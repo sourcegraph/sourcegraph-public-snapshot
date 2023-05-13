@@ -113,7 +113,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 		remote      string
 		revision    string
 		want        map[string]string
-		err         error
+		clientErr   error
 		readerError error
 		skipReader  bool
 	}
@@ -148,7 +148,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 			name: "not-found",
 
 			revision:   "HEAD",
-			err:        errors.New("repository does not exist: not-found"),
+			clientErr:  errors.New("repository does not exist: not-found"),
 			skipReader: false,
 		},
 		{
@@ -156,7 +156,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 
 			remote:      createRepoWithDotGitDir(t, root),
 			revision:    "revision-not-found",
-			err:         nil,
+			clientErr:   nil,
 			readerError: &gitdomain.RevisionNotFoundError{Repo: "revision-not-found", Spec: "revision-not-found"},
 			skipReader:  true,
 		},
@@ -200,7 +200,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 			}
 
 			rc, err := cli.ArchiveReader(ctx, nil, name, gitserver.ArchiveOptions{Treeish: test.revision, Format: gitserver.ArchiveFormatZip})
-			if have, want := fmt.Sprint(err), fmt.Sprint(test.err); have != want {
+			if have, want := fmt.Sprint(err), fmt.Sprint(test.clientErr); have != want {
 				t.Errorf("archive: have err %v, want %v", have, want)
 			}
 			if rc == nil {

@@ -84,17 +84,17 @@ type testGitserverConns struct {
 	clientFunc func(conn *grpc.ClientConn) proto.GitserverServiceClient
 }
 
-// AddrForRepo implements ClientSource
+// AddrForRepo returns the gitserver address to use for the given repo name.
 func (c *testGitserverConns) AddrForRepo(userAgent string, repo api.RepoName) string {
 	return c.conns.AddrForRepo(userAgent, repo)
 }
 
-// Addresses implements ClientSource
+// Addresses returns the current list of gitserver addresses.
 func (c *testGitserverConns) Addresses() []string {
 	return c.conns.Addresses
 }
 
-// ClientForRepo implements ClientSource
+// ClientForRepo returns a client or host for the given repo name.
 func (c *testGitserverConns) ClientForRepo(userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error) {
 	conn, err := c.conns.ConnForRepo(userAgent, repo)
 	if err != nil {

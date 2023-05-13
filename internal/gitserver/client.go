@@ -69,9 +69,14 @@ func ResetClientMocks() {
 
 var _ Client = &clientImplementor{}
 
+// ClientSource is a source of gitserver.Client instances.
+// It allows for mocking out the client source in tests.
 type ClientSource interface {
+	// ClientForRepo returns a Client for the given repo.
 	ClientForRepo(userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error)
+	// AddrForRepo returns the address of the gitserver for the given repo.
 	AddrForRepo(userAgent string, repo api.RepoName) string
+	// Address the current list of gitserver addresses.
 	Addresses() []string
 }
 
@@ -90,8 +95,8 @@ func NewClient() Client {
 	}
 }
 
-// NewTestClient returns a test client that will use the given hard coded list of
-// addresses instead of reading them from config.
+// NewTestClient returns a test client that will use the given list of
+// addresses provided by the clientSource.
 func NewTestClient(cli httpcli.Doer, clientSource ClientSource) Client {
 	logger := sglog.Scoped("NewTestClient", "Test New client")
 
@@ -649,13 +654,13 @@ func (r *readCloseWrapper) Close() error {
 // convertGRPCErrorToGitDomainError translates a GRPC error to a gitdomain error.
 // If the error is not a GRPC error, it is returned as-is.
 func convertGRPCErrorToGitDomainError(err error) error {
-	if status.Code(err) == codes.Canceled {
-		return context.Canceled
-	}
-
 	st, ok := status.FromError(err)
 	if !ok {
 		return err
+	}
+
+	if st.Code() == codes.Canceled {
+		return context.Canceled
 	}
 
 	for _, detail := range st.Details() {
