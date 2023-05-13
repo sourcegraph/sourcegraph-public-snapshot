@@ -1,0 +1,27 @@
+
+
+  .wrapper {
+    display: flex;
+    flex-direction: row;
+    border: 1px solid var(--border-color-2);
+    border-radius: var(--border-radius);
+    padding: 0.25rem 0.625rem;
+    height: 1.75rem;
+    align-items: center;
+    gap: 0.625rem;
+    font-size: 0.875rem;
+  }
+
+  .title {
+    display: flex;
+    height: 100%;
+    align-items: center;
+    padding:5px;
+  }
+
+  .separator {
+    background-color: var(--border-color-2);
+    height: 100%;
+    width: 1px;
+  }
+

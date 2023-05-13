@@ -1,0 +1,10 @@
+.menuSelectedItem {
+    background-color: var(--dropdown-link-active-bg);
+    color: var(--dropdown-link-active-color);
+  }
+
+  .customMenuButton {
+    width: 165px;
+    display: flex;
+    justify-content: space-between;
+  }
