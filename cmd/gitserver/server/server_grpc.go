@@ -1,12 +1,16 @@
 package server
 
 import (
+	"context"
+	"io"
+
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -34,12 +38,62 @@ func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 		})
 	})
 
-	// TODO(camdencheek): set user agent from all grpc clients
-	execStatus, err := gs.Server.exec(ss.Context(), gs.Server.Logger, &internalReq, "unknown-grpc-client", w)
+	// TODO(mucles): set user agent from all grpc clients
+	return gs.doExec(ss.Context(), gs.Server.Logger, &internalReq, "unknown-grpc-client", w)
+}
+
+func (gs *GRPCServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverService_ArchiveServer) error {
+	//TODO(mucles): re-enable access logging (see server.go handleArchive)
+	// Log which which actor is accessing the repo.
+	// accesslog.Record(ctx, req.Repo,
+	// 	log.String("treeish", req.Treeish),
+	// 	log.String("format", req.Format),
+	// 	log.Strings("path", req.Pathspecs),
+	// )
+
+	if err := checkSpecArgSafety(req.GetTreeish()); err != nil {
+		return status.Error(codes.InvalidArgument, err.Error())
+	}
+
+	if req.GetRepo() == "" || req.GetFormat() == "" {
+		return status.Error(codes.InvalidArgument, "empty repo or format")
+	}
+
+	execReq := &protocol.ExecRequest{
+		Repo: api.RepoName(req.GetRepo()),
+		Args: []string{
+			"archive",
+			"--worktree-attributes",
+			"--format=" + req.Format,
+		},
+	}
+
+	if req.GetFormat() == string(gitserver.ArchiveFormatZip) {
+		execReq.Args = append(execReq.Args, "-0")
+	}
+
+	execReq.Args = append(execReq.Args, req.GetTreeish(), "--")
+	execReq.Args = append(execReq.Args, req.GetPathspecs()...)
+
+	w := streamio.NewWriter(func(p []byte) error {
+		return ss.Send(&proto.ArchiveResponse{
+			Data: p,
+		})
+	})
+
+	// TODO(mucles): set user agent from all grpc clients
+	return gs.doExec(ss.Context(), gs.Server.Logger, execReq, "unknown-grpc-client", w)
+}
+
+// doExec executes the given git command and streams the output to the given writer.
+//
+// Note: This function wraps the underlying exec implementation and returns grpc specific error handling.
+func (gs *GRPCServer) doExec(ctx context.Context, logger log.Logger, req *protocol.ExecRequest, userAgent string, w io.Writer) error {
+	execStatus, err := gs.Server.exec(ctx, logger, req, userAgent, w)
 	if err != nil {
 		if v := (&NotFoundError{}); errors.As(err, &v) {
 			s, err := status.New(codes.NotFound, "repo not found").WithDetails(&proto.NotFoundPayload{
-				Repo:            req.GetRepo(),
+				Repo:            string(req.Repo),
 				CloneInProgress: v.Payload.CloneInProgress,
 				CloneProgress:   v.Payload.CloneProgress,
 			})
@@ -67,8 +121,8 @@ func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 		}
 		return s.Err()
 	}
-
 	return nil
+
 }
 
 func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService_SearchServer) error {

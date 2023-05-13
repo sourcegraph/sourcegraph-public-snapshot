@@ -57,7 +57,8 @@ func TestReadDir_SubRepoFiltering(t *testing.T) {
 		t.Fatalf("unexpected error creating sub-repo perms client: %s", err)
 	}
 
-	client := gitserver.NewTestClient(http.DefaultClient, inttests.GitserverAddresses)
+	source := gitserver.NewTestClientSource(inttests.GitserverAddresses)
+	client := gitserver.NewTestClient(http.DefaultClient, source)
 	files, err := client.ReadDir(ctx, checker, repo, commitID, "", false)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
