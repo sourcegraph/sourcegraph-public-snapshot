@@ -15,7 +15,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -39,19 +41,70 @@ func NewGitserverAddressesFromConf(cfg *conf.Unified) GitserverAddresses {
 	return addrs
 }
 
-func newTestGitserverConns(addrs []string) *GitserverConns {
+type TestClientSourceOptions struct {
+	// ClientFunc is the function that is used to return a gRPC client
+	// given the provided connection.
+	ClientFunc func(conn *grpc.ClientConn) proto.GitserverServiceClient
+}
+
+func NewTestClientSource(addrs []string, options ...func(o *TestClientSourceOptions)) ClientSource {
+	opts := TestClientSourceOptions{
+		ClientFunc: func(conn *grpc.ClientConn) proto.GitserverServiceClient {
+			return proto.NewGitserverServiceClient(conn)
+		},
+	}
+
+	for _, o := range options {
+		o(&opts)
+	}
+
 	conns := make(map[string]connAndErr)
 	for _, addr := range addrs {
 		conn, err := defaults.Dial(addr)
 		conns[addr] = connAndErr{conn: conn, err: err}
 	}
-	return &GitserverConns{
-		GitserverAddresses: GitserverAddresses{
-			Addresses: addrs,
+
+	source := testGitserverConns{
+		conns: &GitserverConns{
+			GitserverAddresses: GitserverAddresses{
+				Addresses: addrs,
+			},
+			grpcConns: conns,
 		},
-		grpcConns: conns,
+
+		clientFunc: opts.ClientFunc,
 	}
+
+	return &source
 }
+
+type testGitserverConns struct {
+	conns *GitserverConns
+
+	clientFunc func(conn *grpc.ClientConn) proto.GitserverServiceClient
+}
+
+// AddrForRepo returns the gitserver address to use for the given repo name.
+func (c *testGitserverConns) AddrForRepo(userAgent string, repo api.RepoName) string {
+	return c.conns.AddrForRepo(userAgent, repo)
+}
+
+// Addresses returns the current list of gitserver addresses.
+func (c *testGitserverConns) Addresses() []string {
+	return c.conns.Addresses
+}
+
+// ClientForRepo returns a client or host for the given repo name.
+func (c *testGitserverConns) ClientForRepo(userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error) {
+	conn, err := c.conns.ConnForRepo(userAgent, repo)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.clientFunc(conn), nil
+}
+
+var _ ClientSource = &testGitserverConns{}
 
 type GitserverAddresses struct {
 	// The current list of gitserver addresses
@@ -108,6 +161,22 @@ type connAndErr struct {
 type atomicGitServerConns struct {
 	conns     atomic.Pointer[GitserverConns]
 	watchOnce sync.Once
+}
+
+func (a *atomicGitServerConns) AddrForRepo(userAgent string, repo api.RepoName) string {
+	return a.get().AddrForRepo(userAgent, repo)
+}
+
+func (a *atomicGitServerConns) ClientForRepo(userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error) {
+	conn, err := a.get().ConnForRepo(userAgent, repo)
+	if err != nil {
+		return nil, err
+	}
+	return proto.NewGitserverServiceClient(conn), nil
+}
+
+func (a *atomicGitServerConns) Addresses() []string {
+	return a.get().Addresses
 }
 
 func (a *atomicGitServerConns) get() *GitserverConns {
@@ -168,3 +237,5 @@ func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 		}
 	}
 }
+
+var _ ClientSource = &atomicGitServerConns{}
