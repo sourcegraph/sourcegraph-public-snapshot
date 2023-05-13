@@ -127,7 +127,7 @@ const UpdateMirrorRepositoryActionContainer: FC<UpdateMirrorRepositoryActionCont
     return (
         <ActionContainer
             title={title}
-            titleAs="h3"
+            //TODO: uncomment after merging titleAs="h3"
             description={<div>{description}</div>}
             buttonLabel={buttonLabel}
             buttonDisabled={buttonDisabled || props.disabled}
@@ -167,7 +167,7 @@ const CheckMirrorRepositoryConnectionActionContainer: FC<
     return (
         <BaseActionContainer
             title="Check connection to remote repository"
-            titleAs="h3"
+            //TODO: uncomment after merging titleAs="h3"
             description={<span>Diagnose problems cloning or updating from the remote repository.</span>}
             action={
                 <Button
@@ -243,7 +243,7 @@ const CorruptionLogsContainer: FC<CorruptionLogProps> = props => {
     return (
         <BaseActionContainer
             title="Repository corruption"
-            titleAs="h3"
+            //TODO: uncomment after merging titleAs="h3"
             description={<span>Recent corruption events that have been detected on this repository.</span>}
             details={
                 <div className="flex-1">
@@ -292,7 +292,7 @@ const LastSyncOutputContainer: FC<LastSyncOutputProps> = props => {
     return (
         <BaseActionContainer
             title="Last sync log"
-            titleAs="h3"
+            //TODO: uncomment after merging titleAs="h3"
             description={<h4>Output from this repository's most recent sync job.</h4>}
             details={<LogOutput text={output} logDescription="Job output:" />}
         />
@@ -385,7 +385,7 @@ export const RepoSettingsMirrorPage: FC<RepoSettingsMirrorPageProps> = props => 
                 />
                 <ActionContainer
                     title="Reclone repository"
-                    titleAs="h3"
+                    //TODO: uncomment after merging titleAs="h3"
                     description={
                         <div>
                             This will delete the repository from disk and reclone it.
