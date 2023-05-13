@@ -6493,6 +6493,9 @@ ALTER TABLE ONLY github_apps
 ALTER TABLE ONLY gitserver_repos
     ADD CONSTRAINT gitserver_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
 
+ALTER TABLE ONLY gitserver_repos_sync_output
+    ADD CONSTRAINT gitserver_repos_sync_output_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
+
 ALTER TABLE ONLY insights_query_runner_jobs_dependencies
     ADD CONSTRAINT insights_query_runner_jobs_dependencies_fk_job_id FOREIGN KEY (job_id) REFERENCES insights_query_runner_jobs(id) ON DELETE CASCADE;
 

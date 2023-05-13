@@ -13548,7 +13548,15 @@
           "ConstraintDefinition": "PRIMARY KEY (repo_id)"
         }
       ],
-      "Constraints": null,
+      "Constraints": [
+        {
+          "Name": "gitserver_repos_sync_output_repo_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "repo",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE"
+        }
+      ],
       "Triggers": []
     },
     {
