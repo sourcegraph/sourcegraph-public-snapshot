@@ -8,6 +8,7 @@ import {
     mdiClose,
     mdiGit,
     mdiMinusCircleOutline,
+    mdiGithub,
 } from '@mdi/js'
 
 import {
@@ -36,14 +37,14 @@ export const SELECTED = {
     NONE: 3,
 } as const
 
-export type SelectedType = typeof SELECTED[keyof typeof SELECTED]
+export type ContextType = typeof SELECTED[keyof typeof SELECTED]
 
 interface ContextScopeProps {}
 
 export const ContextScope: React.FC<ContextScopeProps> = ({}) => {
-    const [selectedItem, setSelectedItem] = useState<SelectedType>(SELECTED.NONE)
+    const [selectedItem, setSelectedItem] = useState<ContextType>(SELECTED.NONE)
 
-    const handleItemSelected = (itemIndex: SelectedType) => {
+    const handleItemSelected = (itemIndex: ContextType) => {
         setSelectedItem(itemIndex)
     }
 
@@ -160,17 +161,17 @@ const PopoverComponent: React.FC<{
 
 const ItemRepos: React.FC = () => {
     const mockedRepoNames = [
-        'ant-design',
-        'sourcegraph',
-        'react-custom-scrollbars',
-        'react-packages',
-        'meteor-slingshot',
+        'almeidapaulooliveira/ant-design',
+        'sourcegraph/sourcegraph',
+        'almeidapaulooliveira/react-custom-scrollbars',
+        'almeidapaulooliveira/react-packages',
+        'bartonhammond/meteor-slingshot',
     ]
 
     return (
         <PopoverComponent
             header="Add repositories to the scope"
-            icon={mdiGit}
+            icon={mdiGithub}
             emptyMessage="Start by adding repositories to the scope."
             inputPlaceholder="Search for a repository..."
             items={mockedRepoNames}
