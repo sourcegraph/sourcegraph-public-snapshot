@@ -13,16 +13,14 @@ interface EmptyStateProps {
 
 export const EmptyState: React.FC<EmptyStateProps> = ({ icon, message }) => {
     return (
-        <div className={classNames('d-flex align-items-center justify-content-center', styles.emptyState)}>
+        <div className={classNames('d-flex align-items-center justify-content-center flex-column', styles.emptyState)}>
             <svg height={40} width={40} viewBox="0 0 24 24">
                 <path d={icon} fill="currentColor" />
             </svg>
 
-            <div className={classNames('d-flex', styles.emptyStateContainer)}>
-                <Text size="small" className={styles.marginBottomZero}>
-                    {message}
-                </Text>
-            </div>
+            <Text size="small" className="m-0 d-flex text-center">
+                {message}
+            </Text>
         </div>
     )
 }
