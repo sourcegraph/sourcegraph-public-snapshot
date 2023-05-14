@@ -913,6 +913,7 @@ func TestCommitOwnershipSignals(t *testing.T) {
 		ContributionCount: 5,
 	}}, nil)
 	db.RecentContributionSignalsFunc.SetDefaultReturn(recentContribStore)
+	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
 
 	fakeDB.Wire(db)
 	repoID := api.RepoID(1)

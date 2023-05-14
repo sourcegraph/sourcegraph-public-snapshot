@@ -72,3 +72,9 @@
         opacity: 1;
     }
 }
+
+/** TODO(#51791): Extract common component or unify together with FileOwnershipEntry. */
+.badge {
+    text-transform: uppercase;
+    margin-right: 0.5rem;
+}
