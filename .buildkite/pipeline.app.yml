@@ -1,0 +1,13 @@
+steps:
+  - group: "Sourcegraph App"
+    steps:
+      - label: 'Build Sourcegraph App for Linux'
+        key: 'sourcegraph-app-linux'
+        agents: { queue: bazel }
+        # Prioritize generating pipelines so that jobs can get generated and queued up as soon
+        # as possible, so as to better assess pipeline load e.g. to scale the Buildkite fleet.
+        env:
+          PLATFORM: x86_64-unknown-linux-gnu
+        command:
+          - 'pnpm install'
+          - './enterprise/dev/app/build-release.sh'
