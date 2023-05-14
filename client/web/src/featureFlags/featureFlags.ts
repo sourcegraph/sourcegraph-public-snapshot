@@ -19,6 +19,8 @@ export type FeatureFlagName =
     | 'accessible-symbol-tree'
     | 'accessible-file-tree-always-load-ancestors'
     | 'search-ownership'
+    | 'own-background-index-repo-recent-contributors'
+    | 'own-background-index-repo-recent-views'
     | 'search-ranking'
     | 'blob-page-switch-areas-shortcuts'
     | 'sentinel'
