@@ -2,7 +2,6 @@
 
 set -eu
 
-GCLOUD_APP_CREDENTIALS_FILE=${GCLOUD_APP_CREDENTIALS_FILE-$HOME/.config/gcloud/application_default_credentials.json}
 cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. || exit 1
 
 bazelrc() {
@@ -20,7 +19,6 @@ bazel_build() {
   platform=$1
   target_path=$2
   bazel_cmd="bazel"
-
   if [[ ${CI:-""} == "true" ]]; then
     bazel_cmd="${bazel_cmd} $(bazelrc)"
   fi
@@ -60,36 +58,12 @@ pre_codesign() {
   fi
 }
 
-create_version() {
-  local sha
-  # In a GitHub action this can result in an empty sha
-  sha=$(git rev-parse --short HEAD)
-  if [[ -z ${sha} ]]; then
-    sha=${GITHUB_SHA:-""}
-  fi
-
-  local build="insiders"
-  if [[ ${RELEASE_BUILD} == 1 ]]; then
-    build=${GITHUB_RUN_NUMBER:-"release"}
-  fi
-  echo "$(date '+%Y.%-m.%-d')+${build}.${sha}"
-}
-
-set_version() {
-  if [[ ${CI:-""} == "true" ]]; then
-    VERSION=${VERSION:-$(create_version)}
-  else
-    VERSION=${VERSION:-"0.0.0+dev"}
-  fi
-  export VERSION
-
-  local tauri_conf
-  local tmp
-  tauri_conf="./src-tauri/tauri.conf.json"
-  tmp=$(mktemp)
-  echo "--- updating package version in '${tauri_conf}' to ${VERSION}"
-  jq --arg version "${VERSION}" '.package.version = $version' "${tauri_conf}" > "${tmp}"
-  mv "${tmp}" ./src-tauri/tauri.conf.json
+upload_artifacts() {
+  local platform
+  local target_path
+  platform=$1
+  target_path=$2
+  buildkite-agent artifact upload "${target_path}"
 }
 
 platform() {
@@ -126,10 +100,15 @@ platform() {
   export PLATFORM_IS_MACOS=${macos}
 }
 
+VERSION=$(./enterprise/dev/app/app_version.sh)
+export VERSION
+
 set_platform
 target_path=".bin/sourcegraph-backend-${PLATFORM}"
-set_version
+
 bazel_build "${PLATFORM}" "${target_path}"
+
+# TODO(burmudar) move this to it's own file
 if [[ ${CODESIGNING} == 1 ]]; then
   # If on a macOS host, Tauri will invoke the base64 command as part of the code signing process.
   # it expects the macOS base64 command, not the gnutils one provided by homebrew, so we prefer
@@ -138,6 +117,7 @@ if [[ ${CODESIGNING} == 1 ]]; then
 
   pre_codesign "${target_path}"
 fi
-echo "[Tauri] Building Application (${VERSION})"]
-NODE_ENV=production pnpm run build-app-shell
-pnpm tauri build
+
+if [[ ${CI:-""} == "true" ]]; then
+  upload_artifacts "${PLATFORM}" ".bin/sourcegraph-backend-*"
+fi
