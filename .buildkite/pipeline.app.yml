@@ -9,5 +9,6 @@ steps:
         env:
           PLATFORM: x86_64-unknown-linux-gnu
         command:
-          - 'pnpm install'
+          - './dev/ci/asdf-install.sh'
+          - './dev/ci/pnpm-install-with-retry.sh'
           - './enterprise/dev/app/build-release.sh'
