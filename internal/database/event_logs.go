@@ -1477,22 +1477,32 @@ func buildAggregatedRepoMetadataStatsQuery(period string) string {
 func (l *eventLogStore) aggregatedRepoMetadataStatsPeriod(ctx context.Context, now time.Time, period string) (*types.RepoMetadataAggregatedStatsPeriod, error) {
 	q := buildAggregatedRepoMetadataStatsQuery(period)
 	row := l.QueryRow(ctx, sqlf.Sprintf(q, now, now))
-	var data types.RepoMetadataAggregatedStatsPeriod
+	var startTime time.Time
+	var createEvent types.EventStats
+	var updateEvent types.EventStats
+	var deleteEvent types.EventStats
+	var searchEvent types.EventStats
 	if err := row.Scan(
-		&data.StartTime,
-		&data.CreateRepoMetadataCount,
-		&data.CreateRepoMetadataUniqueCount,
-		&data.UpdateRepoMetadataCount,
-		&data.UpdateRepoMetadataUniqueCount,
-		&data.DeleteRepoMetadataCount,
-		&data.DeleteRepoMetadataUniqueCount,
-		&data.SearchFilterUsageCount,
-		&data.SearchFilterUsageUniqueCount,
+		&startTime,
+		&createEvent.EventsCount,
+		&createEvent.UserCount,
+		&updateEvent.EventsCount,
+		&updateEvent.UserCount,
+		&deleteEvent.EventsCount,
+		&deleteEvent.UserCount,
+		&searchEvent.EventsCount,
+		&searchEvent.UserCount,
 	); err != nil {
 		return nil, err
 	}
 
-	return &data, nil
+	return &types.RepoMetadataAggregatedStatsPeriod{
+			StartTime: startTime,
+			CreateRepoMetadata: &createEvent,
+			UpdateRepoMetadata: &updateEvent,
+			DeleteRepoMetadata: &deleteEvent,
+			SearchFilterUsage: &searchEvent,
+	}, nil
 }
 
 func (l *eventLogStore) AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error) {

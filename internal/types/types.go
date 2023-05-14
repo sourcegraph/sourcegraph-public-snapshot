@@ -1030,18 +1030,15 @@ type RepoMetadataAggregatedStats struct {
 
 type RepoMetadataAggregatedStatsPeriod struct {
 	StartTime time.Time
+	CreateRepoMetadata *EventStats
+	UpdateRepoMetadata *EventStats
+	DeleteRepoMetadata *EventStats
+	SearchFilterUsage *EventStats
+}
 
-	CreateRepoMetadataCount int32
-	CreateRepoMetadataUniqueCount int32
-	
-	UpdateRepoMetadataCount int32
-	UpdateRepoMetadataUniqueCount int32
-	
-	DeleteRepoMetadataCount int32
-	DeleteRepoMetadataUniqueCount int32
-
-	SearchFilterUsageCount       int32
-	SearchFilterUsageUniqueCount int32
+type EventStats struct {
+	UserCount   *int32
+	EventsCount *int32
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
