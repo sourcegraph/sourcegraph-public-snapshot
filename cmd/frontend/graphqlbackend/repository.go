@@ -13,12 +13,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -28,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -659,4 +662,22 @@ func (r *RepositoryResolver) isPerforceDepot(ctx context.Context) bool {
 	}
 
 	return s == &PerforceDepotSourceType
+}
+
+func (r *schemaResolver) logBackendEvent(ctx context.Context, eventName string) {
+	a := actor.FromContext(ctx)
+	if a.IsAuthenticated() && !a.IsMockUser() {
+		if err := usagestats.LogBackendEvent(
+			r.db,
+			a.UID,
+			deviceid.FromContext(ctx),
+			eventName,
+			nil,
+			nil,
+			featureflag.GetEvaluatedFlagSet(ctx),
+			nil,
+		); err != nil {
+			r.logger.Warn("Could not log " + eventName)
+		}
+	}
 }

@@ -1021,6 +1021,29 @@ type CodyAggregatedEvent struct {
 	InvalidDay          int32
 }
 
+type RepoMetadataAggregatedStats struct {
+	IsEnabled bool
+	Daily     *RepoMetadataAggregatedStatsPeriod
+	Weekly    *RepoMetadataAggregatedStatsPeriod
+	Monthly   *RepoMetadataAggregatedStatsPeriod
+}
+
+type RepoMetadataAggregatedStatsPeriod struct {
+	StartTime time.Time
+
+	CreateRepoMetadataCount int32
+	CreateRepoMetadataUniqueCount int32
+	
+	UpdateRepoMetadataCount int32
+	UpdateRepoMetadataUniqueCount int32
+	
+	DeleteRepoMetadataCount int32
+	DeleteRepoMetadataUniqueCount int32
+
+	SearchFilterUsageCount       int32
+	SearchFilterUsageUniqueCount int32
+}
+
 // NOTE: DO NOT alter this struct without making a symmetric change
 // to the updatecheck handler. This struct is marshalled and sent to
 // BigQuery, which requires the input match its schema exactly.
