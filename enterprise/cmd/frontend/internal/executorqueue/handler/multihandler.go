@@ -67,6 +67,7 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err := validateWorkerHostname(req.ExecutorName); err != nil {
 		m.logger.Error(err.Error())
 		m.marshalAndRespondError(w, err, http.StatusBadRequest)
+		return
 	}
 
 	version2Supported := false
