@@ -24,7 +24,7 @@ func generateAnnotation(category string, check string, content string) {
 	_ = os.WriteFile(path, []byte(content+"\n"), os.ModePerm)
 
 	if check == "Go format" {
-		gofmt, _ := os.OpenFile(fmt.Sprintf("%s/gofmt", annotationsDir))
+		gofmt, _ := os.Open(fmt.Sprintf("%s/gofmt", annotationsDir))
 		if err != nil {
 			os.Stderr.WriteString(err.Error() + "\n")
 		}
