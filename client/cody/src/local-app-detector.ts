@@ -1,5 +1,5 @@
 import { promises as fs } from 'fs'
-import { homedir, platform, type } from 'os'
+import { homedir, platform } from 'os'
 
 import { Disposable } from 'vscode'
 
