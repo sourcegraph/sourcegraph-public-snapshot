@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"flag"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -215,4 +216,18 @@ func isAirgapped(ctx context.Context) (err error) {
 	}
 
 	return err
+}
+
+// getSchemaJSONFilename returns the basename of the JSON-serialized schema in the sg/sg repository.
+func getSchemaJSONFilename(schemaName string) (string, error) {
+	switch schemaName {
+	case "frontend":
+		return "internal/database/schema.json", nil
+	case "codeintel":
+		fallthrough
+	case "codeinsights":
+		return fmt.Sprintf("internal/database/schema.%s.json", schemaName), nil
+	}
+
+	return "", errors.Newf("unknown schema name %q", schemaName)
 }
