@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// MultiHandler handles the HTTP requests of an executor for more than one queue. See ExecutorHandler for single-queue implementation.
 type MultiHandler struct {
 	JobTokenStore         executorstore.JobTokenStore
 	CodeIntelQueueHandler QueueHandler[uploadsshared.Index]

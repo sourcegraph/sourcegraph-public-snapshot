@@ -26,7 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// ExecutorHandler handles the HTTP requests of an executor.
+// ExecutorHandler handles the HTTP requests of an executor for a single queue. See MultiHandler for multi-queue implementation.
 type ExecutorHandler interface {
 	// Name is the name of the queue the handler processes.
 	Name() string
