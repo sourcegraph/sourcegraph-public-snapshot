@@ -54,6 +54,7 @@ contents:
     - coursier@sourcegraph
     - p4cli@sourcegraph
     - p4-fusion@sourcegraph
+    - s3proxy@sourcegraph
 
     # Temp, testing server image without pulling from other layers
     - grafana@chainguard
