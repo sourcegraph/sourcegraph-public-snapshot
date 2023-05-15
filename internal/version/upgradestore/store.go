@@ -140,7 +140,7 @@ func isMissingRelation(err error) bool {
 		return false
 	}
 
-	return pgErr.Code == "42P01"
+	return pgErr.Code == pgerrcode.UndefinedTable
 }
 
 // GetAutoUpgrade gets the current value of versions.version and versions.auto_upgrade in the frontend database.
