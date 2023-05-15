@@ -194,7 +194,7 @@ Also, check the [changelog](https://sourcegraph.com/github.com/sourcegraph/sourc
 > NOTE: Keep in mind that only one minor version bumps are guaranteed to be disruption-free.
 
 ```bash
-curl -sfLo executor https://storage.googleapis.com/sourcegraph-artifacts/executor/latest/linux-amd64/executor
+curl -sfLo executor https://storage.googleapis.com/sourcegraph-artifacts/executor/${SOURCEGRAPH_VERSION}/linux-amd64/executor
 chmod +x executor
 # Assuming /usr/local/bin is in $PATH.
 mv executor /usr/local/bin
