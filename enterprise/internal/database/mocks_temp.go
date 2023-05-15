@@ -7978,6 +7978,9 @@ type MockEnterpriseDB struct {
 	// SettingsFunc is an instance of a mock function object controlling the
 	// behavior of the method Settings.
 	SettingsFunc *EnterpriseDBSettingsFunc
+	// SignalConfigurationsFunc is an instance of a mock function object
+	// controlling the behavior of the method SignalConfigurations.
+	SignalConfigurationsFunc *EnterpriseDBSignalConfigurationsFunc
 	// SubRepoPermsFunc is an instance of a mock function object controlling
 	// the behavior of the method SubRepoPerms.
 	SubRepoPermsFunc *EnterpriseDBSubRepoPermsFunc
@@ -8247,6 +8250,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		SettingsFunc: &EnterpriseDBSettingsFunc{
 			defaultHook: func() (r0 database.SettingsStore) {
+				return
+			},
+		},
+		SignalConfigurationsFunc: &EnterpriseDBSignalConfigurationsFunc{
+			defaultHook: func() (r0 database.SignalConfigurationStore) {
 				return
 			},
 		},
@@ -8547,6 +8555,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.Settings")
 			},
 		},
+		SignalConfigurationsFunc: &EnterpriseDBSignalConfigurationsFunc{
+			defaultHook: func() database.SignalConfigurationStore {
+				panic("unexpected invocation of MockEnterpriseDB.SignalConfigurations")
+			},
+		},
 		SubRepoPermsFunc: &EnterpriseDBSubRepoPermsFunc{
 			defaultHook: func() SubRepoPermsStore {
 				panic("unexpected invocation of MockEnterpriseDB.SubRepoPerms")
@@ -8752,6 +8765,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		SettingsFunc: &EnterpriseDBSettingsFunc{
 			defaultHook: i.Settings,
+		},
+		SignalConfigurationsFunc: &EnterpriseDBSignalConfigurationsFunc{
+			defaultHook: i.SignalConfigurations,
 		},
 		SubRepoPermsFunc: &EnterpriseDBSubRepoPermsFunc{
 			defaultHook: i.SubRepoPerms,
@@ -13439,6 +13455,108 @@ func (c EnterpriseDBSettingsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBSettingsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBSignalConfigurationsFunc describes the behavior when the
+// SignalConfigurations method of the parent MockEnterpriseDB instance is
+// invoked.
+type EnterpriseDBSignalConfigurationsFunc struct {
+	defaultHook func() database.SignalConfigurationStore
+	hooks       []func() database.SignalConfigurationStore
+	history     []EnterpriseDBSignalConfigurationsFuncCall
+	mutex       sync.Mutex
+}
+
+// SignalConfigurations delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) SignalConfigurations() database.SignalConfigurationStore {
+	r0 := m.SignalConfigurationsFunc.nextHook()()
+	m.SignalConfigurationsFunc.appendCall(EnterpriseDBSignalConfigurationsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SignalConfigurations
+// method of the parent MockEnterpriseDB instance is invoked and the hook
+// queue is empty.
+func (f *EnterpriseDBSignalConfigurationsFunc) SetDefaultHook(hook func() database.SignalConfigurationStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SignalConfigurations method of the parent MockEnterpriseDB instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *EnterpriseDBSignalConfigurationsFunc) PushHook(hook func() database.SignalConfigurationStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBSignalConfigurationsFunc) SetDefaultReturn(r0 database.SignalConfigurationStore) {
+	f.SetDefaultHook(func() database.SignalConfigurationStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBSignalConfigurationsFunc) PushReturn(r0 database.SignalConfigurationStore) {
+	f.PushHook(func() database.SignalConfigurationStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBSignalConfigurationsFunc) nextHook() func() database.SignalConfigurationStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBSignalConfigurationsFunc) appendCall(r0 EnterpriseDBSignalConfigurationsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBSignalConfigurationsFuncCall
+// objects describing the invocations of this function.
+func (f *EnterpriseDBSignalConfigurationsFunc) History() []EnterpriseDBSignalConfigurationsFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBSignalConfigurationsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBSignalConfigurationsFuncCall is an object that describes an
+// invocation of method SignalConfigurations on an instance of
+// MockEnterpriseDB.
+type EnterpriseDBSignalConfigurationsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.SignalConfigurationStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBSignalConfigurationsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBSignalConfigurationsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

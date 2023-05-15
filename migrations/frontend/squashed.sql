@@ -3665,6 +3665,24 @@ CREATE SEQUENCE own_background_jobs_id_seq
 
 ALTER SEQUENCE own_background_jobs_id_seq OWNED BY own_background_jobs.id;
 
+CREATE TABLE own_signal_configurations (
+    id integer NOT NULL,
+    name text NOT NULL,
+    description text DEFAULT ''::text NOT NULL,
+    excluded_repo_patterns text[],
+    enabled boolean DEFAULT false NOT NULL
+);
+
+CREATE SEQUENCE own_signal_configurations_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE own_signal_configurations_id_seq OWNED BY own_signal_configurations.id;
+
 CREATE TABLE own_signal_recent_contribution (
     id integer NOT NULL,
     commit_author_id integer NOT NULL,
@@ -4804,6 +4822,8 @@ ALTER TABLE ONLY own_aggregate_recent_view ALTER COLUMN id SET DEFAULT nextval('
 
 ALTER TABLE ONLY own_background_jobs ALTER COLUMN id SET DEFAULT nextval('own_background_jobs_id_seq'::regclass);
 
+ALTER TABLE ONLY own_signal_configurations ALTER COLUMN id SET DEFAULT nextval('own_signal_configurations_id_seq'::regclass);
+
 ALTER TABLE ONLY own_signal_recent_contribution ALTER COLUMN id SET DEFAULT nextval('own_signal_recent_contribution_id_seq'::regclass);
 
 ALTER TABLE ONLY package_repo_filters ALTER COLUMN id SET DEFAULT nextval('package_repo_filters_id_seq'::regclass);
@@ -5214,6 +5234,9 @@ ALTER TABLE ONLY own_aggregate_recent_view
 
 ALTER TABLE ONLY own_background_jobs
     ADD CONSTRAINT own_background_jobs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY own_signal_configurations
+    ADD CONSTRAINT own_signal_configurations_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY own_signal_recent_contribution
     ADD CONSTRAINT own_signal_recent_contribution_pkey PRIMARY KEY (id);

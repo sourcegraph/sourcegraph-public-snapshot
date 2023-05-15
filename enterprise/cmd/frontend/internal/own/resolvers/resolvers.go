@@ -8,11 +8,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 
 	"github.com/sourcegraph/log"
@@ -499,7 +495,7 @@ func (r *ownResolver) SignalConfigurations(ctx context.Context) ([]graphqlbacken
 	// ffStore := r.db.FeatureFlags()
 
 	var resolvers []graphqlbackend.SignalConfigurationResolver
-	store := NewSignalConfigurationStore(r.db)
+	store := r.db.SignalConfigurations()
 	configurations, err := store.LoadConfigurations(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "LoadConfigurations")
@@ -513,8 +509,7 @@ func (r *ownResolver) SignalConfigurations(ctx context.Context) ([]graphqlbacken
 }
 
 type signalConfigResolver struct {
-	config   SignalConfiguration
-	excluded []string
+	config database.SignalConfiguration
 }
 
 func (s *signalConfigResolver) Name() string {
@@ -530,16 +525,16 @@ func (s *signalConfigResolver) IsEnabled() bool {
 }
 
 func (s *signalConfigResolver) ExcludedRepoPatterns() []string {
-	return s.config.ExcludedRepoPatterns
+	return userifyPatterns(s.config.ExcludedRepoPatterns)
 }
 
 func (r *ownResolver) UpdateSignalConfigurations(ctx context.Context, args graphqlbackend.UpdateSignalConfigurationsArgs) ([]graphqlbackend.SignalConfigurationResolver, error) {
 	// for now, just return the jobs
 	r.logger.Info("input signal configs", log.String("configs", fmt.Sprintf("%v", args.Input.Configs)))
 
-	err := NewSignalConfigurationStore(r.db).WithTransact(ctx, func(store SignalConfigurationStore) error {
+	err := r.db.SignalConfigurations().WithTransact(ctx, func(store database.SignalConfigurationStore) error {
 		for _, config := range args.Input.Configs {
-			if err := store.UpdateConfiguration(ctx, UpdateSignalConfigurationArgs{
+			if err := store.UpdateConfiguration(ctx, database.UpdateSignalConfigurationArgs{
 				Name:                 config.Name,
 				ExcludedRepoPatterns: postgresifyPatterns(config.ExcludedRepoPatterns),
 				Enabled:              config.Enabled,
@@ -554,69 +549,6 @@ func (r *ownResolver) UpdateSignalConfigurations(ctx context.Context, args graph
 	}
 
 	return r.SignalConfigurations(ctx)
-}
-
-type SignalConfiguration struct {
-	ID                   int
-	Name                 string
-	Description          string
-	ExcludedRepoPatterns []string
-	Enabled              bool
-}
-
-type SignalConfigurationStore interface {
-	LoadConfigurations(ctx context.Context) ([]SignalConfiguration, error)
-	UpdateConfiguration(ctx context.Context, args UpdateSignalConfigurationArgs) error
-	WithTransact(context.Context, func(store SignalConfigurationStore) error) error
-}
-
-type UpdateSignalConfigurationArgs struct {
-	Name                 string
-	ExcludedRepoPatterns []string
-	Enabled              bool
-}
-
-type signalConfigurationStore struct {
-	*basestore.Store
-}
-
-func NewSignalConfigurationStore(db database.DB) SignalConfigurationStore {
-	return &signalConfigurationStore{basestore.NewWithHandle(db.Handle())}
-}
-
-func (s *signalConfigurationStore) With(other basestore.ShareableStore) *signalConfigurationStore {
-	return &signalConfigurationStore{s.Store.With(other)}
-}
-
-func (s *signalConfigurationStore) LoadConfigurations(ctx context.Context) ([]SignalConfiguration, error) {
-	multiScan := basestore.NewSliceScanner(func(scanner dbutil.Scanner) (SignalConfiguration, error) {
-		var temp SignalConfiguration
-		err := scanner.Scan(
-			&temp.ID,
-			&temp.Name,
-			&temp.Description,
-			pq.Array(&temp.ExcludedRepoPatterns),
-			&temp.Enabled,
-		)
-		if err != nil {
-			return SignalConfiguration{}, err
-		}
-		temp.ExcludedRepoPatterns = userifyPatterns(temp.ExcludedRepoPatterns)
-		return temp, nil
-	})
-
-	return multiScan(s.Query(ctx, sqlf.Sprintf("select * from own_signal_configurations;")))
-}
-
-func (s *signalConfigurationStore) UpdateConfiguration(ctx context.Context, args UpdateSignalConfigurationArgs) error {
-	q := "update own_signal_configurations set enabled = %s, excluded_repo_patterns = %s where name = %s"
-	return s.Exec(ctx, sqlf.Sprintf(q, args.Enabled, pq.Array(args.ExcludedRepoPatterns), args.Name))
-}
-
-func (s *signalConfigurationStore) WithTransact(ctx context.Context, f func(store SignalConfigurationStore) error) error {
-	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
-		return f(s.With(tx))
-	})
 }
 
 // postgresifyPatterns will convert glob-ish patterns to postgres compatible patterns. For example github.com/* -> github.com/%
