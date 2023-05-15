@@ -61,6 +61,9 @@ sg db reset-redis
 
 # Create a site-admin user whose email and password are foo@sourcegraph.com and sourcegraph.
 sg db add-user -username=foo
+
+# Create an access token for the user created above.
+sg db add-access-token -username=foo
 `,
 		Category: CategoryDev,
 		Subcommands: []*cli.Command{
@@ -150,6 +153,32 @@ sg db add-user -username=foo
 				},
 				Action: dbAddUserAction,
 			},
+
+			{
+				Name:        "add-access-token",
+				Usage:       "Create a sourcegraph access token",
+				Description: `Run 'sg db add-access-token -username bob' to create an access token for the given username. The access token will be printed if the operation succeeds`,
+				Flags: []cli.Flag{
+					&cli.StringFlag{
+						Name:  "username",
+						Value: "sourcegraph",
+						Usage: "Username for user",
+					},
+					&cli.BoolFlag{
+						Name:     "sudo",
+						Value:    false,
+						Usage:    "Set true to make a site-admin level token",
+						Required: false,
+					},
+					&cli.StringFlag{
+						Name:     "note",
+						Value:    "",
+						Usage:    "Note attached to the token",
+						Required: false,
+					},
+				},
+				Action: dbAddAccessTokenAction,
+			},
 		},
 	}
 )
@@ -205,6 +234,51 @@ func dbAddUserAction(cmd *cli.Context) error {
 			),
 		)
 
+		return nil
+	})
+}
+
+func dbAddAccessTokenAction(cmd *cli.Context) error {
+	ctx := cmd.Context
+	logger := log.Scoped("dbAddAccessTokenAction", "")
+
+	// Read the configuration.
+	conf, _ := getConfig()
+	if conf == nil {
+		return errors.New("failed to read sg.config.yaml. This command needs to be run in the `sourcegraph` repository")
+	}
+
+	// Connect to the database.
+	conn, err := connections.EnsureNewFrontendDB(&observation.TestContext, postgresdsn.New("", "", conf.GetEnv), "frontend")
+	if err != nil {
+		return err
+	}
+
+	db := database.NewDB(logger, conn)
+	return db.WithTransact(ctx, func(tx database.DB) error {
+		username := cmd.String("username")
+		sudo := cmd.Bool("sudo")
+		note := cmd.String("note")
+
+		scopes := []string{"user:all"}
+		if sudo {
+			scopes = []string{"site-admin:sudo"}
+		}
+
+		// Fetch user
+		user, err := tx.Users().GetByUsername(ctx, username)
+		if err != nil {
+			return err
+		}
+
+		// Generate the token
+		_, token, err := tx.AccessTokens().Create(ctx, user.ID, scopes, note, user.ID)
+		if err != nil {
+			return err
+		}
+
+		// Print token
+		std.Out.WriteSuccessf("New token created: %q", token)
 		return nil
 	})
 }
