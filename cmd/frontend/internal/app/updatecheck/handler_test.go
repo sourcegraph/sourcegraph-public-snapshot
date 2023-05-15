@@ -207,6 +207,7 @@ func TestSerializeBasic(t *testing.T) {
 	compareJSON(t, payload, `{
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
+		"repo_metadata_usage": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "mylicense",
 		"has_update": "true",
@@ -282,6 +283,7 @@ func TestSerializeLimited(t *testing.T) {
 	compareJSON(t, payload, `{
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "2023.03.23+205275.dd37e7",
+		"repo_metadata_usage": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "",
 		"has_update": "true",
@@ -359,6 +361,7 @@ func TestSerializeFromQuery(t *testing.T) {
 	compareJSON(t, payload, `{
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
+		"repo_metadata_usage": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "",
 		"has_update": "true",
@@ -419,6 +422,7 @@ func TestSerializeBatchChangesUsage(t *testing.T) {
 	compareJSON(t, payload, `{
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
+		"repo_metadata_usage": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "mylicense",
 		"has_update": "true",
@@ -479,6 +483,7 @@ func TestSerializeGrowthStatistics(t *testing.T) {
 	compareJSON(t, payload, `{
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
+		"repo_metadata_usage": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "mylicense",
 		"has_update": "true",
@@ -505,7 +510,7 @@ func TestSerializeGrowthStatistics(t *testing.T) {
 		"search_onboarding": null,
 		"homepage_panels": null,
 		"repositories": null,
-"repository_size_histogram": null,
+		"repository_size_histogram": null,
 		"retention_statistics": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
@@ -640,6 +645,7 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 	compareJSON(t, payload, `{
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
+		"repo_metadata_usage": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "mylicense",
 		"has_update": "true",
@@ -822,6 +828,7 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 	compareJSON(t, payload, `{
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
+		"repo_metadata_usage": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "mylicense",
 		"has_update": "true",
@@ -952,6 +959,7 @@ func TestSerializeCodeHostVersions(t *testing.T) {
 	compareJSON(t, payload, `{
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
+		"repo_metadata_usage": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "mylicense",
 		"has_update": "true",
@@ -1048,6 +1056,7 @@ func TestSerializeOwn(t *testing.T) {
 		"access_request_enabled": "false",
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
+		"repo_metadata_usage": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "",
 		"has_update": "true",
