@@ -3,12 +3,13 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "accesslog",
     srcs = ["accesslog.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/server/internal/accesslog",
-    visibility = ["//cmd/gitserver/server:__subpackages__"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog",
+    visibility = ["//cmd/gitserver:__subpackages__"],
     deps = [
         "//internal/audit",
         "//internal/conf/conftypes",
         "@com_github_sourcegraph_log//:log",
+        "@org_golang_google_grpc//:go_default_library",
         "@org_uber_go_atomic//:atomic",
     ],
 )
@@ -26,5 +27,6 @@ go_test(
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
+        "@org_golang_google_grpc//:go_default_library",
     ],
 )
