@@ -17,7 +17,7 @@ type llmProxyAccessResolver struct {
 func (r llmProxyAccessResolver) Enabled() bool { return r.sub.v.LLMProxyAccess.Enabled }
 
 func (r llmProxyAccessResolver) RateLimit(ctx context.Context) (graphqlbackend.LLMProxyRateLimit, error) {
-	if !r.sub.v.LLMProxyAccess.Enabled {
+	if !r.Enabled() {
 		return nil, nil
 	}
 
@@ -51,6 +51,10 @@ func (r llmProxyAccessResolver) RateLimit(ctx context.Context) (graphqlbackend.L
 }
 
 func (r llmProxyAccessResolver) Usage(ctx context.Context) ([]graphqlbackend.LLMProxyUsageDatapoint, error) {
+	if !r.Enabled() {
+		return nil, nil
+	}
+
 	usage, err := NewLLMProxyService().UsageForSubscription(ctx, r.sub.UUID())
 	if err != nil {
 		return nil, err
