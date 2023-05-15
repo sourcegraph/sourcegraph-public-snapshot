@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 import {
     mdiChevronUp,
@@ -25,7 +25,7 @@ import {
 import { TruncatedText } from '../../../../enterprise/insights/components'
 import { ContextType, SELECTED } from '../ContextScope'
 
-import { repoMockedModel } from './mockedModels'
+import { repoMockedModel, filesMockedModel } from './mockedModels'
 
 import styles from './ContextComponents.module.scss'
 
@@ -41,6 +41,11 @@ export const ContextPopover: React.FC<{
     const [isPopoverOpen, setIsPopoverOpen] = useState(false)
     const [currentItems, setCurrentItems] = useState<string[] | undefined>(items)
     const [searchText, setSearchText] = useState('')
+
+    useEffect(() => {
+        setCurrentItems(items)
+        clearSearchText()
+    }, [items])
 
     const clearSearchText = () => {
         setSearchText('')
@@ -79,9 +84,12 @@ export const ContextPopover: React.FC<{
         }
     }
 
-    const filteredItems = repoMockedModel
-        .filter(item => !currentItems?.includes(item)) // Exclude items already present in currentItems
-        .filter(item => fuzzySearch(item, searchText))
+    const filteredItems =
+        contextType === SELECTED.REPOSITORIES
+            ? repoMockedModel
+            : filesMockedModel
+                  .filter(item => !currentItems?.includes(item)) // Exclude items already present in currentItems
+                  .filter(item => fuzzySearch(item, searchText))
 
     const isSearching = searchText.length > 0
     const isSearchEmpty = isSearching && filteredItems.length === 0
@@ -99,7 +107,7 @@ export const ContextPopover: React.FC<{
                         `${header}...`
                     ) : (
                         <TruncatedText>
-                            {currentItems.length} {itemType} ({currentItems?.join(', ')})
+                            {currentItems.length} {itemType} ({currentItems?.map(item => getFileName(item)).join(', ')})
                         </TruncatedText>
                     )}
                 </div>
@@ -135,7 +143,7 @@ export const ContextPopover: React.FC<{
                                             {
                                                 <span
                                                     dangerouslySetInnerHTML={{
-                                                        __html: getTintedText(item, searchText),
+                                                        __html: getTintedText(getFileName(item), searchText),
                                                     }}
                                                 />
                                             }
@@ -145,7 +153,11 @@ export const ContextPopover: React.FC<{
                                                 <>
                                                     <Icon aria-hidden={true} svgPath={mdiGithub} />{' '}
                                                     <Text size="small" className="m-0">
-                                                        sourcegraph/sourcegraph/client/cody-ui/src
+                                                        <span
+                                                            dangerouslySetInnerHTML={{
+                                                                __html: getTintedText(getPath(item), searchText),
+                                                            }}
+                                                        />
                                                     </Text>
                                                 </>
                                             )}
@@ -243,4 +255,14 @@ export const fuzzySearch = (item: string, search: string): boolean => {
 export const getTintedText = (item: string, searchText: string) => {
     const searchRegex = new RegExp(`(${searchText})`, 'gi')
     return item.replace(searchRegex, match => `<span class="tinted">${match}</span>`)
+}
+
+export const getFileName = (path: string) => {
+    const parts = path.split('/')
+    return parts[parts.length - 1]
+}
+
+export const getPath = (path: string) => {
+    const parts = path.split('/')
+    return parts.slice(0, parts.length - 1).join('/')
 }

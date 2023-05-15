@@ -63,14 +63,7 @@ const ItemRepos: React.FC = () => {
 }
 
 const ItemFiles: React.FC = () => {
-    const mockedFileNames = [
-        'CodyChat.tsx',
-        'CodyChatView.tsx',
-        'Cody.ts',
-        'CodyLogo.tsx',
-        'CodyModal.ts',
-        'CustomScroller.tsx',
-    ]
+    const mockedFileNames: string[] = []
 
     return (
         <ContextPopover
