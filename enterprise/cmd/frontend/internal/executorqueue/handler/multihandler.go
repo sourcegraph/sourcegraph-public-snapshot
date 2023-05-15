@@ -56,19 +56,21 @@ func (m *MultiHandler) validateQueues(queues []string) []string {
 
 // ServeHTTP is the equivalent of ExecutorHandler.HandleDequeue for multiple queues.
 func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	var payload executortypes.DequeueRequest
+	wrapHandler(w, r, &payload, m.logger, func() (int, any, error) {
+		job, dequeued, err := m.dequeue(r.Context(), payload)
+		if !dequeued {
+			return http.StatusNoContent, nil, err
+		}
 
-	var req executortypes.DequeueRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		err = errors.Wrap(err, fmt.Sprintf("Failed to unmarshal payload"))
-		m.logger.Error(err.Error())
-		m.marshalAndRespondError(w, err, http.StatusInternalServerError)
-		return
-	}
+		return http.StatusOK, job, err
+	})
+}
 
+func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueRequest) (executortypes.Job, bool, error) {
 	if err := validateWorkerHostname(req.ExecutorName); err != nil {
 		m.logger.Error(err.Error())
-		m.marshalAndRespondError(w, err, http.StatusBadRequest)
-		return
+		return executortypes.Job{}, false, err
 	}
 
 	version2Supported := false
@@ -76,16 +78,14 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		var err error
 		version2Supported, err = api.CheckSourcegraphVersion(req.Version, "4.3.0-0", "2022-11-24")
 		if err != nil {
-			m.marshalAndRespondError(w, err, http.StatusBadRequest)
-			return
+			return executortypes.Job{}, false, err
 		}
 	}
 
 	if invalidQueues := m.validateQueues(req.Queues); len(invalidQueues) > 0 {
 		message := fmt.Sprintf("Invalid queue name(s) '%s' found. Supported queue names are '%s'.", strings.Join(invalidQueues, ", "), strings.Join(m.validQueues, ", "))
 		m.logger.Error(message)
-		m.marshalAndRespondError(w, errors.New(message), http.StatusBadRequest)
-		return
+		return executortypes.Job{}, false, errors.New(message)
 	}
 
 	resourceMetadata := ResourceMetadata{
@@ -94,50 +94,48 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		DiskSpace: req.DiskSpace,
 	}
 
-	logger := m.logger.Scoped("dequeue", "Select a job record from the database.")
+	logger := m.logger.Scoped("dequeue", "Pick a job record from the database.")
 	var job executortypes.Job
 	// TODO - impl fairness later
 	for _, queue := range req.Queues {
 		switch queue {
 		case m.BatchesQueueHandler.Name:
-			record, dequeued, err := m.BatchesQueueHandler.Store.Dequeue(r.Context(), req.ExecutorName, nil)
+			record, dequeued, err := m.BatchesQueueHandler.Store.Dequeue(ctx, req.ExecutorName, nil)
 			if err != nil {
 				err = errors.Wrapf(err, "dbworkerstore.Dequeue %s", queue)
-				logger.Error("Handler returned an error", log.Error(err))
-				m.marshalAndRespondError(w, err, http.StatusInternalServerError)
-				return
+				logger.Error("Failed to dequeue", log.String("queue", queue), log.Error(err))
+				return executortypes.Job{}, false, err
 			}
 			if !dequeued {
 				// no batches job to dequeue, try next queue
 				continue
 			}
 
-			job, err = m.BatchesQueueHandler.RecordTransformer(r.Context(), req.Version, record, resourceMetadata)
+			job, err = m.BatchesQueueHandler.RecordTransformer(ctx, req.Version, record, resourceMetadata)
 			if err != nil {
-				markErr := markRecordAsFailed(r.Context(), m.BatchesQueueHandler.Store, record.RecordID(), err, logger)
+				markErr := markRecordAsFailed(ctx, m.BatchesQueueHandler.Store, record.RecordID(), err, logger)
 				err = errors.Wrapf(errors.Append(err, markErr), "RecordTransformer %s", queue)
-				m.marshalAndRespondError(w, err, http.StatusInternalServerError)
-				return
+				logger.Error("Failed to transform record", log.String("queue", queue), log.Error(err))
+				return executortypes.Job{}, false, err
 			}
 		case m.CodeIntelQueueHandler.Name:
-			record, dequeued, err := m.CodeIntelQueueHandler.Store.Dequeue(r.Context(), req.ExecutorName, nil)
+			record, dequeued, err := m.CodeIntelQueueHandler.Store.Dequeue(ctx, req.ExecutorName, nil)
 			if err != nil {
 				err = errors.Wrapf(err, "dbworkerstore.Dequeue %s", queue)
-				logger.Error("Handler returned an error", log.Error(err))
-				m.marshalAndRespondError(w, err, http.StatusInternalServerError)
-				return
+				logger.Error("Failed to dequeue", log.String("queue", queue), log.Error(err))
+				return executortypes.Job{}, false, err
 			}
 			if !dequeued {
 				// no codeintel job to dequeue, try next queue
 				continue
 			}
 
-			job, err = m.CodeIntelQueueHandler.RecordTransformer(r.Context(), req.Version, record, resourceMetadata)
+			job, err = m.CodeIntelQueueHandler.RecordTransformer(ctx, req.Version, record, resourceMetadata)
 			if err != nil {
-				markErr := markRecordAsFailed(r.Context(), m.CodeIntelQueueHandler.Store, record.RecordID(), err, logger)
+				markErr := markRecordAsFailed(ctx, m.CodeIntelQueueHandler.Store, record.RecordID(), err, logger)
 				err = errors.Wrapf(errors.Append(err, markErr), "RecordTransformer %s", queue)
-				m.marshalAndRespondError(w, err, http.StatusInternalServerError)
-				return
+				logger.Error("Failed to transform record", log.String("queue", queue), log.Error(err))
+				return executortypes.Job{}, false, err
 			}
 		}
 		if job.ID != 0 {
@@ -147,9 +145,8 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if job.ID == 0 {
-		// all queues are empty, return no content
-		w.WriteHeader(http.StatusNoContent)
-		return
+		// all queues are empty, return nothing
+		return executortypes.Job{}, false, nil
 	}
 
 	// If this executor supports v2, return a v2 payload. Based on this field,
@@ -159,31 +156,25 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	logger = m.logger.Scoped("token", "Create or regenerate a job token.")
-	token, err := m.JobTokenStore.Create(r.Context(), job.ID, job.Queue, job.RepositoryName)
+	token, err := m.JobTokenStore.Create(ctx, job.ID, job.Queue, job.RepositoryName)
 	if err != nil {
 		if errors.Is(err, executorstore.ErrJobTokenAlreadyCreated) {
 			// Token has already been created, regen it.
-			token, err = m.JobTokenStore.Regenerate(r.Context(), job.ID, job.Queue)
+			token, err = m.JobTokenStore.Regenerate(ctx, job.ID, job.Queue)
 			if err != nil {
 				err = errors.Wrap(err, "RegenerateToken")
-				logger.Error(err.Error())
-				m.marshalAndRespondError(w, err, http.StatusInternalServerError)
-				return
+				logger.Error("Failed to regenerate token", log.Error(err))
+				return executortypes.Job{}, false, err
 			}
 		} else {
 			err = errors.Wrap(err, "CreateToken")
-			logger.Error(err.Error())
-			m.marshalAndRespondError(w, err, http.StatusInternalServerError)
-			return
+			logger.Error("Failed to create token", log.Error(err))
+			return executortypes.Job{}, false, err
 		}
 	}
 	job.Token = token
 
-	if err = json.NewEncoder(w).Encode(job); err != nil {
-		err = errors.Wrap(err, "Failed to serialize payload")
-		m.logger.Error(err.Error())
-		m.marshalAndRespondError(w, err, http.StatusInternalServerError)
-	}
+	return job, true, nil
 }
 
 func markRecordAsFailed[T workerutil.Record](context context.Context, store dbworkerstore.Store[T], recordID int, err error, logger log.Logger) error {
