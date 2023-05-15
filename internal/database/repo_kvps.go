@@ -17,12 +17,12 @@ type RepoKVPStore interface {
 	WithTransact(context.Context, func(RepoKVPStore) error) error
 	With(basestore.ShareableStore) RepoKVPStore
 	Get(context.Context, api.RepoID, string) (KeyValuePair, error)
-	List(context.Context, api.RepoID) ([]KeyValuePair, error)
+	Count(context.Context, RepoKVPListOptions) (int, error)
+	List(context.Context, RepoKVPListOptions, PaginationArgs) ([]KeyValuePair, error)
 	Create(context.Context, api.RepoID, KeyValuePair) error
 	Update(context.Context, api.RepoID, KeyValuePair) (KeyValuePair, error)
 	Delete(context.Context, api.RepoID, string) error
 }
-
 type repoKVPStore struct {
 	*basestore.Store
 }
@@ -71,14 +71,46 @@ func (s *repoKVPStore) Get(ctx context.Context, repoID api.RepoID, key string) (
 	return scanKVP(s.QueryRow(ctx, sqlf.Sprintf(q, repoID, key)))
 }
 
-func (s *repoKVPStore) List(ctx context.Context, repoID api.RepoID) ([]KeyValuePair, error) {
-	q := `
+type RepoKVPListOptions struct {
+	Query   *string
+}
+
+func (r *RepoKVPListOptions) SQL() []*sqlf.Query {
+	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	if r != nil && r.Query != nil {
+		conds = append(conds, sqlf.Sprintf("key ILIKE %s", "%"+*r.Query+"%"))
+	}
+	return conds
+}
+
+func (s *repoKVPStore) Count(ctx context.Context, options RepoKVPListOptions) (int, error) {
+	q := sqlf.Sprintf("SELECT COUNT(*) FROM access_requests WHERE (%s)", sqlf.Join(options.SQL(), ") AND ("))
+	return basestore.ScanInt(s.QueryRow(ctx, q))
+}
+
+func (s *repoKVPStore) List(ctx context.Context, options RepoKVPListOptions, orderOptions PaginationArgs) ([]KeyValuePair, error) {
+	query := `
 	SELECT key, value
 	FROM repo_kvps
-	WHERE repo_id = %s
+	WHERE (%s)
 	`
 
-	return scanKVPs(s.Query(ctx, sqlf.Sprintf(q, repoID)))
+	where := options.SQL()
+	p := orderOptions.SQL()
+
+	if p.Where != nil {
+		where = append(where, p.Where)
+	}
+
+	if p.Order != nil {
+		p.Order = sqlf.Sprintf("key")
+	}
+
+	q := sqlf.Sprintf(query, sqlf.Join(where, ") AND ("))
+	q = p.AppendOrderToQuery(q)
+	q = p.AppendLimitToQuery(q)
+
+	return scanKVPs(s.Query(ctx, q))
 }
 
 func (s *repoKVPStore) Update(ctx context.Context, repoID api.RepoID, kvp KeyValuePair) (KeyValuePair, error) {

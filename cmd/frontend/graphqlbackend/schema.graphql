@@ -9636,6 +9636,41 @@ extend type Query {
     ): AccessRequestConnection!
 }
 
+"""
+A list of repo key-value pair metadata
+"""
+type RepoMetadataConnection {
+    """
+    Total count of repo key-value pair metadata
+    """
+    totalCount: Int!
+    """
+    A list of repo key-value pair metadata
+    """
+    nodes: [KeyValuePair!]!
+
+    """
+    Pagination information.
+    """
+    pageInfo: BidirectionalPageInfo!
+}
+
+extend type Query {
+    """
+    List repo key-value pair metadata
+    """
+    repoMetadata(
+        query: String
+        """
+        Returns the first n repo key-value pair metadata
+        """
+        first: Int
+        last: Int
+        after: String
+        before: String
+    ): RepoMetadataConnection!
+}
+
 extend type Mutation {
     """
     Marks access_request as rejected

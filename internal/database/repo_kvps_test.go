@@ -69,8 +69,9 @@ func TestRepoKVPs(t *testing.T) {
 	})
 
 	t.Run("List", func(t *testing.T) {
-		t.Run("normal", func(t *testing.T) {
-			kvps, err := kvps.List(ctx, repo.ID)
+		ten := 1
+		t.Run("returns all", func(t *testing.T) {
+			kvps, err := kvps.List(ctx, RepoKVPListOptions{}, PaginationArgs{First: &ten})
 			require.NoError(t, err)
 			require.Equal(t, kvps, []KeyValuePair{
 				{Key: "key1", Value: strPtr("value1")},
@@ -78,10 +79,43 @@ func TestRepoKVPs(t *testing.T) {
 			})
 		})
 
-		t.Run("repo does not exist", func(t *testing.T) {
-			kvps, err := kvps.List(ctx, repo.ID+1)
+		t.Run("returns when found match by query", func(t *testing.T) {
+			query := "ey"
+			kvps, err := kvps.List(ctx, RepoKVPListOptions{Query: &query}, PaginationArgs{First: &ten})
+			require.NoError(t, err)
+			require.Equal(t, kvps, []KeyValuePair{
+				{Key: "key1", Value: strPtr("value1")},
+			})
+		})
+
+		t.Run("returns empty when found no match by query", func(t *testing.T) {
+			query := "nonexisting"
+			kvps, err := kvps.List(ctx, RepoKVPListOptions{Query: &query}, PaginationArgs{First: &ten})
 			require.NoError(t, err)
 			require.Empty(t, kvps)
+		})
+	})
+
+	t.Run("Count", func(t *testing.T) {
+		ten := 1
+		t.Run("returns all", func(t *testing.T) {
+			count, err := kvps.Count(ctx, RepoKVPListOptions{})
+			require.NoError(t, err)
+			require.Equal(t, count, 2)
+		})
+
+		t.Run("returns when found match by query", func(t *testing.T) {
+			query := "ey"
+			count, err := kvps.List(ctx, RepoKVPListOptions{Query: &query}, PaginationArgs{First: &ten})
+			require.NoError(t, err)
+			require.Equal(t, count, 1)
+		})
+
+		t.Run("returns empty when found no match by query", func(t *testing.T) {
+			query := "nonexisting"
+			count, err := kvps.List(ctx, RepoKVPListOptions{Query: &query}, PaginationArgs{First: &ten})
+			require.NoError(t, err)
+			require.Empty(t, count)
 		})
 	})
 
