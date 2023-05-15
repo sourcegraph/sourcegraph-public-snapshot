@@ -84,6 +84,7 @@ func newExecutorQueuesHandler(
 		queueRouter := base.PathPrefix("/queue").Subrouter()
 		// The queue route are treated as an internal actor and require the executor access token to authenticate.
 		queueRouter.Use(withInternalActor, executorAuth)
+		queueRouter.Path("/dequeue").Methods(http.MethodPost).HandlerFunc(multiHandler.ServeHTTP)
 
 		jobRouter := base.PathPrefix("/queue").Subrouter()
 		// The job routes are treated as internal actor. Additionally, each job comes with a short-lived token that is
@@ -94,8 +95,6 @@ func newExecutorQueuesHandler(
 			handler.SetupRoutes(h, queueRouter)
 			handler.SetupJobRoutes(h, jobRouter)
 		}
-
-		queueRouter.Path("/dequeue").Methods(http.MethodPost).HandlerFunc(multiHandler.ServeHTTP)
 
 		// Upload LSIF indexes without a sudo access token or github tokens.
 		lsifRouter := base.PathPrefix("/lsif").Name("executor-lsif").Subrouter()
