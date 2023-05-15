@@ -46,6 +46,26 @@ func DialOptions(logger log.Logger) []grpc.DialOption {
 
 	metrics := mustGetClientMetrics()
 
+	out := []grpc.DialOption{
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithChainStreamInterceptor(
+			grpc_prometheus.StreamClientInterceptor(metrics),
+			propagator.StreamClientPropagator(actor.ActorPropagator{}),
+			propagator.StreamClientPropagator(policy.ShouldTracePropagator{}),
+			propagator.StreamClientPropagator(requestclient.Propagator{}),
+			otelStreamInterceptor,
+		),
+		grpc.WithChainUnaryInterceptor(
+			grpc_prometheus.UnaryClientInterceptor(metrics),
+			propagator.UnaryClientPropagator(actor.ActorPropagator{}),
+			propagator.UnaryClientPropagator(policy.ShouldTracePropagator{}),
+			propagator.UnaryClientPropagator(requestclient.Propagator{}),
+			otelUnaryInterceptor,
+		),
+	}
+
+	return out
+
 	return []grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithChainStreamInterceptor(
