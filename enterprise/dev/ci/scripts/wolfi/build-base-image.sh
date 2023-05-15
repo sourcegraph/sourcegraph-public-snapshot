@@ -61,3 +61,6 @@ docker load <"$tarball"
 
 docker tag "$image_name" "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:$tag"
 docker push "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:$tag"
+# Temporary convenience during initial development, as this doesn't scale to multiple branches!
+docker tag "$image_name" "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:latest"
+docker push "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:latest"

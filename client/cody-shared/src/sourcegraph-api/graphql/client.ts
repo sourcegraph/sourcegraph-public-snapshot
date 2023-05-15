@@ -1,5 +1,7 @@
 import fetch from 'isomorphic-fetch'
 
+import { buildGraphQLUrl } from '@sourcegraph/http-client'
+
 import { ConfigurationWithAccessToken } from '../../configuration'
 import { isError } from '../../utils'
 
@@ -159,33 +161,33 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     private fetchSourcegraphAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
-        const endpointURL = new URL('/.api/graphql', this.config.serverEndpoint).href
         const headers = new Headers(this.config.customHeaders as HeadersInit)
         headers.set('Content-Type', 'application/json; charset=utf-8')
         if (this.config.accessToken) {
             headers.set('Authorization', `token ${this.config.accessToken}`)
         }
 
-        return fetch(endpointURL, {
+        const url = buildGraphQLUrl({ request: query, baseUrl: this.config.serverEndpoint })
+        return fetch(url, {
             method: 'POST',
             body: JSON.stringify({ query, variables }),
             headers,
         })
             .then(verifyResponseCode)
             .then(response => response.json() as T)
-            .catch(error => new Error(`accessing Sourcegraph GraphQL API: ${error}`))
+            .catch(error => new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`))
     }
 
     // make an anonymous request to the dotcom API
     private async fetchSourcegraphDotcomAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
-        const endpointURL = new URL('/.api/graphql', this.dotcomUrl).href
-        return fetch(endpointURL, {
+        const url = buildGraphQLUrl({ request: query, baseUrl: this.dotcomUrl })
+        return fetch(url, {
             method: 'POST',
             body: JSON.stringify({ query, variables }),
         })
             .then(verifyResponseCode)
             .then(response => response.json() as T)
-            .catch(() => new Error('error fetching Sourcegraph GraphQL API'))
+            .catch(error => new Error(`error fetching Sourcegraph GraphQL API: ${error} (${url})`))
     }
 }
 

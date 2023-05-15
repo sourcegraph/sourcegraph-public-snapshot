@@ -1,9 +1,9 @@
 import { Meta, Story } from '@storybook/react'
 
-import { Text } from '@sourcegraph/wildcard'
+import { Card, Grid, H2, H3 } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
-import { RepoMetadata } from './RepoMetadata'
+import { RepoMetadataItem, RepoMetadata } from './RepoMetadata'
 
 const config: Meta = {
     title: 'branded/search-ui/RepoMetadata',
@@ -14,25 +14,49 @@ const config: Meta = {
 
 export default config
 
-const mockMetadata: [string, string | undefined][] = [
-    ['team', 'iam'],
-    ['org', 'source'],
-    ['oss', undefined],
+const mockItems: RepoMetadataItem[] = [
+    {
+        key: 'archived',
+        value: 'true',
+    },
+    {
+        key: 'oss',
+    },
+    {
+        key: 'license',
+        value: 'multiple',
+    },
 ]
 
 export const RepoMetadataStory: Story = () => (
     <BrandedStory>
         {() => (
-            <div className="m-3">
-                <div className="d-flex align-items-center mb-2">
-                    <Text className="mb-0 mr-3 text-no-wrap">Default</Text>
-                    <RepoMetadata keyValuePairs={mockMetadata} />
-                </div>
-                <div className="d-flex align-items-center mb-2">
-                    <Text className="mb-0 mr-3 text-no-wrap">Small</Text>
-                    <RepoMetadata keyValuePairs={mockMetadata} small={true} />
-                </div>
-            </div>
+            <Card className="p-3">
+                <Grid columnCount={3}>
+                    <div />
+                    <H2 className="mb-0 mr-3 text-no-wrap">small=false (default)</H2>
+                    <H2 className="mb-0 mr-3 text-no-wrap">small=true</H2>
+
+                    <H3 className="mb-0 mr-3 text-no-wrap">Default</H3>
+                    <RepoMetadata items={mockItems} />
+                    <RepoMetadata items={mockItems} small={true} />
+                    <H3 className="mb-0 mr-3 text-no-wrap">Clickable</H3>
+                    <RepoMetadata
+                        items={mockItems}
+                        queryState={{ query: '' }}
+                        buildSearchURLQueryFromQueryState={() => ''}
+                    />
+                    <RepoMetadata
+                        items={mockItems}
+                        queryState={{ query: '' }}
+                        buildSearchURLQueryFromQueryState={() => ''}
+                        small={true}
+                    />
+                    <H3 className="mb-0 mr-3 text-no-wrap">Deletable</H3>
+                    <RepoMetadata items={mockItems} onDelete={key => alert(key)} />
+                    <RepoMetadata items={mockItems} onDelete={key => alert(key)} small={true} />
+                </Grid>
+            </Card>
         )}
     </BrandedStory>
 )

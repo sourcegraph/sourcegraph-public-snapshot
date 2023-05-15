@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
-import { Client, createClient } from '@sourcegraph/cody-shared/src/chat/client'
+import { Client, Transcript, createClient } from '@sourcegraph/cody-shared/src/chat/client'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import type { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { CodySvg } from '@sourcegraph/cody-ui/src/utils/icons'
@@ -40,6 +40,10 @@ const editor: Editor = {
     async showWarningMessage(message) {
         console.warn(message)
     },
+    async showInputBox(prompt?: string) {
+        // TODO: Use a proper UI element
+        return window.prompt(prompt || 'Enter here...') || undefined
+    },
 }
 /* eslint-enable @typescript-eslint/require-await */
 
@@ -57,9 +61,8 @@ export const App: React.FunctionComponent = () => {
         createClient({
             config,
             setMessageInProgress,
-            setTranscript,
+            setTranscript: (transcript: Transcript) => setTranscript(transcript.toChat()),
             editor,
-            openCody: () => {},
         }).then(setClient, setClient)
     }, [config])
 

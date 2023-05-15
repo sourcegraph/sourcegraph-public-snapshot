@@ -5,23 +5,57 @@ import { Interaction, InteractionJSON } from './interaction'
 import { ChatMessage } from './messages'
 
 export interface TranscriptJSON {
+    id: string
     interactions: InteractionJSON[]
+    lastInteractionTimestamp: string
 }
 
 export class Transcript {
     public static fromJSON(json: TranscriptJSON): Transcript {
         return new Transcript(
             json.interactions.map(
-                ({ humanMessage, assistantMessage, context }) =>
-                    new Interaction(humanMessage, assistantMessage, Promise.resolve(context))
-            )
+                ({ humanMessage, assistantMessage, context, timestamp }) =>
+                    new Interaction(
+                        humanMessage,
+                        assistantMessage,
+                        Promise.resolve(context),
+                        timestamp || new Date().toISOString()
+                    )
+            ),
+            json.id
         )
     }
 
     private interactions: Interaction[] = []
 
-    constructor(interactions: Interaction[] = []) {
+    private internalID: string
+
+    constructor(interactions: Interaction[] = [], id?: string) {
         this.interactions = interactions
+        this.internalID =
+            id ||
+            this.interactions.find(({ timestamp }) => !isNaN(new Date(timestamp) as any))?.timestamp ||
+            new Date().toISOString()
+    }
+
+    public get id(): string {
+        return this.internalID
+    }
+
+    public get isEmpty(): boolean {
+        return this.interactions.length === 0
+    }
+
+    public get lastInteractionTimestamp(): string {
+        for (let index = this.interactions.length - 1; index >= 0; index--) {
+            const { timestamp } = this.interactions[index]
+
+            if (!isNaN(new Date(timestamp) as any)) {
+                return timestamp
+            }
+        }
+
+        return new Date().toISOString()
     }
 
     public addInteraction(interaction: Interaction | null): void {
@@ -35,11 +69,30 @@ export class Transcript {
         return this.interactions.length > 0 ? this.interactions[this.interactions.length - 1] : null
     }
 
+    public removeLastInteraction(): void {
+        this.interactions.pop()
+    }
+
     public addAssistantResponse(text: string, displayText?: string): void {
         this.getLastInteraction()?.setAssistantMessage({
             speaker: 'assistant',
             text,
             displayText: displayText ?? text,
+        })
+    }
+
+    public addErrorAsAssistantResponse(errorText: string): void {
+        const lastInteraction = this.getLastInteraction()
+        if (!lastInteraction) {
+            return
+        }
+        // If assistant has responsed before, we will add the error message after it
+        const lastAssistantMessage = lastInteraction.getAssistantMessage().displayText || ''
+        lastInteraction.setAssistantMessage({
+            speaker: 'assistant',
+            text: 'Failed to generate a response due to server error.',
+            displayText:
+                lastAssistantMessage + `<div class="cody-chat-error"><span>Request failed: </span>${errorText}</div>`,
         })
     }
 
@@ -74,11 +127,18 @@ export class Transcript {
     }
 
     public async toJSON(): Promise<TranscriptJSON> {
-        return { interactions: await Promise.all(this.interactions.map(interaction => interaction.toJSON())) }
+        const interactions = await Promise.all(this.interactions.map(interaction => interaction.toJSON()))
+
+        return {
+            id: this.id,
+            interactions,
+            lastInteractionTimestamp: this.lastInteractionTimestamp,
+        }
     }
 
     public reset(): void {
         this.interactions = []
+        this.internalID = new Date().toISOString()
     }
 }
 

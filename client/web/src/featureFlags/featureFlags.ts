@@ -19,14 +19,20 @@ export type FeatureFlagName =
     | 'accessible-symbol-tree'
     | 'accessible-file-tree-always-load-ancestors'
     | 'search-ownership'
+    | 'own-background-index-repo-recent-contributors'
+    | 'own-background-index-repo-recent-views'
     | 'search-ranking'
     | 'blob-page-switch-areas-shortcuts'
-    | 'app-connect-dotcom'
     | 'sentinel'
-    | 'cody-experimental'
     | 'clone-progress-logging'
     | 'sourcegraph-operator-site-admin-hide-maintenance'
     | 'repository-metadata'
+    | 'llm-proxy-management-ui'
+    | 'cody-web-chat'
+    | 'cody-web-search'
+    | 'cody-web-sidebar'
+    | 'cody-web-all'
+    | 'cody-web-editor-recipes'
 
 interface OrgFlagOverride {
     orgID: string

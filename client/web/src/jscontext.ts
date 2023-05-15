@@ -55,6 +55,7 @@ export type SourcegraphContextCurrentUser = Pick<
     | 'emails'
     | 'latestSettings'
     | 'permissions'
+    | 'hasVerifiedEmail'
 >
 
 /**
@@ -180,6 +181,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     batchChangesWebhookLogsEnabled: boolean
 
     batchChangesRolloutWindows: BatchChangeRolloutWindow[] | null
+
+    /** Whether cody is enabled for the user. */
+    codyEnabled: boolean
 
     /** Whether executors are enabled on the site. */
     executorsEnabled: boolean

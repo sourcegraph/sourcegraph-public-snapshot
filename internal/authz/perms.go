@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/collections"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -99,16 +98,15 @@ const (
 )
 
 // TracingFields returns tracing fields for the opentracing log.
-func (p *Permission) TracingFields() []otlog.Field {
-	fs := []otlog.Field{
-		otlog.Int32("SrcPermissions.UserID", p.UserID),
-		otlog.Int32("SrcPermissions.RepoID", p.RepoID),
-		otlog.Int32("SrcPermissions.ExternalAccountID", p.ExternalAccountID),
-		otlog.String("SrcPermissions.CreatedAt", p.CreatedAt.String()),
-		otlog.String("SrcPermissions.UpdatedAt", p.UpdatedAt.String()),
-		otlog.String("SrcPermissions.Source", string(p.Source)),
+func (p *Permission) TracingFields() []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.Int("SrcPermissions.UserID", int(p.UserID)),
+		attribute.Int("SrcPermissions.RepoID", int(p.RepoID)),
+		attribute.Int("SrcPermissions.ExternalAccountID", int(p.ExternalAccountID)),
+		attribute.Stringer("SrcPermissions.CreatedAt", p.CreatedAt),
+		attribute.Stringer("SrcPermissions.UpdatedAt", p.UpdatedAt),
+		attribute.String("SrcPermissions.Source", string(p.Source)),
 	}
-	return fs
 }
 
 // RepoPermissions declares which users have access to a given repository
@@ -123,22 +121,22 @@ type RepoPermissions struct {
 }
 
 // TracingFields returns tracing fields for the opentracing log.
-func (p *RepoPermissions) TracingFields() []otlog.Field {
-	fs := []otlog.Field{
-		otlog.Int32("RepoPermissions.RepoID", p.RepoID),
-		trace.Stringer("RepoPermissions.Perm", p.Perm),
+func (p *RepoPermissions) TracingFields() []attribute.KeyValue {
+	attrs := []attribute.KeyValue{
+		attribute.Int("RepoPermissions.RepoID", int(p.RepoID)),
+		attribute.Stringer("RepoPermissions.Perm", p.Perm),
 	}
 
 	if p.UserIDs != nil {
-		fs = append(fs,
-			otlog.Int("RepoPermissions.UserIDs.Count", len(p.UserIDs)),
-			otlog.Int("RepoPermissions.PendingUserIDs.Count", len(p.PendingUserIDs)),
-			otlog.String("RepoPermissions.UpdatedAt", p.UpdatedAt.String()),
-			otlog.String("RepoPermissions.SyncedAt", p.SyncedAt.String()),
+		attrs = append(attrs,
+			attribute.Int("RepoPermissions.UserIDs.Count", len(p.UserIDs)),
+			attribute.Int("RepoPermissions.PendingUserIDs.Count", len(p.PendingUserIDs)),
+			attribute.Stringer("RepoPermissions.UpdatedAt", p.UpdatedAt),
+			attribute.Stringer("RepoPermissions.SyncedAt", p.SyncedAt),
 		)
 	}
 
-	return fs
+	return attrs
 }
 
 // UserGrantPermissions defines the structure to grant pending permissions to a user.
@@ -157,16 +155,16 @@ type UserGrantPermissions struct {
 }
 
 // TracingFields returns tracing fields for the opentracing log.
-func (p *UserGrantPermissions) TracingFields() []otlog.Field {
-	fs := []otlog.Field{
-		otlog.Int32("UserGrantPermissions.UserID", p.UserID),
-		otlog.Int32("UserGrantPermissions.UserExternalAccountID", p.UserExternalAccountID),
-		otlog.String("UserPendingPermissions.ServiceType", p.ServiceType),
-		otlog.String("UserPendingPermissions.ServiceID", p.ServiceID),
-		otlog.String("UserPendingPermissions.AccountID", p.AccountID),
+func (p *UserGrantPermissions) TracingFields() []attribute.KeyValue {
+	attrs := []attribute.KeyValue{
+		attribute.Int("UserGrantPermissions.UserID", int(p.UserID)),
+		attribute.Int("UserGrantPermissions.UserExternalAccountID", int(p.UserExternalAccountID)),
+		attribute.String("UserPendingPermissions.ServiceType", p.ServiceType),
+		attribute.String("UserPendingPermissions.ServiceID", p.ServiceID),
+		attribute.String("UserPendingPermissions.AccountID", p.AccountID),
 	}
 
-	return fs
+	return attrs
 }
 
 // UserPendingPermissions defines permissions that a not-yet-created user has to
@@ -205,22 +203,22 @@ func (p *UserPendingPermissions) GenerateSortedIDsSlice() []int32 {
 }
 
 // TracingFields returns tracing fields for the opentracing log.
-func (p *UserPendingPermissions) TracingFields() []otlog.Field {
-	fs := []otlog.Field{
-		otlog.Int64("UserPendingPermissions.ID", p.ID),
-		otlog.String("UserPendingPermissions.ServiceType", p.ServiceType),
-		otlog.String("UserPendingPermissions.ServiceID", p.ServiceID),
-		otlog.String("UserPendingPermissions.BindID", p.BindID),
-		trace.Stringer("UserPendingPermissions.Perm", p.Perm),
-		otlog.String("UserPendingPermissions.Type", string(p.Type)),
+func (p *UserPendingPermissions) TracingFields() []attribute.KeyValue {
+	attrs := []attribute.KeyValue{
+		attribute.Int64("UserPendingPermissions.ID", p.ID),
+		attribute.String("UserPendingPermissions.ServiceType", p.ServiceType),
+		attribute.String("UserPendingPermissions.ServiceID", p.ServiceID),
+		attribute.String("UserPendingPermissions.BindID", p.BindID),
+		attribute.Stringer("UserPendingPermissions.Perm", p.Perm),
+		attribute.String("UserPendingPermissions.Type", string(p.Type)),
 	}
 
 	if p.IDs != nil {
-		fs = append(fs,
-			otlog.Int("UserPendingPermissions.IDs.Count", len(p.IDs)),
-			otlog.String("UserPendingPermissions.UpdatedAt", p.UpdatedAt.String()),
+		attrs = append(attrs,
+			attribute.Int("UserPendingPermissions.IDs.Count", len(p.IDs)),
+			attribute.Stringer("UserPendingPermissions.UpdatedAt", p.UpdatedAt),
 		)
 	}
 
-	return fs
+	return attrs
 }

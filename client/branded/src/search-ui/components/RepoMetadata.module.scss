@@ -1,14 +1,14 @@
-.repo-metadata {
+.container {
     gap: 0.5rem;
-    font-size: 0.75rem;
 }
 
-.rounded-left-none {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
+.highlight {
+    color: var(--search-filter-keyword-color);
 }
 
-.rounded-right-none {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
+.badge-button {
+    &:focus,
+    &:hover {
+        background-color: var(--badge-dark);
+    }
 }

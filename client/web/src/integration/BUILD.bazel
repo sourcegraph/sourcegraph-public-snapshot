@@ -20,7 +20,6 @@ ts_project(
     name = "integration",
     srcs = [
         "context.ts",
-        "environment.ts",
         "graphQlResponseHelpers.ts",
         "graphQlResults.ts",
         "insights/utils/override-insights-graphql-api.ts",
@@ -49,7 +48,6 @@ ts_project(
     testonly = True,
     srcs = [
         "batches.test.ts",
-        "blob-viewer.test.ts",
         "code-monitoring.test.ts",
         "codemirror-blob-view.test.ts",
         "commit-page.test.ts",
@@ -117,6 +115,7 @@ mocha_test(
     is_percy_enabled = True,
     tags = [
         "no-sandbox",
+        "requires-network",
     ],
     tests = [test.replace(".ts", ".js") for test in glob(["**/*.test.ts"])],
     deps = [":integration_tests"],

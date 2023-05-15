@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/service/servegit"
 	"github.com/sourcegraph/sourcegraph/internal/singleprogram/filepicker"
 )
@@ -47,10 +48,14 @@ func main() {
 		if !ok {
 			fmt.Fprintf(os.Stderr, "filepicker not found\n")
 		} else {
-			path, err := p(context.Background())
+			paths, err := p(context.Background(), false)
 			if err != nil {
 				fatalf("filepicker error: %v\n", err)
 			}
+			if len(paths) != 1 {
+				fatalf("filepicker error: expected 1 path, got %d\n", len(paths))
+			}
+			path := paths[0]
 			fmt.Fprintf(os.Stderr, "filepicker picked %q\n", path)
 			*root = path
 		}

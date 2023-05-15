@@ -10,6 +10,7 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/uploads/internal/store",
+        "//internal/actor",
         "//internal/api",
         "//internal/authz",
         "//internal/env",
@@ -31,6 +32,7 @@ go_test(
         "//enterprise/internal/codeintel/uploads/shared",
         "//internal/api",
         "//internal/authz",
+        "//internal/database/basestore",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/observation",

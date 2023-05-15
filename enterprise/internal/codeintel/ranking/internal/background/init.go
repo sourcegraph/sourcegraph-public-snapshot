@@ -1,6 +1,7 @@
 package background
 
 import (
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/background/coordinator"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/background/exporter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/background/janitor"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/background/mapper"
@@ -13,6 +14,10 @@ import (
 
 func NewSymbolExporter(observationCtx *observation.Context, store store.Store, lsifstore lsifstore.Store, config *exporter.Config) goroutine.BackgroundRoutine {
 	return exporter.NewSymbolExporter(observationCtx, store, lsifstore, config)
+}
+
+func NewCoordinator(observationCtx *observation.Context, store store.Store, config *coordinator.Config) goroutine.BackgroundRoutine {
+	return coordinator.NewCoordinator(observationCtx, store, config)
 }
 
 func NewMapper(observationCtx *observation.Context, store store.Store, config *mapper.Config) []goroutine.BackgroundRoutine {
@@ -28,12 +33,9 @@ func NewReducer(observationCtx *observation.Context, store store.Store, config *
 
 func NewSymbolJanitor(observationCtx *observation.Context, store store.Store, config *janitor.Config) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		janitor.NewSymbolDefinitionsJanitor(observationCtx, store, config),
-		janitor.NewSymbolReferencesJanitor(observationCtx, store, config),
-		janitor.NewSymbolInitialPathsJanitor(observationCtx, store, config),
-		janitor.NewAbandonedDefinitionsJanitor(observationCtx, store, config),
-		janitor.NewAbandonedReferencesJanitor(observationCtx, store, config),
-		janitor.NewAbandonedInitialCountsJanitor(observationCtx, store, config),
+		janitor.NewExportedUploadsJanitor(observationCtx, store, config),
+		janitor.NewDeletedUploadsJanitor(observationCtx, store, config),
+		janitor.NewAbandonedExportedUploadsJanitor(observationCtx, store, config),
 		janitor.NewRankCountsJanitor(observationCtx, store, config),
 		janitor.NewRankJanitor(observationCtx, store, config),
 	}

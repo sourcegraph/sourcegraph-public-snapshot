@@ -79,6 +79,8 @@
     - PermissionStore
     - RolePermissionStore
     - RepoStatisticsStore
+    - RecentContributionSignalStore
+    - RecentViewSignalStore
 - filename: internal/gitserver/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/gitserver
   interfaces:
@@ -117,3 +119,7 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store
   interfaces:
     - JobTokenStore
+- filename: enterprise/internal/github_apps/store/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store
+  interfaces:
+    - GitHubAppsStore

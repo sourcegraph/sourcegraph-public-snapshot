@@ -14,7 +14,7 @@ contents:
     - busybox
     - curl
     - wget
-    # - 'bind-tools>=9.16.33-r0' # TODO: Not available in Wolfi repo
+    - bind-tools
 
 accounts:
   groups:

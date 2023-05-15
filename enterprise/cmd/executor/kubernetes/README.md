@@ -17,6 +17,9 @@ The following is a guide to setting up a local development environment for the e
 - Install [MiniKube](https://kubernetes.io/docs/tasks/tools/install-minikube/)
 - Start MiniKube
   - `minikube start`
+- Load the images
+  - `minikube image load executor-kubernetes:latest`
+  - `minikube image load sourcegraph/batcheshelper:insiders`
 
 ## Build Image
 
@@ -37,7 +40,7 @@ kubectl create secret generic executor-frontend-password --from-literal=EXECUTOR
 
 ## Deploy
 
-Run the following command to deploy the executor.
+Run the following command in either the `batches` or `codeintel` directory to deploy the executor.
 
 ```bash
 kubectl apply -f .

@@ -49,5 +49,5 @@ export interface CompletionParameters {
 export interface CompletionCallbacks {
     onChange: (text: string) => void
     onComplete: () => void
-    onError: (message: string) => void
+    onError: (message: string, statusCode?: number) => void
 }

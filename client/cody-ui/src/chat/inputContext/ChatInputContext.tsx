@@ -37,9 +37,12 @@ export const ChatInputContext: React.FunctionComponent<{
 
     return (
         <div className={classNames(styles.container, className)}>
-            <h3 className={styles.badge}>
-                {contextStatus.mode && contextStatus.connection ? 'Embeddings' : 'Keyword'}
-            </h3>
+            {contextStatus.mode && contextStatus.connection ? (
+                <h3 className={styles.badge}>Embeddings</h3>
+            ) : contextStatus.supportsKeyword ? (
+                <h3 className={styles.badge}>Keyword</h3>
+            ) : null}
+
             {items.length > 0 && (
                 <ul className={styles.items}>
                     {items.map(({ icon, text, tooltip }, index) => (

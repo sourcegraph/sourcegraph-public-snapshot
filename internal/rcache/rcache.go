@@ -88,7 +88,7 @@ func (r *Cache) SetWithTTL(key string, b []byte, ttl int) {
 }
 
 func (r *Cache) Increase(key string) {
-	err := kv().Incr(r.rkeyPrefix() + key)
+	_, err := kv().Incr(r.rkeyPrefix() + key)
 	if err != nil {
 		log15.Warn("failed to execute redis command", "cmd", "INCR", "error", err)
 		return

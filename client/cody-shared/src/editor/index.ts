@@ -15,7 +15,12 @@ export interface ActiveTextEditorVisibleContent {
     fileName: string
 }
 
+export interface InlineController {
+    selection: ActiveTextEditorSelection | null
+}
+
 export interface Editor {
+    controller?: InlineController
     getWorkspaceRootPath(): string | null
     getActiveTextEditor(): ActiveTextEditor | null
     getActiveTextEditorSelection(): ActiveTextEditorSelection | null
@@ -29,4 +34,5 @@ export interface Editor {
     replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void>
     showQuickPick(labels: string[]): Promise<string | undefined>
     showWarningMessage(message: string): Promise<void>
+    showInputBox(prompt?: string): Promise<string | undefined>
 }

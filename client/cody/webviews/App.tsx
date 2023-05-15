@@ -18,17 +18,23 @@ import { UserHistory } from './UserHistory'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<Pick<Configuration, 'debug' | 'serverEndpoint'> | null>(null)
-    const [debugLog, setDebugLog] = useState(['No data yet'])
+    const [config, setConfig] = useState<Pick<
+        Configuration,
+        'debug' | 'serverEndpoint' | 'experimentalConnectToApp'
+    > | null>(null)
+    const [debugLog, setDebugLog] = useState<string[]>([])
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
+    const [messageBeingEdited, setMessageBeingEdited] = useState<boolean>(false)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
     const [isValidLogin, setIsValidLogin] = useState<boolean>()
     const [formInput, setFormInput] = useState('')
     const [inputHistory, setInputHistory] = useState<string[] | []>([])
     const [userHistory, setUserHistory] = useState<ChatHistory | null>(null)
     const [contextStatus, setContextStatus] = useState<ChatContextStatus | null>(null)
-    const [errorMessage, setErrorMessage] = useState<string>('')
+    const [errorMessages, setErrorMessages] = useState<string[]>([])
+    const [suggestions, setSuggestions] = useState<string[] | undefined>()
+    const [isAppInstalled, setIsAppInstalled] = useState<boolean>(false)
 
     useEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -66,26 +72,26 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     break
                 case 'contextStatus':
                     setContextStatus(message.contextStatus)
-                    if (message.contextStatus.mode !== 'keyword' && !message.contextStatus?.codebase) {
-                        setErrorMessage(
-                            'Codebase is missing. A codebase must be provided via the cody.codebase setting to enable embeddings. Failling back to local keyword search for context.'
-                        )
-                    }
-                    if (message.contextStatus?.codebase && !message.contextStatus?.connection) {
-                        setErrorMessage(
-                            'Codebase connection failed. Please make sure the codebase in your cody.codebase setting is correct and exists in your Sourcegraph instance. Falling back to local keyword search for context.'
-                        )
-                    }
+                    break
+                case 'errors':
+                    setErrorMessages([...errorMessages, message.errors].slice(-5))
+                    setDebugLog([...debugLog, message.errors])
                     break
                 case 'view':
                     setView(message.messages)
+                    break
+                case 'suggestions':
+                    setSuggestions(message.suggestions)
+                    break
+                case 'app-state':
+                    setIsAppInstalled(message.isInstalled)
                     break
             }
         })
 
         vscodeAPI.postMessage({ command: 'initialized' })
         // The dependencies array is empty to execute the callback only on component mount.
-    }, [debugLog, vscodeAPI])
+    }, [debugLog, errorMessages, vscodeAPI])
 
     const onLogin = useCallback(
         (token: string, endpoint: string) => {
@@ -111,7 +117,14 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         <div className="outer-container">
             <Header />
             {view === 'login' && (
-                <Login onLogin={onLogin} isValidLogin={isValidLogin} serverEndpoint={config?.serverEndpoint} />
+                <Login
+                    onLogin={onLogin}
+                    isValidLogin={isValidLogin}
+                    serverEndpoint={config?.serverEndpoint}
+                    isAppInstalled={isAppInstalled}
+                    vscodeAPI={vscodeAPI}
+                    enableConnectToApp={config?.experimentalConnectToApp}
+                />
             )}
             {view !== 'login' && <NavBar view={view} setView={setView} devMode={Boolean(config?.debug)} />}
             {view === 'debug' && config?.debug && <Debug debugLog={debugLog} />}
@@ -120,24 +133,18 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     userHistory={userHistory}
                     setUserHistory={setUserHistory}
                     setInputHistory={setInputHistory}
+                    setView={setView}
                     vscodeAPI={vscodeAPI}
                 />
             )}
             {view === 'recipes' && <Recipes vscodeAPI={vscodeAPI} />}
-            {view === 'settings' && (
-                <Settings setView={setView} onLogout={onLogout} serverEndpoint={config?.serverEndpoint} />
-            )}
-            {view === 'chat' && errorMessage && (
-                <div className="error">
-                    Error: {errorMessage}
-                    <button type="button" onClick={() => setErrorMessage('')} className="close-btn">
-                        ×
-                    </button>
-                </div>
-            )}
+            {view === 'settings' && <Settings onLogout={onLogout} serverEndpoint={config?.serverEndpoint} />}
+            {view === 'chat' && errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
             {view === 'chat' && (
                 <Chat
                     messageInProgress={messageInProgress}
+                    messageBeingEdited={messageBeingEdited}
+                    setMessageBeingEdited={setMessageBeingEdited}
                     transcript={transcript}
                     contextStatus={contextStatus}
                     formInput={formInput}
@@ -145,8 +152,26 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     inputHistory={inputHistory}
                     setInputHistory={setInputHistory}
                     vscodeAPI={vscodeAPI}
+                    suggestions={suggestions}
+                    setSuggestions={setSuggestions}
                 />
             )}
         </div>
     )
 }
+
+const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (errors: string[]) => void }> = ({
+    errors,
+    setErrors,
+}) => (
+    <div className="error-container">
+        {errors.map((error, i) => (
+            <div key={i} className="error">
+                <span>{error}</span>
+                <button type="button" className="close-btn" onClick={() => setErrors(errors.filter(e => e !== error))}>
+                    ×
+                </button>
+            </div>
+        ))}
+    </div>
+)

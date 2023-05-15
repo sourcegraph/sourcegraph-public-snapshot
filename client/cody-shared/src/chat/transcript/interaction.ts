@@ -8,17 +8,21 @@ export interface InteractionJSON {
     humanMessage: InteractionMessage
     assistantMessage: InteractionMessage
     context: ContextMessage[]
+    timestamp: string
 }
 
 export class Interaction {
     private cachedContextFileNames: string[] = []
     private context: Promise<ContextMessage[]>
+    public readonly timestamp: string
 
     constructor(
         private humanMessage: InteractionMessage,
         private assistantMessage: InteractionMessage,
-        context: Promise<ContextMessage[]>
+        context: Promise<ContextMessage[]>,
+        timestamp: string = new Date().toISOString()
     ) {
+        this.timestamp = timestamp
         this.context = context.then(messages => {
             const contextFileNames = messages
                 .map(message => message.fileName)
@@ -60,7 +64,12 @@ export class Interaction {
     }
 
     public async toJSON(): Promise<InteractionJSON> {
-        return { humanMessage: this.humanMessage, assistantMessage: this.assistantMessage, context: await this.context }
+        return {
+            humanMessage: this.humanMessage,
+            assistantMessage: this.assistantMessage,
+            context: await this.context,
+            timestamp: this.timestamp,
+        }
     }
 }
 

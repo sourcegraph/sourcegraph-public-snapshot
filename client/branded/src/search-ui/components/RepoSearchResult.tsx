@@ -5,6 +5,7 @@ import classNames from 'classnames'
 
 import { highlightNode } from '@sourcegraph/common'
 import { codeHostSubstrLength, displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
+import { BuildSearchQueryURLParameters, QueryState } from '@sourcegraph/shared/src/search'
 import { getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 import { Icon, Link } from '@sourcegraph/wildcard'
 
@@ -19,6 +20,8 @@ const REPO_DESCRIPTION_CHAR_LIMIT = 500
 export interface RepoSearchResultProps {
     result: RepositoryMatch
     onSelect: () => void
+    buildSearchURLQueryFromQueryState?: (queryParameters: BuildSearchQueryURLParameters) => string
+    queryState?: QueryState
     containerClassName?: string
     as?: React.ElementType
     index: number
@@ -32,6 +35,8 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
     as,
     index,
     enableRepositoryMetadata,
+    buildSearchURLQueryFromQueryState,
+    queryState,
 }) => {
     const repoDescriptionElement = useRef<HTMLDivElement>(null)
     const repoNameElement = useRef<HTMLAnchorElement>(null)
@@ -90,15 +95,8 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                 <div className={classNames(styles.searchResultMatch, 'p-2 flex-column')}>
                     {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
                     <div className="d-flex align-items-center flex-row">
-                        <div className={classNames(styles.matchType, 'd-flex align-items-start')}>
+                        <div className={styles.matchType}>
                             <small>Repository match</small>
-                            {enableRepositoryMetadata && !!result.keyValuePairs && (
-                                <RepoMetadata
-                                    keyValuePairs={Object.entries(result.keyValuePairs)}
-                                    className="justify-content-end ml-2 mr-4"
-                                    small={true}
-                                />
-                            )}
                         </div>
                         {result.fork && (
                             <>
@@ -146,6 +144,15 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                             </>
                         )}
                     </div>
+                    {enableRepositoryMetadata && !!result.metadata && (
+                        <RepoMetadata
+                            small={true}
+                            className="mt-1"
+                            queryState={queryState}
+                            buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
+                            items={Object.entries(result.metadata).map(([key, value]) => ({ key, value }))}
+                        />
+                    )}
                     {result.description && (
                         <>
                             <div className={styles.dividerVertical} />

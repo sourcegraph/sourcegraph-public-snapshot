@@ -1,60 +1,129 @@
 import React, { useMemo } from 'react'
 
+import { mdiDelete } from '@mdi/js'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { sortBy } from 'lodash'
 
-import { Badge } from '@sourcegraph/wildcard'
+import { BuildSearchQueryURLParameters, QueryState } from '@sourcegraph/shared/src/search'
+import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
+import { appendFilter, omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { Badge, Button, Code, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './RepoMetadata.module.scss'
 
-interface RepoMetadataItemProps {
-    metadataKey: string
-    metadataValue: string | null | undefined
-    small?: boolean
+export interface RepoMetadataItem {
+    key: string
+    value?: string | null
 }
 
-const RepoMetadataItem: React.FunctionComponent<RepoMetadataItemProps> = ({ metadataKey, metadataValue, small }) => (
-    <div className="d-flex align-items-stretch justify-content-center">
-        <Badge
-            as="dt"
-            small={small}
-            variant="info"
-            aria-label={`Repository metadata key "${metadataKey}"`}
-            className={classNames('m-0', { [styles.roundedRightNone]: metadataValue })}
-        >
-            {metadataKey}
-        </Badge>
-        <Badge
-            as="dd"
-            small={small}
-            variant="secondary"
-            aria-label={`Repository metadata value "${metadataValue}" for key=${metadataKey}`}
-            aria-hidden={!metadataValue}
-            className={classNames(styles.roundedLeftNone, 'm-0', {
-                ['d-none']: !metadataValue,
-            })}
-        >
-            {metadataValue}
-        </Badge>
-    </div>
+const MetaContent: React.FC<{ meta: RepoMetadataItem; highlight?: boolean }> = ({ meta, highlight }) => (
+    <Code>
+        <span aria-label="Repository metadata key" className={classNames({ [styles.highlight]: highlight })}>
+            {meta.key}
+        </span>
+        {meta.value ? (
+            <span aria-label="Repository metadata value">:{meta.value}</span>
+        ) : (
+            <VisuallyHidden>No metadata value</VisuallyHidden>
+        )}
+    </Code>
 )
 
-interface RepoMetadataProps {
-    keyValuePairs: [string, string | null | undefined][]
-    className?: string
+interface MetaProps {
+    meta: RepoMetadataItem
+    buildSearchURLQueryFromQueryState?: (queryParameters: BuildSearchQueryURLParameters) => string
+    queryState?: QueryState
+    queryBuildOptions?: {
+        omitRepoFilter?: boolean
+    }
+    onDelete?: (item: RepoMetadataItem) => void
     small?: boolean
 }
 
-export const RepoMetadata: React.FunctionComponent<RepoMetadataProps> = ({ keyValuePairs, small, className }) => {
-    const sortedPairs = useMemo(() => sortBy(keyValuePairs), [keyValuePairs])
-    if (sortedPairs.length === 0) {
+const Meta: React.FC<MetaProps> = ({
+    meta,
+    queryState,
+    buildSearchURLQueryFromQueryState,
+    onDelete,
+    small,
+    queryBuildOptions,
+}) => {
+    const filterLink = useMemo(() => {
+        if (!queryState || !buildSearchURLQueryFromQueryState) {
+            return undefined
+        }
+
+        let query = queryState.query
+        // omit repo: filter if omitRepoFilter is true
+        if (queryBuildOptions?.omitRepoFilter) {
+            const repoFilter = findFilter(queryState.query, 'repo', FilterKind.Global)
+            if (repoFilter && !repoFilter.value?.value.startsWith('has')) {
+                query = omitFilter(query, repoFilter)
+            }
+        }
+        // append metadata filter
+        query = appendFilter(query, 'repo', meta.value ? `has(${meta.key}:${meta.value})` : `has.key(${meta.key})`)
+
+        const searchParams = buildSearchURLQueryFromQueryState({ query })
+        return `/search?${searchParams}`
+    }, [buildSearchURLQueryFromQueryState, meta.key, meta.value, queryBuildOptions?.omitRepoFilter, queryState])
+
+    if (onDelete) {
+        return (
+            <Tooltip content="Delete metadata">
+                <Badge
+                    variant="secondary"
+                    small={small}
+                    as={Button}
+                    onClick={() => onDelete(meta)}
+                    aria-label="Delete metadata"
+                    className={styles.badgeButton}
+                >
+                    <Icon svgPath={mdiDelete} aria-hidden={true} className="mr-1" />
+                    <MetaContent meta={meta} />
+                </Badge>
+            </Tooltip>
+        )
+    }
+
+    if (filterLink) {
+        return (
+            <Badge variant="secondary" small={small} as={Link} to={filterLink}>
+                <MetaContent meta={meta} highlight={true} />
+            </Badge>
+        )
+    }
+
+    return (
+        <Badge variant="secondary" small={small}>
+            <MetaContent meta={meta} />
+        </Badge>
+    )
+}
+
+interface RepoMetadataProps
+    extends Pick<
+        MetaProps,
+        'buildSearchURLQueryFromQueryState' | 'queryState' | 'onDelete' | 'small' | 'queryBuildOptions'
+    > {
+    items: RepoMetadataItem[]
+    className?: string
+}
+
+export const RepoMetadata: React.FC<RepoMetadataProps> = ({ items, className, onDelete, ...props }) => {
+    const sortedItems = useMemo(() => sortBy(items, ['key', 'value']), [items])
+    if (sortedItems.length === 0) {
         return null
     }
+
     return (
-        <dl className={classNames(styles.repoMetadata, 'd-flex align-items-start flex-wrap m-0', className)}>
-            {sortedPairs.map(([key, value]) => (
-                <RepoMetadataItem key={`${key}:${value}`} metadataKey={key} metadataValue={value} small={small} />
+        <ul className={classNames(styles.container, 'd-flex align-items-start flex-wrap m-0 list-unstyled', className)}>
+            {sortedItems.map(item => (
+                <li key={`${item.key}:${item.value}`}>
+                    <Meta meta={item} onDelete={onDelete} {...props} />
+                </li>
             ))}
-        </dl>
+        </ul>
     )
 }

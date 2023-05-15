@@ -13,7 +13,6 @@ import (
 	"sync"
 	"time"
 
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
@@ -72,7 +71,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Log events to trace
-	streamWriter.StatHook = eventStreamOTHook(tr.LogFields) //nolint:staticcheck // TODO when updating observation package
+	streamWriter.StatHook = eventStreamTraceHook(tr.AddEvent)
 
 	eventWriter := newEventWriter(streamWriter)
 	defer eventWriter.Done()
@@ -221,13 +220,6 @@ type args struct {
 	Display            int
 	EnableChunkMatches bool
 	SearchMode         int
-
-	// Optional decoration parameters for server-side rendering a result set
-	// or subset. Decorations may specify, e.g., highlighting results with
-	// HTML markup up-front, and/or including context lines around file results.
-	DecorationLimit        int    // The initial number of files to decorate in the result set.
-	DecorationKind         string // The kind of decoration to apply (HTML highlighting, plaintext, etc.)
-	DecorationContextLines int    // The number of lines of context to include around lines with matches.
 }
 
 func parseURLQuery(q url.Values) (*args, error) {
@@ -240,10 +232,9 @@ func parseURLQuery(q url.Values) (*args, error) {
 	}
 
 	a := args{
-		Query:          get("q", ""),
-		Version:        get("v", "V3"),
-		PatternType:    get("t", ""),
-		DecorationKind: get("dk", "html"),
+		Query:       get("q", ""),
+		Version:     get("v", "V3"),
+		PatternType: get("t", ""),
 	}
 
 	if a.Query == "" {
@@ -264,16 +255,6 @@ func parseURLQuery(q url.Values) (*args, error) {
 	searchMode := get("sm", "0")
 	if a.SearchMode, err = strconv.Atoi(searchMode); err != nil {
 		return nil, errors.Errorf("search mode must be integer, got %q: %w", searchMode, err)
-	}
-
-	decorationLimit := get("dl", "0")
-	if a.DecorationLimit, err = strconv.Atoi(decorationLimit); err != nil {
-		return nil, errors.Errorf("decorationLimit must be an integer, got %q: %w", decorationLimit, err)
-	}
-
-	decorationContextLines := get("dc", "1")
-	if a.DecorationContextLines, err = strconv.Atoi(decorationContextLines); err != nil {
-		return nil, errors.Errorf("decorationContextLines must be an integer, got %q: %w", decorationContextLines, err)
 	}
 
 	return &a, nil
@@ -480,7 +461,7 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Search
 		repoEvent.Fork = r.Fork
 		repoEvent.Archived = r.Archived
 		repoEvent.Private = r.Private
-		repoEvent.KeyValuePairs = r.KeyValuePairs
+		repoEvent.Metadata = r.KeyValuePairs
 	}
 
 	return repoEvent
@@ -547,18 +528,17 @@ func fromOwner(owner *result.OwnerMatch) streamhttp.EventMatch {
 	}
 }
 
-// eventStreamOTHook returns a StatHook which logs to log.
-func eventStreamOTHook(log func(...otlog.Field)) func(streamhttp.WriterStat) {
+// eventStreamTraceHook returns a StatHook which logs to log.
+func eventStreamTraceHook(addEvent func(string, ...attribute.KeyValue)) func(streamhttp.WriterStat) {
 	return func(stat streamhttp.WriterStat) {
-		fields := []otlog.Field{
-			otlog.String("streamhttp.Event", stat.Event),
-			otlog.Int("bytes", stat.Bytes),
-			otlog.Int64("duration_ms", stat.Duration.Milliseconds()),
+		fields := []attribute.KeyValue{
+			attribute.Int("bytes", stat.Bytes),
+			attribute.Int64("duration_ms", stat.Duration.Milliseconds()),
 		}
 		if stat.Error != nil {
-			fields = append(fields, otlog.Error(stat.Error))
+			fields = append(fields, trace.Error(stat.Error))
 		}
-		log(fields...)
+		addEvent(stat.Event, fields...)
 	}
 }
 

@@ -52,7 +52,7 @@ func Test_isEmbeddableFileContent(t *testing.T) {
 	}, {
 		content:    []byte("test"),
 		embeddable: false,
-		reason:     SkipReasonTooSmall,
+		reason:     SkipReasonSmall,
 	}, {
 		content:    []byte("file that is larger than the minimum size but contains the word lockfile"),
 		embeddable: false,
@@ -64,11 +64,11 @@ func Test_isEmbeddableFileContent(t *testing.T) {
 	}, {
 		content:    bytes.Repeat([]byte("very long line "), 1000),
 		embeddable: false,
-		reason:     SkipReasonLineTooLong,
+		reason:     SkipReasonLongLine,
 	}, {
 		content:    bytes.Repeat([]byte("somewhat long line "), 10),
 		embeddable: true,
-		reason:     0,
+		reason:     SkipReasonNone,
 	}}
 
 	for _, tc := range cases {

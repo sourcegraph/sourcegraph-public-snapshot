@@ -9,10 +9,10 @@ PNPM,@ardatan/sync-fetch,0.0.1,MIT,"",Approved
 PNPM,@atlassian/aui,7.10.5,Apache 2.0,"",Approved
 PNPM,@axe-core/puppeteer,4.4.2,Mozilla Public License 2.0,"",Approved
 PNPM,@babel/cli,7.20.7,MIT,"",Approved
-PNPM,@babel/code-frame,7.18.6,MIT,"",Approved
+PNPM,@babel/code-frame,7.21.4,MIT,"",Approved
 PNPM,@babel/compat-data,7.21.0,MIT,"",Approved
 PNPM,@babel/core,7.12.9,MIT,"",Approved
-PNPM,@babel/generator,7.21.3,MIT,"",Approved
+PNPM,@babel/generator,7.21.4,MIT,"",Approved
 PNPM,@babel/helper-annotate-as-pure,7.18.6,MIT,"",Approved
 PNPM,@babel/helper-builder-binary-assignment-operator-visitor,7.18.9,MIT,"",Approved
 PNPM,@babel/helper-compilation-targets,7.20.7,MIT,"",Approved
@@ -35,11 +35,11 @@ PNPM,@babel/helper-skip-transparent-expression-wrappers,7.20.0,MIT,"",Approved
 PNPM,@babel/helper-split-export-declaration,7.18.6,MIT,"",Approved
 PNPM,@babel/helper-string-parser,7.19.4,MIT,"",Approved
 PNPM,@babel/helper-validator-identifier,7.19.1,MIT,"",Approved
-PNPM,@babel/helper-validator-option,7.18.6,MIT,"",Approved
+PNPM,@babel/helper-validator-option,7.21.0,MIT,"",Approved
 PNPM,@babel/helper-wrap-function,7.20.5,MIT,"",Approved
 PNPM,@babel/helpers,7.21.0,MIT,"",Approved
 PNPM,@babel/highlight,7.18.6,MIT,"",Approved
-PNPM,@babel/parser,7.21.3,MIT,"",Approved
+PNPM,@babel/parser,7.21.4,MIT,"",Approved
 PNPM,@babel/plugin-bugfix-safari-id-destructuring-collision-in-function-expression,7.18.6,MIT,"",Approved
 PNPM,@babel/plugin-bugfix-v8-spread-parameters-in-optional-chaining,7.18.9,MIT,"",Approved
 PNPM,@babel/plugin-proposal-async-generator-functions,7.20.7,MIT,"",Approved
@@ -53,7 +53,7 @@ PNPM,@babel/plugin-proposal-json-strings,7.18.6,MIT,"",Approved
 PNPM,@babel/plugin-proposal-logical-assignment-operators,7.18.9,MIT,"",Approved
 PNPM,@babel/plugin-proposal-nullish-coalescing-operator,7.18.6,MIT,"",Approved
 PNPM,@babel/plugin-proposal-numeric-separator,7.18.6,MIT,"",Approved
-PNPM,@babel/plugin-proposal-object-rest-spread,7.20.7,MIT,"",Approved
+PNPM,@babel/plugin-proposal-object-rest-spread,7.12.1,MIT,"",Approved
 PNPM,@babel/plugin-proposal-optional-catch-binding,7.18.6,MIT,"",Approved
 PNPM,@babel/plugin-proposal-optional-chaining,7.21.0,MIT,"",Approved
 PNPM,@babel/plugin-proposal-private-methods,7.18.6,MIT,"",Approved
@@ -67,7 +67,7 @@ PNPM,@babel/plugin-syntax-decorators,7.12.13,MIT,"",Approved
 PNPM,@babel/plugin-syntax-dynamic-import,7.8.3,MIT,"",Approved
 PNPM,@babel/plugin-syntax-export-default-from,7.18.6,MIT,"",Approved
 PNPM,@babel/plugin-syntax-export-namespace-from,7.8.3,MIT,"",Approved
-PNPM,@babel/plugin-syntax-flow,7.18.6,MIT,"",Approved
+PNPM,@babel/plugin-syntax-flow,7.21.4,MIT,"",Approved
 PNPM,@babel/plugin-syntax-import-assertions,7.20.0,MIT,"",Approved
 PNPM,@babel/plugin-syntax-import-meta,7.10.4,MIT,"",Approved
 PNPM,@babel/plugin-syntax-json-strings,7.8.3,MIT,"",Approved
@@ -123,7 +123,7 @@ PNPM,@babel/plugin-transform-typescript,7.20.2,MIT,"",Approved
 PNPM,@babel/plugin-transform-unicode-escapes,7.18.10,MIT,"",Approved
 PNPM,@babel/plugin-transform-unicode-regex,7.18.6,MIT,"",Approved
 PNPM,@babel/preset-env,7.20.2,MIT,"",Approved
-PNPM,@babel/preset-flow,7.18.6,MIT,"",Approved
+PNPM,@babel/preset-flow,7.21.4,MIT,"",Approved
 PNPM,@babel/preset-modules,0.1.5,MIT,"",Approved
 PNPM,@babel/preset-react,7.18.6,MIT,"",Approved
 PNPM,@babel/preset-typescript,7.18.6,MIT,"",Approved
@@ -131,8 +131,8 @@ PNPM,@babel/register,7.21.0,MIT,"",Approved
 PNPM,@babel/runtime,7.20.6,MIT,"",Approved
 PNPM,@babel/runtime-corejs3,7.10.3,MIT,"",Approved
 PNPM,@babel/template,7.20.7,MIT,"",Approved
-PNPM,@babel/traverse,7.21.3,MIT,"",Approved
-PNPM,@babel/types,7.10.5,MIT,"",Approved
+PNPM,@babel/traverse,7.21.4,MIT,"",Approved
+PNPM,@babel/types,7.21.4,MIT,"",Approved
 PNPM,@base2/pretty-print-object,1.0.1,Simplified BSD,"",Approved
 PNPM,@bcoe/v8-coverage,0.2.3,MIT,"",Approved
 PNPM,@bessonovs/set-project-references,0.0.10,MIT,"",Approved
@@ -155,7 +155,7 @@ PNPM,@colors/colors,1.5.0,MIT,"",Approved
 PNPM,@cspotcode/source-map-support,0.8.1,MIT,"",Approved
 PNPM,@discoveryjs/json-ext,0.5.7,MIT,"",Approved
 PNPM,@discoveryjs/natural-compare,1.1.0,MIT,"",Approved
-PNPM,@esbuild/linux-x64,0.17.8,MIT,"",Approved
+PNPM,@esbuild/linux-x64,0.16.17,MIT,"",Approved
 PNPM,@eslint/eslintrc,1.4.1,MIT,"",Approved
 PNPM,@figspec/components,1.0.0,MIT,"",Approved
 PNPM,@figspec/react,1.0.0,MIT,"",Approved
@@ -223,13 +223,13 @@ PNPM,@jest/source-map,28.1.2,MIT,"",Approved
 PNPM,@jest/test-result,28.1.3,MIT,"",Approved
 PNPM,@jest/test-sequencer,28.1.3,MIT,"",Approved
 PNPM,@jest/transform,28.1.3,MIT,"",Approved
-PNPM,@jest/types,29.5.0,MIT,"",Approved
-PNPM,@jridgewell/gen-mapping,0.3.2,MIT,"",Approved
+PNPM,@jest/types,27.5.1,MIT,"",Approved
+PNPM,@jridgewell/gen-mapping,0.3.3,MIT,"",Approved
 PNPM,@jridgewell/resolve-uri,3.1.0,MIT,"",Approved
 PNPM,@jridgewell/set-array,1.1.2,MIT,"",Approved
-PNPM,@jridgewell/source-map,0.3.2,MIT,"",Approved
-PNPM,@jridgewell/sourcemap-codec,1.4.14,MIT,"",Approved
-PNPM,@jridgewell/trace-mapping,0.3.9,MIT,"",Approved
+PNPM,@jridgewell/source-map,0.3.3,MIT,"",Approved
+PNPM,@jridgewell/sourcemap-codec,1.4.15,MIT,"",Approved
+PNPM,@jridgewell/trace-mapping,0.3.18,MIT,"",Approved
 PNPM,@jsdevtools/ono,7.1.3,MIT,"",Approved
 PNPM,@juggle/resize-observer,3.3.1,Apache 2.0,"",Approved
 PNPM,@leichtgewicht/ip-codec,2.0.4,MIT,"",Approved
@@ -345,14 +345,14 @@ PNPM,@reach/tabs,0.16.4,MIT,"",Approved
 PNPM,@reach/utils,0.16.0,MIT,"",Approved
 PNPM,@reach/visually-hidden,0.16.0,MIT,"",Approved
 PNPM,@react-aria/live-announcer,3.1.0,Apache 2.0,"",Approved
-PNPM,@react-native-community/cli,10.2.0,MIT,"",Approved
+PNPM,@react-native-community/cli,10.2.2,MIT,"",Approved
 PNPM,@react-native-community/cli-clean,10.1.1,MIT,"",Approved
 PNPM,@react-native-community/cli-config,10.1.1,MIT,"",Approved
 PNPM,@react-native-community/cli-debugger-ui,10.0.0,MIT,"",Approved
 PNPM,@react-native-community/cli-doctor,10.2.2,MIT,"",Approved
 PNPM,@react-native-community/cli-hermes,10.2.0,MIT,"",Approved
 PNPM,@react-native-community/cli-platform-android,10.2.0,MIT,"",Approved
-PNPM,@react-native-community/cli-platform-ios,10.2.0,MIT,"",Approved
+PNPM,@react-native-community/cli-platform-ios,10.2.1,MIT,"",Approved
 PNPM,@react-native-community/cli-plugin-metro,10.2.2,MIT,"",Approved
 PNPM,@react-native-community/cli-server-api,10.1.1,MIT,"",Approved
 PNPM,@react-native-community/cli-tools,10.1.1,MIT,"",Approved
@@ -370,7 +370,7 @@ PNPM,@react-spring/three,9.4.2,MIT,"",Approved
 PNPM,@react-spring/types,9.4.2,MIT,"",Approved
 PNPM,@react-spring/web,9.4.2,MIT,"",Approved
 PNPM,@react-spring/zdog,9.4.2,MIT,"",Approved
-PNPM,@react-three/fiber,8.12.0,MIT,"",Approved
+PNPM,@react-three/fiber,8.12.1,MIT,"",Approved
 PNPM,@remix-run/router,1.3.2,MIT,"",Approved
 PNPM,@repeaterjs/repeater,3.0.4,MIT,"",Approved
 PNPM,@sentry/browser,7.8.1,New BSD,"",Approved
@@ -482,6 +482,10 @@ PNPM,@sveltejs/adapter-static,2.0.1,MIT,"",Approved
 PNPM,@sveltejs/kit,1.5.6,MIT,"",Approved
 PNPM,@sveltejs/vite-plugin-svelte,2.0.2,MIT,"",Approved
 PNPM,@szmarczak/http-timer,4.0.5,MIT,"",Approved
+PNPM,@tauri-apps/api,1.2.0,Apache-2.0 OR MIT,"",Approved
+PNPM,@tauri-apps/cli,1.2.3,Apache-2.0 OR MIT,"",Approved
+PNPM,@tauri-apps/cli-linux-x64-gnu,1.2.3,MIT,"",Approved
+PNPM,@tauri-apps/cli-linux-x64-musl,1.2.3,MIT,"",Approved
 PNPM,@terminus-term/to-string-loader,1.1.7-beta.1,New BSD,"",Approved
 PNPM,@testing-library/dom,8.13.0,MIT,"",Approved
 PNPM,@testing-library/jest-dom,5.16.4,MIT,"",Approved
@@ -594,6 +598,7 @@ PNPM,@types/prettier,2.7.2,MIT,"",Approved
 PNPM,@types/pretty-hrtime,1.0.0,MIT,"",Approved
 PNPM,@types/prismjs,1.26.0,MIT,"",Approved
 PNPM,@types/promise.allsettled,1.0.3,MIT,"",Approved
+PNPM,@types/prompts,2.4.4,MIT,"",Approved
 PNPM,@types/prop-types,15.7.5,MIT,"",Approved
 PNPM,@types/pug,2.0.6,MIT,"",Approved
 PNPM,@types/puppeteer,5.4.5,MIT,"",Approved
@@ -647,18 +652,18 @@ PNPM,@types/webpack-bundle-analyzer,4.6.0,MIT,"",Approved
 PNPM,@types/webpack-env,1.18.0,MIT,"",Approved
 PNPM,@types/webpack-stats-plugin,0.3.2,MIT,"",Approved
 PNPM,@types/ws,7.4.7,MIT,"",Approved
-PNPM,@types/yargs,17.0.23,MIT,"",Approved
+PNPM,@types/yargs,16.0.4,MIT,"",Approved
 PNPM,@types/yargs-parser,21.0.0,MIT,"",Approved
 PNPM,@types/yauzl,2.10.0,MIT,"",Approved
 PNPM,@typescript-eslint/eslint-plugin,5.54.1,MIT,"",Approved
 PNPM,@typescript-eslint/experimental-utils,5.4.0,MIT,"",Approved
-PNPM,@typescript-eslint/parser,5.56.0,Simplified BSD,"",Approved
-PNPM,@typescript-eslint/scope-manager,5.56.0,MIT,"",Approved
+PNPM,@typescript-eslint/parser,5.58.0,Simplified BSD,"",Approved
+PNPM,@typescript-eslint/scope-manager,5.58.0,MIT,"",Approved
 PNPM,@typescript-eslint/type-utils,5.54.1,MIT,"",Approved
-PNPM,@typescript-eslint/types,5.56.0,MIT,"",Approved
-PNPM,@typescript-eslint/typescript-estree,5.56.0,Simplified BSD,"",Approved
+PNPM,@typescript-eslint/types,5.58.0,MIT,"",Approved
+PNPM,@typescript-eslint/typescript-estree,5.58.0,Simplified BSD,"",Approved
 PNPM,@typescript-eslint/utils,5.54.1,MIT,"",Approved
-PNPM,@typescript-eslint/visitor-keys,5.56.0,MIT,"",Approved
+PNPM,@typescript-eslint/visitor-keys,5.58.0,MIT,"",Approved
 PNPM,@ungap/promise-all-settled,1.1.2,ISC,"",Approved
 PNPM,@visx/annotation,2.10.0,MIT,"",Approved
 PNPM,@visx/axis,2.11.1,MIT,"",Approved
@@ -717,7 +722,7 @@ PNPM,abbrev,1.1.1,ISC,"",Approved
 PNPM,abort-controller,3.0.0,MIT,"",Approved
 PNPM,absolute-path,0.0.0,MIT,"",Approved
 PNPM,accepts,1.3.8,MIT,"",Approved
-PNPM,acorn,8.8.2,MIT,"",Approved
+PNPM,acorn,7.4.1,MIT,"",Approved
 PNPM,acorn-globals,6.0.0,MIT,"",Approved
 PNPM,acorn-import-assertions,1.8.0,MIT,"",Approved
 PNPM,acorn-jsx,5.3.2,MIT,"",Approved
@@ -969,7 +974,7 @@ PNPM,combined-stream,1.0.8,MIT,"",Approved
 PNPM,comlink,4.3.0,Apache 2.0,"",Approved
 PNPM,comma-separated-tokens,1.0.5,MIT,"",Approved
 PNPM,command-exists,1.2.9,MIT,"",Approved
-PNPM,commander,9.5.0,MIT,"",Approved
+PNPM,commander,10.0.1,MIT,"",Approved
 PNPM,comment-json,4.1.0,MIT,"",Approved
 PNPM,comment-parser,0.7.6,MIT,"",Approved
 PNPM,common-path-prefix,3.0.0,ISC,"",Approved
@@ -1196,7 +1201,7 @@ PNPM,es6-promisify,5.0.0,MIT,"",Approved
 PNPM,es6-shim,0.35.5,MIT,"",Approved
 PNPM,es6-symbol,3.1.3,ISC,"",Approved
 PNPM,es6-weak-map,2.0.2,MIT,"",Approved
-PNPM,esbuild,0.17.8,MIT,"",Approved
+PNPM,esbuild,0.16.17,MIT,"",Approved
 PNPM,escalade,3.1.1,MIT,"",Approved
 PNPM,escape-goat,2.1.1,MIT,"",Approved
 PNPM,escape-html,1.0.3,MIT,"",Approved
@@ -1223,7 +1228,7 @@ PNPM,eslint-plugin-unused-imports,1.1.5,MIT,"",Approved
 PNPM,eslint-rule-composer,0.3.0,MIT,"",Approved
 PNPM,eslint-scope,7.1.1,Simplified BSD,"",Approved
 PNPM,eslint-utils,3.0.0,MIT,"",Approved
-PNPM,eslint-visitor-keys,2.0.0,Apache 2.0,"",Approved
+PNPM,eslint-visitor-keys,3.4.0,Apache 2.0,"",Approved
 PNPM,esm-env,1.0.0,MIT,"",Approved
 PNPM,espree,9.4.1,Simplified BSD,"",Approved
 PNPM,esprima,4.0.1,Simplified BSD,"",Approved
@@ -1266,7 +1271,7 @@ PNPM,fast-json-stable-stringify,2.1.0,MIT,"",Approved
 PNPM,fast-levenshtein,2.0.6,MIT,"",Approved
 PNPM,fast-safe-stringify,2.1.1,MIT,"",Approved
 PNPM,fast-text-encoding,1.0.0,Apache-2,"",Approved
-PNPM,fast-xml-parser,4.1.3,MIT,"",Approved
+PNPM,fast-xml-parser,4.2.0,MIT,"",Approved
 PNPM,fastest-levenshtein,1.0.12,MIT,"",Approved
 PNPM,fastparse,1.1.2,MIT,"",Approved
 PNPM,fastq,1.6.0,ISC,"",Approved
@@ -1420,7 +1425,7 @@ Go,github.com/djherbis/buffer,v1.2.0,MIT,github.com/djherbis/buffer,Approved
 Go,github.com/djherbis/nio/v3,v3.0.1,MIT,github.com/djherbis/nio,Approved
 Go,github.com/dlclark/regexp2,v1.8.0,MIT,github.com/dlclark/regexp2,Approved
 Go,github.com/dnaeon/go-vcr,v1.2.0,MIT,github.com/dnaeon/go-vcr,Approved
-Go,github.com/docker/docker,v23.0.0-rc.1,"Apache 2.0,MIT",github.com/docker/docker,Approved
+Go,github.com/docker/docker,v23.0.1,"Apache 2.0,MIT",github.com/docker/docker,Approved
 Go,github.com/docker/docker-credential-helpers,v0.7.0,MIT,github.com/docker/docker-credential-helpers,Approved
 Go,github.com/docker/go-connections,v0.4.0,Apache 2.0,github.com/docker/go-connections,Approved
 Go,github.com/docker/go-units,v0.5.0,Apache 2.0,github.com/docker/go-units,Approved
@@ -1455,7 +1460,7 @@ Go,github.com/go-openapi/errors,v0.20.3,Apache 2.0,github.com/go-openapi/errors,
 Go,github.com/go-openapi/jsonpointer,v0.19.5,Apache 2.0,github.com/go-openapi/jsonpointer,Approved
 Go,github.com/go-openapi/jsonreference,v0.20.0,Apache 2.0,github.com/go-openapi/jsonreference,Approved
 Go,github.com/go-openapi/loads,v0.21.2,Apache 2.0,github.com/go-openapi/loads,Approved
-Go,github.com/go-openapi/runtime,v0.24.1,"Apache 2.0,MIT",github.com/go-openapi/runtime,Approved
+Go,github.com/go-openapi/runtime,v0.24.2,"Apache 2.0,MIT",github.com/go-openapi/runtime,Approved
 Go,github.com/go-openapi/spec,v0.20.7,Apache 2.0,github.com/go-openapi/spec,Approved
 Go,github.com/go-openapi/strfmt,v0.21.3,Apache 2.0,github.com/go-openapi/strfmt,Approved
 Go,github.com/go-openapi/swag,v0.22.3,Apache 2.0,github.com/go-openapi/swag,Approved
@@ -1466,7 +1471,7 @@ Go,github.com/godbus/dbus/v5,v5.0.6,Simplified BSD,github.com/godbus/dbus,Approv
 Go,github.com/gofrs/uuid,v4.2.0,MIT,github.com/gofrs/uuid,Approved
 Go,github.com/gogo/protobuf,v1.3.2,New BSD,github.com/gogo/protobuf,Approved
 Go,github.com/golang-jwt/jwt,v3.2.2,MIT,github.com/golang-jwt/jwt,Approved
-Go,github.com/golang-jwt/jwt/v4,v4.4.2,MIT,github.com/golang-jwt/jwt,Approved
+Go,github.com/golang-jwt/jwt/v4,v4.5.0,MIT,github.com/golang-jwt/jwt,Approved
 Go,github.com/golang/gddo,v0.0.0-20210115222349-20d68f94ee1f,New BSD,github.com/golang/gddo,Approved
 Go,github.com/golang/glog,v1.0.0,Apache 2.0,github.com/golang/glog,Approved
 Go,github.com/golang/groupcache,v0.0.0-20210331224755-41bb18bfe9da,Apache 2.0,github.com/golang/groupcache,Approved
@@ -1568,7 +1573,7 @@ Go,github.com/mitchellh/mapstructure,v1.5.0,MIT,github.com/mitchellh/mapstructur
 Go,github.com/mitchellh/reflectwalk,v1.0.2,MIT,github.com/mitchellh/reflectwalk,Approved
 Go,github.com/moby/buildkit,v0.11.3,Apache 2.0,github.com/moby/buildkit,Approved
 Go,github.com/moby/sys/mountinfo,v0.6.2,Apache 2.0,github.com/moby/sys,Approved
-Go,github.com/moby/term,v0.0.0-20210619224110-3f7ff695adc6,Apache 2.0,github.com/moby/term,Approved
+Go,github.com/moby/term,v0.0.0-20221128092401-c43b287e0e0f,Apache 2.0,github.com/moby/term,Approved
 Go,github.com/modern-go/concurrent,v0.0.0-20180306012644-bacd9c7ef1dd,Apache 2.0,github.com/modern-go/concurrent,Approved
 Go,github.com/modern-go/reflect2,v1.0.2,Apache 2.0,github.com/modern-go/reflect2,Approved
 Go,github.com/monochromegane/go-gitignore,v0.0.0-20200626010858-205db1a8cc00,MIT,github.com/monochromegane/go-gitignore,Approved
@@ -1590,7 +1595,6 @@ Go,github.com/peterbourgon/ff,v1.7.1,Apache 2.0,github.com/peterbourgon/ff,Appro
 Go,github.com/peterbourgon/ff/v3,v3.3.0,Apache 2.0,github.com/peterbourgon/ff,Approved
 Go,github.com/peterhellberg/link,v1.1.0,MIT,github.com/peterhellberg/link,Approved
 Go,github.com/pjbgf/sha1cd,v0.2.3,Apache 2.0,github.com/pjbgf/sha1cd,Approved
-Go,github.com/pkg/browser,v0.0.0-20210911075715-681adbf594b8,Simplified BSD,github.com/pkg/browser,Approved
 Go,github.com/pkg/errors,v0.9.1,Simplified BSD,github.com/pkg/errors,Approved
 Go,github.com/pmezard/go-difflib,v1.0.0,New BSD,github.com/pmezard/go-difflib,Approved
 Go,github.com/pquerna/cachecontrol,v0.1.0,Apache 2.0,github.com/pquerna/cachecontrol,Approved
@@ -1654,6 +1658,8 @@ Go,github.com/uber/jaeger-lib,v2.4.1,Apache 2.0,github.com/uber/jaeger-lib,Appro
 Go,github.com/urfave/cli/v2,v2.23.7,MIT,github.com/urfave/cli,Approved
 Go,github.com/vmihailenco/msgpack/v5,v5.3.5,Simplified BSD,github.com/vmihailenco/msgpack,Approved
 Go,github.com/vmihailenco/tagparser/v2,v2.0.0,Simplified BSD,github.com/vmihailenco/tagparser,Approved
+Go,github.com/weaviate/weaviate,v1.18.3,New BSD,github.com/weaviate/weaviate,Approved
+Go,github.com/weaviate/weaviate-go-client/v4,v4.7.1,New BSD,github.com/weaviate/weaviate-go-client,Approved
 Go,github.com/wk8/go-ordered-map/v2,v2.1.5,Apache 2.0,github.com/wk8/go-ordered-map,Approved
 Go,github.com/xanzy/go-gitlab,v0.80.0,Apache 2.0,github.com/xanzy/go-gitlab,Approved
 Go,github.com/xanzy/ssh-agent,v0.3.3,Apache 2.0,github.com/xanzy/ssh-agent,Approved
@@ -1688,7 +1694,7 @@ PNPM,glogg,1.0.1,MIT,"",Approved
 PNPM,glur,1.1.2,MIT,"",Approved
 Go,go.bobheadxi.dev/streamline,v1.2.2,MIT,go.bobheadxi.dev/streamline,Approved
 Go,go.etcd.io/bbolt,v1.3.6,MIT,go.etcd.io/bbolt,Approved
-Go,go.mongodb.org/mongo-driver,v1.10.2,Apache 2.0,go.mongodb.org/mongo-driver,Approved
+Go,go.mongodb.org/mongo-driver,v1.11.3,Apache 2.0,go.mongodb.org/mongo-driver,Approved
 Go,go.opencensus.io,v0.24.0,Apache 2.0,go.opencensus.io,Approved
 Go,go.opentelemetry.io/collector,v0.71.0,Apache 2.0,go.opentelemetry.io/collector,Approved
 Go,go.opentelemetry.io/collector/component,v0.71.0,Apache 2.0,go.opentelemetry.io/collector/component,Approved
@@ -1726,7 +1732,7 @@ Go,golang.org/x/exp,v0.0.0-20221208152030-732eee02a75a,New BSD,golang.org/x/exp,
 Go,golang.org/x/mod,v0.8.0,New BSD,golang.org/x/mod,Approved
 Go,golang.org/x/net,v0.7.0,New BSD,golang.org/x/net,Approved
 Go,golang.org/x/sync,v0.1.0,New BSD,golang.org/x/sync,Approved
-Go,golang.org/x/sys,v0.5.0,New BSD,golang.org/x/sys,Approved
+Go,golang.org/x/sys,v0.6.0,New BSD,golang.org/x/sys,Approved
 Go,golang.org/x/term,v0.5.0,New BSD,golang.org/x/term,Approved
 Go,golang.org/x/text,v0.7.0,New BSD,golang.org/x/text,Approved
 Go,golang.org/x/time,v0.3.0,New BSD,golang.org/x/time,Approved
@@ -1750,7 +1756,7 @@ Go,gopkg.in/yaml.v2,v2.4.0,"Apache 2.0,MIT",gopkg.in/yaml.v2,Approved
 Go,gopkg.in/yaml.v3,v3.0.1,MIT,gopkg.in/yaml.v3,Approved
 PNPM,got,11.8.5,MIT,"",Approved
 PNPM,gql2ts,1.10.1,MIT,"",Approved
-PNPM,graceful-fs,4.2.10,ISC,"",Approved
+PNPM,graceful-fs,4.2.11,ISC,"",Approved
 PNPM,grapheme-splitter,1.0.4,MIT,"",Approved
 PNPM,graphiql,1.11.5,MIT,"",Approved
 PNPM,graphlib,2.1.8,MIT,"",Approved
@@ -1760,7 +1766,7 @@ PNPM,graphql-language-service,5.1.0,MIT,"",Approved
 PNPM,graphql-request,5.0.0,MIT,"",Approved
 PNPM,graphql-schema-linter,2.0.1,MIT,"",Approved
 PNPM,graphql-tag,2.12.6,MIT,"",Approved
-PNPM,graphql-ws,5.12.0,MIT,"",Approved
+PNPM,graphql-ws,5.12.1,MIT,"",Approved
 PNPM,growl,1.10.5,MIT,"",Approved
 PNPM,gtoken,4.1.1,MIT,"",Approved
 PNPM,gulp,4.0.2,MIT,"",Approved
@@ -1991,7 +1997,7 @@ PNPM,jest-runtime,28.1.3,MIT,"",Approved
 PNPM,jest-serializer,27.5.1,MIT,"",Approved
 PNPM,jest-snapshot,28.1.3,MIT,"",Approved
 PNPM,jest-specific-snapshot,4.0.0,MIT,"",Approved
-PNPM,jest-util,29.5.0,MIT,"",Approved
+PNPM,jest-util,27.5.1,MIT,"",Approved
 PNPM,jest-validate,26.6.2,MIT,"",Approved
 PNPM,jest-watcher,28.1.3,MIT,"",Approved
 PNPM,jest-worker,27.5.1,MIT,"",Approved
@@ -2048,7 +2054,7 @@ PNPM,klaw,1.3.1,MIT,"",Approved
 PNPM,kleur,4.1.5,MIT,"",Approved
 PNPM,klona,2.0.5,MIT,"",Approved
 PNPM,known-css-properties,0.24.0,MIT,"",Approved
-PNPM,konva,8.4.3,MIT,"",Approved
+PNPM,konva,9.0.0,MIT,"",Approved
 PNPM,last-run,1.1.1,MIT,"",Approved
 PNPM,latest-version,5.1.0,MIT,"",Approved
 Go,layeh.com/gopher-luar,v1.0.10,Mozilla Public License 2.0,layeh.com/gopher-luar,Approved
@@ -2072,7 +2078,7 @@ PNPM,linkifyjs,4.1.0,MIT,"",Approved
 PNPM,listenercount,1.0.1,ISC,"",Approved
 PNPM,listr2,4.0.5,MIT,"",Approved
 PNPM,lit-element,2.5.1,New BSD,"",Approved
-PNPM,lit-html,1.4.1,New BSD,"",Approved
+PNPM,lit-html,2.7.2,New BSD,"",Approved
 PNPM,load-json-file,4.0.0,MIT,"",Approved
 PNPM,loader-runner,4.2.0,MIT,"",Approved
 PNPM,loader-utils,3.2.1,MIT,"",Approved
@@ -2177,7 +2183,7 @@ PNPM,message-port-polyfill,0.2.0,MIT,"",Approved
 PNPM,metaviewport-parser,0.2.0,MIT,"",Approved
 PNPM,methods,1.1.2,MIT,"",Approved
 PNPM,metro,0.73.9,MIT,"",Approved
-PNPM,metro-babel-transformer,0.73.8,MIT,"",Approved
+PNPM,metro-babel-transformer,0.73.9,MIT,"",Approved
 PNPM,metro-cache,0.73.9,MIT,"",Approved
 PNPM,metro-cache-key,0.73.9,MIT,"",Approved
 PNPM,metro-config,0.73.9,MIT,"",Approved
@@ -2187,12 +2193,12 @@ PNPM,metro-hermes-compiler,0.73.9,MIT,"",Approved
 PNPM,metro-inspector-proxy,0.73.9,MIT,"",Approved
 PNPM,metro-minify-terser,0.73.9,MIT,"",Approved
 PNPM,metro-minify-uglify,0.73.9,MIT,"",Approved
-PNPM,metro-react-native-babel-preset,0.73.8,MIT,"",Approved
-PNPM,metro-react-native-babel-transformer,0.73.8,MIT,"",Approved
+PNPM,metro-react-native-babel-preset,0.73.9,MIT,"",Approved
+PNPM,metro-react-native-babel-transformer,0.73.9,MIT,"",Approved
 PNPM,metro-resolver,0.73.9,MIT,"",Approved
-PNPM,metro-runtime,0.73.8,MIT,"",Approved
-PNPM,metro-source-map,0.73.8,MIT,"",Approved
-PNPM,metro-symbolicate,0.73.8,MIT,"",Approved
+PNPM,metro-runtime,0.73.9,MIT,"",Approved
+PNPM,metro-source-map,0.73.9,MIT,"",Approved
+PNPM,metro-symbolicate,0.73.9,MIT,"",Approved
 PNPM,metro-transform-plugins,0.73.9,MIT,"",Approved
 PNPM,metro-transform-worker,0.73.9,MIT,"",Approved
 PNPM,microevent.ts,0.1.1,MIT,"",Approved
@@ -2215,7 +2221,7 @@ PNPM,minipass-flush,1.0.5,ISC,"",Approved
 PNPM,minipass-pipeline,1.2.4,ISC,"",Approved
 PNPM,minizlib,2.1.2,MIT,"",Approved
 PNPM,mixin-deep,1.3.2,MIT,"",Approved
-PNPM,mkdirp,0.5.6,MIT,"",Approved
+PNPM,mkdirp,1.0.4,MIT,"",Approved
 PNPM,mkdirp-classic,0.5.3,MIT,"",Approved
 PNPM,mocha,8.3.2,MIT,"",Approved
 PNPM,mock-require,3.0.3,MIT,"",Approved
@@ -2277,7 +2283,7 @@ PNPM,num2fraction,1.2.2,MIT,"",Approved
 PNPM,number-is-nan,1.0.1,MIT,"",Approved
 PNPM,nwsapi,2.2.2,MIT,"",Approved
 PNPM,nyc,15.1.0,ISC,"",Approved
-PNPM,ob1,0.73.8,MIT,"",Approved
+PNPM,ob1,0.73.9,MIT,"",Approved
 PNPM,object-assign,4.1.1,MIT,"",Approved
 PNPM,object-copy,0.1.0,MIT,"",Approved
 PNPM,object-hash,3.0.0,MIT,"",Approved
@@ -2366,7 +2372,7 @@ PNPM,path-to-regexp,0.1.7,MIT,"",Approved
 PNPM,path-type,1.1.0,MIT,"",Approved
 PNPM,pend,1.2.0,MIT,"",Approved
 PNPM,performance-now,2.1.0,MIT,"",Approved
-PNPM,picocolors,1.0.0,ISC,"",Approved
+PNPM,picocolors,0.2.1,ISC,"",Approved
 PNPM,picomatch,2.3.1,MIT,"",Approved
 PNPM,pify,2.3.0,MIT,"",Approved
 PNPM,pinkie,2.0.4,MIT,"",Approved
@@ -2431,7 +2437,7 @@ PNPM,postcss-selector-parser,3.1.2,MIT,"",Approved
 PNPM,postcss-svgo,4.0.3,MIT,"",Approved
 PNPM,postcss-unique-selectors,4.0.1,MIT,"",Approved
 PNPM,postcss-value-parser,3.3.1,MIT,"",Approved
-PNPM,preact,10.13.1,MIT,"",Approved
+PNPM,preact,10.13.2,MIT,"",Approved
 PNPM,preact-render-to-string,5.1.19,MIT,"",Approved
 PNPM,prebuild-install,7.0.1,MIT,"",Approved
 PNPM,prelude-ls,1.2.1,MIT,"",Approved
@@ -2503,9 +2509,9 @@ PNPM,react-inspector,5.1.1,MIT,"",Approved
 PNPM,react-is,16.13.1,MIT,"",Approved
 PNPM,react-konva,16.8.6,MIT,"",Approved
 PNPM,react-lifecycles-compat,3.0.4,MIT,"",Approved
-PNPM,react-native,0.71.4,MIT,"",Approved
+PNPM,react-native,0.71.6,MIT,"",Approved
 PNPM,react-native-codegen,0.71.5,MIT,"",Approved
-PNPM,react-native-gradle-plugin,0.71.16,MIT,"",Approved
+PNPM,react-native-gradle-plugin,0.71.17,MIT,"",Approved
 PNPM,react-reconciler,0.27.0,MIT,"",Approved
 PNPM,react-refresh,0.4.3,MIT,"",Approved
 PNPM,react-remove-scroll,2.4.3,MIT,"",Approved
@@ -2654,7 +2660,7 @@ PNPM,shallow-clone,3.0.1,MIT,"",Approved
 PNPM,shallowequal,1.1.0,MIT,"",Approved
 PNPM,shebang-command,2.0.0,MIT,"",Approved
 PNPM,shebang-regex,3.0.0,MIT,"",Approved
-PNPM,shell-quote,1.8.0,MIT,"",Approved
+PNPM,shell-quote,1.8.1,MIT,"",Approved
 PNPM,shelljs,0.8.5,New BSD,"",Approved
 PNPM,shimmer,1.2.1,Simplified BSD,"",Approved
 PNPM,side-channel,1.0.4,MIT,"",Approved
@@ -2696,7 +2702,7 @@ PNPM,socks-proxy-agent,5.0.1,MIT,"",Approved
 PNPM,sorcery,0.11.0,MIT,"",Approved
 PNPM,sort-keys,2.0.0,MIT,"",Approved
 PNPM,source-list-map,2.0.1,MIT,"",Approved
-PNPM,source-map,0.7.4,New BSD,"",Approved
+PNPM,source-map,0.5.7,New BSD,"",Approved
 PNPM,source-map-js,1.0.2,New BSD,"",Approved
 PNPM,source-map-resolve,0.6.0,MIT,"",Approved
 PNPM,source-map-support,0.5.13,MIT,"",Approved
@@ -2782,7 +2788,7 @@ PNPM,supports-color,3.2.3,MIT,"",Approved
 PNPM,supports-hyperlinks,2.3.0,MIT,"",Approved
 PNPM,supports-preserve-symlinks-flag,1.0.0,MIT,"",Approved
 PNPM,suspend-react,0.0.8,MIT,"",Approved
-PNPM,svelte,3.55.1,MIT,"",Approved
+PNPM,svelte,3.57.0,MIT,"",Approved
 PNPM,svelte-check,3.0.4,MIT,"",Approved
 PNPM,svelte-hmr,0.15.1,ISC,"",Approved
 PNPM,svelte-preprocess,5.0.1,MIT,"",Approved
@@ -2805,7 +2811,7 @@ PNPM,telejson,6.0.8,MIT,"",Approved
 PNPM,temp,0.8.4,MIT,"",Approved
 PNPM,term-size,2.2.0,MIT,"",Approved
 PNPM,terminal-link,2.1.1,MIT,"",Approved
-PNPM,terser,5.16.8,Simplified BSD,"",Approved
+PNPM,terser,5.16.9,Simplified BSD,"",Approved
 PNPM,terser-webpack-plugin,5.3.6,MIT,"",Approved
 PNPM,test-exclude,6.0.0,ISC,"",Approved
 PNPM,tether,0.6.5,MIT,"",Approved
@@ -2814,7 +2820,7 @@ PNPM,thenby,1.3.4,Apache 2.0,"",Approved
 PNPM,thenify,3.3.1,MIT,"",Approved
 PNPM,thenify-all,1.6.0,MIT,"",Approved
 PNPM,third-party-web,0.12.5,MIT,"",Approved
-PNPM,three,0.150.1,MIT,"",Approved
+PNPM,three,0.151.3,MIT,"",Approved
 PNPM,throat,5.0.0,MIT,"",Approved
 PNPM,throttle-debounce,3.0.1,MIT,"",Approved
 PNPM,through,2.3.8,MIT,"",Approved
@@ -3052,7 +3058,7 @@ PNPM,xmlchars,2.2.0,MIT,"",Approved
 PNPM,xmlhttprequest-ssl,2.0.0,MIT,"",Approved
 PNPM,xregexp,2.0.0,MIT,"",Approved
 PNPM,xtend,4.0.2,MIT,"",Approved
-PNPM,y18n,5.0.8,ISC,"",Approved
+PNPM,y18n,4.0.3,ISC,"",Approved
 PNPM,yallist,4.0.0,ISC,"",Approved
 PNPM,yaml,2.2.1,ISC,"",Approved
 PNPM,yaml-ast-parser,0.0.43,Apache 2.0,"",Approved

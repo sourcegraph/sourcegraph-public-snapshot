@@ -10,22 +10,18 @@ cleanup() {
   rm -rf "$OUTPUT"
 }
 trap cleanup EXIT
+
 if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
-   bazel build //enterprise/cmd/frontend \
-     --stamp \
-     --workspace_status_command=./dev/bazel_stamp_vars.sh \
-     --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
-     --//:assets_bundle_type=enterprise
+  ./dev/ci/bazel.sh build //enterprise/cmd/frontend
+  out=$(./dev/ci/bazel.sh cquery //enterprise/cmd/frontend --output=files)
+  cp "$out" "$OUTPUT"
 
-   out=$(bazel cquery //enterprise/cmd/frontend --output=files)
-   cp "$out" "$OUTPUT"
-
-   docker build -f enterprise/cmd/frontend/Dockerfile -t "$IMAGE" "$OUTPUT" \
-     --progress=plain \
-     --build-arg COMMIT_SHA \
-     --build-arg DATE \
-     --build-arg VERSION
-   exit $?
+  docker build -f enterprise/cmd/frontend/Dockerfile -t "$IMAGE" "$OUTPUT" \
+    --progress=plain \
+    --build-arg COMMIT_SHA \
+    --build-arg DATE \
+    --build-arg VERSION
+  exit $?
 fi
 
 # Environment for building linux binaries

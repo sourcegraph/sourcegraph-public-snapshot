@@ -37,6 +37,7 @@ export const repositoryFragment = gql`
         id
         name
         url
+        sourceType
         externalURLs {
             url
             serviceKind
@@ -52,7 +53,7 @@ export const repositoryFragment = gql`
             abbrevName
         }
         isFork
-        keyValuePairs {
+        metadata {
             key
             value
         }

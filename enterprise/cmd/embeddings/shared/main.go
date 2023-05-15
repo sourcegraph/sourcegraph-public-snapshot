@@ -18,7 +18,6 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -74,15 +73,19 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return gitserverClient.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, repoName, revision, fileName)
 	}
 
-	getRepoEmbeddingIndex, err := getCachedRepoEmbeddingIndex(repoStore, repoEmbeddingJobsStore, func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
-		return embeddings.DownloadRepoEmbeddingIndex(ctx, uploadStore, string(repoEmbeddingIndexName))
-	})
+	indexGetter, err := NewCachedEmbeddingIndexGetter(
+		repoStore,
+		repoEmbeddingJobsStore,
+		func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
+			return embeddings.DownloadRepoEmbeddingIndex(ctx, uploadStore, string(repoEmbeddingIndexName))
+		},
+		config.EmbeddingsCacheSize,
+	)
 	if err != nil {
 		return err
 	}
 
-	client := embed.NewEmbeddingsClient()
-	getQueryEmbedding, err := getCachedQueryEmbeddingFn(client)
+	getQueryEmbedding, err := getCachedQueryEmbeddingFn()
 	if err != nil {
 		return err
 	}
@@ -97,7 +100,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	getContextDetectionEmbeddingIndex := getCachedContextDetectionEmbeddingIndex(uploadStore)
 
 	// Create HTTP server
-	handler := NewHandler(logger, readFile, getRepoEmbeddingIndex, getQueryEmbedding, weaviate, getContextDetectionEmbeddingIndex)
+	handler := NewHandler(logger, readFile, indexGetter.Get, getQueryEmbedding, weaviate, getContextDetectionEmbeddingIndex)
 	handler = handlePanic(logger, handler)
 	handler = featureflag.Middleware(db.FeatureFlags(), handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())

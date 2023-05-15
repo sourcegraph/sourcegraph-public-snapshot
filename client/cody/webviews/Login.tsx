@@ -3,8 +3,11 @@ import { useCallback, useState } from 'react'
 import { TextFieldType } from '@vscode/webview-ui-toolkit/dist/text-field'
 import { VSCodeTextField, VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
-import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
+import { renderCodyMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
+
+import { ConnectApp } from './ConnectApp'
+import { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Login.module.css'
 
@@ -12,12 +15,18 @@ interface LoginProps {
     isValidLogin?: boolean
     onLogin: (token: string, endpoint: string) => void
     serverEndpoint?: string
+    isAppInstalled: boolean
+    vscodeAPI: VSCodeWrapper
+    enableConnectToApp?: boolean
 }
 
 export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>> = ({
     isValidLogin,
     onLogin,
     serverEndpoint,
+    isAppInstalled,
+    vscodeAPI,
+    enableConnectToApp,
 }) => {
     const [token, setToken] = useState<string>('')
     const [endpoint, setEndpoint] = useState(serverEndpoint)
@@ -42,21 +51,15 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
             <section className={styles.section}>
                 <h2 className={styles.sectionHeader}>Enterprise User</h2>
                 <form className={styles.wrapper} onSubmit={onSubmit}>
-                    <label htmlFor="endpoint" className={styles.label}>
-                        Sourcegraph Instance URL
-                    </label>
                     <VSCodeTextField
                         id="endpoint"
                         value={endpoint || ''}
                         className={styles.input}
                         placeholder="https://example.sourcegraph.com"
                         onInput={(e: any) => setEndpoint(e.target.value)}
-                    />
-
-                    <label htmlFor="accessToken" className={styles.label}>
-                        Access Token (
-                        <a href="https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token">docs</a>)
-                    </label>
+                    >
+                        Sourcegraph Instance URL
+                    </VSCodeTextField>
                     <VSCodeTextField
                         id="accessToken"
                         value={token}
@@ -64,33 +67,36 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                         className={styles.input}
                         type={TextFieldType.password}
                         onInput={(e: any) => setToken(e.target.value)}
-                    />
-
+                    >
+                        Access Token (
+                        <a href="https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token">docs</a>)
+                    </VSCodeTextField>
                     <VSCodeButton className={styles.button} type="submit">
                         Sign In
                     </VSCodeButton>
                 </form>
             </section>
+            <div className={styles.divider} />
             <section className={styles.section}>
                 <h2 className={styles.sectionHeader}>Everyone Else</h2>
-                <div className={styles.wrapper}>
-                    <p className={styles.linkToForm}>
-                        <a href="https://docs.google.com/forms/d/e/1FAIpQLScSI06yGMls-V1FALvFyURi8U9bKRTSKPworBhzZEHDQvo0HQ/viewform">
-                            Fill out this form to request access.
-                        </a>
-                    </p>
-                    <a href="https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=CODY">
-                        <VSCodeButton
-                            className={styles.button}
-                            type="button"
-                            onClick={() => setEndpoint('https://sourcegraph.com')}
-                        >
-                            Continue with Sourcegraph.com
-                        </VSCodeButton>
-                    </a>
-                </div>
+                <p className={styles.openMessage}>
+                    Cody for open source code is available to all users with a Sourcegraph.com account
+                </p>
+                <a href="https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=CODY">
+                    <VSCodeButton
+                        className={styles.button}
+                        type="button"
+                        onClick={() => setEndpoint('https://sourcegraph.com')}
+                    >
+                        Continue with Sourcegraph.com
+                    </VSCodeButton>
+                </a>
+                {enableConnectToApp && <ConnectApp isAppInstalled={isAppInstalled} vscodeAPI={vscodeAPI} />}
             </section>
-            <div className={styles.terms} dangerouslySetInnerHTML={{ __html: renderMarkdown(CODY_TERMS_MARKDOWN) }} />
+            <div
+                className={styles.terms}
+                dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(CODY_TERMS_MARKDOWN) }}
+            />
         </div>
     )
 }

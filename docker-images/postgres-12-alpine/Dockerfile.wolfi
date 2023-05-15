@@ -1,0 +1,28 @@
+# Are you bumping postgres minor or major version?
+# Please review the changes in /usr/local/share/postgresql/postgresql.conf.sample
+# If there is any change, you should ping @team/delivery
+# And Delivery will make sure changes are reflected in our deploy repository
+
+# Dockerfile for Wolfi-based images
+# This is currently being tested in parallel to Alpine - you don't need to update this
+#   file if you change the regular Dockerfile.
+
+# hadolint ignore=DL3007
+FROM us.gcr.io/sourcegraph-dev/wolfi-postgresql-12-base:latest
+
+# To remain compatibility with codeinsights-db and codeintel-db, user and group
+# IDs are set here, rather than in the base image
+
+ARG PING_UID=99
+ARG POSTGRES_UID=999
+
+# We modify the postgres user/group to reconcile with our previous debian based images
+# and avoid issues with customers migrating.
+RUN addgroup -g $PING_UID ping &&\
+    adduser -D -u $POSTGRES_UID postgres postgres &&\
+    mkdir -p /data/pgdata-12 && chown -R postgres:postgres /data
+
+COPY rootfs /
+
+USER postgres
+ENTRYPOINT ["/postgres-wolfi.sh"]
