@@ -972,18 +972,24 @@ Indexes:
 
 # Table "public.codeintel_ranking_progress"
 ```
-          Column          |           Type           | Collation | Nullable |                        Default                         
---------------------------+--------------------------+-----------+----------+--------------------------------------------------------
- id                       | bigint                   |           | not null | nextval('codeintel_ranking_progress_id_seq'::regclass)
- graph_key                | text                     |           | not null | 
- max_definition_id        | integer                  |           | not null | 
- max_reference_id         | integer                  |           | not null | 
- max_path_id              | integer                  |           | not null | 
- mappers_started_at       | timestamp with time zone |           | not null | 
- mapper_completed_at      | timestamp with time zone |           |          | 
- seed_mapper_completed_at | timestamp with time zone |           |          | 
- reducer_started_at       | timestamp with time zone |           |          | 
- reducer_completed_at     | timestamp with time zone |           |          | 
+             Column              |           Type           | Collation | Nullable |                        Default                         
+---------------------------------+--------------------------+-----------+----------+--------------------------------------------------------
+ id                              | bigint                   |           | not null | nextval('codeintel_ranking_progress_id_seq'::regclass)
+ graph_key                       | text                     |           | not null | 
+ max_definition_id               | integer                  |           | not null | 
+ max_reference_id                | integer                  |           | not null | 
+ max_path_id                     | integer                  |           | not null | 
+ mappers_started_at              | timestamp with time zone |           | not null | 
+ mapper_completed_at             | timestamp with time zone |           |          | 
+ seed_mapper_completed_at        | timestamp with time zone |           |          | 
+ reducer_started_at              | timestamp with time zone |           |          | 
+ reducer_completed_at            | timestamp with time zone |           |          | 
+ num_path_records_total          | integer                  |           |          | 
+ num_reference_records_total     | integer                  |           |          | 
+ num_count_records_total         | integer                  |           |          | 
+ num_path_records_processed      | integer                  |           |          | 
+ num_reference_records_processed | integer                  |           |          | 
+ num_count_records_processed     | integer                  |           |          | 
 Indexes:
     "codeintel_ranking_progress_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_progress_graph_key_key" UNIQUE CONSTRAINT, btree (graph_key)

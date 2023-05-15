@@ -1798,7 +1798,13 @@ CREATE TABLE codeintel_ranking_progress (
     mapper_completed_at timestamp with time zone,
     seed_mapper_completed_at timestamp with time zone,
     reducer_started_at timestamp with time zone,
-    reducer_completed_at timestamp with time zone
+    reducer_completed_at timestamp with time zone,
+    num_path_records_total integer,
+    num_reference_records_total integer,
+    num_count_records_total integer,
+    num_path_records_processed integer,
+    num_reference_records_processed integer,
+    num_count_records_processed integer
 );
 
 CREATE SEQUENCE codeintel_ranking_progress_id_seq

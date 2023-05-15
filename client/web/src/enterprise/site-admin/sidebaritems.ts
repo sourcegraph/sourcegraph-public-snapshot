@@ -131,6 +131,10 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
             label: 'Inference',
             condition: () => window.context?.codeIntelAutoIndexingEnabled,
         },
+        {
+            to: '/site-admin/code-graph/ranking',
+            label: 'Ranking',
+        },
     ],
 }
 

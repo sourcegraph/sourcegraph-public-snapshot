@@ -1,0 +1,17 @@
+extend type Query {
+    rankingSummary: [RankingSummary!]!
+}
+
+type RankingSummary {
+    graphKey: String!
+    pathMapperProgress: RankingSummaryProgress!
+    referenceMapperProgress: RankingSummaryProgress!
+    reducerProgress: RankingSummaryProgress
+}
+
+type RankingSummaryProgress {
+    startedAt: DateTime!
+    completedAt: DateTime
+    processed: Int!
+    total: Int!
+}
