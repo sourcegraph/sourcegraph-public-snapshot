@@ -98,7 +98,7 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// TODO - impl fairness later
 	for _, queue := range req.Queues {
 		switch queue {
-		case "batches":
+		case m.BatchesQueueHandler.Name:
 			record, dequeued, err := m.BatchesQueueHandler.Store.Dequeue(r.Context(), req.ExecutorName, nil)
 			if err != nil {
 				err = errors.Wrapf(err, "dbworkerstore.Dequeue %s", queue)
@@ -118,7 +118,7 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				m.marshalAndRespondError(w, err, http.StatusInternalServerError)
 				return
 			}
-		case "codeintel":
+		case m.CodeIntelQueueHandler.Name:
 			record, dequeued, err := m.CodeIntelQueueHandler.Store.Dequeue(r.Context(), req.ExecutorName, nil)
 			if err != nil {
 				err = errors.Wrapf(err, "dbworkerstore.Dequeue %s", queue)
