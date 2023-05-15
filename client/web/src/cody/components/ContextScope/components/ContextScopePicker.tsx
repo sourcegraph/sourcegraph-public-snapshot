@@ -5,7 +5,7 @@ import { Icon, Menu, MenuButton, MenuList, MenuItem, Position } from '@sourcegra
 
 import { ContextType, SELECTED } from '../ContextScope'
 
-import styles from './ContextScopeComponents.module.scss'
+import styles from './ContextComponents.module.scss'
 
 interface ContextScopePickerProps {
     onSelect?: (itemIndex: ContextType) => void
