@@ -219,7 +219,6 @@ require (
 	github.com/gosimple/unidecode v1.0.1 // indirect
 	github.com/grafana-tools/sdk v0.0.0-20220919052116-6562121319fc // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.2.0.20210128111500-3ff779b52992 // indirect
-	github.com/hashicorp/golang-lru/v2 v2.0.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/moby/sys/mountinfo v0.6.2 // indirect
 	github.com/mpvl/unique v0.0.0-20150818121801-cbe035fff7de // indirect
@@ -259,6 +258,7 @@ require (
 	github.com/google/go-github/v47 v47.1.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2 v2.0.0-rc.3
 	github.com/hashicorp/go-version v1.6.0
+	github.com/hashicorp/golang-lru/v2 v2.0.2
 	github.com/hexops/autogold/v2 v2.1.0
 	github.com/k3a/html2text v1.1.0
 	github.com/klauspost/cpuid/v2 v2.2.4
