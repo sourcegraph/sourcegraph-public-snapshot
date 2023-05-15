@@ -263,7 +263,10 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
-require github.com/go-redsync/redsync/v4 v4.8.1
+require (
+	github.com/go-redsync/redsync/v4 v4.8.1
+	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
+)
 
 require (
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
@@ -297,7 +300,6 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
-	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa // indirect
 	github.com/moby/sys/mountinfo v0.6.2 // indirect
 	github.com/mpvl/unique v0.0.0-20150818121801-cbe035fff7de // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
