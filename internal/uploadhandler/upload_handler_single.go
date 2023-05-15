@@ -10,8 +10,6 @@ import (
 	sglog "github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/opentracing/opentracing-go/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -20,8 +18,8 @@ import (
 func (h *UploadHandler[T]) handleEnqueueSinglePayload(ctx context.Context, uploadState uploadState[T], body io.Reader) (_ any, statusCode int, err error) {
 	ctx, trace, endObservation := h.operations.handleEnqueueSinglePayload.With(ctx, &err, observation.Args{})
 	defer func() {
-		endObservation(1, observation.Args{LogFields: []log.Field{
-			log.Int("statusCode", statusCode),
+		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
+			attribute.Int("statusCode", statusCode),
 		}})
 	}()
 
