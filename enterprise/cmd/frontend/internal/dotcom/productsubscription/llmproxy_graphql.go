@@ -2,21 +2,17 @@ package productsubscription
 
 import (
 	"context"
-	"fmt"
 	"time"
-
-	"cloud.google.com/go/bigquery"
-	"google.golang.org/api/iterator"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
-	llmproxy "github.com/sourcegraph/sourcegraph/enterprise/internal/llm-proxy"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type llmProxyAccessResolver struct{ sub *productSubscription }
+type llmProxyAccessResolver struct {
+	sub *productSubscription
+}
 
 func (r llmProxyAccessResolver) Enabled() bool { return r.sub.v.LLMProxyAccess.Enabled }
 
@@ -55,76 +51,16 @@ func (r llmProxyAccessResolver) RateLimit(ctx context.Context) (graphqlbackend.L
 }
 
 func (r llmProxyAccessResolver) Usage(ctx context.Context) ([]graphqlbackend.LLMProxyUsageDatapoint, error) {
-	d := conf.Get().Dotcom
-	if d == nil || d.LlmProxy == nil || d.LlmProxy.BigQueryGoogleProjectID == "" || d.LlmProxy.BigQueryDataset == "" || d.LlmProxy.BigQueryTable == "" {
-		// Not configured, nothing we can do.
-		return nil, nil
-	}
-
-	client, err := bigquery.NewClient(ctx, d.LlmProxy.BigQueryGoogleProjectID)
+	usage, err := NewLLMProxyService().UsageForSubscription(ctx, r.sub.UUID())
 	if err != nil {
-		return nil, errors.Wrap(err, "creating BigQuery client")
-	}
-	defer client.Close()
-
-	tbl := client.Dataset(d.LlmProxy.BigQueryDataset).Table(d.LlmProxy.BigQueryTable)
-
-	// Count events with a specific name for each day in the last 7 days.
-	query := fmt.Sprintf(`
-SELECT
-	DATE(created_at) as date,
-	COUNT(*) as count
-FROM
-	%s.%s
-WHERE
-	source = @source
-	AND identifier = @identifier
-	AND name = @eventName
-	AND DATE(created_at) >= DATE(TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY))
-GROUP BY
-	date
-ORDER BY
-	date DESC`,
-		tbl.DatasetID,
-		tbl.TableID,
-	)
-
-	q := client.Query(query)
-	q.Parameters = []bigquery.QueryParameter{
-		{
-			Name:  "source",
-			Value: llmproxy.ProductSubscriptionActorSourceName,
-		},
-		{
-			Name:  "identifier",
-			Value: r.sub.UUID(),
-		},
-		{
-			Name:  "eventName",
-			Value: llmproxy.EventNameCompletionsStarted,
-		},
+		return nil, err
 	}
 
-	it, err := q.Read(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "executing query")
-	}
-
-	resolvers := make([]graphqlbackend.LLMProxyUsageDatapoint, 0)
-	for {
-		var row struct {
-			Date  bigquery.NullDate
-			Count int
-		}
-		err := it.Next(&row)
-		if err == iterator.Done {
-			break
-		} else if err != nil {
-			return nil, errors.Wrap(err, "reading query result")
-		}
+	resolvers := make([]graphqlbackend.LLMProxyUsageDatapoint, 0, len(usage))
+	for _, u := range usage {
 		resolvers = append(resolvers, &llmProxyUsageDatapoint{
-			date:  row.Date.Date.In(time.UTC),
-			count: row.Count,
+			date:  u.Date,
+			count: u.Count,
 		})
 	}
 
