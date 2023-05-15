@@ -86,10 +86,8 @@ export const ContextPopover: React.FC<{
 
     const filteredItems =
         contextType === SELECTED.REPOSITORIES
-            ? repoMockedModel
-            : filesMockedModel
-                  .filter(item => !currentItems?.includes(item)) // Exclude items already present in currentItems
-                  .filter(item => fuzzySearch(item, searchText))
+            ? repoMockedModel.filter(item => !currentItems?.includes(item) && fuzzySearch(item, searchText))
+            : filesMockedModel.filter(item => !currentItems?.includes(item) && fuzzySearch(item, searchText))
 
     const isSearching = searchText.length > 0
     const isSearchEmpty = isSearching && filteredItems.length === 0
@@ -131,44 +129,14 @@ export const ContextPopover: React.FC<{
                         <>
                             <div className="itemsContainer">
                                 {(isSearching ? filteredItems : currentItems)?.map((item, index) => (
-                                    <div
-                                        key={index}
-                                        className={classNames(
-                                            'd-flex justify-content-between flex-row p-1 rounded-lg',
-                                            'item'
-                                        )}
-                                    >
-                                        <div>
-                                            <Icon aria-hidden={true} svgPath={icon} />{' '}
-                                            {
-                                                <span
-                                                    dangerouslySetInnerHTML={{
-                                                        __html: getTintedText(getFileName(item), searchText),
-                                                    }}
-                                                />
-                                            }
-                                        </div>
-                                        <div className="d-flex align-items-center itemRight">
-                                            {contextType === SELECTED.FILES && (
-                                                <>
-                                                    <Icon aria-hidden={true} svgPath={mdiGithub} />{' '}
-                                                    <Text size="small" className="m-0">
-                                                        <span
-                                                            dangerouslySetInnerHTML={{
-                                                                __html: getTintedText(getPath(item), searchText),
-                                                            }}
-                                                        />
-                                                    </Text>
-                                                </>
-                                            )}
-
-                                            <ItemAction
-                                                isSearching={isSearching}
-                                                handleAddItem={() => handleAddItem(index)}
-                                                handleRemoveItem={() => handleRemoveItem(index)}
-                                            />
-                                        </div>
-                                    </div>
+                                    <ContextItem
+                                        item={item}
+                                        icon={icon}
+                                        searchText={searchText}
+                                        contextType={contextType}
+                                        handleAddItem={() => handleAddItem(index)}
+                                        handleRemoveItem={() => handleRemoveItem(index)}
+                                    />
                                 ))}
                             </div>
 
@@ -197,6 +165,41 @@ export const ContextPopover: React.FC<{
         </Popover>
     )
 }
+
+const ContextItem: React.FC<{
+    item: string
+    icon: string
+    searchText: string
+    contextType: ContextType
+    handleAddItem: () => void
+    handleRemoveItem: () => void
+}> = ({ item, icon, searchText, contextType, handleAddItem, handleRemoveItem }) => (
+    <div className={classNames('d-flex justify-content-between flex-row p-1 rounded-lg', 'item')}>
+        <div>
+            <Icon aria-hidden={true} svgPath={icon} />{' '}
+            <span
+                dangerouslySetInnerHTML={{
+                    __html: getTintedText(contextType === SELECTED.FILES ? getFileName(item) : item, searchText),
+                }}
+            />
+        </div>
+        <div className="d-flex align-items-center itemRight">
+            {contextType === SELECTED.FILES && (
+                <>
+                    <Icon aria-hidden={true} svgPath={mdiGithub} />{' '}
+                    <Text size="small" className="m-0">
+                        <span dangerouslySetInnerHTML={{ __html: getTintedText(getPath(item), searchText) }} />
+                    </Text>
+                </>
+            )}
+            <ItemAction
+                isSearching={searchText.length > 0}
+                handleAddItem={handleAddItem}
+                handleRemoveItem={handleRemoveItem}
+            />
+        </div>
+    </div>
+)
 
 const ItemAction: React.FC<{
     isSearching: boolean
