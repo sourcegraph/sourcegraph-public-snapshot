@@ -10095,5 +10095,3 @@ type Permission implements Node {
     """
     createdAt: DateTime!
 }
-
-
