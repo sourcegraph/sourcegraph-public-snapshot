@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "httpapi",
+    srcs = [
+        "anthropic.go",
+        "handler.go",
+        "healthz.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/httpapi",
+    visibility = ["//enterprise/cmd/llm-proxy:__subpackages__"],
+    deps = [
+        "//enterprise/cmd/llm-proxy/internal/actor",
+        "//enterprise/cmd/llm-proxy/internal/events",
+        "//enterprise/cmd/llm-proxy/internal/response",
+        "//enterprise/internal/completions/client/anthropic",
+        "//enterprise/internal/llm-proxy",
+        "//internal/httpcli",
+        "//internal/redispool",
+        "//internal/version",
+        "//lib/errors",
+        "@com_github_gorilla_mux//:mux",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

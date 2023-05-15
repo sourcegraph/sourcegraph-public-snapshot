@@ -15,7 +15,7 @@ func TestDecoder(t *testing.T) {
 	}
 
 	decodeAll := func(input string) ([]event, error) {
-		dec := newDecoder(strings.NewReader(input))
+		dec := NewDecoder(strings.NewReader(input))
 		var events []event
 		for dec.Scan() {
 			events = append(events, event{
@@ -34,7 +34,7 @@ func TestDecoder(t *testing.T) {
 	t.Run("Multiple", func(t *testing.T) {
 		events, err := decodeAll("data:b\r\n\r\ndata:c\r\n\r\ndata: [DONE]\r\n\r\n")
 		require.NoError(t, err)
-		require.Equal(t, events, []event{{data: "b"}, {data: "c"}, {data: "[DONE]"}})
+		require.Equal(t, events, []event{{data: "b"}, {data: "c"}})
 	})
 
 	t.Run("ErrExpectedData", func(t *testing.T) {
@@ -45,6 +45,12 @@ func TestDecoder(t *testing.T) {
 	t.Run("InterleavedPing", func(t *testing.T) {
 		events, err := decodeAll("data:a\r\n\r\nevent: ping\r\ndata: 2023-04-28 21:18:31.866238\r\n\r\ndata:b\r\n\r\ndata: [DONE]\r\n\r\n")
 		require.NoError(t, err)
-		require.Equal(t, events, []event{{data: "a"}, {data: "b"}, {data: "[DONE]"}})
+		require.Equal(t, events, []event{{data: "a"}, {data: "b"}})
+	})
+
+	t.Run("Ends after done", func(t *testing.T) {
+		events, err := decodeAll("data:a\r\n\r\nevent: ping\r\ndata: 2023-04-28 21:18:31.866238\r\n\r\ndata:b\r\n\r\ndata: [DONE]\r\n\r\ndata:c\r\n\r\n")
+		require.NoError(t, err)
+		require.Equal(t, events, []event{{data: "a"}, {data: "b"}})
 	})
 }

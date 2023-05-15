@@ -42,7 +42,6 @@ type anthropicClient struct {
 const apiURL = "https://api.anthropic.com/v1/complete"
 const clientID = "sourcegraph/1.0"
 
-var doneBytes = []byte("[DONE]")
 var stopSequences = []string{HUMAN_PROMPT}
 
 var allowedClientSpecifiedModels = map[string]struct{}{
@@ -110,16 +109,9 @@ func (a *anthropicClient) Stream(
 	}
 	defer resp.Body.Close()
 
-	dec := newDecoder(resp.Body)
+	dec := NewDecoder(resp.Body)
 	for dec.Scan() {
 		data := dec.Data()
-
-		// Check for special sentinel value used by the Anthropic API to
-		// indicate that the stream is done.
-		if bytes.Equal(data, doneBytes) {
-			return nil
-		}
-
 		// Gracefully skip over any data that isn't JSON-like. Anthropic's API sometimes sends
 		// non-documented data over the stream, like timestamps.
 		if !bytes.HasPrefix(data, []byte("{")) {
