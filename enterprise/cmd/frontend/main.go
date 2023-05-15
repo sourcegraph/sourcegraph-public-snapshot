@@ -15,5 +15,5 @@ func main() {
 	if os.Getenv("WEBPACK_DEV_SERVER") == "1" {
 		assets.UseDevAssetsProvider()
 	}
-	enterprisecmd.DeprecatedSingleServiceMainEnterprise(shared.Service)
+	enterprisecmd.SingleServiceMainEnterprise(shared.Service)
 }

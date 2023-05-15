@@ -26339,9 +26339,9 @@ Query: `sum by (op)(increase(src_codeintel_ranking_file_reference_count_reducer_
 
 <br />
 
-### Code Intelligence > Ranking: Codeintel: Uploads > Janitor task > Codeintel ranking symbol definitions janitor
+### Code Intelligence > Ranking: Codeintel: Uploads > Janitor task > Codeintel ranking exported uploads janitor
 
-#### codeintel-ranking: codeintel_ranking_symbol_definitions_janitor_records_scanned_total
+#### codeintel-ranking: codeintel_ranking_exported_uploads_janitor_records_scanned_total
 
 <p class="subtitle">Records scanned every 5m</p>
 
@@ -26356,13 +26356,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_ranking_symbol_definitions_janitor_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_ranking_exported_uploads_janitor_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-ranking: codeintel_ranking_symbol_definitions_janitor_records_altered_total
+#### codeintel-ranking: codeintel_ranking_exported_uploads_janitor_records_altered_total
 
 <p class="subtitle">Records altered every 5m</p>
 
@@ -26377,13 +26377,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_ranking_symbol_definitions_janitor_records_altered_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_ranking_exported_uploads_janitor_records_altered_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-ranking: codeintel_ranking_symbol_definitions_janitor_total
+#### codeintel-ranking: codeintel_ranking_exported_uploads_janitor_total
 
 <p class="subtitle">Job invocation operations every 5m</p>
 
@@ -26396,13 +26396,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_ranking_symbol_definitions_janitor_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_ranking_exported_uploads_janitor_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-ranking: codeintel_ranking_symbol_definitions_janitor_99th_percentile_duration
+#### codeintel-ranking: codeintel_ranking_exported_uploads_janitor_99th_percentile_duration
 
 <p class="subtitle">99th percentile successful job invocation operation duration over 5m</p>
 
@@ -26415,13 +26415,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_ranking_symbol_definitions_janitor_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_ranking_exported_uploads_janitor_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
 <br />
 
-#### codeintel-ranking: codeintel_ranking_symbol_definitions_janitor_errors_total
+#### codeintel-ranking: codeintel_ranking_exported_uploads_janitor_errors_total
 
 <p class="subtitle">Job invocation operation errors every 5m</p>
 
@@ -26434,13 +26434,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_ranking_symbol_definitions_janitor_errors_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_ranking_exported_uploads_janitor_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-ranking: codeintel_ranking_symbol_definitions_janitor_error_rate
+#### codeintel-ranking: codeintel_ranking_exported_uploads_janitor_error_rate
 
 <p class="subtitle">Job invocation operation error rate over 5m</p>
 
@@ -26453,15 +26453,15 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_ranking_symbol_definitions_janitor_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_ranking_symbol_definitions_janitor_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_ranking_symbol_definitions_janitor_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_ranking_exported_uploads_janitor_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_ranking_exported_uploads_janitor_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_ranking_exported_uploads_janitor_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
 <br />
 
-### Code Intelligence > Ranking: Codeintel: Uploads > Janitor task > Codeintel ranking symbol references janitor
+### Code Intelligence > Ranking: Codeintel: Uploads > Janitor task > Codeintel ranking deleted exported uploads janitor
 
-#### codeintel-ranking: codeintel_ranking_symbol_references_janitor_records_scanned_total
+#### codeintel-ranking: codeintel_ranking_deleted_exported_uploads_janitor_records_scanned_total
 
 <p class="subtitle">Records scanned every 5m</p>
 
@@ -26476,13 +26476,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_ranking_symbol_references_janitor_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_ranking_deleted_exported_uploads_janitor_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-ranking: codeintel_ranking_symbol_references_janitor_records_altered_total
+#### codeintel-ranking: codeintel_ranking_deleted_exported_uploads_janitor_records_altered_total
 
 <p class="subtitle">Records altered every 5m</p>
 
@@ -26497,13 +26497,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_ranking_symbol_references_janitor_records_altered_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_ranking_deleted_exported_uploads_janitor_records_altered_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-ranking: codeintel_ranking_symbol_references_janitor_total
+#### codeintel-ranking: codeintel_ranking_deleted_exported_uploads_janitor_total
 
 <p class="subtitle">Job invocation operations every 5m</p>
 
@@ -26516,13 +26516,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_ranking_symbol_references_janitor_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_ranking_deleted_exported_uploads_janitor_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-ranking: codeintel_ranking_symbol_references_janitor_99th_percentile_duration
+#### codeintel-ranking: codeintel_ranking_deleted_exported_uploads_janitor_99th_percentile_duration
 
 <p class="subtitle">99th percentile successful job invocation operation duration over 5m</p>
 
@@ -26535,13 +26535,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_ranking_symbol_references_janitor_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_ranking_deleted_exported_uploads_janitor_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
 <br />
 
-#### codeintel-ranking: codeintel_ranking_symbol_references_janitor_errors_total
+#### codeintel-ranking: codeintel_ranking_deleted_exported_uploads_janitor_errors_total
 
 <p class="subtitle">Job invocation operation errors every 5m</p>
 
@@ -26554,13 +26554,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_ranking_symbol_references_janitor_errors_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_ranking_deleted_exported_uploads_janitor_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-ranking: codeintel_ranking_symbol_references_janitor_error_rate
+#### codeintel-ranking: codeintel_ranking_deleted_exported_uploads_janitor_error_rate
 
 <p class="subtitle">Job invocation operation error rate over 5m</p>
 
@@ -26573,15 +26573,15 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_ranking_symbol_references_janitor_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_ranking_symbol_references_janitor_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_ranking_symbol_references_janitor_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_ranking_deleted_exported_uploads_janitor_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_ranking_deleted_exported_uploads_janitor_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_ranking_deleted_exported_uploads_janitor_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
 <br />
 
-### Code Intelligence > Ranking: Codeintel: Uploads > Janitor task > Codeintel ranking symbol initial paths janitor
+### Code Intelligence > Ranking: Codeintel: Uploads > Janitor task > Codeintel ranking abandoned exported uploads janitor
 
-#### codeintel-ranking: codeintel_ranking_symbol_initial_paths_janitor_records_scanned_total
+#### codeintel-ranking: codeintel_ranking_abandoned_exported_uploads_janitor_records_scanned_total
 
 <p class="subtitle">Records scanned every 5m</p>
 
@@ -26596,13 +26596,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_ranking_symbol_initial_paths_janitor_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_ranking_abandoned_exported_uploads_janitor_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-ranking: codeintel_ranking_symbol_initial_paths_janitor_records_altered_total
+#### codeintel-ranking: codeintel_ranking_abandoned_exported_uploads_janitor_records_altered_total
 
 <p class="subtitle">Records altered every 5m</p>
 
@@ -26617,13 +26617,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(increase(src_codeintel_ranking_symbol_initial_paths_janitor_records_altered_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum(increase(src_codeintel_ranking_abandoned_exported_uploads_janitor_records_altered_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-ranking: codeintel_ranking_symbol_initial_paths_janitor_total
+#### codeintel-ranking: codeintel_ranking_abandoned_exported_uploads_janitor_total
 
 <p class="subtitle">Job invocation operations every 5m</p>
 
@@ -26636,13 +26636,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_ranking_symbol_initial_paths_janitor_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_ranking_abandoned_exported_uploads_janitor_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-ranking: codeintel_ranking_symbol_initial_paths_janitor_99th_percentile_duration
+#### codeintel-ranking: codeintel_ranking_abandoned_exported_uploads_janitor_99th_percentile_duration
 
 <p class="subtitle">99th percentile successful job invocation operation duration over 5m</p>
 
@@ -26655,13 +26655,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_ranking_symbol_initial_paths_janitor_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
+Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_ranking_abandoned_exported_uploads_janitor_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
 
 </details>
 
 <br />
 
-#### codeintel-ranking: codeintel_ranking_symbol_initial_paths_janitor_errors_total
+#### codeintel-ranking: codeintel_ranking_abandoned_exported_uploads_janitor_errors_total
 
 <p class="subtitle">Job invocation operation errors every 5m</p>
 
@@ -26674,13 +26674,13 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_ranking_symbol_initial_paths_janitor_errors_total{job=~"^${source:regex}.*"}[5m]))`
+Query: `sum by (op)(increase(src_codeintel_ranking_abandoned_exported_uploads_janitor_errors_total{job=~"^${source:regex}.*"}[5m]))`
 
 </details>
 
 <br />
 
-#### codeintel-ranking: codeintel_ranking_symbol_initial_paths_janitor_error_rate
+#### codeintel-ranking: codeintel_ranking_abandoned_exported_uploads_janitor_error_rate
 
 <p class="subtitle">Job invocation operation error rate over 5m</p>
 
@@ -26693,367 +26693,7 @@ To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking
 <details>
 <summary>Technical details</summary>
 
-Query: `sum by (op)(increase(src_codeintel_ranking_symbol_initial_paths_janitor_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_ranking_symbol_initial_paths_janitor_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_ranking_symbol_initial_paths_janitor_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
-
-</details>
-
-<br />
-
-### Code Intelligence > Ranking: Codeintel: Uploads > Janitor task > Codeintel ranking abandoned definitions janitor
-
-#### codeintel-ranking: codeintel_ranking_abandoned_definitions_janitor_records_scanned_total
-
-<p class="subtitle">Records scanned every 5m</p>
-
-The number of candidate records considered for cleanup.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101000` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_codeintel_ranking_abandoned_definitions_janitor_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-ranking: codeintel_ranking_abandoned_definitions_janitor_records_altered_total
-
-<p class="subtitle">Records altered every 5m</p>
-
-The number of candidate records altered as part of cleanup.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101001` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_codeintel_ranking_abandoned_definitions_janitor_records_altered_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-ranking: codeintel_ranking_abandoned_definitions_janitor_total
-
-<p class="subtitle">Job invocation operations every 5m</p>
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101010` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum by (op)(increase(src_codeintel_ranking_abandoned_definitions_janitor_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-ranking: codeintel_ranking_abandoned_definitions_janitor_99th_percentile_duration
-
-<p class="subtitle">99th percentile successful job invocation operation duration over 5m</p>
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101011` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_ranking_abandoned_definitions_janitor_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
-
-</details>
-
-<br />
-
-#### codeintel-ranking: codeintel_ranking_abandoned_definitions_janitor_errors_total
-
-<p class="subtitle">Job invocation operation errors every 5m</p>
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101012` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum by (op)(increase(src_codeintel_ranking_abandoned_definitions_janitor_errors_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-ranking: codeintel_ranking_abandoned_definitions_janitor_error_rate
-
-<p class="subtitle">Job invocation operation error rate over 5m</p>
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101013` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum by (op)(increase(src_codeintel_ranking_abandoned_definitions_janitor_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_ranking_abandoned_definitions_janitor_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_ranking_abandoned_definitions_janitor_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
-
-</details>
-
-<br />
-
-### Code Intelligence > Ranking: Codeintel: Uploads > Janitor task > Codeintel ranking abandoned references janitor
-
-#### codeintel-ranking: codeintel_ranking_abandoned_references_janitor_records_scanned_total
-
-<p class="subtitle">Records scanned every 5m</p>
-
-The number of candidate records considered for cleanup.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101100` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_codeintel_ranking_abandoned_references_janitor_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-ranking: codeintel_ranking_abandoned_references_janitor_records_altered_total
-
-<p class="subtitle">Records altered every 5m</p>
-
-The number of candidate records altered as part of cleanup.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101101` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_codeintel_ranking_abandoned_references_janitor_records_altered_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-ranking: codeintel_ranking_abandoned_references_janitor_total
-
-<p class="subtitle">Job invocation operations every 5m</p>
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101110` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum by (op)(increase(src_codeintel_ranking_abandoned_references_janitor_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-ranking: codeintel_ranking_abandoned_references_janitor_99th_percentile_duration
-
-<p class="subtitle">99th percentile successful job invocation operation duration over 5m</p>
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101111` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_ranking_abandoned_references_janitor_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
-
-</details>
-
-<br />
-
-#### codeintel-ranking: codeintel_ranking_abandoned_references_janitor_errors_total
-
-<p class="subtitle">Job invocation operation errors every 5m</p>
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101112` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum by (op)(increase(src_codeintel_ranking_abandoned_references_janitor_errors_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-ranking: codeintel_ranking_abandoned_references_janitor_error_rate
-
-<p class="subtitle">Job invocation operation error rate over 5m</p>
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101113` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum by (op)(increase(src_codeintel_ranking_abandoned_references_janitor_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_ranking_abandoned_references_janitor_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_ranking_abandoned_references_janitor_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
-
-</details>
-
-<br />
-
-### Code Intelligence > Ranking: Codeintel: Uploads > Janitor task > Codeintel ranking abandoned initial counts janitor
-
-#### codeintel-ranking: codeintel_ranking_abandoned_initial_counts_janitor_records_scanned_total
-
-<p class="subtitle">Records scanned every 5m</p>
-
-The number of candidate records considered for cleanup.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101200` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_codeintel_ranking_abandoned_initial_counts_janitor_records_scanned_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-ranking: codeintel_ranking_abandoned_initial_counts_janitor_records_altered_total
-
-<p class="subtitle">Records altered every 5m</p>
-
-The number of candidate records altered as part of cleanup.
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101201` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum(increase(src_codeintel_ranking_abandoned_initial_counts_janitor_records_altered_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-ranking: codeintel_ranking_abandoned_initial_counts_janitor_total
-
-<p class="subtitle">Job invocation operations every 5m</p>
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101210` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum by (op)(increase(src_codeintel_ranking_abandoned_initial_counts_janitor_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-ranking: codeintel_ranking_abandoned_initial_counts_janitor_99th_percentile_duration
-
-<p class="subtitle">99th percentile successful job invocation operation duration over 5m</p>
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101211` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_ranking_abandoned_initial_counts_janitor_duration_seconds_bucket{job=~"^${source:regex}.*"}[5m])))`
-
-</details>
-
-<br />
-
-#### codeintel-ranking: codeintel_ranking_abandoned_initial_counts_janitor_errors_total
-
-<p class="subtitle">Job invocation operation errors every 5m</p>
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101212` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum by (op)(increase(src_codeintel_ranking_abandoned_initial_counts_janitor_errors_total{job=~"^${source:regex}.*"}[5m]))`
-
-</details>
-
-<br />
-
-#### codeintel-ranking: codeintel_ranking_abandoned_initial_counts_janitor_error_rate
-
-<p class="subtitle">Job invocation operation error rate over 5m</p>
-
-This panel has no related alerts.
-
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101213` on your Sourcegraph instance.
-
-<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
-
-<details>
-<summary>Technical details</summary>
-
-Query: `sum by (op)(increase(src_codeintel_ranking_abandoned_initial_counts_janitor_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_ranking_abandoned_initial_counts_janitor_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_ranking_abandoned_initial_counts_janitor_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
+Query: `sum by (op)(increase(src_codeintel_ranking_abandoned_exported_uploads_janitor_errors_total{job=~"^${source:regex}.*"}[5m])) / (sum by (op)(increase(src_codeintel_ranking_abandoned_exported_uploads_janitor_total{job=~"^${source:regex}.*"}[5m])) + sum by (op)(increase(src_codeintel_ranking_abandoned_exported_uploads_janitor_errors_total{job=~"^${source:regex}.*"}[5m]))) * 100`
 
 </details>
 
@@ -27069,7 +26709,7 @@ The number of candidate records considered for cleanup.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101300` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101000` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -27090,7 +26730,7 @@ The number of candidate records altered as part of cleanup.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101301` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101001` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -27109,7 +26749,7 @@ Query: `sum(increase(src_codeintel_ranking_rank_counts_janitor_records_altered_t
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101310` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101010` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -27128,7 +26768,7 @@ Query: `sum by (op)(increase(src_codeintel_ranking_rank_counts_janitor_total{job
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101311` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101011` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -27147,7 +26787,7 @@ Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_ranking_rank
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101312` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101012` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -27166,7 +26806,7 @@ Query: `sum by (op)(increase(src_codeintel_ranking_rank_counts_janitor_errors_to
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101313` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101013` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -27189,7 +26829,7 @@ The number of candidate records considered for cleanup.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101400` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101100` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -27210,7 +26850,7 @@ The number of candidate records altered as part of cleanup.
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101401` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101101` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -27229,7 +26869,7 @@ Query: `sum(increase(src_codeintel_ranking_rank_janitor_records_altered_total{jo
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101410` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101110` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -27248,7 +26888,7 @@ Query: `sum by (op)(increase(src_codeintel_ranking_rank_janitor_total{job=~"^${s
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101411` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101111` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -27267,7 +26907,7 @@ Query: `histogram_quantile(0.99, sum  by (le,op)(rate(src_codeintel_ranking_rank
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101412` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101112` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
@@ -27286,7 +26926,7 @@ Query: `sum by (op)(increase(src_codeintel_ranking_rank_janitor_errors_total{job
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101413` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking?viewPanel=101113` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 

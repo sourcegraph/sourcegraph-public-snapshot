@@ -5,6 +5,7 @@ import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { Interaction } from '../transcript/interaction'
 
+import { contentSanitizer } from './helpers'
 import { Recipe, RecipeContext } from './recipe'
 
 export class Fixup implements Recipe {
@@ -24,7 +25,9 @@ export class Fixup implements Recipe {
             return null
         }
 
-        // TODO: Move the prompt suffix from the recipe to the chat view. It may have other subscribers.
+        // Reconstruct Cody's prompt using user's context
+        // Replace placeholders in reverse order to avoid collisions if a placeholder occurs in the input
+        // TODO: Move prompt suffix from recipe to chat view. It has other subscribers.
         const promptText = Fixup.prompt
             .replace('{humanInput}', truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS))
             .replace('{responseMultiplexerPrompt}', context.responseMultiplexer.prompt())
@@ -45,7 +48,7 @@ export class Fixup implements Recipe {
                 await context.editor.replaceSelection(
                     selection.fileName,
                     selection.selectedText,
-                    this.sanitize(content)
+                    contentSanitizer(content)
                 )
             })
         )
@@ -66,20 +69,13 @@ export class Fixup implements Recipe {
         )
     }
 
+    // Get context from editor
     private async getContextMessages(text: string, codebaseContext: CodebaseContext): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = await codebaseContext.getContextMessages(text, {
             numCodeResults: 12,
             numTextResults: 3,
         })
         return contextMessages
-    }
-
-    private sanitize(text: string): string {
-        const tagsIndex = text.indexOf('tags:')
-        if (tagsIndex !== -1) {
-            return text.trim().slice(tagsIndex + 6) + '\n'
-        }
-        return text.trim() + '\n'
     }
 
     // Prompt Templates

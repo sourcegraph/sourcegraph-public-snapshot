@@ -33,15 +33,9 @@ func NewReducer(observationCtx *observation.Context, store store.Store, config *
 
 func NewSymbolJanitor(observationCtx *observation.Context, store store.Store, config *janitor.Config) []goroutine.BackgroundRoutine {
 	return []goroutine.BackgroundRoutine{
-		janitor.NewSymbolDefinitionsJanitor(observationCtx, store, config),
-		janitor.NewSymbolReferencesJanitor(observationCtx, store, config),
-		janitor.NewSymbolInitialPathsJanitor(observationCtx, store, config),
-		janitor.NewDeletedSymbolDefinitionsJanitor(observationCtx, store, config),
-		janitor.NewDeletedSymbolReferencesJanitor(observationCtx, store, config),
-		janitor.NewDeletedSymbolInitialPathsJanitor(observationCtx, store, config),
-		janitor.NewAbandonedDefinitionsJanitor(observationCtx, store, config),
-		janitor.NewAbandonedReferencesJanitor(observationCtx, store, config),
-		janitor.NewAbandonedInitialCountsJanitor(observationCtx, store, config),
+		janitor.NewExportedUploadsJanitor(observationCtx, store, config),
+		janitor.NewDeletedUploadsJanitor(observationCtx, store, config),
+		janitor.NewAbandonedExportedUploadsJanitor(observationCtx, store, config),
 		janitor.NewRankCountsJanitor(observationCtx, store, config),
 		janitor.NewRankJanitor(observationCtx, store, config),
 	}
