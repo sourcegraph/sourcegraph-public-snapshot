@@ -42,6 +42,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -287,6 +288,7 @@ type Server struct {
 	// particular command should be recorded or not.
 	recordingCommandFactory *wrexec.RecordingCommandFactory
 
+	// TODO: Update docsstring
 	PerforceChangelistMappingQueue *perforceChangelistMappingQueue
 }
 
@@ -2358,7 +2360,11 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	logger.Info("repo cloned")
 	repoClonedCounter.Inc()
 
-	s.PerforceChangelistMappingQueue.push(&perforceChangelistMappingJob{repo: repo})
+	if r, err := s.DB.Repos().GetByName(ctx, repo); err != nil {
+		logger.Warn("failed to retrieve repo from DB (this could be a data inconsistency)", log.Error(err))
+	} else if r.ExternalRepo.ServiceType == extsvc.TypePerforce {
+		s.PerforceChangelistMappingQueue.push(&perforceChangelistMappingJob{repo: repo})
+	}
 
 	return nil
 }

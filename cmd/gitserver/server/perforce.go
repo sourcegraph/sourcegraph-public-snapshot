@@ -6,10 +6,12 @@ import (
 	"database/sql"
 	"fmt"
 	"os/exec"
+	"strconv"
 	"sync"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -133,6 +135,11 @@ func (s *Server) doChangelistMapping(ctx context.Context, job *perforceChangelis
 		return errors.Wrap(err, "Repos.GetByName")
 	}
 
+	if repo.ExternalRepo.ServiceType != extsvc.TypePerforce {
+		logger.Warn("skippin non-perforce depot (this is not a regression but someone is likely pushing non perforce depots into the queue and creating NOOP jobs)")
+		return nil
+	}
+
 	logger.Warn("repo received from DB")
 
 	dir := s.dir(protocol.NormalizeRepo(repo.Name))
@@ -161,12 +168,12 @@ func (s *Server) doChangelistMapping(ctx context.Context, job *perforceChangelis
 		return errors.Wrap(err, "headCommitSHA")
 	}
 
-	if latestRowCommit.CommitSHA == head {
+	if string(latestRowCommit.CommitSHA) == head {
 		logger.Info("repo commits already mapped upto HEAD, skipping", log.String("HEAD", head))
 		return nil
 	}
 
-	commitsMap, err = newMappableCommits(ctx, logger, dir, latestRowCommit.CommitSHA, head)
+	commitsMap, err = newMappableCommits(ctx, logger, dir, string(latestRowCommit.CommitSHA), head)
 	if err != nil {
 		return errors.Wrapf(err, "failed to import existing repo's commits after HEAD: %q", head)
 	}
@@ -232,7 +239,12 @@ func newMappableCommits(ctx context.Context, logger log.Logger, dir GitDir, last
 			return nil, errors.Wrap(err, "getP4ChangelistID")
 		}
 
-		data[i] = types.PerforceChangelist{CommitSHA: commit.ID, ChangelistID: cid}
+		parsedCID, err := strconv.ParseInt(cid, 10, 64)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to parse changelist ID to int64")
+		}
+
+		data[i] = types.PerforceChangelist{CommitSHA: commit.ID, ChangelistID: parsedCID}
 	}
 
 	return data, nil
