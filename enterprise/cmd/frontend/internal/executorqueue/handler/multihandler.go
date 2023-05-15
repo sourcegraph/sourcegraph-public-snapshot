@@ -56,7 +56,7 @@ func (m *MultiHandler) validateQueues(queues []string) []string {
 
 // ServeHTTP is the equivalent of ExecutorHandler.HandleDequeue for multiple queues.
 func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	var req executortypes.MultiQueueDequeueRequest
+	var req executortypes.DequeueRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		err = errors.Wrap(err, fmt.Sprintf("Failed to unmarshal payload"))
 		m.logger.Error(err.Error())
@@ -64,15 +64,15 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := validateWorkerHostname(req.Metadata.ExecutorName); err != nil {
+	if err := validateWorkerHostname(req.ExecutorName); err != nil {
 		m.logger.Error(err.Error())
 		m.marshalAndRespondError(w, err, http.StatusBadRequest)
 	}
 
 	version2Supported := false
-	if req.Metadata.Version != "" {
+	if req.Version != "" {
 		var err error
-		version2Supported, err = api.CheckSourcegraphVersion(req.Metadata.Version, "4.3.0-0", "2022-11-24")
+		version2Supported, err = api.CheckSourcegraphVersion(req.Version, "4.3.0-0", "2022-11-24")
 		if err != nil {
 			m.marshalAndRespondError(w, err, http.StatusBadRequest)
 			return
@@ -87,9 +87,9 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resourceMetadata := ResourceMetadata{
-		NumCPUs:   req.Metadata.NumCPUs,
-		Memory:    req.Metadata.Memory,
-		DiskSpace: req.Metadata.DiskSpace,
+		NumCPUs:   req.NumCPUs,
+		Memory:    req.Memory,
+		DiskSpace: req.DiskSpace,
 	}
 
 	logger := m.logger.Scoped("dequeue", "Select a job record from the database.")
@@ -98,7 +98,7 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	for _, queue := range req.Queues {
 		switch queue {
 		case "batches":
-			record, dequeued, err := m.BatchesQueueHandler.Store.Dequeue(r.Context(), req.Metadata.ExecutorName, nil)
+			record, dequeued, err := m.BatchesQueueHandler.Store.Dequeue(r.Context(), req.ExecutorName, nil)
 			if err != nil {
 				err = errors.Wrapf(err, "dbworkerstore.Dequeue %s", queue)
 				logger.Error("Handler returned an error", log.Error(err))
@@ -110,7 +110,7 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			job, err = m.BatchesQueueHandler.RecordTransformer(r.Context(), req.Metadata.Version, record, resourceMetadata)
+			job, err = m.BatchesQueueHandler.RecordTransformer(r.Context(), req.Version, record, resourceMetadata)
 			if err != nil {
 				markErr := markRecordAsFailed(r.Context(), m.BatchesQueueHandler.Store, record.RecordID(), err, logger)
 				err = errors.Wrapf(errors.Append(err, markErr), "RecordTransformer %s", queue)
@@ -118,7 +118,7 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		case "codeintel":
-			record, dequeued, err := m.CodeIntelQueueHandler.Store.Dequeue(r.Context(), req.Metadata.ExecutorName, nil)
+			record, dequeued, err := m.CodeIntelQueueHandler.Store.Dequeue(r.Context(), req.ExecutorName, nil)
 			if err != nil {
 				err = errors.Wrapf(err, "dbworkerstore.Dequeue %s", queue)
 				logger.Error("Handler returned an error", log.Error(err))
@@ -130,7 +130,7 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 
-			job, err = m.CodeIntelQueueHandler.RecordTransformer(r.Context(), req.Metadata.Version, record, resourceMetadata)
+			job, err = m.CodeIntelQueueHandler.RecordTransformer(r.Context(), req.Version, record, resourceMetadata)
 			if err != nil {
 				markErr := markRecordAsFailed(r.Context(), m.CodeIntelQueueHandler.Store, record.RecordID(), err, logger)
 				err = errors.Wrapf(errors.Append(err, markErr), "RecordTransformer %s", queue)
