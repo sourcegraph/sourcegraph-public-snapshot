@@ -29,9 +29,8 @@ pipeline:
     with:
       uri: https://github.com/comby-tools/comby/releases/download/${{package.version}}/comby-${{package.version}}-x86_64-linux.tar.gz
       expected-sha256: ec0ca6477822154d71033e0b0a724c23a0608b99028ecab492bc9876ae8c458a
-      # TODO: Work out why we can't use fetch's extract: true
-  - runs: |
-      tar zxvf comby-${{package.version}}-x86_64-linux.tar.gz
+      strip-components: 0
   - runs: |
       mkdir -p ${{targets.destdir}}/usr/bin/
+      chmod +x comby-${{package.version}}-x86_64-linux
       cp comby-${{package.version}}-x86_64-linux ${{targets.destdir}}/usr/bin/comby
