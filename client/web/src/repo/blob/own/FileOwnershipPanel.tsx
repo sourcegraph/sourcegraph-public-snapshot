@@ -68,13 +68,12 @@ export const FileOwnershipPanel: React.FunctionComponent<
         data.node.commit.blob.ownership.nodes.length > 0
     ) {
         const nodes = data.node.commit.blob.ownership.nodes
-        const owners = nodes.filter(ownership =>
-            ownership.reasons.some(reason => reason.__typename === 'CodeownersFileEntry')
-        )
         return (
             <div className={styles.contents}>
                 <OwnExplanation owners={nodes.map(ownership => ownership.owner)} />
-                {owners.length === 0 && <Alert variant="info">No ownership data for this file.</Alert>}
+                {data.node.commit.blob.ownership.totalOwners === 0 && (
+                    <Alert variant="info">No ownership data for this file.</Alert>
+                )}
                 <Accordion
                     as="table"
                     collapsible={true}
