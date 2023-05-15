@@ -6,6 +6,7 @@ import (
 	"os"
 	"sync"
 
+	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
 
@@ -55,6 +56,15 @@ type Resolver struct {
 }
 
 func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.EmbeddingsSearchInputArgs) (graphqlbackend.EmbeddingsSearchResultsResolver, error) {
+	return r.EmbeddingsMultiSearch(ctx, graphqlbackend.EmbeddingsMultiSearchInputArgs{
+		Repos:            []graphql.ID{args.Repo},
+		Query:            args.Query,
+		CodeResultsCount: args.CodeResultsCount,
+		TextResultsCount: args.TextResultsCount,
+	})
+}
+
+func (r *Resolver) EmbeddingsMultiSearch(ctx context.Context, args graphqlbackend.EmbeddingsMultiSearchInputArgs) (graphqlbackend.EmbeddingsSearchResultsResolver, error) {
 	if !conf.EmbeddingsEnabled() {
 		return nil, errors.New("embeddings are not configured or disabled")
 	}

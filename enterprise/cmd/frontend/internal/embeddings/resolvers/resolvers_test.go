@@ -63,7 +63,7 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 	ffs := featureflag.NewMemoryStore(map[string]bool{"cody-experimental": true}, nil, nil)
 	ctx = featureflag.WithFlags(ctx, ffs)
 
-	results, err := resolver.EmbeddingsSearch(ctx, graphqlbackend.EmbeddingsSearchInputArgs{
+	results, err := resolver.EmbeddingsMultiSearch(ctx, graphqlbackend.EmbeddingsMultiSearchInputArgs{
 		Repos:            []graphql.ID{graphqlbackend.MarshalRepositoryID(3)},
 		Query:            "test",
 		CodeResultsCount: 1,

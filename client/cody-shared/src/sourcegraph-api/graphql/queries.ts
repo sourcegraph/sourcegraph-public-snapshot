@@ -22,7 +22,7 @@ query Repository($name: String!) {
 
 export const SEARCH_EMBEDDINGS_QUERY = `
 query EmbeddingsSearch($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
-	embeddingsSearch(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
+	embeddingsMultiSearch(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
 		codeResults {
 			fileName
 			startLine
