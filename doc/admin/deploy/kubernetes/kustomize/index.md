@@ -120,7 +120,7 @@ To correctly configure your Sourcegraph deployment, it is crucial to create an o
 
 #### components-list
 
-The order of components in the [kustomization.template.yaml file](kustomize/index.md#kustomization-yaml) is important and should be maintained. The components are listed in a specific order to ensure proper dependency management and compatibility between components. Reordering components can introduce conflicts or prevent components from interacting as expected. Only modify the component order if explicitly instructed to do so by the documentation. Otherwise, leave the component order as-is to avoid issues.
+The order of components in the [kustomization.template.yaml file](#kustomization-yaml) is important and should be maintained. The components are listed in a specific order to ensure proper dependency management and compatibility between components. Reordering components can introduce conflicts or prevent components from interacting as expected. Only modify the component order if explicitly instructed to do so by the documentation. Otherwise, leave the component order as-is to avoid issues.
 
 ### buildConfig.yaml
 
@@ -169,7 +169,7 @@ Follow the steps listed below to set up the configuration files for your instanc
 
 #### kustomization.yaml
 
-Rename the [kustomization.template.yaml](kustomize/index.md#kustomization-yaml) file in `instances/$INSTANCE_NAME` to `kustomization.yaml`:
+Rename the [kustomization.template.yaml](#kustomization-yaml) file in `instances/$INSTANCE_NAME` to `kustomization.yaml`:
 
 ```bash
   $ mv instances/template/kustomization.template.yaml instances/$INSTANCE_NAME/kustomization.yaml
@@ -177,7 +177,7 @@ Rename the [kustomization.template.yaml](kustomize/index.md#kustomization-yaml) 
 
 #### buildConfig.yaml
 
-Rename the [buildConfig.template.yaml](kustomize/index.md#buildconfig-yaml) file in `instances/$INSTANCE_NAME` to `buildConfig.yaml`:
+Rename the [buildConfig.template.yaml](#buildconfig-yaml) file in `instances/$INSTANCE_NAME` to `buildConfig.yaml`:
 
 ```bash
   $ mv instances/template/buildConfig.template.yaml instances/$INSTANCE_NAME/buildConfig.yaml
@@ -246,7 +246,7 @@ $ kubectl kustomize https://github.com/sourcegraph/deploy-sourcegraph-k8s/exampl
 
 ## Kustomize with Helm
 
-Kustomize can be used in conjunction with Helm to configure Sourcegraph, as outlined in [this guidance](helm.md#integrate-kustomize-with-helm-chart). However, this approach is only recommended as a temporary workaround while Sourcegraph adds support for previously unsupported customizations in its Helm chart. This means that using Kustomize with Helm is not a long-term solution.
+Kustomize can be used in conjunction with Helm to configure Sourcegraph, as outlined in [this guidance](../helm.md#integrate-kustomize-with-helm-chart). However, this approach is only recommended as a temporary workaround while Sourcegraph adds support for previously unsupported customizations in its Helm chart. This means that using Kustomize with Helm is not a long-term solution.
 
 ## Deprecated
 

@@ -29,7 +29,8 @@ export const GitHubAppsPage: React.FC = () => {
             <PageTitle title="GitHub Apps" />
             <PageHeader path={[{ text: 'GitHub Apps' }]} className="mb-1" />
             <div className="d-flex align-items-center">
-                Create and connect a GitHub App.{' '}
+                Create and connect a GitHub App.
+                {/* TODO: add proper link here */}
                 <Link to="" className="ml-1">
                     See how GitHub App configuration works.
                 </Link>

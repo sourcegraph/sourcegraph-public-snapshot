@@ -10,6 +10,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/background"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -114,7 +115,7 @@ func NewOwnBackgroundWorker(ctx context.Context, db database.DB, observationCtx 
 		Name:        "own-background-jobs-janitor",
 		Description: "Janitor for own-background-jobs queue",
 		Interval:    time.Minute * 5,
-		Metrics:     background.NewJanitorMetrics(observationCtx, "own-background-jobs-janitor", "own-background"),
+		Metrics:     background.NewJanitorMetrics(observationCtx, "own-background-jobs-janitor"),
 		CleanupFunc: janitorFunc(db, time.Hour*24*7),
 	})
 	return []goroutine.BackgroundRoutine{worker, resetter, janitor}

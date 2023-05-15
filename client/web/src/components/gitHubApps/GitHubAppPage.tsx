@@ -152,7 +152,6 @@ export const GitHubAppPage: FC<Props> = ({
                             </Tooltip>
                         </span>
                     </div>
-                    <AuthProviderMessage app={app} id={appID} />
                     <Container className="mt-3 mb-3">
                         <Grid columnCount={2} templateColumns="auto 1fr" spacing={[0.6, 2]}>
                             <span className="font-weight-bold">GitHub App Name</span>
@@ -164,6 +163,7 @@ export const GitHubAppPage: FC<Props> = ({
                             <span className="font-weight-bold">AppID</span>
                             <span>{app.appID}</span>
                         </Grid>
+                        <AuthProviderMessage app={app} id={appID} />
 
                         <hr className="mt-4 mb-4" />
 
