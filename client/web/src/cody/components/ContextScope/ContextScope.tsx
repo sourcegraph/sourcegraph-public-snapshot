@@ -6,6 +6,7 @@ import {
     mdiFileDocumentOutline,
     mdiFileOutline,
     mdiClose,
+    mdiPlusCircleOutline,
     mdiGit,
     mdiMinusCircleOutline,
     mdiGithub,
@@ -71,6 +72,22 @@ export const ContextScope: React.FC<ContextScopeProps> = ({}) => {
     )
 }
 
+// Custom fuzzy search function
+const fuzzySearch = (item, search) => {
+    const itemLowerCase = item.toLowerCase()
+    const searchLowerCase = search.toLowerCase()
+
+    let lastIndex = -1
+    for (let i = 0; i < searchLowerCase.length; i++) {
+        const index = itemLowerCase.indexOf(searchLowerCase[i], lastIndex + 1)
+        if (index === -1) {
+            return false
+        }
+        lastIndex = index
+    }
+    return true
+}
+
 const ContextSeparator = () => <div className={styles.separator} />
 
 const PopoverComponent: React.FC<{
@@ -80,13 +97,29 @@ const PopoverComponent: React.FC<{
     inputPlaceholder: string
     items?: string[]
     contextType: ContextType
-    itemType: sring
+    itemType: string
 }> = ({ header, icon, emptyMessage, inputPlaceholder, items, contextType, itemType }) => {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false)
     const [currentItems, setCurrentItems] = useState<string[] | undefined>(items)
+    const [searchText, setSearchText] = useState('') // Add state for the search text
+
+    const clearSearchText = () => {
+        setSearchText('')
+    }
+
+    const handleSearch = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchText(event.target.value)
+    }
 
     const handleClearAll = () => {
         setCurrentItems([])
+    }
+
+    const handleAddAll = () => {
+        if (filteredItems && filteredItems.length > 0) {
+            setCurrentItems(prevItems => (prevItems ? [...prevItems, ...filteredItems] : filteredItems))
+            clearSearchText() // Clear the search text after adding all items
+        }
     }
 
     const handleRemoveItem = (index: number) => {
@@ -100,7 +133,19 @@ const PopoverComponent: React.FC<{
         })
     }
 
+    const handleAddItem = (index: number) => {
+        if (filteredItems) {
+            const selectedItem = filteredItems[index]
+            setCurrentItems(prevItems => (prevItems ? [...prevItems, selectedItem] : [selectedItem]))
+        }
+    }
+
+    const filteredItems = repoMockedModel
+        .filter(item => !currentItems?.includes(item)) // Exclude items already present in currentItems
+        .filter(item => fuzzySearch(item, searchText))
+
     const isEmpty = !currentItems || currentItems.length === 0
+    const isSearching = searchText.length > 0
 
     return (
         <Popover isOpen={isPopoverOpen} onOpenChange={event => setIsPopoverOpen(event.isOpen)}>
@@ -129,12 +174,12 @@ const PopoverComponent: React.FC<{
                             <Icon aria-hidden={true} svgPath={mdiClose} />
                         </Button>
                     </div>
-                    {isEmpty ? (
+                    {isEmpty && !isSearching ? (
                         <EmptyState icon={icon} message={emptyMessage} />
                     ) : (
                         <>
                             <div className="itemsContainer">
-                                {currentItems?.map((item, index) => (
+                                {(isSearching ? filteredItems : currentItems)?.map((item, index) => (
                                     <div
                                         key={index}
                                         className={classNames(
@@ -146,7 +191,7 @@ const PopoverComponent: React.FC<{
                                             <Icon aria-hidden={true} svgPath={icon} /> {item}
                                         </div>
                                         <div className="d-flex align-items-center itemRight">
-                                            {contextType !== SELECTED.FILES && (
+                                            {contextType === SELECTED.FILES && (
                                                 <>
                                                     <Icon aria-hidden={true} svgPath={mdiGithub} />{' '}
                                                     <Text size="small" className="m-0">
@@ -155,26 +200,47 @@ const PopoverComponent: React.FC<{
                                                 </>
                                             )}
 
-                                            <Button
-                                                className="pl-1"
-                                                variant="icon"
-                                                onClick={() => handleRemoveItem(index)}
-                                            >
-                                                <Icon aria-hidden={true} svgPath={mdiMinusCircleOutline} />
-                                            </Button>
+                                            {isSearching ? (
+                                                <Button
+                                                    className="pl-1"
+                                                    variant="icon"
+                                                    onClick={() => handleAddItem(index)}
+                                                >
+                                                    <Icon aria-hidden={true} svgPath={mdiPlusCircleOutline} />
+                                                </Button>
+                                            ) : (
+                                                <Button
+                                                    className="pl-1"
+                                                    variant="icon"
+                                                    onClick={() => handleRemoveItem(index)}
+                                                >
+                                                    <Icon aria-hidden={true} svgPath={mdiMinusCircleOutline} />
+                                                </Button>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
                             </div>
 
-                            <Button
-                                className={classNames('d-flex justify-content-between', 'itemClear')}
-                                variant="icon"
-                                onClick={handleClearAll}
-                            >
-                                Clear all from the scope.
-                                <Icon aria-hidden={true} svgPath={mdiCloseCircleOutline} />
-                            </Button>
+                            {isSearching ? (
+                                <Button
+                                    className={classNames('d-flex justify-content-between', 'itemClear')}
+                                    variant="icon"
+                                    onClick={handleAddAll}
+                                >
+                                    Add all to the scope.
+                                    <Icon aria-hidden={true} svgPath={mdiPlusCircleOutline} />
+                                </Button>
+                            ) : (
+                                <Button
+                                    className={classNames('d-flex justify-content-between', 'itemClear')}
+                                    variant="icon"
+                                    onClick={handleClearAll}
+                                >
+                                    Clear all from the scope.
+                                    <Icon aria-hidden={true} svgPath={mdiCloseCircleOutline} />
+                                </Button>
+                            )}
                         </>
                     )}
 
@@ -186,6 +252,8 @@ const PopoverComponent: React.FC<{
                             spellCheck="false"
                             placeholder={inputPlaceholder}
                             variant="small"
+                            value={searchText}
+                            onChange={handleSearch}
                         />
                     </div>
                 </Card>
@@ -194,22 +262,39 @@ const PopoverComponent: React.FC<{
     )
 }
 
-const repoModel = [
+const repoMockedModel = [
     'almeidapaulooliveira/ant-design',
     'sourcegraph/sourcegraph',
     'almeidapaulooliveira/react-custom-scrollbars',
     'almeidapaulooliveira/react-packages',
     'bartonhammond/meteor-slingshot',
+    'primer/react',
+    'redis/redis',
+    'facebook/react',
+    'npm/npm',
+    'docker/app',
+    'kubernetes/dashboard',
+    'kubernetes/website',
+    'kubernetes/kubernetes',
+    'nginx/docker-nginx',
+    'opencontainers/runc',
+    'opencontainers/image-spec',
+    'ant-design/ant-design',
+    'ant-design/ant-design-pro',
+    'ant-design/ant-design-pro-layout',
+    'ant-design/ant-design-icons',
+    'ant-design/ant-design-pro-blocks',
+    'ant-design/ant-design-pro-cli',
+    'ant-design/ant-design-pro-site',
+    'ant-design/ant-design-pro-table',
+    'ant-design/ant-design-pro-form',
+    'ant-design/ant-design-pro-list',
+    'ant-design/ant-design-pro-field',
+    'ant-design/ant-design-pro-descriptions',
 ]
 
 const ItemRepos: React.FC = () => {
-    const mockedRepoNames = [
-        'almeidapaulooliveira/ant-design',
-        'sourcegraph/sourcegraph',
-        'almeidapaulooliveira/react-custom-scrollbars',
-        'almeidapaulooliveira/react-packages',
-        'bartonhammond/meteor-slingshot',
-    ]
+    const mockedRepoNames = repoMockedModel.slice(0, 6)
 
     return (
         <PopoverComponent
