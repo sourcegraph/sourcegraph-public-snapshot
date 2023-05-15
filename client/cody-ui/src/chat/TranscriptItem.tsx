@@ -173,9 +173,7 @@ export const TranscriptItem: React.FunctionComponent<
                         />
                     )
                 ) : inProgress ? (
-                    <span>
-                        Fetching context... <BlinkingCursor />
-                    </span>
+                    <BlinkingCursor />
                 ) : null}
             </div>
         </div>
