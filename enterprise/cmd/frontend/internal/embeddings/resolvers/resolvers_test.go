@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/graph-gophers/graphql-go"
@@ -11,6 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/contextdetection"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -29,12 +32,21 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 	mockDB.ReposFunc.SetDefaultReturn(mockRepos)
 
 	mockGitserver := gitserver.NewMockClient()
-	mockGitserver.ReadFileFunc.SetDefaultReturn([]byte("test\nfirst\nfour\nlines\nplus\nsome\nmore"), nil)
+	mockGitserver.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, fileName string) ([]byte, error) {
+		if fileName == "testfile" {
+			return []byte("test\nfirst\nfour\nlines\nplus\nsome\nmore"), nil
+		}
+		return nil, os.ErrNotExist
+	})
 
 	mockEmbeddingsClient := embeddings.NewMockClient()
 	mockEmbeddingsClient.SearchFunc.SetDefaultReturn(&embeddings.EmbeddingCombinedSearchResults{
 		CodeResults: embeddings.EmbeddingSearchResults{{
 			FileName:  "testfile",
+			StartLine: 0,
+			EndLine:   4,
+		}, {
+			FileName:  "censored",
 			StartLine: 0,
 			EndLine:   4,
 		}},
@@ -73,6 +85,7 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 
 	codeResults, err := results.CodeResults(ctx)
 	require.NoError(t, err)
+	require.Len(t, codeResults, 1)
 	require.Equal(t, "test\nfirst\nfour\nlines", codeResults[0].Content(ctx))
 
 }
