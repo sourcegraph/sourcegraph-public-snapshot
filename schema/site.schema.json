@@ -13,7 +13,8 @@
       "!go": {
         "pointer": true
       },
-      "group": "Search"
+      "group": "Search",
+      "examples": [true]
     },
     "search.largeFiles": {
       "description": "A list of file glob patterns where matching files will be indexed and searched regardless of their size. Files still need to be valid utf-8 to be indexed. The glob pattern syntax can be found here: https://github.com/bmatcuk/doublestar#patterns.",
@@ -71,7 +72,18 @@
           "description": "Destination pubsub topic name to export usage data",
           "deprecationMessage": "Deprecated in favor of an environment variable EXPORT_USAGE_DATA_TOPIC_NAME."
         }
-      }
+      },
+      "examples": [
+        {
+          "enabled": true,
+          "batchSize": 1000,
+          "topicProjectName": "my-project",
+          "topicName": "usage-data"
+        },
+        {
+          "enabled": false
+        }
+      ]
     },
     "auth.passwordPolicy": {
       "type": "object",
@@ -98,7 +110,15 @@
           "type": "boolean",
           "default": true
         }
-      }
+      },
+      "examples": [
+        {
+          "enabled": true,
+          "numberOfSpecialCharacters": 1,
+          "requireAtLeastOneNumber": true,
+          "requireUpperandLowerCase": true
+        }
+      ]
     },
     "experimentalFeatures": {
       "description": "Experimental features and settings.",
@@ -597,7 +617,15 @@
         "dependencies": {
           "start": ["end"]
         }
-      }
+      },
+      "examples": [
+        {
+          "rate": "10/hour",
+          "days": ["saturday", "sunday"],
+          "start": "06:00",
+          "end": "20:00"
+        }
+      ]
     },
     "batchChanges.disableWebhooksWarning": {
       "description": "Hides Batch Changes warnings about webhooks not being configured.",
@@ -627,7 +655,13 @@
         "type": "string"
       },
       "group": "Code intelligence",
-      "default": null
+      "default": null,
+      "examples": [
+        {
+          "go": "sourcegraph/lsif-go:latest",
+          "java": "sourcegraph/lsif-java:latest"
+        }
+      ]
     },
     "codeIntelAutoIndexing.policyRepositoryMatchLimit": {
       "description": "The maximum number of repositories to which a single auto-indexing policy can apply. Default is -1, which is unlimited.",
@@ -732,12 +766,25 @@
           }
         }
       },
-      "group": "External services"
+      "group": "External services",
+      "examples": [
+        [
+          {
+            "pattern": "^github.com/sourcegraph/.*",
+            "interval": 5
+          },
+          {
+            "pattern": "^bitbucket.org/.*",
+            "interval": 10
+          }
+        ]
+      ]
     },
     "disablePublicRepoRedirects": {
       "description": "Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.",
       "type": "boolean",
-      "group": "External services"
+      "group": "External services",
+      "examples": [true]
     },
     "git.cloneURLToRepositoryName": {
       "description": "JSON array of configuration that maps from Git clone URL to repository name. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.",
@@ -759,7 +806,15 @@
           }
         }
       },
-      "group": "External services"
+      "group": "External services",
+      "examples": [
+        [
+          {
+            "from": "^../(?P<name>\\w+)$",
+            "to": "github.com/user/{name}"
+          }
+        ]
+      ]
     },
     "gitLongCommandTimeout": {
       "description": "Maximum number of seconds that a long Git command (e.g. clone or remote update) is allowed to execute. The default is 3600 seconds, or 1 hour.",
@@ -842,7 +897,29 @@
             }
           }
         }
-      }
+      },
+      "examples": [
+        {
+          "engine": {
+            "default": "tree-sitter",
+            "overrides": {
+              "go": "syntect"
+            }
+          },
+          "languages": {
+            "extensions": {
+              "go": "go",
+              "ts": "typescript"
+            },
+            "patterns": [
+              {
+                "match": "^package main$",
+                "language": "go"
+              }
+            ]
+          }
+        }
+      ]
     },
     "repoListUpdateInterval": {
       "description": "Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.",
@@ -928,7 +1005,15 @@
           "default": 10000,
           "minimum": 1
         }
-      }
+      },
+      "examples": [
+        {
+          "maxTimeoutSeconds": 60,
+          "maxRepos": 200,
+          "commitDiffMaxRepos": 50,
+          "commitDiffWithTimeFilterMaxRepos": 5000
+        }
+      ]
     },
     "parentSourcegraph": {
       "description": "URL to fetch unreachable repository details from. Defaults to \"https://sourcegraph.com\"",
@@ -940,7 +1025,12 @@
           "default": "https://sourcegraph.com"
         }
       },
-      "group": "External services"
+      "group": "External services",
+      "examples": [
+        {
+          "url": "https://sourcegraph.example.com"
+        }
+      ]
     },
     "auth.accessTokens": {
       "description": "Settings for access tokens, which enable external tools to access the Sourcegraph API with the privileges of the user.",
@@ -1209,7 +1299,19 @@
           "$ref": "#/definitions/EmailTemplate"
         }
       },
-      "group": "Email"
+      "group": "Email",
+      "examples": [
+        {
+          "resetPassword": {
+            "subject": "Reset your password on {{.Host}}",
+            "body": "To reset your password on {{.Host}}, please click the link below:\n\n{{.URL}}\n\nIf you did not request a password reset, please ignore this email. Your password will not change until you click the link and set a new password."
+          },
+          "setPassword": {
+            "subject": "Set your password on {{.Host}}",
+            "body": "To set your password on {{.Host}} and complete your account registration, please click the link below:\n\n{{.URL}}\n\nYour username is: {{.Username}}\n\nIf you did not sign up for an account on {{.Host}}, please ignore this email."
+          }
+        }
+      ]
     },
     "executors.frontendURL": {
       "description": "The URL where Sourcegraph executors can reach the Sourcegraph instance. If not set, defaults to externalURL. URLs with a path (other than `/`) are not allowed. For Docker executors, the special hostname `host.docker.internal` can be used to refer to the Docker container's host.",
@@ -1244,7 +1346,8 @@
     "executors.accessToken": {
       "description": "The shared secret between Sourcegraph and executors.",
       "type": "string",
-      "minLength": 20
+      "minLength": 20,
+      "examples": ["my-super-secret-access-token"]
     },
     "auth.userOrgMap": {
       "description": "Ensure that matching users are members of the specified orgs (auto-joining users to the orgs if they are not already a member). Provide a JSON object of the form `{\"*\": [\"org1\", \"org2\"]}`, where org1 and org2 are orgs that all users are automatically joined to. Currently the only supported key is `\"*\"`.",
@@ -1287,7 +1390,16 @@
               "type": "string",
               "pattern": "^https?://"
             }
-          }
+          },
+          "examples": [
+            {
+              "sentry": {
+                "dsn": "https://public_key@sentry.example.com/project_id",
+                "backendDSN": "https://public_key@sentry.example.com/backend_project_id",
+                "codeIntelDSN": "https://public_key@sentry.example.com/codeintel_project_id"
+              }
+            }
+          ]
         },
         "auditLog": {
           "description": "EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)",
@@ -1350,7 +1462,19 @@
             }
           }
         }
-      }
+      },
+      "examples": [
+        {
+          "openTelemetry": {
+            "endpoint": "/-/debug/otlp"
+          }
+        },
+        {
+          "openTelemetry": {
+            "endpoint": "https://opentelemetry.example.com"
+          }
+        }
+      ]
     },
     "observability.tracing": {
       "description": "Configures distributed tracing within Sourcegraph. To learn more, refer to https://docs.sourcegraph.com/admin/observability/tracing",
@@ -1383,7 +1507,21 @@
             "{{ .ExternalURL }}/-/debug/jaeger/trace/{{ .TraceID }}"
           ]
         }
-      }
+      },
+      "examples": [
+        {
+          "sampling": "selective",
+          "type": "opentelemetry",
+          "debug": false,
+          "urlTemplate": "https://ui.honeycomb.io/$ORG/environments/$DATASET/trace?trace_id={{ .TraceID }}"
+        },
+        {
+          "sampling": "all",
+          "type": "jaeger",
+          "debug": true,
+          "urlTemplate": "{{ .ExternalURL }}/-/debug/jaeger/trace/{{ .TraceID }}"
+        }
+      ]
     },
     "observability.alerts": {
       "description": "Configure notifications for Sourcegraph's built-in alerts.",
@@ -1445,14 +1583,32 @@
             "type": ""
           }
         }
-      }
+      },
+      "examples": [
+        {
+          "level": "critical",
+          "notifier": {
+            "type": "slack",
+            "url": "https://hooks.slack.com/services/...",
+            "channel": "#alerts"
+          }
+        },
+        {
+          "level": "warning",
+          "notifier": {
+            "type": "email",
+            "addresses": ["alerts@example.com"]
+          }
+        }
+      ]
     },
     "observability.silenceAlerts": {
       "description": "Silence individual Sourcegraph alerts by identifier.",
       "type": "array",
       "items": {
         "type": "string"
-      }
+      },
+      "examples": [["warning_gitserver_disk_space_remaining"], ["critical_frontend_down", "warning_high_load"]]
     },
     "observability.logSlowSearches": {
       "description": "(debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.",
@@ -1629,7 +1785,16 @@
           "type": "string",
           "description": "The Client Secret of the GitHub App for Sourcegraph, accessible from https://github.com/settings/apps ."
         }
-      }
+      },
+      "examples": [
+        {
+          "slug": "sourcegraph",
+          "appID": "1234",
+          "privateKey": "base64-encoded-private-key",
+          "clientID": "client-id",
+          "clientSecret": "client-secret"
+        }
+      ]
     },
     "gitRecorder": {
       "description": "Record git operations that are executed on configured repositories. The following commands are not recorded: show, log, rev-parse and diff.",
@@ -1647,7 +1812,13 @@
             "type": "string"
           }
         }
-      }
+      },
+      "examples": [
+        {
+          "size": 1000,
+          "repos": ["github.com/sourcegraph/sourcegraph", "github.com/gorilla/mux"]
+        }
+      ]
     },
     "dotcom": {
       "description": "Configuration options for Sourcegraph.com only.",
@@ -1754,7 +1925,14 @@
           "type": "string",
           "group": "Sourcegraph.com"
         }
-      }
+      },
+      "examples": [
+        {
+          "app": {
+            "dotcomAuthToken": "abc123"
+          }
+        }
+      ]
     },
     "notifications": {
       "description": "Notifications recieved from Sourcegraph.com to display in Sourcegraph.",
@@ -1774,7 +1952,13 @@
             "minLength": 1
           }
         }
-      }
+      },
+      "examples": [
+        {
+          "key": "2023-03-10-my-key",
+          "message": "This is a test notification message."
+        }
+      ]
     },
     "auth.providers": {
       "description": "The authentication providers to use for identifying and signing in users. See instructions below for configuring SAML, OpenID Connect (including Google Workspace), and HTTP authentication proxies. Multiple authentication providers are supported (by specifying multiple elements in this array).",
@@ -1889,12 +2073,22 @@
           "default": 3600
         }
       },
+      "examples": [
+        {
+          "failedAttemptThreshold": 3,
+          "lockoutPeriod": 600,
+          "consecutivePeriod": 300
+        }
+      ],
       "group": "Authentication"
     },
     "auth.unlockAccountLinkSigningKey": {
       "description": "Base64-encoded HMAC signing key to sign the JWT token for account unlock URLs",
       "type": "string",
-      "group": "Authentication"
+      "group": "Authentication",
+      "examples": [
+        "LS0tLS1CRUdJTiBPUEVOU1NIIFBSSVZBVEUgS0VZLS0tLS0KYjNCbGJuTnphQzFyWlhrdGRqRUFBQUFBQkc1dmJtVUFBQUFFYm05dVpRQUFBQUFBQUFBQkFBQUJGZ0FBQUhVQkFBQQ"
+      ]
     },
     "auth.unlockAccountLinkExpiry": {
       "description": "Validity expressed in minutes of the unlock account token",
@@ -1915,7 +2109,14 @@
           },
           "default": true
         }
-      }
+      },
+      "examples": [
+        {
+          "enabled": true,
+          "emailDomains": ["example.com"],
+          "message": "Please explain why you need access in your request."
+        }
+      ]
     },
     "auth.primaryLoginProvidersCount": {
       "description": "The number of auth providers that will be shown to the user on the login screen. Other providers are shown under `Other login methods` section.",
@@ -1978,7 +2179,21 @@
         "executorSecretKey": {
           "$ref": "#/definitions/EncryptionKey"
         }
-      }
+      },
+      "examples": [
+        {
+          "externalServiceKey": {
+            "type": "mounted",
+            "filePath": "/path/to/external_service.key"
+          }
+        },
+        {
+          "userExternalAccountKey": {
+            "type": "cloudkms",
+            "keyname": "projects/my-project/locations/global/keyRings/my-keyring/cryptoKeys/my-key"
+          }
+        }
+      ]
     },
     "webhook.logging": {
       "description": "Configuration for logging incoming webhooks.",
@@ -1996,7 +2211,13 @@
           "type": "string",
           "default": "72h"
         }
-      }
+      },
+      "examples": [
+        {
+          "enabled": true,
+          "retention": "7d"
+        }
+      ]
     },
     "outboundRequestLogLimit": {
       "description": "The maximum number of outbound requests to retain. This is a global limit across all outbound requests. If the limit is exceeded, older items will be deleted. If the limit is 0, no outbound requests are logged.",
@@ -2010,7 +2231,8 @@
       "type": "boolean",
       "!go": {
         "pointer": true
-      }
+      },
+      "examples": [true]
     },
     "organizationInvitations": {
       "description": "Configuration for organization invitations.",
@@ -2026,7 +2248,13 @@
           "description": "Base64 encoded HMAC Signing key to sign a JWT token, which is attached to each invitation URL.\nMore documentation here: https://pkg.go.dev/github.com/golang-jwt/jwt#SigningMethodHMAC \n\nIf not provided, will fall back to legacy invitation to an organization.\n\nThe legacy invitation will be deprecated in the future and creating an organization invitation will fail with an error if this setting is not present.",
           "type": "string"
         }
-      }
+      },
+      "examples": [
+        {
+          "expiryTime": 48,
+          "signingKey": "your-signing-key"
+        }
+      ]
     },
     "embeddings": {
       "description": "Configuration for embeddings service.",
@@ -2073,7 +2301,17 @@
           "type": "integer",
           "minimum": 0
         }
-      }
+      },
+      "examples": [
+        {
+          "enabled": true,
+          "dimensions": 1536,
+          "model": "text-embedding-ada-002",
+          "accessToken": "your-access-token",
+          "url": "https://api.openai.com/v1/embeddings",
+          "excludedFilePathPatterns": ["*.svg", "**/__mocks__/**", "**/test/**"]
+        }
+      ]
     },
     "completions": {
       "description": "Configuration for the completions service.",
@@ -2121,7 +2359,18 @@
           "type": "integer",
           "default": 0
         }
-      }
+      },
+      "examples": [
+        {
+          "enabled": true,
+          "model": "code-completion",
+          "chatModel": "chat",
+          "completionModel": "code-completion",
+          "accessToken": "abc123",
+          "provider": "openai",
+          "perUserDailyLimit": 100
+        }
+      ]
     }
   },
   "definitions": {
