@@ -14,9 +14,7 @@
         "pointer": true
       },
       "group": "Search",
-      "examples": [
-        true
-      ]
+      "examples": [true]
     },
     "search.largeFiles": {
       "description": "A list of file glob patterns where matching files will be indexed and searched regardless of their size. Files still need to be valid utf-8 to be indexed. The glob pattern syntax can be found here: https://github.com/bmatcuk/doublestar#patterns.",
@@ -120,7 +118,6 @@
           "requireAtLeastOneNumber": true,
           "requireUpperandLowerCase": true
         }
-
       ]
     },
     "experimentalFeatures": {
@@ -624,10 +621,7 @@
       "examples": [
         {
           "rate": "10/hour",
-          "days": [
-            "saturday",
-            "sunday"
-          ],
+          "days": ["saturday", "sunday"],
           "start": "06:00",
           "end": "20:00"
         }
@@ -790,9 +784,7 @@
       "description": "Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.",
       "type": "boolean",
       "group": "External services",
-      "examples": [
-        true
-      ]
+      "examples": [true]
     },
     "git.cloneURLToRepositoryName": {
       "description": "JSON array of configuration that maps from Git clone URL to repository name. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.",
@@ -1355,9 +1347,7 @@
       "description": "The shared secret between Sourcegraph and executors.",
       "type": "string",
       "minLength": 20,
-      "examples": [
-        "my-super-secret-access-token"
-      ]
+      "examples": ["my-super-secret-access-token"]
     },
     "auth.userOrgMap": {
       "description": "Ensure that matching users are members of the specified orgs (auto-joining users to the orgs if they are not already a member). Provide a JSON object of the form `{\"*\": [\"org1\", \"org2\"]}`, where org1 and org2 are orgs that all users are automatically joined to. Currently the only supported key is `\"*\"`.",
@@ -1607,9 +1597,7 @@
           "level": "warning",
           "notifier": {
             "type": "email",
-            "addresses": [
-              "alerts@example.com"
-            ]
+            "addresses": ["alerts@example.com"]
           }
         }
       ]
@@ -1620,15 +1608,7 @@
       "items": {
         "type": "string"
       },
-      "examples": [
-        [
-          "warning_gitserver_disk_space_remaining"
-        ],
-        [
-          "critical_frontend_down",
-          "warning_high_load"
-        ]
-      ]
+      "examples": [["warning_gitserver_disk_space_remaining"], ["critical_frontend_down", "warning_high_load"]]
     },
     "observability.logSlowSearches": {
       "description": "(debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.",
@@ -1836,10 +1816,7 @@
       "examples": [
         {
           "size": 1000,
-          "repos": [
-            "github.com/sourcegraph/sourcegraph",
-            "github.com/gorilla/mux"
-          ]
+          "repos": ["github.com/sourcegraph/sourcegraph", "github.com/gorilla/mux"]
         }
       ]
     },
@@ -2136,9 +2113,7 @@
       "examples": [
         {
           "enabled": true,
-          "emailDomains": [
-            "example.com"
-          ],
+          "emailDomains": ["example.com"],
           "message": "Please explain why you need access in your request."
         }
       ]
@@ -2257,9 +2232,7 @@
       "!go": {
         "pointer": true
       },
-      "examples": [
-        true
-      ]
+      "examples": [true]
     },
     "organizationInvitations": {
       "description": "Configuration for organization invitations.",
@@ -2336,11 +2309,7 @@
           "model": "text-embedding-ada-002",
           "accessToken": "your-access-token",
           "url": "https://api.openai.com/v1/embeddings",
-          "excludedFilePathPatterns": [
-            "*.svg",
-            "**/__mocks__/**",
-            "**/test/**"
-          ]
+          "excludedFilePathPatterns": ["*.svg", "**/__mocks__/**", "**/test/**"]
         }
       ]
     },
