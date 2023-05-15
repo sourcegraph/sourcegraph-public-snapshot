@@ -6,6 +6,7 @@ import classNames from 'classnames'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import {
+    Alert,
     Badge,
     Button,
     Icon,
@@ -25,12 +26,12 @@ import {
 import { MarketingBlock } from '../../components/MarketingBlock'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 import { ChatUI } from '../components/ChatUI'
 import { HistoryList } from '../components/HistoryList'
 import { useChatStore } from '../stores/chat'
+import { useIsCodyEnabled } from '../useIsCodyEnabled'
 
 import { CodyColorIcon } from './CodyPageIcon'
 
@@ -45,7 +46,7 @@ const onTryOnPublicCodeClick = (): void => eventLogger.log(EventName.CODY_CHAT_T
 
 export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authenticatedUser }) => {
     const { reset, clearHistory } = useChatStore({ codebase: '' })
-    const [enabled] = useFeatureFlag('cody-web-chat')
+    const codyEnabled = useIsCodyEnabled()
     const [showVSCodeCTA] = useState<boolean>(Math.random() < 0.5 || true)
     const [isCTADismissed = true, setIsCTADismissed] = useTemporarySetting('cody.chatPageCta.dismissed', false)
     const onCTADismiss = (): void => setIsCTADismissed(true)
@@ -54,8 +55,13 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authe
         eventLogger.logPageView('CodyChat')
     }, [])
 
-    if (!enabled) {
-        return <PageTitle title="Cody AI Chat" />
+    if (!codyEnabled.chat) {
+        return (
+            <Page className="overflow-hidden">
+                <PageTitle title="Cody AI Chat" />
+                <Alert variant="info">Cody is not enabled. Please contact your site admin to enable Cody.</Alert>
+            </Page>
+        )
     }
 
     return (
