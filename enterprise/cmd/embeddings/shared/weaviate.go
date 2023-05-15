@@ -100,6 +100,9 @@ func (w *weaviateClient) Search(ctx context.Context, repoName api.RepoName, repo
 				}
 			}
 
+			// multiply by half max int32 since distance will always be between 0 and 2
+			similarity := int32(cMap["_additional"].(map[string]any)["distance"].(float64) * (1073741823))
+
 			srs = append(srs, embeddings.EmbeddingSearchResult{
 				RepoName:  repoName,
 				Revision:  api.CommitID(revision),
@@ -107,8 +110,8 @@ func (w *weaviateClient) Search(ctx context.Context, repoName api.RepoName, repo
 				StartLine: int(cMap["start_line"].(float64)),
 				EndLine:   int(cMap["end_line"].(float64)),
 				ScoreDetails: embeddings.SearchScoreDetails{
-					// multiply by half max int32 since distance will always be between 0 and 2
-					SimilarityScore: int32(cMap["_additional"].(map[string]any)["distance"].(float64) * (1073741823)),
+					Score:           similarity,
+					SimilarityScore: similarity,
 				},
 			})
 		}

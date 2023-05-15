@@ -121,26 +121,26 @@ func TestEmbeddingsSearchE2E(t *testing.T) {
 				FileName:     "codefile1",
 				StartLine:    0,
 				EndLine:      1,
-				ScoreDetails: embeddings.SearchScoreDetails{SimilarityScore: 1016},
+				ScoreDetails: embeddings.SearchScoreDetails{Score: 1016, SimilarityScore: 1016},
 			}, {
 				RepoName:     "repo3",
 				FileName:     "codefile1",
 				StartLine:    0,
 				EndLine:      1,
-				ScoreDetails: embeddings.SearchScoreDetails{SimilarityScore: 762},
+				ScoreDetails: embeddings.SearchScoreDetails{Score: 762, SimilarityScore: 762},
 			}},
 			TextResults: embeddings.EmbeddingSearchResults{{
 				RepoName:     "repo4",
 				FileName:     "textfile1",
 				StartLine:    0,
 				EndLine:      1,
-				ScoreDetails: embeddings.SearchScoreDetails{SimilarityScore: 1016},
+				ScoreDetails: embeddings.SearchScoreDetails{Score: 1016, SimilarityScore: 1016},
 			}, {
 				RepoName:     "repo3",
 				FileName:     "textfile1",
 				StartLine:    0,
 				EndLine:      1,
-				ScoreDetails: embeddings.SearchScoreDetails{SimilarityScore: 762},
+				ScoreDetails: embeddings.SearchScoreDetails{Score: 762, SimilarityScore: 762},
 			}},
 		}, results)
 	}
@@ -165,26 +165,26 @@ func TestEmbeddingsSearchE2E(t *testing.T) {
 				FileName:     "codefile1",
 				StartLine:    0,
 				EndLine:      1,
-				ScoreDetails: embeddings.SearchScoreDetails{SimilarityScore: 762},
+				ScoreDetails: embeddings.SearchScoreDetails{Score: 762, SimilarityScore: 762},
 			}, {
 				RepoName:     "repo1",
 				FileName:     "codefile1",
 				StartLine:    0,
 				EndLine:      1,
-				ScoreDetails: embeddings.SearchScoreDetails{SimilarityScore: 254},
+				ScoreDetails: embeddings.SearchScoreDetails{Score: 254, SimilarityScore: 254},
 			}},
 			TextResults: embeddings.EmbeddingSearchResults{{
 				RepoName:     "repo3",
 				FileName:     "textfile1",
 				StartLine:    0,
 				EndLine:      1,
-				ScoreDetails: embeddings.SearchScoreDetails{SimilarityScore: 762},
+				ScoreDetails: embeddings.SearchScoreDetails{Score: 762, SimilarityScore: 762},
 			}, {
 				RepoName:     "repo1",
 				FileName:     "textfile1",
 				StartLine:    0,
 				EndLine:      1,
-				ScoreDetails: embeddings.SearchScoreDetails{SimilarityScore: 254},
+				ScoreDetails: embeddings.SearchScoreDetails{Score: 254, SimilarityScore: 254},
 			}},
 		}, results)
 	}
@@ -209,26 +209,26 @@ func TestEmbeddingsSearchE2E(t *testing.T) {
 				FileName:     "codefile3",
 				StartLine:    0,
 				EndLine:      1,
-				ScoreDetails: embeddings.SearchScoreDetails{SimilarityScore: 1016},
+				ScoreDetails: embeddings.SearchScoreDetails{Score: 1016, SimilarityScore: 1016},
 			}, {
 				RepoName:     "repo3",
 				FileName:     "codefile3",
 				StartLine:    0,
 				EndLine:      1,
-				ScoreDetails: embeddings.SearchScoreDetails{SimilarityScore: 762},
+				ScoreDetails: embeddings.SearchScoreDetails{Score: 762, SimilarityScore: 762},
 			}},
 			TextResults: embeddings.EmbeddingSearchResults{{
 				RepoName:     "repo4",
 				FileName:     "textfile3",
 				StartLine:    0,
 				EndLine:      1,
-				ScoreDetails: embeddings.SearchScoreDetails{SimilarityScore: 1016},
+				ScoreDetails: embeddings.SearchScoreDetails{Score: 1016, SimilarityScore: 1016},
 			}, {
 				RepoName:     "repo3",
 				FileName:     "textfile3",
 				StartLine:    0,
 				EndLine:      1,
-				ScoreDetails: embeddings.SearchScoreDetails{SimilarityScore: 762},
+				ScoreDetails: embeddings.SearchScoreDetails{Score: 762, SimilarityScore: 762},
 			}},
 		}, results)
 	}

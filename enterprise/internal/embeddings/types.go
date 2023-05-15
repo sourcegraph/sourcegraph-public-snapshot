@@ -78,12 +78,15 @@ func (esr *EmbeddingSearchResult) Score() int32 {
 }
 
 type SearchScoreDetails struct {
+	Score int32 `json:"score"`
+
+	// Breakdown
 	SimilarityScore int32 `json:"similarityScore"`
 	RankScore       int32 `json:"rankScore"`
 }
 
 func (s *SearchScoreDetails) String() string {
-	return fmt.Sprintf("score:%d, similarity:%d, rank:%d", s.SimilarityScore+s.RankScore, s.SimilarityScore, s.RankScore)
+	return fmt.Sprintf("score:%d, similarity:%d, rank:%d", s.Score, s.SimilarityScore, s.RankScore)
 }
 
 // DEPRECATED: to support decoding old indexes, we need a struct

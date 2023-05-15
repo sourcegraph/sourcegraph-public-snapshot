@@ -11,10 +11,8 @@ import (
 )
 
 type nearestNeighbor struct {
-	index           int
-	score           int32
-	similarityScore int32
-	rankScore       int32
+	index        int
+	scoreDetails SearchScoreDetails
 }
 
 type nearestNeighborsHeap struct {
@@ -24,7 +22,7 @@ type nearestNeighborsHeap struct {
 func (nn *nearestNeighborsHeap) Len() int { return len(nn.neighbors) }
 
 func (nn *nearestNeighborsHeap) Less(i, j int) bool {
-	return nn.neighbors[i].score < nn.neighbors[j].score
+	return nn.neighbors[i].scoreDetails.Score < nn.neighbors[j].scoreDetails.Score
 }
 
 func (nn *nearestNeighborsHeap) Swap(i, j int) {
@@ -130,7 +128,7 @@ func (index *EmbeddingIndex) SimilaritySearch(
 		}
 	}
 	// And re-sort it according to the score (descending).
-	sort.Slice(neighbors, func(i, j int) bool { return neighbors[i].score > neighbors[j].score })
+	sort.Slice(neighbors, func(i, j int) bool { return neighbors[i].scoreDetails.Score > neighbors[j].scoreDetails.Score })
 
 	// Take top neighbors and return them as results.
 	results := make([]EmbeddingSearchResult, numResults)
@@ -138,15 +136,12 @@ func (index *EmbeddingIndex) SimilaritySearch(
 	for idx := 0; idx < min(numResults, len(neighbors)); idx++ {
 		metadata := index.RowMetadata[neighbors[idx].index]
 		results[idx] = EmbeddingSearchResult{
-			RepoName:  repoName,
-			Revision:  revision,
-			FileName:  metadata.FileName,
-			StartLine: metadata.StartLine,
-			EndLine:   metadata.EndLine,
-			ScoreDetails: SearchScoreDetails{
-				SimilarityScore: neighbors[idx].similarityScore,
-				RankScore:       neighbors[idx].rankScore,
-			},
+			RepoName:     repoName,
+			Revision:     revision,
+			FileName:     metadata.FileName,
+			StartLine:    metadata.StartLine,
+			EndLine:      metadata.EndLine,
+			ScoreDetails: neighbors[idx].scoreDetails,
 		}
 	}
 
@@ -162,17 +157,17 @@ func (index *EmbeddingIndex) partialSimilaritySearch(query []int8, numResults in
 
 	nnHeap := newNearestNeighborsHeap()
 	for i := partialRows.start; i < partialRows.start+numResults; i++ {
-		score, similarityScore, rankScore := index.score(query, i, opts)
-		heap.Push(nnHeap, nearestNeighbor{index: i, score: score, similarityScore: similarityScore, rankScore: rankScore})
+		scoreDetails := index.score(query, i, opts)
+		heap.Push(nnHeap, nearestNeighbor{index: i, scoreDetails: scoreDetails})
 	}
 
 	for i := partialRows.start + numResults; i < partialRows.end; i++ {
-		score, similarityScore, rankScore := index.score(query, i, opts)
+		scoreDetails := index.score(query, i, opts)
 		// Add row if it has greater similarity than the smallest similarity in the heap.
 		// This way we ensure keep a set of the highest similarities in the heap.
-		if score > nnHeap.Peek().score {
+		if scoreDetails.Score > nnHeap.Peek().scoreDetails.Score {
 			heap.Pop(nnHeap)
-			heap.Push(nnHeap, nearestNeighbor{index: i, score: score, similarityScore: similarityScore, rankScore: rankScore})
+			heap.Push(nnHeap, nearestNeighbor{index: i, scoreDetails: scoreDetails})
 		}
 	}
 
@@ -184,10 +179,11 @@ const (
 	scoreSimilarityWeight int32 = 2
 )
 
-func (index *EmbeddingIndex) score(query []int8, i int, opts SearchOptions) (score, similarityScore, rankScore int32) {
-	similarityScore = scoreSimilarityWeight * Dot(index.Row(i), query)
+func (index *EmbeddingIndex) score(query []int8, i int, opts SearchOptions) SearchScoreDetails {
+	similarityScore := scoreSimilarityWeight * Dot(index.Row(i), query)
 
 	// handle missing ranks
+	rankScore := int32(0)
 	if opts.UseDocumentRanks && len(index.Ranks) > i {
 		// The file rank represents a log (base 2) count. The log ranks should be
 		// bounded at 32, but we cap it just in case to ensure it falls in the range [0,
@@ -200,7 +196,11 @@ func (index *EmbeddingIndex) score(query []int8, i int, opts SearchOptions) (sco
 		rankScore = int32(float32(scoreFileRankWeight) * normalizedRank)
 	}
 
-	return similarityScore + rankScore, similarityScore, rankScore
+	return SearchScoreDetails{
+		Score:           similarityScore + rankScore,
+		SimilarityScore: similarityScore,
+		RankScore:       rankScore,
+	}
 }
 
 type searchDebugInfo struct {
