@@ -187,7 +187,7 @@ If you use the systemd service, simply run `systemctl start executor`, otherwise
 ## Upgrading executors
 
 Upgrading executors is relatively uninvolved. Simply follow the instructions below.
-Also, check the [changelog](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) for any Executors related breaking changes or new features that you might want to configure.
+Also, check the [changelog](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/CHANGELOG.md) for any Executors related breaking changes or new features that you might want to configure.
 
 ### **Step 1:** First, grab the executor binary for the new target Sourcegraph version.
 
@@ -201,6 +201,8 @@ mv executor /usr/local/bin
 ```
 
 ### **Step 2:** Make sure all ambient dependencies and configurations are up-to-date:
+
+Ensure [env vars](#step-2-setup-environment-variables) has been configured. 
 
 ```bash
 executor install all
