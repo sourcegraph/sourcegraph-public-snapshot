@@ -34,7 +34,8 @@ func TestGetObject(t *testing.T) {
 
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
-			obj, err := gitserver.NewTestClient(http.DefaultClient, GitserverAddresses).GetObject(context.Background(), test.repo, test.objectName)
+			source := gitserver.NewTestClientSource(GitserverAddresses)
+			obj, err := gitserver.NewTestClient(http.DefaultClient, source).GetObject(context.Background(), test.repo, test.objectName)
 			if err != nil {
 				t.Fatal(err)
 			}

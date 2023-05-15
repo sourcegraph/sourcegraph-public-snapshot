@@ -5,14 +5,14 @@ import { PrefilledOptions, withPreselectedOptions } from '../editor/withPreselec
 import { SourcegraphEmbeddingsSearchClient } from '../embeddings/client'
 import { SourcegraphIntentDetectorClient } from '../intent-detector/client'
 import { SourcegraphBrowserCompletionsClient } from '../sourcegraph-api/completions/browserClient'
-import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql/client'
+import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { isError } from '../utils'
 
 import { BotResponseMultiplexer } from './bot-response-multiplexer'
 import { ChatClient } from './chat'
-import { escapeCodyMarkdown } from './markdown'
 import { getPreamble } from './preamble'
 import { getRecipe } from './recipes/browser-recipes'
+import { RecipeID } from './recipes/recipe'
 import { Transcript, TranscriptJSON } from './transcript'
 import { ChatMessage } from './transcript/messages'
 import { reformatBotMessage } from './viewHelpers'
@@ -36,7 +36,7 @@ export interface Client {
     readonly isMessageInProgress: boolean
     submitMessage: (text: string) => Promise<void>
     executeRecipe: (
-        recipeId: string,
+        recipeId: RecipeID,
         options?: {
             prefilledOptions?: PrefilledOptions
         }
@@ -88,7 +88,7 @@ export async function createClient({
     }
 
     async function executeRecipe(
-        recipeId: string,
+        recipeId: RecipeID,
         options?: {
             prefilledOptions?: PrefilledOptions
             humanChatInput?: string
@@ -122,7 +122,7 @@ export async function createClient({
             onChange(_rawText) {
                 rawText = _rawText
 
-                const text = reformatBotMessage(escapeCodyMarkdown(rawText, true), responsePrefix)
+                const text = reformatBotMessage(rawText, responsePrefix)
                 transcript.addAssistantResponse(text)
 
                 sendTranscript()
@@ -130,7 +130,7 @@ export async function createClient({
             onComplete() {
                 isMessageInProgress = false
 
-                const text = reformatBotMessage(escapeCodyMarkdown(rawText, false), responsePrefix)
+                const text = reformatBotMessage(rawText, responsePrefix)
                 transcript.addAssistantResponse(text)
                 sendTranscript()
             },

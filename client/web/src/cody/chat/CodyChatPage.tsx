@@ -6,6 +6,8 @@ import classNames from 'classnames'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import {
+    Alert,
+    Badge,
     Button,
     Icon,
     Menu,
@@ -24,12 +26,12 @@ import {
 import { MarketingBlock } from '../../components/MarketingBlock'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
-import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 import { ChatUI } from '../components/ChatUI'
 import { HistoryList } from '../components/HistoryList'
 import { useChatStore } from '../stores/chat'
+import { useIsCodyEnabled } from '../useIsCodyEnabled'
 
 import { CodyColorIcon } from './CodyPageIcon'
 
@@ -44,7 +46,7 @@ const onTryOnPublicCodeClick = (): void => eventLogger.log(EventName.CODY_CHAT_T
 
 export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authenticatedUser }) => {
     const { reset, clearHistory } = useChatStore({ codebase: '' })
-    const [enabled] = useFeatureFlag('cody-web-chat')
+    const codyEnabled = useIsCodyEnabled()
     const [showVSCodeCTA] = useState<boolean>(Math.random() < 0.5 || true)
     const [isCTADismissed = true, setIsCTADismissed] = useTemporarySetting('cody.chatPageCta.dismissed', false)
     const onCTADismiss = (): void => setIsCTADismissed(true)
@@ -53,8 +55,13 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authe
         eventLogger.logPageView('CodyChat')
     }, [])
 
-    if (!enabled || !authenticatedUser) {
-        return null
+    if (!codyEnabled.chat) {
+        return (
+            <Page className="overflow-hidden">
+                <PageTitle title="Cody AI Chat" />
+                <Alert variant="info">Cody is not enabled. Please contact your site admin to enable Cody.</Alert>
+            </Page>
+        )
     }
 
     return (
@@ -78,7 +85,14 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authe
                 className="mb-3"
             >
                 <PageHeader.Heading as="h2" styleAs="h1">
-                    <PageHeader.Breadcrumb icon={CodyColorIcon}> Cody Chat</PageHeader.Breadcrumb>
+                    <PageHeader.Breadcrumb icon={CodyColorIcon}>
+                        <div className="d-inline-flex align-items-center">
+                            Cody Chat
+                            <Badge variant="info" className="ml-2">
+                                Beta
+                            </Badge>
+                        </div>
+                    </PageHeader.Breadcrumb>
                 </PageHeader.Heading>
             </PageHeader>
 
@@ -111,7 +125,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authe
                         </Menu>
                     </div>
                     <div className={classNames('h-100 mb-4', styles.sidebar)}>
-                        <HistoryList trucateMessageLenght={60} />
+                        <HistoryList truncateMessageLength={60} />
                     </div>
                     {!isCTADismissed &&
                         (showVSCodeCTA ? (

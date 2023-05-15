@@ -17,6 +17,13 @@ import (
 
 var timeNow = time.Now
 
+func (r *UserResolver) HasVerifiedEmail(ctx context.Context) (bool, error) {
+	// 🚨 SECURITY: In the UserEmailsService we check that only the
+	// authenticated user and site admins can check
+	// whether the user has a verified email.
+	return backend.NewUserEmailsService(r.db, r.logger).HasVerifiedEmail(ctx, r.user.ID)
+}
+
 func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error) {
 	// 🚨 SECURITY: Only the authenticated user and site admins can list user's
 	// emails on Sourcegraph.com.
@@ -46,10 +53,11 @@ func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error)
 
 func (r *UserResolver) PrimaryEmail(ctx context.Context) (*userEmailResolver, error) {
 	// 🚨 SECURITY: Only the authenticated user and site admins can list user's
-	// emails on Sourcegraph.com.
+	// emails on Sourcegraph.com. We don't return an error, but not showing the email
+	// either.
 	if envvar.SourcegraphDotComMode() {
 		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
-			return nil, err
+			return nil, nil
 		}
 	}
 	ms, err := r.db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{

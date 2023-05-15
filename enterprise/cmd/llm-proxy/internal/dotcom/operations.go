@@ -58,6 +58,11 @@ func (v *CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProduc
 	return v.ProductSubscriptionState.LlmProxyAccess
 }
 
+// GetActiveLicense returns CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription.ActiveLicense, and is useful for accessing the field via an interface.
+func (v *CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription) GetActiveLicense() *ProductSubscriptionStateActiveLicenseProductLicense {
+	return v.ProductSubscriptionState.ActiveLicense
+}
+
 func (v *CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription) UnmarshalJSON(b []byte) error {
 
 	if string(b) == "null" {
@@ -91,6 +96,8 @@ type __premarshalCheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTok
 	IsArchived bool `json:"isArchived"`
 
 	LlmProxyAccess ProductSubscriptionStateLlmProxyAccessLLMProxyAccess `json:"llmProxyAccess"`
+
+	ActiveLicense *ProductSubscriptionStateActiveLicenseProductLicense `json:"activeLicense"`
 }
 
 func (v *CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription) MarshalJSON() ([]byte, error) {
@@ -108,6 +115,7 @@ func (v *CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProduc
 	retval.Uuid = v.ProductSubscriptionState.Uuid
 	retval.IsArchived = v.ProductSubscriptionState.IsArchived
 	retval.LlmProxyAccess = v.ProductSubscriptionState.LlmProxyAccess
+	retval.ActiveLicense = v.ProductSubscriptionState.ActiveLicense
 	return &retval, nil
 }
 
@@ -213,6 +221,11 @@ func (v *ListProductSubscriptionFields) GetLlmProxyAccess() ProductSubscriptionS
 	return v.ProductSubscriptionState.LlmProxyAccess
 }
 
+// GetActiveLicense returns ListProductSubscriptionFields.ActiveLicense, and is useful for accessing the field via an interface.
+func (v *ListProductSubscriptionFields) GetActiveLicense() *ProductSubscriptionStateActiveLicenseProductLicense {
+	return v.ProductSubscriptionState.ActiveLicense
+}
+
 func (v *ListProductSubscriptionFields) UnmarshalJSON(b []byte) error {
 
 	if string(b) == "null" {
@@ -248,6 +261,8 @@ type __premarshalListProductSubscriptionFields struct {
 	IsArchived bool `json:"isArchived"`
 
 	LlmProxyAccess ProductSubscriptionStateLlmProxyAccessLLMProxyAccess `json:"llmProxyAccess"`
+
+	ActiveLicense *ProductSubscriptionStateActiveLicenseProductLicense `json:"activeLicense"`
 }
 
 func (v *ListProductSubscriptionFields) MarshalJSON() ([]byte, error) {
@@ -266,6 +281,7 @@ func (v *ListProductSubscriptionFields) __premarshalJSON() (*__premarshalListPro
 	retval.Uuid = v.ProductSubscriptionState.Uuid
 	retval.IsArchived = v.ProductSubscriptionState.IsArchived
 	retval.LlmProxyAccess = v.ProductSubscriptionState.LlmProxyAccess
+	retval.ActiveLicense = v.ProductSubscriptionState.ActiveLicense
 	return &retval, nil
 }
 
@@ -349,6 +365,11 @@ func (v *ListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsProductSub
 	return v.ListProductSubscriptionFields.ProductSubscriptionState.LlmProxyAccess
 }
 
+// GetActiveLicense returns ListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsProductSubscriptionConnectionNodesProductSubscription.ActiveLicense, and is useful for accessing the field via an interface.
+func (v *ListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsProductSubscriptionConnectionNodesProductSubscription) GetActiveLicense() *ProductSubscriptionStateActiveLicenseProductLicense {
+	return v.ListProductSubscriptionFields.ProductSubscriptionState.ActiveLicense
+}
+
 func (v *ListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsProductSubscriptionConnectionNodesProductSubscription) UnmarshalJSON(b []byte) error {
 
 	if string(b) == "null" {
@@ -384,6 +405,8 @@ type __premarshalListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsPr
 	IsArchived bool `json:"isArchived"`
 
 	LlmProxyAccess ProductSubscriptionStateLlmProxyAccessLLMProxyAccess `json:"llmProxyAccess"`
+
+	ActiveLicense *ProductSubscriptionStateActiveLicenseProductLicense `json:"activeLicense"`
 }
 
 func (v *ListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsProductSubscriptionConnectionNodesProductSubscription) MarshalJSON() ([]byte, error) {
@@ -402,6 +425,7 @@ func (v *ListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsProductSub
 	retval.Uuid = v.ListProductSubscriptionFields.ProductSubscriptionState.Uuid
 	retval.IsArchived = v.ListProductSubscriptionFields.ProductSubscriptionState.IsArchived
 	retval.LlmProxyAccess = v.ListProductSubscriptionFields.ProductSubscriptionState.LlmProxyAccess
+	retval.ActiveLicense = v.ListProductSubscriptionFields.ProductSubscriptionState.ActiveLicense
 	return &retval, nil
 }
 
@@ -454,6 +478,8 @@ type ProductSubscriptionState struct {
 	IsArchived bool `json:"isArchived"`
 	// LLM-proxy access granted to this subscription. Properties may be inferred from the active license, or be defined in overrides.
 	LlmProxyAccess ProductSubscriptionStateLlmProxyAccessLLMProxyAccess `json:"llmProxyAccess"`
+	// The currently active product license associated with this product subscription, if any.
+	ActiveLicense *ProductSubscriptionStateActiveLicenseProductLicense `json:"activeLicense"`
 }
 
 // GetId returns ProductSubscriptionState.Id, and is useful for accessing the field via an interface.
@@ -469,6 +495,38 @@ func (v *ProductSubscriptionState) GetIsArchived() bool { return v.IsArchived }
 func (v *ProductSubscriptionState) GetLlmProxyAccess() ProductSubscriptionStateLlmProxyAccessLLMProxyAccess {
 	return v.LlmProxyAccess
 }
+
+// GetActiveLicense returns ProductSubscriptionState.ActiveLicense, and is useful for accessing the field via an interface.
+func (v *ProductSubscriptionState) GetActiveLicense() *ProductSubscriptionStateActiveLicenseProductLicense {
+	return v.ActiveLicense
+}
+
+// ProductSubscriptionStateActiveLicenseProductLicense includes the requested fields of the GraphQL type ProductLicense.
+// The GraphQL type's documentation follows.
+//
+// A product license that was created on Sourcegraph.com.
+// FOR INTERNAL USE ONLY.
+type ProductSubscriptionStateActiveLicenseProductLicense struct {
+	// Information about this product license.
+	Info *ProductSubscriptionStateActiveLicenseProductLicenseInfo `json:"info"`
+}
+
+// GetInfo returns ProductSubscriptionStateActiveLicenseProductLicense.Info, and is useful for accessing the field via an interface.
+func (v *ProductSubscriptionStateActiveLicenseProductLicense) GetInfo() *ProductSubscriptionStateActiveLicenseProductLicenseInfo {
+	return v.Info
+}
+
+// ProductSubscriptionStateActiveLicenseProductLicenseInfo includes the requested fields of the GraphQL type ProductLicenseInfo.
+// The GraphQL type's documentation follows.
+//
+// Information about this site's product license (which activates certain Sourcegraph features).
+type ProductSubscriptionStateActiveLicenseProductLicenseInfo struct {
+	// Tags indicating the product plan and features activated by this license.
+	Tags []string `json:"tags"`
+}
+
+// GetTags returns ProductSubscriptionStateActiveLicenseProductLicenseInfo.Tags, and is useful for accessing the field via an interface.
+func (v *ProductSubscriptionStateActiveLicenseProductLicenseInfo) GetTags() []string { return v.Tags }
 
 // ProductSubscriptionStateLlmProxyAccessLLMProxyAccess includes the requested fields of the GraphQL type LLMProxyAccess.
 // The GraphQL type's documentation follows.
@@ -568,6 +626,11 @@ fragment ProductSubscriptionState on ProductSubscription {
 	llmProxyAccess {
 		... LLMProxyAccessFields
 	}
+	activeLicense {
+		info {
+			tags
+		}
+	}
 }
 fragment LLMProxyAccessFields on LLMProxyAccess {
 	enabled
@@ -627,6 +690,11 @@ fragment ProductSubscriptionState on ProductSubscription {
 	isArchived
 	llmProxyAccess {
 		... LLMProxyAccessFields
+	}
+	activeLicense {
+		info {
+			tags
+		}
 	}
 }
 fragment LLMProxyAccessFields on LLMProxyAccess {

@@ -9,17 +9,18 @@ import { ReleaseNotes } from './generate-release-notes'
 import { GenerateTest } from './generate-test'
 import { GitHistory } from './git-log'
 import { ImproveVariableNames } from './improve-variable-names'
+import { InlineChat } from './inline-chat'
 import { NextQuestions } from './next-questions'
-import { Recipe } from './recipe'
+import { Recipe, RecipeID } from './recipe'
 import { TranslateToLanguage } from './translate'
 
-const registeredRecipes: { [id: string]: Recipe } = {}
+const registeredRecipes: { [id in RecipeID]?: Recipe } = {}
 
-export function registerRecipe(id: string, recipe: Recipe): void {
+export function registerRecipe(id: RecipeID, recipe: Recipe): void {
     registeredRecipes[id] = recipe
 }
 
-export function getRecipe(id: string): Recipe | null {
+export function getRecipe(id: RecipeID): Recipe | undefined {
     return registeredRecipes[id]
 }
 
@@ -32,6 +33,7 @@ function init(): void {
         new ChatQuestion(),
         new ExplainCodeDetailed(),
         new ExplainCodeHighLevel(),
+        new InlineChat(),
         new GenerateDocstring(),
         new GenerateTest(),
         new GitHistory(),

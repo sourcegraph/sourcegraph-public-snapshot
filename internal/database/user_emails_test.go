@@ -159,6 +159,64 @@ func TestUserEmails_GetPrimary(t *testing.T) {
 	checkPrimaryEmail(t, "b1@example.com", true)
 }
 
+func TestUserEmails_HasVerifiedEmail(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	user, err := db.Users().Create(ctx, NewUser{
+		Email:                 "a@example.com",
+		Username:              "u2",
+		Password:              "pw",
+		EmailVerificationCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	checkHasVerifiedEmail := func(t *testing.T, wantVerified bool) {
+		t.Helper()
+		have, err := db.UserEmails().HasVerifiedEmail(ctx, user.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if have != wantVerified {
+			t.Fatalf("got hasVerified %t, want %t", have, wantVerified)
+		}
+	}
+
+	// Has no emails, no verified
+	checkHasVerifiedEmail(t, false)
+
+	code := "abcd"
+	if err := db.UserEmails().Add(ctx, user.ID, "e1@example.com", &code); err != nil {
+		t.Fatal(err)
+	}
+
+	// Has email, but not verified
+	checkHasVerifiedEmail(t, false)
+
+	if err := db.UserEmails().Add(ctx, user.ID, "e2@example.com", &code); err != nil {
+		t.Fatal(err)
+	}
+
+	// Has two emails, but no verified
+	checkHasVerifiedEmail(t, false)
+
+	// Verify email 1/2
+	if _, err := db.UserEmails().Verify(ctx, user.ID, "e1@example.com", code); err != nil {
+		t.Fatal(err)
+	}
+
+	// Has two emails, but no verified
+	checkHasVerifiedEmail(t, true)
+}
+
 func TestUserEmails_SetPrimary(t *testing.T) {
 	if testing.Short() {
 		t.Skip()

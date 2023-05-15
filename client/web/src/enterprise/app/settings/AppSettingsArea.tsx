@@ -1,12 +1,13 @@
 import { FC } from 'react'
 
-import { mdiGit, mdiFolderMultiplePlusOutline } from '@mdi/js'
 import { Routes, Route, Outlet, Navigate, useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, H2, Link, Icon, PageHeader } from '@sourcegraph/wildcard'
+import { Button, H2, Link, PageHeader } from '@sourcegraph/wildcard'
 
-import { LocalRepositoriesStep, RemoteRepositoriesStep } from '../../../setup-wizard/components'
+import { RemoteRepositoriesStep } from '../../../setup-wizard/components'
+
+import { LocalRepositoriesTab } from './local-repositories/LocalRepositoriesTab'
 
 import styles from './AppSettingsArea.module.scss'
 
@@ -19,10 +20,7 @@ enum AppSettingURL {
 export const AppSettingsArea: FC<TelemetryProps> = ({ telemetryService }) => (
     <Routes>
         <Route path="*" element={<AppSettingsLayout />}>
-            <Route
-                path={AppSettingURL.LocalRepositories}
-                element={<LocalRepositoriesTab telemetryService={telemetryService} />}
-            />
+            <Route path={AppSettingURL.LocalRepositories} element={<LocalRepositoriesTab />} />
             <Route
                 path={`${AppSettingURL.RemoteRepositories}/*`}
                 element={<RemoteRepositoriesTab telemetryService={telemetryService} />}
@@ -72,30 +70,6 @@ const AppSettingsLayout: FC = () => {
         </div>
     )
 }
-
-const LocalRepositoriesTab: FC<TelemetryProps> = ({ telemetryService }) => (
-    <div className={styles.content}>
-        <PageHeader
-            headingElement="h2"
-            path={[{ text: 'Local repositories' }]}
-            description="Add your local repositories"
-            className="mb-3"
-            actions={
-                <div className={styles.headerActions}>
-                    <Button variant="primary">
-                        <Icon svgPath={mdiGit} aria-hidden={true} /> Add a repository
-                    </Button>
-                    <Button variant="primary">
-                        <Icon svgPath={mdiFolderMultiplePlusOutline} aria-hidden={true} /> Add all repositories from a
-                        folder
-                    </Button>
-                </div>
-            }
-        />
-
-        <LocalRepositoriesStep description={false} progressBar={false} telemetryService={telemetryService} />
-    </div>
-)
 
 const RemoteRepositoriesTab: FC<TelemetryProps> = ({ telemetryService }) => (
     <div className={styles.content}>

@@ -7,10 +7,10 @@ import { populateCurrentEditorContextTemplate } from '../../prompt/templates'
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
-import { Recipe, RecipeContext } from './recipe'
+import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class NextQuestions implements Recipe {
-    public id = 'next-questions'
+    public id: RecipeID = 'next-questions'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const promptPrefix = 'Assume I have an answer to the following request:'

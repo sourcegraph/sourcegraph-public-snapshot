@@ -18,14 +18,7 @@ const EXTENSION_TO_LANGUAGE: { [key: string]: string } = {
 }
 
 export function getNormalizedLanguageName(extension: string): string {
-    if (!extension) {
-        return ''
-    }
-    const language = EXTENSION_TO_LANGUAGE[extension]
-    if (language) {
-        return language
-    }
-    return extension.charAt(0).toUpperCase() + extension.slice(1)
+    return extension ? EXTENSION_TO_LANGUAGE[extension] ?? extension.charAt(0).toUpperCase() + extension.slice(1) : ''
 }
 
 export async function getContextMessagesFromSelection(
@@ -49,4 +42,14 @@ export async function getContextMessagesFromSelection(
 
 export function getFileExtension(fileName: string): string {
     return path.extname(fileName).slice(1).toLowerCase()
+}
+
+// This cleans up the code returned by Cody based on current behavior
+// ex. Remove  `tags:` that Cody sometimes include in the returned content
+export function contentSanitizer(text: string): string {
+    const tagsIndex = text.indexOf('tags:')
+    if (tagsIndex !== -1) {
+        return text.trim().slice(tagsIndex + 6) + '\n'
+    }
+    return text.trim() + '\n'
 }

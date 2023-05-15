@@ -330,7 +330,7 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 		}
 
 		// This occurrence references this symbol (or a sibling of it)
-		if _, ok := referencesBySymbol[occ.Symbol]; ok && !isDefinition && definitionSymbol != occ.Symbol {
+		if _, ok := referencesBySymbol[occ.Symbol]; ok && !isDefinition {
 			references = append(references, scip.NewRange(occ.Range))
 		}
 

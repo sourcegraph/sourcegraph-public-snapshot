@@ -63,44 +63,18 @@ type MockStore struct {
 	// LastUpdatedAtFunc is an instance of a mock function object
 	// controlling the behavior of the method LastUpdatedAt.
 	LastUpdatedAtFunc *StoreLastUpdatedAtFunc
-	// SoftDeleteStaleDefinitionsFunc is an instance of a mock function
+	// SoftDeleteStaleExportedUploadsFunc is an instance of a mock function
 	// object controlling the behavior of the method
-	// SoftDeleteStaleDefinitions.
-	SoftDeleteStaleDefinitionsFunc *StoreSoftDeleteStaleDefinitionsFunc
-	// SoftDeleteStaleInitialPathsFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// SoftDeleteStaleInitialPaths.
-	SoftDeleteStaleInitialPathsFunc *StoreSoftDeleteStaleInitialPathsFunc
-	// SoftDeleteStaleReferencesFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// SoftDeleteStaleReferences.
-	SoftDeleteStaleReferencesFunc *StoreSoftDeleteStaleReferencesFunc
-	// VacuumAbandonedDefinitionsFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// VacuumAbandonedDefinitions.
-	VacuumAbandonedDefinitionsFunc *StoreVacuumAbandonedDefinitionsFunc
+	// SoftDeleteStaleExportedUploads.
+	SoftDeleteStaleExportedUploadsFunc *StoreSoftDeleteStaleExportedUploadsFunc
 	// VacuumAbandonedExportedUploadsFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// VacuumAbandonedExportedUploads.
 	VacuumAbandonedExportedUploadsFunc *StoreVacuumAbandonedExportedUploadsFunc
-	// VacuumAbandonedInitialPathCountsFunc is an instance of a mock
-	// function object controlling the behavior of the method
-	// VacuumAbandonedInitialPathCounts.
-	VacuumAbandonedInitialPathCountsFunc *StoreVacuumAbandonedInitialPathCountsFunc
-	// VacuumAbandonedReferencesFunc is an instance of a mock function
+	// VacuumDeletedExportedUploadsFunc is an instance of a mock function
 	// object controlling the behavior of the method
-	// VacuumAbandonedReferences.
-	VacuumAbandonedReferencesFunc *StoreVacuumAbandonedReferencesFunc
-	// VacuumDeletedDefinitionsFunc is an instance of a mock function object
-	// controlling the behavior of the method VacuumDeletedDefinitions.
-	VacuumDeletedDefinitionsFunc *StoreVacuumDeletedDefinitionsFunc
-	// VacuumDeletedInitialPathsFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// VacuumDeletedInitialPaths.
-	VacuumDeletedInitialPathsFunc *StoreVacuumDeletedInitialPathsFunc
-	// VacuumDeletedReferencesFunc is an instance of a mock function object
-	// controlling the behavior of the method VacuumDeletedReferences.
-	VacuumDeletedReferencesFunc *StoreVacuumDeletedReferencesFunc
+	// VacuumDeletedExportedUploads.
+	VacuumDeletedExportedUploadsFunc *StoreVacuumDeletedExportedUploadsFunc
 	// VacuumStaleGraphsFunc is an instance of a mock function object
 	// controlling the behavior of the method VacuumStaleGraphs.
 	VacuumStaleGraphsFunc *StoreVacuumStaleGraphsFunc
@@ -176,23 +150,8 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
-		SoftDeleteStaleDefinitionsFunc: &StoreSoftDeleteStaleDefinitionsFunc{
+		SoftDeleteStaleExportedUploadsFunc: &StoreSoftDeleteStaleExportedUploadsFunc{
 			defaultHook: func(context.Context, string) (r0 int, r1 int, r2 error) {
-				return
-			},
-		},
-		SoftDeleteStaleInitialPathsFunc: &StoreSoftDeleteStaleInitialPathsFunc{
-			defaultHook: func(context.Context, string) (r0 int, r1 int, r2 error) {
-				return
-			},
-		},
-		SoftDeleteStaleReferencesFunc: &StoreSoftDeleteStaleReferencesFunc{
-			defaultHook: func(context.Context, string) (r0 int, r1 int, r2 error) {
-				return
-			},
-		},
-		VacuumAbandonedDefinitionsFunc: &StoreVacuumAbandonedDefinitionsFunc{
-			defaultHook: func(context.Context, string, int) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -201,27 +160,7 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
-		VacuumAbandonedInitialPathCountsFunc: &StoreVacuumAbandonedInitialPathCountsFunc{
-			defaultHook: func(context.Context, string, int) (r0 int, r1 error) {
-				return
-			},
-		},
-		VacuumAbandonedReferencesFunc: &StoreVacuumAbandonedReferencesFunc{
-			defaultHook: func(context.Context, string, int) (r0 int, r1 error) {
-				return
-			},
-		},
-		VacuumDeletedDefinitionsFunc: &StoreVacuumDeletedDefinitionsFunc{
-			defaultHook: func(context.Context, string) (r0 int, r1 error) {
-				return
-			},
-		},
-		VacuumDeletedInitialPathsFunc: &StoreVacuumDeletedInitialPathsFunc{
-			defaultHook: func(context.Context, string) (r0 int, r1 error) {
-				return
-			},
-		},
-		VacuumDeletedReferencesFunc: &StoreVacuumDeletedReferencesFunc{
+		VacuumDeletedExportedUploadsFunc: &StoreVacuumDeletedExportedUploadsFunc{
 			defaultHook: func(context.Context, string) (r0 int, r1 error) {
 				return
 			},
@@ -308,24 +247,9 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.LastUpdatedAt")
 			},
 		},
-		SoftDeleteStaleDefinitionsFunc: &StoreSoftDeleteStaleDefinitionsFunc{
+		SoftDeleteStaleExportedUploadsFunc: &StoreSoftDeleteStaleExportedUploadsFunc{
 			defaultHook: func(context.Context, string) (int, int, error) {
-				panic("unexpected invocation of MockStore.SoftDeleteStaleDefinitions")
-			},
-		},
-		SoftDeleteStaleInitialPathsFunc: &StoreSoftDeleteStaleInitialPathsFunc{
-			defaultHook: func(context.Context, string) (int, int, error) {
-				panic("unexpected invocation of MockStore.SoftDeleteStaleInitialPaths")
-			},
-		},
-		SoftDeleteStaleReferencesFunc: &StoreSoftDeleteStaleReferencesFunc{
-			defaultHook: func(context.Context, string) (int, int, error) {
-				panic("unexpected invocation of MockStore.SoftDeleteStaleReferences")
-			},
-		},
-		VacuumAbandonedDefinitionsFunc: &StoreVacuumAbandonedDefinitionsFunc{
-			defaultHook: func(context.Context, string, int) (int, error) {
-				panic("unexpected invocation of MockStore.VacuumAbandonedDefinitions")
+				panic("unexpected invocation of MockStore.SoftDeleteStaleExportedUploads")
 			},
 		},
 		VacuumAbandonedExportedUploadsFunc: &StoreVacuumAbandonedExportedUploadsFunc{
@@ -333,29 +257,9 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.VacuumAbandonedExportedUploads")
 			},
 		},
-		VacuumAbandonedInitialPathCountsFunc: &StoreVacuumAbandonedInitialPathCountsFunc{
-			defaultHook: func(context.Context, string, int) (int, error) {
-				panic("unexpected invocation of MockStore.VacuumAbandonedInitialPathCounts")
-			},
-		},
-		VacuumAbandonedReferencesFunc: &StoreVacuumAbandonedReferencesFunc{
-			defaultHook: func(context.Context, string, int) (int, error) {
-				panic("unexpected invocation of MockStore.VacuumAbandonedReferences")
-			},
-		},
-		VacuumDeletedDefinitionsFunc: &StoreVacuumDeletedDefinitionsFunc{
+		VacuumDeletedExportedUploadsFunc: &StoreVacuumDeletedExportedUploadsFunc{
 			defaultHook: func(context.Context, string) (int, error) {
-				panic("unexpected invocation of MockStore.VacuumDeletedDefinitions")
-			},
-		},
-		VacuumDeletedInitialPathsFunc: &StoreVacuumDeletedInitialPathsFunc{
-			defaultHook: func(context.Context, string) (int, error) {
-				panic("unexpected invocation of MockStore.VacuumDeletedInitialPaths")
-			},
-		},
-		VacuumDeletedReferencesFunc: &StoreVacuumDeletedReferencesFunc{
-			defaultHook: func(context.Context, string) (int, error) {
-				panic("unexpected invocation of MockStore.VacuumDeletedReferences")
+				panic("unexpected invocation of MockStore.VacuumDeletedExportedUploads")
 			},
 		},
 		VacuumStaleGraphsFunc: &StoreVacuumStaleGraphsFunc{
@@ -416,35 +320,14 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		LastUpdatedAtFunc: &StoreLastUpdatedAtFunc{
 			defaultHook: i.LastUpdatedAt,
 		},
-		SoftDeleteStaleDefinitionsFunc: &StoreSoftDeleteStaleDefinitionsFunc{
-			defaultHook: i.SoftDeleteStaleDefinitions,
-		},
-		SoftDeleteStaleInitialPathsFunc: &StoreSoftDeleteStaleInitialPathsFunc{
-			defaultHook: i.SoftDeleteStaleInitialPaths,
-		},
-		SoftDeleteStaleReferencesFunc: &StoreSoftDeleteStaleReferencesFunc{
-			defaultHook: i.SoftDeleteStaleReferences,
-		},
-		VacuumAbandonedDefinitionsFunc: &StoreVacuumAbandonedDefinitionsFunc{
-			defaultHook: i.VacuumAbandonedDefinitions,
+		SoftDeleteStaleExportedUploadsFunc: &StoreSoftDeleteStaleExportedUploadsFunc{
+			defaultHook: i.SoftDeleteStaleExportedUploads,
 		},
 		VacuumAbandonedExportedUploadsFunc: &StoreVacuumAbandonedExportedUploadsFunc{
 			defaultHook: i.VacuumAbandonedExportedUploads,
 		},
-		VacuumAbandonedInitialPathCountsFunc: &StoreVacuumAbandonedInitialPathCountsFunc{
-			defaultHook: i.VacuumAbandonedInitialPathCounts,
-		},
-		VacuumAbandonedReferencesFunc: &StoreVacuumAbandonedReferencesFunc{
-			defaultHook: i.VacuumAbandonedReferences,
-		},
-		VacuumDeletedDefinitionsFunc: &StoreVacuumDeletedDefinitionsFunc{
-			defaultHook: i.VacuumDeletedDefinitions,
-		},
-		VacuumDeletedInitialPathsFunc: &StoreVacuumDeletedInitialPathsFunc{
-			defaultHook: i.VacuumDeletedInitialPaths,
-		},
-		VacuumDeletedReferencesFunc: &StoreVacuumDeletedReferencesFunc{
-			defaultHook: i.VacuumDeletedReferences,
+		VacuumDeletedExportedUploadsFunc: &StoreVacuumDeletedExportedUploadsFunc{
+			defaultHook: i.VacuumDeletedExportedUploads,
 		},
 		VacuumStaleGraphsFunc: &StoreVacuumStaleGraphsFunc{
 			defaultHook: i.VacuumStaleGraphs,
@@ -1795,37 +1678,37 @@ func (c StoreLastUpdatedAtFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// StoreSoftDeleteStaleDefinitionsFunc describes the behavior when the
-// SoftDeleteStaleDefinitions method of the parent MockStore instance is
+// StoreSoftDeleteStaleExportedUploadsFunc describes the behavior when the
+// SoftDeleteStaleExportedUploads method of the parent MockStore instance is
 // invoked.
-type StoreSoftDeleteStaleDefinitionsFunc struct {
+type StoreSoftDeleteStaleExportedUploadsFunc struct {
 	defaultHook func(context.Context, string) (int, int, error)
 	hooks       []func(context.Context, string) (int, int, error)
-	history     []StoreSoftDeleteStaleDefinitionsFuncCall
+	history     []StoreSoftDeleteStaleExportedUploadsFuncCall
 	mutex       sync.Mutex
 }
 
-// SoftDeleteStaleDefinitions delegates to the next hook function in the
+// SoftDeleteStaleExportedUploads delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockStore) SoftDeleteStaleDefinitions(v0 context.Context, v1 string) (int, int, error) {
-	r0, r1, r2 := m.SoftDeleteStaleDefinitionsFunc.nextHook()(v0, v1)
-	m.SoftDeleteStaleDefinitionsFunc.appendCall(StoreSoftDeleteStaleDefinitionsFuncCall{v0, v1, r0, r1, r2})
+func (m *MockStore) SoftDeleteStaleExportedUploads(v0 context.Context, v1 string) (int, int, error) {
+	r0, r1, r2 := m.SoftDeleteStaleExportedUploadsFunc.nextHook()(v0, v1)
+	m.SoftDeleteStaleExportedUploadsFunc.appendCall(StoreSoftDeleteStaleExportedUploadsFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the
-// SoftDeleteStaleDefinitions method of the parent MockStore instance is
+// SoftDeleteStaleExportedUploads method of the parent MockStore instance is
 // invoked and the hook queue is empty.
-func (f *StoreSoftDeleteStaleDefinitionsFunc) SetDefaultHook(hook func(context.Context, string) (int, int, error)) {
+func (f *StoreSoftDeleteStaleExportedUploadsFunc) SetDefaultHook(hook func(context.Context, string) (int, int, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// SoftDeleteStaleDefinitions method of the parent MockStore instance
+// SoftDeleteStaleExportedUploads method of the parent MockStore instance
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *StoreSoftDeleteStaleDefinitionsFunc) PushHook(hook func(context.Context, string) (int, int, error)) {
+func (f *StoreSoftDeleteStaleExportedUploadsFunc) PushHook(hook func(context.Context, string) (int, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1833,20 +1716,20 @@ func (f *StoreSoftDeleteStaleDefinitionsFunc) PushHook(hook func(context.Context
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreSoftDeleteStaleDefinitionsFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
+func (f *StoreSoftDeleteStaleExportedUploadsFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
 	f.SetDefaultHook(func(context.Context, string) (int, int, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreSoftDeleteStaleDefinitionsFunc) PushReturn(r0 int, r1 int, r2 error) {
+func (f *StoreSoftDeleteStaleExportedUploadsFunc) PushReturn(r0 int, r1 int, r2 error) {
 	f.PushHook(func(context.Context, string) (int, int, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *StoreSoftDeleteStaleDefinitionsFunc) nextHook() func(context.Context, string) (int, int, error) {
+func (f *StoreSoftDeleteStaleExportedUploadsFunc) nextHook() func(context.Context, string) (int, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1859,27 +1742,27 @@ func (f *StoreSoftDeleteStaleDefinitionsFunc) nextHook() func(context.Context, s
 	return hook
 }
 
-func (f *StoreSoftDeleteStaleDefinitionsFunc) appendCall(r0 StoreSoftDeleteStaleDefinitionsFuncCall) {
+func (f *StoreSoftDeleteStaleExportedUploadsFunc) appendCall(r0 StoreSoftDeleteStaleExportedUploadsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreSoftDeleteStaleDefinitionsFuncCall
+// History returns a sequence of StoreSoftDeleteStaleExportedUploadsFuncCall
 // objects describing the invocations of this function.
-func (f *StoreSoftDeleteStaleDefinitionsFunc) History() []StoreSoftDeleteStaleDefinitionsFuncCall {
+func (f *StoreSoftDeleteStaleExportedUploadsFunc) History() []StoreSoftDeleteStaleExportedUploadsFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreSoftDeleteStaleDefinitionsFuncCall, len(f.history))
+	history := make([]StoreSoftDeleteStaleExportedUploadsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreSoftDeleteStaleDefinitionsFuncCall is an object that describes an
-// invocation of method SoftDeleteStaleDefinitions on an instance of
+// StoreSoftDeleteStaleExportedUploadsFuncCall is an object that describes
+// an invocation of method SoftDeleteStaleExportedUploads on an instance of
 // MockStore.
-type StoreSoftDeleteStaleDefinitionsFuncCall struct {
+type StoreSoftDeleteStaleExportedUploadsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -1899,355 +1782,14 @@ type StoreSoftDeleteStaleDefinitionsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreSoftDeleteStaleDefinitionsFuncCall) Args() []interface{} {
+func (c StoreSoftDeleteStaleExportedUploadsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreSoftDeleteStaleDefinitionsFuncCall) Results() []interface{} {
+func (c StoreSoftDeleteStaleExportedUploadsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// StoreSoftDeleteStaleInitialPathsFunc describes the behavior when the
-// SoftDeleteStaleInitialPaths method of the parent MockStore instance is
-// invoked.
-type StoreSoftDeleteStaleInitialPathsFunc struct {
-	defaultHook func(context.Context, string) (int, int, error)
-	hooks       []func(context.Context, string) (int, int, error)
-	history     []StoreSoftDeleteStaleInitialPathsFuncCall
-	mutex       sync.Mutex
-}
-
-// SoftDeleteStaleInitialPaths delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockStore) SoftDeleteStaleInitialPaths(v0 context.Context, v1 string) (int, int, error) {
-	r0, r1, r2 := m.SoftDeleteStaleInitialPathsFunc.nextHook()(v0, v1)
-	m.SoftDeleteStaleInitialPathsFunc.appendCall(StoreSoftDeleteStaleInitialPathsFuncCall{v0, v1, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the
-// SoftDeleteStaleInitialPaths method of the parent MockStore instance is
-// invoked and the hook queue is empty.
-func (f *StoreSoftDeleteStaleInitialPathsFunc) SetDefaultHook(hook func(context.Context, string) (int, int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// SoftDeleteStaleInitialPaths method of the parent MockStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *StoreSoftDeleteStaleInitialPathsFunc) PushHook(hook func(context.Context, string) (int, int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreSoftDeleteStaleInitialPathsFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, string) (int, int, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreSoftDeleteStaleInitialPathsFunc) PushReturn(r0 int, r1 int, r2 error) {
-	f.PushHook(func(context.Context, string) (int, int, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *StoreSoftDeleteStaleInitialPathsFunc) nextHook() func(context.Context, string) (int, int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreSoftDeleteStaleInitialPathsFunc) appendCall(r0 StoreSoftDeleteStaleInitialPathsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreSoftDeleteStaleInitialPathsFuncCall
-// objects describing the invocations of this function.
-func (f *StoreSoftDeleteStaleInitialPathsFunc) History() []StoreSoftDeleteStaleInitialPathsFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreSoftDeleteStaleInitialPathsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreSoftDeleteStaleInitialPathsFuncCall is an object that describes an
-// invocation of method SoftDeleteStaleInitialPaths on an instance of
-// MockStore.
-type StoreSoftDeleteStaleInitialPathsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 int
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreSoftDeleteStaleInitialPathsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreSoftDeleteStaleInitialPathsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// StoreSoftDeleteStaleReferencesFunc describes the behavior when the
-// SoftDeleteStaleReferences method of the parent MockStore instance is
-// invoked.
-type StoreSoftDeleteStaleReferencesFunc struct {
-	defaultHook func(context.Context, string) (int, int, error)
-	hooks       []func(context.Context, string) (int, int, error)
-	history     []StoreSoftDeleteStaleReferencesFuncCall
-	mutex       sync.Mutex
-}
-
-// SoftDeleteStaleReferences delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockStore) SoftDeleteStaleReferences(v0 context.Context, v1 string) (int, int, error) {
-	r0, r1, r2 := m.SoftDeleteStaleReferencesFunc.nextHook()(v0, v1)
-	m.SoftDeleteStaleReferencesFunc.appendCall(StoreSoftDeleteStaleReferencesFuncCall{v0, v1, r0, r1, r2})
-	return r0, r1, r2
-}
-
-// SetDefaultHook sets function that is called when the
-// SoftDeleteStaleReferences method of the parent MockStore instance is
-// invoked and the hook queue is empty.
-func (f *StoreSoftDeleteStaleReferencesFunc) SetDefaultHook(hook func(context.Context, string) (int, int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// SoftDeleteStaleReferences method of the parent MockStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *StoreSoftDeleteStaleReferencesFunc) PushHook(hook func(context.Context, string) (int, int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreSoftDeleteStaleReferencesFunc) SetDefaultReturn(r0 int, r1 int, r2 error) {
-	f.SetDefaultHook(func(context.Context, string) (int, int, error) {
-		return r0, r1, r2
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreSoftDeleteStaleReferencesFunc) PushReturn(r0 int, r1 int, r2 error) {
-	f.PushHook(func(context.Context, string) (int, int, error) {
-		return r0, r1, r2
-	})
-}
-
-func (f *StoreSoftDeleteStaleReferencesFunc) nextHook() func(context.Context, string) (int, int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreSoftDeleteStaleReferencesFunc) appendCall(r0 StoreSoftDeleteStaleReferencesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreSoftDeleteStaleReferencesFuncCall
-// objects describing the invocations of this function.
-func (f *StoreSoftDeleteStaleReferencesFunc) History() []StoreSoftDeleteStaleReferencesFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreSoftDeleteStaleReferencesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreSoftDeleteStaleReferencesFuncCall is an object that describes an
-// invocation of method SoftDeleteStaleReferences on an instance of
-// MockStore.
-type StoreSoftDeleteStaleReferencesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 int
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreSoftDeleteStaleReferencesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreSoftDeleteStaleReferencesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// StoreVacuumAbandonedDefinitionsFunc describes the behavior when the
-// VacuumAbandonedDefinitions method of the parent MockStore instance is
-// invoked.
-type StoreVacuumAbandonedDefinitionsFunc struct {
-	defaultHook func(context.Context, string, int) (int, error)
-	hooks       []func(context.Context, string, int) (int, error)
-	history     []StoreVacuumAbandonedDefinitionsFuncCall
-	mutex       sync.Mutex
-}
-
-// VacuumAbandonedDefinitions delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockStore) VacuumAbandonedDefinitions(v0 context.Context, v1 string, v2 int) (int, error) {
-	r0, r1 := m.VacuumAbandonedDefinitionsFunc.nextHook()(v0, v1, v2)
-	m.VacuumAbandonedDefinitionsFunc.appendCall(StoreVacuumAbandonedDefinitionsFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// VacuumAbandonedDefinitions method of the parent MockStore instance is
-// invoked and the hook queue is empty.
-func (f *StoreVacuumAbandonedDefinitionsFunc) SetDefaultHook(hook func(context.Context, string, int) (int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// VacuumAbandonedDefinitions method of the parent MockStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *StoreVacuumAbandonedDefinitionsFunc) PushHook(hook func(context.Context, string, int) (int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreVacuumAbandonedDefinitionsFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, int) (int, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreVacuumAbandonedDefinitionsFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, string, int) (int, error) {
-		return r0, r1
-	})
-}
-
-func (f *StoreVacuumAbandonedDefinitionsFunc) nextHook() func(context.Context, string, int) (int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreVacuumAbandonedDefinitionsFunc) appendCall(r0 StoreVacuumAbandonedDefinitionsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreVacuumAbandonedDefinitionsFuncCall
-// objects describing the invocations of this function.
-func (f *StoreVacuumAbandonedDefinitionsFunc) History() []StoreVacuumAbandonedDefinitionsFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreVacuumAbandonedDefinitionsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreVacuumAbandonedDefinitionsFuncCall is an object that describes an
-// invocation of method VacuumAbandonedDefinitions on an instance of
-// MockStore.
-type StoreVacuumAbandonedDefinitionsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreVacuumAbandonedDefinitionsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreVacuumAbandonedDefinitionsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // StoreVacuumAbandonedExportedUploadsFunc describes the behavior when the
@@ -2364,37 +1906,37 @@ func (c StoreVacuumAbandonedExportedUploadsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// StoreVacuumAbandonedInitialPathCountsFunc describes the behavior when the
-// VacuumAbandonedInitialPathCounts method of the parent MockStore instance
-// is invoked.
-type StoreVacuumAbandonedInitialPathCountsFunc struct {
-	defaultHook func(context.Context, string, int) (int, error)
-	hooks       []func(context.Context, string, int) (int, error)
-	history     []StoreVacuumAbandonedInitialPathCountsFuncCall
+// StoreVacuumDeletedExportedUploadsFunc describes the behavior when the
+// VacuumDeletedExportedUploads method of the parent MockStore instance is
+// invoked.
+type StoreVacuumDeletedExportedUploadsFunc struct {
+	defaultHook func(context.Context, string) (int, error)
+	hooks       []func(context.Context, string) (int, error)
+	history     []StoreVacuumDeletedExportedUploadsFuncCall
 	mutex       sync.Mutex
 }
 
-// VacuumAbandonedInitialPathCounts delegates to the next hook function in
-// the queue and stores the parameter and result values of this invocation.
-func (m *MockStore) VacuumAbandonedInitialPathCounts(v0 context.Context, v1 string, v2 int) (int, error) {
-	r0, r1 := m.VacuumAbandonedInitialPathCountsFunc.nextHook()(v0, v1, v2)
-	m.VacuumAbandonedInitialPathCountsFunc.appendCall(StoreVacuumAbandonedInitialPathCountsFuncCall{v0, v1, v2, r0, r1})
+// VacuumDeletedExportedUploads delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockStore) VacuumDeletedExportedUploads(v0 context.Context, v1 string) (int, error) {
+	r0, r1 := m.VacuumDeletedExportedUploadsFunc.nextHook()(v0, v1)
+	m.VacuumDeletedExportedUploadsFunc.appendCall(StoreVacuumDeletedExportedUploadsFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
-// VacuumAbandonedInitialPathCounts method of the parent MockStore instance
-// is invoked and the hook queue is empty.
-func (f *StoreVacuumAbandonedInitialPathCountsFunc) SetDefaultHook(hook func(context.Context, string, int) (int, error)) {
+// VacuumDeletedExportedUploads method of the parent MockStore instance is
+// invoked and the hook queue is empty.
+func (f *StoreVacuumDeletedExportedUploadsFunc) SetDefaultHook(hook func(context.Context, string) (int, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// VacuumAbandonedInitialPathCounts method of the parent MockStore instance
+// VacuumDeletedExportedUploads method of the parent MockStore instance
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *StoreVacuumAbandonedInitialPathCountsFunc) PushHook(hook func(context.Context, string, int) (int, error)) {
+func (f *StoreVacuumDeletedExportedUploadsFunc) PushHook(hook func(context.Context, string) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2402,247 +1944,20 @@ func (f *StoreVacuumAbandonedInitialPathCountsFunc) PushHook(hook func(context.C
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreVacuumAbandonedInitialPathCountsFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, int) (int, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreVacuumAbandonedInitialPathCountsFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, string, int) (int, error) {
-		return r0, r1
-	})
-}
-
-func (f *StoreVacuumAbandonedInitialPathCountsFunc) nextHook() func(context.Context, string, int) (int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreVacuumAbandonedInitialPathCountsFunc) appendCall(r0 StoreVacuumAbandonedInitialPathCountsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// StoreVacuumAbandonedInitialPathCountsFuncCall objects describing the
-// invocations of this function.
-func (f *StoreVacuumAbandonedInitialPathCountsFunc) History() []StoreVacuumAbandonedInitialPathCountsFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreVacuumAbandonedInitialPathCountsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreVacuumAbandonedInitialPathCountsFuncCall is an object that describes
-// an invocation of method VacuumAbandonedInitialPathCounts on an instance
-// of MockStore.
-type StoreVacuumAbandonedInitialPathCountsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreVacuumAbandonedInitialPathCountsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreVacuumAbandonedInitialPathCountsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// StoreVacuumAbandonedReferencesFunc describes the behavior when the
-// VacuumAbandonedReferences method of the parent MockStore instance is
-// invoked.
-type StoreVacuumAbandonedReferencesFunc struct {
-	defaultHook func(context.Context, string, int) (int, error)
-	hooks       []func(context.Context, string, int) (int, error)
-	history     []StoreVacuumAbandonedReferencesFuncCall
-	mutex       sync.Mutex
-}
-
-// VacuumAbandonedReferences delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockStore) VacuumAbandonedReferences(v0 context.Context, v1 string, v2 int) (int, error) {
-	r0, r1 := m.VacuumAbandonedReferencesFunc.nextHook()(v0, v1, v2)
-	m.VacuumAbandonedReferencesFunc.appendCall(StoreVacuumAbandonedReferencesFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// VacuumAbandonedReferences method of the parent MockStore instance is
-// invoked and the hook queue is empty.
-func (f *StoreVacuumAbandonedReferencesFunc) SetDefaultHook(hook func(context.Context, string, int) (int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// VacuumAbandonedReferences method of the parent MockStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *StoreVacuumAbandonedReferencesFunc) PushHook(hook func(context.Context, string, int) (int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreVacuumAbandonedReferencesFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, int) (int, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreVacuumAbandonedReferencesFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, string, int) (int, error) {
-		return r0, r1
-	})
-}
-
-func (f *StoreVacuumAbandonedReferencesFunc) nextHook() func(context.Context, string, int) (int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreVacuumAbandonedReferencesFunc) appendCall(r0 StoreVacuumAbandonedReferencesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreVacuumAbandonedReferencesFuncCall
-// objects describing the invocations of this function.
-func (f *StoreVacuumAbandonedReferencesFunc) History() []StoreVacuumAbandonedReferencesFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreVacuumAbandonedReferencesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreVacuumAbandonedReferencesFuncCall is an object that describes an
-// invocation of method VacuumAbandonedReferences on an instance of
-// MockStore.
-type StoreVacuumAbandonedReferencesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreVacuumAbandonedReferencesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreVacuumAbandonedReferencesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// StoreVacuumDeletedDefinitionsFunc describes the behavior when the
-// VacuumDeletedDefinitions method of the parent MockStore instance is
-// invoked.
-type StoreVacuumDeletedDefinitionsFunc struct {
-	defaultHook func(context.Context, string) (int, error)
-	hooks       []func(context.Context, string) (int, error)
-	history     []StoreVacuumDeletedDefinitionsFuncCall
-	mutex       sync.Mutex
-}
-
-// VacuumDeletedDefinitions delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockStore) VacuumDeletedDefinitions(v0 context.Context, v1 string) (int, error) {
-	r0, r1 := m.VacuumDeletedDefinitionsFunc.nextHook()(v0, v1)
-	m.VacuumDeletedDefinitionsFunc.appendCall(StoreVacuumDeletedDefinitionsFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// VacuumDeletedDefinitions method of the parent MockStore instance is
-// invoked and the hook queue is empty.
-func (f *StoreVacuumDeletedDefinitionsFunc) SetDefaultHook(hook func(context.Context, string) (int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// VacuumDeletedDefinitions method of the parent MockStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *StoreVacuumDeletedDefinitionsFunc) PushHook(hook func(context.Context, string) (int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreVacuumDeletedDefinitionsFunc) SetDefaultReturn(r0 int, r1 error) {
+func (f *StoreVacuumDeletedExportedUploadsFunc) SetDefaultReturn(r0 int, r1 error) {
 	f.SetDefaultHook(func(context.Context, string) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreVacuumDeletedDefinitionsFunc) PushReturn(r0 int, r1 error) {
+func (f *StoreVacuumDeletedExportedUploadsFunc) PushReturn(r0 int, r1 error) {
 	f.PushHook(func(context.Context, string) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreVacuumDeletedDefinitionsFunc) nextHook() func(context.Context, string) (int, error) {
+func (f *StoreVacuumDeletedExportedUploadsFunc) nextHook() func(context.Context, string) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2655,27 +1970,27 @@ func (f *StoreVacuumDeletedDefinitionsFunc) nextHook() func(context.Context, str
 	return hook
 }
 
-func (f *StoreVacuumDeletedDefinitionsFunc) appendCall(r0 StoreVacuumDeletedDefinitionsFuncCall) {
+func (f *StoreVacuumDeletedExportedUploadsFunc) appendCall(r0 StoreVacuumDeletedExportedUploadsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreVacuumDeletedDefinitionsFuncCall
+// History returns a sequence of StoreVacuumDeletedExportedUploadsFuncCall
 // objects describing the invocations of this function.
-func (f *StoreVacuumDeletedDefinitionsFunc) History() []StoreVacuumDeletedDefinitionsFuncCall {
+func (f *StoreVacuumDeletedExportedUploadsFunc) History() []StoreVacuumDeletedExportedUploadsFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreVacuumDeletedDefinitionsFuncCall, len(f.history))
+	history := make([]StoreVacuumDeletedExportedUploadsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreVacuumDeletedDefinitionsFuncCall is an object that describes an
-// invocation of method VacuumDeletedDefinitions on an instance of
+// StoreVacuumDeletedExportedUploadsFuncCall is an object that describes an
+// invocation of method VacuumDeletedExportedUploads on an instance of
 // MockStore.
-type StoreVacuumDeletedDefinitionsFuncCall struct {
+type StoreVacuumDeletedExportedUploadsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -2692,232 +2007,13 @@ type StoreVacuumDeletedDefinitionsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreVacuumDeletedDefinitionsFuncCall) Args() []interface{} {
+func (c StoreVacuumDeletedExportedUploadsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreVacuumDeletedDefinitionsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// StoreVacuumDeletedInitialPathsFunc describes the behavior when the
-// VacuumDeletedInitialPaths method of the parent MockStore instance is
-// invoked.
-type StoreVacuumDeletedInitialPathsFunc struct {
-	defaultHook func(context.Context, string) (int, error)
-	hooks       []func(context.Context, string) (int, error)
-	history     []StoreVacuumDeletedInitialPathsFuncCall
-	mutex       sync.Mutex
-}
-
-// VacuumDeletedInitialPaths delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockStore) VacuumDeletedInitialPaths(v0 context.Context, v1 string) (int, error) {
-	r0, r1 := m.VacuumDeletedInitialPathsFunc.nextHook()(v0, v1)
-	m.VacuumDeletedInitialPathsFunc.appendCall(StoreVacuumDeletedInitialPathsFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// VacuumDeletedInitialPaths method of the parent MockStore instance is
-// invoked and the hook queue is empty.
-func (f *StoreVacuumDeletedInitialPathsFunc) SetDefaultHook(hook func(context.Context, string) (int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// VacuumDeletedInitialPaths method of the parent MockStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *StoreVacuumDeletedInitialPathsFunc) PushHook(hook func(context.Context, string) (int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreVacuumDeletedInitialPathsFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, string) (int, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreVacuumDeletedInitialPathsFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, string) (int, error) {
-		return r0, r1
-	})
-}
-
-func (f *StoreVacuumDeletedInitialPathsFunc) nextHook() func(context.Context, string) (int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreVacuumDeletedInitialPathsFunc) appendCall(r0 StoreVacuumDeletedInitialPathsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreVacuumDeletedInitialPathsFuncCall
-// objects describing the invocations of this function.
-func (f *StoreVacuumDeletedInitialPathsFunc) History() []StoreVacuumDeletedInitialPathsFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreVacuumDeletedInitialPathsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreVacuumDeletedInitialPathsFuncCall is an object that describes an
-// invocation of method VacuumDeletedInitialPaths on an instance of
-// MockStore.
-type StoreVacuumDeletedInitialPathsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreVacuumDeletedInitialPathsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreVacuumDeletedInitialPathsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// StoreVacuumDeletedReferencesFunc describes the behavior when the
-// VacuumDeletedReferences method of the parent MockStore instance is
-// invoked.
-type StoreVacuumDeletedReferencesFunc struct {
-	defaultHook func(context.Context, string) (int, error)
-	hooks       []func(context.Context, string) (int, error)
-	history     []StoreVacuumDeletedReferencesFuncCall
-	mutex       sync.Mutex
-}
-
-// VacuumDeletedReferences delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockStore) VacuumDeletedReferences(v0 context.Context, v1 string) (int, error) {
-	r0, r1 := m.VacuumDeletedReferencesFunc.nextHook()(v0, v1)
-	m.VacuumDeletedReferencesFunc.appendCall(StoreVacuumDeletedReferencesFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// VacuumDeletedReferences method of the parent MockStore instance is
-// invoked and the hook queue is empty.
-func (f *StoreVacuumDeletedReferencesFunc) SetDefaultHook(hook func(context.Context, string) (int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// VacuumDeletedReferences method of the parent MockStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *StoreVacuumDeletedReferencesFunc) PushHook(hook func(context.Context, string) (int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreVacuumDeletedReferencesFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, string) (int, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreVacuumDeletedReferencesFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, string) (int, error) {
-		return r0, r1
-	})
-}
-
-func (f *StoreVacuumDeletedReferencesFunc) nextHook() func(context.Context, string) (int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreVacuumDeletedReferencesFunc) appendCall(r0 StoreVacuumDeletedReferencesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreVacuumDeletedReferencesFuncCall
-// objects describing the invocations of this function.
-func (f *StoreVacuumDeletedReferencesFunc) History() []StoreVacuumDeletedReferencesFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreVacuumDeletedReferencesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreVacuumDeletedReferencesFuncCall is an object that describes an
-// invocation of method VacuumDeletedReferences on an instance of MockStore.
-type StoreVacuumDeletedReferencesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreVacuumDeletedReferencesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreVacuumDeletedReferencesFuncCall) Results() []interface{} {
+func (c StoreVacuumDeletedExportedUploadsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

@@ -79,3 +79,9 @@ Follow the steps below to package and publish the VS Code extension.
    - Publish release to [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai)
 
    4. Visit the [buildkite page for the vsce/release pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=cody%2Frelease) to watch the build process
+
+## Resources
+
+- [VS Code UX Guidelines](https://code.visualstudio.com/api/ux-guidelines/webviews)
+- [VS Code Webview UI Toolkit](https://microsoft.github.io/vscode-webview-ui-toolkit)
+- [VS Code Icons - Codicons](https://microsoft.github.io/vscode-codicons/dist/codicon.html)
