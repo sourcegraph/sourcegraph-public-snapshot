@@ -99,9 +99,12 @@ export const ContextPopover: React.FC<{
             <PopoverTrigger
                 as={Button}
                 outline={false}
-                className="d-flex justify-content-between p-0 align-items-center w-100 trigger"
+                className={classNames(
+                    'd-flex justify-content-between p-0 align-items-center w-100',
+                    styles.triggerButton
+                )}
             >
-                <div className={classNames(isEmpty && 'emptyTrigger', 'innerTrigger')}>
+                <div className={classNames(isEmpty && styles.triggerButtonEmpty, styles.triggerButtonInner)}>
                     {isEmpty ? (
                         `${header}...`
                     ) : (
@@ -115,7 +118,7 @@ export const ContextPopover: React.FC<{
 
             <PopoverContent position={Position.topStart}>
                 <Card>
-                    <div className={classNames('justify-content-between', 'header')}>
+                    <div className={classNames('justify-content-between', styles.header)}>
                         {header}
                         <Button onClick={() => setIsPopoverOpen(false)} variant="icon" aria-label="Close">
                             <Icon aria-hidden={true} svgPath={mdiClose} />
@@ -128,7 +131,7 @@ export const ContextPopover: React.FC<{
                         />
                     ) : (
                         <>
-                            <div className="itemsContainer">
+                            <div className={styles.itemsContainer}>
                                 {(isSearching ? filteredItems : currentItems)?.map((item, index) => (
                                     <ContextItem
                                         item={item}
@@ -149,7 +152,7 @@ export const ContextPopover: React.FC<{
                         </>
                     )}
 
-                    <div className="footer">
+                    <div className={styles.footer}>
                         <Input
                             role="combobox"
                             autoFocus={true}
@@ -161,7 +164,12 @@ export const ContextPopover: React.FC<{
                             onChange={handleSearch}
                         />
                         {isSearching && (
-                            <Button className="clearButton" variant="icon" onClick={clearSearchText} aria-label="Clear">
+                            <Button
+                                className={styles.clearButton}
+                                variant="icon"
+                                onClick={clearSearchText}
+                                aria-label="Clear"
+                            >
                                 <Icon aria-hidden={true} svgPath={mdiCloseCircle} />
                             </Button>
                         )}
@@ -180,7 +188,7 @@ const ContextItem: React.FC<{
     handleAddItem: () => void
     handleRemoveItem: () => void
 }> = ({ item, icon, searchText, contextType, handleAddItem, handleRemoveItem }) => (
-    <div className={classNames('d-flex justify-content-between flex-row p-1 rounded-lg', 'item')}>
+    <div className={classNames('d-flex justify-content-between flex-row p-1 rounded-lg', styles.item)}>
         <div>
             <Icon aria-hidden={true} svgPath={icon} />{' '}
             <span
@@ -189,7 +197,7 @@ const ContextItem: React.FC<{
                 }}
             />
         </div>
-        <div className="d-flex align-items-center itemRight">
+        <div className={classNames('d-flex align-items-center', styles.itemRight)}>
             {contextType === SELECTED.FILES && (
                 <>
                     <Icon aria-hidden={true} svgPath={mdiGithub} />{' '}
@@ -227,7 +235,7 @@ const ContextActions: React.FC<{
 
     return (
         <Button
-            className={classNames('d-flex justify-content-between', 'itemClear')}
+            className={classNames('d-flex justify-content-between', styles.itemClear)}
             variant="icon"
             onClick={isSearching ? handleAddAll : handleClearAll}
         >
@@ -263,9 +271,8 @@ export const fuzzySearch = (item: string, search: string): boolean => {
 
 export const getTintedText = (item: string, searchText: string) => {
     const searchRegex = new RegExp(`(${searchText})`, 'gi')
-    return item.replace(searchRegex, match => `<span class="tinted">${match}</span>`)
+    return item.replace(searchRegex, match => `<span class="${styles.tintedSearch}">${match}</span>`)
 }
-
 export const getFileName = (path: string) => {
     const parts = path.split('/')
     return parts[parts.length - 1]

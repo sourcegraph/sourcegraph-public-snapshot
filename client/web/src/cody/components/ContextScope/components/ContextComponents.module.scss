@@ -8,8 +8,87 @@
     font-weight: 400;
   }
 
+/* Context Scope styles */
+
+.header {
+    text-transform: uppercase;
+    font-size: 10.5px;
+    color: var(--input-placeholder-color);
+    display: flex;
+    border-bottom: 1px solid var(--border-color-2);;
+    width: 600px;
+    padding: 8px 10px;
+}
+
   .emptyState {
-    color: var(--gray-05);
+    color: var(--header-icon-color);
     padding: 0.9375rem 2.5rem;
   }
 
+  .itemsContainer {
+    max-height: 45vh;
+    padding: 8px;
+    overflow: auto;
+}
+
+.itemClear {
+    color: var(--input-placeholder-color);
+    border-top: 1px solid var(--border-color-2);;
+    padding: 5px 12px;
+    font-size: 0.8rem;
+
+}
+
+.footer {
+    padding: 10px;
+    border-top: 1px solid var(--border-color-2);;
+}
+
+.triggerButton{
+    font-weight: 400;
+}
+
+.triggerButton-empty {
+    color: var(--text-disabled);
+}
+
+.triggerButton-inner {
+    display: flex;
+    min-width: 0;
+    flex-grow: 1;
+    max-width: 28rem;
+}
+
+.item {
+    border-radius: 4px;
+}
+
+.item:hover {
+    background-color: var(--subtle-bg);
+}
+
+.itemRight {
+    color: var(--text-disabled);
+    column-gap: 3px;
+    align-items: end;
+}
+
+.tintedSearch {
+    background-color: var(--mark-bg);
+}
+
+.clearButton {
+    position: absolute;
+    bottom: 0px;
+    right: 12px;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    outline: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    color: var(--input-focus-border-color);
+  }
