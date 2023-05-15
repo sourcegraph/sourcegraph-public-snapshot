@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 
 import { ChatViewProvider, isValidLogin } from './chat/ChatViewProvider'
-import { DOTCOM_URL } from './chat/protocol'
+import { DOTCOM_URL, LOCAL_APP_URL } from './chat/protocol'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
@@ -192,17 +192,24 @@ const register = async (
         // Register URI Handler for resolving token sending back from sourcegraph.com
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {
-                await workspaceConfig.update('cody.serverEndpoint', DOTCOM_URL.href, vscode.ConfigurationTarget.Global)
-                const token = new URLSearchParams(uri.query).get('code')
+                const params = new URLSearchParams(uri.query)
+                let serverEndpoint = DOTCOM_URL.href
+                if (params.get('type') === 'app') {
+                    serverEndpoint = LOCAL_APP_URL.href
+                }
+                await workspaceConfig.update('cody.serverEndpoint', serverEndpoint, vscode.ConfigurationTarget.Global)
+                const token = params.get('code')
                 if (token && token.length > 8) {
                     await secretStorage.store(CODY_ACCESS_TOKEN_SECRET, token)
                     const isAuthed = await isValidLogin({
-                        serverEndpoint: DOTCOM_URL.href,
+                        serverEndpoint,
                         accessToken: token,
                         customHeaders: config.customHeaders,
                     })
                     await chatProvider.sendLogin(isAuthed)
-                    void vscode.window.showInformationMessage('Token has been retreived and updated successfully')
+                    if (isAuthed) {
+                        void vscode.window.showInformationMessage('Token has been retreived and updated successfully')
+                    }
                 }
             },
         })

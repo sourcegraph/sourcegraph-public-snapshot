@@ -84,7 +84,7 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 		(&auth.Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client)},
+			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client, false)},
 			Next:        next,
 		}).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
@@ -109,7 +109,7 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 		(&auth.Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client)},
+			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client, false)},
 			Next:        next,
 		}).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
@@ -130,7 +130,49 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 		(&auth.Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client)},
+			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client, false)},
+			Next:        next,
+		}).ServeHTTP(w, r)
+		assert.Equal(t, http.StatusForbidden, w.Code)
+	})
+
+	t.Run("authenticated but not dev license", func(t *testing.T) {
+		cache := NewMockCache()
+		client := NewMockClient()
+		client.MakeRequestFunc.SetDefaultHook(func(_ context.Context, _ *graphql.Request, resp *graphql.Response) error {
+			resp.Data.(*dotcom.CheckAccessTokenResponse).Dotcom = dotcom.CheckAccessTokenDotcomDotcomQuery{
+				ProductSubscriptionByAccessToken: dotcom.CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription{
+					ProductSubscriptionState: dotcom.ProductSubscriptionState{
+						Id:         "UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==",
+						Uuid:       "6452a8fc-e650-45a7-a0a2-357f776b3b46",
+						IsArchived: false,
+						LlmProxyAccess: dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccess{
+							LLMProxyAccessFields: dotcom.LLMProxyAccessFields{
+								Enabled: true,
+								RateLimit: &dotcom.LLMProxyAccessFieldsRateLimitLLMProxyRateLimit{
+									Limit:           10,
+									IntervalSeconds: 10,
+								},
+							},
+						},
+						ActiveLicense: &dotcom.ProductSubscriptionStateActiveLicenseProductLicense{
+							Info: &dotcom.ProductSubscriptionStateActiveLicenseProductLicenseInfo{
+								Tags: []string{""},
+							},
+						},
+					},
+				},
+			}
+			return nil
+		})
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
+		r.Header.Set("Authorization", "Bearer sgs_abc123")
+		(&auth.Authenticator{
+			Logger:      logger,
+			EventLogger: events.NewStdoutLogger(logger),
+			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client, true)},
 			Next:        next,
 		}).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusForbidden, w.Code)

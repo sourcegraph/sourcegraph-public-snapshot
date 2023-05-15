@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -35,7 +36,9 @@ import (
 func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFunc, config *Config) error {
 	// Enable tracing, at this point tracing wouldn't have been enabled yet because
 	// we run LLM-proxy without conf which means Sourcegraph tracing is not enabled.
-	shutdownTracing, err := maybeEnableTracing(ctx, obctx.Logger.Scoped("tracing", "tracing configuration"))
+	shutdownTracing, err := maybeEnableTracing(ctx,
+		obctx.Logger.Scoped("tracing", "tracing configuration"),
+		config.Trace)
 	if err != nil {
 		return errors.Wrap(err, "maybeEnableTracing")
 	}
@@ -57,11 +60,15 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		productsubscription.NewSource(
 			obctx.Logger,
 			rcache.New("product-subscriptions"),
-			dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken)),
+			dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken),
+			config.Dotcom.DevLicensesOnly),
 	}
 
-	// Set up our handler chain, which is run from the bottom up
+	// Set up our handler chain, which is run from the bottom up. Application handlers
+	// come last.
 	handler := newServiceHandler(obctx.Logger, eventLogger, config)
+
+	// Authentication and rate-limting layers
 	handler = rateLimit(obctx.Logger, eventLogger, newPrefixRedisStore("rate_limit:", redispool.Cache), handler)
 	handler = &auth.Authenticator{
 		Logger:      obctx.Logger.Scoped("auth", "authentication middleware"),
@@ -69,8 +76,15 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		Sources:     sources,
 		Next:        handler,
 	}
-	handler = instrumentation.HTTPMiddleware("llm-proxy", handler)
+
+	// Instrumentation layers
 	handler = httpLogger(obctx.Logger.Scoped("httpAPI", ""), handler)
+	handler = instrumentation.HTTPMiddleware("llm-proxy", handler)
+
+	// Collect request client for downstream handlers. Outside of dev, we always set up
+	// Cloudflare in from of LLM-proxy. This comes first.
+	hasCloudflare := !config.InsecureDev
+	handler = requestclient.ExternalHTTPMiddleware(handler, hasCloudflare)
 
 	// Initialize our server
 	server := httpserver.NewFromAddr(config.Address, &http.Server{
@@ -264,7 +278,12 @@ func healthz(ctx context.Context) error {
 
 func httpLogger(logger log.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		logger.Debug("Request", log.String("method", r.Method), log.String("path", r.URL.Path))
+		rc := requestclient.FromContext(r.Context())
+		logger.Debug("Request",
+			log.String("method", r.Method),
+			log.String("path", r.URL.Path),
+			log.String("requestclient.ip", rc.IP),
+			log.String("requestclient.forwardedFor", rc.ForwardedFor))
 		next.ServeHTTP(w, r)
 	})
 }
