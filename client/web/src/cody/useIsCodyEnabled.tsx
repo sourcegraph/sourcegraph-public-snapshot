@@ -26,10 +26,14 @@ export const useIsCodyEnabled = (): { chat: boolean; sidebar: boolean; search: b
         return notEnabled
     }
 
+    if (!allEnabled) {
+        return notEnabled
+    }
+
     return {
-        chat: chatEnabled || allEnabled,
-        sidebar: sidebarEnabled || allEnabled,
-        search: searchEnabled || allEnabled,
-        editorRecipes: (editorRecipesEnabled && sidebarEnabled) || allEnabled,
+        chat: chatEnabled,
+        sidebar: sidebarEnabled,
+        search: searchEnabled,
+        editorRecipes: (editorRecipesEnabled && sidebarEnabled),
     }
 }
