@@ -81,20 +81,36 @@ func (s *llmProxyService) UsageForSubscription(ctx context.Context, uuid string)
 
 	// Count events with the name for made requests for each day in the last 7 days.
 	query := fmt.Sprintf(`
+WITH date_range AS (
+	SELECT DATE(date) AS date
+	FROM UNNEST(
+		GENERATE_TIMESTAMP_ARRAY(
+			TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY),
+			CURRENT_TIMESTAMP(),
+			INTERVAL 1 DAY
+		)
+	) AS date
+)
 SELECT
-	DATE(created_at) as date,
-	COUNT(*) as count
+	date_range.date AS date,
+	IFNULL(COUNT(events.date), 0) AS count
 FROM
-	%s.%s
-WHERE
-	source = @source
-	AND identifier = @identifier
-	AND name = @eventName
-	AND DATE(created_at) >= DATE(TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY))
+	date_range
+LEFT JOIN (
+	SELECT
+		DATE(created_at) AS date
+	FROM
+		%s.%s
+	WHERE
+		source = @source
+		AND identifier = @identifier
+		AND name = @eventName
+	) events
+ON date_range.date = events.date
 GROUP BY
-	date
+date_range.date
 ORDER BY
-	date DESC`,
+date_range.date DESC`,
 		tbl.DatasetID,
 		tbl.TableID,
 	)
