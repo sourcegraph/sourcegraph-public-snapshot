@@ -102,7 +102,7 @@ func (r *indexConfigurationResolver) Configuration(ctx context.Context) (_ *stri
 }
 
 func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) (_ resolverstubs.InferredConfigurationResolver, err error) {
-	defer r.errTracer.Collect(&err, log.String("indexConfigResolver.field", "inferredConfiguration"))
+	defer r.errTracer.Collect(&err, attribute.String("indexConfigResolver.field", "inferredConfiguration"))
 
 	var limitErr error
 	configuration, _, err := r.autoindexSvc.InferIndexConfiguration(ctx, r.repositoryID, "", "", true)

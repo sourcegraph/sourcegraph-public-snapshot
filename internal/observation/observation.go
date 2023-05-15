@@ -308,7 +308,7 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 		// already has all the other log fields
 		op.emitErrorLogs(trLogger, logErr, finishLogFields, emitToSentry)
 		// op. and args.LogFields already added at start
-		op.emitHoneyEvent(honeyErr, snakecaseOpName, event, finishArgs.LogFields, elapsedMs)
+		op.emitHoneyEvent(honeyErr, snakecaseOpName, event, trace.OTLogFieldsToOTelAttrs(finishArgs.LogFields), elapsedMs)
 
 		op.emitMetrics(metricsErr, count, elapsed, metricLabels)
 
@@ -347,15 +347,15 @@ func (op *Operation) emitErrorLogs(trLogger TraceLogger, err *error, attrs []att
 		Error("operation.error", fields...)
 }
 
-func (op *Operation) emitHoneyEvent(err *error, opName string, event honey.Event, logFields []otlog.Field, duration int64) {
+func (op *Operation) emitHoneyEvent(err *error, opName string, event honey.Event, attrs []attribute.KeyValue, duration int64) {
 	if err != nil && *err != nil {
 		event.AddField("error", (*err).Error())
 	}
 
 	event.AddField("duration_ms", duration)
 
-	for _, field := range logFields {
-		event.AddField(opName+"."+toSnakeCase(field.Key()), field.Value())
+	for _, attr := range attrs {
+		event.AddField(opName+"."+toSnakeCase(string(attr.Key)), attr.Value.AsInterface())
 	}
 
 	event.Send()
