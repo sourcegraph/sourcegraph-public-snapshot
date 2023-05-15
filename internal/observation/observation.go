@@ -280,7 +280,7 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 		Logger:  logger,
 	}
 
-	if mergedFields := mergeAttrs(op.attributes, append(trace.OTLogFieldsToOTelAttrs(args.LogFields), args.Attrs...)); len(mergedFields) > 0 {
+	if mergedFields := mergeAttrs(op.attributes, trace.OTLogFieldsToOTelAttrs(args.LogFields), args.Attrs); len(mergedFields) > 0 {
 		trLogger.initWithTags(mergedFields...)
 	}
 
@@ -289,16 +289,16 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 		elapsed := since.Seconds()
 		elapsedMs := since.Milliseconds()
 		defaultFinishFields := []attribute.KeyValue{attribute.Float64("count", count), attribute.Float64("elapsed", elapsed)}
-		finishLogFields := mergeAttrs(defaultFinishFields, append(trace.OTLogFieldsToOTelAttrs(finishArgs.LogFields), finishArgs.Attrs...))
+		finishAttrs := mergeAttrs(defaultFinishFields, trace.OTLogFieldsToOTelAttrs(finishArgs.LogFields), finishArgs.Attrs)
 
-		logFields := mergeAttrs(defaultFinishFields, finishLogFields)
+		attrs := mergeAttrs(defaultFinishFields, finishAttrs)
 		metricLabels := mergeLabels(op.metricLabels, args.MetricLabelValues, finishArgs.MetricLabelValues)
 
 		if multi := new(ErrCollector); err != nil && errors.As(*err, &multi) {
 			if multi.errs == nil {
 				err = nil
 			}
-			logFields = append(logFields, multi.extraAttrs...)
+			attrs = append(attrs, multi.extraAttrs...)
 		}
 
 		var (
@@ -311,13 +311,13 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 		)
 
 		// already has all the other log fields
-		op.emitErrorLogs(trLogger, logErr, finishLogFields, emitToSentry)
+		op.emitErrorLogs(trLogger, logErr, finishAttrs, emitToSentry)
 		// op. and args.LogFields already added at start
 		op.emitHoneyEvent(honeyErr, snakecaseOpName, event, append(trace.OTLogFieldsToOTelAttrs(finishArgs.LogFields), finishArgs.Attrs...), elapsedMs)
 
 		op.emitMetrics(metricsErr, count, elapsed, metricLabels)
 
-		op.finishTrace(traceErr, tr, logFields)
+		op.finishTrace(traceErr, tr, attrs)
 	}
 }
 
