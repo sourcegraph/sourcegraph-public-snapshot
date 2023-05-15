@@ -55,8 +55,8 @@ type Op struct {
 	Description string
 	// MetricLabelValues that apply for every invocation of this operation.
 	MetricLabelValues []string
-	// LogFields that apply for every invocation of this operation.
-	LogFields []otlog.Field
+	// Attributes that apply for every invocation of this operation.
+	Attrs []attribute.KeyValue
 	// ErrorFilter returns true for any error that should be converted to nil
 	// for the purposes of metrics and tracing. If this field is not set then
 	// error values are unaltered.
