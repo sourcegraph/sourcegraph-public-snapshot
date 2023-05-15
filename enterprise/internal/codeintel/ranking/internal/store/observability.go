@@ -8,30 +8,23 @@ import (
 )
 
 type operations struct {
-	getStarRank                      *observation.Operation
-	getDocumentRanks                 *observation.Operation
-	getReferenceCountStatistics      *observation.Operation
-	lastUpdatedAt                    *observation.Operation
-	getUploadsForRanking             *observation.Operation
-	vacuumAbandonedExportedUploads   *observation.Operation
-	insertDefinitionsForRanking      *observation.Operation
-	vacuumAbandonedDefinitions       *observation.Operation
-	softDeleteStaleDefinitions       *observation.Operation
-	vacuumDeletedDefinitions         *observation.Operation
-	insertReferencesForRanking       *observation.Operation
-	vacuumAbandonedReferences        *observation.Operation
-	softDeleteStaleReferences        *observation.Operation
-	vacuumDeletedReferences          *observation.Operation
-	insertInitialPathRanks           *observation.Operation
-	vacuumAbandonedInitialPathCounts *observation.Operation
-	softDeleteStaleInitialPaths      *observation.Operation
-	vacuumDeletedInitialPaths        *observation.Operation
-	coordinate                       *observation.Operation
-	insertPathCountInputs            *observation.Operation
-	insertInitialPathCounts          *observation.Operation
-	vacuumStaleGraphs                *observation.Operation
-	insertPathRanks                  *observation.Operation
-	vacuumStaleRanks                 *observation.Operation
+	getStarRank                    *observation.Operation
+	getDocumentRanks               *observation.Operation
+	getReferenceCountStatistics    *observation.Operation
+	lastUpdatedAt                  *observation.Operation
+	getUploadsForRanking           *observation.Operation
+	vacuumAbandonedExportedUploads *observation.Operation
+	softDeleteStaleExportedUploads *observation.Operation
+	vacuumDeletedExportedUploads   *observation.Operation
+	insertDefinitionsForRanking    *observation.Operation
+	insertReferencesForRanking     *observation.Operation
+	insertInitialPathRanks         *observation.Operation
+	coordinate                     *observation.Operation
+	insertPathCountInputs          *observation.Operation
+	insertInitialPathCounts        *observation.Operation
+	vacuumStaleGraphs              *observation.Operation
+	insertPathRanks                *observation.Operation
+	vacuumStaleRanks               *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -55,29 +48,22 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		getStarRank:                      op("GetStarRank"),
-		getDocumentRanks:                 op("GetDocumentRanks"),
-		getReferenceCountStatistics:      op("GetReferenceCountStatistics"),
-		lastUpdatedAt:                    op("LastUpdatedAt"),
-		getUploadsForRanking:             op("GetUploadsForRanking"),
-		vacuumAbandonedExportedUploads:   op("VacuumAbandonedExportedUploads"),
-		insertDefinitionsForRanking:      op("InsertDefinitionsForRanking"),
-		vacuumAbandonedDefinitions:       op("VacuumAbandonedDefinitions"),
-		softDeleteStaleDefinitions:       op("SoftDeleteStaleDefinitions"),
-		vacuumDeletedDefinitions:         op("VacuumDeletedDefinitions"),
-		insertReferencesForRanking:       op("InsertReferencesForRanking"),
-		vacuumAbandonedReferences:        op("VacuumAbandonedReferences"),
-		softDeleteStaleReferences:        op("SoftDeleteStaleReferences"),
-		vacuumDeletedReferences:          op("VacuumDeletedReferences"),
-		insertInitialPathRanks:           op("InsertInitialPathRanks"),
-		vacuumAbandonedInitialPathCounts: op("VacuumAbandonedInitialPathCounts"),
-		softDeleteStaleInitialPaths:      op("SoftDeleteStaleInitialPaths"),
-		vacuumDeletedInitialPaths:        op("VacuumDeletedInitialPaths"),
-		coordinate:                       op("Coordinate"),
-		insertPathCountInputs:            op("InsertPathCountInputs"),
-		insertInitialPathCounts:          op("InsertInitialPathCounts"),
-		vacuumStaleGraphs:                op("VacuumStaleGraphs"),
-		insertPathRanks:                  op("InsertPathRanks"),
-		vacuumStaleRanks:                 op("VacuumStaleRanks"),
+		getStarRank:                    op("GetStarRank"),
+		getDocumentRanks:               op("GetDocumentRanks"),
+		getReferenceCountStatistics:    op("GetReferenceCountStatistics"),
+		lastUpdatedAt:                  op("LastUpdatedAt"),
+		getUploadsForRanking:           op("GetUploadsForRanking"),
+		vacuumAbandonedExportedUploads: op("VacuumAbandonedExportedUploads"),
+		softDeleteStaleExportedUploads: op("SoftDeleteStaleExportedUploads"),
+		vacuumDeletedExportedUploads:   op("VacuumDeletedExportedUploads"),
+		insertDefinitionsForRanking:    op("InsertDefinitionsForRanking"),
+		insertReferencesForRanking:     op("InsertReferencesForRanking"),
+		insertInitialPathRanks:         op("InsertInitialPathRanks"),
+		coordinate:                     op("Coordinate"),
+		insertPathCountInputs:          op("InsertPathCountInputs"),
+		insertInitialPathCounts:        op("InsertInitialPathCounts"),
+		vacuumStaleGraphs:              op("VacuumStaleGraphs"),
+		insertPathRanks:                op("InsertPathRanks"),
+		vacuumStaleRanks:               op("VacuumStaleRanks"),
 	}
 }

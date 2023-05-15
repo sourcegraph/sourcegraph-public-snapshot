@@ -73,9 +73,10 @@ progress AS (
 refs AS (
 	SELECT
 		rr.id,
-		rr.upload_id,
+		cre.upload_id,
 		rr.symbol_names
 	FROM codeintel_ranking_references rr
+	JOIN codeintel_ranking_exports cre ON cre.id = rr.exported_upload_id
 	JOIN progress p ON TRUE
 	WHERE
 		rr.graph_key = %s AND
@@ -88,7 +89,7 @@ refs AS (
 		-- Ensure that the record is within the bounds where it would be visible
 		-- to the current "snapshot" defined by the ranking computation state row.
 		rr.id <= p.max_reference_id AND
-		(rr.deleted_at IS NULL OR rr.deleted_at > p.started_at) AND
+		(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at) AND
 
 		-- Ensure the record isn't already processed
 		NOT EXISTS (
@@ -120,10 +121,11 @@ processable_symbols AS (
 		NOT EXISTS (
 			SELECT 1
 			FROM lsif_uploads u2
-			JOIN codeintel_ranking_references rr ON rr.upload_id = u2.id
-			JOIN codeintel_ranking_references_processed rrp ON rrp.codeintel_ranking_reference_id = rr.id
+			JOIN codeintel_ranking_exports cre2 ON cre2.upload_id = u2.id
+			JOIN codeintel_ranking_references rr2 ON rr2.exported_upload_id = cre2.id
+			JOIN codeintel_ranking_references_processed rrp2 ON rrp2.codeintel_ranking_reference_id = rr2.id
 			WHERE
-				rrp.graph_key = %s AND
+				rrp2.graph_key = %s AND
 				u.repository_id = u2.repository_id AND
 				u.root = u2.root AND
 				u.indexer = u2.indexer AND
@@ -168,7 +170,8 @@ referenced_definitions AS (
 			) AS rank
 		FROM codeintel_ranking_definitions rd
 		JOIN referenced_symbols rs ON rs.symbol_name = rd.symbol_name
-		JOIN lsif_uploads u ON u.id = rd.upload_id
+		JOIN codeintel_ranking_exports cre ON cre.id = rd.exported_upload_id
+		JOIN lsif_uploads u ON u.id = cre.upload_id
 		JOIN progress p ON TRUE
 		WHERE
 			rd.graph_key = %s AND
@@ -176,7 +179,7 @@ referenced_definitions AS (
 			-- Ensure that the record is within the bounds where it would be visible
 			-- to the current "snapshot" defined by the ranking computation state row.
 			rd.id <= p.max_definition_id AND
-			(rd.deleted_at IS NULL OR rd.deleted_at > p.started_at)
+			(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at)
 	) s
 
 	-- For multiple uploads in the same repository/root/indexer, only consider
@@ -267,13 +270,14 @@ progress AS (
 unprocessed_path_counts AS (
 	SELECT
 		ipr.id,
-		ipr.upload_id,
+		cre.upload_id,
 		ipr.graph_key,
 		CASE
 			WHEN ipr.document_path != '' THEN array_append('{}'::text[], ipr.document_path)
 			ELSE ipr.document_paths
 		END AS document_paths
 	FROM codeintel_initial_path_ranks ipr
+	JOIN codeintel_ranking_exports cre ON cre.id = ipr.exported_upload_id
 	JOIN progress p ON TRUE
 	WHERE
 		ipr.graph_key = %s AND
@@ -285,7 +289,7 @@ unprocessed_path_counts AS (
 		-- Ensure that the record is within the bounds where it would be visible
 		-- to the current "snapshot" defined by the ranking computation state row.
 		ipr.id <= p.max_path_id AND
-		(ipr.deleted_at IS NULL OR ipr.deleted_at > p.started_at) AND
+		(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at) AND
 
 		-- Ensure the record isn't already processed
 		NOT EXISTS (

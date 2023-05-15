@@ -76,6 +76,7 @@ export const ExternalServicePage: FC<Props> = props => {
 
     const { error: fetchError, loading: fetchLoading } = useFetchExternalService(externalServiceID!, setExternalService)
     const { error: fetchGHAppError, data: ghAppData } = useFetchGithubAppForES(externalService)
+    const ghApp = useMemo(() => ghAppData?.gitHubAppByAppID, [ghAppData])
 
     const [numberOfRepos, setNumberOfRepos] = useState<number>(externalService?.repoCount ?? 0)
     // Callback used in ExternalServiceSyncJobsList to update the number of repos in current component.
@@ -161,7 +162,7 @@ export const ExternalServicePage: FC<Props> = props => {
         )
     }
 
-    const path = useMemo(() => getBreadCrumbs(externalService, ghAppData), [externalService, ghAppData])
+    const path = useMemo(() => getBreadCrumbs(externalService), [externalService])
 
     const mergedError = fetchError || fetchGHAppError
 
@@ -253,6 +254,7 @@ export const ExternalServicePage: FC<Props> = props => {
                             codeHostID={externalService.id}
                             reposNumber={numberOfRepos === 0 ? externalService.repoCount : numberOfRepos}
                             syncInProgress={syncInProgress}
+                            gitHubApp={ghApp}
                             {...externalServiceCategory}
                         />
                     )}

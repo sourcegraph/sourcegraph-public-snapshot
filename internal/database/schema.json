@@ -7166,19 +7166,6 @@
       "Comment": "",
       "Columns": [
         {
-          "Name": "deleted_at",
-          "Index": 7,
-          "TypeName": "timestamp with time zone",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "document_path",
           "Index": 3,
           "TypeName": "text",
@@ -7197,6 +7184,19 @@
           "TypeName": "text[]",
           "IsNullable": false,
           "Default": "'{}'::text[]",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "exported_upload_id",
+          "Index": 8,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -7229,32 +7229,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
-        },
-        {
-          "Name": "last_scanned_at",
-          "Index": 5,
-          "TypeName": "timestamp with time zone",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "upload_id",
-          "Index": 2,
-          "TypeName": "integer",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         }
       ],
       "Indexes": [
@@ -7269,6 +7243,16 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
+          "Name": "codeintel_initial_path_ranks_exported_upload_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_initial_path_ranks_exported_upload_id ON codeintel_initial_path_ranks USING btree (exported_upload_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "codeintel_initial_path_ranks_graph_key_id",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -7277,29 +7261,17 @@
           "IndexDefinition": "CREATE INDEX codeintel_initial_path_ranks_graph_key_id ON codeintel_initial_path_ranks USING btree (graph_key, id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
-        },
-        {
-          "Name": "codeintel_initial_path_ranks_graph_key_last_scanned_at",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX codeintel_initial_path_ranks_graph_key_last_scanned_at ON codeintel_initial_path_ranks USING btree (graph_key, last_scanned_at NULLS FIRST, id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "codeintel_initial_path_upload_id",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX codeintel_initial_path_upload_id ON codeintel_initial_path_ranks USING btree (upload_id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
         }
       ],
-      "Constraints": null,
+      "Constraints": [
+        {
+          "Name": "codeintel_initial_path_ranks_exported_upload_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "codeintel_ranking_exports",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (exported_upload_id) REFERENCES codeintel_ranking_exports(id) ON DELETE CASCADE"
+        }
+      ],
       "Triggers": []
     },
     {
@@ -7597,10 +7569,10 @@
       "Comment": "",
       "Columns": [
         {
-          "Name": "deleted_at",
-          "Index": 8,
-          "TypeName": "timestamp with time zone",
-          "IsNullable": true,
+          "Name": "document_path",
+          "Index": 5,
+          "TypeName": "text",
+          "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -7610,9 +7582,9 @@
           "Comment": ""
         },
         {
-          "Name": "document_path",
-          "Index": 5,
-          "TypeName": "text",
+          "Name": "exported_upload_id",
+          "Index": 9,
+          "TypeName": "integer",
           "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
@@ -7649,35 +7621,9 @@
           "Comment": ""
         },
         {
-          "Name": "last_scanned_at",
-          "Index": 7,
-          "TypeName": "timestamp with time zone",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "symbol_name",
           "Index": 3,
           "TypeName": "text",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "upload_id",
-          "Index": 2,
-          "TypeName": "integer",
           "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
@@ -7700,12 +7646,12 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
-          "Name": "codeintel_ranking_definitions_graph_key_last_scanned_at_id",
+          "Name": "codeintel_ranking_definitions_exported_upload_id",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX codeintel_ranking_definitions_graph_key_last_scanned_at_id ON codeintel_ranking_definitions USING btree (graph_key, last_scanned_at NULLS FIRST, id)",
+          "IndexDefinition": "CREATE INDEX codeintel_ranking_definitions_exported_upload_id ON codeintel_ranking_definitions USING btree (exported_upload_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
@@ -7715,18 +7661,39 @@
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX codeintel_ranking_definitions_graph_key_symbol_search ON codeintel_ranking_definitions USING btree (graph_key, symbol_name, upload_id, document_path)",
+          "IndexDefinition": "CREATE INDEX codeintel_ranking_definitions_graph_key_symbol_search ON codeintel_ranking_definitions USING btree (graph_key, symbol_name, exported_upload_id, document_path)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
       ],
-      "Constraints": null,
+      "Constraints": [
+        {
+          "Name": "codeintel_ranking_definitions_exported_upload_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "codeintel_ranking_exports",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (exported_upload_id) REFERENCES codeintel_ranking_exports(id) ON DELETE CASCADE"
+        }
+      ],
       "Triggers": []
     },
     {
       "Name": "codeintel_ranking_exports",
       "Comment": "",
       "Columns": [
+        {
+          "Name": "deleted_at",
+          "Index": 7,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
         {
           "Name": "graph_key",
           "Index": 2,
@@ -7754,11 +7721,11 @@
           "Comment": ""
         },
         {
-          "Name": "locked_at",
-          "Index": 3,
+          "Name": "last_scanned_at",
+          "Index": 6,
           "TypeName": "timestamp with time zone",
-          "IsNullable": false,
-          "Default": "now()",
+          "IsNullable": true,
+          "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -7767,11 +7734,11 @@
           "Comment": ""
         },
         {
-          "Name": "object_prefix",
-          "Index": 5,
-          "TypeName": "text",
-          "IsNullable": true,
-          "Default": "",
+          "Name": "locked_at",
+          "Index": 3,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -7813,6 +7780,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX codeintel_ranking_exports_pkey ON codeintel_ranking_exports USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "codeintel_ranking_exports_graph_key_last_scanned_at",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_ranking_exports_graph_key_last_scanned_at ON codeintel_ranking_exports USING btree (graph_key, last_scanned_at NULLS FIRST, id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
@@ -8109,10 +8086,10 @@
       "Comment": "References for a given upload proceduced by background job consuming SCIP indexes.",
       "Columns": [
         {
-          "Name": "deleted_at",
-          "Index": 7,
-          "TypeName": "timestamp with time zone",
-          "IsNullable": true,
+          "Name": "exported_upload_id",
+          "Index": 8,
+          "TypeName": "integer",
+          "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -8148,35 +8125,9 @@
           "Comment": ""
         },
         {
-          "Name": "last_scanned_at",
-          "Index": 6,
-          "TypeName": "timestamp with time zone",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "symbol_names",
           "Index": 3,
           "TypeName": "text[]",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "upload_id",
-          "Index": 2,
-          "TypeName": "integer",
           "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
@@ -8199,6 +8150,16 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
+          "Name": "codeintel_ranking_references_exported_upload_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_ranking_references_exported_upload_id ON codeintel_ranking_references USING btree (exported_upload_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "codeintel_ranking_references_graph_key_id",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -8207,29 +8168,17 @@
           "IndexDefinition": "CREATE INDEX codeintel_ranking_references_graph_key_id ON codeintel_ranking_references USING btree (graph_key, id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
-        },
-        {
-          "Name": "codeintel_ranking_references_graph_key_last_scanned_at_id",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX codeintel_ranking_references_graph_key_last_scanned_at_id ON codeintel_ranking_references USING btree (graph_key, last_scanned_at NULLS FIRST, id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "codeintel_ranking_references_upload_id",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX codeintel_ranking_references_upload_id ON codeintel_ranking_references USING btree (upload_id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
         }
       ],
-      "Constraints": null,
+      "Constraints": [
+        {
+          "Name": "codeintel_ranking_references_exported_upload_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "codeintel_ranking_exports",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (exported_upload_id) REFERENCES codeintel_ranking_exports(id) ON DELETE CASCADE"
+        }
+      ],
       "Triggers": []
     },
     {
