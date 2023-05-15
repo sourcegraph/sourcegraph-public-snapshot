@@ -1,6 +1,7 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_cross_binary", "go_library")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("@rules_pkg//:mappings.bzl", "pkg_files")
 load("macro.bzl", "container_dependencies", "dependencies_tars")
 
 go_library(
@@ -63,9 +64,16 @@ pkg_tar(
 
 pkg_tar(
     name = "tar_monitoring_config",
-    srcs = ["//monitoring:generate_config"],
+    srcs = [
+        "//monitoring:generate_config",
+        "//docker-images/prometheus/config:base_config",
+    ],
+    strip_prefix = ".",
     remap_paths = {
-        "/monitoring/prometheous": "/path/to/prom_config/inside_image",  # TODO
+        "monitoring/outputs/docs": "/sg_config_docs",
+        "monitoring/outputs/prometheus": "/sg_config_prometheus",
+        "monitoring/outputs/grafana": "/sg_config_grafana",
+        "docker-images/prometheus/config": "/sg_config_prometheus",
     },
 )
 
@@ -79,7 +87,6 @@ DEPS = [
     "//cmd/symbols",
     "//cmd/worker",
     "//docker-images/prometheus/cmd/prom-wrapper",
-    "//cmd/blobstore",  # TODO wolfi package it
 ]
 
 ZOEKT_DEPS = [
