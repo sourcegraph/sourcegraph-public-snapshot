@@ -143,7 +143,7 @@ func newAnthropicHandler(logger log.Logger, eventLogger events.Logger, anthropic
 					continue
 				}
 
-				var event anthropicCompletionEvent
+				var event anthropicResponse
 				if err := json.Unmarshal(data, &event); err != nil {
 					logger.Error("failed to decode event payload", log.Error(err), log.String("body", string(data)))
 					continue
@@ -160,6 +160,7 @@ func newAnthropicHandler(logger log.Logger, eventLogger events.Logger, anthropic
 	})
 }
 
+// anthropicRequest captures all known fields from https://console.anthropic.com/docs/api/reference.
 type anthropicRequest struct {
 	Prompt            string   `json:"prompt"`
 	Model             string   `json:"model"`
@@ -172,13 +173,8 @@ type anthropicRequest struct {
 	Metadata          any      `json:"metadata"`
 }
 
+// anthropicResponse captures all relevant-to-us fields from https://console.anthropic.com/docs/api/reference.
 type anthropicResponse struct {
 	Completion string `json:"completion"`
 	StopReason string `json:"stop_reason"`
-}
-
-type anthropicCompletionEvent struct {
-	Completion string `json:"completion"`
-	StopReason string `json:"stop_reason"`
-	LogID      string `json:"log_id"`
 }
