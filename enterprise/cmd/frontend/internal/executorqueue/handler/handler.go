@@ -425,6 +425,7 @@ func (h *handler[T]) HandleCanceledJobs(w http.ResponseWriter, r *http.Request) 
 // response body.
 func wrapHandler(w http.ResponseWriter, r *http.Request, payload any, logger log.Logger, handler func() (int, any, error)) {
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		logger.Error("Failed to unmarshal payload", log.Error(err))
 		http.Error(w, fmt.Sprintf("Failed to unmarshal payload: %s", err.Error()), http.StatusBadRequest)
 		return
 	}
