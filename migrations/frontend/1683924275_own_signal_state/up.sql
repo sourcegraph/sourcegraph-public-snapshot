@@ -19,8 +19,12 @@ CREATE TABLE IF NOT EXISTS own_signal_configurations
     enabled                BOOLEAN NOT NULL DEFAULT FALSE
 );
 
-INSERT INTO own_signal_configurations (id, name, enabled)
-VALUES (1, 'recent-contributors', FALSE);
-INSERT INTO own_signal_configurations (id, name, enabled)
-VALUES (2, 'recent-views', FALSE);
+CREATE UNIQUE INDEX own_signal_configurations_name_uidx ON own_signal_configurations(name);
+
+INSERT INTO own_signal_configurations (id, name, enabled, description)
+VALUES (1, 'recent-contributors', FALSE, 'Indexes contributors in each file using repository history.')
+ON CONFLICT DO NOTHING;
+INSERT INTO own_signal_configurations (id, name, enabled, description)
+VALUES (2, 'recent-views', FALSE, 'Indexes users that recently viewed files in Sourcegraph.')
+ON CONFLICT DO NOTHING;
 

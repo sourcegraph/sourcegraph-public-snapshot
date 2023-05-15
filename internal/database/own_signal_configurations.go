@@ -43,6 +43,7 @@ func (s *signalConfigurationStore) With(other basestore.ShareableStore) *signalC
 }
 
 func (s *signalConfigurationStore) LoadConfigurations(ctx context.Context) ([]SignalConfiguration, error) {
+	q := "SELECT id, name, description, excluded_repo_patterns, enabled FROM own_signal_configurations ORDER BY id;"
 	multiScan := basestore.NewSliceScanner(func(scanner dbutil.Scanner) (SignalConfiguration, error) {
 		var temp SignalConfiguration
 		err := scanner.Scan(
@@ -58,11 +59,11 @@ func (s *signalConfigurationStore) LoadConfigurations(ctx context.Context) ([]Si
 		return temp, nil
 	})
 
-	return multiScan(s.Query(ctx, sqlf.Sprintf("select * from own_signal_configurations;")))
+	return multiScan(s.Query(ctx, sqlf.Sprintf(q)))
 }
 
 func (s *signalConfigurationStore) UpdateConfiguration(ctx context.Context, args UpdateSignalConfigurationArgs) error {
-	q := "update own_signal_configurations set enabled = %s, excluded_repo_patterns = %s where name = %s"
+	q := "UPDATE own_signal_configurations SET enabled = %s, excluded_repo_patterns = %s WHERE name = %s"
 	return s.Exec(ctx, sqlf.Sprintf(q, args.Enabled, pq.Array(args.ExcludedRepoPatterns), args.Name))
 }
 
