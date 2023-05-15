@@ -6,6 +6,7 @@ import (
 
 	"github.com/Masterminds/semver"
 	"github.com/jackc/pgconn"
+	"github.com/jackc/pgerrcode"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -139,12 +140,20 @@ func isMissingRelation(err error) bool {
 		return false
 	}
 
-	return pgErr.Code == "42P01"
+	return pgErr.Code == pgerrcode.UndefinedTable
 }
 
 // GetAutoUpgrade gets the current value of versions.version and versions.auto_upgrade in the frontend database.
 func (s *store) GetAutoUpgrade(ctx context.Context) (version string, enabled bool, err error) {
 	if err = s.db.QueryRow(ctx, sqlf.Sprintf(getAutoUpgradeQuery)).Scan(&version, &enabled); err != nil {
+		var pgerr *pgconn.PgError
+		if errors.As(err, &pgerr) {
+			if pgerr.Code == pgerrcode.UndefinedColumn {
+				if err = s.db.QueryRow(ctx, sqlf.Sprintf(getAutoUpgradeFallbackQuery)).Scan(&version); err != nil {
+					return "", false, errors.Wrap(err, "failed to get frontend version from fallback")
+				}
+			}
+		}
 		return "", false, errors.Wrap(err, "failed to get frontend version and auto_upgrade state")
 	}
 	return version, enabled, nil
@@ -152,6 +161,10 @@ func (s *store) GetAutoUpgrade(ctx context.Context) (version string, enabled boo
 
 const getAutoUpgradeQuery = `
 SELECT version, auto_upgrade FROM versions WHERE service = 'frontend'
+`
+
+const getAutoUpgradeFallbackQuery = `
+SELECT version FROM versions WHERE service = 'frontend'
 `
 
 // SetAutoUpgrade sets the value of versions.auto_upgrade in the frontend database.

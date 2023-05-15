@@ -263,7 +263,10 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
-require github.com/go-redsync/redsync/v4 v4.8.1
+require (
+	github.com/go-redsync/redsync/v4 v4.8.1
+	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
+)
 
 require (
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect
