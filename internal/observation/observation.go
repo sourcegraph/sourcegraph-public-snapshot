@@ -178,16 +178,16 @@ func (f FinishFunc) OnCancel(ctx context.Context, count float64, args Args) {
 
 // ErrCollector represents multiple errors and additional log fields that arose from those errors.
 type ErrCollector struct {
-	errs        error
-	extraFields []otlog.Field
+	errs       error
+	extraAttrs []attribute.KeyValue
 }
 
 func NewErrorCollector() *ErrCollector { return &ErrCollector{errs: nil} }
 
-func (e *ErrCollector) Collect(err *error, fields ...otlog.Field) {
+func (e *ErrCollector) Collect(err *error, attrs ...attribute.KeyValue) {
 	if err != nil && *err != nil {
 		e.errs = errors.Append(e.errs, *err)
-		e.extraFields = append(e.extraFields, fields...)
+		e.extraAttrs = append(e.extraAttrs, attrs...)
 	}
 }
 
@@ -293,7 +293,7 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 			if multi.errs == nil {
 				err = nil
 			}
-			logFields = append(logFields, trace.OTLogFieldsToOTelAttrs(multi.extraFields)...)
+			logFields = append(logFields, multi.extraAttrs...)
 		}
 
 		var (
