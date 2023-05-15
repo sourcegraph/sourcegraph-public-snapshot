@@ -25,6 +25,7 @@ type MultiHandler struct {
 	JobTokenStore         executorstore.JobTokenStore
 	CodeIntelQueueHandler QueueHandler[uploadsshared.Index]
 	BatchesQueueHandler   QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]
+	validQueues           []string
 	logger                log.Logger
 }
 
@@ -38,16 +39,15 @@ func NewMultiHandler(
 		JobTokenStore:         jobTokenStore,
 		CodeIntelQueueHandler: codeIntelQueueHandler,
 		BatchesQueueHandler:   batchesQueueHandler,
+		validQueues:           []string{codeIntelQueueHandler.Name, batchesQueueHandler.Name},
 		logger:                log.Scoped("executor-multi-queue-handler", "The route handler for all executor queues"),
 	}
 }
 
-var validQueues = []string{"batches", "codeintel"}
-
-func validateQueues(queues []string) []string {
+func (m *MultiHandler) validateQueues(queues []string) []string {
 	var invalidQueues []string
 	for _, queue := range queues {
-		if !slices.Contains(validQueues, queue) {
+		if !slices.Contains(m.validQueues, queue) {
 			invalidQueues = append(invalidQueues, queue)
 		}
 	}
@@ -79,8 +79,8 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if invalidQueues := validateQueues(req.Queues); len(invalidQueues) != 0 {
-		message := fmt.Sprintf("Invalid queue name(s) '%s' found. Supported queue names are '%s'.", strings.Join(invalidQueues, ", "), strings.Join(validQueues, ", "))
+	if invalidQueues := m.validateQueues(req.Queues); len(invalidQueues) != 0 {
+		message := fmt.Sprintf("Invalid queue name(s) '%s' found. Supported queue names are '%s'.", strings.Join(invalidQueues, ", "), strings.Join(m.validQueues, ", "))
 		m.logger.Error(message)
 		m.marshalAndRespondError(w, errors.New(message), http.StatusBadRequest)
 		return

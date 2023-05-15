@@ -195,7 +195,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			codeintelDequeueEvents: map[int]dequeueEvent[uploadsshared.Index]{
 				0: {
 					expectedStatusCode:   http.StatusBadRequest,
-					expectedResponseBody: `{"error":"Invalid queue name(s) 'invalidqueue' found. Supported queue names are 'batches, codeintel'."}`,
+					expectedResponseBody: `{"error":"Invalid queue name(s) 'invalidqueue' found. Supported queue names are 'codeintel, batches'."}`,
 				},
 			},
 		},
@@ -419,8 +419,8 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 
 			mh := handler.NewMultiHandler(
 				jobTokenStore,
-				handler.QueueHandler[uploadsshared.Index]{Store: codeIntelMockStore, RecordTransformer: transformerFunc[uploadsshared.Index]},
-				handler.QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]{Store: batchesMockStore, RecordTransformer: transformerFunc[*btypes.BatchSpecWorkspaceExecutionJob]},
+				handler.QueueHandler[uploadsshared.Index]{Name: "codeintel", Store: codeIntelMockStore, RecordTransformer: transformerFunc[uploadsshared.Index]},
+				handler.QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]{Name: "batches", Store: batchesMockStore, RecordTransformer: transformerFunc[*btypes.BatchSpecWorkspaceExecutionJob]},
 			)
 
 			router := mux.NewRouter()
