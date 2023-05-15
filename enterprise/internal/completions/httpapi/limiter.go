@@ -89,7 +89,7 @@ func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
 	// Check the current usage. If
 	// no record exists, redis will return 0 and ErrNil.
 	currentUsage, err := rstore.Get(key).Int()
-	if err != nil || err != redis.ErrNil {
+	if err != nil && err != redis.ErrNil {
 		return errors.Wrap(err, "failed to read rate limit counter")
 	}
 
@@ -119,7 +119,7 @@ func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
 	// limit, incrementing the rate limit counter and reading the usage futher up are currently
 	// not an atomic operation, because there is no good way to read the TTL in a transaction
 	// without a lua script.
-	// This approach could  also slightly overcount the usage if redis requests after
+	// This approach could also slightly overcount the usage if redis requests after
 	// the INCR fail, but it will always recover safely.
 	// If Incr works but then everything else fails (eg ctx cancelled) the user spent
 	// a token without getting anything for it. This seems pretty rare and a fine trade-off
