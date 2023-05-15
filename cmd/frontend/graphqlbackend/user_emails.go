@@ -53,10 +53,11 @@ func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error)
 
 func (r *UserResolver) PrimaryEmail(ctx context.Context) (*userEmailResolver, error) {
 	// 🚨 SECURITY: Only the authenticated user and site admins can list user's
-	// emails on Sourcegraph.com.
+	// emails on Sourcegraph.com. We don't return an error, but not showing the email
+	// either.
 	if envvar.SourcegraphDotComMode() {
 		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
-			return nil, err
+			return nil, nil
 		}
 	}
 	ms, err := r.db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{

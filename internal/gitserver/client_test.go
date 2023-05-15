@@ -17,11 +17,13 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"testing/quick"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -45,11 +47,32 @@ func newMockDB() database.DB {
 	return db
 }
 
+func TestProtoRoundTrip(t *testing.T) {
+	var diff string
+
+	f := func(original gitserver.ArchiveOptions) bool {
+
+		var converted gitserver.ArchiveOptions
+		converted.FromProto(original.ToProto("test"))
+
+		if diff = cmp.Diff(original, converted); diff != "" {
+			return false
+		}
+
+		return true
+	}
+
+	if err := quick.Check(f, nil); err != nil {
+		t.Errorf("ArchiveOptions proto roundtrip failed (-want +got):\n%s", diff)
+	}
+}
+
 func TestClient_Remove(t *testing.T) {
 	repo := api.RepoName("github.com/sourcegraph/sourcegraph")
 	addrs := []string{"172.16.8.1:8080", "172.16.8.2:8080"}
 
 	expected := "http://172.16.8.1:8080"
+	source := gitserver.NewTestClientSource(addrs)
 
 	cli := gitserver.NewTestClient(
 		httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
@@ -66,7 +89,8 @@ func TestClient_Remove(t *testing.T) {
 				return nil, errors.Newf("unexpected URL: %q", r.URL.String())
 			}
 		}),
-		addrs,
+
+		source,
 	)
 
 	err := cli.Remove(context.Background(), repo)
@@ -83,75 +107,124 @@ func TestClient_Remove(t *testing.T) {
 func TestClient_ArchiveReader(t *testing.T) {
 	root := gitserver.CreateRepoDir(t)
 
-	tests := map[api.RepoName]struct {
-		remote string
-		want   map[string]string
-		err    error
-	}{
-		"simple": {
-			remote: createSimpleGitRepo(t, root),
+	type test struct {
+		name string
+
+		remote      string
+		revision    string
+		want        map[string]string
+		clientErr   error
+		readerError error
+		skipReader  bool
+	}
+
+	tests := []test{
+		{
+			name: "simple",
+
+			remote:   createSimpleGitRepo(t, root),
+			revision: "HEAD",
 			want: map[string]string{
 				"dir1/":      "",
 				"dir1/file1": "infile1",
 				"file 2":     "infile2",
 			},
+			skipReader: false,
 		},
-		"repo-with-dotgit-dir": {
-			remote: createRepoWithDotGitDir(t, root),
-			want:   map[string]string{"file1": "hello\n", ".git/mydir/file2": "milton\n", ".git/mydir/": "", ".git/": ""},
+		{
+			name: "repo-with-dotgit-dir",
+
+			remote:   createRepoWithDotGitDir(t, root),
+			revision: "HEAD",
+			want: map[string]string{
+				"file1":            "hello\n",
+				".git/mydir/file2": "milton\n",
+				".git/mydir/":      "",
+				".git/":            "",
+			},
+			skipReader: false,
 		},
-		"not-found": {
-			err: errors.New("repository does not exist: not-found"),
+		{
+			name: "not-found",
+
+			revision:   "HEAD",
+			clientErr:  errors.New("repository does not exist: not-found"),
+			skipReader: false,
+		},
+		{
+			name: "revision-not-found",
+
+			remote:      createRepoWithDotGitDir(t, root),
+			revision:    "revision-not-found",
+			clientErr:   nil,
+			readerError: &gitdomain.RevisionNotFoundError{Repo: "revision-not-found", Spec: "revision-not-found"},
+			skipReader:  true,
 		},
 	}
 
-	srv := httptest.NewServer((&server.Server{
-		Logger:   logtest.Scoped(t),
-		ReposDir: filepath.Join(root, "repos"),
-		DB:       newMockDB(),
-		GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
-			testData := tests[name]
-			if testData.remote != "" {
-				return testData.remote, nil
-			}
-			return "", errors.Errorf("no remote for %s", name)
-		},
-		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
-			return &server.GitRepoSyncer{}, nil
-		},
-	}).Handler())
-	defer srv.Close()
-
-	u, _ := url.Parse(srv.URL)
-	addrs := []string{u.Host}
-	cli := gitserver.NewTestClient(&http.Client{}, addrs)
-
-	ctx := context.Background()
-	for name, test := range tests {
+	runArchiveReaderTestfunc := func(t *testing.T, mkClient func(t *testing.T, addrs []string) gitserver.Client, name api.RepoName, test test) {
 		t.Run(string(name), func(t *testing.T) {
+			// Setup: Prepare the test Gitserver server + register the gRPC server
+			s := &server.Server{
+				Logger:   logtest.Scoped(t),
+				ReposDir: filepath.Join(root, "repos"),
+				DB:       newMockDB(),
+				GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
+					if test.remote != "" {
+						return test.remote, nil
+					}
+					return "", errors.Errorf("no remote for %s", test.name)
+				},
+				GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
+					return &server.GitRepoSyncer{}, nil
+				},
+			}
+
+			grpcServer := defaults.NewServer(logtest.Scoped(t))
+
+			proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{Server: s})
+			handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
+			srv := httptest.NewServer(handler)
+			defer srv.Close()
+
+			u, _ := url.Parse(srv.URL)
+
+			addrs := []string{u.Host}
+			cli := mkClient(t, addrs)
+			ctx := context.Background()
+
 			if test.remote != "" {
 				if _, err := cli.RequestRepoUpdate(ctx, name, 0); err != nil {
 					t.Fatal(err)
 				}
 			}
 
-			rc, err := cli.ArchiveReader(ctx, nil, name, gitserver.ArchiveOptions{Treeish: "HEAD", Format: gitserver.ArchiveFormatZip})
-			if have, want := fmt.Sprint(err), fmt.Sprint(test.err); have != want {
+			rc, err := cli.ArchiveReader(ctx, nil, name, gitserver.ArchiveOptions{Treeish: test.revision, Format: gitserver.ArchiveFormatZip})
+			if have, want := fmt.Sprint(err), fmt.Sprint(test.clientErr); have != want {
 				t.Errorf("archive: have err %v, want %v", have, want)
 			}
 			if rc == nil {
 				return
 			}
-
 			t.Cleanup(func() {
 				if err := rc.Close(); err != nil {
 					t.Fatal(err)
 				}
 			})
-			data, err := io.ReadAll(rc)
-			if err != nil {
-				t.Fatal(err)
+
+			data, readErr := io.ReadAll(rc)
+			if readErr != nil {
+				if readErr.Error() != test.readerError.Error() {
+					t.Errorf("archive: have reader err %v, want %v", readErr.Error(), test.readerError.Error())
+				}
+
+				if test.skipReader {
+					return
+				}
+
+				t.Fatal(readErr)
 			}
+
 			zr, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
 			if err != nil {
 				t.Fatal(err)
@@ -178,6 +251,66 @@ func TestClient_ArchiveReader(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("grpc", func(t *testing.T) {
+		t.Setenv("SG_FEATURE_FLAG_GRPC", "true")
+		for _, test := range tests {
+			repoName := api.RepoName(test.name)
+
+			spy := &spyGitserverServiceClient{}
+
+			mkClient := func(t *testing.T, addrs []string) gitserver.Client {
+
+				t.Helper()
+
+				source := gitserver.NewTestClientSource(addrs, func(o *gitserver.TestClientSourceOptions) {
+					o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+						spy.base = proto.NewGitserverServiceClient(cc)
+
+						return spy
+					}
+				})
+
+				return gitserver.NewTestClient(&http.Client{}, source)
+			}
+
+			runArchiveReaderTestfunc(t, mkClient, repoName, test)
+			if !spy.archiveCalled {
+				t.Error("archiveReader: GitserverServiceClient should have been called")
+			}
+
+		}
+	})
+
+	t.Run("http", func(t *testing.T) {
+		t.Setenv("SG_FEATURE_FLAG_GRPC", "false")
+		for _, test := range tests {
+			repoName := api.RepoName(test.name)
+
+			var spyGitserverService *spyGitserverServiceClient
+			mkClient := func(t *testing.T, addrs []string) gitserver.Client {
+				t.Helper()
+
+				spy := &spyGitserverServiceClient{}
+
+				source := gitserver.NewTestClientSource(addrs, func(o *gitserver.TestClientSourceOptions) {
+					o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+						spy.base = proto.NewGitserverServiceClient(cc)
+
+						return spy
+					}
+				})
+
+				return gitserver.NewTestClient(&http.Client{}, source)
+			}
+
+			runArchiveReaderTestfunc(t, mkClient, repoName, test)
+			if spyGitserverService != nil {
+				t.Error("archiveReader: GitserverServiceClient should have not been initialized")
+			}
+		}
+
+	})
 }
 
 func createRepoWithDotGitDir(t *testing.T, root string) string {
@@ -239,6 +372,7 @@ filemode=true
 			t.Fatal(err)
 		}
 	}
+
 	return dir
 }
 
@@ -340,7 +474,9 @@ func TestClient_P4Exec(t *testing.T) {
 
 			u, _ := url.Parse(testServer.URL)
 			addrs := []string{u.Host}
-			cli := gitserver.NewTestClient(&http.Client{}, addrs)
+			source := gitserver.NewTestClientSource(addrs)
+
+			cli := gitserver.NewTestClient(&http.Client{}, source)
 
 			rc, _, err := cli.P4Exec(ctx, test.host, test.user, test.password, test.args...)
 			if diff := cmp.Diff(test.wantErr, fmt.Sprintf("%v", err)); diff != "" {
@@ -422,7 +558,9 @@ func TestClient_ResolveRevisions(t *testing.T) {
 
 	u, _ := url.Parse(srv.URL)
 	addrs := []string{u.Host}
-	cli := gitserver.NewTestClient(&http.Client{}, addrs)
+	source := gitserver.NewTestClientSource(addrs)
+
+	cli := gitserver.NewTestClient(&http.Client{}, source)
 
 	ctx := context.Background()
 	for _, test := range tests {
@@ -444,6 +582,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 
 func TestClient_BatchLog(t *testing.T) {
 	addrs := []string{"172.16.8.1:8080", "172.16.8.2:8080", "172.16.8.3:8080"}
+	source := gitserver.NewTestClientSource(addrs)
 
 	cli := gitserver.NewTestClient(
 		httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
@@ -465,7 +604,7 @@ func TestClient_BatchLog(t *testing.T) {
 			body := io.NopCloser(strings.NewReader(strings.TrimSpace(string(encoded))))
 			return &http.Response{StatusCode: 200, Body: body}, nil
 		}),
-		addrs,
+		source,
 	)
 
 	opts := gitserver.BatchLogOptions{
@@ -570,6 +709,7 @@ func TestClient_ReposStats(t *testing.T) {
 		GitDirBytes: 1337,
 	}
 
+	source := gitserver.NewTestClientSource(addrs)
 	cli := gitserver.NewTestClient(
 		httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
 			switch r.URL.String() {
@@ -584,7 +724,7 @@ func TestClient_ReposStats(t *testing.T) {
 				return nil, errors.Newf("unexpected URL: %q", r.URL.String())
 			}
 		}),
-		addrs,
+		source,
 	)
 
 	gotStatsMap, err := cli.ReposStats(context.Background())
@@ -594,3 +734,28 @@ func TestClient_ReposStats(t *testing.T) {
 
 	assert.Equal(t, wantStats, *gotStatsMap[gitserverAddr])
 }
+
+type spyGitserverServiceClient struct {
+	execCalled    bool
+	searchCalled  bool
+	archiveCalled bool
+
+	base proto.GitserverServiceClient
+}
+
+func (s *spyGitserverServiceClient) Exec(ctx context.Context, in *proto.ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_ExecClient, error) {
+	s.execCalled = true
+	return s.base.Exec(ctx, in, opts...)
+}
+
+func (s *spyGitserverServiceClient) Search(ctx context.Context, in *proto.SearchRequest, opts ...grpc.CallOption) (proto.GitserverService_SearchClient, error) {
+	s.searchCalled = true
+	return s.base.Search(ctx, in, opts...)
+}
+
+func (s *spyGitserverServiceClient) Archive(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error) {
+	s.archiveCalled = true
+	return s.base.Archive(ctx, in, opts...)
+}
+
+var _ proto.GitserverServiceClient = &spyGitserverServiceClient{}

@@ -20,6 +20,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/propagator"
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
 
@@ -47,14 +49,16 @@ func DialOptions() []grpc.DialOption {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithChainStreamInterceptor(
 			grpc_prometheus.StreamClientInterceptor(metrics),
-			internalgrpc.StreamClientPropagator(actor.ActorPropagator{}),
-			internalgrpc.StreamClientPropagator(policy.ShouldTracePropagator{}),
+			propagator.StreamClientPropagator(actor.ActorPropagator{}),
+			propagator.StreamClientPropagator(policy.ShouldTracePropagator{}),
+			propagator.StreamClientPropagator(requestclient.Propagator{}),
 			otelStreamInterceptor,
 		),
 		grpc.WithChainUnaryInterceptor(
 			grpc_prometheus.UnaryClientInterceptor(metrics),
-			internalgrpc.UnaryClientPropagator(actor.ActorPropagator{}),
-			internalgrpc.UnaryClientPropagator(policy.ShouldTracePropagator{}),
+			propagator.UnaryClientPropagator(actor.ActorPropagator{}),
+			propagator.UnaryClientPropagator(policy.ShouldTracePropagator{}),
+			propagator.UnaryClientPropagator(requestclient.Propagator{}),
 			otelUnaryInterceptor,
 		),
 	}
@@ -87,15 +91,17 @@ func ServerOptions(logger log.Logger) []grpc.ServerOption {
 		grpc.ChainStreamInterceptor(
 			internalgrpc.NewStreamPanicCatcher(logger),
 			grpc_prometheus.StreamServerInterceptor(metrics),
-			internalgrpc.StreamServerPropagator(actor.ActorPropagator{}),
-			internalgrpc.StreamServerPropagator(policy.ShouldTracePropagator{}),
+			propagator.StreamServerPropagator(requestclient.Propagator{}),
+			propagator.StreamServerPropagator(actor.ActorPropagator{}),
+			propagator.StreamServerPropagator(policy.ShouldTracePropagator{}),
 			otelgrpc.StreamServerInterceptor(),
 		),
 		grpc.ChainUnaryInterceptor(
 			internalgrpc.NewUnaryPanicCatcher(logger),
 			grpc_prometheus.UnaryServerInterceptor(metrics),
-			internalgrpc.UnaryServerPropagator(actor.ActorPropagator{}),
-			internalgrpc.UnaryServerPropagator(policy.ShouldTracePropagator{}),
+			propagator.UnaryServerPropagator(requestclient.Propagator{}),
+			propagator.UnaryServerPropagator(actor.ActorPropagator{}),
+			propagator.UnaryServerPropagator(policy.ShouldTracePropagator{}),
 			otelgrpc.UnaryServerInterceptor(),
 		),
 	}

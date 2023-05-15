@@ -158,6 +158,10 @@ Comment out until ready to advertise this
 9.  Logs are streamed from the executor to a Sourcegraph API
 10.  The executor calls a Sourcegraph API to that "complete" the Job.
 
+### Native execution
+
+Read more in [Native execution](native_execution.md).
+
 ### Docker-in-Docker Kubernetes
 
 <span class="badge badge-experimental">Experimental</span>

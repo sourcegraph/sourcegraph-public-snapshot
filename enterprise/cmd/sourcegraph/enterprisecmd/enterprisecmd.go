@@ -16,12 +16,10 @@ func MainEnterprise(services []service.Service, args []string) {
 	svcmain.Main(services, config, args)
 }
 
-// DeprecatedSingleServiceMainEnterprise is called from the `main` function of a command in the
+// SingleServiceMainEnterprise is called from the `main` function of a command in the
 // enterprise (non-OSS) build to start a single service (such as frontend or gitserver).
-//
-// DEPRECATED: See svcmain.DeprecatedSingleServiceMain documentation for more info.
-func DeprecatedSingleServiceMainEnterprise(service service.Service) {
-	svcmain.DeprecatedSingleServiceMain(service, config, true, true)
+func SingleServiceMainEnterprise(service service.Service) {
+	svcmain.SingleServiceMain(service, config, true, true)
 }
 
 func init() {

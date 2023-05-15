@@ -31,22 +31,24 @@ const AuthProviderJSON: FC<Props> = ({ app, id }) => {
         }
     )
 
-    const clientSecret = useMemo(() => {
+    const [clientID, clientSecret] = useMemo(() => {
         if (loading) {
-            return 'LOADING...'
+            return ['LOADING...', 'LOADING...']
         }
         if (reveal && data) {
-            return data?.gitHubApp?.clientSecret || 'NO CLIENT SECRET FOUND'
+            const clientID = app?.clientID ?? 'NO CLIENT ID'
+            const clientSecret = data?.gitHubApp?.clientSecret || 'NO CLIENT SECRET FOUND'
+            return [clientID, clientSecret]
         }
-        return 'REDACTED'
-    }, [data, loading, reveal])
+        return ['REDACTED', 'REDACTED']
+    }, [data, loading, reveal, app?.clientID])
 
     const providerJson = useMemo(() => {
         // typescript compiler is not smart enough to know that app is not null
-        const clientID = app !== null ? app.clientID : null
-        const url = app !== null ? app.baseURL : null
+        const url = app?.baseURL ?? null
         return JSON.stringify(
             {
+                displayName: `GitHub App ${app?.name}`,
                 type: 'github',
                 clientID,
                 clientSecret,
@@ -55,7 +57,7 @@ const AuthProviderJSON: FC<Props> = ({ app, id }) => {
             null,
             4
         )
-    }, [clientSecret, app])
+    }, [clientID, clientSecret, app?.baseURL, app?.name])
 
     if (error) {
         return (
