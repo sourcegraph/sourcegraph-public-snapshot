@@ -1,11 +1,11 @@
 import { promises as fs } from 'fs'
-import { homedir } from 'os'
+import { homedir, platform, type } from 'os'
 
 import { Disposable } from 'vscode'
 
 const INTERVAL = 10000
 
-const LOCAL_APP_LOCATIONS = ['~/Library/Application Support/sourcegraph']
+const LOCAL_APP_LOCATIONS: { [key: string]: string[] } = { darwin: ['~/Library/Application Support/sourcegraph'] }
 
 async function pathExists(path: string): Promise<boolean> {
     path = expandHomeDir(path)
@@ -33,14 +33,21 @@ export class LocalAppDetector implements Disposable {
     private intervalHandle: ReturnType<typeof setInterval> | undefined
     private onChange: OnChangeCallback
     private lastState = false
+    private localAppMarkers: string[] | undefined
 
     constructor(options: { onChange: OnChangeCallback }) {
         this.onChange = options.onChange
+        const platformName = platform()
+        this.localAppMarkers = LOCAL_APP_LOCATIONS[platformName]
     }
 
     public async detect(): Promise<void> {
         let detected = false
-        for (const marker of LOCAL_APP_LOCATIONS) {
+        if (!this.localAppMarkers) {
+            return
+        }
+
+        for (const marker of this.localAppMarkers) {
             if (await pathExists(marker)) {
                 detected = true
                 break
@@ -54,6 +61,9 @@ export class LocalAppDetector implements Disposable {
     }
 
     public start(): void {
+        console.log('platform', platform())
+        console.log('type', type())
+
         if (this.intervalHandle !== undefined) {
             return
         }
