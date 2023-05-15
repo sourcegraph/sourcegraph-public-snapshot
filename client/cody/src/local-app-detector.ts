@@ -61,9 +61,6 @@ export class LocalAppDetector implements Disposable {
     }
 
     public start(): void {
-        console.log('platform', platform())
-        console.log('type', type())
-
         if (this.intervalHandle !== undefined) {
             return
         }
