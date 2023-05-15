@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -59,30 +60,47 @@ func TestRepoCommits(t *testing.T) {
 		}
 		defer rows.Close()
 
-		wantedRows := map[string]int64{
-			commitSHA1: 123,
-			commitSHA2: 124,
-			commitSHA3: 125,
+		type repoCommitRow struct {
+			RepoID       int32
+			CommitSHA    string
+			ChangelistID int64
 		}
 
-		totalRows := 0
+		want := []repoCommitRow{
+			{
+				RepoID:       int32(1),
+				CommitSHA:    commitSHA1,
+				ChangelistID: 123,
+			},
+			{
+				RepoID:       int32(1),
+				CommitSHA:    commitSHA2,
+				ChangelistID: 124,
+			},
+			{
+				RepoID:       int32(1),
+				CommitSHA:    commitSHA3,
+				ChangelistID: 125,
+			},
+		}
+
+		got := []repoCommitRow{}
+
 		for rows.Next() {
-			var gotRepoID int32
-			var gotCommitSHABytea []byte
-			var gotChangelistID int64
-			if err := rows.Scan(&gotRepoID, &gotCommitSHABytea, &gotChangelistID); err != nil {
+			var r repoCommitRow
+			var hexCommitSHA []byte
+
+			if err := rows.Scan(&r.RepoID, &hexCommitSHA, &r.ChangelistID); err != nil {
 				t.Fatal(err)
 			}
 
-			gotCommitSHA := hex.EncodeToString(gotCommitSHABytea)
-
-			require.Equal(t, repoID, gotRepoID, "mismatched repoID")
-			require.Equal(t, wantedRows[gotCommitSHA], gotChangelistID, "mismatched commitSHA and changelist ID")
-
-			totalRows += 1
+			r.CommitSHA = hex.EncodeToString(hexCommitSHA)
+			got = append(got, r)
 		}
 
-		require.Equal(t, 3, totalRows, "mismatched number of rows")
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("mismatched rows, diff (-want, +got):\n %v\n", diff)
+		}
 	})
 
 	t.Run("GetLatestForRepo", func(t *testing.T) {
