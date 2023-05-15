@@ -1,0 +1,8 @@
+filegroup(
+    name = "base_config",
+    srcs = [
+        "alertmanager.yml",
+        "prometheus.yml",
+    ],
+    visibility = ["//visibility:public"],
+)
