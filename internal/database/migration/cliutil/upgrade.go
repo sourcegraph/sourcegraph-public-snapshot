@@ -2,6 +2,7 @@ package cliutil
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/urfave/cli/v2"
 
@@ -56,6 +57,11 @@ func Upgrade(
 		Usage:    "Skip comparison of the instance's current schema against the expected version's schema.",
 		Required: false,
 	}
+	ignoreMigratorUpdateCheckFlag := &cli.BoolFlag{
+		Name:     "ignore-migrator-update",
+		Usage:    "Ignore the running migrator not being the latest version. It is recommended to use the latest migrator version.",
+		Required: false,
+	}
 	dryRunFlag := &cli.BoolFlag{
 		Name:     "dry-run",
 		Usage:    "Print the upgrade plan but do not execute it.",
@@ -68,8 +74,23 @@ func Upgrade(
 	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
-		if err := isAirgapped(ctx); err != nil {
-			out.WriteLine(output.Line(output.EmojiWarningSign, output.StyleYellow, err.Error()))
+		airgapped := isAirgapped(ctx)
+		if airgapped != nil {
+			out.WriteLine(output.Line(output.EmojiWarningSign, output.StyleYellow, airgapped.Error()))
+		}
+
+		if airgapped == nil {
+			latest, hasUpdate, err := checkForMigratorUpdate(ctx)
+			if err != nil {
+				out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleYellow, "Failed to check for migrator update: %s. Continuing...", err))
+			} else if hasUpdate {
+				noticeStr := fmt.Sprintf("A newer migrator version is available (%s), please consider using it instead", latest)
+				if ignoreMigratorUpdateCheckFlag.Get(cmd) {
+					out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleYellow, "%s. Continuing...", noticeStr))
+				} else {
+					return cli.Exit(fmt.Sprintf("%s %s%s or pass -ignore-migrator-update.%s", output.EmojiWarning, output.StyleWarning, noticeStr, output.StyleReset), 1)
+				}
+			}
 		}
 
 		runner, err := runnerFactory(schemas.SchemaNames, schemas.Schemas)
@@ -171,6 +192,7 @@ func Upgrade(
 			privilegedHashesFlag,
 			skipVersionCheckFlag,
 			skipDriftCheckFlag,
+			ignoreMigratorUpdateCheckFlag,
 			dryRunFlag,
 			disableAnimation,
 		},

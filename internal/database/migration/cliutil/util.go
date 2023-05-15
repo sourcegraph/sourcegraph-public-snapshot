@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/urfave/cli/v2"
@@ -19,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -230,4 +232,48 @@ func getSchemaJSONFilename(schemaName string) (string, error) {
 	}
 
 	return "", errors.Newf("unknown schema name %q", schemaName)
+}
+
+func checkForMigratorUpdate(ctx context.Context) (latest string, hasUpdate bool, err error) {
+	migratorVersion, migratorPatch, ok := oobmigration.NewVersionAndPatchFromString(version.Version())
+	if !ok || migratorVersion.Dev {
+		return "", false, nil
+	}
+
+	timedCtx, cancel := context.WithTimeout(ctx, time.Second*3)
+	defer cancel()
+	req, _ := http.NewRequestWithContext(timedCtx, http.MethodHead, "https://github.com/sourcegraph/sourcegraph/releases/latest", nil)
+	resp, err := (&http.Client{
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}).Do(req)
+	if err != nil {
+		return "", false, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusFound {
+		return "", false, errors.Newf("unexpected status code %d", resp.StatusCode)
+	}
+
+	location, err := resp.Location()
+	if err != nil {
+		return "", false, err
+	}
+
+	pathParts := strings.Split(location.Path, "/")
+	if len(pathParts) == 0 {
+		return "", false, errors.Newf("empty path in Location header URL: %s", location.String())
+	}
+	latest = pathParts[len(pathParts)-1]
+
+	latestVersion, latestPatch, ok := oobmigration.NewVersionAndPatchFromString(latest)
+	if !ok {
+		return "", false, errors.Newf("last section in path is an invalid format: %s", latest)
+	}
+
+	isMigratorOutOfDate := oobmigration.CompareVersions(latestVersion, migratorVersion) == oobmigration.VersionOrderBefore || (latestPatch > migratorPatch)
+
+	return latest, isMigratorOutOfDate, nil
 }
