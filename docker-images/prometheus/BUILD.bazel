@@ -1,0 +1,8 @@
+filegroup(
+    name = "startup_scripts",
+    srcs = [
+        "alertmanager.sh",
+        "prometheus.sh",
+    ],
+    visibility = ["//visibility:public"],
+)

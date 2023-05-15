@@ -65,16 +65,18 @@ pkg_tar(
 pkg_tar(
     name = "tar_monitoring_config",
     srcs = [
-        "//monitoring:generate_config",
         "//docker-images/prometheus/config:base_config",
+        "//docker-images/prometheus/startup_scripts",
+        "//monitoring:generate_config",
     ],
-    strip_prefix = ".",
     remap_paths = {
         "monitoring/outputs/docs": "/sg_config_docs",
         "monitoring/outputs/prometheus": "/sg_config_prometheus",
         "monitoring/outputs/grafana": "/sg_config_grafana",
         "docker-images/prometheus/config": "/sg_config_prometheus",
+        "docker-iamges/prometheus/startup_scripts": "/",
     },
+    strip_prefix = ".",
 )
 
 DEPS = [
