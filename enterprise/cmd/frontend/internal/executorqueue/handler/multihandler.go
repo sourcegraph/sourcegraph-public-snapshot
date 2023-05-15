@@ -79,7 +79,7 @@ func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if invalidQueues := m.validateQueues(req.Queues); len(invalidQueues) != 0 {
+	if invalidQueues := m.validateQueues(req.Queues); len(invalidQueues) > 0 {
 		message := fmt.Sprintf("Invalid queue name(s) '%s' found. Supported queue names are '%s'.", strings.Join(invalidQueues, ", "), strings.Join(m.validQueues, ", "))
 		m.logger.Error(message)
 		m.marshalAndRespondError(w, errors.New(message), http.StatusBadRequest)
