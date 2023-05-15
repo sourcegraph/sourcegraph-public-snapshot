@@ -108,7 +108,7 @@ func filterAndHydrateContent(
 		startLine := max(0, min(len(lines), result.StartLine))
 		endLine := max(0, min(len(lines), result.EndLine))
 
-		content := strings.Join(lines[result.StartLine:result.EndLine], "\n")
+		content := strings.Join(lines[startLine:endLine], "\n")
 
 		var debugString string
 		if debug {

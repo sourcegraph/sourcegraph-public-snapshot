@@ -113,7 +113,7 @@ Clarification and discussion about key concepts, architecture, and development s
 
 ## Git
 
-- [`git gc` and its modes of operations in Sourcegraph](./git_gc.md)
+- [`git gc` and its modes of operations in Sourcegraph](background-information/git_gc.md)
 
 ### [Languages](background-information/languages/index.md)
 
@@ -142,10 +142,6 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Renovate dependency updates](background-information/renovate.md)
 - [Honeycomb](background-information/honeycomb.md)
 - [GoLand](background-information/goland.md)
-
-### Components
-
-- [`gitserver` API](components/gitserver.md)
 
 ### Other
 

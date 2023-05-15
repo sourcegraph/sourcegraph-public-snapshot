@@ -33,6 +33,14 @@ func (h HandlerWithErrorReturn) ServeHTTP(w http.ResponseWriter, r *http.Request
 	// Handle when h.Handler panics.
 	defer func() {
 		if e := recover(); e != nil {
+			// ErrAbortHandler is a sentinal error which is used to stop an
+			// http handler but not report the error. In practice we have only
+			// seen this used by httputil.ReverseProxy when the server goes
+			// down.
+			if e == http.ErrAbortHandler {
+				return
+			}
+
 			log15.Error("panic in HandlerWithErrorReturn.Handler", "error", e)
 			stack := make([]byte, 1024*1024)
 			n := runtime.Stack(stack, false)

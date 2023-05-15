@@ -310,3 +310,7 @@ rules_nixpkgs_dependencies(toolchains = [
 load("//dev:nix.bzl", "nix_deps")
 
 nix_deps()
+
+load("//enterprise/cmd/embeddings/shared:assets.bzl", "embbedings_assets_deps")
+
+embbedings_assets_deps()

@@ -8,6 +8,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -29,9 +30,10 @@ type RecentViewSignalStore interface {
 }
 
 type ListRecentViewSignalOpts struct {
-	ViewerID int
-	RepoID   api.RepoID
-	Path     string
+	ViewerUserID int
+	RepoID       api.RepoID
+	Path         string
+	LimitOffset  *LimitOffset
 }
 
 type RecentViewSummary struct {
@@ -41,7 +43,8 @@ type RecentViewSummary struct {
 }
 
 func RecentViewSignalStoreWith(other basestore.ShareableStore, logger log.Logger) RecentViewSignalStore {
-	return &recentViewSignalStore{Store: basestore.NewWithHandle(other.Handle()), Logger: logger}
+	lgr := logger.Scoped("RecentViewSignalStore", "Store for a table containing a number of views of a single file by a given viewer")
+	return &recentViewSignalStore{Store: basestore.NewWithHandle(other.Handle()), Logger: lgr}
 }
 
 type recentViewSignalStore struct {
@@ -76,7 +79,7 @@ const insertRecentViewSignalFmtstr = `
 	INSERT INTO own_aggregate_recent_view(viewer_id, viewed_file_path_id, views_count)
 	VALUES(%s, %s, %s)
 	ON CONFLICT(viewer_id, viewed_file_path_id) DO UPDATE
-	SET views_count = EXCLUDED.views_count
+	SET views_count = EXCLUDED.views_count + own_aggregate_recent_view.views_count
 `
 
 func (s *recentViewSignalStore) Insert(ctx context.Context, userID int32, repoPathID, count int) error {
@@ -88,44 +91,104 @@ const bulkInsertRecentViewSignalsFmtstr = `
 	INSERT INTO own_aggregate_recent_view(viewer_id, viewed_file_path_id, views_count)
 	VALUES %s
 	ON CONFLICT(viewer_id, viewed_file_path_id) DO UPDATE
-	SET views_count = EXCLUDED.views_count
+	SET views_count = EXCLUDED.views_count + own_aggregate_recent_view.views_count
 `
+
+const findAncestorPathsFmtstr = `
+	WITH RECURSIVE ancestor_paths AS (
+		SELECT id, parent_id
+		FROM repo_paths
+		WHERE id IN (%s)
+
+		UNION ALL
+
+		SELECT p.id, p.parent_id
+		FROM repo_paths p
+		JOIN ancestor_paths ap ON p.id = ap.parent_id
+	)
+	SELECT id, parent_id
+	FROM ancestor_paths
+	WHERE parent_id IS NOT NULL
+  `
 
 // InsertPaths inserts paths and view counts for a given `userID`. This function
-// has a hard limit of 5000 entries to be inserted. If more than 5000 paths are
-// provided, this function will only add the first 5000 values read from the map
-// (i.e. 5000 random paths) without any errors.
+// has a hard limit of 5000 entries per bulk insert. It will issue the len(repoPathIDToCount) % 5000 inserts.
 func (s *recentViewSignalStore) InsertPaths(ctx context.Context, userID int32, repoPathIDToCount map[int]int) error {
-	pathsNumber := len(repoPathIDToCount)
-	if pathsNumber == 0 {
+	batchSize := len(repoPathIDToCount)
+	if batchSize > 5000 {
+		batchSize = 5000
+	}
+	if batchSize == 0 {
 		return nil
 	}
-	if pathsNumber > 5000 {
-		pathsNumber = 5000
-	}
-	values := make([]*sqlf.Query, 0, pathsNumber)
-	for pathID, count := range repoPathIDToCount {
-		if pathsNumber == 0 {
-			break
+
+	// Query for parent IDs for given paths.
+	parentIDs := map[int]int{}
+	if err := func() error { // func to run rs.Close as soon as possible.
+		var pathIDs []*sqlf.Query
+		for pathID := range repoPathIDToCount {
+			pathIDs = append(pathIDs, sqlf.Sprintf("%s", pathID))
 		}
-		values = append(values, sqlf.Sprintf("(%s, %s, %s)", userID, pathID, count))
-		pathsNumber--
+		q := sqlf.Sprintf(findAncestorPathsFmtstr, sqlf.Join(pathIDs, ","))
+		rs, err := s.Query(ctx, q)
+		if err != nil {
+			return err
+		}
+		defer rs.Close()
+		for rs.Next() {
+			var id, parentID int
+			if err := rs.Scan(&id, &parentID); err != nil {
+				return err
+			}
+			parentIDs[id] = parentID
+		}
+		return nil
+	}(); err != nil {
+		return err
 	}
-	q := sqlf.Sprintf(bulkInsertRecentViewSignalsFmtstr, sqlf.Join(values, ","))
-	return s.Exec(ctx, q)
+
+	// Augment counts for ancestor paths, by summing views.
+	augmentedCounts := map[int]int{}
+	for leafID, count := range repoPathIDToCount {
+		for pathID := leafID; pathID != 0; pathID = parentIDs[pathID] {
+			augmentedCounts[pathID] = augmentedCounts[pathID] + count
+		}
+	}
+
+	// Inser paths in batches.
+	values := make([]*sqlf.Query, 0, batchSize)
+	for pathID, count := range augmentedCounts {
+		values = append(values, sqlf.Sprintf("(%s, %s, %s)", userID, pathID, count))
+		if len(values) == batchSize {
+			q := sqlf.Sprintf(bulkInsertRecentViewSignalsFmtstr, sqlf.Join(values, ","))
+			if err := s.Exec(ctx, q); err != nil {
+				return err
+			}
+			values = values[:0] // retain memory for the buffer
+		}
+	}
+	if len(values) > 0 { // check for remaining values.
+		q := sqlf.Sprintf(bulkInsertRecentViewSignalsFmtstr, sqlf.Join(values, ","))
+		if err := s.Exec(ctx, q); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
-// TODO(sashaostrikov): update query with opts
 const listRecentViewSignalsFmtstr = `
-	SELECT viewer_id, viewed_file_path_id, views_count
-	FROM own_aggregate_recent_view
-	ORDER BY id
+	SELECT o.viewer_id, o.viewed_file_path_id, o.views_count
+	FROM own_aggregate_recent_view AS o
+	-- Optional join with repo_paths table
+	%s
+	-- Optional WHERE clauses
+	WHERE %s
+	-- Order, limit
+	ORDER BY o.id
+	%s
 `
 
-func (s *recentViewSignalStore) List(ctx context.Context, _ ListRecentViewSignalOpts) ([]RecentViewSummary, error) {
-	q := sqlf.Sprintf(listRecentViewSignalsFmtstr)
-
-	// TODO(sashaostrikov): implement paging and use opts
+func (s *recentViewSignalStore) List(ctx context.Context, opts ListRecentViewSignalOpts) ([]RecentViewSummary, error) {
 	viewsScanner := basestore.NewSliceScanner(func(scanner dbutil.Scanner) (RecentViewSummary, error) {
 		var summary RecentViewSummary
 		if err := scanner.Scan(&summary.UserID, &summary.FilePathID, &summary.ViewsCount); err != nil {
@@ -133,20 +196,35 @@ func (s *recentViewSignalStore) List(ctx context.Context, _ ListRecentViewSignal
 		}
 		return summary, nil
 	})
+	return viewsScanner(s.Query(ctx, createListQuery(opts)))
+}
 
-	return viewsScanner(s.Query(ctx, q))
+func createListQuery(opts ListRecentViewSignalOpts) *sqlf.Query {
+	joinClause := &sqlf.Query{}
+	if opts.RepoID != 0 || opts.Path != "" {
+		joinClause = sqlf.Sprintf("INNER JOIN repo_paths AS p ON p.id = o.viewed_file_path_id")
+	}
+	whereClause := sqlf.Sprintf("TRUE")
+	wherePredicates := make([]*sqlf.Query, 0)
+	if opts.RepoID != 0 {
+		wherePredicates = append(wherePredicates, sqlf.Sprintf("p.repo_id = %s", opts.RepoID))
+	}
+	if opts.Path != "" {
+		wherePredicates = append(wherePredicates, sqlf.Sprintf("p.absolute_path = %s", opts.Path))
+	}
+	if opts.ViewerUserID != 0 {
+		wherePredicates = append(wherePredicates, sqlf.Sprintf("o.viewer_id = %s", opts.ViewerUserID))
+	}
+	if len(wherePredicates) > 0 {
+		whereClause = sqlf.Sprintf("%s", sqlf.Join(wherePredicates, "AND"))
+	}
+	return sqlf.Sprintf(listRecentViewSignalsFmtstr, joinClause, whereClause, opts.LimitOffset.SQL())
 }
 
 // BuildAggregateFromEvents builds recent view signals from provided "ViewBlob"
 // events. One signal has a userID, repoPathID and a count. This data is derived
 // from the event, please refer to inline comments for more implementation
 // details.
-//
-// TODO(sashaostrikov): BuildAggregateFromEvents should be called from worker,
-// which queries events like so:
-//
-// db := NewDBWith(s.Logger, s)
-// events, err := db.EventLogs().ListEventsByName(ctx, viewBlobEventType, after, limit)
 func (s *recentViewSignalStore) BuildAggregateFromEvents(ctx context.Context, events []*Event) error {
 	// Map of repo name to repo ID and paths+repoPathIDs of files specified in
 	// "ViewBlob" events. Used to aggregate all the paths for a single repo to then
@@ -184,6 +262,11 @@ func (s *recentViewSignalStore) BuildAggregateFromEvents(ctx context.Context, ev
 		if _, found := repoNameToMetadata[r.RepoName]; !found {
 			// If the repo is not present in `repoNameToMetadata`, we need to query it from
 			// the DB.
+			if _, notFound := notFoundRepos[r.RepoName]; notFound {
+				// If we already know that the repo cannot be found in the DB, we don't need to
+				// make an extra unsuccessful query.
+				continue
+			}
 			repo, err := db.Repos().GetByName(ctx, api.RepoName(r.RepoName))
 			if err != nil {
 				if errcode.IsNotFound(err) {
@@ -234,6 +317,8 @@ func (s *recentViewSignalStore) BuildAggregateFromEvents(ctx context.Context, ev
 		for rpn, count := range pathAndCount {
 			if pathID, found := repoNameToMetadata[rpn.RepoName].pathToID[rpn.FilePath]; found {
 				repoPathIDToCount[pathID] = count
+			} else if _, notFound := notFoundRepos[rpn.RepoName]; notFound {
+				// repo was not found in the database, that's fine.
 			} else {
 				return errors.Newf("cannot find id of path %q of repo %q: this is a bug", rpn.FilePath, rpn.RepoName)
 			}

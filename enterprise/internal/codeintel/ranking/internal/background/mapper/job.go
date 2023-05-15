@@ -12,8 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-const recordTypeName = "path count inputs"
-
 func NewMapper(
 	observationCtx *observation.Context,
 	store store.Store,
@@ -25,7 +23,7 @@ func NewMapper(
 		Name:        name,
 		Description: "Joins ranking definition and references together to create document path count records.",
 		Interval:    config.Interval,
-		Metrics:     background.NewPipelineMetrics(observationCtx, name, recordTypeName),
+		Metrics:     background.NewPipelineMetrics(observationCtx, name),
 		ProcessFunc: func(ctx context.Context) (numRecordsProcessed int, numRecordsAltered background.TaggedCounts, err error) {
 			numReferencesScanned, nuPathCountInputsInserted, err := mapRankingGraph(ctx, store, config.BatchSize)
 			if err != nil {
@@ -48,7 +46,7 @@ func NewSeedMapper(
 		Name:        name,
 		Description: "Adds initial zero counts to files that may not contain any known references.",
 		Interval:    config.Interval,
-		Metrics:     background.NewPipelineMetrics(observationCtx, name, recordTypeName),
+		Metrics:     background.NewPipelineMetrics(observationCtx, name),
 		ProcessFunc: func(ctx context.Context) (numRecordsProcessed int, numRecordsAltered background.TaggedCounts, err error) {
 			numInitialPathsScanned, nuPathCountInputsInserted, err := mapInitializerRankingGraph(ctx, store, config.BatchSize)
 			if err != nil {

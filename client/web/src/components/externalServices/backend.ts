@@ -1,9 +1,12 @@
-import { QueryTuple, MutationTuple } from '@apollo/client'
+import { Dispatch, SetStateAction } from 'react'
+
+import { QueryTuple, MutationTuple, QueryResult } from '@apollo/client'
+import { parse } from 'jsonc-parser'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors, useMutation, useLazyQuery } from '@sourcegraph/http-client'
+import { gql, dataOrThrowErrors, useMutation, useLazyQuery, useQuery } from '@sourcegraph/http-client'
 
 import { requestGraphQL } from '../../backend/graphql'
 import {
@@ -26,6 +29,9 @@ import {
     CancelExternalServiceSyncVariables,
     CancelExternalServiceSyncResult,
     ListExternalServiceFields,
+    ExternalServiceFields,
+    ExternalServiceResult,
+    ExternalServiceVariables,
 } from '../../graphql-operations'
 import { useShowMorePagination, UseShowMorePaginationResult } from '../FilteredConnection/hooks/useShowMorePagination'
 
@@ -175,7 +181,7 @@ export const EXTERNAL_SERVICE_SYNC_JOBS = gql`
     }
 `
 
-const LIST_EXTERNAL_SERVICE_FRAGMENT = gql`
+export const LIST_EXTERNAL_SERVICE_FRAGMENT = gql`
     ${EXTERNAL_SERVICE_SYNC_JOB_CONNECTION_FIELDS_FRAGMENT}
     fragment ListExternalServiceFields on ExternalService {
         id
@@ -303,4 +309,45 @@ export function queryExternalServiceSyncJobs(
             return data.node.syncJobs
         })
     )
+}
+
+export const getExternalService = (
+    data?: ExternalServiceFields | null
+): ExternalServiceFieldsWithConfig | undefined => {
+    if (!data) {
+        return undefined
+    }
+    const node: ExternalServiceFieldsWithConfig = data
+    node.parsedConfig = parse(node.config) as ExternalServiceFieldsWithConfig['parsedConfig']
+    return node
+}
+
+export const useFetchExternalService = (
+    externalServiceID: string,
+    setExternalService: Dispatch<SetStateAction<ExternalServiceFieldsWithConfig | undefined>>
+): QueryResult<ExternalServiceResult, ExternalServiceVariables> =>
+    useQuery<ExternalServiceResult, ExternalServiceVariables>(FETCH_EXTERNAL_SERVICE, {
+        variables: { id: externalServiceID },
+        notifyOnNetworkStatusChange: false,
+        fetchPolicy: 'no-cache',
+        onCompleted: (result: ExternalServiceResult) => {
+            if (result?.node?.__typename !== 'ExternalService') {
+                return
+            }
+            const data = getExternalService(result?.node)
+            if (data) {
+                setExternalService(data)
+            }
+        },
+    })
+export interface GitHubAppDetails {
+    appID: number
+    baseURL: string
+    installationID: number
+}
+export interface ExternalServiceFieldsWithConfig extends ExternalServiceFields {
+    parsedConfig?: {
+        gitHubAppDetails?: GitHubAppDetails
+        url: string
+    }
 }

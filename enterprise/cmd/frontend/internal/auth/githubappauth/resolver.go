@@ -9,12 +9,13 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/repos/webhooks/resolvers"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	ghauth "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -97,18 +98,23 @@ func (r *resolver) GitHubApps(ctx context.Context) (graphqlbackend.GitHubAppConn
 
 func (r *resolver) GitHubApp(ctx context.Context, args *graphqlbackend.GitHubAppArgs) (graphqlbackend.GitHubAppResolver, error) {
 	// 🚨 SECURITY: Check whether user is site-admin
-	return r.GitHubAppByID(ctx, args.ID)
+	return r.gitHubAppByID(ctx, args.ID)
+}
+
+func (r *resolver) GitHubAppByAppID(ctx context.Context, args *graphqlbackend.GitHubAppByAppIDArgs) (graphqlbackend.GitHubAppResolver, error) {
+	// 🚨 SECURITY: Check whether user is site-admin
+	return r.gitHubAppByAppID(ctx, int(args.AppID), args.BaseURL)
 }
 
 func (r *resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 	return map[string]graphqlbackend.NodeByIDFunc{
 		gitHubAppIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.GitHubAppByID(ctx, id)
+			return r.gitHubAppByID(ctx, id)
 		},
 	}
 }
 
-func (r *resolver) GitHubAppByID(ctx context.Context, id graphql.ID) (*gitHubAppResolver, error) {
+func (r *resolver) gitHubAppByID(ctx context.Context, id graphql.ID) (*gitHubAppResolver, error) {
 	// 🚨 SECURITY: Check whether user is site-admin
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -118,6 +124,23 @@ func (r *resolver) GitHubAppByID(ctx context.Context, id graphql.ID) (*gitHubApp
 		return nil, err
 	}
 	app, err := r.db.GitHubApps().GetByID(ctx, int(gitHubAppID))
+	if err != nil {
+		return nil, err
+	}
+
+	return &gitHubAppResolver{
+		app: app,
+		db:  r.db,
+	}, nil
+}
+
+func (r *resolver) gitHubAppByAppID(ctx context.Context, appID int, baseURL string) (*gitHubAppResolver, error) {
+	// 🚨 SECURITY: Check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	app, err := r.db.GitHubApps().GetByAppID(ctx, appID, baseURL)
 	if err != nil {
 		return nil, err
 	}
@@ -180,6 +203,10 @@ func (r *gitHubAppResolver) ClientID() string {
 	return r.app.ClientID
 }
 
+func (r *gitHubAppResolver) ClientSecret() string {
+	return r.app.ClientSecret
+}
+
 func (r *gitHubAppResolver) Logo() string {
 	return r.app.Logo
 }
@@ -190,30 +217,6 @@ func (r *gitHubAppResolver) CreatedAt() gqlutil.DateTime {
 
 func (r *gitHubAppResolver) UpdatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.app.UpdatedAt}
-}
-
-func (r *gitHubAppResolver) ExternalServices(ctx context.Context, args *struct{ graphqlutil.ConnectionArgs }) *graphqlbackend.ComputedExternalServiceConnectionResolver {
-	extsvcs, err := r.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
-		Kinds: []string{extsvc.KindGitHub},
-	})
-	if err != nil {
-		return nil
-	}
-
-	var filteredExtsvc []*itypes.ExternalService
-	for _, es := range extsvcs {
-		parsed, err := extsvc.ParseEncryptableConfig(ctx, extsvc.KindGitHub, es.Config)
-		if err != nil {
-			continue
-		}
-		c := parsed.(*schema.GitHubConnection)
-		if c.GitHubAppDetails == nil || c.GitHubAppDetails.AppID != r.app.AppID || c.Url != r.app.BaseURL {
-			continue
-		}
-		filteredExtsvc = append(filteredExtsvc, es)
-	}
-
-	return graphqlbackend.NewComputedExternalServiceConnectionResolver(r.db, filteredExtsvc, args.ConnectionArgs)
 }
 
 func (r *gitHubAppResolver) Installations(ctx context.Context) (installations []graphqlbackend.GitHubAppInstallation) {
@@ -234,16 +237,51 @@ func (r *gitHubAppResolver) Installations(ctx context.Context) (installations []
 		return nil
 	}
 
+	extsvcs, err := r.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
+		Kinds: []string{extsvc.KindGitHub},
+	})
+	if err != nil {
+		return nil
+	}
+
 	for _, install := range installs {
+		var installationExtsvcs []*itypes.ExternalService
+		for _, es := range extsvcs {
+			parsed, err := extsvc.ParseEncryptableConfig(ctx, extsvc.KindGitHub, es.Config)
+			if err != nil {
+				continue
+			}
+			c := parsed.(*schema.GitHubConnection)
+			if c.GitHubAppDetails == nil || c.GitHubAppDetails.AppID != r.app.AppID || c.Url != r.app.BaseURL || c.GitHubAppDetails.InstallationID != int(install.GetID()) {
+				continue
+			}
+			installationExtsvcs = append(installationExtsvcs, es)
+		}
+
 		installations = append(installations, graphqlbackend.GitHubAppInstallation{
-			InstallID: int32(*install.ID),
+			DB:         r.db,
+			InstallID:  int32(*install.ID),
+			InstallURL: install.GetHTMLURL(),
 			InstallAccount: graphqlbackend.GitHubAppInstallationAccount{
 				AccountLogin:     install.Account.GetLogin(),
 				AccountAvatarURL: install.Account.GetAvatarURL(),
-				AccountURL:       install.Account.GetURL(),
+				AccountURL:       install.Account.GetHTMLURL(),
+				AccountType:      install.Account.GetType(),
 			},
+			InstallExternalServices: installationExtsvcs,
 		})
 	}
 
 	return
+}
+
+func (r *gitHubAppResolver) Webhook(ctx context.Context) graphqlbackend.WebhookResolver {
+	if r.app.WebhookID == nil {
+		return nil
+	}
+	hook, err := r.db.Webhooks(keyring.Default().WebhookKey).GetByID(ctx, int32(*r.app.WebhookID))
+	if err != nil {
+		return nil
+	}
+	return resolvers.NewWebhookResolver(r.db, hook)
 }

@@ -550,6 +550,8 @@ type Completions struct {
 	CompletionModel string `json:"completionModel,omitempty"`
 	// Enabled description: Toggles whether completions are enabled.
 	Enabled bool `json:"enabled"`
+	// Endpoint description: The endpoint under which to reach the provider. Currently only used for provider type LLM proxy.
+	Endpoint string `json:"endpoint,omitempty"`
 	// Model description: DEPRECATED. Use chatModel instead.
 	Model string `json:"model"`
 	// PerUserCodeCompletionsDailyLimit description: If > 0, enables the maximum number of code completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.
@@ -725,6 +727,8 @@ type ExcludedGitLabProject struct {
 	Id int `json:"id,omitempty"`
 	// Name description: The name of a GitLab project ("group/name") to exclude from mirroring.
 	Name string `json:"name,omitempty"`
+	// Pattern description: Regular expression which matches against the name of a GitLab project ("group/name").
+	Pattern string `json:"pattern,omitempty"`
 }
 type ExcludedGitoliteRepo struct {
 	// Name description: The name of a Gitolite repo ("my-repo") to exclude from mirroring.
@@ -2400,6 +2404,8 @@ type SiteConfiguration struct {
 	ExecutorsBatcheshelperImageTag string `json:"executors.batcheshelperImageTag,omitempty"`
 	// ExecutorsFrontendURL description: The URL where Sourcegraph executors can reach the Sourcegraph instance. If not set, defaults to externalURL. URLs with a path (other than `/`) are not allowed. For Docker executors, the special hostname `host.docker.internal` can be used to refer to the Docker container's host.
 	ExecutorsFrontendURL string `json:"executors.frontendURL,omitempty"`
+	// ExecutorsLsifGoImage description: The tag to use for the lsif-go image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.
+	ExecutorsLsifGoImage string `json:"executors.lsifGoImage,omitempty"`
 	// ExecutorsSrcCLIImage description: The image to use for src-cli in executors. Use this value to pull from a custom image registry.
 	ExecutorsSrcCLIImage string `json:"executors.srcCLIImage,omitempty"`
 	// ExecutorsSrcCLIImageTag description: The tag to use for the src-cli image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.
@@ -2624,6 +2630,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "executors.batcheshelperImage")
 	delete(m, "executors.batcheshelperImageTag")
 	delete(m, "executors.frontendURL")
+	delete(m, "executors.lsifGoImage")
 	delete(m, "executors.srcCLIImage")
 	delete(m, "executors.srcCLIImageTag")
 	delete(m, "experimentalFeatures")

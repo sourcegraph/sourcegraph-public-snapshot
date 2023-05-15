@@ -38,8 +38,32 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 		Usage:    "Skip validation of the instance's current version.",
 		Required: false,
 	}
+	ignoreMigratorUpdateCheckFlag := &cli.BoolFlag{
+		Name:     "ignore-migrator-update",
+		Usage:    "Ignore the running migrator not being the latest version. It is recommended to use the latest migrator version.",
+		Required: false,
+	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
+		airgapped := isAirgapped(ctx)
+		if airgapped != nil {
+			out.WriteLine(output.Line(output.EmojiWarningSign, output.StyleYellow, airgapped.Error()))
+		}
+
+		if airgapped == nil {
+			latest, hasUpdate, err := checkForMigratorUpdate(ctx)
+			if err != nil {
+				out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleYellow, "Failed to check for migrator update: %s. Continuing...", err))
+			} else if hasUpdate {
+				noticeStr := fmt.Sprintf("A newer migrator version is available (%s), please consider using it instead", latest)
+				if ignoreMigratorUpdateCheckFlag.Get(cmd) {
+					out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleYellow, "%s. Continuing...", noticeStr))
+				} else {
+					return cli.Exit(fmt.Sprintf("%s %s%s or pass -ignore-migrator-update.%s", output.EmojiWarning, output.StyleWarning, noticeStr, output.StyleReset), 1)
+				}
+			}
+		}
+
 		schemaName := TranslateSchemaNames(schemaNameFlag.Get(cmd), out)
 		version := versionFlag.Get(cmd)
 		file := fileFlag.Get(cmd)
@@ -102,7 +126,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 		}
 		schema := schemas["public"]
 
-		return compareSchemaDescriptions(out, schemaName, version, canonicalize(schema), canonicalize(expectedSchema))
+		return compareAndDisplaySchemaDescriptions(out, schemaName, version, canonicalize(schema), canonicalize(expectedSchema))
 	})
 
 	return &cli.Command{
@@ -115,6 +139,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 			versionFlag,
 			fileFlag,
 			skipVersionCheckFlag,
+			ignoreMigratorUpdateCheckFlag,
 		},
 	}
 }

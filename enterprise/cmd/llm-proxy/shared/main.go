@@ -2,17 +2,16 @@ package shared
 
 import (
 	"context"
-	"encoding/json"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 
-	"github.com/Khan/genqlient/graphql"
+	"github.com/go-redsync/redsync/v4"
+	"github.com/go-redsync/redsync/v4/redis/redigo"
 	"github.com/gorilla/mux"
-	"github.com/gregjones/httpcache"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/events"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
@@ -20,64 +19,109 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor/anonymous"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor/productsubscription"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/limiter"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/response"
 )
 
 func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFunc, config *Config) error {
 	// Enable tracing, at this point tracing wouldn't have been enabled yet because
 	// we run LLM-proxy without conf which means Sourcegraph tracing is not enabled.
-	shutdownTracing, err := maybeEnableTracing(ctx, obctx.Logger.Scoped("tracing", "tracing configuration"))
+	shutdownTracing, err := maybeEnableTracing(ctx,
+		obctx.Logger.Scoped("tracing", "tracing configuration"),
+		config.Trace)
 	if err != nil {
 		return errors.Wrap(err, "maybeEnableTracing")
 	}
 	defer shutdownTracing()
 
-	handler := newServiceHandler(obctx.Logger, config)
-	handler = rateLimit(obctx.Logger, redispool.Cache, handler)
-	handler = authenticate(
-		obctx.Logger,
-		rcache.New("llm-proxy-tokens"),
-		dotcom.NewClient(config.Dotcom.AccessToken),
-		handler,
-		authenticateOptions{
-			AllowAnonymous: config.AllowAnonymous,
-		},
-	)
+	var eventLogger events.Logger
+	if config.BigQuery.ProjectID != "" {
+		eventLogger, err = events.NewBigQueryLogger(config.BigQuery.ProjectID, config.BigQuery.Dataset, config.BigQuery.Table)
+		if err != nil {
+			return errors.Wrap(err, "create event logger")
+		}
+	} else {
+		eventLogger = events.NewStdoutLogger(obctx.Logger)
+	}
+
+	// Supported actor/auth sources
+	sources := actor.Sources{
+		anonymous.NewSource(config.AllowAnonymous),
+		productsubscription.NewSource(
+			obctx.Logger,
+			rcache.New("product-subscriptions"),
+			dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken),
+			config.Dotcom.DevLicensesOnly),
+	}
+
+	// Set up our handler chain, which is run from the bottom up. Application handlers
+	// come last.
+	handler := newServiceHandler(obctx.Logger, eventLogger, config)
+
+	// Authentication and rate-limting layers
+	handler = rateLimit(obctx.Logger, eventLogger, newPrefixRedisStore("rate_limit:", redispool.Cache), handler)
+	handler = &auth.Authenticator{
+		Logger:      obctx.Logger.Scoped("auth", "authentication middleware"),
+		EventLogger: eventLogger,
+		Sources:     sources,
+		Next:        handler,
+	}
+
+	// Instrumentation layers
+	handler = httpLogger(obctx.Logger.Scoped("httpAPI", ""), handler)
 	handler = instrumentation.HTTPMiddleware("llm-proxy", handler)
 
+	// Collect request client for downstream handlers. Outside of dev, we always set up
+	// Cloudflare in from of LLM-proxy. This comes first.
+	hasCloudflare := !config.InsecureDev
+	handler = requestclient.ExternalHTTPMiddleware(handler, hasCloudflare)
+
+	// Initialize our server
 	server := httpserver.NewFromAddr(config.Address, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
 		Handler:      handler,
 	})
 
+	// Set up redis-based distributed mutex for the source syncer worker
+	p, ok := redispool.Store.Pool()
+	if !ok {
+		return errors.New("real redis is required")
+	}
+	sourceWorkerMutex := redsync.New(redigo.NewPool(p)).NewMutex("source-syncer-worker",
+		// Do not retry endlessly becuase it's very likely that someone else has
+		// a long-standing hold on the mutex. We will try again on the next periodic
+		// goroutine run.
+		redsync.WithTries(1),
+		// Expire locks at 2x sync interval to avoid contention while avoiding
+		// the lock getting stuck for too long if something happens. Every handler
+		// iteration, we will extend the lock.
+		redsync.WithExpiry(2*config.SourcesSyncInterval))
+
 	// Mark health server as ready and go!
 	ready()
 	obctx.Logger.Info("service ready", log.String("address", config.Address))
 
-	goroutine.MonitorBackgroundRoutines(ctx, server)
+	// Block until done
+	goroutine.MonitorBackgroundRoutines(ctx,
+		server,
+		sources.Worker(obctx.Logger, sourceWorkerMutex, config.SourcesSyncInterval),
+	)
 
 	return nil
 }
 
-func responseJSONError(logger log.Logger, w http.ResponseWriter, code int, err error) {
-	w.WriteHeader(code)
-	err = json.NewEncoder(w).Encode(map[string]string{
-		"error": err.Error(),
-	})
-	if err != nil {
-		logger.Error("failed to write response", log.Error(err))
-	}
-}
-
-func newServiceHandler(logger log.Logger, config *Config) http.Handler {
+func newServiceHandler(logger log.Logger, eventLogger events.Logger, config *Config) http.Handler {
 	r := mux.NewRouter()
 
 	// For cluster liveness and readiness probes
@@ -97,36 +141,70 @@ func newServiceHandler(logger log.Logger, config *Config) http.Handler {
 	r.HandleFunc("/-/__version", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte(version.Version()))
-		return
 	})
 
 	// V1 service routes
 	v1router := r.PathPrefix("/v1").Subrouter()
 	v1router.Handle("/completions/anthropic",
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			r, err := http.NewRequest(http.MethodPost, "https://api.anthropic.com/v1/complete", r.Body)
+			act := actor.FromContext(r.Context())
+
+			err := eventLogger.LogEvent(
+				events.Event{
+					Name:       events.EventNameCompletionsStarted,
+					Source:     act.Source.Name(),
+					Identifier: act.ID,
+				},
+			)
 			if err != nil {
-				responseJSONError(logger, w, http.StatusInternalServerError, errors.Errorf("failed to create request: %s", err))
+				logger.Error("failed to log event", log.Error(err))
+			}
+
+			ar, err := http.NewRequest(http.MethodPost, "https://api.anthropic.com/v1/complete", r.Body)
+			if err != nil {
+				response.JSONError(logger, w, http.StatusInternalServerError, errors.Errorf("failed to create request: %s", err))
 				return
 			}
 
 			// Mimic headers set by the official Anthropic client:
 			// https://sourcegraph.com/github.com/anthropics/anthropic-sdk-typescript@493075d70f50f1568a276ed0cb177e297f5fef9f/-/blob/src/index.ts
-			r.Header.Set("Cache-Control", "no-cache")
-			r.Header.Set("Accept", "application/json")
-			r.Header.Set("Content-Type", "application/json")
-			r.Header.Set("Client", "sourcegraph-llm-proxy/1.0")
-			r.Header.Set("X-API-Key", config.Anthropic.AccessToken)
+			ar.Header.Set("Cache-Control", "no-cache")
+			ar.Header.Set("Accept", "application/json")
+			ar.Header.Set("Content-Type", "application/json")
+			ar.Header.Set("Client", "sourcegraph-llm-proxy/1.0")
+			ar.Header.Set("X-API-Key", config.Anthropic.AccessToken)
 
-			resp, err := httpcli.ExternalDoer.Do(r)
+			upstreamStarted := time.Now()
+			defer func() {
+				err := eventLogger.LogEvent(
+					events.Event{
+						Name:       events.EventNameCompletionsFinished,
+						Source:     act.Source.Name(),
+						Identifier: act.ID,
+						Metadata: map[string]any{
+							"upstream_request_duration_ms": time.Since(upstreamStarted).Milliseconds(),
+						},
+					},
+				)
+				if err != nil {
+					logger.Error("failed to log event", log.Error(err))
+				}
+			}()
+
+			resp, err := httpcli.ExternalDoer.Do(ar)
+
 			if err != nil {
-				responseJSONError(logger, w, http.StatusInternalServerError, errors.Errorf("failed to make request to Anthropic: %s", err))
+				response.JSONError(logger, w, http.StatusInternalServerError, errors.Errorf("failed to make request to Anthropic: %s", err))
 				return
 			}
 			defer func() { _ = resp.Body.Close() }()
 
+			for k, vv := range resp.Header {
+				for _, v := range vv {
+					w.Header().Add(k, v)
+				}
+			}
 			w.WriteHeader(resp.StatusCode)
-			_ = resp.Header.Write(w)
 
 			_, _ = io.Copy(w, resp.Body)
 		}),
@@ -135,61 +213,40 @@ func newServiceHandler(logger log.Logger, config *Config) http.Handler {
 	return r
 }
 
-type authenticateOptions struct {
-	// TODO: Later maybe make this a configurable rate limit as well.
-	AllowAnonymous bool
-}
-
-func authenticate(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client, next http.Handler, opts authenticateOptions) http.Handler {
-	productSubscriptions := productsubscription.NewSource(logger, cache, dotComClient)
-
+func rateLimit(logger log.Logger, eventLogger events.Logger, cache limiter.RedisStore, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
-		if token == "" {
-			// Anonymous requests. Based on configuration, either allow or disallow.
-			if opts.AllowAnonymous {
-				// TODO: We need to evaluate these to an actor type as well to rate-limit
-				// anonymous users.
-				next.ServeHTTP(w, r)
-				return
-			}
-
-			responseJSONError(logger, w, http.StatusUnauthorized,
-				errors.New("unauthorized access is not allowed"))
-			return
-		}
-
-		act, err := productSubscriptions.Get(r.Context(), token)
-		if err != nil {
-			responseJSONError(logger, w, http.StatusUnauthorized, err)
-			return
-		}
-
-		if !act.AccessEnabled {
-			responseJSONError(logger, w, http.StatusForbidden,
-				errors.New("license archived or LLM proxy access not enabled"))
-			return
-		}
-
-		r = r.WithContext(actor.WithActor(r.Context(), act))
-		next.ServeHTTP(w, r)
-	})
-}
-
-func rateLimit(logger log.Logger, cache limiter.RedisStore, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		l := actor.FromContext(r.Context()).Limiter(cache)
+		act := actor.FromContext(r.Context())
+		l := act.Limiter(cache)
 
 		err := l.TryAcquire(r.Context())
 
-		var rateLimitExceeded limiter.RateLimitExceededError
 		if err != nil {
+			err := eventLogger.LogEvent(
+				events.Event{
+					Name:       events.EventNameRateLimited,
+					Source:     act.Source.Name(),
+					Identifier: act.ID,
+					Metadata: map[string]any{
+						"error": err.Error(),
+					},
+				},
+			)
+			if err != nil {
+				logger.Error("failed to log event", log.Error(err))
+			}
+
+			var rateLimitExceeded limiter.RateLimitExceededError
 			if errors.As(err, &rateLimitExceeded) {
 				rateLimitExceeded.WriteResponse(w)
 				return
 			}
 
-			responseJSONError(logger, w, http.StatusInternalServerError, err)
+			if errors.Is(err, limiter.NoAccessError{}) {
+				response.JSONError(logger, w, http.StatusForbidden, err)
+				return
+			}
+
+			response.JSONError(logger, w, http.StatusInternalServerError, err)
 		}
 
 		next.ServeHTTP(w, r)
@@ -217,4 +274,40 @@ func healthz(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func httpLogger(logger log.Logger, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		rc := requestclient.FromContext(r.Context())
+		logger.Debug("Request",
+			log.String("method", r.Method),
+			log.String("path", r.URL.Path),
+			log.String("requestclient.ip", rc.IP),
+			log.String("requestclient.forwardedFor", rc.ForwardedFor))
+		next.ServeHTTP(w, r)
+	})
+}
+
+func newPrefixRedisStore(prefix string, store redispool.KeyValue) limiter.RedisStore {
+	return &prefixRedisStore{
+		prefix: prefix,
+		store:  store,
+	}
+}
+
+type prefixRedisStore struct {
+	prefix string
+	store  redispool.KeyValue
+}
+
+func (s *prefixRedisStore) Incr(key string) (int, error) {
+	return s.store.Incr(s.prefix + key)
+}
+
+func (s *prefixRedisStore) TTL(key string) (int, error) {
+	return s.store.TTL(s.prefix + key)
+}
+
+func (s *prefixRedisStore) Expire(key string, ttlSeconds int) error {
+	return s.store.Expire(s.prefix+key, ttlSeconds)
 }
