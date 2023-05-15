@@ -202,8 +202,13 @@ func (e *ErrCollector) Error() string {
 type Args struct {
 	// MetricLabelValues that apply only to this invocation of the operation.
 	MetricLabelValues []string
+
+	// DEPRECATED: use Attrs instead
 	// LogFields that apply only to this invocation of the operation.
 	LogFields []otlog.Field
+
+	// Attributes that only apply to this invocation of the operation
+	Attrs []attribute.KeyValue
 }
 
 // WithErrors prepares the necessary timers, loggers, and metrics to observe the invocation of an
@@ -256,7 +261,7 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 		})
 	}
 
-	logger := op.Logger.With(toLogFields(args.LogFields)...)
+	logger := op.Logger.With(append(toLogFields(args.LogFields), attributesToLogFields(args.Attrs)...)...)
 
 	if traceContext := trace.Context(ctx); traceContext.TraceID != "" {
 		event.AddField("trace.trace_id", traceContext.TraceID)
@@ -275,7 +280,7 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 		Logger:  logger,
 	}
 
-	if mergedFields := mergeAttrs(op.attributes, trace.OTLogFieldsToOTelAttrs(args.LogFields)); len(mergedFields) > 0 {
+	if mergedFields := mergeAttrs(op.attributes, append(trace.OTLogFieldsToOTelAttrs(args.LogFields), args.Attrs...)); len(mergedFields) > 0 {
 		trLogger.initWithTags(mergedFields...)
 	}
 
@@ -284,7 +289,7 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 		elapsed := since.Seconds()
 		elapsedMs := since.Milliseconds()
 		defaultFinishFields := []attribute.KeyValue{attribute.Float64("count", count), attribute.Float64("elapsed", elapsed)}
-		finishLogFields := mergeAttrs(defaultFinishFields, trace.OTLogFieldsToOTelAttrs(finishArgs.LogFields))
+		finishLogFields := mergeAttrs(defaultFinishFields, append(trace.OTLogFieldsToOTelAttrs(finishArgs.LogFields), finishArgs.Attrs...))
 
 		logFields := mergeAttrs(defaultFinishFields, finishLogFields)
 		metricLabels := mergeLabels(op.metricLabels, args.MetricLabelValues, finishArgs.MetricLabelValues)
@@ -308,7 +313,7 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 		// already has all the other log fields
 		op.emitErrorLogs(trLogger, logErr, finishLogFields, emitToSentry)
 		// op. and args.LogFields already added at start
-		op.emitHoneyEvent(honeyErr, snakecaseOpName, event, trace.OTLogFieldsToOTelAttrs(finishArgs.LogFields), elapsedMs)
+		op.emitHoneyEvent(honeyErr, snakecaseOpName, event, append(trace.OTLogFieldsToOTelAttrs(finishArgs.LogFields), finishArgs.Attrs...), elapsedMs)
 
 		op.emitMetrics(metricsErr, count, elapsed, metricLabels)
 
