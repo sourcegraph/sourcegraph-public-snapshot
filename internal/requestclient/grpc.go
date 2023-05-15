@@ -10,8 +10,8 @@ import (
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc/propagator"
 )
 
-// Propagator is a Propagator that propagates the Client in the context across the gRPC client / server
-// request boundary.
+// Propagator is a github.com/sourcegraph/sourcegraph/internal/grpc/propagator.Propagator that Propagates
+// the Client in the context across the gRPC client / server request boundary.
 //
 // If the context does not contain a Client, the server will backfill the Client's IP with the IP of the address
 // that the request came from. (see https://pkg.go.dev/google.golang.org/grpc/peer for more information)
