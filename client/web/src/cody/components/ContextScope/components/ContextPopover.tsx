@@ -7,6 +7,7 @@ import {
     mdiPlusCircleOutline,
     mdiMinusCircleOutline,
     mdiGithub,
+    mdiCloseCircle,
 } from '@mdi/js'
 import classNames from 'classnames'
 
@@ -159,6 +160,11 @@ export const ContextPopover: React.FC<{
                             value={searchText}
                             onChange={handleSearch}
                         />
+                        {isSearching && (
+                            <Button className="clearButton" variant="icon" onClick={clearSearchText} aria-label="Clear">
+                                <Icon aria-hidden={true} svgPath={mdiCloseCircle} />
+                            </Button>
+                        )}
                     </div>
                 </Card>
             </PopoverContent>
