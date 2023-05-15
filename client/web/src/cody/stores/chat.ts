@@ -239,7 +239,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
 
         try {
             const client = await createClient({
-                config,
+                config: { ...config, customHeaders: window.context.xhrHeaders },
                 editor,
                 setMessageInProgress,
                 initialTranscript,
@@ -287,7 +287,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
 
         try {
             const client = await createClient({
-                config,
+                config: { ...config, customHeaders: window.context.xhrHeaders },
                 editor,
                 setMessageInProgress,
                 initialTranscript: transcript,
