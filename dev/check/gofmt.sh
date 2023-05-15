@@ -24,7 +24,7 @@ if [ -z "$DIFF" ]; then
   exit 0
 else
   echo "ERROR: gofmt check failed:"
-  echo -e "\n$DIFF\n" >./annotations/gofmt
+  echo -e "\`\`\`term\n$DIFF\n\`\`\`" >./annotations/gofmt
   echo "^^^ +++"
   exit 1
 fi
