@@ -50,7 +50,6 @@ type Config = Pick<
     | 'accessToken'
     | 'useContext'
     | 'experimentalChatPredictions'
-    | 'experimentalConnectToApp'
 >
 
 export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
@@ -585,7 +584,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             })
 
             // Ensure local app detector is running
-            if (this.config.experimentalConnectToApp && !isAuthed) {
+            if (!isAuthed) {
                 this.localAppDetector.start()
             } else {
                 this.localAppDetector.stop()
@@ -595,7 +594,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 debug: this.config.debug,
                 serverEndpoint: this.config.serverEndpoint,
                 hasAccessToken: isAuthed,
-                experimentalConnectToApp: this.config.experimentalConnectToApp,
             }
             void vscode.commands.executeCommand('setContext', 'cody.activated', isAuthed)
             void this.webview?.postMessage({ type: 'config', config: configForWebview })

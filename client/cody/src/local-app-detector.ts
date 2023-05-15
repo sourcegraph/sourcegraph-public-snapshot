@@ -3,9 +3,9 @@ import { homedir } from 'os'
 
 import { Disposable } from 'vscode'
 
-const INTERVAL = 5000
+const INTERVAL = 10000
 
-const LOCAL_APP_LOCATIONS = ['~/Library/Application Support/sourcegraph', '~/Applications/Sourcegraph App.app']
+const LOCAL_APP_LOCATIONS = ['~/Library/Application Support/sourcegraph']
 
 async function pathExists(path: string): Promise<boolean> {
     path = expandHomeDir(path)
