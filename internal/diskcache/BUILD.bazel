@@ -13,6 +13,7 @@ go_library(
     deps = [
         "//internal/metrics",
         "//internal/observation",
+        "//internal/trace",
         "//lib/errors",
         "@com_github_opentracing_opentracing_go//ext",
         "@com_github_opentracing_opentracing_go//log",

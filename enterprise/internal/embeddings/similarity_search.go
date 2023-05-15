@@ -81,11 +81,21 @@ type WorkerOptions struct {
 	MinRowsToSplit int
 }
 
+type SimilaritySearchResult struct {
+	RepoEmbeddingRowMetadata
+	SimilarityScore int32
+	RankScore       int32
+}
+
+func (r *SimilaritySearchResult) Score() int32 {
+	return r.SimilarityScore + r.RankScore
+}
+
 // SimilaritySearch finds the `nResults` most similar rows to a query vector. It uses the cosine similarity metric.
 // IMPORTANT: The vectors in the embedding index have to be normalized for similarity search to work correctly.
-func (index *EmbeddingIndex) SimilaritySearch(query []int8, numResults int, workerOptions WorkerOptions, opts SearchOptions) []EmbeddingSearchResult {
+func (index *EmbeddingIndex) SimilaritySearch(query []int8, numResults int, workerOptions WorkerOptions, opts SearchOptions) []SimilaritySearchResult {
 	if numResults == 0 || len(index.Embeddings) == 0 {
-		return []EmbeddingSearchResult{}
+		return nil
 	}
 
 	numRows := len(index.RowMetadata)
@@ -124,13 +134,13 @@ func (index *EmbeddingIndex) SimilaritySearch(query []int8, numResults int, work
 	sort.Slice(neighbors, func(i, j int) bool { return neighbors[i].score > neighbors[j].score })
 
 	// Take top neighbors and return them as results.
-	results := make([]EmbeddingSearchResult, numResults)
+	results := make([]SimilaritySearchResult, numResults)
 
 	for idx := 0; idx < min(numResults, len(neighbors)); idx++ {
-		results[idx] = EmbeddingSearchResult{
+		results[idx] = SimilaritySearchResult{
 			RepoEmbeddingRowMetadata: index.RowMetadata[neighbors[idx].index],
-			RowNum:                   neighbors[idx].index,
-			Debug:                    neighbors[idx].debug.String(),
+			SimilarityScore:          neighbors[idx].debug.similarity,
+			RankScore:                neighbors[idx].debug.rank,
 		}
 	}
 

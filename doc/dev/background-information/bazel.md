@@ -7,7 +7,7 @@ Sourcegraph is currently migrating to Bazel as its build system and this page is
 - 2023-04-03 Bazel steps are required to pass on all PR builds.
   - Run `bazel run :update-gazelle-repos` if you changed the `go.mod`.
   - Run `bazel configure` after making all your changes in the PR and commit the updated/added `BUILD.bazel`
-  - Add `[no-bazel]` in your commit description if you want to bypass Bazel. 
+  - Add `[no-bazel]` in your commit description if you want to bypass Bazel.
     - ⚠️  see [what to do after using `[no-bazel]`](#i-just-used-no-bazel-to-merge-my-pr)
 - 2023-04-06 Bazel steps are required to pass on main.
   - Run `bazel run :update-gazelle-repos` if you changed the `go.mod`.
@@ -215,11 +215,11 @@ So when a change is detected, `iBazel` will build the affected target and it wil
 
 ### General
 
-#### I just used `[no-bazel]` to merge my PR 
+#### I just used `[no-bazel]` to merge my PR
 
-While using `[no-bazel]` will enable you to get your pull request merged, the subsequent builds will be with Bazel unless they also have that flag. 
+While using `[no-bazel]` will enable you to get your pull request merged, the subsequent builds will be with Bazel unless they also have that flag.
 
-Therefore you need to follow-up quickly with a fix to ensure `main` is not broken. 
+Therefore you need to follow-up quickly with a fix to ensure `main` is not broken.
 
 #### The analysis cache is being busted because of `--action_env`
 
@@ -236,15 +236,24 @@ INFO: Build option --action_env has changed, discarding analysis cache.
 
 #### My JetBrains IDE becomes unresponsive after Bazel builds
 
-By default, JetBrains IDEs such as GoLand will try and index the files in your project workspace. If you run Bazel locally, the resulting artifacts will be indexed, which will likely hog the full heap size that the IDE is allocated.  
+By default, JetBrains IDEs such as GoLand will try and index the files in your project workspace. If you run Bazel locally, the resulting artifacts will be indexed, which will likely hog the full heap size that the IDE is allocated.
 
-There is no reason to index these files, so you can just exclude them from indexing by right-clicking artifact directories, then choosing **Mark directory as** &rarr; **Excluded** from the context menu. A restart is required to stop the indexing process. 
+There is no reason to index these files, so you can just exclude them from indexing by right-clicking artifact directories, then choosing **Mark directory as** &rarr; **Excluded** from the context menu. A restart is required to stop the indexing process.
 
 #### My local `bazel configure` or `./dev/ci/bazel-configure.sh` run has diff with a result of Bazel CI step
 
 This could happen when there are any files which are not tracked by Git. These files affect the run of `bazel configure` and typically add more items to `BUILD.bazel` file.
 
-Solution: run `git clean -ffdx` then run `bazel configure` again. 
+Solution: run `git clean -ffdx` then run `bazel configure` again.
+
+#### How do I clean up all local Bazel cache?
+
+1. The simplest way to clean up the cache is to use the clean command: `bazel clean`. This command will remove all output files and the cache in the bazel-* directories within your workspace. Use the `--expunge` flag to remove the entire working tree, including the cache directory, and force a full rebuild.
+2. To manually clear the global Bazel cache, you need to remove the respective folders from your machine. On macOS, the global cache is typically located at either `~/.cache/bazel` or `/var/tmp/_bazel_$(whoami)`.
+
+#### Where do I fine Bazel rules locally on disk?
+
+Use `bazel info output_base` to find the output base directory. From there go to the `external` folder to find Bazel rules saved locally.
 
 ### Go
 
@@ -376,7 +385,7 @@ error: aborting due to 2 previous errors
 ```
 Bazel doesn't know about the module/crate being use in the rust code. If you do a git blame `Cargo.toml` you'll probably see that a new dependency has been added, but the build files were not updated. There are two ways to solve this:
 1. Run `bazel configure` and `CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_index`. Once the commands have completed you can check that the dependency has been picked up and syntax-highlighter can be built by running `bazel build //docker-images/syntax-highlighter/...`. **Note** this will usually work if the dependency is an *external* dependency.
-2. You're going to have to update the `BUILD.bazel` file yourself. Which one you might ask? From the above error we can see the file `src/main.rs` is where the error is encountered, so we need to tell *its BUILD.bazel* about the new dependency. 
+2. You're going to have to update the `BUILD.bazel` file yourself. Which one you might ask? From the above error we can see the file `src/main.rs` is where the error is encountered, so we need to tell *its BUILD.bazel* about the new dependency.
 For the above dependency, the crate is defined in `docker-images/syntax-highlighter/crates`. You'll also see that each of those crates have their own `BUILD.bazel` files in them, which means we can reference them as targets! Take a peak at `scip-treesitter-languages` `BUILD.bazel` file and take note of the name - that is its target. Now that we have the name of the target we can add it as a dep to `docker-images/syntax-highlighter`. In the snippet below the `syntax-highlighter` `rust_binary` rule is updated with the `scip-treesitter-languages` dependency. Note that we need to refer to the full target path when adding it to the dep list in the `BUILD.bazel` file.
 ```
 rust_binary(

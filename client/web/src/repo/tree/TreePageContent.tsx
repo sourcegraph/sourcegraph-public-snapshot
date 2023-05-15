@@ -1,31 +1,32 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
-import { mdiCog, mdiInformationOutline } from '@mdi/js'
+import { mdiCog, mdiGlasses, mdiInformationOutline, mdiPencil } from '@mdi/js'
 import classNames from 'classnames'
 import { formatISO, subYears } from 'date-fns'
-import { escapeRegExp } from 'lodash'
+import { capitalize, escapeRegExp } from 'lodash'
 import { Observable } from 'rxjs'
 import { catchError, map, switchMap } from 'rxjs/operators'
 
 import { RepoMetadata } from '@sourcegraph/branded'
 import { encodeURIPathComponent, numberWithCommas, pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
+import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType, TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Card, CardHeader, Icon, Link, Tooltip, Text, ButtonLink } from '@sourcegraph/wildcard'
+import { Badge, ButtonLink, Card, CardHeader, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
 import {
     ConnectionContainer,
+    ConnectionError,
     ConnectionList,
     ConnectionLoading,
     ConnectionSummary,
     SummaryContainer,
-    ConnectionError,
 } from '../../components/FilteredConnection/ui'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import {
@@ -35,17 +36,23 @@ import {
     DiffSinceVariables,
     GitCommitFields,
     RepositoryContributorNodeFields,
-    TreePageRepositoryContributorsResult,
-    TreePageRepositoryContributorsVariables,
     Scalars,
     TreeCommitsResult,
-    TreePageRepositoryFields,
     TreeCommitsVariables,
+    TreePageOwnershipNodeFields,
+    TreePageOwnershipResult,
+    TreePageOwnershipVariables,
+    TreePageRepositoryContributorsResult,
+    TreePageRepositoryContributorsVariables,
+    TreePageRepositoryFields,
 } from '../../graphql-operations'
 import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
+import { buildSearchURLQueryFromQueryState, useNavbarQueryState } from '../../stores'
+import { OWNER_FIELDS, RECENT_CONTRIBUTOR_FIELDS, RECENT_VIEW_FIELDS } from '../blob/own/grapqlQueries'
 import { GitCommitNodeTableRow } from '../commits/GitCommitNodeTableRow'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
+import { getRefType } from '../utils'
 
 import { DiffStat, FilesCard, ReadmePreviewCard } from './TreePagePanels'
 
@@ -204,6 +211,7 @@ const ExtraInfoSection: React.FC<{
     const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', false)
 
     const metadataItems = useMemo(() => repo.metadata.map(({ key, value }) => ({ key, value })) || [], [repo.metadata])
+    const queryState = useNavbarQueryState(state => state.queryState)
 
     return (
         <Card className={className}>
@@ -242,7 +250,12 @@ const ExtraInfoSection: React.FC<{
                         )}
                     </ExtraInfoSectionItemHeader>
                     {metadataItems.length ? (
-                        <RepoMetadata items={metadataItems} />
+                        <RepoMetadata
+                            items={metadataItems}
+                            queryState={queryState}
+                            queryBuildOptions={{ omitRepoFilter: true }}
+                            buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
+                        />
                     ) : (
                         <Text className="text-muted">None</Text>
                     )}
@@ -287,6 +300,11 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         return () => subscription.unsubscribe()
     }, [repo.name, revision, filePath])
 
+    const [recentContributorsComputed] = useFeatureFlag('own-background-index-repo-recent-contributors', false)
+    const [recentViewsComputed] = useFeatureFlag('own-background-index-repo-recent-views', false)
+
+    const ownSignalsEnabled = recentContributorsComputed || recentViewsComputed
+
     return (
         <>
             <section className={classNames('container mb-3 px-0', styles.section)}>
@@ -309,16 +327,26 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
 
                 {!isPackage && (
                     <Card className={styles.commits}>
-                        <CardHeader className={panelStyles.cardColHeaderWrapper}>Commits</CardHeader>
+                        <CardHeader className={panelStyles.cardColHeaderWrapper}>
+                            {capitalize(pluralize(getRefType(repo.sourceType), 0))}
+                        </CardHeader>
                         <Commits {...props} />
                     </Card>
                 )}
 
                 {!isPackage && (
-                    <Card className={styles.contributors}>
-                        <CardHeader className={panelStyles.cardColHeaderWrapper}>Contributors</CardHeader>
-                        <Contributors {...props} />
-                    </Card>
+                    <div className={styles.contributors}>
+                        {ownSignalsEnabled && (
+                            <Card>
+                                <CardHeader className={panelStyles.cardColHeaderWrapper}>Ownership</CardHeader>
+                                <Ownership {...props} />
+                            </Card>
+                        )}
+                        <Card className={ownSignalsEnabled ? 'mt-3' : undefined}>
+                            <CardHeader className={panelStyles.cardColHeaderWrapper}>Contributors</CardHeader>
+                            <Contributors {...props} />
+                        </Card>
+                    </div>
                 )}
             </section>
         </>
@@ -335,6 +363,7 @@ const CONTRIBUTORS_QUERY = gql`
     ) {
         node(id: $repo) {
             ... on Repository {
+                sourceType
                 contributors(first: $first, revisionRange: $revisionRange, afterDate: $afterDate, path: $path) {
                     ...TreePageRepositoryContributorConnectionFields
                 }
@@ -418,6 +447,7 @@ const Contributors: React.FC<ContributorsProps> = ({ repo, filePath }) => {
                                 key={node.person.email}
                                 node={node}
                                 repoName={repo.name}
+                                sourceType={repo.sourceType}
                                 {...spec}
                             />
                         ))}
@@ -458,6 +488,171 @@ const Contributors: React.FC<ContributorsProps> = ({ repo, filePath }) => {
     )
 }
 
+const OWNERS_QUERY = gql`
+    ${OWNER_FIELDS}
+    ${RECENT_CONTRIBUTOR_FIELDS}
+    ${RECENT_VIEW_FIELDS}
+
+    query TreePageOwnership($repo: ID!, $first: Int, $revision: String!, $filePath: String!) {
+        node(id: $repo) {
+            ... on Repository {
+                commit(rev: $revision) {
+                    path(path: $filePath) {
+                        ... on GitTree {
+                            ownership(first: $first) {
+                                ...TreePageOwnershipConnectionFields
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fragment TreePageOwnershipConnectionFields on OwnershipConnection {
+        totalCount
+        pageInfo {
+            hasNextPage
+        }
+        nodes {
+            ...TreePageOwnershipNodeFields
+        }
+    }
+
+    fragment TreePageOwnershipNodeFields on Ownership {
+        owner {
+            ...OwnerFields
+        }
+        reasons {
+            ...RecentContributorOwnershipSignalFields
+            ...RecentViewOwnershipSignalFields
+        }
+    }
+`
+
+interface OwnershipProps extends TreePageContentProps {}
+const Ownership: React.FC<OwnershipProps> = ({ repo, filePath }) => {
+    const { data, error, loading } = useQuery<TreePageOwnershipResult, TreePageOwnershipVariables>(OWNERS_QUERY, {
+        variables: {
+            first: 5,
+            repo: repo.id,
+            revision: '',
+            filePath,
+        },
+    })
+
+    const node = data?.node && data?.node.__typename === 'Repository' ? data.node : null
+    const connection =
+        node?.commit?.path?.__typename === 'GitTree' &&
+        node?.commit?.path?.ownership?.__typename === 'OwnershipConnection'
+            ? node.commit.path.ownership
+            : null
+
+    return (
+        <ConnectionContainer>
+            {error && <ConnectionError errors={[error.message]} />}
+            {connection && connection.nodes.length > 0 && (
+                <ConnectionList
+                    className={classNames('test-filtered-contributors-connection', styles.table)}
+                    as="table"
+                >
+                    <tbody>
+                        {connection.nodes.map((node: TreePageOwnershipNodeFields) => (
+                            <OwnerNode
+                                key={
+                                    node.owner.__typename === 'Person'
+                                        ? node.owner.email
+                                        : node.owner.__typename === 'Team'
+                                        ? node.owner.name
+                                        : null
+                                }
+                                node={node}
+                            />
+                        ))}
+                    </tbody>
+                </ConnectionList>
+            )}
+            {loading && (
+                <div className={contributorsStyles.filteredConnectionLoading}>
+                    <ConnectionLoading />
+                </div>
+            )}
+            <SummaryContainer className={styles.tableSummary}>
+                {connection && (
+                    <>
+                        <ConnectionSummary
+                            compact={true}
+                            connection={connection}
+                            first={COUNT}
+                            noun="owner"
+                            pluralNoun="owners"
+                            hasNextPage={connection.pageInfo.hasNextPage}
+                        />
+                        {/* TODO(#51792): Show more button should lead
+                         * to the ownership tab with detailed view for each owner.
+                         */}
+                    </>
+                )}
+            </SummaryContainer>
+        </ConnectionContainer>
+    )
+}
+
+interface OwnerNodeProps {
+    node: TreePageOwnershipNodeFields
+}
+const OwnerNode: React.FC<OwnerNodeProps> = ({ node }) => {
+    const owner = node?.owner
+    return (
+        <tr className={classNames('list-group-item', contributorsStyles.repositoryContributorNode)}>
+            <td className={contributorsStyles.person}>
+                {/* TODO(#51791): Unify the component with FileOwnershipEntry. */}
+                {owner.__typename === 'Person' && (
+                    <>
+                        <UserAvatar user={owner} className="mx-2" inline={true} />
+                        <PersonLink person={owner} />
+                    </>
+                )}
+                {owner.__typename === 'Team' && (
+                    <>
+                        <TeamAvatar
+                            team={{ ...owner, displayName: owner.teamDisplayName }}
+                            className="mx-2"
+                            inline={true}
+                        />
+                        <Link to={`/teams/${owner.name}`}>{owner.teamDisplayName || owner.name}</Link>
+                    </>
+                )}
+            </td>
+            <td className={contributorsStyles.commits}>
+                {node.reasons.map(reason =>
+                    reason?.__typename === 'RecentContributorOwnershipSignal' ? (
+                        <Badge
+                            key={reason.title}
+                            tooltip={reason.description}
+                            className={styles.badge}
+                            variant="secondary"
+                        >
+                            <Icon aria-label={reason.title} svgPath={mdiPencil} />
+                        </Badge>
+                    ) : reason?.__typename === 'RecentViewOwnershipSignal' ? (
+                        <Badge
+                            key={reason.title}
+                            tooltip={reason.description}
+                            className={styles.badge}
+                            variant="secondary"
+                        >
+                            <Icon aria-label={reason.title} svgPath={mdiGlasses} />
+                        </Badge>
+                    ) : (
+                        <></>
+                    )
+                )}
+            </td>
+        </tr>
+    )
+}
+
 interface QuerySpec {
     revisionRange: string
     after: string
@@ -467,6 +662,7 @@ interface QuerySpec {
 interface RepositoryContributorNodeProps extends QuerySpec {
     node: RepositoryContributorNodeFields
     repoName: string
+    sourceType: string
 }
 const RepositoryContributorNode: React.FC<RepositoryContributorNodeProps> = ({
     node,
@@ -474,6 +670,7 @@ const RepositoryContributorNode: React.FC<RepositoryContributorNodeProps> = ({
     revisionRange,
     after,
     path,
+    sourceType,
 }) => {
     const query: string = [
         searchQueryForRepoRevision(repoName),
@@ -485,6 +682,8 @@ const RepositoryContributorNode: React.FC<RepositoryContributorNodeProps> = ({
         .join(' ')
         .replace(/\s+/, ' ')
 
+    const refType = getRefType(sourceType)
+
     return (
         <tr className={classNames('list-group-item', contributorsStyles.repositoryContributorNode)}>
             <td className={contributorsStyles.person}>
@@ -495,13 +694,13 @@ const RepositoryContributorNode: React.FC<RepositoryContributorNodeProps> = ({
                 <Tooltip
                     content={
                         revisionRange?.includes('..')
-                            ? 'All commits will be shown (revision end ranges are not yet supported)'
+                            ? `All ${refType}s will be shown (revision end ranges are not yet supported)`
                             : null
                     }
                     placement="left"
                 >
                     <Link to={`/search?${buildSearchURLQuery(query, SearchPatternType.standard, false)}`}>
-                        {numberWithCommas(node.count)} {pluralize('commit', node.count)}
+                        {numberWithCommas(node.count)} {pluralize(refType, node.count)}
                     </Link>
                 </Tooltip>
             </td>
@@ -514,6 +713,7 @@ const COMMITS_QUERY = gql`
         node(id: $repo) {
             __typename
             ... on Repository {
+                sourceType
                 externalURLs {
                     url
                     serviceKind
@@ -588,14 +788,11 @@ const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => 
                                 {connection.nodes.length > 0 ? (
                                     <>
                                         Showing last {connection.nodes.length}{' '}
-                                        {pluralize(
-                                            'commit of the past year',
-                                            connection.nodes.length,
-                                            'commits of the past year'
-                                        )}
+                                        {pluralize(getRefType(node.sourceType), connection.nodes.length)} of the past
+                                        year
                                     </>
                                 ) : (
-                                    <>No commits in the past year</>
+                                    <>No {pluralize(getRefType(node.sourceType), 0)} in the past year</>
                                 )}
                             </span>
                         </small>

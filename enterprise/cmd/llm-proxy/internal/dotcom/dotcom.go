@@ -11,8 +11,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-const endpoint = "https://sourcegraph.com/.api/graphql"
-
 // NewClient returns a new GraphQL client for the Sourcegraph.com API authenticated
 // with the given Sourcegraph access token.
 //
@@ -27,7 +25,7 @@ const endpoint = "https://sourcegraph.com/.api/graphql"
 //	println(resp.GetDotcom().ProductSubscriptionByAccessToken.LlmProxyAccess.Enabled)
 //
 // The client generator automatically ensures we're up-to-date with the GraphQL schema.
-func NewClient(token string) graphql.Client {
+func NewClient(endpoint, token string) graphql.Client {
 	return &tracedClient{graphql.NewClient(endpoint, &http.Client{
 		Transport: &tokenAuthTransport{
 			token:   token,
