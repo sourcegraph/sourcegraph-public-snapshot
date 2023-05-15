@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/events"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/response"
+	llmproxy "github.com/sourcegraph/sourcegraph/enterprise/internal/llm-proxy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -44,7 +45,7 @@ func (a *Authenticator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		err := a.EventLogger.LogEvent(
 			events.Event{
-				Name:       events.EventNameUnauthorized,
+				Name:       llmproxy.EventNameUnauthorized,
 				Source:     "anonymous",
 				Identifier: "anonymous",
 			},
@@ -65,7 +66,7 @@ func (a *Authenticator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		err := a.EventLogger.LogEvent(
 			events.Event{
-				Name:       events.EventNameAccessDenied,
+				Name:       llmproxy.EventNameAccessDenied,
 				Source:     act.Source.Name(),
 				Identifier: act.ID,
 			},

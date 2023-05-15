@@ -8,6 +8,7 @@ go_library(
     deps = [
         "//enterprise/cmd/llm-proxy/internal/actor",
         "//enterprise/cmd/llm-proxy/internal/dotcom",
+        "//enterprise/internal/llm-proxy",
         "//lib/errors",
         "@com_github_gregjones_httpcache//:httpcache",
         "@com_github_khan_genqlient//graphql",

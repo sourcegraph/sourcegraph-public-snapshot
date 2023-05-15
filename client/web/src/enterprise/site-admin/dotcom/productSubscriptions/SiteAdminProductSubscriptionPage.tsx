@@ -108,7 +108,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
         error &&
         (error.networkError ||
             error.clientErrors.length > 0 ||
-            (error.graphQLErrors.length !== 1 && errorForPath(error, accessTokenPath)))
+            !(error.graphQLErrors.length === 1 && errorForPath(error, accessTokenPath)))
     ) {
         return <ErrorAlert className="my-2" error={error} />
     }
