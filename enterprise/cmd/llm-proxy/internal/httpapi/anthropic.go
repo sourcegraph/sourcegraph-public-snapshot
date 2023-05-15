@@ -56,6 +56,7 @@ func newAnthropicHandler(logger log.Logger, eventLogger events.Logger, anthropic
 				Identifier: act.ID,
 				Metadata: map[string]any{
 					"prompt_character_count": len(body.Prompt),
+					"model":                  body.Model,
 					"stream":                 body.Stream,
 				},
 			},
