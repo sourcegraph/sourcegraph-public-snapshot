@@ -57,7 +57,7 @@ func getHighlightOp() *observation.Operation {
 
 		highlightOp = obsvCtx.Operation(observation.Op{
 			Name:        "codeintel.syntax-highlight.Code",
-			LogFields:   []otlog.Field{},
+			Attrs:       []attribute.KeyValue{},
 			ErrorFilter: func(err error) observation.ErrorFilterBehaviour { return observation.EmitForHoney },
 		})
 	})

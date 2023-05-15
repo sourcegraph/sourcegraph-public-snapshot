@@ -6,7 +6,7 @@ import (
 	"strings"
 	"unicode"
 
-	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // commonAcronyms includes acronyms that malform the expected output of kebabCase
@@ -64,17 +64,17 @@ func mergeLabels(groups ...[]string) []string {
 	return labels
 }
 
-// mergeLogFields flattens slices of slices of log fields.
-func mergeLogFields(groups ...[]otlog.Field) []otlog.Field {
+// mergeAttrs flattens slices of slices of log fields.
+func mergeAttrs(groups ...[]attribute.KeyValue) []attribute.KeyValue {
 	size := 0
 	for _, group := range groups {
 		size += len(group)
 	}
 
-	logFields := make([]otlog.Field, 0, size)
+	attrs := make([]attribute.KeyValue, 0, size)
 	for _, group := range groups {
-		logFields = append(logFields, group...)
+		attrs = append(attrs, group...)
 	}
 
-	return logFields
+	return attrs
 }
