@@ -56,6 +56,7 @@ func (m *MultiHandler) validateQueues(queues []string) []string {
 
 // ServeHTTP is the equivalent of ExecutorHandler.HandleDequeue for multiple queues.
 func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
 	var req executortypes.DequeueRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		err = errors.Wrap(err, fmt.Sprintf("Failed to unmarshal payload"))

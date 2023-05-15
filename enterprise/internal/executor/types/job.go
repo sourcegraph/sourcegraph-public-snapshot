@@ -17,7 +17,7 @@ type Job struct {
 	ID int `json:"id"`
 
 	// Queue contains the name of the source queue.
-	Queue string `json:"queue"`
+	Queue string `json:"queue,omitempty"`
 
 	// Token is the authentication token for the specific Job.
 	Token string `json:"Token"`
@@ -188,7 +188,7 @@ type v2Job struct {
 	Version             int                             `json:"version,omitempty"`
 	ID                  int                             `json:"id"`
 	Token               string                          `json:"token"`
-	Queue               string                          `json:"queue"`
+	Queue               string                          `json:"queue,omitempty"`
 	RepositoryName      string                          `json:"repositoryName"`
 	RepositoryDirectory string                          `json:"repositoryDirectory"`
 	Commit              string                          `json:"commit"`
@@ -205,7 +205,7 @@ type v2Job struct {
 type v1Job struct {
 	ID                  int                             `json:"id"`
 	Token               string                          `json:"token"`
-	Queue               string                          `json:"queue",`
+	Queue               string                          `json:"queue,omitempty"`
 	RepositoryName      string                          `json:"repositoryName"`
 	RepositoryDirectory string                          `json:"repositoryDirectory"`
 	Commit              string                          `json:"commit"`
