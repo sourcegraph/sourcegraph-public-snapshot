@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 
-import { useApolloClient, useLazyQuery } from '@apollo/client'
+import { useApolloClient } from '@apollo/client'
 import { isEqual } from 'lodash'
 
 import { ErrorLike } from '@sourcegraph/common'
@@ -15,13 +15,12 @@ import {
     DiscoverLocalRepositoriesVariables,
     ExternalServiceKind,
     GetLocalCodeHostsResult,
-    GetLocalDirectoryPathResult,
     LocalRepository,
 } from '../../../graphql-operations'
 import { ADD_CODE_HOST, DELETE_CODE_HOST } from '../../queries'
 
 import { createDefaultLocalServiceConfig, getLocalServicePaths, getLocalServices } from './helpers'
-import { DISCOVER_LOCAL_REPOSITORIES, GET_LOCAL_CODE_HOSTS, GET_LOCAL_DIRECTORY_PATH } from './queries'
+import { DISCOVER_LOCAL_REPOSITORIES, GET_LOCAL_CODE_HOSTS } from './queries'
 
 type Path = string
 
@@ -218,28 +217,4 @@ export function useLocalRepositories({ paths, skip }: LocalRepositoriesInput): L
         loaded: skip || !!data || !!previousData,
         repositories: data?.localDirectories?.repositories ?? previousData?.localDirectories?.repositories ?? [],
     }
-}
-
-interface LocalPathPickerAPI {
-    callPathPicker: () => Promise<Path[]>
-}
-
-export function useLocalPathsPicker(): LocalPathPickerAPI {
-    const [queryPath] = useLazyQuery<GetLocalDirectoryPathResult>(GET_LOCAL_DIRECTORY_PATH, {
-        fetchPolicy: 'network-only',
-    })
-
-    const callPathPicker = useCallback(
-        () =>
-            queryPath().then(({ data, error }) => {
-                if (error) {
-                    throw new Error(error.message)
-                }
-
-                return data?.localDirectoriesPicker?.paths ?? []
-            }),
-        [queryPath]
-    )
-
-    return { callPathPicker }
 }
