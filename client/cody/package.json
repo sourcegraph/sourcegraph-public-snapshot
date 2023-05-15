@@ -94,10 +94,6 @@
     },
     "commands": [
       {
-        "command": "cody.toggle-enabled",
-        "title": "Cody: Toggle Enabled/Disabled"
-      },
-      {
         "command": "cody.recipe.explain-code",
         "title": "Ask Cody: Explain Code in Detail"
       },

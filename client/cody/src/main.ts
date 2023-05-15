@@ -146,15 +146,6 @@ const register = async (
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             commentController.delete(thread)
         }),
-        // Toggle Chat
-        vscode.commands.registerCommand('cody.toggle-enabled', async () => {
-            await workspaceConfig.update(
-                'cody.enabled',
-                !workspaceConfig.get('cody.enabled'),
-                vscode.ConfigurationTarget.Global
-            )
-            logEvent('CodyVSCodeExtension:codyToggleEnabled:clicked')
-        }),
         // Access token - this is only used in configuration tests
         vscode.commands.registerCommand('cody.set-access-token', async (args: any[]) => {
             if (args?.length && (args[0] as string)) {
