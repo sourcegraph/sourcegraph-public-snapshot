@@ -25,8 +25,9 @@ import {
 import { TruncatedText } from '../../../../enterprise/insights/components'
 import { ContextType, SELECTED } from '../ContextScope'
 
-import { EmptyState } from './EmptyState'
 import { repoMockedModel } from './mockedModels'
+
+import styles from './ContextComponents.module.scss'
 
 export const ContextPopover: React.FC<{
     header: string
@@ -149,47 +150,21 @@ export const ContextPopover: React.FC<{
                                                 </>
                                             )}
 
-                                            {isSearching ? (
-                                                <Button
-                                                    className="pl-1"
-                                                    variant="icon"
-                                                    onClick={() => handleAddItem(index)}
-                                                >
-                                                    <Icon aria-hidden={true} svgPath={mdiPlusCircleOutline} />
-                                                </Button>
-                                            ) : (
-                                                <Button
-                                                    className="pl-1"
-                                                    variant="icon"
-                                                    onClick={() => handleRemoveItem(index)}
-                                                >
-                                                    <Icon aria-hidden={true} svgPath={mdiMinusCircleOutline} />
-                                                </Button>
-                                            )}
+                                            <ItemAction
+                                                isSearching={isSearching}
+                                                handleAddItem={() => handleAddItem(index)}
+                                                handleRemoveItem={() => handleRemoveItem(index)}
+                                            />
                                         </div>
                                     </div>
                                 ))}
                             </div>
 
-                            {isSearching ? (
-                                <Button
-                                    className={classNames('d-flex justify-content-between', 'itemClear')}
-                                    variant="icon"
-                                    onClick={handleAddAll}
-                                >
-                                    Add all to the scope.
-                                    <Icon aria-hidden={true} svgPath={mdiPlusCircleOutline} />
-                                </Button>
-                            ) : (
-                                <Button
-                                    className={classNames('d-flex justify-content-between', 'itemClear')}
-                                    variant="icon"
-                                    onClick={handleClearAll}
-                                >
-                                    Clear all from the scope.
-                                    <Icon aria-hidden={true} svgPath={mdiCloseCircleOutline} />
-                                </Button>
-                            )}
+                            <ContextActions
+                                isSearching={isSearching}
+                                handleAddAll={handleAddAll}
+                                handleClearAll={handleClearAll}
+                            />
                         </>
                     )}
 
@@ -211,7 +186,54 @@ export const ContextPopover: React.FC<{
     )
 }
 
-// Custom fuzzy search function
+const ItemAction: React.FC<{
+    isSearching: boolean
+    handleAddItem: () => void
+    handleRemoveItem: () => void
+}> = ({ isSearching, handleAddItem, handleRemoveItem }) => (
+    <Button className="pl-1" variant="icon" onClick={isSearching ? handleAddItem : handleRemoveItem}>
+        <Icon aria-hidden={true} svgPath={isSearching ? mdiPlusCircleOutline : mdiMinusCircleOutline} />
+    </Button>
+)
+
+const ContextActions: React.FC<{
+    isSearching: boolean
+    handleAddAll: () => void
+    handleClearAll: () => void
+}> = ({ isSearching, handleAddAll, handleClearAll }) => {
+    const buttonLabel = isSearching ? 'Add all to the scope.' : 'Clear all from the scope.'
+    const buttonIcon = isSearching ? mdiPlusCircleOutline : mdiCloseCircleOutline
+
+    return (
+        <Button
+            className={classNames('d-flex justify-content-between', 'itemClear')}
+            variant="icon"
+            onClick={isSearching ? handleAddAll : handleClearAll}
+        >
+            {buttonLabel}
+            <Icon aria-hidden={true} svgPath={buttonIcon} />
+        </Button>
+    )
+}
+
+/**
+ * Displays an empty state icon and message.
+ */
+const EmptyState: React.FC<{ icon: string; message: string }> = ({ icon, message }) => (
+    <div className={classNames('d-flex align-items-center justify-content-center flex-column', styles.emptyState)}>
+        <svg height={40} width={40} viewBox="0 0 24 24">
+            <path d={icon} fill="currentColor" />
+        </svg>
+
+        <Text size="small" className="m-0 d-flex text-center">
+            {message}
+        </Text>
+    </div>
+)
+
+/**
+ * Helper fuctions for search and filtering.
+ */
 export const fuzzySearch = (item: string, search: string): boolean => {
     const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
     const searchRegex = new RegExp(escapedSearch, 'gi')
