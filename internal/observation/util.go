@@ -64,8 +64,8 @@ func mergeLabels(groups ...[]string) []string {
 	return labels
 }
 
-// mergeLogFields flattens slices of slices of log fields.
-func mergeLogFields(groups ...[]attribute.KeyValue) []attribute.KeyValue {
+// mergeAttrs flattens slices of slices of log fields.
+func mergeAttrs(groups ...[]attribute.KeyValue) []attribute.KeyValue {
 	size := 0
 	for _, group := range groups {
 		size += len(group)

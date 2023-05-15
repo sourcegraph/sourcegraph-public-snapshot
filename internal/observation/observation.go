@@ -275,7 +275,7 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 		Logger:  logger,
 	}
 
-	if mergedFields := mergeLogFields(op.attributes, trace.OTLogFieldsToOTelAttrs(args.LogFields)); len(mergedFields) > 0 {
+	if mergedFields := mergeAttrs(op.attributes, trace.OTLogFieldsToOTelAttrs(args.LogFields)); len(mergedFields) > 0 {
 		trLogger.initWithTags(mergedFields...)
 	}
 
@@ -284,9 +284,9 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 		elapsed := since.Seconds()
 		elapsedMs := since.Milliseconds()
 		defaultFinishFields := []attribute.KeyValue{attribute.Float64("count", count), attribute.Float64("elapsed", elapsed)}
-		finishLogFields := mergeLogFields(defaultFinishFields, trace.OTLogFieldsToOTelAttrs(finishArgs.LogFields))
+		finishLogFields := mergeAttrs(defaultFinishFields, trace.OTLogFieldsToOTelAttrs(finishArgs.LogFields))
 
-		logFields := mergeLogFields(defaultFinishFields, finishLogFields)
+		logFields := mergeAttrs(defaultFinishFields, finishLogFields)
 		metricLabels := mergeLabels(op.metricLabels, args.MetricLabelValues, finishArgs.MetricLabelValues)
 
 		if multi := new(ErrCollector); err != nil && errors.As(*err, &multi) {
