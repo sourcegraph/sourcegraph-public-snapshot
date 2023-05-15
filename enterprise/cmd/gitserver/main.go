@@ -7,5 +7,5 @@ import (
 )
 
 func main() {
-	enterprisecmd.DeprecatedSingleServiceMainEnterprise(shared.Service)
+	enterprisecmd.SingleServiceMainEnterprise(shared.Service)
 }

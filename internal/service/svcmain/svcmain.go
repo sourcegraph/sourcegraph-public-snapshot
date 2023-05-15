@@ -96,12 +96,9 @@ func Main(services []sgservice.Service, config Config, args []string) {
 	}
 }
 
-// DeprecatedSingleServiceMain is called from the `main` function of a command to start a single
+// SingleServiceMain is called from the `main` function of a command to start a single
 // service (such as frontend or gitserver).
-//
-// DEPRECATED: Building per-service commands (i.e., a separate binary for frontend, gitserver, etc.)
-// is deprecated.
-func DeprecatedSingleServiceMain(svc sgservice.Service, config Config, validateConfig, useConfPackage bool) {
+func SingleServiceMain(svc sgservice.Service, config Config, validateConfig, useConfPackage bool) {
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),

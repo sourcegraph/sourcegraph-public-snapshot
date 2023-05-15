@@ -6,5 +6,5 @@ import (
 )
 
 func main() {
-	svcmain.DeprecatedSingleServiceMain(shared.Service, svcmain.Config{}, true, false)
+	svcmain.SingleServiceMain(shared.Service, svcmain.Config{}, true, false)
 }

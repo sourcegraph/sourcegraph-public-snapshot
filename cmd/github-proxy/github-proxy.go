@@ -6,5 +6,5 @@ import (
 )
 
 func main() {
-	osscmd.DeprecatedSingleServiceMainOSS(shared.Service)
+	osscmd.SingleServiceMainOSS(shared.Service)
 }
