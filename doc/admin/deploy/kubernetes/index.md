@@ -206,6 +206,7 @@ We recommend deploying Sourcegraph on Kubernetes with Kustomize due to the flexi
 
 ## Learn more
 
+- [Scaling Sourcegraph on Kubernetes](scale.md)
 - Examples of deploying Sourcegraph to the cloud provider listed below:
   - [Amazon EKS](kustomize/eks.md)
   - [Google GKE](kustomize/gke.md)

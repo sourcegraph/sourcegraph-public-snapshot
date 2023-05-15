@@ -7,7 +7,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
@@ -22,6 +21,7 @@ import (
 	"k8s.io/client-go/rest"
 	fakerest "k8s.io/client-go/rest/fake"
 	k8stesting "k8s.io/client-go/testing"
+	"k8s.io/utils/pointer"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -117,7 +117,7 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 				Clientset: clientset,
 			}
 
-			err := cmd.ReadLogs(context.Background(), "my-namespace", "my-pod", logger, "my-key", []string{"echo", "hello"})
+			err := cmd.ReadLogs(context.Background(), "my-namespace", "my-pod", command.KubernetesJobContainerName, logger, "my-key", []string{"echo", "hello"})
 			if test.expectedErr != nil {
 				require.Error(t, err)
 				assert.EqualError(t, err, test.expectedErr.Error())
@@ -248,7 +248,7 @@ func TestKubernetesCommand_WaitForJobToComplete(t *testing.T) {
 					return true, &batchv1.Job{Status: batchv1.JobStatus{Failed: 1}}, nil
 				})
 			},
-			expectedErr: errors.New("job my-job failed"),
+			expectedErr: errors.New("job failed"),
 		},
 		{
 			name: "Error occurred",
@@ -295,7 +295,6 @@ func TestKubernetesCommand_WaitForJobToComplete(t *testing.T) {
 				context.Background(),
 				"my-namespace",
 				"my-job",
-				command.KubernetesRetry{Attempts: 10, Backoff: 1 * time.Millisecond},
 			)
 			if test.expectedErr != nil {
 				require.Error(t, err)
@@ -334,6 +333,9 @@ func TestNewKubernetesJob(t *testing.T) {
 			CPU:    resource.MustParse("1"),
 			Memory: resource.MustParse("1Gi"),
 		},
+		SecurityContext: command.KubernetesSecurityContext{
+			FSGroup: pointer.Int64(1000),
+		},
 	}
 	job := command.NewKubernetesJob("my-job", "my-image:latest", spec, "/my/path", options)
 
@@ -346,7 +348,7 @@ func TestNewKubernetesJob(t *testing.T) {
 	assert.Equal(t, "sg-executor-job-container", job.Spec.Template.Spec.Containers[0].Name)
 	assert.Equal(t, "my-image:latest", job.Spec.Template.Spec.Containers[0].Image)
 	assert.Equal(t, []string{"echo", "hello"}, job.Spec.Template.Spec.Containers[0].Command)
-	assert.Equal(t, "/data", job.Spec.Template.Spec.Containers[0].WorkingDir)
+	assert.Equal(t, "/job", job.Spec.Template.Spec.Containers[0].WorkingDir)
 
 	require.Len(t, job.Spec.Template.Spec.Containers[0].Env, 1)
 	assert.Equal(t, "FOO", job.Spec.Template.Spec.Containers[0].Env[0].Name)
@@ -359,10 +361,14 @@ func TestNewKubernetesJob(t *testing.T) {
 
 	require.Len(t, job.Spec.Template.Spec.Containers[0].VolumeMounts, 1)
 	assert.Equal(t, "sg-executor-job-volume", job.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name)
-	assert.Equal(t, "/data", job.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath)
+	assert.Equal(t, "/job", job.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath)
 	assert.Equal(t, "/my/path", job.Spec.Template.Spec.Containers[0].VolumeMounts[0].SubPath)
 
 	require.Len(t, job.Spec.Template.Spec.Volumes, 1)
 	assert.Equal(t, "sg-executor-job-volume", job.Spec.Template.Spec.Volumes[0].Name)
 	assert.Equal(t, "my-pvc", job.Spec.Template.Spec.Volumes[0].PersistentVolumeClaim.ClaimName)
+
+	assert.Nil(t, job.Spec.Template.Spec.SecurityContext.RunAsUser)
+	assert.Nil(t, job.Spec.Template.Spec.SecurityContext.RunAsGroup)
+	assert.Equal(t, int64(1000), *job.Spec.Template.Spec.SecurityContext.FSGroup)
 }

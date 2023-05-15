@@ -7,11 +7,8 @@ import (
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/log"
-	jaegerpropagator "go.opentelemetry.io/contrib/propagators/jaeger"
-	otpropagator "go.opentelemetry.io/contrib/propagators/ot"
 	"go.opentelemetry.io/otel"
 	otelbridge "go.opentelemetry.io/otel/bridge/opentracing"
-	w3cpropagator "go.opentelemetry.io/otel/propagation"
 	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
 	oteltrace "go.opentelemetry.io/otel/trace"
 	"go.uber.org/automaxprocs/maxprocs"
@@ -20,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
+	"github.com/sourcegraph/sourcegraph/internal/tracer/oteldefaults"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -117,21 +115,13 @@ func Init(logger log.Logger, c conftypes.WatchableSiteConfig) {
 // All configuration should be sourced directly from the environment using the specification
 // laid out in https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md
 func newBridgeTracers(logger log.Logger, provider *oteltracesdk.TracerProvider, debugMode *atomic.Bool) (opentracing.Tracer, oteltrace.TracerProvider) {
-	// Ensure propagation between services continues to work. This is also done by another
-	// project that uses the OpenTracing bridge:
-	// https://sourcegraph.com/github.com/thanos-io/thanos/-/blob/pkg/tracing/migration/bridge.go?L62
-	compositePropagator := w3cpropagator.NewCompositeTextMapPropagator(
-		jaegerpropagator.Jaeger{},
-		otpropagator.OT{},
-		w3cpropagator.TraceContext{},
-		w3cpropagator.Baggage{},
-	)
-	otel.SetTextMapPropagator(compositePropagator)
+	propagator := oteldefaults.Propagator()
+	otel.SetTextMapPropagator(propagator)
 
 	// Set up otBridgeTracer for converting OpenTracing API calls to OpenTelemetry, and
 	// otelTracerProvider for the inverse.
 	otBridgeTracer := otelbridge.NewBridgeTracer()
-	otBridgeTracer.SetTextMapPropagator(compositePropagator)
+	otBridgeTracer.SetTextMapPropagator(propagator)
 	otelTracerProvider := otelbridge.NewTracerProvider(otBridgeTracer, provider)
 	otBridgeTracer.SetOpenTelemetryTracer(
 		otelTracerProvider.Tracer("sourcegraph/internal/tracer.opentracing-bridge"))

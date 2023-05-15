@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"time"
 
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -94,7 +94,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer eventWriter.Event("done", map[string]any{})
 
 	// Log events to trace
-	eventWriter.StatHook = eventStreamOTHook(tr.LogFields) //nolint:staticcheck // Deprecated: Ok until we update the observation package
+	eventWriter.StatHook = eventStreamTraceHook(tr.AddEvent)
 
 	events, getResults := NewComputeStream(ctx, h.logger, h.db, h.enterpriseJobs, searchQuery, computeQuery.Command)
 	events = batchEvents(events, 50*time.Millisecond)
@@ -260,17 +260,16 @@ func batchEvents(source <-chan Event, delay time.Duration) <-chan Event {
 	return results
 }
 
-// eventStreamOTHook returns a StatHook which logs to log.
-func eventStreamOTHook(log func(...otlog.Field)) func(streamhttp.WriterStat) {
+// eventStreamTraceHook returns a StatHook which logs to log.
+func eventStreamTraceHook(addEvent func(string, ...attribute.KeyValue)) func(streamhttp.WriterStat) {
 	return func(stat streamhttp.WriterStat) {
-		fields := []otlog.Field{
-			otlog.String("streamhttp.Event", stat.Event),
-			otlog.Int("bytes", stat.Bytes),
-			otlog.Int64("duration_ms", stat.Duration.Milliseconds()),
+		fields := []attribute.KeyValue{
+			attribute.Int("bytes", stat.Bytes),
+			attribute.Int64("duration_ms", stat.Duration.Milliseconds()),
 		}
 		if stat.Error != nil {
-			fields = append(fields, otlog.Error(stat.Error))
+			fields = append(fields, trace.Error(stat.Error))
 		}
-		log(fields...)
+		addEvent(stat.Event, fields...)
 	}
 }
