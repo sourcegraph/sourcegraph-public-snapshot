@@ -57,13 +57,12 @@ func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 }
 
 func (gs *GRPCServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverService_ArchiveServer) error {
-	//TODO(mucles): re-enable access logging (see server.go handleArchive)
 	// Log which which actor is accessing the repo.
-	// accesslog.Record(ctx, req.Repo,
-	// 	log.String("treeish", req.Treeish),
-	// 	log.String("format", req.Format),
-	// 	log.Strings("path", req.Pathspecs),
-	// )
+	accesslog.Record(ss.Context(), req.Repo,
+		log.String("treeish", req.Treeish),
+		log.String("format", req.Format),
+		log.Strings("path", req.Pathspecs),
+	)
 
 	if err := checkSpecArgSafety(req.GetTreeish()); err != nil {
 		return status.Error(codes.InvalidArgument, err.Error())
