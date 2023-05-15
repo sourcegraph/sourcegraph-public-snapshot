@@ -61,6 +61,7 @@ export const FETCH_OWNERS = gql`
                 commit(rev: $revision) {
                     blob(path: $currentPath) {
                         ownership {
+                            totalOwners
                             nodes {
                                 owner {
                                     ...OwnerFields

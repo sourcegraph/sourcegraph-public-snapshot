@@ -92,6 +92,11 @@ func (o *ownershipReasonResolver) ToRecentViewOwnershipSignal() (res graphqlback
 	return
 }
 
+func (o *ownershipReasonResolver) makesAnOwner() bool {
+	_, ok := o.resolver.(*codeownersFileEntryResolver)
+	return ok
+}
+
 func (r *ownResolver) GitBlobOwnership(
 	ctx context.Context,
 	blob *graphqlbackend.GitTreeEntryResolver,
@@ -245,8 +250,10 @@ func (r *ownResolver) computeCodeowners(ctx context.Context, blob *graphqlbacken
 			ownerships = append(ownerships, &ownershipResolver{
 				db:            r.db,
 				resolvedOwner: ro,
-				reasons: []graphqlbackend.OwnershipReasonResolver{
-					&ownershipReasonResolver{res},
+				reasons: []*ownershipReasonResolver{
+					{
+						res,
+					},
 				},
 			})
 		}
@@ -289,15 +296,11 @@ func (r *ownResolver) ownershipConnection(
 	}
 
 	// 3. Assemble the connection resolver object:
-	var rs []graphqlbackend.OwnershipResolver
-	for _, o := range ownerships {
-		rs = append(rs, o)
-	}
 	return &ownershipConnectionResolver{
 		db:         r.db,
 		total:      total,
 		next:       next,
-		ownerships: rs,
+		ownerships: ownerships,
 	}, nil
 }
 
@@ -305,11 +308,21 @@ type ownershipConnectionResolver struct {
 	db         edb.EnterpriseDB
 	total      int
 	next       *string
-	ownerships []graphqlbackend.OwnershipResolver
+	ownerships []*ownershipResolver
 }
 
 func (r *ownershipConnectionResolver) TotalCount(_ context.Context) (int32, error) {
 	return int32(r.total), nil
+}
+
+func (r *ownershipConnectionResolver) TotalOwners(_ context.Context) (int32, error) {
+	var total int32
+	for _, ownership := range r.ownerships {
+		if ownership.isOwner() {
+			total++
+		}
+	}
+	return total, nil
 }
 
 func (r *ownershipConnectionResolver) PageInfo(_ context.Context) (*graphqlutil.PageInfo, error) {
@@ -317,13 +330,17 @@ func (r *ownershipConnectionResolver) PageInfo(_ context.Context) (*graphqlutil.
 }
 
 func (r *ownershipConnectionResolver) Nodes(_ context.Context) ([]graphqlbackend.OwnershipResolver, error) {
-	return r.ownerships, nil
+	var rs []graphqlbackend.OwnershipResolver
+	for _, r := range r.ownerships {
+		rs = append(rs, r)
+	}
+	return rs, nil
 }
 
 type ownershipResolver struct {
 	db            edb.EnterpriseDB
 	resolvedOwner codeowners.ResolvedOwner
-	reasons       []graphqlbackend.OwnershipReasonResolver
+	reasons       []*ownershipReasonResolver
 }
 
 func (r *ownershipResolver) Owner(ctx context.Context) (graphqlbackend.OwnerResolver, error) {
@@ -337,7 +354,11 @@ func (r *ownershipResolver) Owner(ctx context.Context) (graphqlbackend.OwnerReso
 }
 
 func (r *ownershipResolver) Reasons(_ context.Context) ([]graphqlbackend.OwnershipReasonResolver, error) {
-	return r.reasons, nil
+	var rs []graphqlbackend.OwnershipReasonResolver
+	for _, r := range r.reasons {
+		rs = append(rs, r)
+	}
+	return rs, nil
 }
 
 func (r *ownershipResolver) order() int {
@@ -345,12 +366,23 @@ func (r *ownershipResolver) order() int {
 	codeownersCount := 0
 	for _, r := range r.reasons {
 		reasonsCount++
-		if _, ok := r.ToCodeownersFileEntry(); ok {
+		if r.makesAnOwner() {
 			codeownersCount++
 		}
 	}
 	// Smaller numbers are ordered in front, so take negative score.
 	return -10*codeownersCount + reasonsCount
+}
+
+// isOwner is true if this assigns an actual owner (for instance through CODEOWNERS file)
+// and false otherwise (for instance if it is a recent-contribution signal).
+func (r *ownershipResolver) isOwner() bool {
+	for _, reason := range r.reasons {
+		if reason.makesAnOwner() {
+			return true
+		}
+	}
+	return false
 }
 
 type ownerResolver struct {
@@ -462,7 +494,11 @@ func computeRecentContributorSignals(ctx context.Context, db edb.EnterpriseDB, p
 				Handle: author.AuthorName,
 				Email:  author.AuthorEmail,
 			},
-			reasons: []graphqlbackend.OwnershipReasonResolver{&ownershipReasonResolver{&recentContributorOwnershipSignal{}}},
+			reasons: []*ownershipReasonResolver{
+				{
+					&recentContributorOwnershipSignal{},
+				},
+			},
 		}
 		user, err := db.Users().GetByVerifiedEmail(ctx, author.AuthorEmail)
 		if err == nil {
@@ -534,7 +570,11 @@ func computeRecentViewSignals(ctx context.Context, logger log.Logger, db edb.Ent
 				PrimaryEmail: &email,
 				Handle:       user.Username,
 			},
-			reasons: []graphqlbackend.OwnershipReasonResolver{&ownershipReasonResolver{&recentViewOwnershipSignal{}}},
+			reasons: []*ownershipReasonResolver{
+				{
+					&recentViewOwnershipSignal{},
+				},
+			},
 		}
 		results = append(results, &res)
 	}

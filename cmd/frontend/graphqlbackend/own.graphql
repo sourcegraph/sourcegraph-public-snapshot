@@ -82,6 +82,11 @@ type OwnershipConnection {
     """
     totalCount: Int!
     """
+    The total number of owners in this connection.
+    Here an owner is as opposed to an ownership inference signal.
+    """
+    totalOwners: Int!
+    """
     The pagination info for the connection.
     """
     pageInfo: PageInfo!
