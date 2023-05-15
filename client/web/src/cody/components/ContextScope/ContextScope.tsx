@@ -27,6 +27,8 @@ import {
     Label,
 } from '@sourcegraph/wildcard'
 
+import { TruncatedText } from '../../../enterprise/insights/components'
+
 import { ContextScopePicker } from './components/ContextScopePicker'
 import { EmptyState } from './components/EmptyState'
 
@@ -78,7 +80,8 @@ const PopoverComponent: React.FC<{
     inputPlaceholder: string
     items?: string[]
     contextType: ContextType
-}> = ({ header, icon, emptyMessage, inputPlaceholder, items, contextType }) => {
+    itemType: sring
+}> = ({ header, icon, emptyMessage, inputPlaceholder, items, contextType, itemType }) => {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false)
     const [currentItems, setCurrentItems] = useState<string[] | undefined>(items)
 
@@ -104,9 +107,17 @@ const PopoverComponent: React.FC<{
             <PopoverTrigger
                 as={Button}
                 outline={false}
-                className="d-flex justify-content-between p-0 align-items-center w-100"
+                className="d-flex justify-content-between p-0 align-items-center w-100 trigger"
             >
-                <div>CodyChat.tsx, CodyChatView.tsx, Cody.ts, 3 more</div>
+                <div className={classNames(isEmpty && 'emptyTrigger', 'innerTrigger')}>
+                    {isEmpty ? (
+                        `${header}...`
+                    ) : (
+                        <TruncatedText>
+                            {currentItems.length} {itemType} ({currentItems?.join(', ')})
+                        </TruncatedText>
+                    )}
+                </div>
                 <Icon aria-hidden={true} svgPath={mdiChevronUp} />
             </PopoverTrigger>
 
@@ -126,7 +137,10 @@ const PopoverComponent: React.FC<{
                                 {currentItems?.map((item, index) => (
                                     <div
                                         key={index}
-                                        className={classNames('d-flex justify-content-between flex-row p-1', 'item')}
+                                        className={classNames(
+                                            'd-flex justify-content-between flex-row p-1 rounded-lg',
+                                            'item'
+                                        )}
                                     >
                                         <div>
                                             <Icon aria-hidden={true} svgPath={icon} /> {item}
@@ -165,13 +179,28 @@ const PopoverComponent: React.FC<{
                     )}
 
                     <div className="footer">
-                        <Input placeholder={inputPlaceholder} variant="small" />
+                        <Input
+                            role="combobox"
+                            autoFocus={true}
+                            autoComplete="off"
+                            spellCheck="false"
+                            placeholder={inputPlaceholder}
+                            variant="small"
+                        />
                     </div>
                 </Card>
             </PopoverContent>
         </Popover>
     )
 }
+
+const repoModel = [
+    'almeidapaulooliveira/ant-design',
+    'sourcegraph/sourcegraph',
+    'almeidapaulooliveira/react-custom-scrollbars',
+    'almeidapaulooliveira/react-packages',
+    'bartonhammond/meteor-slingshot',
+]
 
 const ItemRepos: React.FC = () => {
     const mockedRepoNames = [
@@ -189,7 +218,8 @@ const ItemRepos: React.FC = () => {
             emptyMessage="Start by adding repositories to the scope."
             inputPlaceholder="Search for a repository..."
             items={mockedRepoNames}
-            contextType={SELECTED.FILES}
+            contextType={SELECTED.REPOSITORIES}
+            itemType="repositories"
         />
     )
 }
@@ -211,7 +241,8 @@ const ItemFiles: React.FC = () => {
             emptyMessage="Start by adding files to the scope."
             inputPlaceholder="Search for a file..."
             items={mockedFileNames}
-            contextType={SELECTED.REPOSITORIES}
+            contextType={SELECTED.FILES}
+            itemType="files"
         />
     )
 }
