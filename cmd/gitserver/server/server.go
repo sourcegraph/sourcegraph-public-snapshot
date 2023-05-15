@@ -37,7 +37,7 @@ import (
 	"github.com/sourcegraph/conc"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/internal/accesslog"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -1643,7 +1643,7 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Log which which actor is accessing the repo.
+	// Log which actor is accessing the repo.
 	args := req.Args
 	cmd := ""
 	if len(req.Args) > 0 {
@@ -2724,9 +2724,13 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	// when the cleanup happens, just that it does.
 	defer s.cleanTmpFiles(dir)
 
-	err = syncer.Fetch(ctx, remoteURL, dir, revspec)
+	output, err := syncer.Fetch(ctx, remoteURL, dir, revspec)
 	if err != nil {
-		return errors.Wrapf(err, "failed to fetch repo %q", repo)
+		if output != nil {
+			return errors.Wrapf(err, "failed to fetch repo %q with output %q", repo, newURLRedactor(remoteURL).redact(string(output)))
+		} else {
+			return errors.Wrapf(err, "failed to fetch repo %q", repo)
+		}
 	}
 
 	removeBadRefs(ctx, dir)

@@ -29,7 +29,6 @@ const {
 } = require('@sourcegraph/build-config')
 
 const { IS_PRODUCTION, IS_DEVELOPMENT, ENVIRONMENT_CONFIG, writeIndexHTMLPlugin } = require('./dev/utils')
-const { isHotReloadEnabled } = require('./src/integration/environment')
 
 const {
   NODE_ENV,
@@ -52,8 +51,10 @@ const {
   SENTRY_DOT_COM_AUTH_TOKEN,
   SENTRY_ORGANIZATION,
   SENTRY_PROJECT,
+  SOURCEGRAPH_APP,
 } = ENVIRONMENT_CONFIG
 
+const isHotReloadEnabled = NODE_ENV !== 'production' && !IS_CI
 const IS_PERSISTENT_CACHE_ENABLED = IS_DEVELOPMENT && !IS_CI
 const IS_EMBED_ENTRY_POINT_ENABLED = ENTERPRISE && (IS_PRODUCTION || (IS_DEVELOPMENT && EMBED_DEVELOPMENT))
 
@@ -126,9 +127,13 @@ const config = {
     }),
   },
   entry: {
-    // Enterprise vs. OSS builds use different entrypoints. The enterprise entrypoint imports a
-    // strict superset of the OSS entrypoint.
-    app: ENTERPRISE ? path.join(enterpriseDirectory, 'main.tsx') : path.join(__dirname, 'src', 'main.tsx'),
+    // Desktop app vs. Enterprise vs. OSS builds use different entrypoints. The enterprise entrypoint imports a
+    // strict superset of the OSS entrypoint. The app endoint imports a strict superset of the enterprise entrypoint.
+    app: SOURCEGRAPH_APP
+      ? path.join(enterpriseDirectory, 'app-main.tsx')
+      : ENTERPRISE
+      ? path.join(enterpriseDirectory, 'main.tsx')
+      : path.join(__dirname, 'src', 'main.tsx'),
     // Embedding entrypoint. It uses a small subset of the main webapp intended to be embedded into
     // iframes on 3rd party sites. Added only in production enterprise builds or if embed development is enabled.
     ...(IS_EMBED_ENTRY_POINT_ENABLED && { embed: path.join(enterpriseDirectory, 'embed', 'main.tsx') }),

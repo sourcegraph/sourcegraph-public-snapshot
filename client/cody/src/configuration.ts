@@ -1,6 +1,12 @@
 import * as vscode from 'vscode'
 
-import type { ConfigurationUseContext, Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import type {
+    ConfigurationUseContext,
+    Configuration,
+    ConfigurationWithAccessToken,
+} from '@sourcegraph/cody-shared/src/configuration'
+
+import { SecretStorage, getAccessToken } from './services/SecretStorageProvider'
 
 /**
  * All configuration values, with some sanitization performed.
@@ -14,7 +20,8 @@ export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'ge
         useContext: config.get<ConfigurationUseContext>('cody.useContext') || 'embeddings',
         experimentalSuggest: config.get('cody.experimental.suggestions', false),
         experimentalChatPredictions: config.get('cody.experimental.chatPredictions', false),
-        anthropicKey: config.get('cody.experimental.keys.anthropic', null),
+        experimentalInline: config.get('cody.experimental.inline', false),
+        experimentalConnectToApp: config.get('cody.experimental.connectToApp', false),
         customHeaders: config.get<object>('cody.customHeaders', {}) as Record<string, string>,
     }
 }
@@ -38,4 +45,10 @@ const codyConfiguration = vscode.workspace.getConfiguration('cody')
 // Update user configurations in VS Code for Cody
 export async function updateConfiguration(configKey: string, configValue: string): Promise<void> {
     await codyConfiguration.update(configKey, configValue, vscode.ConfigurationTarget.Global)
+}
+
+export const getFullConfig = async (secretStorage: SecretStorage): Promise<ConfigurationWithAccessToken> => {
+    const config = getConfiguration(vscode.workspace.getConfiguration())
+    const accessToken = (await getAccessToken(secretStorage)) || null
+    return { ...config, accessToken }
 }

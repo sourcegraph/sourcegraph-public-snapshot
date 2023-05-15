@@ -76,7 +76,7 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 				attribute.Int64("duration_ms", stat.Duration.Milliseconds()),
 			}
 			if stat.Error != nil {
-				attrs = append(attrs, attribute.String("error", stat.Error.Error()))
+				attrs = append(attrs, trace.Error(stat.Error))
 			}
 			tr.AddEvent("write", attrs...)
 		}
@@ -154,7 +154,7 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 				Filename:  h.Filename,
 				Commit: BlameHunkCommitResponse{
 					Parents: parents,
-					URL:     fmt.Sprintf("%s/-/commit/%s", repo.URI, h.CommitID),
+					URL:     fmt.Sprintf("%s/-/commit/%s", repo.Name, h.CommitID),
 				},
 				User: blameHunkUserResponse,
 			}

@@ -17,12 +17,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // productSubscription implements the GraphQL type ProductSubscription.
+// It must not be copied.
 type productSubscription struct {
 	db database.DB
 	v  *dbSubscription
+
+	activeLicense     *dbLicense
+	activeLicenseErr  error
+	activeLicenseOnce sync.Once
 }
 
 // ProductSubscriptionByID looks up and returns the ProductSubscription with the given GraphQL
@@ -95,15 +101,24 @@ func (r *productSubscription) Account(ctx context.Context) (*graphqlbackend.User
 }
 
 func (r *productSubscription) ActiveLicense(ctx context.Context) (graphqlbackend.ProductLicense, error) {
-	// Return newest license.
-	active, err := dbLicenses{db: r.db}.Active(ctx, r.v.ID)
+	activeLicense, err := r.computeActiveLicense(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if active == nil {
+	if activeLicense == nil {
 		return nil, nil
 	}
-	return &productLicense{db: r.db, v: active}, nil
+	return &productLicense{db: r.db, v: activeLicense}, nil
+}
+
+// computeActiveLicense populates r.activeLicense and r.activeLicenseErr once,
+// make sure this is called before attempting to use either.
+func (r *productSubscription) computeActiveLicense(ctx context.Context) (*dbLicense, error) {
+	r.activeLicenseOnce.Do(func() {
+		r.activeLicense, r.activeLicenseErr = dbLicenses{db: r.db}.Active(ctx, r.v.ID)
+	})
+
+	return r.activeLicense, r.activeLicenseErr
 }
 
 func (r *productSubscription) ProductLicenses(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.ProductLicenseConnection, error) {
@@ -118,6 +133,56 @@ func (r *productSubscription) ProductLicenses(ctx context.Context, args *graphql
 	return &productLicenseConnection{db: r.db, opt: opt}, nil
 }
 
+func (r *productSubscription) LLMProxyAccess() graphqlbackend.LLMProxyAccess {
+	return llmProxyAccessResolver{sub: r}
+}
+
+func (r *productSubscription) CurrentSourcegraphAccessToken(ctx context.Context) (*string, error) {
+	activeLicense, err := r.computeActiveLicense(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if activeLicense == nil {
+		return nil, errors.New("an active license is required")
+	}
+
+	if !activeLicense.AccessTokenEnabled {
+		return nil, errors.New("active license has been disabled for access")
+	}
+
+	token := defaultAccessToken(defaultRawAccessToken([]byte(r.activeLicense.LicenseKey)))
+	return &token, nil
+}
+
+func (r *productSubscription) SourcegraphAccessTokens(ctx context.Context) (tokens []string, err error) {
+	activeLicense, err := r.computeActiveLicense(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var mainToken string
+	if activeLicense != nil && activeLicense.AccessTokenEnabled {
+		mainToken = defaultAccessToken(defaultRawAccessToken([]byte(r.activeLicense.LicenseKey)))
+		tokens = append(tokens, mainToken)
+	}
+
+	allLicenses, err := dbLicenses{db: r.db}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: r.v.ID})
+	if err != nil {
+		return nil, errors.Wrap(err, "listing subscription licenses")
+	}
+	for _, l := range allLicenses {
+		if !l.AccessTokenEnabled {
+			continue
+		}
+		lt := defaultAccessToken(defaultRawAccessToken([]byte(l.LicenseKey)))
+		if mainToken == "" || lt != mainToken {
+			tokens = append(tokens, lt)
+		}
+	}
+	return tokens, nil
+}
+
 func (r *productSubscription) CreatedAt() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.v.CreatedAt}
 }
@@ -129,6 +194,7 @@ func (r *productSubscription) URL(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	// TODO: accountUser can be nil if the user has been deleted.
 	return *accountUser.SettingsURL() + "/subscriptions/" + r.v.ID, nil
 }
 
@@ -157,6 +223,25 @@ func (r ProductSubscriptionLicensingResolver) CreateProductSubscription(ctx cont
 		return nil, err
 	}
 	return productSubscriptionByDBID(ctx, r.DB, id)
+}
+
+func (r ProductSubscriptionLicensingResolver) UpdateProductSubscription(ctx context.Context, args *graphqlbackend.UpdateProductSubscriptionArgs) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site admins may update product subscriptions.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
+		return nil, err
+	}
+
+	sub, err := productSubscriptionByID(ctx, r.DB, args.ID)
+	if err != nil {
+		return nil, err
+	}
+	if err := (dbSubscriptions{db: r.DB}).Update(ctx, sub.v.ID, dbSubscriptionUpdate{
+		llmProxyAccess: args.Update.LLMProxyAccess,
+	}); err != nil {
+		return nil, err
+	}
+
+	return &graphqlbackend.EmptyResponse{}, nil
 }
 
 func (r ProductSubscriptionLicensingResolver) ArchiveProductSubscription(ctx context.Context, args *graphqlbackend.ArchiveProductSubscriptionArgs) (*graphqlbackend.EmptyResponse, error) {

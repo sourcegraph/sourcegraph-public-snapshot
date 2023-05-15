@@ -3,7 +3,7 @@ package jobutil
 import (
 	"context"
 
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -55,13 +55,13 @@ func (l *LimitJob) Name() string {
 	return "LimitJob"
 }
 
-func (l *LimitJob) Fields(v job.Verbosity) (res []log.Field) {
+func (l *LimitJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 	switch v {
 	case job.VerbosityMax:
 		fallthrough
 	case job.VerbosityBasic:
 		res = append(res,
-			log.Int("limit", l.limit),
+			attribute.Int("limit", l.limit),
 		)
 	}
 	return res

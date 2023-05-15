@@ -8,27 +8,31 @@
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
 </aside>
 
-## Dependencies
+## Installation
+
+> Note: See [offline installation guide](deploy_executors_binary_offline.md) for instructions on how to install executors in an air-gapped environment.
+
+The following steps will guide you through the process of installing executors on a linux machine.
+
+### Dependencies
 
 In order to run executors on your machine, a few things need to be set up correctly before proceeding.
 
 - Executors only support linux-based machine with amd64 processors
-- Docker has to be installed on the machine (`curl -fsSL https://get.docker.com | sh`)
+- Docker has to be installed on the machine (`curl -fsSL https://get.docker.com | sh`)
 - Git has to be installed at a version `>= v2.26`
+- The ability to run commands as `root` on the host machine and configure networking routes
 
 If [Firecracker isolation will be used](index.md#how-it-works): _(recommended)_
 
-- The host has to support KVM (for AWS that means a metal instance, on GCP that means [enabling nested virtualization](https://cloud.google.com/compute/docs/instances/nested-virtualization/enabling))
+- The host has to support KVM (for AWS that means a [metal instance](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html), on GCP that means [enabling nested virtualization](https://cloud.google.com/compute/docs/instances/nested-virtualization/enabling))
 - The following additional dependencies need to be installed:
   - `dmsetup`
   - `losetup`
   - `mkfs.ext4`
   - `iptables`
   - `strings` (part of binutils)
-
-## Installation
-
-Once dependencies are met, you can download the executor binary and start configuring your machine:
+  - `systemd` (optional)
 
 ### **Step 0:** Confirm that virtualization is enabled (if using Firecracker)
 
@@ -121,7 +125,7 @@ export EXECUTOR_FRONTEND_PASSWORD=SUPER_SECRET_SHARED_TOKEN
 
 To be able to run workloads in isolation, a few dependencies need to be installed and configured. The executor CLI can do all of that automatically.
 
-To run all of the required setup steps, just run
+To run all of the required setup steps, just run the following commands as `root`:
 
 ```bash
 executor install all
@@ -221,3 +225,4 @@ executor validate
 ### **Step 4:** Restart your running executor / spin up a new machine
 
 Depending on how you set up executors, you might want to restart the systemd service, or restart/replace the machine running them, so the new binary is running.
+If you use the systemd service, simply run `systemctl start executor`, otherwise run `executor run`. Your executor should start listening for jobs now and be visible under the `Executors > Instances` section of the Site Configuration.

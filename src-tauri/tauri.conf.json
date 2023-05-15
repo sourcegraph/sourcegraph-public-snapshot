@@ -2,8 +2,9 @@
   "$schema": "../node_modules/@tauri-apps/cli/schema.json",
   "build": {
     "beforeBuildCommand": "./src-tauri/compose-assets.sh",
-    "devPath": "http://localhost:3080/sign-in?nonce=foobar&returnTo=/",
-    "distDir": "./assets"
+    "devPath": "http://localhost:3080/sign-in?secret=foobar&returnTo=/",
+    "distDir": "./assets",
+    "withGlobalTauri": true
   },
   "package": {
     "productName": "Sourcegraph App",
@@ -11,6 +12,9 @@
   },
   "tauri": {
     "allowlist": {
+      "dialog": {
+        "open": true
+      },
       "shell": {
         "sidecar": true,
         "scope": [
@@ -19,15 +23,15 @@
             "sidecar": true
           }
         ],
-        "open": "^https?:|com.sourcegraph.app/.*.log$"
+        "open": "^(vscode:|https?:)|com.sourcegraph.app/.*.log$"
       },
       "window": {
         "startDragging": true
       }
     },
     "systemTray": {
-      "iconPath": "icons/32x32.png",
-      "iconAsTemplate": false
+      "iconPath": "icons/tray.ico",
+      "iconAsTemplate": true
     },
     "bundle": {
       "active": true,
@@ -68,8 +72,7 @@
         "height": 768,
         "resizable": true,
         "title": "Sourcegraph",
-        "width": 1024,
-        "titleBarStyle": "Overlay"
+        "width": 1024
       }
     ]
   }

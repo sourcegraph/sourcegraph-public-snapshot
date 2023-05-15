@@ -68,14 +68,21 @@ async function getFiles(currentEditor: vscode.TextEditor, history: History): Pro
     }
     const historyFiles = await Promise.all(
         history.lastN(10, curLang, [currentEditor.document.uri, ...files.map(f => f.uri)]).map(async item => {
-            const contents = (await vscode.workspace.openTextDocument(item.document.uri)).getText()
-            return {
-                uri: item.document.uri,
-                contents,
+            try {
+                const contents = (await vscode.workspace.openTextDocument(item.document.uri)).getText()
+                return [
+                    {
+                        uri: item.document.uri,
+                        contents,
+                    },
+                ]
+            } catch (error) {
+                console.error(error)
+                return []
             }
         })
     )
-    files.push(...historyFiles)
+    files.push(...historyFiles.flat())
     return files
 }
 

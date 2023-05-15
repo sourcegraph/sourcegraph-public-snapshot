@@ -4,11 +4,13 @@ import (
 	"context"
 	"strings"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/httpapi"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/cody"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -18,12 +20,14 @@ var _ graphqlbackend.CompletionsResolver = &completionsResolver{}
 
 // completionsResolver provides chat completions
 type completionsResolver struct {
-	rl streaming.RateLimiter
+	rl     httpapi.RateLimiter
+	db     database.DB
+	logger log.Logger
 }
 
-func NewCompletionsResolver(db database.DB) graphqlbackend.CompletionsResolver {
-	rl := streaming.NewRateLimiter(db, redispool.Store)
-	return &completionsResolver{rl: rl}
+func NewCompletionsResolver(db database.DB, logger log.Logger) graphqlbackend.CompletionsResolver {
+	rl := httpapi.NewRateLimiter(db, redispool.Store, httpapi.RateLimitScopeCompletion)
+	return &completionsResolver{rl: rl, db: db, logger: logger}
 }
 
 func (c *completionsResolver) Completions(ctx context.Context, args graphqlbackend.CompletionsArgs) (_ string, err error) {
@@ -31,17 +35,26 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 		return "", errors.New("cody experimental feature flag is not enabled for current user")
 	}
 
-	completionsConfig := conf.Get().Completions
+	if err := cody.CheckVerifiedEmailRequirement(ctx, c.db, c.logger); err != nil {
+		return "", err
+	}
+
+	completionsConfig := client.GetCompletionsConfig()
 	if completionsConfig == nil || !completionsConfig.Enabled {
 		return "", errors.New("completions are not configured or disabled")
 	}
 
-	ctx, done := streaming.Trace(ctx, "resolver", completionsConfig.Model).
+	ctx, done := httpapi.Trace(ctx, "resolver", completionsConfig.ChatModel).
 		WithErrorP(&err).
 		Build()
 	defer done()
 
-	client, err := streaming.GetCompletionClient(completionsConfig.Provider, completionsConfig.AccessToken, completionsConfig.Model)
+	client, err := client.Get(
+		completionsConfig.Endpoint,
+		completionsConfig.Provider,
+		completionsConfig.AccessToken,
+		completionsConfig.ChatModel,
+	)
 	if err != nil {
 		return "", errors.Wrap(err, "GetCompletionStreamClient")
 	}

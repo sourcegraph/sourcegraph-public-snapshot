@@ -24,7 +24,7 @@ Engineering
 Product
 ```
 
-Teams in Sourcegraph are usable in [Sourcegraph Own](../../own), and other features in the future. Teams can be code owners and will influence the Own experience. You can search for code owned by a specific team, and in the future advanced ownership analytics will be informed by given team structures.
+Teams in Sourcegraph are usable in [Sourcegraph Own](../../own/index.md), and other features in the future. Teams can be code owners and will influence the Own experience. You can search for code owned by a specific team, and in the future advanced ownership analytics will be informed by given team structures.
 
 ## Configuring teams
 

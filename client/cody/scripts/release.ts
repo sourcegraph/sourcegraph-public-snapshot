@@ -3,7 +3,8 @@ import childProcess from 'child_process'
 
 import * as semver from 'semver'
 
-import { version } from '../package.json'
+// eslint-disable-next-line  @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+const { version } = require('../package.json')
 
 /**
  * This script is used by the CI to publish the extension to the VS Code Marketplace. It is
@@ -16,7 +17,7 @@ import { version } from '../package.json'
  * Build and publish the extension with the updated package name using the tokens stored in the
  * pipeline to run commands in pnpm and allows all events to activate the extension
  */
-const isPreRelease = semver.minor(version) % 2 !== 0 ? '--pre-release' : ''
+const isPreRelease = semver.prerelease(version) !== null ? '--pre-release' : ''
 
 // Tokens are stored in CI pipeline
 const tokens = {

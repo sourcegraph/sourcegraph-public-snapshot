@@ -19,8 +19,8 @@ type DotcomRootResolver interface {
 type DotcomResolver interface {
 	// DotcomMutation
 	CreateProductSubscription(context.Context, *CreateProductSubscriptionArgs) (ProductSubscription, error)
+	UpdateProductSubscription(context.Context, *UpdateProductSubscriptionArgs) (*EmptyResponse, error)
 	GenerateProductLicenseForSubscription(context.Context, *GenerateProductLicenseForSubscriptionArgs) (ProductLicense, error)
-	GenerateAccessTokenForSubscription(context.Context, *GenerateAccessTokenForSubscriptionArgs) (ProductSubscriptionAccessToken, error)
 	ArchiveProductSubscription(context.Context, *ArchiveProductSubscriptionArgs) (*EmptyResponse, error)
 
 	// DotcomQuery
@@ -40,10 +40,13 @@ type ProductSubscription interface {
 	Account(context.Context) (*UserResolver, error)
 	ActiveLicense(context.Context) (ProductLicense, error)
 	ProductLicenses(context.Context, *graphqlutil.ConnectionArgs) (ProductLicenseConnection, error)
+	LLMProxyAccess() LLMProxyAccess
 	CreatedAt() gqlutil.DateTime
 	IsArchived() bool
 	URL(context.Context) (string, error)
 	URLForSiteAdmin(context.Context) *string
+	CurrentSourcegraphAccessToken(context.Context) (*string, error)
+	SourcegraphAccessTokens(context.Context) ([]string, error)
 }
 
 type CreateProductSubscriptionArgs struct {
@@ -115,4 +118,43 @@ type ProductLicenseConnection interface {
 
 type ProductSubscriptionByAccessTokenArgs struct {
 	AccessToken string
+}
+
+type UpdateProductSubscriptionArgs struct {
+	ID     graphql.ID
+	Update UpdateProductSubscriptionInput
+}
+
+type UpdateProductSubscriptionInput struct {
+	LLMProxyAccess *UpdateLLMProxyAccessInput
+}
+
+type UpdateLLMProxyAccessInput struct {
+	Enabled                  *bool
+	RateLimit                *int32
+	RateLimitIntervalSeconds *int32
+}
+
+type LLMProxyAccess interface {
+	Enabled() bool
+	RateLimit(context.Context) (LLMProxyRateLimit, error)
+	Usage(context.Context) ([]LLMProxyUsageDatapoint, error)
+}
+
+type LLMProxyUsageDatapoint interface {
+	Date() gqlutil.DateTime
+	Count() int32
+}
+
+type LLMProxyRateLimitSource string
+
+const (
+	LLMProxyRateLimitSourceOverride LLMProxyRateLimitSource = "OVERRIDE"
+	LLMProxyRateLimitSourcePlan     LLMProxyRateLimitSource = "PLAN"
+)
+
+type LLMProxyRateLimit interface {
+	Source() LLMProxyRateLimitSource
+	Limit() int32
+	IntervalSeconds() int32
 }

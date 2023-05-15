@@ -892,6 +892,15 @@ type Mutation {
     use the default quota.
     """
     setUserCompletionsQuota(user: ID!, quota: Int): User!
+    """
+    Sets the code completions requests quota for the user per day. Quota: Null means
+    use the default quota.
+    """
+    setUserCodeCompletionsQuota(user: ID!, quota: Int): User!
+    """
+    Submits a post-signup user survey about intended Cody usage.
+    """
+    submitCodySurvey(isForWork: Boolean!, isForPersonal: Boolean!): EmptyResponse!
 }
 
 """
@@ -2285,6 +2294,15 @@ type FeatureFlagBoolean {
     Overrides that apply to the feature flag
     """
     overrides: [FeatureFlagOverride!]!
+    """
+    When the feature flag was created.
+    """
+    createdAt: DateTime!
+
+    """
+    When the feature flag was last updated.
+    """
+    updatedAt: DateTime!
 }
 
 """
@@ -2306,6 +2324,15 @@ type FeatureFlagRollout {
     Overrides that apply to the feature flag
     """
     overrides: [FeatureFlagOverride!]!
+    """
+    When the feature flag was created.
+    """
+    createdAt: DateTime!
+
+    """
+    When the feature flag was last updated.
+    """
+    updatedAt: DateTime!
 }
 
 """
@@ -3424,6 +3451,15 @@ type RepositoryConnection {
 }
 
 """
+All possible types of currently supported repositories, even though they may be stored
+as a git repository on disk.
+"""
+enum RepositoryType {
+    GIT_REPOSITORY
+    PERFORCE_DEPOT
+}
+
+"""
 A repository is a Git source control repository that is mirrored from some origin code host.
 """
 type Repository implements Node & GenericSearchResultInterface {
@@ -3444,6 +3480,10 @@ type Repository implements Node & GenericSearchResultInterface {
     DEPRECATED: Use name.
     """
     uri: String! @deprecated(reason: "Use name.")
+    """
+    The source of this repository from where it was imported / converted.
+    """
+    sourceType: RepositoryType!
     """
     The repository's description.
     """
@@ -4907,6 +4947,10 @@ type GitCommit implements Node {
     """
     abbreviatedOID: String!
     """
+    The perforce changelist ID if this git commit was originally converted from a perforce depot.
+    """
+    perforceChangelist: PerforceChangelist
+    """
     This commit's author.
     """
     author: Signature!
@@ -6070,6 +6114,11 @@ type User implements Node & SettingsSubject & Namespace {
     """
     emails: [UserEmail!]!
     """
+    Whether the user has a verified email or not.
+    Only the user and site admins can access this field.
+    """
+    hasVerifiedEmail: Boolean!
+    """
     The user's verified primary email address (if any).
     On dotcom only the user and site admins can access this field.
     """
@@ -6167,6 +6216,12 @@ type User implements Node & SettingsSubject & Namespace {
     Null, if not overwritten.
     """
     completionsQuotaOverride: Int
+    """
+    The configured override for the user to the code completions request quota
+    per day.
+    Null, if not overwritten.
+    """
+    codeCompletionsQuotaOverride: Int
 }
 
 """
@@ -6972,6 +7027,16 @@ type Site implements SettingsSubject {
     The quota of completions requests allowed per user in a day. Null, if unlimited.
     """
     perUserCompletionsQuota: Int
+
+    """
+    The quota of code completions requests allowed per user in a day. Null, if unlimited.
+    """
+    perUserCodeCompletionsQuota: Int
+
+    """
+    Whether users are required to have a verified email in order to access Cody.
+    """
+    requiresVerifiedEmailForCody: Boolean!
 }
 
 """
@@ -9994,4 +10059,14 @@ type CodeIntelCommit {
     The repository that contains this commit.
     """
     repository: CodeIntelRepository!
+}
+
+"""
+A Perforce changelist.
+"""
+type PerforceChangelist {
+    """
+    The changelist ID.
+    """
+    cid: String!
 }

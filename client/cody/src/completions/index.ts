@@ -2,11 +2,16 @@ import * as vscode from 'vscode'
 
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
+import { logEvent } from '../event-logger'
+
 import { CompletionsCache } from './cache'
 import { getContext } from './context'
 import { CompletionsDocumentProvider } from './docprovider'
 import { History } from './history'
 import { CompletionProvider, EndOfLineCompletionProvider, MultilineCompletionProvider } from './provider'
+
+const LOG_INLINE = { type: 'inline' }
+const LOG_MULTILINE = { type: 'multiline' }
 
 function lastNLines(text: string, n: number): string {
     const lines = text.split('\n')
@@ -24,6 +29,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
     private abortOpenMultilineCompletion: () => void = () => {}
 
     constructor(
+        private webviewErrorMessager: (error: string) => Promise<void>,
         private completionsClient: SourcegraphNodeCompletionsClient,
         private documentProvider: CompletionsDocumentProvider,
         private history: History,
@@ -47,11 +53,12 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         try {
             return await this.provideInlineCompletionItemsInner(document, position, context, token)
         } catch (error) {
+            console.error(error)
+
             if (error.message === 'aborted') {
                 return []
             }
 
-            await vscode.window.showErrorMessage(`Error in provideInlineCompletionItems: ${error}`)
             return []
         }
     }
@@ -86,21 +93,22 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return []
         }
 
-        const { prefix, prevLine: precedingLine } = docContext
+        const { prefix, suffix, prevLine: precedingLine } = docContext
 
         const cachedCompletions = inlineCompletionsCache.get(prefix)
         if (cachedCompletions) {
-            return cachedCompletions.map(r => new vscode.InlineCompletionItem(r.content))
+            return cachedCompletions.map(toInlineCompletionItem)
         }
 
         const remainingChars = this.tokToChar(this.promptTokens)
 
-        const completionNoSnippets = new MultilineCompletionProvider(
+        const completionNoSnippets = new EndOfLineCompletionProvider(
             this.completionsClient,
             remainingChars,
             this.responseTokens,
             [],
             prefix,
+            suffix,
             '\n'
         )
         const emptyPromptLength = completionNoSnippets.emptyPromptLength()
@@ -118,6 +126,15 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         let waitMs: number
         const completers: CompletionProvider[] = []
+
+        // VS Code does not show completions if we are in the process of writing a word or if a
+        // selected completion info is present (so something is selected from the completions
+        // dropdown list based on the lang server) and the returned completion range does not
+        // contain the same selection.
+        if (context.selectedCompletionInfo || /[A-Za-z]$/.test(precedingLine)) {
+            return []
+        }
+
         if (precedingLine.trim() === '') {
             // Start of line: medium debounce
             waitMs = 500
@@ -128,6 +145,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     this.responseTokens,
                     similarCode,
                     prefix,
+                    suffix,
                     '',
                     2 // tries
                 )
@@ -145,6 +163,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     this.responseTokens,
                     similarCode,
                     prefix,
+                    suffix,
                     '',
                     2 // tries
                 ),
@@ -156,6 +175,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     this.responseTokens,
                     similarCode,
                     prefix,
+                    suffix,
                     '\n', // force a new line in the case we are at end of line
                     1 // tries
                 )
@@ -174,11 +194,15 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return []
         }
 
+        logEvent('CodyVSCodeExtension:completion:started', LOG_INLINE, LOG_INLINE)
+
         const results = (await Promise.all(completers.map(c => c.generateCompletions(abortController.signal)))).flat()
 
         inlineCompletionsCache.add(results)
 
-        return results.map(r => new vscode.InlineCompletionItem(r.content))
+        logEvent('CodyVSCodeExtension:completion:suggested', LOG_INLINE, LOG_INLINE)
+
+        return results.map(toInlineCompletionItem)
     }
 
     public async fetchAndShowCompletions(): Promise<void> {
@@ -212,7 +236,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             console.error('not showing completions, no currently open doc')
             return
         }
-        const { prefix } = docContext
+        const { prefix, suffix } = docContext
 
         const remainingChars = this.tokToChar(this.promptTokens)
 
@@ -222,6 +246,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             this.responseTokens,
             [],
             prefix,
+            suffix,
             ''
         )
         const emptyPromptLength = completionNoSnippets.emptyPromptLength()
@@ -243,22 +268,25 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             this.responseTokens,
             similarCode,
             prefix,
+            suffix,
             ''
         )
 
         try {
+            logEvent('CodyVSCodeExtension:completion:started', LOG_MULTILINE, LOG_MULTILINE)
             const completions = await completer.generateCompletions(abortController.signal, 3)
             this.documentProvider.addCompletions(completionsUri, ext, completions, {
                 suffix: '',
                 elapsedMillis: 0,
                 llmOptions: null,
             })
+            logEvent('CodyVSCodeExtension:completion:suggested', LOG_MULTILINE, LOG_MULTILINE)
         } catch (error) {
             if (error.message === 'aborted') {
                 return
             }
 
-            await vscode.window.showErrorMessage(`Error in fetchAndShowCompletions: ${error}`)
+            await this.webviewErrorMessager(`FetchAndShowCompletions - ${error}`)
         }
     }
 }
@@ -347,4 +375,11 @@ export interface Completion {
     prompt: string
     content: string
     stopReason?: string
+}
+
+function toInlineCompletionItem(completion: Completion): vscode.InlineCompletionItem {
+    return new vscode.InlineCompletionItem(completion.content, undefined, {
+        title: 'Completion accepted',
+        command: 'cody.completions.inline.accepted',
+    })
 }
