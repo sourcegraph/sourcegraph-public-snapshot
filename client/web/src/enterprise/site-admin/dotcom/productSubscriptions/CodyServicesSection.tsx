@@ -102,7 +102,7 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
             </H3>
             <Container className="mb-3">
                 <H4>Access token</H4>
-                <Text className="mb-2">Access tokens can be used for LLM-proxy access - coming soon!</Text>
+                <Text className="mb-2">Access tokens can be used for LLM-proxy access</Text>
                 {currentSourcegraphAccessToken && (
                     <CopyableText
                         label="Access token"
