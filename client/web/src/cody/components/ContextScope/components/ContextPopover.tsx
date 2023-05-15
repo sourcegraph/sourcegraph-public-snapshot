@@ -165,7 +165,10 @@ export const ContextPopover: React.FC<{
                         />
                         {isSearching && (
                             <Button
-                                className={styles.clearButton}
+                                className={classNames(
+                                    'd-flex p-1 align-items-center justify-content-center',
+                                    styles.clearButton
+                                )}
                                 variant="icon"
                                 onClick={clearSearchText}
                                 aria-label="Clear"
