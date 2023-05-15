@@ -1458,16 +1458,16 @@ func buildAggregatedRepoMetadataStatsQuery(period string) string {
 	)
 	SELECT
 		` + makeDateTruncExpression(period, "%s::timestamp") + ` as start_time,
-	
+
 		COUNT(*) FILTER (WHERE name IN ('RepoMetadataAdded')) AS added_count,
 		COUNT(DISTINCT user_id) FILTER (WHERE name IN ('RepoMetadataAdded')) AS added_unique_count,
-	
+
 		COUNT(*) FILTER (WHERE name IN ('RepoMetadataUpdated')) AS updated_count,
 		COUNT(DISTINCT user_id) FILTER (WHERE name IN ('RepoMetadataUpdated')) AS updated_unique_count,
-	
+
 		COUNT(*) FILTER (WHERE name IN ('RepoMetadataDeleted')) AS deleted_count,
 		COUNT(DISTINCT user_id) FILTER (WHERE name IN ('RepoMetadataDeleted')) AS deleted_unique_count,
-	
+
 		COUNT(*) FILTER (WHERE name IN ('SearchSubmitted') AND (argument->>'query' ILIKE '%%repo:has(%%' OR argument->>'query' ILIKE '%%repo:has.key(%%')) AS searches_count,
 		COUNT(DISTINCT user_id) FILTER (WHERE name IN ('SearchSubmitted') AND (argument->>'query' ILIKE '%%repo:has(%%' OR argument->>'query' ILIKE '%%repo:has.key(%%')) AS searches_unique_count
 	FROM events;
@@ -1485,13 +1485,13 @@ func (l *eventLogStore) aggregatedRepoMetadataStatsPeriod(ctx context.Context, n
 	if err := row.Scan(
 		&startTime,
 		&createEvent.EventsCount,
-		&createEvent.UserCount,
+		&createEvent.UsersCount,
 		&updateEvent.EventsCount,
-		&updateEvent.UserCount,
+		&updateEvent.UsersCount,
 		&deleteEvent.EventsCount,
-		&deleteEvent.UserCount,
+		&deleteEvent.UsersCount,
 		&searchEvent.EventsCount,
-		&searchEvent.UserCount,
+		&searchEvent.UsersCount,
 	); err != nil {
 		return nil, err
 	}
