@@ -2,8 +2,8 @@
 
 export {
     LocalRepositoriesStep,
+    callFilePicker,
     useLocalRepositories,
-    useLocalPathsPicker,
     useLocalRepositoriesPaths,
     useNewLocalRepositoriesPaths,
 } from './local-repositories-step'

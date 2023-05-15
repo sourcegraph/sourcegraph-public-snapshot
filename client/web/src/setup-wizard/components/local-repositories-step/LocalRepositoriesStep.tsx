@@ -25,7 +25,8 @@ import { CodeHostExternalServiceAlert } from '../CodeHostExternalServiceAlert'
 import { ProgressBar } from '../ProgressBar'
 import { CustomNextButton, FooterWidget } from '../setup-steps'
 
-import { useLocalRepositoriesPaths, useLocalRepositories, useLocalPathsPicker } from './hooks'
+import { callFilePicker } from './helpers'
+import { useLocalRepositoriesPaths, useLocalRepositories } from './hooks'
 import { DISCOVER_LOCAL_REPOSITORIES } from './queries'
 
 import styles from './LocalRepositoriesStep.module.scss'
@@ -62,7 +63,7 @@ export const LocalRepositoriesStep: FC<LocalRepositoriesStepProps> = ({
             <Container className={styles.content}>
                 {!loading && (
                     <LocalRepositoriesForm
-                        isFilePickerAvailable={window.context.localFilePickerAvailable}
+                        isFilePickerAvailable={true}
                         error={error}
                         directoryPaths={paths}
                         onDirectoryPathsChange={setPaths}
@@ -100,7 +101,6 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
     const { isFilePickerAvailable, error, directoryPaths, onDirectoryPathsChange } = props
 
     const [internalPaths, setInternalPaths] = useState(directoryPaths)
-    const { callPathPicker } = useLocalPathsPicker()
 
     const { repositories, loading, loaded } = useLocalRepositories({
         skip: !!error,
@@ -128,9 +128,11 @@ const LocalRepositoriesForm: FC<LocalRepositoriesFormProps> = props => {
     }, [debouncedInternalPaths, onDirectoryPathsChange])
 
     const handlePathsPickClick = async (): Promise<void> => {
-        const paths = await callPathPicker()
+        const paths = await callFilePicker()
 
-        onDirectoryPathsChange(paths)
+        if (paths !== null) {
+            onDirectoryPathsChange(paths)
+        }
     }
 
     // Use internal path only if backend-based file picker is unavailable
