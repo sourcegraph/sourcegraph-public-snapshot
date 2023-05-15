@@ -155,7 +155,8 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	var additionalServerOptions []grpc.ServerOption
 
 	for method, scopedLogger := range map[string]log.Logger{
-		proto.GitserverService_Exec_FullMethodName: logger.Scoped("exec.accesslog", "exec endpoint access log"),
+		proto.GitserverService_Exec_FullMethodName:    logger.Scoped("exec.accesslog", "exec endpoint access log"),
+		proto.GitserverService_Archive_FullMethodName: logger.Scoped("archive.accesslog", "archive endpoint access log"),
 	} {
 		streamInterceptor := accesslog.StreamServerInterceptor(scopedLogger, configurationWatcher)
 		unaryInterceptor := accesslog.UnaryServerInterceptor(scopedLogger, configurationWatcher)
