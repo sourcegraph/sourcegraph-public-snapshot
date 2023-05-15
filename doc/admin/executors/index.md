@@ -187,6 +187,15 @@ Read more in [Native execution](native_execution.md).
 9.  Logs are streamed from the executor to a Sourcegraph API
 10.  The executor calls a Sourcegraph API to that "complete" the Job.
 
+## Deciding which deployment to use
+
+Deciding how to deploy the executor depends on your use case. The following flowchart can help you decide which
+deployment is best for you.
+
+<a href='#'>
+  <img src='executor_deployment_tree.png' alt='Executor Deployment Flowchart'>
+</a>
+
 ## Troubleshooting
 Refer to the [Troubleshooting Executors](./executors_troubleshooting.md) document for common debugging operations.
 
