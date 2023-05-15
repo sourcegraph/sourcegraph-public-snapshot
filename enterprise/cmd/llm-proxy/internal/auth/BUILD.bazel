@@ -9,6 +9,7 @@ go_library(
         "//enterprise/cmd/llm-proxy/internal/actor",
         "//enterprise/cmd/llm-proxy/internal/events",
         "//enterprise/cmd/llm-proxy/internal/response",
+        "//enterprise/internal/llm-proxy",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
     ],

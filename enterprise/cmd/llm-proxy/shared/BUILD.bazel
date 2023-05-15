@@ -19,6 +19,7 @@ go_library(
         "//enterprise/cmd/llm-proxy/internal/events",
         "//enterprise/cmd/llm-proxy/internal/limiter",
         "//enterprise/cmd/llm-proxy/internal/response",
+        "//enterprise/internal/llm-proxy",
         "//internal/debugserver",
         "//internal/env",
         "//internal/goroutine",

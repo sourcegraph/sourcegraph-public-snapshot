@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/events"
+	llmproxy "github.com/sourcegraph/sourcegraph/enterprise/internal/llm-proxy"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
@@ -151,7 +152,7 @@ func newServiceHandler(logger log.Logger, eventLogger events.Logger, config *Con
 
 			err := eventLogger.LogEvent(
 				events.Event{
-					Name:       events.EventNameCompletionsStarted,
+					Name:       llmproxy.EventNameCompletionsStarted,
 					Source:     act.Source.Name(),
 					Identifier: act.ID,
 				},
@@ -178,7 +179,7 @@ func newServiceHandler(logger log.Logger, eventLogger events.Logger, config *Con
 			defer func() {
 				err := eventLogger.LogEvent(
 					events.Event{
-						Name:       events.EventNameCompletionsFinished,
+						Name:       llmproxy.EventNameCompletionsFinished,
 						Source:     act.Source.Name(),
 						Identifier: act.ID,
 						Metadata: map[string]any{
@@ -223,7 +224,7 @@ func rateLimit(logger log.Logger, eventLogger events.Logger, cache limiter.Redis
 		if err != nil {
 			err := eventLogger.LogEvent(
 				events.Event{
-					Name:       events.EventNameRateLimited,
+					Name:       llmproxy.EventNameRateLimited,
 					Source:     act.Source.Name(),
 					Identifier: act.ID,
 					Metadata: map[string]any{

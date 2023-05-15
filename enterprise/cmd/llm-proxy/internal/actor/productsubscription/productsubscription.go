@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/dotcom"
+	llmproxy "github.com/sourcegraph/sourcegraph/enterprise/internal/llm-proxy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -44,7 +45,7 @@ func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Cl
 	}
 }
 
-func (s *Source) Name() string { return "dotcom-product-subscriptions" }
+func (s *Source) Name() string { return llmproxy.ProductSubscriptionActorSourceName }
 
 func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 	// "sgs_" is productSubscriptionAccessTokenPrefix

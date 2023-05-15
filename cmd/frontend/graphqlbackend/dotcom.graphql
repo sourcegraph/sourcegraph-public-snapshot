@@ -299,6 +299,20 @@ type ProductSubscription implements Node {
 }
 
 """
+A usage data point of LLM proxy use of a subscription.
+"""
+type LLMProxyUsageDatapoint {
+    """
+    The day the usage occurred.
+    """
+    date: DateTime!
+    """
+    The number of requests made.
+    """
+    count: Int!
+}
+
+"""
 LLM-proxy access granted to a subscription.
 FOR INTERNAL USE ONLY.
 """
@@ -311,6 +325,10 @@ type LLMProxyAccess {
     Rate limits for LLM-proxy access, or null if not enabled.
     """
     rateLimit: LLMProxyRateLimit
+    """
+    Recent usage data of LLM proxy for the subscription.
+    """
+    usage: [LLMProxyUsageDatapoint!]!
 }
 
 """

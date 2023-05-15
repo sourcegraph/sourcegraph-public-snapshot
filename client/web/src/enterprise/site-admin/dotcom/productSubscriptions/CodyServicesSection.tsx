@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 
 import { mdiPencil, mdiTrashCan } from '@mdi/js'
+import { parseISO } from 'date-fns'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { logger } from '@sourcegraph/common'
@@ -19,6 +20,8 @@ import {
     Badge,
     Tooltip,
     Label,
+    H5,
+    LineChart,
 } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../../../components/CopyableText'
@@ -28,6 +31,7 @@ import {
     UpdateLLMProxyConfigResult,
     UpdateLLMProxyConfigVariables,
 } from '../../../../graphql-operations'
+import { ChartContainer } from '../../../../site-admin/analytics/components/ChartContainer'
 
 import { UPDATE_LLM_PROXY_CONFIG } from './backend'
 import { LLMProxyRateLimitModal } from './LlmProxyRateLimitModal'
@@ -98,7 +102,7 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
             </H3>
             <Container className="mb-3">
                 <H4>Access token</H4>
-                <Text className="mb-2">Access tokens can be used for LLM-proxy access - coming soon!</Text>
+                <Text className="mb-2">Access tokens can be used for LLM-proxy access</Text>
                 {currentSourcegraphAccessToken && (
                     <CopyableText
                         label="Access token"
@@ -135,52 +139,77 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
                         </div>
 
                         {llmProxyAccess.enabled && (
-                            <div className="form-group mt-2 mb-0">
-                                <Label className="mb-2">Rate limit</Label>
-                                <Text className="mb-0 d-flex align-items-baseline">
-                                    {llmProxyAccess.rateLimit !== null && (
-                                        <>
-                                            <LLMProxyRateLimitSourceBadge
-                                                source={llmProxyAccess.rateLimit.source}
-                                                className="mr-2"
-                                            />
-                                            {llmProxyAccess.rateLimit.limit} requests /{' '}
-                                            {prettyInterval(llmProxyAccess.rateLimit.intervalSeconds)}
-                                            {viewerCanAdminister && (
-                                                <>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="link"
-                                                        aria-label="Edit rate limit"
-                                                        className="ml-1"
-                                                        onClick={() => setShowRateLimitConfigModal(true)}
-                                                    >
-                                                        <Icon aria-hidden={true} svgPath={mdiPencil} />
-                                                    </Button>
-                                                    {llmProxyAccess.rateLimit.source ===
-                                                        LLMProxyRateLimitSource.OVERRIDE && (
-                                                        <Tooltip content="Remove rate limit override">
-                                                            <Button
-                                                                size="sm"
-                                                                variant="link"
-                                                                aria-label="Remove rate limit override"
-                                                                className="ml-1"
-                                                                onClick={onRemoveRateLimitOverride}
-                                                            >
-                                                                <Icon
-                                                                    aria-hidden={true}
-                                                                    svgPath={mdiTrashCan}
-                                                                    className="text-danger"
-                                                                />
-                                                            </Button>
-                                                        </Tooltip>
-                                                    )}
-                                                </>
-                                            )}
-                                        </>
+                            <>
+                                <div className="form-group mt-2 mb-2">
+                                    <Label className="mb-2">Rate limit</Label>
+                                    <Text className="mb-0 d-flex align-items-baseline">
+                                        {llmProxyAccess.rateLimit !== null && (
+                                            <>
+                                                <LLMProxyRateLimitSourceBadge
+                                                    source={llmProxyAccess.rateLimit.source}
+                                                    className="mr-2"
+                                                />
+                                                {llmProxyAccess.rateLimit.limit} requests /{' '}
+                                                {prettyInterval(llmProxyAccess.rateLimit.intervalSeconds)}
+                                                {viewerCanAdminister && (
+                                                    <>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="link"
+                                                            aria-label="Edit rate limit"
+                                                            className="ml-1"
+                                                            onClick={() => setShowRateLimitConfigModal(true)}
+                                                        >
+                                                            <Icon aria-hidden={true} svgPath={mdiPencil} />
+                                                        </Button>
+                                                        {llmProxyAccess.rateLimit.source ===
+                                                            LLMProxyRateLimitSource.OVERRIDE && (
+                                                            <Tooltip content="Remove rate limit override">
+                                                                <Button
+                                                                    size="sm"
+                                                                    variant="link"
+                                                                    aria-label="Remove rate limit override"
+                                                                    className="ml-1"
+                                                                    onClick={onRemoveRateLimitOverride}
+                                                                >
+                                                                    <Icon
+                                                                        aria-hidden={true}
+                                                                        svgPath={mdiTrashCan}
+                                                                        className="text-danger"
+                                                                    />
+                                                                </Button>
+                                                            </Tooltip>
+                                                        )}
+                                                    </>
+                                                )}
+                                            </>
+                                        )}
+                                    </Text>
+                                </div>
+                                <H5 className="mb-2">Usage</H5>
+                                <ChartContainer labelX="Date" labelY="Daily usage">
+                                    {width => (
+                                        <LineChart
+                                            width={width}
+                                            height={200}
+                                            series={[
+                                                {
+                                                    data: llmProxyAccess.usage,
+                                                    getXValue(datum) {
+                                                        return parseISO(datum.date)
+                                                    },
+                                                    getYValue(datum) {
+                                                        return datum.count
+                                                    },
+                                                    id: 'usage',
+                                                    name: 'LLM Proxy usage',
+                                                    color: 'var(--purple)',
+                                                },
+                                            ]}
+                                        />
                                     )}
-                                </Text>
-                            </div>
+                                </ChartContainer>
+                            </>
                         )}
                     </>
                 )}
