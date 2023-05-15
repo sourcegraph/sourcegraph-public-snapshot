@@ -28,6 +28,7 @@ type MultiHandler struct {
 	logger                log.Logger
 }
 
+// NewMultiHandler creates a new MultiHandler.
 func NewMultiHandler(
 	jobTokenStore executorstore.JobTokenStore,
 	codeIntelQueueHandler QueueHandler[uploadsshared.Index],
@@ -63,6 +64,7 @@ type dequeueRequest struct {
 	DiskSpace    string   `json:"diskSpace,omitempty"`
 }
 
+// ServeHTTP is the equivalent of ExecutorHandler.HandleDequeue for multiple queues.
 func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var req dequeueRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
