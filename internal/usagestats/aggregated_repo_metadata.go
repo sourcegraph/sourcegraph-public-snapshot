@@ -13,6 +13,8 @@ func GetAggregatedRepoMetadataStats(ctx context.Context, db database.DB) (*types
 	if err != nil {
 		return nil, err
 	}
+	flag, err := db.FeatureFlags().GetFeatureFlag(ctx, "repository-metadata")
 
+	stats.IsEnabled = flag != nil && flag.Bool.Value
 	return stats, nil
 }
