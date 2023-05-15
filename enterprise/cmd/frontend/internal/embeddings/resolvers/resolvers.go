@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"os"
-	"sync"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/conc/pool"
@@ -230,16 +229,27 @@ func embeddingsSearchResultsToResolvers(
 	gs gitserver.Client,
 	results []embeddings.EmbeddingSearchResult,
 ) ([]graphqlbackend.EmbeddingsSearchResultResolver, error) {
-	var (
-		mu     sync.Mutex
-		output []graphqlbackend.EmbeddingsSearchResultResolver
-	)
 
-	p := pool.New().WithMaxGoroutines(8)
-	for _, result := range results {
-		result := result
-		p.Go(func() {
-			content, err := gs.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, result.RepoName, result.Revision, result.FileName)
+	allContents := make([][]byte, len(results))
+	allErrors := make([]error, len(results))
+	{ // Fetch contents in parallel because fetching them serially can be slow.
+		p := pool.New().WithMaxGoroutines(8)
+		for i, result := range results {
+			i, result := i, result
+			p.Go(func() {
+				content, err := gs.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, result.RepoName, result.Revision, result.FileName)
+				allContents[i] = content
+				allErrors[i] = err
+			})
+		}
+		p.Wait()
+	}
+
+	resolvers := make([]graphqlbackend.EmbeddingsSearchResultResolver, 0, len(results))
+	{ // Merge the results with their contents, skipping any that errored when fetching the context.
+		for i, result := range results {
+			contents := allContents[i]
+			err := allErrors[i]
 			if err != nil {
 				if !os.IsNotExist(err) {
 					logger.Error(
@@ -250,22 +260,17 @@ func embeddingsSearchResultsToResolvers(
 						log.Error(err),
 					)
 				}
-				return
+				continue
 			}
 
-			mu.Lock()
-			defer mu.Unlock()
-
-			output = append(output, &embeddingsSearchResultResolver{
+			resolvers = append(resolvers, &embeddingsSearchResultResolver{
 				result:  result,
-				content: string(extractLineRange(content, result.StartLine, result.EndLine)),
+				content: string(extractLineRange(contents, result.StartLine, result.EndLine)),
 			})
-		})
+		}
 	}
 
-	p.Wait()
-
-	return output, nil
+	return resolvers, nil
 }
 
 func extractLineRange(content []byte, startLine, endLine int) []byte {
