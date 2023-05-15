@@ -19,6 +19,7 @@ func generateAnnotation(category string, check string, content string) {
 	os.MkdirAll(annotationsDir, os.ModePerm)
 
 	// write annotation
+	fmt.Printf("RICKY: %s\n", check)
 	path := filepath.Join(annotationsDir, fmt.Sprintf("%s: %s.md", category, check))
 	_ = os.WriteFile(path, []byte(content+"\n"), os.ModePerm)
 }
