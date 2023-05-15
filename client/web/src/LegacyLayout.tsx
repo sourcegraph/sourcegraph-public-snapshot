@@ -199,26 +199,24 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 !disableFeedbackSurvey &&
                 !isCodyStandalonePage && <SurveyToast authenticatedUser={props.authenticatedUser} />}
             {props.isSourcegraphDotCom && props.authenticatedUser && <CodySurveyToast />}
-            {!isSiteInit &&
-                !isSignInOrUp &&
-                !isCodyStandalonePage && (
-                    <GlobalNavbar
-                        {...props}
-                        showSearchBox={
-                            isSearchRelatedPage &&
-                            !isSearchHomepage &&
-                            !isCommunitySearchContextPage &&
-                            !isSearchConsolePage &&
-                            !isSearchNotebooksPage &&
-                            !isCodySearchPage
-                        }
-                        setFuzzyFinderIsVisible={setFuzzyFinderVisible}
-                        isRepositoryRelatedPage={isRepositoryRelatedPage}
-                        showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
-                        showFeedbackModal={showFeedbackModal}
-                        historyStack={historyStack}
-                    />
-                )}
+            {!isSiteInit && !isSignInOrUp && !isCodyStandalonePage && (
+                <GlobalNavbar
+                    {...props}
+                    showSearchBox={
+                        isSearchRelatedPage &&
+                        !isSearchHomepage &&
+                        !isCommunitySearchContextPage &&
+                        !isSearchConsolePage &&
+                        !isSearchNotebooksPage &&
+                        !isCodySearchPage
+                    }
+                    setFuzzyFinderIsVisible={setFuzzyFinderVisible}
+                    isRepositoryRelatedPage={isRepositoryRelatedPage}
+                    showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
+                    showFeedbackModal={showFeedbackModal}
+                    historyStack={historyStack}
+                />
+            )}
             {needsSiteInit && !isSiteInit && <Navigate replace={true} to="/site-admin/init" />}
             <Suspense
                 fallback={

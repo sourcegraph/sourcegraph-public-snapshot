@@ -156,10 +156,14 @@ export const routes: RouteObject[] = [
         // expose this information in the handle object instead.
         handle: { isRepoContainer: true },
     },
-    ...(window.context.sourcegraphAppMode ? [{
-        path: PageRoutes.CodyStandalone,
-        element: <CodyStandalonePage />,
-    }] : []),
+    ...(window.context.sourcegraphAppMode
+        ? [
+              {
+                  path: PageRoutes.CodyStandalone,
+                  element: <CodyStandalonePage />,
+              },
+          ]
+        : []),
 ]
 
 function SearchConsolePageOrRedirect(props: LegacyLayoutRouteContext): JSX.Element {
