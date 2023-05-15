@@ -3,10 +3,10 @@ import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
 import { getContextMessagesFromSelection, getNormalizedLanguageName, MARKDOWN_FORMAT_PROMPT } from './helpers'
-import { Recipe, RecipeContext } from './recipe'
+import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class ExplainCodeDetailed implements Recipe {
-    public id = 'explain-code-detailed'
+    public id: RecipeID = 'explain-code-detailed'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()

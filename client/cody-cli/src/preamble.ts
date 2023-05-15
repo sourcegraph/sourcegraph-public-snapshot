@@ -17,6 +17,10 @@ I will answer questions, explain code, and generate code as concisely and clearl
 My responses will be formatted using Markdown syntax for code blocks without language specifiers.
 I will acknowledge when I don't know an answer or need more context.`
 
+/**
+ * Creates and returns an array of two messages: one from a human, and the supposed response from the AI assistant.
+ * Both messages contain an optional note about the current codebase if it's not null.
+ */
 export function getPreamble(codebase: string): Message[] {
     const preamble = [actions, rules]
     const preambleResponse = [answer]

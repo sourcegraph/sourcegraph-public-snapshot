@@ -4,6 +4,7 @@ import { TranscriptJSON } from '.'
 
 export interface ChatMessage extends Message {
     displayText?: string
+    // File names of context files
     contextFiles?: string[]
 }
 

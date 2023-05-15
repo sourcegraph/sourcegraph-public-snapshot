@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 
 import { ChatViewProvider, isValidLogin } from './chat/ChatViewProvider'
@@ -110,7 +111,7 @@ const register = async (
     )
     disposables.push({ dispose: () => vscode.commands.executeCommand('setContext', 'cody.activated', false) })
 
-    const executeRecipe = async (recipe: string): Promise<void> => {
+    const executeRecipe = async (recipe: RecipeID): Promise<void> => {
         await vscode.commands.executeCommand('cody.chat.focus')
         await chatProvider.executeRecipe(recipe, '')
     }

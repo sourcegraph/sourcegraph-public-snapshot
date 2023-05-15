@@ -7,10 +7,10 @@ import { Interaction } from '../transcript/interaction'
 
 import { ChatQuestion } from './chat-question'
 import { Fixup } from './fixup'
-import { Recipe, RecipeContext } from './recipe'
+import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class InlineChat implements Recipe {
-    public id = 'inline-chat'
+    public id: RecipeID = 'inline-chat'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const selection = context.editor.controller?.selection

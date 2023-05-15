@@ -4,10 +4,10 @@ import { MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
-import { Recipe, RecipeContext } from './recipe'
+import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class ReleaseNotes implements Recipe {
-    public id = 'release-notes'
+    public id: RecipeID = 'release-notes'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const dirPath = context.editor.getWorkspaceRootPath()

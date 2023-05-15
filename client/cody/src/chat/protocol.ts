@@ -1,4 +1,5 @@
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
+import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
@@ -13,7 +14,7 @@ export type WebviewMessage =
       }
     | { command: 'event'; event: string; value: string }
     | { command: 'submit'; text: string; submitType: 'user' | 'suggestion' }
-    | { command: 'executeRecipe'; recipe: string }
+    | { command: 'executeRecipe'; recipe: RecipeID }
     | { command: 'settings'; serverEndpoint: string; accessToken: string }
     | { command: 'removeToken' }
     | { command: 'removeHistory' }

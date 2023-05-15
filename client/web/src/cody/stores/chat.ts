@@ -6,6 +6,7 @@ import create from 'zustand'
 
 import { Client, createClient, ClientInit, Transcript, TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/client'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
+import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { PrefilledOptions } from '@sourcegraph/cody-shared/src/editor/withPreselectedOptions'
 import { isErrorLike } from '@sourcegraph/common'
@@ -35,7 +36,7 @@ interface CodyChatStore {
     submitMessage: (text: string) => void
     editMessage: (text: string) => void
     executeRecipe: (
-        recipeId: string,
+        recipeId: RecipeID,
         options?: {
             prefilledOptions?: PrefilledOptions
         }
@@ -145,7 +146,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
     }
 
     const executeRecipe = async (
-        recipeId: string,
+        recipeId: RecipeID,
         options?: {
             prefilledOptions?: PrefilledOptions
         }
