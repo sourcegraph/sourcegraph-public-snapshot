@@ -13,6 +13,10 @@ js_library(
     srcs = glob([
         "*.graphql",
     ]),
+    visibility = [
+        "//client/backstage-backend/node_modules/@sourcegraph/shared/dev:__pkg__",
+        "//client/shared/dev:__pkg__",
+    ],
 )
 
 linter_bin.graphql_schema_linter_test(

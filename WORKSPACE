@@ -202,6 +202,26 @@ go_repository(
     version = "v1.14.1",
 )
 
+# Overrides the default provided protobuf dep from rules_go by a more
+# recent one.
+go_repository(
+    name = "org_golang_google_protobuf",
+    build_file_proto_mode = "disable_global",
+    importpath = "google.golang.org/protobuf",
+    sum = "h1:7QBf+IK2gx70Ap/hDsOmam3GE0v9HicjfEdAxE62UoM=",
+    version = "v1.29.1",
+)  # keep
+
+# Pin protoc-gen-go-grpc to 1.3.0
+# See also //:gen-go-grpc
+go_repository(
+    name = "org_golang_google_grpc_cmd_protoc_gen_go_grpc",
+    build_file_proto_mode = "disable_global",
+    importpath = "google.golang.org/grpc/cmd/protoc-gen-go-grpc",
+    sum = "h1:rNBFJjBCOgVr9pWD7rs/knKL4FRTKgpZmsRfV214zcA=",
+    version = "v1.3.0",
+)  # keep
+
 # gazelle:repository_macro deps.bzl%go_dependencies
 go_dependencies()
 

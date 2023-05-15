@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -38,18 +39,30 @@ func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 		})
 	})
 
+	// Log which actor is accessing the repo.
+	args := req.GetArgs()
+	cmd := ""
+	if len(args) > 0 {
+		cmd = args[0]
+		args = args[1:]
+	}
+
+	accesslog.Record(ss.Context(), req.GetRepo(),
+		log.String("cmd", cmd),
+		log.Strings("args", args),
+	)
+
 	// TODO(mucles): set user agent from all grpc clients
 	return gs.doExec(ss.Context(), gs.Server.Logger, &internalReq, "unknown-grpc-client", w)
 }
 
 func (gs *GRPCServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverService_ArchiveServer) error {
-	//TODO(mucles): re-enable access logging (see server.go handleArchive)
 	// Log which which actor is accessing the repo.
-	// accesslog.Record(ctx, req.Repo,
-	// 	log.String("treeish", req.Treeish),
-	// 	log.String("format", req.Format),
-	// 	log.Strings("path", req.Pathspecs),
-	// )
+	accesslog.Record(ss.Context(), req.Repo,
+		log.String("treeish", req.Treeish),
+		log.String("format", req.Format),
+		log.Strings("path", req.Pathspecs),
+	)
 
 	if err := checkSpecArgSafety(req.GetTreeish()); err != nil {
 		return status.Error(codes.InvalidArgument, err.Error())

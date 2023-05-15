@@ -1,4 +1,4 @@
-package grpc
+package propagator
 
 import (
 	"context"
@@ -86,7 +86,7 @@ func StreamServerPropagator(prop Propagator) grpc.StreamServerInterceptor {
 	}
 }
 
-// StreamServerPropagator returns an interceptor that will use the given propagator
+// UnaryServerPropagator returns an interceptor that will use the given propagator
 // to translate some metadata back into the context for the RPC handler. The client
 // should be configured with an interceptor that uses the same propagator.
 func UnaryServerPropagator(prop Propagator) grpc.UnaryServerInterceptor {

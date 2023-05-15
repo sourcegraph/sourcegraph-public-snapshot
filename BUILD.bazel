@@ -85,6 +85,8 @@ gazelle(
 
 # Because the current implementation of rules_go uses the old protoc grpc compiler, we have to declare our own, and declare it manually in the build files.
 # See https://github.com/bazelbuild/rules_go/issues/3022
+
+# gazelle:go_grpc_compilers //:gen-go-grpc,@io_bazel_rules_go//proto:go_proto
 go_proto_compiler(
     name = "gen-go-grpc",
     plugin = "@org_golang_google_grpc_cmd_protoc_gen_go_grpc//:protoc-gen-go-grpc",
