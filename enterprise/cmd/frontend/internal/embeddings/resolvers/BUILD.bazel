@@ -27,7 +27,6 @@ go_library(
         "//lib/errors",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_graph_gophers_graphql_go//relay",
-<<<<<<< HEAD
         "@com_github_sourcegraph_conc//pool",
         "@com_github_sourcegraph_log//:log",
     ],
@@ -43,6 +42,8 @@ go_test(
         "//enterprise/internal/embeddings/background/contextdetection",
         "//enterprise/internal/embeddings/background/repo",
         "//internal/actor",
+        "//internal/api",
+        "//internal/authz",
         "//internal/conf",
         "//internal/database",
         "//internal/featureflag",
@@ -52,8 +53,5 @@ go_test(
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//require",
-=======
-        "@com_github_sourcegraph_log//:log",
->>>>>>> origin/main
     ],
 )
