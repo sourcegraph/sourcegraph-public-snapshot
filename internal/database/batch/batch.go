@@ -342,7 +342,7 @@ func (i *Inserter) makeQuery(numValues int) string {
 
 // MaxNumPostgresParameters is the maximum number of placeholder variables allowed by Postgres
 // in a single insert statement.
-const MaxNumPostgresParameters = 32767
+const MaxNumPostgresParameters = 65535
 
 // MaxNumSQLiteParameters is the maximum number of placeholder variables allowed by SQLite
 // in a single insert statement.
