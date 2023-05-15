@@ -12,6 +12,7 @@ export const SELECTED = {
     REPOSITORIES: 1,
     FILES: 2,
     NONE: 3,
+    AUTOMATIC: 4,
 } as const
 
 export type ContextType = typeof SELECTED[keyof typeof SELECTED]

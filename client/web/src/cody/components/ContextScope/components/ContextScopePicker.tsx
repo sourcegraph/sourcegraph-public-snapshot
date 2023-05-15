@@ -3,6 +3,7 @@ import classNames from 'classnames'
 
 import { Icon, Menu, MenuButton, MenuList, MenuItem, Position } from '@sourcegraph/wildcard'
 
+import { codyIconPath } from '../../CodyIcon'
 import { ContextType, SELECTED } from '../ContextScope'
 
 import styles from './ContextComponents.module.scss'
@@ -22,6 +23,7 @@ export const ContextScopePicker: React.FC<ContextScopePickerProps> = ({ onSelect
         { label: 'Repositories', icon: mdiGit },
         { label: 'Files', icon: mdiFileDocumentOutline },
         { label: 'None', icon: mdiCircleOutline },
+        { label: 'Automatic', icon: codyIconPath },
     ]
 
     return (
