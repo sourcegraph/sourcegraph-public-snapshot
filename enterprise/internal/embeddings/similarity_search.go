@@ -2,7 +2,6 @@ package embeddings
 
 import (
 	"container/heap"
-	"fmt"
 	"math"
 	"sort"
 
@@ -201,19 +200,6 @@ func (index *EmbeddingIndex) score(query []int8, i int, opts SearchOptions) Sear
 		SimilarityScore: similarityScore,
 		RankScore:       rankScore,
 	}
-}
-
-type searchDebugInfo struct {
-	similarity int32
-	rank       int32
-	enabled    bool
-}
-
-func (i *searchDebugInfo) String() string {
-	if !i.enabled {
-		return ""
-	}
-	return fmt.Sprintf("score:%d, similarity:%d, rank:%d", i.similarity+i.rank, i.similarity, i.rank)
 }
 
 func min(a, b int) int {
