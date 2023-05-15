@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/log"
 	"golang.org/x/exp/slices"
@@ -26,6 +28,7 @@ type MultiHandler struct {
 	CodeIntelQueueHandler QueueHandler[uploadsshared.Index]
 	BatchesQueueHandler   QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]
 	validQueues           []string
+	RandomGenerator       RandomGenerator
 	logger                log.Logger
 }
 
@@ -40,6 +43,7 @@ func NewMultiHandler(
 		CodeIntelQueueHandler: codeIntelQueueHandler,
 		BatchesQueueHandler:   batchesQueueHandler,
 		validQueues:           []string{codeIntelQueueHandler.Name, batchesQueueHandler.Name},
+		RandomGenerator:       &RealRandom{},
 		logger:                log.Scoped("executor-multi-queue-handler", "The route handler for all executor queues"),
 	}
 }
@@ -94,9 +98,17 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 		DiskSpace: req.DiskSpace,
 	}
 
+	// Initialize the random number generator
+	m.RandomGenerator.Seed(time.Now().UnixNano())
+
+	// Shuffle the slice using the Fisher-Yates algorithm
+	for i := len(req.Queues) - 1; i > 0; i-- {
+		j := m.RandomGenerator.Intn(i + 1)
+		req.Queues[i], req.Queues[j] = req.Queues[j], req.Queues[i]
+	}
+
 	logger := m.logger.Scoped("dequeue", "Pick a job record from the database.")
 	var job executortypes.Job
-	// TODO - impl fairness later
 	for _, queue := range req.Queues {
 		switch queue {
 		case m.BatchesQueueHandler.Name:
@@ -194,4 +206,19 @@ func (m *MultiHandler) marshalAndRespondError(w http.ResponseWriter, err error, 
 		data = []byte(fmt.Sprintf("Failed to serialize payload: %s", err))
 	}
 	http.Error(w, string(data), statusCode)
+}
+
+type RandomGenerator interface {
+	Seed(seed int64)
+	Intn(n int) int
+}
+
+type RealRandom struct{}
+
+func (r *RealRandom) Seed(seed int64) {
+	rand.Seed(seed)
+}
+
+func (r *RealRandom) Intn(n int) int {
+	return rand.Intn(n)
 }

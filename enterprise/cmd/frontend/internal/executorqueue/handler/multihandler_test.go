@@ -23,6 +23,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type MockRandom struct {
+	IntnResults []int
+}
+
+func (r *MockRandom) Seed(seed int64) {}
+
+func (r *MockRandom) Intn(n int) int {
+	if len(r.IntnResults) == 0 {
+		return 0
+	}
+	result := r.IntnResults[0]
+	r.IntnResults = r.IntnResults[1:]
+	return result
+}
+
 type dequeueEvent[T workerutil.Record] struct {
 	queueName            string
 	expectedStatusCode   int
@@ -69,10 +84,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.CreateFunc.History(), 2)
 
-				// codeintel dequeue gets called twice: the queues are handled in order of the value in the request body.
-				// Once a queue is empty, the next in line gets dequeued. The second call returns an empty job.
-				// TODO: this could break when fairness is implemented.
-				require.Len(t, codeintelMockStore.DequeueFunc.History(), 2)
+				require.Len(t, codeintelMockStore.DequeueFunc.History(), 1)
 				assert.Equal(t, "test-executor", codeintelMockStore.DequeueFunc.History()[0].Arg1)
 				assert.Nil(t, codeintelMockStore.DequeueFunc.History()[0].Arg2)
 				assert.Equal(t, 1, jobTokenStore.CreateFunc.History()[0].Arg1)
@@ -146,9 +158,9 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.CreateFunc.History(), 1)
 
-				// codeintel dequeue gets called twice: the queues are handled in order of the value in the request body.
-				// Once a queue is empty, the next in line gets dequeued. The second call returns an empty job.
-				// TODO: this could break when fairness is implemented.
+				// codeintel dequeue gets called twice: the second dequeue invocation mocks fairness to first dequeue the batches queue, which yields this sequence of events:
+				//   1. Queue order after fairness: [codeintel, batches], dequeue codeintel -> successful dequeue
+				//   2. Queue order after fairness: [batches, codeintel], dequeue batches -> no job to dequeue, dequeue codeintel -> no job to dequeue
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 2)
 				assert.Equal(t, "test-executor", codeintelMockStore.DequeueFunc.History()[0].Arg1)
 				assert.Nil(t, codeintelMockStore.DequeueFunc.History()[0].Arg2)
@@ -422,6 +434,17 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 				handler.QueueHandler[uploadsshared.Index]{Name: "codeintel", Store: codeIntelMockStore, RecordTransformer: transformerFunc[uploadsshared.Index]},
 				handler.QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]{Name: "batches", Store: batchesMockStore, RecordTransformer: transformerFunc[*btypes.BatchSpecWorkspaceExecutionJob]},
 			)
+
+			// Mock random fairness to alternate between how the queues are defined in the request and reversed between dequeues in a single test.
+			// The first queue will be attempted to be dequeued. Without randomness, the first queue would be dequeued until no jobs are returned.
+			//
+			// Example with two dequeues and request ["codeintel", "batches"]: 1. codeintel, 2. batches (instead of 1. codeintel, 2. codeintel -> no job, then dequeue batches)
+			// Example with one dequeue and request ["codeintel", "batches"]: 1. codeintel
+			var intnResults []int
+			for i := len(test.codeintelDequeueEvents) + len(test.batchesDequeueEvents); i > 0; i-- {
+				intnResults = append(intnResults, i-1)
+			}
+			mh.RandomGenerator = &MockRandom{IntnResults: intnResults}
 
 			router := mux.NewRouter()
 			router.HandleFunc("/dequeue", mh.ServeHTTP)
