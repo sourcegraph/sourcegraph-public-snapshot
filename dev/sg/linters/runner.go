@@ -30,6 +30,7 @@ func NewRunner(out *std.Output, annotations bool, targets ...Target) Runner {
 				os.Stderr.WriteString(err.Error() + "\n")
 			}
 		}
+		os.Stdout.WriteString("asdfasdfasdf")
 		return fmt.Sprintf("Try `sg lint --fix %s` to fix this issue!", category)
 	}
 	return runner
