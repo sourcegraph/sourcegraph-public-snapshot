@@ -68,7 +68,7 @@ let
               {
                 name = "helix-core-api";
                 url = "https://cdist2.perforce.com/perforce/r22.2/bin.linux26x86_64/p4api-glibc2.3-openssl3.tgz";
-                hash = "";
+                hash = "sha256-wovk38lk4cjrC6pTa9dSwmYM1RN1nzmzdl8VIwf2BLY=";
               }
           else throw "unsupported platform ${stdenv.targetPlatform.parsed.kernel.name}"
         )
