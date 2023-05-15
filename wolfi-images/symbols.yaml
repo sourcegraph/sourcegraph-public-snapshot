@@ -21,7 +21,7 @@ contents:
 
     ## symbols packages
     - ca-certificates
-    - jansson                    # TODO: Need to add in ctags build environment
+    - jansson
     - libstdc++                  # TODO: For tree-sitter. Not an apk dependency
     - ctags@sourcegraph
 
