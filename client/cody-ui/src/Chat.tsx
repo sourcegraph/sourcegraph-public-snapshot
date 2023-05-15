@@ -213,6 +213,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 FeedbackButtonsContainer={FeedbackButtonsContainer}
                 feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                 copyButtonOnSubmit={copyButtonOnSubmit}
+                submitButtonComponent={SubmitButton}
+                chatInputClassName={chatInputClassName}
             />
 
             <form className={classNames(styles.inputRow, inputRowClassName)}>
