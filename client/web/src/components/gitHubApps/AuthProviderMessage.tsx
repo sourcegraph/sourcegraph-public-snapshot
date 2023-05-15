@@ -48,6 +48,7 @@ const AuthProviderJSON: FC<Props> = ({ app, id }) => {
         const url = app?.baseURL ?? null
         return JSON.stringify(
             {
+                displayName: `GitHub App ${app?.name}`,
                 type: 'github',
                 clientID,
                 clientSecret,
@@ -56,7 +57,7 @@ const AuthProviderJSON: FC<Props> = ({ app, id }) => {
             null,
             4
         )
-    }, [clientID, clientSecret, app?.baseURL])
+    }, [clientID, clientSecret, app?.baseURL, app?.name])
 
     if (error) {
         return (

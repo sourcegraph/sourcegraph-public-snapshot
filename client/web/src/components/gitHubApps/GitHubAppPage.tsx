@@ -90,7 +90,7 @@ export const GitHubAppPage: FC<Props> = ({
         try {
             const req = await fetch(`/.auth/githubapp/state?id=${app?.id}`)
             const state = await req.text()
-            window.location.assign(
+            window.open(
                 app.appURL.endsWith('/')
                     ? app.appURL + 'installations/new?state=' + state
                     : app.appURL + '/installations/new?state=' + state
@@ -214,8 +214,7 @@ export const GitHubAppPage: FC<Props> = ({
                                                 <H3 className="d-flex align-items-center mb-0">
                                                     Code host connections
                                                     <ButtonLink
-                                                        variant="secondary"
-                                                        outline={true}
+                                                        variant="primary"
                                                         className="ml-auto"
                                                         to={`/site-admin/external-services/new?id=github&appID=${
                                                             app.appID
@@ -227,31 +226,39 @@ export const GitHubAppPage: FC<Props> = ({
                                                         <Icon svgPath={mdiPlus} aria-hidden={true} /> Add connection
                                                     </ButtonLink>
                                                 </H3>
-                                                <ConnectionList
-                                                    as="ul"
-                                                    className={styles.listGroup}
-                                                    aria-label="Code Host Connections"
-                                                >
-                                                    {installation.externalServices?.nodes?.map(node => (
-                                                        <ExternalServiceNode
-                                                            key={node.id}
-                                                            node={node}
-                                                            editingDisabled={false}
-                                                        />
-                                                    ))}
-                                                </ConnectionList>
-                                                {installation.externalServices && (
-                                                    <SummaryContainer className="mt-2" centered={true}>
-                                                        <ConnectionSummary
-                                                            noSummaryIfAllNodesVisible={false}
-                                                            first={100}
-                                                            centered={true}
-                                                            connection={installation.externalServices}
-                                                            noun="code host connection"
-                                                            pluralNoun="code host connections"
-                                                            hasNextPage={false}
-                                                        />
-                                                    </SummaryContainer>
+                                                {installation.externalServices?.nodes?.length > 0 ? (
+                                                    <>
+                                                        <ConnectionList
+                                                            as="ul"
+                                                            className={styles.listGroup}
+                                                            aria-label="Code Host Connections"
+                                                        >
+                                                            {installation.externalServices?.nodes?.map(node => (
+                                                                <ExternalServiceNode
+                                                                    key={node.id}
+                                                                    node={node}
+                                                                    editingDisabled={false}
+                                                                />
+                                                            ))}
+                                                        </ConnectionList>
+                                                        {installation.externalServices && (
+                                                            <SummaryContainer className="mt-2" centered={true}>
+                                                                <ConnectionSummary
+                                                                    noSummaryIfAllNodesVisible={false}
+                                                                    first={100}
+                                                                    centered={true}
+                                                                    connection={installation.externalServices}
+                                                                    noun="code host connection"
+                                                                    pluralNoun="code host connections"
+                                                                    hasNextPage={false}
+                                                                />
+                                                            </SummaryContainer>
+                                                        )}
+                                                    </>
+                                                ) : (
+                                                    <Text className="text-center mt-4">
+                                                        You haven't added any code host connections yet.
+                                                    </Text>
                                                 )}
                                             </div>
                                         </Container>

@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { DeleteGitHubAppResult, DeleteGitHubAppVariables } from 'src/graphql-operations'
 
 import { useMutation } from '@sourcegraph/http-client'
-import { Button, Link, Icon, Tooltip, Container, AnchorLink, ButtonLink } from '@sourcegraph/wildcard'
+import { Button, Icon, Tooltip, Container, AnchorLink, ButtonLink } from '@sourcegraph/wildcard'
 
 import { DELETE_GITHUB_APP_BY_ID_QUERY } from './backend'
 
@@ -46,13 +46,13 @@ export const GitHubAppCard: React.FC<GitHubAppCardProps> = ({ app, refetch }) =>
 
     return (
         <Container className="d-flex align-items-center mb-2 p-3">
-            <Link className={classNames(styles.appLink, 'd-flex align-items-center text-decoration-none')} to={app.id}>
+            <span className={classNames(styles.appLink, 'd-flex align-items-center')}>
                 <img className={classNames('mr-3', styles.logo)} src={app.logo} alt="app logo" aria-hidden={true} />
                 <span>
                     <div className="font-weight-bold">{app.name}</div>
                     <div className="text-muted">AppID: {app.appID}</div>
                 </span>
-            </Link>
+            </span>
             <div className="ml-auto">
                 <AnchorLink to={app.appURL} target="_blank" className="mr-3">
                     <small>

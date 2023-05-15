@@ -6,7 +6,13 @@ import { useQuery } from '@sourcegraph/http-client'
 import { ButtonLink, ErrorAlert, Icon, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { GitHubAppsResult, GitHubAppsVariables } from '../../graphql-operations'
-import { ConnectionContainer, ConnectionLoading, ConnectionList } from '../FilteredConnection/ui'
+import {
+    ConnectionContainer,
+    ConnectionLoading,
+    ConnectionList,
+    ConnectionSummary,
+    SummaryContainer,
+} from '../FilteredConnection/ui'
 import { PageTitle } from '../PageTitle'
 
 import { GITHUB_APPS_QUERY } from './backend'
@@ -29,12 +35,19 @@ export const GitHubAppsPage: React.FC = () => {
             <PageTitle title="GitHub Apps" />
             <PageHeader path={[{ text: 'GitHub Apps' }]} className="mb-1" />
             <div className="d-flex align-items-center">
-                Create and connect a GitHub App.
-                {/* TODO: add proper link here */}
-                <Link to="" className="ml-1">
-                    See how GitHub App configuration works.
-                </Link>
-                <ButtonLink to="/site-admin/github-apps/new" className="ml-auto" variant="primary" as={Link}>
+                <span>
+                    Create and connect a GitHub App to better manage GitHub code host connections.
+                    {/* TODO: add docs link here once we have them */}
+                    <Link to="" className="ml-1">
+                        See how GitHub App configuration works.
+                    </Link>
+                </span>
+                <ButtonLink
+                    to="/site-admin/github-apps/new"
+                    className="ml-auto text-nowrap"
+                    variant="primary"
+                    as={Link}
+                >
                     <Icon aria-hidden={true} svgPath={mdiPlus} /> Create GitHub App
                 </ButtonLink>
             </div>
@@ -49,6 +62,20 @@ export const GitHubAppsPage: React.FC = () => {
                         gitHubApps?.map(app => <GitHubAppCard key={app.id} app={app} refetch={reloadApps} />)
                     )}
                 </ConnectionList>
+                <SummaryContainer className="mt-2" centered={true}>
+                    <ConnectionSummary
+                        noSummaryIfAllNodesVisible={false}
+                        first={gitHubApps?.length ?? 0}
+                        centered={true}
+                        connection={{
+                            nodes: gitHubApps ?? [],
+                            totalCount: gitHubApps?.length ?? 0,
+                        }}
+                        noun="GitHub App"
+                        pluralNoun="GitHub Apps"
+                        hasNextPage={false}
+                    />
+                </SummaryContainer>
             </ConnectionContainer>
         </>
     )

@@ -1,9 +1,9 @@
 import { FC, useState, useCallback, useRef } from 'react'
 
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Alert, Container, Button, Input, Label, Text, PageHeader } from '@sourcegraph/wildcard'
+import { Alert, Container, Button, Input, Label, Text, PageHeader, ButtonLink } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../PageTitle'
 
@@ -18,21 +18,12 @@ interface stateResponse {
  * Page for choosing a service kind and variant to add, among the available options.
  */
 export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
-    const { search } = useLocation()
-    const navigate = useNavigate()
     const ref = useRef<HTMLFormElement>(null)
     const formInput = useRef<HTMLInputElement>(null)
     const [name, setName] = useState<string>('')
     const [url, setUrl] = useState<string>('')
     const [org, setOrg] = useState<string>('')
     const [error, setError] = useState<any>(null)
-
-    let alert = null
-    const id = new URLSearchParams(search).get('id')
-    if (id) {
-        // TODO: handle this on a different page
-        alert = <Alert variant="info">GitHub App installed successfully.</Alert>
-    }
 
     const baseUrl = window.location.origin
     const getManifest = useCallback(
@@ -136,8 +127,8 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
                 path={[{ text: 'Create GitHub App' }]}
                 description={
                     <>
-                        Create and connect a GitHub App.
-                        {/* TODO: add proper link here */}
+                        Create and connect a GitHub App to better manage GitHub code host connections.
+                        {/* TODO: add docs link here once we have them */}
                         <Link to="" className="ml-1">
                             See how GitHub App configuration works.
                         </Link>
@@ -145,7 +136,6 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
                 }
             />
             <Container className="mt-3">
-                {alert}
                 {error && <Alert variant="danger">Error creating github app: {error}</Alert>}
                 <Text>
                     Create a new GitHub App by completing the form below. Once you click "Create GitHub App", you will
@@ -197,9 +187,9 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
                     >
                         Create Github App
                     </Button>
-                    <Button className="ml-3" onClick={() => navigate(-1)} variant="secondary">
+                    <ButtonLink className="ml-3" to="/site-admin/github-apps" variant="secondary">
                         Cancel
-                    </Button>
+                    </ButtonLink>
                 </div>
                 {/* eslint-disable-next-line react/forbid-elements */}
                 <form ref={ref} method="post">
