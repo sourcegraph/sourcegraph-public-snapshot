@@ -11,6 +11,7 @@ import { GitHistory } from './git-log'
 import { ImproveVariableNames } from './improve-variable-names'
 import { InlineChat } from './inline-chat'
 import { NextQuestions } from './next-questions'
+import { NonStop } from './non-stop'
 import { Recipe, RecipeID } from './recipe'
 import { TranslateToLanguage } from './translate'
 
@@ -42,6 +43,7 @@ function init(): void {
         new TranslateToLanguage(),
         new FindCodeSmells(),
         new NextQuestions(),
+        new NonStop(),
         new ContextSearch(),
         new ReleaseNotes(),
     ]

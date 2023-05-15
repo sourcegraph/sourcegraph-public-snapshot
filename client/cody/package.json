@@ -89,9 +89,22 @@
           "id": "cody.chat",
           "name": "Chat",
           "visibility": "visible"
+        },
+        {
+          "id": "cody.tasks.view",
+          "name": "Fixups",
+          "visibility": "visible",
+          "when": "cody.task.view.enabled"
         }
       ]
     },
+    "viewsWelcome": [
+      {
+        "view": "cody.tasks.view",
+        "contents": "Task list is currently empty.",
+        "when": "cody.task.view.enabled"
+      }
+    ],
     "commands": [
       {
         "command": "cody.toggle-enabled",
@@ -159,7 +172,7 @@
         "command": "cody.interactive.clear",
         "title": "Cody: Clear & Restart Chat Session",
         "group": "Cody",
-        "icon": "$(clear-all)"
+        "icon": "$(add)"
       },
       {
         "command": "cody.history",
@@ -183,7 +196,13 @@
         "title": "Cody: Loading",
         "enablement": "!commentThreadIsEmpty",
         "icon": "$(sync~spin)"
-      }
+      },
+      {
+				"command": "cody.task.add",
+				"title": "Cody: Add a Non-Stop Cody Task",
+        "icon": "$(add)",
+        "enablement": "cody.task.view.enabled"
+			}
     ],
     "keybindings": [
       {
@@ -195,6 +214,12 @@
         "command": "cody.recipe.fixup",
         "key": "ctrl+alt+/",
         "mac": "ctrl+alt+/",
+        "when": "cody.activated && editorTextFocus && !editorReadonly"
+      },
+      {
+        "command": "cody.task.add",
+        "key": "ctrl+alt+f",
+        "mac": "shift+cmd+v",
         "when": "cody.activated && editorTextFocus && !editorReadonly"
       }
     ],
@@ -208,35 +233,35 @@
       "commandPalette": [
         {
           "command": "cody.recipe.explain-code",
-          "when": "cody.activated"
+          "when": "cody.activated && workbenchState == workspace"
         },
         {
           "command": "cody.recipe.context-search",
-          "when": "cody.activated"
+          "when": "cody.activated && workbenchState == workspace"
         },
         {
           "command": "cody.recipe.explain-code-high-level",
-          "when": "cody.activated"
+          "when": "cody.activated && workbenchState == workspace"
         },
         {
           "command": "cody.recipe.generate-unit-test",
-          "when": "cody.activated"
+          "when": "cody.activated && workbenchState == workspace"
         },
         {
           "command": "cody.recipe.generate-docstring",
-          "when": "cody.activated"
+          "when": "cody.activated && workbenchState == workspace"
         },
         {
           "command": "cody.recipe.translate-to-language",
-          "when": "cody.activated"
+          "when": "cody.activated && workbenchState == workspace"
         },
         {
           "command": "cody.recipe.git-history",
-          "when": "cody.activated"
+          "when": "cody.activated && workbenchState == workspace"
         },
         {
           "command": "cody.recipe.fixup",
-          "when": "cody.activated"
+          "when": "cody.activated && workbenchState == workspace"
         },
         {
           "command": "cody.set-access-token",
@@ -304,24 +329,52 @@
         {
           "command": "cody.interactive.clear",
           "when": "view == cody.chat && cody.activated",
-          "group": "navigation"
+          "group": "navigation@1",
+          "visibility": "visible"
         },
         {
           "command": "cody.settings",
           "when": "view == cody.chat && cody.activated",
-          "group": "navigation"
+          "group": "navigation@3",
+          "visibility": "visible"
         },
         {
           "command": "cody.history",
           "when": "view == cody.chat && cody.activated",
-          "group": "navigation"
+          "group": "navigation@2",
+          "visibility": "visible"
+        },
+        {
+          "command": "cody.task.add",
+          "when": "view == cody.tasks.view && cody.activated",
+          "group": "navigation",
+          "visibility": "visible"
         }
+      ],
+      "view/item/context": [
+        {
+					"command": "cody.task.add",
+          "when": "cody.activated && viewItem == cody.tasks",
+					"group": "overflow",
+          "visibility": "visible"
+				},
+        {
+					"command": "cody.task.add",
+          "when": "cody.activated && viewItem == cody.tasks",
+					"group":  "inline@1",
+          "visibility": "visible"
+				}
       ],
       "comments/commentThread/context": [
         {
           "command": "cody.comment.add",
           "group": "inline",
           "when": "cody.activated && commentController =~ /^cody-inline/"
+        },
+        {
+          "command": "cody.focus",
+          "group": "inline",
+          "when": "!cody.activated"
         }
       ],
       "comments/commentThread/title": [
@@ -337,6 +390,48 @@
         }
       ]
     },
+    "colors": [
+			{
+				"id": "pending",
+				"defaults": {
+					"dark": "#00cbec",
+					"light": "#005482",
+					"highContrast": "editor.foreground",
+					"highContrastLight": "editor.foreground"
+				},
+				"description": "Color to indicate a processing or pending state."
+			},
+			{
+				"id": "idle",
+				"defaults": {
+					"dark": "#ffdb45",
+					"light": "#ff9933",
+					"highContrast": "editor.foreground",
+					"highContrastLight": "editor.foreground"
+				},
+				"description": "Color to indicate a paused or queued state."
+			},
+			{
+				"id": "done",
+				"defaults": {
+					"dark": "#17ab52",
+					"light": "#1f7d45",
+					"highContrast": "editor.foreground",
+					"highContrastLight": "editor.foreground"
+				},
+				"description": "Color to indicate a complete state."
+			},
+			{
+				"id": "error",
+				"defaults": {
+					"dark": "#ff5543",
+					"light": "#c22626",
+					"highContrast": "editor.foreground",
+					"highContrastLight": "editor.foreground"
+				},
+				"description": "Color to indicate an error state."
+			}
+    ],
     "configuration": {
       "type": "object",
       "title": "Cody",
@@ -390,10 +485,6 @@
           "markdownDescription": "Enables inline chat with cody inside the code editor window",
           "default": false
         },
-        "cody.experimental.connectToApp": {
-          "type": "boolean",
-          "default": false
-        },
         "cody.customHeaders": {
           "order": 8,
           "type": "object",
@@ -405,6 +496,16 @@
               "Proxy-Authenticate": "Basic"
             }
           ]
+        },
+        "cody.experimental.nonStop": {
+          "order": 9,
+          "type": "boolean",
+          "default": false
+        },
+        "cody.experimental.connectToApp": {
+          "order": 10,
+          "type": "boolean",
+          "default": false
         },
         "cody.debug": {
           "order": 99,

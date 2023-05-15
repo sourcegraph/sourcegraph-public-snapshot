@@ -9,9 +9,10 @@ import {
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
 import { InlineController } from '../services/InlineController'
+import { TaskViewProvider } from '../services/TaskViewProvider'
 
 export class VSCodeEditor implements Editor {
-    constructor(public controller: InlineController) {}
+    constructor(public controller: InlineController, public taskView: TaskViewProvider) {}
 
     public getWorkspaceRootPath(): string | null {
         const uri = vscode.window.activeTextEditor?.document?.uri

@@ -16,6 +16,8 @@ describe('getConfiguration', () => {
             experimentalSuggest: false,
             experimentalChatPredictions: false,
             experimentalInline: false,
+            experimentalNonStop: false,
+            experimentalConnectToApp: false,
             customHeaders: {},
         })
     })
@@ -40,6 +42,10 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.inline':
                         return true
+                    case 'cody.experimental.nonStop':
+                        return true
+                    case 'cody.experimental.connectToApp':
+                        return true
                     case 'cody.customHeaders':
                         return {
                             'Cache-Control': 'no-cache',
@@ -59,6 +65,8 @@ describe('getConfiguration', () => {
             experimentalSuggest: true,
             experimentalChatPredictions: true,
             experimentalInline: true,
+            experimentalNonStop: true,
+            experimentalConnectToApp: true,
             customHeaders: {
                 'Cache-Control': 'no-cache',
                 'Proxy-Authenticate': 'Basic',

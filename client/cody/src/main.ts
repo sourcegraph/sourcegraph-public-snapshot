@@ -21,6 +21,7 @@ import {
     SecretStorage,
     VSCodeSecretStorage,
 } from './services/SecretStorageProvider'
+import { TaskViewProvider } from './services/TaskViewProvider'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
@@ -77,8 +78,10 @@ const register = async (
     // Controller for inline assist
     const commentController = new InlineController(context.extensionPath)
     disposables.push(commentController.get())
+    // Task view for Non-Stop Cody
+    const taskView = new TaskViewProvider()
 
-    const editor = new VSCodeEditor(commentController)
+    const editor = new VSCodeEditor(commentController, taskView)
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
 
@@ -250,6 +253,20 @@ const register = async (
                 return [new vscode.Range(0, 0, lineCount - 1, 0)]
             },
         }
+    }
+
+    // Register task view and non-stop cody command when feature flag is on
+    if (initialConfig.experimentalNonStop) {
+        disposables.push(vscode.window.registerTreeDataProvider('cody.tasks.view', taskView))
+        disposables.push(
+            vscode.commands.registerCommand('cody.task.add', async () => {
+                const input = await vscode.window.showInputBox({
+                    prompt: 'Cody: Add instruction for your Fixup request.',
+                })
+                await chatProvider.executeRecipe('non-stop', input, false)
+            })
+        )
+        await vscode.commands.executeCommand('setContext', 'cody.task.view.enabled', true)
     }
 
     return {

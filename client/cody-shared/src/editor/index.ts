@@ -19,8 +19,15 @@ export interface InlineController {
     selection: ActiveTextEditorSelection | null
 }
 
+export interface TaskViewProvider {
+    newTask(taskID: string, input: string, selection: ActiveTextEditorSelection): void
+    stopTask(taskID: string, content?: string): Promise<void>
+    refresh(): void
+}
+
 export interface Editor {
     controller?: InlineController
+    taskView?: TaskViewProvider
     getWorkspaceRootPath(): string | null
     getActiveTextEditor(): ActiveTextEditor | null
     getActiveTextEditorSelection(): ActiveTextEditorSelection | null
