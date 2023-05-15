@@ -22,7 +22,8 @@ func TestBatchInserter(t *testing.T) {
 	db := dbtest.NewDB(logger, t)
 	setupTestTable(t, db)
 
-	expectedValues := makeTestValues(2, 0)
+	tableSizeFactor := 2
+	expectedValues := makeTestValues(tableSizeFactor, 0)
 	testInsert(t, db, expectedValues)
 
 	rows, err := db.Query("SELECT col1, col2, col3, col4, col5 from batch_inserter_test")
