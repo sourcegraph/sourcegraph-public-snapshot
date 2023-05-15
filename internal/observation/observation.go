@@ -77,7 +77,7 @@ type Operation struct {
 	name         string
 	kebabName    string
 	metricLabels []string
-	logFields    []otlog.Field
+	attributes   []attribute.KeyValue
 
 	// Logger is a logger scoped to this operation. Must not be nil.
 	log.Logger
@@ -275,16 +275,16 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 		Logger:  logger,
 	}
 
-	if mergedFields := mergeLogFields(op.logFields, args.LogFields); len(mergedFields) > 0 {
-		trLogger.initWithTags(trace.OTLogFieldsToOTelAttrs(mergedFields)...)
+	if mergedFields := mergeLogFields(op.attributes, trace.OTLogFieldsToOTelAttrs(args.LogFields)); len(mergedFields) > 0 {
+		trLogger.initWithTags(mergedFields...)
 	}
 
 	return ctx, trLogger, func(count float64, finishArgs Args) {
 		since := time.Since(start)
 		elapsed := since.Seconds()
 		elapsedMs := since.Milliseconds()
-		defaultFinishFields := []otlog.Field{otlog.Float64("count", count), otlog.Float64("elapsed", elapsed)}
-		finishLogFields := mergeLogFields(defaultFinishFields, finishArgs.LogFields)
+		defaultFinishFields := []attribute.KeyValue{attribute.Float64("count", count), attribute.Float64("elapsed", elapsed)}
+		finishLogFields := mergeLogFields(defaultFinishFields, trace.OTLogFieldsToOTelAttrs(finishArgs.LogFields))
 
 		logFields := mergeLogFields(defaultFinishFields, finishLogFields)
 		metricLabels := mergeLabels(op.metricLabels, args.MetricLabelValues, finishArgs.MetricLabelValues)
@@ -293,7 +293,7 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 			if multi.errs == nil {
 				err = nil
 			}
-			logFields = append(logFields, multi.extraFields...)
+			logFields = append(logFields, trace.OTLogFieldsToOTelAttrs(multi.extraFields)...)
 		}
 
 		var (
@@ -330,7 +330,7 @@ func (op *Operation) startTrace(ctx context.Context) (*trace.Trace, context.Cont
 // emitErrorLogs will log as message if the operation has failed. This log contains the error
 // as well as all of the log fields attached ot the operation, the args to With, and the args
 // to the finish function.
-func (op *Operation) emitErrorLogs(trLogger TraceLogger, err *error, logFields []otlog.Field, emitToSentry bool) {
+func (op *Operation) emitErrorLogs(trLogger TraceLogger, err *error, attrs []attribute.KeyValue, emitToSentry bool) {
 	if err == nil || *err == nil {
 		return
 	}
@@ -340,7 +340,7 @@ func (op *Operation) emitErrorLogs(trLogger TraceLogger, err *error, logFields [
 		// only fields of type ErrorType end up in sentry
 		errField = log.String("error", (*err).Error())
 	}
-	fields := append(toLogFields(logFields), errField)
+	fields := append(attributesToLogFields(attrs), errField)
 
 	trLogger.
 		AddCallerSkip(2). // callback() -> emitErrorLogs() -> Logger
@@ -374,7 +374,7 @@ func (op *Operation) emitMetrics(err *error, count, elapsed float64, labels []st
 // finishTrace will set the error value, log additional fields supplied after the operation's
 // execution, and finalize the trace span. This does nothing if no trace was constructed at
 // the start of the operation.
-func (op *Operation) finishTrace(err *error, tr *trace.Trace, logFields []otlog.Field) {
+func (op *Operation) finishTrace(err *error, tr *trace.Trace, attrs []attribute.KeyValue) {
 	if tr == nil {
 		return
 	}
@@ -383,7 +383,7 @@ func (op *Operation) finishTrace(err *error, tr *trace.Trace, logFields []otlog.
 		tr.SetError(*err)
 	}
 
-	tr.AddEvent("done", trace.OTLogFieldsToOTelAttrs(logFields)...)
+	tr.AddEvent("done", attrs...)
 	tr.Finish()
 }
 

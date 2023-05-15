@@ -87,7 +87,7 @@ func (c *Context) Operation(args Op) *Operation {
 		name:         args.Name,
 		kebabName:    kebabCase(args.Name),
 		metricLabels: args.MetricLabelValues,
-		logFields:    args.LogFields,
+		attributes:   trace.OTLogFieldsToOTelAttrs(args.LogFields),
 		errorFilter:  args.ErrorFilter,
 
 		Logger: logger.With(toLogFields(args.LogFields)...),
