@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
@@ -116,39 +116,116 @@ func TestGetVCSSyncer(t *testing.T) {
 }
 
 func TestMethodSpecificStreamInterceptor(t *testing.T) {
-	called := false
-	next := func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		called = true
-		return nil
+	tests := []struct {
+		name string
+
+		matchedMethod string
+		testMethod    string
+
+		expectedInterceptorCalled bool
+	}{
+		{
+			name: "allowed method",
+
+			matchedMethod: "allowedMethod",
+			testMethod:    "allowedMethod",
+
+			expectedInterceptorCalled: true,
+		},
+		{
+			name: "not allowed method",
+
+			matchedMethod: "allowedMethod",
+			testMethod:    "otherMethod",
+
+			expectedInterceptorCalled: false,
+		},
 	}
 
-	noopHandler := func(srv any, ss grpc.ServerStream) error { return nil }
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			called := false
+			interceptor := methodSpecificStreamInterceptor(test.matchedMethod, func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+				called = true
+				return handler(srv, ss)
+			})
 
-	interceptor := methodSpecificStreamInterceptor("allowedMethod", next)
-	err := interceptor(nil, nil, &grpc.StreamServerInfo{FullMethod: "otherMethod"}, noopHandler)
-	require.NoError(t, err)
-	require.False(t, called)
+			handlerCalled := false
+			noopHandler := func(srv any, ss grpc.ServerStream) error {
+				handlerCalled = true
+				return nil
+			}
 
-	err = interceptor(nil, nil, &grpc.StreamServerInfo{FullMethod: "allowedMethod"}, noopHandler)
-	require.NoError(t, err)
-	require.True(t, called)
+			err := interceptor(nil, nil, &grpc.StreamServerInfo{FullMethod: test.testMethod}, noopHandler)
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+
+			if !handlerCalled {
+				t.Error("expected handler to be called")
+			}
+
+			if diff := cmp.Diff(test.expectedInterceptorCalled, called); diff != "" {
+				t.Fatalf("unexpected interceptor called value (-want +got):\n%s", diff)
+			}
+		})
+	}
 }
 
 func TestMethodSpecificUnaryInterceptor(t *testing.T) {
-	called := false
-	next := func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		called = true
-		return nil, nil
+	tests := []struct {
+		name string
+
+		matchedMethod string
+		testMethod    string
+
+		expectedInterceptorCalled bool
+	}{
+		{
+			name: "allowed method",
+
+			matchedMethod: "allowedMethod",
+			testMethod:    "allowedMethod",
+
+			expectedInterceptorCalled: true,
+		},
+		{
+			name: "not allowed method",
+
+			matchedMethod: "allowedMethod",
+			testMethod:    "otherMethod",
+
+			expectedInterceptorCalled: false,
+		},
 	}
 
-	noopHandler := func(ctx context.Context, req any) (any, error) { return nil, nil }
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			called := false
+			interceptor := methodSpecificUnaryInterceptor(test.matchedMethod, func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+				called = true
+				return handler(ctx, req)
+			})
 
-	interceptor := methodSpecificUnaryInterceptor("allowedMethod", next)
-	_, err := interceptor(nil, nil, &grpc.UnaryServerInfo{FullMethod: "otherMethod"}, noopHandler)
-	require.NoError(t, err)
-	require.False(t, called)
+			handlerCalled := false
+			noopHandler := func(ctx context.Context, req any) (any, error) {
+				handlerCalled = true
+				return nil, nil
+			}
 
-	_, err = interceptor(nil, nil, &grpc.UnaryServerInfo{FullMethod: "allowedMethod"}, noopHandler)
-	require.NoError(t, err)
-	require.True(t, called)
+			_, err := interceptor(context.Background(), nil, &grpc.UnaryServerInfo{FullMethod: test.testMethod}, noopHandler)
+			if err != nil {
+				t.Fatalf("expected no error, got %v", err)
+			}
+
+			if !handlerCalled {
+				t.Error("expected handler to be called")
+			}
+
+			if diff := cmp.Diff(test.expectedInterceptorCalled, called); diff != "" {
+				t.Fatalf("unexpected interceptor called value (-want +got):\n%s", diff)
+			}
+
+		})
+	}
 }
