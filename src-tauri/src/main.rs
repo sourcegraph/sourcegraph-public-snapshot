@@ -30,10 +30,6 @@ fn get_launch_path(window: tauri::Window) -> String {
 
 #[tauri::command]
 fn hide_window(app: tauri::AppHandle, window: tauri::Window) {
-    if window.label() == "cody" {
-        let item_handle = app.tray_handle().get_item("cody");
-        item_handle.set_title("Show Cody").unwrap();
-    }
     window.hide().unwrap();
 }
 
@@ -101,9 +97,7 @@ fn main() {
         .setup(|app| {
             start_embedded_services();
 
-            // Cody system tray window.
             let handle = app.handle();
-            cody::init_cody_window(&handle);
 
             // Register handler for sourcegraph:// scheme urls.
             tauri_plugin_deep_link::register(SCHEME, move |request| {

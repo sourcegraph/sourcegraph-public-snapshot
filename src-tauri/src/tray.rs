@@ -1,3 +1,4 @@
+use crate::cody::init_cody_window;
 use crate::common::show_window;
 use tauri::api::shell;
 use tauri::{
@@ -40,16 +41,11 @@ pub fn on_system_tray_event(app: &AppHandle, event: SystemTrayEvent) {
         match id.as_str() {
             "open" => show_window(app, "main"),
             "cody" => {
-                let win = app.get_window("cody").unwrap();
-                win.move_window(Position::TrayBottomLeft).unwrap();
-                let item_handle = app.tray_handle().get_item(&id);
-                let window = app.get_window("cody").unwrap();
-                if window.is_visible().unwrap() {
-                    window.hide().unwrap();
-                    item_handle.set_title("Show Cody").unwrap();
+                let win = app.get_window("cody");
+                if win.is_none() {
+                    init_cody_window(app);
                 } else {
-                    window.show().unwrap();
-                    item_handle.set_title("Hide Cody").unwrap();
+                    show_window(app, "cody")
                 }
             }
             "settings" => {
