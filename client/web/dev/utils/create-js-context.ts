@@ -48,7 +48,6 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         needServerRestart: false,
         needsSiteInit: false,
         needsRepositoryConfiguration: false,
-        localFilePickerAvailable: true,
         resetPasswordEnabled: true,
         runningOnMacOS: true,
         sentryDSN: null,

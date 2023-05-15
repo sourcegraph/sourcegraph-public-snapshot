@@ -1,7 +1,3 @@
 export { LocalRepositoriesStep } from './LocalRepositoriesStep'
-export {
-    useLocalPathsPicker,
-    useLocalRepositories,
-    useLocalRepositoriesPaths,
-    useNewLocalRepositoriesPaths,
-} from './hooks'
+export { callFilePicker } from './helpers'
+export { useLocalRepositories, useLocalRepositoriesPaths, useNewLocalRepositoriesPaths } from './hooks'

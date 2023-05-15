@@ -152,12 +152,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     runningOnMacOS: boolean
 
     /**
-     * Whether the setup wizard supports file picker query, it's used
-     * only for the Sourcegraph App (in all others deploy types it's always false)
-     */
-    localFilePickerAvailable: boolean
-
-    /**
      * Whether or not the server needs to restart in order to apply a pending
      * configuration change.
      */

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -11,7 +10,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/service/servegit"
-	"github.com/sourcegraph/sourcegraph/internal/singleprogram/filepicker"
 )
 
 const usage = `
@@ -37,29 +35,10 @@ func main() {
 
 	root := flag.String("root", c.CWDRoot, "the directory we search from.")
 	block := flag.Bool("block", false, "by default we stream out the repos we find. This is not exactly what sourcegraph uses, so enable this flag for the same behaviour.")
-	picker := flag.Bool("picker", false, "try run the file picker.")
 	lsRemote := flag.Bool("git-ls-remote", false, "run git ls-remote on each CloneURL to validate git.")
 	verbose := flag.Bool("v", false, "verbose output.")
 
 	flag.Parse()
-
-	if *picker {
-		p, ok := filepicker.Lookup(log.Scoped("picker", ""))
-		if !ok {
-			fmt.Fprintf(os.Stderr, "filepicker not found\n")
-		} else {
-			paths, err := p(context.Background(), false)
-			if err != nil {
-				fatalf("filepicker error: %v\n", err)
-			}
-			if len(paths) != 1 {
-				fatalf("filepicker error: expected 1 path, got %d\n", len(paths))
-			}
-			path := paths[0]
-			fmt.Fprintf(os.Stderr, "filepicker picked %q\n", path)
-			*root = path
-		}
-	}
 
 	srv := &servegit.Serve{
 		ServeConfig: c.ServeConfig,

@@ -7,7 +7,6 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//internal/service/servegit",
-        "//internal/singleprogram/filepicker",
         "@com_github_sourcegraph_log//:log",
     ],
 )
