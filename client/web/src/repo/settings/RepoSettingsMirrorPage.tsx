@@ -22,6 +22,7 @@ import {
     Collapse,
     CollapsePanel,
     Label,
+    H4,
 } from '@sourcegraph/wildcard'
 
 import { LogOutput } from '../../components/LogOutput'
@@ -127,7 +128,7 @@ const UpdateMirrorRepositoryActionContainer: FC<UpdateMirrorRepositoryActionCont
     return (
         <ActionContainer
             title={title}
-            //TODO: uncomment after merging titleAs="h3"
+            // TODO: uncomment after merging titleAs="h3"
             description={<div>{description}</div>}
             buttonLabel={buttonLabel}
             buttonDisabled={buttonDisabled || props.disabled}
@@ -167,7 +168,7 @@ const CheckMirrorRepositoryConnectionActionContainer: FC<
     return (
         <BaseActionContainer
             title="Check connection to remote repository"
-            //TODO: uncomment after merging titleAs="h3"
+            // TODO: uncomment after merging titleAs="h3"
             description={<span>Diagnose problems cloning or updating from the remote repository.</span>}
             action={
                 <Button
@@ -243,7 +244,7 @@ const CorruptionLogsContainer: FC<CorruptionLogProps> = props => {
     return (
         <BaseActionContainer
             title="Repository corruption"
-            //TODO: uncomment after merging titleAs="h3"
+            // TODO: uncomment after merging titleAs="h3"
             description={<span>Recent corruption events that have been detected on this repository.</span>}
             details={
                 <div className="flex-1">
@@ -292,8 +293,8 @@ const LastSyncOutputContainer: FC<LastSyncOutputProps> = props => {
     return (
         <BaseActionContainer
             title="Last sync log"
-            //TODO: uncomment after merging titleAs="h3"
-            description={<h4>Output from this repository's most recent sync job.</h4>}
+            // TODO: uncomment after merging titleAs="h3"
+            description={<H4>Output from this repository's most recent sync job</H4>}
             details={<LogOutput text={output} logDescription="Job output:" />}
         />
     )
@@ -337,15 +338,11 @@ export const RepoSettingsMirrorPage: FC<RepoSettingsMirrorPageProps> = props => 
 
                 <div className="form-group">
                     <Label>
-                        {
-                            <>
-                                {' '}
-                                Remote repository URL{' '}
-                                <small className="text-info">
-                                    <Icon aria-hidden={true} svgPath={mdiLock} /> Only visible to site admins
-                                </small>
-                            </>
-                        }
+                        {' '}
+                        Remote repository URL{' '}
+                        <small className="text-info">
+                            <Icon aria-hidden={true} svgPath={mdiLock} /> Only visible to site admins
+                        </small>
                     </Label>
                     <Input
                         value={repo.mirrorInfo.remoteURL || '(unknown)'}
@@ -385,7 +382,7 @@ export const RepoSettingsMirrorPage: FC<RepoSettingsMirrorPageProps> = props => 
                 />
                 <ActionContainer
                     title="Reclone repository"
-                    //TODO: uncomment after merging titleAs="h3"
+                    // TODO: uncomment after merging titleAs="h3"
                     description={
                         <div>
                             This will delete the repository from disk and reclone it.
