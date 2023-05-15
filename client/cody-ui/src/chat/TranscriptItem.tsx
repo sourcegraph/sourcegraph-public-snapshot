@@ -83,10 +83,7 @@ export const TranscriptItem: React.FunctionComponent<
                     value={formInput}
                     autoFocus={true}
                     required={true}
-                    onInput={({ target }) => {
-                        const { value } = target as HTMLInputElement
-                        setFormInput(value)
-                    }}
+                    onInput={event => setFormInput((event.target as HTMLInputElement).value)}
                     onKeyDown={event => {
                         if (event.key === 'Escape') {
                             setBeingEdited(false)
@@ -96,11 +93,9 @@ export const TranscriptItem: React.FunctionComponent<
                             event.key === 'Enter' &&
                             !event.shiftKey &&
                             !event.nativeEvent.isComposing &&
-                            formInput &&
                             formInput.trim()
                         ) {
                             event.preventDefault()
-                            event.stopPropagation()
                             setBeingEdited(false)
                             editButtonOnSubmit(formInput)
                         }
