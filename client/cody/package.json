@@ -359,7 +359,7 @@
         "cody.codebase": {
           "order": 2,
           "type": "string",
-          "markdownDescription": "The name of the embedded repository that Cody will use to gather context for response. This is automatically inferred from your git setup but you can use this option if you need to overwrite the default",
+          "markdownDescription": "The name of the embedded repository that Cody will use to gather context for response. This is automatically inferred from your git setup but you can use this option if you need to override the default.",
           "example": "github.com/sourcegraph/sourcegraph"
         },
         "cody.useContext": {
@@ -384,7 +384,7 @@
           "order": 5,
           "type": "boolean",
           "default": false,
-          "markdownDescription": "Adds sugestions of possible relevant messages in the chat window"
+          "markdownDescription": "Adds sugestions of possible relevant messages in the chat window."
         },
         "cody.experimental.inline": {
           "order": 6,

@@ -11,7 +11,7 @@ import { Icon } from '../../utils/Icon'
 import styles from './ChatInputContext.module.css'
 
 const infoMsg =
-    "This codebase does not appear to be embedded in your Sourcegraph instance. While Cody will still function, we highly recommend embedding your codebase in Sourcegraph to enable Cody's full capabilities."
+    "This codebase does not have embeddings. To enable Cody's full capabilities, configure embeddings in your Sourcegraph instance. See our docs on how to configure embeddings at https://docs.sourcegraph.com/cody/explanations/code_graph_context#embeddings"
 
 export const ChatInputContext: React.FunctionComponent<{
     contextStatus: ChatContextStatus
