@@ -73,19 +73,15 @@ export const ContextScope: React.FC<ContextScopeProps> = ({}) => {
 }
 
 // Custom fuzzy search function
-const fuzzySearch = (item, search) => {
-    const itemLowerCase = item.toLowerCase()
-    const searchLowerCase = search.toLowerCase()
+const fuzzySearch = (item: string, search: string): boolean => {
+    const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const searchRegex = new RegExp(escapedSearch, 'gi')
+    return searchRegex.test(item)
+}
 
-    let lastIndex = -1
-    for (let i = 0; i < searchLowerCase.length; i++) {
-        const index = itemLowerCase.indexOf(searchLowerCase[i], lastIndex + 1)
-        if (index === -1) {
-            return false
-        }
-        lastIndex = index
-    }
-    return true
+const getTintedText = (item: string, searchText: string) => {
+    const searchRegex = new RegExp(`(${searchText})`, 'gi')
+    return item.replace(searchRegex, match => `<span class="tinted">${match}</span>`)
 }
 
 const ContextSeparator = () => <div className={styles.separator} />
@@ -101,7 +97,7 @@ const PopoverComponent: React.FC<{
 }> = ({ header, icon, emptyMessage, inputPlaceholder, items, contextType, itemType }) => {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false)
     const [currentItems, setCurrentItems] = useState<string[] | undefined>(items)
-    const [searchText, setSearchText] = useState('') // Add state for the search text
+    const [searchText, setSearchText] = useState('')
 
     const clearSearchText = () => {
         setSearchText('')
@@ -144,8 +140,11 @@ const PopoverComponent: React.FC<{
         .filter(item => !currentItems?.includes(item)) // Exclude items already present in currentItems
         .filter(item => fuzzySearch(item, searchText))
 
-    const isEmpty = !currentItems || currentItems.length === 0
     const isSearching = searchText.length > 0
+    const isSearchEmpty = isSearching && filteredItems.length === 0
+    const isEmpty = !currentItems || currentItems.length === 0
+
+    console.log('isSearchEmpty', isSearchEmpty)
 
     return (
         <Popover isOpen={isPopoverOpen} onOpenChange={event => setIsPopoverOpen(event.isOpen)}>
@@ -174,8 +173,11 @@ const PopoverComponent: React.FC<{
                             <Icon aria-hidden={true} svgPath={mdiClose} />
                         </Button>
                     </div>
-                    {isEmpty && !isSearching ? (
-                        <EmptyState icon={icon} message={emptyMessage} />
+                    {(isEmpty && !isSearching) || isSearchEmpty ? (
+                        <EmptyState
+                            icon={icon}
+                            message={isSearchEmpty ? `No ${itemType} found for '${searchText}'` : emptyMessage}
+                        />
                     ) : (
                         <>
                             <div className="itemsContainer">
@@ -188,7 +190,14 @@ const PopoverComponent: React.FC<{
                                         )}
                                     >
                                         <div>
-                                            <Icon aria-hidden={true} svgPath={icon} /> {item}
+                                            <Icon aria-hidden={true} svgPath={icon} />{' '}
+                                            {
+                                                <span
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: getTintedText(item, searchText),
+                                                    }}
+                                                />
+                                            }
                                         </div>
                                         <div className="d-flex align-items-center itemRight">
                                             {contextType === SELECTED.FILES && (
@@ -294,7 +303,7 @@ const repoMockedModel = [
 ]
 
 const ItemRepos: React.FC = () => {
-    const mockedRepoNames = repoMockedModel.slice(0, 6)
+    const mockedRepoNames: string[] = []
 
     return (
         <PopoverComponent
