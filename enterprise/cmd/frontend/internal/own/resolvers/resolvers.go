@@ -7,6 +7,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 
 	"github.com/sourcegraph/log"
@@ -143,12 +144,46 @@ func (r *ownResolver) GitCommitOwnership(
 	if err := areOwnEndpointsAvailable(ctx); err != nil {
 		return nil, err
 	}
+	repoID := commit.Repository().IDInt32()
 
 	// Retrieve recent contributors signals.
-	ownerships, err := computeRecentContributorSignals(ctx, r.db, repoRootPath, commit.Repository().IDInt32())
+	ownerships, err := computeRecentContributorSignals(ctx, r.db, repoRootPath, repoID)
 	if err != nil {
 		return nil, err
 	}
+
+	// Retrieve recent view signals.
+	viewerResolvers, err := computeRecentViewSignals(ctx, r.logger, r.db, repoRootPath, repoID)
+	if err != nil {
+		return nil, err
+	}
+	ownerships = append(ownerships, viewerResolvers...)
+
+	return r.ownershipConnection(args, ownerships)
+}
+
+func (r *ownResolver) GitTreeOwnership(
+	ctx context.Context,
+	tree *graphqlbackend.GitTreeEntryResolver,
+	args graphqlbackend.ListOwnershipArgs,
+) (graphqlbackend.OwnershipConnectionResolver, error) {
+	if err := areOwnEndpointsAvailable(ctx); err != nil {
+		return nil, err
+	}
+
+	// Retrieve recent contributors signals.
+	repoID := tree.Repository().IDInt32()
+	ownerships, err := computeRecentContributorSignals(ctx, r.db, tree.Path(), repoID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Retrieve recent view signals.
+	viewerResolvers, err := computeRecentViewSignals(ctx, r.logger, r.db, tree.Path(), repoID)
+	if err != nil {
+		return nil, err
+	}
+	ownerships = append(ownerships, viewerResolvers...)
 
 	return r.ownershipConnection(args, ownerships)
 }
@@ -228,8 +263,12 @@ func (r *ownResolver) ownershipConnection(
 
 	// TODO(#51636): Introduce deterministic ordering based on priority of signals.
 	sort.Slice(ownerships, func(i, j int) bool {
-		iText := ownerships[i].resolvedOwner.Identifier()
-		jText := ownerships[j].resolvedOwner.Identifier()
+		o, p := ownerships[i], ownerships[j]
+		if x, y := o.order(), p.order(); x != y {
+			return x < y
+		}
+		iText := o.resolvedOwner.Identifier()
+		jText := p.resolvedOwner.Identifier()
 		return iText < jText
 	})
 	total := len(ownerships)
@@ -299,6 +338,19 @@ func (r *ownershipResolver) Owner(ctx context.Context) (graphqlbackend.OwnerReso
 
 func (r *ownershipResolver) Reasons(_ context.Context) ([]graphqlbackend.OwnershipReasonResolver, error) {
 	return r.reasons, nil
+}
+
+func (r *ownershipResolver) order() int {
+	reasonsCount := 0
+	codeownersCount := 0
+	for _, r := range r.reasons {
+		reasonsCount++
+		if _, ok := r.ToCodeownersFileEntry(); ok {
+			codeownersCount++
+		}
+	}
+	// Smaller numbers are ordered in front, so take negative score.
+	return -10*codeownersCount + reasonsCount
 }
 
 type ownerResolver struct {
