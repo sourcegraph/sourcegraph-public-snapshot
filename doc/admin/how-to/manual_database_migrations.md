@@ -22,13 +22,14 @@ upgrade \
     [-dry-run=false] \
     [-disable-animation=false] \
     [-skip-version-check=false] [-skip-drift-check=false] \
-    [-unprivileged-only=false] [-noop-privileged=false] [-privileged-hash=<hash>]
+    [-unprivileged-only=false] [-noop-privileged=false] [-privileged-hash=<hash>] \
+    [-ignore-migrator-update=false]
 ```
 
 **Required arguments**:
 
-- `-from`: The current Sourcegraph release version (_without the patch_; e.g., `v3.36`)
-- `-to`: The target Sorucegraph release version (_without the patch_; e.g., `v4.0`)
+- `-from`: The current Sourcegraph release version (*without the patch*; e.g., `v3.36`)
+- `-to`: The target Sorucegraph release version (*without the patch*; e.g., `v4.0`)
 
 **Optional arguments**:
 
@@ -37,6 +38,7 @@ upgrade \
 - `-skip-version-check`: Skip comparing the current instance version against `-from`.
 - `-skip-drift-check`: Skip comparing the database schema shape against the schema defined by `-from`.
 - `-unprivileged-only` and `-noop-privileged`: Controls behavior of schema migrations the presence of [privileged definitions](./privileged_migrations.md).
+- `-ignore-migrator-update`: Controls whether to hard- or soft-fail if a newer migrator version is available. It is recommended to use the latest migrator version.
 
 **Notes**:
 
@@ -52,7 +54,8 @@ The `drift` command describes the current (live) database schema and compares it
 drift \
     -db=<schema> \
     [-version=<version>] \
-    [-file=<path to description file>]
+    [-file=<path to description file>] \
+    [-ignore-migrator-update=false]
 ```
 
 **Required arguments**:
@@ -63,8 +66,9 @@ drift \
 
 Exactly one of `-version` and `-file` must be supplied.
 
-- `-version`: The instance's current Sourcegraph release version _including a patch_ (e.g., `v3.42.1`).
+- `-version`: The instance's current Sourcegraph release version *including a patch* (e.g., `v3.42.1`).
 - `-file`: The filepath to a local schema description file. This is useful for airgapped instances that do not have access to the public Sourcegraph GitHub repository or the public GCS bucket where old revisions have been backfilled.
+- `-ignore-migrator-update`: Controls whether to hard- or soft-fail if a newer migrator version is available. It is recommended to use the latest migrator version.
 
 ### downgrade
 
@@ -76,13 +80,14 @@ downgrade \
     [-dry-run=false] \
     [-disable-animation=false] \
     [-skip-version-check=false] [-skip-drift-check=false] \
-    [-unprivileged-only=false] [-noop-privileged=false] [-privileged-hash=<hash>]
+    [-unprivileged-only=false] [-noop-privileged=false] [-privileged-hash=<hash>] \
+    [-ignore-migrator-update=false]
 ```
 
 **Required arguments**:
 
-- `-from`: The current Sourcegraph release version (_without the patch_; e.g., `v3.36`)
-- `-to`: The target Sorucegraph release version (_without the patch_; e.g., `v4.0`)
+- `-from`: The current Sourcegraph release version (*without the patch*; e.g., `v3.36`)
+- `-to`: The target Sorucegraph release version (*without the patch*; e.g., `v4.0`)
 
 **Optional arguments**:
 
@@ -91,6 +96,7 @@ downgrade \
 - `-skip-version-check`: Skip comparing the current instance version against `-from`.
 - `-skip-drift-check`: Skip comparing the database schema shape against the schema defined by `-from`.
 - `-unprivileged-only` and `-noop-privileged`: Controls behavior of schema migrations the presence of [privileged definitions](./privileged_migrations.md).
+- `-ignore-migrator-update`: Controls whether to hard- or soft-fail if a newer migrator version is available. It is recommended to use the latest migrator version.
 
 **Notes**:
 
@@ -156,7 +162,7 @@ up \
 **Optional arguments**:
 
 - `-db`: The target schema(s) to modify. Comma-separated values are allowed.
-- `-skip-upgrade-validation`: Skip asserting that the [standard upgrade policy](../updates/index.md#standard-upgrades) is being followed. 
+- `-skip-upgrade-validation`: Skip asserting that the [standard upgrade policy](../updates/index.md#standard-upgrades) is being followed.
 - `-skip-oobmigration-validation`: Skip reading the progress of out-of-band migrations to assert completion of newly deprecated migrations.
 - `-ignore-single-dirty-log` and `-ignore-single-pending-log`: Re-attempt to apply the **next** migration that was marked as errored or as incomplete (respectively). See [how to troubleshoot a dirty database](dirty_database.md#0-attempt-re-application).
 - `-unprivileged-only` and `-noop-privileged`: Controls behavior of schema migrations the presence of [privileged definitions](./privileged_migrations.md).
@@ -198,6 +204,7 @@ downto \
     [-ignore-single-dirty-log=false] [-ignore-single-pending-log=false] \
     [-unprivileged-only=false] [-noop-privileged=false] [-privileged-hash=<hash>]
 ```
+
 **Required arguments**:
 
 - `-db`: The target schema to modify.
@@ -284,9 +291,11 @@ yq eval -i \
 ```
 
 The above `yq` commands alter the `configure/migrator/migrator.Job.yaml` file. For example producing the following key pairs:
+
 ```yaml
 image: "index.docker.io/sourcegraph/migrator:4.1.3@sha256:0dc6543f0a755e46d962ba572d501559915716fa55beb3aa644a52f081fcd57e"
 ```
+
 ```yaml
 args: ["upgrade", "--from=3.40.2", "--to=4.1.2"]
 ```
@@ -322,14 +331,17 @@ The log output of the `migrator` should include `INFO`-level logs and successful
 Running migrator operations in helm takes advantage of the [sourcegraph-migrator helm charts](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph-migrator). You can learn more about general operations and find some examples in the repo where the charts are defined.
 
 Generally the migrator is run via the `helm upgrade`, for example:
+
 ```
 helm upgrade --install -n sourcegraph --set "migrator.args={drift,--db=frontend,--version=v3.39.1}" sourcegraph-migrator sourcegraph/sourcegraph-migrator --version 4.4.2
 ```
+
 In the example above the `drift` operation is run with flags `-db` and `-version`. The migrator is run using image version `v4.4.2`.
 
 Arguments are set with the `--set "migrator.args={operation-arg,flag-arg-1,flag-arg-2}` portion of the command. Just like you would run commands in terminal, these are the args you are telling the migrator to run on initialization.
 
 In the most general form running operations follows this template:
+
 ```
 helm upgrade --install -n <your namespace> --set "migrator.args={<arg1>,<arg2>,<arg3>}" sourcegraph-migrator sourcegraph/sourcegraph-migrator --version <migrator image version> 
 ```
