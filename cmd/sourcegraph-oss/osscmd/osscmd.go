@@ -21,10 +21,8 @@ func MainOSS(services []service.Service, args []string) {
 	svcmain.Main(services, config, args)
 }
 
-// DeprecatedSingleServiceMainOSS is called from the `main` function of a command in the OSS build
+// SingleServiceMainOSS is called from the `main` function of a command in the OSS build
 // to start a single service (such as frontend or gitserver).
-//
-// DEPRECATED: See svcmain.DeprecatedSingleServiceMain documentation for more info.
-func DeprecatedSingleServiceMainOSS(service service.Service) {
-	svcmain.DeprecatedSingleServiceMain(service, config, true, true)
+func SingleServiceMainOSS(service service.Service) {
+	svcmain.SingleServiceMain(service, config, true, true)
 }

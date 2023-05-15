@@ -64,7 +64,7 @@ func (e *bridgeFieldEncoder) emitCommon(key string, value interface{}) {
 	e.pairs = append(e.pairs, otTagToOTelAttr(key, value))
 }
 
-func otLogFieldsToOTelAttrs(fields []otlog.Field) []attribute.KeyValue {
+func OTLogFieldsToOTelAttrs(fields []otlog.Field) []attribute.KeyValue {
 	encoder := &bridgeFieldEncoder{}
 	for _, field := range fields {
 		field.Marshal(encoder)

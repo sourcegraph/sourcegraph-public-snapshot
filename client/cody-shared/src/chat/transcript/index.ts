@@ -5,11 +5,15 @@ import { Interaction, InteractionJSON } from './interaction'
 import { ChatMessage } from './messages'
 
 export interface TranscriptJSON {
+    // This is the timestamp of the first interaction.
     id: string
     interactions: InteractionJSON[]
     lastInteractionTimestamp: string
 }
 
+/**
+ * A transcript of a conversation between a human and an assistant.
+ */
 export class Transcript {
     public static fromJSON(json: TranscriptJSON): Transcript {
         return new Transcript(
@@ -142,6 +146,11 @@ export class Transcript {
     }
 }
 
+/**
+ * Truncates the given prompt messages to fit within the available tokens budget.
+ * The truncation is done by removing the oldest pairs of messages first.
+ * No individual message will be truncated. We just remove pairs of messages if they exceed the available tokens budget.
+ */
 function truncatePrompt(messages: Message[], maxTokens: number): Message[] {
     const newPromptMessages = []
     let availablePromptTokensBudget = maxTokens
@@ -163,6 +172,9 @@ function truncatePrompt(messages: Message[], maxTokens: number): Message[] {
     return newPromptMessages.reverse()
 }
 
+/**
+ * Gives a rough estimate for the number of tokens used by the message.
+ */
 function estimateTokensUsage(message: Message): number {
     return Math.round((message.text || '').length / CHARS_PER_TOKEN)
 }

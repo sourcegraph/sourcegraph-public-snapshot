@@ -3,10 +3,10 @@ import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
 import { languageMarkdownID, languageNames } from './langs'
-import { Recipe, RecipeContext } from './recipe'
+import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class TranslateToLanguage implements Recipe {
-    public id = 'translate-to-language'
+    public id: RecipeID = 'translate-to-language'
 
     public static options = languageNames
 

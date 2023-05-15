@@ -12,13 +12,13 @@ import { safeTimestampToDate, useChatStoreState } from '../../stores/chat'
 import styles from './HistoryList.module.scss'
 
 interface HistoryListProps {
-    trucateMessageLenght?: number
+    truncateMessageLength?: number
     onSelect?: (id: string) => void
     itemClassName?: string
 }
 
 export const HistoryList: React.FunctionComponent<HistoryListProps> = ({
-    trucateMessageLenght,
+    truncateMessageLength,
     onSelect,
     itemClassName,
 }) => {
@@ -44,7 +44,7 @@ export const HistoryList: React.FunctionComponent<HistoryListProps> = ({
                     transcript={transcript}
                     onSelect={onSelect}
                     className={itemClassName}
-                    truncateMessageLength={trucateMessageLenght}
+                    truncateMessageLength={truncateMessageLength}
                 />
             ))}
         </div>

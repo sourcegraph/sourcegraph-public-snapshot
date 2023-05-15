@@ -30,7 +30,7 @@ A _person_ can be:
 - an unknown user for which we were unable to resolve a profile, in which case we will return the `CODEOWNERS` data we have.
 
 A _team_ is a group of Sourcegraph users represented by a common handle, which is a new feature that we added. 
-[Read more about how to manage teams in Sourcegraph](../admin/teams).
+[Read more about how to manage teams in Sourcegraph](../admin/teams/index.md).
 
 ## Code ownership
 

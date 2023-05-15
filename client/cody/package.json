@@ -392,6 +392,10 @@
           "markdownDescription": "Enables Cody to provide Inline Assist, which enable the ability to initiate conversation and actions directly in the editor through comments.",
           "default": false
         },
+        "cody.experimental.connectToApp": {
+          "type": "boolean",
+          "default": false
+        },
         "cody.customHeaders": {
           "order": 7,
           "type": "object",
