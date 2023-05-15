@@ -59,7 +59,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 	tests := []dequeueTestCase{
 		{
 			name: "Dequeue one record for each queue",
-			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB", "queues": ["codeintel", "batches"]}`,
+			body: `{"metadata":{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"},"queues": ["codeintel", "batches"]}`,
 			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
 				jobTokenStore.CreateFunc.PushReturn("token1", nil)
@@ -101,7 +101,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 		},
 		{
 			name: "Dequeue only codeintel record when requesting codeintel queue and batches record exists",
-			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB", "queues": ["codeintel"]}`,
+			body: `{"metadata":{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"},"queues": ["codeintel"]}`,
 			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
 				batchesMockStore.DequeueFunc.PushReturn(&btypes.BatchSpecWorkspaceExecutionJob{ID: 2}, true, nil)
@@ -137,7 +137,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 		},
 		{
 			name: "Dequeue only codeintel record when requesting both queues and batches record doesn't exists",
-			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB", "queues": ["codeintel", "batches"]}`,
+			body: `{"metadata":{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"},"queues": ["codeintel", "batches"]}`,
 			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
 				batchesMockStore.DequeueFunc.PushReturn(&btypes.BatchSpecWorkspaceExecutionJob{}, false, nil)
@@ -173,7 +173,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 		},
 		{
 			name: "Nothing to dequeue",
-			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB", "queues": ["codeintel","batches"]}`,
+			body: `{"metadata":{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"},"queues": ["codeintel","batches"]}`,
 			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{}, false, nil)
 				batchesMockStore.DequeueFunc.PushReturn(&btypes.BatchSpecWorkspaceExecutionJob{}, false, nil)
@@ -187,7 +187,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 		},
 		{
 			name: "Invalid queue name",
-			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB", "queues": ["invalidqueue"]}`,
+			body: `{"metadata":{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"},"queues": ["invalidqueue"]}`,
 			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 0)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
@@ -201,7 +201,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 		},
 		{
 			name: "Invalid version",
-			body: `{"executorName": "test-executor", "version":"\n1.2", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel","batches"]}`,
+			body: `{"metadata":{"executorName": "test-executor", "version":"\n1.2", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"},"queues": ["codeintel","batches"]}`,
 			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 0)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
@@ -215,7 +215,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 		},
 		{
 			name: "Dequeue error codeintel",
-			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel"]}`,
+			body: `{"metadata":{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"},"queues": ["codeintel"]}`,
 			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{}, false, errors.New("failed to dequeue"))
 			},
@@ -233,7 +233,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 		},
 		{
 			name: "Dequeue error batches",
-			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["batches"]}`,
+			body: `{"metadata":{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"},"queues": ["batches"]}`,
 			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				batchesMockStore.DequeueFunc.PushReturn(&btypes.BatchSpecWorkspaceExecutionJob{}, false, errors.New("failed to dequeue"))
 			},
@@ -251,7 +251,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 		},
 		{
 			name: "Failed to transform record codeintel",
-			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel"]}`,
+			body: `{"metadata":{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"},"queues": ["codeintel"]}`,
 			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
 				codeintelMockStore.MarkFailedFunc.PushReturn(true, nil)
@@ -276,7 +276,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 		},
 		{
 			name: "Failed to transform record batches",
-			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["batches"]}`,
+			body: `{"metadata":{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"},"queues": ["batches"]}`,
 			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				batchesMockStore.DequeueFunc.PushReturn(&btypes.BatchSpecWorkspaceExecutionJob{ID: 1}, true, nil)
 				batchesMockStore.MarkFailedFunc.PushReturn(true, nil)
@@ -301,7 +301,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 		},
 		{
 			name: "Failed to mark record as failed codeintel",
-			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel"]}`,
+			body: `{"metadata":{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"},"queues": ["codeintel"]}`,
 			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
 				codeintelMockStore.MarkFailedFunc.PushReturn(true, errors.New("failed to mark"))
@@ -326,7 +326,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 		},
 		{
 			name: "Failed to mark record as failed batches",
-			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["batches"]}`,
+			body: `{"metadata":{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"},"queues": ["batches"]}`,
 			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				batchesMockStore.DequeueFunc.PushReturn(&btypes.BatchSpecWorkspaceExecutionJob{ID: 1}, true, nil)
 				batchesMockStore.MarkFailedFunc.PushReturn(true, errors.New("failed to mark"))
@@ -351,7 +351,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 		},
 		{
 			name: "Failed to create job token",
-			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel","batches"]}`,
+			body: `{"metadata":{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"},"queues": ["codeintel","batches"]}`,
 			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
 				jobTokenStore.CreateFunc.PushReturn("", errors.New("failed to create token"))
@@ -370,7 +370,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 		},
 		{
 			name: "Job token already exists",
-			body: `{"executorName": "test-executor","numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel","batches"]}`,
+			body: `{"metadata":{"executorName": "test-executor","numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"},"queues": ["codeintel","batches"]}`,
 			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
 				jobTokenStore.CreateFunc.PushReturn("", executorstore.ErrJobTokenAlreadyCreated)
@@ -392,7 +392,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 		},
 		{
 			name: "Failed to regenerate token",
-			body: `{"executorName": "test-executor","numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel","batches"]}`,
+			body: `{"metadata":{"executorName": "test-executor","numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"},"queues": ["codeintel","batches"]}`,
 			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
 				jobTokenStore.CreateFunc.PushReturn("", executorstore.ErrJobTokenAlreadyCreated)

@@ -12,6 +12,11 @@ type DequeueRequest struct {
 	DiskSpace    string `json:"diskSpace,omitempty"`
 }
 
+type MultiQueueDequeueRequest struct {
+	Queues   []string       `json:"queues"`
+	Metadata DequeueRequest `json:"metadata"`
+}
+
 type JobOperationRequest struct {
 	ExecutorName string `json:"executorName"`
 	JobID        int    `json:"jobId"`
