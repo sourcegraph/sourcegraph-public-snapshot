@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
+	"github.com/Masterminds/semver"
 	"github.com/sourcegraph/log"
 	"google.golang.org/api/option"
 
@@ -159,7 +160,12 @@ func (checker *AppUpdateChecker) Handler() http.HandlerFunc {
 			log.String("arch", appClientVersion.Arch),
 		))
 
-		if !checker.canUpdate(appClientVersion, manifest) {
+		if canUpdate, err := checker.canUpdate(appClientVersion, manifest); err != nil {
+			checker.logger.Error("failed to check app client version for update",
+				log.String("clientVersion", appClientVersion.Version), log.String("manifestVersion", manifest.Version))
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		} else if !canUpdate {
 			// No update
 			w.WriteHeader(http.StatusNoContent)
 			return
@@ -168,12 +174,14 @@ func (checker *AppUpdateChecker) Handler() http.HandlerFunc {
 		var platformLoc AppLocation
 		if p, ok := manifest.Platforms[appClientVersion.Platform()]; !ok {
 			// we don't have this platform in our manifest, so this is just a bad request
-			checker.logger.Error("platform not found App Update Manifest", log.String("platform", appClientVersion.Platform()))
+			checker.logger.Error("platform not found in App Update Manifest", log.String("platform", appClientVersion.Platform()))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		} else {
 			platformLoc = p
 		}
+
+		checker.logger.Debug("found client platform in App Update Manifest", log.Object("platform", log.String("signature", platformLoc.Signature), log.String("url", platformLoc.URL)))
 
 		updateResp := AppUpdateResponse{
 			Version:   manifest.Version,
@@ -216,9 +224,18 @@ func readClientAppVersion(reqURL *url.URL) *AppVersion {
 	return &appClientVersion
 }
 
-func (checker *AppUpdateChecker) canUpdate(client *AppVersion, manifest *AppUpdateManifest) bool {
-	// very crude check, we should convert each version to semver here and do a proper check
-	return client.Version != manifest.Version
+func (checker *AppUpdateChecker) canUpdate(client *AppVersion, manifest *AppUpdateManifest) (bool, error) {
+	clientVersion, err := semver.NewVersion(client.Version)
+	if err != nil {
+		return false, err
+	}
+	manifestVersion, err := semver.NewVersion(manifest.Version)
+	if err != nil {
+		return false, err
+	}
+
+	// if the manifest version is higher than then the clientVersion, then the client can upgrade
+	return manifestVersion.Compare(clientVersion) > 0, nil
 }
 
 func (checker *AppNoopUpdateChecker) Handler() http.HandlerFunc {
