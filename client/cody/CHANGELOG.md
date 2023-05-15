@@ -10,6 +10,8 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Changed
 
+- Arrow key behavior: you can now navigate forwards through messages with the down arrow; additionally the up and down arrows will navigate backwards and forwards only if you're at the start or end of the drafted text, respectively. [pull/51586](https://github.com/sourcegraph/sourcegraph/pull/51586)
+
 ## [0.1.2]
 
 ### Added

@@ -25,11 +25,24 @@ export const SCROLL_THRESHOLD = 100
 const onFeedbackSubmit = (feedback: string): void => eventLogger.log(`web:cody:feedbackSubmit:${feedback}`)
 
 export const ChatUI = (): JSX.Element => {
-    const { submitMessage, editMessage, messageInProgress, transcript, getChatContext, transcriptId } =
-        useChatStoreState()
+    const {
+        submitMessage,
+        editMessage,
+        messageInProgress,
+        transcript,
+        getChatContext,
+        transcriptId,
+        transcriptHistory,
+    } = useChatStoreState()
 
     const [formInput, setFormInput] = useState('')
-    const [inputHistory, setInputHistory] = useState<string[] | []>([])
+    const [inputHistory, setInputHistory] = useState<string[] | []>(() =>
+        transcriptHistory
+            .flatMap(entry => entry.interactions)
+            .sort((entryA, entryB) => +new Date(entryA.timestamp) - +new Date(entryB.timestamp))
+            .filter(interaction => interaction.humanMessage.displayText !== undefined)
+            .map(interaction => interaction.humanMessage.displayText!)
+    )
     const [messageBeingEdited, setMessageBeingEdited] = useState<boolean>(false)
 
     return (
@@ -172,6 +185,12 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
         adjustTextAreaHeight()
     }, [adjustTextAreaHeight, value, width])
 
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>): void => {
+        if (onKeyDown) {
+            onKeyDown(event, textAreaRef.current?.selectionStart ?? null)
+        }
+    }
+
     return (
         <TextArea
             ref={textAreaRef}
@@ -181,7 +200,7 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
             rows={1}
             autoFocus={false}
             required={true}
-            onKeyDown={onKeyDown}
+            onKeyDown={handleKeyDown}
             onInput={onInput}
         />
     )
