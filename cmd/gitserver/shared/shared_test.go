@@ -144,9 +144,9 @@ func TestMethodSpecificStreamInterceptor(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			called := false
+			interceptorCalled := false
 			interceptor := methodSpecificStreamInterceptor(test.matchedMethod, func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-				called = true
+				interceptorCalled = true
 				return handler(srv, ss)
 			})
 
@@ -165,7 +165,7 @@ func TestMethodSpecificStreamInterceptor(t *testing.T) {
 				t.Error("expected handler to be called")
 			}
 
-			if diff := cmp.Diff(test.expectedInterceptorCalled, called); diff != "" {
+			if diff := cmp.Diff(test.expectedInterceptorCalled, interceptorCalled); diff != "" {
 				t.Fatalf("unexpected interceptor called value (-want +got):\n%s", diff)
 			}
 		})
@@ -201,9 +201,9 @@ func TestMethodSpecificUnaryInterceptor(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			called := false
+			interceptorCalled := false
 			interceptor := methodSpecificUnaryInterceptor(test.matchedMethod, func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-				called = true
+				interceptorCalled = true
 				return handler(ctx, req)
 			})
 
@@ -222,7 +222,7 @@ func TestMethodSpecificUnaryInterceptor(t *testing.T) {
 				t.Error("expected handler to be called")
 			}
 
-			if diff := cmp.Diff(test.expectedInterceptorCalled, called); diff != "" {
+			if diff := cmp.Diff(test.expectedInterceptorCalled, interceptorCalled); diff != "" {
 				t.Fatalf("unexpected interceptor called value (-want +got):\n%s", diff)
 			}
 
