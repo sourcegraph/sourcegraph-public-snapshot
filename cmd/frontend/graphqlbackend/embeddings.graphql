@@ -22,6 +22,31 @@ extend type Query {
         """
         textResultsCount: Int!
     ): EmbeddingsSearchResults!
+
+    """
+    Experimental: Searches a set of repositories for similar code and text results using embeddings.
+    We separated code and text results because text results tended to always feature at the top of the combined results,
+    and didn't leave room for the code.
+    """
+    embeddingsMultiSearch(
+        """
+        The repository to search.
+        """
+        repos: [ID!]!
+        """
+        The query used for embeddings search.
+        """
+        query: String!
+        """
+        The number of code results to return.
+        """
+        codeResultsCount: Int!
+        """
+        The number of text results to return. Text results contain Markdown files and similar file types primarily used for writing documentation.
+        """
+        textResultsCount: Int!
+    ): EmbeddingsSearchResults!
+
     """
     Experimental: Determines whether the given query requires further context before it can be answered.
     For example:

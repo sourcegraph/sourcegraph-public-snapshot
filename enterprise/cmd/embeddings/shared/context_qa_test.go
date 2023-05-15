@@ -13,8 +13,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/embeddings/qa"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -34,7 +32,6 @@ func TestRecall(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	logger := log.NoOp()
 
 	// Set up mock functions
 	queryEmbeddings, err := loadQueryEmbeddings(t)
@@ -59,20 +56,13 @@ func TestRecall(t *testing.T) {
 		return embeddings.DownloadRepoEmbeddingIndex(context.Background(), mockStore, string(key))
 	}
 
-	// We only care about the file names in this test.
-	mockReadFile := func(ctx context.Context, repoName api.RepoName, revision api.CommitID, fileName string) ([]byte, error) {
-		return []byte{}, nil
-	}
-
 	// Weaviate is disabled per default. We don't need it for this test.
 	weaviate := &weaviateClient{}
 
-	searcher := func(args embeddings.EmbeddingsSearchParameters) (*embeddings.EmbeddingSearchResults, error) {
-		return searchRepoEmbeddingIndex(
+	searcher := func(args embeddings.EmbeddingsSearchParameters) (*embeddings.EmbeddingCombinedSearchResults, error) {
+		return searchRepoEmbeddingIndexes(
 			ctx,
-			logger,
 			args,
-			mockReadFile,
 			getRepoEmbeddingIndex,
 			getQueryEmbedding,
 			weaviate,
@@ -120,8 +110,8 @@ func loadQueryEmbeddings(t *testing.T) (map[string][]float32, error) {
 	return m, nil
 }
 
-type embeddingsSearcherFunc func(args embeddings.EmbeddingsSearchParameters) (*embeddings.EmbeddingSearchResults, error)
+type embeddingsSearcherFunc func(args embeddings.EmbeddingsSearchParameters) (*embeddings.EmbeddingCombinedSearchResults, error)
 
-func (f embeddingsSearcherFunc) Search(args embeddings.EmbeddingsSearchParameters) (*embeddings.EmbeddingSearchResults, error) {
+func (f embeddingsSearcherFunc) Search(args embeddings.EmbeddingsSearchParameters) (*embeddings.EmbeddingCombinedSearchResults, error) {
 	return f(args)
 }
