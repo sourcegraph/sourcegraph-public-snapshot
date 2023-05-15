@@ -78,6 +78,10 @@ type AuditLog struct {
 	GraphQL bool `json:"graphQL"`
 	// InternalTraffic description: Capture security events performed by the internal traffic (adds significant noise).
 	InternalTraffic bool `json:"internalTraffic"`
+	// Location description: Where to output the audit log
+	Location string `json:"location,omitempty"`
+	// SecurityEvents description: Capture security events (adds significant noise).
+	SecurityEvents bool `json:"securityEvents"`
 	// SeverityLevel description: Severity logging level for the audit log.
 	SeverityLevel string `json:"severityLevel,omitempty"`
 }

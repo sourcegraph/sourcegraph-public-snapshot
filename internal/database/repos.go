@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
-	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -156,10 +154,10 @@ var counterAccessGranted = promauto.NewCounter(prometheus.CounterOpts{
 	Help: "metric to measure the impact of logging access granted to private repos",
 })
 
+// deprecated
+var disableLogPrivateRepoAccess = env.MustGetBool("SRC_DISABLE_LOG_PRIVATE_REPO_ACCESS", false, "prevent logging access granted to private repos")
+
 func logPrivateRepoAccessGranted(ctx context.Context, db DB, ids []api.RepoID) {
-	if disabled, _ := strconv.ParseBool(os.Getenv("SRC_DISABLE_LOG_PRIVATE_REPO_ACCESS")); disabled {
-		return
-	}
 
 	a := actor.FromContext(ctx)
 	arg, _ := json.Marshal(struct {
@@ -873,6 +871,9 @@ func (s *repoStore) StreamMinimalRepos(ctx context.Context, opt ReposListOptions
 
 	if len(privateIDs) > 0 {
 		counterAccessGranted.Inc()
+		if disableLogPrivateRepoAccess {
+			s.logger.Warn("SRC_DISABLE_PRIVATE_REPO_LOGGING is deprecated and has no effect, set in site config instead")
+		}
 		logPrivateRepoAccessGranted(ctx, NewDBWith(s.logger, s), privateIDs)
 	}
 
@@ -924,6 +925,9 @@ func (s *repoStore) listRepos(ctx context.Context, tr *trace.Trace, opt ReposLis
 
 	if len(privateIDs) > 0 {
 		counterAccessGranted.Inc()
+		if disableLogPrivateRepoAccess {
+			s.logger.Warn("SRC_DISABLE_PRIVATE_REPO_LOGGING is deprecated and has no effect, set in site config instead")
+		}
 		logPrivateRepoAccessGranted(ctx, NewDBWith(s.logger, s), privateIDs)
 	}
 

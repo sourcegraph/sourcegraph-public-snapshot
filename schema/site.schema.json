@@ -1421,20 +1421,33 @@
               "type": "boolean",
               "default": false
             },
+            "securityEvents": {
+              "description": "Capture security events (adds significant noise).",
+              "type": "boolean",
+              "default": false
+            },
             "severityLevel": {
               "description": "Severity logging level for the audit log.",
               "type": "string",
               "enum": ["DEBUG", "INFO", "WARN", "ERROR"],
               "default": "INFO"
+            },
+            "location": {
+              "description": "Where to output the audit log",
+              "type": "string",
+              "enum": ["none", "stdout", "database", "both"],
+              "default": "none"
             }
           },
-          "required": ["internalTraffic", "graphQL", "gitserverAccess"],
+          "required": ["internalTraffic", "graphQL", "gitserverAccess", "securityEvents"],
           "examples": [
             {
               "internalTraffic": false,
               "graphQL": false,
               "gitserverAccess": false,
-              "severityLevel": "INFO"
+              "securityEvents": true,
+              "severityLevel": "INFO",
+              "location": "stdout"
             }
           ]
         }
