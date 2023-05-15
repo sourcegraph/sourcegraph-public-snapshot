@@ -251,7 +251,9 @@ func (r *ownResolver) computeCodeowners(ctx context.Context, blob *graphqlbacken
 				db:            r.db,
 				resolvedOwner: ro,
 				reasons: []*ownershipReasonResolver{
-					&ownershipReasonResolver{res},
+					{
+						res,
+					},
 				},
 			})
 		}
