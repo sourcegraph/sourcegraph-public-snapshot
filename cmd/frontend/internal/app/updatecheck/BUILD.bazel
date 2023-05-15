@@ -36,6 +36,7 @@ go_library(
         "//schema",
         "@com_github_coreos_go_semver//semver",
         "@com_github_gomodule_redigo//redis",
+        "@com_github_masterminds_semver//:semver",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_log//:log",
