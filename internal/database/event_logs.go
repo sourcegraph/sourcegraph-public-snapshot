@@ -1457,7 +1457,7 @@ func buildAggregatedRepoMetadataStatsQuery(period string) string {
 			AND name IN ('RepoMetadataAdded', 'RepoMetadataUpdated', 'RepoMetadataDeleted', 'SearchSubmitted')
 	)
 	SELECT
-		`+ makeDateTruncExpression(period, "%s::timestamp") + ` as start_time,
+		` + makeDateTruncExpression(period, "%s::timestamp") + ` as start_time,
 	
 		COUNT(*) FILTER (WHERE name IN ('RepoMetadataAdded')) AS added_count,
 		COUNT(DISTINCT user_id) FILTER (WHERE name IN ('RepoMetadataAdded')) AS added_unique_count,
@@ -1497,11 +1497,11 @@ func (l *eventLogStore) aggregatedRepoMetadataStatsPeriod(ctx context.Context, n
 	}
 
 	return &types.RepoMetadataAggregatedStatsPeriod{
-			StartTime: startTime,
-			CreateRepoMetadata: &createEvent,
-			UpdateRepoMetadata: &updateEvent,
-			DeleteRepoMetadata: &deleteEvent,
-			SearchFilterUsage: &searchEvent,
+		StartTime:          startTime,
+		CreateRepoMetadata: &createEvent,
+		UpdateRepoMetadata: &updateEvent,
+		DeleteRepoMetadata: &deleteEvent,
+		SearchFilterUsage:  &searchEvent,
 	}, nil
 }
 
