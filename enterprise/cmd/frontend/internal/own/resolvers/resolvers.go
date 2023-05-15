@@ -9,6 +9,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 
 	"github.com/sourcegraph/log"
@@ -492,8 +494,6 @@ func computeRecentViewSignals(ctx context.Context, logger log.Logger, db edb.Ent
 }
 
 func (r *ownResolver) SignalConfigurations(ctx context.Context) ([]graphqlbackend.SignalConfigurationResolver, error) {
-	// ffStore := r.db.FeatureFlags()
-
 	var resolvers []graphqlbackend.SignalConfigurationResolver
 	store := r.db.SignalConfigurations()
 	configurations, err := store.LoadConfigurations(ctx)
@@ -529,10 +529,15 @@ func (s *signalConfigResolver) ExcludedRepoPatterns() []string {
 }
 
 func (r *ownResolver) UpdateSignalConfigurations(ctx context.Context, args graphqlbackend.UpdateSignalConfigurationsArgs) ([]graphqlbackend.SignalConfigurationResolver, error) {
+	err := auth.CheckCurrentActorIsSiteAdmin(actor.FromContext(ctx), r.db)
+	if err != nil {
+		return nil, err
+	}
+
 	// for now, just return the jobs
 	r.logger.Info("input signal configs", log.String("configs", fmt.Sprintf("%v", args.Input.Configs)))
 
-	err := r.db.SignalConfigurations().WithTransact(ctx, func(store database.SignalConfigurationStore) error {
+	err = r.db.SignalConfigurations().WithTransact(ctx, func(store database.SignalConfigurationStore) error {
 		for _, config := range args.Input.Configs {
 			if err := store.UpdateConfiguration(ctx, database.UpdateSignalConfigurationArgs{
 				Name:                 config.Name,

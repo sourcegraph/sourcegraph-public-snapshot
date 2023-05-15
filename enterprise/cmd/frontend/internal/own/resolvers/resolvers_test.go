@@ -12,6 +12,7 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -821,5 +822,52 @@ func TestCommitOwnershipSignals(t *testing.T) {
 		Variables: map[string]any{
 			"repo": string(relay.MarshalID("Repository", repoID)),
 		},
+	})
+}
+
+func Test_SignalConfigurations(t *testing.T) {
+	// db := database.NewMockDB()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	git := fakeGitserver{}
+	own := fakeOwnService{}
+
+	ctx := context.Background()
+
+	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, git, own, logger)})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Context: ctx,
+		Schema:  schema,
+		Query: `
+			query asdf {
+			  signalConfigurations {
+				name
+				description
+				isEnabled
+				excludedRepoPatterns
+			  }
+			}`,
+		ExpectedResult: `{"signalConfigurations":[{"name":"recent-contributors","description":"Indexes contributors in each file using repository history.","isEnabled":false,"excludedRepoPatterns":[]},{"name":"recent-views","description":"Indexes users that recently viewed files in Sourcegraph.","isEnabled":false,"excludedRepoPatterns":[]}]}`,
+	})
+
+	t.Run("no admin access", func(t *testing.T) {
+		graphqlbackend.RunTest(t, &graphqlbackend.Test{
+			Context: ctx,
+			Schema:  schema,
+			Query: `
+			mutation asdf($input:UpdateSignalConfigurationsInput!) {
+			  updateSignalConfigurations(input:$input) {
+				isEnabled
+				name
+				description
+				excludedRepoPatterns
+			  }
+			}`,
+			ExpectedResult: ``,
+		})
 	})
 }
