@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -19,9 +20,10 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	GitserverService_Exec_FullMethodName    = "/gitserver.v1.GitserverService/Exec"
-	GitserverService_Search_FullMethodName  = "/gitserver.v1.GitserverService/Search"
-	GitserverService_Archive_FullMethodName = "/gitserver.v1.GitserverService/Archive"
+	GitserverService_Exec_FullMethodName       = "/gitserver.v1.GitserverService/Exec"
+	GitserverService_Search_FullMethodName     = "/gitserver.v1.GitserverService/Search"
+	GitserverService_Archive_FullMethodName    = "/gitserver.v1.GitserverService/Archive"
+	GitserverService_ReposStats_FullMethodName = "/gitserver.v1.GitserverService/ReposStats"
 )
 
 // GitserverServiceClient is the client API for GitserverService service.
@@ -31,6 +33,7 @@ type GitserverServiceClient interface {
 	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error)
 	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (GitserverService_SearchClient, error)
 	Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (GitserverService_ArchiveClient, error)
+	ReposStats(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReposStatsResponse, error)
 }
 
 type gitserverServiceClient struct {
@@ -137,6 +140,15 @@ func (x *gitserverServiceArchiveClient) Recv() (*ArchiveResponse, error) {
 	return m, nil
 }
 
+func (c *gitserverServiceClient) ReposStats(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReposStatsResponse, error) {
+	out := new(ReposStatsResponse)
+	err := c.cc.Invoke(ctx, GitserverService_ReposStats_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GitserverServiceServer is the server API for GitserverService service.
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
@@ -144,6 +156,7 @@ type GitserverServiceServer interface {
 	Exec(*ExecRequest, GitserverService_ExecServer) error
 	Search(*SearchRequest, GitserverService_SearchServer) error
 	Archive(*ArchiveRequest, GitserverService_ArchiveServer) error
+	ReposStats(context.Context, *emptypb.Empty) (*ReposStatsResponse, error)
 	mustEmbedUnimplementedGitserverServiceServer()
 }
 
@@ -159,6 +172,9 @@ func (UnimplementedGitserverServiceServer) Search(*SearchRequest, GitserverServi
 }
 func (UnimplementedGitserverServiceServer) Archive(*ArchiveRequest, GitserverService_ArchiveServer) error {
 	return status.Errorf(codes.Unimplemented, "method Archive not implemented")
+}
+func (UnimplementedGitserverServiceServer) ReposStats(context.Context, *emptypb.Empty) (*ReposStatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReposStats not implemented")
 }
 func (UnimplementedGitserverServiceServer) mustEmbedUnimplementedGitserverServiceServer() {}
 
@@ -236,13 +252,36 @@ func (x *gitserverServiceArchiveServer) Send(m *ArchiveResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _GitserverService_ReposStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).ReposStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_ReposStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).ReposStats(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GitserverService_ServiceDesc is the grpc.ServiceDesc for GitserverService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var GitserverService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "gitserver.v1.GitserverService",
 	HandlerType: (*GitserverServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ReposStats",
+			Handler:    _GitserverService_ReposStats_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "Exec",

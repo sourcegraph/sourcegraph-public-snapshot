@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package gitserver.v1;
 
+import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
@@ -10,6 +11,7 @@ service GitserverService {
   rpc Exec(ExecRequest) returns (stream ExecResponse) {}
   rpc Search(SearchRequest) returns (stream SearchResponse) {}
   rpc Archive(ArchiveRequest) returns (stream ArchiveResponse) {}
+  rpc ReposStats(google.protobuf.Empty) returns (ReposStatsResponse) {}
 }
 
 message ExecRequest {
@@ -209,4 +211,20 @@ message ArchiveRequest {
 // ArchiveResponse is the response from the Archive RPC that returns a chunk of the archive.
 message ArchiveResponse {
   bytes data = 1;
+}
+
+
+// ReposStats is an aggregation of statistics from a gitserver.
+message ReposStats {
+    // git_dir_bytes is the amount of bytes stored in .git directories.
+    int64 git_dir_bytes = 1;
+    // updated_at is the time these statistics were computed. If updated_at is
+	// zero, the statistics have not yet been computed. This can happen on a
+	// new gitserver.
+    google.protobuf.Timestamp updated_at = 2;
+}
+
+// RepoStatsRespone is the response from the RepoStats RPC that returns a map of repo stats.
+message ReposStatsResponse {
+    map<string, ReposStats> stats = 1;
 }
