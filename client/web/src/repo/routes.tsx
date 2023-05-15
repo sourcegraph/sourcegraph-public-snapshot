@@ -264,12 +264,13 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
         },
         render: ({ resolvedRev: { commitID }, match, repoHeaderContributionsLifecycleProps, ...context }: any) => (
             <>
-                <RepositoryDocumentationPage
+                const memoizedRepositoryDocumentationPage = React.useMemo(() => <RepositoryDocumentationPage
                     {...context}
                     match={match}
                     commitID={commitID}
                     pathID={match.params.pathID ? '/' + decodeURIComponent(match.params.pathID) : '/'}
-                />
+                />, [context, match, commitID, match.params.pathID]);
+                <>{memoizedRepositoryDocumentationPage}
                 <ActionItemsBar
                     useActionItemsBar={context.useActionItemsBar}
                     location={context.location}
