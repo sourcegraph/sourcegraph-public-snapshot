@@ -72,41 +72,38 @@ func (s *repoKVPStore) Get(ctx context.Context, repoID api.RepoID, key string) (
 }
 
 type RepoKVPListOptions struct {
-	Query   *string
+	QueryKey   *string
+	QueryValue *string
 }
 
 func (r *RepoKVPListOptions) SQL() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
-	if r != nil && r.Query != nil {
-		conds = append(conds, sqlf.Sprintf("key ILIKE %s", "%"+*r.Query+"%"))
+	if r.QueryKey != nil {
+		conds = append(conds, sqlf.Sprintf("key ILIKE %s", "%"+*r.QueryKey+"%"))
+	}
+	if r.QueryValue != nil {
+		conds = append(conds, sqlf.Sprintf("value ILIKE %s", "%"+*r.QueryValue+"%"))
 	}
 	return conds
 }
 
 func (s *repoKVPStore) Count(ctx context.Context, options RepoKVPListOptions) (int, error) {
-	q := sqlf.Sprintf("SELECT COUNT(*) FROM access_requests WHERE (%s)", sqlf.Join(options.SQL(), ") AND ("))
+	where := options.SQL()
+	q := sqlf.Sprintf("SELECT COUNT(*) FROM access_requests WHERE (%s) GROUP BY key, value", sqlf.Join(where, ") AND ("))
 	return basestore.ScanInt(s.QueryRow(ctx, q))
 }
 
 func (s *repoKVPStore) List(ctx context.Context, options RepoKVPListOptions, orderOptions PaginationArgs) ([]KeyValuePair, error) {
-	query := `
-	SELECT key, value
-	FROM repo_kvps
-	WHERE (%s)
-	`
-
 	where := options.SQL()
 	p := orderOptions.SQL()
-
 	if p.Where != nil {
 		where = append(where, p.Where)
 	}
-
 	if p.Order != nil {
-		p.Order = sqlf.Sprintf("key")
+		p.Order = sqlf.Sprintf("COUNT(*) DESC")
 	}
 
-	q := sqlf.Sprintf(query, sqlf.Join(where, ") AND ("))
+	q := sqlf.Sprintf(`SELECT key, value FROM repo_kvps WHERE (%s) GROUP BY key, value`, sqlf.Join(where, ") AND ("))
 	q = p.AppendOrderToQuery(q)
 	q = p.AppendLimitToQuery(q)
 

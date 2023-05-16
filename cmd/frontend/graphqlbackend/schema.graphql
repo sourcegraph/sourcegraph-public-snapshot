@@ -9660,7 +9660,8 @@ extend type Query {
     List repo key-value pair metadata
     """
     repoMetadata(
-        query: String
+        queryKey: String
+        queryValue: String
         """
         Returns the first n repo key-value pair metadata
         """
