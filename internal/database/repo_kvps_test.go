@@ -5,9 +5,10 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/stretchr/testify/require"
 )
 
 func TestRepoKVPs(t *testing.T) {
@@ -69,35 +70,39 @@ func TestRepoKVPs(t *testing.T) {
 	})
 
 	t.Run("List", func(t *testing.T) {
-		ten := 1
+		ten := 10
 		t.Run("returns all", func(t *testing.T) {
-			kvps, err := kvps.List(ctx, RepoKVPListOptions{}, PaginationArgs{First: &ten})
+			tuples, err := kvps.List(ctx, RepoKVPListOptions{}, PaginationArgs{First: &ten})
 			require.NoError(t, err)
-			require.Equal(t, kvps, []KeyValuePair{
+			require.Equal(t, []KeyValuePair{
 				{Key: "key1", Value: strPtr("value1")},
 				{Key: "tag1", Value: nil},
-			})
+			}, tuples)
 		})
 
 		t.Run("returns when found match by query", func(t *testing.T) {
-			query := "ey"
-			kvps, err := kvps.List(ctx, RepoKVPListOptions{Query: &query}, PaginationArgs{First: &ten})
+			tuples, err := kvps.List(ctx, RepoKVPListOptions{QueryKey: strPtr("tag")}, PaginationArgs{First: &ten})
 			require.NoError(t, err)
-			require.Equal(t, kvps, []KeyValuePair{
+			require.Equal(t, []KeyValuePair{
+				{Key: "tag1", Value: nil},
+			}, tuples)
+
+			tuples, err = kvps.List(ctx, RepoKVPListOptions{QueryKey: strPtr("1"), QueryValue: strPtr("val")}, PaginationArgs{First: &ten})
+			require.NoError(t, err)
+			require.Equal(t, []KeyValuePair{
 				{Key: "key1", Value: strPtr("value1")},
-			})
+			}, tuples)
 		})
 
 		t.Run("returns empty when found no match by query", func(t *testing.T) {
-			query := "nonexisting"
-			kvps, err := kvps.List(ctx, RepoKVPListOptions{Query: &query}, PaginationArgs{First: &ten})
+			tuples, err := kvps.List(ctx, RepoKVPListOptions{QueryKey: strPtr("nonexisting")}, PaginationArgs{First: &ten})
 			require.NoError(t, err)
-			require.Empty(t, kvps)
+			require.Empty(t, tuples)
 		})
 	})
 
 	t.Run("Count", func(t *testing.T) {
-		ten := 1
+		ten := 10
 		t.Run("returns all", func(t *testing.T) {
 			count, err := kvps.Count(ctx, RepoKVPListOptions{})
 			require.NoError(t, err)
@@ -105,15 +110,17 @@ func TestRepoKVPs(t *testing.T) {
 		})
 
 		t.Run("returns when found match by query", func(t *testing.T) {
-			query := "ey"
-			count, err := kvps.List(ctx, RepoKVPListOptions{Query: &query}, PaginationArgs{First: &ten})
+			count, err := kvps.Count(ctx, RepoKVPListOptions{QueryKey: strPtr("ey")})
 			require.NoError(t, err)
-			require.Equal(t, count, 1)
+			require.Equal(t, 1, count)
+
+			count, err = kvps.Count(ctx, RepoKVPListOptions{QueryKey: strPtr("1"), QueryValue: strPtr("val")})
+			require.NoError(t, err)
+			require.Equal(t, 1, count)
 		})
 
 		t.Run("returns empty when found no match by query", func(t *testing.T) {
-			query := "nonexisting"
-			count, err := kvps.List(ctx, RepoKVPListOptions{Query: &query}, PaginationArgs{First: &ten})
+			count, err := kvps.List(ctx, RepoKVPListOptions{QueryKey: strPtr("nonexisting")}, PaginationArgs{First: &ten})
 			require.NoError(t, err)
 			require.Empty(t, count)
 		})

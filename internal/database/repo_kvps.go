@@ -88,9 +88,14 @@ func (r *RepoKVPListOptions) SQL() []*sqlf.Query {
 }
 
 func (s *repoKVPStore) Count(ctx context.Context, options RepoKVPListOptions) (int, error) {
+	q := `
+	WITH kvps AS (
+		SELECT COUNT(*) FROM repo_kvps WHERE (%s) GROUP BY key, value
+	)
+	SELECT COUNT(*) FROM kvps
+	`
 	where := options.SQL()
-	q := sqlf.Sprintf("SELECT COUNT(*) FROM access_requests WHERE (%s) GROUP BY key, value", sqlf.Join(where, ") AND ("))
-	return basestore.ScanInt(s.QueryRow(ctx, q))
+	return basestore.ScanInt(s.QueryRow(ctx, sqlf.Sprintf(q, sqlf.Join(where, ") AND ("))))
 }
 
 func (s *repoKVPStore) List(ctx context.Context, options RepoKVPListOptions, orderOptions PaginationArgs) ([]KeyValuePair, error) {
