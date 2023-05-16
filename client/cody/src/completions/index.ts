@@ -1,5 +1,6 @@
 import * as vscode from 'vscode'
 
+import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { logEvent } from '../event-logger'
@@ -372,7 +373,7 @@ function getCurrentDocContext(
 
 export interface Completion {
     prefix: string
-    prompt: string
+    messages: Message[]
     content: string
     stopReason?: string
 }
