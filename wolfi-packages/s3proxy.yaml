@@ -26,6 +26,7 @@ environment:
       - ca-certificates-bundle
       - maven
       - openjdk-11
+      - openjdk-11-jre
 
 pipeline:
   - uses: fetch
