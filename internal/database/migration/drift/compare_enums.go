@@ -36,7 +36,7 @@ func compareEnums(schemaName, version string, actual, expected schemas.SchemaDes
 			expectedEnum.Name,
 			fmt.Sprintf("Unexpected labels for enum %q", expectedEnum.Name),
 			"drop and re-create the type",
-		).withDiff(enum.Labels, expectedEnum.Labels).withStatements(dropEnumStmt, createEnumStmt)
+		).withDiff(expectedEnum.Labels, enum.Labels).withStatements(dropEnumStmt, createEnumStmt)
 	}, noopAdditionalCallback[schemas.EnumDescription])
 }
 
