@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/gomodule/redigo/redis"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -52,7 +54,7 @@ func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
 		return errors.Wrap(err, "failed to read configured rate limit")
 	}
 
-	if limit == 0 {
+	if limit <= 0 {
 		// Rate limiting disabled.
 		return nil
 	}
@@ -84,13 +86,41 @@ func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
 
 	rstore := r.rstore.WithContext(ctx)
 
-	// Let's increment the rate limit counter for the user.
-	// Note that the rate limiter _may_ allow slightly less requests than the configured
-	// limit, incrementing the rate limit counter and expiry operations are currently not
-	// an atomic operation.
-	// We also don't use a transaction in here, because there is no good way to
-	// read the TTL without a lua script. This approach could slightly overcount the
-	// usage if redis requests after the INCR fail, but it will always recover safely.
+	// Check the current usage. If
+	// no record exists, redis will return 0 and ErrNil.
+	currentUsage, err := rstore.Get(key).Int()
+	if err != nil && err != redis.ErrNil {
+		return errors.Wrap(err, "failed to read rate limit counter")
+	}
+
+	// If the usage exceeds the maximum, we return an error. Consumers can check if
+	// the error is of type RateLimitExceededError and extract additional information
+	// like the limit and the time by when they should retry.
+	if currentUsage >= limit {
+		// Read TTL to compute the RetryAfter time.
+		ttl, err := rstore.TTL(key)
+		if err != nil {
+			return errors.Wrap(err, "failed to get TTL for rate limit counter")
+		}
+		return RateLimitExceededError{
+			Scope: r.scope,
+			Limit: limit,
+			// Return the minimum value of currentUsage and limit to not return
+			// confusing values when the limit was exceeded. This method increases
+			// on every check, even if the limit was reached.
+			Used:       min(currentUsage, limit),
+			RetryAfter: time.Now().Add(time.Duration(ttl) * time.Second),
+		}
+	}
+
+	// Now that we know that we want to let the user pass, let's increment the rate
+	// limit counter for the user.
+	// Note that the rate limiter _may_ allow slightly more requests than the configured
+	// limit, incrementing the rate limit counter and reading the usage futher up are currently
+	// not an atomic operation, because there is no good way to read the TTL in a transaction
+	// without a lua script.
+	// This approach could also slightly overcount the usage if redis requests after
+	// the INCR fail, but it will always recover safely.
 	// If Incr works but then everything else fails (eg ctx cancelled) the user spent
 	// a token without getting anything for it. This seems pretty rare and a fine trade-off
 	// since its just one token. The most likely reason this would happen is user cancelling
@@ -101,11 +131,8 @@ func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
 	// just one token. This seems fine. Note: this isn't an issue on subsequent requests in the
 	// same time block since the TTL would have been set.
 
-	// Check the current usage and increment the counter for the current user. If
-	// no record exists, redis will initialize it with 1.
-	currentUsage, err := rstore.Incr(key)
-	if err != nil {
-		return errors.Wrap(err, "failed to increase rate limit counter")
+	if _, err := rstore.Incr(key); err != nil {
+		return errors.Wrap(err, "failed to increment rate limit counter")
 	}
 
 	// Set expiry on the key. If the key didn't exist prior to the previous INCR,
@@ -119,21 +146,6 @@ func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
 	if ttl < 0 {
 		if err := rstore.Expire(key, int(24*time.Hour/time.Second)); err != nil {
 			return errors.Wrap(err, "failed to set expiry for rate limit counter")
-		}
-	}
-
-	// If the usage exceeds the maximum, we return an error. Consumers can check if
-	// the error is of type RateLimitExceededError and extract additional information
-	// like the limit and the time by when they should retry.
-	if currentUsage > limit {
-		return RateLimitExceededError{
-			Scope: r.scope,
-			Limit: limit,
-			// Return the minimum value of currentUsage and limit to not return
-			// confusing values when the limit was exceeded. This method increases
-			// on every check, even if the limit was reached.
-			Used:       min(currentUsage, limit),
-			RetryAfter: time.Now().Add(time.Duration(ttl) * time.Second),
 		}
 	}
 
