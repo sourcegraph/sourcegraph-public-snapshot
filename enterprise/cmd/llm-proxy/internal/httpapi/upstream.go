@@ -22,12 +22,12 @@ type requestTransformer func(*http.Request)
 type requestMetadataRetriever[T any] func(T) (promptCharacterCount int, model string, additionalMetadata map[string]any)
 type responseParser[T any] func(T, io.Reader) (completionCharacterCount int)
 
-func makeUpstreamHandler[T any](logger log.Logger, eventLogger events.Logger, upstreamAPIURL string, bodyTrans bodyTransformer[T], rmr requestMetadataRetriever[T], reqTrans requestTransformer, respParser responseParser[T]) http.Handler {
+func makeUpstreamHandler[ReqT any](logger log.Logger, eventLogger events.Logger, upstreamAPIURL string, bodyTrans bodyTransformer[ReqT], rmr requestMetadataRetriever[ReqT], reqTrans requestTransformer, respParser responseParser[ReqT]) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		act := actor.FromContext(r.Context())
 
 		// Parse the request body.
-		var body T
+		var body ReqT
 		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 			response.JSONError(logger, w, http.StatusBadRequest, errors.Wrap(err, "failed to parse request body"))
 			return
