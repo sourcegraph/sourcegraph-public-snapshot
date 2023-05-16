@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/redigo"
+	"github.com/gomodule/redigo/redis"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/events"
@@ -129,9 +130,8 @@ func rateLimit(logger log.Logger, eventLogger events.Logger, cache limiter.Redis
 		l := act.Limiter(cache)
 
 		err := l.TryAcquire(r.Context())
-
 		if err != nil {
-			err := eventLogger.LogEvent(
+			loggerErr := eventLogger.LogEvent(
 				events.Event{
 					Name:       llmproxy.EventNameRateLimited,
 					Source:     act.Source.Name(),
@@ -141,8 +141,8 @@ func rateLimit(logger log.Logger, eventLogger events.Logger, cache limiter.Redis
 					},
 				},
 			)
-			if err != nil {
-				logger.Error("failed to log event", log.Error(err))
+			if loggerErr != nil {
+				logger.Error("failed to log event", log.Error(loggerErr))
 			}
 
 			var rateLimitExceeded limiter.RateLimitExceededError
@@ -157,6 +157,7 @@ func rateLimit(logger log.Logger, eventLogger events.Logger, cache limiter.Redis
 			}
 
 			response.JSONError(logger, w, http.StatusInternalServerError, err)
+			return
 		}
 
 		next.ServeHTTP(w, r)
@@ -189,6 +190,14 @@ type prefixRedisStore struct {
 
 func (s *prefixRedisStore) Incr(key string) (int, error) {
 	return s.store.Incr(s.prefix + key)
+}
+
+func (s *prefixRedisStore) GetInt(key string) (int, error) {
+	i, err := s.store.Get(s.prefix + key).Int()
+	if err != nil && err != redis.ErrNil {
+		return 0, err
+	}
+	return i, nil
 }
 
 func (s *prefixRedisStore) TTL(key string) (int, error) {

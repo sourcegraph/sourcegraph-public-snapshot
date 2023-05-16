@@ -19,7 +19,7 @@ const (
 )
 
 func NewClient(cli httpcli.Doer, endpoint, accessToken string, model string) (types.CompletionsClient, error) {
-	// Backcompat with older configs: We can remove this once S2 and k8s are migrated.
+	// TODO: Backcompat with older configs: We can remove this once S2 and k8s are migrated.
 	endpoint = strings.TrimSuffix(endpoint, "/v1/completions/anthropic")
 	llmProxyURL, err := url.Parse(endpoint)
 	if err != nil {

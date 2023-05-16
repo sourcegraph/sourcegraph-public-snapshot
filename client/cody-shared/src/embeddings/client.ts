@@ -3,13 +3,17 @@ import { SourcegraphGraphQLAPIClient, EmbeddingsSearchResults } from '../sourceg
 import { EmbeddingsSearch } from '.'
 
 export class SourcegraphEmbeddingsSearchClient implements EmbeddingsSearch {
-    constructor(private client: SourcegraphGraphQLAPIClient, private repoId: string) {}
+    constructor(private client: SourcegraphGraphQLAPIClient, private repoId: string, private web: boolean = true) {}
 
     public async search(
         query: string,
         codeResultsCount: number,
         textResultsCount: number
     ): Promise<EmbeddingsSearchResults | Error> {
-        return this.client.searchEmbeddings(this.repoId, query, codeResultsCount, textResultsCount)
+        if (this.web) {
+            return this.client.searchEmbeddings(this.repoId, query, codeResultsCount, textResultsCount)
+        }
+
+        return this.client.legacySearchEmbeddings(this.repoId, query, codeResultsCount, textResultsCount)
     }
 }

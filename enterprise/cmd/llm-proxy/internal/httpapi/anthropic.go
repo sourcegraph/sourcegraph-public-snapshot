@@ -36,10 +36,10 @@ func newAnthropicHandler(logger log.Logger, eventLogger events.Logger, accessTok
 			r.Header.Set("Client", "sourcegraph-llm-proxy/1.0")
 			r.Header.Set("X-API-Key", accessToken)
 		},
-		func(body anthropicRequest, r io.Reader) int {
+		func(reqBody anthropicRequest, r io.Reader) int {
 			// Try to parse the request we saw, if it was non-streaming, we can simply parse
 			// it as JSON.
-			if !body.Stream {
+			if !reqBody.Stream {
 				var res anthropicResponse
 				if err := json.NewDecoder(r).Decode(&res); err != nil {
 					logger.Error("failed to parse anthropic response as JSON", log.Error(err))
