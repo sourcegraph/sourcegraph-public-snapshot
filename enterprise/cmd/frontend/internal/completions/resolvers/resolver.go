@@ -65,7 +65,7 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 	}
 
 	var last string
-	if err := client.Stream(ctx, convertParams(args), func(event types.ChatCompletionEvent) error {
+	if err := client.Stream(ctx, convertParams(args), func(event types.CompletionResponse) error {
 		// each completion is just a partial of the final result, since we're in a sync request anyway
 		// we will just wait for the final completion event
 		last = event.Completion
@@ -76,8 +76,8 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 	return last, nil
 }
 
-func convertParams(args graphqlbackend.CompletionsArgs) types.ChatCompletionRequestParameters {
-	return types.ChatCompletionRequestParameters{
+func convertParams(args graphqlbackend.CompletionsArgs) types.CompletionRequestParameters {
+	return types.CompletionRequestParameters{
 		Messages:          convertMessages(args.Input.Messages),
 		Temperature:       float32(args.Input.Temperature),
 		MaxTokensToSample: int(args.Input.MaxTokensToSample),

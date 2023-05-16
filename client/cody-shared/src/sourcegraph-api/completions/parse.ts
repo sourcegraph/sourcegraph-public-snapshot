@@ -37,14 +37,14 @@ function parseEventData(eventType: Event['type'], dataLine: string): Event | Err
     const jsonData = dataLine.slice(DATA_LINE_PREFIX.length)
     switch (eventType) {
         case 'completion': {
-            const data = parseJSON<{ completion: string }>(jsonData)
+            const data = parseJSON<{ completion: string; stopReason: string }>(jsonData)
             if (isError(data)) {
                 return data
             }
             if (typeof data.completion === undefined) {
                 return new Error('invalid completion event')
             }
-            return { type: eventType, completion: data.completion }
+            return { type: eventType, completion: data.completion, stopReason: data.stopReason }
         }
         case 'error': {
             const data = parseJSON<{ error: string }>(jsonData)

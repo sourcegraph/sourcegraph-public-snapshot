@@ -6,10 +6,10 @@ import { toPartialUtf8String } from '../utils'
 
 import { SourcegraphCompletionsClient } from './client'
 import { parseEvents } from './parse'
-import { CompletionParameters, CompletionCallbacks, CodeCompletionParameters, CodeCompletionResponse } from './types'
+import { CompletionParameters, CompletionCallbacks, CompletionResponse } from './types'
 
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
-    public async complete(params: CodeCompletionParameters, abortSignal: AbortSignal): Promise<CodeCompletionResponse> {
+    public async complete(params: CompletionParameters, abortSignal: AbortSignal): Promise<CompletionResponse> {
         const log = this.logger?.startCompletion(params)
 
         const requestFn = this.codeCompletionsEndpoint.startsWith('https://') ? https.request : http.request
@@ -18,7 +18,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
         if (this.config.accessToken) {
             headersInstance.set('Authorization', `token ${this.config.accessToken}`)
         }
-        const completion = await new Promise<CodeCompletionResponse>((resolve, reject) => {
+        const completion = await new Promise<CompletionResponse>((resolve, reject) => {
             const req = requestFn(
                 this.codeCompletionsEndpoint,
                 {
@@ -44,7 +44,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                                 reject(new Error(buffer))
                             }
 
-                            const resp = JSON.parse(buffer) as CodeCompletionResponse
+                            const resp = JSON.parse(buffer) as CompletionResponse
                             if (typeof resp.completion !== 'string' || typeof resp.stopReason !== 'string') {
                                 const message = `response does not satisfy CodeCompletionResponse: ${buffer}`
                                 log?.onError(message)

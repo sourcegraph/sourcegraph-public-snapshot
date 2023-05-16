@@ -1,18 +1,15 @@
 import * as anthropic from '@anthropic-ai/sdk'
 
-import { ReferenceSnippet } from './context'
+import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
-export interface Message {
-    role: 'human' | 'ai'
-    text: string | null
-}
+import { ReferenceSnippet } from './context'
 
 export function messagesToText(messages: Message[]): string {
     return messages
         .map(
             message =>
-                `${message.role === 'human' ? anthropic.HUMAN_PROMPT : anthropic.AI_PROMPT}${
-                    message.text === null ? '' : ' ' + message.text
+                `${message.speaker === 'human' ? anthropic.HUMAN_PROMPT : anthropic.AI_PROMPT}${
+                    message.text === undefined ? '' : ' ' + message.text
                 }`
         )
         .join('')
@@ -39,7 +36,7 @@ export class SingleLinePromptTemplate implements PromptTemplate {
             const lastHumanLine = Math.max(Math.floor(prefixLines.length / 2), prefixLines.length - 5)
             prefixMessages = [
                 {
-                    role: 'human',
+                    speaker: 'human',
                     text:
                         'Complete the following file:\n' +
                         '```' +
@@ -47,7 +44,7 @@ export class SingleLinePromptTemplate implements PromptTemplate {
                         '```',
                 },
                 {
-                    role: 'ai',
+                    speaker: 'assistant',
                     text:
                         'Here is the completion of the file:\n' +
                         '```' +
@@ -57,11 +54,11 @@ export class SingleLinePromptTemplate implements PromptTemplate {
         } else {
             prefixMessages = [
                 {
-                    role: 'human',
+                    speaker: 'human',
                     text: 'Write some code',
                 },
                 {
-                    role: 'ai',
+                    speaker: 'assistant',
                     text: `Here is some code:\n\`\`\`\n${prefix}`,
                 },
             ]
@@ -102,7 +99,7 @@ export class KnowledgeBasePromptTemplate implements PromptTemplate {
             const lastHumanLine = Math.max(Math.floor(prefixLines.length / 2), prefixLines.length - 5)
             prefixMessages = [
                 {
-                    role: 'human',
+                    speaker: 'human',
                     text:
                         'Complete the following file:\n' +
                         '```' +
@@ -110,7 +107,7 @@ export class KnowledgeBasePromptTemplate implements PromptTemplate {
                         '```',
                 },
                 {
-                    role: 'ai',
+                    speaker: 'assistant',
                     text:
                         'Here is the completion of the file:\n' +
                         '```' +
@@ -120,11 +117,11 @@ export class KnowledgeBasePromptTemplate implements PromptTemplate {
         } else {
             prefixMessages = [
                 {
-                    role: 'human',
+                    speaker: 'human',
                     text: 'Write some code',
                 },
                 {
-                    role: 'ai',
+                    speaker: 'assistant',
                     text: `Here is some code:\n\`\`\`\n${prefix}`,
                 },
             ]
@@ -135,7 +132,7 @@ export class KnowledgeBasePromptTemplate implements PromptTemplate {
         for (const snippet of snippets) {
             const snippetMessages: Message[] = [
                 {
-                    role: 'human',
+                    speaker: 'human',
                     text:
                         `Add the following code snippet (from file ${snippet.filename}) to your knowledge base:\n` +
                         '```' +
@@ -143,7 +140,7 @@ export class KnowledgeBasePromptTemplate implements PromptTemplate {
                         '```',
                 },
                 {
-                    role: 'ai',
+                    speaker: 'assistant',
                     text: 'Okay, I have added it to my knowledge base.',
                 },
             ]

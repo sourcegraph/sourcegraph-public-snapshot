@@ -32,13 +32,13 @@ type openAIChatCompletionStreamClient struct {
 	model       string
 }
 
-func (a *openAIChatCompletionStreamClient) Complete(ctx context.Context, requestParams types.CodeCompletionRequestParameters) (*types.CodeCompletionResponse, error) {
+func (a *openAIChatCompletionStreamClient) Complete(ctx context.Context, requestParams types.CompletionRequestParameters) (*types.CompletionResponse, error) {
 	return nil, errors.New("openAIChatCompletionStreamClient.Complete: unimplemented")
 }
 
 func (a *openAIChatCompletionStreamClient) Stream(
 	ctx context.Context,
-	requestParams types.ChatCompletionRequestParameters,
+	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
 ) error {
 	if requestParams.TopK < 0 {
@@ -128,9 +128,13 @@ func (a *openAIChatCompletionStreamClient) Stream(
 			return errors.Errorf("failed to decode event payload: %w - body: %s", err, string(data))
 		}
 
-		if len(event.Choices) > 0 && event.Choices[0].FinishReason == nil {
+		if len(event.Choices) > 0 {
 			content = append(content, event.Choices[0].Delta.Content)
-			err = sendEvent(types.ChatCompletionEvent{Completion: strings.Join(content, "")})
+			ev := types.CompletionResponse{Completion: strings.Join(content, "")}
+			if event.Choices[0].FinishReason != nil {
+				ev.StopReason = *event.Choices[0].FinishReason
+			}
+			err = sendEvent(ev)
 			if err != nil {
 				return err
 			}

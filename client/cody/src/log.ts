@@ -2,9 +2,8 @@ import vscode from 'vscode'
 
 import { CompletionLogger } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 import {
-    CodeCompletionParameters,
-    CodeCompletionResponse,
     CompletionParameters,
+    CompletionResponse,
     Event,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
@@ -19,7 +18,7 @@ if (config.debug) {
 }
 
 export const logger: CompletionLogger = {
-    startCompletion(params: CodeCompletionParameters | CompletionParameters) {
+    startCompletion(params: CompletionParameters) {
         if (!outputChannel) {
             return undefined
         }
@@ -47,7 +46,7 @@ export const logger: CompletionLogger = {
             outputChannel!.appendLine('')
         }
 
-        function onComplete(result: string | CodeCompletionResponse): void {
+        function onComplete(result: string | CompletionResponse): void {
             if (hasFinished) {
                 return
             }

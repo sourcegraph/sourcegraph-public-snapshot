@@ -15,7 +15,7 @@ import (
 const anthropicAPIURL = "https://api.anthropic.com/v1/complete"
 
 func newAnthropicHandler(logger log.Logger, eventLogger events.Logger, accessToken string) http.Handler {
-	return makeUpstreamHandler[anthropicRequest](
+	return makeUpstreamHandler(
 		logger,
 		eventLogger,
 		anthropicAPIURL,

@@ -15,7 +15,7 @@ import (
 const openAIURL = "https://api.openai.com/v1/chat/completions"
 
 func newOpenAIHandler(logger log.Logger, eventLogger events.Logger, accessToken string, orgID string) http.Handler {
-	return makeUpstreamHandler[openaiRequest](
+	return makeUpstreamHandler(
 		logger,
 		eventLogger,
 		openAIURL,
