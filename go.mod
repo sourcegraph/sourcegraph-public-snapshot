@@ -262,10 +262,7 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
-require (
-	github.com/go-redsync/redsync/v4 v4.8.1
-	github.com/hexops/autogold v1.3.1
-)
+require github.com/go-redsync/redsync/v4 v4.8.1
 
 require (
 	cloud.google.com/go/compute/metadata v0.2.3 // indirect

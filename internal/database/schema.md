@@ -2930,6 +2930,7 @@ Indexes:
  enabled                | boolean |           | not null | false
 Indexes:
     "own_signal_configurations_pkey" PRIMARY KEY, btree (id)
+    "own_signal_configurations_name_uidx" UNIQUE, btree (name)
 
 ```
 

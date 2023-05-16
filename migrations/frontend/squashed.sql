@@ -5741,6 +5741,8 @@ CREATE INDEX own_background_jobs_repo_id_idx ON own_background_jobs USING btree 
 
 CREATE INDEX own_background_jobs_state_idx ON own_background_jobs USING btree (state);
 
+CREATE UNIQUE INDEX own_signal_configurations_name_uidx ON own_signal_configurations USING btree (name);
+
 CREATE UNIQUE INDEX package_repo_filters_unique_matcher_per_scheme ON package_repo_filters USING btree (scheme, matcher);
 
 CREATE INDEX package_repo_versions_blocked ON package_repo_versions USING btree (blocked);
