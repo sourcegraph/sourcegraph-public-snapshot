@@ -12,7 +12,6 @@ go_library(
         "//enterprise/internal/completions/client/openai",
         "//enterprise/internal/completions/types",
         "//internal/conf",
-        "//internal/conf/deploy",
         "//internal/httpcli",
         "//lib/errors",
         "//schema",
