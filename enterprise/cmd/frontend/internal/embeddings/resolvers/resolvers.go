@@ -31,6 +31,7 @@ func NewResolver(
 ) graphqlbackend.EmbeddingsResolver {
 	return &Resolver{
 		db:                        db,
+		logger:                    logger,
 		gitserverClient:           gitserverClient,
 		embeddingsClient:          embeddingsClient,
 		repoEmbeddingJobsStore:    repoStore,
