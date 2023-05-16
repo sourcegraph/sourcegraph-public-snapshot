@@ -2,7 +2,6 @@ package handler
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -43,7 +42,7 @@ func NewMultiHandler(
 		CodeIntelQueueHandler: codeIntelQueueHandler,
 		BatchesQueueHandler:   batchesQueueHandler,
 		validQueues:           []string{codeIntelQueueHandler.Name, batchesQueueHandler.Name},
-		RandomGenerator:       &RealRandom{},
+		RandomGenerator:       &realRandom{},
 		logger:                log.Scoped("executor-multi-queue-handler", "The route handler for all executor queues"),
 	}
 }
@@ -199,26 +198,19 @@ func markRecordAsFailed[T workerutil.Record](context context.Context, store dbwo
 	return markErr
 }
 
-func (m *MultiHandler) marshalAndRespondError(w http.ResponseWriter, err error, statusCode int) {
-	data, err := json.Marshal(errorResponse{Error: err.Error()})
-	if err != nil {
-		m.logger.Error("Failed to serialize payload", log.Error(err))
-		data = []byte(fmt.Sprintf("Failed to serialize payload: %s", err))
-	}
-	http.Error(w, string(data), statusCode)
-}
-
+// RandomGenerator is a wrapper for generating random numbers to support simple queue fairness.
+// Its functions can be mocked out for consistent dequeuing in unit tests.
 type RandomGenerator interface {
 	Seed(seed int64)
 	Intn(n int) int
 }
 
-type RealRandom struct{}
+type realRandom struct{}
 
-func (r *RealRandom) Seed(seed int64) {
+func (r *realRandom) Seed(seed int64) {
 	rand.Seed(seed)
 }
 
-func (r *RealRandom) Intn(n int) int {
+func (r *realRandom) Intn(n int) int {
 	return rand.Intn(n)
 }
