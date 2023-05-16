@@ -47,7 +47,6 @@ func main() {
 				GraphQL:         true,
 				SeverityLevel:   "INFO",
 			},
-			SecurityEventLog: &schema.SecurityEventLog{Location: "auditlogs"},
 		}}})
 	defer conf.Mock(nil)
 

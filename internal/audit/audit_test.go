@@ -238,23 +238,3 @@ func auditLogMessage(t *testing.T) []logtest.CapturedLog {
 
 	return exportLogs()
 }
-
-//func TestLogLocation(t *testing.T) {
-//	tests := []struct {
-//		name string
-//		cfg  schema.SiteConfiguration
-//		want Location
-//	}{
-//		// TODO: Add test cases.
-//		{
-//			"base",
-//			schema.SiteConfiguration{Log: &schema.Log{AuditLog: &schema.AuditLog{Location: "none"}}},
-//			None,
-//		},
-//	}
-//	for _, tt := range tests {
-//		t.Run(tt.name, func(t *testing.T) {
-//			assert.Equalf(t, tt.want, LogLocation(tt.cfg), "LogLocation(%v)", tt.cfg)
-//		})
-//	}
-//}
