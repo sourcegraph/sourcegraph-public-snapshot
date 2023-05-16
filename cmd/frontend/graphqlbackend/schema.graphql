@@ -9731,6 +9731,11 @@ enum PermissionNamespace {
     This represents the Batch Changes namespace.
     """
     BATCH_CHANGES
+    """
+    Code ownership namespace used for permitting to assign ownership
+    within Sourcegraph.
+    """
+    OWNERSHIP
 }
 
 """

@@ -3,3 +3,6 @@ namespaces:
     actions:
       - READ
       - WRITE
+  - name: OWNERSHIP
+    actions:
+      - ASSIGN
