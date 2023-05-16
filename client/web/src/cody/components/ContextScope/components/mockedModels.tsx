@@ -32,6 +32,15 @@ export const repoMockedModel = [
 ]
 
 export const filesMockedModel = [
+    'mythical_adventures/mythical_adventures/src/mythical_beasts.py',
+    'mythical_adventures/mythical_adventures/src/magical_adventures.py',
+    'mythical_adventures/mythical_adventures/src/enchanted_forest.py',
+    'mythical_adventures/mythical_adventures/src/dragon_slayer.py',
+    'mythical_adventures/mythical_adventures/src/spellbook_utils.py',
+    'mythical_adventures/mythical_adventures/src/unicorn_tamer.py',
+    'mythical_adventures/mythical_adventures/src/wizard_academy.py',
+    'sourcegraph/sourcegraph/logs/ci-main.log',
+    'sourcegraph/sourcegraph/logs/ci-errors.log',
     'sourcegraph/sourcegraph/client/cody-ui/src/CodyChat.tsx',
     'sourcegraph/sourcegraph/client/cody-ui/src/CodyChatView.tsx',
     'sourcegraph/sourcegraph/client/cody-ui/src/Cody.ts',

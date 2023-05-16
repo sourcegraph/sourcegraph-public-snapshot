@@ -40,6 +40,7 @@ export const ContextScope: React.FC<ContextScopeProps> = ({}) => {
             >
                 {selectedItem === SELECTED.FILES && <ItemFiles />}
                 {selectedItem === SELECTED.REPOSITORIES && <ItemRepos />}
+                {selectedItem === SELECTED.AUTOMATIC && 'sourcegraph/sourcegraph —— CodyChat.tsx'}
             </div>
         </div>
     )
