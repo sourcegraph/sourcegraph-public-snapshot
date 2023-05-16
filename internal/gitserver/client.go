@@ -1249,8 +1249,6 @@ func (c *clientImplementor) ReposStats(ctx context.Context) (map[string]*protoco
 			}
 
 			resp, err := client.ReposStats(ctx, &emptypb.Empty{})
-			fmt.Printf("repos-stats: %s %q\n", addr, resp)
-			fmt.Printf("repos-stats: %s %v\n", addr, err)
 			if err != nil {
 				allErr = errors.Append(allErr, err)
 			} else {

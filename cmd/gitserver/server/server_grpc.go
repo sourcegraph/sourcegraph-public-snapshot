@@ -3,7 +3,6 @@ package server
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -176,10 +175,6 @@ func (gs *GRPCServer) ReposStats(ctx context.Context, req *empty.Empty) (*proto.
 	if err := json.Unmarshal(b, &stats); err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to unmarshal %s: %v", reposStatsName, err.Error())
 	}
-
-	fmt.Println(stats)
-	fmt.Println(stats.ToProto())
-	fmt.Println(err)
 
 	return stats.ToProto(), nil
 }
