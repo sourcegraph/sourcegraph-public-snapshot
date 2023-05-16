@@ -36,7 +36,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -44,8 +43,7 @@ import (
 // Run from webhooks_integration_test.go
 func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 	return func(t *testing.T) {
-		now := timeutil.Now()
-		clock := func() time.Time { return now }
+		clock := func() time.Time { return time.Date(2023, time.May, 16, 12, 0, 0, 0, time.UTC) }
 
 		ctx := context.Background()
 

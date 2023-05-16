@@ -4,16 +4,17 @@
       "ID": 1,
       "ChangesetID": 1,
       "Kind": "github:check_suite",
-      "Key": "91fbd9cc7f694e66",
-      "CreatedAt": "2023-05-16 13:57:21.277349+01",
-      "UpdatedAt": "2023-05-16 13:57:21.280517+01",
+      "Key": "4492a717f9197034",
+      "CreatedAt": "2023-05-24T13:57:21.277349Z",
+      "UpdatedAt": "2023-05-24T13:57:21.280517Z",
       "Metadata": {
         "ID": "CS_kwDOH1Ragc8AAAADAWJ06w",
         "Status": "completed",
         "Conclusion": "success",
         "CheckRuns": {
           "Nodes": null
-        }
+        },
+        "ReceivedAt": "2023-05-16T12:00:00.000000Z"
       }
     }
   ],
