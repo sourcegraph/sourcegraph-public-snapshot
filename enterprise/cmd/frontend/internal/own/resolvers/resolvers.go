@@ -534,9 +534,6 @@ func (r *ownResolver) UpdateOwnSignalConfigurations(ctx context.Context, args gr
 		return nil, err
 	}
 
-	// for now, just return the jobs
-	r.logger.Info("input signal configs", log.String("configs", fmt.Sprintf("%v", args.Input.Configs)))
-
 	err = r.db.SignalConfigurations().WithTransact(ctx, func(store database.SignalConfigurationStore) error {
 		for _, config := range args.Input.Configs {
 			if err := store.UpdateConfiguration(ctx, database.UpdateSignalConfigurationArgs{
