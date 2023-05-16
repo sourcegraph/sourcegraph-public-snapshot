@@ -39,6 +39,8 @@ environment:
       - bubblewrap
 
 pipeline:
+  - runs: |
+      ls -al $HOME
   # Fetch Comby source
   - uses: fetch
     with:
