@@ -86,8 +86,9 @@ export class Fixup implements Recipe {
     Do not move code from outside the selection into the selection in your reply.
     Do not remove code inside the <selection> tags that might be being used by the code outside the <selection> tags.
     It is OK to provide some commentary within the replacement <selection>.
-    Only return provide me the replacement <selection> and nothing else.
-    If it doesn't make sense, you do not need to provide <selection>.
+    It is not acceptable to enclose the rewritten replacement with markdowns.
+    Only provide me with the replacement <selection> and nothing else.
+    If it doesn't make sense, you do not need to provide <selection>. Instead, tell me how I can help you to understand my request.
 
     \`\`\`
     {truncateTextStart}<selection>{selectedText}</selection>{truncateFollowingText}

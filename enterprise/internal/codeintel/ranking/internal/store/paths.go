@@ -5,15 +5,15 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func (s *store) InsertInitialPathRanks(ctx context.Context, exportedUploadID int, documentPaths chan string, batchSize int, graphKey string) (err error) {
-	ctx, _, endObservation := s.operations.insertInitialPathRanks.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("graphKey", graphKey),
+	ctx, _, endObservation := s.operations.insertInitialPathRanks.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("graphKey", graphKey),
 	}})
 	defer endObservation(1, observation.Args{})
 

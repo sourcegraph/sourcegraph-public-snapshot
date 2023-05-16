@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
-	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -17,8 +17,8 @@ func (s *store) InsertPathRanks(
 	derivativeGraphKey string,
 	batchSize int,
 ) (numInputsProcessed int, numPathRanksInserted int, err error) {
-	ctx, _, endObservation := s.operations.insertPathRanks.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("derivativeGraphKey", derivativeGraphKey),
+	ctx, _, endObservation := s.operations.insertPathRanks.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("derivativeGraphKey", derivativeGraphKey),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -133,7 +133,7 @@ SELECT
 `
 
 func (s *store) VacuumStaleRanks(ctx context.Context, derivativeGraphKey string) (rankRecordsDeleted, rankRecordsScanned int, err error) {
-	ctx, _, endObservation := s.operations.vacuumStaleRanks.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	ctx, _, endObservation := s.operations.vacuumStaleRanks.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	if _, ok := rankingshared.GraphKeyFromDerivativeGraphKey(derivativeGraphKey); !ok {

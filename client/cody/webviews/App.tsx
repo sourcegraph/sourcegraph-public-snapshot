@@ -18,10 +18,7 @@ import { UserHistory } from './UserHistory'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<Pick<
-        Configuration,
-        'debug' | 'serverEndpoint' | 'experimentalConnectToApp'
-    > | null>(null)
+    const [config, setConfig] = useState<Pick<Configuration, 'debug' | 'serverEndpoint'> | null>(null)
     const [debugLog, setDebugLog] = useState<string[]>([])
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
@@ -123,9 +120,9 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     serverEndpoint={config?.serverEndpoint}
                     isAppInstalled={isAppInstalled}
                     vscodeAPI={vscodeAPI}
-                    enableConnectToApp={config?.experimentalConnectToApp}
                 />
             )}
+            {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
             {view !== 'login' && <NavBar view={view} setView={setView} devMode={Boolean(config?.debug)} />}
             {view === 'debug' && config?.debug && <Debug debugLog={debugLog} />}
             {view === 'history' && (
@@ -139,7 +136,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             )}
             {view === 'recipes' && <Recipes vscodeAPI={vscodeAPI} />}
             {view === 'settings' && <Settings onLogout={onLogout} serverEndpoint={config?.serverEndpoint} />}
-            {view === 'chat' && errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
             {view === 'chat' && (
                 <Chat
                     messageInProgress={messageInProgress}
