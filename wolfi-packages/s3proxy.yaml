@@ -34,7 +34,7 @@ pipeline:
       expected-sha256: e2d3f8f217d67ab8cc074490f27b4d649f4ec73f5bf540aa9da1ad4dda818d0b
       extract: true
   - runs: |
-      mvn package -DskipTests
+      JAVA_HOME=/usr/lib/jvm/java-11-openjdk/ mvn package -DskipTests
   - runs: |
       mkdir -p ${{targets.destdir}}/opt/
       cp -r target/ ${{targets.destdir}}/opt/s3proxy
