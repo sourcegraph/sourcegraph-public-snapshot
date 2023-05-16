@@ -10,7 +10,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -160,7 +159,7 @@ func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 	})
 }
 
-func (gs *GRPCServer) ReposStats(ctx context.Context, req *empty.Empty) (*proto.ReposStatsResponse, error) {
+func (gs *GRPCServer) ReposStats(ctx context.Context, req *proto.ReposStatsRequest) (*proto.ReposStatsResponse, error) {
 	b, err := os.ReadFile(filepath.Join(gs.Server.ReposDir, reposStatsName))
 	if errors.Is(err, os.ErrNotExist) {
 		// When a gitserver is new this file might not have been computed

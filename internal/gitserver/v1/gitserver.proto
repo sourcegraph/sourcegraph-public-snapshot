@@ -2,7 +2,6 @@ syntax = "proto3";
 
 package gitserver.v1;
 
-import "google/protobuf/empty.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
@@ -11,7 +10,7 @@ service GitserverService {
   rpc Exec(ExecRequest) returns (stream ExecResponse) {}
   rpc Search(SearchRequest) returns (stream SearchResponse) {}
   rpc Archive(ArchiveRequest) returns (stream ArchiveResponse) {}
-  rpc ReposStats(google.protobuf.Empty) returns (ReposStatsResponse) {}
+  rpc ReposStats(ReposStatsRequest) returns (ReposStatsResponse) {}
 }
 
 message ExecRequest {
@@ -212,6 +211,8 @@ message ArchiveRequest {
 message ArchiveResponse {
   bytes data = 1;
 }
+
+message ReposStatsRequest{}
 
 // ReposStats is an aggregation of statistics from a gitserver.
 message ReposStatsResponse {

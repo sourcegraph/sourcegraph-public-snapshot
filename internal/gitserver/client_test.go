@@ -24,7 +24,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -834,7 +833,7 @@ func (s *spyGitserverServiceClient) Archive(ctx context.Context, in *proto.Archi
 	return s.base.Archive(ctx, in, opts...)
 }
 
-func (s *spyGitserverServiceClient) ReposStats(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*proto.ReposStatsResponse, error) {
+func (s *spyGitserverServiceClient) ReposStats(ctx context.Context, in *proto.ReposStatsRequest, opts ...grpc.CallOption) (*proto.ReposStatsResponse, error) {
 	s.reposStatsCalled = true
 	return s.base.ReposStats(ctx, in, opts...)
 }

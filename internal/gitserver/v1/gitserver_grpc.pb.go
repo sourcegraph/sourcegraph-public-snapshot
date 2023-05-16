@@ -11,7 +11,6 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
-	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -33,7 +32,7 @@ type GitserverServiceClient interface {
 	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error)
 	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (GitserverService_SearchClient, error)
 	Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (GitserverService_ArchiveClient, error)
-	ReposStats(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReposStatsResponse, error)
+	ReposStats(ctx context.Context, in *ReposStatsRequest, opts ...grpc.CallOption) (*ReposStatsResponse, error)
 }
 
 type gitserverServiceClient struct {
@@ -140,7 +139,7 @@ func (x *gitserverServiceArchiveClient) Recv() (*ArchiveResponse, error) {
 	return m, nil
 }
 
-func (c *gitserverServiceClient) ReposStats(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ReposStatsResponse, error) {
+func (c *gitserverServiceClient) ReposStats(ctx context.Context, in *ReposStatsRequest, opts ...grpc.CallOption) (*ReposStatsResponse, error) {
 	out := new(ReposStatsResponse)
 	err := c.cc.Invoke(ctx, GitserverService_ReposStats_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -156,7 +155,7 @@ type GitserverServiceServer interface {
 	Exec(*ExecRequest, GitserverService_ExecServer) error
 	Search(*SearchRequest, GitserverService_SearchServer) error
 	Archive(*ArchiveRequest, GitserverService_ArchiveServer) error
-	ReposStats(context.Context, *emptypb.Empty) (*ReposStatsResponse, error)
+	ReposStats(context.Context, *ReposStatsRequest) (*ReposStatsResponse, error)
 	mustEmbedUnimplementedGitserverServiceServer()
 }
 
@@ -173,7 +172,7 @@ func (UnimplementedGitserverServiceServer) Search(*SearchRequest, GitserverServi
 func (UnimplementedGitserverServiceServer) Archive(*ArchiveRequest, GitserverService_ArchiveServer) error {
 	return status.Errorf(codes.Unimplemented, "method Archive not implemented")
 }
-func (UnimplementedGitserverServiceServer) ReposStats(context.Context, *emptypb.Empty) (*ReposStatsResponse, error) {
+func (UnimplementedGitserverServiceServer) ReposStats(context.Context, *ReposStatsRequest) (*ReposStatsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReposStats not implemented")
 }
 func (UnimplementedGitserverServiceServer) mustEmbedUnimplementedGitserverServiceServer() {}
@@ -253,7 +252,7 @@ func (x *gitserverServiceArchiveServer) Send(m *ArchiveResponse) error {
 }
 
 func _GitserverService_ReposStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(ReposStatsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -265,7 +264,7 @@ func _GitserverService_ReposStats_Handler(srv interface{}, ctx context.Context, 
 		FullMethod: GitserverService_ReposStats_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GitserverServiceServer).ReposStats(ctx, req.(*emptypb.Empty))
+		return srv.(GitserverServiceServer).ReposStats(ctx, req.(*ReposStatsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }

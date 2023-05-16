@@ -25,7 +25,6 @@ import (
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/sourcegraph/go-diff/diff"
 	sglog "github.com/sourcegraph/log"
@@ -1248,7 +1247,7 @@ func (c *clientImplementor) ReposStats(ctx context.Context) (map[string]*protoco
 				return nil, err
 			}
 
-			resp, err := client.ReposStats(ctx, &emptypb.Empty{})
+			resp, err := client.ReposStats(ctx, &proto.ReposStatsRequest{})
 			if err != nil {
 				allErr = errors.Append(allErr, err)
 			} else {
