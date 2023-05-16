@@ -562,6 +562,7 @@ type routeSpec struct {
 	expectedPayload      string
 	responseStatus       int
 	responsePayload      string
+	multiQueue           bool
 }
 
 func testRoute(t *testing.T, spec routeSpec, f func(client *queue.Client)) {
@@ -570,7 +571,6 @@ func testRoute(t *testing.T, spec routeSpec, f func(client *queue.Client)) {
 
 	options := queue.Options{
 		ExecutorName: "deadbeef",
-		QueueName:    "test_queue",
 		BaseClientOptions: apiclient.BaseClientOptions{
 			ExecutorName: "deadbeef",
 			EndpointOptions: apiclient.EndpointOptions{
@@ -588,6 +588,12 @@ func testRoute(t *testing.T, spec routeSpec, f func(client *queue.Client)) {
 			IgniteVersion:   "test-ignite-version",
 			SrcCliVersion:   "test-src-cli-version",
 		},
+	}
+
+	if spec.multiQueue {
+		options.QueueNames = []string{"test_queue_one", "test_queue_two"}
+	} else {
+		options.QueueName = "test_queue"
 	}
 
 	client, err := newQueueClient(options)
