@@ -81,7 +81,7 @@ func NewSource(ctx context.Context, logger log.Logger, db database.DB, svc *type
 	case extsvc.KindOther:
 		return NewOtherSource(ctx, svc, cf, logger.Scoped("OtherSource", ""))
 	case extsvc.VariantLocalGit.AsKind():
-		return NewLocalSource(ctx, svc, logger.Scoped("LocalSource", ""))
+		return NewLocalSource(ctx, logger.Scoped("LocalSource", "local repo source"), svc)
 	default:
 		return nil, errors.Newf("cannot create source for kind %q", svc.Kind)
 	}

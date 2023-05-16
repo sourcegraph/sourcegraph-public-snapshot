@@ -119,7 +119,8 @@ func Init(logger log.Logger) CleanupFunc {
 	setDefaultEnv(logger, "GLOBAL_SETTINGS_ALLOW_EDITS", "true")
 	writeFileIfNotExists(globalSettingsPath, []byte("{}\n"))
 
-	setDefaultEnv(logger, "LOCAL_REPOS_CONFIG_FILE", filepath.Join(configDir, "repos"))
+	// Set configuration file path for local repositories
+	setDefaultEnv(logger, "SRC_LOCAL_REPOS_CONFIG_FILE", filepath.Join(configDir, "repos"))
 
 	// We disable the use of executors passwords, because executors only listen on `localhost` this
 	// is safe to do.

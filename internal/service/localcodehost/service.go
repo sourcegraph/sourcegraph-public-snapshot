@@ -51,12 +51,13 @@ type Config struct {
 }
 
 func (c *Config) Load() {
-	configFilePath := c.Get("LOCAL_REPOS_CONFIG_FILE", "", "Path to the local repositories configuration file")
+	configFilePath := c.Get("SRC_LOCAL_REPOS_CONFIG_FILE", "", "Path to the local repositories configuration file")
 
 	file, err := os.Open(configFilePath)
 	if err != nil {
 		return
 	}
+	defer file.Close()
 	c.Repos = parseConfig(file)
 }
 
@@ -88,12 +89,15 @@ func parseConfig(input io.Reader) []*schema.LocalRepoPattern {
 
 		repos = append(repos, &schema.LocalRepoPattern{Pattern: strings.TrimSpace(pattern), Group: strings.TrimSpace(group)})
 	}
+
+	if scanner.Err() != nil {
+		return []*schema.LocalRepoPattern{}
+	}
+
 	return repos
 }
 
-type svc struct {
-	srvReady chan (any)
-}
+type svc struct{}
 
 func (s *svc) Name() string {
 	return "localcodehost"
@@ -105,9 +109,8 @@ func (s *svc) Configure() (env.Config, []debugserver.Endpoint) {
 	return c, nil
 }
 
-func (s *svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, configI env.Config) (err error) {
-
-	config := configI.(*Config)
+func (s *svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, envConf env.Config) (err error) {
+	config := envConf.(*Config)
 
 	if len(config.Repos) > 0 {
 		if err := ensureExtSVC(observationCtx, config); err != nil {
@@ -118,7 +121,5 @@ func (s *svc) Start(ctx context.Context, observationCtx *observation.Context, re
 	return nil
 }
 
-var Service = &svc{
-	srvReady: make(chan any),
-}
+var Service = &svc{}
 var _ service.Service = Service

@@ -16,21 +16,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// LocalSources connects to a local code host.
+// LocalSource connects to a local code host.
 type LocalSource struct {
 	svc    *types.ExternalService
 	config *schema.LocalExternalService
 	logger log.Logger
 }
 
-func NewLocalSource(ctx context.Context, svc *types.ExternalService, logger log.Logger) (*LocalSource, error) {
+func NewLocalSource(ctx context.Context, logger log.Logger, svc *types.ExternalService) (*LocalSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 	var config schema.LocalExternalService
 	if err := jsonc.Unmarshal(rawConfig, &config); err != nil {
-		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 
 	return &LocalSource{
@@ -56,7 +56,7 @@ func (s *LocalSource) ListRepos(ctx context.Context, results chan SourceResult) 
 	repoPaths := getRepoPaths(s.config)
 	for _, r := range repoPaths {
 		uri := "file:///" + r.Path
-		s.logger.Info("found repo " + uri)
+		s.logger.Info("found repo ", log.String("uri", uri))
 		results <- SourceResult{
 			Source: s,
 			Repo: &types.Repo{
@@ -88,7 +88,7 @@ func isBareRepo(path string) bool {
 		return false
 	}
 
-	return string(out) != "false\n"
+	return strings.TrimSpace(string(out)) != "false"
 }
 
 // Check if git thinks the given path is a proper git checkout
