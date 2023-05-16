@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	otlog "github.com/opentracing/opentracing-go/log"
 
 	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -109,7 +108,7 @@ func (s *store) SoftDeleteStaleExportedUploads(ctx context.Context, graphKey str
 	numStaleExportedUploadRecordsDeleted int,
 	err error,
 ) {
-	ctx, _, endObservation := s.operations.softDeleteStaleExportedUploads.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	ctx, _, endObservation := s.operations.softDeleteStaleExportedUploads.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(
@@ -176,7 +175,7 @@ func (s *store) VacuumDeletedExportedUploads(ctx context.Context, derivativeGrap
 	numExportedUploadRecordsDeleted int,
 	err error,
 ) {
-	ctx, _, endObservation := s.operations.vacuumDeletedExportedUploads.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	ctx, _, endObservation := s.operations.vacuumDeletedExportedUploads.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	graphKey, ok := rankingshared.GraphKeyFromDerivativeGraphKey(derivativeGraphKey)

@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
@@ -293,8 +293,8 @@ ORDER BY version
 func (s *Store) TryLock(ctx context.Context) (_ bool, _ func(err error) error, err error) {
 	key := s.lockKey()
 
-	ctx, _, endObservation := s.operations.tryLock.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int32("key", key),
+	ctx, _, endObservation := s.operations.tryLock.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("key", int(key)),
 	}})
 	defer endObservation(1, observation.Args{})
 
