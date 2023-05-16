@@ -29,7 +29,7 @@ environment:
       - zlib-dev
       - m4
       - gmp-dev
-      - libev
+      - libev-dev
       - sqlite-libs
       - sqlite-dev
       - wget
@@ -55,7 +55,7 @@ pipeline:
       opam switch create 4.11.0 4.11.0
       eval $(opam env --switch=4.11.0)
       cd comby-${{package.version}}/
-      LIBRARY_PATH=/usr/lib opam install . --deps-only --yes
+      opam install . --deps-only --yes
       make
       make test
       make install
