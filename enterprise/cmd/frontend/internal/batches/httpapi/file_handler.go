@@ -13,8 +13,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/opentracing/opentracing-go/log"
 	sglog "github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -74,8 +74,8 @@ func (h *FileHandler) Get() http.Handler {
 func (h *FileHandler) get(r *http.Request) (_ io.Reader, statusCode int, err error) {
 	ctx, _, endObservation := h.operations.get.With(r.Context(), &err, observation.Args{})
 	defer func() {
-		endObservation(1, observation.Args{LogFields: []log.Field{
-			log.Int("statusCode", statusCode),
+		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
+			attribute.Int("statusCode", statusCode),
 		}})
 	}()
 
@@ -113,8 +113,8 @@ func (h *FileHandler) Exists() http.Handler {
 func (h *FileHandler) exists(r *http.Request) (statusCode int, err error) {
 	ctx, _, endObservation := h.operations.exists.With(r.Context(), &err, observation.Args{})
 	defer func() {
-		endObservation(1, observation.Args{LogFields: []log.Field{
-			log.Int("statusCode", statusCode),
+		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
+			attribute.Int("statusCode", statusCode),
 		}})
 	}()
 
@@ -185,8 +185,8 @@ const maxMemory = 1 << 20 // 1MB
 func (h *FileHandler) upload(r *http.Request) (resp uploadResponse, statusCode int, err error) {
 	ctx, _, endObservation := h.operations.upload.With(r.Context(), &err, observation.Args{})
 	defer func() {
-		endObservation(1, observation.Args{LogFields: []log.Field{
-			log.Int("statusCode", statusCode),
+		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
+			attribute.Int("statusCode", statusCode),
 		}})
 	}()
 

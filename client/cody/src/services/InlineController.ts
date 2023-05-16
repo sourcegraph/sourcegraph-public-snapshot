@@ -44,7 +44,7 @@ export class InlineController {
     constructor(private extensionPath: string) {
         this.commentController = vscode.comments.createCommentController(this.id, this.label)
         this.commentController.options = this.options
-        // Track last selection in valid doc
+        // Track last selection range in valid doc before an action is called
         vscode.window.onDidChangeTextEditorSelection(e => {
             if (e.textEditor.document.uri.scheme !== 'file') {
                 return
@@ -58,9 +58,9 @@ export class InlineController {
                 this.selectionRange = range
             }
         })
-        // Track and update line of changes when the task for the current selected range is being processed
+        // Track and update line diff when a task for the current selected range is being processed (this.isInProgress)
+        // This makes sure the comment range and highlights are also updated correctly
         vscode.workspace.onDidChangeTextDocument(e => {
-            // don't track
             if (!this.isInProgress || !this.selectionRange || e.document.uri.scheme !== 'file') {
                 return
             }
@@ -71,7 +71,7 @@ export class InlineController {
         })
     }
     /**
-     * Getter
+     * Getter to return instance
      */
     public get(): vscode.CommentController {
         return this.commentController
@@ -321,6 +321,9 @@ export class Comment implements vscode.Comment {
     }
 }
 
+/**
+ * For tracking lines diff
+ */
 export function lineTracker(e: vscode.TextDocumentChangeEvent, cur: vscode.Range): vscode.Range | null {
     for (const change of e.contentChanges) {
         if (change.range.start.line > cur.end.line) {
@@ -340,13 +343,15 @@ export function lineTracker(e: vscode.TextDocumentChangeEvent, cur: vscode.Range
     }
     return null
 }
-
+/**
+ * Create selection range for a single line
+ * This is used for display the Cody icon and Code action on top of the first line of selected code
+ */
 export function singleLineRange(line: number): vscode.Range {
     return new vscode.Range(line, 0, line, 0)
 }
-
 /**
- * Generate icon path for each speaker
+ * Generate icon path for each speaker: cody vs human (sourcegraph)
  */
 export function getIconPath(speaker: string, extPath: string): vscode.Uri {
     const extensionPath = vscode.Uri.file(extPath)
