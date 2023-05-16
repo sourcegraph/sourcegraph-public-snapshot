@@ -2,11 +2,12 @@ package httpapi
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/auth"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -22,10 +23,18 @@ func NewDiagnosticsHandler(logger log.Logger, next http.Handler, secret string) 
 		switch r.URL.Path {
 		// For service liveness and readiness probes
 		case "/-/healthz":
-			if secret != "" && r.Header.Get("Authorization") != fmt.Sprintf("Bearer %s", secret) {
-				w.WriteHeader(http.StatusUnauthorized)
-				w.Write([]byte("healthz: unauthorized"))
-				return
+			if secret != "" {
+				token, err := auth.ExtractBearer(r.Header)
+				if err != nil {
+					response.JSONError(logger, w, http.StatusBadRequest, err)
+					return
+				}
+
+				if token != secret {
+					w.WriteHeader(http.StatusUnauthorized)
+					w.Write([]byte("healthz: unauthorized"))
+					return
+				}
 			}
 
 			if err := healthz(r.Context()); err != nil {
