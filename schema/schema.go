@@ -545,7 +545,7 @@ type Completions struct {
 	// AccessToken description: The access token used to authenticate with the external completions provider.
 	AccessToken string `json:"accessToken"`
 	// ChatModel description: The model used for chat completions.
-	ChatModel string `json:"chatModel"`
+	ChatModel string `json:"chatModel,omitempty"`
 	// CompletionModel description: The model used for code completion.
 	CompletionModel string `json:"completionModel,omitempty"`
 	// Enabled description: Toggles whether completions are enabled.
@@ -553,7 +553,7 @@ type Completions struct {
 	// Endpoint description: The endpoint under which to reach the provider. Currently only used for provider type LLM proxy.
 	Endpoint string `json:"endpoint,omitempty"`
 	// Model description: DEPRECATED. Use chatModel instead.
-	Model string `json:"model,omitempty"`
+	Model string `json:"model"`
 	// PerUserCodeCompletionsDailyLimit description: If > 0, enables the maximum number of code completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.
 	PerUserCodeCompletionsDailyLimit int `json:"perUserCodeCompletionsDailyLimit,omitempty"`
 	// PerUserDailyLimit description: If > 0, enables the maximum number of completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.
