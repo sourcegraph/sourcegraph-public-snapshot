@@ -12,17 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type AnthropicCompletionsRequestParameters struct {
-	Prompt            string   `json:"prompt"`
-	Temperature       float32  `json:"temperature"`
-	MaxTokensToSample int      `json:"max_tokens_to_sample"`
-	StopSequences     []string `json:"stop_sequences"`
-	TopK              int      `json:"top_k"`
-	TopP              float32  `json:"top_p"`
-	Model             string   `json:"model"`
-	Stream            bool     `json:"stream"`
-}
-
 const ProviderName = "anthropic"
 
 func NewClient(cli httpcli.Doer, accessToken string, model string) types.CompletionsClient {
@@ -33,77 +22,41 @@ func NewClient(cli httpcli.Doer, accessToken string, model string) types.Complet
 	}
 }
 
+const apiURL = "https://api.anthropic.com/v1/complete"
+const clientID = "sourcegraph/1.0"
+
 type anthropicClient struct {
 	cli         httpcli.Doer
 	accessToken string
 	model       string
 }
 
-const apiURL = "https://api.anthropic.com/v1/complete"
-const clientID = "sourcegraph/1.0"
-
-var stopSequences = []string{HUMAN_PROMPT}
-
-var allowedClientSpecifiedModels = map[string]struct{}{
-	"claude-instant-v1.0": {},
-}
-
 func (a *anthropicClient) Complete(
 	ctx context.Context,
-	requestParams types.CodeCompletionRequestParameters,
-) (*types.CodeCompletionResponse, error) {
-	var model string
-	if _, isAllowed := allowedClientSpecifiedModels[requestParams.Model]; isAllowed {
-		model = requestParams.Model
-	} else {
-		model = a.model
-	}
-	payload := AnthropicCompletionsRequestParameters{
-		Stream:            false,
-		StopSequences:     requestParams.StopSequences,
-		Model:             model,
-		Temperature:       float32(requestParams.Temperature),
-		MaxTokensToSample: requestParams.MaxTokensToSample,
-		TopP:              float32(requestParams.TopP),
-		TopK:              requestParams.TopK,
-		Prompt:            requestParams.Prompt,
-	}
-
-	resp, err := a.makeRequest(ctx, payload)
+	requestParams types.CompletionRequestParameters,
+) (*types.CompletionResponse, error) {
+	resp, err := a.makeRequest(ctx, requestParams, false)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	var response types.CodeCompletionResponse
+	var response anthropicCompletionResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
-	return &response, nil
+	return &types.CompletionResponse{
+		Completion: response.Completion,
+		StopReason: response.StopReason,
+	}, nil
 }
 
 func (a *anthropicClient) Stream(
 	ctx context.Context,
-	requestParams types.ChatCompletionRequestParameters,
+	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
 ) error {
-	prompt, err := getPrompt(requestParams.Messages)
-	if err != nil {
-		return err
-	}
-
-	payload := AnthropicCompletionsRequestParameters{
-		Stream:            true,
-		StopSequences:     stopSequences,
-		Model:             a.model,
-		Temperature:       requestParams.Temperature,
-		MaxTokensToSample: requestParams.MaxTokensToSample,
-		TopP:              requestParams.TopP,
-		TopK:              requestParams.TopK,
-		Prompt:            prompt,
-	}
-
-	resp, err := a.makeRequest(ctx, payload)
+	resp, err := a.makeRequest(ctx, requestParams, true)
 	if err != nil {
 		return err
 	}
@@ -122,12 +75,15 @@ func (a *anthropicClient) Stream(
 			continue
 		}
 
-		var event types.ChatCompletionEvent
+		var event anthropicCompletionResponse
 		if err := json.Unmarshal(data, &event); err != nil {
 			return errors.Errorf("failed to decode event payload: %w - body: %s", err, string(data))
 		}
 
-		err = sendEvent(event)
+		err = sendEvent(types.CompletionResponse{
+			Completion: event.Completion,
+			StopReason: event.StopReason,
+		})
 		if err != nil {
 			return err
 		}
@@ -136,7 +92,32 @@ func (a *anthropicClient) Stream(
 	return dec.Err()
 }
 
-func (a *anthropicClient) makeRequest(ctx context.Context, payload AnthropicCompletionsRequestParameters) (*http.Response, error) {
+func (a *anthropicClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
+	prompt, err := getPrompt(requestParams.Messages)
+	if err != nil {
+		return nil, err
+	}
+	// Backcompat: Remove this code once enough clients are upgraded and we drop the
+	// Prompt field on requestParams.
+	if prompt == "" {
+		prompt = requestParams.Prompt
+	}
+
+	if len(requestParams.StopSequences) == 0 {
+		requestParams.StopSequences = []string{HUMAN_PROMPT}
+	}
+
+	payload := anthropicCompletionsRequestParameters{
+		Stream:            stream,
+		StopSequences:     requestParams.StopSequences,
+		Model:             a.model,
+		Temperature:       requestParams.Temperature,
+		MaxTokensToSample: requestParams.MaxTokensToSample,
+		TopP:              requestParams.TopP,
+		TopK:              requestParams.TopK,
+		Prompt:            prompt,
+	}
+
 	reqBody, err := json.Marshal(payload)
 	if err != nil {
 		return nil, err
@@ -167,4 +148,20 @@ func (a *anthropicClient) makeRequest(ctx context.Context, payload AnthropicComp
 	}
 
 	return resp, nil
+}
+
+type anthropicCompletionsRequestParameters struct {
+	Prompt            string   `json:"prompt"`
+	Temperature       float32  `json:"temperature"`
+	MaxTokensToSample int      `json:"max_tokens_to_sample"`
+	StopSequences     []string `json:"stop_sequences"`
+	TopK              int      `json:"top_k"`
+	TopP              float32  `json:"top_p"`
+	Model             string   `json:"model"`
+	Stream            bool     `json:"stream"`
+}
+
+type anthropicCompletionResponse struct {
+	Completion string `json:"completion"`
+	StopReason string `json:"stop_reason"`
 }
