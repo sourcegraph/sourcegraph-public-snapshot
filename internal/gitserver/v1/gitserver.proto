@@ -212,7 +212,7 @@ message ArchiveResponse {
   bytes data = 1;
 }
 
-message ReposStatsRequest{}
+message ReposStatsRequest {}
 
 // ReposStats is an aggregation of statistics from a gitserver.
 message ReposStatsResponse {
