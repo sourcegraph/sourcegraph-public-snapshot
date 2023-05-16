@@ -114,6 +114,9 @@ func (s *searchClient) Plan(
 	}
 	tr.LazyPrintf("parsing done")
 
+	features := ToFeatures(featureflag.FromContext(ctx), s.logger)
+	features.KeywordScoring = searchType == query.SearchTypeKeyword
+
 	inputs := &search.Inputs{
 		Plan:                   plan,
 		Query:                  plan.ToQ(),
@@ -121,7 +124,7 @@ func (s *searchClient) Plan(
 		SearchMode:             searchMode,
 		UserSettings:           settings,
 		OnSourcegraphDotCom:    sourcegraphDotComMode,
-		Features:               ToFeatures(featureflag.FromContext(ctx), s.logger),
+		Features:               features,
 		PatternType:            searchType,
 		Protocol:               protocol,
 		SanitizeSearchPatterns: sanitizeSearchPatterns(ctx, s.db, s.logger), // Experimental: check site config to see if search sanitization is enabled

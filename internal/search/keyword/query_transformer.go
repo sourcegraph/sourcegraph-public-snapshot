@@ -1,13 +1,12 @@
 package keyword
 
 import (
-	"strings"
-
 	"github.com/go-enry/go-enry/v2"
-	"github.com/kljensen/snowball"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
+
+const maxTransformedPatterns = 10
 
 type keywordQuery struct {
 	query    query.Basic
@@ -107,18 +106,18 @@ func transformPatterns(patterns []string) []string {
 	}
 
 	for _, pattern := range patterns {
-		patternLowerCase := strings.ToLower(pattern)
-
-		if stopWords.Has(patternLowerCase) {
+		pattern = removePunctuation(pattern)
+		if len(pattern) < 3 || isCommonTerm(pattern) {
 			continue
 		}
-		add(patternLowerCase)
 
-		stemmed, err := snowball.Stem(patternLowerCase, "english", false)
-		if err != nil {
-			continue
-		}
-		add(stemmed)
+		pattern = stemTerm(pattern)
+		add(pattern)
+	}
+
+	// To maintain decent latency, limit the number of patterns we search.
+	if len(transformedPatterns) > maxTransformedPatterns {
+		transformedPatterns = transformedPatterns[:maxTransformedPatterns]
 	}
 
 	return transformedPatterns
