@@ -66,6 +66,7 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
 
     const history = data?.node?.commit?.ancestors?.nodes?.[0]
     const ownership = data.node.commit?.blob?.ownership
+    const ownershipIncludingSignals = data.node.commit?.blob?.ownershipIncludingSignals
 
     return (
         <div className={styles.wrapper}>
@@ -117,6 +118,9 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
                             ))}
                             {ownership.totalCount > 2 && (
                                 <div className={styles.ownMore}>+{ownership.totalCount - 2} more</div>
+                            )}
+                            {ownership.totalCount <= 2 && ownershipIncludingSignals.totalCount > 0 && (
+                                <div className={styles.ownMore}>+{ownershipIncludingSignals.totalCount} inferred</div>
                             )}
                         </div>
                     </Button>
