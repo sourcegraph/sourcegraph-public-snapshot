@@ -7,7 +7,16 @@ import (
 )
 
 func compareTables(schemaName, version string, actual, expected schemas.SchemaDescription) []Summary {
-	return compareNamedListsMulti(actual.Tables, expected.Tables, func(table *schemas.TableDescription, expectedTable schemas.TableDescription) []Summary {
+	return compareNamedListsMulti(
+		actual.Tables,
+		expected.Tables,
+		compareTablesCallbackFor(schemaName, version),
+		noopAdditionalCallback[schemas.TableDescription],
+	)
+}
+
+func compareTablesCallbackFor(schemaName, version string) func(_ *schemas.TableDescription, _ schemas.TableDescription) []Summary {
+	return func(table *schemas.TableDescription, expectedTable schemas.TableDescription) []Summary {
 		if table == nil {
 			url := makeSearchURL(schemaName, version,
 				fmt.Sprintf("CREATE TABLE %s", expectedTable.Name),
@@ -28,5 +37,5 @@ func compareTables(schemaName, version string, actual, expected schemas.SchemaDe
 		summaries = append(summaries, compareIndexes(*table, expectedTable)...)
 		summaries = append(summaries, compareTriggers(*table, expectedTable)...)
 		return summaries
-	}, noopAdditionalCallback[schemas.TableDescription])
+	}
 }

@@ -9,7 +9,16 @@ import (
 )
 
 func compareColumns(schemaName, version string, actualTable, expectedTable schemas.TableDescription) []Summary {
-	return compareNamedLists(actualTable.Columns, expectedTable.Columns, func(column *schemas.ColumnDescription, expectedColumn schemas.ColumnDescription) Summary {
+	return compareNamedLists(
+		actualTable.Columns,
+		expectedTable.Columns,
+		compareColumnsCallbackFor(schemaName, version, expectedTable),
+		compareColumnsAdditionalCallbackFor(expectedTable),
+	)
+}
+
+func compareColumnsCallbackFor(schemaName, version string, expectedTable schemas.TableDescription) func(_ *schemas.ColumnDescription, _ schemas.ColumnDescription) Summary {
+	return func(column *schemas.ColumnDescription, expectedColumn schemas.ColumnDescription) Summary {
 		if column == nil {
 			url := makeSearchURL(schemaName, version,
 				fmt.Sprintf("CREATE TABLE %s", expectedTable.Name),
@@ -67,7 +76,11 @@ func compareColumns(schemaName, version string, actualTable, expectedTable schem
 			fmt.Sprintf("Unexpected properties of column %q.%q", expectedTable.Name, expectedColumn.Name),
 			"redefine the column",
 		).withDiff(expectedColumn, *column).withURLHint(url)
-	}, func(additional []schemas.ColumnDescription) []Summary {
+	}
+}
+
+func compareColumnsAdditionalCallbackFor(expectedTable schemas.TableDescription) func(_ []schemas.ColumnDescription) []Summary {
+	return func(additional []schemas.ColumnDescription) []Summary {
 		summaries := []Summary{}
 		for _, column := range additional {
 			alterColumnStmt := fmt.Sprintf("ALTER TABLE %s DROP COLUMN %s;", expectedTable.Name, column.Name)
@@ -81,5 +94,5 @@ func compareColumns(schemaName, version string, actualTable, expectedTable schem
 		}
 
 		return summaries
-	})
+	}
 }

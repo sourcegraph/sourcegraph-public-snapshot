@@ -8,36 +8,43 @@ import (
 )
 
 func compareEnums(schemaName, version string, actual, expected schemas.SchemaDescription) []Summary {
-	return compareNamedLists(actual.Enums, expected.Enums, func(enum *schemas.EnumDescription, expectedEnum schemas.EnumDescription) Summary {
-		quotedLabels := make([]string, 0, len(expectedEnum.Labels))
-		for _, label := range expectedEnum.Labels {
-			quotedLabels = append(quotedLabels, fmt.Sprintf("'%s'", label))
-		}
-		createEnumStmt := fmt.Sprintf("CREATE TYPE %s AS ENUM (%s);", expectedEnum.Name, strings.Join(quotedLabels, ", "))
-		dropEnumStmt := fmt.Sprintf("DROP TYPE %s;", expectedEnum.Name)
+	return compareNamedLists(
+		actual.Enums,
+		expected.Enums,
+		compareEnumsCallback,
+		noopAdditionalCallback[schemas.EnumDescription],
+	)
+}
 
-		if enum == nil {
-			return newDriftSummary(
-				expectedEnum.Name,
-				fmt.Sprintf("Missing enum %q", expectedEnum.Name),
-				"create the type",
-			).withStatements(createEnumStmt)
-		}
+func compareEnumsCallback(enum *schemas.EnumDescription, expectedEnum schemas.EnumDescription) Summary {
+	quotedLabels := make([]string, 0, len(expectedEnum.Labels))
+	for _, label := range expectedEnum.Labels {
+		quotedLabels = append(quotedLabels, fmt.Sprintf("'%s'", label))
+	}
+	createEnumStmt := fmt.Sprintf("CREATE TYPE %s AS ENUM (%s);", expectedEnum.Name, strings.Join(quotedLabels, ", "))
+	dropEnumStmt := fmt.Sprintf("DROP TYPE %s;", expectedEnum.Name)
 
-		if ordered, ok := constructEnumRepairStatements(*enum, expectedEnum); ok {
-			return newDriftSummary(
-				expectedEnum.Name,
-				fmt.Sprintf("Missing %d labels for enum %q", len(ordered), expectedEnum.Name),
-				"add the missing enum labels",
-			).withStatements(ordered...)
-		}
-
+	if enum == nil {
 		return newDriftSummary(
 			expectedEnum.Name,
-			fmt.Sprintf("Unexpected labels for enum %q", expectedEnum.Name),
-			"drop and re-create the type",
-		).withDiff(expectedEnum.Labels, enum.Labels).withStatements(dropEnumStmt, createEnumStmt)
-	}, noopAdditionalCallback[schemas.EnumDescription])
+			fmt.Sprintf("Missing enum %q", expectedEnum.Name),
+			"create the type",
+		).withStatements(createEnumStmt)
+	}
+
+	if ordered, ok := constructEnumRepairStatements(*enum, expectedEnum); ok {
+		return newDriftSummary(
+			expectedEnum.Name,
+			fmt.Sprintf("Missing %d labels for enum %q", len(ordered), expectedEnum.Name),
+			"add the missing enum labels",
+		).withStatements(ordered...)
+	}
+
+	return newDriftSummary(
+		expectedEnum.Name,
+		fmt.Sprintf("Unexpected labels for enum %q", expectedEnum.Name),
+		"drop and re-create the type",
+	).withDiff(expectedEnum.Labels, enum.Labels).withStatements(dropEnumStmt, createEnumStmt)
 }
 
 // constructEnumRepairStatements returns a set of `ALTER ENUM ADD VALUE` statements to make

@@ -7,7 +7,16 @@ import (
 )
 
 func compareConstraints(actualTable, expectedTable schemas.TableDescription) []Summary {
-	return compareNamedLists(actualTable.Constraints, expectedTable.Constraints, func(constraint *schemas.ConstraintDescription, expectedConstraint schemas.ConstraintDescription) Summary {
+	return compareNamedLists(
+		actualTable.Constraints,
+		expectedTable.Constraints,
+		compareConstraintsCallbackFor(expectedTable),
+		compareConstraintsAdditionalCallbackFor(expectedTable),
+	)
+}
+
+func compareConstraintsCallbackFor(expectedTable schemas.TableDescription) func(_ *schemas.ConstraintDescription, _ schemas.ConstraintDescription) Summary {
+	return func(constraint *schemas.ConstraintDescription, expectedConstraint schemas.ConstraintDescription) Summary {
 		createConstraintStmt := fmt.Sprintf("ALTER TABLE %s ADD CONSTRAINT %s %s;", expectedTable.Name, expectedConstraint.Name, expectedConstraint.ConstraintDefinition)
 		dropConstraintStmt := fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s;", expectedTable.Name, expectedConstraint.Name)
 
@@ -24,7 +33,11 @@ func compareConstraints(actualTable, expectedTable schemas.TableDescription) []S
 			fmt.Sprintf("Unexpected properties of constraint %q.%q", expectedTable.Name, expectedConstraint.Name),
 			"redefine the constraint",
 		).withDiff(expectedConstraint, *constraint).withStatements(dropConstraintStmt, createConstraintStmt)
-	}, func(additional []schemas.ConstraintDescription) []Summary {
+	}
+}
+
+func compareConstraintsAdditionalCallbackFor(expectedTable schemas.TableDescription) func(_ []schemas.ConstraintDescription) []Summary {
+	return func(additional []schemas.ConstraintDescription) []Summary {
 		summaries := []Summary{}
 		for _, constraint := range additional {
 			alterTableStmt := fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s;", expectedTable.Name, constraint.Name)
@@ -38,5 +51,5 @@ func compareConstraints(actualTable, expectedTable schemas.TableDescription) []S
 		}
 
 		return summaries
-	})
+	}
 }

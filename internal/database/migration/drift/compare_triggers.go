@@ -7,7 +7,16 @@ import (
 )
 
 func compareTriggers(actualTable, expectedTable schemas.TableDescription) []Summary {
-	return compareNamedLists(actualTable.Triggers, expectedTable.Triggers, func(trigger *schemas.TriggerDescription, expectedTrigger schemas.TriggerDescription) Summary {
+	return compareNamedLists(
+		actualTable.Triggers,
+		expectedTable.Triggers,
+		compareNamedListsCallbackFor(expectedTable),
+		compareNamedListsAdditionalCallbackFor(expectedTable),
+	)
+}
+
+func compareNamedListsCallbackFor(expectedTable schemas.TableDescription) func(_ *schemas.TriggerDescription, _ schemas.TriggerDescription) Summary {
+	return func(trigger *schemas.TriggerDescription, expectedTrigger schemas.TriggerDescription) Summary {
 		createTriggerStmt := fmt.Sprintf("%s;", expectedTrigger.Definition)
 		dropTriggerStmt := fmt.Sprintf("DROP TRIGGER %s ON %s;", expectedTrigger.Name, expectedTable.Name)
 
@@ -24,7 +33,11 @@ func compareTriggers(actualTable, expectedTable schemas.TableDescription) []Summ
 			fmt.Sprintf("Unexpected properties of trigger %q.%q", expectedTable.Name, expectedTrigger.Name),
 			"redefine the trigger",
 		).withDiff(expectedTrigger, *trigger).withStatements(dropTriggerStmt, createTriggerStmt)
-	}, func(additional []schemas.TriggerDescription) []Summary {
+	}
+}
+
+func compareNamedListsAdditionalCallbackFor(expectedTable schemas.TableDescription) func(_ []schemas.TriggerDescription) []Summary {
+	return func(additional []schemas.TriggerDescription) []Summary {
 		summaries := []Summary{}
 		for _, trigger := range additional {
 			dropTriggerStmt := fmt.Sprintf("DROP TRIGGER %s ON %s;", trigger.Name, expectedTable.Name)
@@ -38,5 +51,5 @@ func compareTriggers(actualTable, expectedTable schemas.TableDescription) []Summ
 		}
 
 		return summaries
-	})
+	}
 }
