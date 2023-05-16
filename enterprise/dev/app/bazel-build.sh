@@ -32,7 +32,7 @@ bazel_build() {
   # for more info see the BUILD.bazel file in enterprise/cmd/sourcegraph
   if [[ ${CROSS_COMPILE_X86_64_MACOS:-0} == 1 ]]; then
     bazel_target="//enterprise/cmd/sourcegraph:sourcegraph_x86_64_darwin"
-    bazel_opts="${bazel_opts} --platform @zig_sdk//platform:darwin_amd64 --extra_toolchains @zig_sdk//toolchain:darwin_amd64"
+    bazel_opts="${bazel_opts} --platforms @zig_sdk//platform:darwin_amd64 --extra_toolchains @zig_sdk//toolchain:darwin_amd64"
   fi
 
   echo "--- :bazel: Building Sourcegraph Backend (${VERSION}) for platform: ${platform}"

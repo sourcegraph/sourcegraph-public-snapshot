@@ -24,12 +24,10 @@ steps:
           CROSS_COMPILE_X86_64_MACOS: 1
         command:
           - './enterprise/dev/app/bazel-build.sh'
+      - label: 'Wait for builds to complete'
+        wait: ~
       - label: 'Bundle with Tauri'
         key: 'build-tauri-sourcegraph-app'
-        depends_on:
-          - 'build-sourcegraph-app-linux'
-          - 'build-sourcegraph-app-macos-arm64'
-          - 'build-sourcegraph-app-macos-x86_64'
         agents: { queue: stateless }
         command:
           - './dev/ci/pnpm-install-with-retry.sh'
