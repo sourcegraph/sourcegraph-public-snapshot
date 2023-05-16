@@ -15,16 +15,18 @@ import {
     UpdateSignalConfigsVariables,
 } from '../../../graphql-operations';
 import {GET_OWN_JOB_CONFIGURATIONS, UPDATE_SIGNAL_CONFIGURATIONS} from './query';
+import {noop} from 'rxjs';
 
 export const OwnStatusPage: FC = () => {
     const [hasLocalChanges, setHasLocalChanges] = useState<boolean>(false)
     const [localData, setLocalData] = useState<OwnSignalConfig[]>([])
+    const [saveError, setSaveError] = useState<Error>()
 
     const { loading, error } = useQuery<GetOwnSignalConfigurationsResult>(
-        GET_OWN_JOB_CONFIGURATIONS, {onCompleted: data => {setLocalData(data.signalConfigurations)}}
+        GET_OWN_JOB_CONFIGURATIONS, {onCompleted: data => {setLocalData(data.ownSignalConfigurations)}}
     )
 
-    const [saveConfigs, {loading: loadingSaveConfigs}] = useMutation<UpdateSignalConfigsResult, UpdateSignalConfigsVariables>(UPDATE_SIGNAL_CONFIGURATIONS)
+    const [saveConfigs, {loading: loadingSaveConfigs}] = useMutation<UpdateSignalConfigsResult, UpdateSignalConfigsVariables>(UPDATE_SIGNAL_CONFIGURATIONS, {})
 
     function onUpdateJob(index: number, newJob: OwnSignalConfig): void {
         setHasLocalChanges(true)
@@ -48,18 +50,24 @@ export const OwnStatusPage: FC = () => {
                     description="List of Own inference signal indexers and their configurations. All repositories are included by default."
                     className="mb-3"
                 />
+                {saveError && <ErrorAlert error={saveError}/>}
             </div>
 
             {<Button id='saveButton' disabled={!hasLocalChanges} aria-label="Save changes" variant="primary" onClick={() => {
+                setSaveError(null)
                 // do network stuff
                 saveConfigs({variables: {
                     input: {
                         configs: localData.map(ldd => ({name: ldd.name, enabled: ldd.isEnabled, excludedRepoPatterns: ldd.excludedRepoPatterns}))
                     }
-                    }}).then(data => {
-                    setHasLocalChanges(false)
-                    setLocalData(data.data.updateSignalConfigurations)
-                }) // what do we do with errors here?
+                    }}).then(result => {
+                        if (result.errors) {
+                            setSaveError(new Error('Failed to save configurations'))
+                        } else {
+                            setHasLocalChanges(false)
+                            setLocalData(result.data.updateOwnSignalConfigurations)
+                        }
+                }).catch(noop)
             }}>
                 {loadingSaveConfigs && <LoadingSpinner/>}
                 {!loadingSaveConfigs && 'Save'}
@@ -93,7 +101,8 @@ export const OwnStatusPage: FC = () => {
                     <div id='excludeRepos'>
                         <Label className="mb-0">Exclude repositories</Label>
                         <RepositoryPatternList repositoryPatterns={job.excludedRepoPatterns} setRepositoryPatterns={updater => {
-                            onUpdateJob(index, {...job, excludedRepoPatterns: updater(job.excludedRepoPatterns)} as OwnSignalConfig)}
+                            const updatedJob:OwnSignalConfig = {...job, excludedRepoPatterns: updater(job.excludedRepoPatterns)} as OwnSignalConfig
+                            onUpdateJob(index, updatedJob)}
                         }/>
                     </div>
                 </li>

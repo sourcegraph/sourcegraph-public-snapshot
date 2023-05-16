@@ -201,7 +201,7 @@ extend type Mutation {
     """
     deleteCodeownersFiles(repositories: [DeleteCodeownersFilesInput!]!): EmptyResponse
 
-    updateSignalConfigurations(input: UpdateSignalConfigurationsInput!): [SignalConfiguration!]!
+    updateOwnSignalConfigurations(input: UpdateSignalConfigurationsInput!): [OwnSignalConfiguration!]!
 }
 
 """
@@ -243,24 +243,24 @@ extend type Query {
     """
     codeownersIngestedFiles(first: Int, after: Int): CodeownersIngestedFileConnection!
 
-    signalConfigurations: [SignalConfiguration!]!
+    ownSignalConfigurations: [OwnSignalConfiguration!]!
 }
 
-type SignalConfiguration {
+type OwnSignalConfiguration {
     name: String!
     description: String!
     isEnabled: Boolean!
     excludedRepoPatterns: [String!]!
 }
 
-input SignalConfigurationUpdate {
+input OwnSignalConfigurationUpdate {
     excludedRepoPatterns: [String!]!
     enabled: Boolean!
     name: String!
 }
 
 input UpdateSignalConfigurationsInput {
-    configs: [SignalConfigurationUpdate!]!
+    configs: [OwnSignalConfigurationUpdate!]!
 }
 
 """

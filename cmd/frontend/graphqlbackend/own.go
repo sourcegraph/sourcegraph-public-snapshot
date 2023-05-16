@@ -36,8 +36,8 @@ type OwnResolver interface {
 	DeleteCodeownersFiles(context.Context, *DeleteCodeownersFileArgs) (*EmptyResponse, error)
 
 	// config
-	SignalConfigurations(ctx context.Context) ([]SignalConfigurationResolver, error)
-	UpdateSignalConfigurations(ctx context.Context, configurationsArgs UpdateSignalConfigurationsArgs) ([]SignalConfigurationResolver, error)
+	OwnSignalConfigurations(ctx context.Context) ([]SignalConfigurationResolver, error)
+	UpdateOwnSignalConfigurations(ctx context.Context, configurationsArgs UpdateSignalConfigurationsArgs) ([]SignalConfigurationResolver, error)
 }
 
 type OwnershipConnectionResolver interface {

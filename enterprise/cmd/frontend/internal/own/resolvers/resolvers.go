@@ -493,7 +493,7 @@ func computeRecentViewSignals(ctx context.Context, logger log.Logger, db edb.Ent
 	return results, nil
 }
 
-func (r *ownResolver) SignalConfigurations(ctx context.Context) ([]graphqlbackend.SignalConfigurationResolver, error) {
+func (r *ownResolver) OwnSignalConfigurations(ctx context.Context) ([]graphqlbackend.SignalConfigurationResolver, error) {
 	var resolvers []graphqlbackend.SignalConfigurationResolver
 	store := r.db.SignalConfigurations()
 	configurations, err := store.LoadConfigurations(ctx)
@@ -528,7 +528,7 @@ func (s *signalConfigResolver) ExcludedRepoPatterns() []string {
 	return userifyPatterns(s.config.ExcludedRepoPatterns)
 }
 
-func (r *ownResolver) UpdateSignalConfigurations(ctx context.Context, args graphqlbackend.UpdateSignalConfigurationsArgs) ([]graphqlbackend.SignalConfigurationResolver, error) {
+func (r *ownResolver) UpdateOwnSignalConfigurations(ctx context.Context, args graphqlbackend.UpdateSignalConfigurationsArgs) ([]graphqlbackend.SignalConfigurationResolver, error) {
 	err := auth.CheckCurrentActorIsSiteAdmin(actor.FromContext(ctx), r.db)
 	if err != nil {
 		return nil, err
@@ -553,7 +553,7 @@ func (r *ownResolver) UpdateSignalConfigurations(ctx context.Context, args graph
 		return nil, err
 	}
 
-	return r.SignalConfigurations(ctx)
+	return r.OwnSignalConfigurations(ctx)
 }
 
 // postgresifyPatterns will convert glob-ish patterns to postgres compatible patterns. For example github.com/* -> github.com/%

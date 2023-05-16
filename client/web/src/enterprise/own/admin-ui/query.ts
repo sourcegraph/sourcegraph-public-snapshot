@@ -1,7 +1,7 @@
 import { gql } from '@sourcegraph/http-client'
 
 export const OWN_SIGNAL_FRAGMENT = gql`
-    fragment OwnSignalConfig on SignalConfiguration {
+    fragment OwnSignalConfig on OwnSignalConfiguration {
         name
         description
         isEnabled
@@ -11,7 +11,7 @@ export const OWN_SIGNAL_FRAGMENT = gql`
 
 export const GET_OWN_JOB_CONFIGURATIONS = gql`
     query GetOwnSignalConfigurations {
-        signalConfigurations {
+        ownSignalConfigurations {
             ... OwnSignalConfig
         }
     }
@@ -20,7 +20,7 @@ export const GET_OWN_JOB_CONFIGURATIONS = gql`
 
 export const UPDATE_SIGNAL_CONFIGURATIONS = gql`
     mutation UpdateSignalConfigs($input:UpdateSignalConfigurationsInput!) {
-        updateSignalConfigurations(input:$input) {
+        updateOwnSignalConfigurations(input:$input) {
             isEnabled
             name
             description
