@@ -41,9 +41,14 @@ func newExecutorQueuesHandler(
 	// in the worker.
 	//
 	// Note: In order register a new queue type please change the validate() check code in enterprise/cmd/executor/config.go
-	codeintelHandler := handler.NewHandler(executorStore, jobTokenStore, metricsStore, codeintelqueue.QueueHandler(observationCtx, db, accessToken))
-	batchesHandler := handler.NewHandler(executorStore, jobTokenStore, metricsStore, batches.QueueHandler(observationCtx, db, accessToken))
+	codeIntelQueueHandler := codeintelqueue.QueueHandler(observationCtx, db, accessToken)
+	batchesQueueHandler := batches.QueueHandler(observationCtx, db, accessToken)
+
+	codeintelHandler := handler.NewHandler(executorStore, jobTokenStore, metricsStore, codeIntelQueueHandler)
+	batchesHandler := handler.NewHandler(executorStore, jobTokenStore, metricsStore, batchesQueueHandler)
 	handlers := []handler.ExecutorHandler{codeintelHandler, batchesHandler}
+
+	multiHandler := handler.NewMultiHandler(jobTokenStore, codeIntelQueueHandler, batchesQueueHandler)
 
 	gitserverClient := gitserver.NewClient()
 
@@ -79,6 +84,7 @@ func newExecutorQueuesHandler(
 		queueRouter := base.PathPrefix("/queue").Subrouter()
 		// The queue route are treated as an internal actor and require the executor access token to authenticate.
 		queueRouter.Use(withInternalActor, executorAuth)
+		queueRouter.Path("/dequeue").Methods(http.MethodPost).HandlerFunc(multiHandler.ServeHTTP)
 
 		jobRouter := base.PathPrefix("/queue").Subrouter()
 		// The job routes are treated as internal actor. Additionally, each job comes with a short-lived token that is

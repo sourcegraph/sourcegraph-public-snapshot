@@ -16,6 +16,9 @@ type Job struct {
 	// that different queues can share identifiers.
 	ID int `json:"id"`
 
+	// Queue contains the name of the source queue.
+	Queue string `json:"queue,omitempty"`
+
 	// Token is the authentication token for the specific Job.
 	Token string `json:"Token"`
 
@@ -75,6 +78,7 @@ func (j Job) MarshalJSON() ([]byte, error) {
 			Version:             j.Version,
 			ID:                  j.ID,
 			Token:               j.Token,
+			Queue:               j.Queue,
 			RepositoryName:      j.RepositoryName,
 			RepositoryDirectory: j.RepositoryDirectory,
 			Commit:              j.Commit,
@@ -95,6 +99,7 @@ func (j Job) MarshalJSON() ([]byte, error) {
 	v1 := v1Job{
 		ID:                  j.ID,
 		Token:               j.Token,
+		Queue:               j.Queue,
 		RepositoryName:      j.RepositoryName,
 		RepositoryDirectory: j.RepositoryDirectory,
 		Commit:              j.Commit,
@@ -130,6 +135,7 @@ func (j *Job) UnmarshalJSON(data []byte) error {
 		j.Version = v2.Version
 		j.ID = v2.ID
 		j.Token = v2.Token
+		j.Queue = v2.Queue
 		j.RepositoryName = v2.RepositoryName
 		j.RepositoryDirectory = v2.RepositoryDirectory
 		j.Commit = v2.Commit
@@ -152,6 +158,7 @@ func (j *Job) UnmarshalJSON(data []byte) error {
 	}
 	j.ID = v1.ID
 	j.Token = v1.Token
+	j.Queue = v1.Queue
 	j.RepositoryName = v1.RepositoryName
 	j.RepositoryDirectory = v1.RepositoryDirectory
 	j.Commit = v1.Commit
@@ -181,6 +188,7 @@ type v2Job struct {
 	Version             int                             `json:"version,omitempty"`
 	ID                  int                             `json:"id"`
 	Token               string                          `json:"token"`
+	Queue               string                          `json:"queue,omitempty"`
 	RepositoryName      string                          `json:"repositoryName"`
 	RepositoryDirectory string                          `json:"repositoryDirectory"`
 	Commit              string                          `json:"commit"`
@@ -197,6 +205,7 @@ type v2Job struct {
 type v1Job struct {
 	ID                  int                             `json:"id"`
 	Token               string                          `json:"token"`
+	Queue               string                          `json:"queue,omitempty"`
 	RepositoryName      string                          `json:"repositoryName"`
 	RepositoryDirectory string                          `json:"repositoryDirectory"`
 	Commit              string                          `json:"commit"`
