@@ -8,17 +8,8 @@ import (
 	"cloud.google.com/go/bigquery"
 	"github.com/sourcegraph/log"
 
+	llmproxy "github.com/sourcegraph/sourcegraph/enterprise/internal/llm-proxy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-)
-
-type EventName string
-
-const (
-	EventNameUnauthorized        EventName = "Unauthorized"
-	EventNameAccessDenied        EventName = "AccessDenied"
-	EventNameRateLimited         EventName = "RateLimited"
-	EventNameCompletionsStarted  EventName = "CompletionsStarted"
-	EventNameCompletionsFinished EventName = "CompletionsFinished"
 )
 
 // Logger is an event logger.
@@ -45,7 +36,7 @@ func NewBigQueryLogger(projectID, dataset, table string) (Logger, error) {
 
 // Event contains information to be logged.
 type Event struct {
-	Name       EventName
+	Name       llmproxy.EventName
 	Source     string
 	Identifier string
 	Metadata   map[string]any

@@ -23,7 +23,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -70,35 +69,47 @@ func ResetClientMocks() {
 
 var _ Client = &clientImplementor{}
 
+// ClientSource is a source of gitserver.Client instances.
+// It allows for mocking out the client source in tests.
+type ClientSource interface {
+	// ClientForRepo returns a Client for the given repo.
+	ClientForRepo(userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error)
+	// AddrForRepo returns the address of the gitserver for the given repo.
+	AddrForRepo(userAgent string, repo api.RepoName) string
+	// Address the current list of gitserver addresses.
+	Addresses() []string
+}
+
 // NewClient returns a new gitserver.Client.
 func NewClient() Client {
 	return &clientImplementor{
 		logger:      sglog.Scoped("NewClient", "returns a new gitserver.Client"),
-		conns:       conns.get,
 		httpClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
 		// Use the binary name for userAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
-		userAgent:  filepath.Base(os.Args[0]),
-		operations: getOperations(),
+		userAgent:    filepath.Base(os.Args[0]),
+		operations:   getOperations(),
+		clientSource: conns,
 	}
 }
 
-// NewTestClient returns a test client that will use the given hard coded list of
-// addresses instead of reading them from config.
-func NewTestClient(cli httpcli.Doer, addrs []string) Client {
+// NewTestClient returns a test client that will use the given list of
+// addresses provided by the clientSource.
+func NewTestClient(cli httpcli.Doer, clientSource ClientSource) Client {
 	logger := sglog.Scoped("NewTestClient", "Test New client")
+
 	return &clientImplementor{
 		logger:      logger,
-		conns:       func() *GitserverConns { return newTestGitserverConns(addrs) },
 		httpClient:  cli,
 		HTTPLimiter: limiter.New(500),
 		// Use the binary name for userAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
-		userAgent:  filepath.Base(os.Args[0]),
-		operations: newOperations(observation.ContextWithLogger(logger, &observation.TestContext)),
+		userAgent:    filepath.Base(os.Args[0]),
+		operations:   newOperations(observation.ContextWithLogger(logger, &observation.TestContext)),
+		clientSource: clientSource,
 	}
 }
 
@@ -188,11 +199,11 @@ type clientImplementor struct {
 	// logger is used for all logging and logger creation
 	logger sglog.Logger
 
-	// conns is a function that returns the current set of gitserver addresses and connections
-	conns func() *GitserverConns
-
 	// operations are used for internal observability
 	operations *operations
+
+	// clientSource is used to get the corresponding gprc client or address for a given repository
+	clientSource ClientSource
 }
 
 type RawBatchLogResult struct {
@@ -436,15 +447,15 @@ type Client interface {
 }
 
 func (c *clientImplementor) Addrs() []string {
-	return c.conns().Addresses
+	return c.clientSource.Addresses()
 }
 
 func (c *clientImplementor) AddrForRepo(repo api.RepoName) string {
-	return c.conns().AddrForRepo(c.userAgent, repo)
+	return c.clientSource.AddrForRepo(c.userAgent, repo)
 }
 
-func (c *clientImplementor) ConnForRepo(repo api.RepoName) (*grpc.ClientConn, error) {
-	return c.conns().ConnForRepo(c.userAgent, repo)
+func (c *clientImplementor) ClientForRepo(repo api.RepoName) (proto.GitserverServiceClient, error) {
+	return c.clientSource.ClientForRepo(c.userAgent, repo)
 }
 
 // ArchiveOptions contains options for the Archive func.
@@ -452,6 +463,36 @@ type ArchiveOptions struct {
 	Treeish   string               // the tree or commit to produce an archive for
 	Format    ArchiveFormat        // format of the resulting archive (usually "tar" or "zip")
 	Pathspecs []gitdomain.Pathspec // if nonempty, only include these pathspecs.
+}
+
+func (o *ArchiveOptions) FromProto(x *proto.ArchiveRequest) {
+	protoPathSpecs := x.GetPathspecs()
+	pathSpecs := make([]gitdomain.Pathspec, 0, len(protoPathSpecs))
+
+	for _, path := range protoPathSpecs {
+		pathSpecs = append(pathSpecs, gitdomain.Pathspec(path))
+	}
+
+	*o = ArchiveOptions{
+		Treeish:   x.GetTreeish(),
+		Format:    ArchiveFormat(x.GetFormat()),
+		Pathspecs: pathSpecs,
+	}
+}
+
+func (o *ArchiveOptions) ToProto(repo string) *proto.ArchiveRequest {
+	protoPathSpecs := make([]string, 0, len(o.Pathspecs))
+
+	for _, path := range o.Pathspecs {
+		protoPathSpecs = append(protoPathSpecs, string(path))
+	}
+
+	return &proto.ArchiveRequest{
+		Repo:      repo,
+		Treeish:   o.Treeish,
+		Format:    string(o.Format),
+		Pathspecs: protoPathSpecs,
+	}
 }
 
 type BatchLogOptions protocol.BatchLogRequest
@@ -477,7 +518,7 @@ func (a *archiveReader) Read(p []byte) (int, error) {
 	n, err := a.base.Read(p)
 	if err != nil {
 		// handle the special case where git archive failed because of an invalid spec
-		if strings.Contains(err.Error(), "Not a valid object") {
+		if isRevisionNotFound(err.Error()) {
 			return 0, &gitdomain.RevisionNotFoundError{Repo: a.repo, Spec: a.spec}
 		}
 	}
@@ -536,11 +577,10 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 	}
 
 	if internalgrpc.IsGRPCEnabled(ctx) {
-		conn, err := c.execer.ConnForRepo(repoName)
+		client, err := c.execer.ClientForRepo(repoName)
 		if err != nil {
 			return nil, err
 		}
-		client := proto.NewGitserverServiceClient(conn)
 
 		req := &proto.ExecRequest{
 			Repo:           string(repoName),
@@ -610,34 +650,49 @@ type readCloseWrapper struct {
 func (r *readCloseWrapper) Read(p []byte) (int, error) {
 	n, err := r.r.Read(p)
 	if err != nil {
-		st, ok := status.FromError(err)
-		if !ok {
-			return n, err
-		}
-
-		for _, detail := range st.Details() {
-			switch payload := detail.(type) {
-			case *proto.ExecStatusPayload:
-				return n, &CommandStatusError{
-					Message:    st.Message(),
-					Stderr:     payload.Stderr,
-					StatusCode: payload.StatusCode,
-				}
-			case *proto.NotFoundPayload:
-				return n, &gitdomain.RepoNotExistError{
-					Repo:            api.RepoName(payload.Repo),
-					CloneInProgress: payload.CloneInProgress,
-					CloneProgress:   payload.CloneProgress,
-				}
-			}
-		}
+		err = convertGRPCErrorToGitDomainError(err)
 	}
+
 	return n, err
 }
 
 func (r *readCloseWrapper) Close() error {
 	r.closeFn()
 	return nil
+}
+
+// convertGRPCErrorToGitDomainError translates a GRPC error to a gitdomain error.
+// If the error is not a GRPC error, it is returned as-is.
+func convertGRPCErrorToGitDomainError(err error) error {
+	st, ok := status.FromError(err)
+	if !ok {
+		return err
+	}
+
+	if st.Code() == codes.Canceled {
+		return context.Canceled
+	}
+
+	for _, detail := range st.Details() {
+		switch payload := detail.(type) {
+
+		case *proto.ExecStatusPayload:
+			return &CommandStatusError{
+				Message:    st.Message(),
+				Stderr:     payload.Stderr,
+				StatusCode: payload.StatusCode,
+			}
+
+		case *proto.NotFoundPayload:
+			return &gitdomain.RepoNotExistError{
+				Repo:            api.RepoName(payload.Repo),
+				CloneInProgress: payload.CloneInProgress,
+				CloneProgress:   payload.CloneProgress,
+			}
+		}
+	}
+
+	return err
 }
 
 type CommandStatusError struct {
@@ -660,6 +715,12 @@ func (c *CommandStatusError) Error() string {
 	return stderr
 }
 
+func isRevisionNotFound(err string) bool {
+	// error message is lowercased in to handle case insensitive error messages
+	loweredErr := strings.ToLower(err)
+	return strings.Contains(loweredErr, "not a valid object")
+}
+
 func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "GitserverClient.Search") //nolint:staticcheck // OT is deprecated
 	span.SetTag("repo", string(args.Repo))
@@ -677,12 +738,11 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 	repoName := protocol.NormalizeRepo(args.Repo)
 
 	if internalgrpc.IsGRPCEnabled(ctx) {
-		conn, err := c.ConnForRepo(repoName)
+		client, err := c.ClientForRepo(repoName)
 		if err != nil {
 			return false, err
 		}
 
-		client := proto.NewGitserverServiceClient(conn)
 		cs, err := client.Search(ctx, args.ToProto())
 		if err != nil {
 			return false, convertGitserverError(err)

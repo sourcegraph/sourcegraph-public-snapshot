@@ -6,6 +6,7 @@ import * as vscode from 'vscode'
 import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-response-multiplexer'
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
+import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { getRecipe } from '@sourcegraph/cody-shared/src/chat/recipes/vscode-recipes'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ChatMessage, ChatHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
@@ -25,6 +26,7 @@ import { getFullConfig, updateConfiguration } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { logEvent } from '../event-logger'
 import { LocalKeywordContextFetcher } from '../keyword-context/local-keyword-context-fetcher'
+import { LocalAppDetector } from '../local-app-detector'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../services/SecretStorageProvider'
 import { TestSupport } from '../test-support'
@@ -48,6 +50,7 @@ type Config = Pick<
     | 'accessToken'
     | 'useContext'
     | 'experimentalChatPredictions'
+    | 'experimentalConnectToApp'
 >
 
 export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
@@ -72,6 +75,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
     // Codebase-context-related state
     private currentWorkspaceRoot: string
+
+    private localAppDetector: LocalAppDetector
 
     constructor(
         private extensionPath: string,
@@ -107,6 +112,18 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 }
             })
         )
+
+        this.localAppDetector = new LocalAppDetector({
+            onChange: isInstalled => {
+                void this.webview?.postMessage({ type: 'app-state', isInstalled })
+
+                // If app has been detected, we can stop the local app detector.
+                if (isInstalled) {
+                    this.localAppDetector.stop()
+                }
+            },
+        })
+        this.disposables.push(this.localAppDetector)
     }
 
     public onConfigurationChange(newConfig: Config): void {
@@ -347,7 +364,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.publishContextStatus()
     }
 
-    public async executeRecipe(recipeId: string, humanChatInput: string = '', showTab = true): Promise<void> {
+    public async executeRecipe(recipeId: RecipeID, humanChatInput: string = '', showTab = true): Promise<void> {
         if (this.isMessageInProgress) {
             this.sendErrorToWebview('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
             return
@@ -395,7 +412,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
     }
 
-    private async runRecipeForSuggestion(recipeId: string, humanChatInput: string = ''): Promise<void> {
+    private async runRecipeForSuggestion(recipeId: RecipeID, humanChatInput: string = ''): Promise<void> {
         const recipe = getRecipe(recipeId)
         if (!recipe) {
             return
@@ -566,10 +583,19 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 accessToken: this.config.accessToken,
                 customHeaders: this.config.customHeaders,
             })
+
+            // Ensure local app detector is running
+            if (this.config.experimentalConnectToApp && !isAuthed) {
+                this.localAppDetector.start()
+            } else {
+                this.localAppDetector.stop()
+            }
+
             const configForWebview: ConfigurationSubsetForWebview = {
                 debug: this.config.debug,
                 serverEndpoint: this.config.serverEndpoint,
                 hasAccessToken: isAuthed,
+                experimentalConnectToApp: this.config.experimentalConnectToApp,
             }
             void vscode.commands.executeCommand('setContext', 'cody.activated', isAuthed)
             void this.webview?.postMessage({ type: 'config', config: configForWebview })

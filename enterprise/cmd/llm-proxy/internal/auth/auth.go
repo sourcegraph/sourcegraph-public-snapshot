@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/events"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/response"
+	llmproxy "github.com/sourcegraph/sourcegraph/enterprise/internal/llm-proxy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -22,7 +23,21 @@ type Authenticator struct {
 var _ http.Handler = &Authenticator{}
 
 func (a *Authenticator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	token := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
+	var token string
+
+	if authHeader := r.Header.Get("Authorization"); authHeader != "" {
+		typ := strings.SplitN(authHeader, " ", 2)
+		if len(typ) != 2 {
+			response.JSONError(a.Logger, w, http.StatusBadRequest, errors.New("token type missing in Authorization header"))
+			return
+		}
+		if strings.ToLower(typ[0]) != "bearer" {
+			response.JSONError(a.Logger, w, http.StatusBadRequest, errors.Newf("invalid token type %s", typ[0]))
+			return
+		}
+
+		token = typ[1]
+	}
 
 	act, err := a.Sources.Get(r.Context(), token)
 	if err != nil {
@@ -30,7 +45,7 @@ func (a *Authenticator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		err := a.EventLogger.LogEvent(
 			events.Event{
-				Name:       events.EventNameUnauthorized,
+				Name:       llmproxy.EventNameUnauthorized,
 				Source:     "anonymous",
 				Identifier: "anonymous",
 			},
@@ -51,7 +66,7 @@ func (a *Authenticator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		err := a.EventLogger.LogEvent(
 			events.Event{
-				Name:       events.EventNameAccessDenied,
+				Name:       llmproxy.EventNameAccessDenied,
 				Source:     act.Source.Name(),
 				Identifier: act.ID,
 			},

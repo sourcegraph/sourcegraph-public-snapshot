@@ -670,6 +670,8 @@ func TestOwnership_WithSignals(t *testing.T) {
 						commit(rev: $revision) {
 							blob(path: $currentPath) {
 								ownership {
+									totalOwners
+									totalCount
 									nodes {
 										owner {
 											...on Person {
@@ -700,6 +702,8 @@ func TestOwnership_WithSignals(t *testing.T) {
 				"commit": {
 					"blob": {
 						"ownership": {
+							"totalOwners": 1,
+							"totalCount": 3,
 							"nodes": [
 								{
 									"owner": {
@@ -913,6 +917,7 @@ func TestCommitOwnershipSignals(t *testing.T) {
 		ContributionCount: 5,
 	}}, nil)
 	db.RecentContributionSignalsFunc.SetDefaultReturn(recentContribStore)
+	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
 
 	fakeDB.Wire(db)
 	repoID := api.RepoID(1)

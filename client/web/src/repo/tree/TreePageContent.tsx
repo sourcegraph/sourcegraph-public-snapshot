@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
-import { mdiCog, mdiInformationOutline } from '@mdi/js'
+import { mdiCog, mdiGlasses, mdiInformationOutline, mdiPencil } from '@mdi/js'
 import classNames from 'classnames'
 import { formatISO, subYears } from 'date-fns'
 import { capitalize, escapeRegExp } from 'lodash'
@@ -10,22 +10,23 @@ import { catchError, map, switchMap } from 'rxjs/operators'
 import { RepoMetadata } from '@sourcegraph/branded'
 import { encodeURIPathComponent, numberWithCommas, pluralize } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql, useQuery } from '@sourcegraph/http-client'
+import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType, TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Card, CardHeader, Icon, Link, Tooltip, Text, ButtonLink } from '@sourcegraph/wildcard'
+import { Badge, ButtonLink, Card, CardHeader, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../backend/graphql'
 import {
     ConnectionContainer,
+    ConnectionError,
     ConnectionList,
     ConnectionLoading,
     ConnectionSummary,
     SummaryContainer,
-    ConnectionError,
 } from '../../components/FilteredConnection/ui'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import {
@@ -35,16 +36,20 @@ import {
     DiffSinceVariables,
     GitCommitFields,
     RepositoryContributorNodeFields,
-    TreePageRepositoryContributorsResult,
-    TreePageRepositoryContributorsVariables,
     Scalars,
     TreeCommitsResult,
-    TreePageRepositoryFields,
     TreeCommitsVariables,
+    TreePageOwnershipNodeFields,
+    TreePageOwnershipResult,
+    TreePageOwnershipVariables,
+    TreePageRepositoryContributorsResult,
+    TreePageRepositoryContributorsVariables,
+    TreePageRepositoryFields,
 } from '../../graphql-operations'
 import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
 import { buildSearchURLQueryFromQueryState, useNavbarQueryState } from '../../stores'
+import { OWNER_FIELDS, RECENT_CONTRIBUTOR_FIELDS, RECENT_VIEW_FIELDS } from '../blob/own/grapqlQueries'
 import { GitCommitNodeTableRow } from '../commits/GitCommitNodeTableRow'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { getRefType } from '../utils'
@@ -295,6 +300,11 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
         return () => subscription.unsubscribe()
     }, [repo.name, revision, filePath])
 
+    const [recentContributorsComputed] = useFeatureFlag('own-background-index-repo-recent-contributors', false)
+    const [recentViewsComputed] = useFeatureFlag('own-background-index-repo-recent-views', false)
+
+    const ownSignalsEnabled = recentContributorsComputed || recentViewsComputed
+
     return (
         <>
             <section className={classNames('container mb-3 px-0', styles.section)}>
@@ -325,10 +335,18 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                 )}
 
                 {!isPackage && (
-                    <Card className={styles.contributors}>
-                        <CardHeader className={panelStyles.cardColHeaderWrapper}>Contributors</CardHeader>
-                        <Contributors {...props} />
-                    </Card>
+                    <div className={styles.contributors}>
+                        {ownSignalsEnabled && (
+                            <Card>
+                                <CardHeader className={panelStyles.cardColHeaderWrapper}>Ownership</CardHeader>
+                                <Ownership {...props} />
+                            </Card>
+                        )}
+                        <Card className={ownSignalsEnabled ? 'mt-3' : undefined}>
+                            <CardHeader className={panelStyles.cardColHeaderWrapper}>Contributors</CardHeader>
+                            <Contributors {...props} />
+                        </Card>
+                    </div>
                 )}
             </section>
         </>
@@ -467,6 +485,171 @@ const Contributors: React.FC<ContributorsProps> = ({ repo, filePath }) => {
                 )}
             </SummaryContainer>
         </ConnectionContainer>
+    )
+}
+
+const OWNERS_QUERY = gql`
+    ${OWNER_FIELDS}
+    ${RECENT_CONTRIBUTOR_FIELDS}
+    ${RECENT_VIEW_FIELDS}
+
+    query TreePageOwnership($repo: ID!, $first: Int, $revision: String!, $filePath: String!) {
+        node(id: $repo) {
+            ... on Repository {
+                commit(rev: $revision) {
+                    path(path: $filePath) {
+                        ... on GitTree {
+                            ownership(first: $first) {
+                                ...TreePageOwnershipConnectionFields
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fragment TreePageOwnershipConnectionFields on OwnershipConnection {
+        totalCount
+        pageInfo {
+            hasNextPage
+        }
+        nodes {
+            ...TreePageOwnershipNodeFields
+        }
+    }
+
+    fragment TreePageOwnershipNodeFields on Ownership {
+        owner {
+            ...OwnerFields
+        }
+        reasons {
+            ...RecentContributorOwnershipSignalFields
+            ...RecentViewOwnershipSignalFields
+        }
+    }
+`
+
+interface OwnershipProps extends TreePageContentProps {}
+const Ownership: React.FC<OwnershipProps> = ({ repo, filePath }) => {
+    const { data, error, loading } = useQuery<TreePageOwnershipResult, TreePageOwnershipVariables>(OWNERS_QUERY, {
+        variables: {
+            first: 5,
+            repo: repo.id,
+            revision: '',
+            filePath,
+        },
+    })
+
+    const node = data?.node && data?.node.__typename === 'Repository' ? data.node : null
+    const connection =
+        node?.commit?.path?.__typename === 'GitTree' &&
+        node?.commit?.path?.ownership?.__typename === 'OwnershipConnection'
+            ? node.commit.path.ownership
+            : null
+
+    return (
+        <ConnectionContainer>
+            {error && <ConnectionError errors={[error.message]} />}
+            {connection && connection.nodes.length > 0 && (
+                <ConnectionList
+                    className={classNames('test-filtered-contributors-connection', styles.table)}
+                    as="table"
+                >
+                    <tbody>
+                        {connection.nodes.map((node: TreePageOwnershipNodeFields) => (
+                            <OwnerNode
+                                key={
+                                    node.owner.__typename === 'Person'
+                                        ? node.owner.email
+                                        : node.owner.__typename === 'Team'
+                                        ? node.owner.name
+                                        : null
+                                }
+                                node={node}
+                            />
+                        ))}
+                    </tbody>
+                </ConnectionList>
+            )}
+            {loading && (
+                <div className={contributorsStyles.filteredConnectionLoading}>
+                    <ConnectionLoading />
+                </div>
+            )}
+            <SummaryContainer className={styles.tableSummary}>
+                {connection && (
+                    <>
+                        <ConnectionSummary
+                            compact={true}
+                            connection={connection}
+                            first={COUNT}
+                            noun="owner"
+                            pluralNoun="owners"
+                            hasNextPage={connection.pageInfo.hasNextPage}
+                        />
+                        {/* TODO(#51792): Show more button should lead
+                         * to the ownership tab with detailed view for each owner.
+                         */}
+                    </>
+                )}
+            </SummaryContainer>
+        </ConnectionContainer>
+    )
+}
+
+interface OwnerNodeProps {
+    node: TreePageOwnershipNodeFields
+}
+const OwnerNode: React.FC<OwnerNodeProps> = ({ node }) => {
+    const owner = node?.owner
+    return (
+        <tr className={classNames('list-group-item', contributorsStyles.repositoryContributorNode)}>
+            <td className={contributorsStyles.person}>
+                {/* TODO(#51791): Unify the component with FileOwnershipEntry. */}
+                {owner.__typename === 'Person' && (
+                    <>
+                        <UserAvatar user={owner} className="mx-2" inline={true} />
+                        <PersonLink person={owner} />
+                    </>
+                )}
+                {owner.__typename === 'Team' && (
+                    <>
+                        <TeamAvatar
+                            team={{ ...owner, displayName: owner.teamDisplayName }}
+                            className="mx-2"
+                            inline={true}
+                        />
+                        <Link to={`/teams/${owner.name}`}>{owner.teamDisplayName || owner.name}</Link>
+                    </>
+                )}
+            </td>
+            <td className={contributorsStyles.commits}>
+                {node.reasons.map(reason =>
+                    reason?.__typename === 'RecentContributorOwnershipSignal' ? (
+                        <Badge
+                            key={reason.title}
+                            tooltip={reason.description}
+                            className={styles.badge}
+                            variant="secondary"
+                        >
+                            <Icon aria-label={reason.title} svgPath={mdiPencil} />
+                        </Badge>
+                    ) : reason?.__typename === 'RecentViewOwnershipSignal' ? (
+                        <Badge
+                            key={reason.title}
+                            tooltip={reason.description}
+                            className={styles.badge}
+                            variant="secondary"
+                        >
+                            <Icon aria-label={reason.title} svgPath={mdiGlasses} />
+                        </Badge>
+                    ) : (
+                        <></>
+                    )
+                )}
+            </td>
+        </tr>
     )
 }
 
