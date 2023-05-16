@@ -9,6 +9,7 @@ import (
 	"github.com/go-redsync/redsync/v4/redis/redigo"
 	"github.com/gomodule/redigo/redis"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/events"
 	llmproxy "github.com/sourcegraph/sourcegraph/enterprise/internal/llm-proxy"
@@ -82,7 +83,8 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 	// Instrumentation layers
 	handler = httpLogger(obctx.Logger.Scoped("httpAPI", ""), handler)
-	handler = instrumentation.HTTPMiddleware("llm-proxy", handler)
+	handler = instrumentation.HTTPMiddleware("llm-proxy", handler,
+		otelhttp.WithPublicEndpoint())
 
 	// Collect request client for downstream handlers. Outside of dev, we always set up
 	// Cloudflare in from of LLM-proxy. This comes first.
