@@ -59,7 +59,7 @@ func productSubscriptionByDBID(ctx context.Context, db database.DB, id string) (
 		return nil, err
 	}
 	// 🚨 SECURITY: Only site admins and the subscription account's user may view a product subscription.
-	if err := serviceAccountOrOwnerOrSiteAdmin(ctx, db, &v.UserID); err != nil {
+	if err := serviceAccountOrOwnerOrSiteAdmin(ctx, db, &v.UserID, false); err != nil {
 		return nil, err
 	}
 	return &productSubscription{v: v, db: db}, nil
@@ -226,8 +226,8 @@ func (r ProductSubscriptionLicensingResolver) CreateProductSubscription(ctx cont
 }
 
 func (r ProductSubscriptionLicensingResolver) UpdateProductSubscription(ctx context.Context, args *graphqlbackend.UpdateProductSubscriptionArgs) (*graphqlbackend.EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins may update product subscriptions.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
+	// 🚨 SECURITY: Only site admins or the service accounts may update product subscriptions.
+	if err := serviceAccountOrSiteAdmin(ctx, r.DB, true); err != nil {
 		return nil, err
 	}
 
@@ -281,7 +281,7 @@ func (r ProductSubscriptionLicensingResolver) ProductSubscriptions(ctx context.C
 
 	// 🚨 SECURITY: Users may only list their own product subscriptions. Site admins may list
 	// licenses for all users, or for any other user.
-	if err := serviceAccountOrOwnerOrSiteAdmin(ctx, r.DB, accountUserID); err != nil {
+	if err := serviceAccountOrOwnerOrSiteAdmin(ctx, r.DB, accountUserID, false); err != nil {
 		return nil, err
 	}
 	var opt dbSubscriptionsListOptions

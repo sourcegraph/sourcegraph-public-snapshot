@@ -20,7 +20,7 @@ func defaultAccessToken(rawToken []byte) string {
 // given access token.
 func (r ProductSubscriptionLicensingResolver) ProductSubscriptionByAccessToken(ctx context.Context, args *graphqlbackend.ProductSubscriptionByAccessTokenArgs) (graphqlbackend.ProductSubscription, error) {
 	// 🚨 SECURITY: Only specific entities may use this functionality.
-	if err := serviceAccountOrOwnerOrSiteAdmin(ctx, r.DB, nil); err != nil {
+	if err := serviceAccountOrSiteAdmin(ctx, r.DB, false); err != nil {
 		return nil, err
 	}
 
