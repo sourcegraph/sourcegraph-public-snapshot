@@ -1,0 +1,8 @@
+filegroup(
+    name = "config",
+    srcs = glob([
+        "grafana-single-container.ini",
+        "provisioning/**/*.yaml",
+    ]),
+    visibility = ["//visibility:public"],
+)
