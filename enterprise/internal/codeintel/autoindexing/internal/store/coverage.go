@@ -72,11 +72,15 @@ func (s *store) RepositoryIDsWithConfiguration(ctx context.Context, offset, limi
 
 const repositoriesWithConfigurationQuery = `
 SELECT
-	repository_id,
-	available_indexers,
+	r.id,
+	cai.available_indexers,
 	COUNT(*) OVER() AS count
-FROM cached_available_indexers
-WHERE available_indexers != '{}'::jsonb
+FROM cached_available_indexers cai
+JOIN repo r ON r.id = cai.repository_id
+WHERE
+	available_indexers != '{}'::jsonb AND
+	r.deleted_at IS NULL AND
+	r.blocked IS NULL
 ORDER BY num_events DESC
 LIMIT %s
 OFFSET %s
