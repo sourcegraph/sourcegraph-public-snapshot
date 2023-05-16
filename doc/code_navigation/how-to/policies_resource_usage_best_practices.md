@@ -1,4 +1,4 @@
-# Code intelligence policies best practices
+# Code intelligence policies resource usage best practices
 
 This guide gives an overview of best practices when defining [auto-index scheduling](configure_auto_indexing.md) and [data retention](configure_data_retention.md) policies as it relates to resource usage (particular the disk requirement for Postgres).
 
@@ -25,10 +25,6 @@ The following factors also play a contributing role to the scale of data on a pa
 - How *deeply* your data retention policies retain individual SCIP indexes (the latest commit vs all commits on a branch)
 - How many repositories (or indexing targets) have received SCIP uploads (are there deprecated repos being indexed that will never be relevant to a user?)
 
----
----
----
+TODO - example configuration?
 
-TODO: How best to use auto-index and CI/CD based indexing together? I would like to use CI/CD in the first instance to index (especially with Kotlin/Java where the indexing process requires a full build, which is sometimes hard outside our CI/CD infra), but use auto-indexing as fallback for repos that either don’t have CI/CD indexes, or where CI/CD has failed (i.e. the build itself is fine, but CI/CD infra had a moment and lost the job/index before upload)
-
-TODO: Add example configuration for sg/sg, with detailed description of the chosen config, and why certain value where picked
+Add example configuration for sg/sg, with detailed description of the chosen config, and why certain value where picked
