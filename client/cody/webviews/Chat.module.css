@@ -74,6 +74,23 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     word-break: break-all;
 }
 
+:global(.token-not-hallucinated):hover:after,
+:global(.token-hallucinated):hover:after {
+    display: inline;
+    background: #969896;
+    color: #000;
+    padding: 0.2rem;
+    margin: 0.1rem;
+}
+
+:global(.token-not-hallucinated):hover:after {
+    content: "This file exists";
+}
+
+:global(.token-hallucinated):hover:after {
+    content: "This file does not exist";
+}
+
 .feedback-buttons {
     display: flex;
     flex-direction: row;
