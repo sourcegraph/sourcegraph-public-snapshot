@@ -3,11 +3,9 @@ package store
 import (
 	"context"
 	"sort"
-	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -374,10 +372,10 @@ WHERE id = %s
 
 // ReindexIndexes reindexes indexes matching the given filter criteria.
 func (s *store) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOptions) (err error) {
-	ctx, _, endObservation := s.operations.reindexIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", opts.RepositoryID),
-		log.String("states", strings.Join(opts.States, ",")),
-		log.String("term", opts.Term),
+	ctx, _, endObservation := s.operations.reindexIndexes.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", opts.RepositoryID),
+		attribute.StringSlice("states", opts.States),
+		attribute.String("term", opts.Term),
 	}})
 	defer endObservation(1, observation.Args{})
 
