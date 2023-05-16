@@ -2335,7 +2335,7 @@
     "completions": {
       "description": "Configuration for the completions service.",
       "type": "object",
-      "required": ["enabled", "model", "accessToken", "provider"],
+      "required": ["enabled", "chatModel", "accessToken", "provider"],
       "properties": {
         "enabled": {
           "description": "Toggles whether completions are enabled.",
