@@ -123,6 +123,9 @@ func makeUpstreamHandler[ReqT any](logger log.Logger, eventLogger events.Logger,
 		if upstreamStatusCode >= 200 && upstreamStatusCode < 300 {
 			// Pass reader to response transformer to capture token counts.
 			completionCharacterCount = respParser(body, &responseBuf)
+
+		} else if upstreamStatusCode >= 500 {
+			logger.Error("error from upstream", log.String("url", upstreamAPIURL), log.Int("status_code", upstreamStatusCode))
 		}
 	})
 }

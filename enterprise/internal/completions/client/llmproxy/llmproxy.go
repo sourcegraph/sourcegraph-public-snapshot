@@ -26,7 +26,7 @@ func NewClient(cli httpcli.Doer, endpoint, accessToken string, model string) (ty
 		return nil, err
 	}
 
-	if strings.ToLower(model) == "gpt-4" {
+	if strings.HasPrefix(strings.ToLower(model), "gpt-") {
 		return openai.NewClient(llmProxyDoer(cli, llmProxyURL, accessToken, "/v1/completions/openai"), "", model), nil
 	}
 	if strings.HasPrefix(strings.ToLower(model), "claude-") {
