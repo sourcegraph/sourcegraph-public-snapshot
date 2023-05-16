@@ -7,17 +7,15 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/drift"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 var errOutOfSync = errors.Newf("database schema is out of sync")
 
-func compareAndDisplaySchemaDescriptions(rawOut *output.Output, schemaName, version string, actual, expected schemas.SchemaDescription) (err error) {
+func displayDriftSummaries(rawOut *output.Output, summaries []drift.Summary) (err error) {
 	out := &preambledOutput{rawOut, false}
-
-	for _, summary := range drift.CompareSchemaDescriptions(schemaName, version, actual, expected) {
+	for _, summary := range summaries {
 		displaySummary(out, summary)
 		err = errOutOfSync
 	}

@@ -86,7 +86,7 @@ func Start(logger log.Logger, registerEnterpriseMigrators registerMigratorsUsing
 			cliutil.DownTo(appName, newRunner, outputFactory, false),
 			cliutil.Validate(appName, newRunner, outputFactory),
 			cliutil.Describe(appName, newRunner, outputFactory),
-			cliutil.Drift(appName, newRunner, outputFactory, DefaultSchemaFactories...),
+			cliutil.Drift(appName, newRunner, outputFactory, false, DefaultSchemaFactories...),
 			cliutil.AddLog(appName, newRunner, outputFactory),
 			cliutil.Upgrade(appName, newRunnerWithSchemas, outputFactory, registerMigrators, DefaultSchemaFactories...),
 			cliutil.Downgrade(appName, newRunnerWithSchemas, outputFactory, registerMigrators, DefaultSchemaFactories...),

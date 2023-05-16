@@ -32,6 +32,9 @@ type MockStore struct {
 	// IndexStatusFunc is an instance of a mock function object controlling
 	// the behavior of the method IndexStatus.
 	IndexStatusFunc *StoreIndexStatusFunc
+	// RunDDLStatementsFunc is an instance of a mock function object
+	// controlling the behavior of the method RunDDLStatements.
+	RunDDLStatementsFunc *StoreRunDDLStatementsFunc
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *StoreTransactFunc
@@ -70,6 +73,11 @@ func NewMockStore() *MockStore {
 		},
 		IndexStatusFunc: &StoreIndexStatusFunc{
 			defaultHook: func(context.Context, string, string) (r0 shared.IndexStatus, r1 bool, r2 error) {
+				return
+			},
+		},
+		RunDDLStatementsFunc: &StoreRunDDLStatementsFunc{
+			defaultHook: func(context.Context, []string) (r0 error) {
 				return
 			},
 		},
@@ -125,6 +133,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.IndexStatus")
 			},
 		},
+		RunDDLStatementsFunc: &StoreRunDDLStatementsFunc{
+			defaultHook: func(context.Context, []string) error {
+				panic("unexpected invocation of MockStore.RunDDLStatements")
+			},
+		},
 		TransactFunc: &StoreTransactFunc{
 			defaultHook: func(context.Context) (Store, error) {
 				panic("unexpected invocation of MockStore.Transact")
@@ -168,6 +181,9 @@ func NewMockStoreFrom(i Store) *MockStore {
 		},
 		IndexStatusFunc: &StoreIndexStatusFunc{
 			defaultHook: i.IndexStatus,
+		},
+		RunDDLStatementsFunc: &StoreRunDDLStatementsFunc{
+			defaultHook: i.RunDDLStatements,
 		},
 		TransactFunc: &StoreTransactFunc{
 			defaultHook: i.Transact,
@@ -607,6 +623,111 @@ func (c StoreIndexStatusFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreIndexStatusFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// StoreRunDDLStatementsFunc describes the behavior when the
+// RunDDLStatements method of the parent MockStore instance is invoked.
+type StoreRunDDLStatementsFunc struct {
+	defaultHook func(context.Context, []string) error
+	hooks       []func(context.Context, []string) error
+	history     []StoreRunDDLStatementsFuncCall
+	mutex       sync.Mutex
+}
+
+// RunDDLStatements delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) RunDDLStatements(v0 context.Context, v1 []string) error {
+	r0 := m.RunDDLStatementsFunc.nextHook()(v0, v1)
+	m.RunDDLStatementsFunc.appendCall(StoreRunDDLStatementsFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the RunDDLStatements
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreRunDDLStatementsFunc) SetDefaultHook(hook func(context.Context, []string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RunDDLStatements method of the parent MockStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreRunDDLStatementsFunc) PushHook(hook func(context.Context, []string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreRunDDLStatementsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, []string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreRunDDLStatementsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, []string) error {
+		return r0
+	})
+}
+
+func (f *StoreRunDDLStatementsFunc) nextHook() func(context.Context, []string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreRunDDLStatementsFunc) appendCall(r0 StoreRunDDLStatementsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreRunDDLStatementsFuncCall objects
+// describing the invocations of this function.
+func (f *StoreRunDDLStatementsFunc) History() []StoreRunDDLStatementsFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreRunDDLStatementsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreRunDDLStatementsFuncCall is an object that describes an invocation
+// of method RunDDLStatements on an instance of MockStore.
+type StoreRunDDLStatementsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreRunDDLStatementsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreRunDDLStatementsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // StoreTransactFunc describes the behavior when the Transact method of the
