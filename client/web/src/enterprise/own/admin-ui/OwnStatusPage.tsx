@@ -10,51 +10,25 @@ import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import {RepositoryPatternList} from '../../codeintel/configuration/components/RepositoryPatternList';
 import {useMutation, useQuery} from '@sourcegraph/http-client';
 import {
-    GetOwnSignalConfigurationsResult,
+    GetOwnSignalConfigurationsResult, OwnSignalConfig,
     UpdateSignalConfigsResult,
     UpdateSignalConfigsVariables,
 } from '../../../graphql-operations';
 import {GET_OWN_JOB_CONFIGURATIONS, UPDATE_SIGNAL_CONFIGURATIONS} from './query';
 
-interface Job {
-    name: string;
-    description: string;
-    isEnabled: boolean;
-    excluded: string[];  // array of strings
-}
-
-const data: Job[] = [{
-    'name': 'recent-contributors',
-    'description': 'Calculates recent contributors one job per repository.',
-    'isEnabled': true,
-    excluded: []
-},
-    {
-        'name': 'recent-views',
-        'description': 'Calculates recent viewers from the events stored inside Sourcegraph.',
-        'isEnabled': false,
-        excluded: []
-    }
-]
-
 export const OwnStatusPage: FC = () => {
     const [hasLocalChanges, setHasLocalChanges] = useState<boolean>(false)
-    const [localData, setLocalData] = useState<Job[]>([])
+    const [localData, setLocalData] = useState<OwnSignalConfig[]>([])
 
     const { loading, error } = useQuery<GetOwnSignalConfigurationsResult>(
-        GET_OWN_JOB_CONFIGURATIONS, {onCompleted: data => {
-                const jobs = data.signalConfigurations.map(sc => {
-                    return {...sc, excluded: sc.excludedRepoPatterns}
-                })
-                setLocalData(jobs)
-            }}
+        GET_OWN_JOB_CONFIGURATIONS, {onCompleted: data => {setLocalData(data.signalConfigurations)}}
     )
 
     const [saveConfigs, {loading: loadingSaveConfigs}] = useMutation<UpdateSignalConfigsResult, UpdateSignalConfigsVariables>(UPDATE_SIGNAL_CONFIGURATIONS)
 
-    function onUpdateJob(index: number, newJob: Job): void {
+    function onUpdateJob(index: number, newJob: OwnSignalConfig): void {
         setHasLocalChanges(true)
-        const newData = localData.map((job, ind) => {
+        const newData = localData.map((job: OwnSignalConfig, ind: number) => {
             if (ind === index) {
                 return newJob
             }
@@ -80,14 +54,11 @@ export const OwnStatusPage: FC = () => {
                 // do network stuff
                 saveConfigs({variables: {
                     input: {
-                        configs: localData.map(ldd => ({name: ldd.name, enabled: ldd.isEnabled, excludedRepoPatterns: ldd.excluded}))
+                        configs: localData.map(ldd => ({name: ldd.name, enabled: ldd.isEnabled, excludedRepoPatterns: ldd.excludedRepoPatterns}))
                     }
                     }}).then(data => {
-                    const jobs = data.data.updateSignalConfigurations.map(sc => {
-                        return {...sc, excluded: sc.excludedRepoPatterns}
-                    })
                     setHasLocalChanges(false)
-                    setLocalData(jobs)
+                    setLocalData(data.data.updateSignalConfigurations)
                 }) // what do we do with errors here?
             }}>
                 {loadingSaveConfigs && <LoadingSpinner/>}
@@ -98,7 +69,7 @@ export const OwnStatusPage: FC = () => {
         <Container className='root'>
             {(loading) && <LoadingSpinner/>}
             {error && <ErrorAlert prefix="Error fetching Own signal configurations" error={error} /> }
-            {!(loading) && localData && !error && localData.map((job, index) => (
+            {!(loading) && localData && !error && localData.map((job: OwnSignalConfig, index: number) => (
                 <li key={job.name} className="job">
                     <div className='jobHeader'>
                         <H3 className='jobName'>{job.name}</H3>
@@ -121,10 +92,9 @@ export const OwnStatusPage: FC = () => {
 
                     <div id='excludeRepos'>
                         <Label className="mb-0">Exclude repositories</Label>
-                        <RepositoryPatternList repositoryPatterns={job.excluded} setRepositoryPatterns={updater => {
-                            onUpdateJob(index, {...job, excluded: updater(job.excluded)} as Job)}
+                        <RepositoryPatternList repositoryPatterns={job.excludedRepoPatterns} setRepositoryPatterns={updater => {
+                            onUpdateJob(index, {...job, excludedRepoPatterns: updater(job.excludedRepoPatterns)} as OwnSignalConfig)}
                         }/>
-
                     </div>
                 </li>
             ))}
