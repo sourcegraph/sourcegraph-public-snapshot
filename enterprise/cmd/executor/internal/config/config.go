@@ -27,6 +27,7 @@ type Config struct {
 	FrontendURL                                    string
 	FrontendAuthorizationToken                     string
 	QueueName                                      string
+	QueueNames                                     string
 	QueuePollInterval                              time.Duration
 	MaximumNumJobs                                 int
 	FirecrackerImage                               string
@@ -97,7 +98,8 @@ func NewAppConfig() *Config {
 func (c *Config) Load() {
 	c.FrontendURL = c.Get("EXECUTOR_FRONTEND_URL", "", "The external URL of the sourcegraph instance.")
 	c.FrontendAuthorizationToken = c.Get("EXECUTOR_FRONTEND_PASSWORD", c.defaultFrontendPassword, "The authorization token supplied to the frontend.")
-	c.QueueName = c.Get("EXECUTOR_QUEUE_NAME", "", "The name of the queue to listen to.")
+	c.QueueName = c.GetOptional("EXECUTOR_QUEUE_NAME", "The name of the queue to listen to.")
+	c.QueueNames = c.GetOptional("EXECUTOR_QUEUE_NAMES", "The names of multiple queues to listen to, comma-separated.")
 	c.QueuePollInterval = c.GetInterval("EXECUTOR_QUEUE_POLL_INTERVAL", "1s", "Interval between dequeue requests.")
 	c.MaximumNumJobs = c.GetInt("EXECUTOR_MAXIMUM_NUM_JOBS", "1", "Number of virtual machines or containers that can be running at once.")
 	c.UseFirecracker = c.GetBool("EXECUTOR_USE_FIRECRACKER", strconv.FormatBool(runtime.GOOS == "linux" && !IsKubernetes()), "Whether to isolate commands in virtual machines. Requires ignite and firecracker. Linux hosts only. Kubernetes is not supported.")
@@ -179,8 +181,18 @@ func getKubeConfigPath() string {
 }
 
 func (c *Config) Validate() error {
-	if c.QueueName != "" && c.QueueName != "batches" && c.QueueName != "codeintel" {
+	if c.QueueName == "" && c.QueueNames == "" {
+		c.AddError(errors.New("One of EXECUTOR_QUEUE_NAME and EXECUTOR_QUEUE_NAMES should be set"))
+	} else if c.QueueName != "" && c.QueueNames != "" {
+		c.AddError(errors.New("Only one of EXECUTOR_QUEUE_NAME and EXECUTOR_QUEUE_NAMES should be set"))
+	} else if c.QueueName != "" && c.QueueName != "batches" && c.QueueName != "codeintel" {
 		c.AddError(errors.New("EXECUTOR_QUEUE_NAME must be set to 'batches' or 'codeintel'"))
+	} else {
+		for _, queueName := range strings.Split(c.QueueNames, ",") {
+			if queueName != "batches" && queueName != "codeintel" {
+				c.AddError(errors.Newf("EXECUTOR_QUEUE_NAMES contains invalid queue name '%s'", queueName))
+			}
+		}
 	}
 
 	u, err := url.Parse(c.FrontendURL)

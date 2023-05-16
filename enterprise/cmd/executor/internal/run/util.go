@@ -60,10 +60,11 @@ func newQueueTelemetryOptions(ctx context.Context, runner util.CmdRunner, useFir
 }
 
 func apiWorkerOptions(c *config.Config, queueTelemetryOptions queue.TelemetryOptions) apiworker.Options {
+	queueNames := strings.Split(c.QueueNames, ",")
 	return apiworker.Options{
 		VMPrefix:      c.VMPrefix,
 		QueueName:     c.QueueName,
-		QueueNames:    c.QueueNames,
+		QueueNames:    queueNames,
 		WorkerOptions: workerOptions(c),
 		RunnerOptions: runner.Options{
 			DockerOptions:      dockerOptions(c),
@@ -135,10 +136,11 @@ func resourceOptions(c *config.Config) command.ResourceOptions {
 }
 
 func queueOptions(c *config.Config, telemetryOptions queue.TelemetryOptions) queue.Options {
+	queueNames := strings.Split(c.QueueNames, ",")
 	return queue.Options{
 		ExecutorName:      c.WorkerHostname,
 		QueueName:         c.QueueName,
-		QueueNames:        c.QueueNames,
+		QueueNames:        queueNames,
 		BaseClientOptions: baseClientOptions(c, "/.executors/queue"),
 		TelemetryOptions:  telemetryOptions,
 		ResourceOptions: queue.ResourceOptions{

@@ -247,6 +247,54 @@ func TestConfig_Validate(t *testing.T) {
 			},
 			expectedErr: errors.New("EXECUTOR_FRONTEND_URL must be in the format scheme://host (and optionally :port)"),
 		},
+		{
+			name: "EXECUTOR_QUEUE_NAME and EXECUTOR_QUEUE_NAMES both defined",
+			getterFunc: func(name string, defaultValue, description string) string {
+				switch name {
+				case "EXECUTOR_QUEUE_NAME":
+					return "batches"
+				case "EXECUTOR_QUEUE_NAMES":
+					return "batches,codeintel"
+				case "EXECUTOR_FRONTEND_URL":
+					return "http://some-url.com"
+				case "EXECUTOR_FRONTEND_PASSWORD":
+					return "some-password"
+				default:
+					return defaultValue
+				}
+			},
+			expectedErr: errors.New("Only one of EXECUTOR_QUEUE_NAME and EXECUTOR_QUEUE_NAMES should be set"),
+		},
+		{
+			name: "Neither of EXECUTOR_QUEUE_NAME and EXECUTOR_QUEUE_NAMES defined",
+			getterFunc: func(name string, defaultValue, description string) string {
+				switch name {
+				case "EXECUTOR_FRONTEND_URL":
+					return "http://some-url.com"
+				case "EXECUTOR_FRONTEND_PASSWORD":
+					return "some-password"
+				default:
+					return defaultValue
+				}
+			},
+			expectedErr: errors.New("One of EXECUTOR_QUEUE_NAME and EXECUTOR_QUEUE_NAMES should be set"),
+		},
+		{
+			name: "EXECUTOR_QUEUE_NAMES using incorrect separator",
+			getterFunc: func(name string, defaultValue, description string) string {
+				switch name {
+				case "EXECUTOR_FRONTEND_URL":
+					return "http://some-url.com"
+				case "EXECUTOR_QUEUE_NAMES":
+					return "batches;codeintel"
+				case "EXECUTOR_FRONTEND_PASSWORD":
+					return "some-password"
+				default:
+					return defaultValue
+				}
+			},
+			expectedErr: errors.New("EXECUTOR_QUEUE_NAMES contains invalid queue name 'batches;codeintel'"),
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
