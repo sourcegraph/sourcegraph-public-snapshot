@@ -65,11 +65,11 @@ func TestAssignedOwnersStore_ListAssignedOwnersForRepo(t *testing.T) {
 		return owners[i].FilePath < owners[j].FilePath
 	})
 	// We are checking everything except timestamps, non-zero check is sufficient for them.
-	assert.Equal(t, owners[0], &AssignedOwnerSummary{UserID: 1, RepoID: 1, FilePath: "src", WhoAssignedUserID: 2, AssignedAt: owners[0].AssignedAt})
+	assert.Equal(t, owners[0], &AssignedOwnerSummary{OwnerUserID: 1, RepoID: 1, FilePath: "src", WhoAssignedUserID: 2, AssignedAt: owners[0].AssignedAt})
 	assert.NotZero(t, owners[0].AssignedAt)
-	assert.Equal(t, owners[1], &AssignedOwnerSummary{UserID: 2, RepoID: 1, FilePath: "src/abc", WhoAssignedUserID: 1, AssignedAt: owners[1].AssignedAt})
+	assert.Equal(t, owners[1], &AssignedOwnerSummary{OwnerUserID: 2, RepoID: 1, FilePath: "src/abc", WhoAssignedUserID: 1, AssignedAt: owners[1].AssignedAt})
 	assert.NotZero(t, owners[1].AssignedAt)
-	assert.Equal(t, owners[2], &AssignedOwnerSummary{UserID: 2, RepoID: 1, FilePath: "src/def", WhoAssignedUserID: 1, AssignedAt: owners[2].AssignedAt})
+	assert.Equal(t, owners[2], &AssignedOwnerSummary{OwnerUserID: 2, RepoID: 1, FilePath: "src/def", WhoAssignedUserID: 1, AssignedAt: owners[2].AssignedAt})
 	assert.NotZero(t, owners[2].AssignedAt)
 }
 

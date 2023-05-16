@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS assigned_owners
 (
     id                   SERIAL PRIMARY KEY,
-    user_id              INTEGER   NOT NULL REFERENCES users (id) ON DELETE CASCADE DEFERRABLE,
+    owner_user_id        INTEGER   NOT NULL REFERENCES users (id) ON DELETE CASCADE DEFERRABLE,
     file_path_id         INTEGER   NOT NULL REFERENCES repo_paths (id),
     who_assigned_user_id INTEGER   NULL REFERENCES users (id) ON DELETE SET NULL DEFERRABLE,
     assigned_at          TIMESTAMP NOT NULL DEFAULT NOW()

@@ -926,7 +926,7 @@ CREATE TABLE aggregated_user_statistics (
 
 CREATE TABLE assigned_owners (
     id integer NOT NULL,
-    user_id integer NOT NULL,
+    owner_user_id integer NOT NULL,
     file_path_id integer NOT NULL,
     who_assigned_user_id integer,
     assigned_at timestamp without time zone DEFAULT now() NOT NULL
@@ -5957,7 +5957,7 @@ ALTER TABLE ONLY assigned_owners
     ADD CONSTRAINT assigned_owners_file_path_id_fkey FOREIGN KEY (file_path_id) REFERENCES repo_paths(id);
 
 ALTER TABLE ONLY assigned_owners
-    ADD CONSTRAINT assigned_owners_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
+    ADD CONSTRAINT assigned_owners_owner_user_id_fkey FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY assigned_owners
     ADD CONSTRAINT assigned_owners_who_assigned_user_id_fkey FOREIGN KEY (who_assigned_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE;

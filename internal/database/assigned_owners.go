@@ -18,7 +18,7 @@ type AssignedOwnersStore interface {
 }
 
 type AssignedOwnerSummary struct {
-	UserID            int32
+	OwnerUserID       int32
 	FilePath          string
 	RepoID            api.RepoID
 	WhoAssignedUserID int32
@@ -41,7 +41,7 @@ const insertAssignedOwnerFmtstr = `
 		FROM repo_paths
 		WHERE absolute_path = %s AND repo_id = %s
 	)
-	INSERT INTO assigned_owners(user_id, file_path_id, who_assigned_user_id)
+	INSERT INTO assigned_owners(owner_user_id, file_path_id, who_assigned_user_id)
 	SELECT %s, p.id, %s
 	FROM repo_path AS p
 	ON CONFLICT DO NOTHING
@@ -64,7 +64,7 @@ func (s assignedOwnersStore) Insert(ctx context.Context, assignedOwnerID int32, 
 }
 
 const listAssignedOwnersForRepoFmtstr = `
-	SELECT a.user_id, p.absolute_path, p.repo_id, a.who_assigned_user_id, a.assigned_at
+	SELECT a.owner_user_id, p.absolute_path, p.repo_id, a.who_assigned_user_id, a.assigned_at
 	FROM assigned_owners AS a
 	INNER JOIN repo_paths AS p ON p.id = a.file_path_id
 	WHERE p.repo_id = %s
@@ -83,7 +83,7 @@ var scanAssignedOwners = basestore.NewSliceScanner(func(scanner dbutil.Scanner) 
 
 func scanAssignedOwner(sc dbutil.Scanner, summary *AssignedOwnerSummary) error {
 	return sc.Scan(
-		&summary.UserID,
+		&summary.OwnerUserID,
 		&summary.FilePath,
 		&summary.RepoID,
 		&dbutil.NullInt32{N: &summary.WhoAssignedUserID},
