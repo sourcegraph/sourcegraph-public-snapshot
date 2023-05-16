@@ -300,7 +300,7 @@ WITH
 -- perform below.
 candidates_from_uploads AS (
 	SELECT u.repository_id
-	FROM lsif_uploads u
+	FROM lsif_uploads_with_repository_name u
 	WHERE
 		u.state = 'failed' AND
 		NOT EXISTS (
