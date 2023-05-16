@@ -71,6 +71,21 @@ func TestClient_Dequeue(t *testing.T) {
 			},
 			expectedErr: errors.New("unexpected status code 500"),
 		},
+		{
+			name: "Multi-queue success",
+			spec: routeSpec{
+				expectedMethod:   "POST",
+				expectedPath:     "/.executors/queue/dequeue",
+				expectedUsername: "test",
+				expectedToken:    "hunter2",
+				expectedPayload:  `{"executorName": "deadbeef", "version": "0.0.0+dev", "queues": ["test_queue_one", "test_queue_two"]}`,
+				responseStatus:   http.StatusOK,
+				responsePayload:  `{"id": 42, "queue": "test_queue_one"}`,
+				multiQueue:       true,
+			},
+			expectedJob: types.Job{ID: 42, Queue: "test_queue_one", VirtualMachineFiles: map[string]types.VirtualMachineFile{}},
+			isDequeued:  true,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
