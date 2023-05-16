@@ -37,12 +37,14 @@ if [ "$clean" != "n" ] && [ "$clean" != "N" ]; then
   rm -rf "$DATA"
 fi
 
+
+# WIP WIP
+  # -e DISABLE_BLOBSTORE=true \
+  # -e DISABLE_OBSERVABILITY=true \
 echo "--- Starting server ${IMAGE} on port ${PORT}"
 docker run "$@" \
   --publish "$PORT":7080 \
   -e ALLOW_SINGLE_DOCKER_CODE_INSIGHTS=t \
-  -e DISABLE_BLOBSTORE=true \
-  -e DISABLE_OBSERVABILITY=true \
   -e SOURCEGRAPH_LICENSE_GENERATION_KEY="$SOURCEGRAPH_LICENSE_GENERATION_KEY" \
   -e SG_FEATURE_FLAG_GRPC="$SG_FEATURE_FLAG_GRPC" \
   -e DB_STARTUP_TIMEOUT="$DB_STARTUP_TIMEOUT" \
