@@ -1,4 +1,6 @@
 export interface KeywordContextFetcherResult {
+    repoName?: string
+    revision?: string
     fileName: string
     content: string
 }

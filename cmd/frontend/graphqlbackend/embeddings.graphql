@@ -72,6 +72,14 @@ A single embeddings search result.
 """
 type EmbeddingsSearchResult {
     """
+    The name of the repository containing the search result.
+    """
+    repoName: String!
+    """
+    The commitID of the repository containing the search result.
+    """
+    revision: String!
+    """
     The search result file name.
     """
     fileName: String!

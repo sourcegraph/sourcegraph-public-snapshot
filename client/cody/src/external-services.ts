@@ -43,7 +43,8 @@ export async function configureExternalServices(
             'Please check that the repository exists and is entered correctly in the cody.codebase setting.'
         console.info(infoMessage)
     }
-    const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
+    const embeddingsSearch =
+        repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId, false) : null
 
     const codebaseContext = new CodebaseContext(
         initialConfig,

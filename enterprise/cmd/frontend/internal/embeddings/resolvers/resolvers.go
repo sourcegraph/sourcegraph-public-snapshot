@@ -206,6 +206,14 @@ type embeddingsSearchResultResolver struct {
 	result embeddings.EmbeddingSearchResult
 }
 
+func (r *embeddingsSearchResultResolver) RepoName(ctx context.Context) string {
+	return string(r.result.RepoName)
+}
+
+func (r *embeddingsSearchResultResolver) Revision(ctx context.Context) string {
+	return string(r.result.Revision)
+}
+
 func (r *embeddingsSearchResultResolver) FileName(ctx context.Context) string {
 	return r.result.FileName
 }

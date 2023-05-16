@@ -39,6 +39,8 @@ type EmbeddingsSearchResultsResolver interface {
 }
 
 type EmbeddingsSearchResultResolver interface {
+	RepoName(ctx context.Context) string
+	Revision(ctx context.Context) string
 	FileName(ctx context.Context) string
 	StartLine(ctx context.Context) int32
 	EndLine(ctx context.Context) int32

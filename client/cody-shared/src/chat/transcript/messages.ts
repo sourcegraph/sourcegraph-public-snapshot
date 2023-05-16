@@ -1,11 +1,11 @@
+import { ContextFile } from '../../codebase-context/messages'
 import { Message } from '../../sourcegraph-api'
 
 import { TranscriptJSON } from '.'
 
 export interface ChatMessage extends Message {
     displayText?: string
-    // File names of context files
-    contextFiles?: string[]
+    contextFiles?: ContextFile[]
 }
 
 export interface InteractionMessage extends Message {
