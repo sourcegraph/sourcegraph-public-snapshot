@@ -14,48 +14,33 @@ bazelrc() {
 
 bazel_build() {
   local bazel_cmd
+  local bazel_target
+  local bazel_opts
   local platform
-  local target_path
-  platform=$1
-  target_path=$2
+  local bin_dir
   bazel_cmd="bazel"
+  bazel_target="//enterprise/cmd/sourcegraph:sourcegraph"
+  bazel_opts="--stamp --workspace_status_command=./enterprise/dev/app/app_stamp_vars.sh"
+  platform=$1
+  bin_dir=$2
+
   if [[ ${CI:-""} == "true" ]]; then
     bazel_cmd="${bazel_cmd} $(bazelrc)"
   fi
 
+  # we need special flags and targets when cross compiling
+  # for more info see the BUILD.bazel file in enterprise/cmd/sourcegraph
+  if [[ ${CROSS_COMPILE_X86_64_MACOS:-0} == 1 ]]; then
+    bazel_target="//enterprise/cmd/sourcegraph:sourcegraph_x86_64_darwin"
+    bazel_opts="${bazel_opts} --platform @zig_sdk//platform:darwin_amd64 --extra_toolchains @zig_sdk//toolchain:darwin_amd64"
+  fi
+
   echo "--- :bazel: Building Sourcegraph Backend (${VERSION}) for platform: ${platform}"
-  ${bazel_cmd} build //enterprise/cmd/sourcegraph:sourcegraph --stamp --workspace_status_command=./enterprise/dev/app/app_stamp_vars.sh
+  ${bazel_cmd} build ${bazel_target} ${bazel_opts}
 
   out=$(bazel cquery //enterprise/cmd/sourcegraph:sourcegraph --output=files)
-  mkdir -p ".bin"
-  cp -vf "${out}" "${target_path}"
-}
-
-pre_codesign() {
-  local binary_path
-  binary_path=$1
-  # Tauri won't code sign our sidecar sourcegraph-backend Go binary for us, so we need to do it on
-  # our own. https://github.com/tauri-apps/tauri/discussions/2269
-  # For details on code signing, see doc/dev/background-information/app/codesigning.md
-  if [[ ${PLATFORM_IS_MACOS} == 1 ]]; then
-    # We expect the same APPLE_ env vars that Tauri does here, see https://tauri.app/v1/guides/distribution/sign-macos
-    security create-keychain -p my_temporary_keychain_password my_temporary_keychain.keychain
-    security set-keychain-settings my_temporary_keychain.keychain
-    security unlock-keychain -p my_temporary_keychain_password my_temporary_keychain.keychain
-    security list-keychains -d user -s my_temporary_keychain.keychain "$(security list-keychains -d user | sed 's/["]//g')"
-
-    echo "$APPLE_CERTIFICATE" >cert.p12.base64
-    base64 -d -i cert.p12.base64 -o cert.p12
-
-    security import ./cert.p12 -k my_temporary_keychain.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-    security set-key-partition-list -S apple-tool:,apple:, -s -k my_temporary_keychain_password -D "$APPLE_SIGNING_IDENTITY" -t private my_temporary_keychain.keychain
-
-    echo "[Code Signing] binary: ${binary_path}"
-    codesign --force -s "$APPLE_SIGNING_IDENTITY" --keychain my_temporary_keychain.keychain --deep "${binary_path}"
-
-    security delete-keychain my_temporary_keychain.keychain
-    security list-keychains -d user -s login.keychain
-  fi
+  mkdir -p "${bin_dir}"
+  cp -vf "${out}" "${bin_dir}/sourcegraph-backend-${platform}"
 }
 
 upload_artifacts() {
@@ -66,11 +51,11 @@ upload_artifacts() {
   buildkite-agent artifact upload "${target_path}"
 }
 
+
 platform() {
   # We need to determine the platform string for the sourcegraph-backend binary
   local arch=""
   local platform=""
-  local macos=0
   case "$(uname -m)" in
     "amd64")
       arch="x86_64"
@@ -80,33 +65,32 @@ platform() {
       ;;
     *)
       arch=$(uname -m)
-      ;;
   esac
 
   case "$(uname -s)" in
     "Darwin")
       platform="${arch}-apple-darwin"
-      macos=1
       ;;
     "Linux")
       platform="${arch}-unknown-linux-gnu"
       ;;
     *)
       platform="${arch}-unknown-unknown"
-      ;;
   esac
 
-  export PLATFORM=${platform}
-  export PLATFORM_IS_MACOS=${macos}
+  echo ${platform}
 }
+
+# determine platform if it is not set
+PLATFORM=${PLATFORM:-$(platform)}
+export PLATFORM
+export PLATFORM_IS_MACOS=if [[ $(uname -s) == "Darwin" ]]; then 1; else 0 fi;
+
 
 VERSION=$(./enterprise/dev/app/app_version.sh)
 export VERSION
 
-set_platform
-target_path=".bin/sourcegraph-backend-${PLATFORM}"
-
-bazel_build "${PLATFORM}" "${target_path}"
+bazel_build "${PLATFORM}" ".bin"
 
 # TODO(burmudar) move this to it's own file
 if [[ ${CODESIGNING} == 1 ]]; then

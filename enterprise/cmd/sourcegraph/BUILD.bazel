@@ -50,3 +50,26 @@ go_binary(
     # },
     visibility = ["//visibility:public"],
 )
+
+go_binary(
+    name = "sourcegraph_x86_64_darwin",
+    embed = [":sourcegraph_lib"],
+    # -trimpath removes useless information like e.g. /Users/stephen/stephen@sourcegraph.com/
+    # prefixes from import paths in stack traces
+    gc_goopts = ["-trimpath"],
+
+    # when cross compiling from arm64 to x86_64 we hit a DWARF generation issue see https://github.com/ziglang/zig/issues/15438
+    # the workaround is to set the linkmod (buildmode) to pie
+    linkmode = "pie",
+    # The options below reduce the final binary size considerably.
+    #
+    # -s strips debug symbols (not needed for stack traces)
+    # -w strips the DWARF debug symbol table (not needed for stack traces)
+    gc_linkopts = [
+      "-w",
+    ],
+    # x_defs = {
+    #     "github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType": "app",
+    # },
+    visibility = ["//visibility:public"],
+)

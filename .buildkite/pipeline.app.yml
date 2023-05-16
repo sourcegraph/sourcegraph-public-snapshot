@@ -1,16 +1,27 @@
 steps:
   - group: "Sourcegraph App"
     steps:
-      - label: 'Build Sourcegraph Backend App for Linux'
+      - label: 'Build for Linux'
         key: 'build-sourcegraph-app-linux'
         agents: { queue: bazel }
         env:
           PLATFORM: x86_64-unknown-linux-gnu
         command:
           - './enterprise/dev/app/bazel-build.sh'
-      - label: 'Build Sourcegraph Backend App for MacOS arm64'
+      - label: 'Build for MacOS arm64'
         key: 'build-sourcegraph-app-macos-arm64'
         agents: { queue: macos }
+        env:
+          PLATFORM: aarch64-apple-darwin
+        command:
+          - './enterprise/dev/app/bazel-build.sh'
+      - label: 'Build for MacOS x86_64'
+        key: 'build-sourcegraph-app-macos-x86_64'
+        depends_on: 'build-sourcegraph-app-macos-arm64'
+        agents: { queue: macos }
+        env:
+          PLATFORM: x86_64-apple-darwin
+          CROSS_COMPILE_X86_64_MACOS: 1
         command:
           - './enterprise/dev/app/bazel-build.sh'
       - label: 'Bundle with Tauri'
@@ -18,6 +29,7 @@ steps:
         depends_on:
           - 'build-sourcegraph-app-linux'
           - 'build-sourcegraph-app-macos-arm64'
+          - 'build-sourcegraph-app-macos-x86_64'
         agents: { queue: stateless }
         command:
           - './dev/ci/pnpm-install-with-retry.sh'

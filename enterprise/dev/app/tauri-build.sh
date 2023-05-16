@@ -43,5 +43,5 @@ set_version ${VERSION}
 
 echo "--- [Tauri] Building Application (${VERSION})"]
 NODE_ENV=production pnpm run build-app-shell
-pnpm tauri build
+pnpm tauri build --bundles deb,appimage,app,dmg
 upload_dist
