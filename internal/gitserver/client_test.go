@@ -24,6 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -735,10 +736,71 @@ func TestClient_ReposStats(t *testing.T) {
 	assert.Equal(t, wantStats, *gotStatsMap[gitserverAddr])
 }
 
+func TestClient_ReposStats_GRPC(t *testing.T) {
+	t.Setenv("SG_FEATURE_FLAG_GRPC", "false")
+
+	root := t.TempDir()
+	s := &server.Server{
+		Logger:   logtest.Scoped(t),
+		ReposDir: filepath.Join(root, "repos"),
+		DB:       newMockDB(),
+		GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
+			return "", nil
+		},
+		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
+			return &server.GitRepoSyncer{}, nil
+		},
+	}
+
+	grpcServer := defaults.NewServer(logtest.Scoped(t))
+
+	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{Server: s})
+	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
+	srv := httptest.NewServer(handler)
+	defer srv.Close()
+
+	u, _ := url.Parse(srv.URL)
+
+	addrs := []string{u.Host}
+
+	spy := &spyGitserverServiceClient{}
+
+	source := gitserver.NewTestClientSource(addrs, func(o *gitserver.TestClientSourceOptions) {
+		o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+			spy.base = proto.NewGitserverServiceClient(cc)
+
+			return spy
+		}
+	})
+
+	cli := gitserver.NewTestClient(http.DefaultClient, source)
+
+	now := time.Now().UTC()
+	// ctx := context.Background()
+	//expected := fmt.Sprintf("http://%s", addrs)
+	wantStats := protocol.ReposStats{
+		UpdatedAt:   now,
+		GitDirBytes: 1337,
+	}
+
+	gotStatsMap, err := cli.ReposStats(context.Background())
+	if err != nil {
+		t.Fatalf("expected URL %q, but got err %q", addrs[0], err)
+	}
+
+	if !spy.reposStatsCalled {
+		t.Error("ReposStats: GitserverServiceClient should have been called")
+	}
+
+	assert.Equal(t, wantStats, *gotStatsMap[addrs[0]])
+
+}
+
 type spyGitserverServiceClient struct {
-	execCalled    bool
-	searchCalled  bool
-	archiveCalled bool
+	execCalled       bool
+	searchCalled     bool
+	archiveCalled    bool
+	reposStatsCalled bool
 
 	base proto.GitserverServiceClient
 }
@@ -756,6 +818,11 @@ func (s *spyGitserverServiceClient) Search(ctx context.Context, in *proto.Search
 func (s *spyGitserverServiceClient) Archive(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error) {
 	s.archiveCalled = true
 	return s.base.Archive(ctx, in, opts...)
+}
+
+func (s *spyGitserverServiceClient) ReposStats(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*proto.ReposStatsResponse, error) {
+	s.reposStatsCalled = true
+	return s.base.ReposStats(ctx, in, opts...)
 }
 
 var _ proto.GitserverServiceClient = &spyGitserverServiceClient{}

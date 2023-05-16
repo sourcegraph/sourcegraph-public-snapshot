@@ -2,11 +2,16 @@ package server
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -154,4 +159,27 @@ func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 			LimitHit: limitHit,
 		},
 	})
+}
+
+func (gs *GRPCServer) ReposStats(ctx context.Context, req *empty.Empty) (*proto.ReposStatsResponse, error) {
+	b, err := os.ReadFile(filepath.Join(gs.Server.ReposDir, reposStatsName))
+	if errors.Is(err, os.ErrNotExist) {
+		// When a gitserver is new this file might not have been computed
+		// yet. Clients are expected to handle this case by noticing UpdatedAt
+		// is not set.
+		b = []byte("{}")
+	} else if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to read %s: %v", reposStatsName, err.Error())
+	}
+
+	var stats *protocol.ReposStats
+	if err := json.Unmarshal(b, &stats); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to unmarshal %s: %v", reposStatsName, err.Error())
+	}
+
+	fmt.Println(stats)
+	fmt.Println(stats.ToProto())
+	fmt.Println(err)
+
+	return stats.ToProto(), nil
 }

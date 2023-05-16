@@ -215,7 +215,7 @@ message ArchiveResponse {
 
 
 // ReposStats is an aggregation of statistics from a gitserver.
-message ReposStats {
+message ReposStatsResponse {
     // git_dir_bytes is the amount of bytes stored in .git directories.
     int64 git_dir_bytes = 1;
     // updated_at is the time these statistics were computed. If updated_at is
@@ -224,7 +224,3 @@ message ReposStats {
     google.protobuf.Timestamp updated_at = 2;
 }
 
-// RepoStatsRespone is the response from the RepoStats RPC that returns a map of repo stats.
-message ReposStatsResponse {
-    map<string, ReposStats> stats = 1;
-}

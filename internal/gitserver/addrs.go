@@ -104,6 +104,15 @@ func (c *testGitserverConns) ClientForRepo(userAgent string, repo api.RepoName) 
 	return c.clientFunc(conn), nil
 }
 
+func (c *testGitserverConns) ClientForAddr(userAgent string, addr string) (proto.GitserverServiceClient, error) {
+	conn, err := defaults.Dial(addr)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.clientFunc(conn), nil
+}
+
 var _ ClientSource = &testGitserverConns{}
 
 type GitserverAddresses struct {
@@ -169,6 +178,14 @@ func (a *atomicGitServerConns) AddrForRepo(userAgent string, repo api.RepoName) 
 
 func (a *atomicGitServerConns) ClientForRepo(userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error) {
 	conn, err := a.get().ConnForRepo(userAgent, repo)
+	if err != nil {
+		return nil, err
+	}
+	return proto.NewGitserverServiceClient(conn), nil
+}
+
+func (a *atomicGitServerConns) ClientForAddr(userAgent string, addr string) (proto.GitserverServiceClient, error) {
+	conn, err := a.get().grpcConns[addr].conn, a.get().grpcConns[addr].err
 	if err != nil {
 		return nil, err
 	}

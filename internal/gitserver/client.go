@@ -25,6 +25,7 @@ import (
 	"golang.org/x/sync/semaphore"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/sourcegraph/go-diff/diff"
 	sglog "github.com/sourcegraph/log"
@@ -72,6 +73,8 @@ var _ Client = &clientImplementor{}
 // ClientSource is a source of gitserver.Client instances.
 // It allows for mocking out the client source in tests.
 type ClientSource interface {
+	// ClientForAddr returns a Client for the given address.
+	ClientForAddr(userAgent string, addr string) (proto.GitserverServiceClient, error)
 	// ClientForRepo returns a Client for the given repo.
 	ClientForRepo(userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error)
 	// AddrForRepo returns the address of the gitserver for the given repo.
@@ -456,6 +459,10 @@ func (c *clientImplementor) AddrForRepo(repo api.RepoName) string {
 
 func (c *clientImplementor) ClientForRepo(repo api.RepoName) (proto.GitserverServiceClient, error) {
 	return c.clientSource.ClientForRepo(c.userAgent, repo)
+}
+
+func (c *clientImplementor) ClientForAddr(addr string) (proto.GitserverServiceClient, error) {
+	return c.clientSource.ClientForAddr(c.userAgent, addr)
 }
 
 // ArchiveOptions contains options for the Archive func.
@@ -1231,7 +1238,28 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 func (c *clientImplementor) ReposStats(ctx context.Context) (map[string]*protocol.ReposStats, error) {
 	stats := map[string]*protocol.ReposStats{}
 	var allErr error
+
 	for _, addr := range c.Addrs() {
+		if internalgrpc.IsGRPCEnabled(ctx) {
+			rs := &protocol.ReposStats{}
+
+			client, err := c.ClientForAddr(addr)
+			if err != nil {
+				return nil, err
+			}
+
+			resp, err := client.ReposStats(ctx, &emptypb.Empty{})
+			fmt.Printf("repos-stats: %s %q\n", addr, resp)
+			fmt.Printf("repos-stats: %s %v\n", addr, err)
+			if err != nil {
+				allErr = errors.Append(allErr, err)
+			} else {
+				rs.FromProto(resp)
+				stats[addr] = rs
+			}
+			continue
+		}
+
 		stat, err := c.doReposStats(ctx, addr)
 		if err != nil {
 			allErr = errors.Append(allErr, err)
