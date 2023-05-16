@@ -2,12 +2,15 @@ package database
 
 import (
 	"context"
+	"database/sql"
 
+	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type RepoKVPStore interface {
@@ -48,7 +51,15 @@ func (s *repoKVPStore) Create(ctx context.Context, repoID api.RepoID, kvp KeyVal
 	VALUES (%s, %s, %s)
 	`
 
-	return s.Exec(ctx, sqlf.Sprintf(q, repoID, kvp.Key, kvp.Value))
+	if err := s.Exec(ctx, sqlf.Sprintf(q, repoID, kvp.Key, kvp.Value)); err != nil {
+		var e *pgconn.PgError
+		if errors.As(err, &e) && e.Code == "23505" {
+			return errors.Newf(`Repo metadata key "%s" already exists for the given repository.`, kvp.Key)
+		}
+		return err
+	}
+
+	return nil
 }
 
 func (s *repoKVPStore) Get(ctx context.Context, repoID api.RepoID, key string) (KeyValuePair, error) {
@@ -92,12 +103,16 @@ func (s *repoKVPStore) Update(ctx context.Context, repoID api.RepoID, kvp KeyVal
 	row := s.QueryRow(ctx, sqlf.Sprintf(q, kvp.Value, repoID, kvp.Key))
 
 	var updated KeyValuePair
-	return updated, row.Scan(&updated.Key, &updated.Value)
+	err := row.Scan(&kvp.Key, &kvp.Value)
+	if errors.Is(err, sql.ErrNoRows) {
+		return updated, errors.Newf(`Repo metadata key "%s" does not exist for the given repository.`, kvp.Key)
+	}
+	return updated, err
 }
 
 func (s *repoKVPStore) Delete(ctx context.Context, repoID api.RepoID, key string) error {
 	q := `
-	DELETE FROM  repo_kvps
+	DELETE FROM repo_kvps
 	WHERE repo_id = %s
 		AND key = %s
 	`
