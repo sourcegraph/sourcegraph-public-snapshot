@@ -8,7 +8,28 @@ import winkUtils from 'wink-nlp-utils'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { KeywordContextFetcher, KeywordContextFetcherResult } from '@sourcegraph/cody-shared/src/keyword-context'
 
-const fileExtRipgrepParams = ['-Tmarkdown', '-Tyaml', '-Tjson', '-g', '!*.lock', '-g', '!*.snap']
+/**
+ * Exclude files without extensions and directories that starts with '.'
+ * Limits the search to 250 files
+ * Limits to use 1 thread
+ */
+const fileExtRipgrepParams = [
+    '-Tmarkdown',
+    '-Tyaml',
+    '-Tjson',
+    '-g',
+    '*.*',
+    '-g',
+    '!.*',
+    '-g',
+    '!*.lock',
+    '-g',
+    '!*.snap',
+    '--max-count',
+    '250',
+    '--threads',
+    '1',
+]
 
 /**
  * Term represents a single term in the keyword search.
@@ -208,6 +229,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                             {
                                 cwd: rootPath,
                                 maxBuffer: 1024 * 1024 * 1024,
+                                timeout: 1000 * 60, // timeout in one minute
                             },
                             (error, stdout, stderr) => {
                                 if (error?.code === 2) {
