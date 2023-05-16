@@ -3,7 +3,6 @@ package lsifstore
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
@@ -356,15 +355,6 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 		hoverText:       hoverText,
 		prototypes:      prototypes,
 	}
-}
-
-func intsToString(vs []int) string {
-	strs := make([]string, 0, len(vs))
-	for _, v := range vs {
-		strs = append(strs, strconv.Itoa(v))
-	}
-
-	return strings.Join(strs, ", ")
 }
 
 func monikersToString(vs []precise.MonikerData) string {

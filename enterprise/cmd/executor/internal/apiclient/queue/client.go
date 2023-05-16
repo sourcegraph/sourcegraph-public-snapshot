@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -222,15 +220,6 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []int) (knownIDs, cancelI
 	}
 
 	return respV1, cancelIDs, nil
-}
-
-func intsToString(ints []int) string {
-	segments := make([]string, 0, len(ints))
-	for _, id := range ints {
-		segments = append(segments, strconv.Itoa(id))
-	}
-
-	return strings.Join(segments, ", ")
 }
 
 func gatherMetrics(logger log.Logger, gatherer prometheus.Gatherer) (string, error) {

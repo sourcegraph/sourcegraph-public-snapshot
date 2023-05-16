@@ -2,8 +2,6 @@ package lsifstore
 
 import (
 	"context"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -215,15 +213,3 @@ SELECT
 	(SELECT COUNT(*) FROM candidates),
 	(SELECT COUNT(*) FROM deleted_documents)
 `
-
-//
-//
-
-func intsToString(vs []int) string {
-	strs := make([]string, 0, len(vs))
-	for _, v := range vs {
-		strs = append(strs, strconv.Itoa(v))
-	}
-
-	return strings.Join(strs, ", ")
-}
