@@ -34,11 +34,17 @@ func TestDecoder(t *testing.T) {
 	t.Run("Multiple", func(t *testing.T) {
 		events, err := decodeAll("data:b\n\ndata:c\n\ndata: [DONE]\n\n")
 		require.NoError(t, err)
-		require.Equal(t, events, []event{{data: "b"}, {data: "c"}, {data: "[DONE]"}})
+		require.Equal(t, events, []event{{data: "b"}, {data: "c"}})
 	})
 
 	t.Run("ErrExpectedData", func(t *testing.T) {
 		_, err := decodeAll("datas:b\n\n")
 		require.Contains(t, err.Error(), "malformed data, expected data")
+	})
+
+	t.Run("Ends after done", func(t *testing.T) {
+		events, err := decodeAll("data:b\n\ndata:c\n\ndata: [DONE]\n\ndata:d\n\n")
+		require.NoError(t, err)
+		require.Equal(t, events, []event{{data: "b"}, {data: "c"}})
 	})
 }
