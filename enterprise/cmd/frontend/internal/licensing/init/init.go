@@ -85,6 +85,22 @@ func Init(
 			}
 		}
 
+		bcFeature := &licensing.FeatureBatchChanges{}
+		if err := licensing.Check(bcFeature); err == nil {
+			if bcFeature.Unrestricted {
+				licenseInfo.BatchChanges = &hooks.FeatureBatchChanges{
+					Unrestricted: true,
+					// Superceded by being unrestricted
+					MaxNumChangesets: -1,
+				}
+			} else {
+				max := int(bcFeature.MaxNumChangesets)
+				licenseInfo.BatchChanges = &hooks.FeatureBatchChanges{
+					MaxNumChangesets: max,
+				}
+			}
+		}
+
 		// returning this only makes sense on dotcom
 		if envvar.SourcegraphDotComMode() {
 			for _, plan := range licensing.AllPlans {
