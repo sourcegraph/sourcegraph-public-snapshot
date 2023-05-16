@@ -8557,7 +8557,7 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		SignalConfigurationsFunc: &EnterpriseDBSignalConfigurationsFunc{
 			defaultHook: func() database.SignalConfigurationStore {
-				panic("unexpected invocation of MockEnterpriseDB.SignalConfigurations")
+				panic("unexpected invocation of MockEnterpriseDB.OwnSignalConfigurations")
 			},
 		},
 		SubRepoPermsFunc: &EnterpriseDBSubRepoPermsFunc{
@@ -8767,7 +8767,7 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 			defaultHook: i.Settings,
 		},
 		SignalConfigurationsFunc: &EnterpriseDBSignalConfigurationsFunc{
-			defaultHook: i.SignalConfigurations,
+			defaultHook: i.OwnSignalConfigurations,
 		},
 		SubRepoPermsFunc: &EnterpriseDBSubRepoPermsFunc{
 			defaultHook: i.SubRepoPerms,
@@ -13459,7 +13459,7 @@ func (c EnterpriseDBSettingsFuncCall) Results() []interface{} {
 }
 
 // EnterpriseDBSignalConfigurationsFunc describes the behavior when the
-// SignalConfigurations method of the parent MockEnterpriseDB instance is
+// OwnSignalConfigurations method of the parent MockEnterpriseDB instance is
 // invoked.
 type EnterpriseDBSignalConfigurationsFunc struct {
 	defaultHook func() database.SignalConfigurationStore
@@ -13470,13 +13470,13 @@ type EnterpriseDBSignalConfigurationsFunc struct {
 
 // SignalConfigurations delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockEnterpriseDB) SignalConfigurations() database.SignalConfigurationStore {
+func (m *MockEnterpriseDB) OwnSignalConfigurations() database.SignalConfigurationStore {
 	r0 := m.SignalConfigurationsFunc.nextHook()()
 	m.SignalConfigurationsFunc.appendCall(EnterpriseDBSignalConfigurationsFuncCall{r0})
 	return r0
 }
 
-// SetDefaultHook sets function that is called when the SignalConfigurations
+// SetDefaultHook sets function that is called when the OwnSignalConfigurations
 // method of the parent MockEnterpriseDB instance is invoked and the hook
 // queue is empty.
 func (f *EnterpriseDBSignalConfigurationsFunc) SetDefaultHook(hook func() database.SignalConfigurationStore) {
@@ -13484,7 +13484,7 @@ func (f *EnterpriseDBSignalConfigurationsFunc) SetDefaultHook(hook func() databa
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// SignalConfigurations method of the parent MockEnterpriseDB instance
+// OwnSignalConfigurations method of the parent MockEnterpriseDB instance
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
@@ -13540,7 +13540,7 @@ func (f *EnterpriseDBSignalConfigurationsFunc) History() []EnterpriseDBSignalCon
 }
 
 // EnterpriseDBSignalConfigurationsFuncCall is an object that describes an
-// invocation of method SignalConfigurations on an instance of
+// invocation of method OwnSignalConfigurations on an instance of
 // MockEnterpriseDB.
 type EnterpriseDBSignalConfigurationsFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method

@@ -5540,7 +5540,7 @@ func NewStrictMockDB() *MockDB {
 		},
 		SignalConfigurationsFunc: &DBSignalConfigurationsFunc{
 			defaultHook: func() SignalConfigurationStore {
-				panic("unexpected invocation of MockDB.SignalConfigurations")
+				panic("unexpected invocation of MockDB.OwnSignalConfigurations")
 			},
 		},
 		TeamsFunc: &DBTeamsFunc{
@@ -5732,7 +5732,7 @@ func NewMockDBFrom(i DB) *MockDB {
 			defaultHook: i.Settings,
 		},
 		SignalConfigurationsFunc: &DBSignalConfigurationsFunc{
-			defaultHook: i.SignalConfigurations,
+			defaultHook: i.OwnSignalConfigurations,
 		},
 		TeamsFunc: &DBTeamsFunc{
 			defaultHook: i.Teams,
@@ -9977,7 +9977,7 @@ func (c DBSettingsFuncCall) Results() []interface{} {
 }
 
 // DBSignalConfigurationsFunc describes the behavior when the
-// SignalConfigurations method of the parent MockDB instance is invoked.
+// OwnSignalConfigurations method of the parent MockDB instance is invoked.
 type DBSignalConfigurationsFunc struct {
 	defaultHook func() SignalConfigurationStore
 	hooks       []func() SignalConfigurationStore
@@ -9987,13 +9987,13 @@ type DBSignalConfigurationsFunc struct {
 
 // SignalConfigurations delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockDB) SignalConfigurations() SignalConfigurationStore {
+func (m *MockDB) OwnSignalConfigurations() SignalConfigurationStore {
 	r0 := m.SignalConfigurationsFunc.nextHook()()
 	m.SignalConfigurationsFunc.appendCall(DBSignalConfigurationsFuncCall{r0})
 	return r0
 }
 
-// SetDefaultHook sets function that is called when the SignalConfigurations
+// SetDefaultHook sets function that is called when the OwnSignalConfigurations
 // method of the parent MockDB instance is invoked and the hook queue is
 // empty.
 func (f *DBSignalConfigurationsFunc) SetDefaultHook(hook func() SignalConfigurationStore) {
@@ -10001,7 +10001,7 @@ func (f *DBSignalConfigurationsFunc) SetDefaultHook(hook func() SignalConfigurat
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// SignalConfigurations method of the parent MockDB instance invokes the
+// OwnSignalConfigurations method of the parent MockDB instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
 func (f *DBSignalConfigurationsFunc) PushHook(hook func() SignalConfigurationStore) {
@@ -10056,7 +10056,7 @@ func (f *DBSignalConfigurationsFunc) History() []DBSignalConfigurationsFuncCall 
 }
 
 // DBSignalConfigurationsFuncCall is an object that describes an invocation
-// of method SignalConfigurations on an instance of MockDB.
+// of method OwnSignalConfigurations on an instance of MockDB.
 type DBSignalConfigurationsFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.

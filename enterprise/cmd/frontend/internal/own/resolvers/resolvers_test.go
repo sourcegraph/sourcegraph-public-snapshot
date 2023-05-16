@@ -9,7 +9,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/hexops/autogold/v2"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -833,6 +836,12 @@ func Test_SignalConfigurations(t *testing.T) {
 
 	ctx := context.Background()
 
+	admin, err := db.Users().Create(context.Background(), database.NewUser{Username: "admin"})
+	require.NoError(t, err)
+
+	user, err := db.Users().Create(context.Background(), database.NewUser{Username: "non-admin"})
+	require.NoError(t, err)
+
 	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, git, own, logger)})
 	if err != nil {
 		t.Fatal(err)
@@ -843,7 +852,7 @@ func Test_SignalConfigurations(t *testing.T) {
 		Schema:  schema,
 		Query: `
 			query asdf {
-			  signalConfigurations {
+			  ownSignalConfigurations {
 				name
 				description
 				isEnabled
@@ -851,7 +860,7 @@ func Test_SignalConfigurations(t *testing.T) {
 			  }
 			}`,
 		ExpectedResult: `{
-		  "signalConfigurations": [
+		  "ownSignalConfigurations": [
 			{
 			  "name": "recent-contributors",
 			  "description": "Indexes contributors in each file using repository history.",
@@ -868,20 +877,76 @@ func Test_SignalConfigurations(t *testing.T) {
 		}`,
 	})
 
-	t.Run("no admin access", func(t *testing.T) {
-		graphqlbackend.RunTest(t, &graphqlbackend.Test{
-			Context: ctx,
-			Schema:  schema,
-			Query: `
-			mutation asdf($input:UpdateSignalConfigurationsInput!) {
-			  updateSignalConfigurations(input:$input) {
-				isEnabled
-				name
-				description
-				excludedRepoPatterns
-			  }
-			}`,
-			ExpectedResult: ``,
-		})
+	baseTest := &graphqlbackend.Test{
+		Context: ctx,
+		Schema:  schema,
+		Query: `
+				mutation asdf($input:UpdateSignalConfigurationsInput!) {
+				  updateOwnSignalConfigurations(input:$input) {
+					isEnabled
+					name
+					description
+					excludedRepoPatterns
+				  }
+				}`,
+		Variables: map[string]any{"input": map[string]any{
+			"configs": []any{map[string]any{
+				"name": "recent-contributors", "enabled": true, "excludedRepoPatterns": []any{"github.com/*"}}},
+		}},
+	}
+	t.Run("user without admin access", func(t *testing.T) {
+		userActor := actor.FromUser(user.ID)
+		userCtx := actor.WithActor(ctx, userActor)
+
+		baseTest.Context = userCtx
+		baseTest.ExpectedErrors = []*gqlerrors.QueryError{{
+			Message: "must be site admin",
+			Path:    []any{"updateOwnSignalConfigurations"},
+		}}
+		baseTest.ExpectedResult = `null`
+
+		graphqlbackend.RunTest(t, baseTest)
+
+		// ensure the configs didn't change despite the error
+		configsFromDb, err := db.OwnSignalConfigurations().LoadConfigurations(ctx)
+		require.NoError(t, err)
+		autogold.Expect([]database.SignalConfiguration{
+			{
+				ID:          1,
+				Name:        "recent-contributors",
+				Description: "Indexes contributors in each file using repository history.",
+			},
+			{
+				ID:          2,
+				Name:        "recent-views",
+				Description: "Indexes users that recently viewed files in Sourcegraph.",
+			},
+		}).Equal(t, configsFromDb)
+	})
+
+	t.Run("user with admin access", func(t *testing.T) {
+		adminActor := actor.FromUser(admin.ID)
+		userCtx := actor.WithActor(ctx, adminActor)
+
+		baseTest.Context = userCtx
+		baseTest.ExpectedErrors = nil
+		baseTest.ExpectedResult = `{
+		  "updateOwnSignalConfigurations": [
+			{
+			  "name": "recent-contributors",
+			  "description": "Indexes contributors in each file using repository history.",
+			  "isEnabled": true,
+			  "excludedRepoPatterns": ["github.com/*"]
+			},
+			{
+			  "name": "recent-views",
+			  "description": "Indexes users that recently viewed files in Sourcegraph.",
+			  "isEnabled": false,
+			  "excludedRepoPatterns": []
+			}
+		  ]
+		}`
+
+		graphqlbackend.RunTest(t, baseTest)
 	})
 }

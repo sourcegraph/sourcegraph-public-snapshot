@@ -16,7 +16,7 @@ func Test_LoadConfigurations(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	store := db.SignalConfigurations()
+	store := db.OwnSignalConfigurations()
 	configurations, err := store.LoadConfigurations(ctx)
 	require.NoError(t, err)
 

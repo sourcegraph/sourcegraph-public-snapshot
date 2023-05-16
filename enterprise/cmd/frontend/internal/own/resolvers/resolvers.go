@@ -495,7 +495,7 @@ func computeRecentViewSignals(ctx context.Context, logger log.Logger, db edb.Ent
 
 func (r *ownResolver) OwnSignalConfigurations(ctx context.Context) ([]graphqlbackend.SignalConfigurationResolver, error) {
 	var resolvers []graphqlbackend.SignalConfigurationResolver
-	store := r.db.SignalConfigurations()
+	store := r.db.OwnSignalConfigurations()
 	configurations, err := store.LoadConfigurations(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "LoadConfigurations")
@@ -534,7 +534,7 @@ func (r *ownResolver) UpdateOwnSignalConfigurations(ctx context.Context, args gr
 		return nil, err
 	}
 
-	err = r.db.SignalConfigurations().WithTransact(ctx, func(store database.SignalConfigurationStore) error {
+	err = r.db.OwnSignalConfigurations().WithTransact(ctx, func(store database.SignalConfigurationStore) error {
 		for _, config := range args.Input.Configs {
 			if err := store.UpdateConfiguration(ctx, database.UpdateSignalConfigurationArgs{
 				Name:                 config.Name,

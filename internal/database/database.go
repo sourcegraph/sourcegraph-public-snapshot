@@ -68,7 +68,7 @@ type DB interface {
 	Teams() TeamStore
 	EventLogsScrapeState() EventLogsScrapeStateStore
 	RecentViewSignal() RecentViewSignalStore
-	SignalConfigurations() SignalConfigurationStore
+	OwnSignalConfigurations() SignalConfigurationStore
 
 	WithTransact(context.Context, func(tx DB) error) error
 }
@@ -315,6 +315,6 @@ func (d *db) RecentViewSignal() RecentViewSignalStore {
 	return RecentViewSignalStoreWith(d.Store, d.logger)
 }
 
-func (d *db) SignalConfigurations() SignalConfigurationStore {
+func (d *db) OwnSignalConfigurations() SignalConfigurationStore {
 	return SignalConfigurationStoreWith(d.Store)
 }
