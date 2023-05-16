@@ -10,8 +10,8 @@ import { Icon } from '../../utils/Icon'
 
 import styles from './ChatInputContext.module.css'
 
-const infoMsg =
-    "This codebase is not yet indexed for Cody by Sourcegraph. To generate a Cody index, see https://docs.sourcegraph.com/cody/explanations/code_graph_context#embeddings or contact support@sourcegraph.com for assistance."
+const warning =
+    'This codebase is not yet indexed for Cody by Sourcegraph. Response quality will be poor. To generate a Cody index, see https://docs.sourcegraph.com/cody/explanations/code_graph_context#embeddings or contact support@sourcegraph.com for assistance.'
 
 export const ChatInputContext: React.FunctionComponent<{
     contextStatus: ChatContextStatus
@@ -24,7 +24,7 @@ export const ChatInputContext: React.FunctionComponent<{
                     ? {
                           icon: contextStatus.connection ? mdiSourceRepository : mdiFileExcel,
                           text: basename(contextStatus.codebase.replace(/^(github|gitlab)\.com\//, '')),
-                          tooltip: contextStatus.connection ? contextStatus.codebase : infoMsg,
+                          tooltip: contextStatus.connection ? contextStatus.codebase : warning,
                       }
                     : null,
                 contextStatus.filePath
@@ -41,12 +41,15 @@ export const ChatInputContext: React.FunctionComponent<{
     return (
         <div className={classNames(styles.container, className)}>
             {contextStatus.mode && contextStatus.connection ? (
-                <h3 title="Current Context: Embedded" className={styles.badge}>
-                    Embeddings
+                <h3
+                    title="This repository is indexed for Cody by Sourcegraph."
+                    className={classNames(styles.badge, styles.success)}
+                >
+                    Indexed
                 </h3>
             ) : contextStatus.supportsKeyword ? (
-                <h3 title="Current Context: Local Keyword" className={styles.badge}>
-                    Keyword
+                <h3 title={warning} className={classNames(styles.badge, styles.warn)}>
+                    ⚠ Not indexed
                 </h3>
             ) : null}
 
@@ -68,7 +71,7 @@ const ContextItem: React.FunctionComponent<{ icon: string; text: string; tooltip
     tooltip,
     as: Tag,
 }) => (
-    <Tag className={tooltip === infoMsg ? styles.info : styles.item}>
+    <Tag className={styles.item}>
         <Icon svgPath={icon} className={styles.itemIcon} />
         <span className={styles.itemText} title={tooltip}>
             {text}

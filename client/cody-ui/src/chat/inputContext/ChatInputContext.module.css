@@ -47,11 +47,12 @@
     overflow: hidden;
 }
 
-.info {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    overflow: hidden;
+.warn {
+    font-weight: bold;
+    color: var(--vscode-list-warningForeground, #fdf1cc);
+}
 
-    color: var(--vscode-editorWarning-foreground, #ff5543);
+.success {
+    font-weight: bold;
+    color: var(--vscode-textLink-foreground, #c4ffe8);
 }
