@@ -8,10 +8,16 @@ steps:
           PLATFORM: x86_64-unknown-linux-gnu
         command:
           - './enterprise/dev/app/bazel-build.sh'
+      - label: 'Build Sourcegraph Backend App for MacOS arm64'
+        key: 'build-sourcegraph-app-macos-arm64'
+        agents: { queue: macos }
+        command:
+          - './enterprise/dev/app/bazel-build.sh'
       - label: 'Bundle with Tauri'
         key: 'build-tauri-sourcegraph-app'
         depends_on:
           - 'build-sourcegraph-app-linux'
+          - 'build-sourcegraph-app-macos-arm64'
         agents: { queue: stateless }
         command:
           - './dev/ci/pnpm-install-with-retry.sh'
