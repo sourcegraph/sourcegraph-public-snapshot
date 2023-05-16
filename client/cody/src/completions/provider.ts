@@ -272,7 +272,6 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
                 messages: prompt,
                 stopSequences: [anthropic.HUMAN_PROMPT, '\n'],
                 maxTokensToSample: this.responseTokens,
-                model: 'claude-instant-v1.0',
                 temperature: 1,
                 topK: -1,
                 topP: -1,
