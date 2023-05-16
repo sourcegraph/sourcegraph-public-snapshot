@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func (c *client) GetChange(ctx context.Context, changeID string) (*Change, error) {
@@ -44,7 +46,7 @@ func (c *client) AbandonChange(ctx context.Context, changeID string) (*Change, e
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
 	return &change, nil
@@ -65,7 +67,7 @@ func (c *client) SubmitChange(ctx context.Context, changeID string) (*Change, er
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
 	return &change, nil
@@ -91,7 +93,7 @@ func (c *client) WriteReviewComment(ctx context.Context, changeID string, commen
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+		return errors.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
 	return nil

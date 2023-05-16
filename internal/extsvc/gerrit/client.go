@@ -32,7 +32,8 @@ type client struct {
 }
 
 type Client interface {
-	WithAuthenticator(a auth.Authenticator) Client
+	GetURL() *url.URL
+	WithAuthenticator(a auth.Authenticator) (Client, error)
 	GetAuthenticatedUserAccount(ctx context.Context) (*Account, error)
 	GetGroup(ctx context.Context, groupName string) (Group, error)
 	ListProjects(ctx context.Context, opts ListProjectsArgs) (projects ListProjectsResponse, nextPage bool, err error)
@@ -63,13 +64,20 @@ func NewClient(urn string, url *url.URL, creds *AccountCredentials, httpClient h
 	}, nil
 }
 
-func (c *client) WithAuthenticator(a auth.Authenticator) Client {
+func (c *client) WithAuthenticator(a auth.Authenticator) (Client, error) {
+	switch a.(type) {
+	case *auth.BasicAuth, *auth.BasicAuthWithSSH:
+		break
+	default:
+		return nil, errors.Errorf("authenticator type unsupported for Azure DevOps clients: %s", a)
+	}
+
 	return &client{
 		httpClient: c.httpClient,
 		URL:        c.URL,
 		rateLimit:  c.rateLimit,
 		auther:     a,
-	}
+	}, nil
 }
 
 func (c *client) GetAuthenticatedUserAccount(ctx context.Context) (*Account, error) {
@@ -157,4 +165,8 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) (*http.R
 		return resp, nil
 	}
 	return resp, json.Unmarshal(bs[4:], result)
+}
+
+func (c *client) GetURL() *url.URL {
+	return c.URL
 }
