@@ -2,9 +2,11 @@ contents:
   keyring:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
     - https://storage.googleapis.com/package-repository/packages/melange.rsa.pub
+    - https://storage.googleapis.com/package-repository/chainguard/chainguard-enterprise.rsa.pub
   repositories:
     - https://packages.wolfi.dev/os
     - '@sourcegraph https://storage.googleapis.com/package-repository/packages/main'
+    - '@chainguard https://storage.googleapis.com/package-repository/chainguard'
   packages:
     ## Base set of packages included in sourcegraph/alpine base image
     - wolfi-baselayout
@@ -33,6 +35,7 @@ contents:
     - nginx
     - nodejs-16 # TODO: Earliest version from Wolfi; test upgrade from 14.5.0 to 16.19.1
     - openjdk-11
+    - openjdk-11-default-jvm
     - openssh-client
     - pcre
     - postgresql-12
@@ -52,6 +55,11 @@ contents:
     - coursier@sourcegraph
     - p4cli@sourcegraph
     - p4-fusion@sourcegraph
+    - grafana@chainguard
+    - prometheus
+    - prometheus-alertmanager
+    - syntect-server@sourcegraph
+    - s3proxy@sourcegraph
 
 accounts:
   groups:
