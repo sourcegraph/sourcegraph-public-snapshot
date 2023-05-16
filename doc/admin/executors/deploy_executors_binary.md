@@ -85,7 +85,7 @@ mv executor /usr/local/bin
 The executor is configured through environment variables. Those need to be passed to it when you run it (including for `install`, `validate` and `test-vm`), so add these to your shell profile, or an environment file. Only `EXECUTOR_FRONTEND_URL`, `EXECUTOR_FRONTEND_PASSWORD` and `EXECUTOR_QUEUE_NAME` are _required_.
 
 | Env var                                  | Description                                                                                                                                                                                                                        | Example value                              |
-|------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------|
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
 | `EXECUTOR_FRONTEND_URL`                  | The external URL of the Sourcegraph instance. **required**                                                                                                                                                                         | `http://sourcegraph.example.com`           |
 | `EXECUTOR_FRONTEND_PASSWORD`             | The shared secret configured in the Sourcegraph instance site config under `executors.accessToken`. **required**                                                                                                                   | `our-shared-secret`                        |
 | `EXECUTOR_QUEUE_NAME`                    | The name of the queue to pull jobs from to. Possible values: `batches` and `codeintel` **required**                                                                                                                                | `batches`                                  |
@@ -186,4 +186,43 @@ systemctl enable executor
 
 ### **Step 6:** Start receiving workloads
 
+If you use the systemd service, simply run `systemctl start executor`, otherwise run `executor run`. Your executor should start listening for jobs now! All done!
+
+## Upgrading executors
+
+Upgrading executors is relatively uninvolved. Simply follow the instructions below.
+Also, check the [changelog](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/CHANGELOG.md) for any Executors related breaking changes or new features that you might want to configure.
+
+### **Step 1:** First, grab the executor binary for the new target Sourcegraph version.
+
+> NOTE: Keep in mind that only one minor version bumps are guaranteed to be disruption-free.
+
+```bash
+curl -sfLo executor https://storage.googleapis.com/sourcegraph-artifacts/executor/${SOURCEGRAPH_VERSION}/linux-amd64/executor
+chmod +x executor
+# Assuming /usr/local/bin is in $PATH.
+mv executor /usr/local/bin
+```
+
+### **Step 2:** Make sure all ambient dependencies and configurations are up-to-date:
+
+Ensure [env vars](#step-2-setup-environment-variables) has been configured. 
+
+```bash
+executor install all
+# OR run the following, to see how to install/configure components separately.
+executor install --help
+```
+
+### **Step 3:** Validate your machine is ready to receive workloads
+
+All set up! Before letting the executor start receiving workloads from your Sourcegraph instance, you might want to verify your setup. Run the following command:
+
+```bash
+executor validate
+```
+
+### **Step 4:** Restart your running executor / spin up a new machine
+
+Depending on how you set up executors, you might want to restart the systemd service, or restart/replace the machine running them, so the new binary is running.
 If you use the systemd service, simply run `systemctl start executor`, otherwise run `executor run`. Your executor should start listening for jobs now and be visible under the `Executors > Instances` section of the Site Configuration.
