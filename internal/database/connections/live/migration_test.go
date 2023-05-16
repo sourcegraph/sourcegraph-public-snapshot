@@ -3,6 +3,7 @@ package connections
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/jackc/pgconn"
@@ -207,9 +208,24 @@ func testDownMigrationsDoNotCreateDrift(t *testing.T, name string, schema *schem
 		// Detect drift between previous state (before to up/down) and new state (after)
 		if summaries := drift.CompareSchemaDescriptions(name, "", description, expectedDescription); len(summaries) > 0 {
 			for _, summary := range summaries {
-				// TODO - actually format the problem!
-				fmt.Printf("> %q\n", summary)
-				fmt.Printf("> This is where it is defined %d\n", definition.ID)
+				statements := "None"
+				if s, ok := summary.Statements(); ok {
+					statements = strings.Join(s, "\n >")
+				}
+
+				urlHint := "None"
+				if u, ok := summary.URLHint(); ok {
+					urlHint = fmt.Sprintf("Reproduce query as defined at the following URL: \n > %s", u)
+				}
+
+				t.Fatalf(
+					"\n Drift detected at migration: %d \n Explanation: \n > %s \n Suggested action: \n > %s. \n Suggested query: \n > %s \n Hint: \n > %s\n",
+					definition.ID,
+					summary.Problem(),
+					summary.Solution(),
+					statements,
+					urlHint,
+				)
 			}
 
 			t.Fatalf("Detected drift!")
