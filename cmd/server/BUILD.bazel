@@ -109,10 +109,8 @@ container_dependencies(ZOEKT_DEPS)
 #   bazel cquery '//cmd/server:image' --output build
 oci_image(
     name = "image",
-    architecture = "amd64",
     base = "@wolfi_server_base",
     entrypoint = ["/server"],
-    os = "linux",
     tars = [
         ":tar_server_linux_amd64",
         ":static_config_tar",
@@ -124,5 +122,5 @@ oci_image(
 oci_tarball(
     name = "image_tarball",
     image = ":image",
-    repotags = ["server:candidate"],
+    repo_tags = ["server:candidate"],
 )
