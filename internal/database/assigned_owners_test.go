@@ -40,11 +40,11 @@ func TestAssignedOwnersStore_ListAssignedOwnersForRepo(t *testing.T) {
 
 	// Inserting assigned owners.
 	store := AssignedOwnersStoreWith(db, logger)
-	err = store.Insert(ctx, user1.ID, 2, user2.ID)
+	err = store.Insert(ctx, user1.ID, 1, "src", user2.ID)
 	require.NoError(t, err)
-	err = store.Insert(ctx, user2.ID, 3, user1.ID)
+	err = store.Insert(ctx, user2.ID, 1, "src/abc", user1.ID)
 	require.NoError(t, err)
-	err = store.Insert(ctx, user2.ID, 4, user1.ID)
+	err = store.Insert(ctx, user2.ID, 1, "src/def", user1.ID)
 	require.NoError(t, err)
 
 	// Getting assigned owners for a non-existent repo.
@@ -62,18 +62,18 @@ func TestAssignedOwnersStore_ListAssignedOwnersForRepo(t *testing.T) {
 	require.NoError(t, err)
 	assert.Len(t, owners, 3)
 	sort.Slice(owners, func(i, j int) bool {
-		return owners[i].FilePathID < owners[j].FilePathID
+		return owners[i].FilePath < owners[j].FilePath
 	})
 	// We are checking everything except timestamps, non-zero check is sufficient for them.
-	assert.Equal(t, owners[0], &AssignedOwnerSummary{UserID: 1, FilePathID: 2, WhoAssignedUserID: 2, AssignedAt: owners[0].AssignedAt})
+	assert.Equal(t, owners[0], &AssignedOwnerSummary{UserID: 1, RepoID: 1, FilePath: "src", WhoAssignedUserID: 2, AssignedAt: owners[0].AssignedAt})
 	assert.NotZero(t, owners[0].AssignedAt)
-	assert.Equal(t, owners[1], &AssignedOwnerSummary{UserID: 2, FilePathID: 3, WhoAssignedUserID: 1, AssignedAt: owners[1].AssignedAt})
+	assert.Equal(t, owners[1], &AssignedOwnerSummary{UserID: 2, RepoID: 1, FilePath: "src/abc", WhoAssignedUserID: 1, AssignedAt: owners[1].AssignedAt})
 	assert.NotZero(t, owners[1].AssignedAt)
-	assert.Equal(t, owners[2], &AssignedOwnerSummary{UserID: 2, FilePathID: 4, WhoAssignedUserID: 1, AssignedAt: owners[2].AssignedAt})
+	assert.Equal(t, owners[2], &AssignedOwnerSummary{UserID: 2, RepoID: 1, FilePath: "src/def", WhoAssignedUserID: 1, AssignedAt: owners[2].AssignedAt})
 	assert.NotZero(t, owners[2].AssignedAt)
 }
 
-func TestAssignedOwnersStore_ListByFilePath(t *testing.T) {
+func TestAssignedOwnersStore_Insert(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -83,7 +83,7 @@ func TestAssignedOwnersStore_ListByFilePath(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	// Creating 2 users.
+	// Creating a user.
 	user1, err := db.Users().Create(ctx, NewUser{Username: "user1"})
 	require.NoError(t, err)
 
@@ -95,21 +95,17 @@ func TestAssignedOwnersStore_ListByFilePath(t *testing.T) {
 	_, err = db.QueryContext(ctx, "INSERT INTO repo_paths (repo_id, absolute_path, parent_id) VALUES (1, '', NULL), (1, 'src', 1)")
 	require.NoError(t, err)
 
-	// Inserting assigned owner.
 	store := AssignedOwnersStoreWith(db, logger)
-	err = store.Insert(ctx, user1.ID, 2, user1.ID)
-	require.NoError(t, err)
 
-	// Getting assigned owners for a non-existent path.
-	owners, err := store.ListByFilePath(ctx, "no/way")
-	require.NoError(t, err)
-	assert.Empty(t, owners)
+	// Inserting assigned owner for non-existing path.
+	err = store.Insert(ctx, user1.ID, 1, "no/way", user1.ID)
+	assert.EqualError(t, err, `cannot find "no/way" path for repo with ID=1`)
 
-	// Getting assigned owners for existing path.
-	owners, err = store.ListByFilePath(ctx, "src")
+	// Inserting assigned owner for non-existing repo.
+	err = store.Insert(ctx, user1.ID, 1337, "src", user1.ID)
+	assert.EqualError(t, err, `cannot find "src" path for repo with ID=1337`)
+
+	// Successfully inserting assigned owner.
+	err = store.Insert(ctx, user1.ID, 1, "src", user1.ID)
 	require.NoError(t, err)
-	assert.Len(t, owners, 1)
-	// We are checking everything except timestamps, non-zero check is sufficient for them.
-	assert.Equal(t, owners[0], &AssignedOwnerSummary{UserID: 1, FilePathID: 2, WhoAssignedUserID: 1, AssignedAt: owners[0].AssignedAt})
-	assert.NotZero(t, owners[0].AssignedAt)
 }

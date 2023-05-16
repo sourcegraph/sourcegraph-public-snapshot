@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/cockroachdb/errors"
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -12,14 +13,14 @@ import (
 )
 
 type AssignedOwnersStore interface {
-	Insert(ctx context.Context, assignedOwnerID int32, filePathID int, whoAssignedUserID int32) error
-	ListByFilePath(ctx context.Context, filePath string) ([]*AssignedOwnerSummary, error)
+	Insert(ctx context.Context, assignedOwnerID int32, repoID api.RepoID, absolutePath string, whoAssignedUserID int32) error
 	ListAssignedOwnersForRepo(ctx context.Context, repoID api.RepoID) ([]*AssignedOwnerSummary, error)
 }
 
 type AssignedOwnerSummary struct {
 	UserID            int32
-	FilePathID        int
+	FilePath          string
+	RepoID            api.RepoID
 	WhoAssignedUserID int32
 	AssignedAt        time.Time
 }
@@ -35,30 +36,35 @@ type assignedOwnersStore struct {
 }
 
 const insertAssignedOwnerFmtstr = `
+	WITH repo_path AS (
+		SELECT id
+		FROM repo_paths
+		WHERE absolute_path = %s AND repo_id = %s
+	)
 	INSERT INTO assigned_owners(user_id, file_path_id, who_assigned_user_id)
-	VALUES (%s, %s, %s)
+	SELECT %s, p.id, %s
+	FROM repo_path AS p
 	ON CONFLICT DO NOTHING
 `
 
-func (s assignedOwnersStore) Insert(ctx context.Context, assignedOwnerID int32, filePathID int, whoAssignedUserID int32) error {
-	q := sqlf.Sprintf(insertAssignedOwnerFmtstr, assignedOwnerID, filePathID, whoAssignedUserID)
-	return s.Exec(ctx, q)
-}
-
-const listAssignedOwnersForRepoPathFmtstr = `
-	SELECT a.user_id, a.file_path_id, a.who_assigned_user_id, a.assigned_at
-	FROM assigned_owners AS a
-	INNER JOIN repo_paths AS p ON p.id = a.file_path_id
-	WHERE p.absolute_path = %s
-`
-
-func (s assignedOwnersStore) ListByFilePath(ctx context.Context, filePath string) ([]*AssignedOwnerSummary, error) {
-	q := sqlf.Sprintf(listAssignedOwnersForRepoPathFmtstr, filePath)
-	return scanAssignedOwners(s.Query(ctx, q))
+func (s assignedOwnersStore) Insert(ctx context.Context, assignedOwnerID int32, repoID api.RepoID, absolutePath string, whoAssignedUserID int32) error {
+	q := sqlf.Sprintf(insertAssignedOwnerFmtstr, absolutePath, repoID, assignedOwnerID, whoAssignedUserID)
+	result, err := s.ExecResult(ctx, q)
+	if err != nil {
+		return errors.Wrap(err, "executing SQL query")
+	}
+	insertedRows, err := result.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "getting rows affected")
+	}
+	if insertedRows == 0 {
+		return notFoundError{errors.Newf("cannot find %q path for repo with ID=%d", absolutePath, repoID)}
+	}
+	return err
 }
 
 const listAssignedOwnersForRepoFmtstr = `
-	SELECT a.user_id, a.file_path_id, a.who_assigned_user_id, a.assigned_at
+	SELECT a.user_id, p.absolute_path, p.repo_id, a.who_assigned_user_id, a.assigned_at
 	FROM assigned_owners AS a
 	INNER JOIN repo_paths AS p ON p.id = a.file_path_id
 	WHERE p.repo_id = %s
@@ -78,7 +84,8 @@ var scanAssignedOwners = basestore.NewSliceScanner(func(scanner dbutil.Scanner) 
 func scanAssignedOwner(sc dbutil.Scanner, summary *AssignedOwnerSummary) error {
 	return sc.Scan(
 		&summary.UserID,
-		&summary.FilePathID,
+		&summary.FilePath,
+		&summary.RepoID,
 		&dbutil.NullInt32{N: &summary.WhoAssignedUserID},
 		&summary.AssignedAt,
 	)
