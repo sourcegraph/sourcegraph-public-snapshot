@@ -13,7 +13,7 @@ import (
 
 const (
 	ProviderName    = "llmproxy"
-	DefaultEndpoint = "https://completions.sgdev.org/v1/completions/anthropic"
+	DefaultEndpoint = "https://completions.sourcegraph.com/v1/completions/anthropic"
 )
 
 type llmProxyAnthropicClient struct {
