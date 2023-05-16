@@ -13,6 +13,7 @@ import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
 import { getRgPath } from './rg'
+import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { InlineController } from './services/InlineController'
 import { LocalStorage } from './services/LocalStorageProvider'
 import {
@@ -87,6 +88,7 @@ const register = async (
         codebaseContext,
         chatClient,
         completionsClient,
+        guardrails,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
     } = await configureExternalServices(initialConfig, rgPath, editor)
 
@@ -237,6 +239,15 @@ const register = async (
                 return [new vscode.Range(0, 0, lineCount - 1, 0)]
             },
         }
+    }
+
+    if (initialConfig.experimentalGuardrails) {
+        const guardrailsProvider = new GuardrailsProvider(guardrails, editor)
+        disposables.push(
+            vscode.commands.registerCommand('cody.guardrails.debug', async () => {
+                await guardrailsProvider.debugEditorSelection()
+            })
+        )
     }
 
     return {
