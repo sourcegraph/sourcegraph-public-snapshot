@@ -42,8 +42,7 @@ export type ExtensionMessage =
 /**
  * The subset of configuration that is visible to the webview.
  */
-export interface ConfigurationSubsetForWebview
-    extends Pick<Configuration, 'debug' | 'serverEndpoint' | 'experimentalConnectToApp'> {
+export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debug' | 'serverEndpoint'> {
     hasAccessToken: boolean
 }
 

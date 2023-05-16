@@ -1912,6 +1912,25 @@
               "default": "1h"
             }
           }
+        },
+        "llmProxy": {
+          "description": "Configuration related to the LLM Proxy service management. This should only be used on sourcegraph.com.",
+          "type": "object",
+          "group": "Sourcegraph.com",
+          "properties": {
+            "bigQueryGoogleProjectID": {
+              "description": "The project ID to pull BigQuery LLM Proxy related events from.",
+              "type": "string"
+            },
+            "bigQueryDataset": {
+              "description": "The dataset to pull BigQuery LLM Proxy related events from.",
+              "type": "string"
+            },
+            "bigQueryTable": {
+              "description": "The table in the dataset to pull BigQuery LLM Proxy related events from.",
+              "type": "string"
+            }
+          }
         }
       },
       "group": "Sourcegraph.com"

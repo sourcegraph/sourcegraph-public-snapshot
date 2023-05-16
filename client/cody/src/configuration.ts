@@ -13,7 +13,6 @@ import { SecretStorage, getAccessToken } from './services/SecretStorageProvider'
  */
 export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'get'>): Configuration {
     return {
-        enabled: config.get('cody.enabled', true),
         serverEndpoint: sanitizeServerEndpoint(config.get('cody.serverEndpoint', '')),
         codebase: sanitizeCodebase(config.get('cody.codebase')),
         debug: config.get('cody.debug', false),
@@ -21,7 +20,6 @@ export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'ge
         experimentalSuggest: config.get('cody.experimental.suggestions', false),
         experimentalChatPredictions: config.get('cody.experimental.chatPredictions', false),
         experimentalInline: config.get('cody.experimental.inline', false),
-        experimentalConnectToApp: config.get('cody.experimental.connectToApp', false),
         customHeaders: config.get<object>('cody.customHeaders', {}) as Record<string, string>,
     }
 }

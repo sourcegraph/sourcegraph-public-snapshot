@@ -580,6 +580,8 @@ type DebugLog struct {
 type Dotcom struct {
 	// AppNotifications description: Notifications to display in the Sourcegraph app.
 	AppNotifications []*AppNotifications `json:"app.notifications,omitempty"`
+	// LlmProxy description: Configuration related to the LLM Proxy service management. This should only be used on sourcegraph.com.
+	LlmProxy *LlmProxy `json:"llmProxy,omitempty"`
 	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
 	SlackLicenseExpirationWebhook string `json:"slackLicenseExpirationWebhook,omitempty"`
 	// SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.
@@ -1344,6 +1346,16 @@ type ImportChangesets struct {
 type JVMPackagesConnection struct {
 	// Maven description: Configuration for resolving from Maven repositories.
 	Maven Maven `json:"maven"`
+}
+
+// LlmProxy description: Configuration related to the LLM Proxy service management. This should only be used on sourcegraph.com.
+type LlmProxy struct {
+	// BigQueryDataset description: The dataset to pull BigQuery LLM Proxy related events from.
+	BigQueryDataset string `json:"bigQueryDataset,omitempty"`
+	// BigQueryGoogleProjectID description: The project ID to pull BigQuery LLM Proxy related events from.
+	BigQueryGoogleProjectID string `json:"bigQueryGoogleProjectID,omitempty"`
+	// BigQueryTable description: The table in the dataset to pull BigQuery LLM Proxy related events from.
+	BigQueryTable string `json:"bigQueryTable,omitempty"`
 }
 
 // Log description: Configuration for logging and alerting, including to external services.
