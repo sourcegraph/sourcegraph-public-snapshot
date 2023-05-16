@@ -1,6 +1,8 @@
 package drift
 
 import (
+	"sort"
+
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
@@ -76,8 +78,8 @@ func compareNamedListsMultiStrict[T schemas.Namer](
 	primaryCallback func(a *T, b T) []Summary,
 	additionsCallback func(additional []T) []Summary,
 ) []Summary {
-	am := groupByName(as)
-	bm := groupByName(bs)
+	am := schemas.GroupByName(as)
+	bm := schemas.GroupByName(bs)
 	additional := make([]T, 0, len(am))
 	summaries := []Summary(nil)
 
@@ -111,4 +113,15 @@ func compareNamedListsMultiStrict[T schemas.Namer](
 
 func noopAdditionalCallback[T schemas.Namer](_ []T) []Summary {
 	return nil
+}
+
+// keys returns the ordered keys of the given map.
+func keys[T any](m map[string]T) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	return keys
 }

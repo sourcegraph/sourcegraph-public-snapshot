@@ -7,18 +7,18 @@ import (
 )
 
 func compareExtensions(schemaName, version string, actual, expected schemas.SchemaDescription) []Summary {
-	return compareNamedLists(wrapStrings(actual.Extensions), wrapStrings(expected.Extensions), compareExtensionsCallback)
+	return compareNamedLists(actual.WrappedExtensions(), expected.WrappedExtensions(), compareExtensionsCallback)
 }
 
-func compareExtensionsCallback(extension *stringNamer, expectedExtension stringNamer) Summary {
+func compareExtensionsCallback(extension *schemas.ExtensionDescription, expectedExtension schemas.ExtensionDescription) Summary {
 	if extension == nil {
-		createExtensionStmt := fmt.Sprintf("CREATE EXTENSION %s;", expectedExtension)
-
 		return newDriftSummary(
 			expectedExtension.GetName(),
-			fmt.Sprintf("Missing extension %q", expectedExtension),
-			"install the extension",
-		).withStatements(createExtensionStmt)
+			fmt.Sprintf("Missing extension %q", expectedExtension.GetName()),
+			"define the extension",
+		).withStatements(
+			expectedExtension.CreateStatement(),
+		)
 	}
 
 	return nil
