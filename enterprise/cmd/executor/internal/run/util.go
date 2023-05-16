@@ -63,7 +63,6 @@ func apiWorkerOptions(c *config.Config, queueTelemetryOptions queue.TelemetryOpt
 	return apiworker.Options{
 		VMPrefix:      c.VMPrefix,
 		QueueName:     c.QueueName,
-		QueueNames:    c.QueueNames,
 		WorkerOptions: workerOptions(c),
 		RunnerOptions: runner.Options{
 			DockerOptions:      dockerOptions(c),
@@ -138,7 +137,6 @@ func queueOptions(c *config.Config, telemetryOptions queue.TelemetryOptions) que
 	return queue.Options{
 		ExecutorName:      c.WorkerHostname,
 		QueueName:         c.QueueName,
-		QueueNames:        c.QueueNames,
 		BaseClientOptions: baseClientOptions(c, "/.executors/queue"),
 		TelemetryOptions:  telemetryOptions,
 		ResourceOptions: queue.ResourceOptions{

@@ -616,12 +616,11 @@ func TestUpdateExecutionLogEntryBadResponse(t *testing.T) {
 }
 
 type routeSpec struct {
-	expectedMethod   string
-	expectedPath     string
-	expectedUsername string
-	expectedToken    string
-	expectedJobID    string
-	//expectedJobQueue     string
+	expectedMethod       string
+	expectedPath         string
+	expectedUsername     string
+	expectedToken        string
+	expectedJobID        string
 	expectedExecutorName string
 	expectedPayload      string
 	responseStatus       int
