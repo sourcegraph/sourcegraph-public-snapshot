@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -17,7 +18,7 @@ func NewRepositoryMatcher(store store.Store, observationCtx *observation.Context
 	metrics := newMetrics(observationCtx)
 
 	return goroutine.NewPeriodicGoroutine(
-		context.Background(),
+		actor.WithInternalActor(context.Background()),
 		"codeintel.policies-matcher", "match repositories to autoindexing+retention policies",
 		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
