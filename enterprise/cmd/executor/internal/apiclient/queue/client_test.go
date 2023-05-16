@@ -121,7 +121,6 @@ func TestClient_MarkComplete(t *testing.T) {
 				expectedUsername:     "test",
 				expectedToken:        "job-token",
 				expectedJobID:        "42",
-				expectedJobQueue:     "test_queue",
 				expectedExecutorName: "deadbeef",
 				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42}`,
 				responseStatus:       http.StatusNoContent,
@@ -137,7 +136,6 @@ func TestClient_MarkComplete(t *testing.T) {
 				expectedUsername:     "test",
 				expectedToken:        "hunter2",
 				expectedJobID:        "42",
-				expectedJobQueue:     "test_queue",
 				expectedExecutorName: "deadbeef",
 				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42}`,
 				responseStatus:       http.StatusNoContent,
@@ -153,7 +151,6 @@ func TestClient_MarkComplete(t *testing.T) {
 				expectedUsername:     "test",
 				expectedToken:        "job-token",
 				expectedJobID:        "42",
-				expectedJobQueue:     "test_queue",
 				expectedExecutorName: "deadbeef",
 				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42}`,
 				responseStatus:       http.StatusInternalServerError,
@@ -161,6 +158,22 @@ func TestClient_MarkComplete(t *testing.T) {
 			},
 			job:         types.Job{ID: 42, Token: "job-token"},
 			expectedErr: errors.New("unexpected status code 500"),
+		},
+		{
+			name: "Multi-queue Success",
+			spec: routeSpec{
+				expectedMethod:       "POST",
+				expectedPath:         "/.executors/queue/test_queue/markComplete",
+				expectedUsername:     "test",
+				expectedToken:        "job-token",
+				expectedJobID:        "42",
+				expectedExecutorName: "deadbeef",
+				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42}`,
+				responseStatus:       http.StatusNoContent,
+				responsePayload:      ``,
+				multiQueue:           true,
+			},
+			job: types.Job{ID: 42, Token: "job-token", Queue: "test_queue"},
 		},
 	}
 	for _, test := range tests {
@@ -571,12 +584,12 @@ func TestUpdateExecutionLogEntryBadResponse(t *testing.T) {
 }
 
 type routeSpec struct {
-	expectedMethod       string
-	expectedPath         string
-	expectedUsername     string
-	expectedToken        string
-	expectedJobID        string
-	expectedJobQueue     string
+	expectedMethod   string
+	expectedPath     string
+	expectedUsername string
+	expectedToken    string
+	expectedJobID    string
+	//expectedJobQueue     string
 	expectedExecutorName string
 	expectedPayload      string
 	responseStatus       int
