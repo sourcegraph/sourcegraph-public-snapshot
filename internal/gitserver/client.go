@@ -75,7 +75,7 @@ type ClientSource interface {
 	ClientForRepo(userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error)
 	// AddrForRepo returns the address of the gitserver for the given repo.
 	AddrForRepo(userAgent string, repo api.RepoName) string
-	// Addresses returns the current list of gitserver addresses.
+	// Address the current list of gitserver addresses.
 	Addresses() []string
 }
 

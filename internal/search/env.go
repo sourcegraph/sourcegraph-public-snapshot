@@ -4,23 +4,18 @@ import (
 	"context"
 	"sync"
 
-	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	"github.com/sourcegraph/zoekt/query"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
 )
 
 var (
 	searcherURLsOnce sync.Once
 	searcherURLs     *endpoint.Map
-
-	searcherGRPCConnectionCacheOnce sync.Once
-	searcherGRPCConnectionCache     *defaults.ConnectionCache
 
 	indexedSearchOnce sync.Once
 	indexedSearch     zoekt.Streamer
@@ -41,15 +36,6 @@ func SearcherURLs() *endpoint.Map {
 		})
 	})
 	return searcherURLs
-}
-
-func SearcherGRPCConnectionCache() *defaults.ConnectionCache {
-	searcherGRPCConnectionCacheOnce.Do(func() {
-		logger := log.Scoped("searcherGRPCConnectionCache", "gRPC connection cache for searcher endpoints")
-		searcherGRPCConnectionCache = defaults.NewConnectionCache(logger)
-	})
-
-	return searcherGRPCConnectionCache
 }
 
 func Indexed() zoekt.Streamer {
