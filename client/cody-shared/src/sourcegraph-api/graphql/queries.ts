@@ -24,16 +24,16 @@ export const SEARCH_EMBEDDINGS_QUERY = `
 query EmbeddingsSearch($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
 	embeddingsMultiSearch(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
 		codeResults {
-                        repoName
-                        revision
+            repoName
+            revision
 			fileName
 			startLine
 			endLine
 			content
 		}
 		textResults {
-                        repoName
-                        revision
+            repoName
+            revision
 			fileName
 			startLine
 			endLine
