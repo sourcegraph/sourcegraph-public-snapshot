@@ -90,7 +90,7 @@ WITH
 -- perform below.
 candidates_from_uploads AS (
 	SELECT u.repository_id
-	FROM lsif_uploads u
+	FROM lsif_uploads_with_repository_name u
 	WHERE
 		u.state = 'failed' AND
 		NOT EXISTS (
@@ -167,12 +167,15 @@ var scanRepositoryWithAvailableIndexers = basestore.NewSliceWithCountScanner(fun
 
 const repositoriesWithConfigurationQuery = `
 SELECT
-	repository_id,
-	available_indexers,
+	r.id,
+	cai.available_indexers,
 	COUNT(*) OVER() AS count
-FROM cached_available_indexers
+FROM cached_available_indexers cai
+JOIN repo r ON r.id = cai.repository_id
 WHERE
-	available_indexers != '{}'::jsonb
+	available_indexers != '{}'::jsonb AND
+	r.deleted_at IS NULL AND
+	r.blocked IS NULL
 ORDER BY num_events DESC LIMIT %s OFFSET %s
 `
 
