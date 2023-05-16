@@ -355,7 +355,7 @@
         "cody.codebase": {
           "order": 2,
           "type": "string",
-          "markdownDescription": "The name of the embedded repository that Cody will use to gather context for response. This is automatically inferred from your git setup but you can use this option if you need to override the default.",
+          "markdownDescription": "The name of the embedded repository that Cody will use to gather context for its responses. This is automatically inferred from your Git metadata but you can use this option if you need to override the default.",
           "example": "github.com/sourcegraph/sourcegraph"
         },
         "cody.useContext": {
@@ -368,12 +368,12 @@
             "blended"
           ],
           "default": "embeddings",
-          "markdownDescription": "If 'embeddings' is selected for a repository embedded in Sourcegraph, Cody will use contextual search for the search context. If 'keyword' is selected, it will perform a keyword-based search locally for search context. A repository must be embedded in Sourcegraph to use the 'embeddings' option, or it will automatically fall back to using 'keyword'."
+          "markdownDescription": "If 'embeddings' is selected, Cody will prefer to use an embeddings-based index when fetching context to generate responses to user requests. If no such index is found, it will fall back to using keyword-based local context fetching. If 'keyword' is selected, Cody will use keyword context."
         },
         "cody.experimental.suggestions": {
           "order": 4,
           "type": "boolean",
-          "markdownDescription": "Enables Cody to provide suggestions for inline auto-completion in your editor.",
+          "markdownDescription": "Enables Cody inline autocompletion in your editor.",
           "default": false
         },
         "cody.experimental.chatPredictions": {
@@ -385,7 +385,7 @@
         "cody.experimental.inline": {
           "order": 6,
           "type": "boolean",
-          "markdownDescription": "Enables Cody to provide Inline Assist, which enable the ability to initiate conversation and actions directly in the editor through comments.",
+          "markdownDescription": "Enables Cody Inline Assist, an inline way to explicitly ask questions and propose modifications to code.",
           "default": false
         },
         "cody.experimental.connectToApp": {
