@@ -16,6 +16,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+type LocalRepoMetadata struct {
+	AbsPath string
+}
+
 // LocalSource connects to a local code host.
 type LocalSource struct {
 	svc    *types.ExternalService
@@ -73,7 +77,8 @@ func (s *LocalSource) ListRepos(ctx context.Context, results chan SourceResult) 
 						CloneURL: uri,
 					},
 				},
-				Metadata: nil,
+				// Looks like this needs to be a JSON object
+				Metadata: "{}",
 			},
 		}
 	}
