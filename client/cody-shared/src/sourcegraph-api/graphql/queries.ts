@@ -21,19 +21,19 @@ query Repository($name: String!) {
 }`
 
 export const SEARCH_EMBEDDINGS_QUERY = `
-query EmbeddingsSearch($repo: ID!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
-	embeddingsSearch(repo: $repo, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
+query EmbeddingsSearch($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
+	embeddingsMultiSearch(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
 		codeResults {
-                        repoName
-                        revision
+            repoName
+            revision
 			fileName
 			startLine
 			endLine
 			content
 		}
 		textResults {
-                        repoName
-                        revision
+            repoName
+            revision
 			fileName
 			startLine
 			endLine
