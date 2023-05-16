@@ -101,8 +101,10 @@ export const GitHubAppSelector: React.FC<Props> = ({ disabled = false, gitHubApp
 
     return (
         <div className="d-flex flex-column">
-            <Label className="mt-2" id="github-app-label">
-                <Text className="mb-2">GitHub App</Text>
+            <Label className="mt-2">
+                <Text className="mb-2" id="github-app-label">
+                    GitHub App
+                </Text>
                 {disabled && id ? (
                     <Link to={`/site-admin/github-apps/${encodeURIComponent(id)}`}>{name}</Link>
                 ) : (
@@ -112,6 +114,7 @@ export const GitHubAppSelector: React.FC<Props> = ({ disabled = false, gitHubApp
                         onChange={onAppChange}
                         className="mb-0"
                         disabled={disabled}
+                        isCustomStyle={true}
                     >
                         <option value="">Choose a GitHub App</option>
                         {apps?.map(app => (
@@ -122,14 +125,17 @@ export const GitHubAppSelector: React.FC<Props> = ({ disabled = false, gitHubApp
                     </Select>
                 )}
             </Label>
-            <Label className="mt-2" id="installation-id-label">
-                <Text className="mb-2">Installation</Text>
+            <Label className="mt-2">
+                <Text className="mb-2" id="installation-id-label">
+                    Installation
+                </Text>
                 <Select
                     aria-labelledby="installation-id-label"
                     value={selectedInstallID}
                     onChange={onInstallationChange}
                     className="mb-0"
                     disabled={disabled || selectedApp?.installations.length === 1}
+                    isCustomStyle={true}
                 >
                     <option value={-1}>Choose a GitHub App</option>
                     {selectedApp?.installations?.map(installation => (
