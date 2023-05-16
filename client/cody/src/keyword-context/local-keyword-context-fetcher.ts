@@ -12,6 +12,8 @@ import { KeywordContextFetcher, KeywordContextFetcherResult } from '@sourcegraph
  * Exclude files without extensions and directories that starts with '.'
  * Limits the search to 250 files
  * Limits to use 1 thread
+ * Exclude files larger than 10 megabytes
+ * Exclude binary files
  */
 const fileExtRipgrepParams = [
     '-Tmarkdown',
@@ -29,6 +31,8 @@ const fileExtRipgrepParams = [
     '250',
     '--threads',
     '1',
+    '--max-filesize',
+    '3M',
 ]
 
 /**
