@@ -72,7 +72,7 @@ const register = async (
 }> => {
     const disposables: vscode.Disposable[] = []
 
-    await updateEventLogger(initialConfig, localStorage)
+    void updateEventLogger(initialConfig, localStorage)
 
     // Controller for inline assist
     const commentController = new InlineController(context.extensionPath)
@@ -107,9 +107,9 @@ const register = async (
     disposables.push(
         vscode.window.registerWebviewViewProvider('cody.chat', chatProvider, {
             webviewOptions: { retainContextWhenHidden: true },
-        })
+        }),
+        { dispose: () => vscode.commands.executeCommand('setContext', 'cody.activated', false) }
     )
-    disposables.push({ dispose: () => vscode.commands.executeCommand('setContext', 'cody.activated', false) })
 
     const executeRecipe = async (recipe: RecipeID): Promise<void> => {
         await vscode.commands.executeCommand('cody.chat.focus')
@@ -139,7 +139,7 @@ const register = async (
     disposables.push(
         // File Chat Provider
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
-            const isFixMode = comment.text.trimStart().startsWith('/f')
+            const isFixMode = /^\/f(ix)?\s/i.test(comment.text.trimStart())
             await commentController.chat(comment, isFixMode)
             await chatProvider.executeRecipe(isFixMode ? 'fixup' : 'inline-chat', comment.text, false)
             logEvent(`CodyVSCodeExtension:inline-assist:${isFixMode ? 'fixup' : 'chat'}`)
@@ -147,25 +147,14 @@ const register = async (
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             commentController.delete(thread)
         }),
-        // Toggle Chat
-        vscode.commands.registerCommand('cody.toggle-enabled', async () => {
-            await workspaceConfig.update(
-                'cody.enabled',
-                !workspaceConfig.get('cody.enabled'),
-                vscode.ConfigurationTarget.Global
-            )
-            logEvent('CodyVSCodeExtension:codyToggleEnabled:clicked')
-        }),
-        // Access token
-        // This is only used in configuration tests
+        // Access token - this is only used in configuration tests
         vscode.commands.registerCommand('cody.set-access-token', async (args: any[]) => {
             if (args?.length && (args[0] as string)) {
                 await secretStorage.store(CODY_ACCESS_TOKEN_SECRET, args[0])
             }
         }),
         vscode.commands.registerCommand('cody.delete-access-token', async () => {
-            await secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
-            logEvent('CodyVSCodeExtension:codyDeleteAccessToken:clicked')
+            await chatProvider.logout()
         }),
         // Commands
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
@@ -173,7 +162,6 @@ const register = async (
         vscode.commands.registerCommand('cody.history', () => chatProvider.setWebviewView('history')),
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
             await chatProvider.clearAndRestartSession()
-            chatProvider.setWebviewView('chat')
         }),
         vscode.commands.registerCommand('cody.recipe.explain-code', () => executeRecipe('explain-code-detailed')),
         vscode.commands.registerCommand('cody.recipe.explain-code-high-level', () =>
@@ -233,10 +221,8 @@ const register = async (
             vscode.commands.registerCommand('cody.experimental.suggest', async () => {
                 await completionsProvider.fetchAndShowCompletions()
             }),
-            vscode.commands.registerCommand('cody.completions.inline.accepted', (...args) => {
-                const params = {
-                    type: 'inline',
-                }
+            vscode.commands.registerCommand('cody.completions.inline.accepted', () => {
+                const params = { type: 'inline' }
                 logEvent('CodyVSCodeExtension:completion:accepted', params, params)
             }),
             vscode.languages.registerInlineCompletionItemProvider({ scheme: 'file' }, completionsProvider)

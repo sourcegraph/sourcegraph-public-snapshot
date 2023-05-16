@@ -13,7 +13,6 @@ import { SecretStorage, getAccessToken } from './services/SecretStorageProvider'
  */
 export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'get'>): Configuration {
     return {
-        enabled: config.get('cody.enabled', true),
         serverEndpoint: sanitizeServerEndpoint(config.get('cody.serverEndpoint', '')),
         codebase: sanitizeCodebase(config.get('cody.codebase')),
         debug: config.get('cody.debug', false),

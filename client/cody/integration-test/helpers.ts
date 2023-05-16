@@ -26,7 +26,6 @@ export async function beforeIntegrationTest(): Promise<void> {
     // Configure extension.
     const config = vscode.workspace.getConfiguration()
     await config.update('cody.serverEndpoint', `http://localhost:${mockServer.SERVER_PORT}`)
-    await config.update('cody.enabled', true)
     await ensureExecuteCommand('cody.set-access-token', ['test-token'])
 }
 
