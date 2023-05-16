@@ -61,4 +61,4 @@ pipeline:
       make install
   - runs: |
       mkdir -p ${{targets.destdir}}/usr/bin/
-      cp _build/default/src/main.exe ${{targets.destdir}}/usr/bin/comby
+      cp /root/.opam/4.11.0/bin/comby ${{targets.destdir}}/usr/bin/
