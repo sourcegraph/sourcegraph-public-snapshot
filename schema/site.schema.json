@@ -1421,33 +1421,38 @@
               "type": "boolean",
               "default": false
             },
-            "securityEvents": {
-              "description": "Capture security events (adds significant noise).",
-              "type": "boolean",
-              "default": false
-            },
             "severityLevel": {
               "description": "Severity logging level for the audit log.",
               "type": "string",
               "enum": ["DEBUG", "INFO", "WARN", "ERROR"],
               "default": "INFO"
-            },
-            "location": {
-              "description": "Where to output the audit log",
-              "type": "string",
-              "enum": ["none", "stdout", "database", "both"],
-              "default": "none"
             }
           },
-          "required": ["internalTraffic", "graphQL", "gitserverAccess", "securityEvents"],
+          "required": ["internalTraffic", "graphQL", "gitserverAccess"],
           "examples": [
             {
               "internalTraffic": false,
               "graphQL": false,
               "gitserverAccess": false,
-              "securityEvents": true,
-              "severityLevel": "INFO",
-              "location": "stdout"
+              "severityLevel": "INFO"
+            }
+          ]
+        },
+        "securityEventLog": {
+          "description": "EXPERIMENTAL: Configuration for security event logging",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "location": {
+              "description": "Where to output the security event log",
+              "type": "string",
+              "enum": ["none", "auditlog", "database", "all"],
+              "default": "auditlog"
+            }
+          },
+          "examples": [
+            {
+              "location": "auditlog"
             }
           ]
         }

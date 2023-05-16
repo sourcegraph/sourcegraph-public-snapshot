@@ -121,10 +121,11 @@ func (s *securityEventLogsStore) Insert(ctx context.Context, event *SecurityEven
 
 func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*SecurityEvent) error {
 	cfg := conf.SiteConfig()
-	loc := audit.LogLocation(cfg)
-	if loc == audit.None || !audit.IsEnabled(cfg, audit.SecurityEvents) {
+	loc := audit.SecurityEventLocation(cfg)
+	if loc == audit.None {
 		return nil
 	}
+
 	actor := sgactor.FromContext(ctx)
 	vals := make([]*sqlf.Query, len(events))
 	for index, event := range events {
@@ -148,6 +149,10 @@ func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*Secur
 		// "internal".
 		noUser := event.UserID == 0 && event.AnonymousUserID == ""
 		if actor.IsInternal() && noUser {
+			// only log internal access if we are explicitly configured to do so
+			if !audit.IsEnabled(cfg, audit.InternalTraffic) {
+				return nil
+			}
 			event.AnonymousUserID = "internal"
 		}
 
@@ -164,14 +169,14 @@ func (s *securityEventLogsStore) InsertList(ctx context.Context, events []*Secur
 		)
 	}
 
-	if loc == audit.Database || loc == audit.Both {
+	if loc == audit.Database || loc == audit.All {
 		query := sqlf.Sprintf("INSERT INTO security_event_logs(name, url, user_id, anonymous_user_id, source, argument, version, timestamp) VALUES %s", sqlf.Join(vals, ","))
 
 		if _, err := s.Handle().ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
 			return errors.Wrap(err, "INSERT")
 		}
 	}
-	if loc == audit.Stdout || loc == audit.Both {
+	if loc == audit.AuditLog || loc == audit.All {
 		for _, event := range events {
 			audit.Log(ctx, s.logger, audit.Record{
 				Entity: "security events",

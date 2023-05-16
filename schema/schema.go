@@ -78,10 +78,6 @@ type AuditLog struct {
 	GraphQL bool `json:"graphQL"`
 	// InternalTraffic description: Capture security events performed by the internal traffic (adds significant noise).
 	InternalTraffic bool `json:"internalTraffic"`
-	// Location description: Where to output the audit log
-	Location string `json:"location,omitempty"`
-	// SecurityEvents description: Capture security events (adds significant noise).
-	SecurityEvents bool `json:"securityEvents"`
 	// SeverityLevel description: Severity logging level for the audit log.
 	SeverityLevel string `json:"severityLevel,omitempty"`
 }
@@ -1366,6 +1362,8 @@ type LlmProxy struct {
 type Log struct {
 	// AuditLog description: EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)
 	AuditLog *AuditLog `json:"auditLog,omitempty"`
+	// SecurityEventLog description: EXPERIMENTAL: Configuration for security event logging
+	SecurityEventLog *SecurityEventLog `json:"securityEventLog,omitempty"`
 	// Sentry description: Configuration for Sentry
 	Sentry *Sentry `json:"sentry,omitempty"`
 }
@@ -1982,6 +1980,12 @@ type SearchScope struct {
 	Name string `json:"name"`
 	// Value description: The query string of this search scope
 	Value string `json:"value"`
+}
+
+// SecurityEventLog description: EXPERIMENTAL: Configuration for security event logging
+type SecurityEventLog struct {
+	// Location description: Where to output the security event log
+	Location string `json:"location,omitempty"`
 }
 
 // Sentry description: Configuration for Sentry

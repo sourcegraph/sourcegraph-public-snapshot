@@ -46,7 +46,9 @@ func main() {
 				GitserverAccess: true,
 				GraphQL:         true,
 				SeverityLevel:   "INFO",
-			}}}})
+			},
+			SecurityEventLog: &schema.SecurityEventLog{Location: "auditlogs"},
+		}}})
 	defer conf.Mock(nil)
 
 	for i := 0; i < logsCount; i++ {

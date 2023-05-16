@@ -23,6 +23,7 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 	t.Parallel()
 	logger, exportLogs := logtest.Captured(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
+	defer conf.Mock(nil)
 
 	var testCases = []struct {
 		name  string
@@ -36,7 +37,7 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 			event: &SecurityEvent{UserID: 1, URL: "http://sourcegraph.com", Source: "WEB"},
 			conf: &conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{Log: &schema.Log{
-					AuditLog: &schema.AuditLog{SecurityEvents: true, Location: "both"}}},
+					SecurityEventLog: &schema.SecurityEventLog{Location: "all"}}},
 			},
 			err: `INSERT: ERROR: new row for relation "security_event_logs" violates check constraint "security_event_logs_check_name_not_empty" (SQLSTATE 23514)`,
 		},
@@ -47,7 +48,7 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 				UserID: 0, AnonymousUserID: ""},
 			conf: &conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{Log: &schema.Log{
-					AuditLog: &schema.AuditLog{SecurityEvents: true, Location: "both"}}},
+					SecurityEventLog: &schema.SecurityEventLog{Location: "all"}}},
 			},
 			err: `INSERT: ERROR: new row for relation "security_event_logs" violates check constraint "security_event_logs_check_has_user" (SQLSTATE 23514)`,
 		},
@@ -59,7 +60,7 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 				UserID: 0, AnonymousUserID: ""},
 			conf: &conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{Log: &schema.Log{
-					AuditLog: &schema.AuditLog{SecurityEvents: true, Location: "both"}}},
+					SecurityEventLog: &schema.SecurityEventLog{Location: "all"}}},
 			},
 			err: "<nil>",
 		},
@@ -68,7 +69,7 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 			event: &SecurityEvent{Name: "test_event", URL: "http://sourcegraph.com", UserID: 1},
 			conf: &conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{Log: &schema.Log{
-					AuditLog: &schema.AuditLog{SecurityEvents: true, Location: "both"}}},
+					SecurityEventLog: &schema.SecurityEventLog{Location: "all"}}},
 			},
 			err: `INSERT: ERROR: new row for relation "security_event_logs" violates check constraint "security_event_logs_check_source_not_empty" (SQLSTATE 23514)`,
 		},
@@ -77,7 +78,7 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 			event: &SecurityEvent{Name: "test_event", URL: "http://sourcegraph.com", Source: "WEB", UserID: 0, AnonymousUserID: ""},
 			conf: &conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{Log: &schema.Log{
-					AuditLog: &schema.AuditLog{SecurityEvents: true, Location: "both"}}},
+					SecurityEventLog: &schema.SecurityEventLog{Location: "all"}}},
 			},
 			err: `INSERT: ERROR: new row for relation "security_event_logs" violates check constraint "security_event_logs_check_has_user" (SQLSTATE 23514)`,
 		},
@@ -86,7 +87,7 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 			event: &SecurityEvent{Name: "test_event", URL: "http://sourcegraph.com", Source: "Web", UserID: 1, AnonymousUserID: ""},
 			conf: &conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{Log: &schema.Log{
-					AuditLog: &schema.AuditLog{SecurityEvents: true, Location: "both"}}},
+					SecurityEventLog: &schema.SecurityEventLog{Location: "all"}}},
 			},
 			err: "<nil>",
 		},
@@ -95,7 +96,7 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 			event: &SecurityEvent{Name: "test_event", URL: "http://sourcegraph.com", Source: "Web", UserID: 0, AnonymousUserID: "blah"},
 			conf: &conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{Log: &schema.Log{
-					AuditLog: &schema.AuditLog{SecurityEvents: true, Location: "both"}}},
+					SecurityEventLog: &schema.SecurityEventLog{Location: "all"}}},
 			},
 			err: "<nil>",
 		},
@@ -104,7 +105,7 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 			event: &SecurityEvent{Name: "test_event", UserID: 1, URL: "http://sourcegraph.com", Source: "WEB"},
 			conf: &conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{Log: &schema.Log{
-					AuditLog: &schema.AuditLog{SecurityEvents: true, Location: "both"}}},
+					SecurityEventLog: &schema.SecurityEventLog{Location: "all"}}},
 			},
 			err: "<nil>",
 		},

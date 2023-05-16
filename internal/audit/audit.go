@@ -76,43 +76,17 @@ type Record struct {
 	Fields []log.Field
 }
 
-type Location = int
-
-const (
-	None = iota
-	Stdout
-	Database
-	Both
-)
-
-func LogLocation(cfg schema.SiteConfiguration) Location {
-	if auditCfg := getAuditCfg(cfg); auditCfg != nil {
-		switch auditCfg.Location {
-		case "none":
-			return None
-		case "stdout":
-			return Stdout
-		case "database":
-			return Database
-		case "both":
-			return Both
-		}
-	}
-	// default to stdout
-	return Stdout
-}
-
 type AuditLogSetting = int
 
 const (
 	GitserverAccess = iota
 	InternalTraffic
 	GraphQL
-	SecurityEvents
 )
 
 // IsEnabled returns the value of the respective setting from the site config (if set).
 // Otherwise, it returns the default value for the setting.
+// NOTE: This does not affect security_event logs, these are separately configured
 func IsEnabled(cfg schema.SiteConfiguration, setting AuditLogSetting) bool {
 	if auditCfg := getAuditCfg(cfg); auditCfg != nil {
 		switch setting {
@@ -122,8 +96,6 @@ func IsEnabled(cfg schema.SiteConfiguration, setting AuditLogSetting) bool {
 			return auditCfg.InternalTraffic
 		case GraphQL:
 			return auditCfg.GraphQL
-		case SecurityEvents:
-			return auditCfg.SecurityEvents
 		}
 	}
 	// all settings now currently default to 'false', but that's a coincidence, not intention
