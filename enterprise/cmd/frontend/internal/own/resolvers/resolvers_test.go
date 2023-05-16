@@ -826,7 +826,6 @@ func TestCommitOwnershipSignals(t *testing.T) {
 }
 
 func Test_SignalConfigurations(t *testing.T) {
-	// db := database.NewMockDB()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	git := fakeGitserver{}
