@@ -65,7 +65,7 @@ Foreign-key constraints:
         Column        |            Type             | Collation | Nullable |                   Default                   
 ----------------------+-----------------------------+-----------+----------+---------------------------------------------
  id                   | integer                     |           | not null | nextval('assigned_owners_id_seq'::regclass)
- user_id              | integer                     |           | not null | 
+ owner_user_id        | integer                     |           | not null | 
  file_path_id         | integer                     |           | not null | 
  who_assigned_user_id | integer                     |           |          | 
  assigned_at          | timestamp without time zone |           | not null | now()
@@ -74,7 +74,7 @@ Indexes:
     "assigned_owners_file_path" UNIQUE, btree (file_path_id)
 Foreign-key constraints:
     "assigned_owners_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
-    "assigned_owners_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+    "assigned_owners_owner_user_id_fkey" FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     "assigned_owners_who_assigned_user_id_fkey" FOREIGN KEY (who_assigned_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
 
 ```
@@ -3942,7 +3942,7 @@ Referenced by:
     TABLE "access_tokens" CONSTRAINT "access_tokens_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "access_tokens" CONSTRAINT "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)
     TABLE "aggregated_user_statistics" CONSTRAINT "aggregated_user_statistics_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-    TABLE "assigned_owners" CONSTRAINT "assigned_owners_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "assigned_owners" CONSTRAINT "assigned_owners_owner_user_id_fkey" FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "assigned_owners" CONSTRAINT "assigned_owners_who_assigned_user_id_fkey" FOREIGN KEY (who_assigned_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_initial_applier_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_last_applier_id_fkey" FOREIGN KEY (last_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
