@@ -245,6 +245,22 @@ func TestClient_MarkErrored(t *testing.T) {
 			job:         types.Job{ID: 42, Token: "job-token"},
 			expectedErr: errors.New("unexpected status code 500"),
 		},
+		{
+			name: "Multi-queue Success",
+			spec: routeSpec{
+				expectedMethod:       "POST",
+				expectedPath:         "/.executors/queue/test_queue/markErrored",
+				expectedUsername:     "test",
+				expectedToken:        "job-token",
+				expectedJobID:        "42",
+				expectedExecutorName: "deadbeef",
+				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
+				responseStatus:       http.StatusNoContent,
+				responsePayload:      ``,
+				multiQueue:           true,
+			},
+			job: types.Job{ID: 42, Token: "job-token", Queue: "test_queue"},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -314,6 +330,22 @@ func TestClient_MarkFailed(t *testing.T) {
 			},
 			job:         types.Job{ID: 42, Token: "job-token"},
 			expectedErr: errors.New("unexpected status code 500"),
+		},
+		{
+			name: "Success",
+			spec: routeSpec{
+				expectedMethod:       "POST",
+				expectedPath:         "/.executors/queue/test_queue/markFailed",
+				expectedUsername:     "test",
+				expectedToken:        "job-token",
+				expectedJobID:        "42",
+				expectedExecutorName: "deadbeef",
+				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
+				responseStatus:       http.StatusNoContent,
+				responsePayload:      ``,
+				multiQueue:           true,
+			},
+			job: types.Job{ID: 42, Token: "job-token", Queue: "test_queue"},
 		},
 	}
 	for _, test := range tests {
