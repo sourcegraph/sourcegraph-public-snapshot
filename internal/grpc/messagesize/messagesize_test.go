@@ -35,7 +35,7 @@ func TestGetMessageSizeBytesFromEnv(t *testing.T) {
 	})
 
 	t.Run("just large enough", func(t *testing.T) {
-		t.Setenv("TEST_SIZE", "4MB") // below range
+		t.Setenv("TEST_SIZE", "4MB") // inside low-end of range
 
 		fourMegaBytes := 4 * 1000 * 1000
 		size, err := getMessageSizeBytesFromEnv("TEST_SIZE", uint64(fourMegaBytes), math.MaxInt)
@@ -49,7 +49,7 @@ func TestGetMessageSizeBytesFromEnv(t *testing.T) {
 	})
 
 	t.Run("just small enough", func(t *testing.T) {
-		t.Setenv("TEST_SIZE", "4MB") // below range
+		t.Setenv("TEST_SIZE", "4MB") // inside large-end of range
 
 		fourMegaBytes := 4 * 1000 * 1000
 		size, err := getMessageSizeBytesFromEnv("TEST_SIZE", 0, uint64(fourMegaBytes))
