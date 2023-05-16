@@ -4,8 +4,8 @@ go_library(
     name = "httpapi",
     srcs = [
         "anthropic.go",
+        "diagnostics.go",
         "handler.go",
-        "healthz.go",
         "openai.go",
         "upstream.go",
     ],
@@ -13,6 +13,7 @@ go_library(
     visibility = ["//enterprise/cmd/llm-proxy:__subpackages__"],
     deps = [
         "//enterprise/cmd/llm-proxy/internal/actor",
+        "//enterprise/cmd/llm-proxy/internal/auth",
         "//enterprise/cmd/llm-proxy/internal/events",
         "//enterprise/cmd/llm-proxy/internal/response",
         "//enterprise/internal/completions/client/anthropic",

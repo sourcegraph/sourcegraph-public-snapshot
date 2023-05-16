@@ -81,8 +81,11 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		Next:        handler,
 	}
 
+	// Diagnostic layers should come before auth/rate-limiting
+	handler = httpapi.NewDiagnosticsHandler(obctx.Logger, handler, config.DiagnosticsSecret)
+
 	// Instrumentation layers
-	handler = httpLogger(obctx.Logger.Scoped("httpAPI", ""), handler)
+	handler = requestLogger(obctx.Logger.Scoped("requests", "HTTP requests"), handler)
 	handler = instrumentation.HTTPMiddleware("llm-proxy", handler,
 		otelhttp.WithPublicEndpoint())
 
@@ -166,7 +169,7 @@ func rateLimit(logger log.Logger, eventLogger events.Logger, cache limiter.Redis
 	})
 }
 
-func httpLogger(logger log.Logger, next http.Handler) http.Handler {
+func requestLogger(logger log.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rc := requestclient.FromContext(r.Context())
 		logger.Debug("Request",
