@@ -8,7 +8,7 @@ import (
 var scoutCommands commander
 
 func init() {
-	usage := `'src scout' is a tool that provides monitoring for Sourcegraph resource allocations
+	usage := `'src scout' is a tool that provides monitoring for Sourcegraph resources 
 
     EXPERIMENTAL: 'scout' is an experimental command in the 'src' tool. To use, you must
     point your .kube config to your Sourcegraph instance.

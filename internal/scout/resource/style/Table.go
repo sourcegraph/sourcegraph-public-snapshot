@@ -3,10 +3,14 @@ package style
 import (
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
+	"text/tabwriter"
 
 	"github.com/charmbracelet/bubbles/table"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"golang.design/x/clipboard"
 )
 
@@ -32,12 +36,27 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			copiedMessage := lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#32CD32")).
 				Render(fmt.Sprintf(
-					"Copied resource allocations for %s to clipboard",
+					"Copied resource allocations for '%s' to clipboard",
 					m.table.SelectedRow()[0],
 				))
 			return m, tea.Batch(
 				tea.Printf(
 					copiedMessage,
+				),
+			)
+		case "C":
+			tmpDir := os.TempDir()
+			filePath := filepath.Join(tmpDir, "resource-dump.txt")
+			m.dumpResources(m.table.Rows(), filePath)
+			savedMessage := lipgloss.NewStyle().
+				Foreground(lipgloss.Color("#32CD32")).
+				Render(fmt.Sprintf(
+					"saved resource allocations to %s",
+					filePath,
+				))
+			return m, tea.Batch(
+				tea.Printf(
+					savedMessage,
 				),
 			)
 		}
@@ -49,54 +68,83 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m model) View() string {
 	s := "\n > Press 'j' and 'k' to go up and down\n"
 	s += " > Press 'c' to copy highlighted row to clipboard\n"
+	s += " > Press 'C' to copy all rows to a file\n"
 	s += " > Press 'q' to quit\n\n"
 	s += baseStyle.Render(m.table.View()) + "\n"
 	return s
 }
 
+func (m model) dumpResources(rows []table.Row, filePath string) error {
+	dumpFile, err := os.Create(filePath)
+	if err != nil {
+		return errors.Wrap(err, "error while creating new file")
+	}
+	defer dumpFile.Close()
+
+	tw := tabwriter.NewWriter(dumpFile, 0, 0, 3, ' ', 0)
+	defer tw.Flush()
+
+	// default to docker terms
+	headers := []string{
+		"NAME",
+		"CPU CORES",
+		"CPU SHARES",
+		"MEM LIMITS",
+		"MEM RESERVATIONS",
+	}
+
+	// kubernetes rows will always have 6 items
+	// change column headers to reflect k8s terms
+	if len(rows[0]) == 6 {
+		headers = []string{
+			"NAME",
+			"CPU LIMITS",
+			"CPU REQUESTS",
+			"MEM LIMITS",
+			"MEM REQUESTS",
+			"CAPACITY",
+		}
+	}
+
+	fmt.Fprintf(tw, strings.Join(headers, "\t")+"\n")
+
+	for _, row := range rows {
+		values := []string{row[0], row[1], row[2], row[3], row[4]}
+		if len(row) == 6 {
+			values = append(values, row[5])
+		}
+		fmt.Fprintf(tw, strings.Join(values, "\t")+"\n")
+	}
+	return nil
+}
+
 func (m model) copyRowToClipboard(row table.Row) {
 	var containerInfo string
 
-	// change output based on the length of row
-	// docker rows will always be length of 5
-	// kubernetes rows will always be length of 6
-	if len(row) == 5 {
-		name := row[0]
-		cpuCores := row[1]
-		cpuShares := row[2]
-		memLimits := row[3]
-		memReservations := row[4]
-		containerInfo = fmt.Sprintf(`container: %s
-            cpu cores: %s 
-            cpu shares: %s
-            mem limits: %s
-            mem reservations: %s`,
-			name,
-			cpuCores,
-			cpuShares,
-			memLimits,
-			memReservations,
-		)
-	} else if len(row) == 6 {
-		name := row[0]
-		cpuLimits := row[1]
-		cpuRequests := row[2]
-		memLimits := row[3]
-		memRequests := row[4]
-		capacity := row[5]
-		containerInfo = fmt.Sprintf(`container: %s
-            cpu limits: %s 
-            cpu requests: %s
-            mem limits: %s
-            mem requests: %s
-            disk capacity: %s`,
-			name,
-			cpuLimits,
-			cpuRequests,
-			memLimits,
-			memRequests,
-			capacity,
-		)
+	// default to docker headers
+	headers := []string{
+		"NAME",
+		"CPU CORES",
+		"CPU SHARES",
+		"MEM LIMITS",
+		"MEM RESERVATIONS",
+	}
+
+	// kubernetes rows will always have 6 items
+	// change column headers to reflect k8s terms
+	if len(row) == 6 {
+		headers = []string{
+			"NAME",
+			"CPU LIMITS",
+			"CPU REQUESTS",
+			"MEM LIMITS",
+			"MEM REQUESTS",
+			"CAPACITY",
+		}
+	}
+
+	for i, header := range headers {
+		containerInfo += fmt.Sprintf("%s: %s\n", header, row[i])
 	}
 
 	clipboard.Write(clipboard.FmtText, []byte(containerInfo))
