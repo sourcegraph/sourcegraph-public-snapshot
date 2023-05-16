@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
@@ -58,10 +58,10 @@ type RepoCommit struct {
 	CommitID CommitID
 }
 
-func (rc RepoCommit) LogFields() []log.Field {
-	return []log.Field{
-		log.String("repo", string(rc.Repo)),
-		log.String("commitID", string(rc.CommitID)),
+func (rc RepoCommit) Attrs() []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.String("repo", string(rc.Repo)),
+		attribute.String("commitID", string(rc.CommitID)),
 	}
 }
 

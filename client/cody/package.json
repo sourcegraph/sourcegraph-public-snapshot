@@ -94,10 +94,6 @@
     },
     "commands": [
       {
-        "command": "cody.toggle-enabled",
-        "title": "Cody: Toggle Enabled/Disabled"
-      },
-      {
         "command": "cody.recipe.explain-code",
         "title": "Ask Cody: Explain Code in Detail"
       },
@@ -170,17 +166,20 @@
       {
         "command": "cody.comment.add",
         "title": "Ask Cody",
+        "category": "Cody Inline Assist",
         "enablement": "!commentIsEmpty"
       },
       {
         "command": "cody.comment.delete",
-        "title": "Cody: Remove chat",
+        "title": "Cody Inline Assist: Remove Comment",
+        "category": "Cody Inline Assist",
         "enablement": "!commentThreadIsEmpty",
         "icon": "$(trash)"
       },
       {
         "command": "cody.comment.load",
-        "title": "Cody: Loading",
+        "title": "Cody Inline Assist: Loading",
+        "category": "Cody Inline Assist",
         "enablement": "!commentThreadIsEmpty",
         "icon": "$(sync~spin)"
       }
@@ -322,6 +321,11 @@
           "command": "cody.comment.add",
           "group": "inline",
           "when": "cody.activated && commentController =~ /^cody-inline/"
+        },
+        {
+          "command": "cody.focus",
+          "group": "inline",
+          "when": "!cody.activated && commentController =~ /^cody-inline/"
         }
       ],
       "comments/commentThread/title": [
@@ -341,27 +345,21 @@
       "type": "object",
       "title": "Cody",
       "properties": {
-        "cody.enabled": {
-          "order": 1,
-          "type": "boolean",
-          "default": true,
-          "description": "Enable Cody"
-        },
         "cody.serverEndpoint": {
-          "order": 2,
+          "order": 1,
           "type": "string",
           "default": "https://sourcegraph.com",
           "example": "https://example.sourcegraph.com",
           "description": "URL to the Sourcegraph instance."
         },
         "cody.codebase": {
-          "order": 3,
+          "order": 2,
           "type": "string",
-          "markdownDescription": "Repo path that cody will use to gather context for the answers. Example: 'github.com/sourcegraph/sourcegraph' . This is automatically inferred from your git setup but you can use this option if you need to overwrite the default",
+          "markdownDescription": "The name of the embedded repository that Cody will use to gather context for its responses. This is automatically inferred from your Git metadata but you can use this option if you need to override the default.",
           "example": "github.com/sourcegraph/sourcegraph"
         },
         "cody.useContext": {
-          "order": 4,
+          "order": 3,
           "type": "string",
           "enum": [
             "embeddings",
@@ -370,24 +368,24 @@
             "blended"
           ],
           "default": "embeddings",
-          "markdownDescription": "If embeddings for a repo are present, Cody will use them to set the context for Sourcegraph search (best scneario). If not, it will automatically fall back to keyword based search"
+          "markdownDescription": "If 'embeddings' is selected, Cody will prefer to use an embeddings-based index when fetching context to generate responses to user requests. If no such index is found, it will fall back to using keyword-based local context fetching. If 'keyword' is selected, Cody will use keyword context."
         },
         "cody.experimental.suggestions": {
-          "order": 5,
+          "order": 4,
           "type": "boolean",
-          "markdownDescription": "Enables code completions while typing in the code editor window",
+          "markdownDescription": "Enables Cody inline autocompletion in your editor.",
           "default": false
         },
         "cody.experimental.chatPredictions": {
-          "order": 6,
+          "order": 5,
           "type": "boolean",
           "default": false,
-          "markdownDescription": "Adds sugestions of possible relevant messages in the chat window"
+          "markdownDescription": "Adds sugestions of possible relevant messages in the chat window."
         },
         "cody.experimental.inline": {
-          "order": 7,
+          "order": 6,
           "type": "boolean",
-          "markdownDescription": "Enables inline chat with cody inside the code editor window",
+          "markdownDescription": "Enables Cody Inline Assist, an inline way to explicitly ask questions and propose modifications to code.",
           "default": false
         },
         "cody.experimental.connectToApp": {
@@ -395,9 +393,9 @@
           "default": false
         },
         "cody.customHeaders": {
-          "order": 8,
+          "order": 7,
           "type": "object",
-          "markdownDescription": "Adds custom HTTP headers to all network requests. Usefull if you are behind a proxy server that requires custom headers",
+          "markdownDescription": "Adds custom HTTP headers to all network requests to the Sourcegraph endpoint. Defining required headers here ensures requests are properly forwarded through intermediary proxy servers, which may mandate certain custom headers for internal or external communication.",
           "default": {},
           "examples": [
             {
@@ -409,7 +407,7 @@
         "cody.debug": {
           "order": 99,
           "type": "boolean",
-          "markdownDescription": "(Only relevant for the team developing and improving Cody)"
+          "markdownDescription": "Adds 'Debug' view to Cody Chat view that allows developers to see and log errors."
         }
       }
     }

@@ -21,8 +21,30 @@ query Repository($name: String!) {
 }`
 
 export const SEARCH_EMBEDDINGS_QUERY = `
-query EmbeddingsSearch($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
-	embeddingsMultiSearch(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
+query EmbeddingsSearch($repo: ID!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
+	embeddingsSearch(repo: $repo, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
+		codeResults {
+                        repoName
+                        revision
+			fileName
+			startLine
+			endLine
+			content
+		}
+		textResults {
+                        repoName
+                        revision
+			fileName
+			startLine
+			endLine
+			content
+		}
+	}
+}`
+
+export const LEGACY_SEARCH_EMBEDDINGS_QUERY = `
+query LegacyEmbeddingsSearch($repo: ID!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
+	embeddingsSearch(repo: $repo, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
 		codeResults {
 			fileName
 			startLine

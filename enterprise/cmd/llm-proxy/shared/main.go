@@ -7,7 +7,9 @@ import (
 
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/redigo"
+	"github.com/gomodule/redigo/redis"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/events"
 	llmproxy "github.com/sourcegraph/sourcegraph/enterprise/internal/llm-proxy"
@@ -66,6 +68,8 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	// come last.
 	handler := httpapi.NewHandler(obctx.Logger, eventLogger, &httpapi.Config{
 		AnthropicAccessToken: config.Anthropic.AccessToken,
+		OpenAIAccessToken:    config.OpenAI.AccessToken,
+		OpenAIOrgID:          config.OpenAI.OrgID,
 	})
 
 	// Authentication and rate-limting layers
@@ -82,7 +86,8 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 	// Instrumentation layers
 	handler = requestLogger(obctx.Logger.Scoped("requests", "HTTP requests"), handler)
-	handler = instrumentation.HTTPMiddleware("llm-proxy", handler)
+	handler = instrumentation.HTTPMiddleware("llm-proxy", handler,
+		otelhttp.WithPublicEndpoint())
 
 	// Collect request client for downstream handlers. Outside of dev, we always set up
 	// Cloudflare in from of LLM-proxy. This comes first.
@@ -190,6 +195,14 @@ type prefixRedisStore struct {
 
 func (s *prefixRedisStore) Incr(key string) (int, error) {
 	return s.store.Incr(s.prefix + key)
+}
+
+func (s *prefixRedisStore) GetInt(key string) (int, error) {
+	i, err := s.store.Get(s.prefix + key).Int()
+	if err != nil && err != redis.ErrNil {
+		return 0, err
+	}
+	return i, nil
 }
 
 func (s *prefixRedisStore) TTL(key string) (int, error) {
