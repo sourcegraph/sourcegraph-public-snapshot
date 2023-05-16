@@ -97,7 +97,7 @@ func (c *Client) MarkComplete(ctx context.Context, job types.Job) (_ bool, err e
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/markComplete", c.options.QueueName), job.Token, types.MarkCompleteRequest{
+	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/markComplete", c.inferQueueName(job)), job.Token, types.MarkCompleteRequest{
 		JobOperationRequest: types.JobOperationRequest{
 			ExecutorName: c.options.ExecutorName,
 			JobID:        job.ID,
@@ -329,4 +329,15 @@ func (c *Client) UpdateExecutionLogEntry(ctx context.Context, job types.Job, ent
 	}
 
 	return c.client.DoAndDrop(ctx, req)
+}
+
+// inferQueueName returns the queue name if it is specified on the job, which is the case
+// when an executor is configured to listen to multiple queues. If the queue name is empty,
+// return the specific queue that is configured.
+func (c *Client) inferQueueName(job types.Job) string {
+	if job.Queue != "" {
+		return job.Queue
+	} else {
+		return c.options.QueueName
+	}
 }

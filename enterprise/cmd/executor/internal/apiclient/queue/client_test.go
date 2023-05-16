@@ -121,6 +121,7 @@ func TestClient_MarkComplete(t *testing.T) {
 				expectedUsername:     "test",
 				expectedToken:        "job-token",
 				expectedJobID:        "42",
+				expectedJobQueue:     "test_queue",
 				expectedExecutorName: "deadbeef",
 				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42}`,
 				responseStatus:       http.StatusNoContent,
@@ -136,6 +137,7 @@ func TestClient_MarkComplete(t *testing.T) {
 				expectedUsername:     "test",
 				expectedToken:        "hunter2",
 				expectedJobID:        "42",
+				expectedJobQueue:     "test_queue",
 				expectedExecutorName: "deadbeef",
 				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42}`,
 				responseStatus:       http.StatusNoContent,
@@ -151,6 +153,7 @@ func TestClient_MarkComplete(t *testing.T) {
 				expectedUsername:     "test",
 				expectedToken:        "job-token",
 				expectedJobID:        "42",
+				expectedJobQueue:     "test_queue",
 				expectedExecutorName: "deadbeef",
 				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42}`,
 				responseStatus:       http.StatusInternalServerError,
@@ -573,6 +576,7 @@ type routeSpec struct {
 	expectedUsername     string
 	expectedToken        string
 	expectedJobID        string
+	expectedJobQueue     string
 	expectedExecutorName string
 	expectedPayload      string
 	responseStatus       int
