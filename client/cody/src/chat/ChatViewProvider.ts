@@ -207,8 +207,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.sendEvent(message.event, message.value)
                 break
             case 'removeToken':
-                await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
-                this.sendEvent('token', 'Delete')
+                await this.logout()
                 break
             case 'removeHistory':
                 await this.clearHistory()
@@ -325,14 +324,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     private async executeChatCommands(text: string): Promise<void> {
-        const command = text.split(' ')[0]
-        switch (command) {
-            case '/reset':
-            case '/r':
+        switch (true) {
+            case /^\/r(est)?\s/i.test(text):
                 await this.clearAndRestartSession()
                 break
-            case '/search':
-            case '/s':
+            case /^\/s(earch)?\s/i.test(text):
                 await this.executeRecipe('context-search', text)
                 break
             default:
@@ -521,6 +517,18 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             this.sendEvent('auth', 'login')
         }
         void this.webview?.postMessage({ type: 'login', isValid })
+    }
+
+    /**
+     * Logout deletes token from secret storage
+     * Also removes the avtivate status for the extension to disable access to all commands and set webview back to login view
+     */
+    public async logout(): Promise<void> {
+        await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
+        await vscode.commands.executeCommand('setContext', 'cody.activated', false)
+        this.sendEvent('token', 'Delete')
+        this.sendEvent('auth', 'logout')
+        this.setWebviewView('login')
     }
 
     /**

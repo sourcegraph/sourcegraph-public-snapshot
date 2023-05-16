@@ -19,7 +19,6 @@ go_library(
         "//internal/search/result",
         "//lib/errors",
         "@com_github_inconshreveable_log15//:log15",
-        "@com_github_opentracing_opentracing_go//log",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_sourcegraph_go_ctags//:go-ctags",
         "@com_github_sourcegraph_log//:log",

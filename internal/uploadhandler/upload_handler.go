@@ -8,7 +8,6 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	sglog "github.com/sourcegraph/log"
@@ -78,8 +77,8 @@ func (h *UploadHandler[T]) handleEnqueue(w http.ResponseWriter, r *http.Request)
 	payload, statusCode, err := func() (_ any, statusCode int, err error) {
 		ctx, trace, endObservation := h.operations.handleEnqueue.With(r.Context(), &err, observation.Args{})
 		defer func() {
-			endObservation(1, observation.Args{LogFields: []log.Field{
-				log.Int("statusCode", statusCode),
+			endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
+				attribute.Int("statusCode", statusCode),
 			}})
 		}()
 

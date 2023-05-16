@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "access_requests.go",
         "access_tokens.go",
+        "assigned_owners.go",
         "authenticator.go",
         "authz.go",
         "bitbucket_project_permissions.go",
@@ -151,6 +152,7 @@ go_test(
     srcs = [
         "access_requests_test.go",
         "access_tokens_test.go",
+        "assigned_owners_test.go",
         "authenticator_test.go",
         "bitbucket_project_permissions_test.go",
         "conf_test.go",

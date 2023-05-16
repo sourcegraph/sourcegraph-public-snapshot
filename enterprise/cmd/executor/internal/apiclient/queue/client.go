@@ -7,13 +7,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
 	"strings"
 	"time"
 
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/expfmt"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
 
@@ -60,7 +59,7 @@ func (c *Client) QueuedCount(ctx context.Context) (int, error) {
 }
 
 func (c *Client) Dequeue(ctx context.Context, workerHostname string, extraArguments any) (job types.Job, _ bool, err error) {
-	var observationField otlog.Field
+	var queueAttr attribute.KeyValue
 	var endpoint string
 	dequeueRequest := types.DequeueRequest{
 		Version:      version.Version(),
@@ -71,16 +70,16 @@ func (c *Client) Dequeue(ctx context.Context, workerHostname string, extraArgume
 	}
 
 	if len(c.options.QueueNames) > 0 {
-		observationField = otlog.String("queueNames", strings.Join(c.options.QueueNames, ", "))
+		queueAttr = attribute.String("queueNames", strings.Join(c.options.QueueNames, ","))
 		endpoint = "/dequeue"
 		dequeueRequest.Queues = c.options.QueueNames
 	} else {
-		observationField = otlog.String("queueName", c.options.QueueName)
+		queueAttr = attribute.String("queueName", c.options.QueueName)
 		endpoint = fmt.Sprintf("%s/dequeue", c.options.QueueName)
 	}
 
-	ctx, _, endObservation := c.operations.dequeue.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		observationField,
+	ctx, _, endObservation := c.operations.dequeue.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		queueAttr,
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -95,9 +94,9 @@ func (c *Client) Dequeue(ctx context.Context, workerHostname string, extraArgume
 
 func (c *Client) MarkComplete(ctx context.Context, job types.Job) (_ bool, err error) {
 	queue := c.inferQueueName(job)
-	ctx, _, endObservation := c.operations.markComplete.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("queueName", job.Queue),
-		otlog.Int("jobID", job.ID),
+	ctx, _, endObservation := c.operations.markComplete.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("queueName", queue),
+		attribute.Int("jobID", job.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -119,9 +118,9 @@ func (c *Client) MarkComplete(ctx context.Context, job types.Job) (_ bool, err e
 
 func (c *Client) MarkErrored(ctx context.Context, job types.Job, failureMessage string) (_ bool, err error) {
 	queue := c.inferQueueName(job)
-	ctx, _, endObservation := c.operations.markErrored.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("queueName", queue),
-		otlog.Int("jobID", job.ID),
+	ctx, _, endObservation := c.operations.markErrored.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("queueName", queue),
+		attribute.Int("jobID", job.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -144,9 +143,9 @@ func (c *Client) MarkErrored(ctx context.Context, job types.Job, failureMessage 
 
 func (c *Client) MarkFailed(ctx context.Context, job types.Job, failureMessage string) (_ bool, err error) {
 	queue := c.inferQueueName(job)
-	ctx, _, endObservation := c.operations.markFailed.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("queueName", queue),
-		otlog.Int("jobID", job.ID),
+	ctx, _, endObservation := c.operations.markFailed.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("queueName", queue),
+		attribute.Int("jobID", job.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -168,9 +167,9 @@ func (c *Client) MarkFailed(ctx context.Context, job types.Job, failureMessage s
 }
 
 func (c *Client) Heartbeat(ctx context.Context, jobIDs []int) (knownIDs, cancelIDs []int, err error) {
-	ctx, _, endObservation := c.operations.heartbeat.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("queueName", c.options.QueueName),
-		otlog.String("jobIDs", intsToString(jobIDs)),
+	ctx, _, endObservation := c.operations.heartbeat.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("queueName", c.options.QueueName),
+		attribute.IntSlice("jobIDs", jobIDs),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -240,15 +239,6 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []int) (knownIDs, cancelI
 	return respV1, cancelIDs, nil
 }
 
-func intsToString(ints []int) string {
-	segments := make([]string, 0, len(ints))
-	for _, id := range ints {
-		segments = append(segments, strconv.Itoa(id))
-	}
-
-	return strings.Join(segments, ", ")
-}
-
 func gatherMetrics(logger log.Logger, gatherer prometheus.Gatherer) (string, error) {
 	maxDuration := 3 * time.Second
 	ctx, cancel := context.WithTimeout(context.Background(), maxDuration)
@@ -302,9 +292,9 @@ func (c *Client) Ping(ctx context.Context) (err error) {
 }
 
 func (c *Client) AddExecutionLogEntry(ctx context.Context, job types.Job, entry internalexecutor.ExecutionLogEntry) (entryID int, err error) {
-	ctx, _, endObservation := c.operations.addExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("queueName", c.options.QueueName),
-		otlog.Int("jobID", job.ID),
+	ctx, _, endObservation := c.operations.addExecutionLogEntry.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("queueName", c.options.QueueName),
+		attribute.Int("jobID", job.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -324,10 +314,10 @@ func (c *Client) AddExecutionLogEntry(ctx context.Context, job types.Job, entry 
 }
 
 func (c *Client) UpdateExecutionLogEntry(ctx context.Context, job types.Job, entryID int, entry internalexecutor.ExecutionLogEntry) (err error) {
-	ctx, _, endObservation := c.operations.updateExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("queueName", c.options.QueueName),
-		otlog.Int("jobID", job.ID),
-		otlog.Int("entryID", entryID),
+	ctx, _, endObservation := c.operations.updateExecutionLogEntry.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("queueName", c.options.QueueName),
+		attribute.Int("jobID", job.ID),
+		attribute.Int("entryID", entryID),
 	}})
 	defer endObservation(1, observation.Args{})
 
