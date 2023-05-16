@@ -85,6 +85,11 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 		}
 	}
 
+	if len(req.Queues) == 0 {
+		m.logger.Info("Dequeue requested without any queue names", log.String("executorName", req.ExecutorName))
+		return executortypes.Job{}, false, nil
+	}
+
 	if invalidQueues := m.validateQueues(req.Queues); len(invalidQueues) > 0 {
 		message := fmt.Sprintf("Invalid queue name(s) '%s' found. Supported queue names are '%s'.", strings.Join(invalidQueues, ", "), strings.Join(m.validQueues, ", "))
 		m.logger.Error(message)
