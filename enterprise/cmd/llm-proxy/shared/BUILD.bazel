@@ -38,6 +38,7 @@ go_library(
         "//lib/errors",
         "@com_github_go_redsync_redsync_v4//:redsync",
         "@com_github_go_redsync_redsync_v4//redis/redigo",
+        "@com_github_gomodule_redigo//redis",
         "@com_github_googlecloudplatform_opentelemetry_operations_go_exporter_trace//:trace",
         "@com_github_sourcegraph_log//:log",
         "@io_opentelemetry_go_contrib_detectors_gcp//:gcp",
