@@ -1811,14 +1811,14 @@ ALTER SEQUENCE codeintel_ranking_path_counts_inputs_id_seq OWNED BY codeintel_ra
 CREATE TABLE codeintel_ranking_progress (
     id bigint NOT NULL,
     graph_key text NOT NULL,
-    max_definition_id integer NOT NULL,
-    max_reference_id integer NOT NULL,
-    max_path_id integer NOT NULL,
     mappers_started_at timestamp with time zone NOT NULL,
     mapper_completed_at timestamp with time zone,
     seed_mapper_completed_at timestamp with time zone,
     reducer_started_at timestamp with time zone,
-    reducer_completed_at timestamp with time zone
+    reducer_completed_at timestamp with time zone,
+    max_definition_id bigint NOT NULL,
+    max_reference_id bigint NOT NULL,
+    max_path_id bigint NOT NULL
 );
 
 CREATE SEQUENCE codeintel_ranking_progress_id_seq
