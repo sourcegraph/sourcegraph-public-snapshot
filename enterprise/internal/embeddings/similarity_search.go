@@ -2,16 +2,17 @@ package embeddings
 
 import (
 	"container/heap"
+	"fmt"
 	"math"
 	"sort"
 
 	"github.com/sourcegraph/conc"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
 type nearestNeighbor struct {
-	index        int
-	scoreDetails SearchScoreDetails
+	index int
+	score int32
+	debug searchDebugInfo
 }
 
 type nearestNeighborsHeap struct {
@@ -21,7 +22,7 @@ type nearestNeighborsHeap struct {
 func (nn *nearestNeighborsHeap) Len() int { return len(nn.neighbors) }
 
 func (nn *nearestNeighborsHeap) Less(i, j int) bool {
-	return nn.neighbors[i].scoreDetails.Score < nn.neighbors[j].scoreDetails.Score
+	return nn.neighbors[i].score < nn.neighbors[j].score
 }
 
 func (nn *nearestNeighborsHeap) Swap(i, j int) {
@@ -80,16 +81,19 @@ type WorkerOptions struct {
 	MinRowsToSplit int
 }
 
+type SimilaritySearchResult struct {
+	RepoEmbeddingRowMetadata
+	SimilarityScore int32
+	RankScore       int32
+}
+
+func (r *SimilaritySearchResult) Score() int32 {
+	return r.SimilarityScore + r.RankScore
+}
+
 // SimilaritySearch finds the `nResults` most similar rows to a query vector. It uses the cosine similarity metric.
 // IMPORTANT: The vectors in the embedding index have to be normalized for similarity search to work correctly.
-func (index *EmbeddingIndex) SimilaritySearch(
-	query []int8,
-	numResults int,
-	workerOptions WorkerOptions,
-	opts SearchOptions,
-	repoName api.RepoName,
-	revision api.CommitID,
-) []EmbeddingSearchResult {
+func (index *EmbeddingIndex) SimilaritySearch(query []int8, numResults int, workerOptions WorkerOptions, opts SearchOptions) []SimilaritySearchResult {
 	if numResults == 0 || len(index.Embeddings) == 0 {
 		return nil
 	}
@@ -127,20 +131,16 @@ func (index *EmbeddingIndex) SimilaritySearch(
 		}
 	}
 	// And re-sort it according to the score (descending).
-	sort.Slice(neighbors, func(i, j int) bool { return neighbors[i].scoreDetails.Score > neighbors[j].scoreDetails.Score })
+	sort.Slice(neighbors, func(i, j int) bool { return neighbors[i].score > neighbors[j].score })
 
 	// Take top neighbors and return them as results.
-	results := make([]EmbeddingSearchResult, numResults)
+	results := make([]SimilaritySearchResult, numResults)
 
 	for idx := 0; idx < min(numResults, len(neighbors)); idx++ {
-		metadata := index.RowMetadata[neighbors[idx].index]
-		results[idx] = EmbeddingSearchResult{
-			RepoName:     repoName,
-			Revision:     revision,
-			FileName:     metadata.FileName,
-			StartLine:    metadata.StartLine,
-			EndLine:      metadata.EndLine,
-			ScoreDetails: neighbors[idx].scoreDetails,
+		results[idx] = SimilaritySearchResult{
+			RepoEmbeddingRowMetadata: index.RowMetadata[neighbors[idx].index],
+			SimilarityScore:          neighbors[idx].debug.similarity,
+			RankScore:                neighbors[idx].debug.rank,
 		}
 	}
 
@@ -156,17 +156,17 @@ func (index *EmbeddingIndex) partialSimilaritySearch(query []int8, numResults in
 
 	nnHeap := newNearestNeighborsHeap()
 	for i := partialRows.start; i < partialRows.start+numResults; i++ {
-		scoreDetails := index.score(query, i, opts)
-		heap.Push(nnHeap, nearestNeighbor{index: i, scoreDetails: scoreDetails})
+		score, debugInfo := index.score(query, i, opts)
+		heap.Push(nnHeap, nearestNeighbor{index: i, score: score, debug: debugInfo})
 	}
 
 	for i := partialRows.start + numResults; i < partialRows.end; i++ {
-		scoreDetails := index.score(query, i, opts)
+		score, debugInfo := index.score(query, i, opts)
 		// Add row if it has greater similarity than the smallest similarity in the heap.
 		// This way we ensure keep a set of the highest similarities in the heap.
-		if scoreDetails.Score > nnHeap.Peek().scoreDetails.Score {
+		if score > nnHeap.Peek().score {
 			heap.Pop(nnHeap)
-			heap.Push(nnHeap, nearestNeighbor{index: i, scoreDetails: scoreDetails})
+			heap.Push(nnHeap, nearestNeighbor{index: i, score: score, debug: debugInfo})
 		}
 	}
 
@@ -178,7 +178,7 @@ const (
 	scoreSimilarityWeight int32 = 2
 )
 
-func (index *EmbeddingIndex) score(query []int8, i int, opts SearchOptions) SearchScoreDetails {
+func (index *EmbeddingIndex) score(query []int8, i int, opts SearchOptions) (score int32, debugInfo searchDebugInfo) {
 	similarityScore := scoreSimilarityWeight * Dot(index.Row(i), query)
 
 	// handle missing ranks
@@ -195,11 +195,20 @@ func (index *EmbeddingIndex) score(query []int8, i int, opts SearchOptions) Sear
 		rankScore = int32(float32(scoreFileRankWeight) * normalizedRank)
 	}
 
-	return SearchScoreDetails{
-		Score:           similarityScore + rankScore,
-		SimilarityScore: similarityScore,
-		RankScore:       rankScore,
+	return similarityScore + rankScore, searchDebugInfo{similarity: similarityScore, rank: rankScore, enabled: opts.Debug}
+}
+
+type searchDebugInfo struct {
+	similarity int32
+	rank       int32
+	enabled    bool
+}
+
+func (i *searchDebugInfo) String() string {
+	if !i.enabled {
+		return ""
 	}
+	return fmt.Sprintf("score:%d, similarity:%d, rank:%d", i.similarity+i.rank, i.similarity, i.rank)
 }
 
 func min(a, b int) int {
@@ -217,5 +226,6 @@ func max(a, b int) int {
 }
 
 type SearchOptions struct {
+	Debug            bool
 	UseDocumentRanks bool
 }

@@ -1,12 +1,8 @@
 package resolvers
 
 import (
-	"bytes"
 	"context"
-	"os"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -19,7 +15,6 @@ import (
 	repobg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -30,7 +25,7 @@ func NewResolver(
 	db database.DB,
 	logger log.Logger,
 	gitserverClient gitserver.Client,
-	embeddingsClient embeddings.Client,
+	embeddingsClient *embeddings.Client,
 	repoStore repobg.RepoEmbeddingJobsStore,
 	contextDetectionStore contextdetectionbg.ContextDetectionEmbeddingJobsStore,
 ) graphqlbackend.EmbeddingsResolver {
@@ -48,22 +43,13 @@ type Resolver struct {
 	db                        database.DB
 	logger                    log.Logger
 	gitserverClient           gitserver.Client
-	embeddingsClient          embeddings.Client
+	embeddingsClient          *embeddings.Client
 	repoEmbeddingJobsStore    repobg.RepoEmbeddingJobsStore
 	contextDetectionJobsStore contextdetectionbg.ContextDetectionEmbeddingJobsStore
 	emails                    backend.UserEmailsService
 }
 
 func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.EmbeddingsSearchInputArgs) (graphqlbackend.EmbeddingsSearchResultsResolver, error) {
-	return r.EmbeddingsMultiSearch(ctx, graphqlbackend.EmbeddingsMultiSearchInputArgs{
-		Repos:            []graphql.ID{args.Repo},
-		Query:            args.Query,
-		CodeResultsCount: args.CodeResultsCount,
-		TextResultsCount: args.TextResultsCount,
-	})
-}
-
-func (r *Resolver) EmbeddingsMultiSearch(ctx context.Context, args graphqlbackend.EmbeddingsMultiSearchInputArgs) (graphqlbackend.EmbeddingsSearchResultsResolver, error) {
 	if !conf.EmbeddingsEnabled() {
 		return nil, errors.New("embeddings are not configured or disabled")
 	}
@@ -76,28 +62,19 @@ func (r *Resolver) EmbeddingsMultiSearch(ctx context.Context, args graphqlbacken
 		return nil, err
 	}
 
-	repoIDs := make([]api.RepoID, len(args.Repos))
-	for i, repo := range args.Repos {
-		repoID, err := graphqlbackend.UnmarshalRepositoryID(repo)
-		if err != nil {
-			return nil, err
-		}
-		repoIDs[i] = repoID
-	}
-
-	repos, err := r.db.Repos().GetByIDs(ctx, repoIDs...)
+	repoID, err := graphqlbackend.UnmarshalRepositoryID(args.Repo)
 	if err != nil {
 		return nil, err
 	}
 
-	repoNames := make([]api.RepoName, len(repos))
-	for i, repo := range repos {
-		repoNames[i] = repo.Name
+	repo, err := r.db.Repos().Get(ctx, repoID)
+	if err != nil {
+		return nil, err
 	}
 
 	results, err := r.embeddingsClient.Search(ctx, embeddings.EmbeddingsSearchParameters{
-		RepoNames:        repoNames,
-		RepoIDs:          repoIDs,
+		RepoName:         repo.Name,
+		RepoID:           repoID,
 		Query:            args.Query,
 		CodeResultsCount: int(args.CodeResultsCount),
 		TextResultsCount: int(args.TextResultsCount),
@@ -106,11 +83,7 @@ func (r *Resolver) EmbeddingsMultiSearch(ctx context.Context, args graphqlbacken
 		return nil, err
 	}
 
-	return &embeddingsSearchResultsResolver{
-		results:   results,
-		gitserver: r.gitserverClient,
-		logger:    r.logger,
-	}, nil
+	return &embeddingsSearchResultsResolver{results}, nil
 }
 
 func (r *Resolver) IsContextRequiredForChatQuery(ctx context.Context, args graphqlbackend.IsContextRequiredForChatQueryInputArgs) (bool, error) {
@@ -210,91 +183,27 @@ func (r *Resolver) ScheduleContextDetectionForEmbedding(ctx context.Context) (*g
 }
 
 type embeddingsSearchResultsResolver struct {
-	results   *embeddings.EmbeddingCombinedSearchResults
-	gitserver gitserver.Client
-	logger    log.Logger
+	results *embeddings.EmbeddingSearchResults
 }
 
-func (r *embeddingsSearchResultsResolver) CodeResults(ctx context.Context) ([]graphqlbackend.EmbeddingsSearchResultResolver, error) {
-	return embeddingsSearchResultsToResolvers(ctx, r.logger, r.gitserver, r.results.CodeResults)
-}
-
-func (r *embeddingsSearchResultsResolver) TextResults(ctx context.Context) ([]graphqlbackend.EmbeddingsSearchResultResolver, error) {
-	return embeddingsSearchResultsToResolvers(ctx, r.logger, r.gitserver, r.results.TextResults)
-}
-
-func embeddingsSearchResultsToResolvers(
-	ctx context.Context,
-	logger log.Logger,
-	gs gitserver.Client,
-	results []embeddings.EmbeddingSearchResult,
-) ([]graphqlbackend.EmbeddingsSearchResultResolver, error) {
-
-	allContents := make([][]byte, len(results))
-	allErrors := make([]error, len(results))
-	{ // Fetch contents in parallel because fetching them serially can be slow.
-		p := pool.New().WithMaxGoroutines(8)
-		for i, result := range results {
-			i, result := i, result
-			p.Go(func() {
-				content, err := gs.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, result.RepoName, result.Revision, result.FileName)
-				allContents[i] = content
-				allErrors[i] = err
-			})
-		}
-		p.Wait()
+func (r *embeddingsSearchResultsResolver) CodeResults(ctx context.Context) []graphqlbackend.EmbeddingsSearchResultResolver {
+	codeResults := make([]graphqlbackend.EmbeddingsSearchResultResolver, len(r.results.CodeResults))
+	for idx, result := range r.results.CodeResults {
+		codeResults[idx] = &embeddingsSearchResultResolver{result}
 	}
-
-	resolvers := make([]graphqlbackend.EmbeddingsSearchResultResolver, 0, len(results))
-	{ // Merge the results with their contents, skipping any that errored when fetching the context.
-		for i, result := range results {
-			contents := allContents[i]
-			err := allErrors[i]
-			if err != nil {
-				if !os.IsNotExist(err) {
-					logger.Error(
-						"error reading file",
-						log.String("repoName", string(result.RepoName)),
-						log.String("revision", string(result.Revision)),
-						log.String("fileName", result.FileName),
-						log.Error(err),
-					)
-				}
-				continue
-			}
-
-			resolvers = append(resolvers, &embeddingsSearchResultResolver{
-				result:  result,
-				content: string(extractLineRange(contents, result.StartLine, result.EndLine)),
-			})
-		}
-	}
-
-	return resolvers, nil
+	return codeResults
 }
 
-func extractLineRange(content []byte, startLine, endLine int) []byte {
-	lines := bytes.Split(content, []byte("\n"))
-
-	// Sanity check: check that startLine and endLine are within 0 and len(lines).
-	startLine = clamp(startLine, 0, len(lines))
-	endLine = clamp(endLine, 0, len(lines))
-
-	return bytes.Join(lines[startLine:endLine], []byte("\n"))
-}
-
-func clamp(input, min, max int) int {
-	if input > max {
-		return max
-	} else if input < min {
-		return min
+func (r *embeddingsSearchResultsResolver) TextResults(ctx context.Context) []graphqlbackend.EmbeddingsSearchResultResolver {
+	textResults := make([]graphqlbackend.EmbeddingsSearchResultResolver, len(r.results.TextResults))
+	for idx, result := range r.results.TextResults {
+		textResults[idx] = &embeddingsSearchResultResolver{result}
 	}
-	return input
+	return textResults
 }
 
 type embeddingsSearchResultResolver struct {
-	result  embeddings.EmbeddingSearchResult
-	content string
+	result embeddings.EmbeddingSearchResult
 }
 
 func (r *embeddingsSearchResultResolver) FileName(ctx context.Context) string {
@@ -310,5 +219,5 @@ func (r *embeddingsSearchResultResolver) EndLine(ctx context.Context) int32 {
 }
 
 func (r *embeddingsSearchResultResolver) Content(ctx context.Context) string {
-	return r.content
+	return r.result.Content
 }

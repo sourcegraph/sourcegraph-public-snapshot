@@ -11,7 +11,6 @@ import (
 
 type EmbeddingsResolver interface {
 	EmbeddingsSearch(ctx context.Context, args EmbeddingsSearchInputArgs) (EmbeddingsSearchResultsResolver, error)
-	EmbeddingsMultiSearch(ctx context.Context, args EmbeddingsMultiSearchInputArgs) (EmbeddingsSearchResultsResolver, error)
 	IsContextRequiredForChatQuery(ctx context.Context, args IsContextRequiredForChatQueryInputArgs) (bool, error)
 	RepoEmbeddingJobs(ctx context.Context, args ListRepoEmbeddingJobsArgs) (*graphqlutil.ConnectionResolver[RepoEmbeddingJobResolver], error)
 
@@ -34,16 +33,9 @@ type EmbeddingsSearchInputArgs struct {
 	TextResultsCount int32
 }
 
-type EmbeddingsMultiSearchInputArgs struct {
-	Repos            []graphql.ID
-	Query            string
-	CodeResultsCount int32
-	TextResultsCount int32
-}
-
 type EmbeddingsSearchResultsResolver interface {
-	CodeResults(ctx context.Context) ([]EmbeddingsSearchResultResolver, error)
-	TextResults(ctx context.Context) ([]EmbeddingsSearchResultResolver, error)
+	CodeResults(ctx context.Context) []EmbeddingsSearchResultResolver
+	TextResults(ctx context.Context) []EmbeddingsSearchResultResolver
 }
 
 type EmbeddingsSearchResultResolver interface {

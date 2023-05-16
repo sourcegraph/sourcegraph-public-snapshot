@@ -8,7 +8,6 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//enterprise/internal/embeddings",
-        "//internal/api",
         "//lib/errors",
     ],
 )

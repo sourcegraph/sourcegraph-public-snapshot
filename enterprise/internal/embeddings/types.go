@@ -1,8 +1,6 @@
 package embeddings
 
 import (
-	"fmt"
-	"sort"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -47,46 +45,18 @@ type ContextDetectionEmbeddingIndex struct {
 	MessagesWithoutAdditionalContextMeanEmbedding []float32
 }
 
-type EmbeddingCombinedSearchResults struct {
-	CodeResults EmbeddingSearchResults `json:"codeResults"`
-	TextResults EmbeddingSearchResults `json:"textResults"`
-}
-
-type EmbeddingSearchResults []EmbeddingSearchResult
-
-// MergeTruncate merges other into the search results, keeping only max results with the highest scores
-func (esrs *EmbeddingSearchResults) MergeTruncate(other EmbeddingSearchResults, max int) {
-	self := *esrs
-	self = append(self, other...)
-	sort.Slice(self, func(i, j int) bool { return self[i].Score() > self[j].Score() })
-	*esrs = self[:max]
+type EmbeddingSearchResults struct {
+	CodeResults []EmbeddingSearchResult `json:"codeResults"`
+	TextResults []EmbeddingSearchResult `json:"textResults"`
 }
 
 type EmbeddingSearchResult struct {
-	RepoName api.RepoName `json:"repoName"`
-	Revision api.CommitID `json:"revision"`
-
-	FileName  string `json:"fileName"`
-	StartLine int    `json:"startLine"`
-	EndLine   int    `json:"endLine"`
-
-	ScoreDetails SearchScoreDetails `json:"scoreDetails"`
-}
-
-func (esr *EmbeddingSearchResult) Score() int32 {
-	return esr.ScoreDetails.RankScore + esr.ScoreDetails.SimilarityScore
-}
-
-type SearchScoreDetails struct {
-	Score int32 `json:"score"`
-
-	// Breakdown
-	SimilarityScore int32 `json:"similarityScore"`
-	RankScore       int32 `json:"rankScore"`
-}
-
-func (s *SearchScoreDetails) String() string {
-	return fmt.Sprintf("score:%d, similarity:%d, rank:%d", s.Score, s.SimilarityScore, s.RankScore)
+	RepoName api.RepoName
+	Revision api.CommitID
+	RepoEmbeddingRowMetadata
+	Content string `json:"content"`
+	// Experimental: Clients should not rely on any particular format of debug
+	Debug string `json:"debug,omitempty"`
 }
 
 // DEPRECATED: to support decoding old indexes, we need a struct
