@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -18,6 +19,10 @@ func (r *schemaResolver) RepoMetadata(ctx context.Context, args *RepoMetadataArg
 	// 🚨 SECURITY: Only site admins can see access requests.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
+	}
+
+	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
+		return nil, errors.New("'repository-metadata' feature flag is not enabled")
 	}
 
 	listOptions := &args.RepoKVPListOptions
