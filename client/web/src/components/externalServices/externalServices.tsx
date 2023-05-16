@@ -1667,7 +1667,6 @@ export const resolveExternalServiceCategory = (
         // if config contains gitHubAppDetails, we should use GitHub App instead
         if (parsedConfig.gitHubAppDetails && gitHubApp) {
             externalServiceCategory = { ...codeHostExternalServices.ghapp }
-            console.log('parsedConfig', parsedConfig, gitHubApp)
             externalServiceCategory.additionalFormComponent = (
                 <GitHubAppSelector
                     disabled={true}
