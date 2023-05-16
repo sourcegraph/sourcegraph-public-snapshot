@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
 	uploadgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql"
@@ -18,8 +18,8 @@ func (r *gitBlobLSIFDataResolver) Snapshot(ctx context.Context, args *struct{ In
 		return nil, err
 	}
 
-	ctx, _, endObservation := r.operations.snapshot.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("uploadID", uploadID),
+	ctx, _, endObservation := r.operations.snapshot.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("uploadID", uploadID),
 	}})
 	defer endObservation(1, observation.Args{})
 
