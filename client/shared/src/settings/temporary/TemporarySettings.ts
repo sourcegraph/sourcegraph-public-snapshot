@@ -75,6 +75,10 @@ export interface TemporarySettingsSchema {
     'setup.activeStepId': string
     'own.panelExplanationHidden': boolean
     'cody.showSidebar': boolean
+    'cody.blobPageCta.dismissed': boolean
+    'cody.searchPageCta.dismissed': boolean
+    'cody.chatPageCta.dismissed': boolean
+    'cody.survey.submitted': boolean
 }
 
 /**

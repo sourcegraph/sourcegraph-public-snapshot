@@ -13,23 +13,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/service/servegit"
-	"github.com/sourcegraph/sourcegraph/internal/singleprogram/filepicker"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type LocalDirectoryArgs struct {
-	Dir string
+	Paths []string
 }
 
 type AppResolver interface {
-	LocalDirectoryPicker(ctx context.Context) (LocalDirectoryResolver, error)
-	LocalDirectory(ctx context.Context, args *LocalDirectoryArgs) (LocalDirectoryResolver, error)
+	LocalDirectories(ctx context.Context, args *LocalDirectoryArgs) (LocalDirectoryResolver, error)
 	LocalExternalServices(ctx context.Context) ([]LocalExternalServiceResolver, error)
 }
 
 type LocalDirectoryResolver interface {
-	Path() string
+	Paths() []string
 	Repositories(ctx context.Context) ([]LocalRepositoryResolver, error)
 }
 
@@ -62,70 +60,58 @@ func (r *appResolver) checkLocalDirectoryAccess(ctx context.Context) error {
 	return auth.CheckCurrentUserIsSiteAdmin(ctx, r.db)
 }
 
-func (r *appResolver) LocalDirectoryPicker(ctx context.Context) (LocalDirectoryResolver, error) {
+func (r *appResolver) LocalDirectories(ctx context.Context, args *LocalDirectoryArgs) (LocalDirectoryResolver, error) {
 	// 🚨 SECURITY: Only site admins on app may use API which accesses local filesystem.
 	if err := r.checkLocalDirectoryAccess(ctx); err != nil {
 		return nil, err
 	}
 
-	picker, ok := filepicker.Lookup(r.logger)
-	if !ok {
-		return nil, errors.New("filepicker is not available")
+	// Make sure all paths are absolute
+	absPaths := make([]string, 0, len(args.Paths))
+	for _, path := range args.Paths {
+		if path == "" {
+			return nil, errors.New("Path must be non-empty string")
+		}
+
+		absPath, err := filepath.Abs(path)
+		if err != nil {
+			return nil, err
+		}
+		absPaths = append(absPaths, absPath)
 	}
 
-	path, err := picker(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return &localDirectoryResolver{path: path}, nil
-}
-
-func (r *appResolver) LocalDirectory(ctx context.Context, args *LocalDirectoryArgs) (LocalDirectoryResolver, error) {
-	// 🚨 SECURITY: Only site admins on app may use API which accesses local filesystem.
-	if err := r.checkLocalDirectoryAccess(ctx); err != nil {
-		return nil, err
-	}
-
-	// we will not assume current working directory when localDirectoryResolver conducts discovery on path
-	if args.Dir == "" {
-		return nil, errors.New("Path must be non-empty string")
-	}
-
-	path, err := filepath.Abs(args.Dir)
-	if err != nil {
-		return nil, err
-	}
-
-	return &localDirectoryResolver{path: path}, nil
+	return &localDirectoryResolver{paths: absPaths}, nil
 }
 
 type localDirectoryResolver struct {
-	path string
+	paths []string
 }
 
-func (r *localDirectoryResolver) Path() string {
-	return r.path
+func (r *localDirectoryResolver) Paths() []string {
+	return r.paths
 }
 
 func (r *localDirectoryResolver) Repositories(ctx context.Context) ([]LocalRepositoryResolver, error) {
-	repos, err := servegit.Service.Repos(ctx, r.path)
-	if err != nil {
-		return nil, err
-	}
-	if err != nil {
-		return nil, err
+	var allRepos []LocalRepositoryResolver
+
+	for _, path := range r.paths {
+		repos, err := servegit.Service.Repos(ctx, path)
+		if err != nil {
+			return nil, err
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		for _, repo := range repos {
+			allRepos = append(allRepos, localRepositoryResolver{
+				name: repo.Name,
+				path: repo.AbsFilePath,
+			})
+		}
 	}
 
-	local := make([]LocalRepositoryResolver, 0, len(repos))
-	for _, repo := range repos {
-		local = append(local, localRepositoryResolver{
-			name: repo.Name,
-			path: repo.AbsFilePath,
-		})
-	}
-
-	return local, nil
+	return allRepos, nil
 }
 
 type localRepositoryResolver struct {

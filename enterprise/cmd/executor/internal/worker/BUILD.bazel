@@ -21,6 +21,7 @@ go_library(
         "//enterprise/cmd/executor/internal/worker/runtime",
         "//enterprise/cmd/executor/internal/worker/workspace",
         "//enterprise/internal/executor/types",
+        "//enterprise/internal/executor/util",
         "//internal/goroutine",
         "//internal/honey",
         "//internal/observation",

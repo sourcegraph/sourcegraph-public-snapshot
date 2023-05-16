@@ -28,6 +28,16 @@ js_library(
 )
 
 js_binary(
+    name = "build_code_intel_extensions",
+    data = [
+        "//:node_modules/shelljs",
+        "//:node_modules/signale",
+    ],
+    entry_point = "buildCodeIntelExtensions.js",
+    visibility = ["//client:__subpackages__"],
+)
+
+js_binary(
     name = "generate_graphql_operations",
     data = [
         ":extract_graphql_operation_codegen_plugin",
@@ -39,6 +49,18 @@ js_binary(
         "//cmd/frontend/graphqlbackend:graphql_schema",
     ],
     entry_point = "generateGraphQlOperations.js",
+    visibility = ["//client:__subpackages__"],
+)
+
+js_binary(
+    name = "run_mocha_tests_with_percy",
+    data = [
+        "//:node_modules/@percy/cli",
+        "//:node_modules/mocha",
+        "//:node_modules/puppeteer",
+        "//:node_modules/resolve-bin",
+    ],
+    entry_point = "runMochaTestsWithPercy.js",
     visibility = ["//client:__subpackages__"],
 )
 

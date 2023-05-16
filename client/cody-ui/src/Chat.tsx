@@ -23,9 +23,10 @@ interface ChatProps extends ChatClassNames {
     setFormInput: (input: string) => void
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
-    onSubmit: (text: string) => void
+    onSubmit: (text: string, submitType: 'user' | 'suggestion') => void
     textAreaComponent: React.FunctionComponent<ChatUITextAreaProps>
     submitButtonComponent: React.FunctionComponent<ChatUISubmitButtonProps>
+    suggestionButtonComponent?: React.FunctionComponent<ChatUISuggestionButtonProps>
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
     afterTips?: string
     className?: string
@@ -34,6 +35,8 @@ interface ChatProps extends ChatClassNames {
     FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
     feedbackButtonsOnSubmit?: (text: string) => void
     copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
+    suggestions?: string[]
+    setSuggestions?: (suggestions: undefined | []) => void
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {
@@ -49,12 +52,17 @@ export interface ChatUITextAreaProps {
     value: string
     required: boolean
     onInput: React.FormEventHandler<HTMLElement>
-    onKeyDown: React.KeyboardEventHandler<HTMLElement>
+    onKeyDown?: (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null) => void
 }
 
 export interface ChatUISubmitButtonProps {
     className: string
     disabled: boolean
+    onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
+}
+
+export interface ChatUISuggestionButtonProps {
+    suggestion: string
     onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
 }
 
@@ -90,6 +98,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     onSubmit,
     textAreaComponent: TextArea,
     submitButtonComponent: SubmitButton,
+    suggestionButtonComponent: SuggestionButton,
     fileLinkComponent,
     afterTips,
     className,
@@ -106,6 +115,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
+    suggestions,
+    setSuggestions,
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
@@ -126,19 +137,31 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [historyIndex, inputHistory, setFormInput]
     )
 
+    const submitInput = useCallback(
+        (input: string, submitType: 'user' | 'suggestion'): void => {
+            if (messageInProgress) {
+                return
+            }
+
+            onSubmit(input, submitType)
+            setSuggestions?.(undefined)
+            setHistoryIndex(inputHistory.length + 1)
+            setInputHistory([...inputHistory, input])
+        },
+        [inputHistory, messageInProgress, onSubmit, setInputHistory, setSuggestions]
+    )
+
     const onChatSubmit = useCallback((): void => {
         // Submit chat only when input is not empty and not in progress
         if (formInput.trim() && !messageInProgress) {
-            onSubmit(formInput)
-            setHistoryIndex(inputHistory.length + 1)
-            setInputHistory([...inputHistory, formInput])
             setInputRows(5)
             setFormInput('')
+            submitInput(formInput, 'user')
         }
-    }, [formInput, inputHistory, messageInProgress, onSubmit, setFormInput, setInputHistory])
+    }, [formInput, messageInProgress, setFormInput, submitInput])
 
     const onChatKeyDown = useCallback(
-        (event: React.KeyboardEvent<HTMLDivElement>): void => {
+        (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null): void => {
             // Submit input on Enter press (without shift) and
             // trim the formInput to make sure input value is not empty.
             if (
@@ -153,16 +176,25 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 setMessageBeingEdited(false)
                 onChatSubmit()
             }
+
             // Loop through input history on up arrow press
-            if (event.key === 'ArrowUp' && inputHistory.length) {
-                if (formInput === inputHistory[historyIndex] || !formInput) {
+            if (!inputHistory.length) {
+                return
+            }
+
+            if (formInput === inputHistory[historyIndex] || !formInput) {
+                if (event.key === 'ArrowUp' && caretPosition === 0) {
                     const newIndex = historyIndex - 1 < 0 ? inputHistory.length - 1 : historyIndex - 1
+                    setHistoryIndex(newIndex)
+                    setFormInput(inputHistory[newIndex])
+                } else if (event.key === 'ArrowDown' && caretPosition === formInput.length) {
+                    const newIndex = historyIndex + 1 >= inputHistory.length ? 0 : historyIndex + 1
                     setHistoryIndex(newIndex)
                     setFormInput(inputHistory[newIndex])
                 }
             }
         },
-        [inputHistory, onChatSubmit, formInput, historyIndex, setFormInput, setMessageBeingEdited]
+        [inputHistory, historyIndex, setFormInput, onChatSubmit, formInput, setMessageBeingEdited]
     )
 
     const transcriptWithWelcome = useMemo<ChatMessage[]>(
@@ -190,9 +222,24 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 FeedbackButtonsContainer={FeedbackButtonsContainer}
                 feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                 copyButtonOnSubmit={copyButtonOnSubmit}
+                submitButtonComponent={SubmitButton}
+                chatInputClassName={chatInputClassName}
             />
 
             <form className={classNames(styles.inputRow, inputRowClassName)}>
+                {suggestions !== undefined && suggestions.length !== 0 && SuggestionButton ? (
+                    <div className={styles.suggestions}>
+                        {suggestions.map((suggestion: string) =>
+                            suggestion.trim().length > 0 ? (
+                                <SuggestionButton
+                                    key={suggestion}
+                                    suggestion={suggestion}
+                                    onClick={() => submitInput(suggestion, 'suggestion')}
+                                />
+                            ) : null
+                        )}
+                    </div>
+                ) : null}
                 <div className={styles.textAreaContainer}>
                     <TextArea
                         className={classNames(styles.chatInput, chatInputClassName)}

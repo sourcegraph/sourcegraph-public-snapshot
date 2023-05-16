@@ -4,7 +4,13 @@ import classNames from 'classnames'
 
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { ChatUITextAreaProps, EditButtonProps, FeedbackButtonsProps, CopyButtonProps } from '../Chat'
+import {
+    ChatUITextAreaProps,
+    EditButtonProps,
+    FeedbackButtonsProps,
+    CopyButtonProps,
+    ChatUISubmitButtonProps,
+} from '../Chat'
 
 import { FileLinkProps } from './ContextFiles'
 import { TranscriptItem, TranscriptItemClassNames } from './TranscriptItem'
@@ -25,6 +31,7 @@ export const Transcript: React.FunctionComponent<
         FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
         copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
+        submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
     } & TranscriptItemClassNames
 > = ({
     transcript,
@@ -44,6 +51,8 @@ export const Transcript: React.FunctionComponent<
     FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
+    submitButtonComponent,
+    chatInputClassName,
 }) => {
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
     useEffect(() => {
@@ -81,8 +90,7 @@ export const Transcript: React.FunctionComponent<
         <div ref={transcriptContainerRef} className={classNames(className, styles.container)}>
             {transcript.map(
                 (message, index) =>
-                    message?.displayText &&
-                    (!messageInProgress || index !== transcript.length - 1) && (
+                    message?.displayText && (
                         <TranscriptItem
                             // eslint-disable-next-line react/no-array-index-key
                             key={index}
@@ -104,6 +112,8 @@ export const Transcript: React.FunctionComponent<
                             feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                             copyButtonOnSubmit={copyButtonOnSubmit}
                             showFeedbackButtons={index > 0 && transcript.length - index === 1}
+                            submitButtonComponent={submitButtonComponent}
+                            chatInputClassName={chatInputClassName}
                         />
                     )
             )}
@@ -121,6 +131,8 @@ export const Transcript: React.FunctionComponent<
                     showEditButton={false}
                     showFeedbackButtons={false}
                     copyButtonOnSubmit={copyButtonOnSubmit}
+                    submitButtonComponent={submitButtonComponent}
+                    chatInputClassName={chatInputClassName}
                 />
             )}
         </div>

@@ -109,10 +109,11 @@ Clarification and discussion about key concepts, architecture, and development s
     - [Testing web code](background-information/testing_web_code.md)
 - [Building p4-fusion](background-information/build_p4_fusion.md)
 - [The `gitserver` API](background-information/gitserver-api.md)
+- [Using gRPC alongside REST for internal APIs](background-information/gRPC_internal_api.md)
 
 ## Git
 
-- [`git gc` and its modes of operations in Sourcegraph](./git_gc.md)
+- [`git gc` and its modes of operations in Sourcegraph](background-information/git_gc.md)
 
 ### [Languages](background-information/languages/index.md)
 
@@ -141,10 +142,6 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Renovate dependency updates](background-information/renovate.md)
 - [Honeycomb](background-information/honeycomb.md)
 - [GoLand](background-information/goland.md)
-
-### Components
-
-- [`gitserver` API](components/gitserver.md)
 
 ### Other
 

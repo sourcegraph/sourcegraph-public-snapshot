@@ -42,8 +42,8 @@ local gomod_recognizer = recognizer.new_path_recognizer {
         local_steps = { netrc_steps },
         root = root,
         indexer = indexer,
-        indexer_args = { "lsif-go", "--no-animation" },
-        outfile = "",
+        indexer_args = { "scip-go", "--no-animation" },
+        outfile = "index.scip",
         requested_envvars = { "GOPRIVATE", "GOPROXY", "GONOPROXY", "GOSUMDB", "GONOSUMDB", "NETRC_DATA" },
       })
     end
@@ -68,8 +68,8 @@ local goext_recognizer = recognizer.new_path_recognizer {
           local_steps = { netrc_steps },
           root = "",
           indexer = indexer,
-          indexer_args = { "GO111MODULE=off", "lsif-go", "--no-animation" },
-          outfile = "",
+          indexer_args = { "GO111MODULE=off", "scip-go", "--no-animation" },
+          outfile = "index.scip",
           requested_envvars = { "GOPRIVATE", "GOPROXY", "GONOPROXY", "GOSUMDB", "GONOSUMDB", "NETRC_DATA" },
         }
       end

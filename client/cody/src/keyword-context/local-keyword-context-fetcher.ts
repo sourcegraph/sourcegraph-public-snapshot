@@ -18,7 +18,7 @@ const fileExtRipgrepParams = ['-Tmarkdown', '-Tyaml', '-Tjson', '-g', '!*.lock',
  * For example, if the original is "cody" and the stem is "codi", the prefix is "cod"
  * - The count is the number of times the keyword appears in the document/query.
  */
-interface Term {
+export interface Term {
     stem: string
     originals: string[]
     prefix: string
@@ -57,6 +57,21 @@ export function userQueryToKeywordQuery(query: string): Term[] {
     const filteredWords = winkUtils.tokens.removeWords(origWords) as string[]
     const terms: { [stem: string]: Term } = {}
     for (const word of filteredWords) {
+        // Ignore ASCII-only strings of length 2 or less
+        if (word.length <= 2) {
+            let skip = true
+            for (let i = 0; i < word.length; i++) {
+                if (word.charCodeAt(i) >= 128) {
+                    // non-ASCII
+                    skip = false
+                    break
+                }
+            }
+            if (skip) {
+                continue
+            }
+        }
+
         const stem = winkUtils.string.stem(word)
         if (terms[stem]) {
             terms[stem].originals.push(word)
@@ -93,6 +108,37 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
             })
         )
         return messagePairs.reverse().flat()
+    }
+
+    public async getSearchContext(query: string, numResults: number): Promise<KeywordContextFetcherResult[]> {
+        console.log('fetching keyword context')
+        const rootPath = this.editor.getWorkspaceRootPath()
+        if (!rootPath) {
+            return []
+        }
+
+        const stems = userQueryToKeywordQuery(query)
+            .map(t => (t.prefix.length < 4 ? t.originals[0] : t.prefix))
+            .join('|')
+
+        const filesnamesWithScores = await this.fetchKeywordFiles(rootPath, query)
+        const messagePairs = await Promise.all(
+            filesnamesWithScores.slice(0, numResults).map(async ({ filename }) => {
+                const uri = vscode.Uri.file(path.join(rootPath, filename))
+                const textDocument = await vscode.workspace.openTextDocument(uri)
+                const snippet = textDocument.getText()
+                const keywordPattern = new RegExp(stems, 'g')
+                const matches = snippet.match(keywordPattern)
+                const keywordIndex = snippet.indexOf(matches ? matches[0] : query)
+                // show 5 lines of code only
+                const startLine = Math.max(0, textDocument.positionAt(keywordIndex).line - 2)
+                const endLine = startLine + 5
+                const content = textDocument.getText(new vscode.Range(startLine, 0, endLine, 0))
+
+                return { fileName: filename, content }
+            })
+        )
+        return messagePairs.flat()
     }
 
     private async fetchFileStats(

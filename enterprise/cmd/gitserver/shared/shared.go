@@ -26,5 +26,5 @@ func enterpriseInit(db database.DB, keyring keyring.Ring) {
 	}
 
 	ghAppsStore := enterpriseDB.GitHubApps().WithEncryptionKey(keyring.GitHubAppKey)
-	auth.FromConnection = ghaauth.CreateEnterpriseFromConnection(ghAppsStore)
+	auth.FromConnection = ghaauth.CreateEnterpriseFromConnection(ghAppsStore, keyring.GitHubAppKey)
 }

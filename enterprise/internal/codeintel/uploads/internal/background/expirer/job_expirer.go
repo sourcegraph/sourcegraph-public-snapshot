@@ -8,6 +8,7 @@ import (
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -32,7 +33,7 @@ func NewUploadExpirer(
 		policyMatcher: policies.NewMatcher(gitserverClient, policies.RetentionExtractor, true, false),
 	}
 	return goroutine.NewPeriodicGoroutine(
-		context.Background(),
+		actor.WithInternalActor(context.Background()),
 		"codeintel.upload-expirer", "marks uploads as expired based on retention policies",
 		config.ExpirerInterval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {

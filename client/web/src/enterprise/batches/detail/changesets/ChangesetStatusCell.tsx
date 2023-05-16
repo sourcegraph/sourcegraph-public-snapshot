@@ -10,6 +10,7 @@ import {
     mdiTimerSand,
     mdiArchive,
     mdiLock,
+    mdiDotsVertical,
 } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
@@ -186,4 +187,15 @@ export const ChangesetStatusReadOnly: React.FunctionComponent<React.PropsWithChi
             {label}
         </div>
     </Tooltip>
+)
+
+export const ChangesetStatusOthers: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
+    label = <StatusLabel status="Others" />,
+    className,
+    ...props
+}) => (
+    <div className={classNames(iconClassNames, className)} {...props}>
+        <Icon svgPath={mdiDotsVertical} inline={false} aria-hidden={true} />
+        {label}
+    </div>
 )

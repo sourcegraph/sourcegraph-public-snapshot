@@ -39,6 +39,7 @@ Sourcegraph's main features are:
 - [Code navigation](#code-navigation): jump-to-definition, find references, and other smart, IDE-like code browsing features on any branch, commit, or PR/code review
 - [Code search](#code-search): fast, up-to-date, and scalable, with regexp support on any branch or commit without an indexing delay (and diff search)
 - [Notebooks](#notebooks): pair code and markdown to create powerful live and persistent documentation
+- [Cody](#cody): read and write code with the help of a context-aware AI code assistant
 - [Code Insights](#code-insights): reveal high-level information about your codebase at its current state and over time, to track migrations, version usage, vulnerability remediation, ownership, and anything else you can search in Sourcegraph
 - [Batch Changes](#batch-changes): make large-scale code changes across many repositories and code hosts
 - [Integrations](#integrations) with code hosts, code review tools, editors, web browsers, etc.
@@ -105,6 +106,14 @@ Sourcegraph gives you code navigation in:
 ![GitHub file integration](https://storage.googleapis.com/sourcegraph-assets/code-graph/docs/github-file.png)
 
 Read the [code navigation documentation](../code_navigation/index.md) to learn more and to set it up.
+
+---
+
+## Cody
+
+Cody is an AI code assistant that uses Sourcegraph code search, the code graph, and LLMs to provide context-aware answers about your codebase. Cody can explain code, refactor code, and write code, all within the context of your existing codebase.
+
+[Learn more about about Cody](../cody/index.md).
 
 ---
 

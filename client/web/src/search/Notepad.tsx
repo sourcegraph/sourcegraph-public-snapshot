@@ -33,11 +33,11 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/
 import { buildSearchURLQuery, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, TextArea, Icon, H2, H3, Text, createLinkUrl, useMatchMedia } from '@sourcegraph/wildcard'
 
+import { useCodySidebarSize } from '../cody/stores/sidebar'
 import { BlockInput } from '../notebooks'
 import { createNotebook } from '../notebooks/backend'
 import { blockToGQLInput } from '../notebooks/serialize'
 import { EnterprisePageRoutes } from '../routes.constants'
-import { useCodySidebarSize } from '../stores/codySidebar'
 import {
     addNotepadEntry,
     NotepadEntry,

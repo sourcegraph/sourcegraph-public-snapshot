@@ -10,7 +10,7 @@ import { Link, Icon, H2 } from '@sourcegraph/wildcard'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 
-import { ExternalsAuth } from './ExternalsAuth'
+import { ExternalsAuth } from './components/ExternalsAuth'
 import { SignUpArguments, SignUpForm } from './SignUpForm'
 
 import styles from './VsCodeSignUpPage.module.scss'

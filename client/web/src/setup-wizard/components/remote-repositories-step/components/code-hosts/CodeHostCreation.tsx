@@ -44,7 +44,7 @@ export const CodeHostCreation: FC<CodeHostCreationProps> = props => {
         return (
             <Alert variant="warning">
                 <H4>We either couldn't find "{codeHostType}" code host option or we do not support this</H4>
-                Pick one of supported code host option <Link to="/setup/remote-repositories">here</Link>
+                Pick one of supported code host option <Link to="..">here</Link>
             </Alert>
         )
     }
@@ -64,7 +64,7 @@ export const CodeHostCreation: FC<CodeHostCreationProps> = props => {
                         loading={state.submitting}
                         disabled={state.submitting}
                     />
-                    <Button as={Link} size="sm" to="/setup/remote-repositories" variant="secondary">
+                    <Button as={Link} size="sm" to=".." variant="secondary">
                         Cancel
                     </Button>
                 </footer>
@@ -172,7 +172,7 @@ const CodeHostCreationView: FC<CodeHostCreationFormProps> = props => {
 
         // Reset local storage values
         setLocalValues(defaultConnectionValues)
-        navigate('/setup/remote-repositories')
+        navigate('..')
         // TODO show notification UI that code host has been added successfully
     }
 

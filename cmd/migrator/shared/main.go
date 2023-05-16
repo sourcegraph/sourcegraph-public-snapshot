@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"os"
+	"strings"
 
 	"github.com/urfave/cli/v2"
 
@@ -22,10 +23,7 @@ import (
 
 const appName = "migrator"
 
-var out = output.NewOutput(os.Stdout, output.OutputOpts{
-	ForceColor: true,
-	ForceTTY:   true,
-})
+var out = output.NewOutput(os.Stdout, output.OutputOpts{})
 
 // NewRunnerWithSchemas returns new migrator runner with given scheme names and
 // definitions.
@@ -34,10 +32,18 @@ func NewRunnerWithSchemas(observationCtx *observation.Context, logger log.Logger
 	if err != nil {
 		return nil, err
 	}
+
+	var dsnsStrings []string
+	for schema, dsn := range dsns {
+		dsnsStrings = append(dsnsStrings, schema+" => "+dsn)
+	}
+
+	out.WriteLine(output.Linef(output.EmojiInfo, output.StyleGrey, "Connection DSNs used: %s", strings.Join(dsnsStrings, ", ")))
+
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
 		return connections.NewStoreShim(store.NewWithDB(observationCtx, db, migrationsTable))
 	}
-	r, err := connections.RunnerFromDSNsWithSchemas(logger, dsns, appName, storeFactory, schemas)
+	r, err := connections.RunnerFromDSNsWithSchemas(out, logger, dsns, appName, storeFactory, schemas)
 	if err != nil {
 		return nil, err
 	}
