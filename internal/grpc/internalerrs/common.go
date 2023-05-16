@@ -57,6 +57,8 @@ func probablyInternalGRPCError(s *status.Status, checkers []internalGRPCErrorChe
 // the go-grpc library.
 type internalGRPCErrorChecker func(*status.Status) bool
 
+// allCheckers is a list of functions that check if a gRPC status likely represents an
+// error that comes from the go-grpc library.
 var allCheckers = []internalGRPCErrorChecker{
 	gRPCPrefixChecker,
 	gRPCResourceExhaustedChecker,
@@ -74,9 +76,6 @@ func gRPCResourceExhaustedChecker(s *status.Status) bool {
 	// Observed from https://github.com/grpc/grpc-go/blob/756119c7de49e91b6f3b9d693b9850e1598938eb/stream.go#L884
 	return s.Code() == codes.ResourceExhausted && strings.HasPrefix(s.Message(), "trying to send message larger than max (")
 }
-
-// internalGRPCCheckers is a list of functions that check if a gRPC status likely represents an
-// error that comes from the go-grpc library.
 
 // splitMethodName splits a full gRPC method name in to its components (service, method)
 //
