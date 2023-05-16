@@ -177,9 +177,6 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		for _, fixtureFile := range fixtureFiles {
 			_, name := path.Split(fixtureFile)
 			name = strings.TrimSuffix(name, ".json")
-			if name != "check-run" {
-				continue
-			}
 			t.Run(name, func(t *testing.T) {
 				bt.TruncateTables(t, db, "changeset_events")
 
