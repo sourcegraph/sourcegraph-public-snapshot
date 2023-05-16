@@ -21,13 +21,21 @@ set_version() {
 }
 
 upload_dist() {
+  local bundle_path
+  bundle_path="./src-tauri/target/release/bundle"
   mkdir -p dist
-  src=$(find ./src-tauri/target/release -type f \( -name "Sourcegraph*.dmg" -o -name "sourcegraph*.deb" -o -name "sourcegraph*.AppImage" -o -name "sourcegraph*.tar.gz" \) -exec realpath {} \;)
-  for from in ${src}; do
-    # remove everything until the last slash
-    filename=$(echo ${from} | sed 's|.*/||')
-    mv -vf "$from" "./dist/${filename}"
-  done
+  src=$(find ${bundle_path} -type f \( -name "Sourcegraph*.dmg" -o -name "Sourcegraph*.app" -o -name "sourcegraph*.deb" -o -name "sourcegraph*.AppImage" -o -name "sourcegraph*.tar.gz" \) -exec realpath {} \;);
+  while IFS= read -r from; do
+    mv -vf "${from}" "./dist/"
+  done <<< ${src}
+
+  # # we have to handle Sourcegraph.App differently since it is a dir
+  local app_bundle
+  app_bundle="${bundle_path}/macos/Sourcegraph App.app"
+  if [[ -d  ${app_bundle} ]]; then
+    mv "${app_bundle}" "./dist/"
+  fi
+
   echo --- Uploading artifacts from dist
   ls -al ./dist
   buildkite-agent artifact upload "./dist/*"
@@ -41,7 +49,10 @@ fi
 VERSION=$(./enterprise/dev/app/app_version.sh)
 set_version ${VERSION}
 
-echo "--- [Tauri] Building Application (${VERSION})"]
+echo "--- :tauri: Building Application (${VERSION})"]
 NODE_ENV=production pnpm run build-app-shell
 pnpm tauri build --bundles deb,appimage,app,dmg
-upload_dist
+
+if [[ ${CI:-""} == "true" ]]; then
+  upload_dist
+fi

@@ -9,16 +9,22 @@ download_artifacts() {
   src=$1
   dest=$2
   mkdir -p "${dest}"
-  buildkite-agent artifact download "${src}/sourcegraph-backend-*" "${dest}"
+  buildkite-agent artifact download "${src}" "${dest}"
 }
 
 # check that the directory exists and that is has files in it
 if [[ ! -d "./dist" ||  -z $(ls dist/) ]]; then
-  download_artifacts "dist" dist/
+  download_artifacts "dist/*" dist/
+else
+  echo "missing dist artefacts - not creating release"
+  exit 1
 fi
 
+echo "--- :aws: fetching GitHub Token"
+export GITHUB_TOKEN=$(aws secretsmanager get-secret-value --secret-id sourcegraph/mac/github-token | jq '.SecretString |  fromjson | .token')
+
 VERSION=$(./enterprise/dev/app/app_version.sh)
-echo "--- Creating GitHub release for Sourcegraph App (${VERSION})"
+echo "--- :github: Creating GitHub release for Sourcegraph App (${VERSION})"
 echo "Release will have to following assets:"
 ls -al ./dist
 gh release create "app-v${VERSION}" \

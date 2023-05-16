@@ -1,21 +1,21 @@
 steps:
   - group: "Sourcegraph App"
     steps:
-      - label: 'Build for Linux'
+      - label: ':bazel::linux: Build for Linux'
         key: 'build-sourcegraph-app-linux'
         agents: { queue: bazel }
         env:
           PLATFORM: x86_64-unknown-linux-gnu
         command:
           - './enterprise/dev/app/build-backend.sh'
-      - label: 'Build for MacOS arm64'
+      - label: ':bazel::mac: Build for MacOS arm64'
         key: 'build-sourcegraph-app-macos-arm64'
         agents: { queue: macos }
         env:
           PLATFORM: aarch64-apple-darwin
         command:
           - './enterprise/dev/app/build-backend.sh'
-      - label: 'Build for MacOS x86_64'
+      - label: ':go::mac:Build for MacOS x86_64'
         key: 'build-sourcegraph-app-macos-x86_64'
         depends_on: 'build-sourcegraph-app-macos-arm64'
         agents: { queue: macos }
@@ -26,13 +26,12 @@ steps:
           - './enterprise/dev/app/build-backend.sh'
       - label: 'Wait for builds to complete'
         wait: ~
-      - label: 'Bundle with Tauri'
-        key: 'build-tauri-sourcegraph-app'
+      - label: ':linux::tauri: Bundle with Tauri'
+        key: 'linux-build-tauri-sourcegraph-app'
         agents: { queue: stateless }
         command:
           - './dev/ci/pnpm-install-with-retry.sh'
           - './enterprise/dev/app/tauri-build.sh'
-          - './enterprise/dev/app/github-release.sh'
         env:
           AWS_CONFIG_FILE: /buildkite/.aws/config
           AWS_SHARED_CREDENTIALS_FILE: /buildkite/.aws/credentials
@@ -51,3 +50,15 @@ steps:
               profile: buildkite
               region: us-central1
             tarball: {}
+      - label: ':macos::tauri: Bundle with Tauri'
+        key: 'mac-build-tauri-sourcegraph-app'
+        agents: { queue: macos }
+        command:
+          - './dev/ci/pnpm-install-with-retry.sh'
+          - './enterprise/dev/app/tauri-build.sh'
+      - label: "wait for bundles to complete"
+        wait: ~
+      - label: ':github: Create GitHub release'
+        key: create-github-release
+        command:
+          - './enterprise/dev/app/create-github-release.sh'
