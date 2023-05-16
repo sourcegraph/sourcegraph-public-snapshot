@@ -199,8 +199,8 @@
       },
       {
 				"command": "cody.task.add",
-				"title": "Cody: Add a Non-Stop Cody Task",
-        "icon": "$(add)",
+				"title": "Cody: Add a non-stop Cody task with highlighted code",
+        "icon": "resources/cody.png",
         "enablement": "cody.task.view.enabled"
 			}
     ],
@@ -343,27 +343,15 @@
           "when": "view == cody.chat && cody.activated",
           "group": "navigation@2",
           "visibility": "visible"
-        },
+        }
+      ],
+      "editor/title": [
         {
           "command": "cody.task.add",
-          "when": "view == cody.tasks.view && cody.activated",
+          "when": "cody.activated",
           "group": "navigation",
           "visibility": "visible"
         }
-      ],
-      "view/item/context": [
-        {
-					"command": "cody.task.add",
-          "when": "cody.activated && viewItem == cody.tasks",
-					"group": "overflow",
-          "visibility": "visible"
-				},
-        {
-					"command": "cody.task.add",
-          "when": "cody.activated && viewItem == cody.tasks",
-					"group":  "inline@1",
-          "visibility": "visible"
-				}
       ],
       "comments/commentThread/context": [
         {
@@ -390,48 +378,6 @@
         }
       ]
     },
-    "colors": [
-			{
-				"id": "pending",
-				"defaults": {
-					"dark": "#00cbec",
-					"light": "#005482",
-					"highContrast": "editor.foreground",
-					"highContrastLight": "editor.foreground"
-				},
-				"description": "Color to indicate a processing or pending state."
-			},
-			{
-				"id": "idle",
-				"defaults": {
-					"dark": "#ffdb45",
-					"light": "#ff9933",
-					"highContrast": "editor.foreground",
-					"highContrastLight": "editor.foreground"
-				},
-				"description": "Color to indicate a paused or queued state."
-			},
-			{
-				"id": "done",
-				"defaults": {
-					"dark": "#17ab52",
-					"light": "#1f7d45",
-					"highContrast": "editor.foreground",
-					"highContrastLight": "editor.foreground"
-				},
-				"description": "Color to indicate a complete state."
-			},
-			{
-				"id": "error",
-				"defaults": {
-					"dark": "#ff5543",
-					"light": "#c22626",
-					"highContrast": "editor.foreground",
-					"highContrastLight": "editor.foreground"
-				},
-				"description": "Color to indicate an error state."
-			}
-    ],
     "configuration": {
       "type": "object",
       "title": "Cody",
