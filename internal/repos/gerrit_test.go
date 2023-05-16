@@ -38,7 +38,7 @@ func TestGerritSource_ListRepos(t *testing.T) {
 		repos, err := listAll(ctx, src)
 		require.NoError(t, err)
 
-		testutil.AssertGolden(t, "testdata/sources/GERRIT/"+t.Name(), true, repos)
+		testutil.AssertGolden(t, "testdata/sources/GERRIT/"+t.Name(), update(t.Name()), repos)
 	})
 
 	t.Run("with filtering", func(t *testing.T) {
