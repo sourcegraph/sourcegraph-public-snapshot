@@ -139,9 +139,10 @@ const register = async (
     disposables.push(
         // File Chat Provider
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
-            const isFixMode = comment.text.startsWith('/f')
+            const isFixMode = comment.text.trimStart().startsWith('/f')
             await commentController.chat(comment, isFixMode)
             await chatProvider.executeRecipe(isFixMode ? 'fixup' : 'inline-chat', comment.text, false)
+            logEvent(`CodyVSCodeExtension:inline-assist:${isFixMode ? 'fixup' : 'chat'}`)
         }),
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             commentController.delete(thread)
