@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -58,8 +59,15 @@ func (c *Client) QueuedCount(ctx context.Context) (int, error) {
 }
 
 func (c *Client) Dequeue(ctx context.Context, workerHostname string, extraArguments any) (job types.Job, _ bool, err error) {
+
+	var observationField attribute.KeyValue
+	if len(c.options.QueueNames) > 0 {
+		observationField = attribute.String("queueNames", strings.Join(c.options.QueueNames, ", "))
+	} else {
+		observationField = attribute.String("queueName", c.options.QueueName)
+	}
 	ctx, _, endObservation := c.operations.dequeue.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("queueName", c.options.QueueName),
+		observationField,
 	}})
 	defer endObservation(1, observation.Args{})
 
