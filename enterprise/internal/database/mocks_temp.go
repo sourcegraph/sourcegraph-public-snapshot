@@ -7844,6 +7844,9 @@ type MockEnterpriseDB struct {
 	// AccessTokensFunc is an instance of a mock function object controlling
 	// the behavior of the method AccessTokens.
 	AccessTokensFunc *EnterpriseDBAccessTokensFunc
+	// AssignedOwnersFunc is an instance of a mock function object
+	// controlling the behavior of the method AssignedOwners.
+	AssignedOwnersFunc *EnterpriseDBAssignedOwnersFunc
 	// AuthzFunc is an instance of a mock function object controlling the
 	// behavior of the method Authz.
 	AuthzFunc *EnterpriseDBAuthzFunc
@@ -8027,6 +8030,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		AccessTokensFunc: &EnterpriseDBAccessTokensFunc{
 			defaultHook: func() (r0 database.AccessTokenStore) {
+				return
+			},
+		},
+		AssignedOwnersFunc: &EnterpriseDBAssignedOwnersFunc{
+			defaultHook: func() (r0 database.AssignedOwnersStore) {
 				return
 			},
 		},
@@ -8327,6 +8335,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.AccessTokens")
 			},
 		},
+		AssignedOwnersFunc: &EnterpriseDBAssignedOwnersFunc{
+			defaultHook: func() database.AssignedOwnersStore {
+				panic("unexpected invocation of MockEnterpriseDB.AssignedOwners")
+			},
+		},
 		AuthzFunc: &EnterpriseDBAuthzFunc{
 			defaultHook: func() database.AuthzStore {
 				panic("unexpected invocation of MockEnterpriseDB.Authz")
@@ -8620,6 +8633,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		AccessTokensFunc: &EnterpriseDBAccessTokensFunc{
 			defaultHook: i.AccessTokens,
+		},
+		AssignedOwnersFunc: &EnterpriseDBAssignedOwnersFunc{
+			defaultHook: i.AssignedOwners,
 		},
 		AuthzFunc: &EnterpriseDBAuthzFunc{
 			defaultHook: i.Authz,
@@ -8987,6 +9003,105 @@ func (c EnterpriseDBAccessTokensFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBAccessTokensFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBAssignedOwnersFunc describes the behavior when the
+// AssignedOwners method of the parent MockEnterpriseDB instance is invoked.
+type EnterpriseDBAssignedOwnersFunc struct {
+	defaultHook func() database.AssignedOwnersStore
+	hooks       []func() database.AssignedOwnersStore
+	history     []EnterpriseDBAssignedOwnersFuncCall
+	mutex       sync.Mutex
+}
+
+// AssignedOwners delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) AssignedOwners() database.AssignedOwnersStore {
+	r0 := m.AssignedOwnersFunc.nextHook()()
+	m.AssignedOwnersFunc.appendCall(EnterpriseDBAssignedOwnersFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the AssignedOwners
+// method of the parent MockEnterpriseDB instance is invoked and the hook
+// queue is empty.
+func (f *EnterpriseDBAssignedOwnersFunc) SetDefaultHook(hook func() database.AssignedOwnersStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AssignedOwners method of the parent MockEnterpriseDB instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *EnterpriseDBAssignedOwnersFunc) PushHook(hook func() database.AssignedOwnersStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBAssignedOwnersFunc) SetDefaultReturn(r0 database.AssignedOwnersStore) {
+	f.SetDefaultHook(func() database.AssignedOwnersStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBAssignedOwnersFunc) PushReturn(r0 database.AssignedOwnersStore) {
+	f.PushHook(func() database.AssignedOwnersStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBAssignedOwnersFunc) nextHook() func() database.AssignedOwnersStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBAssignedOwnersFunc) appendCall(r0 EnterpriseDBAssignedOwnersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBAssignedOwnersFuncCall objects
+// describing the invocations of this function.
+func (f *EnterpriseDBAssignedOwnersFunc) History() []EnterpriseDBAssignedOwnersFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBAssignedOwnersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBAssignedOwnersFuncCall is an object that describes an
+// invocation of method AssignedOwners on an instance of MockEnterpriseDB.
+type EnterpriseDBAssignedOwnersFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.AssignedOwnersStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBAssignedOwnersFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBAssignedOwnersFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
