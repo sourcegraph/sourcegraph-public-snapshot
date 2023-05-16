@@ -18,13 +18,13 @@ func compareSequences(schemaName, version string, actual, expected schemas.Schem
 				expectedSequence.Name,
 				fmt.Sprintf("Missing sequence %q", expectedSequence.Name),
 				"define the sequence",
-			).withStatements(definitionStmt)
+			).withURLHint(definitionStmt)
 		}
 
 		return newDriftSummary(
 			expectedSequence.Name,
 			fmt.Sprintf("Unexpected properties of sequence %q", expectedSequence.Name),
 			"redefine the sequence",
-		).withDiff(expectedSequence, *sequence).withStatements(definitionStmt)
+		).withDiff(expectedSequence, *sequence).withURLHint(definitionStmt)
 	}, noopAdditionalCallback[schemas.SequenceDescription])
 }
