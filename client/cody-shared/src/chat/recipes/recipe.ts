@@ -27,6 +27,7 @@ export type RecipeID =
     | 'release-notes'
     | 'inline-chat'
     | 'next-questions'
+    | 'app-scaffold'
 
 export interface Recipe {
     id: RecipeID

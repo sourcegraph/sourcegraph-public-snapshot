@@ -18,6 +18,7 @@ export const recipesList = {
     fixup: 'Fixup code from inline instructions',
     'context-search': 'Codebase context search',
     'release-notes': 'Generate release notes',
+    'app-scaffold': 'Generate app scaffold',
 }
 
 export const Recipes: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {

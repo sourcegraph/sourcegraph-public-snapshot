@@ -4,6 +4,7 @@ import { ExplainCodeDetailed } from './explain-code-detailed'
 import { ExplainCodeHighLevel } from './explain-code-high-level'
 import { FindCodeSmells } from './find-code-smells'
 import { Fixup } from './fixup'
+import { AppScaffold } from './generate-app-scaffold'
 import { GenerateDocstring } from './generate-docstring'
 import { ReleaseNotes } from './generate-release-notes'
 import { GenerateTest } from './generate-test'
@@ -44,6 +45,7 @@ function init(): void {
         new NextQuestions(),
         new ContextSearch(),
         new ReleaseNotes(),
+        new AppScaffold(),
     ]
 
     for (const recipe of recipes) {
