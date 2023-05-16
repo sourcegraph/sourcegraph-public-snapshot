@@ -60,8 +60,14 @@ func (c *Client) QueuedCount(ctx context.Context) (int, error) {
 }
 
 func (c *Client) Dequeue(ctx context.Context, workerHostname string, extraArguments any) (job types.Job, _ bool, err error) {
+	var observationField otlog.Field
+	if len(c.options.QueueNames) > 0 {
+		observationField = otlog.String("queueNames", strings.Join(c.options.QueueNames, ", "))
+	} else {
+		observationField = otlog.String("queueName", c.options.QueueName)
+	}
 	ctx, _, endObservation := c.operations.dequeue.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("queueName", c.options.QueueName),
+		observationField,
 	}})
 	defer endObservation(1, observation.Args{})
 
