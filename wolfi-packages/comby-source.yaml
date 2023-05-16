@@ -55,7 +55,7 @@ pipeline:
       opam switch create 4.11.0 4.11.0
       eval $(opam env --switch=4.11.0)
       cd comby-${{package.version}}/
-      opam install . --deps-only --yes
+      LIBRARY_PATH=/usr/lib opam install . --deps-only --yes
       make
       make test
       make install
