@@ -380,7 +380,7 @@
           "order": 5,
           "type": "boolean",
           "default": false,
-          "markdownDescription": "Adds sugestions of possible relevant messages in the chat window."
+          "markdownDescription": "Adds suggestions of possible relevant messages in the chat window."
         },
         "cody.experimental.inline": {
           "order": 6,
