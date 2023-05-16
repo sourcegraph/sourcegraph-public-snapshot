@@ -212,7 +212,7 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		}
 	}
 
-	changesetAuthor, err := author.GetChangesetAuthorForUser(ctx, database.UsersWith(s.logger, s), batchSpec.UserID)
+	changesetAuthor, err := author.GetChangesetAuthor(ctx, database.UsersWith(s.logger, s), batchSpec.UserID)
 	if err != nil {
 		return false, errors.Wrap(err, "creating changeset author")
 	}

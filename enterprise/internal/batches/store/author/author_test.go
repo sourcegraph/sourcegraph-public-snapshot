@@ -7,8 +7,10 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestGetChangesetAuthorForUser(t *testing.T) {
@@ -20,7 +22,7 @@ func TestGetChangesetAuthorForUser(t *testing.T) {
 	userStore := db.Users()
 
 	t.Run("User ID doesnt exist", func(t *testing.T) {
-		author, err := GetChangesetAuthorForUser(ctx, userStore, 0)
+		author, err := GetChangesetAuthor(ctx, userStore, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -38,7 +40,7 @@ func TestGetChangesetAuthorForUser(t *testing.T) {
 			t.Fatalf("failed to create test user: %v", err)
 		}
 
-		author, err := GetChangesetAuthorForUser(ctx, userStore, user.ID)
+		author, err := GetChangesetAuthor(ctx, userStore, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -57,7 +59,7 @@ func TestGetChangesetAuthorForUser(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create test user: %v", err)
 		}
-		author, err := GetChangesetAuthorForUser(ctx, userStore, user.ID)
+		author, err := GetChangesetAuthor(ctx, userStore, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -78,7 +80,7 @@ func TestGetChangesetAuthorForUser(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create test user: %v", err)
 		}
-		author, err := GetChangesetAuthorForUser(ctx, userStore, user.ID)
+		author, err := GetChangesetAuthor(ctx, userStore, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -87,6 +89,35 @@ func TestGetChangesetAuthorForUser(t *testing.T) {
 		}
 
 		if author.Name != user.DisplayName {
+			t.Fatalf("found incorrect name: %v", author)
+		}
+	})
+
+	t.Run("Use default author", func(t *testing.T) {
+		defaultAuthor := &schema.BatchChangesDefaultAuthor{
+			Name:  "John Doe",
+			Email: "john.doe@example.com",
+		}
+		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{BatchChangesDefaultAuthor: defaultAuthor}})
+		defer conf.Mock(nil)
+
+		user, err := userStore.Create(ctx, database.NewUser{
+			Username: "mary",
+		})
+
+		if err != nil {
+			t.Fatalf("failed to create test user: %v", err)
+		}
+		author, err := GetChangesetAuthor(ctx, userStore, user.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if author.Email != defaultAuthor.Email {
+			t.Fatalf("found incorrect email: %v", author)
+		}
+
+		if author.Name != defaultAuthor.Name {
 			t.Fatalf("found incorrect name: %v", author)
 		}
 	})

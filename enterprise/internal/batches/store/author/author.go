@@ -3,13 +3,14 @@ package author
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func GetChangesetAuthorForUser(ctx context.Context, userStore database.UserStore, userID int32) (author *batches.ChangesetSpecAuthor, err error) {
+func getChangesetAuthorForUser(ctx context.Context, userStore database.UserStore, userID int32) (author *batches.ChangesetSpecAuthor, err error) {
 
 	userEmailStore := database.UserEmailsWith(userStore)
 
@@ -35,4 +36,28 @@ func GetChangesetAuthorForUser(ctx context.Context, userStore database.UserStore
 	}
 
 	return author, nil
+}
+
+func getDefaultChangesetAuthor() (author *batches.ChangesetSpecAuthor) {
+	defaultAuthor := conf.Get().BatchChangesDefaultAuthor
+
+	if defaultAuthor != nil {
+		return &batches.ChangesetSpecAuthor{
+			Name:  defaultAuthor.Name,
+			Email: defaultAuthor.Email,
+		}
+	}
+
+	return nil
+}
+
+func GetChangesetAuthor(ctx context.Context, userStore database.UserStore, userID int32) (author *batches.ChangesetSpecAuthor, err error) {
+	author, err = getChangesetAuthorForUser(ctx, userStore, userID)
+	if err != nil {
+		return nil, err
+	}
+	if author != nil {
+		return author, nil
+	}
+	return getDefaultChangesetAuthor(), nil
 }

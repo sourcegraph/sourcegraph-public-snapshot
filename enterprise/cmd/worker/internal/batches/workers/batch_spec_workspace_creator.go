@@ -221,7 +221,7 @@ func (r *batchSpecWorkspaceCreator) process(
 	usedCacheEntries := []int64{}
 	changesetsByWorkspace := make(map[*btypes.BatchSpecWorkspace][]*btypes.ChangesetSpec)
 
-	changesetAuthor, err := author.GetChangesetAuthorForUser(ctx, database.UsersWith(r.logger, r.store), spec.UserID)
+	changesetAuthor, err := author.GetChangesetAuthor(ctx, database.UsersWith(r.logger, r.store), spec.UserID)
 	if err != nil {
 		return err
 	}
