@@ -11,7 +11,7 @@ export class SourcegraphEmbeddingsSearchClient implements EmbeddingsSearch {
         textResultsCount: number
     ): Promise<EmbeddingsSearchResults | Error> {
         if (this.web) {
-            return this.client.searchEmbeddings(this.repoId, query, codeResultsCount, textResultsCount)
+            return this.client.searchEmbeddings([this.repoId], query, codeResultsCount, textResultsCount)
         }
 
         return this.client.legacySearchEmbeddings(this.repoId, query, codeResultsCount, textResultsCount)
