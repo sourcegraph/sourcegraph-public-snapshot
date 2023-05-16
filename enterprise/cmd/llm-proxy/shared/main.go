@@ -67,6 +67,8 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	// come last.
 	handler := httpapi.NewHandler(obctx.Logger, eventLogger, &httpapi.Config{
 		AnthropicAccessToken: config.Anthropic.AccessToken,
+		OpenAIAccessToken:    config.OpenAI.AccessToken,
+		OpenAIOrgID:          config.OpenAI.OrgID,
 	})
 
 	// Authentication and rate-limting layers
