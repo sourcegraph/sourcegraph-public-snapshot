@@ -1,6 +1,6 @@
 #include "textflag.h"
 
-TEXT ·dotAVX2(SB), NOSPLIT, $0-56
+TEXT ·dotAVX2(SB), NOSPLIT, $0-52
 	// Offsets based on slice header offsets.
 	// To check, use `GOARCH=amd64 go vet`
 	MOVQ a_base+0(FP), AX
@@ -48,30 +48,9 @@ reduce:
 	// Store the reduced sum
 	VMOVD X0, R8
 
-	// For the remainder of the function, we do not use vector instructions.
-	// Zero the registers to avoid the SSE penalty.
-	VZEROALL
-
-// In tailloop, we add to the dot product one at a time
-tailloop:
-	CMPQ DX, $0
-	JE end
-
-	// Load values from the input slices
-	MOVBQSX (AX), R9
-	MOVBQSX (BX), R10
-
-	// Multiply and accumulate
-	IMULQ R9, R10
-	ADDQ R10, R8
-
-	INCQ AX
-	INCQ BX
-	DECQ DX
-	JMP tailloop
-
 end:
-	MOVQ R8, ret+48(FP)
+	MOVL R8, ret+48(FP)
+	VZEROALL
 	RET
 
 // dotVNNI calculates the dot product of two slices using AVX512 VNNI
