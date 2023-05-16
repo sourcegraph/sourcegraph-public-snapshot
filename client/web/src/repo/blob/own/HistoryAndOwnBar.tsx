@@ -116,11 +116,14 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
                                     )}
                                 </div>
                             ))}
-                            {ownership.totalCount > 2 && (
+                            {ownership.totalCount > 2 ? (
                                 <div className={styles.ownMore}>+{ownership.totalCount - 2} more</div>
-                            )}
-                            {ownership.totalCount <= 2 && ownershipIncludingSignals.totalCount > 0 && (
-                                <div className={styles.ownMore}>+{ownershipIncludingSignals.totalCount} inferred</div>
+                            ) : (
+                                ownershipIncludingSignals.totalCount > ownership.totalCount && (
+                                    <div className={styles.ownMore}>
+                                        +{ownershipIncludingSignals.totalCount - ownership.totalCount} inferred
+                                    </div>
+                                )
                             )}
                         </div>
                     </Button>
