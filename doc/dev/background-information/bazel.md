@@ -426,6 +426,27 @@ cat bazel-sourcegraph/external/local_config_cc/cc_wrapper.sh | grep "# Call the 
 /usr/bin/gcc "$@"
 ```
 
+### On MacOS, you get `Bad CPU type for executable` when running Bazel
+
+This typically happens when `bazel` tries to use `protoc` to compile protobuf definitions and you're on an arm64 mac. The full error will look like the following:
+```
+src/main/tools/process-wrapper-legacy.cc:80: "execvp(bazel-out/darwin_arm64-opt-exec-2B5CBBC6/bin/external/com_google_protobuf_protoc_macos_aarch64/protoc.exe, ...)": Bad CPU type in executable
+ERROR: /private/var/tmp/_bazel_ec2-user/c27d26456d2e68ea0aaccfcda2d35b4e/external/go_googleapis/google/api/BUILD.bazel:22:14: Generating Descriptor Set proto_library @go_googleapis//google/api:api_proto failed: (Exit 1): protoc.exe failed: error executing command (from target @go_googleapis//google/api:api_proto) bazel-out/darwin_arm64-opt-exec-2B5CBBC6/bin/external/com_google_protobuf_protoc_macos_aarch64/protoc.exe --direct_dependencies google/api/launch_stage.proto ... (remaining 5 arguments skipped)
+```
+
+If you run the `file` utility on the `protoc` binary you'll see the CPU architecture mismatch.
+```
+file bazel-out/darwin_arm64-opt-exec-2B5CBBC6/bin/external/com_google_protobuf_protoc_macos_aarch64/protoc.exe
+bazel-out/darwin_arm64-opt-exec-2B5CBBC6/bin/external/com_google_protobuf_protoc_macos_aarch64/protoc.exe: Mach-O 64-bit executable x86_64
+```
+
+To fix this, you need to install Rosetta 2. There are various ways of doing that, but below is the CLI way to do it.
+```
+/usr/sbin/softwareupdate --install-rosetta --agree-to-license
+```
+
+__Tested on Darwin 22.3.0 Darwin Kernel Version 22.3.0__
+
 ## Resources
 
 - [Core Bazel (book)](https://www.amazon.com/Core-Bazel-Fast-Builds-People/dp/B08DVDM7BZ):
