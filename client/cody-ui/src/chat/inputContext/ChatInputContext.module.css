@@ -51,3 +51,14 @@
 .index-missing {
     font-weight: bold;
 }
+
+.indexStatusOnHover,
+a:hover .indexStatus {
+    display: none;
+}
+
+.indexStatus,
+a:hover .indexStatusOnHover {
+    display: inline;
+    color: var(--vscode-list-warningForeground, #fdf1cc);
+}
