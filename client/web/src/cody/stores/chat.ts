@@ -232,7 +232,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
             config,
             editor,
             onEvent,
-            transcript: initialTranscript.toChat(),
+            transcript: await initialTranscript.toChatPromise(),
             transcriptId: initialTranscript.isEmpty ? null : initialTranscript.id,
             transcriptHistory,
         })
@@ -283,7 +283,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         }
 
         const transcript = Transcript.fromJSON(transcriptJSONFromHistory)
-        const messages = transcript.toChat()
+        const messages = await transcript.toChatPromise()
 
         try {
             const client = await createClient({
