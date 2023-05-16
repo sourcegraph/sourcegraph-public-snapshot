@@ -25,9 +25,8 @@ CREATE TABLE IF NOT EXISTS gitserver_localclone_jobs (
     delete_source       boolean not null DEFAULT false
 );
 
-DROP VIEW IF EXISTS gitserver_localclone_jobs_with_repo_name;
 -- create the old view
-CREATE VIEW gitserver_localclone_jobs_with_repo_name AS SELECT glj.id,
+CREATE OR REPLACE VIEW gitserver_localclone_jobs_with_repo_name AS SELECT glj.id,
   glj.state,
   glj.failure_message,
   glj.started_at,
