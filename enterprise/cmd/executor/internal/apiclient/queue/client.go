@@ -61,23 +61,30 @@ func (c *Client) QueuedCount(ctx context.Context) (int, error) {
 
 func (c *Client) Dequeue(ctx context.Context, workerHostname string, extraArguments any) (job types.Job, _ bool, err error) {
 	var observationField otlog.Field
-	if len(c.options.QueueNames) > 0 {
-		observationField = otlog.String("queueNames", strings.Join(c.options.QueueNames, ", "))
-	} else {
-		observationField = otlog.String("queueName", c.options.QueueName)
-	}
-	ctx, _, endObservation := c.operations.dequeue.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		observationField,
-	}})
-	defer endObservation(1, observation.Args{})
-
-	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/dequeue", c.options.QueueName), types.DequeueRequest{
+	var endpoint string
+	dequeueRequest := types.DequeueRequest{
 		Version:      version.Version(),
 		ExecutorName: c.options.ExecutorName,
 		NumCPUs:      c.options.ResourceOptions.NumCPUs,
 		Memory:       c.options.ResourceOptions.Memory,
 		DiskSpace:    c.options.ResourceOptions.DiskSpace,
-	})
+	}
+
+	if len(c.options.QueueNames) > 0 {
+		observationField = otlog.String("queueNames", strings.Join(c.options.QueueNames, ", "))
+		endpoint = "/dequeue"
+		dequeueRequest.Queues = c.options.QueueNames
+	} else {
+		observationField = otlog.String("queueName", c.options.QueueName)
+		endpoint = fmt.Sprintf("%s/dequeue", c.options.QueueName)
+	}
+
+	ctx, _, endObservation := c.operations.dequeue.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
+		observationField,
+	}})
+	defer endObservation(1, observation.Args{})
+
+	req, err := c.client.NewJSONRequest(http.MethodPost, endpoint, dequeueRequest)
 	if err != nil {
 		return job, false, err
 	}
