@@ -22,7 +22,8 @@ func TestBatchInserter(t *testing.T) {
 	db := dbtest.NewDB(logger, t)
 	setupTestTable(t, db)
 
-	expectedValues := makeTestValues(2, 0)
+	tableSizeFactor := 2
+	expectedValues := makeTestValues(tableSizeFactor, 0)
 	testInsert(t, db, expectedValues)
 
 	rows, err := db.Query("SELECT col1, col2, col3, col4, col5 from batch_inserter_test")
@@ -40,6 +41,39 @@ func TestBatchInserter(t *testing.T) {
 		}
 
 		values = append(values, []any{v1, v2, v3, v4, v5})
+	}
+
+	if diff := cmp.Diff(expectedValues, values); diff != "" {
+		t.Errorf("unexpected table contents (-want +got):\n%s", diff)
+	}
+}
+
+func TestBatchInserterThin(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := dbtest.NewDB(logger, t)
+	setupTestTableThin(t, db)
+
+	tableSizeFactor := 2
+	var expectedValues [][]any
+	for i := 0; i < MaxNumPostgresParameters*tableSizeFactor; i++ {
+		expectedValues = append(expectedValues, []any{i})
+	}
+	testInsertThin(t, db, expectedValues)
+
+	rows, err := db.Query("SELECT col1 from batch_inserter_test_thin")
+	if err != nil {
+		t.Fatalf("unexpected error querying data: %s", err)
+	}
+	defer rows.Close()
+
+	var values [][]any
+	for rows.Next() {
+		var v1 int
+		if err := rows.Scan(&v1); err != nil {
+			t.Fatalf("unexpected error scanning data: %s", err)
+		}
+
+		values = append(values, []any{v1})
 	}
 
 	if diff := cmp.Diff(expectedValues, values); diff != "" {
@@ -162,6 +196,18 @@ func setupTestTable(t testing.TB, db *sql.DB) {
 	}
 }
 
+func setupTestTableThin(t testing.TB, db *sql.DB) {
+	createTableQuery := `
+		CREATE TABLE batch_inserter_test_thin (
+			id SERIAL,
+			col1 integer NOT NULL UNIQUE
+		)
+	`
+	if _, err := db.Exec(createTableQuery); err != nil {
+		t.Fatalf("unexpected error creating test table: %s", err)
+	}
+}
+
 func makeTestValues(tableSizeFactor, payloadSize int) [][]any {
 	var expectedValues [][]any
 	for i := 0; i < MaxNumPostgresParameters*tableSizeFactor; i++ {
@@ -190,6 +236,21 @@ func testInsert(t testing.TB, db *sql.DB, expectedValues [][]any) {
 	ctx := context.Background()
 
 	inserter := NewInserter(ctx, db, "batch_inserter_test", MaxNumPostgresParameters, "col1", "col2", "col3", "col4", "col5")
+	for _, values := range expectedValues {
+		if err := inserter.Insert(ctx, values...); err != nil {
+			t.Fatalf("unexpected error inserting values: %s", err)
+		}
+	}
+
+	if err := inserter.Flush(ctx); err != nil {
+		t.Fatalf("unexpected error flushing: %s", err)
+	}
+}
+
+func testInsertThin(t testing.TB, db *sql.DB, expectedValues [][]any) {
+	ctx := context.Background()
+
+	inserter := NewInserter(ctx, db, "batch_inserter_test_thin", MaxNumPostgresParameters, "col1")
 	for _, values := range expectedValues {
 		if err := inserter.Insert(ctx, values...); err != nil {
 			t.Fatalf("unexpected error inserting values: %s", err)
