@@ -13,10 +13,10 @@ var PostAuthMiddleware func(http.Handler) http.Handler
 // the given license plan. It mirrors the type licensing.FeatureBatchChanges.
 type FeatureBatchChanges struct {
 	// If true, there is no limit to the number of changesets that can be created.
-	Unrestricted bool
+	Unrestricted bool `json:"unrestricted"`
 	// Maximum number of changesets that can be created per batch change.
 	// If Unrestricted is true, this is ignored.
-	MaxNumChangesets int
+	MaxNumChangesets int `json:"maxNumChangesets"`
 }
 
 // LicenseInfo contains information about the legitimate usage of the current
