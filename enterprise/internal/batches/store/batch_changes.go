@@ -7,7 +7,6 @@ import (
 
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-diff/diff"
 	"go.opentelemetry.io/otel/attribute"
 

@@ -6,7 +6,6 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
