@@ -73,12 +73,17 @@ func TestEmbeddingsSearch(t *testing.T) {
 			return []float32{0, 0, 1, 0}, nil
 		case "four":
 			return []float32{0, 0, 1, 1}, nil
+		case "context detection":
+			return []float32{2, 4, 6, 8}, nil
 		default:
 			panic("unknown")
 		}
 	}
 	getContextDetectionEmbeddingIndex := func(context.Context) (*embeddings.ContextDetectionEmbeddingIndex, error) {
-		return nil, nil
+		return &embeddings.ContextDetectionEmbeddingIndex{
+			MessagesWithAdditionalContextMeanEmbedding:    []float32{1, 2, 3, 4},
+			MessagesWithoutAdditionalContextMeanEmbedding: []float32{4, 3, 2, 1},
+		}, nil
 	}
 
 	server1 := httptest.NewServer(NewHandler(
@@ -232,4 +237,12 @@ func TestEmbeddingsSearch(t *testing.T) {
 			}},
 		}, results)
 	}
+
+	t.Run("IsContextRequiredForChatQuery", func(t *testing.T) {
+		res, err := client.IsContextRequiredForChatQuery(context.Background(), embeddings.IsContextRequiredForChatQueryParameters{
+			Query: "context detection",
+		})
+		require.NoError(t, err)
+		require.True(t, res)
+	})
 }
