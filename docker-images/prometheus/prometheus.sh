@@ -10,4 +10,4 @@ fi
 STORAGE_PATH="${STORAGE_PATH:-"/prometheus"}"
 
 # shellcheck disable=SC2086
-exec /bin/prometheus --config.file=$CONFIG_FILE --storage.tsdb.path=$STORAGE_PATH $PROMETHEUS_ADDITIONAL_FLAGS --web.console.libraries=/usr/share/prometheus/console_libraries --web.console.templates=/usr/share/prometheus/consoles "$@"
+exec /usr/bin/prometheus --config.file=$CONFIG_FILE --storage.tsdb.path=$STORAGE_PATH $PROMETHEUS_ADDITIONAL_FLAGS --web.console.libraries=/usr/share/prometheus/console_libraries --web.console.templates=/usr/share/prometheus/consoles "$@"
