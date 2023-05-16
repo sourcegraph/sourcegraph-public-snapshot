@@ -141,13 +141,13 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async searchEmbeddings(
-        repos: string[],
+        repo: string,
         query: string,
         codeResultsCount: number,
         textResultsCount: number
     ): Promise<EmbeddingsSearchResults | Error> {
         return this.fetchSourcegraphAPI<APIResponse<EmbeddingsSearchResponse>>(SEARCH_EMBEDDINGS_QUERY, {
-            repos,
+            repo,
             query,
             codeResultsCount,
             textResultsCount,
