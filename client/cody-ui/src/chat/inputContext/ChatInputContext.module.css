@@ -47,12 +47,7 @@
     overflow: hidden;
 }
 
-.warn {
+.index-present,
+.index-missing {
     font-weight: bold;
-    color: var(--vscode-list-warningForeground, #fdf1cc);
-}
-
-.success {
-    font-weight: bold;
-    color: var(--vscode-textLink-foreground, #c4ffe8);
 }
