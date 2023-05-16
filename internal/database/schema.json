@@ -8105,8 +8105,8 @@
         },
         {
           "Name": "max_definition_id",
-          "Index": 3,
-          "TypeName": "integer",
+          "Index": 11,
+          "TypeName": "bigint",
           "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
@@ -8118,8 +8118,8 @@
         },
         {
           "Name": "max_path_id",
-          "Index": 5,
-          "TypeName": "integer",
+          "Index": 13,
+          "TypeName": "bigint",
           "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
@@ -8131,8 +8131,8 @@
         },
         {
           "Name": "max_reference_id",
-          "Index": 4,
-          "TypeName": "integer",
+          "Index": 12,
+          "TypeName": "bigint",
           "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
