@@ -1,6 +1,9 @@
-import { gql } from '@sourcegraph/http-client'
+import { QueryResult } from '@apollo/client'
 
-import { LIST_EXTERNAL_SERVICE_FRAGMENT } from '../externalServices/backend'
+import { gql, useQuery } from '@sourcegraph/http-client'
+
+import { GitHubAppByAppIDResult, GitHubAppByAppIDVariables } from '../../graphql-operations'
+import { ExternalServiceFieldsWithConfig, LIST_EXTERNAL_SERVICE_FRAGMENT } from '../externalServices/backend'
 
 export const GITHUB_APPS_QUERY = gql`
     query GitHubApps {
@@ -44,13 +47,25 @@ export const GITHUB_APP_BY_ID_QUERY = gql`
                     url
                     type
                 }
-            }
-            externalServices(first: 100) {
-                nodes {
-                    ...ListExternalServiceFields
+                externalServices(first: 100) {
+                    nodes {
+                        ...ListExternalServiceFields
+                    }
+                    totalCount
                 }
-                totalCount
             }
+            webhook {
+                id
+            }
+        }
+    }
+`
+
+export const GITHUB_APP_BY_APP_ID_QUERY = gql`
+    query GitHubAppByAppID($appID: Int!, $baseURL: String!) {
+        gitHubAppByAppID(appID: $appID, baseURL: $baseURL) {
+            id
+            name
         }
     }
 `
@@ -83,3 +98,15 @@ export const DELETE_GITHUB_APP_BY_ID_QUERY = gql`
         }
     }
 `
+
+export const useFetchGithubAppForES = (
+    externalService?: ExternalServiceFieldsWithConfig
+): QueryResult<GitHubAppByAppIDResult, GitHubAppByAppIDVariables> =>
+    useQuery<GitHubAppByAppIDResult, GitHubAppByAppIDVariables>(GITHUB_APP_BY_APP_ID_QUERY, {
+        skip: !externalService?.parsedConfig?.gitHubAppDetails,
+        variables: {
+            appID: externalService?.parsedConfig?.gitHubAppDetails?.appID ?? 0,
+            baseURL:
+                externalService?.parsedConfig?.gitHubAppDetails?.baseURL ?? externalService?.parsedConfig?.url ?? '',
+        },
+    })

@@ -6,7 +6,6 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -20,8 +19,8 @@ import (
 func (s *store) InsertUpload(ctx context.Context, upload shared.Upload) (id int, err error) {
 	ctx, _, endObservation := s.operations.insertUpload.With(ctx, &err, observation.Args{})
 	defer func() {
-		endObservation(1, observation.Args{LogFields: []log.Field{
-			log.Int("id", id),
+		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
+			attribute.Int("id", id),
 		}})
 	}()
 
@@ -72,9 +71,9 @@ RETURNING id
 // AddUploadPart adds the part index to the given upload's uploaded parts array. This method is idempotent
 // (the resulting array is deduplicated on update).
 func (s *store) AddUploadPart(ctx context.Context, uploadID, partIndex int) (err error) {
-	ctx, _, endObservation := s.operations.addUploadPart.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("uploadID", uploadID),
-		log.Int("partIndex", partIndex),
+	ctx, _, endObservation := s.operations.addUploadPart.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("uploadID", uploadID),
+		attribute.Int("partIndex", partIndex),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -87,8 +86,8 @@ UPDATE lsif_uploads SET uploaded_parts = array(SELECT DISTINCT * FROM unnest(arr
 
 // MarkQueued updates the state of the upload to queued and updates the upload size.
 func (s *store) MarkQueued(ctx context.Context, id int, uploadSize *int64) (err error) {
-	ctx, _, endObservation := s.operations.markQueued.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("id", id),
+	ctx, _, endObservation := s.operations.markQueued.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -106,8 +105,8 @@ WHERE id = %s
 
 // MarkFailed updates the state of the upload to failed, increments the num_failures column and sets the finished_at time
 func (s *store) MarkFailed(ctx context.Context, id int, reason string) (err error) {
-	ctx, _, endObservation := s.operations.markFailed.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("id", id),
+	ctx, _, endObservation := s.operations.markFailed.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -130,11 +129,11 @@ WHERE
 // commit, root, and indexer. This is necessary to perform during conversions before changing
 // the state of a processing upload to completed as there is a unique index on these four columns.
 func (s *store) DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) (err error) {
-	ctx, trace, endObservation := s.operations.deleteOverlappingDumps.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
-		log.String("commit", commit),
-		log.String("root", root),
-		log.String("indexer", indexer),
+	ctx, trace, endObservation := s.operations.deleteOverlappingDumps.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
+		attribute.String("commit", commit),
+		attribute.String("root", root),
+		attribute.String("indexer", indexer),
 	}})
 	defer endObservation(1, observation.Args{})
 

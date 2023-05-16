@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/opentracing/opentracing-go/log"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -46,7 +45,7 @@ func (z *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, s
 
 	err = zoektSearch(ctx, clients.Logger, z.Repos, z.Query, nil, search.SymbolRequest, clients.Zoekt, z.FileMatchLimit, z.Select, z.Features, since, stream)
 	if err != nil {
-		tr.SetAttributes(attribute.String("error", err.Error()))
+		tr.SetAttributes(trace.Error(err))
 		// Only record error if we haven't timed out.
 		if ctx.Err() == nil {
 			cancel()
@@ -60,24 +59,24 @@ func (z *SymbolSearchJob) Name() string {
 	return "ZoektSymbolSearchJob"
 }
 
-func (z *SymbolSearchJob) Fields(v job.Verbosity) (res []log.Field) {
+func (z *SymbolSearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 	switch v {
 	case job.VerbosityMax:
 		res = append(res,
-			log.Int32("fileMatchLimit", z.FileMatchLimit),
-			trace.Stringer("select", z.Select),
+			attribute.Int("fileMatchLimit", int(z.FileMatchLimit)),
+			attribute.Stringer("select", z.Select),
 		)
 		// z.Repos is nil for un-indexed search
 		if z.Repos != nil {
 			res = append(res,
-				log.Int("numRepoRevs", len(z.Repos.RepoRevs)),
-				log.Int("numBranchRepos", len(z.Repos.branchRepos)),
+				attribute.Int("numRepoRevs", len(z.Repos.RepoRevs)),
+				attribute.Int("numBranchRepos", len(z.Repos.branchRepos)),
 			)
 		}
 		fallthrough
 	case job.VerbosityBasic:
 		res = append(res,
-			trace.Stringer("query", z.Query),
+			attribute.Stringer("query", z.Query),
 		)
 	}
 	return res
@@ -103,7 +102,7 @@ func (s *GlobalSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClie
 	// always search for symbols in indexed repositories when searching the repo universe.
 	err = DoZoektSearchGlobal(ctx, clients.Logger, clients.Zoekt, s.ZoektArgs, nil, stream)
 	if err != nil {
-		tr.SetAttributes(attribute.String("error", err.Error()))
+		tr.SetAttributes(trace.Error(err))
 		// Only record error if we haven't timed out.
 		if ctx.Err() == nil {
 			return nil, err
@@ -117,22 +116,22 @@ func (*GlobalSymbolSearchJob) Name() string {
 	return "ZoektGlobalSymbolSearchJob"
 }
 
-func (s *GlobalSymbolSearchJob) Fields(v job.Verbosity) (res []log.Field) {
+func (s *GlobalSymbolSearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 	switch v {
 	case job.VerbosityMax:
 		res = append(res,
-			trace.Printf("repoScope", "%q", s.GlobalZoektQuery.RepoScope),
-			log.Bool("includePrivate", s.GlobalZoektQuery.IncludePrivate),
-			log.Int32("fileMatchLimit", s.ZoektArgs.FileMatchLimit),
-			trace.Stringer("select", s.ZoektArgs.Select),
+			trace.Stringers("repoScope", s.GlobalZoektQuery.RepoScope),
+			attribute.Bool("includePrivate", s.GlobalZoektQuery.IncludePrivate),
+			attribute.Int("fileMatchLimit", int(s.ZoektArgs.FileMatchLimit)),
+			attribute.Stringer("select", s.ZoektArgs.Select),
 		)
 		fallthrough
 	case job.VerbosityBasic:
 		res = append(res,
-			trace.Stringer("query", s.GlobalZoektQuery.Query),
-			log.String("type", string(s.ZoektArgs.Typ)),
-			trace.Scoped("repoOpts", s.RepoOpts.Tags()...),
+			attribute.Stringer("query", s.GlobalZoektQuery.Query),
+			attribute.String("type", string(s.ZoektArgs.Typ)),
 		)
+		res = append(res, trace.Scoped("repoOpts", s.RepoOpts.Attributes()...)...)
 	}
 	return res
 }

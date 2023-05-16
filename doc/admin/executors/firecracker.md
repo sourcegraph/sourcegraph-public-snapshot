@@ -22,6 +22,23 @@ To use Firecracker, the host machine has to support KVM. When deploying on an AW
 
 See [deploying Executors binary](./deploy_executors_binary.md) for additional information on configuring Linux Machines.
 
+### AWS Bare Metal
+
+AWS Bare Metal provides an application with direct access to the processor and memory of the underlying server. This
+allows the application to use the host hardware and kernel directly, no virtualization layer is present.
+
+Using bare metal is expensive to run on. Ideally, Executors on bare metal should be used when there are a lot of Jobs to
+run - this will offset the cost of running a bare metal instance. To get the best performance to cost ratio, it is
+recommended to fine tune the number of CPUs, the Disk Space allocated, and the memory for each Firecracker VM.
+
+Executor can be fined tuned with the following environment variables,
+
+| Environment Variable              | Description                                                                                                                                               |
+|-----------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `EXECUTOR_FIRECRACKER_DISK_SPACE` | How much disk space to allocate to each virtual machine. (default value: "20G")                                                                           |
+| `EXECUTOR_JOB_NUM_CPUS`           | How many CPUs to allocate to each virtual machine or container. A value of zero sets no resource bound (in Docker, but not VMs). (default value: "4")     |
+| `EXECUTOR_JOB_MEMORY`             | How much memory to allocate to each virtual machine or container. A value of zero sets no resource bound (in Docker, but not VMs). (default value: "12G") |
+
 ## Known caveats
 
 We [configure iptables](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/cmd/executor/internal/run/install.go?L229-255) to prevent Firecracker-isolated processes from talking on [Private IPv4 Addresses](https://en.wikipedia.org/wiki/Private_network#Private_IPv4_addresses) (providing network-level isolation). They can talk to DNS and Sourcegraph only, which prevents users from talking to a 10.x.x.x, 172.x.x.x, or 192.168.x.x range IP.

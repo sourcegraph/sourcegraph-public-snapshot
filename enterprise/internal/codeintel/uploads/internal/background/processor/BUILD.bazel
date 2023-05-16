@@ -35,7 +35,6 @@ go_library(
         "//lib/errors",
         "@com_github_jackc_pgconn//:pgconn",
         "@com_github_keegancsmith_sqlf//:sqlf",
-        "@com_github_opentracing_opentracing_go//log",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_scip//bindings/go/scip",

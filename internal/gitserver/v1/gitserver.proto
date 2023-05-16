@@ -9,6 +9,7 @@ option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
 service GitserverService {
   rpc Exec(ExecRequest) returns (stream ExecResponse) {}
   rpc Search(SearchRequest) returns (stream SearchResponse) {}
+  rpc Archive(ArchiveRequest) returns (stream ArchiveResponse) {}
 }
 
 message ExecRequest {
@@ -191,4 +192,21 @@ message CommitMatch {
   // to its first parent. May be unset if `include_modified_files` is not
   // specified in the request.
   repeated string modified_files = 9;
+}
+
+// ArchiveRequest is set of parameters for the Archive RPC.
+message ArchiveRequest {
+  // repo is the name of the repo to be archived
+  string repo = 1;
+  // treeish is the tree or commit to produce an archive for
+  string treeish = 2;
+  // format is the format of the resulting archive (usually "tar" or "zip")
+  string format = 3;
+  // pathspecs is the list of pathspecs to include in the archive. If empty, all pathspecs are included.
+  repeated string pathspecs = 4;
+}
+
+// ArchiveResponse is the response from the Archive RPC that returns a chunk of the archive.
+message ArchiveResponse {
+  bytes data = 1;
 }

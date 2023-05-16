@@ -16,7 +16,7 @@ import (
 )
 
 func Init(
-	ctx context.Context,
+	_ context.Context,
 	observationCtx *observation.Context,
 	db database.DB,
 	_ codeintel.Services,
@@ -27,6 +27,15 @@ func Init(
 	contextDetectionEmbeddingsStore := contextdetection.NewContextDetectionEmbeddingJobsStore(db)
 	gitserverClient := gitserver.NewClient()
 	embeddingsClient := embeddings.NewClient()
-	enterpriseServices.EmbeddingsResolver = resolvers.NewResolver(db, gitserverClient, embeddingsClient, repoEmbeddingsStore, contextDetectionEmbeddingsStore)
+
+	enterpriseServices.EmbeddingsResolver = resolvers.NewResolver(
+		db,
+		observationCtx.Logger,
+		gitserverClient,
+		embeddingsClient,
+		repoEmbeddingsStore,
+		contextDetectionEmbeddingsStore,
+	)
+
 	return nil
 }

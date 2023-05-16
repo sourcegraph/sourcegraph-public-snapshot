@@ -10,7 +10,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
@@ -49,8 +49,8 @@ type ProcessedSCIPDocument struct {
 }
 
 func (s *store) InsertMetadata(ctx context.Context, uploadID int, meta ProcessedMetadata) (err error) {
-	ctx, _, endObservation := s.operations.insertMetadata.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Int("uploadID", uploadID),
+	ctx, _, endObservation := s.operations.insertMetadata.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("uploadID", uploadID),
 	}})
 	defer endObservation(1, observation.Args{})
 

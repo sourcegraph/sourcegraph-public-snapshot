@@ -6,7 +6,7 @@ import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
 import { getFileExtension } from './helpers'
-import { Recipe, RecipeContext } from './recipe'
+import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 /*
 This class implements the context-search recipe.
@@ -26,7 +26,7 @@ Functionality:
 */
 
 export class ContextSearch implements Recipe {
-    public id = 'context-search'
+    public id: RecipeID = 'context-search'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const query = humanChatInput || (await context.editor.showInputBox('Enter your search query here...')) || ''
