@@ -2,7 +2,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "auth",
-    srcs = ["auth.go"],
+    srcs = [
+        "auth.go",
+        "bearer.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/auth",
     visibility = ["//enterprise/cmd/llm-proxy:__subpackages__"],
     deps = [

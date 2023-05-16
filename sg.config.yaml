@@ -124,8 +124,6 @@ env:
   # OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318
   # OTEL_EXPORTER_OTLP_PROTOCOL: http/json
 
-  LLM_PROXY_ALLOW_ANONYMOUS: true
-
 commands:
   server:
     description: Run an all-in-one sourcegraph/server image
@@ -400,6 +398,8 @@ commands:
       LLM_PROXY_ANTHROPIC_ACCESS_TOKEN: foobar
       LLM_PROXY_DOTCOM_ACCESS_TOKEN: foobar
       LLM_PROXY_DOTCOM_API_URL: https://sourcegraph.test:3443/.api/graphql
+      LLM_PROXY_ALLOW_ANONYMOUS: true
+      LLM_PROXY_DIAGNOSTICS_SECRET: sekret
       SRC_LOG_LEVEL: dbug
     watch:
       - lib
