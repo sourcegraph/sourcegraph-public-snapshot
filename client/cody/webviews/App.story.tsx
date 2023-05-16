@@ -46,7 +46,6 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                 debug: true,
                 hasAccessToken: true,
                 serverEndpoint: 'https://example.com',
-                experimentalConnectToApp: false,
             },
         })
         return () => {}

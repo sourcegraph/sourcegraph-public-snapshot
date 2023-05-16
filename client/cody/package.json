@@ -388,10 +388,6 @@
           "markdownDescription": "Enables Cody Inline Assist, an inline way to explicitly ask questions and propose modifications to code.",
           "default": false
         },
-        "cody.experimental.connectToApp": {
-          "type": "boolean",
-          "default": false
-        },
         "cody.customHeaders": {
           "order": 7,
           "type": "object",
