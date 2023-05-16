@@ -239,7 +239,7 @@ const staticExtensions: Extension = [
         '.cm-line': {
             padding: 0,
         },
-        '&.cm-editor.cm-focused .cm-selectionLayer .cm-selectionBackground': {
+        '&.cm-focused .cm-selectionLayer .cm-selectionBackground': {
             backgroundColor: 'var(--code-selection-bg-2)',
         },
         '.cm-selectionLayer .cm-selectionBackground': {
