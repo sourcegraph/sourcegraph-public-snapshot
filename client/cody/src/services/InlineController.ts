@@ -3,6 +3,8 @@ import * as vscode from 'vscode'
 import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
+import { logEvent } from '../event-logger'
+
 import { CodeLensProvider } from './CodeLensProvider'
 
 const initPost = new vscode.Position(0, 0)
@@ -106,7 +108,7 @@ export class InlineController {
         this.threads = threads
         this.thread = thread
         this.selection = await this.makeSelection(isFixMode)
-        await vscode.commands.executeCommand('setContext', 'cody.replied', false)
+        void vscode.commands.executeCommand('setContext', 'cody.replied', false)
     }
     /**
      * List response from Cody as comment
@@ -182,9 +184,10 @@ export class InlineController {
                 new vscode.Position(this.thread.range.end.line + 1 + SURROUNDING_LINES, 0)
             )
         )
+        // Add space when selectedText is empty --empty selectedText could cause delayed response
         const selection = {
             fileName: vscode.workspace.asRelativePath(this.thread.uri.fsPath),
-            selectedText: activeDocument.getText(selectionRange),
+            selectedText: activeDocument.getText(selectionRange) || ' ',
             precedingText,
             followingText,
         }
@@ -231,6 +234,7 @@ export class InlineController {
         const newRange = new vscode.Range(startLine, 0, startLine + newLineCount, 0)
         await this.setReplacementRange(newRange)
         this.currentTaskId = ''
+        logEvent('CodyVSCodeExtension:inline-assist:replaced')
         return
     }
     /**
