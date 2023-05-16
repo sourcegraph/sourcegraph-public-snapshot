@@ -157,6 +157,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				"redis-cache",
 				"redis-store",
 				"repo-updater",
+				"server",
 			}, c.Version,
 				// c.candidateImageTag(),
 				"latest", // TODO: Do not merge; used to simplify dev
