@@ -103,6 +103,7 @@ ts_project(
     testonly = True,
     srcs = [
         "src/chat/ChatViewProvider.test.ts",
+        "src/completions/cache.test.ts",
         "src/completions/context.test.ts",
         "src/completions/provider.test.ts",
         "src/configuration.test.ts",
