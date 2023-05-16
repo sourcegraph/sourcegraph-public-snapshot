@@ -1,5 +1,5 @@
 package:
-  name: comby-source
+  name: comby
   version: 1.8.1
   epoch: 1
   description: "A code rewrite tool for structural search and replace that supports ~every language."
