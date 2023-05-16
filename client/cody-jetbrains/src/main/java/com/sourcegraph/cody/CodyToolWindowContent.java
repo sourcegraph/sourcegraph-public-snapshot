@@ -1,5 +1,6 @@
 package com.sourcegraph.cody;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.VerticalFlowLayout;
 import com.intellij.openapi.wm.ToolWindow;
@@ -16,11 +17,10 @@ import org.jetbrains.annotations.NotNull;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.AdjustmentListener;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 
-class CodyToolWindowContent {
+class CodyToolWindowContent implements UpdatableChat {
     private final @NotNull JPanel contentPanel = new JPanel();
     private final @NotNull JPanel messagesPanel;
     private final @NotNull JTextField messageField;
@@ -46,6 +46,7 @@ class CodyToolWindowContent {
         controlsPanel.setLayout(new BoxLayout(controlsPanel, BoxLayout.X_AXIS));
         messageField = new JTextField();
         controlsPanel.add(messageField);
+        messageField.addActionListener(e -> sendMessage(project)); // TODO: Also disable the button while sending, then re-enable it
         JButton sendButton = new JButton("Send");
         sendButton.addActionListener(e -> sendMessage(project));
         controlsPanel.add(sendButton);
@@ -62,53 +63,60 @@ class CodyToolWindowContent {
     }
 
     public void addMessage(@NotNull ChatMessage message) {
-        boolean isHuman = message.getSpeaker() == Speaker.HUMAN;
+        ApplicationManager.getApplication().invokeLater(() -> {
+            boolean isHuman = message.getSpeaker() == Speaker.HUMAN;
 
-        // Bubble panel
-        var bubblePanel = new JPanel();
-        bubblePanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false));
-        bubblePanel.setBorder(BorderFactory.createEmptyBorder(0, isHuman ? JBUIScale.scale(20) : 0, 0, !isHuman ? JBUIScale.scale(20) : 0));
+            // Bubble panel
+            var bubblePanel = new JPanel();
+            bubblePanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false));
+            bubblePanel.setBorder(BorderFactory.createEmptyBorder(0, isHuman ? JBUIScale.scale(20) : 0, 0, !isHuman ? JBUIScale.scale(20) : 0));
 
-        // Chat bubble
-        ChatBubble bubble = new ChatBubble(10, message);
-        bubblePanel.add(bubble, VerticalFlowLayout.TOP);
-        messagesPanel.add(bubblePanel);
-        messagesPanel.revalidate();
-        messagesPanel.repaint();
-
-        // Need this hacky solution to scroll all the way down after each message
-        SwingUtilities.invokeLater(() -> {
-            needScrollingDown = true;
+            // Chat bubble
+            ChatBubble bubble = new ChatBubble(10, message);
+            bubblePanel.add(bubble, VerticalFlowLayout.TOP);
+            messagesPanel.add(bubblePanel);
             messagesPanel.revalidate();
             messagesPanel.repaint();
+
+            // Need this hacky solution to scroll all the way down after each message
+            ApplicationManager.getApplication().invokeLater(() -> {
+                needScrollingDown = true;
+                messagesPanel.revalidate();
+                messagesPanel.repaint();
+            });
+        });
+    }
+
+    public void updateLastMessage(@NotNull ChatMessage message) {
+        ApplicationManager.getApplication().invokeLater(() -> {
+            if (messagesPanel.getComponentCount() > 0) {
+                JPanel lastBubblePanel = (JPanel) messagesPanel.getComponent(messagesPanel.getComponentCount() - 1);
+                ChatBubble lastBubble = (ChatBubble) lastBubblePanel.getComponent(0);
+                lastBubble.updateText(message.getDisplayText());
+                messagesPanel.revalidate();
+                messagesPanel.repaint();
+            }
         });
     }
 
     private void sendMessage(@NotNull Project project) {
         // Build message
         EditorContext editorContext = EditorContextGetter.getEditorContext(project);
-        var chat = new Chat();
+        var chat = new Chat("", "https://sourcegraph.com/", "TODO: API key");
         ArrayList<String> contextFiles = editorContext == null ? new ArrayList<>() : new ArrayList<>(Collections.singletonList(editorContext.getCurrentFileContent()));
         ChatMessage humanMessage = ChatMessage.createHumanMessage(messageField.getText(), contextFiles);
         addMessage(humanMessage);
 
-        // Get and process assistant message
-        ChatMessage assistantMessage;
-        try {
-            assistantMessage = chat.sendMessage(humanMessage);
-        } catch (IOException e) {
-            if (e.getMessage().equals("Connection refused")) {
-                assistantMessage = ChatMessage.createAssistantMessage("I'm sorry, I can't connect to the server. Please make sure that the server is running and try again.");
-            } else {
-                assistantMessage = ChatMessage.createAssistantMessage("I'm sorry, I can't connect to the server. Please try again. The error message I got was: \"" + e.getMessage() + "\".");
-            }
-        } catch (InterruptedException e) {
-            assistantMessage = ChatMessage.createAssistantMessage("Okay, I've canceled that.");
-        }
-        addMessage(assistantMessage);
+        // Get assistant message
+        // Note: A separate thread is needed because it's a long-running task. If we did the back-end call
+        //       in the main thread and then waited, we wouldn't see the messages streamed back to us.
+        new Thread(() -> {
+            chat.sendMessage(humanMessage, "", this); // TODO: Use prefix
+        }).start();
     }
 
     public @NotNull JPanel getContentPanel() {
         return contentPanel;
     }
 }
+

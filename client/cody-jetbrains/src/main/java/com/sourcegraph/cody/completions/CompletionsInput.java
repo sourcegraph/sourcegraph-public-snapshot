@@ -25,4 +25,8 @@ public class CompletionsInput {
     public void addMessage(@NotNull Speaker speaker, @NotNull String text) {
         messages.add(new Message(speaker, text));
     }
+
+    public void addMessages(@NotNull List<Message> messages) {
+        this.messages.addAll(messages);
+    }
 }
