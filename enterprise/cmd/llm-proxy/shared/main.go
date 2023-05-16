@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/redigo"
+	"github.com/gomodule/redigo/redis"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/events"
@@ -187,6 +188,14 @@ type prefixRedisStore struct {
 
 func (s *prefixRedisStore) Incr(key string) (int, error) {
 	return s.store.Incr(s.prefix + key)
+}
+
+func (s *prefixRedisStore) GetInt(key string) (int, error) {
+	i, err := s.store.Get(s.prefix + key).Int()
+	if err != nil && err != redis.ErrNil {
+		return 0, err
+	}
+	return i, nil
 }
 
 func (s *prefixRedisStore) TTL(key string) (int, error) {
