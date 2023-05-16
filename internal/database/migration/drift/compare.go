@@ -24,10 +24,22 @@ func CompareSchemaDescriptions(schemaName, version string, actual, expected sche
 
 // compareNamedLists invokes the given primary callback with a pair of differing elements from slices
 // `as` and `bs`, respectively, with the same name. If there is a missing element from `as`, there will
-// be an invocation of this callback with a nil value for its first parameter. Elements for which there
+// be an invocation of this callback with a nil value for its first parameter. If any invocation of the
+// function returns true, the output of this function will be true.
+func compareNamedLists[T schemas.Namer](
+	as []T,
+	bs []T,
+	primaryCallback func(a *T, b T) Summary,
+) []Summary {
+	return compareNamedListsStrict(as, bs, primaryCallback, noopAdditionalCallback[T])
+}
+
+// compareNamedListsStrict invokes the given primary callback with a pair of differing elements from
+// slices `as` and `bs`, respectively, with the same name. If there is a missing element from `as`, there
+// will be an invocation of this callback with a nil value for its first parameter. Elements for which there
 // is no analog in `bs` will be collected and sent to an invocation of the additions callback. If any
 // invocation of either function returns true, the output of this function will be true.
-func compareNamedLists[T schemas.Namer](
+func compareNamedListsStrict[T schemas.Namer](
 	as []T,
 	bs []T,
 	primaryCallback func(a *T, b T) Summary,
@@ -41,10 +53,24 @@ func compareNamedLists[T schemas.Namer](
 		return nil
 	}
 
-	return compareNamedListsMulti(as, bs, wrappedPrimaryCallback, additionsCallback)
+	return compareNamedListsMultiStrict(as, bs, wrappedPrimaryCallback, additionsCallback)
 }
 
+// compareNamedListsMulti invokes the given primary callback with a pair of differing elements from slices
+// `as` and `bs`, respectively, with the same name. Similar `compareNamedLists`, but this version expects
+// multiple `Summary` values from the callback.
 func compareNamedListsMulti[T schemas.Namer](
+	as []T,
+	bs []T,
+	primaryCallback func(a *T, b T) []Summary,
+) []Summary {
+	return compareNamedListsMultiStrict(as, bs, primaryCallback, noopAdditionalCallback[T])
+}
+
+// compareNamedListsMultiStrict invokes the given primary callback with a pair of differing elements from
+// slices `as` and `bs`, respectively, with the same name. Similar `compareNamedListsStrict`, but
+// this version expects multiple `Summary` values from the callback.
+func compareNamedListsMultiStrict[T schemas.Namer](
 	as []T,
 	bs []T,
 	primaryCallback func(a *T, b T) []Summary,

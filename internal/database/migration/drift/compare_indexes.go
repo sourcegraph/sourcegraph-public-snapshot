@@ -7,7 +7,7 @@ import (
 )
 
 func compareIndexes(actualTable, expectedTable schemas.TableDescription) []Summary {
-	return compareNamedLists(
+	return compareNamedListsStrict(
 		actualTable.Indexes,
 		expectedTable.Indexes,
 		compareIndexesCallbackFor(expectedTable),

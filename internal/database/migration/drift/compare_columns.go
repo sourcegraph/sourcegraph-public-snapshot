@@ -9,7 +9,7 @@ import (
 )
 
 func compareColumns(schemaName, version string, actualTable, expectedTable schemas.TableDescription) []Summary {
-	return compareNamedLists(
+	return compareNamedListsStrict(
 		actualTable.Columns,
 		expectedTable.Columns,
 		compareColumnsCallbackFor(schemaName, version, expectedTable),

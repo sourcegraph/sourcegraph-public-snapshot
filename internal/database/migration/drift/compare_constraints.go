@@ -7,7 +7,7 @@ import (
 )
 
 func compareConstraints(actualTable, expectedTable schemas.TableDescription) []Summary {
-	return compareNamedLists(
+	return compareNamedListsStrict(
 		actualTable.Constraints,
 		expectedTable.Constraints,
 		compareConstraintsCallbackFor(expectedTable),

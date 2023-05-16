@@ -7,7 +7,7 @@ import (
 )
 
 func compareTriggers(actualTable, expectedTable schemas.TableDescription) []Summary {
-	return compareNamedLists(
+	return compareNamedListsStrict(
 		actualTable.Triggers,
 		expectedTable.Triggers,
 		compareNamedListsCallbackFor(expectedTable),

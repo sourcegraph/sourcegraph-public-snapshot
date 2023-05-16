@@ -7,12 +7,7 @@ import (
 )
 
 func compareSequences(schemaName, version string, actual, expected schemas.SchemaDescription) []Summary {
-	return compareNamedLists(
-		actual.Sequences,
-		expected.Sequences,
-		compareSequencesCallbackFor(schemaName, version),
-		noopAdditionalCallback[schemas.SequenceDescription],
-	)
+	return compareNamedLists(actual.Sequences, expected.Sequences, compareSequencesCallbackFor(schemaName, version))
 }
 
 func compareSequencesCallbackFor(schemaName, version string) func(_ *schemas.SequenceDescription, _ schemas.SequenceDescription) Summary {

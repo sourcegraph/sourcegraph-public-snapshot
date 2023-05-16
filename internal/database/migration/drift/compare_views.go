@@ -8,12 +8,7 @@ import (
 )
 
 func compareViews(schemaName, version string, actual, expected schemas.SchemaDescription) []Summary {
-	return compareNamedLists(
-		actual.Views,
-		expected.Views,
-		compareViewsCallback,
-		noopAdditionalCallback[schemas.ViewDescription],
-	)
+	return compareNamedLists(actual.Views, expected.Views, compareViewsCallback)
 }
 
 func compareViewsCallback(view *schemas.ViewDescription, expectedView schemas.ViewDescription) Summary {

@@ -8,12 +8,7 @@ import (
 )
 
 func compareFunctions(schemaName, version string, actual, expected schemas.SchemaDescription) []Summary {
-	return compareNamedLists(
-		actual.Functions,
-		expected.Functions,
-		compareFunctionsCallback,
-		noopAdditionalCallback[schemas.FunctionDescription],
-	)
+	return compareNamedLists(actual.Functions, expected.Functions, compareFunctionsCallback)
 }
 
 func compareFunctionsCallback(function *schemas.FunctionDescription, expectedFunction schemas.FunctionDescription) Summary {

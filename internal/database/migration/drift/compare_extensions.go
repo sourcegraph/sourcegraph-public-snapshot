@@ -7,12 +7,7 @@ import (
 )
 
 func compareExtensions(schemaName, version string, actual, expected schemas.SchemaDescription) []Summary {
-	return compareNamedLists(
-		wrapStrings(actual.Extensions),
-		wrapStrings(expected.Extensions),
-		compareExtensionsCallback,
-		noopAdditionalCallback[stringNamer],
-	)
+	return compareNamedLists(wrapStrings(actual.Extensions), wrapStrings(expected.Extensions), compareExtensionsCallback)
 }
 
 func compareExtensionsCallback(extension *stringNamer, expectedExtension stringNamer) Summary {

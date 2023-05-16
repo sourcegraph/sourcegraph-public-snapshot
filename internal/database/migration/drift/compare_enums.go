@@ -8,12 +8,7 @@ import (
 )
 
 func compareEnums(schemaName, version string, actual, expected schemas.SchemaDescription) []Summary {
-	return compareNamedLists(
-		actual.Enums,
-		expected.Enums,
-		compareEnumsCallback,
-		noopAdditionalCallback[schemas.EnumDescription],
-	)
+	return compareNamedLists(actual.Enums, expected.Enums, compareEnumsCallback)
 }
 
 func compareEnumsCallback(enum *schemas.EnumDescription, expectedEnum schemas.EnumDescription) Summary {

@@ -7,12 +7,7 @@ import (
 )
 
 func compareTables(schemaName, version string, actual, expected schemas.SchemaDescription) []Summary {
-	return compareNamedListsMulti(
-		actual.Tables,
-		expected.Tables,
-		compareTablesCallbackFor(schemaName, version),
-		noopAdditionalCallback[schemas.TableDescription],
-	)
+	return compareNamedListsMulti(actual.Tables, expected.Tables, compareTablesCallbackFor(schemaName, version))
 }
 
 func compareTablesCallbackFor(schemaName, version string) func(_ *schemas.TableDescription, _ schemas.TableDescription) []Summary {
