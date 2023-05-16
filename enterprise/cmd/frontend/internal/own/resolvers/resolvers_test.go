@@ -851,7 +851,22 @@ func Test_SignalConfigurations(t *testing.T) {
 				excludedRepoPatterns
 			  }
 			}`,
-		ExpectedResult: `{"signalConfigurations":[{"name":"recent-contributors","description":"Indexes contributors in each file using repository history.","isEnabled":false,"excludedRepoPatterns":[]},{"name":"recent-views","description":"Indexes users that recently viewed files in Sourcegraph.","isEnabled":false,"excludedRepoPatterns":[]}]}`,
+		ExpectedResult: `{
+		  "signalConfigurations": [
+			{
+			  "name": "recent-contributors",
+			  "description": "Indexes contributors in each file using repository history.",
+			  "isEnabled": false,
+			  "excludedRepoPatterns": []
+			},
+			{
+			  "name": "recent-views",
+			  "description": "Indexes users that recently viewed files in Sourcegraph.",
+			  "isEnabled": false,
+			  "excludedRepoPatterns": []
+			}
+		  ]
+		}`,
 	})
 
 	t.Run("no admin access", func(t *testing.T) {
