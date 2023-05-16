@@ -59,7 +59,6 @@ pipeline:
       make
       make test
       make install
-      ls -al /**
   - runs: |
       mkdir -p ${{targets.destdir}}/usr/bin/
-      cp comby-${{package.version}}-x86_64-linux ${{targets.destdir}}/usr/bin/comby
+      cp _build/default/src/main.exe ${{targets.destdir}}/usr/bin/comby
