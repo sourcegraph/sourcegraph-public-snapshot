@@ -129,9 +129,8 @@ func rateLimit(logger log.Logger, eventLogger events.Logger, cache limiter.Redis
 		l := act.Limiter(cache)
 
 		err := l.TryAcquire(r.Context())
-
 		if err != nil {
-			err := eventLogger.LogEvent(
+			loggerErr := eventLogger.LogEvent(
 				events.Event{
 					Name:       llmproxy.EventNameRateLimited,
 					Source:     act.Source.Name(),
@@ -141,8 +140,8 @@ func rateLimit(logger log.Logger, eventLogger events.Logger, cache limiter.Redis
 					},
 				},
 			)
-			if err != nil {
-				logger.Error("failed to log event", log.Error(err))
+			if loggerErr != nil {
+				logger.Error("failed to log event", log.Error(loggerErr))
 			}
 
 			var rateLimitExceeded limiter.RateLimitExceededError
@@ -157,6 +156,7 @@ func rateLimit(logger log.Logger, eventLogger events.Logger, cache limiter.Redis
 			}
 
 			response.JSONError(logger, w, http.StatusInternalServerError, err)
+			return
 		}
 
 		next.ServeHTTP(w, r)
