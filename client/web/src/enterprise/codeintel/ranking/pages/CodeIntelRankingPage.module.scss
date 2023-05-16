@@ -1,0 +1,22 @@
+.title-container {
+    font-size: 0.9rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding-bottom: 20px;
+}
+
+.table-container {
+    padding-bottom: 30px;
+
+    h4 {
+        font-size: .85rem;
+        font-weight: 600;
+        border-bottom: 1px solid grey;
+    }
+}
+
+.row {
+    display: grid;
+    grid-template-columns: 0.5fr 1fr;
+    font-size: 0.8rem;
+}

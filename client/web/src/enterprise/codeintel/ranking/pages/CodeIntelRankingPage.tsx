@@ -1,14 +1,16 @@
 import { FunctionComponent, useEffect } from 'react'
 
-import { formatDistance } from 'date-fns'
+import { formatDistance, format, parseISO } from 'date-fns'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, ErrorAlert, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
+import { Container, ErrorAlert, LoadingSpinner, PageHeader, H4, H3 } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../../components/Collapsible'
 
 import { useRankingSummary as defaultUseRankingSummary } from './backend'
+
+import styles from './CodeIntelRankingPage.module.scss'
 
 export interface CodeIntelRankingPageProps extends TelemetryProps {
     useRankingSummary?: typeof defaultUseRankingSummary
@@ -50,9 +52,9 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
                         <>No data.</>
                     ) : (
                         <>
-                            <h3>Current ranking calculation</h3>
+                            <H3>Current ranking calculation</H3>
 
-                            <div className="p-2">
+                            <div className="py-3">
                                 <Summary key={data.rankingSummary[0].graphKey} summary={data.rankingSummary[0]} />
                             </div>
                         </>
@@ -62,7 +64,7 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
             {data && data.rankingSummary.length > 1 && (
                 <Container>
                     <Collapsible title="Historic ranking calculations" titleAtStart={true} titleClassName="h3">
-                        <div className="p-4">
+                        <div className="py-3">
                             {data.rankingSummary.slice(1).map(summary => (
                                 <Summary key={summary.graphKey} summary={summary} />
                             ))}
@@ -94,53 +96,71 @@ interface SummaryProps {
 
 const Summary: FunctionComponent<SummaryProps> = ({ summary }) => (
     <div>
-        <strong>Graph key: {summary.graphKey}</strong>
-
-        <ul>
-            <li>
-                Path mapper: <Progress progress={summary.pathMapperProgress} />
-            </li>
-
-            <li>
-                Reference mapper: <Progress progress={summary.referenceMapperProgress} />
-            </li>
-
-            {summary.reducerProgress && (
-                <li>
-                    Reducer: <Progress progress={summary.reducerProgress} />
-                </li>
-            )}
-        </ul>
+        <Progress title="Path Aggregation Process" progress={summary.pathMapperProgress} />
+        <Progress title="Reference Aggregation Process" progress={summary.referenceMapperProgress} />
+        {summary.reducerProgress && <Progress title="Reducing Process" progress={summary.reducerProgress} />}
     </div>
 )
 
 interface ProgressProps {
+    title: string
     progress: Progress
 }
 
-const Progress: FunctionComponent<ProgressProps> = ({ progress }) => (
-    <span>
-        <span className="d-block">
-            {progress.processed === 0 ? (
-                <>No records marked for processing</>
-            ) : (
-                <>
-                    {progress.processed} of {progress.total} records processed
-                </>
-            )}
+const Progress: FunctionComponent<ProgressProps> = ({ title, progress }) => (
+    <div>
+        <div className={styles.tableContainer}>
+            <H4>{title}</H4>
+            <div className={styles.row}>
+                <div>Queued records</div>
+                <div>
+                    {progress.processed === 0 ? (
+                        <>Process finished</>
+                    ) : (
+                        <>
+                            {progress.processed} of {progress.total} records processed
+                        </>
+                    )}
+                </div>
+            </div>
+            <div className={styles.row}>
+                <div>Started</div>
+                <div>
+                    {format(parseISO(progress.startedAt), 'MMM L y h:mm:ss a')} (
+                    <Timestamp date={progress.startedAt} />){' '}
+                </div>
+            </div>
+            <div className={styles.row}>
+                <div>Completed</div>
+                <div>
+                    {progress.completedAt ? (
+                        <>
+                            {format(parseISO(progress.completedAt), 'MMM L y h:mm:ss a')} (
+                            <Timestamp date={progress.completedAt} />){' '}
+                        </>
+                    ) : (
+                        '-'
+                    )}
+                </div>
+            </div>
+            <div className={styles.row}>
+                <div>Duration</div>
+                <div>
+                    {progress.completedAt && (
+                        <> Ran for {formatDistance(new Date(progress.completedAt), new Date(progress.startedAt))}</>
+                    )}
+                </div>
+            </div>
 
-            <span className="float-right">
-                {progress.processed === 0 ? 100 : Math.floor(((progress.processed / progress.total) * 100 * 100) / 100)}
-                %
-            </span>
-        </span>
-
-        <span className="d-block text-muted">
-            Started running <Timestamp date={progress.startedAt} />
-            {progress.completedAt && (
-                <> and ran for {formatDistance(new Date(progress.completedAt), new Date(progress.startedAt))}</>
-            )}
-            .
-        </span>
-    </span>
+            <div className={styles.row}>
+                <div>Progress</div>
+                <div>
+                    {progress.processed === 0
+                        ? 100
+                        : Math.floor(((progress.processed / progress.total) * 100 * 100) / 100)}
+                    %
+                </div>
+            </div>
+        </div>
+    </div>
 )
