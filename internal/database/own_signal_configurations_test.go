@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/hexops/autogold"
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
@@ -20,7 +20,7 @@ func Test_LoadConfigurations(t *testing.T) {
 	configurations, err := store.LoadConfigurations(ctx)
 	require.NoError(t, err)
 
-	autogold.Want("snapshot check for configurations", []SignalConfiguration{
+	autogold.Expect([]SignalConfiguration{
 		{
 			ID:          1,
 			Name:        "recent-contributors",
@@ -46,7 +46,7 @@ func Test_LoadConfigurations(t *testing.T) {
 		configurations, err := store.LoadConfigurations(ctx)
 		require.NoError(t, err)
 
-		autogold.Want("configs after update", []SignalConfiguration{
+		autogold.Expect([]SignalConfiguration{
 			{
 				ID:                   1,
 				Name:                 "recent-contributors",
