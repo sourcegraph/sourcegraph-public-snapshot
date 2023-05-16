@@ -156,6 +156,7 @@ func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, namespace 
 			return ErrKubernetesJobFailed
 		}
 	}
+	// Wont happen
 	return nil
 }
 
