@@ -3,7 +3,6 @@ import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
 interface ConnectAppProps {
-    isAppInstalled: boolean
     vscodeAPI: VSCodeWrapper
 }
 
@@ -20,15 +19,9 @@ export const ConnectApp: React.FunctionComponent<ConnectAppProps> = props => {
         <p>
             <VSCodeButton
                 type="button"
-                onClick={() =>
-                    openLink(
-                        props.isAppInstalled
-                            ? 'sourcegraph://user/settings/tokens/new/callback?requestFrom=CODY'
-                            : 'https://about.sourcegraph.com/app'
-                    )
-                }
+                onClick={() => openLink('sourcegraph://user/settings/tokens/new/callback?requestFrom=CODY')}
             >
-                {props.isAppInstalled ? 'Connect Sourcegraph App' : 'Get Sourcegraph App'}
+                Connect Sourcegraph App
             </VSCodeButton>
         </p>
     )
