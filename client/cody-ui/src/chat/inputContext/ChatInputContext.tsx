@@ -38,9 +38,12 @@ export const ChatInputContext: React.FunctionComponent<{
     return (
         <div className={classNames(styles.container, className)}>
             {contextStatus.mode && contextStatus.connection ? (
-                <h3 className={styles.badge}>Embeddings</h3>
+                <h3 className={classNames(styles.badge, styles.success)}>Indexed</h3>
             ) : contextStatus.supportsKeyword ? (
-                <h3 className={styles.badge}>Keyword</h3>
+                <h3
+                    className={classNames(styles.badge, styles.warn)}
+                    title="This repository is not yet indexed for Cody by Sourcegraph. Response quality will be poor. If you need help generating an index, reach out to support@sourcegraph.com."
+                >⚠ Not indexed</h3>
             ) : null}
 
             {items.length > 0 && (

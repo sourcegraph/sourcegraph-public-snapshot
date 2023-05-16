@@ -47,6 +47,15 @@
     overflow: hidden;
 }
 
+.warn {
+    font-weight: bold;
+    color: var(--vscode-list-warningForeground, #fdf1cc);
+}
+
+.success {
+    color: var(--vscode-notebookStatusSuccessIcon-foreground, lightgreen);
+}
+
 .fail {
     display: inline-flex;
     align-items: center;
