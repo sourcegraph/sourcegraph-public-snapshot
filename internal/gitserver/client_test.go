@@ -737,7 +737,7 @@ func TestClient_ReposStats(t *testing.T) {
 }
 
 func TestClient_ReposStats_GRPC(t *testing.T) {
-	t.Setenv("SG_FEATURE_FLAG_GRPC", "false")
+	t.Setenv("SG_FEATURE_FLAG_GRPC", "true")
 
 	root := t.TempDir()
 	s := &server.Server{
@@ -759,6 +759,28 @@ func TestClient_ReposStats_GRPC(t *testing.T) {
 	srv := httptest.NewServer(handler)
 	defer srv.Close()
 
+	dir := filepath.Join(s.ReposDir, "repos")
+	err := os.MkdirAll(dir, 0777)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	now := time.Now().UTC()
+
+	wantStats := protocol.ReposStats{
+		UpdatedAt:   now,
+		GitDirBytes: 1337,
+	}
+
+	b, err := json.Marshal(wantStats)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.WriteFile(filepath.Join(s.ReposDir, "repos-stats.json"), b, 0666)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	u, _ := url.Parse(srv.URL)
 
 	addrs := []string{u.Host}
@@ -774,14 +796,6 @@ func TestClient_ReposStats_GRPC(t *testing.T) {
 	})
 
 	cli := gitserver.NewTestClient(http.DefaultClient, source)
-
-	now := time.Now().UTC()
-	// ctx := context.Background()
-	//expected := fmt.Sprintf("http://%s", addrs)
-	wantStats := protocol.ReposStats{
-		UpdatedAt:   now,
-		GitDirBytes: 1337,
-	}
 
 	gotStatsMap, err := cli.ReposStats(context.Background())
 	if err != nil {
