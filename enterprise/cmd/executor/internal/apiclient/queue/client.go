@@ -59,25 +59,29 @@ func (c *Client) QueuedCount(ctx context.Context) (int, error) {
 }
 
 func (c *Client) Dequeue(ctx context.Context, workerHostname string, extraArguments any) (job types.Job, _ bool, err error) {
-
+	var endpoint string
+	dequeueRequest := types.DequeueRequest{
+		Version:      version.Version(),
+		ExecutorName: c.options.ExecutorName,
+		NumCPUs:      c.options.ResourceOptions.NumCPUs,
+		Memory:       c.options.ResourceOptions.Memory,
+		DiskSpace:    c.options.ResourceOptions.DiskSpace,
+	}
 	var observationField attribute.KeyValue
 	if len(c.options.QueueNames) > 0 {
 		observationField = attribute.String("queueNames", strings.Join(c.options.QueueNames, ", "))
+		endpoint = "/dequeue"
+		dequeueRequest.Queues = c.options.QueueNames
 	} else {
 		observationField = attribute.String("queueName", c.options.QueueName)
+		endpoint = fmt.Sprintf("%s/dequeue", c.options.QueueName)
 	}
 	ctx, _, endObservation := c.operations.dequeue.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		observationField,
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/dequeue", c.options.QueueName), types.DequeueRequest{
-		Version:      version.Version(),
-		ExecutorName: c.options.ExecutorName,
-		NumCPUs:      c.options.ResourceOptions.NumCPUs,
-		Memory:       c.options.ResourceOptions.Memory,
-		DiskSpace:    c.options.ResourceOptions.DiskSpace,
-	})
+	req, err := c.client.NewJSONRequest(http.MethodPost, endpoint, dequeueRequest)
 	if err != nil {
 		return job, false, err
 	}
