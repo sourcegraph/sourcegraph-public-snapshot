@@ -7,11 +7,8 @@
     border-bottom: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    list-style-type: none;  // Add this
+    list-style-type: none;
 }
-
-// Rest of styles...
-
 
 .jobHeader {
     display: flex;
@@ -27,7 +24,6 @@
     font-size: 0.875rem;
     color: var(--text-muted);
         flex-direction: row;
-
 }
 
 .jobDescription {
@@ -43,18 +39,14 @@
 #excludeRepos {
     margin-top: 8px;
 }
-//
-// #saveButton {
-//     align-self;
-// }
 
 .topHeader {
   display: flex;
-  align-items: center;  // Add this
+  align-items: center;
 }
 
 #saveButton {
-  margin-left: auto;  // Add this
+  margin-left: auto;
 }
 
 #statusText {

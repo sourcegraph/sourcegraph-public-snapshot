@@ -1,6 +1,6 @@
 import { gql } from '@sourcegraph/http-client'
 
-export const OwnSignalFragment = gql`
+export const OWN_SIGNAL_FRAGMENT = gql`
     fragment OwnSignalConfig on SignalConfiguration {
         name
         description
@@ -15,7 +15,7 @@ export const GET_OWN_JOB_CONFIGURATIONS = gql`
             ... OwnSignalConfig
         }
     }
-    ${OwnSignalFragment}
+    ${OWN_SIGNAL_FRAGMENT}
 `
 
 export const UPDATE_SIGNAL_CONFIGURATIONS = gql`
