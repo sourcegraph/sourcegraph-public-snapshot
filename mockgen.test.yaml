@@ -1,3 +1,9 @@
+- filename: enterprise/internal/authz/gerrit/mocks_test.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit
+      interfaces:
+        - Client
+      prefix: Gerrit
 - filename: cmd/frontend/internal/httpapi/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/httpcli
   interfaces:

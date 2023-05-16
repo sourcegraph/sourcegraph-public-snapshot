@@ -7,10 +7,9 @@
 package httpapi
 
 import (
+	httpcli "github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"net/http"
 	"sync"
-
-	httpcli "github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 // MockDoer is a mock implementation of the Doer interface (from the package
