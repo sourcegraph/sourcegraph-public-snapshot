@@ -94,13 +94,14 @@ func (c *Client) Dequeue(ctx context.Context, workerHostname string, extraArgume
 }
 
 func (c *Client) MarkComplete(ctx context.Context, job types.Job) (_ bool, err error) {
+	queue := c.inferQueueName(job)
 	ctx, _, endObservation := c.operations.markComplete.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
 		otlog.String("queueName", job.Queue),
 		otlog.Int("jobID", job.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/markComplete", c.inferQueueName(job)), job.Token, types.MarkCompleteRequest{
+	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/markComplete", queue), job.Token, types.MarkCompleteRequest{
 		JobOperationRequest: types.JobOperationRequest{
 			ExecutorName: c.options.ExecutorName,
 			JobID:        job.ID,
