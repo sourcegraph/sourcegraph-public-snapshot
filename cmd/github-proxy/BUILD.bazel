@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_cross_binary")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_cross_binary", "go_library")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
@@ -26,26 +26,26 @@ go_binary(
 go_cross_binary(
     name = "github-proxy_linux_amd64",
     platform = "@io_bazel_rules_go//go/toolchain:linux_amd64",
-    target = ":github-proxy"
+    target = ":github-proxy",
 )
 
 pkg_tar(
     name = "tar_github-proxy_linux_amd64",
     srcs = [":github-proxy_linux_amd64"],
-    remap_paths = { "/github-proxy_linux_amd64": "/github-proxy" },
+    remap_paths = {"/github-proxy_linux_amd64": "/github-proxy"},
 )
 
 oci_image(
     name = "image",
     architecture = "amd64",
     base = "@wolfi_base",
-    tars = [":tar_github-proxy_linux_amd64"],
     entrypoint = ["/github-proxy"],
     os = "linux",
+    tars = [":tar_github-proxy_linux_amd64"],
 )
 
 oci_tarball(
     name = "image_tarball",
     image = ":image",
-    repotags = ["github-proxy:candidate"]
+    repotags = ["github-proxy:candidate"],
 )
