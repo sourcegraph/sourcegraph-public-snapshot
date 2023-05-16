@@ -102,6 +102,10 @@ func (a *openAIChatCompletionStreamClient) Stream(
 	dec := NewDecoder(resp.Body)
 	var content []string
 	for dec.Scan() {
+		if ctx.Err() != nil && ctx.Err() == context.Canceled {
+			return nil
+		}
+
 		data := dec.Data()
 
 		if bytes.Equal(data, doneBytes) {
@@ -121,7 +125,7 @@ func (a *openAIChatCompletionStreamClient) Stream(
 			} `json:"choices"`
 		}
 		if err := json.Unmarshal(data, &event); err != nil {
-			return errors.Errorf("failed to decode event payload: %w", err)
+			return errors.Errorf("failed to decode event payload: %w - body: %s", err, string(data))
 		}
 
 		if len(event.Choices) > 0 && event.Choices[0].FinishReason == nil {
