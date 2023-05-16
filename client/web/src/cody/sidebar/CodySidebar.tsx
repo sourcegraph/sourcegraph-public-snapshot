@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { mdiClose, mdiFormatListBulleted, mdiPlus, mdiDelete } from '@mdi/js'
 
 import { CodyLogo } from '@sourcegraph/cody-ui/src/icons/CodyLogo'
-import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Icon, Tooltip, Badge } from '@sourcegraph/wildcard'
 
 import { ChatUI, ScrollDownButton } from '../components/ChatUI'
 import { HistoryList } from '../components/HistoryList'
@@ -96,6 +96,9 @@ export const CodySidebar = ({ onClose }: CodySidebarProps): JSX.Element => {
                     <div className="col-6 d-flex justify-content-center">
                         <CodyLogo />
                         {showHistory ? 'Chats' : 'Ask Cody'}
+                        <div className="ml-2">
+                            <Badge variant="info">Beta</Badge>
+                        </div>
                     </div>
                     <div className="col-3 d-flex justify-content-end p-0">
                         <Button variant="icon" aria-label="Close" onClick={onClose}>

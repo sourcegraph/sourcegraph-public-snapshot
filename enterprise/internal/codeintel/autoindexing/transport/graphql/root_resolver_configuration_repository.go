@@ -7,6 +7,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
@@ -87,7 +88,7 @@ func newIndexConfigurationResolver(autoindexSvc AutoIndexingService, siteAdminCh
 }
 
 func (r *indexConfigurationResolver) Configuration(ctx context.Context) (_ *string, err error) {
-	defer r.errTracer.Collect(&err, log.String("indexConfigResolver.field", "configuration"))
+	defer r.errTracer.Collect(&err, attribute.String("indexConfigResolver.field", "configuration"))
 
 	configuration, exists, err := r.autoindexSvc.GetIndexConfigurationByRepositoryID(ctx, r.repositoryID)
 	if err != nil {
@@ -101,7 +102,7 @@ func (r *indexConfigurationResolver) Configuration(ctx context.Context) (_ *stri
 }
 
 func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) (_ resolverstubs.InferredConfigurationResolver, err error) {
-	defer r.errTracer.Collect(&err, log.String("indexConfigResolver.field", "inferredConfiguration"))
+	defer r.errTracer.Collect(&err, attribute.String("indexConfigResolver.field", "inferredConfiguration"))
 
 	var limitErr error
 	configuration, _, err := r.autoindexSvc.InferIndexConfiguration(ctx, r.repositoryID, "", "", true)

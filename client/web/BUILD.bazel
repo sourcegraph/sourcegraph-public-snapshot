@@ -184,6 +184,7 @@ ts_project(
         "src/codeintel/useCodeIntel.ts",
         "src/codeintel/useRepoAndBlob.ts",
         "src/codeintel/util/helpers.ts",
+        "src/cody/CodyStandalonePage.tsx",
         "src/cody/chat/CodyChatPage.tsx",
         "src/cody/chat/CodyPageIcon.tsx",
         "src/cody/chat/index.tsx",
@@ -1672,6 +1673,7 @@ ts_project(
         "//:node_modules/@sentry/browser",  #keep
         "//:node_modules/@sourcegraph/extension-api-classes",
         "//:node_modules/@storybook/client-api",  #keep
+        "//:node_modules/@tauri-apps/api",
         "//:node_modules/@types/bloomfilter",
         "//:node_modules/@types/chrome",  #keep
         "//:node_modules/@types/classnames",

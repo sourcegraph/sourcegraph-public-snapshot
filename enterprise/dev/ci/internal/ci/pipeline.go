@@ -137,7 +137,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				"precise-code-intel-worker",
 				"repo-updater",
 				"searcher",
-				"server",
+				// "server",
 				"symbols",
 				"worker",
 				"blobstore",

@@ -556,6 +556,9 @@ $ sg db reset-redis
 
 # Create a site-admin user whose email and password are foo@sourcegraph.com and sourcegraph.
 $ sg db add-user -username=foo
+
+# Create an access token for the user created above.
+$ sg db add-access-token -username=foo
 ```
 
 ### sg db delete-test-dbs
@@ -620,6 +623,20 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--password="<value>"`: Password for user (default: sourcegraphsourcegraph)
+* `--username="<value>"`: Username for user (default: sourcegraph)
+
+### sg db add-access-token
+
+Create a sourcegraph access token.
+
+Run 'sg db add-access-token -username bob' to create an access token for the given username. The access token will be printed if the operation succeeds
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--note="<value>"`: Note attached to the token
+* `--sudo`: Set true to make a site-admin level token
 * `--username="<value>"`: Username for user (default: sourcegraph)
 
 ## sg migration
@@ -820,6 +837,7 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--file="<value>"`: The target schema description file.
+* `--ignore-migrator-update`: Ignore the running migrator not being the latest version. It is recommended to use the latest migrator version.
 * `--schema, --db="<value>"`: The target `schema` to compare. Possible values are 'frontend', 'codeintel' and 'codeinsights'
 * `--skip-version-check`: Skip validation of the instance's current version.
 * `--version="<value>"`: The target schema version. Can be a version (e.g. 5.0.2) or resolvable as a git revlike on the Sourcegraph repository (e.g. a branch, tag or commit hash).

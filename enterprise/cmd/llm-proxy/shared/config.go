@@ -26,6 +26,11 @@ type Config struct {
 		AccessToken string
 	}
 
+	OpenAI struct {
+		AccessToken string
+		OrgID       string
+	}
+
 	AllowAnonymous bool
 
 	SourcesSyncInterval time.Duration
@@ -52,6 +57,8 @@ func (c *Config) Load() {
 	c.Dotcom.DevLicensesOnly = c.GetBool("LLM_PROXY_DOTCOM_DEV_LICENSES_ONLY", "false", "Only allow tokens associated with active dev licenses to be used.")
 
 	c.Anthropic.AccessToken = c.Get("LLM_PROXY_ANTHROPIC_ACCESS_TOKEN", "", "The Anthropic access token to be used.")
+	c.OpenAI.AccessToken = c.GetOptional("LLM_PROXY_OPENAI_ACCESS_TOKEN", "The OpenAI access token to be used.")
+	c.OpenAI.OrgID = c.GetOptional("LLM_PROXY_OPENAI_ORG_ID", "The OpenAI organization to count billing towards. Setting this ensures we always use the correct negotiated terms.")
 	c.AllowAnonymous = c.GetBool("LLM_PROXY_ALLOW_ANONYMOUS", "false", "Allow anonymous access to LLM proxy.")
 	c.SourcesSyncInterval = c.GetInterval("LLM_PROXY_SOURCES_SYNC_INTERVAL", "2m", "The interval at which to sync actor sources.")
 

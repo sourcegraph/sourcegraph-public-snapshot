@@ -39,6 +39,7 @@ type OwnResolver interface {
 
 type OwnershipConnectionResolver interface {
 	TotalCount(context.Context) (int32, error)
+	TotalOwners(context.Context) (int32, error)
 	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
 	Nodes(context.Context) ([]OwnershipResolver, error)
 }

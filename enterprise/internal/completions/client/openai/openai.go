@@ -13,31 +13,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const apiURL = "https://api.openai.com/v1/chat/completions"
-
-var doneBytes = []byte("[DONE]")
-
-type OpenAIChatCompletionsRequestParameters struct {
-	Model            string             `json:"model"`
-	Messages         []Message          `json:"messages"`
-	Temperature      float32            `json:"temperature,omitempty"`
-	TopP             float32            `json:"top_p,omitempty"`
-	N                int                `json:"n,omitempty"`
-	Stream           bool               `json:"stream,omitempty"`
-	Stop             []string           `json:"stop,omitempty"`
-	MaxTokens        int                `json:"max_tokens,omitempty"`
-	PresencePenalty  float32            `json:"presence_penalty,omitempty"`
-	FrequencyPenalty float32            `json:"frequency_penalty,omitempty"`
-	LogitBias        map[string]float32 `json:"logit_bias,omitempty"`
-	User             string             `json:"user,omitempty"`
-}
-
-type Message struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
-}
-
-const ProviderName = "openai"
+const (
+	apiURL       = "https://api.openai.com/v1/chat/completions"
+	ProviderName = "openai"
+)
 
 func NewClient(cli httpcli.Doer, accessToken string, model string) types.CompletionsClient {
 	return &openAIChatCompletionStreamClient{
@@ -70,7 +49,7 @@ func (a *openAIChatCompletionStreamClient) Stream(
 	}
 
 	// TODO(sqs): make CompletionRequestParameters non-anthropic-specific
-	payload := OpenAIChatCompletionsRequestParameters{
+	payload := openAIChatCompletionsRequestParameters{
 		Model:       a.model,
 		Temperature: requestParams.Temperature,
 		TopP:        requestParams.TopP,
@@ -90,7 +69,7 @@ func (a *openAIChatCompletionStreamClient) Stream(
 		default:
 			role = strings.ToLower(role)
 		}
-		payload.Messages = append(payload.Messages, Message{
+		payload.Messages = append(payload.Messages, message{
 			Role:    role,
 			Content: m.Text,
 		})
@@ -155,4 +134,24 @@ func (a *openAIChatCompletionStreamClient) Stream(
 	}
 
 	return dec.Err()
+}
+
+type openAIChatCompletionsRequestParameters struct {
+	Model            string             `json:"model"`
+	Messages         []message          `json:"messages"`
+	Temperature      float32            `json:"temperature,omitempty"`
+	TopP             float32            `json:"top_p,omitempty"`
+	N                int                `json:"n,omitempty"`
+	Stream           bool               `json:"stream,omitempty"`
+	Stop             []string           `json:"stop,omitempty"`
+	MaxTokens        int                `json:"max_tokens,omitempty"`
+	PresencePenalty  float32            `json:"presence_penalty,omitempty"`
+	FrequencyPenalty float32            `json:"frequency_penalty,omitempty"`
+	LogitBias        map[string]float32 `json:"logit_bias,omitempty"`
+	User             string             `json:"user,omitempty"`
+}
+
+type message struct {
+	Role    string `json:"role"`
+	Content string `json:"content"`
 }

@@ -10,10 +10,10 @@ import {
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
-import { Recipe, RecipeContext } from './recipe'
+import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class ChatQuestion implements Recipe {
-    public id = 'chat-question'
+    public id: RecipeID = 'chat-question'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const truncatedText = truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS)
@@ -71,7 +71,7 @@ export class ChatQuestion implements Recipe {
         const truncatedContent = truncateText(visibleContent.content, MAX_CURRENT_FILE_TOKENS)
         return getContextMessageWithResponse(
             populateCurrentEditorContextTemplate(truncatedContent, visibleContent.fileName),
-            visibleContent.fileName
+            { fileName: visibleContent.fileName }
         )
     }
 
@@ -79,7 +79,7 @@ export class ChatQuestion implements Recipe {
         const truncatedContent = truncateText(selection.selectedText, MAX_CURRENT_FILE_TOKENS)
         return getContextMessageWithResponse(
             populateCurrentEditorSelectedContextTemplate(truncatedContent, selection.fileName),
-            selection.fileName
+            { fileName: selection.fileName }
         )
     }
 }
