@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -131,12 +130,16 @@ func (c *client) searchPartition(ctx context.Context, endpoint string, args Embe
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("%s, %#v\n", endpoint, response)
 	return &response, nil
 }
 
 func (c *client) IsContextRequiredForChatQuery(ctx context.Context, args IsContextRequiredForChatQueryParameters) (bool, error) {
-	resp, err := c.httpPost(ctx, "isContextRequiredForChatQuery", "", args)
+	endpoint, err := c.url("")
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := c.httpPost(ctx, "isContextRequiredForChatQuery", endpoint, args)
 	if err != nil {
 		return false, err
 	}
