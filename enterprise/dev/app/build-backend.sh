@@ -4,6 +4,39 @@ set -eu
 
 cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. || exit 1
 
+# We need the current go build since when cross compiling using bazel
+# the zig compiler or bazel is unable to find system libraries
+go_build() {
+  local platform
+  local version
+  platform=$1
+  version=$2
+
+  if [ -z "${SKIP_BUILD_WEB-}" ]; then
+    echo "--- :chrome: Building web"
+    # esbuild is faster
+    pnpm install
+    NODE_ENV=production ENTERPRISE=1 SOURCEGRAPH_APP=1 DEV_WEB_BUILDER=esbuild pnpm run build-web
+  fi
+
+  export GO111MODULE=on
+  export CGO_ENABLED=1
+
+  local ldflags
+  ldflags="-s -w"
+  ldflags="$ldflags -X github.com/sourcegraph/sourcegraph/internal/version.version=${version}"
+  ldflags="$ldflags -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)"
+  ldflags="$ldflags -X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=app"
+
+  echo "--- :go: Building Sourcegraph Backend (${version}) for platform: ${platform}"
+  GOOS=darwin GOARCH=amd64 go build \
+    -o .bin/sourcegraph-backend-${platform} \
+    -trimpath \
+    -tags dist \
+    -ldflags "$ldflags" \
+    ./enterprise/cmd/sourcegraph
+}
+
 bazelrc() {
   if [[ $(uname -s) == "Darwin" ]]; then
     echo "--bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.macos.bazelrc"
@@ -90,7 +123,11 @@ export PLATFORM_IS_MACOS=if [[ $(uname -s) == "Darwin" ]]; then 1; else 0 fi;
 VERSION=$(./enterprise/dev/app/app_version.sh)
 export VERSION
 
-bazel_build "${PLATFORM}" ".bin"
+if [[ ${CROSS_COMPILE_X86_64_MACOS:-0} == 1 ]]; then
+  go_build ${PLATFORM} ${VERSION}
+else
+  bazel_build "${PLATFORM}" ".bin"
+fi
 
 # TODO(burmudar) move this to it's own file
 if [[ ${CODESIGNING} == 1 ]]; then
