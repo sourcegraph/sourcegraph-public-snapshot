@@ -111,6 +111,10 @@ func (a *anthropicClient) Stream(
 
 	dec := NewDecoder(resp.Body)
 	for dec.Scan() {
+		if ctx.Err() != nil && ctx.Err() == context.Canceled {
+			return nil
+		}
+
 		data := dec.Data()
 		// Gracefully skip over any data that isn't JSON-like. Anthropic's API sometimes sends
 		// non-documented data over the stream, like timestamps.
