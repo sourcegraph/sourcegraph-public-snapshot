@@ -8,11 +8,9 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
 	sglog "github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
-
-	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
-	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -24,8 +22,8 @@ import (
 func (h *UploadHandler[T]) handleEnqueueMultipartSetup(ctx context.Context, uploadState uploadState[T], _ io.Reader) (_ any, statusCode int, err error) {
 	ctx, trace, endObservation := h.operations.handleEnqueueMultipartSetup.With(ctx, &err, observation.Args{})
 	defer func() {
-		endObservation(1, observation.Args{LogFields: []log.Field{
-			log.Int("statusCode", statusCode),
+		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
+			attribute.Int("statusCode", statusCode),
 		}})
 	}()
 
@@ -61,8 +59,8 @@ func (h *UploadHandler[T]) handleEnqueueMultipartSetup(ctx context.Context, uplo
 func (h *UploadHandler[T]) handleEnqueueMultipartUpload(ctx context.Context, uploadState uploadState[T], body io.Reader) (_ any, statusCode int, err error) {
 	ctx, trace, endObservation := h.operations.handleEnqueueMultipartUpload.With(ctx, &err, observation.Args{})
 	defer func() {
-		endObservation(1, observation.Args{LogFields: []log.Field{
-			log.Int("statusCode", statusCode),
+		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
+			attribute.Int("statusCode", statusCode),
 		}})
 	}()
 
@@ -90,8 +88,8 @@ func (h *UploadHandler[T]) handleEnqueueMultipartUpload(ctx context.Context, upl
 func (h *UploadHandler[T]) handleEnqueueMultipartFinalize(ctx context.Context, uploadState uploadState[T], _ io.Reader) (_ any, statusCode int, err error) {
 	ctx, trace, endObservation := h.operations.handleEnqueueMultipartFinalize.With(ctx, &err, observation.Args{})
 	defer func() {
-		endObservation(1, observation.Args{LogFields: []log.Field{
-			log.Int("statusCode", statusCode),
+		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
+			attribute.Int("statusCode", statusCode),
 		}})
 	}()
 

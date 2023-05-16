@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -15,14 +15,14 @@ const DefaultConfigurationPolicyPageSize = 50
 
 // 🚨 SECURITY: dbstore layer handles authz for GetConfigurationPolicies
 func (r *rootResolver) CodeIntelligenceConfigurationPolicies(ctx context.Context, args *resolverstubs.CodeIntelligenceConfigurationPoliciesArgs) (_ resolverstubs.CodeIntelligenceConfigurationPolicyConnectionResolver, err error) {
-	ctx, traceErrs, endObservation := r.operations.configurationPolicies.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int32("first", resolverstubs.Deref(args.First, 0)),
-		log.String("after", resolverstubs.Deref(args.After, "")),
-		log.String("repository", string(resolverstubs.Deref(args.Repository, ""))),
-		log.String("query", resolverstubs.Deref(args.Query, "")),
-		log.Bool("forDataRetention", resolverstubs.Deref(args.ForDataRetention, false)),
-		log.Bool("forIndexing", resolverstubs.Deref(args.ForIndexing, false)),
-		log.Bool("protected", resolverstubs.Deref(args.Protected, false)),
+	ctx, traceErrs, endObservation := r.operations.configurationPolicies.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("first", int(resolverstubs.Deref(args.First, 0))),
+		attribute.String("after", resolverstubs.Deref(args.After, "")),
+		attribute.String("repository", string(resolverstubs.Deref(args.Repository, ""))),
+		attribute.String("query", resolverstubs.Deref(args.Query, "")),
+		attribute.Bool("forDataRetention", resolverstubs.Deref(args.ForDataRetention, false)),
+		attribute.Bool("forIndexing", resolverstubs.Deref(args.ForIndexing, false)),
+		attribute.Bool("protected", resolverstubs.Deref(args.Protected, false)),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -69,8 +69,8 @@ func (r *rootResolver) CodeIntelligenceConfigurationPolicies(ctx context.Context
 }
 
 func (r *rootResolver) ConfigurationPolicyByID(ctx context.Context, policyID graphql.ID) (_ resolverstubs.CodeIntelligenceConfigurationPolicyResolver, err error) {
-	ctx, traceErrs, endObservation := r.operations.configurationPolicyByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("policyID", string(policyID)),
+	ctx, traceErrs, endObservation := r.operations.configurationPolicyByID.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("policyID", string(policyID)),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 

@@ -3,7 +3,7 @@ package graphql
 import (
 	"context"
 
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -17,8 +17,8 @@ func (r *rootResolver) CodeIntelligenceInferenceScript(ctx context.Context) (scr
 }
 
 func (r *rootResolver) UpdateCodeIntelligenceInferenceScript(ctx context.Context, args *resolverstubs.UpdateCodeIntelligenceInferenceScriptArgs) (_ *resolverstubs.EmptyResponse, err error) {
-	ctx, _, endObservation := r.operations.updateCodeIntelligenceInferenceScript.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("script", args.Script),
+	ctx, _, endObservation := r.operations.updateCodeIntelligenceInferenceScript.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("script", args.Script),
 	}})
 	defer endObservation(1, observation.Args{})
 

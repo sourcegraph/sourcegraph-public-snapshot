@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -34,8 +34,8 @@ LIMIT 1
 `
 
 func (s *store) SetInferenceScript(ctx context.Context, script string) (err error) {
-	ctx, _, endObservation := s.operations.setInferenceScript.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("scriptSize", len(script)),
+	ctx, _, endObservation := s.operations.setInferenceScript.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("scriptSize", len(script)),
 	}})
 	defer endObservation(1, observation.Args{})
 

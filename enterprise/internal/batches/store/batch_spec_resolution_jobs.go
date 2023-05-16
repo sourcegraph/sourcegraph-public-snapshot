@@ -6,7 +6,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -63,7 +63,7 @@ func (e ErrResolutionJobAlreadyExists) Error() string {
 
 // CreateBatchSpecResolutionJob creates the given batch spec resolutionjob jobs.
 func (s *Store) CreateBatchSpecResolutionJob(ctx context.Context, wj *btypes.BatchSpecResolutionJob) (err error) {
-	ctx, _, endObservation := s.operations.createBatchSpecResolutionJob.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, _, endObservation := s.operations.createBatchSpecResolutionJob.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	q := s.createBatchSpecResolutionJobQuery(wj)
@@ -117,9 +117,9 @@ type GetBatchSpecResolutionJobOpts struct {
 
 // GetBatchSpecResolutionJob gets a BatchSpecResolutionJob matching the given options.
 func (s *Store) GetBatchSpecResolutionJob(ctx context.Context, opts GetBatchSpecResolutionJobOpts) (job *btypes.BatchSpecResolutionJob, err error) {
-	ctx, _, endObservation := s.operations.getBatchSpecResolutionJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(opts.ID)),
-		log.Int("BatchSpecID", int(opts.BatchSpecID)),
+	ctx, _, endObservation := s.operations.getBatchSpecResolutionJob.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(opts.ID)),
+		attribute.Int("BatchSpecID", int(opts.BatchSpecID)),
 	}})
 	defer endObservation(1, observation.Args{})
 

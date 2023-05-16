@@ -4,7 +4,7 @@ import (
 	"context"
 	"strings"
 
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
@@ -71,12 +71,12 @@ func NewRootResolver(
 
 // 🚨 SECURITY: dbstore layer handles authz for query resolution
 func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.GitBlobLSIFDataArgs) (_ resolverstubs.GitBlobLSIFDataResolver, err error) {
-	ctx, _, endObservation := r.operations.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repoID", int(args.Repo.ID)),
-		log.String("commit", string(args.Commit)),
-		log.String("path", args.Path),
-		log.Bool("exactPath", args.ExactPath),
-		log.String("toolName", args.ToolName),
+	ctx, _, endObservation := r.operations.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repoID", int(args.Repo.ID)),
+		attribute.String("commit", string(args.Commit)),
+		attribute.String("path", args.Path),
+		attribute.Bool("exactPath", args.ExactPath),
+		attribute.String("toolName", args.ToolName),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -163,10 +163,10 @@ func (r *gitBlobLSIFDataResolver) ToGitBlobLSIFData() (resolverstubs.GitBlobLSIF
 }
 
 func (r *gitBlobLSIFDataResolver) VisibleIndexes(ctx context.Context) (_ *[]resolverstubs.PreciseIndexResolver, err error) {
-	ctx, traceErrs, endObservation := r.operations.visibleIndexes.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repoID", r.requestState.RepositoryID),
-		log.String("commit", r.requestState.Commit),
-		log.String("path", r.requestState.Path),
+	ctx, traceErrs, endObservation := r.operations.visibleIndexes.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repoID", r.requestState.RepositoryID),
+		attribute.String("commit", r.requestState.Commit),
+		attribute.String("path", r.requestState.Path),
 	}})
 	defer endObservation(1, observation.Args{})
 

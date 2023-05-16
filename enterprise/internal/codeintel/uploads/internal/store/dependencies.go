@@ -5,7 +5,7 @@ import (
 	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -16,8 +16,8 @@ import (
 
 // ReferencesForUpload returns the set of import monikers attached to the given upload identifier.
 func (s *store) ReferencesForUpload(ctx context.Context, uploadID int) (_ shared.PackageReferenceScanner, err error) {
-	ctx, _, endObservation := s.operations.referencesForUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("uploadID", uploadID),
+	ctx, _, endObservation := s.operations.referencesForUpload.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("uploadID", uploadID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -38,8 +38,8 @@ ORDER BY r.scheme, r.manager, r.name, r.version
 
 // UpdatePackages upserts package data tied to the given upload.
 func (s *store) UpdatePackages(ctx context.Context, dumpID int, packages []precise.Package) (err error) {
-	ctx, _, endObservation := s.operations.updatePackages.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("numPackages", len(packages)),
+	ctx, _, endObservation := s.operations.updatePackages.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("numPackages", len(packages)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -102,8 +102,8 @@ func loadPackagesChannel(packages []precise.Package) <-chan []any {
 
 // UpdatePackageReferences inserts reference data tied to the given upload.
 func (s *store) UpdatePackageReferences(ctx context.Context, dumpID int, references []precise.PackageReference) (err error) {
-	ctx, _, endObservation := s.operations.updatePackageReferences.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("numReferences", len(references)),
+	ctx, _, endObservation := s.operations.updatePackageReferences.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("numReferences", len(references)),
 	}})
 	defer endObservation(1, observation.Args{})
 

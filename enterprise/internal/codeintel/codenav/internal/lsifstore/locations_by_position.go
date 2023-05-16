@@ -3,12 +3,10 @@ package lsifstore
 import (
 	"context"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -41,14 +39,14 @@ func (s *store) GetPrototypeLocations(ctx context.Context, bundleID int, path st
 // whose scheme+identifier matches one of the given monikers. This method also returns the size of the
 // complete result set to aid in pagination.
 func (s *store) GetBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error) {
-	ctx, trace, endObservation := s.operations.getBulkMonikerLocations.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("tableName", tableName),
-		log.Int("numUploadIDs", len(uploadIDs)),
-		log.String("uploadIDs", intsToString(uploadIDs)),
-		log.Int("numMonikers", len(monikers)),
-		log.String("monikers", monikersToString(monikers)),
-		log.Int("limit", limit),
-		log.Int("offset", offset),
+	ctx, trace, endObservation := s.operations.getBulkMonikerLocations.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("tableName", tableName),
+		attribute.Int("numUploadIDs", len(uploadIDs)),
+		attribute.IntSlice("uploadIDs", uploadIDs),
+		attribute.Int("numMonikers", len(monikers)),
+		attribute.String("monikers", monikersToString(monikers)),
+		attribute.Int("limit", limit),
+		attribute.Int("offset", offset),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -135,11 +133,11 @@ func (s *store) getLocations(
 	path string,
 	line, character, limit, offset int,
 ) (_ []shared.Location, _ int, err error) {
-	ctx, trace, endObservation := operation.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("bundleID", bundleID),
-		log.String("path", path),
-		log.Int("line", line),
-		log.Int("character", character),
+	ctx, trace, endObservation := operation.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("bundleID", bundleID),
+		attribute.String("path", path),
+		attribute.Int("line", line),
+		attribute.Int("character", character),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -357,15 +355,6 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 		hoverText:       hoverText,
 		prototypes:      prototypes,
 	}
-}
-
-func intsToString(vs []int) string {
-	strs := make([]string, 0, len(vs))
-	for _, v := range vs {
-		strs = append(strs, strconv.Itoa(v))
-	}
-
-	return strings.Join(strs, ", ")
 }
 
 func monikersToString(vs []precise.MonikerData) string {

@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -14,8 +14,8 @@ import (
 
 // 🚨 SECURITY: Only entrypoint is within the repository resolver so the user is already authenticated
 func (r *rootResolver) CommitGraph(ctx context.Context, repoID graphql.ID) (_ resolverstubs.CodeIntelligenceCommitGraphResolver, err error) {
-	ctx, _, endObservation := r.operations.commitGraph.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repoID", string(repoID)),
+	ctx, _, endObservation := r.operations.commitGraph.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repoID", string(repoID)),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 

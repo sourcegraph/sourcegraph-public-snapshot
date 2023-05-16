@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	traceLog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -16,16 +16,14 @@ import (
 // Definitions returns the list of source locations that define the symbol at the given position.
 func (r *gitBlobLSIFDataResolver) Definitions(ctx context.Context, args *resolverstubs.LSIFQueryPositionArgs) (_ resolverstubs.LocationConnectionResolver, err error) {
 	requestArgs := codenav.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path, Line: int(args.Line), Character: int(args.Character)}
-	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.definitions, time.Second, observation.Args{
-		LogFields: []traceLog.Field{
-			traceLog.Int("repositoryID", requestArgs.RepositoryID),
-			traceLog.String("commit", requestArgs.Commit),
-			traceLog.String("path", requestArgs.Path),
-			traceLog.Int("line", requestArgs.Line),
-			traceLog.Int("character", requestArgs.Character),
-			traceLog.Int("limit", requestArgs.Limit),
-		},
-	})
+	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.definitions, time.Second, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", requestArgs.RepositoryID),
+		attribute.String("commit", requestArgs.Commit),
+		attribute.String("path", requestArgs.Path),
+		attribute.Int("line", requestArgs.Line),
+		attribute.Int("character", requestArgs.Character),
+		attribute.Int("limit", requestArgs.Limit),
+	}})
 	defer endObservation()
 
 	def, err := r.codeNavSvc.GetDefinitions(ctx, requestArgs, r.requestState)

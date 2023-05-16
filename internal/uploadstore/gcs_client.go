@@ -3,13 +3,12 @@ package uploadstore
 import (
 	"context"
 	"io"
-	"strings"
 	"time"
 
 	"cloud.google.com/go/storage"
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go/log"
 	sglog "github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 
@@ -79,8 +78,8 @@ func (s *gcsStore) Init(ctx context.Context) error {
 }
 
 func (s *gcsStore) Get(ctx context.Context, key string) (_ io.ReadCloser, err error) {
-	ctx, _, endObservation := s.operations.Get.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("key", key),
+	ctx, _, endObservation := s.operations.Get.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("key", key),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -93,8 +92,8 @@ func (s *gcsStore) Get(ctx context.Context, key string) (_ io.ReadCloser, err er
 }
 
 func (s *gcsStore) Upload(ctx context.Context, key string, r io.Reader) (_ int64, err error) {
-	ctx, _, endObservation := s.operations.Upload.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("key", key),
+	ctx, _, endObservation := s.operations.Upload.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("key", key),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -119,9 +118,9 @@ func (s *gcsStore) Upload(ctx context.Context, key string, r io.Reader) (_ int64
 }
 
 func (s *gcsStore) Compose(ctx context.Context, destination string, sources ...string) (_ int64, err error) {
-	ctx, _, endObservation := s.operations.Compose.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("destination", destination),
-		log.String("sources", strings.Join(sources, ", ")),
+	ctx, _, endObservation := s.operations.Compose.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("destination", destination),
+		attribute.StringSlice("sources", sources),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -150,8 +149,8 @@ func (s *gcsStore) Compose(ctx context.Context, destination string, sources ...s
 }
 
 func (s *gcsStore) Delete(ctx context.Context, key string) (err error) {
-	ctx, _, endObservation := s.operations.Delete.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("key", key),
+	ctx, _, endObservation := s.operations.Delete.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("key", key),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -159,9 +158,9 @@ func (s *gcsStore) Delete(ctx context.Context, key string) (err error) {
 }
 
 func (s *gcsStore) ExpireObjects(ctx context.Context, prefix string, maxAge time.Duration) (err error) {
-	ctx, _, endObservation := s.operations.ExpireObjects.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("prefix", prefix),
-		log.String("maxAge", maxAge.String()),
+	ctx, _, endObservation := s.operations.ExpireObjects.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("prefix", prefix),
+		attribute.Stringer("maxAge", maxAge),
 	}})
 	defer endObservation(1, observation.Args{})
 

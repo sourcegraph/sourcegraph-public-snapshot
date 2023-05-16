@@ -7,11 +7,13 @@ import (
 	"sync"
 
 	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	sglog "github.com/sourcegraph/log"
@@ -246,12 +248,12 @@ func (i *Inserter) Flush(ctx context.Context) (err error) {
 		return nil
 	}
 
-	operationlogFields := []log.Field{
-		log.Int("batchSize", len(batch)),
-		log.Int("payloadSize", payloadSize),
+	operationlogFields := []attribute.KeyValue{
+		attribute.Int("batchSize", len(batch)),
+		attribute.Int("payloadSize", payloadSize),
 	}
-	combinedLogFields := append(operationlogFields, i.commonLogFields...)
-	ctx, _, endObservation := i.operations.flush.With(ctx, &err, observation.Args{LogFields: combinedLogFields})
+	combinedLogFields := append(operationlogFields, trace.OTLogFieldsToOTelAttrs(i.commonLogFields)...)
+	ctx, _, endObservation := i.operations.flush.With(ctx, &err, observation.Args{Attrs: combinedLogFields})
 	defer endObservation(1, observation.Args{})
 
 	// Create a query with enough placeholders to match the current batch size. This should

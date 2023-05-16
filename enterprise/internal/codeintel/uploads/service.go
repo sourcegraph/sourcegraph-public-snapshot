@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
@@ -105,9 +105,13 @@ const numAncestors = 100
 // all results while a subsequent request made after the lsif_nearest_uploads has been updated to include
 // this commit will.
 func (s *Service) InferClosestUploads(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []shared.Dump, err error) {
-	ctx, _, endObservation := s.operations.inferClosestUploads.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{log.Int("repositoryID", repositoryID), log.String("commit", commit), log.String("path", path), log.Bool("exactPath", exactPath), log.String("indexer", indexer)},
-	})
+	ctx, _, endObservation := s.operations.inferClosestUploads.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
+		attribute.String("commit", commit),
+		attribute.String("path", path),
+		attribute.Bool("exactPath", exactPath),
+		attribute.String("indexer", indexer),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))

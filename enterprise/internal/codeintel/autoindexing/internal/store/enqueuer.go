@@ -5,7 +5,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -16,9 +16,9 @@ import (
 )
 
 func (s *store) IsQueued(ctx context.Context, repositoryID int, commit string) (_ bool, err error) {
-	ctx, _, endObservation := s.operations.isQueued.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
-		log.String("commit", commit),
+	ctx, _, endObservation := s.operations.isQueued.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
+		attribute.String("commit", commit),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -74,11 +74,11 @@ SELECT
 `
 
 func (s *store) IsQueuedRootIndexer(ctx context.Context, repositoryID int, commit string, root string, indexer string) (_ bool, err error) {
-	ctx, _, endObservation := s.operations.isQueuedRootIndexer.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
-		log.String("commit", commit),
-		log.String("root", root),
-		log.String("indexer", indexer),
+	ctx, _, endObservation := s.operations.isQueuedRootIndexer.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
+		attribute.String("commit", commit),
+		attribute.String("root", root),
+		attribute.String("indexer", indexer),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -110,8 +110,8 @@ LIMIT 1
 // - share code with uploads store (should own this?)
 
 func (s *store) InsertIndexes(ctx context.Context, indexes []shared.Index) (_ []shared.Index, err error) {
-	ctx, _, endObservation := s.operations.insertIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("numIndexes", len(indexes)),
+	ctx, _, endObservation := s.operations.insertIndexes.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("numIndexes", len(indexes)),
 	}})
 	endObservation(1, observation.Args{})
 

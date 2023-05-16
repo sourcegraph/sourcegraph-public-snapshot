@@ -7,7 +7,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -78,8 +78,8 @@ var oneGigabyte = 1000000000
 
 // CreateChangesetSpec creates the given ChangesetSpecs.
 func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.ChangesetSpec) (err error) {
-	ctx, _, endObservation := s.operations.createChangesetSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("Count", len(cs)),
+	ctx, _, endObservation := s.operations.createChangesetSpec.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("Count", len(cs)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -163,8 +163,8 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 
 // UpdateChangesetSpecBatchSpecID updates the given ChangesetSpecs to be owned by the given batch spec.
 func (s *Store) UpdateChangesetSpecBatchSpecID(ctx context.Context, cs []int64, batchSpec int64) (err error) {
-	ctx, _, endObservation := s.operations.updateChangesetSpecBatchSpecID.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("Count", len(cs)),
+	ctx, _, endObservation := s.operations.updateChangesetSpecBatchSpecID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("Count", len(cs)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -189,8 +189,8 @@ func (s *Store) updateChangesetSpecQuery(cs []int64, batchSpec int64) *sqlf.Quer
 
 // DeleteChangesetSpec deletes the ChangesetSpec with the given ID.
 func (s *Store) DeleteChangesetSpec(ctx context.Context, id int64) (err error) {
-	ctx, _, endObservation := s.operations.deleteChangesetSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(id)),
+	ctx, _, endObservation := s.operations.deleteChangesetSpec.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(id)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -210,8 +210,8 @@ type CountChangesetSpecsOpts struct {
 
 // CountChangesetSpecs returns the number of changeset specs in the database.
 func (s *Store) CountChangesetSpecs(ctx context.Context, opts CountChangesetSpecsOpts) (count int, err error) {
-	ctx, _, endObservation := s.operations.countChangesetSpecs.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("batchSpecID", int(opts.BatchSpecID)),
+	ctx, _, endObservation := s.operations.countChangesetSpecs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("batchSpecID", int(opts.BatchSpecID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -260,9 +260,9 @@ type GetChangesetSpecOpts struct {
 
 // GetChangesetSpec gets a changeset spec matching the given options.
 func (s *Store) GetChangesetSpec(ctx context.Context, opts GetChangesetSpecOpts) (spec *btypes.ChangesetSpec, err error) {
-	ctx, _, endObservation := s.operations.getChangesetSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(opts.ID)),
-		log.String("randID", opts.RandID),
+	ctx, _, endObservation := s.operations.getChangesetSpec.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(opts.ID)),
+		attribute.String("randID", opts.RandID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -503,8 +503,8 @@ type DeleteChangesetSpecsOpts struct {
 
 // DeleteChangesetSpecs deletes the ChangesetSpecs matching the given options.
 func (s *Store) DeleteChangesetSpecs(ctx context.Context, opts DeleteChangesetSpecsOpts) (err error) {
-	ctx, _, endObservation := s.operations.deleteChangesetSpecs.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("batchSpecID", int(opts.BatchSpecID)),
+	ctx, _, endObservation := s.operations.deleteChangesetSpecs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("batchSpecID", int(opts.BatchSpecID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -638,9 +638,9 @@ type GetRewirerMappingsOpts struct {
 // Spec 4 should be attached to Changeset 4, since it tracks PR #333 in Repo C. (ChangesetSpec = 4, Changeset = 4)
 // Changeset 3 doesn't have a matching spec and should be detached from the batch change (and closed) (ChangesetSpec == 0, Changeset = 3).
 func (s *Store) GetRewirerMappings(ctx context.Context, opts GetRewirerMappingsOpts) (mappings btypes.RewirerMappings, err error) {
-	ctx, _, endObservation := s.operations.getRewirerMappings.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("batchSpecID", int(opts.BatchSpecID)),
-		log.Int("batchChangeID", int(opts.BatchChangeID)),
+	ctx, _, endObservation := s.operations.getRewirerMappings.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("batchSpecID", int(opts.BatchSpecID)),
+		attribute.Int("batchChangeID", int(opts.BatchChangeID)),
 	}})
 	defer endObservation(1, observation.Args{})
 

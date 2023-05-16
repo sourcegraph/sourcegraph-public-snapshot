@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -14,8 +14,8 @@ import (
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
 func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *resolverstubs.CreateCodeIntelligenceConfigurationPolicyArgs) (_ resolverstubs.CodeIntelligenceConfigurationPolicyResolver, err error) {
-	ctx, traceErrs, endObservation := r.operations.createConfigurationPolicy.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repository", string(resolverstubs.Deref(args.Repository, ""))),
+	ctx, traceErrs, endObservation := r.operations.createConfigurationPolicy.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repository", string(resolverstubs.Deref(args.Repository, ""))),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -61,8 +61,8 @@ func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Con
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
 func (r *rootResolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *resolverstubs.UpdateCodeIntelligenceConfigurationPolicyArgs) (_ *resolverstubs.EmptyResponse, err error) {
-	ctx, _, endObservation := r.operations.updateConfigurationPolicy.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("policyID", string(args.ID)),
+	ctx, _, endObservation := r.operations.updateConfigurationPolicy.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("policyID", string(args.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -101,8 +101,8 @@ func (r *rootResolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Con
 
 // 🚨 SECURITY: Only site admins may modify code intelligence configuration policies
 func (r *rootResolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context, args *resolverstubs.DeleteCodeIntelligenceConfigurationPolicyArgs) (_ *resolverstubs.EmptyResponse, err error) {
-	ctx, _, endObservation := r.operations.deleteConfigurationPolicy.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("policyID", string(args.Policy)),
+	ctx, _, endObservation := r.operations.deleteConfigurationPolicy.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("policyID", string(args.Policy)),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 

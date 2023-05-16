@@ -17,7 +17,6 @@ import (
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
-	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel/attribute"
@@ -497,10 +496,10 @@ func (o *ArchiveOptions) ToProto(repo string) *proto.ArchiveRequest {
 
 type BatchLogOptions protocol.BatchLogRequest
 
-func (opts BatchLogOptions) LogFields() []log.Field {
-	return []log.Field{
-		log.Int("numRepoCommits", len(opts.RepoCommits)),
-		log.String("Format", opts.Format),
+func (opts BatchLogOptions) Attrs() []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.Int("numRepoCommits", len(opts.RepoCommits)),
+		attribute.String("Format", opts.Format),
 	}
 }
 
@@ -887,7 +886,7 @@ var deadlineExceededCounter = promauto.NewCounter(prometheus.CounterOpts{
 // and commit pairs. If the invoked callback returns a non-nil error, the operation will begin
 // to abort processing further results.
 func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, callback BatchLogCallback) (err error) {
-	ctx, _, endObservation := c.operations.batchLog.With(ctx, &err, observation.Args{LogFields: opts.LogFields()})
+	ctx, _, endObservation := c.operations.batchLog.With(ctx, &err, observation.Args{Attrs: opts.Attrs()})
 	defer endObservation(1, observation.Args{})
 
 	// Make a request to a single gitserver shard and feed the results to the user-supplied
@@ -898,16 +897,16 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		repoNames := repoNamesFromRepoCommits(repoCommits)
 
 		ctx, logger, endObservation := c.operations.batchLogSingle.With(ctx, &err, observation.Args{
-			LogFields: []log.Field{
-				log.String("addr", addr),
-				log.Int("numRepos", len(repoNames)),
-				log.Int("numRepoCommits", len(repoCommits)),
+			Attrs: []attribute.KeyValue{
+				attribute.String("addr", addr),
+				attribute.Int("numRepos", len(repoNames)),
+				attribute.Int("numRepoCommits", len(repoCommits)),
 			},
 		})
 		defer func() {
 			endObservation(1, observation.Args{
-				LogFields: []log.Field{
-					log.Int("numProcessed", numProcessed),
+				Attrs: []attribute.KeyValue{
+					attribute.Int("numProcessed", numProcessed),
 				},
 			})
 		}()

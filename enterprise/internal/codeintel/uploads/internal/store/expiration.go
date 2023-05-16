@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -18,8 +17,8 @@ import (
 // GetLastUploadRetentionScanForRepository returns the last timestamp, if any, that the repository with the
 // given identifier was considered for upload expiration checks.
 func (s *store) GetLastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error) {
-	ctx, _, endObservation := s.operations.getLastUploadRetentionScanForRepository.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
+	ctx, _, endObservation := s.operations.getLastUploadRetentionScanForRepository.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -86,11 +85,11 @@ RETURNING repository_id
 // records with the given protected identifiers and sets the expired field on the upload
 // records with the given expired identifiers.
 func (s *store) UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) (err error) {
-	ctx, _, endObservation := s.operations.updateUploadRetention.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("numProtectedIDs", len(protectedIDs)),
-		log.String("protectedIDs", intsToString(protectedIDs)),
-		log.Int("numExpiredIDs", len(expiredIDs)),
-		log.String("expiredIDs", intsToString(expiredIDs)),
+	ctx, _, endObservation := s.operations.updateUploadRetention.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("numProtectedIDs", len(protectedIDs)),
+		attribute.IntSlice("protectedIDs", protectedIDs),
+		attribute.Int("numExpiredIDs", len(expiredIDs)),
+		attribute.IntSlice("expiredIDs", expiredIDs),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -479,8 +478,8 @@ SELECT (SELECT COUNT(*) FROM candidates), u.repository_id, COUNT(*) FROM updated
 
 // SetRepositoryAsDirtyWithTx marks the given repository's commit graph as out of date.
 func (s *store) setRepositoryAsDirtyWithTx(ctx context.Context, repositoryID int, tx *basestore.Store) (err error) {
-	ctx, _, endObservation := s.operations.setRepositoryAsDirty.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
+	ctx, _, endObservation := s.operations.setRepositoryAsDirty.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
 

@@ -5,7 +5,6 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
@@ -20,13 +19,13 @@ import (
 // If a repository identifier is supplied (is non-zero), then only the configuration policies that apply
 // to repository are returned. If repository is not supplied, then all policies may be returned.
 func (s *store) GetConfigurationPolicies(ctx context.Context, opts shared.GetConfigurationPoliciesOptions) (_ []shared.ConfigurationPolicy, totalCount int, err error) {
-	ctx, trace, endObservation := s.operations.getConfigurationPolicies.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Int("repositoryID", opts.RepositoryID),
-		otlog.String("term", opts.Term),
-		otlog.Bool("forDataRetention", opts.ForDataRetention),
-		otlog.Bool("forIndexing", opts.ForIndexing),
-		otlog.Int("limit", opts.Limit),
-		otlog.Int("offset", opts.Offset),
+	ctx, trace, endObservation := s.operations.getConfigurationPolicies.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", opts.RepositoryID),
+		attribute.String("term", opts.Term),
+		attribute.Bool("forDataRetention", opts.ForDataRetention),
+		attribute.Bool("forIndexing", opts.ForIndexing),
+		attribute.Int("limit", opts.Limit),
+		attribute.Int("offset", opts.Offset),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -136,8 +135,8 @@ OFFSET %s
 `
 
 func (s *store) GetConfigurationPolicyByID(ctx context.Context, id int) (_ shared.ConfigurationPolicy, _ bool, err error) {
-	ctx, _, endObservation := s.operations.getConfigurationPolicyByID.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Int("id", id),
+	ctx, _, endObservation := s.operations.getConfigurationPolicyByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -243,8 +242,8 @@ var (
 )
 
 func (s *store) UpdateConfigurationPolicy(ctx context.Context, policy shared.ConfigurationPolicy) (err error) {
-	ctx, _, endObservation := s.operations.updateConfigurationPolicy.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Int("id", policy.ID),
+	ctx, _, endObservation := s.operations.updateConfigurationPolicy.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("id", policy.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -322,8 +321,8 @@ WHERE id = %s
 `
 
 func (s *store) DeleteConfigurationPolicyByID(ctx context.Context, id int) (err error) {
-	ctx, _, endObservation := s.operations.deleteConfigurationPolicyByID.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Int("id", id),
+	ctx, _, endObservation := s.operations.deleteConfigurationPolicyByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
 

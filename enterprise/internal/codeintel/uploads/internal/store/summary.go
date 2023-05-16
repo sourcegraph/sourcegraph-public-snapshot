@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -16,8 +15,8 @@ import (
 )
 
 func (s *store) GetIndexers(ctx context.Context, opts shared.GetIndexersOptions) (_ []string, err error) {
-	ctx, _, endObservation := s.operations.getIndexers.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", opts.RepositoryID),
+	ctx, _, endObservation := s.operations.getIndexers.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", opts.RepositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -56,8 +55,8 @@ WHERE
 // include the set of unprocessed records as well as the latest finished record. These values allow users to
 // quickly determine if a particular root/indexer pair is up-to-date or having issues processing.
 func (s *store) GetRecentUploadsSummary(ctx context.Context, repositoryID int) (upload []shared.UploadsWithRepositoryNamespace, err error) {
-	ctx, logger, endObservation := s.operations.getRecentUploadsSummary.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
+	ctx, logger, endObservation := s.operations.getRecentUploadsSummary.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -178,8 +177,8 @@ const sanitizedIndexerExpression = `
 // include the set of unprocessed records as well as the latest finished record. These values allow users to
 // quickly determine if a particular root/indexer pair os up-to-date or having issues processing.
 func (s *store) GetRecentIndexesSummary(ctx context.Context, repositoryID int) (summaries []uploadsshared.IndexesWithRepositoryNamespace, err error) {
-	ctx, logger, endObservation := s.operations.getRecentIndexesSummary.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
+	ctx, logger, endObservation := s.operations.getRecentIndexesSummary.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
 

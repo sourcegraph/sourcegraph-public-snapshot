@@ -5,20 +5,20 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func (s *store) InsertDependencyIndexingJob(ctx context.Context, uploadID int, externalServiceKind string, syncTime time.Time) (id int, err error) {
-	ctx, _, endObservation := s.operations.insertDependencyIndexingJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("uploadId", uploadID),
-		log.String("extSvcKind", externalServiceKind),
+	ctx, _, endObservation := s.operations.insertDependencyIndexingJob.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("uploadId", uploadID),
+		attribute.String("extSvcKind", externalServiceKind),
 	}})
 	defer func() {
-		endObservation(1, observation.Args{LogFields: []log.Field{
-			log.Int("id", id),
+		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
+			attribute.Int("id", id),
 		}})
 	}()
 
@@ -38,9 +38,9 @@ RETURNING id
 `
 
 func (s *store) QueueRepoRev(ctx context.Context, repositoryID int, rev string) (err error) {
-	ctx, _, endObservation := s.operations.queueRepoRev.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
-		log.String("rev", rev),
+	ctx, _, endObservation := s.operations.queueRepoRev.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
+		attribute.String("rev", rev),
 	}})
 	defer endObservation(1, observation.Args{})
 

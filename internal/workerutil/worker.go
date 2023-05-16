@@ -9,6 +9,7 @@ import (
 	"github.com/derision-test/glock"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
@@ -325,7 +326,7 @@ func (w *Worker[T]) dequeueAndHandle() (dequeued bool, err error) {
 	w.options.Metrics.numJobs.Inc()
 	processLog.Info("Dequeued record for processing", log.Int("id", record.RecordID()))
 	processArgs := observation.Args{
-		LogFields: []otlog.Field{otlog.Int("record.id", record.RecordID())},
+		Attrs: []attribute.KeyValue{attribute.Int("record.id", record.RecordID())},
 	}
 
 	if hook, ok := w.handler.(WithHooks[T]); ok {

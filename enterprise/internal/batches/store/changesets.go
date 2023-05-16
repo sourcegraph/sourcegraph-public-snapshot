@@ -12,10 +12,10 @@ import (
 
 	adobatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/search"
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
@@ -245,8 +245,8 @@ var temporaryChangesetInsertColumns = []string{
 
 // CreateChangeset creates the given Changesets.
 func (s *Store) CreateChangeset(ctx context.Context, cs ...*btypes.Changeset) (err error) {
-	ctx, _, endObservation := s.operations.createChangeset.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("count", len(cs)),
+	ctx, _, endObservation := s.operations.createChangeset.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("count", len(cs)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -343,8 +343,8 @@ func (s *Store) CreateChangeset(ctx context.Context, cs ...*btypes.Changeset) (e
 
 // DeleteChangeset deletes the Changeset with the given ID.
 func (s *Store) DeleteChangeset(ctx context.Context, id int64) (err error) {
-	ctx, _, endObservation := s.operations.deleteChangeset.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(id)),
+	ctx, _, endObservation := s.operations.deleteChangeset.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(id)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -478,8 +478,8 @@ type GetChangesetOpts struct {
 
 // GetChangeset gets a changeset matching the given options.
 func (s *Store) GetChangeset(ctx context.Context, opts GetChangesetOpts) (ch *btypes.Changeset, err error) {
-	ctx, _, endObservation := s.operations.getChangeset.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(opts.ID)),
+	ctx, _, endObservation := s.operations.getChangeset.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(opts.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -769,8 +769,8 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 // `resetState` argument but *only if* the `currentState` matches its current
 // `reconciler_state`.
 func (s *Store) EnqueueChangeset(ctx context.Context, cs *btypes.Changeset, resetState, currentState btypes.ReconcilerState) (err error) {
-	ctx, _, endObservation := s.operations.enqueueChangeset.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(cs.ID)),
+	ctx, _, endObservation := s.operations.enqueueChangeset.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(cs.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -824,8 +824,8 @@ func (s *Store) enqueueChangesetQuery(cs *btypes.Changeset, resetState, currentS
 
 // UpdateChangeset updates the given Changeset.
 func (s *Store) UpdateChangeset(ctx context.Context, cs *btypes.Changeset) (err error) {
-	ctx, _, endObservation := s.operations.updateChangeset.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(cs.ID)),
+	ctx, _, endObservation := s.operations.updateChangeset.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(cs.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -927,8 +927,8 @@ RETURNING
 // Once the changesets are in the temporary table, the values are then used to update their "previous" value in the actual
 // changesets table.
 func (s *Store) UpdateChangesetsForApply(ctx context.Context, cs []*btypes.Changeset) (err error) {
-	ctx, _, endObservation := s.operations.updateChangeset.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("count", len(cs)),
+	ctx, _, endObservation := s.operations.updateChangeset.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("count", len(cs)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -1028,8 +1028,8 @@ WHERE c.id = source.id
 // UpdateChangesetBatchChanges updates only the `batch_changes` & `updated_at`
 // columns of the given Changeset.
 func (s *Store) UpdateChangesetBatchChanges(ctx context.Context, cs *btypes.Changeset) (err error) {
-	ctx, _, endObservation := s.operations.updateChangesetBatchChanges.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(cs.ID)),
+	ctx, _, endObservation := s.operations.updateChangesetBatchChanges.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(cs.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -1044,8 +1044,8 @@ func (s *Store) UpdateChangesetBatchChanges(ctx context.Context, cs *btypes.Chan
 // UpdateChangesetUiPublicationState updates only the `ui_publication_state` &
 // `updated_at` columns of the given Changeset.
 func (s *Store) UpdateChangesetUiPublicationState(ctx context.Context, cs *btypes.Changeset) (err error) {
-	ctx, _, endObservation := s.operations.updateChangesetUIPublicationState.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(cs.ID)),
+	ctx, _, endObservation := s.operations.updateChangesetUIPublicationState.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(cs.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -1085,8 +1085,8 @@ RETURNING
 // that relate to the state of the changeset on the code host, e.g.
 // external_branch, external_state, etc.
 func (s *Store) UpdateChangesetCodeHostState(ctx context.Context, cs *btypes.Changeset) (err error) {
-	ctx, _, endObservation := s.operations.updateChangesetCodeHostState.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(cs.ID)),
+	ctx, _, endObservation := s.operations.updateChangesetCodeHostState.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(cs.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -1190,10 +1190,10 @@ var CanceledChangesetFailureMessage = "Canceled"
 // currently processing changesets have finished executing.
 func (s *Store) CancelQueuedBatchChangeChangesets(ctx context.Context, batchChangeID int64) (err error) {
 	var iterations int
-	ctx, _, endObservation := s.operations.cancelQueuedBatchChangeChangesets.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("batchChangeID", int(batchChangeID)),
+	ctx, _, endObservation := s.operations.cancelQueuedBatchChangeChangesets.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("batchChangeID", int(batchChangeID)),
 	}})
-	defer endObservation(1, observation.Args{LogFields: []log.Field{log.Int("iterations", iterations)}})
+	defer endObservation(1, observation.Args{Attrs: []attribute.KeyValue{attribute.Int("iterations", iterations)}})
 
 	// Just for safety, so we don't end up with stray cancel requests bombarding
 	// the DB with 10 requests a second forever:
@@ -1266,11 +1266,11 @@ WHERE
 // passed.
 func (s *Store) EnqueueChangesetsToClose(ctx context.Context, batchChangeID int64) (err error) {
 	var iterations int
-	ctx, _, endObservation := s.operations.enqueueChangesetsToClose.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("batchChangeID", int(batchChangeID)),
+	ctx, _, endObservation := s.operations.enqueueChangesetsToClose.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("batchChangeID", int(batchChangeID)),
 	}})
 	defer func() {
-		endObservation(1, observation.Args{LogFields: []log.Field{log.Int("iterations", iterations)}})
+		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{attribute.Int("iterations", iterations)}})
 	}()
 
 	// Just for safety, so we don't end up with stray cancel requests bombarding
@@ -1485,8 +1485,8 @@ func ScanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 // GetChangesetsStats returns statistics on all the changesets associated to the given batch change,
 // or all changesets across the instance.
 func (s *Store) GetChangesetsStats(ctx context.Context, batchChangeID int64) (stats btypes.ChangesetsStats, err error) {
-	ctx, _, endObservation := s.operations.getChangesetsStats.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("batchChangeID", int(batchChangeID)),
+	ctx, _, endObservation := s.operations.getChangesetsStats.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("batchChangeID", int(batchChangeID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -1538,8 +1538,8 @@ WHERE
 
 // GetRepoChangesetsStats returns statistics on all the changesets associated to the given repo.
 func (s *Store) GetRepoChangesetsStats(ctx context.Context, repoID api.RepoID) (stats *btypes.RepoChangesetsStats, err error) {
-	ctx, _, endObservation := s.operations.getRepoChangesetsStats.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repoID", int(repoID)),
+	ctx, _, endObservation := s.operations.getRepoChangesetsStats.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repoID", int(repoID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -1635,8 +1635,8 @@ RETURNING %s
 `
 
 func (s *Store) GetChangesetPlaceInSchedulerQueue(ctx context.Context, id int64) (place int, err error) {
-	ctx, _, endObservation := s.operations.getChangesetPlaceInSchedulerQueue.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(id)),
+	ctx, _, endObservation := s.operations.getChangesetPlaceInSchedulerQueue.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(id)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -1779,8 +1779,8 @@ func uiPublicationStateColumn(c *btypes.Changeset) *string {
 
 // CleanDetachedChangesets deletes changesets that have been detached after duration specified.
 func (s *Store) CleanDetachedChangesets(ctx context.Context, retention time.Duration) (err error) {
-	ctx, _, endObservation := s.operations.cleanDetachedChangesets.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("Retention", retention.String()),
+	ctx, _, endObservation := s.operations.cleanDetachedChangesets.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Stringer("Retention", retention),
 	}})
 	defer endObservation(1, observation.Args{})
 

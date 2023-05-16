@@ -1491,16 +1491,16 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 	// Invoked multiple times from the handler defined below.
 	performGitLogCommand := func(ctx context.Context, repoCommit api.RepoCommit, format string) (output string, isRepoCloned bool, err error) {
 		ctx, _, endObservation := operations.batchLogSingle.With(ctx, &err, observation.Args{
-			LogFields: append(
-				[]otlog.Field{
-					otlog.String("format", format),
+			Attrs: append(
+				[]attribute.KeyValue{
+					attribute.String("format", format),
 				},
-				repoCommit.LogFields()...,
+				repoCommit.Attrs()...,
 			),
 		})
 		defer func() {
-			endObservation(1, observation.Args{LogFields: []otlog.Field{
-				otlog.Bool("isRepoCloned", isRepoCloned),
+			endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
+				attribute.Bool("isRepoCloned", isRepoCloned),
 			}})
 		}()
 
@@ -1532,8 +1532,8 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 	instrumentedHandler := func(ctx context.Context) (statusCodeOnError int, err error) {
 		ctx, logger, endObservation := operations.batchLog.With(ctx, &err, observation.Args{})
 		defer func() {
-			endObservation(1, observation.Args{LogFields: []otlog.Field{
-				otlog.Int("statusCodeOnError", statusCodeOnError),
+			endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
+				attribute.Int("statusCodeOnError", statusCodeOnError),
 			}})
 		}()
 

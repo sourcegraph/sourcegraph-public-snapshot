@@ -5,8 +5,8 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -21,8 +21,8 @@ func (s *store) InsertDefinitionsAndReferencesForDocument(
 	rankingBatchNumber int,
 	setDefsAndRefs func(ctx context.Context, upload shared.ExportedUpload, rankingBatchNumber int, rankingGraphKey, path string, document *scip.Document) error,
 ) (err error) {
-	ctx, _, endObservation := s.operations.insertDefinitionsAndReferencesForDocument.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Int("id", upload.UploadID),
+	ctx, _, endObservation := s.operations.insertDefinitionsAndReferencesForDocument.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("id", upload.UploadID),
 	}})
 	defer endObservation(1, observation.Args{})
 

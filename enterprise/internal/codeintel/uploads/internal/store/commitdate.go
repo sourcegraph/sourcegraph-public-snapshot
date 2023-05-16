@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -18,8 +18,8 @@ import (
 // has not yet completed and an error is returned to prevent downstream expiration errors being made due to
 // outdated commit graph data.
 func (s *store) GetOldestCommitDate(ctx context.Context, repositoryID int) (_ time.Time, _ bool, err error) {
-	ctx, _, endObservation := s.operations.getOldestCommitDate.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
+	ctx, _, endObservation := s.operations.getOldestCommitDate.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -52,9 +52,9 @@ LIMIT 1
 
 // UpdateCommittedAt updates the committed_at column for upload matching the given repository and commit.
 func (s *store) UpdateCommittedAt(ctx context.Context, repositoryID int, commit, commitDateString string) (err error) {
-	ctx, _, endObservation := s.operations.updateCommittedAt.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
-		log.String("commit", commit),
+	ctx, _, endObservation := s.operations.updateCommittedAt.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
+		attribute.String("commit", commit),
 	}})
 	defer func() { endObservation(1, observation.Args{}) }()
 
@@ -68,8 +68,8 @@ INSERT INTO codeintel_commit_dates(repository_id, commit_bytea, committed_at) VA
 // SourcedCommitsWithoutCommittedAt returns the repository and commits of uploads that do not have an
 // associated commit date value.
 func (s *store) SourcedCommitsWithoutCommittedAt(ctx context.Context, batchSize int) (_ []SourcedCommits, err error) {
-	ctx, _, endObservation := s.operations.sourcedCommitsWithoutCommittedAt.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("batchSize", batchSize),
+	ctx, _, endObservation := s.operations.sourcedCommitsWithoutCommittedAt.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("batchSize", batchSize),
 	}})
 	defer func() { endObservation(1, observation.Args{}) }()
 

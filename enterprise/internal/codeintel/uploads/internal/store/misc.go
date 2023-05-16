@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -13,8 +13,8 @@ import (
 
 // HasRepository determines if there is LSIF data for the given repository.
 func (s *store) HasRepository(ctx context.Context, repositoryID int) (_ bool, err error) {
-	ctx, _, endObservation := s.operations.hasRepository.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
+	ctx, _, endObservation := s.operations.hasRepository.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -28,9 +28,9 @@ SELECT 1 FROM lsif_uploads WHERE state NOT IN ('deleted', 'deleting') AND reposi
 
 // HasCommit determines if the given commit is known for the given repository.
 func (s *store) HasCommit(ctx context.Context, repositoryID int, commit string) (_ bool, err error) {
-	ctx, _, endObservation := s.operations.hasCommit.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
-		log.String("commit", commit),
+	ctx, _, endObservation := s.operations.hasCommit.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
+		attribute.String("commit", commit),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -56,8 +56,8 @@ SELECT
 func (s *store) InsertDependencySyncingJob(ctx context.Context, uploadID int) (id int, err error) {
 	ctx, _, endObservation := s.operations.insertDependencySyncingJob.With(ctx, &err, observation.Args{})
 	defer func() {
-		endObservation(1, observation.Args{LogFields: []log.Field{
-			log.Int("id", id),
+		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
+			attribute.Int("id", id),
 		}})
 	}()
 

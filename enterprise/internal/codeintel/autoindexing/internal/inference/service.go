@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	otelog "github.com/opentracing/opentracing-go/log"
 	baselua "github.com/yuin/gopher-lua"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -84,9 +83,9 @@ func newService(
 // will overwrite them (to disable or change default behavior). Each recognizer's generate function
 // is invoked and the resulting index jobs are combined into a flattened list.
 func (s *Service) InferIndexJobs(ctx context.Context, repo api.RepoName, commit, overrideScript string) (_ []config.IndexJob, err error) {
-	ctx, _, endObservation := s.operations.inferIndexJobs.With(ctx, &err, observation.Args{LogFields: []otelog.Field{
-		otelog.String("repo", string(repo)),
-		otelog.String("commit", commit),
+	ctx, _, endObservation := s.operations.inferIndexJobs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repo", string(repo)),
+		attribute.String("commit", commit),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -131,9 +130,9 @@ func (s *Service) InferIndexJobs(ctx context.Context, repo api.RepoName, commit,
 // will overwrite them (to disable or change default behavior). Each recognizer's hints function is
 // invoked and the resulting index job hints are combined into a flattened list.
 func (s *Service) InferIndexJobHints(ctx context.Context, repo api.RepoName, commit, overrideScript string) (_ []config.IndexJobHint, err error) {
-	ctx, _, endObservation := s.operations.inferIndexJobHints.With(ctx, &err, observation.Args{LogFields: []otelog.Field{
-		otelog.String("repo", string(repo)),
-		otelog.String("commit", commit),
+	ctx, _, endObservation := s.operations.inferIndexJobHints.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repo", string(repo)),
+		attribute.String("commit", commit),
 	}})
 	defer endObservation(1, observation.Args{})
 

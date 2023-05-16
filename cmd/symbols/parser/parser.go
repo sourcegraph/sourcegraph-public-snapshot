@@ -7,7 +7,6 @@ import (
 	"sync/atomic"
 
 	"github.com/inconshreveable/log15"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-ctags"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -56,11 +55,11 @@ func NewParser(
 }
 
 func (p *parser) Parse(ctx context.Context, args search.SymbolsParameters, paths []string) (_ <-chan SymbolOrError, err error) {
-	ctx, _, endObservation := p.operations.parse.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("repo", string(args.Repo)),
-		otlog.String("commitID", string(args.CommitID)),
-		otlog.Int("paths", len(paths)),
-		otlog.String("paths", strings.Join(paths, ":")),
+	ctx, _, endObservation := p.operations.parse.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repo", string(args.Repo)),
+		attribute.String("commitID", string(args.CommitID)),
+		attribute.Int("paths", len(paths)),
+		attribute.StringSlice("paths", paths),
 	}})
 	// NOTE: We call endObservation synchronously within this function when we
 	// return an error. Once we get on the success-only path, we install it to
@@ -94,9 +93,9 @@ func (p *parser) Parse(ctx context.Context, args search.SymbolsParameters, paths
 
 		go func() {
 			defer func() {
-				endObservation(1, observation.Args{LogFields: []otlog.Field{
-					otlog.Int("numRequests", int(totalRequests)),
-					otlog.Int("numSymbols", int(totalSymbols)),
+				endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
+					attribute.Int("numRequests", int(totalRequests)),
+					attribute.Int("numSymbols", int(totalSymbols)),
 				}})
 			}()
 
@@ -136,9 +135,9 @@ func min(a, b int) int {
 }
 
 func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- SymbolOrError, parseRequest fetcher.ParseRequest, totalSymbols *uint32) (err error) {
-	ctx, trace, endObservation := p.operations.handleParseRequest.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("path", parseRequest.Path),
-		otlog.Int("fileSize", len(parseRequest.Data)),
+	ctx, trace, endObservation := p.operations.handleParseRequest.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("path", parseRequest.Path),
+		attribute.Int("fileSize", len(parseRequest.Data)),
 	}})
 	defer endObservation(1, observation.Args{})
 

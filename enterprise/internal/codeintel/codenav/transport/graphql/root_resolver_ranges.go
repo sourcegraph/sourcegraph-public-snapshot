@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
@@ -21,15 +21,13 @@ var ErrIllegalBounds = errors.New("illegal bounds")
 // requires cross-linking of bundles (cross-repo or cross-root).
 func (r *gitBlobLSIFDataResolver) Ranges(ctx context.Context, args *resolverstubs.LSIFRangesArgs) (_ resolverstubs.CodeIntelligenceRangeConnectionResolver, err error) {
 	requestArgs := codenav.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path}
-	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.ranges, time.Second, observation.Args{
-		LogFields: []log.Field{
-			log.Int("repositoryID", requestArgs.RepositoryID),
-			log.String("commit", requestArgs.Commit),
-			log.String("path", requestArgs.Path),
-			log.Int("startLine", int(args.StartLine)),
-			log.Int("endLine", int(args.EndLine)),
-		},
-	})
+	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.ranges, time.Second, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", requestArgs.RepositoryID),
+		attribute.String("commit", requestArgs.Commit),
+		attribute.String("path", requestArgs.Path),
+		attribute.Int("startLine", int(args.StartLine)),
+		attribute.Int("endLine", int(args.EndLine)),
+	}})
 	defer endObservation()
 
 	if args.StartLine < 0 || args.EndLine < args.StartLine {

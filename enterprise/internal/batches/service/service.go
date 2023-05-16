@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 	"gopkg.in/yaml.v2"
 
 	sglog "github.com/sourcegraph/log"
@@ -321,8 +321,8 @@ type CreateBatchSpecOpts struct {
 
 // CreateBatchSpec creates the BatchSpec.
 func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts) (spec *btypes.BatchSpec, err error) {
-	ctx, _, endObservation := s.operations.createBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("changesetSpecs", len(opts.ChangesetSpecRandIDs)),
+	ctx, _, endObservation := s.operations.createBatchSpec.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("changesetSpecs", len(opts.ChangesetSpecRandIDs)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -413,9 +413,9 @@ type CreateBatchSpecFromRawOpts struct {
 
 // CreateBatchSpecFromRaw creates the BatchSpec.
 func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSpecFromRawOpts) (spec *btypes.BatchSpec, err error) {
-	ctx, _, endObservation := s.operations.createBatchSpecFromRaw.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Bool("allowIgnored", opts.AllowIgnored),
-		log.Bool("allowUnsupported", opts.AllowUnsupported),
+	ctx, _, endObservation := s.operations.createBatchSpecFromRaw.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Bool("allowIgnored", opts.AllowIgnored),
+		attribute.Bool("allowUnsupported", opts.AllowUnsupported),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -521,8 +521,8 @@ type ExecuteBatchSpecOpts struct {
 // It returns an error if the batchSpecWorkspaceResolutionJob didn't finish
 // successfully.
 func (s *Service) ExecuteBatchSpec(ctx context.Context, opts ExecuteBatchSpecOpts) (batchSpec *btypes.BatchSpec, err error) {
-	ctx, _, endObservation := s.operations.executeBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("BatchSpecRandID", opts.BatchSpecRandID),
+	ctx, _, endObservation := s.operations.executeBatchSpec.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("BatchSpecRandID", opts.BatchSpecRandID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -603,8 +603,8 @@ type CancelBatchSpecOpts struct {
 // CancelBatchSpec cancels all BatchSpecWorkspaceExecutionJobs associated with
 // the BatchSpec.
 func (s *Service) CancelBatchSpec(ctx context.Context, opts CancelBatchSpecOpts) (batchSpec *btypes.BatchSpec, err error) {
-	ctx, _, endObservation := s.operations.cancelBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("BatchSpecRandID", opts.BatchSpecRandID),
+	ctx, _, endObservation := s.operations.cancelBatchSpec.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("BatchSpecRandID", opts.BatchSpecRandID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -704,9 +704,9 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 type UpsertBatchSpecInputOpts = CreateBatchSpecFromRawOpts
 
 func (s *Service) UpsertBatchSpecInput(ctx context.Context, opts UpsertBatchSpecInputOpts) (spec *btypes.BatchSpec, err error) {
-	ctx, _, endObservation := s.operations.upsertBatchSpecInput.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Bool("allowIgnored", opts.AllowIgnored),
-		log.Bool("allowUnsupported", opts.AllowUnsupported),
+	ctx, _, endObservation := s.operations.upsertBatchSpecInput.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Bool("allowIgnored", opts.AllowIgnored),
+		attribute.Bool("allowUnsupported", opts.AllowUnsupported),
 	}})
 	defer endObservation(1, observation.Args{})
 
