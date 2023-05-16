@@ -11,7 +11,7 @@ import { Icon } from '../../utils/Icon'
 import styles from './ChatInputContext.module.css'
 
 const warning =
-    'This repository has not yet been configured for Cody indexing on Sourcegraph, and response quality will be poor. To enable Cody’s code graph indexing, see the Cody documentation or email support@sourcegraph.com for assistance.'
+    'This repository has not yet been configured for Cody indexing on Sourcegraph, and response quality will be poor. To enable Cody’s code graph indexing, click here to see the Cody documentation, or email support@sourcegraph.com for assistance.'
 
 export const ChatInputContext: React.FunctionComponent<{
     contextStatus: ChatContextStatus
@@ -49,8 +49,9 @@ export const ChatInputContext: React.FunctionComponent<{
                 </h3>
             ) : contextStatus.supportsKeyword ? (
                 <h3 title={warning} className={classNames(styles.badge, styles.indexMissing)}>
-                    {/* TODO: Change link depending on sourcegraph.com or Enterprise */}
-                    <a href="https://docs.sourcegraph.com/cody/explanations/code_graph_context">⚠ Enable Cody Indexing</a>
+                    <a href="https://docs.sourcegraph.com/cody/explanations/code_graph_context">
+                        ⚠ Enable Cody Indexing
+                    </a>
                 </h3>
             ) : null}
 
