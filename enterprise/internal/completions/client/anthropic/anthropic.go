@@ -22,8 +22,10 @@ func NewClient(cli httpcli.Doer, accessToken string, model string) types.Complet
 	}
 }
 
-const apiURL = "https://api.anthropic.com/v1/complete"
-const clientID = "sourcegraph/1.0"
+const (
+	apiURL   = "https://api.anthropic.com/v1/complete"
+	clientID = "sourcegraph/1.0"
+)
 
 type anthropicClient struct {
 	cli         httpcli.Doer

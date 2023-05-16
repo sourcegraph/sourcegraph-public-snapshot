@@ -58,7 +58,7 @@ func newOpenAIHandler(logger log.Logger, eventLogger events.Logger, accessToken 
 				return 0
 			}
 
-			// Otherwise, we have to parse the event stream from anthropic.
+			// Otherwise, we have to parse the event stream.
 			dec := openai.NewDecoder(r)
 			var finalCompletion string
 			// Consume all the messages, but we only care about the last completion data.
