@@ -37,6 +37,11 @@ func GetCompletionsConfig() *schema.Completions {
 			completionsConfig.ChatModel = completionsConfig.Model
 		}
 
+		// TODO: Temporary workaround to fix instances where no completion model is set.
+		if completionsConfig.CompletionModel == "" {
+			completionsConfig.CompletionModel = "claude-instant-v1.0"
+		}
+
 		if completionsConfig.Provider == llmproxy.ProviderName && completionsConfig.Endpoint == "" {
 			completionsConfig.Endpoint = llmproxy.DefaultEndpoint
 		}
