@@ -231,17 +231,17 @@ exec docker run --rm -i \
 
 func setupAppDir(root string, defaultDirFn func() (string, error)) (string, error) {
 	var base = root
+	var dir = ""
 	var err error
 	if base == "" {
+		dir = appDirectory
+		if version.IsDev(version.Version()) {
+			dir = fmt.Sprintf("%s-dev", dir)
+		}
 		base, err = defaultDirFn()
 	}
 	if err != nil {
 		return "", err
-	}
-
-	dir := appDirectory
-	if version.IsDev(version.Version()) {
-		dir = fmt.Sprintf("%s-dev", dir)
 	}
 
 	path := filepath.Join(base, dir)
