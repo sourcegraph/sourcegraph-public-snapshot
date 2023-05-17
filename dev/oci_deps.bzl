@@ -4,7 +4,7 @@ def oci_deps():
     oci_pull(
         name = "wolfi_base",
         digest = "sha256:79d9c1e76beff31da0f182f30a2664dace9d9153cad8cbde7dba5edcef9e564d",
-        image = "us.gcr.io/sourcegraph-dev/wolfi-sourcegraph-dev-base",
+        image = "us.gcr.io/sourcegraph-dev/wolfi-sourcegraph-base",
     )
 
     oci_pull(
