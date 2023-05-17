@@ -2,7 +2,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "audit",
-    srcs = ["audit.go"],
+    srcs = [
+        "audit.go",
+        "security_events.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/audit",
     visibility = ["//:__subpackages__"],
     deps = [
@@ -18,7 +21,10 @@ go_library(
 go_test(
     name = "audit_test",
     timeout = "short",
-    srcs = ["audit_test.go"],
+    srcs = [
+        "audit_test.go",
+        "security_events_test.go",
+    ],
     embed = [":audit"],
     deps = [
         "//internal/actor",
