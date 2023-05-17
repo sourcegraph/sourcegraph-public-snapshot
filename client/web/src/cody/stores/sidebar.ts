@@ -39,10 +39,13 @@ export function useCodySidebarStore(): Omit<CodySidebarSizeStore, 'size'> & Cody
         inputNeedsFocus = false
     }, [])
 
-    const setSidebarIsOpen = useCallback((...args: Parameters<typeof setIsOpen>) => {
-        setIsOpen(...args)
-        inputNeedsFocus = true
-    }, [])
+    const setSidebarIsOpen = useCallback(
+        (...args: Parameters<typeof setIsOpen>) => {
+            setIsOpen(...args)
+            inputNeedsFocus = true
+        },
+        [setIsOpen]
+    )
 
     return {
         onResize,
