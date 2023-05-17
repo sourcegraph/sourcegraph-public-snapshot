@@ -187,6 +187,20 @@ Read more in [Native execution](native_execution.md).
 9.  Logs are streamed from the executor to a Sourcegraph API
 10.  The executor calls a Sourcegraph API to that "complete" the Job.
 
+## Deciding which deployment to use
+
+Deciding how to deploy the executor depends on your use case. The following flowchart can help you decide which
+deployment is best for you.
+
+<a href='https://storage.googleapis.com/sourcegraph-assets/executor_deployment_tree.png'>
+  <img src='https://storage.googleapis.com/sourcegraph-assets/executor_deployment_tree.png' alt='Executor Deployment Flowchart'>
+</a>
+
+<!-- 
+Diagrams are at: https://app.excalidraw.com/s/4Dr1S6qmmY7/206fDJsoMVz
+See handbook to where images are stored: https://handbook.sourcegraph.com/handbook/editing/handbook-images-video/#adding-images-to-google-cloud-storage
+-->
+
 ## Troubleshooting
 Refer to the [Troubleshooting Executors](./executors_troubleshooting.md) document for common debugging operations.
 
