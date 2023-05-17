@@ -51,8 +51,7 @@ COPY --from=build /usr/local/bin/coursier /usr/local/bin/coursier
 
 # copy into place the p4-fusion binary and the wrapper shell script
 # that facilitates better handling of killing of the p4-fusion
-# (for example, either because it exceeded gitLongCommandTimeout, or the Docker host's OOM Reaper killed it)
-# actually, I'm not sure about gitLongCommandTimeout, because that may directly terminate the wrapper script.
+# (for example, if the Docker host's OOM Reaper killed it)
 COPY --from=build /usr/local/bin/p4-fusion /usr/local/bin/p4-fusion-binary
 COPY p4-fusion-wrapper-detect-kill.sh /usr/local/bin/p4-fusion
 COPY process-stats-watcher.sh /usr/local/bin/process-stats-watcher.sh
