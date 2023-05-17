@@ -10,42 +10,37 @@
     list-style-type: none;
 }
 
-.jobHeader {
+.job-header {
     display: flex;
     justify-content: space-between;
     margin-bottom: 0.5rem;
 }
 
-.jobName {
+.job-name {
     margin: 0;
 }
 
-.jobStatus {
+.job-status {
     font-size: 0.875rem;
     color: var(--text-muted);
-    flex-direction: row;
     display: flex;
     flex-direction: row;
     gap: 8px;
 }
 
-.jobDescription {
+.job-description {
     margin: 0;
 }
 
-.excludeRepos {
-    margin-top: 8px;
+.exclude-repos {
+    margin-top: 0.5rem;
 }
 
-.topHeader {
+.top-header {
   display: flex;
   align-items: center;
 }
 
-.saveButton {
+.save-button {
   margin-left: auto;
-}
-
-.statusText {
-    align:center;
 }
