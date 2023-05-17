@@ -90,7 +90,7 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public isDotCom(): boolean {
-        return this.config.serverEndpoint === this.dotcomUrl
+        return new URL(this.config.serverEndpoint).origin === new URL(this.dotcomUrl).origin
     }
 
     public async getCurrentUserId(): Promise<string | Error> {

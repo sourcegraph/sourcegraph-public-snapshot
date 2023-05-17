@@ -9,7 +9,7 @@ export const CURRENT_USER_ID_AND_VERIFIED_EMAIL = `
 query CurrentUser {
     currentUser {
         id
-		hasVerifiedEmail
+        hasVerifiedEmail
     }
 }`
 
