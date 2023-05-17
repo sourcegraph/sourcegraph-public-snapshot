@@ -17,11 +17,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// product subscription tokens are always a prefix of 4 characters (sgs_)
+// followed by a 64-character hex-encoded SHA256 hash
+const tokenLength = 4 + 64
+
 var (
 	minUpdateInterval = 10 * time.Minute
 
 	defaultUpdateInterval = 24 * time.Hour
-	tokenLength           = 68
 )
 
 type Source struct {
