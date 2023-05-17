@@ -8,16 +8,15 @@ import winkUtils from 'wink-nlp-utils'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { KeywordContextFetcher, KeywordContextFetcherResult } from '@sourcegraph/cody-shared/src/keyword-context'
 
+import { logEvent } from '../event-logger'
+
 /**
- * Exclude files without extensions and directories that starts with '.'
+ * Exclude files without extensions and hidden files (starts with '.')
  * Limits to use 1 thread
  * Exclude files larger than 1MB (based on search.largeFiles)
  * Note: Ripgrep excludes binary files and respects .gitignore by default
  */
 const fileExtRipgrepParams = [
-    '-Tmarkdown',
-    '-Tyaml',
-    '-Tjson',
     '-g',
     '*.*',
     '-g',
@@ -115,6 +114,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
 
     public async getContext(query: string, numResults: number): Promise<KeywordContextFetcherResult[]> {
         console.log('fetching keyword matches')
+        const startTime = performance.now()
         const rootPath = this.editor.getWorkspaceRootPath()
         if (!rootPath) {
             return []
@@ -129,6 +129,8 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                 return { fileName: filename, content }
             })
         )
+        const searchDuration = performance.now() - startTime
+        logEvent('CodyVSCodeExtension:keywordContext:searchDuration', searchDuration, searchDuration)
         return messagePairs.reverse().flat()
     }
 
