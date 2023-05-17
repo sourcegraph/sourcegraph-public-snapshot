@@ -53,8 +53,12 @@ func (s *Source) Name() string { return llmproxy.ProductSubscriptionActorSourceN
 
 func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 	// "sgs_" is productSubscriptionAccessTokenPrefix
-	if token == "" || !strings.HasPrefix(token, "sgs_") || len(token) != tokenLength {
+	if token == "" || !strings.HasPrefix(token, "sgs_") {
 		return nil, actor.ErrNotFromSource{}
+	}
+
+	if len(token) != tokenLength {
+		return nil, errors.New("invalid token format")
 	}
 
 	data, hit := s.cache.Get(token)
