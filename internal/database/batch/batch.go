@@ -6,14 +6,12 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	sglog "github.com/sourcegraph/log"
@@ -32,7 +30,7 @@ type Inserter struct {
 	returningSuffix      string
 	returningScanner     ReturningScanner
 	operations           *operations
-	commonLogFields      []log.Field
+	commonAttrs          []attribute.KeyValue
 }
 
 type ReturningScanner func(rows dbutil.Scanner) error
@@ -191,11 +189,11 @@ func NewInserterWithReturn(
 		returningSuffix:      returningSuffix,
 		returningScanner:     returningScanner,
 		operations:           getOperations(logger),
-		commonLogFields: []log.Field{
-			log.String("tableName", tableName),
-			log.String("columnNames", strings.Join(columnNames, ",")),
-			log.Int("numColumns", numColumns),
-			log.Int("maxNumValues", maxNumValues),
+		commonAttrs: []attribute.KeyValue{
+			attribute.String("tableName", tableName),
+			attribute.StringSlice("columnNames", columnNames),
+			attribute.Int("numColumns", numColumns),
+			attribute.Int("maxNumValues", maxNumValues),
 		},
 	}
 }
@@ -248,12 +246,12 @@ func (i *Inserter) Flush(ctx context.Context) (err error) {
 		return nil
 	}
 
-	operationlogFields := []attribute.KeyValue{
+	operationAttrs := []attribute.KeyValue{
 		attribute.Int("batchSize", len(batch)),
 		attribute.Int("payloadSize", payloadSize),
 	}
-	combinedLogFields := append(operationlogFields, trace.OTLogFieldsToOTelAttrs(i.commonLogFields)...)
-	ctx, _, endObservation := i.operations.flush.With(ctx, &err, observation.Args{Attrs: combinedLogFields})
+	combinedAttrs := append(operationAttrs, i.commonAttrs...)
+	ctx, _, endObservation := i.operations.flush.With(ctx, &err, observation.Args{Attrs: combinedAttrs})
 	defer endObservation(1, observation.Args{})
 
 	// Create a query with enough placeholders to match the current batch size. This should

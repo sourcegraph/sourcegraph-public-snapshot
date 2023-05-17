@@ -9,7 +9,6 @@ go_library(
         "fields.go",
         "httptrace.go",
         "logger.go",
-        "otel_bridge.go",
         "trace.go",
         "tracer.go",
         "url.go",
