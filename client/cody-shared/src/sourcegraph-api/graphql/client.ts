@@ -13,7 +13,7 @@ import {
     LEGACY_SEARCH_EMBEDDINGS_QUERY,
     LOG_EVENT_MUTATION,
     REPOSITORY_EMBEDDING_EXISTS_QUERY,
-    CURRENT_USER_ID_AND_VERIFIED_EMAIL,
+    CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY,
 } from './queries'
 
 interface APIResponse<T> {
@@ -25,7 +25,7 @@ interface CurrentUserIdResponse {
     currentUser: { id: string } | null
 }
 
-interface CurrentUserIdAndVerifiedEmailResponse {
+interface CurrentUserIdHasVerifiedEmailResponse {
     currentUser: { id: string; hasVerifiedEmail: boolean } | null
 }
 
@@ -102,8 +102,8 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async getCurrentUserIdAndVerifiedEmail(): Promise<{ id: string; hasVerifiedEmail: boolean } | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdAndVerifiedEmailResponse>>(
-            CURRENT_USER_ID_AND_VERIFIED_EMAIL,
+        return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdHasVerifiedEmailResponse>>(
+            CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY,
             {}
         ).then(response =>
             extractDataOrError(response, data =>

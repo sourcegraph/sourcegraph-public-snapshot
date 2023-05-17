@@ -5,7 +5,7 @@ query CurrentUser {
     }
 }`
 
-export const CURRENT_USER_ID_AND_VERIFIED_EMAIL = `
+export const CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY = `
 query CurrentUser {
     currentUser {
         id
