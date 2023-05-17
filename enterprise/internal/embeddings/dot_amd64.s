@@ -69,7 +69,7 @@ TEXT ·dotVNNI(SB), NOSPLIT, $0-52
 	VPXORQ Z0, Z0, Z0 // positive
 	VPXORQ Z1, Z1, Z1 // negative
 
-	// Fill Z3 with 128
+	// Fill Z2 with 128
 	MOVD $0x80808080, R9
 	VPBROADCASTD R9, Z2
 
@@ -98,9 +98,12 @@ blockloop:
 	JMP blockloop
 
 reduce:
+    // Subtract the overshoot from our calculated dot product
 	VPSUBD Z1, Z0, Z0 // Z0 -= Z1
 
-    // Sum Z0 horizontally
+    // Sum Z0 horizontally. There is no horizontal sum instruction, so instead
+    // we sum the upper and lower halves of Z0, fold it in half again, and
+    // repeat until we are down to 1 element that contains the final sum.
     VEXTRACTI64X4 $1, Z0, Y1
     VPADDD Y0, Y1, Y0
 
