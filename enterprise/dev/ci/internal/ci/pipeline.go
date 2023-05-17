@@ -159,8 +159,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				"repo-updater",
 				"server",
 			}, c.Version,
-				// c.candidateImageTag(),
-				"latest", // TODO: Do not merge; used to simplify dev
+				c.candidateImageTag(),
 				(numUpdatedBaseImages > 0),
 			),
 		)
