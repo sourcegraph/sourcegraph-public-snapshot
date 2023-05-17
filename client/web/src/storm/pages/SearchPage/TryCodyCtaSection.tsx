@@ -77,7 +77,7 @@ export const TryCodyCtaSection: React.FC<TelemetryProps & { className?: string }
         telemetryService.log(eventName, { type: 'ComHome' }, { type: 'ComHome' })
     const onInstallClick = (): void => logEvent(EventName.TRY_CODY_VSCODE)
     const onMarketplaceClick = (): void => logEvent(EventName.TRY_CODY_MARKETPLACE)
-    const onCookbookClick = (): void => logEvent(EventName.TRY_CODY_WEB)
+    const onTryWebClick = (): void => logEvent(EventName.TRY_CODY_WEB)
 
     if (isDismissed) {
         return null
@@ -128,17 +128,25 @@ export const TryCodyCtaSection: React.FC<TelemetryProps & { className?: string }
                 </Text>
             </MarketingBlock>
             <div className="d-flex flex-column justify-content-center p-4">
-                <H3>Try Cody AI on public code</H3>
+                <H3>Cody for Sourcegraph.com</H3>
                 <Text>
-                    Cody for Sourcegraph.com explains, generates, and translates code, right in the web interface.
+                    A free, helpful AI assistant, that explains, generates, and transpiles code, in the Sourcegraph web interface.
                 </Text>
                 <Link
-                    to="https://sourcegraph.com/github.com/openai/openai-cookbook/-/blob/apps/file-q-and-a/nextjs-with-flask-server/server/answer_question.py"
-                    className={classNames(styles.tryCookbookLink, 'd-flex align-items-center')}
-                    onClick={onCookbookClick}
+                    to="/cody"
+                    className={classNames(styles.tryChatLink, 'd-flex align-items-center mb-2')}
+                    onClick={onTryWebClick}
                 >
-                    Try it on the openai cookbook
+                    Try Cody chat
                     <Icon svgPath={mdiArrowRight} aria-hidden={true} size="md" />
+                </Link>
+                <Link
+                    to="https://sourcegraph.com/github.com/openai/openai-cookbook/-/blob/apps/file-q-and-a/nextjs-with-flask-server/server/answer_question.py"
+                    className={classNames(styles.tryFileLink, 'd-flex align-items-center')}
+                    onClick={onTryWebClick}
+                >
+                    Try Cody on a file
+                    <Icon svgPath={mdiArrowRight} aria-hidden={true} size="sm" />
                 </Link>
             </div>
             <Button className={classNames(styles.closeButton, 'position-absolute m-0')} onClick={onDismiss}>
