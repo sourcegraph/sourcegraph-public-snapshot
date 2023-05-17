@@ -128,6 +128,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             ) : (
                 <>
                     <NavBar view={view} setView={setView} devMode={Boolean(config?.debug)} />
+                    {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
                     {view === 'debug' && config?.debug && <Debug debugLog={debugLog} />}
                     {view === 'history' && (
                         <UserHistory
@@ -140,7 +141,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     )}
                     {view === 'recipes' && <Recipes vscodeAPI={vscodeAPI} />}
                     {view === 'settings' && <Settings onLogout={onLogout} serverEndpoint={config?.serverEndpoint} />}
-                    {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
                     {view === 'chat' && (
                         <Chat
                             messageInProgress={messageInProgress}
