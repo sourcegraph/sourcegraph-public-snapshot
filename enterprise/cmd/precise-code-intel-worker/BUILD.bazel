@@ -1,4 +1,6 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_cross_binary", "go_library")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 go_library(
     name = "precise-code-intel-worker_lib",
@@ -19,4 +21,29 @@ go_binary(
     name = "precise-code-intel-worker",
     embed = [":precise-code-intel-worker_lib"],
     visibility = ["//visibility:public"],
+)
+
+go_cross_binary(
+    name = "precise-code-intel-worker_linux_amd64",
+    platform = "@io_bazel_rules_go//go/toolchain:linux_amd64",
+    target = ":precise-code-intel-worker",
+)
+
+pkg_tar(
+    name = "tar_precise-code-intel-worker_linux_amd64",
+    srcs = [":precise-code-intel-worker_linux_amd64"],
+    remap_paths = {"/precise-code-intel-worker_linux_amd64": "/precise-code-intel-worker"},
+)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_base",
+    entrypoint = ["/precise-code-intel-worker"],
+    tars = [":tar_precise-code-intel-worker_linux_amd64"],
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["precise-code-intel-worker:candidate"],
 )

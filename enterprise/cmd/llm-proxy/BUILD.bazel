@@ -1,4 +1,6 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_cross_binary", "go_library")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 go_library(
     name = "llm-proxy_lib",
@@ -15,4 +17,29 @@ go_binary(
     name = "llm-proxy",
     embed = [":llm-proxy_lib"],
     visibility = ["//visibility:public"],
+)
+
+go_cross_binary(
+    name = "llm-proxy_linux_amd64",
+    platform = "@io_bazel_rules_go//go/toolchain:linux_amd64",
+    target = ":llm-proxy",
+)
+
+pkg_tar(
+    name = "tar_llm-proxy_linux_amd64",
+    srcs = [":llm-proxy_linux_amd64"],
+    remap_paths = {"/llm-proxy_linux_amd64": "/llm-proxy"},
+)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_base",
+    entrypoint = ["/llm-proxy"],
+    tars = [":tar_llm-proxy_linux_amd64"],
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["llm-proxy:candidate"],
 )

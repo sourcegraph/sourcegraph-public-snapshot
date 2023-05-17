@@ -1,4 +1,7 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_cross_binary", "go_library")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("//cmd/server:macro.bzl", "container_dependencies", "dependencies_tars")
 
 go_library(
     name = "server_lib",
@@ -15,4 +18,113 @@ go_binary(
     name = "server",
     embed = [":server_lib"],
     visibility = ["//visibility:public"],
+)
+
+go_cross_binary(
+    name = "server_linux_amd64",
+    platform = "@zig_sdk//platform:linux_amd64",
+    target = "server",
+)
+
+pkg_tar(
+    name = "tar_server_linux_amd64",
+    srcs = [":server_linux_amd64"],
+    remap_paths = {"/server_linux_amd64": "/server"},
+)
+
+genrule(
+    name = "nginx_tmp_folder",
+    outs = [".keep_tmp"],
+    cmd = "echo keep > $@",
+)
+
+genrule(
+    name = "nginx_run_folder",
+    outs = [".keep_run"],
+    cmd = "echo keep > $@",
+)
+
+pkg_tar(
+    name = "static_config_tar",
+    srcs = [
+        ":nginx_run_folder",
+        ":nginx_tmp_folder",
+    ],
+    remap_paths = {
+        "/.keep_tmp": "/var/lib/nginx/tmp/.keep",
+        "/.keep_run": "/var/run/.keep",
+    },
+)
+
+pkg_tar(
+    name = "tar_postgres_exporter_config",
+    srcs = ["//cmd/server:postgres_exporter.yaml"],
+)
+
+pkg_tar(
+    name = "tar_monitoring_config",
+    srcs = [
+        "//dev/prometheus:prometheus_targets_linux",
+        "//docker-images/grafana/config",
+        "//docker-images/prometheus:startup_scripts",
+        "//docker-images/prometheus/config:base_config",
+        "//monitoring:generate_config",
+    ],
+    remap_paths = {
+        "monitoring/outputs/docs": "/sg_config_docs",
+        "monitoring/outputs/prometheus": "/sg_config_prometheus",
+        "monitoring/outputs/grafana": "/sg_config_grafana",
+        "docker-images/grafana/config": "/sg_config_grafana",
+        "docker-images/prometheus/config": "/sg_config_prometheus",
+        "docker-images/prometheus": "",
+        "dev/prometheus/linux": "/sg_prometheus_add_ons",
+    },
+    strip_prefix = ".",
+)
+
+DEPS = [
+  "//cmd/github-proxy",
+  "//cmd/searcher",
+
+  "//enterprise/cmd/frontend",
+  "//enterprise/cmd/gitserver",
+  "//enterprise/cmd/migrator",
+  "//enterprise/cmd/precise-code-intel-worker",
+  "//enterprise/cmd/repo-updater",
+  "//enterprise/cmd/symbols",
+  "//enterprise/cmd/worker",
+
+  "//docker-images/prometheus/cmd/prom-wrapper",
+]
+
+ZOEKT_DEPS = [
+    "@com_github_sourcegraph_zoekt//cmd/zoekt-archive-index",
+    "@com_github_sourcegraph_zoekt//cmd/zoekt-git-index",
+    "@com_github_sourcegraph_zoekt//cmd/zoekt-sourcegraph-indexserver",
+    "@com_github_sourcegraph_zoekt//cmd/zoekt-webserver",
+]
+
+# Declares rules for building go_cross_binary + pkg_tar for each dep in DEPS
+container_dependencies(DEPS)
+
+container_dependencies(ZOEKT_DEPS)
+
+# Tip: to view exactly what gets built here, you can run:
+#   bazel cquery '//cmd/server:image' --output build
+oci_image(
+    name = "image",
+    base = "@wolfi_server_base",
+    entrypoint = ["/server"],
+    tars = [
+        ":tar_server_linux_amd64",
+        ":static_config_tar",
+        "tar_postgres_exporter_config",
+        ":tar_monitoring_config",
+    ] + dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS),
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["server:candidate"],
 )
