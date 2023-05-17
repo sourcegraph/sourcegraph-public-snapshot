@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/drift"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
@@ -206,7 +206,7 @@ func testDownMigrationsDoNotCreateDrift(t *testing.T, name string, schema *schem
 		description := descriptions["public"]
 
 		// Detect drift between previous state (before to up/down) and new state (after)
-		if summaries := cliutil.CompareSchemaDescriptions(name, "", description, expectedDescription); len(summaries) > 0 {
+		if summaries := drift.CompareSchemaDescriptions(name, "", description, expectedDescription); len(summaries) > 0 {
 			for _, summary := range summaries {
 				statements := "None"
 				if s, ok := summary.Statements(); ok {
