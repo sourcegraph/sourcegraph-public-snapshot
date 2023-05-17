@@ -6,7 +6,6 @@ import com.intellij.openapi.ui.VerticalFlowLayout;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.scale.JBUIScale;
-import com.intellij.ui.tabs.impl.JBEditorTabs;
 import com.sourcegraph.cody.chat.Chat;
 import com.sourcegraph.cody.chat.ChatBubble;
 import com.sourcegraph.cody.chat.ChatMessage;
@@ -21,7 +20,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.AdjustmentListener;
 import java.util.ArrayList;
-import java.util.Collections;
 
 class CodyToolWindowContent implements UpdatableChat {
     private final @NotNull JBTabbedPane tabbedPane = new JBTabbedPane();
@@ -37,27 +35,27 @@ class CodyToolWindowContent implements UpdatableChat {
 
         // Recipes panel
         RecipeRunner recipeRunner = new RecipeRunner(project, this);
-            JButton explainCodeDetailedButton = new JButton("Explain selected code (detailed)");
+        JButton explainCodeDetailedButton = new JButton("Explain selected code (detailed)");
         explainCodeDetailedButton.addActionListener(e -> recipeRunner.runExplainCodeDetailed());
-            JButton explainCodeHighLevelButton = new JButton("Explain selected code (high level)");
+        JButton explainCodeHighLevelButton = new JButton("Explain selected code (high level)");
         explainCodeHighLevelButton.addActionListener(e -> recipeRunner.runExplainCodeHighLevel());
-            JButton generateUnitTestButton = new JButton("Generate a unit test");
+        JButton generateUnitTestButton = new JButton("Generate a unit test");
         generateUnitTestButton.addActionListener(e -> recipeRunner.runGenerateUnitTest());
-            JButton generateDocstringButton = new JButton("Generate a docstring");
+        JButton generateDocstringButton = new JButton("Generate a docstring");
         generateDocstringButton.addActionListener(e -> recipeRunner.runGenerateDocstring());
-            JButton improveVariableNamesButton = new JButton("Improve variable names");
+        JButton improveVariableNamesButton = new JButton("Improve variable names");
         improveVariableNamesButton.addActionListener(e -> recipeRunner.runImproveVariableNames());
-            JButton translateToLanguageButton = new JButton("Translate to different language");
+        JButton translateToLanguageButton = new JButton("Translate to different language");
         translateToLanguageButton.addActionListener(e -> recipeRunner.runTranslateToLanguage());
-            JButton gitHistoryButton = new JButton("Summarize recent code changes");
+        JButton gitHistoryButton = new JButton("Summarize recent code changes");
         gitHistoryButton.addActionListener(e -> recipeRunner.runGitHistory());
-            JButton findCodeSmellsButton = new JButton("Smell code");
+        JButton findCodeSmellsButton = new JButton("Smell code");
         findCodeSmellsButton.addActionListener(e -> recipeRunner.runFindCodeSmells());
-            JButton fixupButton = new JButton("Fixup code from inline instructions");
+        JButton fixupButton = new JButton("Fixup code from inline instructions");
         fixupButton.addActionListener(e -> recipeRunner.runFixup());
-            JButton contextSearchButton = new JButton("Codebase context search");
+        JButton contextSearchButton = new JButton("Codebase context search");
         contextSearchButton.addActionListener(e -> recipeRunner.runContextSearch());
-            JButton releaseNotesButton = new JButton("Generate release notes");
+        JButton releaseNotesButton = new JButton("Generate release notes");
         releaseNotesButton.addActionListener(e -> recipeRunner.runReleaseNotes());
         recipesPanel.add(explainCodeDetailedButton);
         recipesPanel.add(explainCodeHighLevelButton);
@@ -71,7 +69,7 @@ class CodyToolWindowContent implements UpdatableChat {
         recipesPanel.add(contextSearchButton);
         recipesPanel.add(releaseNotesButton);
 
-            // Chat panel
+        // Chat panel
         messagesPanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 10, true, true));
         JBScrollPane chatPanel = new JBScrollPane(messagesPanel, JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
@@ -144,13 +142,12 @@ class CodyToolWindowContent implements UpdatableChat {
 
     private void sendMessage(@NotNull Project project) {
         // Build message
-        EditorContext editorContext = EditorContextGetter.getEditorContext(project);
         boolean isEnterprise = ConfigUtil.getInstanceType(project).equals(SettingsComponent.InstanceType.ENTERPRISE);
         String instanceUrl = isEnterprise ? ConfigUtil.getEnterpriseUrl(project) : "https://sourcegraph.com/";
         String accessToken = isEnterprise ? ConfigUtil.getEnterpriseAccessToken(project) : ConfigUtil.getDotcomAccessToken(project);
 
         var chat = new Chat("", instanceUrl, accessToken != null ? accessToken : "");
-        ArrayList<String> contextFiles = editorContext == null ? new ArrayList<>() : new ArrayList<>(Collections.singletonList(editorContext.getCurrentFileContent()));
+        ArrayList<String> contextFiles = EditorContextGetter.getEditorContext(project).getCurrentFileContentAsArrayList();
         ChatMessage humanMessage = ChatMessage.createHumanMessage(messageField.getText(), contextFiles);
         addMessage(humanMessage);
 

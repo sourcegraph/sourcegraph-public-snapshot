@@ -1,6 +1,10 @@
 package com.sourcegraph.cody.editor;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.ArrayList;
+import java.util.Collections;
 
 public class EditorContext {
     @Nullable
@@ -10,24 +14,29 @@ public class EditorContext {
     @Nullable
     private final String selection;
 
+    public EditorContext() {
+        this(null, null, null);
+    }
+
     public EditorContext(@Nullable String currentFileName, @Nullable String currentFileContent, @Nullable String selection) {
         this.currentFileName = currentFileName;
         this.currentFileContent = currentFileContent;
         this.selection = selection;
     }
 
-    @Nullable
-    public String getCurrentFileName() {
+    public @Nullable String getCurrentFileName() {
         return currentFileName;
     }
 
-    @Nullable
-    public String getCurrentFileContent() {
+    public @Nullable String getCurrentFileContent() {
         return currentFileContent;
     }
 
-    @Nullable
-    public String getSelection() {
+    public @Nullable String getSelection() {
         return selection;
+    }
+
+    public @NotNull ArrayList<String> getCurrentFileContentAsArrayList() {
+        return currentFileContent != null ? new ArrayList<>(Collections.singletonList(this.getCurrentFileContent())) : new ArrayList<>();
     }
 }
