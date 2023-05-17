@@ -5,7 +5,7 @@ query CurrentUser {
     }
 }`
 
-export const AUTH_STATUS_QUERY = `
+export const CURRENT_USER_ID_AND_VERIFIED_EMAIL = `
 query CurrentUser {
     currentUser {
         id
