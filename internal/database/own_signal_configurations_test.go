@@ -1,0 +1,64 @@
+package database
+
+import (
+	"context"
+	"testing"
+
+	"github.com/hexops/autogold/v2"
+	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+)
+
+func Test_LoadConfigurations(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	store := db.OwnSignalConfigurations()
+	configurations, err := store.LoadConfigurations(ctx)
+	require.NoError(t, err)
+
+	autogold.Expect([]SignalConfiguration{
+		{
+			ID:          1,
+			Name:        "recent-contributors",
+			Description: "Indexes contributors in each file using repository history.",
+		},
+		{
+			ID:          2,
+			Name:        "recent-views",
+			Description: "Indexes users that recently viewed files in Sourcegraph.",
+		},
+	}).Equal(t, configurations)
+
+	t.Run("update signal config", func(t *testing.T) {
+		require.NotEmpty(t, configurations)
+		cfg := configurations[0]
+		err := store.UpdateConfiguration(ctx, UpdateSignalConfigurationArgs{
+			Name:                 cfg.Name,
+			ExcludedRepoPatterns: []string{"github.com/findme/somewhere"},
+			Enabled:              true,
+		})
+		require.NoError(t, err)
+
+		configurations, err := store.LoadConfigurations(ctx)
+		require.NoError(t, err)
+
+		autogold.Expect([]SignalConfiguration{
+			{
+				ID:                   1,
+				Name:                 "recent-contributors",
+				Description:          "Indexes contributors in each file using repository history.",
+				ExcludedRepoPatterns: []string{"github.com/findme/somewhere"},
+				Enabled:              true,
+			},
+			{
+				ID:          2,
+				Name:        "recent-views",
+				Description: "Indexes users that recently viewed files in Sourcegraph.",
+			},
+		}).Equal(t, configurations)
+	})
+}

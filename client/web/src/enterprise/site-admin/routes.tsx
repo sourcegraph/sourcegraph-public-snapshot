@@ -71,6 +71,7 @@ const RoleAssignmentModal = lazyComponent<RoleAssignmentModalProps, 'RoleAssignm
 )
 
 const CodeInsightsJobsPage = lazyComponent(() => import('../insights/admin-ui/CodeInsightsJobs'), 'CodeInsightsJobs')
+const OwnStatusPage = lazyComponent(() => import('../own/admin-ui/OwnStatusPage'), 'OwnStatusPage')
 
 const SiteAdminCodyPage = lazyComponent(() => import('./cody/SiteAdminCodyPage'), 'SiteAdminCodyPage')
 
@@ -152,6 +153,11 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             exact: true,
             path: '/code-insights-jobs',
             render: () => <CodeInsightsJobsPage />,
+        },
+        {
+            exact: true,
+            path: '/own-signal-page',
+            render: () => <OwnStatusPage />,
         },
 
         // Code intelligence redirect

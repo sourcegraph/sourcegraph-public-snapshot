@@ -131,6 +131,11 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
             label: 'Inference',
             condition: () => window.context?.codeIntelAutoIndexingEnabled,
         },
+        {
+            label: 'Ownership signals',
+            to: '/site-admin/own-signal-page',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+        },
     ],
 }
 

@@ -2947,6 +2947,21 @@ Indexes:
 
 ```
 
+# Table "public.own_signal_configurations"
+```
+         Column         |  Type   | Collation | Nullable |                        Default                        
+------------------------+---------+-----------+----------+-------------------------------------------------------
+ id                     | integer |           | not null | nextval('own_signal_configurations_id_seq'::regclass)
+ name                   | text    |           | not null | 
+ description            | text    |           | not null | ''::text
+ excluded_repo_patterns | text[]  |           |          | 
+ enabled                | boolean |           | not null | false
+Indexes:
+    "own_signal_configurations_pkey" PRIMARY KEY, btree (id)
+    "own_signal_configurations_name_uidx" UNIQUE, btree (name)
+
+```
+
 # Table "public.own_signal_recent_contribution"
 ```
         Column        |            Type             | Collation | Nullable |                          Default                           
