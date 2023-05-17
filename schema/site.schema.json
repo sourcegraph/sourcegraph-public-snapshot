@@ -569,7 +569,7 @@
       "default": false
     },
     "batchChanges.autoDeleteBranch": {
-      "description": "Override code host specific setting and automatically delete batch change branches when a batch change is merged or closed.",
+      "description": "Automatically delete branches created for Batch Changes changesets when the changeset is merged or closed, for supported code hosts. Overrides any setting on the repository on the code host itself.",
       "type": "boolean",
       "group": "BatchChanges",
       "default": false
