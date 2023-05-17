@@ -7,7 +7,6 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
     private ranges: vscode.Range | null = null
     private static lenses: CodeLensProvider
 
-    private fileUri: vscode.Uri | null = null
     private status = CodyTaskState.idle
     public decorator: DecorationProvider
 
@@ -15,7 +14,7 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
     private _onDidChangeCodeLenses: vscode.EventEmitter<void> = new vscode.EventEmitter<void>()
     public readonly onDidChangeCodeLenses: vscode.Event<void> = this._onDidChangeCodeLenses.event
 
-    constructor(public id = '', private extPath = '') {
+    constructor(public id = '', private extPath = '', private fileUri: vscode.Uri | null = null) {
         this.decorator = new DecorationProvider(this.id, this.extPath)
         vscode.workspace.onDidChangeTextDocument(e => {
             if (e.document.uri.fsPath !== this.fileUri?.fsPath) {
@@ -80,11 +79,11 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
         document: vscode.TextDocument,
         token: vscode.CancellationToken
     ): vscode.CodeLens[] | Thenable<vscode.CodeLens[]> {
-        if (!document || !token) {
+        // Only create Code lens in known filePath
+        if (!document || !token || document.uri.fsPath !== this.fileUri?.fsPath) {
             return []
         }
-        this.fileUri = document.uri
-        this.decorator.setFileUri(document.uri)
+        this.decorator.setFileUri(this.fileUri)
         return this.createCodeLenses()
     }
     /**

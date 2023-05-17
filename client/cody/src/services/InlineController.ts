@@ -46,7 +46,10 @@ export class InlineController {
         this.commentController.options = this.options
         // Track last selection range in valid doc before an action is called
         vscode.window.onDidChangeTextEditorSelection(e => {
-            if (e.textEditor.document.uri.scheme !== 'file') {
+            if (
+                e.textEditor.document.uri.scheme !== 'file' ||
+                e.textEditor.document.uri.fsPath !== this.thread?.uri.fsPath
+            ) {
                 return
             }
             const selection = e.selections[0]
@@ -61,7 +64,13 @@ export class InlineController {
         // Track and update line diff when a task for the current selected range is being processed (this.isInProgress)
         // This makes sure the comment range and highlights are also updated correctly
         vscode.workspace.onDidChangeTextDocument(e => {
-            if (!this.isInProgress || !this.selectionRange || e.document.uri.scheme !== 'file') {
+            // don't track
+            if (
+                !this.isInProgress ||
+                !this.selectionRange ||
+                e.document.uri.scheme !== 'file' ||
+                e.document.uri.fsPath !== this.thread?.uri.fsPath
+            ) {
                 return
             }
             const newRange = lineTracker(e, this.selectionRange)
@@ -200,7 +209,7 @@ export class InlineController {
      * Get the current editor using the comment thread uri instead
      */
     public async makeCodeLenses(taskID: string, uri: vscode.Uri, extPath: string): Promise<CodeLensProvider> {
-        const lens = new CodeLensProvider(taskID, extPath)
+        const lens = new CodeLensProvider(taskID, extPath, uri)
         const activeDocument = await vscode.workspace.openTextDocument(uri)
         await lens.provideCodeLenses(activeDocument, new vscode.CancellationTokenSource().token)
         vscode.languages.registerCodeLensProvider('*', lens)
@@ -227,7 +236,7 @@ export class InlineController {
         const startLine = selection.start.line
         await activeEditor.edit(edit => {
             edit.delete(selection)
-            edit.insert(new vscode.Position(startLine, 0), replacement + '\n')
+            edit.insert(new vscode.Position(startLine, 0), replacement)
         })
         const newLineCount = replacement.split('\n').length - 2
         // Highlight from the start line to the length of the replacement content
@@ -262,9 +271,10 @@ export class InlineController {
         if (!this.thread) {
             return null
         }
-        await vscode.window.showTextDocument(this.thread.uri)
-        this.editor = vscode.window.activeTextEditor || null
-        return this.editor
+        const activeDocument = await vscode.workspace.openTextDocument(this.thread.uri)
+        const activeEditor = (await vscode.window.showTextDocument(activeDocument)) || null
+        this.editor = activeEditor
+        return activeEditor
     }
     /**
      * Return latest selection
