@@ -221,15 +221,16 @@ interface useGetBatchChangesSiteConfigurationResult {
 }
 
 export const useBatchChangesRolloutWindowConfig = (): useGetBatchChangesSiteConfigurationResult => {
-    const [rolloutWindowConfig, setRolloutWindowConfig] = useState<BatchChangeRolloutWindow[]>([])
     const { loading, error, data } = useQuery(BATCH_CHANGES_SITE_CONFIGURATION, {
         fetchPolicy: 'cache-first',
     })
-    useEffect(() => {
-        if (data) {
-            const siteConfig = jsonc.parse(data.site.configuration.effectiveContents)
-            setRolloutWindowConfig(siteConfig['batchChanges.rolloutWindows'] || [])
+   
+   const rolloutWindowConfig: BatchChangeRolloutWindow[] = useMemo(() => {
+        if (!data) {
+            return []
         }
+        const siteConfig = jsonc.parse(data.site.configuration.effectiveContents)
+        return siteConfig['batchChanges.rolloutWindows'] || []
     }, [data])
 
     return { loading, error, rolloutWindowConfig }
