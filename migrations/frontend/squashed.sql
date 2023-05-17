@@ -5403,7 +5403,7 @@ CREATE INDEX access_tokens_lookup ON access_tokens USING hash (value_sha256) WHE
 
 CREATE INDEX app_id_idx ON github_app_installs USING btree (app_id);
 
-CREATE UNIQUE INDEX assigned_owners_file_path ON assigned_owners USING btree (file_path_id);
+CREATE INDEX assigned_owners_file_path ON assigned_owners USING btree (file_path_id);
 
 CREATE INDEX batch_changes_namespace_org_id ON batch_changes USING btree (namespace_org_id);
 
