@@ -37,10 +37,8 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    architecture = "amd64",
     base = "@wolfi_base",
     entrypoint = ["/searcher"],
-    os = "linux",
     tars = [":tar_searcher_linux_amd64"],
 )
 

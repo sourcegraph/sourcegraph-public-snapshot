@@ -37,10 +37,8 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    architecture = "amd64",
     base = "@wolfi_base",
     entrypoint = ["/gitserver"],
-    os = "linux",
     tars = [":tar_gitserver_linux_amd64"],
 )
 

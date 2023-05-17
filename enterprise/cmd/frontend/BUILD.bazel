@@ -39,10 +39,8 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    architecture = "amd64",
     base = "@wolfi_base",
     entrypoint = ["/frontend"],
-    os = "linux",
     tars = [":tar_frontend_linux_amd64"],
 )
 

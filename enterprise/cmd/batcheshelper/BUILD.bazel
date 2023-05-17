@@ -49,10 +49,8 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    architecture = "amd64",
     base = "@wolfi_base",
     entrypoint = ["/batcheshelper"],
-    os = "linux",
     tars = [":tar_batcheshelper_linux_amd64"],
 )
 

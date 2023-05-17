@@ -36,10 +36,8 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    architecture = "amd64",
     base = "@wolfi_symbols_base",
     entrypoint = ["/symbols_docker"],
-    os = "linux",
     tars = [":tar_symbols_linux_amd64"],
 )
 
