@@ -88,6 +88,9 @@ blockloop:
 	// to compensate by so we can subtract it from the sum at the end.
 	//
 	// Effectively, we are calculating SUM((Z3 + 128) · Z4) - 128 * SUM(Z4).
+    //
+    // The idea for this comes from this doc:
+    // https://www.intel.com/content/www/us/en/docs/onednn/developer-guide-reference/2023-0/nuances-of-int8-computations.html#DOXID-DEV-GUIDE-INT8-COMPUTATIONS-1DG-I8-COMP-S12
 
 	VPADDB Z3, Z2, Z3   // add 128 to Z3, making it unsigned
 	VPDPBUSD Z4, Z3, Z0 // Z0 += Z3 dot Z4
