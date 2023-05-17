@@ -13,6 +13,7 @@ package:
   dependencies:
     runtime:
       - openjdk-11
+      - openjdk-11-default-jvm # Set Java 11 as default JVM
 
 environment:
   contents:
@@ -26,7 +27,7 @@ environment:
       - ca-certificates-bundle
       - maven
       - openjdk-11
-      - openjdk-11-jre
+      - openjdk-11-default-jvm
 
 pipeline:
   - uses: fetch
