@@ -76,6 +76,7 @@ pkg_tar(
         "monitoring/outputs/docs": "/sg_config_docs",
         "monitoring/outputs/prometheus": "/sg_config_prometheus",
         "monitoring/outputs/grafana": "/sg_config_grafana/provisioning/dashboards/sourcegraph",
+        "docker-images/grafana/config": "/sg_config_grafana",
         "docker-images/prometheus/config": "/sg_config_prometheus",
         "docker-images/prometheus": "",
         "dev/prometheus/linux": "/sg_prometheus_add_ons",
