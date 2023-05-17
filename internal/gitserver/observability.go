@@ -16,6 +16,7 @@ type operations struct {
 	p4Exec         *observation.Operation
 	batchLog       *observation.Operation
 	batchLogSingle *observation.Operation
+	do             *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -49,6 +50,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		p4Exec:         op("P4Exec"),
 		batchLog:       op("BatchLog"),
 		batchLogSingle: subOp("batchLogSingle"),
+		do:             subOp("do"),
 	}
 }
 

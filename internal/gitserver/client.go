@@ -15,8 +15,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel/attribute"
@@ -40,7 +38,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -1303,22 +1300,14 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 		return nil, errors.Wrap(err, "do")
 	}
 
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.do") //nolint:staticcheck // OT is deprecated
-	defer func() {
-		if repo != "" {
-			span.LogKV("repo", string(repo), "method", method, "path", parsedURL.Path)
-		} else {
-			span.LogKV("method", method, "path", parsedURL.Path)
-		}
-		span.LogKV("repo", string(repo), "method", method, "path", parsedURL.Path)
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
-	}()
+	ctx, trLogger, endObservation := c.operations.do.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repo", string(repo)),
+		attribute.String("method", method),
+		attribute.String("path", parsedURL.Path),
+	}})
+	defer endObservation(1, observation.Args{})
 
-	req, err := http.NewRequest(method, uri, bytes.NewReader(payload))
+	req, err := http.NewRequestWithContext(ctx, method, uri, bytes.NewReader(payload))
 	if err != nil {
 		return nil, err
 	}
@@ -1329,16 +1318,10 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 	// Set header so that the server knows the request is from us.
 	req.Header.Set("X-Requested-With", "Sourcegraph")
 
-	req = req.WithContext(ctx)
-
 	c.HTTPLimiter.Acquire()
 	defer c.HTTPLimiter.Release()
-	span.LogKV("event", "Acquired HTTP limiter")
 
-	req, ht := nethttp.TraceRequest(span.Tracer(), req,
-		nethttp.OperationName("Gitserver Client"),
-		nethttp.ClientTrace(false))
-	defer ht.Finish()
+	trLogger.AddEvent("Acquired HTTP limiter")
 
 	return c.httpClient.Do(req)
 }
