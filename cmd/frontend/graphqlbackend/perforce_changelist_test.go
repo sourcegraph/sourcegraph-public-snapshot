@@ -17,7 +17,15 @@ func TestGetP4ChangelistID(t *testing.T) {
 			expectedChangeListID: "83725",
 		},
 		{
+			input:                `[git-p4: depot-path = "//test-perms/": change = 83725]`,
+			expectedChangeListID: "83725",
+		},
+		{
 			input:                `[p4-fusion: depot-paths = "//test-perms/": change = 80972]`,
+			expectedChangeListID: "80972",
+		},
+		{
+			input:                `[p4-fusion: depot-path = "//test-perms/": change = 80972]`,
 			expectedChangeListID: "80972",
 		},
 		{
