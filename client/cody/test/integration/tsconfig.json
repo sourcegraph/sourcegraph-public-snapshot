@@ -1,14 +1,14 @@
 {
-  "extends": "../tsconfig.json",
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
     "sourceMap": true,
     "rootDir": ".",
     "sourceRoot": ".",
-    "outDir": "../out/integration-test",
+    "outDir": "../../out/test/integration",
     "types": ["mocha", "node"],
     "jsx": "react-jsx",
   },
-  "references": [{ "path": "../" }],
+  "references": [{ "path": "../../" }],
   "include": ["*", "**/*", ".eslintrc.js"],
   "exclude": ["out", "testdata"],
 }
