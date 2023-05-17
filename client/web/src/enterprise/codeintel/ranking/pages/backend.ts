@@ -42,9 +42,8 @@ export const useRankingSummary = (
     error?: ApolloError
     loading: boolean
     data: RankingSummaryResult | undefined
-} => {
-    return useQuery<RankingSummaryResult, RankingSummaryVariables>(RANKING_SUMMARY, {
+} =>
+    useQuery<RankingSummaryResult, RankingSummaryVariables>(RANKING_SUMMARY, {
         variables,
         fetchPolicy: 'cache-first',
     })
-}
