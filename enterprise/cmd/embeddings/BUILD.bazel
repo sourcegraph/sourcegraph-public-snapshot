@@ -43,5 +43,5 @@ oci_image(
 oci_tarball(
     name = "image_tarball",
     image = ":image",
-    repotags = ["embeddings:candidate"],
+    repo_tags = ["embeddings:candidate"],
 )
