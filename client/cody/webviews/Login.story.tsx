@@ -38,8 +38,8 @@ const invalidAccessTokenAuthStatus: AuthStatus = {
 }
 
 const requiresVerifiedEmailAuthStatus: AuthStatus = {
-    authenticated: false,
-    showInvalidAccessTokenError: true,
+    authenticated: true,
+    showInvalidAccessTokenError: false,
     hasVerifiedEmail: false,
     requiresVerifiedEmail: true,
 }
