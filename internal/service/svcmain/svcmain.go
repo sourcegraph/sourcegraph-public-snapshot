@@ -62,7 +62,7 @@ func Main(services []sgservice.Service, config Config, args []string) {
 
 	app := cli.NewApp()
 	app.Name = filepath.Base(args[0])
-	app.Usage = "The Sourcegraph App"
+	app.Usage = "The Sourcegraph app"
 	app.Version = version.Version()
 	app.Flags = []cli.Flag{
 		&cli.PathFlag{

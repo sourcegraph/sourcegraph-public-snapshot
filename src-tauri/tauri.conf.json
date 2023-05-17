@@ -7,7 +7,7 @@
     "withGlobalTauri": true
   },
   "package": {
-    "productName": "Sourcegraph App",
+    "productName": "Sourcegraph",
     "version": "1.0.0"
   },
   "tauri": {
