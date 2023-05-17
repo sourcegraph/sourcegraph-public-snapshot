@@ -233,7 +233,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                             {
                                 cwd: rootPath,
                                 maxBuffer: 1024 * 1024 * 1024,
-                                timeout: 1000 * 30, // timeout in one minute
+                                timeout: 1000 * 30, // timeout in 30secs
                             },
                             (error, stdout, stderr) => {
                                 if (error?.code === 2) {
