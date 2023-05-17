@@ -4,6 +4,7 @@ package linters
 import (
 	"bytes"
 	"context"
+	"os"
 
 	"github.com/sourcegraph/run"
 	"go.bobheadxi.dev/streamline/pipeline"
@@ -68,6 +69,8 @@ var Targets = []Target{
 			tsEnterpriseImport,
 			inlineTemplates,
 			runScript("pnpm dedupe", "dev/check/pnpm-deduplicate.sh"),
+			// we only run this linter locally, since on CI it has it's own job
+			onlyLocal(runScript("pnpm list:js:web", "dev/ci/pnpm-run.sh lint:js:web")),
 			checkUnversionedDocsLinks(),
 		},
 	},
@@ -106,6 +109,15 @@ var Formatting = Target{
 	Checks: []*linter{
 		prettier,
 	},
+}
+
+func onlyLocal(l *linter) *linter {
+	if os.Getenv("CI") == "true" {
+		l.Enabled = func(ctx context.Context, args *repo.State) error {
+			return errors.New("check is disabled in CI")
+		}
+	}
+	return l
 }
 
 // runScript creates check that runs the given script from the root of sourcegraph/sourcegraph.
