@@ -37,8 +37,8 @@ type EventLogStore interface {
 	// AggregatedCodyEvents calculates CodyAggregatedEvent for each every unique event type related to Cody.
 	AggregatedCodyEvents(ctx context.Context, now time.Time) ([]types.CodyAggregatedEvent, error)
 
-	// AggregatedRepoMetadataStats calculates RepoMetadataAggregatedEvent for each every unique event type related to RepoMetadata.
-	AggregatedRepoMetadataStats(ctx context.Context, now time.Time) (*types.RepoMetadataAggregatedStats, error)
+	// AggregatedRepoMetadataEvents calculates RepoMetadataAggregatedEvent for each every unique event type related to RepoMetadata.
+	AggregatedRepoMetadataEvents(ctx context.Context, now time.Time, period PeriodType) (*types.RepoMetadataAggregatedEvents, error)
 
 	// AggregatedSearchEvents calculates SearchAggregatedEvent for each every unique event type related to search.
 	AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error)
@@ -450,6 +450,18 @@ const (
 	// Monthly is used to get a count of events or unique users within a month.
 	Monthly PeriodType = "monthly"
 )
+
+func (s PeriodType) ToDBString() string {
+	switch s {
+	case Daily:
+		return "day"
+	case Weekly:
+		return "week"
+	case Monthly:
+		return "month"
+	}
+	return "unknown"
+}
 
 var ErrInvalidPeriodType = errors.New("invalid period type")
 
@@ -1421,30 +1433,7 @@ func (l *eventLogStore) aggregatedCodyEvents(ctx context.Context, queryString st
 	return events, nil
 }
 
-func (l *eventLogStore) AggregatedRepoMetadataStats(ctx context.Context, now time.Time) (*types.RepoMetadataAggregatedStats, error) {
-	daily, err := l.aggregatedRepoMetadataStatsPeriod(ctx, now, "day")
-	if err != nil {
-		return nil, err
-	}
-
-	weekly, err := l.aggregatedRepoMetadataStatsPeriod(ctx, now, "week")
-	if err != nil {
-		return nil, err
-	}
-
-	monthly, err := l.aggregatedRepoMetadataStatsPeriod(ctx, now, "month")
-	if err != nil {
-		return nil, err
-	}
-
-	return &types.RepoMetadataAggregatedStats{
-		Daily:   daily,
-		Weekly:  weekly,
-		Monthly: monthly,
-	}, nil
-}
-
-func buildAggregatedRepoMetadataStatsQuery(period string) string {
+func buildAggregatedRepoMetadataEventsQuery(period PeriodType) string {
 	return `
 	WITH events AS (
 		SELECT
@@ -1453,11 +1442,11 @@ func buildAggregatedRepoMetadataStatsQuery(period string) string {
 			argument
 		FROM event_logs
 		WHERE
-			timestamp >= ` + makeDateTruncExpression(period, "%s::timestamp") + `
+			timestamp >= ` + makeDateTruncExpression(period.ToDBString(), "%s::timestamp") + `
 			AND name IN ('RepoMetadataAdded', 'RepoMetadataUpdated', 'RepoMetadataDeleted', 'SearchSubmitted')
 	)
 	SELECT
-		` + makeDateTruncExpression(period, "%s::timestamp") + ` as start_time,
+		` + makeDateTruncExpression(period.ToDBString(), "%s::timestamp") + ` as start_time,
 
 		COUNT(*) FILTER (WHERE name IN ('RepoMetadataAdded')) AS added_count,
 		COUNT(DISTINCT user_id) FILTER (WHERE name IN ('RepoMetadataAdded')) AS added_unique_count,
@@ -1474,9 +1463,9 @@ func buildAggregatedRepoMetadataStatsQuery(period string) string {
 	`
 }
 
-func (l *eventLogStore) aggregatedRepoMetadataStatsPeriod(ctx context.Context, now time.Time, period string) (*types.RepoMetadataAggregatedStatsPeriod, error) {
-	q := buildAggregatedRepoMetadataStatsQuery(period)
-	row := l.QueryRow(ctx, sqlf.Sprintf(q, now, now))
+func (l *eventLogStore) AggregatedRepoMetadataEvents(ctx context.Context, now time.Time, period PeriodType) (*types.RepoMetadataAggregatedEvents, error) {
+	query := buildAggregatedRepoMetadataEventsQuery(period)
+	row := l.QueryRow(ctx, sqlf.Sprintf(query, now, now))
 	var startTime time.Time
 	var createEvent types.EventStats
 	var updateEvent types.EventStats
@@ -1496,7 +1485,7 @@ func (l *eventLogStore) aggregatedRepoMetadataStatsPeriod(ctx context.Context, n
 		return nil, err
 	}
 
-	return &types.RepoMetadataAggregatedStatsPeriod{
+	return &types.RepoMetadataAggregatedEvents{
 		StartTime:          startTime,
 		CreateRepoMetadata: &createEvent,
 		UpdateRepoMetadata: &updateEvent,

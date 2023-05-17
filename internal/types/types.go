@@ -1022,16 +1022,24 @@ type CodyAggregatedEvent struct {
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
-// RepoMetadataAggregatedStats represents the total and unique number of
+// to the updatecheck handler.
+// RepoMetadataAggregatedStats represents the total number of repo metadata,
+// number of repositories with any metadata, total and unique number of
 // events for repo metadata usage related events over the current day, week, month.
 type RepoMetadataAggregatedStats struct {
-	IsEnabled bool
-	Daily     *RepoMetadataAggregatedStatsPeriod
-	Weekly    *RepoMetadataAggregatedStatsPeriod
-	Monthly   *RepoMetadataAggregatedStatsPeriod
+	Summary *RepoMetadataAggregatedSummary
+	Daily   *RepoMetadataAggregatedEvents
+	Weekly  *RepoMetadataAggregatedEvents
+	Monthly *RepoMetadataAggregatedEvents
 }
 
-type RepoMetadataAggregatedStatsPeriod struct {
+type RepoMetadataAggregatedSummary struct {
+	IsEnabled              bool
+	RepoMetadataCount      *int32
+	ReposWithMetadataCount *int32
+}
+
+type RepoMetadataAggregatedEvents struct {
 	StartTime          time.Time
 	CreateRepoMetadata *EventStats
 	UpdateRepoMetadata *EventStats
