@@ -4,6 +4,9 @@ import com.intellij.ui.JBColor;
 import com.intellij.util.ui.JBInsets;
 import com.intellij.util.ui.UIUtil;
 import com.sourcegraph.cody.completions.Speaker;
+import org.commonmark.node.Node;
+import org.commonmark.parser.Parser;
+import org.commonmark.renderer.html.HtmlRenderer;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -22,19 +25,33 @@ public class ChatBubble extends JPanel {
         this.setBackground(background);
         this.setLayout(new BorderLayout());
         this.setBorder(new EmptyBorder(new JBInsets(10, 10, 10, 10)));
-        JTextArea textArea = new JTextArea(message.getDisplayText());
-        textArea.setFont(UIUtil.getLabelFont());
-        textArea.setLineWrap(true);
-        textArea.setWrapStyleWord(true);
-        textArea.setBackground(background);
-        textArea.setForeground(isHuman ? JBColor.WHITE : JBColor.BLACK);
-        textArea.setComponentOrientation(isHuman ? ComponentOrientation.RIGHT_TO_LEFT : ComponentOrientation.LEFT_TO_RIGHT);
-        this.add(textArea, BorderLayout.CENTER);
+
+        JEditorPane pane = new JEditorPane();
+        pane.setContentType("text/html");
+        pane.setText(convertToHtml(message.getDisplayText()));
+        pane.setEditable(false);
+        pane.setFont(UIUtil.getLabelFont());
+        pane.setBackground(background);
+        pane.setForeground(isHuman ? JBColor.WHITE : JBColor.BLACK);
+        pane.setComponentOrientation(isHuman ? ComponentOrientation.RIGHT_TO_LEFT : ComponentOrientation.LEFT_TO_RIGHT);
+        pane.setBorder(BorderFactory.createEmptyBorder(0, 0, 0, 0));
+        this.add(pane, BorderLayout.CENTER);
     }
 
-    public void updateText(@NotNull String newText) {
-        JTextArea textArea = (JTextArea) this.getComponent(0);
-        textArea.setText(newText);
+    public void updateText(@NotNull String newMarkdownText) {
+        JEditorPane pane = (JEditorPane) this.getComponent(0);
+        pane.setText(convertToHtml(newMarkdownText));
+    }
+
+    private @NotNull String convertToHtml(@NotNull String markdown) {
+        // Parse markdown
+        Parser parser = Parser.builder().build();
+        Node node = parser.parse(markdown);
+        HtmlRenderer renderer = HtmlRenderer.builder().build();
+        String messageAsHtml = renderer.render(node);
+
+        // Build HTML
+        return "<html data-gramm=\"false\"><head><style>p { margin:0; }</style></head><body>" + messageAsHtml + "</body></html>";
     }
 
     @Override
