@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS own_signal_configurations
     enabled                BOOLEAN NOT NULL DEFAULT FALSE
 );
 
-CREATE UNIQUE INDEX own_signal_configurations_name_uidx ON own_signal_configurations(name);
+CREATE UNIQUE INDEX IF NOT EXISTS own_signal_configurations_name_uidx ON own_signal_configurations(name);
 
 INSERT INTO own_signal_configurations (id, name, enabled, description)
 VALUES (1, 'recent-contributors', FALSE, 'Indexes contributors in each file using repository history.')
