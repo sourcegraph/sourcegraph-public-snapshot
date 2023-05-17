@@ -222,6 +222,9 @@ extend type Mutation {
     """
     deleteCodeownersFiles(repositories: [DeleteCodeownersFilesInput!]!): EmptyResponse
 
+    """
+    Update ownership signal configurations. This operation will update any configurations keyed by name. It will do nothing if the key doesn't exist.
+    """
     updateOwnSignalConfigurations(input: UpdateSignalConfigurationsInput!): [OwnSignalConfiguration!]!
 }
 
@@ -264,23 +267,59 @@ extend type Query {
     """
     codeownersIngestedFiles(first: Int, after: Int): CodeownersIngestedFileConnection!
 
+    """
+    List all ownership signal configurations
+    """
     ownSignalConfigurations: [OwnSignalConfiguration!]!
 }
 
+"""
+OwnSignalConfiguration represents the configuration for an ownership signal.
+"""  
 type OwnSignalConfiguration {
-    name: String!
+    """
+    The name of the signal configuration, this serves as the primary key.
+    """
+    name: String! 
+    """
+    The description of the signal configuration.
+    """
     description: String!
+    """
+    Whether or not the signal configuration is enabled.
+    """
     isEnabled: Boolean!
+    """
+    A list of repository name patterns to exclude from the signal.
+    """
     excludedRepoPatterns: [String!]!
 }
 
+""" 
+OwnSignalConfigurationUpdate represents an update to an OwnSignalConfiguration.
+"""
 input OwnSignalConfigurationUpdate {
+    """
+    A list of repository name patterns to exclude from the signal.
+    """
     excludedRepoPatterns: [String!]!
+    """
+    Whether or not the signal configuration should be enabled.
+    """
     enabled: Boolean!
+    """
+    The new name for the signal configuration.
+    """
     name: String!
 }
 
+"""
+UpdateSignalConfigurationsInput represents the input for updating multiple signal configurations. 
+"""
 input UpdateSignalConfigurationsInput {
+    """
+    The signal configuration updates.
+    """
     configs: [OwnSignalConfigurationUpdate!]!
 }
 
