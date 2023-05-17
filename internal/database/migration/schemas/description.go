@@ -395,19 +395,23 @@ func (d ConstraintDescription) GetName() string { return d.Name }
 func (d TriggerDescription) GetName() string    { return d.Name }
 func (d ViewDescription) GetName() string       { return d.Name }
 
-type Normalizer[T any] interface{ Normalize() T }
-type PreComparisonNormalizer[T any] interface{ PreComparisonNormalize() T }
+type (
+	Normalizer[T any]              interface{ Normalize() T }
+	PreComparisonNormalizer[T any] interface{ PreComparisonNormalize() T }
+)
 
 func (d FunctionDescription) PreComparisonNormalize() FunctionDescription {
 	d.Definition = normalizeFunction(d.Definition)
 	return d
 }
+
 func (d TableDescription) Normalize() TableDescription {
 	d.Comment = ""
 	return d
 }
 
 func (d ColumnDescription) Normalize() ColumnDescription {
+	d.Index = -1
 	d.Comment = ""
 	return d
 }
