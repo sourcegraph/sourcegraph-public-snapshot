@@ -173,21 +173,36 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
     }
 
     const reset = async (): Promise<void> => {
-        const { client, onEvent } = get()
+        const { client: oldClient, config, editor, onEvent } = get()
+        if (!config || !editor) {
+            return
+        }
+
+        if (oldClient && !isErrorLike(oldClient)) {
+            oldClient.reset()
+        }
+
         const transcriptHistory = fetchTranscriptHistory()
+        const transcript = new Transcript()
+        const messages = transcript.toChat()
+        saveTranscriptHistory([...transcriptHistory, await transcript.toJSON()])
 
-        if (client && !isErrorLike(client)) {
-            // push current transcript to transcript history and save
-            const transcript = await client.transcript.toJSON()
-            if (transcript.interactions.length && !transcriptHistory.find(({ id }) => id === transcript.id)) {
-                transcriptHistory.push(transcript)
-            }
-            setCurrentTranscriptId(null)
-            set({ messageInProgress: null, transcript: [] })
-            saveTranscriptHistory(transcriptHistory)
+        try {
+            const client = await createClient({
+                config: { ...config, customHeaders: window.context.xhrHeaders },
+                editor,
+                setMessageInProgress,
+                initialTranscript: transcript,
+                setTranscript: (transcript: Transcript) => void setTranscript(transcript),
+            })
 
+            setCurrentTranscriptId(transcript.id)
+            set({ client, transcript: messages })
+            await setTranscript(transcript)
             onEvent?.('reset')
-            void client.reset()
+        } catch (error) {
+            onEvent?.('error')
+            set({ client: error })
         }
     }
 
@@ -330,38 +345,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         submitMessage,
         editMessage,
         executeRecipe,
-        reset: async (): Promise<void> => {
-            const { client: oldClient, config, editor, onEvent } = get()
-            if (!config || !editor) {
-                return
-            }
-
-            if (oldClient && !isErrorLike(oldClient)) {
-                oldClient.reset()
-            }
-
-            const transcriptHistory = fetchTranscriptHistory()
-            const transcript = new Transcript()
-            const messages = transcript.toChat()
-            saveTranscriptHistory([...transcriptHistory, await transcript.toJSON()])
-
-            try {
-                const client = await createClient({
-                    config: { ...config, customHeaders: window.context.xhrHeaders },
-                    editor,
-                    setMessageInProgress,
-                    initialTranscript: transcript,
-                    setTranscript: (transcript: Transcript) => void setTranscript(transcript),
-                })
-
-                setCurrentTranscriptId(transcript.id)
-                set({ client, transcript: messages })
-                await setTranscript(transcript)
-            } catch (error) {
-                onEvent?.('error')
-                set({ client: error })
-            }
-        },
+        reset,
         getChatContext,
         loadTranscriptFromHistory,
         clearHistory,
