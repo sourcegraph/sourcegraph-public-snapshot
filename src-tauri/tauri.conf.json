@@ -20,10 +20,11 @@
         "scope": [
           {
             "name": "../.bin/sourcegraph-backend",
-            "sidecar": true
+            "sidecar": true,
+            "args": ["--cacheDir", "$APPCONFIG", "--configDir", "$APPLOCALDATA"]
           }
         ],
-        "open": "^(vscode:|https?:)|com.sourcegraph.app/.*.log$"
+        "open": "^(vscode:|https?:)|com.sourcegraph.cody/.*.log$"
       },
       "window": {
         "startDragging": true
@@ -42,7 +43,7 @@
       },
       "externalBin": ["../.bin/sourcegraph-backend"],
       "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
-      "identifier": "com.sourcegraph.app",
+      "identifier": "com.sourcegraph.cody",
       "longDescription": "",
       "macOS": {
         "entitlements": null,
