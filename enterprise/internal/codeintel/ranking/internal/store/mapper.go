@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
-	otlog "github.com/opentracing/opentracing-go/log"
 
 	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -37,7 +36,6 @@ func (s *store) InsertPathCountInputs(
 		batchSize,
 		derivativeGraphKey,
 		derivativeGraphKey,
-		graphKey,
 		graphKey,
 		derivativeGraphKey,
 	))
@@ -74,9 +72,10 @@ progress AS (
 refs AS (
 	SELECT
 		rr.id,
-		rr.upload_id,
+		cre.upload_id,
 		rr.symbol_names
 	FROM codeintel_ranking_references rr
+	JOIN codeintel_ranking_exports cre ON cre.id = rr.exported_upload_id
 	JOIN progress p ON TRUE
 	WHERE
 		rr.graph_key = %s AND
@@ -89,7 +88,7 @@ refs AS (
 		-- Ensure that the record is within the bounds where it would be visible
 		-- to the current "snapshot" defined by the ranking computation state row.
 		rr.id <= p.max_reference_id AND
-		(rr.deleted_at IS NULL OR rr.deleted_at > p.started_at) AND
+		(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at) AND
 
 		-- Ensure the record isn't already processed
 		NOT EXISTS (
@@ -121,10 +120,11 @@ processable_symbols AS (
 		NOT EXISTS (
 			SELECT 1
 			FROM lsif_uploads u2
-			JOIN codeintel_ranking_references rr ON rr.upload_id = u2.id
-			JOIN codeintel_ranking_references_processed rrp ON rrp.codeintel_ranking_reference_id = rr.id
+			JOIN codeintel_ranking_exports cre2 ON cre2.upload_id = u2.id
+			JOIN codeintel_ranking_references rr2 ON rr2.exported_upload_id = cre2.id
+			JOIN codeintel_ranking_references_processed rrp2 ON rrp2.codeintel_ranking_reference_id = rr2.id
 			WHERE
-				rrp.graph_key = %s AND
+				rrp2.graph_key = %s AND
 				u.repository_id = u2.repository_id AND
 				u.root = u2.root AND
 				u.indexer = u2.indexer AND
@@ -152,48 +152,51 @@ referenced_symbols AS (
 ),
 referenced_definitions AS (
 	SELECT
-		u.repository_id,
-		rd.document_path,
+		s.repository_id,
+		s.document_path,
 		COUNT(*) AS count
-	FROM codeintel_ranking_definitions rd
-	JOIN referenced_symbols rs ON rs.symbol_name = rd.symbol_name
-	JOIN lsif_uploads u ON u.id = rd.upload_id
-	JOIN progress p ON TRUE
-	WHERE
-		rd.graph_key = %s AND
+	FROM (
+		SELECT
+			u.repository_id,
+			rd.document_path,
 
-		-- Ensure that the record is within the bounds where it would be visible
-		-- to the current "snapshot" defined by the ranking computation state row.
-		rd.id <= p.max_definition_id AND
-		(rd.deleted_at IS NULL OR rd.deleted_at > p.started_at) AND
+			-- Group by repository/root/indexer and order by descending ids. We
+			-- will only count the rows with rank = 1 in the outer query in order
+			-- to break ties when shadowed definitions are present.
+			RANK() OVER (
+				PARTITION BY u.repository_id, u.root, u.indexer
+				ORDER BY u.id DESC
+			) AS rank
+		FROM codeintel_ranking_definitions rd
+		JOIN referenced_symbols rs ON rs.symbol_name = rd.symbol_name
+		JOIN codeintel_ranking_exports cre ON cre.id = rd.exported_upload_id
+		JOIN lsif_uploads u ON u.id = cre.upload_id
+		JOIN progress p ON TRUE
+		WHERE
+			rd.graph_key = %s AND
 
-		-- If there are multiple uploads in the same repository/root/indexer, only
-		-- consider definition records attached to the one with the highest id. This
-		-- should prevent over-counting definitions when there are multiple uploads
-		-- in the exported set, but the shadowed (newly non-visible) uploads have not
-		-- yet been removed by the janitor processes.
-		NOT EXISTS (
-			SELECT 1
-			FROM lsif_uploads u2
-			JOIN codeintel_ranking_definitions rd2 ON rd2.upload_id = u2.id
-			WHERE
-				rd2.graph_key = %s AND
-				u.repository_id = u2.repository_id AND
-				u.root = u2.root AND
-				u.indexer = u2.indexer AND
-				u.id > u2.id
-		)
-	GROUP BY u.repository_id, rd.document_path, rd.graph_key
+			-- Ensure that the record is within the bounds where it would be visible
+			-- to the current "snapshot" defined by the ranking computation state row.
+			rd.id <= p.max_definition_id AND
+			(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at)
+	) s
+
+	-- For multiple uploads in the same repository/root/indexer, only consider
+	-- definition records attached to the one with the highest id. This should
+	-- prevent over-counting definitions when there are multiple uploads in the
+	-- exported set, but the shadowed (newly non-visible) uploads have not yet
+	-- been removed by the janitor processes.
+	WHERE s.rank = 1
+	GROUP BY s.repository_id, s.document_path
 ),
 ins AS (
 	INSERT INTO codeintel_ranking_path_counts_inputs (repository_id, document_path, count, graph_key)
 	SELECT
 		rx.repository_id,
 		rx.document_path,
-		SUM(rx.count),
+		rx.count,
 		%s
 	FROM referenced_definitions rx
-	GROUP BY rx.repository_id, rx.document_path
 	RETURNING 1
 ),
 set_progress AS (
@@ -266,13 +269,14 @@ progress AS (
 unprocessed_path_counts AS (
 	SELECT
 		ipr.id,
-		ipr.upload_id,
+		cre.upload_id,
 		ipr.graph_key,
 		CASE
 			WHEN ipr.document_path != '' THEN array_append('{}'::text[], ipr.document_path)
 			ELSE ipr.document_paths
 		END AS document_paths
 	FROM codeintel_initial_path_ranks ipr
+	JOIN codeintel_ranking_exports cre ON cre.id = ipr.exported_upload_id
 	JOIN progress p ON TRUE
 	WHERE
 		ipr.graph_key = %s AND
@@ -284,7 +288,7 @@ unprocessed_path_counts AS (
 		-- Ensure that the record is within the bounds where it would be visible
 		-- to the current "snapshot" defined by the ranking computation state row.
 		ipr.id <= p.max_path_id AND
-		(ipr.deleted_at IS NULL OR ipr.deleted_at > p.started_at) AND
+		(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at) AND
 
 		-- Ensure the record isn't already processed
 		NOT EXISTS (
@@ -340,7 +344,7 @@ SELECT
 `
 
 func (s *store) VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string, batchSize int) (_ int, err error) {
-	ctx, _, endObservation := s.operations.vacuumStaleGraphs.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	ctx, _, endObservation := s.operations.vacuumStaleGraphs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumStaleGraphsQuery, derivativeGraphKey, derivativeGraphKey, batchSize)))

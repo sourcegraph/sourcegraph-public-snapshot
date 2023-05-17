@@ -79,7 +79,6 @@ Machines on Cloud Providers have additional constraints for use with firecracker
   a [metal instance (`.metal`)](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/instance-types.html)
 - **GCP:** the instance
   must [enable nested virtualization](https://cloud.google.com/compute/docs/instances/nested-virtualization/enabling)
-
 ## Configure Sourcegraph
 
 Executors must be run separately from your Sourcegraph instance.

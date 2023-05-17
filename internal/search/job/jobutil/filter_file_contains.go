@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/grafana/regexp"
-	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 // NewFileContainsFilterJob creates a filter job to post-filter results for the
@@ -285,7 +284,7 @@ func (j *fileContainsFilterJob) Children() []job.Describer {
 	return []job.Describer{j.child}
 }
 
-func (j *fileContainsFilterJob) Fields(v job.Verbosity) (res []otlog.Field) {
+func (j *fileContainsFilterJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 	switch v {
 	case job.VerbosityMax:
 		fallthrough
@@ -294,13 +293,13 @@ func (j *fileContainsFilterJob) Fields(v job.Verbosity) (res []otlog.Field) {
 		for _, re := range j.originalPatternMatchers {
 			originalPatternStrings = append(originalPatternStrings, re.String())
 		}
-		res = append(res, trace.Strings("originalPatterns", originalPatternStrings))
+		res = append(res, attribute.StringSlice("originalPatterns", originalPatternStrings))
 
 		filterStrings := make([]string, 0, len(j.includeMatchers))
 		for _, re := range j.includeMatchers {
 			filterStrings = append(filterStrings, re.String())
 		}
-		res = append(res, trace.Strings("filterPatterns", filterStrings))
+		res = append(res, attribute.StringSlice("filterPatterns", filterStrings))
 	}
 	return res
 }

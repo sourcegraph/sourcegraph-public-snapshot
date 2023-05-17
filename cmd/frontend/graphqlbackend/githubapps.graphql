@@ -15,6 +15,10 @@ extend type Query {
     Looks up a GitHub App by its ID.
     """
     gitHubApp(id: ID!): GitHubApp
+    """
+    Looks up a GitHub App by its AppID and BaseURL.
+    """
+    gitHubAppByAppID(appID: Int!, baseURL: String!): GitHubApp
 }
 
 """
@@ -80,13 +84,13 @@ type GitHubApp implements Node {
     """
     updatedAt: DateTime!
     """
-    Fetches external services related to this GitHub App.
-    """
-    externalServices(first: Int): ExternalServiceConnection!
-    """
     Fetches a list of installation IDs for this GitHub App.
     """
     installations: [Installation!]!
+    """
+    Fetches the webhook associated with this GitHub App.
+    """
+    webhook: Webhook
 }
 
 """
@@ -127,4 +131,8 @@ type Installation {
     The account on which the App was installed
     """
     account: GitHubAccount!
+    """
+    The external services derived from this installation.
+    """
+    externalServices(first: Int): ExternalServiceConnection!
 }

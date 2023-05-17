@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/drift"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
@@ -339,18 +340,19 @@ func CheckDrift(ctx context.Context, r Runner, version string, out *output.Outpu
 		}
 		schema := schemaDescriptions["public"]
 
-		var drift bytes.Buffer
-		driftOut := output.NewOutput(&drift, output.OutputOpts{})
+		var buf bytes.Buffer
+		driftOut := output.NewOutput(&buf, output.OutputOpts{})
 
 		expectedSchema, err := fetchExpectedSchema(ctx, schemaName, version, driftOut, expectedSchemaFactories)
 		if err != nil {
 			return err
 		}
-		if err := compareAndDisplaySchemaDescriptions(driftOut, schemaName, version, canonicalize(schema), canonicalize(expectedSchema)); err != nil {
+
+		if err := displayDriftSummaries(driftOut, drift.CompareSchemaDescriptions(schemaName, version, canonicalize(schema), canonicalize(expectedSchema))); err != nil {
 			schemasWithDrift = append(schemasWithDrift,
 				&schemaWithDrift{
 					name:  schemaName,
-					drift: &drift,
+					drift: &buf,
 				},
 			)
 		}

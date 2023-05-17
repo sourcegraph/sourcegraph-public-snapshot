@@ -13,7 +13,9 @@ type CollapseControlledProps =
     | { isOpen: boolean; onOpenChange: (opened: boolean) => void; openByDefault?: boolean }
 
 interface CollapseCommonProps {
-    children: React.FunctionComponent<React.PropsWithChildren<{ isOpen?: boolean }>> | ReactNode
+    children:
+        | React.FunctionComponent<React.PropsWithChildren<{ isOpen?: boolean; setOpen: (open: boolean) => void }>>
+        | ReactNode
 }
 
 export type CollapseProps = CollapseControlledProps & CollapseCommonProps
@@ -35,7 +37,6 @@ export const Collapse: React.FunctionComponent<CollapseProps> = React.memo(funct
     const isControlled = isOpen !== undefined
     const isCollapseOpen = isControlled ? isOpen : isInternalOpen
     const ChildrenComponent = typeof children === 'function' && children
-    const collapseContent = ChildrenComponent ? <ChildrenComponent isOpen={isCollapseOpen} /> : children
 
     const setOpen = useCallback(
         (opened: boolean) => {
@@ -57,7 +58,11 @@ export const Collapse: React.FunctionComponent<CollapseProps> = React.memo(funct
         [isCollapseOpen, setOpen]
     )
 
-    return <CollapseContext.Provider value={context}>{collapseContent}</CollapseContext.Provider>
+    return (
+        <CollapseContext.Provider value={context}>
+            {ChildrenComponent ? <ChildrenComponent isOpen={isCollapseOpen} setOpen={setOpen} /> : children}
+        </CollapseContext.Provider>
+    )
 })
 
 interface CollapseHeaderProps extends React.HTMLAttributes<HTMLButtonElement> {

@@ -35,6 +35,7 @@ import { CodeIntelligenceProps } from '../codeintel'
 import { CodySidebar } from '../cody/sidebar'
 import { useChatStore } from '../cody/stores/chat'
 import { useCodySidebarStore } from '../cody/stores/sidebar'
+import { useIsCodyEnabled } from '../cody/useIsCodyEnabled'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { RouteError } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
@@ -153,6 +154,8 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
     const { repoName, revision, rawRevision, filePath, commitRange, position, range } = parseBrowserRepoURL(
         location.pathname + location.search + location.hash
     )
+
+    const codyEnabled = useIsCodyEnabled()
 
     const resolvedRevisionOrError = useObservable(
         useMemo(
@@ -348,7 +351,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
 
     return (
         <>
-            {window.context?.codyEnabled &&
+            {codyEnabled.sidebar &&
                 focusCodyShortcut?.keybindings.map((keybinding, index) => (
                     <Shortcut
                         key={index}
@@ -372,7 +375,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                         telemetryService={props.telemetryService}
                     />
 
-                    {window.context?.codyEnabled ? (
+                    {codyEnabled.sidebar ? (
                         <RepoHeaderContributionPortal
                             position="right"
                             priority={1}
@@ -488,7 +491,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                     </Suspense>
                 </div>
 
-                {window.context?.codyEnabled && isCodySidebarOpen && (
+                {codyEnabled.sidebar && isCodySidebarOpen && (
                     <Panel
                         className="cody-sidebar-panel"
                         position="right"

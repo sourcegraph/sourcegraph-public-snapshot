@@ -1,32 +1,26 @@
 .container {
-    padding: 1rem;
+    padding: 1.25rem;
     color: var(--vscode-editor-foreground);
+}
+
+.divider {
+    height: 1px;
+    border-top: 1px solid var(--vscode-activityBar-border);
+    margin-bottom: 1.25rem;
 }
 
 .section {
-    margin-bottom: 2rem;
+    margin-bottom: 1.25rem;
 }
 
 .section-header {
-    font-weight: bold;
+    font-weight: 600;
     color: var(--vscode-editor-foreground);
-    font-size: calc(1.25*var(--vscode-editor-font-size));
-    margin-bottom: 0.25rem;
+    font-size: calc(1.15*var(--vscode-editor-font-size));
+    margin: 0 0 0.65rem 0;
 }
 
-.wrapper {
-    padding: 0.5rem;
-}
-
-.label {
-    display: inline-block;
-    font-weight: bold;
-    color: var(--vscode-editor-foreground);
-    font-size: var(--vscode-editor-font-size);
-    margin-bottom: 0.25rem;
-}
-
-.link-to-form {
+.open-message {
     margin-top: 0;
     margin-bottom: 0.75rem;
 }
@@ -50,4 +44,3 @@
 .terms {
     font-size: 90%;
 }
-

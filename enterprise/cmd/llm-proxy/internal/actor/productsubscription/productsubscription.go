@@ -9,9 +9,11 @@ import (
 	"github.com/Khan/genqlient/graphql"
 	"github.com/gregjones/httpcache"
 	"github.com/sourcegraph/log"
+	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/dotcom"
+	llmproxy "github.com/sourcegraph/sourcegraph/enterprise/internal/llm-proxy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -25,25 +27,29 @@ type Source struct {
 	log    log.Logger
 	cache  httpcache.Cache // TODO: add something to regularly clean up the cache
 	dotcom graphql.Client
+
+	devLicensesOnly bool
 }
 
 var _ actor.Source = &Source{}
 var _ actor.SourceUpdater = &Source{}
 var _ actor.SourceSyncer = &Source{}
 
-func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client) *Source {
+func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client, devLicensesOnly bool) *Source {
 	return &Source{
 		log:    logger.Scoped("productsubscriptions", "product subscription actor source"),
 		cache:  cache,
 		dotcom: dotComClient,
+
+		devLicensesOnly: devLicensesOnly,
 	}
 }
 
-func (s *Source) Name() string { return "sourcegraph.com product subscriptions" }
+func (s *Source) Name() string { return llmproxy.ProductSubscriptionActorSourceName }
 
 func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 	// "sgs_" is productSubscriptionAccessTokenPrefix
-	if token == "" && !strings.HasPrefix(token, "sgs_") {
+	if token == "" || !strings.HasPrefix(token, "sgs_") {
 		return nil, actor.ErrNotFromSource{}
 	}
 
@@ -66,6 +72,7 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 		return s.fetchAndCache(ctx, token)
 	}
 
+	act.Source = s
 	return act, nil
 }
 
@@ -90,7 +97,7 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 	}
 	for _, sub := range resp.Dotcom.ProductSubscriptions.Nodes {
 		for _, token := range sub.SourcegraphAccessTokens {
-			act := NewActor(s, token, sub.ProductSubscriptionState)
+			act := NewActor(s, token, sub.ProductSubscriptionState, s.devLicensesOnly)
 			data, err := json.Marshal(act)
 			if err != nil {
 				s.log.Error("failed to marshal actor", log.Error(err))
@@ -111,9 +118,11 @@ func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor,
 	resp, checkErr := dotcom.CheckAccessToken(ctx, s.dotcom, token)
 	if checkErr != nil {
 		// Generate a stateless actor so that we aren't constantly hitting the dotcom API
-		act = NewActor(s, token, dotcom.ProductSubscriptionState{})
+		act = NewActor(s, token, dotcom.ProductSubscriptionState{}, s.devLicensesOnly)
 	} else {
-		act = NewActor(s, token, resp.Dotcom.ProductSubscriptionByAccessToken.ProductSubscriptionState)
+		act = NewActor(s, token,
+			resp.Dotcom.ProductSubscriptionByAccessToken.ProductSubscriptionState,
+			s.devLicensesOnly)
 	}
 
 	if data, err := json.Marshal(act); err != nil {
@@ -130,7 +139,7 @@ func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor,
 }
 
 // NewActor creates an actor from Sourcegraph.com product subscription state.
-func NewActor(source *Source, token string, s dotcom.ProductSubscriptionState) *actor.Actor {
+func NewActor(source *Source, token string, s dotcom.ProductSubscriptionState, devLicensesOnly bool) *actor.Actor {
 	var rateLimit actor.RateLimit
 	if s.LlmProxyAccess.RateLimit != nil {
 		rateLimit = actor.RateLimit{
@@ -139,11 +148,15 @@ func NewActor(source *Source, token string, s dotcom.ProductSubscriptionState) *
 		}
 	}
 
+	// In dev mode, only allow dev licenses.
+	disabledBecauseOfDevMode := devLicensesOnly &&
+		(s.ActiveLicense == nil || s.ActiveLicense.Info == nil || !slices.Contains(s.ActiveLicense.Info.Tags, "dev"))
+
 	now := time.Now()
 	return &actor.Actor{
 		Key:           token,
-		ID:            s.Id,
-		AccessEnabled: !s.IsArchived && s.LlmProxyAccess.Enabled && rateLimit.IsValid(),
+		ID:            s.Uuid,
+		AccessEnabled: !disabledBecauseOfDevMode && !s.IsArchived && s.LlmProxyAccess.Enabled && rateLimit.IsValid(),
 		RateLimit:     rateLimit,
 		LastUpdated:   &now,
 		Source:        source,

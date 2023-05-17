@@ -29,6 +29,11 @@ import (
 const MAX_CONCURRENT_BUILD_PROCS = 4
 
 func Commands(ctx context.Context, parentEnv map[string]string, verbose bool, cmds ...Command) error {
+	if len(cmds) == 0 {
+		// Exit early if there are no commands to run.
+		return nil
+	}
+
 	chs := make([]<-chan struct{}, 0, len(cmds))
 	monitor := &changeMonitor{}
 	for _, cmd := range cmds {
