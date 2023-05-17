@@ -956,6 +956,17 @@ bazelCommands:
       SRC_PROF_HTTP: 127.0.0.1:3551
   searcher:
     target: //cmd/searcher
+  syntax-highlighter:
+    target: //docker-images/syntax-highlighter:syntect_server
+    env:
+      # Environment copied from Dockerfile
+      WORKERS: "1"
+      ROCKET_ENV: "production"
+      ROCKET_LIMITS: "{json=10485760}"
+      ROCKET_SECRET_KEY: "SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA="
+      ROCKET_KEEP_ALIVE: "0"
+      ROCKET_PORT: "9238"
+      QUIET: "true"
   github-proxy:
     target: //cmd/github-proxy
   frontend:
@@ -1060,10 +1071,10 @@ commandsets:
       - oss-gitserver-1
       - github-proxy
       - searcher
+      - syntax-highlighter
     commands:
       - oss-web
       - caddy
-      - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
@@ -1112,12 +1123,12 @@ commandsets:
       - gitserver-1
       - searcher
       - symbols
+      - syntax-highlighter
       - github-proxy
     commands:
       - web
       - blobstore
       - docsite
-      - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
@@ -1204,6 +1215,7 @@ commandsets:
       - gitserver-1
       - searcher
       - symbols
+      - syntax-highlighter
       - github-proxy
       - codeintel-worker
       - codeintel-executor
@@ -1211,7 +1223,6 @@ commandsets:
       - web
       - blobstore
       - docsite
-      - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
