@@ -10,10 +10,9 @@ import { KeywordContextFetcher, KeywordContextFetcherResult } from '@sourcegraph
 
 /**
  * Exclude files without extensions and directories that starts with '.'
- * Limits the search to 250 files
  * Limits to use 1 thread
- * Exclude files larger than 10 megabytes
- * Exclude binary files
+ * Exclude files larger than 1MB (based on search.largeFiles)
+ * Note: Ripgrep excludes binary files and respects .gitignore by default
  */
 const fileExtRipgrepParams = [
     '-Tmarkdown',
@@ -27,12 +26,10 @@ const fileExtRipgrepParams = [
     '!*.lock',
     '-g',
     '!*.snap',
-    '--max-count',
-    '250',
     '--threads',
     '1',
     '--max-filesize',
-    '3M',
+    '1M',
 ]
 
 /**
@@ -135,8 +132,9 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
         return messagePairs.reverse().flat()
     }
 
+    // Return context results for the Codebase Context Search recipe
     public async getSearchContext(query: string, numResults: number): Promise<KeywordContextFetcherResult[]> {
-        console.log('fetching keyword context')
+        console.log('fetching keyword search context...')
         const rootPath = this.editor.getWorkspaceRootPath()
         if (!rootPath) {
             return []
@@ -145,7 +143,6 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
         const stems = userQueryToKeywordQuery(query)
             .map(t => (t.prefix.length < 4 ? t.originals[0] : t.prefix))
             .join('|')
-
         const filesnamesWithScores = await this.fetchKeywordFiles(rootPath, query)
         const messagePairs = await Promise.all(
             filesnamesWithScores.slice(0, numResults).map(async ({ filename }) => {
@@ -153,9 +150,10 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                 const textDocument = await vscode.workspace.openTextDocument(uri)
                 const snippet = textDocument.getText()
                 const keywordPattern = new RegExp(stems, 'g')
+                // show 5 lines of code only
+                // TODO: Rewrite this to use rg instead @bee
                 const matches = snippet.match(keywordPattern)
                 const keywordIndex = snippet.indexOf(matches ? matches[0] : query)
-                // show 5 lines of code only
                 const startLine = Math.max(0, textDocument.positionAt(keywordIndex).line - 2)
                 const endLine = startLine + 5
                 const content = textDocument.getText(new vscode.Range(startLine, 0, endLine, 0))
@@ -233,7 +231,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                             {
                                 cwd: rootPath,
                                 maxBuffer: 1024 * 1024 * 1024,
-                                timeout: 1000 * 60, // timeout in one minute
+                                timeout: 1000 * 30, // timeout in one minute
                             },
                             (error, stdout, stderr) => {
                                 if (error?.code === 2) {
