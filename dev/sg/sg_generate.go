@@ -5,6 +5,8 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/exec"
+	"strings"
 	"time"
 
 	"github.com/urfave/cli/v2"
@@ -62,7 +64,17 @@ sg --verbose generate ... # Enable verbose output
 			std.Out.WriteFailuref("unrecognized command %q provided", cmd.Args().First())
 			return flag.ErrHelp
 		}
-		return allGenerateTargets.RunAll(cmd.Context)
+		out, err := exec.Command("git", "diff", "--name-only", "origin/master...").Output()
+		if err != nil {
+			panic(err)
+		}
+		// Check if output contains any .proto files
+		if strings.Contains(string(out), ".proto") {
+			return allGenerateTargets.RunAll(cmd.Context)
+
+		} else {
+			return generateTargets.RunAll(cmd.Context)
+		}
 	},
 	Subcommands: allGenerateTargets.Commands(),
 }
