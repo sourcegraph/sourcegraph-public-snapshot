@@ -90,7 +90,6 @@ export const BATCH_CHANGES_BY_NAMESPACE = gql`
 export const GET_LICENSE_AND_USAGE_INFO = gql`
     query GetLicenseAndUsageInfo {
         campaigns: enterpriseLicenseHasFeature(feature: "campaigns")
-        batchChanges: enterpriseLicenseHasFeature(feature: "batch-changes")
         allBatchChanges: batchChanges(first: 1) {
             totalCount
         }
