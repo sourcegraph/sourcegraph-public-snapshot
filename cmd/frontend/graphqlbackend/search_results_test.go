@@ -321,7 +321,7 @@ func TestSearchResultsHydration(t *testing.T) {
 
 	query := `foobar index:only count:350`
 	literalPatternType := "literal"
-	cli := client.NewSearchClient(logtest.Scoped(t), db, z, nil, jobutil.NewUnimplementedEnterpriseJobs())
+	cli := client.NewSearchClient(logtest.Scoped(t), db, z, nil, nil, jobutil.NewUnimplementedEnterpriseJobs())
 	searchInputs, err := cli.Plan(
 		ctx,
 		"V2",
@@ -559,7 +559,7 @@ func TestEvaluateAnd(t *testing.T) {
 			db.ReposFunc.SetDefaultReturn(repos)
 
 			literalPatternType := "literal"
-			cli := client.NewSearchClient(logtest.Scoped(t), db, z, nil, jobutil.NewUnimplementedEnterpriseJobs())
+			cli := client.NewSearchClient(logtest.Scoped(t), db, z, nil, nil, jobutil.NewUnimplementedEnterpriseJobs())
 			searchInputs, err := cli.Plan(
 				context.Background(),
 				"V2",
@@ -664,7 +664,7 @@ func TestSubRepoFiltering(t *testing.T) {
 			})
 
 			literalPatternType := "literal"
-			cli := client.NewSearchClient(logtest.Scoped(t), db, mockZoekt, nil, jobutil.NewUnimplementedEnterpriseJobs())
+			cli := client.NewSearchClient(logtest.Scoped(t), db, mockZoekt, nil, nil, jobutil.NewUnimplementedEnterpriseJobs())
 			searchInputs, err := cli.Plan(
 				context.Background(),
 				"V2",

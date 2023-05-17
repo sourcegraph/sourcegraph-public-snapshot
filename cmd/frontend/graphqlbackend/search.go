@@ -35,7 +35,7 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 		return nil, err
 	}
 
-	cli := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs(), enterpriseJobs)
+	cli := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs(), search.SearcherGRPCConnectionCache(), enterpriseJobs)
 	inputs, err := cli.Plan(
 		ctx,
 		args.Version,
