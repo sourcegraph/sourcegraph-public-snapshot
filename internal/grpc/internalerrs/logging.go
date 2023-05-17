@@ -94,7 +94,7 @@ func doLog(logger log.Logger, serviceName, methodName string, err error) {
 		return
 	}
 
-	if !probablyInternalGRPCError(s) {
+	if !probablyInternalGRPCError(s, allCheckers) {
 		return
 	}
 

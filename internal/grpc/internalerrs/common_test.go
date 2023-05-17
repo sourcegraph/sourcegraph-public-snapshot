@@ -2,8 +2,10 @@ package internalerrs
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -81,42 +83,140 @@ func (s *mockClientStream) RecvMsg(m interface{}) error {
 }
 
 func TestProbablyInternalGRPCError(t *testing.T) {
+	checker := func(s *status.Status) bool {
+		return strings.HasPrefix(s.Message(), "custom error")
+	}
+
+	testCases := []struct {
+		status     *status.Status
+		checkers   []internalGRPCErrorChecker
+		wantResult bool
+	}{
+		{
+			status:     status.New(codes.OK, ""),
+			checkers:   []internalGRPCErrorChecker{func(*status.Status) bool { return true }},
+			wantResult: false,
+		},
+		{
+			status:     status.New(codes.Internal, "custom error message"),
+			checkers:   []internalGRPCErrorChecker{checker},
+			wantResult: true,
+		},
+		{
+			status:     status.New(codes.Internal, "some other error"),
+			checkers:   []internalGRPCErrorChecker{checker},
+			wantResult: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		gotResult := probablyInternalGRPCError(tc.status, tc.checkers)
+		if gotResult != tc.wantResult {
+			t.Errorf("probablyInternalGRPCError(%v, %v) = %v, want %v", tc.status, tc.checkers, gotResult, tc.wantResult)
+		}
+	}
+}
+
+func TestGRPCResourceExhaustedChecker(t *testing.T) {
+	testCases := []struct {
+		status     *status.Status
+		expectPass bool
+	}{
+		{
+			status:     status.New(codes.ResourceExhausted, "trying to send message larger than max (1024 vs 2)"),
+			expectPass: true,
+		},
+		{
+			status:     status.New(codes.ResourceExhausted, "some other error"),
+			expectPass: false,
+		},
+		{
+			status:     status.New(codes.OK, "trying to send message larger than max (1024 vs 5)"),
+			expectPass: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		actual := gRPCResourceExhaustedChecker(tc.status)
+		if actual != tc.expectPass {
+			t.Errorf("gRPCResourceExhaustedChecker(%v) got %t, want %t", tc.status, actual, tc.expectPass)
+		}
+	}
+}
+
+func TestGRPCPrefixChecker(t *testing.T) {
 	tests := []struct {
-		name   string
 		status *status.Status
 		want   bool
 	}{
 		{
-			name: "should return false for OK status",
-
-			status: status.New(codes.OK, "grpc: ok"),
+			status: status.New(codes.OK, "not a grpc error"),
 			want:   false,
 		},
 		{
-			name: "should return false if message does not start with grpc:",
-
-			status: status.New(codes.Unavailable, "server unavailable: grpc: hmm"),
-			want:   false,
-		},
-		{
-			name: "should return false if message doesn't contain 'grpc:' at all",
-
-			status: status.New(codes.Unavailable, "something broke"),
-			want:   false,
-		},
-		{
-			name: "should return true if status is non-OK and message starts with grpc:",
-
-			status: status.New(codes.Internal, "grpc: internal error"),
+			status: status.New(codes.Internal, "grpc: internal server error"),
 			want:   true,
+		},
+		{
+			status: status.New(codes.Unavailable, "some other error"),
+			want:   false,
+		},
+	}
+	for _, test := range tests {
+		got := gRPCPrefixChecker(test.status)
+		if got != test.want {
+			t.Errorf("gRPCPrefixChecker(%v) = %v, want %v", test.status, got, test.want)
+		}
+	}
+}
+
+func TestSplitMethodName(t *testing.T) {
+	testCases := []struct {
+		name string
+
+		fullMethod  string
+		wantService string
+		wantMethod  string
+	}{
+		{
+			name: "full method with service and method",
+
+			fullMethod:  "/package.service/method",
+			wantService: "package.service",
+			wantMethod:  "method",
+		},
+		{
+			name: "method without leading slash",
+
+			fullMethod:  "package.service/method",
+			wantService: "package.service",
+			wantMethod:  "method",
+		},
+		{
+			name: "service without method",
+
+			fullMethod:  "/package.service/",
+			wantService: "package.service",
+			wantMethod:  "",
+		},
+		{
+			name: "empty input",
+
+			fullMethod:  "",
+			wantService: "unknown",
+			wantMethod:  "unknown",
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got := probablyInternalGRPCError(test.status)
-			if got != test.want {
-				t.Errorf("probablyInternalGRPCError(%v) = %v, want %v", test.status, got, test.want)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			service, method := splitMethodName(tc.fullMethod)
+			if diff := cmp.Diff(service, tc.wantService); diff != "" {
+				t.Errorf("splitMethodName(%q) service (-want +got):\n%s", tc.fullMethod, diff)
+			}
+
+			if diff := cmp.Diff(method, tc.wantMethod); diff != "" {
+				t.Errorf("splitMethodName(%q) method (-want +got):\n%s", tc.fullMethod, diff)
 			}
 		})
 	}

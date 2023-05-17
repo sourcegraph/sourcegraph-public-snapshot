@@ -96,7 +96,7 @@ func doObservation(serviceName, methodName string, rpcErr error) {
 		return
 	}
 
-	if !probablyInternalGRPCError(s) {
+	if !probablyInternalGRPCError(s, allCheckers) {
 		// An error occurred, but it was not an internal gRPC error. We record this as a non-internal error.
 		metricGRPCMethodStatus.WithLabelValues(serviceName, methodName, s.Code().String(), "false").Inc()
 		return
