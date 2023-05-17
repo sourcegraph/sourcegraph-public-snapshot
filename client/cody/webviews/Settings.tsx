@@ -2,6 +2,8 @@ import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
 import './Settings.css'
 
+import { isLocalApp } from '../src/chat/protocol'
+
 interface SettingsProps {
     onLogout: () => void
     serverEndpoint?: string
@@ -14,7 +16,9 @@ export const Settings: React.FunctionComponent<React.PropsWithChildren<SettingsP
     <div className="inner-container">
         <div className="non-transcript-container">
             <div className="settings">
-                {serverEndpoint && <p>🟢 Connected to {serverEndpoint}</p>}
+                {serverEndpoint && (
+                    <p>🟢 Connected to {isLocalApp(serverEndpoint) ? 'Sourcegraph App' : serverEndpoint}</p>
+                )}
                 <VSCodeButton className="logout-button" type="button" onClick={onLogout}>
                     Logout
                 </VSCodeButton>

@@ -37,6 +37,7 @@ import {
     DOTCOM_URL,
     ExtensionMessage,
     WebviewMessage,
+    isLocalApp,
     isLoggedIn,
 } from './protocol'
 
@@ -53,7 +54,7 @@ export async function getAuthStatus(
     }
 
     const client = new SourcegraphGraphQLAPIClient(config)
-    if (client.isDotCom()) {
+    if (client.isDotCom() || isLocalApp(config.serverEndpoint)) {
         const data = await client.getCurrentUserIdAndVerifiedEmail()
         return {
             showInvalidAccessTokenError: isError(data),

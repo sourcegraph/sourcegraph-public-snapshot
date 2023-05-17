@@ -192,7 +192,7 @@ const register = async (
                 if (token && token.length > 8) {
                     await secretStorage.store(CODY_ACCESS_TOKEN_SECRET, token)
                     const authStatus = await getAuthStatus({
-                        serverEndpoint: DOTCOM_URL.href,
+                        serverEndpoint,
                         accessToken: token,
                         customHeaders: config.customHeaders,
                     })
