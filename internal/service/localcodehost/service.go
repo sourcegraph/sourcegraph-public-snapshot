@@ -1,12 +1,9 @@
 package localcodehost
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
-	"io"
-	"os"
-	"strings"
+	"io/ioutil"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -53,48 +50,15 @@ type Config struct {
 func (c *Config) Load() {
 	configFilePath := c.Get("SRC_LOCAL_REPOS_CONFIG_FILE", "", "Path to the local repositories configuration file")
 
-	file, err := os.Open(configFilePath)
+	configJSON, err := ioutil.ReadFile(configFilePath)
 	if err != nil {
 		return
 	}
-	defer file.Close()
-	c.Repos = parseConfig(file)
-}
-
-func parseConfig(input io.Reader) []*schema.LocalRepoPattern {
-	repos := make([]*schema.LocalRepoPattern, 0)
-	scanner := bufio.NewScanner(input)
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if len(line) == 0 || line[0] == '#' {
-			continue
-		}
-
-		pattern := line
-		group := ""
-
-		separatorIndex := -1
-
-		if line[0] == '"' {
-			line = line[1:]
-			separatorIndex = strings.Index(line, "\"")
-		} else {
-			separatorIndex = strings.Index(line, " ")
-		}
-
-		if separatorIndex > -1 {
-			pattern = line[0:separatorIndex]
-			group = line[separatorIndex+1:]
-		}
-
-		repos = append(repos, &schema.LocalRepoPattern{Pattern: strings.TrimSpace(pattern), Group: strings.TrimSpace(group)})
+	config, err := extsvc.ParseConfig(extsvc.KindLocal, string(configJSON))
+	if err != nil {
+		return
 	}
-
-	if scanner.Err() != nil {
-		return []*schema.LocalRepoPattern{}
-	}
-
-	return repos
+	c.Repos = config.(*schema.LocalExternalService).Repos
 }
 
 type svc struct{}
