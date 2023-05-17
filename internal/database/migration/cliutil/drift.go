@@ -60,11 +60,6 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 		Required: false,
 		Aliases:  []string{"autofix"},
 	}
-	ignoreMigratorUpdateCheckFlag := &cli.BoolFlag{
-		Name:     "ignore-migrator-update",
-		Usage:    "Ignore the running migrator not being the latest version. It is recommended to use the latest migrator version.",
-		Required: false,
-	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
 		airgapped := isAirgapped(ctx)
