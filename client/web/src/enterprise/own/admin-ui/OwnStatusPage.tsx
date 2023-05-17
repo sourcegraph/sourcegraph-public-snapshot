@@ -22,7 +22,7 @@ import styles from './own-status-page-styles.module.scss'
 export const OwnStatusPage: FC = () => {
     const [hasLocalChanges, setHasLocalChanges] = useState<boolean>(false)
     const [localData, setLocalData] = useState<OwnSignalConfig[]>([])
-    const [saveError, setSaveError] = useState<Error>()
+    const [saveError, setSaveError] = useState<Error | null>()
 
     const { loading, error } = useQuery<GetOwnSignalConfigurationsResult>(GET_OWN_JOB_CONFIGURATIONS, {
         onCompleted: data => {
@@ -82,7 +82,7 @@ export const OwnStatusPage: FC = () => {
                                 },
                             })
                                 .then(result => {
-                                    if (result.errors) {
+                                    if (result.errors || !result.data || !result.data.updateOwnSignalConfigurations) {
                                         setSaveError(new Error('Failed to save configurations'))
                                     } else {
                                         setHasLocalChanges(false)
