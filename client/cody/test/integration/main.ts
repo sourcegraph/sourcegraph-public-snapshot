@@ -2,7 +2,7 @@ import * as path from 'path'
 
 import { runTests } from '@vscode/test-electron'
 
-import * as mockServer from './mock-server'
+import * as mockServer from '../fixtures/mock-server'
 
 async function main(): Promise<void> {
     // Set this environment variable so the extension exposes hooks to the test runner.

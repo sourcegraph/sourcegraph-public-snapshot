@@ -5,8 +5,7 @@ import * as vscode from 'vscode'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { ExtensionApi } from '../../src/extension-api'
-
-import * as mockServer from './mock-server'
+import * as mockServer from '../fixtures/mock-server'
 
 /**
  * Setup (`beforeEach`) function for integration tests that need Cody configured and activated.

@@ -10,6 +10,8 @@
   },
   "include": [
     "src",
+    "test/fixtures",
+    "test/e2e",
     "webviews",
     "vite.config.ts",
     "webpack.config.js",

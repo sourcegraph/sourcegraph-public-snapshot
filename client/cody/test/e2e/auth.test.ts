@@ -1,80 +1,12 @@
-import { mkdtempSync } from 'fs'
-import { tmpdir } from 'os'
-import * as path from 'path'
+import { expect } from '@playwright/test'
 
-import { test as base } from '@playwright/test'
-import { downloadAndUnzipVSCode } from '@vscode/test-electron'
-import { _electron as electron } from 'playwright'
+import { test, getCodySidebar } from './helpers'
 
-const test = base.extend<{}>({
-    // Define a fixture. Note that it can use built-in fixture "page"
-    // and a new option "defaultItem".
-    page: async ({}, use) => {
-        const codyRoot = path.resolve(__dirname, '..', '..')
+test('errors on invalid access token', async ({ page }) => {
+    const sidebar = await getCodySidebar(page)
 
-        const vscodeExecutablePath = await downloadAndUnzipVSCode()
-        const extensionDevelopmentPath = codyRoot
+    await sidebar.getByRole('textbox', { name: 'Access Token (docs)' }).fill('test token')
+    await sidebar.getByRole('button', { name: 'Sign In' }).click()
 
-        const userDataDirectory = mkdtempSync(path.join(tmpdir(), 'cody-vsce'))
-        const extensionsDirectory = mkdtempSync(path.join(tmpdir(), 'cody-vsce'))
-
-        const app = await electron.launch({
-            executablePath: vscodeExecutablePath,
-            args: [
-                // https://github.com/microsoft/vscode/issues/84238
-                '--no-sandbox',
-                // https://github.com/microsoft/vscode-test/issues/120
-                '--disable-updates',
-                '--skip-welcome',
-                '--skip-release-notes',
-                '--disable-workspace-trust',
-                '--extensionDevelopmentPath=' + extensionDevelopmentPath,
-                `--user-data-dir=${userDataDirectory}`,
-                `--extensions-dir=${extensionsDirectory}`,
-            ],
-        })
-
-        await waitUntil(() => app.windows().length > 0)
-
-        const page = await app.firstWindow()
-        await use(page)
-    },
+    await expect(sidebar.getByText('Invalid credentials')).toBeVisible()
 })
-
-test('does stuff', async ({ page }) => {
-    await page.click('[aria-label="Sourcegraph Cody"]')
-
-    // const codyRoot = path.resolve(__dirname, '..', '..')
-
-    // const vscodeExecutablePath = await downloadAndUnzipVSCode()
-    // const extensionDevelopmentPath = codyRoot
-
-    // const userDataDirectory = mkdtempSync(path.join(tmpdir(), 'cody-vsce'))
-    // const extensionsDirectory = mkdtempSync(path.join(tmpdir(), 'cody-vsce'))
-
-    // await electron.launch({
-    //     executablePath: vscodeExecutablePath,
-    //     args: [
-    //         // https://github.com/microsoft/vscode/issues/84238
-    //         '--no-sandbox',
-    //         // https://github.com/microsoft/vscode-test/issues/120
-    //         '--disable-updates',
-    //         '--skip-welcome',
-    //         '--skip-release-notes',
-    //         '--disable-workspace-trust',
-    //         '--extensionDevelopmentPath=' + extensionDevelopmentPath,
-    //         `--user-data-dir=${userDataDirectory}`,
-    //         `--extensions-dir=${extensionsDirectory}`,
-    //     ],
-    // })
-
-    await new Promise(resolve => setTimeout(resolve, 15000))
-})
-
-async function waitUntil(predicate: () => boolean | Promise<boolean>): Promise<void> {
-    let delay = 10
-    while (!(await predicate())) {
-        await new Promise(resolve => setTimeout(resolve, delay))
-        delay <<= 1
-    }
-}
