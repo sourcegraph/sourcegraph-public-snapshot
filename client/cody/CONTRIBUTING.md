@@ -19,6 +19,7 @@
   build with Vite and rollup.js using the `vite.config.ts` file at directory
   root
 - `test/integration`: code for integration tests
+- `test/e2e`: code for playwright UI tests
 - `dist`: build outputs from both webpack and vite
 - `resources`: everything in this directory will be move to
   the ./dist directory automatically during build time for easy packaging

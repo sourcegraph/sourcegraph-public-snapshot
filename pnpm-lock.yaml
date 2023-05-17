@@ -1405,6 +1405,13 @@ importers:
       wink-nlp-utils:
         specifier: ^2.1.0
         version: 2.1.0
+    devDependencies:
+      '@playwright/test':
+        specifier: ^1.33.0
+        version: 1.33.0
+      playwright:
+        specifier: ^1.33.0
+        version: 1.33.0
 
   client/cody-cli:
     dependencies:
@@ -6045,6 +6052,17 @@ packages:
     dependencies:
       '@types/node': 13.13.5
       playwright-core: 1.25.0
+    dev: true
+
+  /@playwright/test@1.33.0:
+    resolution: {integrity: sha512-YunBa2mE7Hq4CfPkGzQRK916a4tuZoVx/EpLjeWlTVOnD4S2+fdaQZE0LJkbfhN5FTSKNLdcl7MoT5XB37bTkg==}
+    engines: {node: '>=14'}
+    hasBin: true
+    dependencies:
+      '@types/node': 13.13.5
+      playwright-core: 1.33.0
+    optionalDependencies:
+      fsevents: 2.3.2
     dev: true
 
   /@pmmmwh/react-refresh-webpack-plugin@0.5.10(react-refresh@0.10.0)(webpack-dev-server@4.11.1)(webpack@5.75.0):
@@ -22921,6 +22939,21 @@ packages:
     resolution: {integrity: sha512-kZ3Jwaf3wlu0GgU0nB8UMQ+mXFTqBIFz9h1svTlNduNKjnbPXFxw7mJanLVjqxHJRn62uBfmgBj93YHidk2N5Q==}
     engines: {node: '>=14'}
     hasBin: true
+    dev: true
+
+  /playwright-core@1.33.0:
+    resolution: {integrity: sha512-aizyPE1Cj62vAECdph1iaMILpT0WUDCq3E6rW6I+dleSbBoGbktvJtzS6VHkZ4DKNEOG9qJpiom/ZxO+S15LAw==}
+    engines: {node: '>=14'}
+    hasBin: true
+    dev: true
+
+  /playwright@1.33.0:
+    resolution: {integrity: sha512-+zzU3V2TslRX2ETBRgQKsKytYBkJeLZ2xzUj4JohnZnxQnivoUvOvNbRBYWSYykQTO0Y4zb8NwZTYFUO+EpPBQ==}
+    engines: {node: '>=14'}
+    hasBin: true
+    requiresBuild: true
+    dependencies:
+      playwright-core: 1.33.0
     dev: true
 
   /please-upgrade-node@3.2.0:

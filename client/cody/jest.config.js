@@ -8,5 +8,5 @@ module.exports = {
   ...config,
   displayName: 'cody',
   rootDir: __dirname,
-  testPathIgnorePatterns: ['test/integration'],
+  testPathIgnorePatterns: ['test/integration', 'test/e2e'],
 }
