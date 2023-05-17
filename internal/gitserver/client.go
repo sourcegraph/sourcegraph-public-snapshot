@@ -834,18 +834,12 @@ func convertGitserverError(err error) error {
 	return err
 }
 
-func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password string, args ...string) (_ io.ReadCloser, _ http.Header, errRes error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.P4Exec") //nolint:staticcheck // OT is deprecated
-	defer func() {
-		if errRes != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", errRes.Error())
-		}
-		span.Finish()
-	}()
-	span.SetTag("request", "P4Exec")
-	span.SetTag("host", host)
-	span.SetTag("args", args)
+func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password string, args ...string) (_ io.ReadCloser, _ http.Header, err error) {
+	ctx, _, endObservation := c.operations.p4Exec.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("host", host),
+		attribute.StringSlice("args", args),
+	}})
+	defer endObservation(1, observation.Args{})
 
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {

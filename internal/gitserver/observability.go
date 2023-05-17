@@ -12,6 +12,7 @@ import (
 
 type operations struct {
 	search         *observation.Operation
+	p4Exec         *observation.Operation
 	batchLog       *observation.Operation
 	batchLogSingle *observation.Operation
 }
@@ -43,6 +44,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 
 	return &operations{
 		search:         op("Search"),
+		p4Exec:         op("P4Exec"),
 		batchLog:       op("BatchLog"),
 		batchLogSingle: subOp("batchLogSingle"),
 	}
