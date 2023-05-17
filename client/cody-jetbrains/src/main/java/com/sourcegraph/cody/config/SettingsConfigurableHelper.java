@@ -31,27 +31,29 @@ public class SettingsConfigurableHelper {
 
         // Get old and new settings
         String oldDotcomAccessToken = ConfigUtil.getDotcomAccessToken(project);
-        String oldUrl = ConfigUtil.getSourcegraphUrl(project);
+        String oldEnterpriseUrl = ConfigUtil.getSourcegraphUrl(project);
         String oldEnterpriseAccessToken = ConfigUtil.getEnterpriseAccessToken(project);
         String newDotcomAccessToken = settings.getDotcomAccessToken();
-        String newUrl = settings.getEnterpriseUrl();
+        String newEnterpriseUrl = settings.getEnterpriseUrl();
         String newEnterpriseAccessToken = settings.getEnterpriseAccessToken();
         String newCustomRequestHeaders = settings.getCustomRequestHeaders();
 
         // Create context
-        PluginSettingChangeContext context = new PluginSettingChangeContext(oldDotcomAccessToken, oldUrl, oldEnterpriseAccessToken,
-            newUrl, newDotcomAccessToken, newEnterpriseAccessToken, newCustomRequestHeaders);
+        PluginSettingChangeContext context = new PluginSettingChangeContext(oldDotcomAccessToken, oldEnterpriseUrl, oldEnterpriseAccessToken,
+            newEnterpriseUrl, newDotcomAccessToken, newEnterpriseAccessToken, newCustomRequestHeaders);
 
         // Notify listeners
         publisher.beforeAction(context);
 
         // Update settings
-        apSettings.setInstanceType(settings.getInstanceType().name());
-        apSettings.setDotcomAccessToken(newDotcomAccessToken);
-        apSettings.setEnterpriseUrl(newUrl);
-        apSettings.setEnterpriseAccessToken(newEnterpriseAccessToken);
+        String instanceTypeName = settings.getInstanceType().name();
+        apSettings.setInstanceType(instanceTypeName.equals(SettingsComponent.InstanceType.ENTERPRISE.name()) || !newDotcomAccessToken.equals("")
+            ? instanceTypeName : null);
+        apSettings.setDotcomAccessToken(!newDotcomAccessToken.equals("") ? newDotcomAccessToken : null);
+        apSettings.setEnterpriseUrl(!newEnterpriseUrl.equals("") ? newEnterpriseUrl : null);
+        apSettings.setEnterpriseAccessToken(!newEnterpriseAccessToken.equals("") ? newEnterpriseAccessToken : null);
         apSettings.setCustomRequestHeaders(settings.getCustomRequestHeaders());
-        apSettings.setCodebase(settings.getCodebase());
+        apSettings.setCodebase(!settings.getCodebase().equals("") ? settings.getCodebase() : null);
         apSettings.setChatPredictionsEnabled(settings.areChatPredictionsEnabled());
 
         // Notify listeners
