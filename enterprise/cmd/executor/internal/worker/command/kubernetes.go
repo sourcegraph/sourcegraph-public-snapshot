@@ -5,7 +5,6 @@ import (
 	"io"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"github.com/sourcegraph/log"
 	"golang.org/x/sync/errgroup"
@@ -139,20 +138,26 @@ func (c *KubernetesCommand) FindPod(ctx context.Context, namespace string, name 
 
 // WaitForJobToComplete waits for the job with the given name to complete.
 func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, namespace string, name string) error {
-	for {
-		// Eventually `ActiveDeadlineSeconds` will kill the job.
-		job, err := c.getJob(ctx, namespace, name)
-		if err != nil {
-			return errors.Wrap(err, "retrieving job")
+	watch, err := c.Clientset.BatchV1().Jobs(namespace).Watch(ctx, metav1.ListOptions{Watch: true, FieldSelector: "metadata.name=" + name})
+	if err != nil {
+		return errors.Wrap(err, "watching job")
+	}
+	defer watch.Stop()
+	// No need to add a timer. If the job exceeds the deadline, it will fail.
+	for event := range watch.ResultChan() {
+		job, ok := event.Object.(*batchv1.Job)
+		if !ok {
+			return errors.New("unexpected object type")
 		}
-		if job.Status.Active == 0 && job.Status.Succeeded > 0 {
+		if job.Status.Succeeded > 0 {
 			return nil
-		} else if job.Status.Failed > 0 {
+		}
+		if job.Status.Failed > 0 {
 			return ErrKubernetesJobFailed
-		} else {
-			time.Sleep(100 * time.Millisecond)
 		}
 	}
+	// Wont happen
+	return nil
 }
 
 // ErrKubernetesJobFailed is returned when a Kubernetes job fails.

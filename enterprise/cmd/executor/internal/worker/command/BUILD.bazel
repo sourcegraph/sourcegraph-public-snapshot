@@ -62,6 +62,7 @@ go_test(
         "@io_k8s_apimachinery//pkg/api/resource",
         "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
         "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_apimachinery//pkg/watch",
         "@io_k8s_client_go//kubernetes/fake",
         "@io_k8s_client_go//kubernetes/scheme",
         "@io_k8s_client_go//rest",

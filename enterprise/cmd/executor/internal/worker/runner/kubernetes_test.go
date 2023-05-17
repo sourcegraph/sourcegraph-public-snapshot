@@ -12,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes/fake"
 	k8stesting "k8s.io/client-go/testing"
 
@@ -52,9 +53,17 @@ func TestKubernetesRunner_Run(t *testing.T) {
 						}}},
 					}, nil
 				})
-				clientset.PrependReactor("get", "jobs", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, &batchv1.Job{Status: batchv1.JobStatus{Succeeded: 1}}, nil
+
+				watcher := watch.NewFakeWithChanSize(10, false)
+				watcher.Add(&batchv1.Job{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "my-job",
+					},
+					Status: batchv1.JobStatus{
+						Succeeded: 1,
+					},
 				})
+				clientset.PrependWatchReactor("jobs", k8stesting.DefaultWatchReactor(watcher, nil))
 			},
 			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
 				require.Len(t, actions, 5)
@@ -63,9 +72,8 @@ func TestKubernetesRunner_Run(t *testing.T) {
 				assert.Equal(t, "jobs", actions[0].GetResource().Resource)
 				assert.Equal(t, "sg-executor-job-some-queue-42-some-key", actions[0].(k8stesting.CreateAction).GetObject().(*batchv1.Job).Name)
 
-				assert.Equal(t, "get", actions[1].GetVerb())
+				assert.Equal(t, "watch", actions[1].GetVerb())
 				assert.Equal(t, "jobs", actions[1].GetResource().Resource)
-				assert.Equal(t, "sg-executor-job-some-queue-42-some-key", actions[1].(k8stesting.GetAction).GetName())
 
 				assert.Equal(t, "list", actions[2].GetVerb())
 				assert.Equal(t, "pods", actions[2].GetResource().Resource)
@@ -107,9 +115,7 @@ func TestKubernetesRunner_Run(t *testing.T) {
 						}}},
 					}, nil
 				})
-				clientset.PrependReactor("get", "jobs", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, nil, errors.New("failed")
-				})
+				clientset.PrependWatchReactor("jobs", k8stesting.DefaultWatchReactor(nil, errors.New("failed")))
 			},
 			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
 				require.Len(t, actions, 3)
@@ -117,20 +123,27 @@ func TestKubernetesRunner_Run(t *testing.T) {
 				assert.Equal(t, "create", actions[0].GetVerb())
 				assert.Equal(t, "jobs", actions[0].GetResource().Resource)
 
-				assert.Equal(t, "get", actions[1].GetVerb())
+				assert.Equal(t, "watch", actions[1].GetVerb())
 				assert.Equal(t, "jobs", actions[1].GetResource().Resource)
 
 				assert.Equal(t, "delete", actions[2].GetVerb())
 				assert.Equal(t, "jobs", actions[2].GetResource().Resource)
 			},
-			expectedErr: errors.New("waiting for job sg-executor-job-some-queue-42-some-key to complete: retrieving job: failed"),
+			expectedErr: errors.New("waiting for job sg-executor-job-some-queue-42-some-key to complete: watching job: failed"),
 		},
 		{
 			name: "Failed to find job pod",
 			mockFunc: func(clientset *fake.Clientset) {
-				clientset.PrependReactor("get", "jobs", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, &batchv1.Job{Status: batchv1.JobStatus{Succeeded: 1}}, nil
+				watcher := watch.NewFakeWithChanSize(10, false)
+				watcher.Add(&batchv1.Job{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "my-job",
+					},
+					Status: batchv1.JobStatus{
+						Succeeded: 1,
+					},
 				})
+				clientset.PrependWatchReactor("jobs", k8stesting.DefaultWatchReactor(watcher, nil))
 				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
 					return true, nil, errors.New("failed")
 				})
@@ -141,7 +154,7 @@ func TestKubernetesRunner_Run(t *testing.T) {
 				assert.Equal(t, "create", actions[0].GetVerb())
 				assert.Equal(t, "jobs", actions[0].GetResource().Resource)
 
-				assert.Equal(t, "get", actions[1].GetVerb())
+				assert.Equal(t, "watch", actions[1].GetVerb())
 				assert.Equal(t, "jobs", actions[1].GetResource().Resource)
 
 				assert.Equal(t, "list", actions[2].GetVerb())
