@@ -73,7 +73,7 @@ export class Transcript {
             }
         }
 
-        return new Date().toISOString()
+        return this.internalID
     }
 
     public addInteraction(interaction: Interaction | null): void {
