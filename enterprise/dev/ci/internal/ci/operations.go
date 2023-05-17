@@ -273,6 +273,7 @@ func addCodyExtensionTests(pipeline *bk.Pipeline) {
 		withPnpmCache(),
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm --filter cody-ai run test:integration"),
+		bk.Cmd("pnpm --filter cody-ai run test:e2e"),
 		bk.Cmd("pnpm --filter cody-shared run test"),
 	)
 }
