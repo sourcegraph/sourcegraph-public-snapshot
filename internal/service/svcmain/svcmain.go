@@ -178,9 +178,7 @@ func run(
 	}
 
 	if oobConfig.Logging != nil {
-		go oobConfig.Logging.Watch(func() {
-			liblog.Update(oobConfig.Logging.SinksConfig)
-		})
+		go oobConfig.Logging.Watch(liblog.Update(oobConfig.Logging.SinksConfig))
 	}
 	if oobConfig.Tracing != nil {
 		tracer.Init(log.Scoped("tracer", "internal tracer package"), oobConfig.Tracing)
