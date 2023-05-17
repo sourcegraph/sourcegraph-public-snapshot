@@ -11,8 +11,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 )
+
+func init() {
+	// TODO(sqs): TODO(single-binary): could we move this out of init?
+	oobmigration.ReturnEnterpriseMigrations = true
+}
 
 type svc struct{}
 
@@ -27,7 +33,7 @@ func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready
 	ossSetupHook := func(_ database.DB, _ conftypes.UnifiedWatchable) enterprise.Services {
 		return enterprise.DefaultServices()
 	}
-	return CLIMain(ctx, observationCtx, ready, ossSetupHook)
+	return CLIMain(ctx, observationCtx, ready, ossSetupHook, nil)
 }
 
 var Service service.Service = svc{}
