@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
@@ -50,24 +49,22 @@ type SearchClient interface {
 	JobClients() job.RuntimeClients
 }
 
-func NewSearchClient(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map, searcherGRPCConnectionCache *defaults.ConnectionCache, enterpriseJobs jobutil.EnterpriseJobs) SearchClient {
+func NewSearchClient(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map, enterpriseJobs jobutil.EnterpriseJobs) SearchClient {
 	return &searchClient{
-		logger:                      logger,
-		db:                          db,
-		zoekt:                       zoektStreamer,
-		searcherURLs:                searcherURLs,
-		searcherGRPCConnectionCache: searcherGRPCConnectionCache,
-		enterpriseJobs:              enterpriseJobs,
+		logger:         logger,
+		db:             db,
+		zoekt:          zoektStreamer,
+		searcherURLs:   searcherURLs,
+		enterpriseJobs: enterpriseJobs,
 	}
 }
 
 type searchClient struct {
-	logger                      log.Logger
-	db                          database.DB
-	zoekt                       zoekt.Streamer
-	searcherURLs                *endpoint.Map
-	searcherGRPCConnectionCache *defaults.ConnectionCache
-	enterpriseJobs              jobutil.EnterpriseJobs
+	logger         log.Logger
+	db             database.DB
+	zoekt          zoekt.Streamer
+	searcherURLs   *endpoint.Map
+	enterpriseJobs jobutil.EnterpriseJobs
 }
 
 func (s *searchClient) Plan(

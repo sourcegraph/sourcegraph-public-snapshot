@@ -12,7 +12,6 @@ import (
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
-	"github.com/sourcegraph/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -72,9 +71,7 @@ func NewClient(serverURL string) *Client {
 			if err != nil {
 				return nil, err
 			}
-
-			l := log.Scoped("repoUpdateGRPCClient", "gRPC client for repo-updater")
-			conn, err := defaults.Dial(u.Host, l)
+			conn, err := defaults.Dial(u.Host)
 			if err != nil {
 				return nil, err
 			}

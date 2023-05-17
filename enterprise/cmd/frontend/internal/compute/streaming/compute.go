@@ -75,7 +75,7 @@ func NewComputeStream(ctx context.Context, logger log.Logger, db database.DB, en
 	}
 
 	patternType := "regexp"
-	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs(), search.SearcherGRPCConnectionCache(), enterpriseJobs)
+	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs(), enterpriseJobs)
 	inputs, err := searchClient.Plan(
 		ctx,
 		"",

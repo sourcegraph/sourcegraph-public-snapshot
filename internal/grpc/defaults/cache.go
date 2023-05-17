@@ -40,12 +40,8 @@ func NewConnectionCache(l log.Logger) *ConnectionCache {
 		ttlcache.WithSizeWarningThreshold[string, connAndError](1000),
 	}
 
-	newConn := func(address string) connAndError {
-		return newGRPCConnection(address, l)
-	}
-
 	return &ConnectionCache{
-		connections: ttlcache.New[string, connAndError](newConn, options...),
+		connections: ttlcache.New[string, connAndError](newGRPCConnection, options...),
 	}
 }
 
@@ -71,7 +67,7 @@ func (c *ConnectionCache) GetConnection(address string) (*grpc.ClientConn, error
 
 // newGRPCConnection creates a new gRPC connection to the given address, or returns an error if
 // the connection could not be created.
-func newGRPCConnection(address string, logger log.Logger) connAndError {
+func newGRPCConnection(address string) connAndError {
 	u, err := url.Parse(address)
 	if err != nil {
 		return connAndError{
@@ -79,7 +75,7 @@ func newGRPCConnection(address string, logger log.Logger) connAndError {
 		}
 	}
 
-	gRPCConn, err := Dial(u.Host, logger)
+	gRPCConn, err := Dial(u.Host)
 	if err != nil {
 		return connAndError{
 			dialErr: errors.Wrapf(err, "dialing gRPC connection to %q", address),

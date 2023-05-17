@@ -45,10 +45,6 @@ type TestClientSourceOptions struct {
 	// ClientFunc is the function that is used to return a gRPC client
 	// given the provided connection.
 	ClientFunc func(conn *grpc.ClientConn) proto.GitserverServiceClient
-
-	// Logger is the log.Logger instance that the test ClientSource will use to
-	// log various metadata to.
-	Logger log.Logger
 }
 
 func NewTestClientSource(addrs []string, options ...func(o *TestClientSourceOptions)) ClientSource {
@@ -56,8 +52,6 @@ func NewTestClientSource(addrs []string, options ...func(o *TestClientSourceOpti
 		ClientFunc: func(conn *grpc.ClientConn) proto.GitserverServiceClient {
 			return proto.NewGitserverServiceClient(conn)
 		},
-
-		Logger: log.Scoped("test gitserver client source", ""),
 	}
 
 	for _, o := range options {
@@ -66,7 +60,7 @@ func NewTestClientSource(addrs []string, options ...func(o *TestClientSourceOpti
 
 	conns := make(map[string]connAndErr)
 	for _, addr := range addrs {
-		conn, err := defaults.Dial(addr, opts.Logger)
+		conn, err := defaults.Dial(addr)
 		conns[addr] = connAndErr{conn: conn, err: err}
 	}
 
@@ -224,14 +218,10 @@ func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 	)
 
 	// Open connections for each address
-	clientLogger := log.Scoped("gitserver.client", "gitserver gRPC client")
-
 	after.grpcConns = make(map[string]connAndErr, len(after.Addresses))
 	for _, addr := range after.Addresses {
 		conn, err := defaults.Dial(
 			addr,
-			clientLogger,
-
 			// Allow large messages to accomodate large diffs
 			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMessageSizeBytes)),
 		)

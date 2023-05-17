@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/fullstorydev/grpcui/standalone"
-	"github.com/sourcegraph/log"
 	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
@@ -19,11 +18,9 @@ const gRPCWebUIPath = "/debug/grpcui"
 //
 // serviceName is the name of the gRPC service that will be displayed on the debug page.
 func NewGRPCWebUIEndpoint(serviceName, target string) Endpoint {
-	logger := log.Scoped("gRPCWebUI", "HTTP handler for serving the gRPC Web UI explore page")
-
 	var handler http.Handler = &grpcHandler{
 		target:   target,
-		dialOpts: defaults.DialOptions(logger),
+		dialOpts: defaults.DialOptions(),
 	}
 
 	// gRPC Web UI expects to serve all of its resources

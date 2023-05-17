@@ -220,19 +220,11 @@ regularly above 0 it is a sign for further investigation.`,
 
 			shared.NewGRPCServerMetricsGroup(
 				shared.GRPCServerMetricsOptions{
-					HumanServiceName:  "searcher",
+					ServiceName:       "searcher",
 					MetricNamespace:   "searcher",
 					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 
 					InstanceFilterRegex: `${instance:regex}`,
-				}, monitoring.ObservableOwnerSearchCore),
-
-			shared.NewGRPCInternalErrorMetricsGroup(
-				shared.GRPCInternalErrorMetricsOptions{
-					HumanServiceName:   "searcher",
-					RawGRPCServiceName: "searcher.v1.SearcherService",
-
-					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 				}, monitoring.ObservableOwnerSearchCore),
 			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
 			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerSearchCore, nil),

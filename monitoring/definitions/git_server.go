@@ -546,19 +546,11 @@ func GitServer() *monitoring.Dashboard {
 
 			shared.NewGRPCServerMetricsGroup(
 				shared.GRPCServerMetricsOptions{
-					HumanServiceName: "gitserver",
-					MetricNamespace:  "gitserver",
+					ServiceName:     "gitserver",
+					MetricNamespace: "gitserver",
 
 					MethodFilterRegex:   fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 					InstanceFilterRegex: `${shard:regex}`,
-				}, monitoring.ObservableOwnerSearchCore),
-
-			shared.NewGRPCInternalErrorMetricsGroup(
-				shared.GRPCInternalErrorMetricsOptions{
-					HumanServiceName:   "gitserver",
-					RawGRPCServiceName: "gitserver.v1.GitserverService",
-
-					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 				}, monitoring.ObservableOwnerSearchCore),
 
 			shared.CodeIntelligence.NewCoursierGroup(containerName),
