@@ -135,6 +135,11 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/code-graph/ranking',
             label: 'Ranking',
         },
+        {
+            label: 'Ownership signals',
+            to: '/site-admin/own-signal-page',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+        },
     ],
 }
 
