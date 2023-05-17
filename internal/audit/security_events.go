@@ -2,7 +2,7 @@ package audit
 
 import "github.com/sourcegraph/sourcegraph/schema"
 
-type SecurityEvent int
+type SecurityEventsLocation int
 
 const (
 	None = iota
