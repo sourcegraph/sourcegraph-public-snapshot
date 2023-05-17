@@ -21,6 +21,7 @@ var (
 	minUpdateInterval = 10 * time.Minute
 
 	defaultUpdateInterval = 24 * time.Hour
+	tokenLength           = 68
 )
 
 type Source struct {
@@ -49,7 +50,7 @@ func (s *Source) Name() string { return llmproxy.ProductSubscriptionActorSourceN
 
 func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 	// "sgs_" is productSubscriptionAccessTokenPrefix
-	if token == "" || !strings.HasPrefix(token, "sgs_") {
+	if token == "" || !strings.HasPrefix(token, "sgs_") || len(token) != tokenLength {
 		return nil, actor.ErrNotFromSource{}
 	}
 
