@@ -55,6 +55,8 @@ type ZoektIndexOptions struct {
 
 	// Error if non-empty indicates the request failed for the repo.
 	Error string `json:",omitempty"`
+
+	LanguageMap []*proto.LanguageMapping
 }
 
 func (o *ZoektIndexOptions) FromProto(p *proto.ZoektIndexOptions) {
@@ -78,6 +80,7 @@ func (o *ZoektIndexOptions) FromProto(p *proto.ZoektIndexOptions) {
 	}
 
 	o.Branches = branches
+	o.LanguageMap = p.GetLanguageMap()
 }
 
 func (o *ZoektIndexOptions) ToProto() *proto.ZoektIndexOptions {
@@ -101,6 +104,7 @@ func (o *ZoektIndexOptions) ToProto() *proto.ZoektIndexOptions {
 		Priority:             o.Priority,
 		DocumentRanksVersion: o.DocumentRanksVersion,
 		Error:                o.Error,
+		LanguageMap:          o.LanguageMap,
 	}
 }
 
@@ -185,6 +189,34 @@ func getIndexOptions(
 		}
 	}
 
+	// TODO: Integrate with cmd/symbols default, maybe move those to language
+
+	languageMapLen := 0
+	if c.SyntaxHighlighting != nil {
+		languageMapLen = len(c.SyntaxHighlighting.Symbols.Engine)
+	}
+	languageMap := make([]*proto.LanguageMapping, languageMapLen)
+
+	languageMap = append(languageMap, &proto.LanguageMapping{Language: "zig", Ctags: proto.CTagsParserType_SCIP})
+	languageMap = append(languageMap, &proto.LanguageMapping{Language: "Zig", Ctags: proto.CTagsParserType_SCIP})
+
+	if languageMapLen > 0 {
+		for language, engine := range c.SyntaxHighlighting.Symbols.Engine {
+			var ctags proto.CTagsParserType
+			switch engine {
+			case "off":
+				ctags = proto.CTagsParserType_NONE
+			case "universal-ctags":
+				ctags = proto.CTagsParserType_UNIVERSAL
+			case "scip-ctags":
+				ctags = proto.CTagsParserType_SCIP
+			default:
+				ctags = proto.CTagsParserType_UNKNOWN
+			}
+			languageMap = append(languageMap, &proto.LanguageMapping{Language: language, Ctags: ctags})
+		}
+	}
+
 	o := ZoektIndexOptions{
 		Name:       opts.Name,
 		RepoID:     opts.RepoID,
@@ -196,6 +228,7 @@ func getIndexOptions(
 		Symbols:    getBoolPtr(c.SearchIndexSymbolsEnabled, true),
 
 		DocumentRanksVersion: opts.DocumentRanksVersion,
+		LanguageMap:          languageMap,
 	}
 
 	// Set of branch names. Always index HEAD
