@@ -46,12 +46,7 @@ const maintenanceGroup: SiteAdminSideBarGroup = {
             label: 'Code Insights jobs',
             to: '/site-admin/code-insights-jobs',
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
-        },
-        {
-            label: 'Own status',
-            to: '/site-admin/own-status-page',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
-        },
+        }
     ],
 }
 
@@ -135,6 +130,11 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/code-graph/inference-configuration',
             label: 'Inference',
             condition: () => window.context?.codeIntelAutoIndexingEnabled,
+        },
+        {
+            label: 'Ownership signals',
+            to: '/site-admin/own-signal-page',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
     ],
 }

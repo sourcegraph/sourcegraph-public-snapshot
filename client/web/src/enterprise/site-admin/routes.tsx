@@ -156,7 +156,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
         },
         {
             exact: true,
-            path: '/own-status-page',
+            path: '/own-signal-page',
             render: () => <OwnStatusPage />,
         },
 
