@@ -1,4 +1,3 @@
-
 # macOS code signing & notarization
 
 ## How certificates are created
