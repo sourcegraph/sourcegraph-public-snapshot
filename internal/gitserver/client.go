@@ -554,20 +554,23 @@ type badRequestError struct{ error }
 
 func (e badRequestError) BadRequest() bool { return true }
 
-func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRes error) {
-	repoName := protocol.NormalizeRepo(c.repo)
-
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.sendExec") //nolint:staticcheck // OT is deprecated
+func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err error) {
+	ctx, cancel := context.WithCancel(ctx)
+	ctx, _, endObservation := c.execOp.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repo", string(c.repo)),
+		attribute.StringSlice("args", c.args[1:]),
+	}})
+	done := func() {
+		cancel()
+		endObservation(1, observation.Args{})
+	}
 	defer func() {
-		if errRes != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", errRes.Error())
+		if err != nil {
+			done()
 		}
-		span.Finish()
 	}()
-	span.SetTag("request", "Exec")
-	span.SetTag("repo", c.repo)
-	span.SetTag("args", c.args[1:])
+
+	repoName := protocol.NormalizeRepo(c.repo)
 
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
@@ -589,11 +592,8 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 			NoTimeout:      c.noTimeout,
 		}
 
-		ctx, cancel := context.WithCancel(ctx)
-
 		stream, err := client.Exec(ctx, req)
 		if err != nil {
-			cancel()
 			return nil, err
 		}
 		r := streamio.NewReader(func() ([]byte, error) {
@@ -606,7 +606,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 			return msg.GetData(), nil
 		})
 
-		return &readCloseWrapper{r: r, closeFn: cancel}, err
+		return &readCloseWrapper{r: r, closeFn: done}, nil
 
 	} else {
 		req := &protocol.ExecRequest{
@@ -623,7 +623,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 
 		switch resp.StatusCode {
 		case http.StatusOK:
-			return &cmdReader{rc: resp.Body, trailer: resp.Trailer}, nil
+			return &cmdReader{rc: &readCloseWrapper{r: resp.Body, closeFn: done}, trailer: resp.Trailer}, nil
 
 		case http.StatusNotFound:
 			var payload protocol.NotFoundPayload
@@ -1033,6 +1033,7 @@ func (c *clientImplementor) gitCommand(repo api.RepoName, arg ...string) GitComm
 		repo:   repo,
 		execer: c,
 		args:   append([]string{git}, arg...),
+		execOp: c.operations.exec,
 	}
 }
 
