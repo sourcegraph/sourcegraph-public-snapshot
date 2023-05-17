@@ -64,16 +64,20 @@ sg --verbose generate ... # Enable verbose output
 			std.Out.WriteFailuref("unrecognized command %q provided", cmd.Args().First())
 			return flag.ErrHelp
 		}
-		out, err := exec.Command("git", "diff", "--name-only", "origin/master...").Output()
-		if err != nil {
-			panic(err)
+		// Get the index of the go target
+		var ind int
+		for i, t := range allGenerateTargets {
+			if t.Name == "go" {
+				ind = i
+			}
 		}
 		// Check if output contains any .proto files
-		if strings.Contains(string(out), ".proto") {
+		out, _ := exec.Command("git", "diff", "--name-only", "main...HEAD").Output()
+		if strings.Contains(string(out), ".proto") || os.Getenv("CI") == "true" {
 			return allGenerateTargets.RunAll(cmd.Context)
-
 		} else {
-			return generateTargets.RunAll(cmd.Context)
+			_ = runGenerateAndReport(cmd.Context, allGenerateTargets[ind], []string{})
+			return nil
 		}
 	},
 	Subcommands: allGenerateTargets.Commands(),

@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"os/exec"
-	"strings"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/buf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate"
@@ -50,17 +48,5 @@ func generateGoRunner(ctx context.Context, args []string) *generate.Report {
 }
 
 func generateProtoRunner(ctx context.Context, args []string) *generate.Report {
-	out, err := exec.Command("git", "diff", "--name-only", "origin/master...").Output()
-	if err != nil {
-		panic(err)
-	}
-
-	// Check if output contains any .proto files
-	if strings.Contains(string(out), ".proto") {
-		println("Diff contains .proto changes!")
-		return proto.Generate(ctx, verbose)
-	} else {
-		println("No .proto changes found")
-		return nil
-	}
+	return proto.Generate(ctx, verbose)
 }
