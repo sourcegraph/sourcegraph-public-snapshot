@@ -7,3 +7,8 @@ release
 .env
 .envrc
 src-snapshot/
+bazel-bin
+bazel-out
+bazel-testlogs
+bazel-zoekt
+bazel-src-cli

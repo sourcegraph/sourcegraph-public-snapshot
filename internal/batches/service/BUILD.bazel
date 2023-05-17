@@ -1,0 +1,43 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "service",
+    srcs = [
+        "build_tasks.go",
+        "remote.go",
+        "service.go",
+    ],
+    importpath = "github.com/sourcegraph/src-cli/internal/batches/service",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/batches",
+        "//internal/batches/docker",
+        "//internal/batches/executor",
+        "//internal/batches/graphql",
+        "@com_github_sourcegraph_sourcegraph_lib//batches",
+        "@com_github_sourcegraph_sourcegraph_lib//batches/template",
+        "@com_github_sourcegraph_sourcegraph_lib//errors",
+    ],
+)
+
+go_test(
+    name = "service_test",
+    srcs = [
+        "remote_test.go",
+        "remote_windows_test.go",
+        "service_test.go",
+    ],
+    embed = [":service"],
+    deps = [
+        "//internal/api/mock",
+        "//internal/batches/docker",
+        "//internal/batches/graphql",
+        "//internal/batches/mock",
+        "@com_github_sourcegraph_sourcegraph_lib//batches",
+        "@com_github_sourcegraph_sourcegraph_lib//errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//mock",
+        "@com_github_stretchr_testify//require",
+    ],
+)

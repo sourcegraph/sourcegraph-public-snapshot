@@ -1,0 +1,35 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "docker",
+    srcs = [
+        "cache.go",
+        "context.go",
+        "image.go",
+        "info.go",
+        "version.go",
+    ],
+    importpath = "github.com/sourcegraph/src-cli/internal/batches/docker",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/exec",
+        "@com_github_kballard_go_shellquote//:go-shellquote",
+        "@com_github_sourcegraph_sourcegraph_lib//errors",
+    ],
+)
+
+go_test(
+    name = "docker_test",
+    srcs = [
+        "cache_test.go",
+        "image_test.go",
+        "info_test.go",
+        "main_test.go",
+    ],
+    embed = [":docker"],
+    deps = [
+        "//internal/exec/expect",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_stretchr_testify//assert",
+    ],
+)
