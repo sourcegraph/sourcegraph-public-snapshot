@@ -248,7 +248,7 @@ body > #sidebar #search-form {
     margin-bottom: 0;
     position: relative;
     display: flex;
-    padding: calc(0.5*var(--spacing)) calc(1*var(--spacing));
+    flex-direction: row;
 }
 body > #sidebar #search-form #search {
     color: var(--text-color);
@@ -268,8 +268,8 @@ body > #sidebar #search-form .search-icon {
     color: var(--link-color);
     display: inline-block;
     position: absolute;
-    left: 26px;
-    top: 18px;
+    left: 10px;
+    top: 10px;
 }
 /* Nav */
 body > #sidebar nav.links {
@@ -1189,3 +1189,22 @@ markprompt-content.dark {
 
     --caret-color: var(--link-color);
   }
+
+.markprompt-search-container {
+    align-items: center;
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    padding: calc(0.5*var(--spacing)) calc(1*var(--spacing));
+}
+
+#markprompt-button {
+    background-color: transparent;
+    border: 0px;
+    color: var(--link-color);
+    cursor:pointer;
+}
+
+#markprompt-button:hover {
+    color: var(--link-hover-color);
+}
