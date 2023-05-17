@@ -541,16 +541,15 @@ func TestAssignedOwners(t *testing.T) {
 
 	// Create repo
 	var repoID api.RepoID = 1
-	err = db.Repos().Create(ctx, &itypes.Repo{ID: repoID, Name: "github.com/sourcegraph/sourcegraph"})
-	require.NoError(t, err)
+	require.NoError(t, db.Repos().Create(ctx, &itypes.Repo{
+		ID:   repoID,
+		Name: "github.com/sourcegraph/sourcegraph",
+	}))
 
 	store := db.AssignedOwners()
-	err = store.Insert(ctx, user1.ID, repoID, "src/test", user2.ID)
-	require.NoError(t, err)
-	err = store.Insert(ctx, user2.ID, repoID, "src/test", user1.ID)
-	require.NoError(t, err)
-	err = store.Insert(ctx, user2.ID, repoID, "src/main", user1.ID)
-	require.NoError(t, err)
+	require.NoError(t, store.Insert(ctx, user1.ID, repoID, "src/test", user2.ID))
+	require.NoError(t, store.Insert(ctx, user2.ID, repoID, "src/test", user1.ID))
+	require.NoError(t, store.Insert(ctx, user2.ID, repoID, "src/main", user1.ID))
 
 	s := NewService(nil, db)
 	var exampleCommitID api.CommitID = "sha"
