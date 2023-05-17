@@ -3,7 +3,7 @@ package localcodehost
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"os"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -50,7 +50,7 @@ type Config struct {
 func (c *Config) Load() {
 	configFilePath := c.Get("SRC_LOCAL_REPOS_CONFIG_FILE", "", "Path to the local repositories configuration file")
 
-	configJSON, err := ioutil.ReadFile(configFilePath)
+	configJSON, err := os.ReadFile(configFilePath)
 	if err != nil {
 		return
 	}
