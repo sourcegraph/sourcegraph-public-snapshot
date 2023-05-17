@@ -27,3 +27,5 @@ pipeline:
       chmod +x p4
       mkdir -p ${{targets.destdir}}/usr/local/bin/
       cp p4 ${{targets.destdir}}/usr/local/bin/p4
+
+# MANUAL REBUILD: 2023-05-17 13:09
