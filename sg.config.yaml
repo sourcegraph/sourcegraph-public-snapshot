@@ -958,6 +958,8 @@ bazelCommands:
     target: //cmd/searcher
   syntax-highlighter:
     target: //docker-images/syntax-highlighter:syntect_server
+    ignoreStdout: true
+    ignoreStderr: true
     env:
       # Environment copied from Dockerfile
       WORKERS: "1"

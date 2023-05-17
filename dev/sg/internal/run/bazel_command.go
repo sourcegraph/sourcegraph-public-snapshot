@@ -24,6 +24,8 @@ type BazelCommand struct {
 	Args            string                            `yaml:"args"`
 	PreCmd          string                            `yaml:"precmd"`
 	Env             map[string]string                 `yaml:"env"`
+	IgnoreStdout    bool                              `yaml:"ignoreStdout"`
+	IgnoreStderr    bool                              `yaml:"ignoreStderr"`
 	ExternalSecrets map[string]secrets.ExternalSecret `yaml:"external_secrets"`
 }
 
@@ -123,8 +125,18 @@ func (bc *BazelCommand) start(ctx context.Context, dir string, parentEnv map[str
 
 	var stdoutWriter, stderrWriter io.Writer
 	logger := newCmdLogger(commandCtx, bc.Name, std.Out.Output)
-	stdoutWriter = io.MultiWriter(logger, sc.stdoutBuf)
-	stderrWriter = io.MultiWriter(logger, sc.stderrBuf)
+	if bc.IgnoreStdout {
+		std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring stdout of %s", bc.Name))
+		stdoutWriter = sc.stdoutBuf
+	} else {
+		stdoutWriter = io.MultiWriter(logger, sc.stdoutBuf)
+	}
+	if bc.IgnoreStderr {
+		std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring stderr of %s", bc.Name))
+		stderrWriter = sc.stderrBuf
+	} else {
+		stderrWriter = io.MultiWriter(logger, sc.stderrBuf)
+	}
 
 	eg, err := process.PipeOutputUnbuffered(ctx, sc.Cmd, stdoutWriter, stderrWriter)
 	if err != nil {
