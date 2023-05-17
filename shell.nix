@@ -37,6 +37,7 @@ let
     exec ${pkgs.bazel_6}/bin/bazel "$@"
   '');
   bazel-watcher = pkgs.writeShellScriptBin "ibazel" ''
+    ${pkgs.lib.optionalString pkgs.hostPlatform.isMacOS "unset CC CXX"}
     exec ${pkgs.bazel-watcher}/bin/ibazel \
       ${pkgs.lib.optionalString pkgs.hostPlatform.isLinux "-bazel_path=${pkgs.bazel_6}/bin/bazel"} "$@"
   '';
