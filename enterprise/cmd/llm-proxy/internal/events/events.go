@@ -20,8 +20,10 @@ var tracer = otel.GetTracerProvider().Tracer("llm-proxy/internal/events")
 
 // Logger is an event logger.
 type Logger interface {
-	// LogEvent logs an event.
-	LogEvent(ctx context.Context, event Event) error
+	// LogEvent logs an event. spanCtx should only be used to extract the span,
+	// event logging should use a background.Context to avoid being cancelled
+	// when a request ends.
+	LogEvent(spanCtx context.Context, event Event) error
 }
 
 // bigQueryLogger is a BigQuery event logger.
@@ -72,13 +74,12 @@ func (e bigQueryEvent) Save() (map[string]bigquery.Value, string, error) {
 }
 
 // LogEvent logs an event to BigQuery.
-func (l *bigQueryLogger) LogEvent(ctx context.Context, event Event) (err error) {
+func (l *bigQueryLogger) LogEvent(spanCtx context.Context, event Event) (err error) {
 	if event.Name == "" || event.Source == "" || event.Identifier == "" {
 		return errors.New("missing event name, source or identifier")
 	}
 
-	var span trace.Span
-	ctx, span = tracer.Start(backgroundContextWithSpan(ctx), "bigQueryLogger.LogEvent",
+	ctx, span := tracer.Start(backgroundContextWithSpan(spanCtx), "bigQueryLogger.LogEvent",
 		trace.WithAttributes(attribute.String("source", event.Source), attribute.String("name", string(event.Name))))
 	defer func() {
 		if err != nil {
@@ -121,10 +122,9 @@ func NewStdoutLogger(logger log.Logger) Logger {
 	return &stdoutLogger{logger: logger.Scoped("events", "event logger")}
 }
 
-func (l *stdoutLogger) LogEvent(ctx context.Context, event Event) error {
+func (l *stdoutLogger) LogEvent(spanCtx context.Context, event Event) error {
 	// Not a terribly interesting trace, but useful to demo backgroundContextWithSpan
-	var span trace.Span
-	ctx, span = tracer.Start(backgroundContextWithSpan(ctx), "stdoutLogger.LogEvent",
+	_, span := tracer.Start(backgroundContextWithSpan(spanCtx), "stdoutLogger.LogEvent",
 		trace.WithAttributes(
 			attribute.String("source", event.Source),
 			attribute.String("name", string(event.Name))))
