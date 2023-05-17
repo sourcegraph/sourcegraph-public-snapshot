@@ -12,15 +12,15 @@ export const OWN_SIGNAL_FRAGMENT = gql`
 export const GET_OWN_JOB_CONFIGURATIONS = gql`
     query GetOwnSignalConfigurations {
         ownSignalConfigurations {
-            ... OwnSignalConfig
+            ...OwnSignalConfig
         }
     }
     ${OWN_SIGNAL_FRAGMENT}
 `
 
 export const UPDATE_SIGNAL_CONFIGURATIONS = gql`
-    mutation UpdateSignalConfigs($input:UpdateSignalConfigurationsInput!) {
-        updateOwnSignalConfigurations(input:$input) {
+    mutation UpdateSignalConfigs($input: UpdateSignalConfigurationsInput!) {
+        updateOwnSignalConfigurations(input: $input) {
             isEnabled
             name
             description
