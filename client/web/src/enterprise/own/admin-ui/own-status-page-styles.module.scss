@@ -23,20 +23,17 @@
 .jobStatus {
     font-size: 0.875rem;
     color: var(--text-muted);
-        flex-direction: row;
+    flex-direction: row;
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
 }
 
 .jobDescription {
     margin: 0;
 }
 
-#job-item {
-    display: flex;
-    flex-direction: row;
-    gap: 8px;
-}
-
-#excludeRepos {
+.excludeRepos {
     margin-top: 8px;
 }
 
@@ -45,10 +42,10 @@
   align-items: center;
 }
 
-#saveButton {
+.saveButton {
   margin-left: auto;
 }
 
-#statusText {
-align:center;
+.statusText {
+    align:center;
 }

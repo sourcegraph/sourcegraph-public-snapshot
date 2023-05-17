@@ -5,7 +5,7 @@ import {
     PageHeader,
     H3, Text, Label, Button, LoadingSpinner, ErrorAlert
 } from '@sourcegraph/wildcard'
-import './own-status-page-styles.scss'
+import styles from './own-status-page-styles.module.scss'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import {RepositoryPatternList} from '../../codeintel/configuration/components/RepositoryPatternList';
 import {useMutation, useQuery} from '@sourcegraph/http-client';
@@ -41,7 +41,7 @@ export const OwnStatusPage: FC = () => {
 
     return (
     <div>
-        <span className='topHeader'>
+        <span className={styles.topHeader}>
             <div>
                 <PageTitle title="Own Signals Configuration"/>
                 <PageHeader
@@ -53,7 +53,7 @@ export const OwnStatusPage: FC = () => {
                 {saveError && <ErrorAlert error={saveError}/>}
             </div>
 
-            {<Button id='saveButton' disabled={!hasLocalChanges} aria-label="Save changes" variant="primary" onClick={() => {
+            {<Button className={styles.saveButton} id='saveButton' disabled={!hasLocalChanges} aria-label="Save changes" variant="primary" onClick={() => {
                 setSaveError(null)
                 // do network stuff
                 saveConfigs({variables: {
@@ -74,14 +74,14 @@ export const OwnStatusPage: FC = () => {
             </Button>}
         </span>
 
-        <Container className='root'>
+        <Container className={styles.root}>
             {(loading) && <LoadingSpinner/>}
             {error && <ErrorAlert prefix="Error fetching Own signal configurations" error={error} /> }
             {!(loading) && localData && !error && localData.map((job: OwnSignalConfig, index: number) => (
-                <li key={job.name} className="job">
-                    <div className='jobHeader'>
-                        <H3 className='jobName'>{job.name}</H3>
-                        <div id="job-item" className='jobStatus'>
+                <li key={job.name} className={styles.job}>
+                    <div className={styles.jobHeader}>
+                        <H3 className={styles.jobName}>{job.name}</H3>
+                        <div id="job-item" className={styles.jobStatus}>
                             <Toggle
                                 onToggle={value => {
                                     onUpdateJob(index, {...job, isEnabled: value})
@@ -96,9 +96,9 @@ export const OwnStatusPage: FC = () => {
                             </Text>
                         </div>
                     </div>
-                    <span className='jobDescription'>{job.description}</span>
+                    <span className={styles.jobDescription}>{job.description}</span>
 
-                    <div id='excludeRepos'>
+                    <div className={styles.excludeRepos} id='excludeRepos'>
                         <Label className="mb-0">Exclude repositories</Label>
                         <RepositoryPatternList repositoryPatterns={job.excludedRepoPatterns} setRepositoryPatterns={updater => {
                             const updatedJob:OwnSignalConfig = {...job, excludedRepoPatterns: updater(job.excludedRepoPatterns)} as OwnSignalConfig
