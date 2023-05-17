@@ -194,10 +194,10 @@ const DropdownItem: React.FunctionComponent<React.PropsWithChildren<DropdownItem
                     {!loading && shouldDisplayRolloutInfo && (
                         <>
                             <br />
-                            <b>
+                            <strong>
                                 Note: Rollout windows have been set up by the admin. This means that some of the
                                 selected changesets won't be processed until a time in the future.
-                            </b>
+                            </strong>
                         </>
                     )}
                 </small>
