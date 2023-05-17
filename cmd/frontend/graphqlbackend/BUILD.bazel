@@ -346,6 +346,7 @@ go_library(
         "@com_github_stretchr_testify//require",
         "@com_github_throttled_throttled_v2//:throttled",
         "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
