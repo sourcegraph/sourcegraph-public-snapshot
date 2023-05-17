@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
@@ -68,10 +67,9 @@ const (
 )
 
 type RuntimeClients struct {
-	Logger                      log.Logger
-	DB                          database.DB
-	Zoekt                       zoekt.Streamer
-	SearcherURLs                *endpoint.Map
-	SearcherGRPCConnectionCache *defaults.ConnectionCache
-	Gitserver                   gitserver.Client
+	Logger       log.Logger
+	DB           database.DB
+	Zoekt        zoekt.Streamer
+	SearcherURLs *endpoint.Map
+	Gitserver    gitserver.Client
 }
