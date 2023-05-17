@@ -5,16 +5,20 @@ load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@aspect_rules_js//npm:defs.bzl", _npm_package = "npm_package")
 load("@aspect_rules_ts//ts:defs.bzl", _ts_project = "ts_project")
 load("@aspect_rules_jest//jest:defs.bzl", _jest_test = "jest_test")
+load("//dev:eslint.bzl", "eslint_test_with_types")
 load(":sass.bzl", _sass = "sass")
 load(":babel.bzl", _babel = "babel")
 
 sass = _sass
 
-def ts_project(name, deps = [], use_preset_env = True, **kwargs):
+# TODO move this to `ts_project.bzl`
+def ts_project(name, srcs = [], deps = [], use_preset_env = True, **kwargs):
     """A wrapper around ts_project
 
     Args:
         name: A unique name for this target
+
+        srcs: A list of source files
 
         deps: A list of dependencies
 
@@ -36,9 +40,19 @@ def ts_project(name, deps = [], use_preset_env = True, **kwargs):
             "//:node_modules/@types/testing-library__jest-dom",
         ] if not d in deps]
 
+    eslint_test_with_types(
+        name = "%s_eslint" % name,
+        testonly = True,
+        srcs = srcs,
+        binary = "//:eslint",
+        config = ":eslint_config",
+        deps = deps,
+    )
+
     # Default arguments for ts_project.
     _ts_project(
         name = name,
+        srcs = srcs,
         deps = deps,
 
         # tsconfig options, default to the root
@@ -78,7 +92,7 @@ def npm_package(name, srcs = [], **kwargs):
     """
     replace_prefixes = kwargs.pop("replace_prefixes", {})
 
-    package_type = kwargs.pop("type", "module")
+    package_type = kwargs.pop("type", "commonjs")
 
     # Modifications to package.json
     # TODO(bazel): remove when package.json can be updated in source

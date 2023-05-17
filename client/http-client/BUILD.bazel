@@ -1,6 +1,7 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "jest_test", "npm_package", "ts_project")
+load("//dev:eslint.bzl", "eslint_config")
 
 npm_link_all_packages(name = "node_modules")
 
@@ -58,10 +59,10 @@ ts_project(
     deps = [
         ":http-client_lib",
         "//:node_modules/@apollo/client",
-        "//:node_modules/@types/sinon",
-        "//:node_modules/delay",
-        "//:node_modules/rxjs",
-        "//:node_modules/sinon",
+        # "//:node_modules/@types/sinon",
+        # "//:node_modules/delay",
+        # "//:node_modules/rxjs",
+        # "//:node_modules/sinon",
     ],
 )
 
@@ -79,3 +80,5 @@ jest_test(
         ":http-client_tests",
     ],
 )
+
+eslint_config()
