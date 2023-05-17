@@ -24,6 +24,7 @@ func BazelOperations() *operations.Set {
 		"@sourcegraph_back_compat//enterprise/cmd/...",
 		"@sourcegraph_back_compat//enterprise/internal/...",
 	))
+	ops.Append(bazelBuild(false, `$$(bazel query 'kind("oci_tarball rule", //...)')`))
 	return ops
 }
 
