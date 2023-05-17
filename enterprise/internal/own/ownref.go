@@ -29,9 +29,6 @@ type Reference struct {
 	// handle is either a sourcegraph or code-host handle,
 	// and can be considered within or outside of
 	handle string
-	// contributorName is specific to recent contributions signal,
-	// and contains whatever is found in commit author's name.
-	contributorName string
 	// email can be found in a CODEOWNERS entry, but can also
 	// be a commit author email, which means it can be a code-host specific
 	// email generated for the purpose of merging a pull-request.
@@ -71,9 +68,30 @@ func searchExample(db database.EnterpriseDB) error {
 	// Then for given file we have owner matches (translated to references here):
 	ownerReferences := []Reference{
 		// Some possible matching entries:
-		{email: "john.doe@sourcegraph.com"}, // email entry in CODEOWNERS
-		{handle: "jdoe"},                    // @eseliger entry in CODEOWNERS
-		{userID: 42},                        // Erik's user ID from assigned ownership
+		// email entry in CODEOWNERS
+		{
+			email: "john.doe@sourcegraph.com",
+			repoContext: &repoContext{
+				name:         "github.com/sourcegraph/sourcegraph",
+				codehostKind: "github",
+			},
+		},
+		// @jdoe entry in CODEOWNERS
+		{
+			handle: "jdoe",
+			repoContext: &repoContext{
+				name:         "github.com/sourcegraph/sourcegraph",
+				codehostKind: "github",
+			},
+		},
+		{
+			handle: "jdoe.sourcegraph",
+			repoContext: &repoContext{
+				name:         "github.com/sourcegraph/sourcegraph",
+				codehostKind: "github",
+			},
+		},
+		{userID: 42}, // John Doe's user ID from assigned ownership
 	}
 	var matches bool
 	for _, ref := range ownerReferences {
@@ -137,8 +155,7 @@ func resolutionExample(db database.EnterpriseDB) error {
 		},
 		// Contributor email contains github username, we can figure this out based on github code host.
 		{
-			contributorName: "John Doe",
-			email:           "githubusername@users.noreply.github.com",
+			email: "githubusername@users.noreply.github.com",
 			// alternative:  "userID+userName@users.noreply.github.com",
 			// repo context where the commit is from
 			repoContext: &repoContext{
