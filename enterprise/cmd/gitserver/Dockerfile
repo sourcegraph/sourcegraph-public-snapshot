@@ -4,7 +4,7 @@
 # ignores.
 
 # Install p4 CLI (keep this up to date with cmd/server/Dockerfile)
-FROM sourcegraph/alpine-3.14:213466_2023-04-17_5.0-bdda34a71619@sha256:6354a4ff578b685e36c8fbde81f62125ae0011b047fb2cc22d1b0de616b3c59a AS p4cli
+FROM sourcegraph/alpine-3.14:213466_2023-04-17_5.0-bdda34a71619@sha256:6354a4ff578b685e36c8fbde81f62125ae0011b047fb2cc22d1b0de616b3c59a AS build
 
 # hash provided in http://filehost.perforce.com/perforce/r22.2/bin.linux26x86_64/SHA256SUMS
 # if the hash is not provided, calculate it by downloading the file and running `sha256sum` on it in Terminal
@@ -13,12 +13,8 @@ RUN echo "8bc10fca1c5a26262b4072deec76150a668581a9749d0504cd443084773d4fd0  /usr
     chmod +x /usr/local/bin/p4 && \
     sha256sum -c expected_hash
 
-FROM sourcegraph/alpine-3.14:213466_2023-04-17_5.0-bdda34a71619@sha256:6354a4ff578b685e36c8fbde81f62125ae0011b047fb2cc22d1b0de616b3c59a AS p4-fusion
-
 COPY p4-fusion-install-alpine.sh /p4-fusion-install-alpine.sh
 RUN /p4-fusion-install-alpine.sh
-
-FROM sourcegraph/alpine-3.14:213466_2023-04-17_5.0-bdda34a71619@sha256:6354a4ff578b685e36c8fbde81f62125ae0011b047fb2cc22d1b0de616b3c59a AS coursier
 
 RUN wget -O coursier.gz https://github.com/coursier/coursier/releases/download/v2.1.0-RC4/cs-x86_64-pc-linux-static.gz && \
     gzip -d coursier.gz && \
@@ -43,7 +39,6 @@ RUN apk add --no-cache \
     'git>=2.38.0' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.17/main \
     git-lfs \
     git-p4 \
-    && apk add --no-cache  \
     openssh-client \
     # We require libstdc++ for p4-fusion
     libstdc++ \
@@ -51,11 +46,16 @@ RUN apk add --no-cache \
     python3 \
     bash
 
-COPY --from=p4cli /usr/local/bin/p4 /usr/local/bin/p4
+COPY --from=build /usr/local/bin/p4 /usr/local/bin/p4
+COPY --from=build /usr/local/bin/coursier /usr/local/bin/coursier
 
-COPY --from=p4-fusion /usr/local/bin/p4-fusion /usr/local/bin/p4-fusion
-
-COPY --from=coursier /usr/local/bin/coursier /usr/local/bin/coursier
+# copy into place the p4-fusion binary and the wrapper shell script
+# that facilitates better handling of killing of the p4-fusion
+# (for example, either because it exceeded gitLongCommandTimeout, or the Docker host's OOM Reaper killed it)
+# actually, I'm not sure about gitLongCommandTimeout, because that may directly terminate the wrapper script.
+COPY --from=build /usr/local/bin/p4-fusion /usr/local/bin/p4-fusion-binary
+COPY p4-fusion-wrapper-detect-kill.sh /usr/local/bin/p4-fusion
+COPY process-stats-watcher.sh /usr/local/bin/process-stats-watcher.sh
 
 # This is a trick to include libraries required by p4,
 # please refer to https://blog.tilander.org/docker-perforce/
