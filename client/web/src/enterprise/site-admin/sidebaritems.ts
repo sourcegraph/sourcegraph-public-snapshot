@@ -51,7 +51,7 @@ const maintenanceGroup: SiteAdminSideBarGroup = {
             label: 'Own status',
             to: '/site-admin/own-status-page',
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
-        }
+        },
     ],
 }
 
