@@ -40,12 +40,14 @@ def ts_project(name, srcs = [], deps = [], use_preset_env = True, **kwargs):
             "//:node_modules/@types/testing-library__jest-dom",
         ] if not d in deps]
 
+    client_package_path = "/".join(native.package_name().split("/")[:2])
+
     eslint_test_with_types(
         name = "%s_eslint" % name,
         testonly = True,
         srcs = srcs,
         binary = "//:eslint",
-        config = ":eslint_config",
+        config = "//{}:eslint_config".format(client_package_path),
         deps = deps,
     )
 
