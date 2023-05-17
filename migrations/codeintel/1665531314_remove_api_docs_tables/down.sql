@@ -73,6 +73,14 @@ INSERT INTO lsif_data_apidocs_num_pages VALUES (0);
 INSERT INTO lsif_data_apidocs_num_search_results_private VALUES (0);
 INSERT INTO lsif_data_apidocs_num_search_results_public VALUES (0);
 
+CREATE SEQUENCE IF NOT EXISTS lsif_data_docs_search_current_private_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
 CREATE TABLE IF NOT EXISTS lsif_data_docs_search_current_private (
     repo_id integer NOT NULL,
     dump_root text NOT NULL,
@@ -80,9 +88,17 @@ CREATE TABLE IF NOT EXISTS lsif_data_docs_search_current_private (
     dump_id integer NOT NULL,
     last_cleanup_scan_at timestamp with time zone DEFAULT now() NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    id BIGSERIAL,
+    id int NOT NULL DEFAULT nextval('lsif_data_docs_search_current_private_id_seq'),
     PRIMARY KEY(id)
 );
+
+CREATE SEQUENCE IF NOT EXISTS lsif_data_docs_search_current_public_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 CREATE TABLE IF NOT EXISTS lsif_data_docs_search_current_public (
     repo_id integer NOT NULL,
@@ -91,28 +107,53 @@ CREATE TABLE IF NOT EXISTS lsif_data_docs_search_current_public (
     dump_id integer NOT NULL,
     last_cleanup_scan_at timestamp with time zone DEFAULT now() NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    id BIGSERIAL,
+    id int NULL DEFAULT nextval('lsif_data_docs_search_current_public_id_seq'),
     PRIMARY KEY(id)
 );
+
+CREATE SEQUENCE IF NOT EXISTS lsif_data_docs_search_lang_names_private_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 CREATE TABLE IF NOT EXISTS lsif_data_docs_search_lang_names_private (
-    id BIGSERIAL,
+    id BIGINT NOT NULL DEFAULT nextval('lsif_data_docs_search_lang_names_private_id_seq'),
     lang_name text NOT NULL,
     tsv tsvector NOT NULL,
     PRIMARY KEY(id),
     UNIQUE(lang_name)
 );
+
+ALTER SEQUENCE lsif_data_docs_search_lang_names_private_id_seq OWNED BY lsif_data_docs_search_lang_names_private.id;
+
+CREATE SEQUENCE IF NOT EXISTS lsif_data_docs_search_lang_names_public_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 CREATE TABLE IF NOT EXISTS lsif_data_docs_search_lang_names_public (
-    id BIGSERIAL,
+    id BIGINT NOT NULL DEFAULT nextval('lsif_data_docs_search_lang_names_public_id_seq'),
     lang_name text NOT NULL,
     tsv tsvector NOT NULL,
     PRIMARY KEY(id),
     UNIQUE(lang_name)
 );
 
+ALTER SEQUENCE lsif_data_docs_search_lang_names_public_id_seq OWNED BY lsif_data_docs_search_lang_names_public.id;
+
+CREATE SEQUENCE IF NOT EXISTS lsif_data_docs_search_private_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
 CREATE TABLE IF NOT EXISTS lsif_data_docs_search_private (
-    id BIGSERIAL,
+    id BIGINT NOT NULL DEFAULT nextval('lsif_data_docs_search_private_id_seq'),
     repo_id integer NOT NULL,
     dump_id integer NOT NULL,
     dump_root text NOT NULL,
@@ -129,9 +170,22 @@ CREATE TABLE IF NOT EXISTS lsif_data_docs_search_private (
     label_reverse_tsv tsvector NOT NULL,
     PRIMARY KEY(id)
 );
+
+ALTER TABLE lsif_data_docs_search_private
+    DROP CONSTRAINT IF EXISTS lsif_data_docs_search_private_lang_name_id_fk;
+ALTER TABLE lsif_data_docs_search_private ADD CONSTRAINT lsif_data_docs_search_private_lang_name_id_fk FOREIGN KEY (lang_name_id) REFERENCES lsif_data_docs_search_lang_names_private(id);
+
+ALTER SEQUENCE lsif_data_docs_search_private_id_seq OWNED BY lsif_data_docs_search_private.id;
+
+CREATE SEQUENCE IF NOT EXISTS lsif_data_docs_search_public_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 CREATE TABLE IF NOT EXISTS lsif_data_docs_search_public (
-    id BIGSERIAL,
+    id BIGINT NOT NULL DEFAULT nextval('lsif_data_docs_search_public_id_seq'),
     repo_id integer NOT NULL,
     dump_id integer NOT NULL,
     dump_root text NOT NULL,
@@ -149,38 +203,91 @@ CREATE TABLE IF NOT EXISTS lsif_data_docs_search_public (
     PRIMARY KEY(id)
 );
 
+ALTER TABLE lsif_data_docs_search_public
+    DROP CONSTRAINT IF EXISTS lsif_data_docs_search_public_lang_name_id_fk;
+ALTER TABLE lsif_data_docs_search_public ADD CONSTRAINT lsif_data_docs_search_public_lang_name_id_fk FOREIGN KEY (lang_name_id) REFERENCES lsif_data_docs_search_lang_names_public(id);
+
+ALTER SEQUENCE lsif_data_docs_search_public_id_seq OWNED BY lsif_data_docs_search_public.id;
+
+CREATE SEQUENCE IF NOT EXISTS lsif_data_docs_search_repo_names_private_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
 CREATE TABLE IF NOT EXISTS lsif_data_docs_search_repo_names_private (
-    id BIGSERIAL,
+    id BIGINT NOT NULL DEFAULT nextval('lsif_data_docs_search_repo_names_private_id_seq'),
     repo_name text NOT NULL,
     tsv tsvector NOT NULL,
     reverse_tsv tsvector NOT NULL,
     PRIMARY KEY(id),
     UNIQUE(repo_name)
 );
+
+ALTER TABLE lsif_data_docs_search_private
+    DROP CONSTRAINT IF EXISTS lsif_data_docs_search_private_repo_name_id_fk;
+ALTER TABLE lsif_data_docs_search_private ADD CONSTRAINT lsif_data_docs_search_private_repo_name_id_fk FOREIGN KEY (repo_name_id) REFERENCES lsif_data_docs_search_repo_names_private(id);
+
+ALTER SEQUENCE lsif_data_docs_search_repo_names_private_id_seq OWNED BY lsif_data_docs_search_repo_names_private.id;
+
+CREATE SEQUENCE IF NOT EXISTS lsif_data_docs_search_repo_names_public_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 CREATE TABLE IF NOT EXISTS lsif_data_docs_search_repo_names_public (
-    id BIGSERIAL,
+    id BIGINT NOT NULL DEFAULT nextval('lsif_data_docs_search_repo_names_public_id_seq'),
     repo_name text NOT NULL,
     tsv tsvector NOT NULL,
     reverse_tsv tsvector NOT NULL,
     PRIMARY KEY(id),
     UNIQUE(repo_name)
 );
+ALTER TABLE lsif_data_docs_search_public
+    DROP CONSTRAINT IF EXISTS lsif_data_docs_search_public_repo_name_id_fk;
+ALTER TABLE lsif_data_docs_search_public ADD CONSTRAINT lsif_data_docs_search_public_repo_name_id_fk FOREIGN KEY (repo_name_id) REFERENCES lsif_data_docs_search_repo_names_public(id);
+
+ALTER SEQUENCE lsif_data_docs_search_repo_names_public_id_seq OWNED BY lsif_data_docs_search_repo_names_public.id;
+
+CREATE SEQUENCE IF NOT EXISTS lsif_data_docs_search_tags_private_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 CREATE TABLE IF NOT EXISTS lsif_data_docs_search_tags_private (
-    id BIGSERIAL,
+    id BIGINT NOT NULL DEFAULT nextval('lsif_data_docs_search_tags_private_id_seq'),
     tags text NOT NULL UNIQUE,
     tsv tsvector NOT NULL,
     PRIMARY KEY(id)
 );
+ALTER TABLE lsif_data_docs_search_private DROP CONSTRAINT IF EXISTS lsif_data_docs_search_private_tags_id_fk;
+ALTER TABLE lsif_data_docs_search_private ADD CONSTRAINT lsif_data_docs_search_private_tags_id_fk FOREIGN KEY (tags_id) REFERENCES lsif_data_docs_search_tags_private(id);
+
+ALTER SEQUENCE lsif_data_docs_search_tags_private_id_seq OWNED BY lsif_data_docs_search_tags_private.id;
+
+CREATE SEQUENCE IF NOT EXISTS lsif_data_docs_search_tags_public_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
 
 CREATE TABLE IF NOT EXISTS lsif_data_docs_search_tags_public (
-    id BIGSERIAL,
+    id BIGINT NOT NULL DEFAULT nextval('lsif_data_docs_search_tags_public_id_seq'),
     tags text NOT NULL UNIQUE,
     tsv tsvector NOT NULL,
     PRIMARY KEY(id),
     UNIQUE(tags)
 );
+ALTER TABLE lsif_data_docs_search_public DROP CONSTRAINT IF EXISTS lsif_data_docs_search_public_tags_id_fk;
+ALTER TABLE lsif_data_docs_search_public ADD CONSTRAINT lsif_data_docs_search_public_tags_id_fk FOREIGN KEY (tags_id) REFERENCES lsif_data_docs_search_tags_public(id);
+
+ALTER SEQUENCE lsif_data_docs_search_tags_public_id_seq OWNED BY lsif_data_docs_search_tags_public.id;
 
 CREATE TABLE IF NOT EXISTS lsif_data_documentation_mappings (
     dump_id integer NOT NULL,

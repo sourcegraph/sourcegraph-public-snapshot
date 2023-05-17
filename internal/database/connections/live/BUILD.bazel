@@ -32,8 +32,10 @@ go_test(
     ],
     deps = [
         "//internal/database/dbtest",
+        "//internal/database/migration/drift",
         "//internal/database/migration/runner",
         "//internal/database/migration/schemas",
+        "//internal/database/migration/store",
         "//internal/observation",
         "//lib/errors",
         "@com_github_jackc_pgconn//:pgconn",
