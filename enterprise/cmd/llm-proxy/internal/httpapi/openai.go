@@ -14,11 +14,12 @@ import (
 
 const openAIURL = "https://api.openai.com/v1/chat/completions"
 
-func newOpenAIHandler(logger log.Logger, eventLogger events.Logger, accessToken string, orgID string) http.Handler {
+func newOpenAIHandler(logger log.Logger, eventLogger events.Logger, accessToken string, orgID string, allowedModels []string) http.Handler {
 	return makeUpstreamHandler(
 		logger,
 		eventLogger,
 		openAIURL,
+		allowedModels,
 		func(body *openaiRequest) {
 			// We don't want to let users generate multiple responses, as this would
 			// mess with rate limit counting.

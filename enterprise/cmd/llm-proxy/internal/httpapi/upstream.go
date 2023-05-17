@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -22,7 +23,7 @@ type requestTransformer func(*http.Request)
 type requestMetadataRetriever[T any] func(T) (promptCharacterCount int, model string, additionalMetadata map[string]any)
 type responseParser[T any] func(T, io.Reader) (completionCharacterCount int)
 
-func makeUpstreamHandler[ReqT any](logger log.Logger, eventLogger events.Logger, upstreamAPIURL string, bodyTrans bodyTransformer[ReqT], rmr requestMetadataRetriever[ReqT], reqTrans requestTransformer, respParser responseParser[ReqT]) http.Handler {
+func makeUpstreamHandler[ReqT any](logger log.Logger, eventLogger events.Logger, upstreamAPIURL string, allowedModels []string, bodyTrans bodyTransformer[ReqT], rmr requestMetadataRetriever[ReqT], reqTrans requestTransformer, respParser responseParser[ReqT]) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		act := actor.FromContext(r.Context())
 
@@ -52,9 +53,15 @@ func makeUpstreamHandler[ReqT any](logger log.Logger, eventLogger events.Logger,
 		// Run the request transformer.
 		reqTrans(req)
 
+		promptCharacterCount, model, am := rmr(body)
+
+		if !isAllowedModel(allowedModels, model) {
+			response.JSONError(logger, w, http.StatusBadRequest, errors.Newf("model %q is not allowed", model))
+			return
+		}
+
 		{
 			metadata := map[string]any{}
-			promptCharacterCount, model, am := rmr(body)
 			for k, v := range am {
 				metadata[k] = v
 			}
@@ -128,4 +135,13 @@ func makeUpstreamHandler[ReqT any](logger log.Logger, eventLogger events.Logger,
 			logger.Error("error from upstream", log.String("url", upstreamAPIURL), log.Int("status_code", upstreamStatusCode))
 		}
 	})
+}
+
+func isAllowedModel(allowedModels []string, model string) bool {
+	for _, m := range allowedModels {
+		if strings.EqualFold(m, model) {
+			return true
+		}
+	}
+	return false
 }
