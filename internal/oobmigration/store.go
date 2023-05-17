@@ -381,6 +381,54 @@ WHERE m.id = %s
 ORDER BY e.created desc
 `
 
+func (s *Store) GetByIDs(ctx context.Context, ids []int) (_ []Migration, err error) {
+	migrations, err := scanMigrations(s.Store.Query(ctx, sqlf.Sprintf(getByIDsQuery, pq.Array(ids))))
+	if err != nil {
+		return nil, err
+	}
+
+	sort.Slice(migrations, func(i, j int) bool { return migrations[i].ID < migrations[j].ID })
+
+	var missingMigrations []int
+	var offset int
+	for i, id := range ids {
+		if migrations[i-offset].ID != id {
+			offset += 1
+			missingMigrations = append(missingMigrations, id)
+			continue
+		}
+	}
+	if len(missingMigrations) > 0 {
+		return nil, errors.Newf("unknown migration id(s) %v", missingMigrations)
+	}
+
+	return migrations, nil
+}
+
+const getByIDsQuery = `
+SELECT
+	m.id,
+	m.team,
+	m.component,
+	m.description,
+	m.introduced_version_major,
+	m.introduced_version_minor,
+	m.deprecated_version_major,
+	m.deprecated_version_minor,
+	m.progress,
+	m.created,
+	m.last_updated,
+	m.non_destructive,
+	m.is_enterprise,
+	m.apply_reverse,
+	m.metadata,
+	e.message,
+	e.created
+FROM out_of_band_migrations m
+LEFT JOIN out_of_band_migrations_errors e ON e.migration_id = m.id
+WHERE m.id = ANY(%s)
+ORDER BY e.created desc`
+
 // ReturnEnterpriseMigrations is set by the enterprise application to enable the
 // inclusion of enterprise-only migration records in the output of oobmigration.List.
 var ReturnEnterpriseMigrations = false

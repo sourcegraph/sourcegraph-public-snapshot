@@ -15,10 +15,12 @@ go_library(
     },
     deps = [
         "//enterprise/cmd/frontend/shared",
-        "//enterprise/cmd/sourcegraph/enterprisecmd",
+        "//internal/conf",
         "//internal/sanitycheck",
+        "//internal/service/svcmain",
         "//ui/assets",
         "//ui/assets/enterprise",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
