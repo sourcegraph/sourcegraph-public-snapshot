@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
@@ -44,7 +45,7 @@ func run(w io.Writer, args []string) error {
 	conf.Mock(&conf.Unified{})
 	logger := log.Scoped("search-plan", "")
 
-	cli := client.NewSearchClient(logger, nil, nil, nil, nil)
+	cli := client.NewSearchClient(logger, nil, nil, nil, nil, nil)
 
 	inputs, err := cli.Plan(
 		context.Background(),

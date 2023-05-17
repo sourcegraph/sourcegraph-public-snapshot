@@ -404,11 +404,18 @@ func Frontend() *monitoring.Dashboard {
 
 			shared.NewGRPCServerMetricsGroup(
 				shared.GRPCServerMetricsOptions{
-					ServiceName:     "frontend",
-					MetricNamespace: "frontend",
+					HumanServiceName: "frontend",
+					MetricNamespace:  "frontend",
 
 					MethodFilterRegex:   fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 					InstanceFilterRegex: `${internalInstance:regex}`,
+				}, monitoring.ObservableOwnerSearchCore),
+			shared.NewGRPCInternalErrorMetricsGroup(
+				shared.GRPCInternalErrorMetricsOptions{
+					HumanServiceName:   "frontend",
+					RawGRPCServiceName: "sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",
+
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 				}, monitoring.ObservableOwnerSearchCore),
 
 			{
