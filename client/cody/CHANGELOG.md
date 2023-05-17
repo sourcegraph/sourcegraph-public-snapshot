@@ -8,6 +8,12 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Fixed
 
+### Changed
+
+## [0.1.3]
+
+### Fixed
+
 - Displays error banners on all view instead of chat view only. [pull/51883](https://github.com/sourcegraph/sourcegraph/pull/51883)
 - Surfaces errors for corrupted token from secret storage. [pull/51883](https://github.com/sourcegraph/sourcegraph/pull/51883)
 
