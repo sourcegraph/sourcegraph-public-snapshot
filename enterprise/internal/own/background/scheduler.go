@@ -2,7 +2,6 @@ package background
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -98,17 +97,15 @@ func (f *featureFlagWrapper) Handle(ctx context.Context) error {
 		f.logger.Info("skipping own indexing job, job disabled", logger.String("job-name", f.jobType.Name))
 	}
 
-	flag, err := database.FeatureFlagsWith(f.db).GetFeatureFlag(ctx, featureFlagName(f.jobType))
+	configurations, err := f.db.OwnSignalConfigurations().LoadConfigurations(ctx, database.LoadSignalConfigurationArgs{Name: f.jobType.Name})
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			logJobDisabled()
-			return nil
-		} else {
-			return errors.Wrap(err, "database.FeatureFlagsWith")
-		}
+		return errors.Wrap(err, "LoadConfigurations")
+	} else if len(configurations) == 0 {
+		return errors.Newf("ownership signal configuration not found for name: %s\n", f.jobType.Name)
 	}
-	res, ok := flag.EvaluateGlobal()
-	if !ok || !res {
+	config := configurations[0]
+
+	if !config.Enabled {
 		logJobDisabled()
 		return nil
 	}
@@ -118,19 +115,19 @@ func (f *featureFlagWrapper) Handle(ctx context.Context) error {
 }
 
 type ownRepoIndexSchedulerJob struct {
-	store   *basestore.Store
-	jobType IndexJobType
-	logger  logger.Logger
-	clock   glock.Clock
+	store       *basestore.Store
+	jobType     IndexJobType
+	logger      logger.Logger
+	clock       glock.Clock
+	configStore database.SignalConfigurationStore
 }
 
 func newOwnRepoIndexSchedulerJob(db database.DB, jobType IndexJobType, logger logger.Logger) *ownRepoIndexSchedulerJob {
 	store := basestore.NewWithHandle(db.Handle())
-	return &ownRepoIndexSchedulerJob{jobType: jobType, store: store, logger: logger, clock: glock.NewRealClock()}
+	return &ownRepoIndexSchedulerJob{jobType: jobType, store: store, logger: logger, clock: glock.NewRealClock(), configStore: db.OwnSignalConfigurations()}
 }
 
 func (o *ownRepoIndexSchedulerJob) Handle(ctx context.Context) error {
-
 	// convert duration to hours to match the query
 	after := o.clock.Now().Add(-1 * o.jobType.IndexInterval)
 

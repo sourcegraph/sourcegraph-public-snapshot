@@ -1086,7 +1086,7 @@ func Test_SignalConfigurations(t *testing.T) {
 		graphqlbackend.RunTest(t, mutationTest)
 
 		// ensure the configs didn't change despite the error
-		configsFromDb, err := db.OwnSignalConfigurations().LoadConfigurations(ctx)
+		configsFromDb, err := db.OwnSignalConfigurations().LoadConfigurations(ctx, database.LoadSignalConfigurationArgs{})
 		require.NoError(t, err)
 		autogold.Expect([]database.SignalConfiguration{
 			{

@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -19,7 +20,7 @@ type SignalConfiguration struct {
 }
 
 type SignalConfigurationStore interface {
-	LoadConfigurations(ctx context.Context) ([]SignalConfiguration, error)
+	LoadConfigurations(ctx context.Context, args LoadSignalConfigurationArgs) ([]SignalConfiguration, error)
 	UpdateConfiguration(ctx context.Context, args UpdateSignalConfigurationArgs) error
 	WithTransact(context.Context, func(store SignalConfigurationStore) error) error
 }
@@ -42,8 +43,22 @@ func (s *signalConfigurationStore) With(other basestore.ShareableStore) *signalC
 	return &signalConfigurationStore{s.Store.With(other)}
 }
 
-func (s *signalConfigurationStore) LoadConfigurations(ctx context.Context) ([]SignalConfiguration, error) {
-	q := "SELECT id, name, description, excluded_repo_patterns, enabled FROM own_signal_configurations ORDER BY id;"
+type LoadSignalConfigurationArgs struct {
+	Name string
+}
+
+func (s *signalConfigurationStore) LoadConfigurations(ctx context.Context, args LoadSignalConfigurationArgs) ([]SignalConfiguration, error) {
+	q := "SELECT id, name, description, excluded_repo_patterns, enabled FROM own_signal_configurations %s ORDER BY id;"
+
+	var conds []*sqlf.Query
+	if len(args.Name) > 0 {
+		conds = append(conds, sqlf.Sprintf("name = %s", args.Name))
+	}
+	where := sqlf.Sprintf("")
+	if len(conds) > 0 {
+		where = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "AND"))
+	}
+
 	multiScan := basestore.NewSliceScanner(func(scanner dbutil.Scanner) (SignalConfiguration, error) {
 		var temp SignalConfiguration
 		err := scanner.Scan(
@@ -59,7 +74,11 @@ func (s *signalConfigurationStore) LoadConfigurations(ctx context.Context) ([]Si
 		return temp, nil
 	})
 
-	return multiScan(s.Query(ctx, sqlf.Sprintf(q)))
+	qq := sqlf.Sprintf(q, where)
+	fmt.Println(qq.Query(sqlf.PostgresBindVar))
+	fmt.Println(qq.Args())
+
+	return multiScan(s.Query(ctx, sqlf.Sprintf(q, where)))
 }
 
 func (s *signalConfigurationStore) UpdateConfiguration(ctx context.Context, args UpdateSignalConfigurationArgs) error {
