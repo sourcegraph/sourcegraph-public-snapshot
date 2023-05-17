@@ -38,8 +38,10 @@ func DialContext(ctx context.Context, addr string, logger log.Logger, additional
 }
 
 // DialOptions is a set of default dial options that should be used for all
-// gRPC clients in Sourcegraph. The options can be extended with
-// service-specific options.
+// gRPC clients in Sourcegraph, along with any additional client-specific options.
+//
+// **Note**: Do not append to this slice directly, instead provide extra options
+// via "additionalOptions".
 func DialOptions(logger log.Logger, additionalOptions ...grpc.DialOption) []grpc.DialOption {
 	// Generate the options dynamically rather than using a static slice
 	// because these options depend on some globals (tracer, trace sampling)
@@ -70,6 +72,12 @@ func DialOptions(logger log.Logger, additionalOptions ...grpc.DialOption) []grpc
 	}
 
 	out = append(out, additionalOptions...)
+
+	// Ensure that the message size options are set last, so they override any other
+	// client-specific options that tweak the message size.
+	//
+	// The message size options are only provided if the environment variable is set. These options serve as an escape hatch, so they
+	// take precedence over everything else with a uniform size setting that's easy to reason about.
 	out = append(out, messagesize.ClientMessageSizeFromEnv(logger)...)
 
 	return out
@@ -89,8 +97,10 @@ func NewServer(logger log.Logger, additionalOpts ...grpc.ServerOption) *grpc.Ser
 }
 
 // ServerOptions is a set of default server options that should be used for all
-// gRPC servers in Sourcegraph. The options can be extended with
-// service-specific options.
+// gRPC servers in Sourcegraph. along with any additional service-specific options.
+//
+// **Note**: Do not append to this slice directly, instead provide extra options
+// via "additionalOptions".
 func ServerOptions(logger log.Logger, additionalOptions ...grpc.ServerOption) []grpc.ServerOption {
 	// Generate the options dynamically rather than using a static slice
 	// because these options depend on some globals (tracer, trace sampling)
@@ -118,6 +128,12 @@ func ServerOptions(logger log.Logger, additionalOptions ...grpc.ServerOption) []
 	}
 
 	out = append(out, additionalOptions...)
+
+	// Ensure that the message size options are set last, so they override any other
+	// server-specific options that tweak the message size.
+	//
+	// The message size options are only provided if the environment variable is set. These options serve as an escape hatch, so they
+	// take precedence over everything else with a uniform size setting that's easy to reason about.
 	out = append(out, messagesize.ServerMessageSizeFromEnv(logger)...)
 
 	return out

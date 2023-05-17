@@ -25,7 +25,10 @@ var (
 	envServerMessageSize = "SRC_GRPC_SERVER_MAX_MESSAGE_SIZE"
 )
 
-// ClientMessageSizeFromEnv returns a grpc.DialOption that sets the maximum message size for gRPC clients.
+// ClientMessageSizeFromEnv returns a slice of grpc.DialOptions that set the maximum message size for gRPC clients if
+// the "SRC_GRPC_CLIENT_MAX_MESSAGE_SIZE" environment variable is set to a valid size value (ex: "40 MB").
+//
+// If the environment variable is not set or if the size value is invalid (too small, not parsable, etc.), it returns nil.
 func ClientMessageSizeFromEnv(l log.Logger) []grpc.DialOption {
 	messageSize, err := getMessageSizeBytesFromEnv(envClientMessageSize, smallestAllowedMaxMessageSize, largestAllowedMaxMessageSize)
 	if err != nil {
@@ -51,7 +54,10 @@ func ClientMessageSizeFromEnv(l log.Logger) []grpc.DialOption {
 	}
 }
 
-// ServerMessageSizeFromEnv returns a grpc.ServerOption that sets the maximum message size for gRPC servers.
+// ServerMessageSizeFromEnv returns a slice of grpc.ServerOption that set the maximum message size for gRPC servers if
+// the "SRC_GRPC_SERVER_MAX_MESSAGE_SIZE" environment variable is set to a valid size value (ex: "40 MB").
+//
+// If the environment variable is not set or if the size value is invalid (too small, not parsable, etc.), it returns nil.
 func ServerMessageSizeFromEnv(l log.Logger) []grpc.ServerOption {
 	messageSize, err := getMessageSizeBytesFromEnv(envServerMessageSize, smallestAllowedMaxMessageSize, largestAllowedMaxMessageSize)
 	if err != nil {
@@ -75,6 +81,11 @@ func ServerMessageSizeFromEnv(l log.Logger) []grpc.ServerOption {
 	}
 }
 
+// getMessageSizeBytesFromEnv reads the environment variable specified by envVar
+// and returns the message size in bytes within the range [minSize, maxSize].
+//
+// If the environment variable is not set or the value is outside the allowed range,
+// it returns an error.
 func getMessageSizeBytesFromEnv(envVar string, minSize, maxSize uint64) (size int, err error) {
 	rawSize, set := os.LookupEnv(envVar)
 	if !set {
