@@ -156,11 +156,12 @@ func (s *searchClient) Execute(
 
 func (s *searchClient) JobClients() job.RuntimeClients {
 	return job.RuntimeClients{
-		Logger:       s.logger,
-		DB:           s.db,
-		Zoekt:        s.zoekt,
-		SearcherURLs: s.searcherURLs,
-		Gitserver:    gitserver.NewClient(),
+		Logger:                      s.logger,
+		DB:                          s.db,
+		Zoekt:                       s.zoekt,
+		SearcherURLs:                s.searcherURLs,
+		SearcherGRPCConnectionCache: s.searcherGRPCConnectionCache,
+		Gitserver:                   gitserver.NewClient(),
 	}
 }
 

@@ -2,6 +2,7 @@ package defaults
 
 import (
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -72,10 +73,10 @@ func (c *ConnectionCache) GetConnection(address string) (*grpc.ClientConn, error
 // newGRPCConnection creates a new gRPC connection to the given address, or returns an error if
 // the connection could not be created.
 func newGRPCConnection(address string, logger log.Logger) connAndError {
-	u, err := url.Parse(address)
+	u, err := parseAddress(address)
 	if err != nil {
 		return connAndError{
-			dialErr: errors.Wrapf(err, "parsing address %q", address),
+			dialErr: errors.Wrapf(err, "dialing gRPC connection to %q: parsing address %q", address, address),
 		}
 	}
 
@@ -87,6 +88,32 @@ func newGRPCConnection(address string, logger log.Logger) connAndError {
 	}
 
 	return connAndError{conn: gRPCConn}
+}
+
+// parseAddress parses rawAddress into a URL object. It accommodates cases where the rawAddress is a
+// simple host:port pair without a URL scheme (e.g., "example.com:8080").
+//
+// This function aims to provide a flexible way to parse addresses that may or may not strictly adhere to the URL format.
+func parseAddress(rawAddress string) (*url.URL, error) {
+	addedScheme := false
+
+	// Temporarily prepend "http://" if no scheme is present
+	if !strings.Contains(rawAddress, "://") {
+		rawAddress = "http://" + rawAddress
+		addedScheme = true
+	}
+
+	parsedURL, err := url.Parse(rawAddress)
+	if err != nil {
+		return nil, err
+	}
+
+	// If we added the "http://" scheme, remove it from the final URL
+	if addedScheme {
+		parsedURL.Scheme = ""
+	}
+
+	return parsedURL, nil
 }
 
 // closeGRPCConnection closes the gRPC connection specified by conn.

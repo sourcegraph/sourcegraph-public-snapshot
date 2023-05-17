@@ -54,6 +54,14 @@ func PrometheusStreamClientInterceptor(ctx context.Context, desc *grpc.StreamDes
 // newPrometheusServerStream wraps a grpc.ClientStream to observe the first error
 // encountered during the stream, if any.
 func newPrometheusServerStream(s grpc.ClientStream, serviceName, methodName string) grpc.ClientStream {
+	// Design note: We only want a single observation for each RPC call: it either succeeds or fails
+	// with a single error. This ensures we do not double-count RPCs in Prometheus metrics.
+	//
+	// For unary calls this is straightforward, but for streaming RPCs we need to make a compromise. We only
+	// observe the first error (either sending or receiving) that occurs during the stream, instead of every
+	// error that occurs during the stream's lifespan. While this approach swallows some errors, it keeps the
+	// Prometheus metric count clean and non-duplicated. The logging interceptor handles surfacing all errors
+	// that are encountered during a stream.
 	var observeOnce sync.Once
 
 	return &callBackClientStream{
@@ -68,7 +76,7 @@ func newPrometheusServerStream(s grpc.ClientStream, serviceName, methodName stri
 		postMessageReceive: func(err error) {
 			if err != nil {
 				if err == io.EOF {
-					// EOF signals end of stream, not an error. We handle this setting err to nil, because
+					// EOF signals end of stream, not an error. We handle this by setting err to nil, because
 					// we want to treat the stream as successfully completed.
 					err = nil
 				}

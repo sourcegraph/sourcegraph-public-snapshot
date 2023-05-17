@@ -3108,9 +3108,12 @@ Query: `(sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.zoekt.config
 <p class="subtitle">Client-observed gRPC internal error percentage across all methods over 1m</p>
 
 The percentage of gRPC requests that appear to fail due to gRPC internal errors across all methods, aggregated across all "frontend" clients.
+
 **Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code. These errors can be caused by a variety of issues, and can originate from either the code-generated "frontend" gRPC client or gRPC server. These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph`s use of gRPC.
 
-**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
+When debugging, knowing that a particular error comes from the grpc-go library itself (an `internal error`) as opposed to `normal` application code can be helpful when trying to fix it.
+
+**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`, etc.). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
 
 This panel has no related alerts.
 
@@ -3132,9 +3135,12 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.
 <p class="subtitle">Client-observed gRPC internal error percentage per-method over 1m</p>
 
 The percentage of gRPC requests that appear to fail to due to gRPC internal errors per method, aggregated across all "frontend" clients.
+
 **Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code. These errors can be caused by a variety of issues, and can originate from either the code-generated "frontend" gRPC client or gRPC server. These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph`s use of gRPC.
 
-**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
+When debugging, knowing that a particular error comes from the grpc-go library itself (an `internal error`) as opposed to `normal` application code can be helpful when trying to fix it.
+
+**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`, etc.). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
 
 This panel has no related alerts.
 
@@ -3156,9 +3162,12 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"sourcegraph.
 <p class="subtitle">Client-observed gRPC internal error response code rate per-method over 1m</p>
 
 The rate of gRPC internal-error response codes per method, aggregated across all "frontend" clients.
+
 **Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code. These errors can be caused by a variety of issues, and can originate from either the code-generated "frontend" gRPC client or gRPC server. These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph`s use of gRPC.
 
-**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
+When debugging, knowing that a particular error comes from the grpc-go library itself (an `internal error`) as opposed to `normal` application code can be helpful when trying to fix it.
+
+**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`, etc.). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
 
 This panel has no related alerts.
 
@@ -6567,9 +6576,12 @@ Query: `(sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1.GitserverSe
 <p class="subtitle">Client-observed gRPC internal error percentage across all methods over 1m</p>
 
 The percentage of gRPC requests that appear to fail due to gRPC internal errors across all methods, aggregated across all "gitserver" clients.
+
 **Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code. These errors can be caused by a variety of issues, and can originate from either the code-generated "gitserver" gRPC client or gRPC server. These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph`s use of gRPC.
 
-**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
+When debugging, knowing that a particular error comes from the grpc-go library itself (an `internal error`) as opposed to `normal` application code can be helpful when trying to fix it.
+
+**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`, etc.). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
 
 This panel has no related alerts.
 
@@ -6591,9 +6603,12 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1
 <p class="subtitle">Client-observed gRPC internal error percentage per-method over 1m</p>
 
 The percentage of gRPC requests that appear to fail to due to gRPC internal errors per method, aggregated across all "gitserver" clients.
+
 **Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code. These errors can be caused by a variety of issues, and can originate from either the code-generated "gitserver" gRPC client or gRPC server. These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph`s use of gRPC.
 
-**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
+When debugging, knowing that a particular error comes from the grpc-go library itself (an `internal error`) as opposed to `normal` application code can be helpful when trying to fix it.
+
+**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`, etc.). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
 
 This panel has no related alerts.
 
@@ -6615,9 +6630,12 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"gitserver.v1
 <p class="subtitle">Client-observed gRPC internal error response code rate per-method over 1m</p>
 
 The rate of gRPC internal-error response codes per method, aggregated across all "gitserver" clients.
+
 **Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code. These errors can be caused by a variety of issues, and can originate from either the code-generated "gitserver" gRPC client or gRPC server. These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph`s use of gRPC.
 
-**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
+When debugging, knowing that a particular error comes from the grpc-go library itself (an `internal error`) as opposed to `normal` application code can be helpful when trying to fix it.
+
+**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`, etc.). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
 
 This panel has no related alerts.
 
@@ -14817,9 +14835,12 @@ Query: `(sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.v1.RepoUpdat
 <p class="subtitle">Client-observed gRPC internal error percentage across all methods over 1m</p>
 
 The percentage of gRPC requests that appear to fail due to gRPC internal errors across all methods, aggregated across all "repo_updater" clients.
+
 **Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code. These errors can be caused by a variety of issues, and can originate from either the code-generated "repo_updater" gRPC client or gRPC server. These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph`s use of gRPC.
 
-**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
+When debugging, knowing that a particular error comes from the grpc-go library itself (an `internal error`) as opposed to `normal` application code can be helpful when trying to fix it.
+
+**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`, etc.). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
 
 This panel has no related alerts.
 
@@ -14841,9 +14862,12 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.
 <p class="subtitle">Client-observed gRPC internal error percentage per-method over 1m</p>
 
 The percentage of gRPC requests that appear to fail to due to gRPC internal errors per method, aggregated across all "repo_updater" clients.
+
 **Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code. These errors can be caused by a variety of issues, and can originate from either the code-generated "repo_updater" gRPC client or gRPC server. These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph`s use of gRPC.
 
-**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
+When debugging, knowing that a particular error comes from the grpc-go library itself (an `internal error`) as opposed to `normal` application code can be helpful when trying to fix it.
+
+**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`, etc.). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
 
 This panel has no related alerts.
 
@@ -14865,9 +14889,12 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"repoupdater.
 <p class="subtitle">Client-observed gRPC internal error response code rate per-method over 1m</p>
 
 The rate of gRPC internal-error response codes per method, aggregated across all "repo_updater" clients.
+
 **Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code. These errors can be caused by a variety of issues, and can originate from either the code-generated "repo_updater" gRPC client or gRPC server. These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph`s use of gRPC.
 
-**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
+When debugging, knowing that a particular error comes from the grpc-go library itself (an `internal error`) as opposed to `normal` application code can be helpful when trying to fix it.
+
+**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`, etc.). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
 
 This panel has no related alerts.
 
@@ -16182,9 +16209,12 @@ Query: `(sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.SearcherServ
 <p class="subtitle">Client-observed gRPC internal error percentage across all methods over 1m</p>
 
 The percentage of gRPC requests that appear to fail due to gRPC internal errors across all methods, aggregated across all "searcher" clients.
+
 **Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code. These errors can be caused by a variety of issues, and can originate from either the code-generated "searcher" gRPC client or gRPC server. These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph`s use of gRPC.
 
-**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
+When debugging, knowing that a particular error comes from the grpc-go library itself (an `internal error`) as opposed to `normal` application code can be helpful when trying to fix it.
+
+**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`, etc.). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
 
 This panel has no related alerts.
 
@@ -16206,9 +16236,12 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.
 <p class="subtitle">Client-observed gRPC internal error percentage per-method over 1m</p>
 
 The percentage of gRPC requests that appear to fail to due to gRPC internal errors per method, aggregated across all "searcher" clients.
+
 **Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code. These errors can be caused by a variety of issues, and can originate from either the code-generated "searcher" gRPC client or gRPC server. These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph`s use of gRPC.
 
-**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
+When debugging, knowing that a particular error comes from the grpc-go library itself (an `internal error`) as opposed to `normal` application code can be helpful when trying to fix it.
+
+**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`, etc.). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
 
 This panel has no related alerts.
 
@@ -16230,9 +16263,12 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"searcher.v1.
 <p class="subtitle">Client-observed gRPC internal error response code rate per-method over 1m</p>
 
 The rate of gRPC internal-error response codes per method, aggregated across all "searcher" clients.
+
 **Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code. These errors can be caused by a variety of issues, and can originate from either the code-generated "searcher" gRPC client or gRPC server. These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph`s use of gRPC.
 
-**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
+When debugging, knowing that a particular error comes from the grpc-go library itself (an `internal error`) as opposed to `normal` application code can be helpful when trying to fix it.
+
+**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`, etc.). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
 
 This panel has no related alerts.
 
@@ -17740,9 +17776,12 @@ Query: `(sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.SymbolsServic
 <p class="subtitle">Client-observed gRPC internal error percentage across all methods over 1m</p>
 
 The percentage of gRPC requests that appear to fail due to gRPC internal errors across all methods, aggregated across all "symbols" clients.
+
 **Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code. These errors can be caused by a variety of issues, and can originate from either the code-generated "symbols" gRPC client or gRPC server. These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph`s use of gRPC.
 
-**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
+When debugging, knowing that a particular error comes from the grpc-go library itself (an `internal error`) as opposed to `normal` application code can be helpful when trying to fix it.
+
+**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`, etc.). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
 
 This panel has no related alerts.
 
@@ -17764,9 +17803,12 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.S
 <p class="subtitle">Client-observed gRPC internal error percentage per-method over 1m</p>
 
 The percentage of gRPC requests that appear to fail to due to gRPC internal errors per method, aggregated across all "symbols" clients.
+
 **Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code. These errors can be caused by a variety of issues, and can originate from either the code-generated "symbols" gRPC client or gRPC server. These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph`s use of gRPC.
 
-**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
+When debugging, knowing that a particular error comes from the grpc-go library itself (an `internal error`) as opposed to `normal` application code can be helpful when trying to fix it.
+
+**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`, etc.). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
 
 This panel has no related alerts.
 
@@ -17788,9 +17830,12 @@ Query: `(100.0 * ((((sum(rate(src_grpc_method_status{grpc_service=~"symbols.v1.S
 <p class="subtitle">Client-observed gRPC internal error response code rate per-method over 1m</p>
 
 The rate of gRPC internal-error response codes per method, aggregated across all "symbols" clients.
+
 **Note**: Internal errors are ones that appear to originate from the https://github.com/grpc/grpc-go library itself, rather than from any user-written application code. These errors can be caused by a variety of issues, and can originate from either the code-generated "symbols" gRPC client or gRPC server. These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph`s use of gRPC.
 
-**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
+When debugging, knowing that a particular error comes from the grpc-go library itself (an `internal error`) as opposed to `normal` application code can be helpful when trying to fix it.
+
+**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with `grpc:`, etc.). Because of this, it`s possible that some gRPC-specific issues might not be categorized as internal errors.
 
 This panel has no related alerts.
 

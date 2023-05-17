@@ -24,5 +24,5 @@ func MainOSS(services []service.Service, args []string) {
 // SingleServiceMainOSS is called from the `main` function of a command in the OSS build
 // to start a single service (such as frontend or gitserver).
 func SingleServiceMainOSS(service service.Service) {
-	svcmain.SingleServiceMain(service, config, true, true)
+	svcmain.SingleServiceMain(service, config)
 }

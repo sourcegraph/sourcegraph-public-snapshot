@@ -4,26 +4,26 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
-	"strconv"
 
 	"github.com/sourcegraph/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
+
+	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
-const (
+var (
 	logScope       = "gRPC.internal.error.reporter"
 	logDescription = "logs gRPC errors that appear to come from the go-grpc implementation"
 
-	envDisableLogging = "SRC_GRPC_DISABLE_INTERNAL_ERROR_LOGGING"
-	envLogStackTraces = "SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_STACK_TRACES"
+	envLoggingEnabled        = env.MustGetBool("SRC_GRPC_INTERNAL_ERROR_LOGGING_ENABLED", true, "Enables logging of gRPC internal errors")
+	envLogStackTracesEnabled = env.MustGetBool("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_STACK_TRACES", false, "Enables including stack traces in logs of gRPC internal errors")
 )
 
 // LoggingUnaryClientInterceptor returns a grpc.UnaryClientInterceptor that logs
 // errors that appear to come from the go-grpc implementation.
 func LoggingUnaryClientInterceptor(l log.Logger) grpc.UnaryClientInterceptor {
-	if !loggingIsEnabled() {
+	if !envLoggingEnabled {
 		// Just return the default invoker if logging is disabled.
 		return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 			return invoker(ctx, method, req, reply, cc, opts...)
@@ -45,7 +45,7 @@ func LoggingUnaryClientInterceptor(l log.Logger) grpc.UnaryClientInterceptor {
 // LoggingStreamClientInterceptor returns a grpc.StreamClientInterceptor that logs
 // errors that appear to come from the go-grpc implementation.
 func LoggingStreamClientInterceptor(l log.Logger) grpc.StreamClientInterceptor {
-	if !loggingIsEnabled() {
+	if !envLoggingEnabled {
 		// Just return the default streamer if logging is disabled.
 		return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 			return streamer(ctx, desc, cc, method, opts...)
@@ -104,34 +104,9 @@ func doLog(logger log.Logger, serviceName, methodName string, err error) {
 		log.String("grpcCode", s.Code().String()),
 	}
 
-	if shouldLogStackTraces() {
+	if envLogStackTracesEnabled {
 		fields = append(fields, log.String("errWithStack", fmt.Sprintf("%+v", err)))
 	}
 
 	logger.Error(s.Message(), fields...)
-}
-
-// loggingIsEnabled returns true if logging of internal gRPC errors is enabled.
-func loggingIsEnabled() bool {
-	return !getEnvWithDefaultBool(envDisableLogging, false)
-}
-
-// shouldLogStackTraces returns true if stack traces should be logged for internal gRPC errors.
-func shouldLogStackTraces() bool {
-	return getEnvWithDefaultBool(envLogStackTraces, false)
-}
-
-func getEnvWithDefaultBool(k string, defaultVal bool) bool {
-	v := os.Getenv(k)
-	if v == "" {
-		return defaultVal
-	}
-
-	b, err := strconv.ParseBool(v)
-	if err != nil {
-		// If the environment variable is set to an invalid value, we return the default.
-		return defaultVal
-	}
-
-	return b
 }
