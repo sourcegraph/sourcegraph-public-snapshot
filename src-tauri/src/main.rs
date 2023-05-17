@@ -176,7 +176,7 @@ fn get_sourcegraph_args(app_handle: tauri::AppHandle) -> Vec<String> {
     let cache_dir = app_handle.path_resolver().app_cache_dir();
     let mut args = Vec::new();
 
-    // cache_dir is where the database goes
+    // cache_dir is where the cache goes
     if let Some(cache_dir) = cache_dir {
         args.push("--cacheDir".to_string());
         args.push(cache_dir.to_string_lossy().to_string())
