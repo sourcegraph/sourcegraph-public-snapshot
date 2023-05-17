@@ -10,6 +10,10 @@ pub fn init_cody_window(handle: &tauri::AppHandle) {
             .inner_size(480.0, 720.0)
             .always_on_top(false);
 
-        cody_win.build().unwrap().move_window(Position::TopRight);
+        cody_win
+            .build()
+            .unwrap()
+            .move_window(Position::TopRight)
+            .unwrap();
     });
 }

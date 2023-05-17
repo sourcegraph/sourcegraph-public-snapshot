@@ -25,6 +25,7 @@ tauri-build = { version = "1.2.1", features = [] }
 serde_json = "1.0"
 log = "0.4.17"
 serde = { version = "1.0", features = ["derive"] }
+tokio = { version = "1.0", features = ["full"] }
 tauri-plugin-log = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "dev" }
 tauri-plugin-deep-link = { git = "https://github.com/FabianLars/tauri-plugin-deep-link", branch = "main" }
 tauri-plugin-positioner = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "dev", features = ["system-tray"] }

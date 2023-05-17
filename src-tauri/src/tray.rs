@@ -5,7 +5,6 @@ use tauri::{
     AppHandle, CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu,
     SystemTrayMenuItem,
 };
-use tauri_plugin_positioner::{Position, WindowExt};
 
 pub fn create_system_tray() -> SystemTray {
     SystemTray::new().with_menu(create_system_tray_menu())
@@ -41,11 +40,18 @@ pub fn on_system_tray_event(app: &AppHandle, event: SystemTrayEvent) {
         match id.as_str() {
             "open" => show_window(app, "main"),
             "cody" => {
+                // If the user select 'Show Cody', they may be on a different screen with the Cody
+                // window on another screen. Recreate it so that it appears on their current screen.
                 let win = app.get_window("cody");
-                if win.is_none() {
-                    init_cody_window(app);
+                if let Some(window) = win {
+                    window.close().unwrap();
+                    let app = app.clone();
+                    tauri::async_runtime::spawn(async move {
+                        tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+                        init_cody_window(&app);
+                    });
                 } else {
-                    show_window(app, "cody")
+                    init_cody_window(app);
                 }
             }
             "settings" => {

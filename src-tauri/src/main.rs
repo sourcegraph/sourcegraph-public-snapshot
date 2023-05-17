@@ -6,8 +6,8 @@
 #[cfg(not(dev))]
 use {tauri::api::process::Command, tauri::api::process::CommandEvent};
 
-mod common;
 mod cody;
+mod common;
 mod tray;
 use common::{extract_path_from_scheme_url, show_window};
 use std::sync::RwLock;
@@ -29,7 +29,7 @@ fn get_launch_path(window: tauri::Window) -> String {
 }
 
 #[tauri::command]
-fn hide_window(app: tauri::AppHandle, window: tauri::Window) {
+fn hide_window(_app: tauri::AppHandle, window: tauri::Window) {
     window.hide().unwrap();
 }
 
@@ -139,10 +139,7 @@ fn main() {
         // its name which may suggest that it invokes something, actually only
         // *defines* an invoke() handler and does not invoke anything during
         // setup here.)
-        .invoke_handler(tauri::generate_handler![
-            get_launch_path,
-            hide_window,
-        ])
+        .invoke_handler(tauri::generate_handler![get_launch_path, hide_window,])
         .run(context)
         .expect("error while running tauri application");
 }
