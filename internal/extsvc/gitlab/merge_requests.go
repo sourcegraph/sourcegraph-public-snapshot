@@ -27,26 +27,27 @@ const (
 )
 
 type MergeRequest struct {
-	ID                     ID `json:"id"`
-	IID                    ID `json:"iid"`
-	ProjectID              ID `json:"project_id"`
-	SourceProjectID        ID `json:"source_project_id"`
-	SourceProjectNamespace string
-	SourceProjectName      string
-	Title                  string            `json:"title"`
-	Description            string            `json:"description"`
-	State                  MergeRequestState `json:"state"`
-	CreatedAt              Time              `json:"created_at"`
-	UpdatedAt              Time              `json:"updated_at"`
-	MergedAt               *Time             `json:"merged_at"`
-	ClosedAt               *Time             `json:"closed_at"`
-	HeadPipeline           *Pipeline         `json:"head_pipeline"`
-	Labels                 []string          `json:"labels"`
-	SourceBranch           string            `json:"source_branch"`
-	TargetBranch           string            `json:"target_branch"`
-	WebURL                 string            `json:"web_url"`
-	WorkInProgress         bool              `json:"work_in_progress"`
-	Draft                  bool              `json:"draft"`
+	ID                      ID `json:"id"`
+	IID                     ID `json:"iid"`
+	ProjectID               ID `json:"project_id"`
+	SourceProjectID         ID `json:"source_project_id"`
+	SourceProjectNamespace  string
+	SourceProjectName       string
+	Title                   string            `json:"title"`
+	Description             string            `json:"description"`
+	State                   MergeRequestState `json:"state"`
+	CreatedAt               Time              `json:"created_at"`
+	UpdatedAt               Time              `json:"updated_at"`
+	MergedAt                *Time             `json:"merged_at"`
+	ClosedAt                *Time             `json:"closed_at"`
+	HeadPipeline            *Pipeline         `json:"head_pipeline"`
+	Labels                  []string          `json:"labels"`
+	SourceBranch            string            `json:"source_branch"`
+	TargetBranch            string            `json:"target_branch"`
+	WebURL                  string            `json:"web_url"`
+	WorkInProgress          bool              `json:"work_in_progress"`
+	Draft                   bool              `json:"draft"`
+	ForceRemoveSourceBranch bool              `json:"force_remove_source_branch"`
 	// We only get a partial User object back from the REST API. For example, it lacks
 	// `Email` and `Identities`. If we need more, we need to issue an additional API
 	// request. Otherwise, we should use a different type here.
