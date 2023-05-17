@@ -6,7 +6,7 @@
 //
 // The vectors must be of the same length, and that length
 // must be a multiple of 16.
-TEXT ·dotSIMD(SB), NOSPLIT, $0-56
+TEXT ·dotSIMD(SB), NOSPLIT, $0-52
 	// Offsets based on slice header offsets.
 	// To check, use `GOARCH=arm64 go vet`
 	MOVD a_base+0(FP), R4
@@ -17,8 +17,6 @@ TEXT ·dotSIMD(SB), NOSPLIT, $0-56
 
 	// Zero V0, which will store 4 packed 32-bit sums
 	VEOR V0.B16, V0.B16, V0.B16
-
-#define BLOCKSIZE $16
 
 blockloop:
 	CMP R4, R6

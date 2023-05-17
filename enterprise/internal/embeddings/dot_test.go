@@ -1,6 +1,7 @@
 package embeddings
 
 import (
+	"math/rand"
 	"testing"
 	"testing/quick"
 )
@@ -28,11 +29,12 @@ func TestDot(t *testing.T) {
 				[]int8{10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
 				102,
 			},
-			{repeat(0, 16), repeat(0, 16), 0},
-			{repeat(0, 16), repeat(1, 16), 0},
-			{repeat(1, 16), repeat(1, 16), 16},
-			{repeat(1, 16), repeat(2, 16), 32},
-			{repeat(1, 17), repeat(1, 17), 17},
+			{repeat(0, 64), repeat(0, 64), 0},
+			{repeat(0, 64), repeat(1, 64), 0},
+			{repeat(1, 64), repeat(1, 64), 64},
+			{repeat(1, 64), repeat(2, 64), 128},
+			{repeat(-1, 64), repeat(1, 64), -64},
+			{repeat(1, 65), repeat(1, 65), 65},
 
 			// A couple of large ones to ensure no weird behavior at scale
 			{repeat(1, 1000000), repeat(1, 1000000), 1000000},
@@ -47,9 +49,9 @@ func TestDot(t *testing.T) {
 			{repeat(127, 134000), repeat(127, 134000), -2133681296},
 
 			// These will overflow if we don't multiply into larger ints
-			{repeat(127, 40), repeat(127, 40), 645160},
-			{repeat(-128, 40), repeat(-128, 40), 655360},
-			{repeat(-128, 40), repeat(127, 40), -650240},
+			{repeat(127, 100), repeat(127, 100), 1612900},
+			{repeat(-128, 100), repeat(-128, 100), 1638400},
+			{repeat(-128, 100), repeat(127, 100), -1625600},
 		}
 
 		for _, tc := range cases {
@@ -61,7 +63,7 @@ func TestDot(t *testing.T) {
 			})
 
 			t.Run("naive", func(t *testing.T) {
-				got := dotPortable(tc.a, tc.b)
+				got := dotNaive(tc.a, tc.b)
 				if tc.want != got {
 					t.Fatalf("want: %d, got: %d", tc.want, got)
 				}
@@ -77,7 +79,7 @@ func TestDot(t *testing.T) {
 				b = b[:len(a)]
 			}
 
-			want := dotPortable(a, b)
+			want := dotNaive(a, b)
 			got := Dot(a, b)
 
 			if want != got {
@@ -89,4 +91,36 @@ func TestDot(t *testing.T) {
 			t.Fatal(err)
 		}
 	})
+
+	t.Run("random", func(t *testing.T) {
+		for i := 0; i < 1000; i++ {
+			size := rand.Int() % 1000
+			a, b := make([]int8, size), make([]int8, size)
+
+			randBytes := make([]byte, size)
+			rand.Read(randBytes)
+			for i, randByte := range randBytes {
+				a[i] = int8(randByte)
+			}
+			rand.Read(randBytes)
+			for i, randByte := range randBytes {
+				b[i] = int8(randByte)
+			}
+
+			want := dotNaive(a, b)
+			got := Dot(a, b)
+
+			if want != got {
+				t.Fatalf("a: %#v\nb: %#v\ngot: %d\nwant: %d", a, b, got, want)
+			}
+		}
+	})
+}
+
+func dotNaive(a, b []int8) int32 {
+	sum := int32(0)
+	for i := 0; i < len(a); i++ {
+		sum += int32(a[i]) * int32(b[i])
+	}
+	return sum
 }
