@@ -46,9 +46,6 @@ fi
 echo "--- Starting server ${IMAGE} on port ${PORT}"
 docker run "$@" \
   --rm \
-  -it \
-  --entrypoint sh \
-  -e SRC_LOG_LEVEL=debug \
   --publish "$PORT":7080 \
   -e ALLOW_SINGLE_DOCKER_CODE_INSIGHTS=t \
   -e SOURCEGRAPH_LICENSE_GENERATION_KEY="$SOURCEGRAPH_LICENSE_GENERATION_KEY" \
