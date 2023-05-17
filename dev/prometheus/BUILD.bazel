@@ -6,7 +6,6 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
-
 filegroup(
     name = "prometheus_targets_all",
     srcs = [

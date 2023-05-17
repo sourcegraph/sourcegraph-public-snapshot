@@ -47,5 +47,5 @@ oci_image(
 oci_tarball(
     name = "image_tarball",
     image = ":image",
-    repo_tags = ["blobstore:candidate"]
+    repo_tags = ["blobstore:candidate"],
 )

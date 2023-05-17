@@ -47,5 +47,5 @@ oci_image(
 oci_tarball(
     name = "image_tarball",
     image = ":image",
-    repo_tags = ["gitserver:candidate"]
+    repo_tags = ["gitserver:candidate"],
 )
