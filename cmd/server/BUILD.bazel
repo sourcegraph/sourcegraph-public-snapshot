@@ -1,7 +1,6 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_cross_binary", "go_library")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
-load("@rules_pkg//:mappings.bzl", "pkg_files")
 load("macro.bzl", "container_dependencies", "dependencies_tars")
 
 go_library(
@@ -56,6 +55,8 @@ pkg_tar(
         "/.keep_run": "/var/run/.keep",
     },
 )
+
+exports_files(["postgres_exporter.yaml"])
 
 pkg_tar(
     name = "tar_postgres_exporter_config",
