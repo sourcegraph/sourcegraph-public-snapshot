@@ -306,10 +306,6 @@ func canonicalize(schemaDescription descriptions.SchemaDescription) descriptions
 			continue
 		}
 
-		for j := range table.Columns {
-			schemaDescription.Tables[i].Columns[j].Index = -1
-		}
-
 		filtered = append(filtered, schemaDescription.Tables[i])
 	}
 	schemaDescription.Tables = filtered
