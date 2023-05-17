@@ -189,7 +189,7 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
             textAreaRef.current.focus()
             setFocusProvided()
         }
-    }, [inputNeedsFocus, setFocusProvided, textAreaRef.current])
+    }, [inputNeedsFocus, setFocusProvided])
 
     useEffect(() => {
         adjustTextAreaHeight()
