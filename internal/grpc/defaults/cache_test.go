@@ -117,6 +117,14 @@ func TestParseAddress(t *testing.T) {
 			},
 		},
 		{
+			name:  "gitserver URL with port and scheme",
+			input: "http://gitserver-0:3181",
+			expected: &url.URL{
+				Scheme: "http",
+				Host:   "gitserver-0:3181",
+			},
+		},
+		{
 			name:  "IPv4 host:port",
 			input: "127.0.0.1:3181",
 			expected: &url.URL{
@@ -125,10 +133,10 @@ func TestParseAddress(t *testing.T) {
 		},
 		{
 			name:  "IPv4 URL with port",
-			input: "http://gitserver-0:3181",
+			input: "http://127.0.0.1:3181",
 			expected: &url.URL{
 				Scheme: "http",
-				Host:   "gitserver-0:3181",
+				Host:   "127.0.0.1:3181",
 			},
 		},
 		{
