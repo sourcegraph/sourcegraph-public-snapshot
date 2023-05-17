@@ -3,8 +3,8 @@ import * as vscode from 'vscode'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 
-import { ChatViewProvider, isValidLogin } from './chat/ChatViewProvider'
-import { DOTCOM_URL, LOCAL_APP_URL } from './chat/protocol'
+import { ChatViewProvider, getAuthStatus } from './chat/ChatViewProvider'
+import { DOTCOM_URL, LOCAL_APP_URL, isLoggedIn } from './chat/protocol'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
@@ -191,14 +191,14 @@ const register = async (
                 const token = params.get('code')
                 if (token && token.length > 8) {
                     await secretStorage.store(CODY_ACCESS_TOKEN_SECRET, token)
-                    const isAuthed = await isValidLogin({
-                        serverEndpoint,
+                    const authStatus = await getAuthStatus({
+                        serverEndpoint: DOTCOM_URL.href,
                         accessToken: token,
                         customHeaders: config.customHeaders,
                     })
-                    await chatProvider.sendLogin(isAuthed)
-                    if (isAuthed) {
-                        void vscode.window.showInformationMessage('Token has been retreived and updated successfully')
+                    await chatProvider.sendLogin(authStatus)
+                    if (isLoggedIn(authStatus)) {
+                        void vscode.window.showInformationMessage('Token has been retrieved and updated successfully')
                     }
                 }
             },
