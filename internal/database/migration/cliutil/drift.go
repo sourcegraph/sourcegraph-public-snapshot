@@ -200,17 +200,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 		Usage:       "Detect differences between the current database schema and the expected schema",
 		Description: ConstructLongHelp(),
 		Action:      action,
-<<<<<<< HEAD
-		Flags: []cli.Flag{
-			schemaNameFlag,
-			versionFlag,
-			fileFlag,
-			skipVersionCheckFlag,
-			ignoreMigratorUpdateCheckFlag,
-		},
-=======
 		Flags:       flags,
->>>>>>> main
 	}
 }
 

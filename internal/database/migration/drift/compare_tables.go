@@ -7,21 +7,6 @@ import (
 )
 
 func compareTables(schemaName, version string, actual, expected schemas.SchemaDescription) []Summary {
-<<<<<<< HEAD
-	return compareNamedListsMulti(actual.Tables, expected.Tables, func(table *schemas.TableDescription, expectedTable schemas.TableDescription) []Summary {
-		if table == nil {
-			url := makeSearchURL(schemaName, version,
-				fmt.Sprintf("CREATE TABLE %s", expectedTable.Name),
-				fmt.Sprintf("ALTER TABLE ONLY %s", expectedTable.Name),
-				fmt.Sprintf("CREATE .*(INDEX|TRIGGER).* ON %s", expectedTable.Name),
-			)
-
-			return singleton(newDriftSummary(
-				expectedTable.Name,
-				fmt.Sprintf("Missing table %q", expectedTable.Name),
-				"define the table",
-			).withURLHint(url))
-=======
 	return compareNamedListsMulti(actual.Tables, expected.Tables, compareTablesCallbackFor(schemaName, version))
 }
 
@@ -39,7 +24,6 @@ func compareTablesCallbackFor(schemaName, version string) func(_ *schemas.TableD
 					fmt.Sprintf("CREATE .*(INDEX|TRIGGER).* ON %s", expectedTable.GetName()),
 				),
 			))
->>>>>>> main
 		}
 
 		summaries := []Summary(nil)
@@ -48,9 +32,5 @@ func compareTablesCallbackFor(schemaName, version string) func(_ *schemas.TableD
 		summaries = append(summaries, compareIndexes(*table, expectedTable)...)
 		summaries = append(summaries, compareTriggers(*table, expectedTable)...)
 		return summaries
-<<<<<<< HEAD
-	}, noopAdditionalCallback[schemas.TableDescription])
-=======
 	}
->>>>>>> main
 }

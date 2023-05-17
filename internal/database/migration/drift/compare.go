@@ -1,11 +1,8 @@
 package drift
 
 import (
-<<<<<<< HEAD
-=======
 	"sort"
 
->>>>>>> main
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
@@ -29,12 +26,6 @@ func CompareSchemaDescriptions(schemaName, version string, actual, expected sche
 
 // compareNamedLists invokes the given primary callback with a pair of differing elements from slices
 // `as` and `bs`, respectively, with the same name. If there is a missing element from `as`, there will
-<<<<<<< HEAD
-// be an invocation of this callback with a nil value for its first parameter. Elements for which there
-// is no analog in `bs` will be collected and sent to an invocation of the additions callback. If any
-// invocation of either function returns true, the output of this function will be true.
-func compareNamedLists[T schemas.Namer](
-=======
 // be an invocation of this callback with a nil value for its first parameter. If any invocation of the
 // function returns true, the output of this function will be true.
 func compareNamedLists[T schemas.Namer](
@@ -51,7 +42,6 @@ func compareNamedLists[T schemas.Namer](
 // is no analog in `bs` will be collected and sent to an invocation of the additions callback. If any
 // invocation of either function returns true, the output of this function will be true.
 func compareNamedListsStrict[T schemas.Namer](
->>>>>>> main
 	as []T,
 	bs []T,
 	primaryCallback func(a *T, b T) Summary,
@@ -65,28 +55,16 @@ func compareNamedListsStrict[T schemas.Namer](
 		return nil
 	}
 
-<<<<<<< HEAD
-	return compareNamedListsMulti(as, bs, wrappedPrimaryCallback, additionsCallback)
-}
-
-=======
 	return compareNamedListsMultiStrict(as, bs, wrappedPrimaryCallback, additionsCallback)
 }
 
 // compareNamedListsMulti invokes the given primary callback with a pair of differing elements from slices
 // `as` and `bs`, respectively, with the same name. Similar `compareNamedLists`, but this version expects
 // multiple `Summary` values from the callback.
->>>>>>> main
 func compareNamedListsMulti[T schemas.Namer](
 	as []T,
 	bs []T,
 	primaryCallback func(a *T, b T) []Summary,
-<<<<<<< HEAD
-	additionsCallback func(additional []T) []Summary,
-) []Summary {
-	am := groupByName(as)
-	bm := groupByName(bs)
-=======
 ) []Summary {
 	return compareNamedListsMultiStrict(as, bs, primaryCallback, noopAdditionalCallback[T])
 }
@@ -102,7 +80,6 @@ func compareNamedListsMultiStrict[T schemas.Namer](
 ) []Summary {
 	am := schemas.GroupByName(as)
 	bm := schemas.GroupByName(bs)
->>>>>>> main
 	additional := make([]T, 0, len(am))
 	summaries := []Summary(nil)
 
@@ -137,8 +114,6 @@ func compareNamedListsMultiStrict[T schemas.Namer](
 func noopAdditionalCallback[T schemas.Namer](_ []T) []Summary {
 	return nil
 }
-<<<<<<< HEAD
-=======
 
 // keys returns the ordered keys of the given map.
 func keys[T any](m map[string]T) []string {
@@ -150,4 +125,3 @@ func keys[T any](m map[string]T) []string {
 
 	return keys
 }
->>>>>>> main
