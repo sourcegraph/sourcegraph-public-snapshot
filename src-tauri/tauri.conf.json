@@ -8,19 +8,34 @@
   },
   "package": {
     "productName": "Sourcegraph App",
-    "version": "1.0.0"
+    "version": "0.0.0+dev"
   },
   "tauri": {
     "allowlist": {
+      "dialog": {
+        "confirm": true
+      },
+      "fs": {
+        "scope": [
+          "$APPDATA/postgresql/data"
+        ],
+        "removeDir": true
+      },
       "shell": {
         "sidecar": true,
         "scope": [
           {
             "name": "../.bin/sourcegraph-backend",
-            "sidecar": true
+            "sidecar": true,
+            "args": [
+              "--cacheDir",
+              "$APPCONFIG",
+              "--configDir",
+              "$APPLOCALDATA"
+            ]
           }
         ],
-        "open": "^(vscode:|https?:)|com.sourcegraph.app/.*.log$"
+        "open": "^(vscode:|https?:)|com.sourcegraph.cody/.*.log$"
       },
       "window": {
         "startDragging": true
@@ -37,9 +52,17 @@
       "deb": {
         "depends": []
       },
-      "externalBin": ["../.bin/sourcegraph-backend"],
-      "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
-      "identifier": "com.sourcegraph.app",
+      "externalBin": [
+        "../.bin/sourcegraph-backend"
+      ],
+      "icon": [
+        "icons/32x32.png",
+        "icons/128x128.png",
+        "icons/128x128@2x.png",
+        "icons/icon.icns",
+        "icons/icon.ico"
+      ],
+      "identifier": "com.sourcegraph.cody",
       "longDescription": "",
       "macOS": {
         "entitlements": null,
