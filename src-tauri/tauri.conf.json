@@ -65,7 +65,12 @@
       "csp": "default-src 'self' http://localhost:3080; style-src 'self' http://localhost:3080 'unsafe-eval' 'unsafe-inline'; navigate-to 'self' http://localhost:3080 'unsafe-allow-redirects';"
     },
     "updater": {
-      "active": false
+      "active": true,
+      "endpoints": [
+        "https://sourcegraph.com/app/check/update?target={{target}}&arch={{arch}}&current_version={{current_version}}"
+      ],
+      "dialog": true,
+      "pubkey": "YOUR_UPDATER_SIGNATURE_PUBKEY_HERE"
     },
     "windows": [
       {

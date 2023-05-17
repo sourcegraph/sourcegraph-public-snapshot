@@ -7,21 +7,24 @@ use tauri::{
 };
 use tauri_plugin_positioner::{Position, WindowExt};
 
+pub const EVENT_CHECK_FOR_UPDATES: &str = "tauri://update";
+
 pub fn create_system_tray() -> SystemTray {
     SystemTray::new().with_menu(create_system_tray_menu())
 }
 
 fn create_system_tray_menu() -> SystemTrayMenu {
     SystemTrayMenu::new()
-        .add_item(CustomMenuItem::new(
-            "open".to_string(),
-            "Open Sourcegraph",
-        ))
+        .add_item(CustomMenuItem::new("open".to_string(), "Open Sourcegraph"))
         .add_item(CustomMenuItem::new("cody".to_string(), "Show Cody"))
         .add_native_item(SystemTrayMenuItem::Separator)
         .add_item(
             CustomMenuItem::new("settings".to_string(), "Settings").accelerator("CmdOrCtrl+,"),
         )
+        .add_item(CustomMenuItem::new(
+            "update".to_string(),
+            "Check for Updates...",
+        ))
         .add_item(CustomMenuItem::new(
             "troubleshoot".to_string(),
             "Troubleshoot",
@@ -66,6 +69,7 @@ pub fn on_system_tray_event(app: &AppHandle, event: SystemTrayEvent) {
             }
             "restart" => app.restart(),
             "quit" => app.exit(0),
+            "update" => app.emit_all(EVENT_CHECK_FOR_UPDATES),
             _ => {}
         }
     }
