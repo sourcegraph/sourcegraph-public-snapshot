@@ -2,6 +2,8 @@ import { AGGREGATE_ERROR_NAME } from './constants'
 import { AggregateError, ErrorLike } from './types'
 import { isErrorLike } from './utils'
 
+const a: number = 1
+
 /**
  * Converts an ErrorLike to a proper Error if needed, copying all properties
  *

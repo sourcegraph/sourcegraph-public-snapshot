@@ -77,15 +77,20 @@ _eslint_test_with_types = rule(
         "config": attr.label(allow_single_file = True),
         "formatter": attr.label(allow_single_file = True, default = Label("//:eslint-relative-formatter")),
         "binary": attr.label(executable = True, cfg = "exec", allow_files = True),
-        "output": attr.string(default = "eslint-output.txt"),
+        "output": attr.string(),
     },
 )
 
 def eslint_test_with_types(name, **kwargs):
     lint_name = "%s_lint" % name
+
     build_test(name, targets = [lint_name])
 
-    _eslint_test_with_types(name = lint_name, **kwargs)
+    _eslint_test_with_types(
+        name = lint_name,
+        output = "%s-output.txt" % name,
+        **kwargs
+    )
 
 def eslint_config():
     client_package_path = "/".join(native.package_name().split("/")[:2])
