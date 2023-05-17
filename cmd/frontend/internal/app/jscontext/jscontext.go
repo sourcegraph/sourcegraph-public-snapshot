@@ -170,6 +170,12 @@ type JSContext struct {
 
 	Branding *schema.Branding `json:"branding"`
 
+	// BatchChangesEnabled is true if:
+	// * Batch Changes is NOT disabled by a flag in the site config
+	// * Batch Changes is NOT limited to admins-only, or it is, but the user issuing
+	//   the request is an admin and thus can access batch changes
+	// It does NOT reflect whether or not the site license has batch changes available.
+	// Use LicenseInfo for that.
 	BatchChangesEnabled                bool                                `json:"batchChangesEnabled"`
 	BatchChangesDisableWebhooksWarning bool                                `json:"batchChangesDisableWebhooksWarning"`
 	BatchChangesWebhookLogsEnabled     bool                                `json:"batchChangesWebhookLogsEnabled"`
