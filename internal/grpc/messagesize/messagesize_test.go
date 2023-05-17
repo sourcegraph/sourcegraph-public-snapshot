@@ -8,12 +8,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestGetMessageSizeBytesFromEnv(t *testing.T) {
+func TestGetMessageSizeBytesFromString(t *testing.T) {
 
 	t.Run("8 MB", func(t *testing.T) {
-		t.Setenv("TEST_SIZE", "8MB")
+		sizeString := "8MB"
 
-		size, err := getMessageSizeBytesFromEnv("TEST_SIZE", 0, math.MaxInt)
+		size, err := getMessageSizeBytesFromString(sizeString, 0, math.MaxInt)
+
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
@@ -25,10 +26,10 @@ func TestGetMessageSizeBytesFromEnv(t *testing.T) {
 	})
 
 	t.Run("just small enough", func(t *testing.T) {
-		t.Setenv("TEST_SIZE", "4MB") // inside large-end of range
+		sizeString := "4MB" // inside large-end of range
 
 		fourMegaBytes := 4 * 1000 * 1000
-		size, err := getMessageSizeBytesFromEnv("TEST_SIZE", 0, uint64(fourMegaBytes))
+		size, err := getMessageSizeBytesFromString(sizeString, 0, uint64(fourMegaBytes))
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
@@ -39,10 +40,10 @@ func TestGetMessageSizeBytesFromEnv(t *testing.T) {
 	})
 
 	t.Run("just large enough", func(t *testing.T) {
-		t.Setenv("TEST_SIZE", "4MB") // inside low-end of range
+		sizeString := "4MB" // inside low-end of range
 
 		fourMegaBytes := 4 * 1000 * 1000
-		size, err := getMessageSizeBytesFromEnv("TEST_SIZE", uint64(fourMegaBytes), math.MaxInt)
+		size, err := getMessageSizeBytesFromString(sizeString, uint64(fourMegaBytes), math.MaxInt)
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
@@ -53,9 +54,19 @@ func TestGetMessageSizeBytesFromEnv(t *testing.T) {
 	})
 
 	t.Run("invalid size", func(t *testing.T) {
-		t.Setenv("TEST_SIZE", "this-is-not-a-size")
+		sizeString := "this-is-not-a-size"
 
-		_, err := getMessageSizeBytesFromEnv("TEST_SIZE", 0, math.MaxInt)
+		_, err := getMessageSizeBytesFromString(sizeString, 0, math.MaxInt)
+		var expectedErr *parseError
+		if !errors.As(err, &expectedErr) {
+			t.Fatalf("expected parseError, got error %q", err)
+		}
+	})
+
+	t.Run("empty", func(t *testing.T) {
+		sizeString := ""
+
+		_, err := getMessageSizeBytesFromString(sizeString, 0, math.MaxInt)
 		var expectedErr *parseError
 		if !errors.As(err, &expectedErr) {
 			t.Fatalf("expected parseError, got error %q", err)
@@ -63,33 +74,24 @@ func TestGetMessageSizeBytesFromEnv(t *testing.T) {
 	})
 
 	t.Run("too large", func(t *testing.T) {
-		t.Setenv("TEST_SIZE", "4MB") // above range
+		sizeString := "4MB" // above range
 
 		twoMegaBytes := 2 * 1024 * 1024
-		_, err := getMessageSizeBytesFromEnv("TEST_SIZE", 0, uint64(twoMegaBytes))
+		_, err := getMessageSizeBytesFromString(sizeString, 0, uint64(twoMegaBytes))
 		var expectedErr *sizeOutOfRangeError
 		if !errors.As(err, &expectedErr) {
 			t.Fatalf("expected sizeOutOfRangeError, got error %q", err)
 		}
 	})
 
-	t.Run("invalid size", func(t *testing.T) {
-		t.Setenv("TEST_SIZE", "this-is-not-a-size")
+	t.Run("too small", func(t *testing.T) {
+		sizeString := "1MB" // below range
 
-		_, err := getMessageSizeBytesFromEnv("TEST_SIZE", 0, math.MaxInt)
-		var expectedErr *parseError
+		twoMegaBytes := 2 * 1024 * 1024
+		_, err := getMessageSizeBytesFromString(sizeString, uint64(twoMegaBytes), math.MaxInt)
+		var expectedErr *sizeOutOfRangeError
 		if !errors.As(err, &expectedErr) {
-			t.Fatalf("expected parseError, got error %q", err)
-		}
-	})
-
-	t.Run("unset environment variable", func(t *testing.T) {
-		// don't set the environment variable
-
-		_, err := getMessageSizeBytesFromEnv("ALMOST_CERTAINLY_NOT_SET_ENV_VAR", 0, math.MaxInt)
-		var expectedErr *envNotSetError
-		if !errors.As(err, &expectedErr) {
-			t.Fatalf("expected envNotSetError, got error %q", err)
+			t.Fatalf("expected sizeOutOfRangeError, got error %q", err)
 		}
 	})
 }

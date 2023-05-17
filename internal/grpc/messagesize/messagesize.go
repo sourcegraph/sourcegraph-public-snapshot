@@ -3,7 +3,6 @@ package messagesize
 import (
 	"fmt"
 	"math"
-	"os"
 	"sync"
 
 	"google.golang.org/grpc"
@@ -11,7 +10,7 @@ import (
 	"github.com/dustin/go-humanize"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
 var (
@@ -19,10 +18,12 @@ var (
 	largestAllowedMaxMessageSize  = uint64(math.MaxInt)     // This is the largest allowed value for the type accepted by the grpc.MaxSize[...] options.
 
 	logClientWarningOnce sync.Once // Ensures that we only log the warning once, since we might call ClientMessageSizeFromEnv multiple times.
-	envClientMessageSize = "SRC_GRPC_CLIENT_MAX_MESSAGE_SIZE"
+	envClientMessageSize = env.Get("SRC_GRPC_CLIENT_MAX_MESSAGE_SIZE", messageSizeDisabled, fmt.Sprintf("set the maximum message size for gRPC clients (ex: %q)", "40MB"))
 
 	logServerWarningOnce sync.Once // Ensures that we only log the warning once, since we might call ServerMessageSizeFromEnv multiple times.
-	envServerMessageSize = "SRC_GRPC_SERVER_MAX_MESSAGE_SIZE"
+	envServerMessageSize = env.Get("SRC_GRPC_SERVER_MAX_MESSAGE_SIZE", messageSizeDisabled, fmt.Sprintf("set the maximum message size for gRPC servers (ex: %q)", "40MB"))
+
+	messageSizeDisabled = "message_size_disabled" // sentinel value for when the message size env var isn't set
 )
 
 // ClientMessageSizeFromEnv returns a slice of grpc.DialOptions that set the maximum message size for gRPC clients if
@@ -30,19 +31,18 @@ var (
 //
 // If the environment variable is not set or if the size value is invalid (too small, not parsable, etc.), it returns nil.
 func ClientMessageSizeFromEnv(l log.Logger) []grpc.DialOption {
-	messageSize, err := getMessageSizeBytesFromEnv(envClientMessageSize, smallestAllowedMaxMessageSize, largestAllowedMaxMessageSize)
-	if err != nil {
-		// Log only if the error is not an envNotSetError
-		var e *envNotSetError
-		if !errors.As(err, &e) {
-			logClientWarningOnce.Do(func() {
-				l.Warn("failed to get gRPC client message size, setting to default value",
-					log.Error(err),
-					log.String("default", humanize.IBytes(smallestAllowedMaxMessageSize)),
-				)
-			})
-		}
+	if envClientMessageSize == messageSizeDisabled {
+		return nil
+	}
 
+	messageSize, err := getMessageSizeBytesFromString(envClientMessageSize, smallestAllowedMaxMessageSize, largestAllowedMaxMessageSize)
+	if err != nil {
+		logClientWarningOnce.Do(func() {
+			l.Warn("failed to get gRPC client message size, setting to default value",
+				log.Error(err),
+				log.String("default", humanize.IBytes(smallestAllowedMaxMessageSize)),
+			)
+		})
 		return nil
 	}
 
@@ -59,18 +59,18 @@ func ClientMessageSizeFromEnv(l log.Logger) []grpc.DialOption {
 //
 // If the environment variable is not set or if the size value is invalid (too small, not parsable, etc.), it returns nil.
 func ServerMessageSizeFromEnv(l log.Logger) []grpc.ServerOption {
-	messageSize, err := getMessageSizeBytesFromEnv(envServerMessageSize, smallestAllowedMaxMessageSize, largestAllowedMaxMessageSize)
+	if envServerMessageSize == messageSizeDisabled {
+		return nil
+	}
+
+	messageSize, err := getMessageSizeBytesFromString(envServerMessageSize, smallestAllowedMaxMessageSize, largestAllowedMaxMessageSize)
 	if err != nil {
-		// Log only if the error is not an envNotSetError
-		var e *envNotSetError
-		if !errors.As(err, &e) {
-			logServerWarningOnce.Do(func() {
-				l.Warn("failed to get gRPC server message size, using default value",
-					log.Error(err),
-					log.String("default", humanize.IBytes(smallestAllowedMaxMessageSize)),
-				)
-			})
-		}
+		logServerWarningOnce.Do(func() {
+			l.Warn("failed to get gRPC server message size, using default value",
+				log.Error(err),
+				log.String("default", humanize.IBytes(smallestAllowedMaxMessageSize)),
+			)
+		})
 
 		return nil
 	}
@@ -81,17 +81,10 @@ func ServerMessageSizeFromEnv(l log.Logger) []grpc.ServerOption {
 	}
 }
 
-// getMessageSizeBytesFromEnv reads the environment variable specified by envVar
-// and returns the message size in bytes within the range [minSize, maxSize].
+// getMessageSizeBytesFromEnv parses rawSize returns the message size in bytes within the range [minSize, maxSize].
 //
-// If the environment variable is not set or the value is outside the allowed range,
-// it returns an error.
-func getMessageSizeBytesFromEnv(envVar string, minSize, maxSize uint64) (size int, err error) {
-	rawSize, set := os.LookupEnv(envVar)
-	if !set {
-		return 0, &envNotSetError{envVar: envVar}
-	}
-
+// If rawSize isn't a valid size is not set or the value is outside the allowed range, it returns an error.
+func getMessageSizeBytesFromString(rawSize string, minSize, maxSize uint64) (size int, err error) {
 	sizeBytes, err := humanize.ParseBytes(rawSize)
 	if err != nil {
 		return 0, &parseError{
@@ -139,14 +132,4 @@ type sizeOutOfRangeError struct {
 
 func (e *sizeOutOfRangeError) Error() string {
 	return fmt.Sprintf("size %s is outside of allowed range [%s, %s]", e.size, e.min, e.max)
-}
-
-// envNotSetError occurs when the environment variable specified by envVar is not set.
-type envNotSetError struct {
-	// envVar is the name of the environment variable that was not set
-	envVar string
-}
-
-func (e *envNotSetError) Error() string {
-	return fmt.Sprintf("environment variable %q not set", e.envVar)
 }
