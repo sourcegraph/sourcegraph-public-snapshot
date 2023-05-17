@@ -41,9 +41,9 @@ The service is stateful (maintaining git clones). However, it only contains data
 
 Syncing of Perforce depots is accomplished by either `p4-fusion` or `git p4` (deprecated), both of which clone Perforce depots into Git repositories in `gitserver`.
 
-### p4-fusion
+### p4-fusion in development
 
-To use `p4-fusion` while developing, there are a couple of options.
+To use `p4-fusion` while developing Sourcegraph, there are a couple of options.
 
 #### Docker
 
@@ -51,9 +51,7 @@ To use `p4-fusion` while developing, there are a couple of options.
 
 #### Native binary executable
 
-If you want to avoid running `gitserver` in Docker (maybe you want better I/O performance), there are some options for building a native binary executable.
-
-Building a `p4-fusion` native binary is possible on either Linux or macOS (Might also be on Windows, but I have not tried it).
+Building a `p4-fusion` native binary is possible on either Linux or macOS.
 
 Read the [comprehensive instructions](https://docs.sourcegraph.com/dev/background-information/build_p4_fusion).
 
@@ -66,4 +64,4 @@ That wrapper shell script is `p4-fusion-wrapper-detect-kill.sh`, and in order to
 1. copy the shell script `process-stats-watcher.sh` to a location in the `PATH`.
 1. Ensure all three of those are executable.
 
-Now when a native `gitserver` process runs `p4-fusion`, it will run the wrapper shell script, which will itself run the `p4-fusion-binary` executable, and the `process-stats-watcher.sh` executable.
+After those steps, when a native `gitserver` process runs `p4-fusion`, it will run the wrapper shell script, which will itself run the `p4-fusion-binary` executable, and the `process-stats-watcher.sh` executable.
