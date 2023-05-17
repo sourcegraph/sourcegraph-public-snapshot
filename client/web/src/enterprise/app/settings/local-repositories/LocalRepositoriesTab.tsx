@@ -1,4 +1,4 @@
-import { FC, useMemo } from 'react'
+import { FC, ReactNode, useMemo } from 'react'
 
 import { mdiFolderMultipleOutline, mdiFolderMultiplePlusOutline, mdiGit, mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
@@ -28,7 +28,28 @@ type Path = string
  * provides abilities to specify a local repositories path and see list
  * of resolved repositories by a given path.
  */
-export const LocalRepositoriesTab: FC = () => {
+export const LocalRepositoriesTab: FC = () => (
+    <LocalRepositoriesWidget>
+        {api => (
+            <PageHeader
+                headingElement="h2"
+                description="Add your local repositories"
+                path={[{ text: 'Local repositories' }]}
+                actions={<PathsPickerActions onPathsChange={api.addNewPaths} />}
+                className="mb-3"
+            />
+        )}
+    </LocalRepositoriesWidget>
+)
+
+interface LocalRepositoriesWidgetProps {
+    children: (api: { addNewPaths: (paths: Path[]) => Promise<void> }) => ReactNode
+    className?: string
+}
+
+export const LocalRepositoriesWidget: FC<LocalRepositoriesWidgetProps> = props => {
+    const { children, className } = props
+
     const {
         paths,
         loading: pathsLoading,
@@ -58,14 +79,8 @@ export const LocalRepositoriesTab: FC = () => {
     const allLoaded = pathLoaded && repositoriesLoaded
 
     return (
-        <div className={styles.root}>
-            <PageHeader
-                headingElement="h2"
-                path={[{ text: 'Local repositories' }]}
-                description="Add your local repositories"
-                className="mb-3"
-                actions={<PathsPickerActions onPathsChange={handlePathsAdd} />}
-            />
+        <div className={classNames(className, styles.root)}>
+            {children({ addNewPaths })}
 
             <Container className={styles.container}>
                 {anyError && <ErrorAlert error={anyError} />}
@@ -93,7 +108,7 @@ interface PathsPickerActionsProps {
  * but we have two buttons to improve user understanding what options
  * they have in the file picker.
  */
-const PathsPickerActions: FC<PathsPickerActionsProps> = ({ onPathsChange }) => {
+export const PathsPickerActions: FC<PathsPickerActionsProps> = ({ onPathsChange }) => {
     const handleClickCallPathPicker = async (): Promise<void> => {
         const paths = await callFilePicker()
 
