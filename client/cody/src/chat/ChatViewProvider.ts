@@ -641,7 +641,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             })
 
             // Ensure local app detector is running
-            if (this.config.experimentalConnectToApp && !isLoggedIn(authStatus)) {
+            if (!isLoggedIn(authStatus)) {
                 this.localAppDetector.start()
             } else {
                 this.localAppDetector.stop()
@@ -650,7 +650,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             const configForWebview: ConfigurationSubsetForWebview = {
                 debug: this.config.debug,
                 serverEndpoint: this.config.serverEndpoint,
-                experimentalConnectToApp: this.config.experimentalConnectToApp,
             }
             void vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
             void this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
