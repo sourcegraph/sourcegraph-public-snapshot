@@ -140,7 +140,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
         return <Navigate replace={true} to={{ ...location, pathname: location.pathname.slice(0, -1) }} />
     }
 
-    if (isSetupWizardPage && !!props.authenticatedUser?.siteAdmin) {
+    if (isSetupWizardPage && !!props.authenticatedUser?.siteAdmin && !props.isSourcegraphApp) {
         return (
             <Suspense
                 fallback={
@@ -159,7 +159,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     // setup wizard state, since we don't have a good solution for this at the
     // moment, we use mutable window.context object here.
     // TODO remove window.context and use injected context store/props
-    if (needsRepositoryConfiguration && !wasSetupWizardSkipped && props.authenticatedUser?.siteAdmin) {
+    if (!props.isSourcegraphApp && needsRepositoryConfiguration && !wasSetupWizardSkipped && props.authenticatedUser?.siteAdmin) {
         return <Navigate to={PageRoutes.SetupWizard} replace={true} />
     }
 
