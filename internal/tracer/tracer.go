@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/tracer/oteldefaults"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // options control the behavior of a TracerType
@@ -55,8 +56,24 @@ func (t TracerType) isSetByUser() bool {
 	return false
 }
 
+type Configuration struct {
+	ExternalURL string
+	*schema.ObservabilityTracing
+}
+
+type ConfigurationSource interface {
+	Config() Configuration
+}
+
+type WatchableConfigurationSource interface {
+	ConfigurationSource
+
+	// Watchable allows the caller to be notified when the configuration changes.
+	conftypes.Watchable
+}
+
 // Init should be called from the main function of service
-func Init(logger log.Logger, c conftypes.WatchableSiteConfig) {
+func Init(logger log.Logger, c WatchableConfigurationSource) {
 	// Tune GOMAXPROCS for kubernetes. All our binaries import this package,
 	// so we tune for all of them.
 	//

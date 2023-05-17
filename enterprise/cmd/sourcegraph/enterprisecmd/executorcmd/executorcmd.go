@@ -10,10 +10,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/service/svcmain"
 )
 
-var config = svcmain.Config{}
+var config = svcmain.Config{
+	SkipValidate: true,
+}
 
 // SingleServiceMainEnterprise is called from the `main` function of a command in the
 // enterprise (non-OSS) build to start a single service (such as frontend or gitserver).
 func SingleServiceMainEnterprise(service service.Service) {
-	svcmain.SingleServiceMain(service, config, false, false)
+	svcmain.SingleServiceMainWithoutConf(service, config, svcmain.OutOfBandConfiguration{})
 }

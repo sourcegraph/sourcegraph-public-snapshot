@@ -19,7 +19,7 @@ func MainEnterprise(services []service.Service, args []string) {
 // SingleServiceMainEnterprise is called from the `main` function of a command in the
 // enterprise (non-OSS) build to start a single service (such as frontend or gitserver).
 func SingleServiceMainEnterprise(service service.Service) {
-	svcmain.SingleServiceMain(service, config, true, true)
+	svcmain.SingleServiceMain(service, config)
 }
 
 func init() {
