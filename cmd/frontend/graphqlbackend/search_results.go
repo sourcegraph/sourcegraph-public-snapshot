@@ -14,6 +14,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/log"
@@ -193,7 +194,7 @@ func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
 }
 
 func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFilterResolver {
-	tr, _ := trace.New(ctx, "DynamicFilters", "", trace.Tag{Key: "resolver", Value: "SearchResultsResolver"})
+	tr, _ := trace.New(ctx, "DynamicFilters", "", attribute.String("resolver", "SearchResultsResolver"))
 	defer tr.Finish()
 
 	var filters streaming.SearchFilters

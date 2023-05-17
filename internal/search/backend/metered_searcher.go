@@ -51,15 +51,15 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 	isLeaf := m.hostname != ""
 
 	var cat string
-	var tags []trace.Tag
+	var attrs []attribute.KeyValue
 	if !isLeaf {
 		cat = "SearchAll"
 	} else {
 		cat = "Search"
-		tags = []trace.Tag{
-			{Key: "span.kind", Value: "client"},
-			{Key: "peer.address", Value: m.hostname},
-			{Key: "peer.service", Value: "zoekt"},
+		attrs = []attribute.KeyValue{
+			attribute.String("span.kind", "client"),
+			attribute.String("peer.address", m.hostname),
+			attribute.String("peer.service", "zoekt"),
 		}
 	}
 
@@ -71,12 +71,10 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		event.AddField("category", cat)
 		event.AddField("query", qStr)
 		event.AddField("actor", actor.FromContext(ctx).UIDString())
-		for _, t := range tags {
-			event.AddField(t.Key, t.Value)
-		}
+		event.AddAttributes(attrs)
 	}
 
-	tr, ctx := trace.New(ctx, "zoekt."+cat, qStr, tags...)
+	tr, ctx := trace.New(ctx, "zoekt."+cat, qStr, attrs...)
 	defer func() {
 		tr.SetErrorIfNotContext(err)
 		tr.Finish()
@@ -231,7 +229,7 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 	start := time.Now()
 
 	var cat string
-	var tags []trace.Tag
+	var attrs []attribute.KeyValue
 
 	if m.hostname == "" {
 		cat = "ListAll"
@@ -241,16 +239,16 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 		} else {
 			cat = "ListMinimal"
 		}
-		tags = []trace.Tag{
-			{Key: "span.kind", Value: "client"},
-			{Key: "peer.address", Value: m.hostname},
-			{Key: "peer.service", Value: "zoekt"},
+		attrs = []attribute.KeyValue{
+			attribute.String("span.kind", "client"),
+			attribute.String("peer.address", m.hostname),
+			attribute.String("peer.service", "zoekt"),
 		}
 	}
 
 	qStr := queryString(q)
 
-	tr, ctx := trace.New(ctx, "zoekt."+cat, qStr, tags...)
+	tr, ctx := trace.New(ctx, "zoekt."+cat, qStr, attrs...)
 	tr.SetAttributes(attribute.Stringer("opts", opts))
 
 	event := honey.NoopEvent()
@@ -259,9 +257,7 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 		event.AddField("category", cat)
 		event.AddField("query", qStr)
 		event.AddField("opts.minimal", opts != nil && opts.Minimal) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
-		for _, t := range tags {
-			event.AddField(t.Key, t.Value)
-		}
+		event.AddAttributes(attrs)
 	}
 
 	zsl, err := m.Streamer.List(ctx, q, opts)
