@@ -157,7 +157,7 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                                 outline={true}
                                 className="p-0 m-0 mt-2 mb-2 border-0 w-100 font-weight-normal d-flex justify-content-between align-items-center"
                             >
-                                Click to view the drift output:
+                                Click to {isExpanded ? 'hide' : 'show'} the drift output:
                                 <Icon
                                     aria-hidden={true}
                                     svgPath={isExpanded ? mdiChevronUp : mdiChevronDown}
@@ -166,10 +166,27 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                                 />
                             </CollapseHeader>
                             <CollapsePanel>
-                                <LogOutput
-                                    text={data.site.upgradeReadiness.schemaDrift}
-                                    logDescription="Drift details:"
-                                />
+                                {data.site.upgradeReadiness.schemaDrift.map(summary => (
+                                    <div key={summary.name}>
+                                        <p>name: {summary.name}</p>
+                                        <p>problem: {summary.problem}</p>
+                                        <p>solution: {summary.solution}</p>
+                                        {summary.diff && (
+                                            <LogOutput text={summary.diff} logDescription="The object diff" />
+                                        )}
+                                        {summary.urlHint && (
+                                            <p>
+                                                <Link to={summary.urlHint}>hey check it out</Link>
+                                            </p>
+                                        )}
+                                        {summary.statements && (
+                                            <LogOutput
+                                                text={summary.statements.join('\n')}
+                                                logDescription="SQL statements to repair"
+                                            />
+                                        )}
+                                    </div>
+                                ))}
                             </CollapsePanel>
                         </Collapse>
                     ) : (

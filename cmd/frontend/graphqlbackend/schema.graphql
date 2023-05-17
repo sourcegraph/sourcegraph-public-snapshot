@@ -7061,11 +7061,41 @@ type UpgradeReadiness {
     """
     The schema drift details.
     """
-    schemaDrift: String!
+    schemaDrift: [SchemaDriftSummary!]!
     """
     The list of deprecated-but-unfinished out-of-band migrations.
     """
     requiredOutOfBandMigrations: [OutOfBandMigration!]!
+}
+
+"""
+TODO
+"""
+type SchemaDriftSummary {
+    """
+    TODO
+    """
+    name: String!
+    """
+    TODO
+    """
+    problem: String!
+    """
+    TODO
+    """
+    solution: String!
+    """
+    TODO
+    """
+    diff: String
+    """
+    TODO
+    """
+    statements: [String!]
+    """
+    TODO
+    """
+    urlHint: String
 }
 
 """
