@@ -18,7 +18,7 @@ import (
 // being cancelled.
 const maxRequestDuration = time.Minute
 
-func newCompletionsHandler[T any](rl RateLimiter, traceFamily string, getModel func(*schema.Completions) string, handle func(context.Context, T, types.CompletionsClient, http.ResponseWriter)) http.Handler {
+func newCompletionsHandler[T any](rl RateLimiter, traceFamily string, getModel func(T, *schema.Completions) string, handle func(context.Context, T, types.CompletionsClient, http.ResponseWriter)) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" {
 			http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusMethodNotAllowed)
@@ -45,7 +45,7 @@ func newCompletionsHandler[T any](rl RateLimiter, traceFamily string, getModel f
 			return
 		}
 
-		model := getModel(completionsConfig)
+		model := getModel(requestParams, completionsConfig)
 
 		var err error
 		ctx, done := Trace(ctx, traceFamily, model).
