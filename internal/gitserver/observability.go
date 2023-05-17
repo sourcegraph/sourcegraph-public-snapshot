@@ -11,6 +11,7 @@ import (
 )
 
 type operations struct {
+	search         *observation.Operation
 	batchLog       *observation.Operation
 	batchLogSingle *observation.Operation
 }
@@ -41,6 +42,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
+		search:         op("Search"),
 		batchLog:       op("BatchLog"),
 		batchLogSingle: subOp("batchLogSingle"),
 	}

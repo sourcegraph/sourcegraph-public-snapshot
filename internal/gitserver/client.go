@@ -721,18 +721,13 @@ func isRevisionNotFound(err string) bool {
 }
 
 func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "GitserverClient.Search") //nolint:staticcheck // OT is deprecated
-	span.SetTag("repo", string(args.Repo))
-	span.SetTag("query", args.Query.String())
-	span.SetTag("diff", args.IncludeDiff)
-	span.SetTag("limit", args.Limit)
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
-	}()
+	ctx, _, endObservation := c.operations.search.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repo", string(args.Repo)),
+		attribute.Stringer("query", args.Query),
+		attribute.Bool("diff", args.IncludeDiff),
+		attribute.Int("limit", args.Limit),
+	}})
+	defer endObservation(1, observation.Args{})
 
 	repoName := protocol.NormalizeRepo(args.Repo)
 
