@@ -30,6 +30,8 @@ intellij {
 }
 
 dependencies {
+    // https://mvnrepository.com/artifact/org.commonmark/commonmark
+    implementation("org.commonmark:commonmark:0.21.0")
     implementation(project(":jetbrains-shared"))
     testImplementation(platform("org.junit:junit-bom:5.7.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
