@@ -585,6 +585,10 @@ func computeRecentViewSignals(ctx context.Context, logger log.Logger, db edb.Ent
 }
 
 func (r *ownResolver) OwnSignalConfigurations(ctx context.Context) ([]graphqlbackend.SignalConfigurationResolver, error) {
+	err := auth.CheckCurrentActorIsSiteAdmin(actor.FromContext(ctx), r.db)
+	if err != nil {
+		return nil, err
+	}
 	var resolvers []graphqlbackend.SignalConfigurationResolver
 	store := r.db.OwnSignalConfigurations()
 	configurations, err := store.LoadConfigurations(ctx)

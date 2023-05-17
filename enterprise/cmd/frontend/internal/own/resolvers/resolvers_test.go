@@ -1015,8 +1015,11 @@ func Test_SignalConfigurations(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	graphqlbackend.RunTest(t, &graphqlbackend.Test{
-		Context: ctx,
+	adminActor := actor.FromUser(admin.ID)
+	adminCtx := actor.WithActor(ctx, adminActor)
+
+	baseReadTest := &graphqlbackend.Test{
+		Context: adminCtx,
 		Schema:  schema,
 		Query: `
 			query asdf {
@@ -1043,9 +1046,9 @@ func Test_SignalConfigurations(t *testing.T) {
 			}
 		  ]
 		}`,
-	})
+	}
 
-	baseTest := &graphqlbackend.Test{
+	mutationTest := &graphqlbackend.Test{
 		Context: ctx,
 		Schema:  schema,
 		Query: `
@@ -1062,18 +1065,25 @@ func Test_SignalConfigurations(t *testing.T) {
 				"name": "recent-contributors", "enabled": true, "excludedRepoPatterns": []any{"github.com/*"}}},
 		}},
 	}
+
+	t.Run("admin access can read", func(t *testing.T) {
+		graphqlbackend.RunTest(t, baseReadTest)
+	})
+
 	t.Run("user without admin access", func(t *testing.T) {
 		userActor := actor.FromUser(user.ID)
 		userCtx := actor.WithActor(ctx, userActor)
 
-		baseTest.Context = userCtx
-		baseTest.ExpectedErrors = []*gqlerrors.QueryError{{
+		expectedErrs := []*gqlerrors.QueryError{{
 			Message: "must be site admin",
 			Path:    []any{"updateOwnSignalConfigurations"},
 		}}
-		baseTest.ExpectedResult = `null`
 
-		graphqlbackend.RunTest(t, baseTest)
+		mutationTest.Context = userCtx
+		mutationTest.ExpectedErrors = expectedErrs
+		mutationTest.ExpectedResult = `null`
+
+		graphqlbackend.RunTest(t, mutationTest)
 
 		// ensure the configs didn't change despite the error
 		configsFromDb, err := db.OwnSignalConfigurations().LoadConfigurations(ctx)
@@ -1090,15 +1100,19 @@ func Test_SignalConfigurations(t *testing.T) {
 				Description: "Indexes users that recently viewed files in Sourcegraph.",
 			},
 		}).Equal(t, configsFromDb)
+
+		readTest := baseReadTest
+
+		// ensure they can't read configs
+		readTest.ExpectedErrors = expectedErrs
+		readTest.ExpectedResult = "null"
+		readTest.Context = userCtx
 	})
 
 	t.Run("user with admin access", func(t *testing.T) {
-		adminActor := actor.FromUser(admin.ID)
-		userCtx := actor.WithActor(ctx, adminActor)
-
-		baseTest.Context = userCtx
-		baseTest.ExpectedErrors = nil
-		baseTest.ExpectedResult = `{
+		mutationTest.Context = adminCtx
+		mutationTest.ExpectedErrors = nil
+		mutationTest.ExpectedResult = `{
 		  "updateOwnSignalConfigurations": [
 			{
 			  "name": "recent-contributors",
@@ -1115,6 +1129,6 @@ func Test_SignalConfigurations(t *testing.T) {
 		  ]
 		}`
 
-		graphqlbackend.RunTest(t, baseTest)
+		graphqlbackend.RunTest(t, mutationTest)
 	})
 }
