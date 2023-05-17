@@ -14,23 +14,28 @@ import (
 
 const ProviderName = "anthropic"
 
-func NewClient(cli httpcli.Doer, accessToken string, model string) types.CompletionsClient {
+func NewClient(cli httpcli.Doer, accessToken, model, apiURL string) types.CompletionsClient {
+	if apiURL == "" {
+		apiURL = defaultAPIURL
+	}
 	return &anthropicClient{
 		cli:         cli,
 		accessToken: accessToken,
 		model:       model,
+		apiURL:      apiURL,
 	}
 }
 
 const (
-	apiURL   = "https://api.anthropic.com/v1/complete"
-	clientID = "sourcegraph/1.0"
+	defaultAPIURL = "https://api.anthropic.com/v1/complete"
+	clientID      = "sourcegraph/1.0"
 )
 
 type anthropicClient struct {
 	cli         httpcli.Doer
 	accessToken string
 	model       string
+	apiURL      string
 }
 
 func (a *anthropicClient) Complete(
@@ -125,7 +130,7 @@ func (a *anthropicClient) makeRequest(ctx context.Context, requestParams types.C
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", apiURL, bytes.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", a.apiURL, bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
 	}
