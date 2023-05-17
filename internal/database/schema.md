@@ -71,7 +71,7 @@ Foreign-key constraints:
  assigned_at          | timestamp without time zone |           | not null | now()
 Indexes:
     "assigned_owners_pkey" PRIMARY KEY, btree (id)
-    "assigned_owners_file_path" UNIQUE, btree (file_path_id)
+    "assigned_owners_file_path" btree (file_path_id)
 Foreign-key constraints:
     "assigned_owners_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
     "assigned_owners_owner_user_id_fkey" FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
