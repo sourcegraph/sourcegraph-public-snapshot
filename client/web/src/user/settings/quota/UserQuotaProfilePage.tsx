@@ -9,7 +9,7 @@ import { LoaderButton } from '../../../components/LoaderButton'
 import { PageTitle } from '../../../components/PageTitle'
 import { Scalars } from '../../../graphql-operations'
 
-import { SET_USER_COMPLETIONS_QUOTA, USER_REQUEST_QUOTAS } from './backend'
+import { SET_USER_CODE_COMPLETIONS_QUOTA, SET_USER_COMPLETIONS_QUOTA, USER_REQUEST_QUOTAS } from './backend'
 
 interface Props {
     user: {
@@ -22,6 +22,8 @@ export const UserQuotaProfilePage: React.FunctionComponent<React.PropsWithChildr
 }) => {
     const { data, loading, error } = useQuery(USER_REQUEST_QUOTAS, { variables: { userID } })
     const [quota, setQuota] = useState<string>('')
+    const [codeCompletionsQuota, setCodeCompletionsQuota] = useState<string>('')
+
     const [
         setUserCompletionsQuota,
         {
@@ -31,12 +33,27 @@ export const UserQuotaProfilePage: React.FunctionComponent<React.PropsWithChildr
         },
     ] = useMutation(SET_USER_COMPLETIONS_QUOTA)
 
+    const [
+        setUserCodeCompletionsQuota,
+        {
+            data: setCodeCompletionsQuotaResponse,
+            loading: setUserCodeCompletionsQuotaLoading,
+            error: setUserCodeCompletionsQuotaError,
+        },
+    ] = useMutation(SET_USER_CODE_COMPLETIONS_QUOTA)
+
     useEffect(() => {
         if (data?.node?.__typename === 'User' && data.node.completionsQuotaOverride !== null) {
             setQuota(data.node.completionsQuotaOverride)
         } else {
             // No overridden limit.
             setQuota('')
+        }
+        if (data?.node?.__typename === 'User' && data.node.codeCompletionsQuotaOverride !== null) {
+            setCodeCompletionsQuota(data.node.codeCompletionsQuotaOverride)
+        } else {
+            // No overridden limit.
+            setCodeCompletionsQuota('')
         }
     }, [data])
 
@@ -51,6 +68,17 @@ export const UserQuotaProfilePage: React.FunctionComponent<React.PropsWithChildr
         }
     }, [setCompletionsQuotaResponse])
 
+    useEffect(() => {
+        if (setCodeCompletionsQuotaResponse) {
+            if (setCodeCompletionsQuotaResponse.codeCompletionsQuotaOverride !== null) {
+                setCodeCompletionsQuota(setCodeCompletionsQuotaResponse.codeCompletionsQuotaOverride)
+            } else {
+                // No overridden limit.
+                setCodeCompletionsQuota('')
+            }
+        }
+    }, [setCodeCompletionsQuotaResponse])
+
     const storeCompletionsQuota = useCallback(() => {
         setUserCompletionsQuota({ variables: { userID, quota: quota === '' ? null : parseInt(quota, 10) } }).catch(
             error => {
@@ -58,6 +86,14 @@ export const UserQuotaProfilePage: React.FunctionComponent<React.PropsWithChildr
             }
         )
     }, [quota, userID, setUserCompletionsQuota])
+
+    const storeCodeCompletionsQuota = useCallback(() => {
+        setUserCodeCompletionsQuota({
+            variables: { userID, quota: codeCompletionsQuota === '' ? null : parseInt(codeCompletionsQuota, 10) },
+        }).catch(error => {
+            logger.error(error)
+        })
+    }, [codeCompletionsQuota, userID, setUserCodeCompletionsQuota])
 
     if (loading) {
         return <LoadingSpinner />
@@ -84,7 +120,7 @@ export const UserQuotaProfilePage: React.FunctionComponent<React.PropsWithChildr
             <Container className="mb-3">
                 <H3>Completions</H3>
                 <Text>Number of requests per day allowed against the completions APIs.</Text>
-                <div className="d-flex justify-content-between align-items-end">
+                <div className="d-flex justify-content-between align-items-end mb-5">
                     <Input
                         id="completions-quota"
                         name="completions-quota"
@@ -112,6 +148,37 @@ export const UserQuotaProfilePage: React.FunctionComponent<React.PropsWithChildr
                     />
                 </div>
                 {setUserCompletionsQuotaError && <ErrorAlert error={setUserCompletionsQuotaError} className="mb-0" />}
+                <Text>Number of requests per day allowed against the code completions APIs.</Text>
+                <div className="d-flex justify-content-between align-items-end">
+                    <Input
+                        id="code-completions-quota"
+                        name="code-completions-quota"
+                        type="number"
+                        value={codeCompletionsQuota}
+                        onChange={event => setCodeCompletionsQuota(event.currentTarget.value)}
+                        spellCheck={false}
+                        min={1}
+                        disabled={setUserCodeCompletionsQuotaLoading}
+                        placeholder={`Global limit: ${
+                            data?.site.perUserCodeCompletionsQuota === null
+                                ? 'infinite'
+                                : data?.site.perUserCodeCompletionsQuota
+                        }`}
+                        label="Custom code completions quota"
+                        className="flex-grow-1 mb-0"
+                    />
+                    <LoaderButton
+                        loading={setUserCodeCompletionsQuotaLoading}
+                        label="Save"
+                        onClick={storeCodeCompletionsQuota}
+                        disabled={setUserCodeCompletionsQuotaLoading}
+                        variant="primary"
+                        className="ml-2"
+                    />
+                </div>
+                {setUserCodeCompletionsQuotaError && (
+                    <ErrorAlert error={setUserCodeCompletionsQuotaError} className="mb-0" />
+                )}
             </Container>
         </>
     )
