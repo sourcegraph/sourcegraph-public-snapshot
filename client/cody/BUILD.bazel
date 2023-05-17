@@ -108,6 +108,7 @@ ts_project(
         "src/completions/provider.test.ts",
         "src/configuration.test.ts",
         "src/keyword-context/local-keyword-context-fetcher.test.ts",
+        "src/services/InlineController.test.ts",
     ],
     tsconfig = ":tsconfig",
     deps = [

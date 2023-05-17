@@ -1,7 +1,7 @@
 import * as vscode from 'vscode'
 
 import { DecorationProvider } from './DecorationProvider'
-import { CodyTaskState, singleLineRange } from './InlineController'
+import { CodyTaskState, lineTracker, singleLineRange } from './InlineController'
 
 export class CodeLensProvider implements vscode.CodeLensProvider {
     private ranges: vscode.Range | null = null
@@ -28,18 +28,11 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
                     this.remove()
                     return
                 }
-                let addedLines = 0
-                if (change.text.includes('\n')) {
-                    addedLines = change.text.split('\n').length - 1
-                } else if (change.range.end.line - change.range.start.line > 0) {
-                    addedLines -= change.range.end.line - change.range.start.line
+                const newRange = lineTracker(change.range, this.ranges, change.text)
+                if (newRange) {
+                    this.ranges = newRange
+                    this.decorator.setState(this.status, newRange)
                 }
-                const newRange = new vscode.Range(
-                    new vscode.Position(this.ranges.start.line + addedLines, 0),
-                    new vscode.Position(this.ranges.end.line + addedLines, 0)
-                )
-                this.ranges = newRange
-                this.decorator.setState(this.status, newRange)
             }
             this._onDidChangeCodeLenses.fire()
         })

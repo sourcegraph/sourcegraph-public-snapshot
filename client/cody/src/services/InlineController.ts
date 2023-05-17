@@ -73,9 +73,8 @@ export class InlineController {
             ) {
                 return
             }
-            const newRange = lineTracker(e, this.selectionRange)
-            if (newRange) {
-                this.selectionRange = newRange
+            for (const change of e.contentChanges) {
+                this.selectionRange = lineTracker(change.range, this.selectionRange, change.text) || this.selectionRange
             }
         })
     }
@@ -332,26 +331,21 @@ export class Comment implements vscode.Comment {
 }
 
 /**
- * For tracking lines diff
+ * For tracking lines diff on file changes
  */
-export function lineTracker(e: vscode.TextDocumentChangeEvent, cur: vscode.Range): vscode.Range | null {
-    for (const change of e.contentChanges) {
-        if (change.range.start.line > cur.end.line) {
-            return null
-        }
-        let addedLines = 0
-        if (change.text.includes('\n')) {
-            addedLines = change.text.split('\n').length - 1
-        } else if (change.range.end.line - change.range.start.line > 0) {
-            addedLines -= change.range.end.line - change.range.start.line
-        }
-        const newRange = new vscode.Range(
-            new vscode.Position(cur.start.line + addedLines, 0),
-            new vscode.Position(cur.end.line + addedLines, 0)
-        )
-        return newRange
+export function lineTracker(change: vscode.Range, cur: vscode.Range, changeText: string): vscode.Range | null {
+    if (change.start.line > cur.end.line) {
+        return null
     }
-    return null
+    let addedLines = 0
+    if (changeText.includes('\n')) {
+        addedLines = changeText.split('\n').length - 1
+    } else if (change.end.line - change.start.line > 0) {
+        addedLines -= change.end.line - change.start.line
+    }
+    const newStartLine = change.start.line > cur.start.line ? cur.start.line : cur.start.line + addedLines
+    const newRange = new vscode.Range(newStartLine, 0, cur.end.line + addedLines, 0)
+    return newRange
 }
 /**
  * Create selection range for a single line
