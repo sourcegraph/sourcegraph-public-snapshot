@@ -24,7 +24,7 @@ func BazelOperations() []operations.Operation {
 		"@sourcegraph_back_compat//enterprise/cmd/...",
 		"@sourcegraph_back_compat//enterprise/internal/...",
 	))
-	ops.Append(bazelBuild(false, `$$(bazel query 'kind("oci_tarball rule", //...)')`))
+	ops = append(ops, bazelBuild(`$$(bazel query 'kind("oci_tarball rule", //...)')`))
 	return ops
 }
 
@@ -154,7 +154,7 @@ func bazelTestWithDepends(optional bool, dependsOn string, targets ...string) fu
 	}
 }
 
-func bazelBuild(optional bool, targets ...string) func(*bk.Pipeline) {
+func bazelBuild(targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
 		bk.Agent("queue", "bazel"),
 	}
@@ -162,9 +162,6 @@ func bazelBuild(optional bool, targets ...string) func(*bk.Pipeline) {
 	cmds = append(cmds, bk.Cmd(bazelCmd))
 
 	return func(pipeline *bk.Pipeline) {
-		if optional {
-			cmds = append(cmds, bk.SoftFail())
-		}
 		pipeline.AddStep(":bazel: Build ...",
 			cmds...,
 		)
