@@ -25,7 +25,6 @@ import (
 func SearchGRPC(
 	ctx context.Context,
 	searcherURLs *endpoint.Map,
-	connectionCache *defaults.ConnectionCache,
 	repo api.RepoName,
 	repoID api.RepoID,
 	branch string,
@@ -84,12 +83,13 @@ func SearchGRPC(
 			return false, errors.Wrap(err, "failed to parse URL")
 		}
 
-		conn, err := connectionCache.GetConnection(parsed.Host)
+		clientConn, err := defaults.DialContext(ctx, parsed.Host)
 		if err != nil {
 			return false, err
 		}
+		defer clientConn.Close()
 
-		client := proto.NewSearcherServiceClient(conn)
+		client := proto.NewSearcherServiceClient(clientConn)
 		resp, err := client.Search(ctx, r)
 		if err != nil {
 			return false, err
