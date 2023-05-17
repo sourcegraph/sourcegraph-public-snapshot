@@ -51,7 +51,7 @@ To use `p4-fusion` while developing Sourcegraph, there are a couple of options.
 
 #### Native binary executable
 
-Building a `p4-fusion` native binary is possible on either Linux or macOS.
+The `p4-fusion` native binary has been built on Linux and macOS, but is untested on Windows.
 
 Read the [comprehensive instructions](https://docs.sourcegraph.com/dev/background-information/build_p4_fusion).
 
