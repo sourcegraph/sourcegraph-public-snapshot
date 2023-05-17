@@ -83,18 +83,16 @@ pkg_tar(
 )
 
 DEPS = [
-  "//cmd/github-proxy",
-  "//cmd/searcher",
-
-  "//enterprise/cmd/frontend",
-  "//enterprise/cmd/gitserver",
-  "//enterprise/cmd/migrator",
-  "//enterprise/cmd/precise-code-intel-worker",
-  "//enterprise/cmd/repo-updater",
-  "//enterprise/cmd/symbols",
-  "//enterprise/cmd/worker",
-
-  "//docker-images/prometheus/cmd/prom-wrapper",
+    "//cmd/github-proxy",
+    "//cmd/searcher",
+    "//enterprise/cmd/frontend",
+    "//enterprise/cmd/gitserver",
+    "//enterprise/cmd/migrator",
+    "//enterprise/cmd/precise-code-intel-worker",
+    "//enterprise/cmd/repo-updater",
+    "//enterprise/cmd/symbols",
+    "//enterprise/cmd/worker",
+    "//docker-images/prometheus/cmd/prom-wrapper",
 ]
 
 ZOEKT_DEPS = [
