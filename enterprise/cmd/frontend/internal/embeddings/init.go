@@ -26,8 +26,7 @@ func Init(
 	repoEmbeddingsStore := repo.NewRepoEmbeddingJobsStore(db)
 	contextDetectionEmbeddingsStore := contextdetection.NewContextDetectionEmbeddingJobsStore(db)
 	gitserverClient := gitserver.NewClient()
-	embeddingsClient := embeddings.NewClient()
-
+	embeddingsClient := embeddings.NewDefaultClient()
 	enterpriseServices.EmbeddingsResolver = resolvers.NewResolver(
 		db,
 		observationCtx.Logger,

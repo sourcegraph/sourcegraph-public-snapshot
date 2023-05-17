@@ -13,7 +13,6 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel/attribute"
@@ -336,15 +335,15 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		filetypeQuery.Engine = EngineSyntect
 	}
 
-	ctx, errCollector, trace, endObservation := getHighlightOp().WithErrorsAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("revision", p.Metadata.Revision),
-		otlog.String("repo", p.Metadata.RepoName),
-		otlog.String("fileExtension", filepath.Ext(p.Filepath)),
-		otlog.String("filepath", p.Filepath),
-		otlog.Int("sizeBytes", len(p.Content)),
-		otlog.Bool("highlightLongLines", p.HighlightLongLines),
-		otlog.Bool("disableTimeout", p.DisableTimeout),
-		otlog.String("syntaxEngine", filetypeQuery.Engine.String()),
+	ctx, errCollector, trace, endObservation := getHighlightOp().WithErrorsAndLogger(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("revision", p.Metadata.Revision),
+		attribute.String("repo", p.Metadata.RepoName),
+		attribute.String("fileExtension", filepath.Ext(p.Filepath)),
+		attribute.String("filepath", p.Filepath),
+		attribute.Int("sizeBytes", len(p.Content)),
+		attribute.Bool("highlightLongLines", p.HighlightLongLines),
+		attribute.Bool("disableTimeout", p.DisableTimeout),
+		attribute.Stringer("syntaxEngine", filetypeQuery.Engine),
 	}})
 	defer endObservation(1, observation.Args{})
 

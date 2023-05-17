@@ -74,7 +74,7 @@ Kubernetes.
 
 | API Groups | Resources          | Verbs                     | Reason                                                                                    |
 |------------|--------------------|---------------------------|-------------------------------------------------------------------------------------------|
-| `batch`    | `jobs`             | `create`, `delete`, `get` | Executors create Job pods to run processes. Once Jobs are completed, they are cleaned up. |
+| `batch`    | `jobs`             | `create`, `delete`, `get`, `list`, `watch` | Executors create Job pods to run processes. Once Jobs are completed, they are cleaned up. |
 |            | `pods`, `pods/log` | `get`, `list`, `watch`    | Executors need to look up and steam logs from the Job Pods.                               |
 
 See

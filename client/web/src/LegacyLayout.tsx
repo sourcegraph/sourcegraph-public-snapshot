@@ -62,6 +62,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const isSearchNotebookListPage = location.pathname === EnterprisePageRoutes.Notebooks
     const isCodySearchPage = routeMatch === EnterprisePageRoutes.CodySearch
     const isRepositoryRelatedPage = routeMatch === PageRoutes.RepoContainer ?? false
+    const isCodyStandalonePage = location.pathname === PageRoutes.CodyStandalone
 
     // eslint-disable-next-line no-restricted-syntax
     const [wasSetupWizardSkipped] = useLocalStorage('setup.skipped', false)
@@ -186,12 +187,19 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 />
             )}
 
-            <GlobalAlerts authenticatedUser={props.authenticatedUser} isSourcegraphDotCom={props.isSourcegraphDotCom} />
-            {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && !disableFeedbackSurvey && (
-                <SurveyToast authenticatedUser={props.authenticatedUser} />
+            {!isCodyStandalonePage && (
+                <GlobalAlerts
+                    authenticatedUser={props.authenticatedUser}
+                    isSourcegraphDotCom={props.isSourcegraphDotCom}
+                />
             )}
+            {!isSiteInit &&
+                !isSignInOrUp &&
+                !props.isSourcegraphDotCom &&
+                !disableFeedbackSurvey &&
+                !isCodyStandalonePage && <SurveyToast authenticatedUser={props.authenticatedUser} />}
             {props.isSourcegraphDotCom && props.authenticatedUser && <CodySurveyToast />}
-            {!isSiteInit && !isSignInOrUp && (
+            {!isSiteInit && !isSignInOrUp && !isCodyStandalonePage && (
                 <GlobalNavbar
                     {...props}
                     showSearchBox={

@@ -10,7 +10,6 @@ import (
 
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
@@ -118,12 +117,10 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, upload uploadss
 
 	ctx, otLogger, endObservation := h.handleOp.With(ctx, &err, observation.Args{})
 	defer func() {
-		endObservation(1, observation.Args{
-			LogFields: append(
-				createLogFields(upload),
-				otlog.Bool("requeued", requeued),
-			),
-		})
+		endObservation(1, observation.Args{Attrs: append(
+			createLogFields(upload),
+			attribute.Bool("requeued", requeued),
+		)})
 	}()
 
 	requeued, err = h.HandleRawUpload(ctx, logger, upload, h.uploadStore, otLogger)
@@ -168,21 +165,21 @@ func (h *handler) getUploadSize(field *int64) int64 {
 	return 0
 }
 
-func createLogFields(upload uploadsshared.Upload) []otlog.Field {
-	fields := []otlog.Field{
-		otlog.Int("uploadID", upload.ID),
-		otlog.Int("repositoryID", upload.RepositoryID),
-		otlog.String("commit", upload.Commit),
-		otlog.String("root", upload.Root),
-		otlog.String("indexer", upload.Indexer),
-		otlog.Int("queueDuration", int(time.Since(upload.UploadedAt))),
+func createLogFields(upload uploadsshared.Upload) []attribute.KeyValue {
+	attrs := []attribute.KeyValue{
+		attribute.Int("uploadID", upload.ID),
+		attribute.Int("repositoryID", upload.RepositoryID),
+		attribute.String("commit", upload.Commit),
+		attribute.String("root", upload.Root),
+		attribute.String("indexer", upload.Indexer),
+		attribute.Stringer("queueDuration", time.Since(upload.UploadedAt)),
 	}
 
 	if upload.UploadSize != nil {
-		fields = append(fields, otlog.Int64("uploadSize", *upload.UploadSize))
+		attrs = append(attrs, attribute.Int64("uploadSize", *upload.UploadSize))
 	}
 
-	return fields
+	return attrs
 }
 
 // defaultBranchContains tells if the default branch contains the given commit ID.
