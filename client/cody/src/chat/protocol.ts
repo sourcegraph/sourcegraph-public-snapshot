@@ -61,3 +61,7 @@ export interface AuthStatus {
 export function isLoggedIn(authStatus: AuthStatus): boolean {
     return authStatus.authenticated && (authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true)
 }
+
+export function isLocalApp(url: string): boolean {
+    return new URL(url).origin === LOCAL_APP_URL.origin
+}

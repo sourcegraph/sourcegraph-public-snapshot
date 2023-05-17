@@ -6,8 +6,8 @@
 #[cfg(not(dev))]
 use {tauri::api::process::Command, tauri::api::process::CommandEvent};
 
-mod common;
 mod cody;
+mod common;
 mod tray;
 use common::{extract_path_from_scheme_url, show_window};
 use std::sync::RwLock;
@@ -39,7 +39,7 @@ fn set_launch_path(url: String) {
 
 // Url scheme for sourcegraph:// urls.
 const SCHEME: &str = "sourcegraph";
-const BUNDLE_IDENTIFIER: &str = "com.sourcegraph.app";
+const BUNDLE_IDENTIFIER: &str = "com.sourcegraph.cody";
 
 fn main() {
     // Prepare handler for sourcegraph:// scheme urls.
@@ -95,10 +95,8 @@ fn main() {
         )
         .plugin(tauri_plugin_positioner::init())
         .setup(|app| {
-            start_embedded_services();
-
+            start_embedded_services(app.handle());
             let handle = app.handle();
-
             // Register handler for sourcegraph:// scheme urls.
             tauri_plugin_deep_link::register(SCHEME, move |request| {
                 let path: &str = extract_path_from_scheme_url(&request, SCHEME);
@@ -139,24 +137,26 @@ fn main() {
         // its name which may suggest that it invokes something, actually only
         // *defines* an invoke() handler and does not invoke anything during
         // setup here.)
-        .invoke_handler(tauri::generate_handler![
-            get_launch_path,
-            hide_window,
-        ])
+        .invoke_handler(tauri::generate_handler![get_launch_path, hide_window,])
         .run(context)
         .expect("error while running tauri application");
 }
 
 #[cfg(dev)]
-fn start_embedded_services() {
+fn start_embedded_services(app_handle: tauri::AppHandle) {
+    let args = get_sourcegraph_args(app_handle);
     println!("embedded Sourcegraph services disabled for local development");
+    println!("Sourcegraph would start with args: {:?}", args);
 }
 
 #[cfg(not(dev))]
-fn start_embedded_services() {
+fn start_embedded_services(app_handle: tauri::AppHandle) {
     let sidecar = "sourcegraph-backend";
+    let args = get_sourcegraph_args(app_handle);
+    println!("Sourcegraph starting with args: {:?}", args);
     let (mut rx, _child) = Command::new_sidecar(sidecar)
         .expect(format!("failed to create `{sidecar}` binary command").as_str())
+        .args(args)
         .spawn()
         .expect(format!("failed to spawn {sidecar} sidecar").as_str());
 
@@ -169,4 +169,23 @@ fn start_embedded_services() {
             };
         }
     });
+}
+
+fn get_sourcegraph_args(app_handle: tauri::AppHandle) -> Vec<String> {
+    let data_dir = app_handle.path_resolver().app_data_dir();
+    let cache_dir = app_handle.path_resolver().app_cache_dir();
+    let mut args = Vec::new();
+
+    // cache_dir is where the cache goes
+    if let Some(cache_dir) = cache_dir {
+        args.push("--cacheDir".to_string());
+        args.push(cache_dir.to_string_lossy().to_string())
+    }
+
+    // configDir is where the database goes
+    if let Some(data_dir) = data_dir {
+        args.push("--configDir".to_string());
+        args.push(data_dir.to_string_lossy().to_string())
+    }
+    return args;
 }

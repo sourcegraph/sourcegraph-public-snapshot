@@ -44,8 +44,8 @@ export const CodySidebar = ({ onClose }: CodySidebarProps): JSX.Element => {
         }
     }
 
-    const onReset = useCallback(() => {
-        reset()
+    const onReset = useCallback(async () => {
+        await reset()
         setShowHistory(false)
     }, [reset, setShowHistory])
 
