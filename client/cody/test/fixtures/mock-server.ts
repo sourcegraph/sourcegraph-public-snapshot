@@ -21,7 +21,6 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
         const operation = new URL(req.url, 'https://example.com').search.replace(/^\?/, '')
         switch (operation) {
             case 'CurrentUser':
-                console.log(req.headers)
                 res.send(JSON.stringify({ data: { currentUser: 'u' } }))
                 break
             case 'IsContextRequiredForChatQuery':

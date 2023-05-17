@@ -8,59 +8,88 @@ import { _electron as electron } from 'playwright'
 
 import { run } from '../fixtures/mock-server'
 
-export const test = base.extend<{}>({
-    page: async ({ page: _page }, use) => {
-        void _page
+export const test = base
+    .extend<{}>({
+        page: async ({ page: _page }, use) => {
+            void _page
 
-        const codyRoot = path.resolve(__dirname, '..', '..')
+            const codyRoot = path.resolve(__dirname, '..', '..')
 
-        const vscodeExecutablePath = await downloadAndUnzipVSCode()
-        const extensionDevelopmentPath = codyRoot
+            const vscodeExecutablePath = await downloadAndUnzipVSCode()
+            const extensionDevelopmentPath = codyRoot
 
-        const userDataDirectory = mkdtempSync(path.join(tmpdir(), 'cody-vsce'))
-        const extensionsDirectory = mkdtempSync(path.join(tmpdir(), 'cody-vsce'))
+            const userDataDirectory = mkdtempSync(path.join(tmpdir(), 'cody-vsce'))
+            const extensionsDirectory = mkdtempSync(path.join(tmpdir(), 'cody-vsce'))
 
-        const workspaceDirectory = path.join(codyRoot, 'test', 'fixtures', 'workspace')
+            const workspaceDirectory = path.join(codyRoot, 'test', 'fixtures', 'workspace')
 
-        const app = await electron.launch({
-            executablePath: vscodeExecutablePath,
-            args: [
-                // https://github.com/microsoft/vscode/issues/84238
-                '--no-sandbox',
-                // https://github.com/microsoft/vscode-test/issues/120
-                '--disable-updates',
-                '--skip-welcome',
-                '--skip-release-notes',
-                '--disable-workspace-trust',
-                '--extensionDevelopmentPath=' + extensionDevelopmentPath,
-                `--user-data-dir=${userDataDirectory}`,
-                `--extensions-dir=${extensionsDirectory}`,
-                workspaceDirectory,
-            ],
-        })
+            // See: https://github.com/microsoft/vscode-test/blob/main/lib/runTest.ts
+            const app = await electron.launch({
+                executablePath: vscodeExecutablePath,
+                args: [
+                    // https://github.com/microsoft/vscode/issues/84238
+                    '--no-sandbox',
+                    // https://github.com/microsoft/vscode-test/issues/120
+                    '--disable-updates',
+                    '--skip-welcome',
+                    '--skip-release-notes',
+                    '--disable-workspace-trust',
+                    '--extensionDevelopmentPath=' + extensionDevelopmentPath,
+                    `--user-data-dir=${userDataDirectory}`,
+                    `--extensions-dir=${extensionsDirectory}`,
+                    workspaceDirectory,
+                ],
+            })
 
-        await waitUntil(() => app.windows().length > 0)
+            await waitUntil(() => app.windows().length > 0)
 
-        const page = await app.firstWindow()
+            const page = await app.firstWindow()
 
-        await run(async () => {
             // Bring the cody sidebar to the foreground
             await page.click('[aria-label="Sourcegraph Cody"]')
+            // Wait for Cody to become activated
+            // TODO(philipp-spiess): Figure out which playwright matcher we can use that works for
+            // the signed-in and signed-out cases
+            await new Promise(resolve => setTimeout(resolve, 500))
 
-            await use(page)
-        })
+            const sidebar = await getCodySidebar(page)
 
-        rmdirSync(userDataDirectory, { recursive: true })
-        rmdirSync(extensionsDirectory, { recursive: true })
-    },
-})
+            await run(async () => {
+                // Ensure we're logged out
+                // TODO(philipp-spiess): Find a way to access the extension host via the injected
+                // electron process so we can run the hidden command instead.
+                if (await page.isVisible('[aria-label="Cody: Settings"]')) {
+                    await page.click('[aria-label="Cody: Settings"]')
+                    await sidebar.getByRole('button', { name: 'Logout' }).click()
+                }
+
+                await use(page)
+            })
+
+            rmdirSync(userDataDirectory, { recursive: true })
+            rmdirSync(extensionsDirectory, { recursive: true })
+        },
+    })
+    .extend<{ sidebar: Frame }>({
+        sidebar: async ({ page }, use) => {
+            const sidebar = await getCodySidebar(page)
+            await use(sidebar)
+        },
+    })
 
 export async function getCodySidebar(page: Page): Promise<Frame> {
     async function findCodySidebarFrame(): Promise<null | Frame> {
         for (const frame of page.frames()) {
-            const title = await frame.title()
-            if (title === 'Cody') {
-                return frame
+            try {
+                const title = await frame.title()
+                if (title === 'Cody') {
+                    return frame
+                }
+            } catch (error: any) {
+                // Skip over frames that were detached in the meantime.
+                if (error.message.indexOf('Frame was detached') === -1) {
+                    throw error
+                }
             }
         }
         return null
