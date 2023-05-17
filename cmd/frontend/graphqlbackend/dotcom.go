@@ -21,7 +21,6 @@ type DotcomResolver interface {
 	CreateProductSubscription(context.Context, *CreateProductSubscriptionArgs) (ProductSubscription, error)
 	UpdateProductSubscription(context.Context, *UpdateProductSubscriptionArgs) (*EmptyResponse, error)
 	GenerateProductLicenseForSubscription(context.Context, *GenerateProductLicenseForSubscriptionArgs) (ProductLicense, error)
-	GenerateAccessTokenForSubscription(context.Context, *GenerateAccessTokenForSubscriptionArgs) (ProductSubscriptionAccessToken, error)
 	ArchiveProductSubscription(context.Context, *ArchiveProductSubscriptionArgs) (*EmptyResponse, error)
 
 	// DotcomQuery
@@ -46,6 +45,8 @@ type ProductSubscription interface {
 	IsArchived() bool
 	URL(context.Context) (string, error)
 	URLForSiteAdmin(context.Context) *string
+	CurrentSourcegraphAccessToken(context.Context) (*string, error)
+	SourcegraphAccessTokens(context.Context) ([]string, error)
 }
 
 type CreateProductSubscriptionArgs struct {
@@ -137,9 +138,23 @@ type UpdateLLMProxyAccessInput struct {
 type LLMProxyAccess interface {
 	Enabled() bool
 	RateLimit(context.Context) (LLMProxyRateLimit, error)
+	Usage(context.Context) ([]LLMProxyUsageDatapoint, error)
 }
 
+type LLMProxyUsageDatapoint interface {
+	Date() gqlutil.DateTime
+	Count() int32
+}
+
+type LLMProxyRateLimitSource string
+
+const (
+	LLMProxyRateLimitSourceOverride LLMProxyRateLimitSource = "OVERRIDE"
+	LLMProxyRateLimitSourcePlan     LLMProxyRateLimitSource = "PLAN"
+)
+
 type LLMProxyRateLimit interface {
+	Source() LLMProxyRateLimitSource
 	Limit() int32
 	IntervalSeconds() int32
 }

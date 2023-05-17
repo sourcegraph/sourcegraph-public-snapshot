@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -30,7 +31,7 @@ func NewPackagesFilterApplicator(
 	}
 
 	return goroutine.NewPeriodicGoroutine(
-		context.Background(),
+		actor.WithInternalActor(context.Background()),
 		"codeintel.package-filter-applicator", "applies package repo filters to all package repo references to precompute their blocked status",
 		time.Second*5,
 		goroutine.HandlerFunc(job.handle))

@@ -14,7 +14,7 @@ Your feedback is important to us and is greatly appreciated. Please do not hesit
 
 ## Issues / Bugs
 
-New issues and feature requests can be filed through our [issue tracker](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/integrations,jetbrains-ide&title=JetBrains:+&projects=Integrations%20Project%20Board) using the `jetbrains-ide` & `team/integrations` labels.
+New issues and feature requests can be filed through our [issue tracker](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/integrations,jetbrains-ide&title=JetBrains:+) using the `jetbrains-ide` & `team/integrations` labels.
 
 ## Development
 
@@ -23,7 +23,7 @@ New issues and feature requests can be filed through our [issue tracker](https:/
 - Run `pnpm generate` in the root directory to generate graphql files
 - Go to `client/jetbrains/` and run `pnpm build` to generate the JS files, or `pnpm watch` to watch for changes and regenerate on the fly
 - You can test the “Find with Sourcegraph” window by running `pnpm standalone` in the `client/jetbrains/` directory and opening [http://localhost:3000/](http://localhost:3000/) in your browser.
-- Run the plugin in a sandboxed IDE by running `./gradlew runIde`. This will start the platform with the versions defined in `gradle.properties`, [here](https://github.com/sourcegraph/sourcegraph/blob/main/client/jetbrains/gradle.properties#L14-L16).
+- Run the plugin in a sandboxed IDE by running `./gradlew :runIde`. This will start the platform with the versions defined in `gradle.properties`, [here](https://github.com/sourcegraph/sourcegraph/blob/main/client/jetbrains/gradle.properties#L14-L16).
   - Note: 2021.3 or later is required for Macs with Apple Silicon chips.
 - Build a deployable plugin artifact by running `./gradlew buildPlugin`. The output file is `build/distributions/Sourcegraph.zip`.
 

@@ -10,7 +10,6 @@ import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { FeedbackPrompt, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
 
-import { TauriTitleBar } from './app/TauriTitleBar'
 import { useHistoryStack } from './app/useHistoryStack'
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
@@ -24,7 +23,7 @@ import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { useHandleSubmitFeedback } from './hooks'
 import { LegacyLayoutRouteContext } from './LegacyRouteContext'
-import { SurveyToast } from './marketing/toast'
+import { CodySurveyToast, SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
 import { parseSearchURLQuery } from './search'
@@ -63,6 +62,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const isSearchNotebookListPage = location.pathname === EnterprisePageRoutes.Notebooks
     const isCodySearchPage = routeMatch === EnterprisePageRoutes.CodySearch
     const isRepositoryRelatedPage = routeMatch === PageRoutes.RepoContainer ?? false
+    const isCodyStandalonePage = location.pathname === PageRoutes.CodyStandalone
 
     // eslint-disable-next-line no-restricted-syntax
     const [wasSetupWizardSkipped] = useLocalStorage('setup.skipped', false)
@@ -137,22 +137,15 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
 
     if (isSetupWizardPage && !!props.authenticatedUser?.siteAdmin) {
         return (
-            <div className="flex">
-                {props.isSourcegraphApp && <TauriTitleBar historyStack={historyStack} />}
-
-                <Suspense
-                    fallback={
-                        <div className="flex flex-1">
-                            <LoadingSpinner className="m-2" />
-                        </div>
-                    }
-                >
-                    <LazySetupWizard
-                        isSourcegraphApp={props.isSourcegraphApp}
-                        telemetryService={props.telemetryService}
-                    />
-                </Suspense>
-            </div>
+            <Suspense
+                fallback={
+                    <div className="flex flex-1">
+                        <LoadingSpinner className="m-2" />
+                    </div>
+                }
+            >
+                <LazySetupWizard isSourcegraphApp={props.isSourcegraphApp} telemetryService={props.telemetryService} />
+            </Suspense>
         )
     }
 
@@ -172,7 +165,6 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 enableContrastCompliantSyntaxHighlighting && CONTRAST_COMPLIANT_CLASSNAME
             )}
         >
-            {props.isSourcegraphApp && <TauriTitleBar historyStack={historyStack} />}
             {showHelpShortcut?.keybindings.map((keybinding, index) => (
                 <Shortcut key={index} {...keybinding} onMatch={showKeyboardShortcutsHelp} />
             ))}
@@ -195,11 +187,19 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 />
             )}
 
-            <GlobalAlerts authenticatedUser={props.authenticatedUser} isSourcegraphDotCom={props.isSourcegraphDotCom} />
-            {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && !disableFeedbackSurvey && (
-                <SurveyToast authenticatedUser={props.authenticatedUser} />
+            {!isCodyStandalonePage && (
+                <GlobalAlerts
+                    authenticatedUser={props.authenticatedUser}
+                    isSourcegraphDotCom={props.isSourcegraphDotCom}
+                />
             )}
-            {!isSiteInit && !isSignInOrUp && (
+            {!isSiteInit &&
+                !isSignInOrUp &&
+                !props.isSourcegraphDotCom &&
+                !disableFeedbackSurvey &&
+                !isCodyStandalonePage && <SurveyToast authenticatedUser={props.authenticatedUser} />}
+            {props.isSourcegraphDotCom && props.authenticatedUser && <CodySurveyToast />}
+            {!isSiteInit && !isSignInOrUp && !isCodyStandalonePage && (
                 <GlobalNavbar
                     {...props}
                     showSearchBox={
@@ -214,6 +214,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                     showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
                     showFeedbackModal={showFeedbackModal}
+                    historyStack={historyStack}
                 />
             )}
             {needsSiteInit && !isSiteInit && <Navigate replace={true} to="/site-admin/init" />}

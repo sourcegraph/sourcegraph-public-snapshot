@@ -28,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/singleprogram/filepicker"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -106,6 +105,7 @@ type CurrentUser struct {
 	ViewerCanAdminister bool       `json:"viewerCanAdminister"`
 	TosAccepted         bool       `json:"tosAccepted"`
 	Searchable          bool       `json:"searchable"`
+	HasVerifiedEmail    bool       `json:"hasVerifiedEmail"`
 
 	Organizations  *UserOrganizationsConnection `json:"organizations"`
 	Session        *UserSession                 `json:"session"`
@@ -170,6 +170,12 @@ type JSContext struct {
 
 	Branding *schema.Branding `json:"branding"`
 
+	// BatchChangesEnabled is true if:
+	// * Batch Changes is NOT disabled by a flag in the site config
+	// * Batch Changes is NOT limited to admins-only, or it is, but the user issuing
+	//   the request is an admin and thus can access batch changes
+	// It does NOT reflect whether or not the site license has batch changes available.
+	// Use LicenseInfo for that.
 	BatchChangesEnabled                bool                                `json:"batchChangesEnabled"`
 	BatchChangesDisableWebhooksWarning bool                                `json:"batchChangesDisableWebhooksWarning"`
 	BatchChangesWebhookLogsEnabled     bool                                `json:"batchChangesWebhookLogsEnabled"`
@@ -204,8 +210,6 @@ type JSContext struct {
 	ExtsvcConfigAllowEdits bool `json:"extsvcConfigAllowEdits"`
 
 	RunningOnMacOS bool `json:"runningOnMacOS"`
-
-	LocalFilePickerAvailable bool `json:"localFilePickerAvailable"`
 
 	SrcServeGitUrl string `json:"srcServeGitUrl"`
 }
@@ -386,8 +390,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		RunningOnMacOS: runningOnMacOS,
 
-		LocalFilePickerAvailable: deploy.IsApp() && filepicker.Available(),
-
 		SrcServeGitUrl: srcServeGitUrl,
 	}
 }
@@ -418,6 +420,11 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		return nil
 	}
 
+	hasVerifiedEmail, err := userResolver.HasVerifiedEmail(ctx)
+	if err != nil {
+		return nil
+	}
+
 	return &CurrentUser{
 		GraphQLTypename:     "User",
 		AvatarURL:           userResolver.AvatarURL(),
@@ -436,6 +443,7 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		Username:            userResolver.Username(),
 		ViewerCanAdminister: canAdminister,
 		Permissions:         resolveUserPermissions(ctx, userResolver),
+		HasVerifiedEmail:    hasVerifiedEmail,
 	}
 }
 

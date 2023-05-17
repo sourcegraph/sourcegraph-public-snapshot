@@ -13,6 +13,10 @@ js_library(
     srcs = glob([
         "*.graphql",
     ]),
+    visibility = [
+        "//client/backstage-backend/node_modules/@sourcegraph/shared/dev:__pkg__",
+        "//client/shared/dev:__pkg__",
+    ],
 )
 
 linter_bin.graphql_schema_linter_test(
@@ -75,6 +79,7 @@ go_library(
         "git_tree.go",
         "git_tree_entry.go",
         "git_tree_submodule.go",
+        "githubapps.go",
         "graphqlbackend.go",
         "highlight.go",
         "hunk.go",
@@ -103,6 +108,7 @@ go_library(
         "package_repo_filters.go",
         "package_repos.go",
         "parse_search_query.go",
+        "perforce_changelist.go",
         "permission.go",
         "permission_connection_store.go",
         "permissions.go",
@@ -158,6 +164,7 @@ go_library(
         "site_usage_stats.go",
         "site_users.go",
         "slow_requests_tracer.go",
+        "source_type.go",
         "status_messages.go",
         "survey_response.go",
         "survey_responses.go",
@@ -201,6 +208,7 @@ go_library(
         "codeintel.sentinel.graphql",
         "codeintel.graphql",
         "completions.graphql",
+        "githubapps.graphql",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend",
     deps = [
@@ -269,6 +277,7 @@ go_library(
         "//internal/markdown",
         "//internal/observation",
         "//internal/oobmigration",
+        "//internal/perforce",
         "//internal/rcache",
         "//internal/repos",
         "//internal/repoupdater",
@@ -284,7 +293,6 @@ go_library(
         "//internal/search/symbol",
         "//internal/search/zoekt",
         "//internal/service/servegit",
-        "//internal/singleprogram/filepicker",
         "//internal/src-prometheus",
         "//internal/symbols",
         "//internal/syncx",
@@ -372,6 +380,7 @@ go_test(
         "orgs_test.go",
         "outbound_webhook_logs_test.go",
         "outbound_webhooks_test.go",
+        "perforce_changelist_test.go",
         "permission_test.go",
         "permissions_test.go",
         "preview_repository_comparison_test.go",
@@ -452,6 +461,7 @@ go_test(
         "//internal/gqlutil",
         "//internal/inventory",
         "//internal/oobmigration",
+        "//internal/rbac/types",
         "//internal/rcache",
         "//internal/repos",
         "//internal/repoupdater",

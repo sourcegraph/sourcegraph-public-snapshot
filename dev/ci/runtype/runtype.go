@@ -14,7 +14,6 @@ const (
 	// RunTypes should be defined by order of precedence.
 
 	PullRequest    RunType = iota // pull request build
-	BazelExpBranch                // branch that runs specific bazel steps
 	WolfiExpBranch                // branch that only builds wolfi images
 
 	// Nightly builds - must be first because they take precedence
@@ -152,10 +151,6 @@ func (t RunType) Matcher() *RunTypeMatcher {
 		return &RunTypeMatcher{
 			Branch: "main-dry-run/",
 		}
-	case BazelExpBranch:
-		return &RunTypeMatcher{
-			Branch: "bzl/",
-		}
 	case WolfiExpBranch:
 		return &RunTypeMatcher{
 			Branch: "wolfi/",
@@ -192,8 +187,6 @@ func (t RunType) String() string {
 	switch t {
 	case PullRequest:
 		return "Pull request"
-	case BazelExpBranch:
-		return "Bazel Exp Branch"
 	case WolfiExpBranch:
 		return "Wolfi Exp Branch"
 	case ReleaseNightly:

@@ -14,6 +14,7 @@ import { UserSettingsTokensPage } from './UserSettingsTokensPage'
 
 interface Props extends Pick<UserSettingsAreaRouteContext, 'user' | 'authenticatedUser'>, TelemetryProps {
     isSourcegraphDotCom: boolean
+    isSourcegraphApp: boolean
 }
 
 export const UserSettingsTokensArea: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
@@ -42,9 +42,9 @@ func (r *configurationPolicyResolver) Repository(ctx context.Context) (_ resolve
 	}
 
 	defer r.errTracer.Collect(&err,
-		log.String("configurationPolicyResolver.field", "repository"),
-		log.Int("configurationPolicyID", r.configurationPolicy.ID),
-		log.Int("repoID", *r.configurationPolicy.RepositoryID),
+		attribute.String("configurationPolicyResolver.field", "repository"),
+		attribute.Int("configurationPolicyID", r.configurationPolicy.ID),
+		attribute.Int("repoID", *r.configurationPolicy.RepositoryID),
 	)
 
 	return gitresolvers.NewRepositoryFromID(ctx, r.repoStore, *r.configurationPolicy.RepositoryID)
@@ -56,9 +56,9 @@ func (r *configurationPolicyResolver) RepositoryPatterns() *[]string {
 
 func (r *configurationPolicyResolver) Type() (_ resolverstubs.GitObjectType, err error) {
 	defer r.errTracer.Collect(&err,
-		log.String("configurationPolicyResolver.field", "type"),
-		log.Int("configurationPolicyID", r.configurationPolicy.ID),
-		log.String("policyType", string(r.configurationPolicy.Type)),
+		attribute.String("configurationPolicyResolver.field", "type"),
+		attribute.Int("configurationPolicyID", r.configurationPolicy.ID),
+		attribute.String("policyType", string(r.configurationPolicy.Type)),
 	)
 
 	switch r.configurationPolicy.Type {

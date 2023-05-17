@@ -33,6 +33,7 @@ const COMMIT_QUERY = gql`
         node(id: $repo) {
             __typename
             ... on Repository {
+                sourceType
                 commit(rev: $revspec) {
                     __typename # Necessary for error handling to check if commit exists
                     ...GitCommitFields

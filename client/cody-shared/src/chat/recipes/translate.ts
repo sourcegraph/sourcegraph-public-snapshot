@@ -3,16 +3,17 @@ import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
 import { languageMarkdownID, languageNames } from './langs'
-import { Recipe, RecipeContext } from './recipe'
+import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class TranslateToLanguage implements Recipe {
-    public id = 'translate-to-language'
+    public id: RecipeID = 'translate-to-language'
 
     public static options = languageNames
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
         if (!selection) {
+            await context.editor.showWarningMessage('No code selected. Please select some code and try again.')
             return null
         }
 

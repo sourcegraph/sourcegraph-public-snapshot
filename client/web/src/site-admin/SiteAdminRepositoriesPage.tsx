@@ -56,7 +56,7 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
                             to="/site-admin/external-services"
                             data-testid="test-repositories-code-host-connections-link"
                         >
-                            code hosts
+                            code host connections
                         </Link>
                         .
                     </>

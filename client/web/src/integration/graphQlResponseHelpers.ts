@@ -1,6 +1,6 @@
 import { encodeURIPathComponent } from '@sourcegraph/common'
 import { JsonDocument } from '@sourcegraph/shared/src/codeintel/scip'
-import { TreeEntriesResult } from '@sourcegraph/shared/src/graphql-operations'
+import { RepositoryType, TreeEntriesResult } from '@sourcegraph/shared/src/graphql-operations'
 
 import {
     BlobResult,
@@ -81,6 +81,7 @@ export const createResolveRepoRevisionResult = (treeUrl: string, oid = '1'.repea
         id: `RepositoryID:${treeUrl}`,
         name: treeUrl,
         url: `/${encodeURIPathComponent(treeUrl)}`,
+        sourceType: RepositoryType.GIT_REPOSITORY,
         externalURLs: [
             {
                 url: new URL(`https://${encodeURIPathComponent(treeUrl)}`).href,
@@ -109,6 +110,7 @@ export const createResolveCloningRepoRevisionResult = (
         id: `RepositoryID:${treeUrl}`,
         name: treeUrl,
         url: `/${encodeURIPathComponent(treeUrl)}`,
+        sourceType: RepositoryType.GIT_REPOSITORY,
         externalURLs: [
             {
                 url: new URL(`https://${encodeURIPathComponent(treeUrl)}`).href,

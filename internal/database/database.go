@@ -66,6 +66,9 @@ type DB interface {
 	ExecutorSecretAccessLogs() ExecutorSecretAccessLogStore
 	ZoektRepos() ZoektReposStore
 	Teams() TeamStore
+	EventLogsScrapeState() EventLogsScrapeStateStore
+	RecentViewSignal() RecentViewSignalStore
+	AssignedOwners() AssignedOwnersStore
 
 	WithTransact(context.Context, func(tx DB) error) error
 }
@@ -302,4 +305,16 @@ func (d *db) ZoektRepos() ZoektReposStore {
 
 func (d *db) Teams() TeamStore {
 	return TeamsWith(d.Store)
+}
+
+func (d *db) EventLogsScrapeState() EventLogsScrapeStateStore {
+	return EventLogsScrapeStateStoreWith(d.Store)
+}
+
+func (d *db) RecentViewSignal() RecentViewSignalStore {
+	return RecentViewSignalStoreWith(d.Store, d.logger)
+}
+
+func (d *db) AssignedOwners() AssignedOwnersStore {
+	return AssignedOwnersStoreWith(d.Store, d.logger)
 }

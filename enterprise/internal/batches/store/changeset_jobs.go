@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
@@ -57,8 +57,8 @@ var changesetJobColumns = SQLColumns{
 
 // CreateChangesetJob creates the given changeset jobs.
 func (s *Store) CreateChangesetJob(ctx context.Context, cs ...*btypes.ChangesetJob) (err error) {
-	ctx, _, endObservation := s.operations.createChangesetJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("count", len(cs)),
+	ctx, _, endObservation := s.operations.createChangesetJob.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("count", len(cs)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -125,8 +125,8 @@ type GetChangesetJobOpts struct {
 
 // GetChangesetJob gets a ChangesetJob matching the given options.
 func (s *Store) GetChangesetJob(ctx context.Context, opts GetChangesetJobOpts) (job *btypes.ChangesetJob, err error) {
-	ctx, _, endObservation := s.operations.getChangesetJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(opts.ID)),
+	ctx, _, endObservation := s.operations.getChangesetJob.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(opts.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
 

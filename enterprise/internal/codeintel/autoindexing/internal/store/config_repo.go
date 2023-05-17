@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -12,9 +12,61 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
+func (s *store) RepositoryExceptions(ctx context.Context, repositoryID int) (canSchedule, canInfer bool, err error) {
+	ctx, _, endObservation := s.operations.repositoryExceptions.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(repositoryExceptionsQuery, repositoryID))
+	if err != nil {
+		return false, false, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	var disableSchedule, disableInference bool
+	for rows.Next() {
+		if err := rows.Scan(&disableSchedule, &disableInference); err != nil {
+			return false, false, err
+		}
+	}
+
+	return !disableSchedule, !disableInference, rows.Err()
+}
+
+const repositoryExceptionsQuery = `
+SELECT
+	cae.disable_scheduling,
+	cae.disable_inference
+FROM codeintel_autoindexing_exceptions cae
+WHERE cae.repository_id = %s
+`
+
+func (s *store) SetRepositoryExceptions(ctx context.Context, repositoryID int, canSchedule, canInfer bool) (err error) {
+	ctx, _, endObservation := s.operations.setRepositoryExceptions.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return s.db.Exec(ctx, sqlf.Sprintf(
+		setRepositoryExceptionsQuery,
+		repositoryID,
+		!canSchedule, !canInfer,
+		!canSchedule, !canInfer,
+	))
+}
+
+const setRepositoryExceptionsQuery = `
+INSERT INTO codeintel_autoindexing_exceptions (repository_id, disable_scheduling, disable_inference)
+VALUES (%s, %s, %s)
+ON CONFLICT (repository_id) DO UPDATE SET
+	disable_scheduling = %s,
+	disable_inference = %s
+`
+
 func (s *store) GetIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int) (_ shared.IndexConfiguration, _ bool, err error) {
-	ctx, _, endObservation := s.operations.getIndexConfigurationByRepositoryID.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
+	ctx, _, endObservation := s.operations.getIndexConfigurationByRepositoryID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -31,9 +83,9 @@ WHERE c.repository_id = %s
 `
 
 func (s *store) UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) (err error) {
-	ctx, _, endObservation := s.operations.updateIndexConfigurationByRepositoryID.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
-		log.Int("dataSize", len(data)),
+	ctx, _, endObservation := s.operations.updateIndexConfigurationByRepositoryID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
+		attribute.Int("dataSize", len(data)),
 	}})
 	defer endObservation(1, observation.Args{})
 

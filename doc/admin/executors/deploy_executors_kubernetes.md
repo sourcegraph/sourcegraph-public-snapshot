@@ -35,7 +35,7 @@ Ensure you have the following tools installed:
 2. Run `cd deploy-sourcegraph-helm/charts/sourcegraph-executor`.
 3. Edit the `values.yaml` with any other customizations you may require.
 4. Run the following command:
-  1. `helm upgrade --install -f values.yaml --version 5.0.2 sg-executor sourcegraph/sourcegraph-executor`
+  1. `helm upgrade --install -f values.yaml --version 5.0.3 sg-executor sourcegraph/sourcegraph-executor`
 5. Confirm executors are working are working by checking the _Executors_ page under **Site admin > Executors > Instances** .
 
 
@@ -59,7 +59,7 @@ If you have security concerns, consider deploying via [terraform](deploy_executo
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
 </aside>
 
-> NOTE: This feature is available in Sourcegraph 5.0.2 and later.
+> NOTE: This feature is available in Sourcegraph 5.0.3 and later.
 
 [Kubernetes manifests](https://github.com/sourcegraph/deploy-sourcegraph) are provided to deploy Sourcegraph Executors
 on a running Kubernetes cluster. If you are deploying Sourcegraph with helm, charts are
@@ -98,17 +98,54 @@ set on the Executor `Deployment` and will configure the `Job`s that it spawns.
 | EXECUTOR_KUBERNETES_NODE_SELECTOR                            | N/A               | A comma separated list of values to use as a node selector for Kubernetes Jobs. e.g. `foo=bar,app=my-app`                              |
 | EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_EXPRESSIONS | N/A               | The JSON encoded required affinity match expressions for Kubernetes Jobs. e.g. `[{"key": "foo", "operator": "In", "values": ["bar"]}]` |
 | EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_FIELDS      | N/A               | The JSON encoded required affinity match fields for Kubernetes Jobs. e.g. `[{"key": "foo", "operator": "In", "values": ["bar"]}]`      |
+| EXECUTOR_KUBERNETES_POD_AFFINITY                             | N/A               | The JSON encoded pod affinity for Kubernetes Jobs. e.g. {"requiredDuringSchedulingIgnoredDuringExecution": [{"labelSelector": {"matchExpressions": [{"key": "foo", "operator": "In", "values": ["bar"]}]}, "topologyKey": "kubernetes.io/hostname"}]} |
+| EXECUTOR_KUBERNETES_POD_ANTI_AFFINITY                        | N/A               | The JSON encoded pod anti-affinity for Kubernetes Jobs. e.g. {"requiredDuringSchedulingIgnoredDuringExecution": [{"labelSelector": {"matchExpressions": [{"key": "foo", "operator": "In", "values": ["bar"]}]}, "topologyKey": "kubernetes.io/hostname"}]} |
+| EXECUTOR_KUBERNETES_NODE_TOLERATIONS                         | N/A               | The JSON encoded tolerations for Kubernetes Jobs. e.g. [{"key": "foo", "operator": "Equal", "value": "bar", "effect": "NoSchedule"}]   |
 | EXECUTOR_KUBERNETES_NAMESPACE                                | `default`         | The namespace to create the Jobs in.                                                                                                   |
 | EXECUTOR_KUBERNETES_PERSISTENCE_VOLUME_NAME                  | `sg-executor-pvc` | The name of the Executor Persistence Volume. Must match the `PersistentVolumeClaim` configured for the instance.                       |
 | EXECUTOR_KUBERNETES_RESOURCE_LIMIT_CPU                       | N/A               | The maximum CPU resource for Kubernetes Jobs.                                                                                          |
 | EXECUTOR_KUBERNETES_RESOURCE_LIMIT_MEMORY                    | `12Gi`            | The maximum memory resource for Kubernetes Jobs.                                                                                       |
 | EXECUTOR_KUBERNETES_RESOURCE_REQUEST_CPU                     | N/A               | The minimum CPU resource for Kubernetes Jobs.                                                                                          |
 | EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY                  | `12Gi`            | The minimum memory resource for Kubernetes Jobs.                                                                                       |
-| KUBERNETES_JOB_RETRY_BACKOFF_LIMIT                           | `600`             | The number of attempts to try when checking if a Job has completed.                                                                    |
-| KUBERNETES_JOB_RETRY_BACKOFF_DURATION                        | `100ms`           | The duration of the backoff when checking if a Job has completed.                                                                      |
+| KUBERNETES_JOB_DEADLINE                                      | `300`             | The number of seconds after which a Kubernetes job will be terminated.                                                                 |
+| KUBERNETES_RUN_AS_USER                                       | N/A               | The user ID to run Kubernetes jobs as.                                                                                                 |
+| KUBERNETES_RUN_AS_GROUP                                      | N/A               | The group ID to run Kubernetes jobs as.                                                                                                |
+| KUBERNETES_FS_GROUP                                          | `1000`            | The group ID to run all containers in the Kubernetes jobs as.                                                                          |
 | KUBERNETES_KEEP_JOBS                                         | `false`           | If true, Kubernetes jobs will not be deleted after they complete. Useful for debugging.                                                |
 
 See other possible Environment Variables [here](./deploy_executors_binary.md#step-2-setup-environment-variables).
+
+> Note: `executor.frontendUrl` must be set in the Site configuration for Executors to work correctly.
+
+### Job Scheduling
+
+> Note: Kubernetes has a max of 110 pods per node. If you run into this limit, you can lower the number of Job Pods running on a node by setting the environment variable `EXECUTOR_MAXIMUM_NUM_JOBS`.
+
+Executors deployed on Kubernetes require Jobs to be scheduled on the same Node as the Executor. This is to ensure that
+Jobs are able to access the same Persistence Volume as the Executor.
+
+To ensure that Jobs are scheduled on the same Node as the Executor, the following environment variables can be set,
+
+- `EXECUTOR_KUBERNETES_NODE_NAME`
+- `EXECUTOR_KUBERNETES_NODE_SELECTOR`
+- `EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_EXPRESSIONS`
+- `EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_FIELDS`
+
+#### Node Name
+
+Using the [Downward API](https://kubernetes.io/docs/concepts/workloads/pods/downward-api/#downwardapi-fieldRef), the 
+property `spec.nodeName` can be used to set the `EXECUTOR_KUBERNETES_NODE_NAME` environment variable.
+
+```yaml
+    - name: EXECUTOR_KUBERNETES_NODE_NAME
+      valueFrom:
+        fieldRef:
+          fieldPath: spec.nodeName
+```
+
+This ensures that the Job is scheduled on the same Node as the Executor.
+
+However, if the node does not have enough resources to run the Job, the Job will not be scheduled.
 
 ### Firewall Rules
 
@@ -116,7 +153,7 @@ The following are Firewall rules that are _highly recommended_ when running Exec
 Environment.
 
 - Disable access to internal resources.
-- Disable access to `5.0.2.254` (AWS / GCP Instance Metadata Service).
+- Disable access to `5.0.3.254` (AWS / GCP Instance Metadata Service).
 
 ### Batch Changes
 

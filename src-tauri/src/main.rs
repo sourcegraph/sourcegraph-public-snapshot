@@ -6,16 +6,31 @@
 #[cfg(not(dev))]
 use {tauri::api::process::Command, tauri::api::process::CommandEvent};
 
+mod cody;
+mod common;
 mod tray;
+use common::{extract_path_from_scheme_url, show_window};
 use std::sync::RwLock;
 use tauri::Manager;
+use tauri_utils::config::RemoteDomainAccessScope;
+
+#[cfg(not(target_os = "macos"))]
+use common::is_scheme_url;
 
 // The URL to open the frontend on, if launched with a scheme url.
 static LAUNCH_PATH: RwLock<String> = RwLock::new(String::new());
 
 #[tauri::command]
-fn get_launch_path() -> String {
+fn get_launch_path(window: tauri::Window) -> String {
+    if window.label() == "cody" {
+        return "/cody-standalone".to_string();
+    }
     LAUNCH_PATH.read().unwrap().clone()
+}
+
+#[tauri::command]
+fn hide_window(app: tauri::AppHandle, window: tauri::Window) {
+    window.hide().unwrap();
 }
 
 fn set_launch_path(url: String) {
@@ -24,22 +39,7 @@ fn set_launch_path(url: String) {
 
 // Url scheme for sourcegraph:// urls.
 const SCHEME: &str = "sourcegraph";
-const BUNDLE_IDENTIFIER: &str = "com.sourcegraph.app";
-
-/// Extracts the path from a URL that starts with the `SCHEME` followed by `://`.
-///
-/// # Examples
-///
-/// ```
-/// let url = "sourcegraph://settings";
-/// assert_eq!(extract_path_from_url(url), "/settings");
-///
-/// let url = "sourcegraph://user/admin";
-/// assert_eq!(extract_path_from_url(url), "/user/admin");
-/// ```
-fn extract_path_from_scheme_url(url: &str) -> &str {
-    &url[(SCHEME.len() + 2)..]
-}
+const BUNDLE_IDENTIFIER: &str = "com.sourcegraph.cody";
 
 fn main() {
     // Prepare handler for sourcegraph:// scheme urls.
@@ -54,14 +54,33 @@ fn main() {
 
     let tray = tray::create_system_tray();
 
+    let scope = RemoteDomainAccessScope {
+        scheme: Some("http".to_string()),
+        domain: "localhost".to_string(),
+        windows: vec!["main".to_string(), "cody".to_string()],
+        plugins: vec![],
+        enable_tauri_api: true,
+    };
+    let mut context = tauri::generate_context!();
+    context
+        .config_mut()
+        .tauri
+        .security
+        .dangerous_remote_domain_ipc_access = vec![scope];
+
     tauri::Builder::default()
         .system_tray(tray)
         .on_system_tray_event(tray::on_system_tray_event)
+        .on_system_tray_event(|app, event| {
+            tauri_plugin_positioner::on_tray_event(app, &event);
+        })
         .on_window_event(|event| match event.event() {
             tauri::WindowEvent::CloseRequested { api, .. } => {
                 // Ensure the app stays open after the last window is closed.
-                event.window().hide().unwrap();
-                api.prevent_close();
+                if event.window().label() == "main" {
+                    event.window().hide().unwrap();
+                    api.prevent_close();
+                }
             }
             _ => {}
         })
@@ -74,13 +93,13 @@ fn main() {
                 .level(log::LevelFilter::Info)
                 .build(),
         )
+        .plugin(tauri_plugin_positioner::init())
         .setup(|app| {
-            start_embedded_services();
-
-            // Register handler for sourcegraph:// scheme urls.
+            start_embedded_services(app.handle());
             let handle = app.handle();
+            // Register handler for sourcegraph:// scheme urls.
             tauri_plugin_deep_link::register(SCHEME, move |request| {
-                let path: &str = extract_path_from_scheme_url(&request);
+                let path: &str = extract_path_from_scheme_url(&request, SCHEME);
 
                 // Case 1: the app has been *launched* with the scheme
                 // url. In the frontend, app-shell.tsx will read it with
@@ -97,9 +116,20 @@ fn main() {
                     .unwrap()
                     .eval(&format!("window.location.href = '{}'", path))
                     .unwrap();
+                show_window(&handle, "main");
             })
             .unwrap();
 
+            // If launched with a scheme url, on non-mac the app receives the url as an argument.
+            // On mac, this is handled by the same handler that receives the url when the app is
+            // already running.
+            #[cfg(not(target_os = "macos"))]
+            if let Some(url) = std::env::args().nth(1) {
+                if is_scheme_url(&url, SCHEME) {
+                    let path = extract_path_from_scheme_url(&url, SCHEME);
+                    set_launch_path(url)
+                }
+            }
             Ok(())
         })
         // Define a handler so that invoke("get_launch_scheme_url") can be
@@ -107,21 +137,26 @@ fn main() {
         // its name which may suggest that it invokes something, actually only
         // *defines* an invoke() handler and does not invoke anything during
         // setup here.)
-        .invoke_handler(tauri::generate_handler![get_launch_path])
-        .run(tauri::generate_context!())
+        .invoke_handler(tauri::generate_handler![get_launch_path, hide_window,])
+        .run(context)
         .expect("error while running tauri application");
 }
 
 #[cfg(dev)]
-fn start_embedded_services() {
+fn start_embedded_services(app_handle: tauri::AppHandle) {
+    let args = get_sourcegraph_args(app_handle);
     println!("embedded Sourcegraph services disabled for local development");
+    println!("Sourcegraph would start with args: {:?}", args);
 }
 
 #[cfg(not(dev))]
-fn start_embedded_services() {
+fn start_embedded_services(app_handle: tauri::AppHandle) {
     let sidecar = "sourcegraph-backend";
+    let args = get_sourcegraph_args(app_handle);
+    println!("Sourcegraph starting with args: {:?}", args);
     let (mut rx, _child) = Command::new_sidecar(sidecar)
         .expect(format!("failed to create `{sidecar}` binary command").as_str())
+        .args(args)
         .spawn()
         .expect(format!("failed to spawn {sidecar} sidecar").as_str());
 
@@ -134,4 +169,23 @@ fn start_embedded_services() {
             };
         }
     });
+}
+
+fn get_sourcegraph_args(app_handle: tauri::AppHandle) -> Vec<String> {
+    let data_dir = app_handle.path_resolver().app_data_dir();
+    let cache_dir = app_handle.path_resolver().app_cache_dir();
+    let mut args = Vec::new();
+
+    // cache_dir is where the cache goes
+    if let Some(cache_dir) = cache_dir {
+        args.push("--cacheDir".to_string());
+        args.push(cache_dir.to_string_lossy().to_string())
+    }
+
+    // configDir is where the database goes
+    if let Some(data_dir) = data_dir {
+        args.push("--configDir".to_string());
+        args.push(data_dir.to_string_lossy().to_string())
+    }
+    return args;
 }
