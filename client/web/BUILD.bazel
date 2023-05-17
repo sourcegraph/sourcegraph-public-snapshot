@@ -626,6 +626,8 @@ ts_project(
         "src/enterprise/codeintel/indexes/hooks/useReindexPreciseIndexes.tsx",
         "src/enterprise/codeintel/indexes/pages/CodeIntelPreciseIndexPage.tsx",
         "src/enterprise/codeintel/indexes/pages/CodeIntelPreciseIndexesPage.tsx",
+        "src/enterprise/codeintel/ranking/pages/CodeIntelRankingPage.tsx",
+        "src/enterprise/codeintel/ranking/pages/backend.ts",
         "src/enterprise/codeintel/repo/CodeIntelSidebar.tsx",
         "src/enterprise/codeintel/repo/RepositoryCodeIntelArea.tsx",
         "src/enterprise/codeintel/searchBased.ts",
