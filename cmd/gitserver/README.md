@@ -39,7 +39,7 @@ The service is stateful (maintaining git clones). However, it only contains data
 
 ## Perforce depots
 
-Syncing of Perforce depots is accomplished by either `git p4` (deprecated), or `p4-fusion`, both of which clone Perforce depots into Git repositories in `gitserver`.
+Syncing of Perforce depots is accomplished by either `p4-fusion` or `git p4` (deprecated), both of which clone Perforce depots into Git repositories in `gitserver`.
 
 ### p4-fusion
 
