@@ -7,15 +7,23 @@ import (
 
 	"cloud.google.com/go/bigquery"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 
 	llmproxy "github.com/sourcegraph/sourcegraph/enterprise/internal/llm-proxy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+var tracer = otel.GetTracerProvider().Tracer("llm-proxy/internal/events")
+
 // Logger is an event logger.
 type Logger interface {
-	// LogEvent logs an event.
-	LogEvent(event Event) error
+	// LogEvent logs an event. spanCtx should only be used to extract the span,
+	// event logging should use a background.Context to avoid being cancelled
+	// when a request ends.
+	LogEvent(spanCtx context.Context, event Event) error
 }
 
 // bigQueryLogger is a BigQuery event logger.
@@ -66,10 +74,20 @@ func (e bigQueryEvent) Save() (map[string]bigquery.Value, string, error) {
 }
 
 // LogEvent logs an event to BigQuery.
-func (l *bigQueryLogger) LogEvent(event Event) error {
+func (l *bigQueryLogger) LogEvent(spanCtx context.Context, event Event) (err error) {
 	if event.Name == "" || event.Source == "" || event.Identifier == "" {
 		return errors.New("missing event name, source or identifier")
 	}
+
+	ctx, span := tracer.Start(backgroundContextWithSpan(spanCtx), "bigQueryLogger.LogEvent",
+		trace.WithAttributes(attribute.String("source", event.Source), attribute.String("name", string(event.Name))))
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, "failed to log event")
+		}
+		span.End()
+	}()
 
 	var metadata json.RawMessage
 	if event.Metadata != nil {
@@ -80,10 +98,8 @@ func (l *bigQueryLogger) LogEvent(event Event) error {
 		}
 	}
 
-	err := l.tableInserter.Put(
-		// NOTE: Using context.Background() because we still want to log the event in the
-		// case of a request cancellation.
-		context.Background(),
+	if err := l.tableInserter.Put(
+		ctx,
 		bigQueryEvent{
 			Name:       string(event.Name),
 			Source:     event.Source,
@@ -91,8 +107,7 @@ func (l *bigQueryLogger) LogEvent(event Event) error {
 			Metadata:   metadata,
 			CreatedAt:  time.Now(),
 		},
-	)
-	if err != nil {
+	); err != nil {
 		return errors.Wrap(err, "inserting event")
 	}
 	return nil
@@ -107,7 +122,14 @@ func NewStdoutLogger(logger log.Logger) Logger {
 	return &stdoutLogger{logger: logger.Scoped("events", "event logger")}
 }
 
-func (l *stdoutLogger) LogEvent(event Event) error {
+func (l *stdoutLogger) LogEvent(spanCtx context.Context, event Event) error {
+	// Not a terribly interesting trace, but useful to demo backgroundContextWithSpan
+	_, span := tracer.Start(backgroundContextWithSpan(spanCtx), "stdoutLogger.LogEvent",
+		trace.WithAttributes(
+			attribute.String("source", event.Source),
+			attribute.String("name", string(event.Name))))
+	defer span.End()
+
 	l.logger.Debug("LogEvent",
 		log.Object("event",
 			log.String("name", string(event.Name)),
@@ -116,4 +138,11 @@ func (l *stdoutLogger) LogEvent(event Event) error {
 		),
 	)
 	return nil
+}
+
+func backgroundContextWithSpan(ctx context.Context) context.Context {
+	// NOTE: Using context.Background() because we still want to log the event in the
+	// case of a request cancellation, we only want the parent span.
+	ctx = trace.ContextWithSpan(context.Background(), trace.SpanFromContext(ctx))
+	return ctx
 }

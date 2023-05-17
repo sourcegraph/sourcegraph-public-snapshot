@@ -88,8 +88,13 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 	// Instrumentation layers
 	handler = requestLogger(obctx.Logger.Scoped("requests", "HTTP requests"), handler)
-	handler = instrumentation.HTTPMiddleware("llm-proxy", handler,
-		otelhttp.WithPublicEndpoint())
+	var otelhttpOpts []otelhttp.Option
+	if !config.InsecureDev {
+		// Outside of dev, we're probably running as a standalone service, so treat
+		// incoming spans as links
+		otelhttpOpts = append(otelhttpOpts, otelhttp.WithPublicEndpoint())
+	}
+	handler = instrumentation.HTTPMiddleware("llm-proxy", handler, otelhttpOpts...)
 
 	// Collect request client for downstream handlers. Outside of dev, we always set up
 	// Cloudflare in from of LLM-proxy. This comes first.
@@ -139,6 +144,7 @@ func rateLimit(logger log.Logger, eventLogger events.Logger, cache limiter.Redis
 		err := l.TryAcquire(r.Context())
 		if err != nil {
 			loggerErr := eventLogger.LogEvent(
+				r.Context(),
 				events.Event{
 					Name:       llmproxy.EventNameRateLimited,
 					Source:     act.Source.Name(),

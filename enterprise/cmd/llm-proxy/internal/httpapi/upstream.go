@@ -44,7 +44,8 @@ func makeUpstreamHandler[ReqT any](logger log.Logger, eventLogger events.Logger,
 			return
 		}
 
-		req, err := http.NewRequest(http.MethodPost, upstreamAPIURL, bytes.NewReader(upstreamPayload))
+		// Create a new request to send upstream, making sure we retain the same context.
+		req, err := http.NewRequestWithContext(r.Context(), http.MethodPost, upstreamAPIURL, bytes.NewReader(upstreamPayload))
 		if err != nil {
 			response.JSONError(logger, w, http.StatusInternalServerError, errors.Wrap(err, "failed to create request"))
 			return
@@ -68,6 +69,7 @@ func makeUpstreamHandler[ReqT any](logger log.Logger, eventLogger events.Logger,
 			metadata["prompt_character_count"] = promptCharacterCount
 			metadata["model"] = model
 			err = eventLogger.LogEvent(
+				r.Context(),
 				events.Event{
 					Name:       llmproxy.EventNameCompletionsStarted,
 					Source:     act.Source.Name(),
@@ -87,6 +89,7 @@ func makeUpstreamHandler[ReqT any](logger log.Logger, eventLogger events.Logger,
 		)
 		defer func() {
 			err := eventLogger.LogEvent(
+				r.Context(),
 				events.Event{
 					Name:       llmproxy.EventNameCompletionsFinished,
 					Source:     act.Source.Name(),

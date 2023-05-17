@@ -33,6 +33,7 @@ func (a *Authenticator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		response.JSONError(a.Logger, w, http.StatusUnauthorized, err)
 
 		err := a.EventLogger.LogEvent(
+			r.Context(),
 			events.Event{
 				Name:       llmproxy.EventNameUnauthorized,
 				Source:     "anonymous",
@@ -54,6 +55,7 @@ func (a *Authenticator) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		)
 
 		err := a.EventLogger.LogEvent(
+			r.Context(),
 			events.Event{
 				Name:       llmproxy.EventNameAccessDenied,
 				Source:     act.Source.Name(),
