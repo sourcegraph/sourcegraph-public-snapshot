@@ -30,7 +30,7 @@ func NewClient(cli httpcli.Doer, endpoint, accessToken string, model string) (ty
 		return openai.NewClient(llmProxyDoer(cli, llmProxyURL, accessToken, "/v1/completions/openai"), "", model), nil
 	}
 	if strings.HasPrefix(strings.ToLower(model), "claude-") {
-		return anthropic.NewClient(llmProxyDoer(cli, llmProxyURL, accessToken, "/v1/completions/anthropic"), "", model), nil
+		return anthropic.NewClient(llmProxyDoer(cli, llmProxyURL, accessToken, "/v1/completions/anthropic"), "", model, ""), nil
 	}
 
 	return nil, errors.Newf("no client known for upstream model %s", model)
