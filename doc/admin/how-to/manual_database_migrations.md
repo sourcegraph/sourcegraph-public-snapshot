@@ -4,7 +4,7 @@
 >
 > The `up` command is a notable exception. See the command documentation for additional details.
 
-The `migrator` is a service that runs as an initial step of the startup process for [Kubernetes](../deploy/kubernetes/update.md#database-migrations) and [Docker-compose](../deploy/docker-compose/index.md#database-migrations) instance deployments. This service is also designed to be invokable directly by a site administrator to perform common tasks dealing with database state.
+The `migrator` is a service that runs as an initial step of the startup process for [Kubernetes](../deploy/kubernetes/upgrade.md#database-migrations) and [Docker-compose](../deploy/docker-compose/index.md#database-migrations) instance deployments. This service is also designed to be invokable directly by a site administrator to perform common tasks dealing with database state.
 
 The [commands](#commands) section below details the legal commands with which the `migrator` service can be invoked. The [environments](#environments) section below details how to supply those commands to a `migrator` instance that has access to your Sourcegraph database.
 

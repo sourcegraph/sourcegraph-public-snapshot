@@ -7,7 +7,7 @@
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
 1. Find the relevant entry for your update in the update notes on this page. **If the notes indicate a patch release exists, target the highest one.**
 1. After checking the relevant update notes, refer to either of the following guides to upgrade your instance:
-    * [Upgrade guide for Kubernetes](../deploy/kubernetes/update.md#standard-upgrades)
+    * [Upgrade guide for Kubernetes](../deploy/kubernetes/upgrade.md#standard-upgrades)
     * [Upgrade guide for Kubernetes with Helm](../deploy/kubernetes/helm.md#standard-upgrades)
 
 ## Multi-version upgrade procedure
@@ -15,7 +15,7 @@
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
 1. Find the relevant entry for your update in the update notes on this page. **If the notes indicate a patch release exists, target the highest one.** These notes may contain relevant information about the infrastructure update such as resource requirement changes or versions of depencies (Docker, Kubernetes, externalized databases).
 1. After checking the relevant update notes, refer to either of the following guides to upgrade your instance:
-    * [Upgrade guide for Kubernetes](../deploy/kubernetes/update.md#multi-version-upgrades)
+    * [Upgrade guide for Kubernetes](../deploy/kubernetes/upgrade.md#multi-version-upgrades)
     * [Upgrade guide for Kubernetes with Helm](../deploy/kubernetes/helm.md#multi-version-upgrades)
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
@@ -176,7 +176,7 @@ No upgrade notes.
 **Notes**:
 
 - The query-runner deployment has been removed, so if you deploy with a method other than the `kubectl-apply-all.sh`, a manual removal of the deployment may be necessary.
-Follow the [standard upgrade procedure](../deploy/kubernetes/update.md) to upgrade your deployment.
+Follow the [standard upgrade procedure](../deploy/kubernetes/upgrade.md) to upgrade your deployment.
 - There is a [known issue](../../code_insights/how-tos/Troubleshooting.md#oob-migration-has-made-progress-but-is-stuck-before-reaching-100) with the Code Insights out-of-band settings migration not reaching 100% complete when encountering deleted users or organizations.
 
 ## v3.33 ➔ v3.34
