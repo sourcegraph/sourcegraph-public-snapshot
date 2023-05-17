@@ -275,12 +275,12 @@ extend type Query {
 
 """
 OwnSignalConfiguration represents the configuration for an ownership signal.
-"""  
+"""
 type OwnSignalConfiguration {
     """
     The name of the signal configuration, this serves as the primary key.
     """
-    name: String! 
+    name: String!
     """
     The description of the signal configuration.
     """
@@ -295,7 +295,7 @@ type OwnSignalConfiguration {
     excludedRepoPatterns: [String!]!
 }
 
-""" 
+"""
 OwnSignalConfigurationUpdate represents an update to an OwnSignalConfiguration.
 """
 input OwnSignalConfigurationUpdate {
@@ -314,7 +314,7 @@ input OwnSignalConfigurationUpdate {
 }
 
 """
-UpdateSignalConfigurationsInput represents the input for updating multiple signal configurations. 
+UpdateSignalConfigurationsInput represents the input for updating multiple signal configurations.
 """
 input UpdateSignalConfigurationsInput {
     """
