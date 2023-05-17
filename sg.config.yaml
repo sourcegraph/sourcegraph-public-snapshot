@@ -546,6 +546,7 @@ commands:
     checkBinary: .bin/zoekt-sourcegraph-indexserver
     env: &zoektenv
       CTAGS_COMMAND: dev/universal-ctags-dev
+      SCIP_CTAGS_COMMAND: dev/scip-ctags-dev
       GRPC_ENABLED: true
 
   zoekt-index-0:
