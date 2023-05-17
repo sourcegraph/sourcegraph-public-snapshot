@@ -32,10 +32,15 @@ import (
 var (
 	migrateTargetDatabase     string
 	migrateTargetDatabaseFlag = &cli.StringFlag{
-		Name:        "db",
-		Usage:       "The target database `schema` to modify",
+		Name:        "schema",
+		Usage:       "The target database `schema` to modify. Possible values are 'frontend', 'codeintel' and 'codeinsights'",
 		Value:       db.DefaultDatabase.Name,
 		Destination: &migrateTargetDatabase,
+		Aliases:     []string{"db"},
+		Action: func(ctx *cli.Context, val string) error {
+			migrateTargetDatabase = cliutil.TranslateSchemaNames(val, std.Out.Output)
+			return nil
+		},
 	}
 
 	squashInContainer     bool
@@ -120,7 +125,7 @@ var (
 	downToCommand   = cliutil.DownTo("sg migration", makeRunner, outputFactory, true)
 	validateCommand = cliutil.Validate("sg migration", makeRunner, outputFactory)
 	describeCommand = cliutil.Describe("sg migration", makeRunner, outputFactory)
-	driftCommand    = cliutil.Drift("sg migration", makeRunner, outputFactory, schemaFactories...)
+	driftCommand    = cliutil.Drift("sg migration", makeRunner, outputFactory, true, schemaFactories...)
 	addLogCommand   = cliutil.AddLog("sg migration", makeRunner, outputFactory)
 
 	leavesCommand = &cli.Command{
@@ -228,7 +233,7 @@ func makeRunnerWithSchemas(schemaNames []string, schemas []*schemas.Schema) (cli
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
 		return connections.NewStoreShim(store.NewWithDB(&observation.TestContext, db, migrationsTable))
 	}
-	r, err := connections.RunnerFromDSNsWithSchemas(logger, postgresdsn.RawDSNsBySchema(schemaNames, getEnv), "sg", storeFactory, schemas)
+	r, err := connections.RunnerFromDSNsWithSchemas(std.Out.Output, logger, postgresdsn.RawDSNsBySchema(schemaNames, getEnv), "sg", storeFactory, schemas)
 	if err != nil {
 		return nil, err
 	}

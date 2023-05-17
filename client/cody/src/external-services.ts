@@ -1,5 +1,3 @@
-import { window } from 'vscode'
-
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
@@ -13,6 +11,7 @@ import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/source
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { LocalKeywordContextFetcher } from './keyword-context/local-keyword-context-fetcher'
+import { logger } from './log'
 
 interface ExternalServices {
     intentDetector: IntentDetector
@@ -35,17 +34,17 @@ export async function configureExternalServices(
     editor: Editor
 ): Promise<ExternalServices> {
     const client = new SourcegraphGraphQLAPIClient(initialConfig)
-    const completions = new SourcegraphNodeCompletionsClient(initialConfig)
+    const completions = new SourcegraphNodeCompletionsClient(initialConfig, logger)
 
     const repoId = initialConfig.codebase ? await client.getRepoId(initialConfig.codebase) : null
     if (isError(repoId)) {
-        const errorMessage =
+        const infoMessage =
             `Cody could not find the '${initialConfig.codebase}' repository on your Sourcegraph instance.\n` +
             'Please check that the repository exists and is entered correctly in the cody.codebase setting.'
-        console.error(errorMessage)
-        void window.showErrorMessage(errorMessage)
+        console.info(infoMessage)
     }
-    const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
+    const embeddingsSearch =
+        repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId, false) : null
 
     const codebaseContext = new CodebaseContext(
         initialConfig,

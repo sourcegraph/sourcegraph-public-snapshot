@@ -57,22 +57,38 @@ func Main(services []sgservice.Service, config Config, args []string) {
 		),
 	)
 
-	runCommand := &cli.Command{
-		Name:  "run",
-		Usage: "Run the Sourcegraph App",
-		Action: func(ctx *cli.Context) error {
-			logger := log.Scoped("sourcegraph", "Sourcegraph")
-			singleprogram.Init(logger)
-			run(liblog, logger, services, config, true, true)
-			return nil
-		},
-	}
-
 	app := cli.NewApp()
 	app.Name = filepath.Base(args[0])
 	app.Usage = "The Sourcegraph App"
 	app.Version = version.Version()
-	app.Action = runCommand.Action
+	app.Flags = []cli.Flag{
+		&cli.PathFlag{
+			Name:        "cacheDir",
+			DefaultText: "OS default cache",
+			Usage:       "Which directory should be used to cache data",
+			EnvVars:     []string{"SRC_APP_CACHE"},
+			TakesFile:   false,
+			Action: func(ctx *cli.Context, p cli.Path) error {
+				return os.Setenv("SRC_APP_CACHE", p)
+			},
+		},
+		&cli.PathFlag{
+			Name:        "configDir",
+			DefaultText: "OS default config",
+			Usage:       "Directory where the configuration should be saved",
+			EnvVars:     []string{"SRC_APP_CONFIG"},
+			TakesFile:   false,
+			Action: func(ctx *cli.Context, p cli.Path) error {
+				return os.Setenv("SRC_APP_CONFIG", p)
+			},
+		},
+	}
+	app.Action = func(_ *cli.Context) error {
+		logger := log.Scoped("sourcegraph", "Sourcegraph")
+		singleprogram.Init(logger)
+		run(liblog, logger, services, config, true, true)
+		return nil
+	}
 
 	if err := app.Run(args); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
@@ -80,12 +96,9 @@ func Main(services []sgservice.Service, config Config, args []string) {
 	}
 }
 
-// DeprecatedSingleServiceMain is called from the `main` function of a command to start a single
+// SingleServiceMain is called from the `main` function of a command to start a single
 // service (such as frontend or gitserver).
-//
-// DEPRECATED: Building per-service commands (i.e., a separate binary for frontend, gitserver, etc.)
-// is deprecated.
-func DeprecatedSingleServiceMain(svc sgservice.Service, config Config, validateConfig, useConfPackage bool) {
+func SingleServiceMain(svc sgservice.Service, config Config, validateConfig, useConfPackage bool) {
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),

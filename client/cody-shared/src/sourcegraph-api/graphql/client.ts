@@ -10,6 +10,7 @@ import {
     IS_CONTEXT_REQUIRED_QUERY,
     REPOSITORY_ID_QUERY,
     SEARCH_EMBEDDINGS_QUERY,
+    LEGACY_SEARCH_EMBEDDINGS_QUERY,
     LOG_EVENT_MUTATION,
     REPOSITORY_EMBEDDING_EXISTS_QUERY,
 } from './queries'
@@ -35,9 +36,15 @@ interface EmbeddingsSearchResponse {
     embeddingsSearch: EmbeddingsSearchResults
 }
 
+interface EmbeddingsMultiSearchResponse {
+    embeddingsMultiSearch: EmbeddingsSearchResults
+}
+
 interface LogEventResponse {}
 
 export interface EmbeddingsSearchResult {
+    repoName?: string
+    revision?: string
     fileName: string
     startLine: number
     endLine: number
@@ -141,12 +148,27 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async searchEmbeddings(
+        repos: string[],
+        query: string,
+        codeResultsCount: number,
+        textResultsCount: number
+    ): Promise<EmbeddingsSearchResults | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<EmbeddingsMultiSearchResponse>>(SEARCH_EMBEDDINGS_QUERY, {
+            repos,
+            query,
+            codeResultsCount,
+            textResultsCount,
+        }).then(response => extractDataOrError(response, data => data.embeddingsMultiSearch))
+    }
+
+    // (Naman): This is a temporary workaround for supporting vscode cody integrated with older version of sourcegraph which do not support the latest searchEmbeddings query.
+    public async legacySearchEmbeddings(
         repo: string,
         query: string,
         codeResultsCount: number,
         textResultsCount: number
     ): Promise<EmbeddingsSearchResults | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<EmbeddingsSearchResponse>>(SEARCH_EMBEDDINGS_QUERY, {
+        return this.fetchSourcegraphAPI<APIResponse<EmbeddingsSearchResponse>>(LEGACY_SEARCH_EMBEDDINGS_QUERY, {
             repo,
             query,
             codeResultsCount,

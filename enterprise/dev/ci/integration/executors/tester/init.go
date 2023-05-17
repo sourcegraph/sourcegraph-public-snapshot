@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/integration/executors/tester/config"
 	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -45,13 +46,9 @@ func initAndAuthenticate() (*gqltestutil.Client, error) {
 }
 
 func ensureRepos(client *gqltestutil.Client) error {
-	c, err := os.ReadFile("config/repos.json")
-	if err != nil {
-		return errors.Wrap(err, "failed to open config/repos.json")
-	}
 
 	var svcs []ExternalSvc
-	if err := json.Unmarshal(c, &svcs); err != nil {
+	if err := json.Unmarshal([]byte(config.Repos), &svcs); err != nil {
 		return errors.Wrap(err, "cannot parse repos.json")
 	}
 

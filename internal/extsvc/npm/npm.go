@@ -10,7 +10,7 @@ import (
 	"net/http"
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -39,8 +39,8 @@ type Client interface {
 func FetchSources(ctx context.Context, client Client, dependency *reposource.NpmVersionedPackage) (_ io.ReadCloser, err error) {
 	operations := getOperations()
 
-	ctx, _, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("dependency", dependency.VersionedPackageSyntax()),
+	ctx, _, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("dependency", dependency.VersionedPackageSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})
 

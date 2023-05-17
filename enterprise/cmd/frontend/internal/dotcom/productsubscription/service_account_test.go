@@ -19,9 +19,19 @@ func TestServiceAccountOrOwnerOrSiteAdmin(t *testing.T) {
 		name           string
 		featureFlags   map[string]bool
 		actorSiteAdmin bool
-		ownerUserID    *int32
-		wantErr        autogold.Value
+
+		ownerUserID            *int32
+		serviceAccountCanWrite bool
+
+		wantErr autogold.Value
 	}{
+		{
+			name: "reader service account",
+			featureFlags: map[string]bool{
+				featureFlagProductSubscriptionsReaderServiceAccount: true,
+			},
+			wantErr: nil,
+		},
 		{
 			name: "service account",
 			featureFlags: map[string]bool{
@@ -54,14 +64,34 @@ func TestServiceAccountOrOwnerOrSiteAdmin(t *testing.T) {
 			name:    "not a site admin, not accessing a user-specific resource",
 			wantErr: autogold.Expect("must be site admin"),
 		},
+		{
+			name: "service account needs writer flag",
+			featureFlags: map[string]bool{
+				featureFlagProductSubscriptionsReaderServiceAccount: true,
+			},
+			serviceAccountCanWrite: true,
+			wantErr:                autogold.Expect("must be site admin"),
+		},
+		{
+			name: "service account fulfills writer flag",
+			featureFlags: map[string]bool{
+				featureFlagProductSubscriptionsServiceAccount: true,
+			},
+			serviceAccountCanWrite: true,
+			wantErr:                nil,
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			tc := tc
+			t.Parallel()
+
 			db := database.NewMockDB()
 			mockUsers := database.NewMockUserStore()
-			mockUsers.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{
-				ID:        actorID,
-				SiteAdmin: tc.actorSiteAdmin,
-			}, nil)
+
+			user := &types.User{ID: actorID, SiteAdmin: tc.actorSiteAdmin}
+			mockUsers.GetByCurrentAuthUserFunc.SetDefaultReturn(user, nil)
+			mockUsers.GetByIDFunc.SetDefaultReturn(user, nil)
+
 			db.UsersFunc.SetDefaultReturn(mockUsers)
 
 			ctx := featureflag.WithFlags(context.Background(),
@@ -71,6 +101,7 @@ func TestServiceAccountOrOwnerOrSiteAdmin(t *testing.T) {
 				actor.WithActor(ctx, &actor.Actor{UID: actorID}),
 				db,
 				tc.ownerUserID,
+				tc.serviceAccountCanWrite,
 			)
 			if tc.wantErr != nil {
 				require.Error(t, err)

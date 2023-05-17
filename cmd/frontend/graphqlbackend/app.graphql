@@ -1,12 +1,5 @@
 extend type Query {
     """
-    Runs a host system native file picker and returns the directories picked.
-    If null the user canceled the operation.
-    This is intended to be used by Sourcegraph App.
-    """
-    localDirectoriesPicker: LocalDirectories
-
-    """
     Returns the local directory at the given directory or comma-separated list of directories.
     This is intended to be used by Sourcegraph App.
     """

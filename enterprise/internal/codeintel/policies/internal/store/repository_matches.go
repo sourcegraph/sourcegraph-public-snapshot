@@ -2,10 +2,9 @@ package store
 
 import (
 	"context"
-	"strings"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -15,10 +14,10 @@ import (
 )
 
 func (s *store) GetRepoIDsByGlobPatterns(ctx context.Context, patterns []string, limit, offset int) (_ []int, _ int, err error) {
-	ctx, _, endObservation := s.operations.getRepoIDsByGlobPatterns.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("numPatterns", len(patterns)),
-		log.Int("limit", limit),
-		log.Int("offset", offset),
+	ctx, _, endObservation := s.operations.getRepoIDsByGlobPatterns.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("numPatterns", len(patterns)),
+		attribute.Int("limit", limit),
+		attribute.Int("offset", offset),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -77,10 +76,10 @@ OFFSET %s
 `
 
 func (s *store) UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) (err error) {
-	ctx, _, endObservation := s.operations.updateReposMatchingPatterns.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("numPatterns", len(patterns)),
-		log.String("pattern", strings.Join(patterns, ",")),
-		log.Int("policyID", policyID),
+	ctx, _, endObservation := s.operations.updateReposMatchingPatterns.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("numPatterns", len(patterns)),
+		attribute.StringSlice("pattern", patterns),
+		attribute.Int("policyID", policyID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -151,8 +150,8 @@ SELECT
 `
 
 func (s *store) SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) (_ []shared.ConfigurationPolicy, err error) {
-	ctx, _, endObservation := s.operations.selectPoliciesForRepositoryMembershipUpdate.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("batchSize", batchSize),
+	ctx, _, endObservation := s.operations.selectPoliciesForRepositoryMembershipUpdate.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("batchSize", batchSize),
 	}})
 	defer endObservation(1, observation.Args{})
 

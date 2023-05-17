@@ -1,4 +1,5 @@
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
+import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
@@ -12,8 +13,8 @@ export type WebviewMessage =
           command: 'initialized'
       }
     | { command: 'event'; event: string; value: string }
-    | { command: 'submit'; text: string }
-    | { command: 'executeRecipe'; recipe: string }
+    | { command: 'submit'; text: string; submitType: 'user' | 'suggestion' }
+    | { command: 'executeRecipe'; recipe: RecipeID }
     | { command: 'settings'; serverEndpoint: string; accessToken: string }
     | { command: 'removeToken' }
     | { command: 'removeHistory' }
@@ -36,6 +37,7 @@ export type ExtensionMessage =
     | { type: 'view'; messages: View }
     | { type: 'errors'; errors: string }
     | { type: 'suggestions'; suggestions: string[] }
+    | { type: 'app-state'; isInstalled: boolean }
 
 /**
  * The subset of configuration that is visible to the webview.
@@ -45,3 +47,4 @@ export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debu
 }
 
 export const DOTCOM_URL = new URL('https://sourcegraph.com')
+export const LOCAL_APP_URL = new URL('http://localhost:3080')

@@ -2,11 +2,11 @@
 
 import React from 'react'
 
-import { mdiCardBulletedOutline, mdiDotsVertical, mdiProgressPencil, mdiTranslate } from '@mdi/js'
+import { mdiCardBulletedOutline, mdiDotsVertical, mdiProgressPencil, mdiShuffleVariant } from '@mdi/js'
 
 import { TranslateToLanguage } from '@sourcegraph/cody-shared/src/chat/recipes/translate'
 
-import { useChatStoreState } from '../../stores/codyChat'
+import { useChatStoreState } from '../stores/chat'
 
 import { Recipe } from './components/Recipe'
 import { RecipeAction } from './components/RecipeAction'
@@ -27,7 +27,7 @@ export const CodyRecipesWidget: React.FC<{}> = () => {
                 <RecipeAction title="A docstring" onClick={() => void executeRecipe('generate-docstring')} />
             </Recipe>
 
-            <Recipe title="Translate" icon={mdiTranslate}>
+            <Recipe title="Transpile" icon={mdiShuffleVariant}>
                 {TranslateToLanguage.options.map(language => (
                     <RecipeAction
                         key={language}

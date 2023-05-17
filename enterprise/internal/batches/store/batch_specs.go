@@ -6,7 +6,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -115,8 +115,8 @@ func (s *Store) createBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 
 // UpdateBatchSpec updates the given BatchSpec.
 func (s *Store) UpdateBatchSpec(ctx context.Context, c *btypes.BatchSpec) (err error) {
-	ctx, _, endObservation := s.operations.updateBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(c.ID)),
+	ctx, _, endObservation := s.operations.updateBatchSpec.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(c.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -167,8 +167,8 @@ func (s *Store) updateBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 
 // DeleteBatchSpec deletes the BatchSpec with the given ID.
 func (s *Store) DeleteBatchSpec(ctx context.Context, id int64) (err error) {
-	ctx, _, endObservation := s.operations.deleteBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(id)),
+	ctx, _, endObservation := s.operations.deleteBatchSpec.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(id)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -256,9 +256,9 @@ type GetBatchSpecOpts struct {
 
 // GetBatchSpec gets a BatchSpec matching the given options.
 func (s *Store) GetBatchSpec(ctx context.Context, opts GetBatchSpecOpts) (spec *btypes.BatchSpec, err error) {
-	ctx, _, endObservation := s.operations.getBatchSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(opts.ID)),
-		log.String("randID", opts.RandID),
+	ctx, _, endObservation := s.operations.getBatchSpec.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(opts.ID)),
+		attribute.String("randID", opts.RandID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -480,9 +480,9 @@ ON
 // 🚨 SECURITY: Repos that the current user (based on the context) does not have
 // access to will be filtered out.
 func (s *Store) ListBatchSpecRepoIDs(ctx context.Context, id int64) (ids []api.RepoID, err error) {
-	ctx, _, endObservation := s.operations.listBatchSpecRepoIDs.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{log.Int64("ID", id)},
-	})
+	ctx, _, endObservation := s.operations.listBatchSpecRepoIDs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int64("ID", id),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s))

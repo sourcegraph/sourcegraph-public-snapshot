@@ -1,0 +1,28 @@
+<idea-plugin>
+    <id>com.sourcegraph.cody</id>
+    <name>Cody</name>
+    <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">Sourcegraph</vendor>
+    <idea-version since-build="211.0"/>
+    <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <notificationGroup id="Cody errors" displayType="BALLOON"/>
+        <toolWindow
+            id="Cody"
+            icon="/icons/codyLogo.svg"
+            anchor="left"
+            secondary="false"
+            factoryClass="com.sourcegraph.cody.CodyToolWindowFactory"/>
+    </extensions>
+
+
+    <actions>
+        <action
+            id="cody.CodyAction"
+            class="com.sourcegraph.cody.CodyAction"
+            text="Open Cody"
+            description="Opens Cody sidebar"
+            icon="/icons/codyLogo.svg">
+        </action>
+    </actions>
+</idea-plugin>
