@@ -12,6 +12,10 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ## [0.1.3]
 
+### Added
+
+- Add support for connecting to Sourcegraph App when a supported version is installed.
+
 ### Fixed
 
 - Displays error banners on all view instead of chat view only. [pull/51883](https://github.com/sourcegraph/sourcegraph/pull/51883)
