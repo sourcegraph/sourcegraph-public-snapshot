@@ -1,12 +1,10 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 
 import { mdiPulse } from '@mdi/js'
-import * as jsonc from 'jsonc-parser'
 
-import { BatchChangeRolloutWindow } from '@sourcegraph/shared/src/schema/site.schema'
 import { Text, H3, Container, Icon, LoadingSpinner, ErrorAlert, Link } from '@sourcegraph/wildcard'
 
-import { useGetBatchChangesSiteConfiguration } from '../backend'
+import { useBatchChangesRolloutWindowConfig } from '../backend'
 
 import { formatRate, formatDays } from './format'
 
@@ -14,22 +12,15 @@ import styles from './RolloutWindowsConfiguration.module.scss'
 
 // Displays the rollout window configuration.
 export const RolloutWindowsConfiguration: React.FunctionComponent = () => {
-    const [rolloutWindows, setRolloutWindows] = useState<BatchChangeRolloutWindow[]>([])
-    const { loading, error, data } = useGetBatchChangesSiteConfiguration()
-    useEffect(() => {
-        if (data) {
-            const siteConfig = jsonc.parse(data.site.configuration.effectiveContents)
-            setRolloutWindows(siteConfig['batchChanges.rolloutWindows'] || [])
-        }
-    }, [data])
+    const { loading, error, rolloutWindowConfig } = useBatchChangesRolloutWindowConfig()
     return (
         <Container className="mb-3">
             <H3>Rollout Windows</H3>
             {loading && <LoadingSpinner />}
             {error && <ErrorAlert error={error} />}
             {!loading &&
-                data &&
-                (rolloutWindows.length === 0 ? (
+                rolloutWindowConfig &&
+                (rolloutWindowConfig.length === 0 ? (
                     <Text className="mb-0">
                         No rollout windows configured for changesets. Learn how to configure them in{' '}
                         <Link to="/help/admin/config/batch_changes#rollout-windows" target="_blank">
@@ -48,7 +39,7 @@ export const RolloutWindowsConfiguration: React.FunctionComponent = () => {
                             </Link>
                         </Text>
                         <ul className={styles.rolloutWindowList}>
-                            {rolloutWindows.map((rolloutWindow, index) => (
+                            {rolloutWindowConfig.map((rolloutWindow, index) => (
                                 <li key={index} className={styles.rolloutWindowListItem}>
                                     <Text className={styles.rolloutWindowListItemFrequency}>
                                         <Icon

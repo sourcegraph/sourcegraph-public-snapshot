@@ -75,7 +75,6 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         },
         embeddingsEnabled: false,
         primaryLoginProvidersCount: 5,
-        batchChangesRolloutWindows: null,
         // Site-config overrides default JS context
         ...siteConfig,
     }

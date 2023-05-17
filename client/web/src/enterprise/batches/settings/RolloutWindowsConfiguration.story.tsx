@@ -5,8 +5,8 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
 import { BATCH_CHANGES_SITE_CONFIGURATION } from '../backend'
+import { noRolloutWindowMockResult, rolloutWindowConfigMockResult } from '../mocks'
 
-import { noRolloutWindowMockResult, rolloutWindowConfigMockResult } from './mocks'
 import { RolloutWindowsConfiguration } from './RolloutWindowsConfiguration'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
