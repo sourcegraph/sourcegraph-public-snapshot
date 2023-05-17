@@ -19,12 +19,12 @@ export class ReleaseNotes implements Recipe {
         const logFormat = '--pretty="Commit author: %an%nCommit message: %s%nChange description:%b%n"'
 
         // check for tags first
-        const gitTagCommand = spawnSync('git', ['tag'], { cwd: dirPath })
+        const gitTagCommand = spawnSync('git', ['tag', '--sort=-creatordate'], { cwd: dirPath })
         const gitTagOutput = gitTagCommand.stdout.toString().trim()
         let tagsPromptText = ''
 
         if (gitTagOutput) {
-            const tags = gitTagOutput.split(/\r?\n/).reverse()
+            const tags = gitTagOutput.split(/\r?\n/)
             for (const tag of tags.slice(0, 3)) {
                 quickPickItems.push({
                     label: tag,
