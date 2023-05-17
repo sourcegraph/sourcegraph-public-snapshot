@@ -657,11 +657,12 @@ func (c *V4Client) Fork(ctx context.Context, owner, repo string, org *string, fo
 	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).Fork(ctx, owner, repo, org, forkName)
 }
 
-// To delete branch
-func (c *V4Client) DeleteRef(ctx context.Context, owner, repo string, ref string) error {
-	// Unfortunately, the GraphQL API doesn't provide a mutation to deleting a branch so we have to fall back to the REST API.
+// DeleteBranch deletes the given branch from the given repository.
+func (c *V4Client) DeleteBranch(ctx context.Context, owner, repo, branch string) error {
+	// Unfortunately, the GraphQL API doesn't provide a mutation to deleting a branch as
+	// of May 2023, so we have to fall back to the REST API.
 	logger := c.log.Scoped("Delete", "temporary client for deleting a branch")
-	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).DeleteRef(ctx, owner, repo, ref)
+	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).DeleteBranch(ctx, owner, repo, branch)
 }
 
 type RecentCommittersParams struct {

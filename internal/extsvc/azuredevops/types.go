@@ -161,10 +161,6 @@ type PullRequestUpdateInput struct {
 	// ADO does not seem to support updating Source ref name, only TargetRefName which needs to be explicitly enabled.
 }
 
-type PullRequestAbandonInput struct {
-	DeleteSourceBranch bool
-}
-
 type PullRequestStatus string
 type PullRequestMergeStrategy string
 

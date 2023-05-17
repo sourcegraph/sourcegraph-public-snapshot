@@ -797,9 +797,9 @@ func (c *V3Client) Fork(ctx context.Context, owner, repo string, org *string, fo
 	return convertRestRepo(restRepo), nil
 }
 
-func (c *V3Client) DeleteRef(ctx context.Context, owner, repo string, ref string) error {
-	//
-	if _, err := c.delete(ctx, "repos/"+owner+"/"+repo+"/git/refs/heads/"+ref); err != nil {
+// DeleteBranch deletes the given branch from the given repository.
+func (c *V3Client) DeleteBranch(ctx context.Context, owner, repo, branch string) error {
+	if _, err := c.delete(ctx, "repos/"+owner+"/"+repo+"/git/refs/heads/"+branch); err != nil {
 		return err
 	}
 	return nil

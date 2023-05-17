@@ -152,10 +152,9 @@ func (s BitbucketServerSource) CloseChangeset(ctx context.Context, c *Changeset)
 	}
 
 	if conf.Get().BatchChangesAutoDeleteBranch {
-		err := s.client.DeleteSourceBranch(ctx, pr, bitbucketserver.DeleteSourceBranchInput{
+		if err := s.client.DeleteBranch(ctx, pr.ToRef.Repository.Project.Key, pr.ToRef.Repository.Slug, bitbucketserver.DeleteBranchInput{
 			Name: pr.FromRef.ID,
-		})
-		if err != nil {
+		}); err != nil {
 			return errors.Wrap(err, "deleting source branch")
 		}
 	}
@@ -298,10 +297,9 @@ func (s BitbucketServerSource) MergeChangeset(ctx context.Context, c *Changeset,
 	}
 
 	if conf.Get().BatchChangesAutoDeleteBranch {
-		err := s.client.DeleteSourceBranch(ctx, pr, bitbucketserver.DeleteSourceBranchInput{
+		if err := s.client.DeleteBranch(ctx, pr.ToRef.Repository.Project.Key, pr.ToRef.Repository.Slug, bitbucketserver.DeleteBranchInput{
 			Name: pr.FromRef.ID,
-		})
-		if err != nil {
+		}); err != nil {
 			return errors.Wrap(err, "deleting source branch")
 		}
 	}

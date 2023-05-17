@@ -11,7 +11,6 @@ import (
 
 	"github.com/Masterminds/semver"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -243,12 +242,6 @@ const (
 func (c *Client) UpdateMergeRequest(ctx context.Context, project *Project, mr *MergeRequest, opts UpdateMergeRequestOpts) (*MergeRequest, error) {
 	if MockUpdateMergeRequest != nil {
 		return MockUpdateMergeRequest(c, ctx, project, mr, opts)
-	}
-
-	if conf.Get().BatchChangesAutoDeleteBranch {
-		opts.RemoveSourceBranch = true
-	} else {
-		opts.RemoveSourceBranch = false
 	}
 
 	data, err := json.Marshal(opts)

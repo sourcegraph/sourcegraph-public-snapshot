@@ -142,7 +142,6 @@ func (s BitbucketCloudSource) CloseChangeset(ctx context.Context, cs *Changeset)
 
 // UpdateChangeset can update Changesets.
 func (s BitbucketCloudSource) UpdateChangeset(ctx context.Context, cs *Changeset) error {
-
 	opts := s.changesetToPullRequestInput(cs)
 	targetRepo := cs.TargetRepo.Metadata.(*bitbucketcloud.Repo)
 
@@ -324,11 +323,7 @@ func (s BitbucketCloudSource) setChangesetMetadata(ctx context.Context, repo *bi
 
 func (s BitbucketCloudSource) changesetToPullRequestInput(cs *Changeset) bitbucketcloud.PullRequestInput {
 	destBranch := gitdomain.AbbreviateRef(cs.BaseRef)
-
-	var closeSourceBranch bool
-	if conf.Get().BatchChangesAutoDeleteBranch {
-		closeSourceBranch = true
-	}
+	closeSourceBranch := conf.Get().BatchChangesAutoDeleteBranch
 
 	opts := bitbucketcloud.PullRequestInput{
 		Title:             cs.Title,

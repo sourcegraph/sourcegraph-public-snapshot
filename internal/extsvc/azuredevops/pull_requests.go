@@ -95,7 +95,6 @@ func (c *client) GetPullRequestStatuses(ctx context.Context, args PullRequestCom
 //
 // Warning: If you are setting the TargetRefName in the PullRequestUpdateInput, it will be the only thing to get updated (bug in the ADO API).
 func (c *client) UpdatePullRequest(ctx context.Context, args PullRequestCommonArgs, input PullRequestUpdateInput) (PullRequest, error) {
-
 	reqURL := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/pullrequests/%s", args.Org, args.Project, args.RepoNameOrID, args.PullRequestID)}
 
 	data, err := json.Marshal(input)

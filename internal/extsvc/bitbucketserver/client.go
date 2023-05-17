@@ -697,7 +697,7 @@ func (c *Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error {
 	return err
 }
 
-type DeleteSourceBranchInput struct {
+type DeleteBranchInput struct {
 	// Don't actually delete the ref name, just do a dry run
 	DryRun bool `json:"dryRun,omitempty"`
 	// Commit ID that the provided ref name is expected to point to. Should the ref point
@@ -708,11 +708,12 @@ type DeleteSourceBranchInput struct {
 	Name string `json:"name,omitempty"`
 }
 
-func (c *Client) DeleteSourceBranch(ctx context.Context, pr *PullRequest, input DeleteSourceBranchInput) error {
+// DeleteBranch deletes a branch on the given repo.
+func (c *Client) DeleteBranch(ctx context.Context, projectKey, repoSlug string, input DeleteBranchInput) error {
 	path := fmt.Sprintf(
 		"rest/branch-utils/latest/projects/%s/repos/%s/branches",
-		pr.ToRef.Repository.Project.Key,
-		pr.ToRef.Repository.Slug,
+		projectKey,
+		repoSlug,
 	)
 
 	resp, err := c.send(ctx, "DELETE", path, nil, input, nil)

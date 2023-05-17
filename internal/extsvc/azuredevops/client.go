@@ -11,8 +11,6 @@ import (
 
 	"github.com/goware/urlx"
 	"github.com/sourcegraph/log"
-	"golang.org/x/oauth2"
-
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -20,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"golang.org/x/oauth2"
 )
 
 const (
