@@ -379,11 +379,13 @@ func (r *GitTreeEntryResolver) LFS(ctx context.Context) (*lfsResolver, error) {
 }
 
 func (r *GitTreeEntryResolver) Ownership(ctx context.Context, args ListOwnershipArgs) (OwnershipConnectionResolver, error) {
-	_, ok := r.ToGitBlob()
-	if !ok {
-		return nil, nil
+	if _, ok := r.ToGitBlob(); ok {
+		return EnterpriseResolvers.ownResolver.GitBlobOwnership(ctx, r, args)
 	}
-	return EnterpriseResolvers.ownResolver.GitBlobOwnership(ctx, r, args)
+	if _, ok := r.ToGitTree(); ok {
+		return EnterpriseResolvers.ownResolver.GitTreeOwnership(ctx, r, args)
+	}
+	return nil, nil
 }
 
 func (r *GitTreeEntryResolver) parent(ctx context.Context) (*GitTreeEntryResolver, error) {

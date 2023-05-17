@@ -4,7 +4,7 @@ Some teams require Sourcegraph configuration to be stored in version control as 
 UI.
 
 As of Sourcegraph v3.4+, this is possible for [site configuration](site_config.md)
-, [code host configuration](../external_service/index.md), and [global settings](settings). As of Sourcegraph v3.34+, Sourcegraph
+, [code host configuration](../external_service/index.md), and [global settings](settings.md). As of Sourcegraph v3.34+, Sourcegraph
 supports merging multiple site config files.
 
 ## Benefits

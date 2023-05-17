@@ -9,13 +9,21 @@ import (
 	"cuelang.org/go/pkg/strings"
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/drift"
 	descriptions "github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, expectedSchemaFactories ...ExpectedSchemaFactory) *cli.Command {
+const maxAutofixAttempts = 3
+
+func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, development bool, expectedSchemaFactories ...ExpectedSchemaFactory) *cli.Command {
+	defaultVersion := ""
+	if development {
+		defaultVersion = "HEAD"
+	}
+
 	schemaNameFlag := &cli.StringFlag{
 		Name:     "schema",
 		Usage:    "The target `schema` to compare. Possible values are 'frontend', 'codeintel' and 'codeinsights'",
@@ -27,6 +35,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 		Usage: "The target schema version. Can be a version (e.g. 5.0.2) or resolvable as a git revlike on the Sourcegraph repository " +
 			"(e.g. a branch, tag or commit hash).",
 		Required: false,
+		Value:    defaultVersion,
 	}
 	fileFlag := &cli.StringFlag{
 		Name:     "file",
@@ -37,11 +46,39 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 		Name:     "skip-version-check",
 		Usage:    "Skip validation of the instance's current version.",
 		Required: false,
+		Value:    development,
+	}
+	ignoreMigratorUpdateCheckFlag := &cli.BoolFlag{
+		Name:     "ignore-migrator-update",
+		Usage:    "Ignore the running migrator not being the latest version. It is recommended to use the latest migrator version.",
+		Required: false,
+	}
+	// Only in available via `sg migration`` in development mode
+	autofixFlag := &cli.BoolFlag{
+		Name:     "auto-fix",
+		Usage:    "Database goes brrrr.",
+		Required: false,
+		Aliases:  []string{"autofix"},
 	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
-		if err := isAirgapped(ctx); err != nil {
-			out.WriteLine(output.Line(output.EmojiWarningSign, output.StyleYellow, err.Error()))
+		airgapped := isAirgapped(ctx)
+		if airgapped != nil {
+			out.WriteLine(output.Line(output.EmojiWarningSign, output.StyleYellow, airgapped.Error()))
+		}
+
+		if airgapped == nil {
+			latest, hasUpdate, err := checkForMigratorUpdate(ctx)
+			if err != nil {
+				out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleYellow, "Failed to check for migrator update: %s. Continuing...", err))
+			} else if hasUpdate {
+				noticeStr := fmt.Sprintf("A newer migrator version is available (%s), please consider using it instead", latest)
+				if ignoreMigratorUpdateCheckFlag.Get(cmd) {
+					out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleYellow, "%s. Continuing...", noticeStr))
+				} else {
+					return cli.Exit(fmt.Sprintf("%s %s%s or pass -ignore-migrator-update.%s", output.EmojiWarning, output.StyleWarning, noticeStr, output.StyleReset), 1)
+				}
+			}
 		}
 
 		schemaName := TranslateSchemaNames(schemaNameFlag.Get(cmd), out)
@@ -95,6 +132,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 				NewExplicitFileSchemaFactory(file),
 			}
 		}
+
 		expectedSchema, err := fetchExpectedSchema(ctx, schemaName, version, out, expectedSchemaFactories)
 		if err != nil {
 			return err
@@ -105,21 +143,59 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 			return err
 		}
 		schema := schemas["public"]
+		summaries := drift.CompareSchemaDescriptions(schemaName, version, canonicalize(schema), canonicalize(expectedSchema))
 
-		return compareAndDisplaySchemaDescriptions(out, schemaName, version, canonicalize(schema), canonicalize(expectedSchema))
+		var autofixErr error
+		if autofixFlag.Get(cmd) {
+			for attempts := maxAutofixAttempts; attempts > 0 && len(summaries) > 0 && autofixErr == nil; attempts-- {
+				allStatements := []string{}
+				for _, summary := range summaries {
+					if statements, ok := summary.Statements(); ok {
+						allStatements = append(allStatements, statements...)
+					}
+				}
+				if len(allStatements) == 0 {
+					out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "No autofix to apply"))
+					break
+				}
+
+				autofixErr = store.RunDDLStatements(ctx, allStatements)
+				if autofixErr != nil {
+					out.WriteLine(output.Linef(output.EmojiFailure, output.StyleFailure, "Failed to apply autofix: %s", err))
+				} else {
+					out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Successfully applied autofix"))
+					out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "Re-checking drift"))
+				}
+
+				schemas, err := store.Describe(ctx)
+				if err != nil {
+					return err
+				}
+				schema := schemas["public"]
+				summaries = drift.CompareSchemaDescriptions(schemaName, version, canonicalize(schema), canonicalize(expectedSchema))
+			}
+		}
+
+		return displayDriftSummaries(out, summaries)
 	})
+
+	flags := []cli.Flag{
+		schemaNameFlag,
+		versionFlag,
+		fileFlag,
+		skipVersionCheckFlag,
+		ignoreMigratorUpdateCheckFlag,
+	}
+	if development {
+		flags = append(flags, autofixFlag)
+	}
 
 	return &cli.Command{
 		Name:        "drift",
 		Usage:       "Detect differences between the current database schema and the expected schema",
 		Description: ConstructLongHelp(),
 		Action:      action,
-		Flags: []cli.Flag{
-			schemaNameFlag,
-			versionFlag,
-			fileFlag,
-			skipVersionCheckFlag,
-		},
+		Flags:       flags,
 	}
 }
 

@@ -27,6 +27,7 @@ import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { CodeMonitoringProps } from '../codeMonitoring'
 import { CodyLogo } from '../cody/components/CodyLogo'
+import { useIsCodyEnabled } from '../cody/useIsCodyEnabled'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { useFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
@@ -153,8 +154,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const showSearchContext = searchContextsEnabled && !isSourcegraphDotCom
     const showCodeMonitoring = codeMonitoringEnabled
     const showSearchNotebook = notebooksEnabled
-    const showCody = window.context?.codyEnabled
-    const [showCodyChat] = useFeatureFlag('cody-web-chat')
+    const codyEnabled = useIsCodyEnabled()
 
     const [isSentinelEnabled] = useFeatureFlag('sentinel')
     // TODO: Include isSourcegraphDotCom in subsequent PR
@@ -181,7 +181,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
         const items: (NavDropdownItem | false)[] = [
             !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
             ownEnabled && { path: EnterprisePageRoutes.Own, content: 'Own' },
-            showCody && {
+            codyEnabled.search && {
                 path: EnterprisePageRoutes.CodySearch,
                 content: (
                     <>
@@ -191,7 +191,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
             },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [ownEnabled, showSearchContext, showCody])
+    }, [ownEnabled, showSearchContext, codyEnabled.search])
 
     const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
 
@@ -223,8 +223,9 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 variant: navLinkVariant,
                             }}
                             routeMatch={routeMatch}
-                            mobileHomeItem={{ content: 'Search home' }}
+                            homeItem={{ content: 'Search home' }}
                             items={searchNavBarItems}
+                            name="search"
                         />
                     ) : (
                         <NavItem icon={MagnifyIcon}>
@@ -233,7 +234,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             </NavLink>
                         </NavItem>
                     )}
-                    {showCody && showCodyChat && !!props.authenticatedUser && (
+                    {codyEnabled.chat && (
                         <NavItem icon={CodyLogo}>
                             <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Cody}>
                                 Cody AI
@@ -283,7 +284,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 content: 'Feedback',
                                 variant: navLinkVariant,
                             }}
-                            mobileHomeItem={{ content: 'Feedback' }}
                             items={[
                                 {
                                     content: 'Join our Discord',
@@ -296,6 +296,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                     target: '_blank',
                                 },
                             ]}
+                            name="feedback"
                         />
                     )}
                 </NavGroup>

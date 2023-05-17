@@ -4887,6 +4887,9 @@ type MockDB struct {
 	// AccessTokensFunc is an instance of a mock function object controlling
 	// the behavior of the method AccessTokens.
 	AccessTokensFunc *DBAccessTokensFunc
+	// AssignedOwnersFunc is an instance of a mock function object
+	// controlling the behavior of the method AssignedOwners.
+	AssignedOwnersFunc *DBAssignedOwnersFunc
 	// AuthzFunc is an instance of a mock function object controlling the
 	// behavior of the method Authz.
 	AuthzFunc *DBAuthzFunc
@@ -5058,6 +5061,11 @@ func NewMockDB() *MockDB {
 		},
 		AccessTokensFunc: &DBAccessTokensFunc{
 			defaultHook: func() (r0 AccessTokenStore) {
+				return
+			},
+		},
+		AssignedOwnersFunc: &DBAssignedOwnersFunc{
+			defaultHook: func() (r0 AssignedOwnersStore) {
 				return
 			},
 		},
@@ -5338,6 +5346,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.AccessTokens")
 			},
 		},
+		AssignedOwnersFunc: &DBAssignedOwnersFunc{
+			defaultHook: func() AssignedOwnersStore {
+				panic("unexpected invocation of MockDB.AssignedOwners")
+			},
+		},
 		AuthzFunc: &DBAuthzFunc{
 			defaultHook: func() AuthzStore {
 				panic("unexpected invocation of MockDB.Authz")
@@ -5610,6 +5623,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		AccessTokensFunc: &DBAccessTokensFunc{
 			defaultHook: i.AccessTokens,
+		},
+		AssignedOwnersFunc: &DBAssignedOwnersFunc{
+			defaultHook: i.AssignedOwners,
 		},
 		AuthzFunc: &DBAuthzFunc{
 			defaultHook: i.Authz,
@@ -5964,6 +5980,105 @@ func (c DBAccessTokensFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBAccessTokensFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBAssignedOwnersFunc describes the behavior when the AssignedOwners
+// method of the parent MockDB instance is invoked.
+type DBAssignedOwnersFunc struct {
+	defaultHook func() AssignedOwnersStore
+	hooks       []func() AssignedOwnersStore
+	history     []DBAssignedOwnersFuncCall
+	mutex       sync.Mutex
+}
+
+// AssignedOwners delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) AssignedOwners() AssignedOwnersStore {
+	r0 := m.AssignedOwnersFunc.nextHook()()
+	m.AssignedOwnersFunc.appendCall(DBAssignedOwnersFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the AssignedOwners
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBAssignedOwnersFunc) SetDefaultHook(hook func() AssignedOwnersStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AssignedOwners method of the parent MockDB instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBAssignedOwnersFunc) PushHook(hook func() AssignedOwnersStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBAssignedOwnersFunc) SetDefaultReturn(r0 AssignedOwnersStore) {
+	f.SetDefaultHook(func() AssignedOwnersStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBAssignedOwnersFunc) PushReturn(r0 AssignedOwnersStore) {
+	f.PushHook(func() AssignedOwnersStore {
+		return r0
+	})
+}
+
+func (f *DBAssignedOwnersFunc) nextHook() func() AssignedOwnersStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBAssignedOwnersFunc) appendCall(r0 DBAssignedOwnersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBAssignedOwnersFuncCall objects describing
+// the invocations of this function.
+func (f *DBAssignedOwnersFunc) History() []DBAssignedOwnersFuncCall {
+	f.mutex.Lock()
+	history := make([]DBAssignedOwnersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBAssignedOwnersFuncCall is an object that describes an invocation of
+// method AssignedOwners on an instance of MockDB.
+type DBAssignedOwnersFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 AssignedOwnersStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBAssignedOwnersFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBAssignedOwnersFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -57783,6 +57898,9 @@ type MockUserEmailsStore struct {
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *UserEmailsStoreHandleFunc
+	// HasVerifiedEmailFunc is an instance of a mock function object
+	// controlling the behavior of the method HasVerifiedEmail.
+	HasVerifiedEmailFunc *UserEmailsStoreHasVerifiedEmailFunc
 	// ListByUserFunc is an instance of a mock function object controlling
 	// the behavior of the method ListByUser.
 	ListByUserFunc *UserEmailsStoreListByUserFunc
@@ -57851,6 +57969,11 @@ func NewMockUserEmailsStore() *MockUserEmailsStore {
 		},
 		HandleFunc: &UserEmailsStoreHandleFunc{
 			defaultHook: func() (r0 basestore.TransactableHandle) {
+				return
+			},
+		},
+		HasVerifiedEmailFunc: &UserEmailsStoreHasVerifiedEmailFunc{
+			defaultHook: func(context.Context, int32) (r0 bool, r1 error) {
 				return
 			},
 		},
@@ -57941,6 +58064,11 @@ func NewStrictMockUserEmailsStore() *MockUserEmailsStore {
 				panic("unexpected invocation of MockUserEmailsStore.Handle")
 			},
 		},
+		HasVerifiedEmailFunc: &UserEmailsStoreHasVerifiedEmailFunc{
+			defaultHook: func(context.Context, int32) (bool, error) {
+				panic("unexpected invocation of MockUserEmailsStore.HasVerifiedEmail")
+			},
+		},
 		ListByUserFunc: &UserEmailsStoreListByUserFunc{
 			defaultHook: func(context.Context, UserEmailsListOptions) ([]*UserEmail, error) {
 				panic("unexpected invocation of MockUserEmailsStore.ListByUser")
@@ -58012,6 +58140,9 @@ func NewMockUserEmailsStoreFrom(i UserEmailsStore) *MockUserEmailsStore {
 		},
 		HandleFunc: &UserEmailsStoreHandleFunc{
 			defaultHook: i.Handle,
+		},
+		HasVerifiedEmailFunc: &UserEmailsStoreHasVerifiedEmailFunc{
+			defaultHook: i.HasVerifiedEmail,
 		},
 		ListByUserFunc: &UserEmailsStoreListByUserFunc{
 			defaultHook: i.ListByUser,
@@ -58919,6 +59050,117 @@ func (c UserEmailsStoreHandleFuncCall) Args() []interface{} {
 // invocation.
 func (c UserEmailsStoreHandleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// UserEmailsStoreHasVerifiedEmailFunc describes the behavior when the
+// HasVerifiedEmail method of the parent MockUserEmailsStore instance is
+// invoked.
+type UserEmailsStoreHasVerifiedEmailFunc struct {
+	defaultHook func(context.Context, int32) (bool, error)
+	hooks       []func(context.Context, int32) (bool, error)
+	history     []UserEmailsStoreHasVerifiedEmailFuncCall
+	mutex       sync.Mutex
+}
+
+// HasVerifiedEmail delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockUserEmailsStore) HasVerifiedEmail(v0 context.Context, v1 int32) (bool, error) {
+	r0, r1 := m.HasVerifiedEmailFunc.nextHook()(v0, v1)
+	m.HasVerifiedEmailFunc.appendCall(UserEmailsStoreHasVerifiedEmailFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the HasVerifiedEmail
+// method of the parent MockUserEmailsStore instance is invoked and the hook
+// queue is empty.
+func (f *UserEmailsStoreHasVerifiedEmailFunc) SetDefaultHook(hook func(context.Context, int32) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// HasVerifiedEmail method of the parent MockUserEmailsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UserEmailsStoreHasVerifiedEmailFunc) PushHook(hook func(context.Context, int32) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserEmailsStoreHasVerifiedEmailFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserEmailsStoreHasVerifiedEmailFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, int32) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *UserEmailsStoreHasVerifiedEmailFunc) nextHook() func(context.Context, int32) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserEmailsStoreHasVerifiedEmailFunc) appendCall(r0 UserEmailsStoreHasVerifiedEmailFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserEmailsStoreHasVerifiedEmailFuncCall
+// objects describing the invocations of this function.
+func (f *UserEmailsStoreHasVerifiedEmailFunc) History() []UserEmailsStoreHasVerifiedEmailFuncCall {
+	f.mutex.Lock()
+	history := make([]UserEmailsStoreHasVerifiedEmailFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserEmailsStoreHasVerifiedEmailFuncCall is an object that describes an
+// invocation of method HasVerifiedEmail on an instance of
+// MockUserEmailsStore.
+type UserEmailsStoreHasVerifiedEmailFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserEmailsStoreHasVerifiedEmailFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserEmailsStoreHasVerifiedEmailFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // UserEmailsStoreListByUserFunc describes the behavior when the ListByUser

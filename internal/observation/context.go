@@ -87,10 +87,10 @@ func (c *Context) Operation(args Op) *Operation {
 		name:         args.Name,
 		kebabName:    kebabCase(args.Name),
 		metricLabels: args.MetricLabelValues,
-		logFields:    args.LogFields,
+		attributes:   args.Attrs,
 		errorFilter:  args.ErrorFilter,
 
-		Logger: logger.With(toLogFields(args.LogFields)...),
+		Logger: logger.With(attributesToLogFields(args.Attrs)...),
 	}
 }
 

@@ -2,18 +2,22 @@ package productsubscription
 
 import (
 	"context"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type llmProxyAccessResolver struct{ sub *productSubscription }
+type llmProxyAccessResolver struct {
+	sub *productSubscription
+}
 
 func (r llmProxyAccessResolver) Enabled() bool { return r.sub.v.LLMProxyAccess.Enabled }
 
 func (r llmProxyAccessResolver) RateLimit(ctx context.Context) (graphqlbackend.LLMProxyRateLimit, error) {
-	if !r.sub.v.LLMProxyAccess.Enabled {
+	if !r.Enabled() {
 		return nil, nil
 	}
 
@@ -46,6 +50,27 @@ func (r llmProxyAccessResolver) RateLimit(ctx context.Context) (graphqlbackend.L
 	return &llmProxyRateLimitResolver{v: rateLimit, source: source}, nil
 }
 
+func (r llmProxyAccessResolver) Usage(ctx context.Context) ([]graphqlbackend.LLMProxyUsageDatapoint, error) {
+	if !r.Enabled() {
+		return nil, nil
+	}
+
+	usage, err := NewLLMProxyService().UsageForSubscription(ctx, r.sub.UUID())
+	if err != nil {
+		return nil, err
+	}
+
+	resolvers := make([]graphqlbackend.LLMProxyUsageDatapoint, 0, len(usage))
+	for _, u := range usage {
+		resolvers = append(resolvers, &llmProxyUsageDatapoint{
+			date:  u.Date,
+			count: u.Count,
+		})
+	}
+
+	return resolvers, nil
+}
+
 type llmProxyRateLimitResolver struct {
 	source graphqlbackend.LLMProxyRateLimitSource
 	v      licensing.LLMProxyRateLimit
@@ -54,3 +79,16 @@ type llmProxyRateLimitResolver struct {
 func (r *llmProxyRateLimitResolver) Source() graphqlbackend.LLMProxyRateLimitSource { return r.source }
 func (r *llmProxyRateLimitResolver) Limit() int32                                   { return r.v.Limit }
 func (r *llmProxyRateLimitResolver) IntervalSeconds() int32                         { return r.v.IntervalSeconds }
+
+type llmProxyUsageDatapoint struct {
+	date  time.Time
+	count int
+}
+
+func (r *llmProxyUsageDatapoint) Date() gqlutil.DateTime {
+	return gqlutil.DateTime{Time: r.date}
+}
+
+func (r *llmProxyUsageDatapoint) Count() int32 {
+	return int32(r.count)
+}

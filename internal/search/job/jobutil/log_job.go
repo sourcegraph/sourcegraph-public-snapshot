@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
 
@@ -54,7 +54,7 @@ func (l *LogJob) Name() string {
 	return "LogJob"
 }
 
-func (l *LogJob) Fields(v job.Verbosity) (res []otlog.Field) { return nil }
+func (l *LogJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) { return nil }
 
 func (l *LogJob) Children() []job.Describer {
 	return []job.Describer{l.child}

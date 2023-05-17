@@ -12,7 +12,7 @@ import { LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { SITE_EXTERNAL_SERVICE_CONFIG } from './backend'
 
-const AddGitHubAppPage = lazyComponent(() => import('../components/gitHubApps/AddGitHubAppPage'), 'AddGitHubAppPage')
+const AddGitHubAppPage = lazyComponent(() => import('../components/gitHubApps/CreateGitHubAppPage'), 'AddGitHubAppPage')
 const GitHubAppPage = lazyComponent(() => import('../components/gitHubApps/GitHubAppPage'), 'GitHubAppPage')
 const GitHubAppsPage = lazyComponent(() => import('../components/gitHubApps/GitHubAppsPage'), 'GitHubAppsPage')
 
