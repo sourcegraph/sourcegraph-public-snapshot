@@ -954,6 +954,8 @@ bazelCommands:
       GITSERVER_ADDR: 127.0.0.1:3501
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
       SRC_PROF_HTTP: 127.0.0.1:3551
+  blobstore:
+    target: //cmd/blobstore:blobstore
   searcher:
     target: //cmd/searcher
   syntax-highlighter:
@@ -1111,13 +1113,13 @@ commandsets:
   enterprise-bazel: &enterprise_bazel_set
     requiresDevPrivate: true
     checks:
-      - docker
       - redis
       - postgres
       - git
       - bazelisk
       - ibazel
     bazelCommands:
+      - blobstore
       - frontend
       - worker
       - repo-updater
@@ -1129,7 +1131,6 @@ commandsets:
       - github-proxy
     commands:
       - web
-      - blobstore
       - docsite
       - zoekt-index-0
       - zoekt-index-1
@@ -1210,6 +1211,7 @@ commandsets:
       - bazelisk
       - ibazel
     bazelCommands:
+      - blobstore
       - frontend
       - worker
       - repo-updater
@@ -1223,7 +1225,6 @@ commandsets:
       - codeintel-executor
     commands:
       - web
-      - blobstore
       - docsite
       - zoekt-index-0
       - zoekt-index-1
