@@ -20,16 +20,16 @@ fi
 
 # shellcheck disable=SC2153
 case "$CLEAN" in
-  "true")
-    clean=y
-    ;;
-  "false")
-    clean=n
-    ;;
-  *)
-    echo -n "Do you want to delete $DATA and start clean? [Y/n] "
-    read -r clean
-    ;;
+"true")
+  clean=y
+  ;;
+"false")
+  clean=n
+  ;;
+*)
+  echo -n "Do you want to delete $DATA and start clean? [Y/n] "
+  read -r clean
+  ;;
 esac
 
 if [ "$clean" != "n" ] && [ "$clean" != "N" ]; then
@@ -37,12 +37,18 @@ if [ "$clean" != "n" ] && [ "$clean" != "N" ]; then
   rm -rf "$DATA"
 fi
 
-
 # WIP WIP
-  # -e DISABLE_BLOBSTORE=true \
-  # -e DISABLE_OBSERVABILITY=true \
+# -e DISABLE_BLOBSTORE=true \
+# -e DISABLE_OBSERVABILITY=true \
+# -it \
+# --entrypoint sh \
+
 echo "--- Starting server ${IMAGE} on port ${PORT}"
 docker run "$@" \
+  --rm \
+  -it \
+  --entrypoint sh \
+  -e SRC_LOG_LEVEL=debug \
   --publish "$PORT":7080 \
   -e ALLOW_SINGLE_DOCKER_CODE_INSIGHTS=t \
   -e SOURCEGRAPH_LICENSE_GENERATION_KEY="$SOURCEGRAPH_LICENSE_GENERATION_KEY" \
@@ -50,6 +56,7 @@ docker run "$@" \
   -e DB_STARTUP_TIMEOUT="$DB_STARTUP_TIMEOUT" \
   --volume "$DATA/config:/etc/sourcegraph" \
   --volume "$DATA/data:/var/opt/sourcegraph" \
+  --name sourcegraph \
   "$IMAGE"
 
 echo "--- Checking for existing Sourcegraph instance at $URL"
