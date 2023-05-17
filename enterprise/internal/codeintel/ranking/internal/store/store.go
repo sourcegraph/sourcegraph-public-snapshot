@@ -17,6 +17,9 @@ import (
 type Store interface {
 	WithTransaction(ctx context.Context, f func(tx Store) error) error
 
+	// Metadata
+	Summaries(ctx context.Context) ([]shared.Summary, error)
+
 	// Retrieval
 	GetStarRank(ctx context.Context, repoName api.RepoName) (float64, error)
 	GetDocumentRanks(ctx context.Context, repoName api.RepoName) (map[string]float64, bool, error)

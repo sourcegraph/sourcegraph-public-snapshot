@@ -15,6 +15,7 @@ go_library(
         "//enterprise/internal/codeintel/autoindexing/transport/graphql",
         "//enterprise/internal/codeintel/codenav/transport/graphql",
         "//enterprise/internal/codeintel/policies/transport/graphql",
+        "//enterprise/internal/codeintel/ranking/transport/graphql",
         "//enterprise/internal/codeintel/sentinel/transport/graphql",
         "//enterprise/internal/codeintel/shared/lsifuploadstore",
         "//enterprise/internal/codeintel/shared/resolvers",
