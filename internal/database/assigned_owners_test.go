@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/stretchr/testify/assert"
@@ -97,15 +98,74 @@ func TestAssignedOwnersStore_Insert(t *testing.T) {
 
 	store := AssignedOwnersStoreWith(db, logger)
 
-	// Inserting assigned owner for non-existing path.
-	err = store.Insert(ctx, user1.ID, 1, "no/way", user1.ID)
-	assert.EqualError(t, err, `cannot find "no/way" path for repo with ID=1`)
-
-	// Inserting assigned owner for non-existing repo.
+	// Inserting assigned owner for non-existing repo, which led to failing to ensure
+	// repo paths.
 	err = store.Insert(ctx, user1.ID, 1337, "src", user1.ID)
-	assert.EqualError(t, err, `cannot find "src" path for repo with ID=1337`)
+	assert.EqualError(t, err, `cannot insert repo paths`)
 
 	// Successfully inserting assigned owner.
 	err = store.Insert(ctx, user1.ID, 1, "src", user1.ID)
 	require.NoError(t, err)
+
+	// Inserting an already existing assigned owner shouldn't error out, the update
+	// is ignored due to `ON CONFLICT DO NOTHING` clause.
+	err = store.Insert(ctx, user1.ID, 1, "src", user1.ID)
+	require.NoError(t, err)
+}
+
+func TestAssignedOwnersStore_Delete(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// Creating users.
+	user1, err := db.Users().Create(ctx, NewUser{Username: "user1"})
+	require.NoError(t, err)
+	user2, err := db.Users().Create(ctx, NewUser{Username: "user2"})
+	require.NoError(t, err)
+
+	// Creating a repo.
+	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"})
+	require.NoError(t, err)
+
+	// Creating repo paths.
+	_, err = db.QueryContext(ctx, "INSERT INTO repo_paths (repo_id, absolute_path, parent_id) VALUES (1, '', NULL), (1, 'src', 1), (1, 'src/abc', 2)")
+	require.NoError(t, err)
+
+	store := AssignedOwnersStoreWith(db, logger)
+
+	// Inserting assigned owners.
+	err = store.Insert(ctx, user1.ID, 1, "src", user2.ID)
+	require.NoError(t, err)
+	err = store.Insert(ctx, user2.ID, 1, "src", user1.ID)
+	require.NoError(t, err)
+	err = store.Insert(ctx, user2.ID, 1, "src/abc", user1.ID)
+	require.NoError(t, err)
+
+	assertNumberOfOwnersForRepo := func(repoID api.RepoID, length int) {
+		summaries, err := store.ListAssignedOwnersForRepo(ctx, repoID)
+		require.NoError(t, err)
+		assert.Len(t, summaries, length)
+	}
+	// Deleting an owner with non-existent path.
+	err = store.DeleteOwner(ctx, user1.ID, 1, "no/way")
+	assert.EqualError(t, err, `cannot delete assigned owner with ID=1 for "no/way" path for repo with ID=1`)
+	assertNumberOfOwnersForRepo(1, 3)
+	// Deleting an owner with a path for non-existent repo.
+	err = store.DeleteOwner(ctx, user1.ID, 1337, "no/way")
+	assert.EqualError(t, err, `cannot delete assigned owner with ID=1 for "no/way" path for repo with ID=1337`)
+	assertNumberOfOwnersForRepo(1, 3)
+	// Deleting an owner with non-existent ID.
+	err = store.DeleteOwner(ctx, 1337, 1, "src/abc")
+	assert.EqualError(t, err, `cannot delete assigned owner with ID=1337 for "src/abc" path for repo with ID=1`)
+	assertNumberOfOwnersForRepo(1, 3)
+	// Deleting an existing owner.
+	err = store.DeleteOwner(ctx, user2.ID, 1, "src/abc")
+	assert.NoError(t, err)
+	assertNumberOfOwnersForRepo(1, 2)
 }
