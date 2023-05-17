@@ -14,7 +14,7 @@ function assertDeepStrictEqual(actual: any, expected: any): void {
 describe('encodeURIPathComponent', () => {
     it('encodes all special characters except slashes and the plus sign', () => {
         expect(encodeURIPathComponent('hello world+/+some_special_characters_:_#_?_%_@')).toBe(
-            'hhello%20world+/+some_special_characters_%3A_%23_%3F_%25_%40'
+            'hello%20world+/+some_special_characters_%3A_%23_%3F_%25_%40'
         )
     })
 })

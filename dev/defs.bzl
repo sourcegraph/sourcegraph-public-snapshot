@@ -94,7 +94,7 @@ def npm_package(name, srcs = [], **kwargs):
     """
     replace_prefixes = kwargs.pop("replace_prefixes", {})
 
-    package_type = kwargs.pop("type", "commonjs")
+    package_type = kwargs.pop("type", "module")
 
     # Modifications to package.json
     # TODO(bazel): remove when package.json can be updated in source
