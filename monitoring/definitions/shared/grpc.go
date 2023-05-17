@@ -255,12 +255,14 @@ func NewGRPCInternalErrorMetricsGroup(opts GRPCInternalErrorMetricsOptions, owne
 			"These errors might be solvable by adjusting the gRPC configuration, or they might indicate a bug from Sourcegraph's use of gRPC.",
 		}, " ")
 
-		second := strings.Join([]string{
-			"**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with 'grpc:').",
+		second := "When debugging, knowing that a particular error comes from the grpc-go library itself (an 'internal error') as opposed to 'normal' application code can be helpful when trying to fix it."
+
+		third := strings.Join([]string{
+			"**Note**: Internal errors are detected via a very coarse heuristic (seeing if the error starts with 'grpc:', etc.).",
 			"Because of this, it's possible that some gRPC-specific issues might not be categorized as internal errors.",
 		}, " ")
 
-		return fmt.Sprintf("%s\n\n%s", first, second)
+		return fmt.Sprintf("%s\n\n%s\n\n%s", first, second, third)
 	}()
 
 	return monitoring.Group{
@@ -329,7 +331,7 @@ func NewGRPCInternalErrorMetricsGroup(opts GRPCInternalErrorMetricsOptions, owne
 						With(monitoring.PanelOptions.ZeroIfNoData()),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The percentage of gRPC requests that appear to fail due to gRPC internal errors across all methods, aggregated across all %q clients.\n%s", opts.HumanServiceName, sharedInternalErrorNote),
+					Interpretation: fmt.Sprintf("The percentage of gRPC requests that appear to fail due to gRPC internal errors across all methods, aggregated across all %q clients.\n\n%s", opts.HumanServiceName, sharedInternalErrorNote),
 				},
 
 				monitoring.Observable{
@@ -346,7 +348,7 @@ func NewGRPCInternalErrorMetricsGroup(opts GRPCInternalErrorMetricsOptions, owne
 						With(monitoring.PanelOptions.ZeroIfNoData("grpc_method")),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The percentage of gRPC requests that appear to fail to due to gRPC internal errors per method, aggregated across all %q clients.\n%s", opts.HumanServiceName, sharedInternalErrorNote),
+					Interpretation: fmt.Sprintf("The percentage of gRPC requests that appear to fail to due to gRPC internal errors per method, aggregated across all %q clients.\n\n%s", opts.HumanServiceName, sharedInternalErrorNote),
 				},
 
 				monitoring.Observable{
@@ -359,7 +361,7 @@ func NewGRPCInternalErrorMetricsGroup(opts GRPCInternalErrorMetricsOptions, owne
 						With(monitoring.PanelOptions.ZeroIfNoData("grpc_method", "grpc_code")),
 					Owner:          owner,
 					NoAlert:        true,
-					Interpretation: fmt.Sprintf("The rate of gRPC internal-error response codes per method, aggregated across all %q clients.\n%s", opts.HumanServiceName, sharedInternalErrorNote),
+					Interpretation: fmt.Sprintf("The rate of gRPC internal-error response codes per method, aggregated across all %q clients.\n\n%s", opts.HumanServiceName, sharedInternalErrorNote),
 				},
 			},
 		},
