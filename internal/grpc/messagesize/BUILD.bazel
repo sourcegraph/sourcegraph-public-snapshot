@@ -6,7 +6,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/messagesize",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//lib/errors",
+        "//internal/env",
         "@com_github_dustin_go_humanize//:go-humanize",
         "@com_github_sourcegraph_log//:log",
         "@org_golang_google_grpc//:go_default_library",
