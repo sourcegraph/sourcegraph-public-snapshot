@@ -547,7 +547,9 @@ func TestAssignedOwners(t *testing.T) {
 	store := db.AssignedOwners()
 	err = store.Insert(ctx, user1.ID, repoID, "src/test", user2.ID)
 	require.NoError(t, err)
-	err = store.Insert(ctx, user2.ID, repoID, "", user1.ID)
+	err = store.Insert(ctx, user2.ID, repoID, "src/test", user1.ID)
+	require.NoError(t, err)
+	err = store.Insert(ctx, user2.ID, repoID, "src/main", user1.ID)
 	require.NoError(t, err)
 
 	s := NewService(nil, db)
@@ -568,10 +570,17 @@ func TestAssignedOwners(t *testing.T) {
 				RepoID:            repoID,
 				WhoAssignedUserID: user2.ID,
 			},
-		},
-		"": []database.AssignedOwnerSummary{
 			{
 				OwnerUserID:       user2.ID,
+				FilePath:          "src/test",
+				RepoID:            repoID,
+				WhoAssignedUserID: user1.ID,
+			},
+		},
+		"src/main": []database.AssignedOwnerSummary{
+			{
+				OwnerUserID:       user2.ID,
+				FilePath:          "src/main",
 				RepoID:            repoID,
 				WhoAssignedUserID: user1.ID,
 			},
