@@ -3,13 +3,14 @@ package com.sourcegraph.cody;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.VerticalFlowLayout;
-import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.scale.JBUIScale;
 import com.sourcegraph.cody.chat.Chat;
 import com.sourcegraph.cody.chat.ChatBubble;
 import com.sourcegraph.cody.chat.ChatMessage;
 import com.sourcegraph.cody.completions.Speaker;
+import com.sourcegraph.cody.config.ConfigUtil;
+import com.sourcegraph.cody.config.SettingsComponent;
 import com.sourcegraph.cody.editor.EditorContext;
 import com.sourcegraph.cody.editor.EditorContextGetter;
 import org.jetbrains.annotations.NotNull;
@@ -26,7 +27,7 @@ class CodyToolWindowContent implements UpdatableChat {
     private final @NotNull JTextField messageField;
     private boolean needScrollingDown = true;
 
-    public CodyToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
+    public CodyToolWindowContent(@NotNull Project project) {
         // Chat panel
         messagesPanel = new JPanel();
         messagesPanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 10, true, true));
@@ -102,7 +103,11 @@ class CodyToolWindowContent implements UpdatableChat {
     private void sendMessage(@NotNull Project project) {
         // Build message
         EditorContext editorContext = EditorContextGetter.getEditorContext(project);
-        var chat = new Chat("", "https://sourcegraph.com/", "TODO: API key");
+        boolean isEnterprise = ConfigUtil.getInstanceType(project).equals(SettingsComponent.InstanceType.ENTERPRISE);
+        String instanceUrl = isEnterprise ? ConfigUtil.getEnterpriseUrl(project) : "https://sourcegraph.com/";
+        String accessToken = isEnterprise ? ConfigUtil.getEnterpriseAccessToken(project) : ConfigUtil.getDotcomAccessToken(project);
+
+        var chat = new Chat("", instanceUrl, accessToken != null ? accessToken : "");
         ArrayList<String> contextFiles = editorContext == null ? new ArrayList<>() : new ArrayList<>(Collections.singletonList(editorContext.getCurrentFileContent()));
         ChatMessage humanMessage = ChatMessage.createHumanMessage(messageField.getText(), contextFiles);
         addMessage(humanMessage);
