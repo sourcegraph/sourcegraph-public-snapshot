@@ -63,7 +63,7 @@ class CodyToolWindowContent implements UpdatableChat {
         addMessage(ChatMessage.createAssistantMessage(welcomeText));
     }
 
-    public void addMessage(@NotNull ChatMessage message) {
+    public synchronized void addMessage(@NotNull ChatMessage message) {
         ApplicationManager.getApplication().invokeLater(() -> {
             boolean isHuman = message.getSpeaker() == Speaker.HUMAN;
 
@@ -88,7 +88,7 @@ class CodyToolWindowContent implements UpdatableChat {
         });
     }
 
-    public void updateLastMessage(@NotNull ChatMessage message) {
+    public synchronized void updateLastMessage(@NotNull ChatMessage message) {
         ApplicationManager.getApplication().invokeLater(() -> {
             if (messagesPanel.getComponentCount() > 0) {
                 JPanel lastBubblePanel = (JPanel) messagesPanel.getComponent(messagesPanel.getComponentCount() - 1);
