@@ -277,6 +277,7 @@ go_library(
         "//internal/markdown",
         "//internal/observation",
         "//internal/oobmigration",
+        "//internal/perforce",
         "//internal/rcache",
         "//internal/repos",
         "//internal/repoupdater",
