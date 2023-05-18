@@ -3308,12 +3308,13 @@ Triggers:
 
 # Table "public.repo_commits_changelists"
 ```
-         Column         |  Type   | Collation | Nullable |                       Default                        
-------------------------+---------+-----------+----------+------------------------------------------------------
- id                     | integer |           | not null | nextval('repo_commits_changelists_id_seq'::regclass)
- repo_id                | integer |           | not null | 
- commit_sha             | bytea   |           | not null | 
- perforce_changelist_id | integer |           | not null | 
+         Column         |           Type           | Collation | Nullable |                       Default                        
+------------------------+--------------------------+-----------+----------+------------------------------------------------------
+ id                     | integer                  |           | not null | nextval('repo_commits_changelists_id_seq'::regclass)
+ repo_id                | integer                  |           | not null | 
+ commit_sha             | bytea                    |           | not null | 
+ perforce_changelist_id | integer                  |           | not null | 
+ created_at             | timestamp with time zone |           | not null | now()
 Indexes:
     "repo_commits_changelists_pkey" PRIMARY KEY, btree (id)
     "repo_id_perforce_changelist_id_unique" UNIQUE, btree (repo_id, perforce_changelist_id)
