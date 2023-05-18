@@ -264,7 +264,7 @@ rust_register_toolchains(
     # Keep in sync with docker-images/syntax-highlighter/Dockerfile
     # and docker-images/syntax-highlighter/rust-toolchain.toml
     versions = [
-        "1.69.0",
+        "1.68.0",
     ],
 )
 
@@ -275,10 +275,10 @@ rust_repository_set(
     extra_exec_rustc_flags = ["--cfg=rustix_use_libc"],
     extra_rustc_flags = {"x86_64-unknown-linux-musl": ["--cfg=rustix_use_libc"]},
     extra_target_triples = ["x86_64-unknown-linux-musl"],
-    versions = ["1.69.0"],
+    versions = ["1.68.0"],
 )
 
-load("@rules_rust//crate_universe:defs.bzl", "crates_repository", "splicing_config")
+load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
 
 crates_repository(
     name = "crate_index",
@@ -304,7 +304,6 @@ crates_repository(
         "//docker-images/syntax-highlighter:crates/scip-treesitter-languages/Cargo.toml",
         "//docker-images/syntax-highlighter:crates/sg-syntax/Cargo.toml",
     ],
-    splicing_config = splicing_config(resolver_version = "2"),
 )
 
 load("@crate_index//:defs.bzl", "crate_repositories")

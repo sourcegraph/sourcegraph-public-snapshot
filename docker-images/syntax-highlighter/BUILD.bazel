@@ -16,22 +16,6 @@ rust_binary(
     ],
 )
 
-rust_binary(
-    name = "syntect_server_musl",
-    srcs = ["src/main.rs"],
-    aliases = aliases(),
-    crate_features = ["crt-static"],
-    proc_macro_deps = all_crate_deps(
-        proc_macro = True,
-    ),
-    deps = all_crate_deps(
-        normal = True,
-    ) + [
-        "//docker-images/syntax-highlighter/crates/scip-treesitter-languages",
-        "//docker-images/syntax-highlighter/crates/sg-syntax",
-    ],
-)
-
 rust_test(
     name = "unit_test",
     size = "small",
