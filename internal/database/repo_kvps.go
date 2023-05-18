@@ -54,7 +54,7 @@ func (s *repoKVPStore) Create(ctx context.Context, repoID api.RepoID, kvp KeyVal
 	if err := s.Exec(ctx, sqlf.Sprintf(q, repoID, kvp.Key, kvp.Value)); err != nil {
 		var e *pgconn.PgError
 		if errors.As(err, &e) && e.Code == "23505" {
-			return errors.Newf(`Repo metadata key "%s" already exists for the given repository.`, kvp.Key)
+			return errors.Newf(`Metadata key "%s" already exists for the given repository.`, kvp.Key)
 		}
 		return err
 	}
