@@ -355,7 +355,7 @@ func (s *store[T]) QueuedCount(ctx context.Context, includeProcessing bool) (_ i
 
 	count, _, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
 		queuedCountQuery,
-		quote(s.options.TableName),
+		quote(s.options.ViewName),
 		sqlf.Join(stateQueries, ","),
 	)))
 
