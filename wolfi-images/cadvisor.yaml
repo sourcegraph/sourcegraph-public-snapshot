@@ -39,3 +39,5 @@ annotations:
   org.opencontainers.image.url: https://sourcegraph.com/
   org.opencontainers.image.source: https://github.com/sourcegraph/sourcegraph/
   org.opencontainers.image.documentation: https://docs.sourcegraph.com/
+
+# MANUAL REBUILD: Tue May 17 15:17:00 BST 2023

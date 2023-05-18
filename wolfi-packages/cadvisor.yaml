@@ -1,7 +1,10 @@
+# Loosely based on the cadvisor Dockerfile, without support for ipmctl
+#   https://github.com/google/cadvisor/blob/master/deploy/Dockerfile
 package:
   name: cadvisor
+   # libpfm version may also need updating - check cadvisor Dockerfile
   version: 0.47.0
-  epoch: 0
+  epoch: 1
   description: "Analyzes resource usage and performance characteristics of running containers"
   target-architecture:
     - x86_64
@@ -12,6 +15,10 @@ package:
       license: 'Apache License 2.0'
   dependencies:
     runtime:
+      - device-mapper
+      - findutils
+      - ndctl
+      - thin-provisioning-tools
 
 environment:
   contents:
@@ -23,14 +30,45 @@ environment:
       - wolfi-base
       - busybox
       - ca-certificates-bundle
+      - build-base
+      - cmake
+      - device-mapper
+      - findutils
+      - git
+      - go
+      - linux-headers
+      - ndctl-dev
+      - thin-provisioning-tools
 
 pipeline:
+  # Fetch and build libpfm
   - uses: fetch
     with:
-      uri: https://github.com/google/cadvisor/releases/download/v${{package.version}}/cadvisor-v${{package.version}}-linux-amd64
-      expected-sha256: caf4491298e0702f9d0c6a1d1949767f5c6400f77e12cd3524d6d3fcc66abc2a
-      extract: false
+      uri: https://sourceforge.net/projects/perfmon2/files/libpfm4/libpfm-4.11.0.tar.gz
+      expected-sha256: 5da5f8872bde14b3634c9688d980f68bda28b510268723cc12973eedbab9fecc
+      strip-components: 0
+  - runs: |
+      pwd
+      export DBG="-g -Wall"
+      make -e -C libpfm-4.11.0
+      make install -C libpfm-4.11.0
+
+# Check out cadvisor
+  - uses: git-checkout
+    with:
+      repository: https://github.com/google/cadvisor
+      tag: v${{package.version}}
+      expected-commit: c7714a77f72d77936446cb45296a1ef305a06c11
+      destination: /cadvisor
+# Build cadvisor
+  - runs: |
+      cd /cadvisor
+      GO_FLAGS="-tags=libfpm,netgo" ./build/build.sh
+
+  # Package libpfm and cadvisor
   - runs: |
       mkdir -p ${{targets.destdir}}/usr/bin/
-      chmod +x cadvisor-v${{package.version}}-linux-amd64
-      cp cadvisor-v${{package.version}}-linux-amd64 ${{targets.destdir}}/usr/bin/cadvisor
+      mkdir -p ${{targets.destdir}}/usr/local/lib/
+      cp /cadvisor/_output/cadvisor ${{targets.destdir}}/usr/bin/cadvisor
+      cp /usr/local/lib/libpfm.so* ${{targets.destdir}}/usr/local/lib/
+
