@@ -19,6 +19,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Badge, ButtonLink, Card, CardHeader, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../auth'
 import { requestGraphQL } from '../../backend/graphql'
 import {
     ConnectionContainer,
@@ -49,6 +50,7 @@ import {
 import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
 import { buildSearchURLQueryFromQueryState, useNavbarQueryState } from '../../stores'
+import { canWriteRepoMetadata } from '../../util/rbac'
 import { OWNER_FIELDS, RECENT_CONTRIBUTOR_FIELDS, RECENT_VIEW_FIELDS } from '../blob/own/grapqlQueries'
 import { GitCommitNodeTableRow } from '../commits/GitCommitNodeTableRow'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
@@ -206,8 +208,8 @@ const ExtraInfoSectionItemHeader: React.FunctionComponent<
 const ExtraInfoSection: React.FC<{
     repo: TreePageRepositoryFields
     className?: string
-    viewerCanAdminister?: boolean
-}> = ({ repo, className, viewerCanAdminister }) => {
+    hasWritePermissions?: boolean
+}> = ({ repo, className, hasWritePermissions }) => {
     const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', false)
 
     const metadataItems = useMemo(() => repo.metadata.map(({ key, value }) => ({ key, value })) || [], [repo.metadata])
@@ -234,10 +236,10 @@ const ExtraInfoSection: React.FC<{
                             </>
                         }
                     >
-                        {viewerCanAdminister && (
+                        {hasWritePermissions && (
                             <Tooltip content="Edit repository metadata">
                                 <ButtonLink
-                                    to={`/${encodeURIPathComponent(repo.name)}/-/settings/metadata`}
+                                    to={`/${encodeURIPathComponent(repo.name)}/-/metadata`}
                                     className={classNames('p-0', styles.extraInfoSectionItemHeaderIcon)}
                                 >
                                     <Icon
@@ -272,6 +274,7 @@ interface TreePageContentProps extends ExtensionsControllerProps, TelemetryProps
     commitID: string
     revision: string
     isPackage: boolean
+    authenticatedUser: AuthenticatedUser | null
 }
 
 export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<TreePageContentProps>> = props => {
@@ -304,6 +307,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
     const [recentViewsComputed] = useFeatureFlag('own-background-index-repo-recent-views', false)
 
     const ownSignalsEnabled = recentContributorsComputed || recentViewsComputed
+    const hasRepoMetaWritePermissions = canWriteRepoMetadata(props.authenticatedUser)
 
     return (
         <>
@@ -319,7 +323,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                 <ExtraInfoSection
                     repo={repo}
                     className={classNames(styles.contributors, 'p-3')}
-                    viewerCanAdminister={repo.viewerCanAdminister}
+                    hasWritePermissions={hasRepoMetaWritePermissions}
                 />
             </section>
             <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>

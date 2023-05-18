@@ -41,6 +41,7 @@ import {
     useObservable,
 } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
 import { RepoBatchChangesButton } from '../../batches/RepoBatchChangesButton'
 import { CodeIntelligenceProps } from '../../codeintel'
@@ -74,6 +75,7 @@ export interface Props
     revision: string
     isSourcegraphDotCom: boolean
     className?: string
+    authenticatedUser: AuthenticatedUser | null
 }
 
 export const treePageRepositoryFragment = gql`

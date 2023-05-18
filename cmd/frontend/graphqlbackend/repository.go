@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/rbac"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -674,7 +675,7 @@ func (r *schemaResolver) AddRepoMetadata(ctx context.Context, args struct {
 	Value *string
 },
 ) (*EmptyResponse, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
 		return &EmptyResponse{}, err
 	}
 
@@ -706,7 +707,7 @@ func (r *schemaResolver) UpdateRepoMetadata(ctx context.Context, args struct {
 	Value *string
 },
 ) (*EmptyResponse, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
 		return &EmptyResponse{}, err
 	}
 
@@ -737,7 +738,7 @@ func (r *schemaResolver) DeleteRepoMetadata(ctx context.Context, args struct {
 	Key  string
 },
 ) (*EmptyResponse, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
 		return &EmptyResponse{}, err
 	}
 
