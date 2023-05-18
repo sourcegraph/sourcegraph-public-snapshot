@@ -176,20 +176,3 @@ func loadConfig(ctx context.Context, jobType IndexJobType, store database.Signal
 	}
 	return configurations[0], nil
 }
-
-// WITH signal_config AS (SELECT * FROM own_signal_configurations WHERE name = 'recent-contributors' LIMIT 1),
-// ineligible_repos AS (SELECT repo_id
-// FROM own_background_jobs,
-// signal_config
-// WHERE job_type = signal_config.id
-// AND (state IN ('failed', 'completed'))
-// OR (state IN ('processing', 'errored', 'queued')))
-// INSERT
-// INTO own_background_jobs (repo_id, job_type) (SELECT gr.repo_id, signal_config.id
-// FROM gitserver_repos gr,
-// signal_config
-// WHERE gr.repo_id NOT IN (SELECT * FROM ineligible_repos)
-// AND gr.repo_id NOT IN (SELECT rr.id
-// FROM repo rr
-// WHERE rr.name LIKE (SELECT UNNEST(signal_config.excluded_repo_patterns)))
-// AND gr.clone_status = 'cloned');
