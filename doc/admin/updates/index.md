@@ -1,10 +1,10 @@
-# Updating Sourcegraph
+# Updating sourcegraph
 
 This page is intended as an entry point into Sourcegraph versioning and the `migrator` service which manages our database schemas. Here we'll cover general concepts and direct you toward relevant operations pages.
 
 > *Note: For product update notes, please refer to the [changelog](../../CHANGELOG.md). You can also [skip general concepts for technical operations](#upgrade-operations), if you know what kind of upgrade you need.*
 
-## General Concepts
+## General concepts
 
 ### Upgrading
 
@@ -12,7 +12,7 @@ A new Sourcegraph release consists of updated images that incorporate code chang
 
 When upgrading Sourcegraph, it is necessary to update and apply the deployment manifests. However, in addition to the manifest updates, it is crucial to ensure that all underlying database schemas of Sourcegraph are also updated.
 
-### Release schedule and Versioning
+### Release Schedule and versioning
 Sourcegraph releases use semantic versioning, for example: `v5.0.3`
 | Description   | Version |
 |---------------|---------|
@@ -22,7 +22,7 @@ Sourcegraph releases use semantic versioning, for example: `v5.0.3`
 
 To learn more about our release schedule see our [handbook](https://handbook.sourcegraph.com/departments/engineering/dev/process/releases/#sourcegraph-releases). In general a new minor version of Sourcegraph is released every month, accompanied by weekly patch releases. Major releases are less frequent and represent significant changes in Sourcegraph.You can also check the [Sourcegraph blog](https://about.sourcegraph.com/blog) for more information about the latest release.
 
-### Upgrade Types
+### Upgrade types
 
 Sourcegraph has two upgrade types. **Standard** upgrades and **Multiversion** upgrades. We generally recommend standard upgrades.
 
@@ -51,20 +51,28 @@ Sourcegraph has two upgrade types. **Standard** upgrades and **Multiversion** up
 
 > *Note: Our major releases don't occur on a consistent interval, so make sure to check our changelog if you aren't certain about wether a major version is multiple minor versions away from your current version. You can also reach out to our support team [support@sourcegraph.com](mailto:support@sourcegraph.com)*
 
-### Sourcegraph Databases & Migrator
+### Sourcegraph databases & migrator
 
-To facilitate the management of Sourcegraph's databases, we have introduced the `migrator` service. `migrator` is usually triggered automatically on Sourcegraph startup but can also be interacted with like a cli tool. Migrator's primary purpose is to manage and apply schema migrations. To learn more about migrations see our [developer docs](https://docs.sourcegraph.com/dev/background-information/sql/migrations_overview).
+To facilitate the management of Sourcegraph's databases, we have created the `migrator` service. `migrator` is usually triggered automatically on Sourcegraph startup but can also be interacted with like a cli tool. Migrator's primary purpose is to manage and apply schema migrations. 
+- To learn more about migrations see our [developer docs](https://docs.sourcegraph.com/dev/background-information/sql/migrations_overview). 
+- For a full listing of migrator's command arguments see its [usage docs](https://docs.sourcegraph.com/admin/how-to/manual_database_migrations).
 
-## Upgrade Operations
+## Upgrade operations
 
-## Check the upgrade readiness
+### General upgrade procedure
 
-Starting 5.0.0, you are able to check the instance upgrade readiness by navigating to **Site admin > Updates** page, readiness information includes:
+Sourcegraph upgrades take the following general form:
+1. Determine if your instance is ready to Upgrade
+2. Merge the latest Sourcegraph release into your deployment manifests
+3. Run migrator by reapplying your manifests in a **standard upgrade** (migrator by default uses the `up` command), or by disabling services connected to your databases and running `migrator` with the `upgrade` argument.
 
-- Whether there are [schema drifts](../how-to/schema-drift.md)
-- Whether there are pending [out-of-band migrations](../../dev/background-information/oobmigrations.md) but need to complete
+**Determine if your release is ready for upgrade**
 
-### Standard upgrades
+Starting 5.0.0, as an admin you are able to check instance upgrade readiness by navigating to the `Site admin > Updates` page. Here you'll be notified if your instance has any **schema drift** or unfinished **out of band migrations**.
+
+
+
+### Standard upgrades index
 
 To perform a standard upgrade, check the notes and follow the guide for your specific environment:
 
@@ -73,7 +81,7 @@ To perform a standard upgrade, check the notes and follow the guide for your spe
 - [Single-container Sourcegraph with Docker](server.md#upgrade-procedure)
 - [Pure-docker custom deployments](pure_docker.md)
 
-### Multi-version upgrades
+### Multi-version upgrades index
 
 - [Sourcegraph with Docker Compose](docker_compose.md#multi-version-upgrade-procedure)
 - [Sourcegraph with Kubernetes](kubernetes.md#multi-version-upgrade-procedure)
