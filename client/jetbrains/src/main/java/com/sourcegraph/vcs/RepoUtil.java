@@ -46,7 +46,7 @@ public class RepoUtil {
             // If the current branch doesn't exist on the remote or if the remote
             // for the current branch doesn't correspond with the sourcegraph remote,
             // use the default branch for the project.
-            remoteBranchName = getRemoteBranchName(project, file)
+            remoteBranchName = getRemoteBranchName(project, file);
             if (remoteBranchName == null || !remoteUrl.contains(remoteBranchName)) {
                 remoteBranchName = ConfigUtil.getDefaultBranchName(project);
             }
