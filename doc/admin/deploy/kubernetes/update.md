@@ -107,6 +107,12 @@ Apply the new manifests from the ouput file `cluster.yaml` to your cluster:
   $ kubectl get pods -o wide --watch
   ```
 
+### Migrate to Kustomize
+
+> For Sourcegraph deployments upgrading from 4.5.0 to >=5.0.0 and choosing to use [deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s) and deprecate the use of [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph).
+
+Follow the instructions for [migration](https://docs.sourcegraph.com/admin/deploy/kubernetes/kustomize/migrate).
+
 ---
 
 ## Multi-version upgrades
