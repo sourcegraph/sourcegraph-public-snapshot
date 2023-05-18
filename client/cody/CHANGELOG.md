@@ -6,7 +6,7 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Added
 
-- Hover tooltips to intent-detection underlines. [pull/51633](https://github.com/sourcegraph/sourcegraph/issues/51633)
+- Hover tooltips to intent-detection underlines. [pull/52029](https://github.com/sourcegraph/sourcegraph/pull/52029)
 
 ### Fixed
 
