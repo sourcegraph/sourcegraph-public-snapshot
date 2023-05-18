@@ -69,7 +69,11 @@ pub fn on_system_tray_event(app: &AppHandle, event: SystemTrayEvent) {
             }
             "restart" => app.restart(),
             "quit" => app.exit(0),
-            "update" => app.emit_all(EVENT_CHECK_FOR_UPDATES),
+            "update" => match app.emit_all(EVENT_CHECK_FOR_UPDATES, {}) {
+                Ok(_) => { },
+                Err(e) => {
+                    log::error!("failed checking for updates {}", e)
+            }                
             _ => {}
         }
     }
