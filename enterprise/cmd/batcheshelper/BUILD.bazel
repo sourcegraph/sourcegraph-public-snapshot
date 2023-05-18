@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_cross_binary", "go_library", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
@@ -35,23 +35,16 @@ go_test(
     ],
 )
 
-go_cross_binary(
-    name = "batcheshelper_linux_amd64",
-    platform = "@io_bazel_rules_go//go/toolchain:linux_amd64",
-    target = ":batcheshelper",
-)
-
 pkg_tar(
-    name = "tar_batcheshelper_linux_amd64",
-    srcs = [":batcheshelper_linux_amd64"],
-    remap_paths = {"/batcheshelper_linux_amd64": "/batcheshelper"},
+    name = "tar_batcheshelper",
+    srcs = [":batcheshelper"],
 )
 
 oci_image(
     name = "image",
     base = "@wolfi_base",
     entrypoint = ["/batcheshelper"],
-    tars = [":tar_batcheshelper_linux_amd64"],
+    tars = [":tar_batcheshelper"],
 )
 
 oci_tarball(

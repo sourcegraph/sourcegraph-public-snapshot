@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_cross_binary", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
@@ -25,23 +25,16 @@ go_binary(
     },
 )
 
-go_cross_binary(
-    name = "frontend_linux_amd64",
-    platform = "@io_bazel_rules_go//go/toolchain:linux_amd64",
-    target = ":frontend",
-)
-
 pkg_tar(
-    name = "tar_frontend_linux_amd64",
-    srcs = [":frontend_linux_amd64"],
-    remap_paths = {"/frontend_linux_amd64": "/frontend"},
+    name = "tar_frontend",
+    srcs = [":frontend"],
 )
 
 oci_image(
     name = "image",
     base = "@wolfi_base",
     entrypoint = ["/frontend"],
-    tars = [":tar_frontend_linux_amd64"],
+    tars = [":tar_frontend"],
 )
 
 oci_tarball(

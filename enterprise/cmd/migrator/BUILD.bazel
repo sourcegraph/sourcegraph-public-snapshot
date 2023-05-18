@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_cross_binary", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
@@ -27,23 +27,16 @@ go_binary(
     visibility = ["//visibility:public"],
 )
 
-go_cross_binary(
-    name = "migrator_linux_amd64",
-    platform = "@io_bazel_rules_go//go/toolchain:linux_amd64",
-    target = ":migrator",
-)
-
 pkg_tar(
-    name = "tar_migrator_linux_amd64",
-    srcs = [":migrator_linux_amd64"],
-    remap_paths = {"/migrator_linux_amd64": "/migrator"},
+    name = "tar_migrator",
+    srcs = [":migrator"],
 )
 
 oci_image(
     name = "image",
     base = "@wolfi_base",
     entrypoint = ["/migrator"],
-    tars = [":tar_migrator_linux_amd64"],
+    tars = [":tar_migrator"],
 )
 
 oci_tarball(

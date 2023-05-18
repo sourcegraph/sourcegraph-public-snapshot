@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_cross_binary", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
@@ -23,23 +23,16 @@ go_binary(
     visibility = ["//visibility:public"],
 )
 
-go_cross_binary(
-    name = "blobstore_linux_amd64",
-    platform = "@io_bazel_rules_go//go/toolchain:linux_amd64",
-    target = ":blobstore",
-)
-
 pkg_tar(
-    name = "tar_blobstore_linux_amd64",
-    srcs = [":blobstore_linux_amd64"],
-    remap_paths = {"/blobstore_linux_amd64": "/blobstore"},
+    name = "tar_blobstore",
+    srcs = [":blobstore"],
 )
 
 oci_image(
     name = "image",
     base = "@wolfi_base",
     entrypoint = ["/blobstore"],
-    tars = [":tar_blobstore_linux_amd64"],
+    tars = [":tar_blobstore"],
 )
 
 oci_tarball(

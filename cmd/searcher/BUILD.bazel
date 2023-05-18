@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_cross_binary", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
@@ -23,23 +23,16 @@ go_binary(
     },
 )
 
-go_cross_binary(
-    name = "searcher_linux_amd64",
-    platform = "@io_bazel_rules_go//go/toolchain:linux_amd64",
-    target = ":searcher",
-)
-
 pkg_tar(
-    name = "tar_searcher_linux_amd64",
-    srcs = [":searcher_linux_amd64"],
-    remap_paths = {"/searcher_linux_amd64": "/searcher"},
+    name = "tar_searcher",
+    srcs = [":searcher"],
 )
 
 oci_image(
     name = "image",
     base = "@wolfi_base",
     entrypoint = ["/searcher"],
-    tars = [":tar_searcher_linux_amd64"],
+    tars = [":tar_searcher"],
 )
 
 oci_tarball(
