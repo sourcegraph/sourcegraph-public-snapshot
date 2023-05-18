@@ -95,9 +95,8 @@ ZOEKT_DEPS = [
     "@com_github_sourcegraph_zoekt//cmd/zoekt-webserver",
 ]
 
-# Declares rules for building go_cross_binary + pkg_tar for each dep in DEPS
+# Declares rules for pkg_tar for each dep in DEPS
 container_dependencies(DEPS)
-
 container_dependencies(ZOEKT_DEPS)
 
 # Tip: to view exactly what gets built here, you can run:

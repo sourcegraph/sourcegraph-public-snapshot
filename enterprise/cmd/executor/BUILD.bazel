@@ -26,12 +26,6 @@ go_binary(
     visibility = ["//visibility:public"],
 )
 
-go_cross_binary(
-    name = "executor_linux_amd64",
-    platform = "@zig_sdk//platform:linux_amd64",
-    target = "executor",
-)
-
 pkg_tar(
     name = "tar_executor",
     srcs = [":executor"],
