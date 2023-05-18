@@ -1,10 +1,14 @@
 export interface ActiveTextEditor {
     content: string
     filePath: string
+    repoName?: string
+    revision?: string
 }
 
 export interface ActiveTextEditorSelection {
     fileName: string
+    repoName?: string
+    revision?: string
     precedingText: string
     selectedText: string
     followingText: string
@@ -13,6 +17,8 @@ export interface ActiveTextEditorSelection {
 export interface ActiveTextEditorVisibleContent {
     content: string
     fileName: string
+    repoName?: string
+    revision?: string
 }
 
 export interface InlineController {

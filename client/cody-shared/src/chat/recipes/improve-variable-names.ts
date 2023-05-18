@@ -42,7 +42,7 @@ export class ImproveVariableNames implements Recipe {
                 truncatedSelectedText,
                 truncatedPrecedingText,
                 truncatedFollowingText,
-                selection.fileName,
+                selection,
                 context.codebaseContext
             )
         )

@@ -444,13 +444,14 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
                 ? {
                       view,
                       repo: props.blobInfo.repoName,
+                      revision: props.blobInfo.revision,
                       filename: props.blobInfo.filePath,
                       content: props.blobInfo.content,
                   }
                 : null,
         })
         return () => useEditorStore.setState({ editor: null })
-    }, [props.blobInfo.content, props.blobInfo.filePath, props.blobInfo.repoName])
+    }, [props.blobInfo.content, props.blobInfo.filePath, props.blobInfo.repoName, props.blobInfo.revision])
 
     return (
         <>
