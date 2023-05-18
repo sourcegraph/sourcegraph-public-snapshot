@@ -94,6 +94,17 @@
         margin-top: 1.5rem;
     }
 
+    &-buttons-group {
+        justify-content: stretch;
+        align-items: center;
+        min-width: 0;
+
+        & > * {
+            flex-grow: 1;
+            flex-shrink: 0;
+        }
+    }
+
     &-widget {
         margin: -2rem -1.5rem;
         display: flex;

@@ -100,6 +100,7 @@ export const LocalRepositoriesWidget: FC<LocalRepositoriesWidgetProps> = props =
 }
 
 interface PathsPickerActionsProps {
+    className?: string
     onPathsChange: (paths: string[]) => void
 }
 
@@ -108,7 +109,7 @@ interface PathsPickerActionsProps {
  * but we have two buttons to improve user understanding what options
  * they have in the file picker.
  */
-export const PathsPickerActions: FC<PathsPickerActionsProps> = ({ onPathsChange }) => {
+export const PathsPickerActions: FC<PathsPickerActionsProps> = ({ className, onPathsChange }) => {
     const handleClickCallPathPicker = async (): Promise<void> => {
         const paths = await callFilePicker()
 
@@ -118,7 +119,7 @@ export const PathsPickerActions: FC<PathsPickerActionsProps> = ({ onPathsChange 
     }
 
     return (
-        <div className={styles.headerActions}>
+        <div className={classNames(className, styles.headerActions)}>
             <Button variant="primary" onClick={handleClickCallPathPicker}>
                 <Icon svgPath={mdiGit} aria-hidden={true} /> Add a repository
             </Button>

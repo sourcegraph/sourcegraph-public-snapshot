@@ -133,7 +133,12 @@ export const AddLocalRepositoriesSetupPage: FC = () => {
             </div>
             <div className={classNames(styles.actions, styles.actionsWithBg)}>
                 <LocalRepositoriesWidget className={styles.localRepositoriesWidget}>
-                    {api => <PathsPickerActions onPathsChange={api.addNewPaths} />}
+                    {api => (
+                        <PathsPickerActions
+                            className={styles.localRepositoriesButtonsGroup}
+                            onPathsChange={api.addNewPaths}
+                        />
+                    )}
                 </LocalRepositoriesWidget>
             </div>
         </div>
