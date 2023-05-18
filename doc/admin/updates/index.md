@@ -60,6 +60,13 @@ To facilitate the management of Sourcegraph's databases, we have created the `mi
 - To learn more about migrations see our [developer docs](https://docs.sourcegraph.com/dev/background-information/sql/migrations_overview). 
 - For a full listing of migrator's command arguments see its [usage docs](https://docs.sourcegraph.com/admin/how-to/manual_database_migrations).
 
+### Best Practices
+> **Caution:** The upgrade process aggressively mutates the shape and contents of your database, and undiscovered errors in the migration process or unexpected environmental differences may cause an unusable instance or data loss.
+
+It is highly recommended to:
+- Take an up-to-date snapshot of your databases prior to starting a multi-version upgrade. 
+- Perform the entire upgrade procedure on an idle clone of the production instance and switch traffic over on success, if possible.
+
 ## General upgrade procedure
 
 Sourcegraph upgrades take the following general form:
@@ -69,9 +76,9 @@ Sourcegraph upgrades take the following general form:
 
 > Note: For more explicit steps, specific to your deployment see the operations guides linked below.
 
-**Determine if your release is ready for upgrade**
+### Upgrade Readiness
 
-Starting 5.0.0, as an admin you are able to check instance upgrade readiness by navigating to the `Site admin > Updates` page. Here you'll be notified if your instance has any **schema drift** or unfinished **out of band migrations**.
+Starting in v5.0.0, as an admin you are able to check instance upgrade readiness by navigating to the `Site admin > Updates` page. Here you'll be notified if your instance has any **schema drift** or unfinished **out of band migrations**.
 
 ![Screenshot 2023-05-17 at 1 37 12 PM](https://github.com/sourcegraph/sourcegraph/assets/13024338/185fc3e8-0706-4a23-b9fe-e262f9a9e4b3)
 
