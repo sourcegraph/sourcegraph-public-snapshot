@@ -26,24 +26,18 @@ func attemptAutofix(
 ) ([]drift.Summary, error) {
 	var autofixErr error
 	for attempts := maxAutofixAttempts; attempts > 0 && len(summaries) > 0 && autofixErr == nil; attempts-- {
-		allStatements := []string{}
-		for _, summary := range summaries {
-			if statements, ok := summary.Statements(); ok {
-				allStatements = append(allStatements, statements...)
-			}
-		}
-		if len(allStatements) == 0 {
-			out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "No autofix to apply"))
-			break
-		}
-
-		autofixErr = store.RunDDLStatements(ctx, allStatements)
-		if autofixErr != nil {
+		if ok, err := runAutofix(ctx, store, summaries); err != nil {
 			out.WriteLine(output.Linef(output.EmojiFailure, output.StyleFailure, "Failed to apply autofix: %s", autofixErr))
 		} else {
+			if !ok {
+				out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "No autofix to apply"))
+				break
+			}
+
 			out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Successfully applied autofix"))
-			out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "Re-checking drift"))
 		}
+
+		out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "Re-checking drift"))
 
 		schemas, err := store.Describe(ctx)
 		if err != nil {
@@ -54,4 +48,22 @@ func attemptAutofix(
 	}
 
 	return summaries, nil
+}
+
+func runAutofix(
+	ctx context.Context,
+	store Store,
+	summaries []drift.Summary,
+) (bool, error) {
+	allStatements := []string{}
+	for _, summary := range summaries {
+		if statements, ok := summary.Statements(); ok {
+			allStatements = append(allStatements, statements...)
+		}
+	}
+	if len(allStatements) == 0 {
+		return false, nil
+	}
+
+	return true, store.RunDDLStatements(ctx, allStatements)
 }
