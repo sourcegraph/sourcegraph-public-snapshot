@@ -158,7 +158,7 @@ func (s *Server) doChangelistMapping(ctx context.Context, job *perforceChangelis
 	// be mapped. This makes it easy to have a reliable start point for the next time this job is
 	// attempted, knowing for sure that the latest commit in the DB is indeed the last point from
 	// which we need to resume the mapping.
-	err = s.DB.RepoCommits().BatchInsertCommitSHAsWithPerforceChangelistID(ctx, repo.ID, commitsMap)
+	err = s.DB.RepoCommitsChangelists().BatchInsertCommitSHAsWithPerforceChangelistID(ctx, repo.ID, commitsMap)
 	if err != nil {
 		return err
 	}
@@ -223,7 +223,7 @@ func newMappableCommits(ctx context.Context, logger log.Logger, dir GitDir, last
 }
 
 func (s *Server) getCommitsToInsert(ctx context.Context, logger log.Logger, repoID api.RepoID, dir GitDir) (commitsMap []types.PerforceChangelist, err error) {
-	latestRowCommit, err := s.DB.RepoCommits().GetLatestForRepo(ctx, repoID)
+	latestRowCommit, err := s.DB.RepoCommitsChangelists().GetLatestForRepo(ctx, repoID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			// This repo has not been imported into the RepoCommits table yet. Start from the beginning.
