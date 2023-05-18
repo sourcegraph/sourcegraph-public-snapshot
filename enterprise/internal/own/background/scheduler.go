@@ -97,13 +97,10 @@ func (f *featureFlagWrapper) Handle(ctx context.Context) error {
 		f.logger.Info("skipping own indexing job, job disabled", logger.String("job-name", f.jobType.Name))
 	}
 
-	configurations, err := f.db.OwnSignalConfigurations().LoadConfigurations(ctx, database.LoadSignalConfigurationArgs{Name: f.jobType.Name})
+	config, err := loadConfig(ctx, f.jobType, f.db.OwnSignalConfigurations())
 	if err != nil {
-		return errors.Wrap(err, "LoadConfigurations")
-	} else if len(configurations) == 0 {
-		return errors.Newf("ownership signal configuration not found for name: %s\n", f.jobType.Name)
+		return errors.Wrap(err, "loadConfig")
 	}
-	config := configurations[0]
 
 	if !config.Enabled {
 		logJobDisabled()
@@ -131,7 +128,12 @@ func (o *ownRepoIndexSchedulerJob) Handle(ctx context.Context) error {
 	// convert duration to hours to match the query
 	after := o.clock.Now().Add(-1 * o.jobType.IndexInterval)
 
-	query := sqlf.Sprintf(ownIndexRepoQuery, o.jobType.Id, after, o.jobType.Id)
+	// config, err := loadConfig(ctx, o.jobType, o.configStore)
+	// if err != nil {
+	// 	return errors.Wrap(err, "loadConfig")
+	// }
+
+	query := sqlf.Sprintf(ownIndexRepoQuery, o.jobType.Name, after)
 	val, err := o.store.ExecResult(ctx, query)
 	if err != nil {
 		return errors.Wrapf(err, "ownRepoIndexSchedulerJob.Handle %s", o.jobType.Name)
@@ -149,12 +151,45 @@ func (o *ownRepoIndexSchedulerJob) Handle(ctx context.Context) error {
 // 3. add all remaining cloned repos to the queue
 // This means each (job, repo) tuple will only be index maximum once in a single interval duration
 var ownIndexRepoQuery = `
-WITH ineligible_repos AS (SELECT repo_id
-                          FROM own_background_jobs
-                          WHERE job_type = %d
-                              AND (state IN ('failed', 'completed') AND finished_at > %s)
-                             OR (state IN ('processing', 'errored', 'queued')))
-insert into own_background_jobs (repo_id, job_type) (SELECT gr.repo_id, %d
-FROM gitserver_repos gr
-WHERE gr.repo_id NOT IN (SELECT * FROM ineligible_repos) and gr.clone_status = 'cloned');
-`
+WITH signal_config AS (SELECT * FROM own_signal_configurations WHERE name = %s LIMIT 1),
+     ineligible_repos AS (SELECT repo_id
+                          FROM own_background_jobs,
+                               signal_config
+                          WHERE job_type = signal_config.id
+                              AND (state IN ('failed', 'completed') AND finished_at > %s) OR (state IN ('processing', 'errored', 'queued'))
+                          UNION
+                            SELECT repo.id FROM repo, signal_config WHERE repo.name LIKE (SELECT UNNEST(signal_config.excluded_repo_patterns))
+                          )
+INSERT
+INTO own_background_jobs (repo_id, job_type) (SELECT gr.repo_id, signal_config.id
+                                              FROM gitserver_repos gr,
+                                                   signal_config
+                                              WHERE gr.repo_id NOT IN (SELECT * FROM ineligible_repos)
+                                                AND gr.clone_status = 'cloned');`
+
+func loadConfig(ctx context.Context, jobType IndexJobType, store database.SignalConfigurationStore) (database.SignalConfiguration, error) {
+	configurations, err := store.LoadConfigurations(ctx, database.LoadSignalConfigurationArgs{Name: jobType.Name})
+	if err != nil {
+		return database.SignalConfiguration{}, errors.Wrap(err, "LoadConfigurations")
+	} else if len(configurations) == 0 {
+		return database.SignalConfiguration{}, errors.Newf("ownership signal configuration not found for name: %s\n", jobType.Name)
+	}
+	return configurations[0], nil
+}
+
+// WITH signal_config AS (SELECT * FROM own_signal_configurations WHERE name = 'recent-contributors' LIMIT 1),
+// ineligible_repos AS (SELECT repo_id
+// FROM own_background_jobs,
+// signal_config
+// WHERE job_type = signal_config.id
+// AND (state IN ('failed', 'completed'))
+// OR (state IN ('processing', 'errored', 'queued')))
+// INSERT
+// INTO own_background_jobs (repo_id, job_type) (SELECT gr.repo_id, signal_config.id
+// FROM gitserver_repos gr,
+// signal_config
+// WHERE gr.repo_id NOT IN (SELECT * FROM ineligible_repos)
+// AND gr.repo_id NOT IN (SELECT rr.id
+// FROM repo rr
+// WHERE rr.name LIKE (SELECT UNNEST(signal_config.excluded_repo_patterns)))
+// AND gr.clone_status = 'cloned');
