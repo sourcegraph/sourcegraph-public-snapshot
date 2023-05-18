@@ -2,9 +2,12 @@ package cliutil
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/drift"
 	descriptions "github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -26,6 +29,7 @@ func attemptAutofix(
 ) (_ []drift.Summary, err error) {
 	for attempts := maxAutofixAttempts; attempts > 0 && len(summaries) > 0 && err == nil; attempts-- {
 		if !runAutofix(ctx, out, store, summaries) {
+			out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "No autofix to apply"))
 			break
 		}
 
@@ -47,23 +51,30 @@ func runAutofix(
 	out *output.Output,
 	store Store,
 	summaries []drift.Summary,
-) bool {
-	allStatements := []string{}
+) (attemptedAutofix bool) {
+	var (
+		successes = 0
+		errs      []error
+	)
 	for _, summary := range summaries {
-		if statements, ok := summary.Statements(); ok {
-			allStatements = append(allStatements, statements...)
+		statements, ok := summary.Statements()
+		if !ok {
+			continue
+		}
+
+		if err := store.RunDDLStatements(ctx, statements); err != nil {
+			errs = append(errs, errors.Wrap(err, fmt.Sprintf("failed to apply autofix %q", strings.Join(statements, "\n"))))
+		} else {
+			successes++
 		}
 	}
-	if len(allStatements) == 0 {
-		out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "No autofix to apply"))
-		return false
+
+	if successes > 0 {
+		out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Successfully applied %d autofixes", successes))
+	}
+	if len(errs) > 0 {
+		out.WriteLine(output.Linef(output.EmojiFailure, output.StyleFailure, "Failed to apply %d autofixes: %s", len(errs), errors.Append(nil, errs...)))
 	}
 
-	if err := store.RunDDLStatements(ctx, allStatements); err != nil {
-		out.WriteLine(output.Linef(output.EmojiFailure, output.StyleFailure, "Failed to apply autofix: %s", err))
-	} else {
-		out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Successfully applied autofix"))
-	}
-
-	return true
+	return successes > 0 || len(errs) > 0
 }
