@@ -50,8 +50,8 @@ type UserEmailsStore interface {
 	Get(ctx context.Context, userID int32, email string) (emailCanonicalCase string, verified bool, err error)
 	GetInitialSiteAdminInfo(ctx context.Context) (email string, tosAccepted bool, err error)
 	GetLatestVerificationSentEmail(ctx context.Context, email string) (*UserEmail, error)
-	GetPrimaryEmail(ctx context.Context, id int32) (email string, verified bool, err error)
-	HasVerifiedEmail(ctx context.Context, id int32) (bool, error)
+	GetPrimaryEmail(ctx context.Context, userID int32) (email string, verified bool, err error)
+	HasVerifiedEmail(ctx context.Context, userID int32) (bool, error)
 	GetVerifiedEmails(ctx context.Context, emails ...string) ([]*UserEmail, error)
 	ListByUser(ctx context.Context, opt UserEmailsListOptions) ([]*UserEmail, error)
 	Remove(ctx context.Context, userID int32, email string) error
@@ -100,12 +100,12 @@ func (s *userEmailsStore) GetInitialSiteAdminInfo(ctx context.Context) (email st
 
 // GetPrimaryEmail gets the oldest email associated with the user, preferring a verified email to an
 // unverified email.
-func (s *userEmailsStore) GetPrimaryEmail(ctx context.Context, id int32) (email string, verified bool, err error) {
+func (s *userEmailsStore) GetPrimaryEmail(ctx context.Context, userID int32) (email string, verified bool, err error) {
 	if err := s.Handle().QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 AND is_primary",
-		id,
+		userID,
 	).Scan(&email, &verified); err != nil {
 		if err == sql.ErrNoRows {
-			return "", false, userEmailNotFoundError{[]any{fmt.Sprintf("id %d", id)}}
+			return "", false, userEmailNotFoundError{[]any{fmt.Sprintf("id %d", userID)}}
 		}
 
 		return "", false, err
@@ -114,8 +114,8 @@ func (s *userEmailsStore) GetPrimaryEmail(ctx context.Context, id int32) (email 
 }
 
 // HasVerifiedEmail returns whether the user with the given ID has a verified email.
-func (s *userEmailsStore) HasVerifiedEmail(ctx context.Context, id int32) (bool, error) {
-	q := sqlf.Sprintf("SELECT true FROM user_emails WHERE user_id = %s AND verified_at IS NOT NULL LIMIT 1", id)
+func (s *userEmailsStore) HasVerifiedEmail(ctx context.Context, userID int32) (bool, error) {
+	q := sqlf.Sprintf("SELECT true FROM user_emails WHERE user_id = %s AND verified_at IS NOT NULL LIMIT 1", userID)
 	verified, ok, err := basestore.ScanFirstBool(s.Query(ctx, q))
 	return ok && verified, err
 }
@@ -284,7 +284,7 @@ func (s *userEmailsStore) SetLastVerification(ctx context.Context, userID int32,
 	return nil
 }
 
-// GetLatestVerificationSentEmail returns the email with the lastest time of
+// GetLatestVerificationSentEmail returns the email with the latest time of
 // "last_verification_sent_at" column, it excludes rows with
 // "last_verification_sent_at IS NULL".
 func (s *userEmailsStore) GetLatestVerificationSentEmail(ctx context.Context, email string) (*UserEmail, error) {
