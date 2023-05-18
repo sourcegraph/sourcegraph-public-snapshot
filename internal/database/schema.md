@@ -1645,23 +1645,6 @@ Referenced by:
 
 **rollout**: Rollout only defined when flag_type is rollout. Increments of 0.01%
 
-# Table "public.github_app_installs"
-```
-     Column      |           Type           | Collation | Nullable |                     Default                     
------------------+--------------------------+-----------+----------+-------------------------------------------------
- id              | integer                  |           | not null | nextval('github_app_installs_id_seq'::regclass)
- app_id          | integer                  |           | not null | 
- installation_id | integer                  |           | not null | 
- created_at      | timestamp with time zone |           | not null | now()
-Indexes:
-    "github_app_installs_pkey" PRIMARY KEY, btree (id)
-    "app_id_idx" btree (app_id)
-    "installation_id_idx" btree (installation_id)
-Foreign-key constraints:
-    "github_app_installs_app_id_fkey" FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE
-
-```
-
 # Table "public.github_apps"
 ```
       Column       |           Type           | Collation | Nullable |                 Default                 
@@ -1685,8 +1668,6 @@ Indexes:
     "github_apps_app_id_slug_base_url_unique" UNIQUE, btree (app_id, slug, base_url)
 Foreign-key constraints:
     "github_apps_webhook_id_fkey" FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE SET NULL
-Referenced by:
-    TABLE "github_app_installs" CONSTRAINT "github_app_installs_app_id_fkey" FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE
 
 ```
 
