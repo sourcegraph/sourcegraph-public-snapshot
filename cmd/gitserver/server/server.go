@@ -2473,6 +2473,10 @@ func scanCRLF(data []byte, atEOF bool) (advance int, token []byte, err error) {
 	return 0, nil, nil
 }
 
+func ScanCRLF(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	return scanCRLF(data, atEOF)
+}
+
 // testGitRepoExists is a test fixture that overrides the return value for
 // GitRepoSyncer.IsCloneable when it is set.
 var testGitRepoExists func(ctx context.Context, remoteURL *vcs.URL) error
