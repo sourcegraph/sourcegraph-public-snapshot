@@ -1,23 +1,12 @@
+include: ./sourcegraph-base.yaml
+
 contents:
-  keyring:
-    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
-  repositories:
-    - https://packages.wolfi.dev/os
   packages:
-    ## Base set of packages
-    - wolfi-baselayout
-    - ca-certificates-bundle
-    - tzdata
     # Included by existing SG base image
     - tini
     - mailcap
-    # Dev tools - may not be required in production
-    - busybox
-    - curl
-    - wget
-    - bind-tools
 
-    # redis-specific packages
+    # redis packages
     - redis
 
 accounts:
@@ -42,8 +31,3 @@ work-dir:
 
 entrypoint:
   command: redis-server
-
-archs:
-- x86_64
-
-# MANUAL REBUILD: Thu May 18 11:33:46 BST 2023

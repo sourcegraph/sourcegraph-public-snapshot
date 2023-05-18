@@ -1,43 +1,25 @@
-contents:
-  repositories:
-    - https://packages.wolfi.dev/os
-  keyring:
-    - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
-  packages:
-    - wolfi-baselayout
-    - ca-certificates-bundle
-    - tzdata
-    # Dev tools - may not be required in production
-    - busybox
-    - curl
-    - wget
-    - bind-tools
+include: ./sourcegraph-base.yaml
 
-    # Postgres-specific packages
-    - su-exec
+contents:
+    # Postgres packages
+    - glibc-locale-en
+    - libpq-12
     - postgresql-12
     - postgresql-12-client
-    - postgresql-12-oci-entrypoint
     - postgresql-12-contrib
-    - libpq-12
-    - glibc-locale-en
+    - postgresql-12-oci-entrypoint
+    - su-exec
 
 # TODO: Currently missing shadow package which would let us modify users and groups in the Dockerfile
 #       In the future, we can use accounts: and paths: directives to do that in this image
 
-accounts:
-  run-as: root
-
+# TODO: Is this needed?
 entrypoint:
   command: /var/lib/postgres/initdb/postgresql-entrypoint.sh postgres
 
+# TODO: Is this needed?
 environment:
   PGDATA: /data/pgdata-12
   POSTGRES_USER: sg
   POSTGRES_PASSWORD: ''
   POSTGRES_DB: sg
-
-archs:
-  - x86_64
-
-# MANUAL REBUILD: Thu May 18 11:33:46 BST 2023
