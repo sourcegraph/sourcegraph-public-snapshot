@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { mdiAccessPoint, mdiFileDocumentOutline, mdiMagnify, mdiPacMan } from '@mdi/js'
+import { mdiAccessPoint, mdiAccountAlert, mdiFileDocumentOutline, mdiMagnify, mdiPacMan } from '@mdi/js'
 
 import { ContextFile } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { pluralize } from '@sourcegraph/common'
@@ -42,6 +42,32 @@ interface ContextItemKind {
 // Gets all of the known kinds of context items.
 function getContextItemKinds(FileLink: React.FunctionComponent<FileLinkProps>): ContextItemKind[] {
     return [
+        {
+            noun: 'IRC log',
+            verb: 'Netsplit',
+            object: 'your chats',
+            searchIcon: mdiAccountAlert,
+            itemIcon: mdiFileDocumentOutline,
+            contains(item): boolean {
+                return item.fileName.includes('a')
+            },
+            present(item): JSX.Element {
+                return <a href={`https://google.com/?q=${item.fileName}`}>{item.fileName}</a>
+            },
+        },
+        {
+            noun: 'wiki pages',
+            verb: 'Considered',
+            object: 'the Megacorp wiki',
+            searchIcon: mdiAccountAlert,
+            itemIcon: mdiFileDocumentOutline,
+            contains(item): boolean {
+                return item.fileName.endsWith('.md')
+            },
+            present(item): JSX.Element {
+                return <a href={`https://google.com/?q=${item.fileName}`}>{item.fileName}</a>
+            },
+        },
         {
             noun: 'client file',
             verb: 'Grokked',
