@@ -9,6 +9,7 @@ go_library(
         "//enterprise/cmd/llm-proxy/internal/actor",
         "//enterprise/cmd/llm-proxy/internal/dotcom",
         "//enterprise/internal/llm-proxy",
+        "//internal/trace",
         "//lib/errors",
         "@com_github_gregjones_httpcache//:httpcache",
         "@com_github_khan_genqlient//graphql",

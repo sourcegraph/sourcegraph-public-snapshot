@@ -2,7 +2,6 @@ package actor
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/go-redsync/redsync/v4"
@@ -15,6 +14,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -137,19 +137,21 @@ type sourcesPeriodicHandler struct {
 var _ goroutine.Handler = &sourcesPeriodicHandler{}
 
 func (s *sourcesPeriodicHandler) Handle(ctx context.Context) (err error) {
+	handleLogger := sgtrace.Logger(ctx, s.logger)
+
 	// If we are not holding a lock, try to acquire it.
 	if expire := s.rmux.Until(); expire.IsZero() {
 		// If another instance is working on background syncs, we don't want to
 		// do anything. We should check every time still in case the current worker
 		// goes offline, we want to be ready to pick up the work.
 		if err := s.rmux.LockContext(ctx); errors.HasType(err, &redsync.ErrTaken{}) {
-			s.logger.Debug("Not starting a new sync, another one is likely in progress")
+			handleLogger.Debug("Not starting a new sync, another one is likely in progress")
 			return nil // ignore lock contention errors
 		} else if err != nil {
 			return errors.Wrap(err, "acquire worker lock")
 		}
 	} else {
-		s.logger.Debug("Extending lock duration")
+		handleLogger.Debug("Extending lock duration")
 		// Otherwise, extend our lock so that we can keep working.
 		_, _ = s.rmux.ExtendContext(ctx)
 	}
@@ -169,22 +171,18 @@ func (s *sourcesPeriodicHandler) Handle(ctx context.Context) (err error) {
 					span.End()
 				}()
 
-				logger := s.logger.
-					With(log.String("syncer", fmt.Sprintf("%T", src))).
-					WithTrace(log.TraceContext{
-						TraceID: span.SpanContext().TraceID().String(),
-						SpanID:  span.SpanContext().SpanID().String(),
-					})
+				syncLogger := sgtrace.Logger(ctx, handleLogger).
+					With(log.String("syncer", src.Name()))
 
 				start := time.Now()
 
-				logger.Info("Starting a new sync")
+				syncLogger.Info("Starting a new sync")
 				seen, err := src.Sync(ctx)
 				if err != nil {
-					logger.Error("Failed sync", log.Error(err))
+					syncLogger.Error("Failed sync", log.Error(err))
 					return errors.Wrapf(err, "failed to sync %s", src.Name())
 				}
-				logger.Info("Completed sync", log.Duration("sync_duration", time.Since(start)), log.Int("seen", seen))
+				syncLogger.Info("Completed sync", log.Duration("sync_duration", time.Since(start)), log.Int("seen", seen))
 				return nil
 			})
 		}

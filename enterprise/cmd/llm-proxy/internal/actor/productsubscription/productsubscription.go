@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/dotcom"
 	llmproxy "github.com/sourcegraph/sourcegraph/enterprise/internal/llm-proxy"
+	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -99,16 +100,25 @@ func (s *Source) Update(ctx context.Context, actor *actor.Actor) {
 // All Sync implementations are called periodically - implementations can decide
 // to skip syncs if the frequency is too high.
 func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
+	syncLog := sgtrace.Logger(ctx, s.log)
+
 	resp, err := dotcom.ListProductSubscriptions(ctx, s.dotcom)
 	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			syncLog.Warn("sync context cancelled")
+			return seen, nil
+		}
 		return seen, errors.Wrap(err, "failed to list subscriptions from dotcom")
 	}
+
 	for _, sub := range resp.Dotcom.ProductSubscriptions.Nodes {
 		for _, token := range sub.SourcegraphAccessTokens {
 			act := NewActor(s, token, sub.ProductSubscriptionState, s.devLicensesOnly)
 			data, err := json.Marshal(act)
 			if err != nil {
-				s.log.Error("failed to marshal actor", log.Error(err))
+				syncLog.Error("failed to marshal actor",
+					log.String("actor.ID", act.ID),
+					log.Error(err))
 				errs = errors.Append(errs, err)
 				continue
 			}
