@@ -8,3 +8,10 @@ contents:
 
     ## opentelemetry-collector packages
     - opentelemetry-collector@sourcegraph
+
+paths:
+  - path: /otel-collector
+    type: directory
+    permissions: 0o755
+
+work-dir: /otel-collector

@@ -8,3 +8,12 @@ contents:
 
     ## blobstore packages
     - s3proxy@sourcegraph
+
+paths:
+  - path: /data
+    type: directory
+    uid: 100
+    gid: 101
+    permissions: 0o755
+
+work-dir: /opt/s3proxy

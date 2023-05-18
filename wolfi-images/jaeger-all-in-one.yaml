@@ -19,3 +19,9 @@ accounts:
     - username: jaeger
       uid: 10001
       gid: 10002
+
+paths:
+  - path: /tmp
+    type: directory
+    uid: 10001
+    permissions: 0o755
