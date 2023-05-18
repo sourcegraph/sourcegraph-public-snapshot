@@ -997,6 +997,15 @@
       "CycleOption": "NO"
     },
     {
+      "Name": "own_signal_configurations_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
       "Name": "own_signal_recent_contribution_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
@@ -1069,7 +1078,7 @@
       "CycleOption": "NO"
     },
     {
-      "Name": "repo_commits_id_seq",
+      "Name": "repo_commits_changelists_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
       "MinimumValue": 1,
@@ -8114,7 +8123,7 @@
         },
         {
           "Name": "max_definition_id",
-          "Index": 11,
+          "Index": 17,
           "TypeName": "bigint",
           "IsNullable": false,
           "Default": "",
@@ -8127,7 +8136,7 @@
         },
         {
           "Name": "max_path_id",
-          "Index": 13,
+          "Index": 19,
           "TypeName": "bigint",
           "IsNullable": false,
           "Default": "",
@@ -8140,9 +8149,87 @@
         },
         {
           "Name": "max_reference_id",
-          "Index": 12,
+          "Index": 18,
           "TypeName": "bigint",
           "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "num_count_records_processed",
+          "Index": 16,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "num_count_records_total",
+          "Index": 13,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "num_path_records_processed",
+          "Index": 14,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "num_path_records_total",
+          "Index": 11,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "num_reference_records_processed",
+          "Index": 15,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "num_reference_records_total",
+          "Index": 12,
+          "TypeName": "integer",
+          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -19533,6 +19620,101 @@
       "Triggers": []
     },
     {
+      "Name": "own_signal_configurations",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "description",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "''::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "enabled",
+          "Index": 5,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "excluded_repo_patterns",
+          "Index": 4,
+          "TypeName": "text[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('own_signal_configurations_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "name",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "own_signal_configurations_name_uidx",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX own_signal_configurations_name_uidx ON own_signal_configurations USING btree (name)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "own_signal_configurations_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX own_signal_configurations_pkey ON own_signal_configurations USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
       "Name": "own_signal_recent_contribution",
       "Comment": "One entry per file changed in every commit that classifies as a contribution signal.",
       "Columns": [
@@ -21834,7 +22016,7 @@
       ]
     },
     {
-      "Name": "repo_commits",
+      "Name": "repo_commits_changelists",
       "Comment": "",
       "Columns": [
         {
@@ -21851,11 +22033,24 @@
           "Comment": ""
         },
         {
+          "Name": "created_at",
+          "Index": 5,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "id",
           "Index": 1,
           "TypeName": "integer",
           "IsNullable": false,
-          "Default": "nextval('repo_commits_id_seq'::regclass)",
+          "Default": "nextval('repo_commits_changelists_id_seq'::regclass)",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -21892,12 +22087,12 @@
       ],
       "Indexes": [
         {
-          "Name": "repo_commits_pkey",
+          "Name": "repo_commits_changelists_pkey",
           "IsPrimaryKey": true,
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX repo_commits_pkey ON repo_commits USING btree (id)",
+          "IndexDefinition": "CREATE UNIQUE INDEX repo_commits_changelists_pkey ON repo_commits_changelists USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
@@ -21907,14 +22102,14 @@
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX repo_id_perforce_changelist_id_unique ON repo_commits USING btree (repo_id, perforce_changelist_id)",
+          "IndexDefinition": "CREATE UNIQUE INDEX repo_id_perforce_changelist_id_unique ON repo_commits_changelists USING btree (repo_id, perforce_changelist_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
         {
-          "Name": "repo_commits_repo_id_fkey",
+          "Name": "repo_commits_changelists_repo_id_fkey",
           "ConstraintType": "f",
           "RefTableName": "repo",
           "IsDeferrable": true,

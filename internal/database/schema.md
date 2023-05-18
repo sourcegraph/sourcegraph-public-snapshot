@@ -993,18 +993,24 @@ Indexes:
 
 # Table "public.codeintel_ranking_progress"
 ```
-          Column          |           Type           | Collation | Nullable |                        Default                         
---------------------------+--------------------------+-----------+----------+--------------------------------------------------------
- id                       | bigint                   |           | not null | nextval('codeintel_ranking_progress_id_seq'::regclass)
- graph_key                | text                     |           | not null | 
- mappers_started_at       | timestamp with time zone |           | not null | 
- mapper_completed_at      | timestamp with time zone |           |          | 
- seed_mapper_completed_at | timestamp with time zone |           |          | 
- reducer_started_at       | timestamp with time zone |           |          | 
- reducer_completed_at     | timestamp with time zone |           |          | 
- max_definition_id        | bigint                   |           | not null | 
- max_reference_id         | bigint                   |           | not null | 
- max_path_id              | bigint                   |           | not null | 
+             Column              |           Type           | Collation | Nullable |                        Default                         
+---------------------------------+--------------------------+-----------+----------+--------------------------------------------------------
+ id                              | bigint                   |           | not null | nextval('codeintel_ranking_progress_id_seq'::regclass)
+ graph_key                       | text                     |           | not null | 
+ mappers_started_at              | timestamp with time zone |           | not null | 
+ mapper_completed_at             | timestamp with time zone |           |          | 
+ seed_mapper_completed_at        | timestamp with time zone |           |          | 
+ reducer_started_at              | timestamp with time zone |           |          | 
+ reducer_completed_at            | timestamp with time zone |           |          | 
+ num_path_records_total          | integer                  |           |          | 
+ num_reference_records_total     | integer                  |           |          | 
+ num_count_records_total         | integer                  |           |          | 
+ num_path_records_processed      | integer                  |           |          | 
+ num_reference_records_processed | integer                  |           |          | 
+ num_count_records_processed     | integer                  |           |          | 
+ max_definition_id               | bigint                   |           | not null | 
+ max_reference_id                | bigint                   |           | not null | 
+ max_path_id                     | bigint                   |           | not null | 
 Indexes:
     "codeintel_ranking_progress_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_progress_graph_key_key" UNIQUE CONSTRAINT, btree (graph_key)
@@ -2947,6 +2953,21 @@ Indexes:
 
 ```
 
+# Table "public.own_signal_configurations"
+```
+         Column         |  Type   | Collation | Nullable |                        Default                        
+------------------------+---------+-----------+----------+-------------------------------------------------------
+ id                     | integer |           | not null | nextval('own_signal_configurations_id_seq'::regclass)
+ name                   | text    |           | not null | 
+ description            | text    |           | not null | ''::text
+ excluded_repo_patterns | text[]  |           |          | 
+ enabled                | boolean |           | not null | false
+Indexes:
+    "own_signal_configurations_pkey" PRIMARY KEY, btree (id)
+    "own_signal_configurations_name_uidx" UNIQUE, btree (name)
+
+```
+
 # Table "public.own_signal_recent_contribution"
 ```
         Column        |            Type             | Collation | Nullable |                          Default                           
@@ -3285,7 +3306,7 @@ Referenced by:
     TABLE "lsif_index_configuration" CONSTRAINT "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "lsif_retention_configuration" CONSTRAINT "lsif_retention_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "permission_sync_jobs" CONSTRAINT "permission_sync_jobs_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
-    TABLE "repo_commits" CONSTRAINT "repo_commits_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "repo_commits_changelists" CONSTRAINT "repo_commits_changelists_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "repo_kvps" CONSTRAINT "repo_kvps_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "repo_paths" CONSTRAINT "repo_paths_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
@@ -3304,19 +3325,20 @@ Triggers:
 
 ```
 
-# Table "public.repo_commits"
+# Table "public.repo_commits_changelists"
 ```
-         Column         |  Type   | Collation | Nullable |                 Default                  
-------------------------+---------+-----------+----------+------------------------------------------
- id                     | integer |           | not null | nextval('repo_commits_id_seq'::regclass)
- repo_id                | integer |           | not null | 
- commit_sha             | bytea   |           | not null | 
- perforce_changelist_id | integer |           | not null | 
+         Column         |           Type           | Collation | Nullable |                       Default                        
+------------------------+--------------------------+-----------+----------+------------------------------------------------------
+ id                     | integer                  |           | not null | nextval('repo_commits_changelists_id_seq'::regclass)
+ repo_id                | integer                  |           | not null | 
+ commit_sha             | bytea                    |           | not null | 
+ perforce_changelist_id | integer                  |           | not null | 
+ created_at             | timestamp with time zone |           | not null | now()
 Indexes:
-    "repo_commits_pkey" PRIMARY KEY, btree (id)
+    "repo_commits_changelists_pkey" PRIMARY KEY, btree (id)
     "repo_id_perforce_changelist_id_unique" UNIQUE, btree (repo_id, perforce_changelist_id)
 Foreign-key constraints:
-    "repo_commits_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+    "repo_commits_changelists_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
