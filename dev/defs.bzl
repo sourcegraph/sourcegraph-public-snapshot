@@ -94,7 +94,7 @@ def npm_package(name, srcs = [], **kwargs):
     """
     replace_prefixes = kwargs.pop("replace_prefixes", {})
 
-    package_type = kwargs.pop("type", "commonjs")
+    # package_type = kwargs.pop("type", "commonjs")
 
     # Modifications to package.json
     # TODO(bazel): remove when package.json can be updated in source
@@ -110,7 +110,7 @@ def npm_package(name, srcs = [], **kwargs):
             out = updated_pkg_json,
             substitutions = {
                 "src/index.ts": "src/index.js",
-                "\"name\"": "\"type\": \"%s\",\n  \"name\"" % package_type,
+                # "\"name\"": "\"type\": \"%s\",\n  \"name\"" % package_type,
             },
         )
 
