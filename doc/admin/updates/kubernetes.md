@@ -1,22 +1,16 @@
-# Updating a Kubernetes Sourcegraph instance
+# Kubernetes Sourcegraph Upgrade Notes
 
-**Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes any special manual migration steps you must perform per-version.
+This page lists the changes that are relevant for upgrading Sourcegraph on **Kubernetes with Kustomize and Helm**. 
 
-## Upgrade procedure
+Other helpful docs:
+- [Kubernetes Kustomize Upgrade Operations](../deploy/kubernetes/upgrade.md)
+- [Kubernetes Helm Upgrade Operations](../deploy/kubernetes/helm.md#upgrading-sourcegraph)
+- [General Upgrade Info](./index.md)
+- [Product changelog](../../../CHANGELOG.md)
 
-1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
-1. Find the relevant entry for your update in the update notes on this page. **If the notes indicate a patch release exists, target the highest one.**
-1. After checking the relevant update notes, refer to either of the following guides to upgrade your instance:
-    * [Upgrade guide for Kubernetes](../deploy/kubernetes/upgrade.md#standard-upgrades)
-    * [Upgrade guide for Kubernetes with Helm](../deploy/kubernetes/helm.md#standard-upgrades)
-
-## Multi-version upgrade procedure
-
-1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
-1. Find the relevant entry for your update in the update notes on this page. **If the notes indicate a patch release exists, target the highest one.** These notes may contain relevant information about the infrastructure update such as resource requirement changes or versions of depencies (Docker, Kubernetes, externalized databases).
-1. After checking the relevant update notes, refer to either of the following guides to upgrade your instance:
-    * [Upgrade guide for Kubernetes](../deploy/kubernetes/upgrade.md#multi-version-upgrades)
-    * [Upgrade guide for Kubernetes with Helm](../deploy/kubernetes/helm.md#multi-version-upgrades)
+> ***Attention:** These notes may contain relevant information about the infrastructure update such as resource requirement changes or versions of depencies (Docker, kubernetes, externalized databases).*
+>
+> ***If the notes indicate a patch release exists, target the highest one.***
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 

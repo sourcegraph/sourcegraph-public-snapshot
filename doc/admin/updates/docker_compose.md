@@ -1,18 +1,15 @@
-# Updating a Docker Compose Sourcegraph instance
+# Docker Compose Upgrade Notes
 
-This page lists the changes that are relevant for [upgrading Sourcegraph on Docker Compose](../deploy/docker-compose/upgrade.md). You can also view the [product changelog](../../../CHANGELOG.md).
+This page lists the changes that are relevant for upgrading Sourcegraph on **Docker Compose**. 
 
-## Upgrade procedure
+Other helpful docs:
+- [Docker Compose Upgrade Operations](../deploy/docker-compose/upgrade.md)
+- [General Upgrade Info](./index.md)
+- [Product changelog](../../../CHANGELOG.md)
 
-1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
-1. Find the relevant entry for your update in the update notes on this page. **If the notes indicate a patch release exists, target the highest one.**
-1. After checking the relevant update notes, refer to the [standard upgrade procedure](../deploy/docker-compose/upgrade.md#standard-upgrades) to upgrade your instance.
-
-## Multi-version upgrade procedure
-
-1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
-1. Find the relevant entries for your update in the update notes on this page. **If the notes indicate a patch release exists, target the highest one.** These notes may contain relevant information about the infrastructure update such as resource requirement changes or versions of depencies (Docker, Docker Compse, externalized databases).
-1. After checking the relevant update notes, refer to the [multi-version upgrade procedure](../deploy/docker-compose/upgrade.md#multi-version-upgrades) to upgrade your instance.
+> ***Attention:** These notes may contain relevant information about the infrastructure update such as resource requirement changes or versions of depencies (Docker, Docker Compose, externalized databases).*
+>
+> ***If the notes indicate a patch release exists, target the highest one.***
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
