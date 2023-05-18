@@ -5,7 +5,6 @@ const notEnabled = {
     sidebar: false,
     search: false,
     editorRecipes: false,
-    any: false,
     needsEmailVerification: false,
 }
 
@@ -14,7 +13,6 @@ interface IsCodyEnabled {
     sidebar: boolean
     search: boolean
     editorRecipes: boolean
-    any: boolean
     needsEmailVerification: boolean
 }
 
@@ -34,7 +32,6 @@ export const useIsCodyEnabled = (): IsCodyEnabled => {
         sidebar: sidebarEnabled || allEnabled,
         search: searchEnabled || allEnabled,
         editorRecipes: (editorRecipesEnabled && sidebarEnabled) || allEnabled,
-        any: chatEnabled || sidebarEnabled || searchEnabled || editorRecipesEnabled || allEnabled,
         needsEmailVerification: window.context?.sourcegraphDotComMode && !window.context?.currentUser?.hasVerifiedEmail,
     }
 }

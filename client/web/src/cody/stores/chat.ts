@@ -71,6 +71,8 @@ const sortSliceTranscriptHistory = (transcriptHistory: TranscriptJSON[]): Transc
         .slice(0, SAVE_MAX_TRANSCRIPT_HISTORY)
 
 export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore => {
+    const needsEmailVerification =
+        window.context?.sourcegraphDotComMode && !window.context?.currentUser?.hasVerifiedEmail
     const fetchTranscriptHistory = (): TranscriptJSON[] => {
         try {
             const json = JSON.parse(
@@ -106,6 +108,10 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
     }
 
     const clearHistory = (): void => {
+        if (needsEmailVerification) {
+            return
+        }
+
         const { client, onEvent } = get()
         saveTranscriptHistory([])
         if (client && !isErrorLike(client)) {
@@ -115,6 +121,10 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
     }
 
     const deleteHistoryItem = (id: string): void => {
+        if (needsEmailVerification) {
+            return
+        }
+
         const { transcriptId } = get()
         const transcriptHistory = fetchTranscriptHistory()
 
@@ -128,6 +138,12 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
 
     const submitMessage = (text: string): void => {
         const { client, onEvent, getChatContext } = get()
+
+        if (needsEmailVerification) {
+            onEvent?.('submit')
+            return
+        }
+
         if (client && !isErrorLike(client)) {
             const { codebase, filePath } = getChatContext()
             eventLogger.log(EventName.CODY_SIDEBAR_SUBMIT, {
@@ -142,6 +158,12 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
 
     const editMessage = (text: string): void => {
         const { client, onEvent, getChatContext } = get()
+
+        if (needsEmailVerification) {
+            onEvent?.('submit')
+            return
+        }
+
         if (client && !isErrorLike(client)) {
             const { codebase, filePath } = getChatContext()
             eventLogger.log(EventName.CODY_SIDEBAR_EDIT, {
@@ -162,6 +184,12 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         }
     ): Promise<void> => {
         const { client, getChatContext, onEvent } = get()
+
+        if (needsEmailVerification) {
+            onEvent?.('submit')
+            return
+        }
+
         if (client && !isErrorLike(client)) {
             const { codebase, filePath } = getChatContext()
             eventLogger.log(EventName.CODY_SIDEBAR_RECIPE, { repo: codebase, path: filePath, recipeId })
@@ -175,6 +203,11 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
     const reset = async (): Promise<void> => {
         const { client: oldClient, config, editor, onEvent } = get()
         if (!config || !editor) {
+            return
+        }
+
+        if (needsEmailVerification) {
+            onEvent?.('submit')
             return
         }
 
