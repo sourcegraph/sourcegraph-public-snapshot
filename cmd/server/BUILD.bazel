@@ -1,5 +1,5 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
-load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("macro.bzl", "container_dependencies", "dependencies_tars")
 
@@ -119,4 +119,11 @@ oci_tarball(
     name = "image_tarball",
     image = ":image",
     repo_tags = ["server:candidate"],
+)
+
+oci_push(
+    name = "push",
+    image = ":image",
+    remote_tags = ["latest"],
+    repository = "us.gcr.io/sourcegraph-dev/server",
 )
