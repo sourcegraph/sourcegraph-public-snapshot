@@ -36,7 +36,7 @@ type HasVerifiedEmailResolver interface {
 type dotcomUserHasVerifiedEmailResolver struct {
 }
 
-// HasVerifiedEmail - checks with sourcegraph.com to ensure user has verified email.
+// HasVerifiedEmail - checks with sourcegraph.com to ensure the app user has verified email.
 func (r *dotcomUserHasVerifiedEmailResolver) HasVerifiedEmail(ctx context.Context) (bool, error) {
 	// 🚨 SECURITY: This resolves HasVerifiedEmail only for App by
 	// sending the request to dotcom to check if a verified email exists for the user.
@@ -61,7 +61,7 @@ func (r *dotcomUserHasVerifiedEmailResolver) HasVerifiedEmail(ctx context.Contex
 	// If we have an app user with a dotcom authtoken ask dotcom if the user has a verified email
 	url := "https://sourcegraph.com/.api/graphql?AppHasVerifiedEmailCheck"
 	cli := httpcli.ExternalDoer
-	payload := strings.NewReader("{\"query\":\"query AppHasVerifiedEmailCheck{ currentUser { hasVerifiedEmail } }\",\"variables\":{}}")
+	payload := strings.NewReader(`{"query":"query AppHasVerifiedEmailCheck{ currentUser { hasVerifiedEmail } }","variables":{}}`)
 
 	// Send GraphQL request to sourcegraph.com to check if email is verified
 	req, err := http.NewRequestWithContext(ctx, "POST", url, payload)
@@ -94,6 +94,7 @@ func (r *dotcomUserHasVerifiedEmailResolver) HasVerifiedEmail(ctx context.Contex
 	if err := json.Unmarshal(b, &result); err != nil {
 		return false, errors.Wrap(err, "unable to unmarshal response")
 	}
+
 	return result.Data.CurrentUser.HasVerifiedEmail, nil
 }
 
