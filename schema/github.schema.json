@@ -182,15 +182,18 @@
       "properties": {
         "baseURL": {
           "description": "The base URL of the GitHub App.",
-          "type": "string"
+          "type": "string",
+          "pattern": "^https?://"
         },
         "appID": {
           "description": "The ID of the GitHub App.",
-          "type": "integer"
+          "type": "integer",
+          "minimum": 1
         },
         "installationID": {
           "description": "The installation ID of this connection.",
-          "type": "integer"
+          "type": "integer",
+          "minimum": 1
         }
       }
     },
