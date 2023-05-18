@@ -72,7 +72,10 @@ sg --verbose generate ... # Enable verbose output
 			}
 		}
 		// Check if output contains any .proto files
-		out, _ := exec.Command("git", "diff", "--name-only", "main...HEAD").Output()
+		out, err := exec.Command("git", "diff", "--name-only", "main...HEAD").Output()
+		if err != nil {
+			errors.Errorf("failed to run git diff: %v", err)
+		}
 		if strings.Contains(string(out), ".proto") || os.Getenv("CI") == "true" {
 			return allGenerateTargets.RunAll(cmd.Context)
 		} else {
