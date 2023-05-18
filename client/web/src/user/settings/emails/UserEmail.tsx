@@ -69,10 +69,13 @@ export const UserEmail: FunctionComponent<React.PropsWithChildren<Props>> = ({
 }) => {
     const [isLoading, setIsLoading] = useState(false)
 
-    const handleError = (error: ErrorLike): void => {
-        onError(asError(error))
-        setIsLoading(false)
-    }
+    const handleError = useCallback(
+        (error: ErrorLike): void => {
+            onError(asError(error))
+            setIsLoading(false)
+        },
+        [onError, setIsLoading]
+    )
 
     const removeEmail = async (): Promise<void> => {
         setIsLoading(true)
@@ -136,9 +139,9 @@ export const UserEmail: FunctionComponent<React.PropsWithChildren<Props>> = ({
         }
     }
 
-    const resendEmail = useCallback(() => {
+    const resendEmail = useCallback(async () => {
         setIsLoading(true)
-        resendVerificationEmail(user, email, {
+        await resendVerificationEmail(user, email, {
             onSuccess: () => {
                 setIsLoading(false)
                 onEmailResendVerification?.()

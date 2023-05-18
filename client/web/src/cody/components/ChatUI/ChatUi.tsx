@@ -13,7 +13,7 @@ import {
 } from '@sourcegraph/cody-ui/src/Chat'
 import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
 import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
-import { Button, Icon, TextArea, Link, Tooltip, Alert, Text } from '@sourcegraph/wildcard'
+import { Button, Icon, TextArea, Link, Tooltip, Alert, Text, H2 } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { CodyPageIcon } from '../../chat/CodyPageIcon'
@@ -228,16 +228,16 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
 
 const NeedsEmailVerificationNotice: React.FunctionComponent = () => (
     <div className="p-3">
-        <h2 className={classNames('d-flex gap-1 align-items-center mb-3', styles.codyMessageHeader)}>
+        <H2 className={classNames('d-flex gap-1 align-items-center mb-3', styles.codyMessageHeader)}>
             <CodyPageIcon /> Cody
-        </h2>
+        </H2>
         <Alert variant="warning">
             <Text className="mb-0">Verify email</Text>
             <Text className="mb-0">
                 Using Cody requires a verified email.{' '}
-                <a href={`${window.context.currentUser?.settingsURL}/emails`} target="_blank">
+                <Link to={`${window.context.currentUser?.settingsURL}/emails`} target="_blank" rel="noreferrer">
                     Resend email verification
-                </a>
+                </Link>
                 .
             </Text>
         </Alert>

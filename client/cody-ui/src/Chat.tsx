@@ -210,7 +210,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             },
             ...transcript,
         ],
-        [afterTips, transcript, needsEmailVerification]
+        [afterTips, transcript]
     )
 
     return (
