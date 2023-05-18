@@ -11,12 +11,12 @@
     width: 50%;
     height: 100%;
     padding: 4rem 3.25rem 0;
-    color: white;
+    color: var(--white);
 
     &-heading {
         font-size: 2rem;
         font-weight: normal;
-        color: white;
+        color: var(--white);
     }
 
     &-text {
@@ -54,7 +54,7 @@
         padding: 2rem;
         border: 1px solid #785198;
         border-radius: 3px;
-        color: white;
+        color: var(--white);
         background: rgba(255, 255, 255, 0.1);
     }
 
@@ -82,7 +82,7 @@
     }
 
     &-term-link {
-        color: white;
+        color: var(--white);
         text-decoration: underline;
     }
 }
@@ -113,7 +113,7 @@
         margin-bottom: 0.5rem;
         font-size: 2rem;
         font-weight: normal;
-        color: white;
+        color: var(--white);
     }
 
     &--footer {

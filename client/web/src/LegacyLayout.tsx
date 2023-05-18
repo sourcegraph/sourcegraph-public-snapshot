@@ -159,7 +159,12 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     // setup wizard state, since we don't have a good solution for this at the
     // moment, we use mutable window.context object here.
     // TODO remove window.context and use injected context store/props
-    if (!props.isSourcegraphApp && needsRepositoryConfiguration && !wasSetupWizardSkipped && props.authenticatedUser?.siteAdmin) {
+    if (
+        !props.isSourcegraphApp &&
+        needsRepositoryConfiguration &&
+        !wasSetupWizardSkipped &&
+        props.authenticatedUser?.siteAdmin
+    ) {
         return <Navigate to={PageRoutes.SetupWizard} replace={true} />
     }
 

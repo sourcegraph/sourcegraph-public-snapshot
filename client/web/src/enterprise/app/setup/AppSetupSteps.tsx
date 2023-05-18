@@ -19,7 +19,7 @@ export const AppWelcomeSetupPage: FC = () => {
             <div className={styles.description}>
                 <H1 className={styles.descriptionHeading}>Welcome</H1>
                 <Text className={styles.descriptionText}>
-                    The Sourcegraph app now includes  our AI coding assistant Cody, which helps you read, write, and
+                    The Sourcegraph app now includes our AI coding assistant Cody, which helps you read, write, and
                     understand code 10x faster.
                 </Text>
 
@@ -32,13 +32,14 @@ export const AppWelcomeSetupPage: FC = () => {
 
                 <img
                     src="https://storage.googleapis.com/sourcegraph-assets/cody-picture-full.png"
+                    alt=""
                     className={styles.descriptionImage}
                 />
             </div>
 
             <div className={styles.actions}>
                 <div className={styles.actionsCard}>
-                    <H3>You’ll need a Sourcegraph.com account in order to connect Cody. </H3>
+                    <H3>You’ll need a Sourcegraph.com account in order to connect Cody.</H3>
 
                     <div className={styles.actionsButtons}>
                         <Button
@@ -63,6 +64,7 @@ export const AppWelcomeSetupPage: FC = () => {
                         <Link
                             to="https://about.sourcegraph.com/terms/cody-notice"
                             target="_blank"
+                            rel="noopener"
                             className={styles.actionsTermLink}
                         >
                             Sourcegraph’s Cody Usage Privacy Notice
