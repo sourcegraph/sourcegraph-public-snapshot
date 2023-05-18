@@ -105,20 +105,16 @@ export function userQueryToKeywordQuery(query: string): Term[] {
             }
         }
 
-        const stem = (winkUtils.string.stem(word) as string) || ''
-        if (!terms.has(stem)) {
-            terms.set(stem, {
-                stem,
-                originals: [word],
-                prefix: longestCommonPrefix(word.toLowerCase(), stem),
-                count: 1,
-            })
+        const stem = winkUtils.string.stem(word)
+        const term = terms.get(stem) || {
+            stem,
+            originals: [word],
+            prefix: longestCommonPrefix(word.toLowerCase(), stem),
+            count: 0,
         }
-        const term = terms.get(stem)
-        if (term) {
-            term.originals.push(word)
-            term.count++
-        }
+        term.originals.push(word)
+        term.count++
+        terms.set(stem, term)
     }
     return [...terms.values()]
 }
