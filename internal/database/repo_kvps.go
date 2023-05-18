@@ -105,7 +105,7 @@ func (s *repoKVPStore) Update(ctx context.Context, repoID api.RepoID, kvp KeyVal
 	var updated KeyValuePair
 	err := row.Scan(&kvp.Key, &kvp.Value)
 	if errors.Is(err, sql.ErrNoRows) {
-		return updated, errors.Newf(`Metadata key "%s" does not exist for the given repository.`, kvp.Key)
+		return updated, errors.Newf(`metadata key %q does not exist for the given repository`, kvp.Key)
 	}
 	return updated, err
 }
