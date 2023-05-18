@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"container/list"
 	"context"
 	"database/sql"
@@ -14,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -24,6 +25,7 @@ type perforceChangelistMappingJob struct {
 	repo api.RepoName
 }
 
+// FIXME: Use generics.
 type perforceChangelistMappingQueue struct {
 	mu   sync.Mutex
 	jobs *list.List
@@ -136,7 +138,7 @@ func (s *Server) doChangelistMapping(ctx context.Context, job *perforceChangelis
 	}
 
 	if repo.ExternalRepo.ServiceType != extsvc.TypePerforce {
-		logger.Warn("skippin non-perforce depot (this is not a regression but someone is likely pushing non perforce depots into the queue and creating NOOP jobs)")
+		logger.Warn("skipping non-perforce depot (this is not a regression but someone is likely pushing non perforce depots into the queue and creating NOOP jobs)")
 		return nil
 	}
 
@@ -144,56 +146,21 @@ func (s *Server) doChangelistMapping(ctx context.Context, job *perforceChangelis
 
 	dir := s.dir(protocol.NormalizeRepo(repo.Name))
 
-	var commitsMap []types.PerforceChangelist
-
 	logger.Warn("latestRowCommit")
 
-	latestRowCommit, err := s.DB.RepoCommits().GetLatestForRepo(ctx, repo.ID)
+	commitsMap, err := s.getCommitsToInsert(ctx, logger, repo.ID, dir)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			// This repo has not been imported into the RepoCommits table yet. Start from the beginning.
-			commitsMap, err = newMappableCommits(ctx, logger, dir, "", "")
-			if err != nil {
-				return errors.Wrap(err, "failed to import new repo (perforce changelists will have limited functionality)")
-			}
-		} else {
-			return errors.Wrap(err, "RepoCommits.GetLatestForRepo")
-		}
+		return err
 	}
 
-	logger.Warn("continuing from latestCommit")
-
-	head, err := headCommitSHA(ctx, logger, dir)
+	// We want to write all the commits or nothing at all in a single transaction to avoid partially
+	// succesful mapping jobs which will make it difficult to determine missing commits that need to
+	// be mapped. This makes it easy to have a reliable start point for the next time this job is
+	// attempted, knowing for sure that the latest commit in the DB is indeed the last point from
+	// which we need to resume the mapping.
+	err = s.DB.RepoCommits().BatchInsertCommitSHAsWithPerforceChangelistID(ctx, repo.ID, commitsMap)
 	if err != nil {
-		return errors.Wrap(err, "headCommitSHA")
-	}
-
-	if string(latestRowCommit.CommitSHA) == head {
-		logger.Info("repo commits already mapped upto HEAD, skipping", log.String("HEAD", head))
-		return nil
-	}
-
-	commitsMap, err = newMappableCommits(ctx, logger, dir, string(latestRowCommit.CommitSHA), head)
-	if err != nil {
-		return errors.Wrapf(err, "failed to import existing repo's commits after HEAD: %q", head)
-	}
-
-	totalCommits := len(commitsMap)
-
-	// TODO: Do we want to make this configurable?
-	step := 1000
-	for i := 0; i < totalCommits; i += step {
-		seek := i + step
-		if seek > totalCommits {
-			seek = totalCommits
-		}
-
-		chunk := commitsMap[i:seek]
-
-		err = s.DB.RepoCommits().BatchInsertCommitSHAsWithPerforceChangelistID(ctx, repo.ID, chunk)
-		if err != nil {
-			return err
-		}
+		return err
 	}
 
 	return nil
@@ -207,7 +174,7 @@ func headCommitSHA(ctx context.Context, logger log.Logger, dir GitDir) (string, 
 		return "", &GitCommandError{Err: err, Output: string(output)}
 	}
 
-	return string(output), nil
+	return string(bytes.TrimSpace(output)), nil
 }
 
 // TODO: Move to gitdomain package maybe?
@@ -215,6 +182,8 @@ var logFormatWithoutRefs = "--format=format:%H%x00%aN%x00%aE%x00%at%x00%cN%x00%c
 
 func newMappableCommits(ctx context.Context, logger log.Logger, dir GitDir, lastMappedCommit, head string) ([]types.PerforceChangelist, error) {
 	cmd := exec.CommandContext(ctx, "git", "log")
+	// FIXME: When lastMappedCommit..head is an invalid range.
+	// Follow up in a separate PR.
 	if lastMappedCommit != "" {
 		cmd.Args = append(cmd.Args, fmt.Sprintf("%s..%s", lastMappedCommit, head))
 	}
@@ -227,6 +196,9 @@ func newMappableCommits(ctx context.Context, logger log.Logger, dir GitDir, last
 		return nil, &GitCommandError{Err: err, Output: string(output)}
 	}
 
+	// FIXME: This is unbounded in nature. Use a progresswriter and read from the progressreader in
+	// a goroutine. But more work needs to be done to parse one commit at a time versus the entire
+	// `git log` output.
 	commits, err := gitserver.ParseGitLogOutput(output)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to parse git log output")
@@ -234,7 +206,7 @@ func newMappableCommits(ctx context.Context, logger log.Logger, dir GitDir, last
 
 	data := make([]types.PerforceChangelist, len(commits))
 	for i, commit := range commits {
-		cid, err := getP4ChangelistID(commit.Message.Body())
+		cid, err := perforce.GetP4ChangelistID(commit.Message.Body())
 		if err != nil {
 			return nil, errors.Wrap(err, "getP4ChangelistID")
 		}
@@ -250,13 +222,34 @@ func newMappableCommits(ctx context.Context, logger log.Logger, dir GitDir, last
 	return data, nil
 }
 
-var gitP4Pattern = lazyregexp.New(`\[(?:git-p4|p4-fusion): depot-paths = "(.*?)"\: change = (\d+)\]`)
-
-func getP4ChangelistID(body string) (string, error) {
-	matches := gitP4Pattern.FindStringSubmatch(body)
-	if len(matches) != 3 {
-		return "", errors.Newf("failed to retrieve changelist ID from commit body: %q", body)
+func (s *Server) getCommitsToInsert(ctx context.Context, logger log.Logger, repoID api.RepoID, dir GitDir) (commitsMap []types.PerforceChangelist, err error) {
+	latestRowCommit, err := s.DB.RepoCommits().GetLatestForRepo(ctx, repoID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			// This repo has not been imported into the RepoCommits table yet. Start from the beginning.
+			commitsMap, err = newMappableCommits(ctx, logger, dir, "", "")
+			return commitsMap, errors.Wrap(err, "failed to import new repo (perforce changelists will have limited functionality)")
+		} else {
+			return nil, errors.Wrap(err, "RepoCommits.GetLatestForRepo")
+		}
 	}
 
-	return matches[2], nil
+	logger.Warn("continuing from latestCommit")
+
+	head, err := headCommitSHA(ctx, logger, dir)
+	if err != nil {
+		return nil, errors.Wrap(err, "headCommitSHA")
+	}
+
+	if latestRowCommit != nil && string(latestRowCommit.CommitSHA) == head {
+		logger.Info("repo commits already mapped upto HEAD, skipping", log.String("HEAD", head))
+		return nil, nil
+	}
+
+	commitsMap, err = newMappableCommits(ctx, logger, dir, string(latestRowCommit.CommitSHA), head)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to import existing repo's commits after HEAD: %q", head)
+	}
+
+	return commitsMap, nil
 }
