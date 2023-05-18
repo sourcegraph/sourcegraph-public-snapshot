@@ -27,6 +27,7 @@ fi
 echo " * Building base image '$image_name' using apko"
 docker run \
   -v "$PWD":/work \
+  -e SOURCE_DATE_EPOCH="$(date +%s)" \
   cgr.dev/chainguard/apko \
   build --debug "${file_name}" \
   "sourcegraph-wolfi/$image_name-base:latest" \
@@ -46,5 +47,5 @@ docker load <"sourcegraph-wolfi-$image_name-base.tar"
 
 ## Cleanup
 echo " * Cleaning up tarball and SBOM"
-rm "sourcegraph-wolfi-$image_name-base.tar"
+# rm "sourcegraph-wolfi-$image_name-base.tar"
 rm sbom*
