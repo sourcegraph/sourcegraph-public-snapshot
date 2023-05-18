@@ -42,6 +42,14 @@ let
       bazel-wrapper
       zlib.dev
     ]);
+    # unsharePid required to preserve bazel server between bazel invocations,
+    # the rest are disabled just in case
+    unsharePid = false;
+    unshareUser = false;
+    unshareIpc = false;
+    unshareNet = false;
+    unshareUts = false;
+    unshareCgroup = false;
   };
 in
 pkgs.mkShell {
