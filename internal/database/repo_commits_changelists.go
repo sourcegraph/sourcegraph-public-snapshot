@@ -56,6 +56,7 @@ SELECT
 	repo_id,
 	commit_sha,
 	perforce_changelist_id
+	created_at
 FROM
 	repo_commits_changelists
 WHERE

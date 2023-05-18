@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
@@ -54,7 +55,7 @@ func TestRepoCommitsChangelists(t *testing.T) {
 	}
 
 	t.Run("BatchInsertCommitSHAsWithPerforceChangelistID", func(t *testing.T) {
-		rows, err := db.QueryContext(ctx, `SELECT repo_id, commit_sha, perforce_changelist_id FROM repo_commits_changelists ORDER by id`)
+		rows, err := db.QueryContext(ctx, `SELECT repo_id, commit_sha, perforce_changelist_id, created_at FROM repo_commits_changelists ORDER by id`)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -89,10 +90,14 @@ func TestRepoCommitsChangelists(t *testing.T) {
 		for rows.Next() {
 			var r repoCommitRow
 			var hexCommitSHA []byte
+			var createdAt time.Time
 
-			if err := rows.Scan(&r.RepoID, &hexCommitSHA, &r.ChangelistID); err != nil {
+			if err := rows.Scan(&r.RepoID, &hexCommitSHA, &r.ChangelistID, &createdAt); err != nil {
 				t.Fatal(err)
 			}
+
+			// All we care is that createdAt has a value, we don't really care about what that is.
+			require.NotNil(t, createdAt)
 
 			r.CommitSHA = hex.EncodeToString(hexCommitSHA)
 			got = append(got, r)
