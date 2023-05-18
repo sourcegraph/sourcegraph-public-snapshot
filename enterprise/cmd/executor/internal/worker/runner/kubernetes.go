@@ -90,7 +90,7 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 			if findPodErr != nil {
 				return errors.Wrap(findPodErr, "finding pod")
 			}
-			if readLogErr := r.cmd.ReadLogs(ctx, r.options.Namespace, pod.Name, "", r.commandLogger, spec.CommandSpec.Key, spec.CommandSpec.Command); findPodErr != nil {
+			if readLogErr := r.cmd.ReadLogs(ctx, r.options.Namespace, pod, "", r.commandLogger, spec.CommandSpec.Key, spec.CommandSpec.Command); findPodErr != nil {
 				return errors.Wrap(readLogErr, "failed to read logs")
 			}
 			return errors.Wrapf(err, "job %s failed: %s", job.Name, pod.Status.Message)
@@ -102,5 +102,5 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 		return errors.Wrap(err, "finding pod")
 	}
 
-	return r.cmd.ReadLogs(ctx, r.options.Namespace, pod.Name, command.KubernetesJobContainerName, r.commandLogger, spec.CommandSpec.Key, spec.CommandSpec.Command)
+	return r.cmd.ReadLogs(ctx, r.options.Namespace, pod, command.KubernetesJobContainerName, r.commandLogger, spec.CommandSpec.Key, spec.CommandSpec.Command)
 }
