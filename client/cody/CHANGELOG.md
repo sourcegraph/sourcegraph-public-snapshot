@@ -6,6 +6,8 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Added
 
+- Hover tooltips to intent-detection underlines. [pull/51633](https://github.com/sourcegraph/sourcegraph/issues/51633)
+
 ### Fixed
 
 - Displays error banners on all view instead of chat view only. [pull/51883](https://github.com/sourcegraph/sourcegraph/pull/51883)

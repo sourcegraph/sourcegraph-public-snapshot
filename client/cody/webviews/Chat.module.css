@@ -67,20 +67,24 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
 :global(.token-hallucinated) {
     border-bottom: 2px solid var(--vscode-testing-iconQueued);
     word-break: break-all;
+    position: relative;
 }
 
 :global(.token-not-hallucinated) {
     border-bottom: 2px solid var(--vscode-testing-iconPassed);
     word-break: break-all;
+    position: relative;
 }
 
 :global(.token-not-hallucinated):hover:after,
 :global(.token-hallucinated):hover:after {
-    display: inline;
-    background: #969896;
-    color: #000;
-    padding: 0.2rem;
-    margin: 0.1rem;
+    position: absolute;
+    background: var(--vscode-editorGutter-background);
+    color: var(--vscode-editorCursor-foreground);
+    bottom: 1rem;
+    left: 0;
+    margin: 0.3rem;
+    padding: 0.1rem 0.3rem;
 }
 
 :global(.token-not-hallucinated):hover:after {
