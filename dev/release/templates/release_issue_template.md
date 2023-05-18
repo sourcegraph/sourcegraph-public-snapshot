@@ -150,8 +150,6 @@ On the day of the release, confirm there are no more release-blocking issues (as
 ### Finalize release
 
 - [ ] From the [release batch change](https://k8s.sgdev.org/organizations/sourcegraph/batch-changes), merge the release-publishing PRs created previously.
-  - For [sourcegraph](https://github.com/sourcegraph/sourcegraph)
-    - [ ] Backport the release-publishing PR from `sourcegraph/sourcegraph@main` into the release branch
   - For [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph)
     - [ ] Ensure the [release tag `v$MAJOR.$MINOR.$PATCH`](https://github.com/sourcegraph/deploy-sourcegraph/tags) has been created
   - For [deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker)

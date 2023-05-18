@@ -106,8 +106,6 @@ Create and test the first release candidate:
     - [ ] Ensure the [release tag](https://github.com/sourcegraph/deploy-sourcegraph/tags) has been created
   - For [deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker)
     - [ ] Ensure the [release tag](https://github.com/sourcegraph/deploy-sourcegraph-docker/tags) has been created
-  - For [sourcegraph](https://github.com/sourcegraph/sourcegraph), also:
-    - [ ] Cherry-pick the release-publishing PR from `sourcegraph/sourcegraph@main` into the release branch.
   - For [deploy-sourcegraph-helm](https://github.com/sourcegraph/deploy-sourcegraph-helm), also:
     - [ ] Update the [changelog](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/CHANGELOG.md) to include changes from the patch
     - [ ] Cherry-pick the release-publishing PR from the release branch into `main`
