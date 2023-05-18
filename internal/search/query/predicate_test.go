@@ -146,6 +146,8 @@ func TestRepoHasTopicPredicate(t *testing.T) {
 }
 
 func TestRepoHasKVPPredicate(t *testing.T) {
+	strPtr := func(s string) *string { return &s }
+
 	t.Run("Unmarshal", func(t *testing.T) {
 		type test struct {
 			name     string
@@ -154,12 +156,13 @@ func TestRepoHasKVPPredicate(t *testing.T) {
 		}
 
 		valid := []test{
-			{`key:value`, `key:value`, &RepoHasKVPPredicate{Key: "key", Value: "value", Negated: false}},
-			{`empty string value`, `key:`, &RepoHasKVPPredicate{Key: "key", Value: "", Negated: false}},
-			{`quoted special characters`, `"key:colon":"value:colon"`, &RepoHasKVPPredicate{Key: "key:colon", Value: "value:colon", Negated: false}},
-			{`escaped quotes`, `"key\"quote":"value\"quote"`, &RepoHasKVPPredicate{Key: `key"quote`, Value: `value"quote`, Negated: false}},
-			{`space padding`, `  key:value  `, &RepoHasKVPPredicate{Key: `key`, Value: `value`, Negated: false}},
-			{`single quoted`, `'  key:':'value : '`, &RepoHasKVPPredicate{Key: `  key:`, Value: `value : `, Negated: false}},
+			{`key:value`, `key:value`, &RepoHasKVPPredicate{Key: "key", Value: strPtr("value"), Negated: false, KeyOnly: false}},
+			{`double quoted special characters`, `"key:colon":"value:colon"`, &RepoHasKVPPredicate{Key: "key:colon", Value: strPtr("value:colon"), Negated: false, KeyOnly: false}},
+			{`single quoted special characters`, `'  key:':'value : '`, &RepoHasKVPPredicate{Key: `  key:`, Value: strPtr(`value : `), Negated: false, KeyOnly: false}},
+			{`escaped quotes`, `"key\"quote":"value\"quote"`, &RepoHasKVPPredicate{Key: `key"quote`, Value: strPtr(`value"quote`), Negated: false, KeyOnly: false}},
+			{`space padding`, `  key:value  `, &RepoHasKVPPredicate{Key: `key`, Value: strPtr(`value`), Negated: false, KeyOnly: false}},
+			{`only key`, `key`, &RepoHasKVPPredicate{Key: `key`, Value: nil, Negated: false, KeyOnly: true}},
+			{`key tag`, `key:`, &RepoHasKVPPredicate{Key: "key", Value: nil, Negated: false, KeyOnly: false}},
 		}
 
 		for _, tc := range valid {
@@ -180,7 +183,6 @@ func TestRepoHasKVPPredicate(t *testing.T) {
 			{`empty`, ``, nil},
 			{`no key`, `:value`, nil},
 			{`no key or value`, `:`, nil},
-			{`invalid syntax`, `key-value`, nil},
 			{`content outside of qutoes`, `key:"quoted value" abc`, nil},
 			{`bonus colons`, `key:value:other`, nil},
 		}

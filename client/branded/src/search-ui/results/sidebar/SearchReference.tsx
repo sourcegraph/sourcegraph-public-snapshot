@@ -229,24 +229,17 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         showSuggestions: false,
     },
     {
-        ...createQueryExampleFromString('has.meta.tag({any string})'),
-        field: FilterType.repo,
-        description: 'Search only inside repositories tagged with a given metadata key',
-        examples: ['repo:has.meta.tag(ocaml)', '-repo:has.meta.tag(golang)'],
-        showSuggestions: false,
-    },
-    {
         ...createQueryExampleFromString('has.meta({key:value})'),
         field: FilterType.repo,
         description: 'Search only inside repositories having a specified key:value pair metadata',
-        examples: ['repo:has.meta(owner:jordan)', '-repo:has.meta(team:search)'],
-        showSuggestions: false,
-    },
-    {
-        ...createQueryExampleFromString('has.meta.key({any string})'),
-        field: FilterType.repo,
-        description: 'Search only inside repositories having a specific metadata key with any value',
-        examples: ['repo:has.meta.key(owner)', '-repo:has.meta.key(wip)'],
+        examples: [
+            'repo:has.meta(owner:jordan)',
+            '-repo:has.meta(team:search)',
+            'repo:has.meta(owner)',
+            '-repo:has.meta(wip)',
+            'repo:has.meta(ocaml:)',
+            '-repo:has.meta(golang:)',
+        ],
         showSuggestions: false,
     },
     {

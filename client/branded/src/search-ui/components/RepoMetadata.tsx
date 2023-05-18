@@ -58,7 +58,7 @@ const Meta: React.FC<MetaProps> = ({
         // omit repo: filter if omitRepoFilter is true
         if (queryBuildOptions?.omitRepoFilter) {
             const repoFilter = findFilter(queryState.query, 'repo', FilterKind.Global)
-            if (repoFilter && !repoFilter.value?.value.startsWith('has')) {
+            if (repoFilter && !repoFilter.value?.value.startsWith('has.meta')) {
                 query = omitFilter(query, repoFilter)
             }
         }
@@ -66,7 +66,7 @@ const Meta: React.FC<MetaProps> = ({
         query = appendFilter(
             query,
             'repo',
-            meta.value ? `has.meta(${meta.key}:${meta.value})` : `has.meta.key(${meta.key})`
+            meta.value ? `has.meta(${meta.key}:${meta.value})` : `has.meta(${meta.key})`
         )
 
         const searchParams = buildSearchURLQueryFromQueryState({ query })

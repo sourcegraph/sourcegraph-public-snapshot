@@ -214,21 +214,9 @@ export const predicateCompletion = (field: string): Completion[] => {
                 description: 'Search only inside repositories whose description matches',
             },
             {
-                label: 'has.meta.tag(...)',
-                insertText: 'has.meta.tag(${1})',
-                asSnippet: true,
-                description: 'Search only inside repositories tagged with a given metadata key',
-            },
-            {
                 label: 'has.meta(...)',
                 insertText: 'has.meta(${1:key}:${2:value})',
                 description: 'Search only inside repositories having a specified key:value pair metadata',
-                asSnippet: true,
-            },
-            {
-                label: 'has.meta.key(...)',
-                insertText: 'has.meta.key(${1})',
-                description: 'Search only inside repositories having a specific metadata key with any value',
                 asSnippet: true,
             },
         ]

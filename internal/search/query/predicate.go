@@ -35,9 +35,7 @@ var DefaultPredicateRegistry = PredicateRegistry{
 		"contains.commit.after": func() Predicate { return &RepoContainsCommitAfterPredicate{} },
 		"has.commit.after":      func() Predicate { return &RepoContainsCommitAfterPredicate{} },
 		"has.description":       func() Predicate { return &RepoHasDescriptionPredicate{} },
-		"has.meta.tag":          func() Predicate { return &RepoHasTagPredicate{} },
 		"has.meta":              func() Predicate { return &RepoHasKVPPredicate{} },
-		"has.meta.key":          func() Predicate { return &RepoHasKeyPredicate{} },
 		"has.topic":             func() Predicate { return &RepoHasTopicPredicate{} },
 
 		// Deprecated predicates
@@ -292,27 +290,11 @@ func (f *RepoHasDescriptionPredicate) Unmarshal(params string, negated bool) (er
 func (f *RepoHasDescriptionPredicate) Field() string { return FieldRepo }
 func (f *RepoHasDescriptionPredicate) Name() string  { return "has.description" }
 
-type RepoHasTagPredicate struct {
-	Key     string
-	Negated bool
-}
-
-func (f *RepoHasTagPredicate) Unmarshal(params string, negated bool) (err error) {
-	if len(params) == 0 {
-		return errors.New("tag must be non-empty")
-	}
-	f.Key = params
-	f.Negated = negated
-	return nil
-}
-
-func (f *RepoHasTagPredicate) Field() string { return FieldRepo }
-func (f *RepoHasTagPredicate) Name() string  { return "has.meta.tag" }
-
 type RepoHasKVPPredicate struct {
 	Key     string
-	Value   string
+	Value   *string
 	Negated bool
+	KeyOnly bool
 }
 
 func (p *RepoHasKVPPredicate) Unmarshal(params string, negated bool) (err error) {
@@ -338,33 +320,41 @@ func (p *RepoHasKVPPredicate) Unmarshal(params string, negated bool) (err error)
 	if err != nil {
 		return err
 	}
-	params = params[advance:]
-
-	// Chomp the leading ":"
-	if !strings.HasPrefix(params, ":") {
-		return errors.New("expected params of the form key:value")
-	}
-	params = params[len(":"):]
-
-	// Scan the possibly-quoted value
-	value, advance, err := scanLiteral(params)
-	if err != nil {
-		return err
-	}
-	params = params[advance:]
-
-	// If we have more text after scanning both the key and the value,
-	// that means someone tried to use a quoted string with data outside
-	// the quotes.
-	if len(params) != 0 {
-		return errors.New("unexpected extra content")
-	}
 
 	if len(key) == 0 {
 		return errors.New("key cannot be empty")
 	}
 
+	params = params[advance:]
+
+	keyOnly := false
+	var value *string = nil
+	if strings.HasPrefix(params, ":") {
+		// Chomp the leading ":"
+		params = params[len(":"):]
+
+		// Scan the possibly-quoted value
+		val, advance, err := scanLiteral(params)
+		if err != nil {
+			return err
+		}
+		params = params[advance:]
+
+		// If we have more text after scanning both the key and the value,
+		// that means someone tried to use a quoted string with data outside
+		// the quotes.
+		if len(params) != 0 {
+			return errors.New("unexpected extra content")
+		}
+		if len(val) > 0 {
+			value = &val
+		}
+	} else {
+		keyOnly = true
+	}
+
 	p.Key = key
+	p.KeyOnly = keyOnly
 	p.Value = value
 	p.Negated = negated
 	return nil
@@ -372,23 +362,6 @@ func (p *RepoHasKVPPredicate) Unmarshal(params string, negated bool) (err error)
 
 func (p *RepoHasKVPPredicate) Field() string { return FieldRepo }
 func (p *RepoHasKVPPredicate) Name() string  { return "has.meta" }
-
-type RepoHasKeyPredicate struct {
-	Key     string
-	Negated bool
-}
-
-func (p *RepoHasKeyPredicate) Unmarshal(params string, negated bool) (err error) {
-	if len(params) == 0 {
-		return errors.New("key must be non-empty")
-	}
-	p.Key = params
-	p.Negated = negated
-	return nil
-}
-
-func (p *RepoHasKeyPredicate) Field() string { return FieldRepo }
-func (p *RepoHasKeyPredicate) Name() string  { return "has.meta.key" }
 
 type RepoHasTopicPredicate struct {
 	Topic   string
