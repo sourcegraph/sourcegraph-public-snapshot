@@ -299,7 +299,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     const displayText = reformatBotMessage(text, responsePrefix)
                     const { text: highlightedDisplayText } = await highlightTokens(displayText || '', filesExist)
                     this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
-                    this.editor.controller.reply(highlightedDisplayText)
+                    this.editor.controllers.inline.reply(highlightedDisplayText)
                 }
                 void this.onCompletionEnd()
             },

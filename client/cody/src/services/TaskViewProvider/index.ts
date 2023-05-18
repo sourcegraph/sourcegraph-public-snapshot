@@ -33,7 +33,7 @@ export class TaskViewProvider implements vscode.TreeDataProvider<CodyTask> {
     }
 
     public getTreeItem(element: CodyTask): vscode.TreeItem {
-        const tooltip = new vscode.MarkdownString(`$(zap) ${element.uri}`, true)
+        const tooltip = new vscode.MarkdownString(`$(zap) ${element.documentUri}`, true)
         element.tooltip = tooltip
         return element
     }
@@ -45,13 +45,18 @@ export class TaskViewProvider implements vscode.TreeDataProvider<CodyTask> {
 
     // Create a new task and add it to task list
     public newTask(taskID: string, input: string, selection: ActiveTextEditorSelection): void {
-        const task = new CodyTask(taskID, input, selection)
+        const editor = vscode.window.activeTextEditor
+        if (!editor) {
+            return
+        }
+
+        const task = new CodyTask(taskID, input, selection, editor)
         this.controller.add(task)
         this.refresh()
     }
 
     // Mark task as completed and start replacement in doc
-    public async stopTask(taskID: string, content?: string): Promise<void> {
+    public async stopTask(taskID: string, content: string | null): Promise<void> {
         await this.controller.stopByID(taskID, content)
         this.refresh()
     }

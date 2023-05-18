@@ -1,3 +1,5 @@
+import { InlineController, TaskViewProvider } from './vscode'
+
 export interface ActiveTextEditor {
     content: string
     filePath: string
@@ -21,19 +23,13 @@ export interface ActiveTextEditorVisibleContent {
     revision?: string
 }
 
-export interface InlineController {
-    selection: ActiveTextEditorSelection | null
-}
-
-export interface TaskViewProvider {
-    newTask(taskID: string, input: string, selection: ActiveTextEditorSelection): void
-    stopTask(taskID: string, content?: string): Promise<void>
-    refresh(): void
+export interface ActiveTextEditorViewControllers {
+    inline: InlineController
+    task: TaskViewProvider
 }
 
 export interface Editor {
-    controller?: InlineController
-    taskView?: TaskViewProvider
+    controllers?: ActiveTextEditorViewControllers
     getWorkspaceRootPath(): string | null
     getActiveTextEditor(): ActiveTextEditor | null
     getActiveTextEditorSelection(): ActiveTextEditorSelection | null

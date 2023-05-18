@@ -80,8 +80,9 @@ const register = async (
     disposables.push(commentController.get())
     // Task view for Non-Stop Cody
     const taskView = new TaskViewProvider()
+    const controllers = { inline: commentController, task: taskView }
 
-    const editor = new VSCodeEditor(commentController, taskView)
+    const editor = new VSCodeEditor(controllers)
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
 
@@ -247,10 +248,7 @@ const register = async (
         disposables.push(vscode.window.registerTreeDataProvider('cody.tasks.view', taskView))
         disposables.push(
             vscode.commands.registerCommand('cody.task.add', async () => {
-                const input = await vscode.window.showInputBox({
-                    prompt: 'Cody: Add instruction for your Fixup request.',
-                })
-                await chatProvider.executeRecipe('non-stop', input, false)
+                await chatProvider.executeRecipe('non-stop', '', false)
             })
         )
         await vscode.commands.executeCommand('setContext', 'cody.task.view.enabled', true)

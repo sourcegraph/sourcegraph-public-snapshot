@@ -12,7 +12,12 @@ import { InlineController } from '../services/InlineController'
 import { TaskViewProvider } from '../services/TaskViewProvider'
 
 export class VSCodeEditor implements Editor {
-    constructor(public controller: InlineController, public taskView: TaskViewProvider) {}
+    constructor(
+        public controllers: {
+            inline: InlineController
+            task: TaskViewProvider
+        }
+    ) {}
 
     public getWorkspaceRootPath(): string | null {
         const uri = vscode.window.activeTextEditor?.document?.uri
@@ -41,7 +46,7 @@ export class VSCodeEditor implements Editor {
     }
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
-        if (this.controller.isInProgress) {
+        if (this.controllers.inline.isInProgress) {
             return null
         }
         const activeEditor = this.getActiveTextEditorInstance()
@@ -116,8 +121,8 @@ export class VSCodeEditor implements Editor {
 
     public async replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
         const activeEditor = this.getActiveTextEditorInstance()
-        if (this.controller.isInProgress) {
-            await this.controller.replaceSelection(replacement)
+        if (this.controllers.inline.isInProgress) {
+            await this.controllers.inline.replaceSelection(replacement)
             return
         }
         if (!activeEditor || vscode.workspace.asRelativePath(activeEditor.document.uri.fsPath) !== fileName) {

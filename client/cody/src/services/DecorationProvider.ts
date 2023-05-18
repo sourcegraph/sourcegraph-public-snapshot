@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
-import { CodyTaskState, getIconPath, singleLineRange } from './InlineController'
+import { CodyTaskState } from './TaskViewProvider/CodyTask'
+import { getIconPath, singleLineRange } from './utils'
 
 const initDecorationType = vscode.window.createTextEditorDecorationType({})
 

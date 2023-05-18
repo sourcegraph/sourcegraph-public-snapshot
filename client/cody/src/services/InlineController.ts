@@ -1,21 +1,21 @@
 import * as vscode from 'vscode'
 
 import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
-import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
 import { logEvent } from '../event-logger'
 
 import { CodeLensProvider } from './CodeLensProvider'
+import { CodyTaskState } from './TaskViewProvider/CodyTask'
+import {
+    editDocByUri,
+    getFixupEditorSelection,
+    getIconPath,
+    getLineNumbersFromRange,
+    getNewRangeOnChange,
+} from './utils'
 
 const initPost = new vscode.Position(0, 0)
 const initRange = new vscode.Range(initPost, initPost)
-
-export enum CodyTaskState {
-    'idle' = 0,
-    'pending' = 1,
-    'done' = 2,
-}
-
 export class InlineController {
     // Controller init
     private readonly id = 'cody-inline-chat'
@@ -73,9 +73,8 @@ export class InlineController {
             ) {
                 return
             }
-            const newRange = lineTracker(e, this.selectionRange)
-            if (newRange) {
-                this.selectionRange = newRange
+            for (const change of e.contentChanges) {
+                this.selectionRange = getNewRangeOnChange(this.selectionRange, change) || this.selectionRange
             }
         })
     }
@@ -116,7 +115,7 @@ export class InlineController {
         await this.runFixMode(isFixMode, comment, thread)
         this.threads = threads
         this.thread = thread
-        this.selection = await this.makeSelection(isFixMode)
+        this.selection = await this.makeSelection()
         void vscode.commands.executeCommand('setContext', 'cody.replied', false)
     }
     /**
@@ -131,6 +130,7 @@ export class InlineController {
         this.thread.canReply = true
         this.currentTaskId = ''
         void vscode.commands.executeCommand('setContext', 'cody.replied', true)
+        this.thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed
     }
     /**
      * Remove a comment thread / conversation
@@ -168,38 +168,13 @@ export class InlineController {
         this.currentTaskId = comment.id
     }
     /**
-     * Get current selected lines from the comment thread.
-     * Add an extra line to the end line to prevent empty selection on single line selection
+     * Get current selection info from doc uri
      */
-    public async makeSelection(isFixMode: boolean): Promise<ActiveTextEditorSelection | null> {
+    public async makeSelection(): Promise<ActiveTextEditorSelection | null> {
         if (!this.thread) {
             return null
         }
-        const activeDocument = await vscode.workspace.openTextDocument(this.thread.uri)
-        const lineLength = activeDocument.lineAt(this.thread.range.end.line).text.length
-        const startPost = new vscode.Position(this.thread.range.start.line, 0)
-        const endPostFix = new vscode.Position(this.thread.range.end.line, lineLength)
-        const endPostAsk = new vscode.Position(this.thread.range.end.line + 1, 0)
-        const selectionRange = new vscode.Range(startPost, isFixMode ? endPostFix : endPostAsk)
-        const precedingText = activeDocument.getText(
-            new vscode.Range(
-                new vscode.Position(Math.max(0, this.thread.range.start.line - SURROUNDING_LINES), 0),
-                this.thread.range.start
-            )
-        )
-        const followingText = activeDocument.getText(
-            new vscode.Range(
-                this.thread.range.end,
-                new vscode.Position(this.thread.range.end.line + 1 + SURROUNDING_LINES, 0)
-            )
-        )
-        // Add space when selectedText is empty --empty selectedText could cause delayed response
-        const selection = {
-            fileName: vscode.workspace.asRelativePath(this.thread.uri.fsPath),
-            selectedText: activeDocument.getText(selectionRange) || ' ',
-            precedingText,
-            followingText,
-        }
+        const { selection, selectionRange } = await getFixupEditorSelection(this.thread.uri, this.thread.range)
         this.selectionRange = selectionRange
         this.selection = selection
         return selection
@@ -220,31 +195,17 @@ export class InlineController {
      * Get the current editor using the comment thread uri instead
      */
     public async replaceSelection(replacement: string): Promise<void> {
-        const activeEditor = await this.getEditor()
-        if (!activeEditor) {
+        if (!this.thread) {
             return
         }
         const chatSelection = this.getSelectionRange()
-        const selection = new vscode.Selection(chatSelection.start, new vscode.Position(chatSelection.end.line + 1, 0))
-        if (!selection) {
-            await vscode.window.showErrorMessage('Missing selection')
-            return
-        }
-        // Stop tracking for file changes to perfotm replacement
+        const lines = getLineNumbersFromRange(chatSelection)
+        // Stop tracking for file changes to perfotm replacement edits
         this.isInProgress = false
-        // Perform edits
-        const startLine = selection.start.line
-        await activeEditor.edit(edit => {
-            edit.delete(selection)
-            edit.insert(new vscode.Position(startLine, 0), replacement)
-        })
-        const newLineCount = replacement.split('\n').length - 2
-        // Highlight from the start line to the length of the replacement content
-        const newRange = new vscode.Range(startLine, 0, startLine + newLineCount, 0)
+        const newRange = await editDocByUri(this.thread.uri, lines, replacement)
+
         await this.setReplacementRange(newRange)
-        this.currentTaskId = ''
         logEvent('CodyVSCodeExtension:inline-assist:replaced')
-        return
     }
     /**
      * Reset the selection range once replacement started by fixup has been completed
@@ -262,19 +223,7 @@ export class InlineController {
         if (this.thread) {
             this.thread.range = newRange
         }
-    }
-    /**
-     * When a comment thread is open, the Editor will be switched to the comment input editor.
-     * Get the current editor using the comment thread uri instead
-     */
-    public async getEditor(): Promise<vscode.TextEditor | null> {
-        if (!this.thread) {
-            return null
-        }
-        const activeDocument = await vscode.workspace.openTextDocument(this.thread.uri)
-        const activeEditor = (await vscode.window.showTextDocument(activeDocument)) || null
-        this.editor = activeEditor
-        return activeEditor
+        this.currentTaskId = ''
     }
     /**
      * Return latest selection
@@ -329,42 +278,4 @@ export class Comment implements vscode.Comment {
         markdownText.supportHtml = true
         return markdownText
     }
-}
-
-/**
- * For tracking lines diff
- */
-export function lineTracker(e: vscode.TextDocumentChangeEvent, cur: vscode.Range): vscode.Range | null {
-    for (const change of e.contentChanges) {
-        if (change.range.start.line > cur.end.line) {
-            return null
-        }
-        let addedLines = 0
-        if (change.text.includes('\n')) {
-            addedLines = change.text.split('\n').length - 1
-        } else if (change.range.end.line - change.range.start.line > 0) {
-            addedLines -= change.range.end.line - change.range.start.line
-        }
-        const newRange = new vscode.Range(
-            new vscode.Position(cur.start.line + addedLines, 0),
-            new vscode.Position(cur.end.line + addedLines, 0)
-        )
-        return newRange
-    }
-    return null
-}
-/**
- * Create selection range for a single line
- * This is used for display the Cody icon and Code action on top of the first line of selected code
- */
-export function singleLineRange(line: number): vscode.Range {
-    return new vscode.Range(line, 0, line, 0)
-}
-/**
- * Generate icon path for each speaker: cody vs human (sourcegraph)
- */
-export function getIconPath(speaker: string, extPath: string): vscode.Uri {
-    const extensionPath = vscode.Uri.file(extPath)
-    const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist')
-    return vscode.Uri.joinPath(webviewPath, speaker === 'cody' ? 'cody.png' : 'sourcegraph.png')
 }

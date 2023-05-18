@@ -7,15 +7,18 @@ import {
     Event,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { getConfiguration } from './configuration'
+import { displayName } from '../package.json'
 
-let outputChannel: null | vscode.OutputChannel = null
+import { getConfiguration } from './configuration'
 
 const workspaceConfig = vscode.workspace.getConfiguration()
 const config = getConfiguration(workspaceConfig)
-if (config.debug) {
-    outputChannel = vscode.window.createOutputChannel('Cody AI by Sourcegraph', 'json')
-}
+
+// Output Channels for General and Debug purposes
+export const codyOutputChannel = vscode.window.createOutputChannel(displayName)
+export const outputChannel = config.debug
+    ? vscode.window.createOutputChannel(displayName + ': Debug', 'json')
+    : codyOutputChannel
 
 export const logger: CompletionLogger = {
     startCompletion(params: CompletionParameters) {
@@ -34,7 +37,7 @@ export const logger: CompletionLogger = {
             }
             hasFinished = true
 
-            outputChannel!.appendLine(
+            outputChannel?.appendLine(
                 JSON.stringify({
                     type,
                     status: 'error',
@@ -43,7 +46,7 @@ export const logger: CompletionLogger = {
                     error,
                 })
             )
-            outputChannel!.appendLine('')
+            outputChannel?.appendLine('')
         }
 
         function onComplete(result: string | CompletionResponse): void {
@@ -52,7 +55,7 @@ export const logger: CompletionLogger = {
             }
             hasFinished = true
 
-            outputChannel!.appendLine(
+            outputChannel?.appendLine(
                 JSON.stringify({
                     type,
                     status: 'success',
@@ -61,7 +64,7 @@ export const logger: CompletionLogger = {
                     result,
                 })
             )
-            outputChannel!.appendLine('')
+            outputChannel?.appendLine('')
         }
 
         function onEvents(events: Event[]): void {

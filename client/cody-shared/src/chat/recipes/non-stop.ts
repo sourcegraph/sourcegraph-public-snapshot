@@ -12,19 +12,24 @@ export class NonStop implements Recipe {
     public id: RecipeID = 'non-stop'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const selection = context.editor.getActiveTextEditorSelection() || context.editor.controller?.selection
-        if (!selection || !humanChatInput) {
+        const controllers = context.editor.controllers
+        const selection = context.editor.getActiveTextEditorSelection()
+        if (!selection || !controllers) {
             await context.editor.showWarningMessage('Select some code to fixup.')
             return null
         }
 
-        if (!context.editor.taskView) {
+        const humanInput =
+            humanChatInput ||
+            (await context.editor.showInputBox('Cody: Add instruction for your Non-Stop Fixup request.'))
+        if (!humanInput) {
+            await context.editor.showWarningMessage('Missing instruction for Non-Stop Fixup request.')
             return null
         }
 
         // Create a id using current data and use it as the key for response multiplexer
         const taskID = Date.now().toString(36).replace(/\d+/g, '')
-        context.editor.taskView?.newTask(taskID, humanChatInput, selection)
+        controllers.task.newTask(taskID, humanInput, selection, context.editor.getWorkspaceRootPath() || '')
 
         const quarterFileContext = Math.floor(MAX_CURRENT_FILE_TOKENS / 4)
         if (truncateText(selection.selectedText, quarterFileContext * 2) !== selection.selectedText) {
@@ -36,8 +41,7 @@ export class NonStop implements Recipe {
         // Reconstruct Cody's prompt using user's context
         // Replace placeholders in reverse order to avoid collisions if a placeholder occurs in the input
         const promptText = NonStop.prompt
-            .replaceAll('{taskID}', taskID)
-            .replace('{humanInput}', truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS))
+            .replace('{humanInput}', truncateText(humanInput, MAX_HUMAN_INPUT_TOKENS))
             .replace('{responseMultiplexerPrompt}', context.responseMultiplexer.prompt())
             .replace('{truncateFollowingText}', truncateText(selection.followingText, quarterFileContext))
             .replace('{selectedText}', selection.selectedText)
@@ -45,22 +49,22 @@ export class NonStop implements Recipe {
             .replace('{fileName}', selection.fileName)
 
         context.responseMultiplexer.sub(
-            `selection-${taskID}`,
+            'selection',
             new BufferedBotResponseSubscriber(async content => {
+                await controllers.task.stopTask(taskID, contentSanitizer(content || ''))
                 if (!content) {
                     await context.editor.showWarningMessage('Cody did not suggest any replacement.')
                     return
                 }
-                await context.editor.taskView?.stopTask(taskID, contentSanitizer(content))
             })
         )
-
+        console.log(promptText, selection)
         return Promise.resolve(
             new Interaction(
                 {
                     speaker: 'human',
                     text: promptText,
-                    displayText: 'Non-stop Cody: ' + humanChatInput,
+                    displayText: 'Non-stop Cody: ' + humanInput,
                 },
                 {
                     speaker: 'assistant',
@@ -82,18 +86,18 @@ export class NonStop implements Recipe {
 
     // Prompt Templates
     public static readonly prompt = `
-    This is part of the file {fileName}. The part of the file I have selected is enclosed with the <selection-{taskID}> tags. You are helping me to work on that part as my coding assistant.
+    This is part of the file {fileName}. The part of the file I have selected is enclosed with the <selection> tags. You are helping me to work on that part as my coding assistant.
     Follow the instructions in the selected part along with the additional instruction provide below to produce a rewritten replacement for only the selected part.
-    Put the rewritten replacement inside <selection-{taskID}> tags. I only want to see the code within <selection-{taskID}>.
+    Put the rewritten replacement inside <selection> tags. I only want to see the code within <selection>.
     Do not move code from outside the selection into the selection in your reply.
-    Do not remove code inside the <selection-{taskID}> tags that might be being used by the code outside the <selection-{taskID}> tags.
-    Do not enclose replacement code with tags other than the <selection-{taskID}> tags.
+    Do not remove code inside the <selection> tags that might be being used by the code outside the <selection> tags.
+    Do not enclose replacement code with tags other than the <selection> tags.
     Do not enclose your answer with any markdown.
-    Only return provide me the replacement <selection-{taskID}> and nothing else.
-    If it doesn't make sense, you do not need to provide <selection-{taskID}>.
+    Only return provide me the replacement <selection> and nothing else.
+    If it doesn't make sense, you do not need to provide <selection>.
 
     \`\`\`
-    {truncateTextStart}<selection-{taskID}>{selectedText}</selection-{taskID}>{truncateFollowingText}
+    {truncateTextStart}<selection>{selectedText}</selection>{truncateFollowingText}
     \`\`\`
 
     Additional Instruction:

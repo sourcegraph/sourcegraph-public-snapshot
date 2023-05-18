@@ -32,11 +32,13 @@ export class TaskController {
 
     // Stops the currently running task. If newContent is provided, replaces the task's content with newContent.
     // Sets the next queued task as the current running task if one exists.
-    public async stop(task: CodyTask, newContent?: string): Promise<void> {
-        task.stop()
+    public async stop(task: CodyTask, newContent: string | null): Promise<void> {
         this.currentTaskID = ''
         if (newContent) {
             await task.replace(newContent, task.getSelectionRange())
+            task.stop()
+        } else {
+            task.error()
         }
         this.tasks.set(task.id, task)
 
@@ -48,9 +50,10 @@ export class TaskController {
         }
     }
 
-    public async stopByID(taskID: string, newContent?: string): Promise<void> {
+    public async stopByID(taskID: string, newContent: string | null): Promise<void> {
         const task = this.get(taskID)
         if (!task) {
+            console.log('Task not found')
             return
         }
         await this.stop(task, newContent)
