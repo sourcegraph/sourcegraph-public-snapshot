@@ -28,6 +28,7 @@ upload_dist() {
   bundle_path="./src-tauri/target/release/bundle"
   mkdir -p dist
   src=$(find ${bundle_path} -type f \( -name "Sourcegraph*.dmg" -o -name "Sourcegraph*.app" -o -name "sourcegraph*.deb" -o -name "sourcegraph*.AppImage" -o -name "sourcegraph*.tar.gz" \) -exec realpath {} \;);
+  # we're using a while and read here because the paths may contain spaces and this handles it properly
   while IFS= read -r from; do
     mv -vf "${from}" "./${DIST_DIR}/"
   done <<< ${src}
@@ -46,7 +47,12 @@ upload_dist() {
 }
 
 cleanup_codesigning() {
-    security delete-keychain my_temporary_keychain.keychain
+    if [[ -n $(security list-keychains -d user | grep "my_temporary_keychain") ]]; then
+      set +e
+      echo "--- :broom: cleaning up keychains"
+      security delete-keychain my_temporary_keychain.keychain
+      set -e
+    fi
 }
 
 pre_codesign() {
@@ -56,11 +62,11 @@ pre_codesign() {
   # our own. https://github.com/tauri-apps/tauri/discussions/2269
   # For details on code signing, see doc/dev/background-information/app/codesigning.md
   if [[ $(uname -s) == "Darwin" ]]; then
-    trap 'cleanup_codesigning' ERR INT TERM
+    trap 'cleanup_codesigning' ERR INT TERM EXIT
 
     if [[ ${CI} == "true" ]]; then
       local secrets
-      echo "--- :aws: retrieving signing secrets"
+      echo "--- :aws: Retrieving signing secrets"
       secrets=$(aws secretsmanager get-secret-value --secret-id sourcegraph/mac-codesigning | jq '.SecretString |  fromjson')
       export APPLE_SIGNING_IDENTITY="$(echo ${secrets} | jq -r '.APPLE_SIGNING_IDENTITY')"
       export APPLE_CERTIFICATE="$(echo ${secrets} | jq -r '.APPLE_CERTIFICATE')"
@@ -69,6 +75,7 @@ pre_codesign() {
       export APPLE_PASSWORD="$(echo ${secrets} | jq -r '.APPLE_PASSWORD')"
     fi
     # We expect the same APPLE_ env vars that Tauri does here, see https://tauri.app/v1/guides/distribution/sign-macos
+    cleanup_codesigning
     security create-keychain -p my_temporary_keychain_password my_temporary_keychain.keychain
     security set-keychain-settings my_temporary_keychain.keychain
     security unlock-keychain -p my_temporary_keychain_password my_temporary_keychain.keychain
@@ -88,6 +95,35 @@ pre_codesign() {
   fi
 }
 
+secret_value() {
+  # secrets are fetched slightly different depending on host
+  local name
+  local value
+  name=$1
+  if [[ $(uname s) == "Darwin" ]]; then
+    # host is in aws - probably
+    value=$(aws secretsmanager get-secret-value --secret-id ${target} | jq '.SecretString | fromjson')
+  else
+    # On Linux we assume we're in GCP thus the secret should be injected as an evironment variable. Please check the instance configuration"
+    value=""
+  fi
+  echo ${value}
+}
+
+build() {
+  if [[ ${CI} == "true" ]]; then
+    local secrets
+    echo "--- :aws::gcp::tauri: Retrieving tauri signing secrets"
+    secrets=$(secret_value "sourcegraph/tauri-key")
+    # if the value is not found in secrets we default to an empty string
+    export TAURI_PRIVATE_KEY="${TAURI_PRIVATE_KEY:-"$(echo ${secrets} | jq -r '.TAURI_PRIVATE_KEY' | base64 -d || echo '')"}"
+    export TAURI_KEY_PASSWORD="${TAURI_KEY_PASSWORD:-"$(echo ${secrets} | jq -r '.TAURI_KEY_PASSWORD' || echo '')"}"
+  fi
+  echo "--- :tauri: Building Application (${VERSION})"]
+  NODE_ENV=production pnpm run build-app-shell
+  pnpm tauri build --bundles deb,appimage,app,dmg,updater
+}
+
 if [[ ${CI:-""} == "true" ]]; then
   download_artifacts
 fi
@@ -104,14 +140,15 @@ if [[ ${CODESIGNING:-"0"} == 1 ]]; then
 
   echo "--- :tauri::mac: Performing code signing"
   binaries=$(find ${BIN_DIR} -type f -name "*apple*")
-  while IFS= read -r binary; do
+  # if the paths contain spaces this for loop will fail, but we're pretty sure the binaries in bin don't contain spaces
+  for binary in ${binaries}; do
     pre_codesign "${binary}"
-  done <<< ${binaries}
+  done
 fi
 
-echo "--- :tauri: Building Application (${VERSION})"]
-NODE_ENV=production pnpm run build-app-shell
-pnpm tauri build --bundles deb,appimage,app,dmg
+echo "xcode DEBUG: $(xcode-select -p)"
+
+build
 
 if [[ ${CI:-""} == "true" ]]; then
   upload_dist
