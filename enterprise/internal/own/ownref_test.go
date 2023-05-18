@@ -104,10 +104,8 @@ func TestBagNoUser(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-
 	t.Parallel()
 	logger := logtest.Scoped(t)
-
 	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 	ctx := context.Background()
 	bag, err := ByTextReference(ctx, db, "userdoesnotexist")
@@ -161,7 +159,6 @@ func TestBagUserFoundNoMatches(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-
 	t.Parallel()
 	logger := logtest.Scoped(t)
 	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))

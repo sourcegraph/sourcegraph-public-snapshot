@@ -113,9 +113,6 @@ func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text string) (Bag
 		if err != nil {
 			return nil, errors.Wrap(err, "UserEmails.ListByUser")
 		}
-		if len(verifiedEmails) == 0 {
-			continue
-		}
 		for _, email := range verifiedEmails {
 			userRefs.verifiedEmails = append(userRefs.verifiedEmails, email.Email)
 		}

@@ -293,12 +293,7 @@ func TestUserEmails_ListByUser(t *testing.T) {
 			UserID: 42133742,
 		})
 		require.NoError(t, err)
-		normalizeUserEmails(userEmails)
-		want := []*UserEmail{
-			{UserID: user.ID, Email: "a@example.com", VerificationCode: strptr("c"), Primary: true},
-			{UserID: user.ID, Email: "b@example.com", VerificationCode: strptr("c2"), VerifiedAt: &testTime},
-		}
-		assert.Empty(t, cmp.Diff(want, userEmails))
+		assert.Empty(t, userEmails)
 	})
 
 	t.Run("list all emails", func(t *testing.T) {
