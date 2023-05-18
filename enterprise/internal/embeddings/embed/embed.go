@@ -4,13 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-
+	codeintelContext "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/split"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const GET_EMBEDDINGS_MAX_RETRIES = 5
@@ -28,6 +27,7 @@ type ranksGetter func(ctx context.Context, repoName string) (types.RepoPathRanks
 func EmbedRepo(
 	ctx context.Context,
 	client EmbeddingsClient,
+	contextService ContextService,
 	readLister FileReadLister,
 	getDocumentRanks ranksGetter,
 	opts EmbedRepoOpts,
@@ -53,12 +53,12 @@ func EmbedRepo(
 		return nil, nil, err
 	}
 
-	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, ranks)
+	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, ranks)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	textIndex, textIndexStats, err := embedFiles(ctx, textFileNames, client, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, ranks)
+	textIndex, textIndexStats, err := embedFiles(ctx, textFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, ranks)
 	if err != nil {
 		return nil, nil, err
 
@@ -85,7 +85,7 @@ type EmbedRepoOpts struct {
 	RepoName          api.RepoName
 	Revision          api.CommitID
 	ExcludePatterns   []*paths.GlobPattern
-	SplitOptions      split.SplitOptions
+	SplitOptions      codeintelContext.SplitOptions
 	MaxCodeEmbeddings int
 	MaxTextEmbeddings int
 }
@@ -97,8 +97,9 @@ func embedFiles(
 	ctx context.Context,
 	files []FileEntry,
 	client EmbeddingsClient,
+	contextService ContextService,
 	excludePatterns []*paths.GlobPattern,
-	splitOptions split.SplitOptions,
+	splitOptions codeintelContext.SplitOptions,
 	reader FileReader,
 	maxEmbeddingVectors int,
 	repoPathRanks types.RepoPathRanks,
@@ -117,7 +118,7 @@ func embedFiles(
 		Ranks:           make([]float32, 0, len(files)/2),
 	}
 
-	var batch []split.EmbeddableChunk
+	var batch []codeintelContext.EmbeddableChunk
 
 	flush := func() error {
 		if len(batch) == 0 {
@@ -145,7 +146,7 @@ func embedFiles(
 		return nil
 	}
 
-	addToBatch := func(chunk split.EmbeddableChunk) error {
+	addToBatch := func(chunk codeintelContext.EmbeddableChunk) error {
 		batch = append(batch, chunk)
 		if len(batch) >= EMBEDDING_BATCH_SIZE {
 			// Flush if we've hit batch size
@@ -188,8 +189,11 @@ func embedFiles(
 		}
 
 		// At this point, we have determined that we want to embed this file.
-
-		for _, chunk := range split.SplitIntoEmbeddableChunks(string(contentBytes), file.Name, splitOptions) {
+		chunks, err := contextService.SplitIntoEmbeddableChunks(ctx, string(contentBytes), file.Name, splitOptions)
+		if err != nil {
+			return embeddings.EmbeddingIndex{}, embeddings.EmbedFilesStats{}, errors.Wrap(err, "error while splitting file")
+		}
+		for _, chunk := range chunks {
 			if err := addToBatch(chunk); err != nil {
 				return embeddings.EmbeddingIndex{}, embeddings.EmbedFilesStats{}, err
 			}

@@ -6,9 +6,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	repoembeddingsbg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -45,6 +47,11 @@ func (s *repoEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 		return nil, err
 	}
 
+	services, err := codeintel.InitServices(observationCtx)
+	if err != nil {
+		return nil, err
+	}
+
 	workCtx := actor.WithInternalActor(context.Background())
 	return []goroutine.BackgroundRoutine{
 		newRepoEmbeddingJobWorker(
@@ -54,6 +61,7 @@ func (s *repoEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 			edb.NewEnterpriseDB(db),
 			uploadStore,
 			gitserver.NewClient(),
+			services.ContextService,
 		),
 	}, nil
 }
@@ -65,11 +73,13 @@ func newRepoEmbeddingJobWorker(
 	db edb.EnterpriseDB,
 	uploadStore uploadstore.Store,
 	gitserverClient gitserver.Client,
+	contextService embed.ContextService,
 ) *workerutil.Worker[*repoembeddingsbg.RepoEmbeddingJob] {
 	handler := &handler{
 		db:              db,
 		uploadStore:     uploadStore,
 		gitserverClient: gitserverClient,
+		contextService:  contextService,
 	}
 	return dbworker.NewWorker[*repoembeddingsbg.RepoEmbeddingJob](ctx, workerStore, handler, workerutil.WorkerOptions{
 		Name:              "repo_embedding_job_worker",

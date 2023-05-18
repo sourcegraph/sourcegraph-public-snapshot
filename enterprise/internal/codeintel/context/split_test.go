@@ -1,4 +1,4 @@
-package split
+package context
 
 import (
 	"testing"

@@ -1,4 +1,4 @@
-[]split.EmbeddableChunk{
+[]context.EmbeddableChunk{
 	{
 		EndLine: 4,
 		Content: "Line\nLine\nLine\nLine",

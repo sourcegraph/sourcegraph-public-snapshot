@@ -8,11 +8,13 @@ go_library(
         "init.go",
         "observability.go",
         "service.go",
+        "split.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/context/internal/store",
+        "//enterprise/internal/embeddings",
         "//internal/database",
         "//internal/env",
         "//internal/metrics",
@@ -22,6 +24,11 @@ go_library(
 
 go_test(
     name = "context_test",
-    srcs = ["service_test.go"],
+    srcs = [
+        "service_test.go",
+        "split_test.go",
+    ],
+    data = glob(["testdata/**"]),
     embed = [":context"],
+    deps = ["@com_github_hexops_autogold_v2//:autogold"],
 )
