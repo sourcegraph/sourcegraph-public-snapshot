@@ -31,14 +31,14 @@ export class CodebaseContext {
 
     public async getContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
         switch (this.config.useContext) {
-            case 'embeddings' || 'blended':
+            case 'keyword':
+                return this.getKeywordContextMessages(query, options)
+            case 'none':
+                return []
+            default:
                 return this.embeddings
                     ? this.getEmbeddingsContextMessages(query, options)
                     : this.getKeywordContextMessages(query, options)
-            case 'keyword':
-                return this.getKeywordContextMessages(query, options)
-            default:
-                return this.getEmbeddingsContextMessages(query, options)
         }
     }
 

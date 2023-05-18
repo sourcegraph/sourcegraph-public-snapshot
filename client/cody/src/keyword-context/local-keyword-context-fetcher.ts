@@ -31,6 +31,18 @@ const fileExtRipgrepParams = [
     '1M',
 ]
 
+interface RipgrepStreamData {
+    value: {
+        type: string
+        data: {
+            path: {
+                text: string
+            }
+            stats: { bytes_searched: number }
+        }
+    }
+}
+
 /**
  * Term represents a single term in the keyword search.
  * - A term is uniquely defined by its stem.
@@ -75,8 +87,8 @@ export function userQueryToKeywordQuery(query: string): Term[] {
         }
         origWords.push(...winkUtils.string.tokenize0(chunk))
     }
-    const filteredWords = winkUtils.tokens.removeWords(origWords) as string[]
-    const terms: { [stem: string]: Term } = {}
+    const filteredWords = winkUtils.tokens.removeWords(origWords)
+    const terms = new Map<string, Term>()
     for (const word of filteredWords) {
         // Ignore ASCII-only strings of length 2 or less
         if (word.length <= 2) {
@@ -94,19 +106,17 @@ export function userQueryToKeywordQuery(query: string): Term[] {
         }
 
         const stem = winkUtils.string.stem(word)
-        if (terms[stem]) {
-            terms[stem].originals.push(word)
-            terms[stem].count++
-        } else {
-            terms[stem] = {
-                stem,
-                originals: [word],
-                prefix: longestCommonPrefix(word.toLowerCase(), stem),
-                count: 1,
-            }
+        const term = terms.get(stem) || {
+            stem,
+            originals: [word],
+            prefix: longestCommonPrefix(word.toLowerCase(), stem),
+            count: 0,
         }
+        term.originals.push(word)
+        term.count++
+        terms.set(stem, term)
     }
-    return [...Object.values(terms)]
+    return [...terms.values()]
 }
 
 export class LocalKeywordContextFetcher implements KeywordContextFetcher {
@@ -186,14 +196,14 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                     .pipe(StreamValues.withParser())
                     .on('data', data => {
                         try {
-                            switch (data.value.type) {
+                            const typedData = data as RipgrepStreamData
+                            switch (typedData.value.type) {
                                 case 'end':
-                                    if (!fileTermCounts[data.value.data.path.text]) {
-                                        fileTermCounts[data.value.data.path.text] = {} as any
+                                    if (!fileTermCounts[typedData.value.data.path.text]) {
+                                        fileTermCounts[typedData.value.data.path.text] = { bytesSearched: 0 }
                                     }
-                                    fileTermCounts[data.value.data.path.text].bytesSearched =
-                                        data.value.data.stats.bytes_searched
-
+                                    fileTermCounts[typedData.value.data.path.text].bytesSearched =
+                                        typedData.value.data.stats.bytes_searched
                                     break
                             }
                         } catch (error) {
