@@ -5,43 +5,22 @@ import (
 
 	"github.com/sourcegraph/go-ctags"
 
+	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type ParserType = uint8
-
-const (
-	UnknownCtags ParserType = iota
-	NoCtags
-	UniversalCtags
-	ScipCtags
-)
-
-func paserNameToParserType(name string) (ParserType, error) {
-	switch name {
-	case "off":
-		return NoCtags, nil
-	case "universal-ctags":
-		return UniversalCtags, nil
-	case "scip-ctags":
-		return ScipCtags, nil
-	default:
-		return UnknownCtags, errors.Errorf("unknown parser type: %s", name)
-	}
-}
-
-type ParserFactory func(ParserType) (ctags.Parser, error)
+type ParserFactory func(ctags_config.ParserType) (ctags.Parser, error)
 
 type parserPool struct {
 	newParser ParserFactory
-	pool      map[ParserType]chan ctags.Parser
+	pool      map[ctags_config.ParserType]chan ctags.Parser
 }
 
 func NewParserPool(newParser ParserFactory, numParserProcesses int) (*parserPool, error) {
-	pool := make(map[ParserType]chan ctags.Parser)
+	pool := make(map[ctags_config.ParserType]chan ctags.Parser)
 
 	// NOTE: We obviously don't make `NoCtags` available in the pool.
-	for _, parserType := range []ParserType{UniversalCtags, ScipCtags} {
+	for _, parserType := range []ctags_config.ParserType{ctags_config.UniversalCtags, ctags_config.ScipCtags} {
 		pool[parserType] = make(chan ctags.Parser, numParserProcesses)
 		for i := 0; i < numParserProcesses; i++ {
 			parser, err := newParser(parserType)
@@ -66,8 +45,8 @@ func NewParserPool(newParser ParserFactory, numParserProcesses int) (*parserPool
 // the pool. This method always returns a non-nil parser with a nil error value.
 //
 // This method blocks until a parser is available or the given context is canceled.
-func (p *parserPool) Get(ctx context.Context, source ParserType) (ctags.Parser, error) {
-	if source == NoCtags || source == UnknownCtags {
+func (p *parserPool) Get(ctx context.Context, source ctags_config.ParserType) (ctags.Parser, error) {
+	if source == ctags_config.NoCtags || source == ctags_config.UnknownCtags {
 		return nil, errors.New("NoCtags is not a valid ParserType")
 	}
 
@@ -86,7 +65,7 @@ func (p *parserPool) Get(ctx context.Context, source ParserType) (ctags.Parser, 
 	}
 }
 
-func (p *parserPool) Done(parser ctags.Parser, source ParserType) {
+func (p *parserPool) Done(parser ctags.Parser, source ctags_config.ParserType) {
 	pool := p.pool[source]
 	pool <- parser
 }
