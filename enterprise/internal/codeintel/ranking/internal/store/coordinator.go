@@ -37,7 +37,7 @@ func (s *store) Coordinate(
 		graphKey,
 		derivativeGraphKey,
 		now,
-		graphKey,
+		derivativeGraphKey,
 	)); err != nil {
 		return err
 	}
