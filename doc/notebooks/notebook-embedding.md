@@ -32,7 +32,7 @@ body.theme-dark .markdown-body ul li:before {
 </style>
 # Embedding Notebooks
 
-A notebook can be embedded using a standard iframe element. To create the embedding URL, copy the notebook URL (e.g. `https://your-sourcegraph-instance.com/notebooks/notebook-id`), and add the `/embed` prefix directly before the `/notebooks` segment:
+A notebook can be embedded using a standard `iframe` element. To create the embedding URL, copy the notebook URL (e.g. `https://your-sourcegraph-instance.com/notebooks/notebook-id`), and add the `/embed` prefix directly before the `/notebooks` segment:
 
   ```
   https://{your-sourcegraph-instance.com}/embed/notebooks/{notebook-id}
@@ -49,7 +49,7 @@ Once you have the embedding URL, create an iframe element and use the embedding 
 ```
 
 ## Security
-We recommend using the `sandbox` attribute to apply extra security restrictions to the iframe. Notebooks require three exceptions: `allow-scripts` allows executing Javascript scripts, `allow-same-origin` allows access to local storage and cookies, and `allow-popups` allows opening links in a separate tab.
+We recommend using the `sandbox` attribute to apply extra security restrictions to the `iframe`. Notebooks require three exceptions: `allow-scripts` allows executing Javascript scripts, `allow-same-origin` allows access to local storage and cookies, and `allow-popups` allows opening links in a separate tab.
 
 ## Enable embedding notebooks on private instances
 Embedding is disabled by default on private instances. A site-admin can enable embedding by running the following GraphQL mutation in the API console, located at `https://{your-sourcegraph-instance.com}/api/console`:
