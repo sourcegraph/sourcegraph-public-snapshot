@@ -73,6 +73,7 @@ bazel_build() {
 
   out=$(bazel cquery //enterprise/cmd/sourcegraph:sourcegraph --output=files)
   mkdir -p "${bin_dir}"
+  chmod +x ${out}
   cp -vf "${out}" "${bin_dir}/sourcegraph-backend-${platform}"
 }
 
@@ -85,40 +86,11 @@ upload_artifacts() {
 }
 
 
-platform() {
-  # We need to determine the platform string for the sourcegraph-backend binary
-  local arch=""
-  local platform=""
-  case "$(uname -m)" in
-    "amd64")
-      arch="x86_64"
-      ;;
-    "arm64")
-      arch="aarch64"
-      ;;
-    *)
-      arch=$(uname -m)
-  esac
-
-  case "$(uname -s)" in
-    "Darwin")
-      platform="${arch}-apple-darwin"
-      ;;
-    "Linux")
-      platform="${arch}-unknown-linux-gnu"
-      ;;
-    *)
-      platform="${arch}-unknown-unknown"
-  esac
-
-  echo ${platform}
-}
-
 # determine platform if it is not set
-PLATFORM=${PLATFORM:-$(platform)}
+PLATFORM=${PLATFORM:-"$(./enterprise/dev/app/detect_platform.sh)"}
 export PLATFORM
 
-VERSION=$(./enterprise/dev/app/app_version.sh)
+VERSION="$(./enterprise/dev/app/app_version.sh)"
 export VERSION
 
 if [[ ${CROSS_COMPILE_X86_64_MACOS:-0} == 1 ]]; then

@@ -9,6 +9,7 @@ DIST_DIR="dist"
 download_artifacts() {
   mkdir -p .bin
   buildkite-agent artifact download "${BIN_DIR}/sourcegraph-backend-*" .bin/
+  chmod -R +x .bin/
 }
 
 set_version() {
@@ -23,27 +24,48 @@ set_version() {
   mv "${tmp}" ./src-tauri/tauri.conf.json
 }
 
+bundle_path() {
+  local platform=$(detect_platform)
+  echo  "./src-tauri/target/${platform}/release/bundle"
+}
+
 upload_dist() {
-  local bundle_path
-  bundle_path="./src-tauri/target/release/bundle"
   mkdir -p dist
-  src=$(find ${bundle_path} -type f \( -name "Sourcegraph*.dmg" -o -name "Sourcegraph*.app" -o -name "sourcegraph*.deb" -o -name "sourcegraph*.AppImage" -o -name "sourcegraph*.tar.gz" \) -exec realpath {} \;);
+  src=$(find "./src-tauri/target/*/release/bundle" -type f \( -name "Sourcegraph*.dmg" -o -name "Sourcegraph*.tar.gz" -o -name "sourcegraph*.deb" -o -name "sourcegraph*.AppImage" -o -name "sourcegraph*.tar.gz" \) -exec realpath {} \;);
   # we're using a while and read here because the paths may contain spaces and this handles it properly
   while IFS= read -r from; do
     mv -vf "${from}" "./${DIST_DIR}/"
   done <<< ${src}
 
-  # # we have to handle Sourcegraph.App differently since it is a dir
-  local app_bundle
-  app_bundle="${bundle_path}/macos/Sourcegraph App.app"
-  if [[ -d  ${app_bundle} ]]; then
-    mv "${app_bundle}" "./${DIST_DIR}/"
-  fi
 
   echo --- Uploading artifacts from dist
   ls -al ./dist
   buildkite-agent artifact upload "./${DIST_DIR}/*"
 
+}
+
+zip_app_and_move() {
+  # # we have to handle Sourcegraph.App differently since it is a dir
+  local platform=$(detect_platform.sh)
+  local bundle_path="./src-tauri/target/${platform}/release/bundle"
+  local app_bundle=$(find "${bundle_path}" -type d -name "Sourcegraph.app")
+
+  if [[ -d  ${app_bundle} ]]; then
+    local arch
+    local target
+    arch="$(uname -m)"
+    if [[ "${arch}" == "arm64" ]]; then
+      arch="aarch64"
+    fi
+
+    target="Sourcegraph.${arch}.app.tar.gz"
+    echo "DEBUG: $(pwd)"
+    pushd
+    cd "${bundle_path}/macos/"
+    echo "--- :file_cabinet: Creating archive of ${app_bundle}"
+    tar -czvf "${target}" "Sourcegraph.app"
+    popd
+  fi
 }
 
 cleanup_codesigning() {
@@ -100,7 +122,7 @@ secret_value() {
   local name
   local value
   name=$1
-  if [[ $(uname s) == "Darwin" ]]; then
+  if [[ $(uname -s) == "Darwin" ]]; then
     # host is in aws - probably
     value=$(aws secretsmanager get-secret-value --secret-id ${target} | jq '.SecretString | fromjson')
   else
@@ -111,6 +133,10 @@ secret_value() {
 }
 
 build() {
+  echo --- :magnify_glass: detecting platform
+  local platform="$(./enterprise/dev/app/detect_platform.sh)"
+  echo "platform is: ${platform}"
+
   if [[ ${CI} == "true" ]]; then
     local secrets
     echo "--- :aws::gcp::tauri: Retrieving tauri signing secrets"
@@ -119,9 +145,10 @@ build() {
     export TAURI_PRIVATE_KEY="${TAURI_PRIVATE_KEY:-"$(echo ${secrets} | jq -r '.TAURI_PRIVATE_KEY' | base64 -d || echo '')"}"
     export TAURI_KEY_PASSWORD="${TAURI_KEY_PASSWORD:-"$(echo ${secrets} | jq -r '.TAURI_KEY_PASSWORD' || echo '')"}"
   fi
-  echo "--- :tauri: Building Application (${VERSION})"]
+
+  echo "--- :tauri: Building Application (${VERSION}) for platform: ${platform}"
   NODE_ENV=production pnpm run build-app-shell
-  pnpm tauri build --bundles deb,appimage,app,dmg,updater
+  pnpm tauri build --bundles deb,appimage,app,dmg,updater --target ${platform}
 }
 
 if [[ ${CI:-""} == "true" ]]; then
@@ -133,6 +160,8 @@ set_version ${VERSION}
 
 # only perform codesigning on mac
 if [[ ${CODESIGNING:-"0"} == 1 ]]; then
+  # We want any xcode related tools to be picked up first so inject it here in the path
+  export PATH="$(xcode-select -p)/usr/bin:$PATH"
   # If on a macOS host, Tauri will invoke the base64 command as part of the code signing process.
   # it expects the macOS base64 command, not the gnutils one provided by homebrew, so we prefer
   # that one here:
@@ -146,9 +175,9 @@ if [[ ${CODESIGNING:-"0"} == 1 ]]; then
   done
 fi
 
-echo "xcode DEBUG: $(xcode-select -p)"
-
 build
+
+zip_app_and_move
 
 if [[ ${CI:-""} == "true" ]]; then
   upload_dist
