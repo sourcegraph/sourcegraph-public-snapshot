@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { ExternalServiceKind } from '../../graphql-operations'
 
 import { ExternalServiceFieldsWithConfig } from './backend'
