@@ -35,9 +35,9 @@ var DefaultPredicateRegistry = PredicateRegistry{
 		"contains.commit.after": func() Predicate { return &RepoContainsCommitAfterPredicate{} },
 		"has.commit.after":      func() Predicate { return &RepoContainsCommitAfterPredicate{} },
 		"has.description":       func() Predicate { return &RepoHasDescriptionPredicate{} },
-		"has.tag":               func() Predicate { return &RepoHasTagPredicate{} },
-		"has":                   func() Predicate { return &RepoHasKVPPredicate{} },
-		"has.key":               func() Predicate { return &RepoHasKeyPredicate{} },
+		"has.meta.tag":          func() Predicate { return &RepoHasTagPredicate{} },
+		"has.meta":              func() Predicate { return &RepoHasKVPPredicate{} },
+		"has.meta.key":          func() Predicate { return &RepoHasKeyPredicate{} },
 		"has.topic":             func() Predicate { return &RepoHasTopicPredicate{} },
 
 		// Deprecated predicates
@@ -307,7 +307,7 @@ func (f *RepoHasTagPredicate) Unmarshal(params string, negated bool) (err error)
 }
 
 func (f *RepoHasTagPredicate) Field() string { return FieldRepo }
-func (f *RepoHasTagPredicate) Name() string  { return "has.tag" }
+func (f *RepoHasTagPredicate) Name() string  { return "has.meta.tag" }
 
 type RepoHasKVPPredicate struct {
 	Key     string
@@ -371,7 +371,7 @@ func (p *RepoHasKVPPredicate) Unmarshal(params string, negated bool) (err error)
 }
 
 func (p *RepoHasKVPPredicate) Field() string { return FieldRepo }
-func (p *RepoHasKVPPredicate) Name() string  { return "has" }
+func (p *RepoHasKVPPredicate) Name() string  { return "has.meta" }
 
 type RepoHasKeyPredicate struct {
 	Key     string
@@ -388,7 +388,7 @@ func (p *RepoHasKeyPredicate) Unmarshal(params string, negated bool) (err error)
 }
 
 func (p *RepoHasKeyPredicate) Field() string { return FieldRepo }
-func (p *RepoHasKeyPredicate) Name() string  { return "has.key" }
+func (p *RepoHasKeyPredicate) Name() string  { return "has.meta.key" }
 
 type RepoHasTopicPredicate struct {
 	Topic   string

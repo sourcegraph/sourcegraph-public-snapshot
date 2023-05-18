@@ -944,10 +944,10 @@ const decorateContainsFileBody = (body: string, offset: number): DecoratedToken[
 }
 
 /**
- * Attempts to decorate `repo:has(key:value)` syntax. Fails if
+ * Attempts to decorate `repo:has.meta(key:value)` syntax. Fails if
  * the body contains unsupported syntax.
  */
-const decorateRepoHasBody = (body: string, offset: number): DecoratedToken[] | undefined => {
+const decorateRepoHasMetaBody = (body: string, offset: number): DecoratedToken[] | undefined => {
     const matches = body.match(/([^:]+):([^:]+)/)
     if (!matches) {
         return undefined
@@ -999,16 +999,16 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
                 value: body,
                 kind: PatternKind.Regexp,
             })
-        case 'has': {
-            const result = decorateRepoHasBody(body, offset)
+        case 'has.meta': {
+            const result = decorateRepoHasMetaBody(body, offset)
             if (result !== undefined) {
                 return result
             }
             break
         }
-        case 'has.tag':
+        case 'has.meta.tag':
+        case 'has.meta.key':
         case 'has.owner':
-        case 'has.key':
         case 'has.topic':
             return [
                 {

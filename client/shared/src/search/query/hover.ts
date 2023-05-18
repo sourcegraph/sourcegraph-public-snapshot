@@ -176,12 +176,12 @@ const toPredicateHover = (token: MetaPredicate): string => {
             return `**Built-in predicate**. Search only inside repositories that have been committed to since \`${parameters}\`.`
         case 'has.description':
             return '**Built-in predicate**. Search only inside repositories that have a **description** matching the given regular expression'
-        case 'has.tag':
-            return '**Built-in predicate**. Search only inside repositories that are tagged with the given tag'
-        case 'has':
-            return '**Built-in predicate**. Search only inside repositories that are associated with the given key:value pair'
-        case 'has.key':
-            return '**Built-in predicate**. Search only inside repositories that are associated with the given key, regardless of its value'
+        case 'has.meta.tag':
+            return '**Built-in predicate**. Search only inside repositories tagged with a given metadata key'
+        case 'has.meta':
+            return '**Built-in predicate**. Search only inside repositories having a specified key:value pair metadata'
+        case 'has.meta.key':
+            return '**Built-in predicate**. Search only inside repositories having a specific metadata key with any value'
         case 'has.owner':
             return '**Built-in predicate**. Search only inside files that are owned by the given person or team'
     }

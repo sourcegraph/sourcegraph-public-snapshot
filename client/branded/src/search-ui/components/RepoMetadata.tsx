@@ -63,7 +63,11 @@ const Meta: React.FC<MetaProps> = ({
             }
         }
         // append metadata filter
-        query = appendFilter(query, 'repo', meta.value ? `has(${meta.key}:${meta.value})` : `has.key(${meta.key})`)
+        query = appendFilter(
+            query,
+            'repo',
+            meta.value ? `has.meta(${meta.key}:${meta.value})` : `has.meta.key(${meta.key})`
+        )
 
         const searchParams = buildSearchURLQueryFromQueryState({ query })
         return `/search?${searchParams}`
