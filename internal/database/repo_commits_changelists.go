@@ -62,7 +62,7 @@ FROM
 WHERE
 	repo_id = %s
 ORDER BY
-	id DESC
+	perforce_changelist_id DESC
 LIMIT 1`
 
 func (s *repoCommitsChangelistsStore) GetLatestForRepo(ctx context.Context, repoID api.RepoID) (*types.RepoCommit, error) {
