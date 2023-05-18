@@ -10,9 +10,13 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/hexops/autogold/v2"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -989,5 +993,142 @@ func TestCommitOwnershipSignals(t *testing.T) {
 		Variables: map[string]any{
 			"repo": string(relay.MarshalID("Repository", repoID)),
 		},
+	})
+}
+
+func Test_SignalConfigurations(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	git := fakeGitserver{}
+	own := fakeOwnService{}
+
+	ctx := context.Background()
+
+	admin, err := db.Users().Create(context.Background(), database.NewUser{Username: "admin"})
+	require.NoError(t, err)
+
+	user, err := db.Users().Create(context.Background(), database.NewUser{Username: "non-admin"})
+	require.NoError(t, err)
+
+	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, git, own, logger)})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	adminActor := actor.FromUser(admin.ID)
+	adminCtx := actor.WithActor(ctx, adminActor)
+
+	baseReadTest := &graphqlbackend.Test{
+		Context: adminCtx,
+		Schema:  schema,
+		Query: `
+			query asdf {
+			  ownSignalConfigurations {
+				name
+				description
+				isEnabled
+				excludedRepoPatterns
+			  }
+			}`,
+		ExpectedResult: `{
+		  "ownSignalConfigurations": [
+			{
+			  "name": "recent-contributors",
+			  "description": "Indexes contributors in each file using repository history.",
+			  "isEnabled": false,
+			  "excludedRepoPatterns": []
+			},
+			{
+			  "name": "recent-views",
+			  "description": "Indexes users that recently viewed files in Sourcegraph.",
+			  "isEnabled": false,
+			  "excludedRepoPatterns": []
+			}
+		  ]
+		}`,
+	}
+
+	mutationTest := &graphqlbackend.Test{
+		Context: ctx,
+		Schema:  schema,
+		Query: `
+				mutation asdf($input:UpdateSignalConfigurationsInput!) {
+				  updateOwnSignalConfigurations(input:$input) {
+					isEnabled
+					name
+					description
+					excludedRepoPatterns
+				  }
+				}`,
+		Variables: map[string]any{"input": map[string]any{
+			"configs": []any{map[string]any{
+				"name": "recent-contributors", "enabled": true, "excludedRepoPatterns": []any{"github.com/*"}}},
+		}},
+	}
+
+	t.Run("admin access can read", func(t *testing.T) {
+		graphqlbackend.RunTest(t, baseReadTest)
+	})
+
+	t.Run("user without admin access", func(t *testing.T) {
+		userActor := actor.FromUser(user.ID)
+		userCtx := actor.WithActor(ctx, userActor)
+
+		expectedErrs := []*gqlerrors.QueryError{{
+			Message: "must be site admin",
+			Path:    []any{"updateOwnSignalConfigurations"},
+		}}
+
+		mutationTest.Context = userCtx
+		mutationTest.ExpectedErrors = expectedErrs
+		mutationTest.ExpectedResult = `null`
+
+		graphqlbackend.RunTest(t, mutationTest)
+
+		// ensure the configs didn't change despite the error
+		configsFromDb, err := db.OwnSignalConfigurations().LoadConfigurations(ctx)
+		require.NoError(t, err)
+		autogold.Expect([]database.SignalConfiguration{
+			{
+				ID:          1,
+				Name:        "recent-contributors",
+				Description: "Indexes contributors in each file using repository history.",
+			},
+			{
+				ID:          2,
+				Name:        "recent-views",
+				Description: "Indexes users that recently viewed files in Sourcegraph.",
+			},
+		}).Equal(t, configsFromDb)
+
+		readTest := baseReadTest
+
+		// ensure they can't read configs
+		readTest.ExpectedErrors = expectedErrs
+		readTest.ExpectedResult = "null"
+		readTest.Context = userCtx
+	})
+
+	t.Run("user with admin access", func(t *testing.T) {
+		mutationTest.Context = adminCtx
+		mutationTest.ExpectedErrors = nil
+		mutationTest.ExpectedResult = `{
+		  "updateOwnSignalConfigurations": [
+			{
+			  "name": "recent-contributors",
+			  "description": "Indexes contributors in each file using repository history.",
+			  "isEnabled": true,
+			  "excludedRepoPatterns": ["github.com/*"]
+			},
+			{
+			  "name": "recent-views",
+			  "description": "Indexes users that recently viewed files in Sourcegraph.",
+			  "isEnabled": false,
+			  "excludedRepoPatterns": []
+			}
+		  ]
+		}`
+
+		graphqlbackend.RunTest(t, mutationTest)
 	})
 }

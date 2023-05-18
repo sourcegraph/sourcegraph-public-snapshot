@@ -1,3 +1,4 @@
+import { OldContextMessage } from '../../codebase-context/messages'
 import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
 import { Message } from '../../sourcegraph-api'
 
@@ -22,7 +23,20 @@ export class Transcript {
                     new Interaction(
                         humanMessage,
                         assistantMessage,
-                        Promise.resolve(context),
+                        Promise.resolve(
+                            context.map(message => {
+                                if (message.file) {
+                                    return message
+                                }
+
+                                const { fileName } = message as any as OldContextMessage
+                                if (fileName) {
+                                    return { ...message, file: { fileName } }
+                                }
+
+                                return message
+                            })
+                        ),
                         timestamp || new Date().toISOString()
                     )
             ),
@@ -59,7 +73,7 @@ export class Transcript {
             }
         }
 
-        return new Date().toISOString()
+        return this.internalID
     }
 
     public addInteraction(interaction: Interaction | null): void {
@@ -128,6 +142,10 @@ export class Transcript {
 
     public toChat(): ChatMessage[] {
         return this.interactions.flatMap(interaction => interaction.toChat())
+    }
+
+    public async toChatPromise(): Promise<ChatMessage[]> {
+        return [...(await Promise.all(this.interactions.map(interaction => interaction.toChatPromise())))].flat()
     }
 
     public async toJSON(): Promise<TranscriptJSON> {

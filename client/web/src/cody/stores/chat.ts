@@ -41,7 +41,7 @@ interface CodyChatStore {
             prefilledOptions?: PrefilledOptions
         }
     ) => Promise<void>
-    reset: () => void
+    reset: () => Promise<void>
     getChatContext: () => ChatContextStatus
     loadTranscriptFromHistory: (id: string) => Promise<void>
     clearHistory: () => void
@@ -49,6 +49,7 @@ interface CodyChatStore {
 }
 
 const CODY_TRANSCRIPT_HISTORY_KEY = 'cody:transcript-history'
+const CODY_CURRENT_TRANSCRIPT_ID_KEY = 'cody:current-transcript-id'
 const SAVE_MAX_TRANSCRIPT_HISTORY = 20
 
 export const safeTimestampToDate = (timestamp: string = ''): Date => {
@@ -96,13 +97,21 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         set({ transcriptHistory: sorted })
     }
 
+    const fetchCurrentTranscriptId = (): string | null =>
+        window.localStorage.getItem(CODY_CURRENT_TRANSCRIPT_ID_KEY) || null
+
+    const setCurrentTranscriptId = (id: string | null): void => {
+        window.localStorage.setItem(CODY_CURRENT_TRANSCRIPT_ID_KEY, id || '')
+        set({ transcriptId: id })
+    }
+
     const clearHistory = (): void => {
         const { client, onEvent } = get()
+        saveTranscriptHistory([])
         if (client && !isErrorLike(client)) {
             onEvent?.('reset')
             void client.reset()
         }
-        saveTranscriptHistory([])
     }
 
     const deleteHistoryItem = (id: string): void => {
@@ -112,7 +121,8 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         saveTranscriptHistory(transcriptHistory.filter(transcript => transcript.id !== id))
 
         if (transcriptId === id) {
-            set({ transcript: [], transcriptId: null })
+            setCurrentTranscriptId(null)
+            set({ transcript: [] })
         }
     }
 
@@ -163,20 +173,36 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
     }
 
     const reset = async (): Promise<void> => {
-        const { client, onEvent } = get()
+        const { client: oldClient, config, editor, onEvent } = get()
+        if (!config || !editor) {
+            return
+        }
+
+        if (oldClient && !isErrorLike(oldClient)) {
+            oldClient.reset()
+        }
+
         const transcriptHistory = fetchTranscriptHistory()
+        const transcript = new Transcript()
+        const messages = transcript.toChat()
+        saveTranscriptHistory([...transcriptHistory, await transcript.toJSON()])
 
-        if (client && !isErrorLike(client)) {
-            // push current transcript to transcript history and save
-            const transcript = await client.transcript.toJSON()
-            if (transcript.interactions.length && !transcriptHistory.find(({ id }) => id === transcript.id)) {
-                transcriptHistory.push(transcript)
-            }
-            set({ messageInProgress: null, transcript: [] })
-            saveTranscriptHistory(transcriptHistory)
+        try {
+            const client = await createClient({
+                config: { ...config, customHeaders: window.context.xhrHeaders },
+                editor,
+                setMessageInProgress,
+                initialTranscript: transcript,
+                setTranscript: (transcript: Transcript) => void setTranscript(transcript),
+            })
 
+            setCurrentTranscriptId(transcript.id)
+            set({ client, transcript: messages })
+            await setTranscript(transcript)
             onEvent?.('reset')
-            void client.reset()
+        } catch (error) {
+            onEvent?.('error')
+            set({ client: error })
         }
     }
 
@@ -191,18 +217,13 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
             messages.pop()
         }
 
-        set({ transcript: messages, transcriptId: transcript.isEmpty ? null : transcript.id })
-
-        if (transcript.isEmpty) {
-            return
-        }
+        setCurrentTranscriptId(transcript.id)
+        set({ transcript: messages })
 
         // find the transcript in history and update it
         const transcriptHistory = fetchTranscriptHistory()
         const transcriptJSONIndex = transcriptHistory.findIndex(({ id }) => id === transcript.id)
-        if (transcriptJSONIndex === -1) {
-            transcriptHistory.push(await transcript.toJSON())
-        } else {
+        if (transcriptJSONIndex !== -1) {
             transcriptHistory[transcriptJSONIndex] = await transcript.toJSON()
         }
 
@@ -222,9 +243,17 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
 
         const initialTranscript = ((): Transcript => {
             try {
-                return Transcript.fromJSON(transcriptHistory[transcriptHistory.length - 1] || { interactions: [] })
+                const currentTranscriptId = fetchCurrentTranscriptId()
+                const transcriptJSON =
+                    transcriptHistory.find(({ id }) => id === currentTranscriptId) ||
+                    transcriptHistory[transcriptHistory.length - 1]
+
+                const transcript = Transcript.fromJSON(transcriptJSON)
+                return transcript
             } catch {
-                return new Transcript()
+                const newTranscript = new Transcript()
+                void newTranscript.toJSON().then(transcriptJSON => saveTranscriptHistory([transcriptJSON]))
+                return newTranscript
             }
         })()
 
@@ -232,14 +261,14 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
             config,
             editor,
             onEvent,
-            transcript: initialTranscript.toChat(),
-            transcriptId: initialTranscript.isEmpty ? null : initialTranscript.id,
+            transcript: await initialTranscript.toChatPromise(),
+            transcriptId: initialTranscript.id,
             transcriptHistory,
         })
 
         try {
             const client = await createClient({
-                config,
+                config: { ...config, customHeaders: window.context.xhrHeaders },
                 editor,
                 setMessageInProgress,
                 initialTranscript,
@@ -283,11 +312,11 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         }
 
         const transcript = Transcript.fromJSON(transcriptJSONFromHistory)
-        const messages = transcript.toChat()
+        const messages = await transcript.toChatPromise()
 
         try {
             const client = await createClient({
-                config,
+                config: { ...config, customHeaders: window.context.xhrHeaders },
                 editor,
                 setMessageInProgress,
                 initialTranscript: transcript,
@@ -316,7 +345,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         submitMessage,
         editMessage,
         executeRecipe,
-        reset: () => void reset(),
+        reset,
         getChatContext,
         loadTranscriptFromHistory,
         clearHistory,

@@ -45,7 +45,7 @@ func StreamHandler(db database.DB, enterpriseJobs jobutil.EnterpriseJobs) http.H
 	return &streamHandler{
 		logger:              logger,
 		db:                  db,
-		searchClient:        client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs(), enterpriseJobs),
+		searchClient:        client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs(), search.SearcherGRPCConnectionCache(), enterpriseJobs),
 		flushTickerInternal: 100 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
 	}

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
-	otlog "github.com/opentracing/opentracing-go/log"
 
 	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -202,10 +201,10 @@ ins AS (
 ),
 set_progress AS (
 	UPDATE codeintel_ranking_progress
-	SET mapper_completed_at = NOW()
-	WHERE
-		id IN (SELECT id FROM progress) AND
-		NOT EXISTS (SELECT 1 FROM refs)
+	SET
+		num_reference_records_processed = COALESCE(num_reference_records_processed, 0) + (SELECT COUNT(*) FROM locked_refs),
+		mapper_completed_at             = CASE WHEN (SELECT COUNT(*) FROM refs) = 0 THEN NOW() ELSE NULL END
+	WHERE id IN (SELECT id FROM progress)
 )
 SELECT
 	(SELECT COUNT(*) FROM locked_refs),
@@ -334,10 +333,10 @@ ins AS (
 ),
 set_progress AS (
 	UPDATE codeintel_ranking_progress
-	SET seed_mapper_completed_at = NOW()
-	WHERE
-		id IN (SELECT id FROM progress) AND
-		NOT EXISTS (SELECT 1 FROM unprocessed_path_counts)
+	SET
+		num_path_records_processed = COALESCE(num_path_records_processed, 0) + (SELECT COUNT(*) FROM locked_path_counts),
+		seed_mapper_completed_at   = CASE WHEN (SELECT COUNT(*) FROM unprocessed_path_counts) = 0 THEN NOW() ELSE NULL END
+	WHERE id IN (SELECT id FROM progress)
 )
 SELECT
 	(SELECT COUNT(*) FROM locked_path_counts),
@@ -345,7 +344,7 @@ SELECT
 `
 
 func (s *store) VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string, batchSize int) (_ int, err error) {
-	ctx, _, endObservation := s.operations.vacuumStaleGraphs.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	ctx, _, endObservation := s.operations.vacuumStaleGraphs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumStaleGraphsQuery, derivativeGraphKey, derivativeGraphKey, batchSize)))

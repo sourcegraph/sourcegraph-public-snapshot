@@ -4887,6 +4887,9 @@ type MockDB struct {
 	// AccessTokensFunc is an instance of a mock function object controlling
 	// the behavior of the method AccessTokens.
 	AccessTokensFunc *DBAccessTokensFunc
+	// AssignedOwnersFunc is an instance of a mock function object
+	// controlling the behavior of the method AssignedOwners.
+	AssignedOwnersFunc *DBAssignedOwnersFunc
 	// AuthzFunc is an instance of a mock function object controlling the
 	// behavior of the method Authz.
 	AuthzFunc *DBAuthzFunc
@@ -4957,6 +4960,9 @@ type MockDB struct {
 	// OutboundWebhooksFunc is an instance of a mock function object
 	// controlling the behavior of the method OutboundWebhooks.
 	OutboundWebhooksFunc *DBOutboundWebhooksFunc
+	// OwnSignalConfigurationsFunc is an instance of a mock function object
+	// controlling the behavior of the method OwnSignalConfigurations.
+	OwnSignalConfigurationsFunc *DBOwnSignalConfigurationsFunc
 	// PermissionSyncJobsFunc is an instance of a mock function object
 	// controlling the behavior of the method PermissionSyncJobs.
 	PermissionSyncJobsFunc *DBPermissionSyncJobsFunc
@@ -5055,6 +5061,11 @@ func NewMockDB() *MockDB {
 		},
 		AccessTokensFunc: &DBAccessTokensFunc{
 			defaultHook: func() (r0 AccessTokenStore) {
+				return
+			},
+		},
+		AssignedOwnersFunc: &DBAssignedOwnersFunc{
+			defaultHook: func() (r0 AssignedOwnersStore) {
 				return
 			},
 		},
@@ -5170,6 +5181,11 @@ func NewMockDB() *MockDB {
 		},
 		OutboundWebhooksFunc: &DBOutboundWebhooksFunc{
 			defaultHook: func(encryption.Key) (r0 OutboundWebhookStore) {
+				return
+			},
+		},
+		OwnSignalConfigurationsFunc: &DBOwnSignalConfigurationsFunc{
+			defaultHook: func() (r0 SignalConfigurationStore) {
 				return
 			},
 		},
@@ -5330,6 +5346,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.AccessTokens")
 			},
 		},
+		AssignedOwnersFunc: &DBAssignedOwnersFunc{
+			defaultHook: func() AssignedOwnersStore {
+				panic("unexpected invocation of MockDB.AssignedOwners")
+			},
+		},
 		AuthzFunc: &DBAuthzFunc{
 			defaultHook: func() AuthzStore {
 				panic("unexpected invocation of MockDB.Authz")
@@ -5443,6 +5464,11 @@ func NewStrictMockDB() *MockDB {
 		OutboundWebhooksFunc: &DBOutboundWebhooksFunc{
 			defaultHook: func(encryption.Key) OutboundWebhookStore {
 				panic("unexpected invocation of MockDB.OutboundWebhooks")
+			},
+		},
+		OwnSignalConfigurationsFunc: &DBOwnSignalConfigurationsFunc{
+			defaultHook: func() SignalConfigurationStore {
+				panic("unexpected invocation of MockDB.OwnSignalConfigurations")
 			},
 		},
 		PermissionSyncJobsFunc: &DBPermissionSyncJobsFunc{
@@ -5598,6 +5624,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		AccessTokensFunc: &DBAccessTokensFunc{
 			defaultHook: i.AccessTokens,
 		},
+		AssignedOwnersFunc: &DBAssignedOwnersFunc{
+			defaultHook: i.AssignedOwners,
+		},
 		AuthzFunc: &DBAuthzFunc{
 			defaultHook: i.Authz,
 		},
@@ -5666,6 +5695,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		OutboundWebhooksFunc: &DBOutboundWebhooksFunc{
 			defaultHook: i.OutboundWebhooks,
+		},
+		OwnSignalConfigurationsFunc: &DBOwnSignalConfigurationsFunc{
+			defaultHook: i.OwnSignalConfigurations,
 		},
 		PermissionSyncJobsFunc: &DBPermissionSyncJobsFunc{
 			defaultHook: i.PermissionSyncJobs,
@@ -5948,6 +5980,105 @@ func (c DBAccessTokensFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBAccessTokensFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBAssignedOwnersFunc describes the behavior when the AssignedOwners
+// method of the parent MockDB instance is invoked.
+type DBAssignedOwnersFunc struct {
+	defaultHook func() AssignedOwnersStore
+	hooks       []func() AssignedOwnersStore
+	history     []DBAssignedOwnersFuncCall
+	mutex       sync.Mutex
+}
+
+// AssignedOwners delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) AssignedOwners() AssignedOwnersStore {
+	r0 := m.AssignedOwnersFunc.nextHook()()
+	m.AssignedOwnersFunc.appendCall(DBAssignedOwnersFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the AssignedOwners
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBAssignedOwnersFunc) SetDefaultHook(hook func() AssignedOwnersStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AssignedOwners method of the parent MockDB instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBAssignedOwnersFunc) PushHook(hook func() AssignedOwnersStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBAssignedOwnersFunc) SetDefaultReturn(r0 AssignedOwnersStore) {
+	f.SetDefaultHook(func() AssignedOwnersStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBAssignedOwnersFunc) PushReturn(r0 AssignedOwnersStore) {
+	f.PushHook(func() AssignedOwnersStore {
+		return r0
+	})
+}
+
+func (f *DBAssignedOwnersFunc) nextHook() func() AssignedOwnersStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBAssignedOwnersFunc) appendCall(r0 DBAssignedOwnersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBAssignedOwnersFuncCall objects describing
+// the invocations of this function.
+func (f *DBAssignedOwnersFunc) History() []DBAssignedOwnersFuncCall {
+	f.mutex.Lock()
+	history := make([]DBAssignedOwnersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBAssignedOwnersFuncCall is an object that describes an invocation of
+// method AssignedOwners on an instance of MockDB.
+type DBAssignedOwnersFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 AssignedOwnersStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBAssignedOwnersFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBAssignedOwnersFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -8247,6 +8378,105 @@ func (c DBOutboundWebhooksFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBOutboundWebhooksFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBOwnSignalConfigurationsFunc describes the behavior when the
+// OwnSignalConfigurations method of the parent MockDB instance is invoked.
+type DBOwnSignalConfigurationsFunc struct {
+	defaultHook func() SignalConfigurationStore
+	hooks       []func() SignalConfigurationStore
+	history     []DBOwnSignalConfigurationsFuncCall
+	mutex       sync.Mutex
+}
+
+// OwnSignalConfigurations delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockDB) OwnSignalConfigurations() SignalConfigurationStore {
+	r0 := m.OwnSignalConfigurationsFunc.nextHook()()
+	m.OwnSignalConfigurationsFunc.appendCall(DBOwnSignalConfigurationsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// OwnSignalConfigurations method of the parent MockDB instance is invoked
+// and the hook queue is empty.
+func (f *DBOwnSignalConfigurationsFunc) SetDefaultHook(hook func() SignalConfigurationStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// OwnSignalConfigurations method of the parent MockDB instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *DBOwnSignalConfigurationsFunc) PushHook(hook func() SignalConfigurationStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBOwnSignalConfigurationsFunc) SetDefaultReturn(r0 SignalConfigurationStore) {
+	f.SetDefaultHook(func() SignalConfigurationStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBOwnSignalConfigurationsFunc) PushReturn(r0 SignalConfigurationStore) {
+	f.PushHook(func() SignalConfigurationStore {
+		return r0
+	})
+}
+
+func (f *DBOwnSignalConfigurationsFunc) nextHook() func() SignalConfigurationStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBOwnSignalConfigurationsFunc) appendCall(r0 DBOwnSignalConfigurationsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBOwnSignalConfigurationsFuncCall objects
+// describing the invocations of this function.
+func (f *DBOwnSignalConfigurationsFunc) History() []DBOwnSignalConfigurationsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBOwnSignalConfigurationsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBOwnSignalConfigurationsFuncCall is an object that describes an
+// invocation of method OwnSignalConfigurations on an instance of MockDB.
+type DBOwnSignalConfigurationsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 SignalConfigurationStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBOwnSignalConfigurationsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBOwnSignalConfigurationsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

@@ -91,6 +91,7 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 		bk.Agent("queue", "bazel"),
 		bk.Key("bazel-tests"),
 		bk.ArtifactPaths("./bazel-testlogs/enterprise/cmd/embeddings/shared/shared_test/*.log"),
+		bk.AutomaticRetry(1), // TODO @jhchabran flaky stuff are breaking builds
 	}
 
 	// Test commands
@@ -116,7 +117,8 @@ func bazelBackCompatTest(targets ...string) func(*bk.Pipeline) {
 		bk.Agent("queue", "bazel"),
 
 		// Generate a patch that backports the migration from the new code into the old one.
-		bk.Cmd("git diff origin/ci/backcompat-v5.0.0..HEAD -- migrations/ > dev/backcompat/patches/back_compat_migrations.patch"),
+		// Ignore space is because of https://github.com/bazelbuild/bazel/issues/17376
+		bk.Cmd("git diff --ignore-space-at-eol origin/ci/backcompat-v5.0.0..HEAD -- migrations/ > dev/backcompat/patches/back_compat_migrations.patch"),
 	}
 
 	bazelCmd := bazelCmd(fmt.Sprintf("test %s", strings.Join(targets, " ")))
