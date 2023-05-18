@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -90,9 +89,7 @@ type Bag interface {
 // TODO: Search by verified email.
 // TODO: Search by code host handle.
 func ByTextReference(ctx context.Context, db database.EnterpriseDB, text string) (Bag, error) {
-	if strings.HasPrefix(text, "@") {
-		text = text[1:]
-	}
+	text = strings.TrimPrefix(text, "@")
 	var b bag
 	// Try to find a user by username (the only lookup for now):
 	user, err := db.Users().GetByUsername(ctx, text)
@@ -148,9 +145,7 @@ func (refs userReferences) containsEmail(email string) bool {
 
 // TODO: Introduce matching on linked code host handles.
 func (refs userReferences) containsHandle(handle string) bool {
-	if strings.HasPrefix(handle, "@") {
-		handle = handle[1:]
-	}
+	handle = strings.TrimPrefix(handle, "@")
 	if u := refs.user; u != nil && u.Username == handle {
 		return true
 	}
@@ -181,88 +176,4 @@ func (b bag) Contains(ref Reference) bool {
 		}
 	}
 	return false
-}
-
-// Clusters is a set of associated references with the use of a database.
-// The way it works is that:
-// 1. references are first added as leads,
-// 2. database is used to resolve set of different references,
-// 3. then the same references can be looked up and resolved to concrete people or teams.
-type Clusters interface {
-	// Add a reference to enrich the data set
-	Add(ref Reference)
-
-	// Resolve all the added references, and cluster by owner identity.
-	Resolve(context.Context, database.EnterpriseDB) error
-
-	// Look up resolved references. If two references evaluate to a single
-	// resolved owner, the result for them is guaranteed to be the same,
-	// and different resolved owners are guaranteed to have different Identifier().
-	Lookup(ref Reference) codeowners.ResolvedOwner
-}
-
-// Example: resolution for file/repo/directory ownership
-func resolutionExample(db database.EnterpriseDB) error {
-	ctx := context.Background()
-	// here are some signals and owner data that is returned for given
-	// file or directory:
-	ownerReferences := []Reference{
-		// email entry in CODEOWNERS
-		{
-			Email: "john.doe@sourcegraph.com",
-			RepoContext: &RepoContext{
-				Name:         "github.com/sourcegraph/sourcegraph",
-				CodehostKind: "github",
-			},
-		},
-		// user handle entry in CODEOWNERS
-		{
-			Handle: "johndoe",
-			RepoContext: &RepoContext{
-				Name:         "github.com/sourcegraph/sourcegraph",
-				CodehostKind: "github",
-			},
-		},
-		// team handle in CODEOWNERS - we know it's a team because of github code host and / in the name
-		{
-			Handle: "sourcegraph/own",
-			RepoContext: &RepoContext{
-				Name:         "github.com/sourcegraph/sourcegraph",
-				CodehostKind: "github",
-			},
-		},
-		// Contributor email contains github username, we can figure this out based on github code host.
-		{
-			Email: "githubusername@users.noreply.github.com",
-			// alternative:  "userID+userName@users.noreply.github.com",
-			// repo context where the commit is from
-			RepoContext: &RepoContext{
-				Name:         "github.com/sourcegraph/sourcegraph",
-				CodehostKind: "github",
-			},
-		},
-		{UserID: 42}, // John's user ID from assigned ownership
-		{UserID: 42}, // User ID originating from recent viewer signal.
-	}
-	var cls Clusters = nil // construct somehow
-	for _, r := range ownerReferences {
-		cls.Add(r)
-	}
-	if err := cls.Resolve(ctx, db); err != nil {
-		return err
-	}
-	// iterate through ownership and signals found again to group
-	grouped := map[string][]Reference{}
-	for _, r := range ownerReferences {
-		// Here we iterate through references, but in the ownership blob/repo/dir
-		// resolver each reference will be attached to a signal, so we'll be able
-		// to group these, like so:
-		o := cls.Lookup(r)
-		rs := grouped[o.Identifier()]
-		rs = append(rs, r)
-		grouped[o.Identifier()] = rs
-	}
-	// We have a map of references by resolved owner identity. In resolver
-	// we're likely also accumulating the resolved owner with signals.
-	return nil
 }
