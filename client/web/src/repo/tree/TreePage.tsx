@@ -374,7 +374,6 @@ export const TreePage: FC<Props> = ({
                             filePath={filePath}
                             tree={treeOrError}
                             repo={repo}
-                            authenticatedUser={props.authenticatedUser}
                             revision={revision}
                             commitID={commitID}
                             isPackage={isPackage}
