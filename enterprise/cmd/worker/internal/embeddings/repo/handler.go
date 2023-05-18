@@ -54,6 +54,20 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		return err
 	}
 
+	// Check if we should do a delta index or a full index
+	isDelta := true
+	lastSuccessfulJob, err := h.db.EmbeddingsJobsStore().GetEmbeddingsJob(ctx, record.RepoID)
+	if err != nil {
+		logger.Info("no previous successful embeddings job found. Falling back to full index")
+		isDelta = false
+	} else {
+		logger.Info(
+			"found previous successful embeddings job. Attempting delta index",
+			log.String("old revision", string(lastSuccessfulJob.Revision)),
+			log.String("new revision", string(record.Revision)),
+		)
+	}
+
 	embeddingsClient := embed.NewEmbeddingsClient()
 	fetcher := &revisionFetcher{
 		repo:      repo.Name,
@@ -74,6 +88,11 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		MaxTextEmbeddings: defaultTo(config.MaxTextEmbeddingsPerRepo, defaultMaxTextEmbeddingsPerRepo),
 	}
 
+	if isDelta {
+		opts.IndexedRevision = lastSuccessfulJob.Revision
+	}
+
+	// TODO (stefan): return whether this was a delta build or not
 	repoEmbeddingIndex, stats, err := embed.EmbedRepo(
 		ctx,
 		embeddingsClient,
@@ -93,6 +112,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		log.Object("stats", stats.ToFields()...),
 	)
 
+	// TODO (stefan): if this is a delta build, we need to merge the new embeddings with the existing ones
 	return embeddings.UploadRepoEmbeddingIndex(ctx, h.uploadStore, string(embeddings.GetRepoEmbeddingIndexName(repo.Name)), repoEmbeddingIndex)
 }
 

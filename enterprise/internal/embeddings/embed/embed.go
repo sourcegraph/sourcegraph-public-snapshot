@@ -88,6 +88,9 @@ type EmbedRepoOpts struct {
 	SplitOptions      codeintelContext.SplitOptions
 	MaxCodeEmbeddings int
 	MaxTextEmbeddings int
+
+	// If set, we already have an index for a previous commit.
+	IndexedRevision api.CommitID
 }
 
 // embedFiles embeds file contents from the given file names. Since embedding models can only handle a certain amount of text (tokens) we cannot embed
