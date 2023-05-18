@@ -118,7 +118,25 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 				Clientset: clientset,
 			}
 
-			err := cmd.ReadLogs(context.Background(), "my-namespace", "my-pod", command.KubernetesJobContainerName, logger, "my-key", []string{"echo", "hello"})
+			pod := &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "my-pod",
+				},
+				Status: corev1.PodStatus{
+					ContainerStatuses: []corev1.ContainerStatus{
+						{
+							Name: command.KubernetesJobContainerName,
+							State: corev1.ContainerState{
+								Terminated: &corev1.ContainerStateTerminated{
+									ExitCode: 0,
+								},
+							},
+						},
+					},
+				},
+			}
+
+			err := cmd.ReadLogs(context.Background(), "my-namespace", pod, command.KubernetesJobContainerName, logger, "my-key", []string{"echo", "hello"})
 			if test.expectedErr != nil {
 				require.Error(t, err)
 				assert.EqualError(t, err, test.expectedErr.Error())
