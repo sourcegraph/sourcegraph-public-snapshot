@@ -78,6 +78,12 @@
 - [Honeycomb](honeycomb.md)
 - [Using PostgreSQL](postgresql.md)
 
+## Wolfi
+
+- [Wolfi Overview](wolfi/index.md)
+- [Wolfi Packages](wolfi/packages.md)
+- [Wolfi Base Images](wolfi/images.md)
+
 ## Other
 
 - [Telemetry](telemetry.md)
