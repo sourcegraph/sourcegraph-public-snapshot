@@ -1,7 +1,6 @@
 package com.sourcegraph.cody.config;
 
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComponentValidator;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.ui.IdeBorderFactory;
@@ -328,9 +327,9 @@ public class SettingsComponent implements Disposable {
         //noinspection DialogTitleCapitalization
         codebaseTextField.getEmptyText().setText("github.com/sourcegraph/sourcegraph");
 
-        // Always disabled for now
-        areChatPredictionsEnabledCheckBox = new JBCheckBox("Experimental: Chat predictions");
-        areChatPredictionsEnabledCheckBox.setEnabled(false);
+        //// Always disabled for now
+        //areChatPredictionsEnabledCheckBox = new JBCheckBox("Experimental: Chat predictions");
+        //areChatPredictionsEnabledCheckBox.setEnabled(false);
 
         //noinspection DialogTitleCapitalization
         JPanel otherSettingsPanel = FormBuilder.createFormBuilder()
@@ -338,8 +337,8 @@ public class SettingsComponent implements Disposable {
             .addTooltip("The name of the embedded repository that Cody will use to gather context")
             .addTooltip("for its responses. This is automatically inferred from your Git metadata,")
             .addTooltip("but you can use this option if you need to override the default.")
-            .addComponent(areChatPredictionsEnabledCheckBox, 10)
-            .addTooltip("Adds suggestions of possible relevant messages in the chat window")
+            //.addComponent(areChatPredictionsEnabledCheckBox, 10)
+            //.addTooltip("Adds suggestions of possible relevant messages in the chat window")
             .getPanel();
         otherSettingsPanel.setBorder(IdeBorderFactory.createTitledBorder("Other Settings", true, JBUI.insetsTop(8)));
         return otherSettingsPanel;

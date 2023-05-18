@@ -15,7 +15,7 @@ public class NotificationActivity implements StartupActivity.DumbAware {
     @Override
     public void runActivity(@NotNull Project project) {
         String url = ConfigUtil.getEnterpriseUrl(project);
-        if (!ConfigUtil.areChatPredictionsEnabled(project) && (url.length() == 0 || url.startsWith(ConfigUtil.DOTCOM_URL))) {
+        if (url.length() == 0 || url.startsWith(ConfigUtil.DOTCOM_URL)) {
             notifyAboutSourcegraphUrl();
         }
     }

@@ -19,7 +19,7 @@ public class GraphQlLogger {
     public static void logInstallEvent(Project project, Consumer<Boolean> callback) {
         String anonymousUserId = ConfigUtil.getAnonymousUserId();
         if (anonymousUserId != null) {
-            Event event = new Event("IDEInstalled", anonymousUserId, ConfigUtil.getSourcegraphUrl(project), null, null);
+            Event event = new Event("CodyInstalled", anonymousUserId, ConfigUtil.getSourcegraphUrl(project), null, null);
             logEvent(project, event, (responseStatusCode) -> callback.accept(responseStatusCode == 200));
         }
     }
@@ -27,7 +27,7 @@ public class GraphQlLogger {
     public static void logUninstallEvent(Project project) {
         String anonymousUserId = ConfigUtil.getAnonymousUserId();
         if (anonymousUserId != null) {
-            Event event = new Event("IDEUninstalled", anonymousUserId, ConfigUtil.getSourcegraphUrl(project), null, null);
+            Event event = new Event("CodyUninstalled", anonymousUserId, ConfigUtil.getSourcegraphUrl(project), null, null);
             logEvent(project, event, null);
         }
     }
