@@ -22,6 +22,7 @@ type handler struct {
 	db              edb.EnterpriseDB
 	uploadStore     uploadstore.Store
 	gitserverClient gitserver.Client
+	contextService  embed.ContextService
 }
 
 var _ workerutil.Handler[*repoembeddingsbg.RepoEmbeddingJob] = &handler{}
@@ -76,6 +77,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 	repoEmbeddingIndex, stats, err := embed.EmbedRepo(
 		ctx,
 		embeddingsClient,
+		h.contextService,
 		fetcher,
 		getDocumentRanks,
 		opts,

@@ -27,7 +27,7 @@ type ranksGetter func(ctx context.Context, repoName string) (types.RepoPathRanks
 func EmbedRepo(
 	ctx context.Context,
 	client EmbeddingsClient,
-	contextSvc ContextService,
+	contextService ContextService,
 	readLister FileReadLister,
 	getDocumentRanks ranksGetter,
 	opts EmbedRepoOpts,
@@ -53,12 +53,12 @@ func EmbedRepo(
 		return nil, nil, err
 	}
 
-	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, contextSvc, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, ranks)
+	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, ranks)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	textIndex, textIndexStats, err := embedFiles(ctx, textFileNames, client, contextSvc, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, ranks)
+	textIndex, textIndexStats, err := embedFiles(ctx, textFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, ranks)
 	if err != nil {
 		return nil, nil, err
 
@@ -97,7 +97,7 @@ func embedFiles(
 	ctx context.Context,
 	files []FileEntry,
 	client EmbeddingsClient,
-	contextSvc ContextService,
+	contextService ContextService,
 	excludePatterns []*paths.GlobPattern,
 	splitOptions codeintelContext.SplitOptions,
 	reader FileReader,
@@ -189,7 +189,7 @@ func embedFiles(
 		}
 
 		// At this point, we have determined that we want to embed this file.
-		chunks, err := contextSvc.SplitIntoEmbeddableChunks(ctx, string(contentBytes), file.Name, splitOptions)
+		chunks, err := contextService.SplitIntoEmbeddableChunks(ctx, string(contentBytes), file.Name, splitOptions)
 		if err != nil {
 			return embeddings.EmbeddingIndex{}, embeddings.EmbedFilesStats{}, errors.Wrap(err, "error while splitting file")
 		}
