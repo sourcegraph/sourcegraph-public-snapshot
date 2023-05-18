@@ -33,7 +33,7 @@ type Reference struct {
 	// UserID indicates identifying a specific user.
 	UserID int32
 	// Handle is either a sourcegraph or code-host handle,
-	// and can be considered within or outside of
+	// and can be considered within or outside of the repo context.
 	Handle string
 	// Email can be found in a CODEOWNERS entry, but can also
 	// be a commit author email, which means it can be a code-host specific
