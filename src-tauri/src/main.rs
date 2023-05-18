@@ -33,11 +33,6 @@ fn app_shell_loaded() -> Option<AppShellReadyPayload> {
     return APP_SHELL_READY_PAYLOAD.read().unwrap().clone();
 }
 
-#[tauri::command]
-fn hide_window(_app: tauri::AppHandle, window: tauri::Window) {
-    window.hide().unwrap();
-}
-
 fn set_launch_path(url: String) {
     *LAUNCH_PATH.write().unwrap() = url;
 }
@@ -143,11 +138,7 @@ fn main() {
         // its name which may suggest that it invokes something, actually only
         // *defines* an invoke() handler and does not invoke anything during
         // setup here.)
-        .invoke_handler(tauri::generate_handler![
-            get_launch_path,
-            hide_window,
-            app_shell_loaded,
-        ])
+        .invoke_handler(tauri::generate_handler![get_launch_path, app_shell_loaded])
         .run(context)
         .expect("error while running tauri application");
 }
