@@ -33,3 +33,5 @@ entrypoint:
 
 archs:
 - x86_64
+
+# MANUAL REBUILD: Thu May 18 11:33:46 BST 2023

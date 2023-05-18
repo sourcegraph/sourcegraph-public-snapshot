@@ -34,4 +34,4 @@ annotations:
   org.opencontainers.image.source: https://github.com/sourcegraph/sourcegraph/
   org.opencontainers.image.documentation: https://docs.sourcegraph.com/
 
-# MANUAL REBUILD: Wed 25 Jan 2023 10:01:49 GMT
+# MANUAL REBUILD: Thu May 18 11:33:46 BST 2023
