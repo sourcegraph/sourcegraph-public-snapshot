@@ -1,0 +1,31 @@
+diff --git toolchain/launcher.zig toolchain/launcher.zig
+index d0bf711..b886502 100644
+--- toolchain/launcher.zig
++++ toolchain/launcher.zig
+@@ -222,12 +222,24 @@ fn parseArgs(
+     if (maybe_target) |target|
+         try args.appendSlice(arena, &[_][]const u8{ "-target", target });
+
+-    while (argv_it.next()) |arg|
+-        try args.append(arena, arg);
++    while (argv_it.next()) |arg| {
++        if (!isSelfContainedCompilerRt(arg))
++            try args.append(arena, arg);
++    }
++    if (mem.eql(u8, zig_tool, "cc") or mem.eql(u8, zig_tool, "c++"))
++       try args.append(arena, "-fno-sanitize=undefined");
+
+     return ParseResults{ .exec = .{ .args = args, .env = env } };
+ }
+
++fn isSelfContainedCompilerRt(arg: []const u8) bool {
++    const self_contained = "self-contained/";
++    return if (std.mem.indexOf(u8, arg, self_contained)) |start_index|
++        std.mem.indexOfPos(u8, arg, start_index + self_contained.len, "crt") != null
++    else
++        false;
++}
++
+ fn parseFatal(
+     arena: mem.Allocator,
+     comptime fmt: []const u8,

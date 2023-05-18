@@ -235,6 +235,7 @@ exports_files([
     # under certain conditions. See //ui/assets/...
     "CHANGELOG.md",
     "001-rules-rust-musl.patch",
+    "002-zig-cc-musl.patch",
 ])
 
 platform(
