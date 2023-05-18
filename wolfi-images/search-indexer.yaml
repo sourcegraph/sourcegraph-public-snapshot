@@ -7,10 +7,11 @@ contents:
     - '@sourcegraph https://storage.googleapis.com/package-repository/packages/main'
 
   packages:
-    ## Base set of packages included in sourcegraph/alpine base image
+    ## Base set of packages
     - wolfi-baselayout
     - ca-certificates-bundle
     - tzdata
+    # Included by existing SG base image
     - tini
     - mailcap
     # Dev tools - may not be required in production

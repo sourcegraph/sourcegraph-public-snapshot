@@ -7,7 +7,7 @@ contents:
     - '@sourcegraph https://storage.googleapis.com/package-repository/packages/main'
   packages:
     ## Base set of packages
-    - wolfi-baselayout # replaces alpine-baselayout-data
+    - wolfi-baselayout
     - ca-certificates-bundle
     - tzdata
     # Included by existing SG base image

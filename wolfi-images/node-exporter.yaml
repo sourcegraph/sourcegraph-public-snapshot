@@ -5,9 +5,14 @@ contents:
     - https://packages.wolfi.dev/os
   packages:
     ## Base set of packages included in sourcegraph/alpine base image
-    - wolfi-baselayout
+    - wolfi-baselayout # replaces alpine-baselayout-data
     - ca-certificates-bundle
     - tzdata
+    # These are dev tools - may not be required in production
+    - busybox
+    - curl
+    - wget
+    - bind-tools
 
     ## node-exporter-specific packages
     - 'prometheus-node-exporter=1.5.0-r3' # IMPORTANT: Pinned version for managed updates

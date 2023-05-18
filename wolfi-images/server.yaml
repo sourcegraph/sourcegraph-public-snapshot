@@ -6,7 +6,7 @@ contents:
     - https://packages.wolfi.dev/os
     - '@sourcegraph https://storage.googleapis.com/package-repository/packages/main'
   packages:
-    ## Base set of packages included in sourcegraph/alpine base image
+    ## Base set of packages
     - wolfi-baselayout
     - ca-certificates-bundle
     - tzdata

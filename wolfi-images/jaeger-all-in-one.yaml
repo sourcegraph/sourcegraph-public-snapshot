@@ -6,13 +6,14 @@ contents:
     - https://packages.wolfi.dev/os
     - '@sourcegraph https://storage.googleapis.com/package-repository/packages/main'
   packages:
-    - wolfi-baselayout # replaces alpine-baselayout-data
+    ## Base set of packages
+    - wolfi-baselayout
     - ca-certificates-bundle
     - tzdata
     # Included by existing SG base image
     - tini
     - mailcap
-    # These are dev tools - may not be required in production
+    # Dev tools - may not be required in production
     - busybox
     - curl
     - wget

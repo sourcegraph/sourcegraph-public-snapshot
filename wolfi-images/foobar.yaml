@@ -4,16 +4,18 @@ contents:
   repositories:
     - https://packages.wolfi.dev/os
   packages:
-    ## Base set of packages included in sourcegraph/alpine base image
+    ## Base set of packages
     - wolfi-baselayout
     - ca-certificates-bundle
     - tzdata
+    # Included by existing SG base image
     - tini
     - mailcap
     # Dev tools - may not be required in production
     - busybox
     - curl
     - wget
+    - bind-tools
 
 accounts:
   groups:

@@ -4,9 +4,16 @@ contents:
   keyring:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
   packages:
-    - ca-certificates-bundle
     - wolfi-baselayout
+    - ca-certificates-bundle
+    - tzdata
+    # Dev tools - may not be required in production
     - busybox
+    - curl
+    - wget
+    - bind-tools
+
+    # Postgres-specific packages
     - su-exec
     - postgresql-12
     - postgresql-12-client

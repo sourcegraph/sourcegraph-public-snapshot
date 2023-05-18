@@ -8,8 +8,11 @@ contents:
     - wolfi-baselayout
     - ca-certificates-bundle
     - tzdata
-    # Debugging tools, can be removed
+    # Dev tools - may not be required in production
     - busybox
+    - curl
+    - wget
+    - bind-tools
 
     ## postgres-exporter-specific packages
     - 'prometheus-postgres-exporter=0.12.0-r1' # IMPORTANT: Pinned version for managed updates

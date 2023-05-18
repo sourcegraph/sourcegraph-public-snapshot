@@ -4,9 +4,21 @@ contents:
   repositories:
     - https://packages.wolfi.dev/os
   packages:
-    - redis
-    - busybox
+    ## Base set of packages
     - wolfi-baselayout
+    - ca-certificates-bundle
+    - tzdata
+    # Included by existing SG base image
+    - tini
+    - mailcap
+    # Dev tools - may not be required in production
+    - busybox
+    - curl
+    - wget
+    - bind-tools
+
+    # redis-specific packages
+    - redis
 
 accounts:
   groups:
