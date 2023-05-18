@@ -133,6 +133,7 @@ type EmbedRepoStats struct {
 	HasRanks       bool
 	CodeIndexStats EmbedFilesStats
 	TextIndexStats EmbedFilesStats
+	IsDelta        bool
 }
 
 func (e *EmbedRepoStats) ToFields() []log.Field {
@@ -141,6 +142,7 @@ func (e *EmbedRepoStats) ToFields() []log.Field {
 		log.Bool("hasRanks", e.HasRanks),
 		log.Object("codeIndex", e.CodeIndexStats.ToFields()...),
 		log.Object("textIndex", e.TextIndexStats.ToFields()...),
+		log.Bool("isDelta", e.IsDelta),
 	}
 }
 

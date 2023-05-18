@@ -31,16 +31,29 @@ func EmbedRepo(
 	readLister FileReadLister,
 	getDocumentRanks ranksGetter,
 	opts EmbedRepoOpts,
-) (*embeddings.RepoEmbeddingIndex, *embeddings.EmbedRepoStats, error) {
+) (*embeddings.RepoEmbeddingIndex, []string, *embeddings.EmbedRepoStats, error) {
 	start := time.Now()
 
-	allFiles, err := readLister.List(ctx)
-	if err != nil {
-		return nil, nil, err
+	var toIndex []FileEntry
+	var toRemove []string
+	var err error
+
+	isDelta := opts.IndexedRevision != ""
+
+	if isDelta {
+		toIndex, toRemove, err = readLister.Diff(ctx, opts.IndexedRevision)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+	} else { // full index
+		toIndex, err = readLister.List(ctx)
+		if err != nil {
+			return nil, nil, nil, err
+		}
 	}
 
 	var codeFileNames, textFileNames []FileEntry
-	for _, file := range allFiles {
+	for _, file := range toIndex {
 		if isValidTextFile(file.Name) {
 			textFileNames = append(textFileNames, file)
 		} else {
@@ -50,17 +63,17 @@ func EmbedRepo(
 
 	ranks, err := getDocumentRanks(ctx, string(opts.RepoName))
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, ranks)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	textIndex, textIndexStats, err := embedFiles(ctx, textFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, ranks)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 
 	}
 
@@ -76,9 +89,10 @@ func EmbedRepo(
 		HasRanks:       len(ranks.Paths) > 0,
 		CodeIndexStats: codeIndexStats,
 		TextIndexStats: textIndexStats,
+		IsDelta:        isDelta,
 	}
 
-	return index, stats, nil
+	return index, toRemove, stats, nil
 }
 
 type EmbedRepoOpts struct {
@@ -226,6 +240,7 @@ func embedFiles(
 type FileReadLister interface {
 	FileReader
 	FileLister
+	FileDiffer
 }
 
 type FileEntry struct {
@@ -239,4 +254,8 @@ type FileLister interface {
 
 type FileReader interface {
 	Read(context.Context, string) ([]byte, error)
+}
+
+type FileDiffer interface {
+	Diff(context.Context, api.CommitID) ([]FileEntry, []string, error)
 }
