@@ -162,6 +162,7 @@ func (refs userReferences) containsUserID(userID int32) bool {
 // Contains at this point returns true
 //   - if email reference matches the primary email,
 //     TODO(#52143): Match also other verified emails
+//   - if handle reference matches the user handle,
 //   - if user ID matches the ID if the user in the bag,
 func (b bag) Contains(ref Reference) bool {
 	for _, userRefs := range b {
