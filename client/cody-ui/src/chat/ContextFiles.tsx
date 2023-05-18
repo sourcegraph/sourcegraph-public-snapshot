@@ -94,13 +94,42 @@ function contextItemsByKind(kinds: ContextItemKind[], items: ContextFile[]): Map
     return result
 }
 
+// Produces a summary string describing what's in the context. For example:
+// "3 files and 1 wiki page"
+function summarizeItemsByKind(itemsByKind: [ContextItemKind, ContextFile[]][]): string {
+    if (itemsByKind.length === 0) {
+        return 'nothing'
+    }
+
+    // Take up to maxKindsToMention kinds.
+    const maxKindsToMention = 3
+    const summaryItems = itemsByKind.slice(0, maxKindsToMention) as [{ noun: string }, { length: number }][]
+
+    // If there's more kinds than maxKindsToMention, roll the rest up into an "other item" count.
+    if (itemsByKind.length > maxKindsToMention) {
+        const sum = itemsByKind.slice(maxKindsToMention - 1).reduce((sum, [_, items]) => sum + items.length, 0)
+        summaryItems[maxKindsToMention - 1] = [{ noun: 'other item' }, { length: sum }]
+    }
+
+    // Generate summaries per kind, and paste them together.
+    const summaries = summaryItems.map(([kind, items]) => `${items.length} ${pluralize(kind.noun, items.length)}`)
+    if (summaries.length === 1) {
+        return summaries[0]
+    }
+    const prefix = summaries.slice(0, -1).join(', ')
+    const suffix = summaries[summaries.length - 1]
+    return `${prefix}, and ${suffix}`
+}
+
 export const ContextFiles: React.FunctionComponent<{
     contextFiles: ContextFile[]
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
     className?: string
 }> = ({ contextFiles, fileLinkComponent: FileLink, className }) => {
     const kinds = getContextItemKinds(FileLink)
-    const itemsByKind = new Array(...contextItemsByKind(kinds, contextFiles).entries())
+    const itemsByKind = new Array<[ContextItemKind, ContextFile[]]>(
+        ...contextItemsByKind(kinds, contextFiles).entries()
+    )
     // Put more numerous items first.
     itemsByKind.sort((a, b) => b[1].length - a[1].length)
 
@@ -121,7 +150,7 @@ export const ContextFiles: React.FunctionComponent<{
         <TranscriptAction
             title={{
                 verb: 'Read',
-                object: `${itemsByKind.length} ${pluralize('kind', itemsByKind.length)}`,
+                object: summarizeItemsByKind(itemsByKind),
             }}
             steps={steps}
             className={className}
