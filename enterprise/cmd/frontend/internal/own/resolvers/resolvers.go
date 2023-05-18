@@ -591,7 +591,7 @@ func (r *ownResolver) OwnSignalConfigurations(ctx context.Context) ([]graphqlbac
 	}
 	var resolvers []graphqlbackend.SignalConfigurationResolver
 	store := r.db.OwnSignalConfigurations()
-	configurations, err := store.LoadConfigurations(ctx)
+	configurations, err := store.LoadConfigurations(ctx, database.LoadSignalConfigurationArgs{})
 	if err != nil {
 		return nil, errors.Wrap(err, "LoadConfigurations")
 	}
