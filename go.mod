@@ -23,6 +23,8 @@ replace (
 	// We publish 'monitoring' as a package for import in other tooling.
 	// When developing Sourcegraph itself, this replace uses the local package instead of a pushed version.
 	github.com/sourcegraph/sourcegraph/monitoring => ./monitoring
+
+	github.com/sourcegraph/zoekt => /Users/auguste.rame/Documents/Repos/zoekt
 )
 
 // Temporary replace directives
