@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/url"
 
@@ -12,7 +11,11 @@ import (
 )
 
 func (c *client) GetChange(ctx context.Context, changeID string) (*Change, error) {
-	reqURL := url.URL{Path: fmt.Sprintf("a/changes/%s", changeID)}
+	pathStr, err := url.JoinPath("a/changes", url.PathEscape(changeID))
+	if err != nil {
+		return nil, err
+	}
+	reqURL := url.URL{Path: pathStr}
 	req, err := http.NewRequest("GET", reqURL.String(), nil)
 	if err != nil {
 		return nil, err
@@ -24,7 +27,7 @@ func (c *client) GetChange(ctx context.Context, changeID string) (*Change, error
 		return nil, err
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode >= http.StatusBadRequest {
 		return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
@@ -33,7 +36,11 @@ func (c *client) GetChange(ctx context.Context, changeID string) (*Change, error
 
 // AbandonChange abandons a Gerrit change.
 func (c *client) AbandonChange(ctx context.Context, changeID string) (*Change, error) {
-	reqURL := url.URL{Path: fmt.Sprintf("a/changes/%s/abandon", changeID)}
+	pathStr, err := url.JoinPath("a/changes", url.PathEscape(changeID), "abandon")
+	if err != nil {
+		return nil, err
+	}
+	reqURL := url.URL{Path: pathStr}
 	req, err := http.NewRequest("POST", reqURL.String(), nil)
 	if err != nil {
 		return nil, err
@@ -45,7 +52,7 @@ func (c *client) AbandonChange(ctx context.Context, changeID string) (*Change, e
 		return nil, err
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode >= http.StatusBadRequest {
 		return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
@@ -54,7 +61,11 @@ func (c *client) AbandonChange(ctx context.Context, changeID string) (*Change, e
 
 // SubmitChange submits a Gerrit change.
 func (c *client) SubmitChange(ctx context.Context, changeID string) (*Change, error) {
-	reqURL := url.URL{Path: fmt.Sprintf("a/changes/%s/submit", changeID)}
+	pathStr, err := url.JoinPath("a/changes", url.PathEscape(changeID), "submit")
+	if err != nil {
+		return nil, err
+	}
+	reqURL := url.URL{Path: pathStr}
 	req, err := http.NewRequest("POST", reqURL.String(), nil)
 	if err != nil {
 		return nil, err
@@ -66,7 +77,7 @@ func (c *client) SubmitChange(ctx context.Context, changeID string) (*Change, er
 		return nil, err
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode >= http.StatusBadRequest {
 		return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
@@ -75,7 +86,11 @@ func (c *client) SubmitChange(ctx context.Context, changeID string) (*Change, er
 
 // WriteReviewComment writes a review comment on a Gerrit change.
 func (c *client) WriteReviewComment(ctx context.Context, changeID string, comment ChangeReviewComment) error {
-	reqURL := url.URL{Path: fmt.Sprintf("a/changes/%s/revisions/current/review", changeID)}
+	pathStr, err := url.JoinPath("a/changes", url.PathEscape(changeID), "revisions/current/review")
+	if err != nil {
+		return err
+	}
+	reqURL := url.URL{Path: pathStr}
 	data, err := json.Marshal(comment)
 	if err != nil {
 		return err
@@ -92,7 +107,7 @@ func (c *client) WriteReviewComment(ctx context.Context, changeID string, commen
 		return err
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode >= http.StatusBadRequest {
 		return errors.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 
