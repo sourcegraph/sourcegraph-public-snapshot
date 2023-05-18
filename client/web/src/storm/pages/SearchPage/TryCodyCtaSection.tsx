@@ -130,24 +130,27 @@ export const TryCodyCtaSection: React.FC<TelemetryProps & { className?: string }
             <div className="d-flex flex-column justify-content-center p-4">
                 <H3>Cody for Sourcegraph.com</H3>
                 <Text>
-                    A free, helpful AI assistant, that explains, generates, and transpiles code, in the Sourcegraph web interface.
+                    A free, helpful AI assistant, that explains, generates, and transpiles code, in the Sourcegraph web
+                    interface.
                 </Text>
-                <Link
+                <Text
+                    as={Link}
                     to="/cody"
-                    className={classNames(styles.tryChatLink, 'd-flex align-items-center mb-2')}
+                    className={classNames('d-flex align-items-center mb-2', styles.tryCodyLink)}
                     onClick={onTryWebClick}
                 >
                     Try Cody chat
-                    <Icon svgPath={mdiArrowRight} aria-hidden={true} size="md" />
-                </Link>
-                <Link
+                    <Icon svgPath={mdiArrowRight} aria-hidden={true} size="sm" className="ml-1" />
+                </Text>
+                <Text
+                    as={Link}
                     to="https://sourcegraph.com/github.com/openai/openai-cookbook/-/blob/apps/file-q-and-a/nextjs-with-flask-server/server/answer_question.py"
-                    className={classNames(styles.tryFileLink, 'd-flex align-items-center')}
+                    className={classNames('d-flex align-items-center', styles.tryCodyLink)}
                     onClick={onTryWebClick}
                 >
                     Try Cody on a file
-                    <Icon svgPath={mdiArrowRight} aria-hidden={true} size="sm" />
-                </Link>
+                    <Icon svgPath={mdiArrowRight} aria-hidden={true} size="sm" className="ml-1" />
+                </Text>
             </div>
             <Button className={classNames(styles.closeButton, 'position-absolute m-0')} onClick={onDismiss}>
                 <Icon svgPath={mdiClose} aria-label="Close try Cody widget" />
