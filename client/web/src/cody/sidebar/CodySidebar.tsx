@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { mdiClose, mdiFormatListBulleted, mdiPlus, mdiDelete } from '@mdi/js'
 
@@ -15,9 +15,10 @@ export const SCROLL_THRESHOLD = 100
 
 interface CodySidebarProps {
     onClose?: () => void
+    titleContent?: JSX.Element
 }
 
-export const CodySidebar = ({ onClose }: CodySidebarProps): JSX.Element => {
+export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose, titleContent }) => {
     const { reset, transcript, messageInProgress, clearHistory } = useChatStoreState()
 
     const codySidebarRef = useRef<HTMLDivElement>(null)
@@ -64,13 +65,14 @@ export const CodySidebar = ({ onClose }: CodySidebarProps): JSX.Element => {
         <div className={styles.mainWrapper}>
             <div className={styles.codySidebar} ref={codySidebarRef} onScroll={handleScroll}>
                 <div className={styles.codySidebarHeader}>
-                    <div className="d-flex col-3 p-0">
+                    <div className="d-flex col-2 p-0">
                         <Tooltip content="Chat history">
                             <Button
                                 variant="icon"
                                 className="mr-2"
                                 aria-label="Active chats"
                                 onClick={() => setShowHistory(showing => !showing)}
+                                aria-pressed={showHistory}
                             >
                                 <Icon aria-hidden={true} svgPath={mdiFormatListBulleted} />
                             </Button>
@@ -93,17 +95,23 @@ export const CodySidebar = ({ onClose }: CodySidebarProps): JSX.Element => {
                             </Tooltip>
                         )}
                     </div>
-                    <div className="col-6 d-flex justify-content-center">
-                        <CodyLogo />
-                        {showHistory ? 'Chats' : 'Ask Cody'}
-                        <div className="ml-2">
-                            <Badge variant="info">Beta</Badge>
-                        </div>
+                    <div className="col-8 d-flex justify-content-center">
+                        {titleContent || (
+                            <div className="d-flex flex-shrink-0 align-items-center">
+                                <CodyLogo />
+                                {showHistory ? 'Chats' : 'Ask Cody'}
+                                <div className="ml-2">
+                                    <Badge variant="info">Beta</Badge>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                    <div className="col-3 d-flex justify-content-end p-0">
-                        <Button variant="icon" aria-label="Close" onClick={onClose}>
-                            <Icon aria-hidden={true} svgPath={mdiClose} />
-                        </Button>
+                    <div className="col-2 d-flex justify-content-end p-0">
+                        {onClose && (
+                            <Button variant="icon" aria-label="Close" onClick={onClose}>
+                                <Icon aria-hidden={true} svgPath={mdiClose} />
+                            </Button>
+                        )}
                     </div>
                 </div>
 

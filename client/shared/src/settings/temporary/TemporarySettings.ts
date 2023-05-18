@@ -79,6 +79,7 @@ export interface TemporarySettingsSchema {
     'cody.searchPageCta.dismissed': boolean
     'cody.chatPageCta.dismissed': boolean
     'cody.survey.submitted': boolean
+    'app.codyStandalonePage.selectedRepo': string
 }
 
 /**

@@ -5,7 +5,6 @@ use tauri::{
     AppHandle, CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu,
     SystemTrayMenuItem,
 };
-use tauri_plugin_positioner::{Position, WindowExt};
 
 pub fn create_system_tray() -> SystemTray {
     SystemTray::new().with_menu(create_system_tray_menu())
