@@ -695,6 +695,12 @@ func PatchCommitInfoFromProto(p *proto.PatchCommitInfo) PatchCommitInfo {
 	}
 }
 
+// P4Credentials holds the username and password for making a connecton to a Perforce server
+type P4Credentials struct {
+	P4User   string
+	P4Passwd string
+}
+
 // PushConfig provides the configuration required to push one or more commits to
 // a code host.
 type PushConfig struct {
@@ -711,6 +717,9 @@ type PushConfig struct {
 	// Passphrase is the passphrase to decrypt the private key. It is required
 	// when passing PrivateKey.
 	Passphrase string
+
+	// for Perforce code hosts, P4Credentials is filled out
+	P4Credentials *P4Credentials
 }
 
 func (p *PushConfig) ToProto() *proto.PushConfig {
@@ -740,6 +749,10 @@ type GerritConfig struct {
 // CreateCommitFromPatchResponse is the response type returned after creating
 // a commit from a patch
 type CreateCommitFromPatchResponse struct {
+	// ChangelistId is the numeric ID of the changelist that is shelved for the patch
+	// only supplied for Perforce code hosts, so it's a pointer so that it can be
+	// optional/nil
+	ChangelistId *uint64
 	// Rev is the tag that the staging object can be found at
 	Rev string
 

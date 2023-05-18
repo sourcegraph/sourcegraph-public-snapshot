@@ -10,9 +10,14 @@ import (
 	"github.com/goware/urlx"
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-diff/diff"
+
+	gerritbatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/gerrit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
+
 	adobatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
 	gerritbatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/gerrit"
+	p4batches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
@@ -461,6 +466,16 @@ func (c *Changeset) SetMetadata(meta any) error {
 		c.ExternalServiceType = extsvc.TypeGerrit
 		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.Change.Branch)
 		c.ExternalUpdatedAt = pr.Change.Updated
+	case *p4batches.AnnotatedChangelist:
+		// TODO: implement this correctly
+		// BCC from ADO-land
+		c.Metadata = pr
+		c.ExternalID = strconv.Itoa(pr.ID)
+		c.ExternalServiceType = extsvc.TypePerforce
+		// Perforce does not have a last updated at field on its CL objects, so we set the creation time.
+		c.ExternalUpdatedAt = pr.CreationDate
+		c.ExternalForkNamespace = ""
+		c.ExternalForkName = ""
 	default:
 		return errors.New("setmetadata unknown changeset type")
 	}
@@ -495,6 +510,9 @@ func (c *Changeset) Title() (string, error) {
 		// Remove extra quotes added by the commit message
 		title = strings.TrimPrefix(strings.TrimSuffix(title, "\""), "\"")
 		return title, nil
+	case *p4batches.AnnotatedChangelist:
+		// TODO; review choice here
+		return m.Title, nil
 	default:
 		return "", errors.New("title unknown changeset type")
 	}
@@ -520,6 +538,9 @@ func (c *Changeset) AuthorName() (string, error) {
 		return m.CreatedBy.UniqueName, nil
 	case *gerritbatches.AnnotatedChange:
 		return m.Change.Owner.Name, nil
+	case *p4batches.AnnotatedChangelist:
+		// TODO: review choice here
+		return m.CreatedBy.UniqueName, nil
 	default:
 		return "", errors.New("authorname unknown changeset type")
 	}
@@ -553,6 +574,9 @@ func (c *Changeset) AuthorEmail() (string, error) {
 		return m.CreatedBy.UniqueName, nil
 	case *gerritbatches.AnnotatedChange:
 		return m.Change.Owner.Email, nil
+	case *p4batches.AnnotatedChangelist:
+		//TODO: review choice here
+		return m.CreatedBy.UniqueName, nil
 	default:
 		return "", errors.New("author email unknown changeset type")
 	}
@@ -575,6 +599,9 @@ func (c *Changeset) ExternalCreatedAt() time.Time {
 		return m.CreationDate
 	case *gerritbatches.AnnotatedChange:
 		return m.Change.Created
+	case *p4batches.AnnotatedChangelist:
+		// TODO: review choice here
+		return m.CreationDate
 	default:
 		return time.Time{}
 	}
@@ -596,6 +623,9 @@ func (c *Changeset) Body() (string, error) {
 	case *gerritbatches.AnnotatedChange:
 		// Gerrit doesn't really differentiate between title/description.
 		return m.Change.Subject, nil
+	case *p4batches.AnnotatedChangelist:
+		// TODO: review choice here
+		return m.Description, nil
 	default:
 		return "", errors.New("body unknown changeset type")
 	}
@@ -662,6 +692,9 @@ func (c *Changeset) URL() (s string, err error) {
 		return returnURL.String(), nil
 	case *gerritbatches.AnnotatedChange:
 		return m.CodeHostURL.JoinPath("c", url.PathEscape(m.Change.Project), "+", url.PathEscape(strconv.Itoa(m.Change.ChangeNumber))).String(), nil
+	case *p4batches.AnnotatedChangelist:
+		// TODO: implement
+		return m.URL, nil
 	default:
 		return "", errors.New("url unknown changeset type")
 	}
@@ -880,6 +913,9 @@ func (c *Changeset) Events() (events []*ChangesetEvent, err error) {
 				Metadata:    reviewer,
 			})
 		}
+	case *p4batches.AnnotatedChangelist:
+		// TODO: implement
+		return events, nil
 	}
 
 	return events, nil
@@ -902,6 +938,9 @@ func (c *Changeset) HeadRefOid() (string, error) {
 		return "", nil
 	case *gerritbatches.AnnotatedChange:
 		return "", nil
+	case *p4batches.AnnotatedChangelist:
+		//TODO: review choice here
+		return "", nil
 	default:
 		return "", errors.New("head ref oid unknown changeset type")
 	}
@@ -922,6 +961,9 @@ func (c *Changeset) HeadRef() (string, error) {
 	case *adobatches.AnnotatedPullRequest:
 		return m.SourceRefName, nil
 	case *gerritbatches.AnnotatedChange:
+		return "", nil
+	case *p4batches.AnnotatedChangelist:
+		// TODO: review choice here
 		return "", nil
 	default:
 		return "", errors.New("headref unknown changeset type")

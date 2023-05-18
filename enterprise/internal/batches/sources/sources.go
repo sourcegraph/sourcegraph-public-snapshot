@@ -292,7 +292,8 @@ func loadExternalService(ctx context.Context, s database.ExternalServiceStore, o
 			*schema.GitLabConnection,
 			*schema.BitbucketCloudConnection,
 			*schema.AzureDevOpsConnection,
-			*schema.GerritConnection:
+			*schema.GerritConnection,
+			*schema.PerforceConnection:
 			return e, nil
 		}
 	}
@@ -316,6 +317,8 @@ func buildChangesetSource(ctx context.Context, cf *httpcli.Factory, externalServ
 		return NewAzureDevOpsSource(ctx, externalService, cf)
 	case extsvc.KindGerrit:
 		return NewGerritSource(ctx, externalService, cf)
+	case extsvc.KindPerforce:
+		return NewPerforceSource(ctx, externalService, cf)
 	default:
 		return nil, errors.Errorf("unsupported external service type %q", extsvc.KindToType(externalService.Kind))
 	}

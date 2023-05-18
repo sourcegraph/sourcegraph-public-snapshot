@@ -12,9 +12,15 @@ import (
 
 	adobatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
 	gerritbatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/gerrit"
+	p4batches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
+
 	"go.opentelemetry.io/otel/attribute"
+
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -1473,6 +1479,14 @@ func ScanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 		m := new(gerritbatches.AnnotatedChange)
 		m.Change = &gerrit.Change{}
 		t.Metadata = m
+	case extsvc.TypePerforce:
+		// low-cost YAGNI: use annotated changelist here even though we have no annotations yet
+		acl := new(p4batches.AnnotatedChangelist)
+		// Ensure the inner PR is initialized, it should never be nil.
+		acl.Changelist = &perforce.Changelist{}
+		t.Metadata = acl
+	case extsvc.TypeGerrit:
+		t.Metadata = new(gerrit.Change)
 	default:
 		return errors.New("unknown external service type")
 	}
