@@ -59,7 +59,10 @@ func (esrs *EmbeddingSearchResults) MergeTruncate(other EmbeddingSearchResults, 
 	self := *esrs
 	self = append(self, other...)
 	sort.Slice(self, func(i, j int) bool { return self[i].Score() > self[j].Score() })
-	*esrs = self[:max]
+	if len(self) > max {
+		self = self[:max]
+	}
+	*esrs = self
 }
 
 type EmbeddingSearchResult struct {
