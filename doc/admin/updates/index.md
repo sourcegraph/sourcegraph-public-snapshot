@@ -37,8 +37,9 @@ Sourcegraph has two upgrade types. **Standard** upgrades and **Multiversion** up
 - Requires manual `migrator` operations
 - Requires downtime
 - We currently support jumping from version `v3.20` or later to any future version.
+- **Sourcegraph App and AMIs do not yet support multiversion upgrades. We hope to improve this soon.**
 
-> *Note: Patch versions don't determine upgrade type -- you should always upgrade to the latest patch!*
+> *Note: Patch versions don't determine upgrade type -- you should always upgrade to the latest patch.*
 
 | From Version | To Version | Upgrade Type | Notes                                |
 |--------------|------------|--------------|--------------------------------------|
