@@ -44,6 +44,10 @@ export const AddExternalServicePage: FC<Props> = ({
         telemetryService.logPageView('AddExternalService')
     }, [telemetryService])
 
+    useEffect(() => {
+        setConfig(externalService.defaultConfig)
+    }, [externalService.defaultConfig])
+
     const getExternalServiceInput = useCallback(
         (): AddExternalServiceInput => ({
             displayName,
@@ -99,7 +103,9 @@ export const AddExternalServicePage: FC<Props> = ({
                                 {...externalService}
                                 title={createdExternalService.displayName}
                                 shortDescription="Update this external service configuration to manage repository mirroring."
-                                to={`/site-admin/external-services/${createdExternalService.id}/edit`}
+                                to={`/site-admin/external-services/${encodeURIComponent(
+                                    createdExternalService.id
+                                )}/edit`}
                             />
                         </div>
                         <Alert variant="warning">
@@ -133,6 +139,7 @@ export const AddExternalServicePage: FC<Props> = ({
                             autoFocus={autoFocusForm}
                             externalServicesFromFile={externalServicesFromFile}
                             allowEditExternalServicesWithFile={allowEditExternalServicesWithFile}
+                            additionalFormComponent={externalService.additionalFormComponent}
                         />
                     </>
                 )}

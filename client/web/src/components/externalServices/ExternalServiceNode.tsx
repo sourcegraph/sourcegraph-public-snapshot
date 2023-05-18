@@ -83,7 +83,9 @@ export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editin
                     <div>
                         <Icon as={IconComponent} aria-label="Code host logo" className="code-host-logo mr-2" />
                         <strong>
-                            <Link to={`/site-admin/external-services/${node.id}`}>{node.displayName}</Link>{' '}
+                            <Link to={`/site-admin/external-services/${encodeURIComponent(node.id)}`}>
+                                {node.displayName}
+                            </Link>{' '}
                             <small className="text-muted">
                                 ({node.repoCount} {pluralize('repository', node.repoCount, 'repositories')})
                             </small>
@@ -112,7 +114,7 @@ export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editin
                     <Tooltip content={`${editingDisabled ? 'View' : 'Edit'} code host connection settings`}>
                         <Button
                             className="test-edit-external-service-button"
-                            to={`/site-admin/external-services/${node.id}/edit`}
+                            to={`/site-admin/external-services/${encodeURIComponent(node.id)}/edit`}
                             variant="secondary"
                             size="sm"
                             as={Link}

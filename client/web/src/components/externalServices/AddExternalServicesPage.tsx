@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import { FC, useMemo } from 'react'
 
 import { mdiInformation } from '@mdi/js'
 import { useLocation } from 'react-router-dom'
@@ -54,30 +54,35 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
         setHasDismissedPrivacyWarning(true)
     }
 
-    const params = new URLSearchParams(search)
-    const id = params.get('id')
-    if (id) {
-        let externalService = allExternalServices[id]
-        if (externalService) {
-            if (externalService.kind === ExternalServiceKind.GITHUB) {
+    const externalService = useMemo(() => {
+        const params = new URLSearchParams(search)
+        const id = params.get('id')
+        if (id) {
+            let externalService = allExternalServices[id]
+            if (externalService?.kind === ExternalServiceKind.GITHUB) {
                 const appID = params.get('appID')
                 const installationID = params.get('installationID')
                 const baseURL = params.get('url')
                 const org = params.get('org')
-                if (appID && installationID && baseURL && org) {
+                if (externalService === codeHostExternalServices.ghapp) {
                     externalService = gitHubAppConfig(baseURL, appID, installationID, org)
                 }
             }
-            return (
-                <AddExternalServicePage
-                    telemetryService={telemetryService}
-                    externalService={externalService}
-                    autoFocusForm={autoFocusForm}
-                    externalServicesFromFile={externalServicesFromFile}
-                    allowEditExternalServicesWithFile={allowEditExternalServicesWithFile}
-                />
-            )
+            return externalService
         }
+        return null
+    }, [search, codeHostExternalServices.ghapp])
+
+    if (externalService) {
+        return (
+            <AddExternalServicePage
+                telemetryService={telemetryService}
+                externalService={externalService}
+                autoFocusForm={autoFocusForm}
+                externalServicesFromFile={externalServicesFromFile}
+                allowEditExternalServicesWithFile={allowEditExternalServicesWithFile}
+            />
+        )
     }
 
     const licenseInfo = window.context.licenseInfo
@@ -189,10 +194,6 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
 }
 
 function getAddURL(id: string): string {
-    if (id === 'ghapp') {
-        return '../../github-apps'
-    }
-
     const parameters = new URLSearchParams()
     parameters.append('id', id)
     return `?${parameters.toString()}`
