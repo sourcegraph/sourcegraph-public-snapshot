@@ -4155,7 +4155,8 @@ CREATE TABLE repo_commits (
     id integer NOT NULL,
     repo_id integer NOT NULL,
     commit_sha bytea NOT NULL,
-    perforce_changelist_id integer NOT NULL
+    perforce_changelist_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 CREATE TABLE repo_commits_changelists (
