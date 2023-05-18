@@ -6,6 +6,8 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Added
 
+- New recipe: `Generate PR description`. Generate the PR description using the PR templates guidelines for the changes made in the current branch. [pull/51721](https://github.com/sourcegraph/sourcegraph/pull/51721)
+
 ### Fixed
 
 ### Changed
