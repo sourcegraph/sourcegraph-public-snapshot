@@ -38,6 +38,8 @@ export const PREDICATES: Access[] = [
                         fields: [{ name: 'after' }],
                     },
                     { name: 'description' },
+                    { name: 'tag' },
+                    { name: 'key' },
                     {
                         name: 'meta',
                         fields: [{ name: 'key' }, { name: 'tag' }],
@@ -218,6 +220,26 @@ export const predicateCompletion = (field: string): Completion[] => {
                 insertText: 'has.meta(${1:key}:${2:value})',
                 description: 'Search only inside repositories having a specified key:value pair metadata',
                 asSnippet: true,
+            },
+            {
+                label: 'has.tag(...)',
+                insertText: 'has.tag(${1})',
+                asSnippet: true,
+                description:
+                    'DEPRECATED: Use "has.meta({tag}:)" instead. Search only inside repositories tagged with a given tag',
+            },
+            {
+                label: 'has(...)',
+                insertText: 'has(${1:key}:${2:value})',
+                description:
+                    'DEPRECATED: Use "has.meta({key}:{value})" instead. Search only inside repositories having a specified key:value pair',
+                asSnippet: true,
+            },
+            {
+                label: 'has.key(...)',
+                insertText: 'has.key(${1})',
+                description:
+                    'DEPRECATED: Use "has.meta({key})" instead. Search only inside repositories having a specifiec key with any value',
             },
         ]
     }

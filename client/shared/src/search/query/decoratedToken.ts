@@ -999,6 +999,13 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
                 value: body,
                 kind: PatternKind.Regexp,
             })
+        case 'has': {
+            const result = decorateRepoHasMetaBody(body, offset)
+            if (result !== undefined) {
+                return result
+            }
+            break
+        }
         case 'has.meta': {
             const result = decorateRepoHasMetaBody(body, offset)
             if (result !== undefined) {
@@ -1006,7 +1013,9 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
             }
             break
         }
+        case 'has.tag':
         case 'has.owner':
+        case 'has.key':
         case 'has.topic':
             return [
                 {
