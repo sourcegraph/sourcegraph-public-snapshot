@@ -89,11 +89,11 @@ func (c *KubernetesCommand) DeleteJob(ctx context.Context, namespace string, job
 var propagationPolicy = metav1.DeletePropagationBackground
 
 // ReadLogs reads the logs of the given pod and writes them to the logger.
-func (c *KubernetesCommand) ReadLogs(ctx context.Context, namespace string, podName string, containerName string, cmdLogger Logger, key string, command []string) error {
-	req := c.Clientset.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{Container: containerName})
+func (c *KubernetesCommand) ReadLogs(ctx context.Context, namespace string, pod *corev1.Pod, containerName string, cmdLogger Logger, key string, command []string) error {
+	req := c.Clientset.CoreV1().Pods(namespace).GetLogs(pod.Name, &corev1.PodLogOptions{Container: containerName})
 	stream, err := req.Stream(ctx)
 	if err != nil {
-		return errors.Wrapf(err, "opening log stream for pod %s", podName)
+		return errors.Wrapf(err, "opening log stream for pod %s", pod.Name)
 	}
 
 	logEntry := cmdLogger.LogEntry(key, command)
@@ -109,7 +109,15 @@ func (c *KubernetesCommand) ReadLogs(ctx context.Context, namespace string, podN
 		}
 	}
 
-	logEntry.Finalize(0)
+	exitCode := 0
+	for _, status := range pod.Status.ContainerStatuses {
+		if status.Name == containerName {
+			exitCode = int(status.State.Terminated.ExitCode)
+			break
+		}
+	}
+
+	logEntry.Finalize(exitCode)
 
 	return nil
 }
@@ -263,11 +271,12 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 					ActiveDeadlineSeconds: options.Deadline,
 					Containers: []corev1.Container{
 						{
-							Name:       KubernetesJobContainerName,
-							Image:      image,
-							Command:    spec.Command,
-							WorkingDir: filepath.Join(KubernetesJobMountPath, spec.Dir),
-							Env:        jobEnvs,
+							Name:            KubernetesJobContainerName,
+							Image:           image,
+							ImagePullPolicy: corev1.PullIfNotPresent,
+							Command:         spec.Command,
+							WorkingDir:      filepath.Join(KubernetesJobMountPath, spec.Dir),
+							Env:             jobEnvs,
 							Resources: corev1.ResourceRequirements{
 								Limits:   resourceLimit,
 								Requests: resourceRequest,
