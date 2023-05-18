@@ -2,49 +2,32 @@
 version: 1
 interactions:
 - request:
-    body: ""
+    body: '{"message":"test message"}'
     form: {}
-    headers: {}
-    url: https://gerrit.sgdev.org/a/projects/?S=0&n=5
-    method: GET
+    headers:
+      Content-Type:
+      - text/plain; charset=UTF-8
+    url: https://gerrit.sgdev.org/a/changes/I52bede3e6dd80b9048924d0416e5d1a7bf49cf5b/revisions/current/review
+    method: POST
   response:
     body: |
       )]}'
-      {
-        "All-Projects": {
-          "id": "All-Projects",
-          "state": "ACTIVE"
-        },
-        "All-Users": {
-          "id": "All-Users",
-          "state": "ACTIVE"
-        },
-        "beatrix": {
-          "id": "beatrix",
-          "state": "ACTIVE"
-        },
-        "idan-temp": {
-          "id": "idan-temp",
-          "state": "ACTIVE"
-        },
-        "k8s-gerrit": {
-          "id": "k8s-gerrit",
-          "state": "ACTIVE"
-        }
-      }
+      {}
     headers:
       Cache-Control:
       - no-cache, no-store, max-age=0, must-revalidate
       Cf-Cache-Status:
       - DYNAMIC
       Cf-Ray:
-      - 7c85e10749c75407-YYZ
+      - 7c865f796885a20a-YYZ
       Content-Disposition:
       - attachment
+      Content-Length:
+      - "8"
       Content-Type:
       - application/json;charset=utf-8
       Date:
-      - Tue, 16 May 2023 19:03:08 GMT
+      - Tue, 16 May 2023 20:29:28 GMT
       Expires:
       - Mon, 01 Jan 1990 00:00:00 GMT
       Pragma:

@@ -18,7 +18,7 @@ const (
 
 type Provider struct {
 	urn      string
-	client   client
+	client   gerrit.Client
 	codeHost *extsvc.CodeHost
 }
 
@@ -27,7 +27,7 @@ func NewProvider(conn *types.GerritConnection) (*Provider, error) {
 	if err != nil {
 		return nil, err
 	}
-	gClient, err := NewClient(conn.URN, baseURL, &gerrit.AccountCredentials{
+	gClient, err := gerrit.NewClient(conn.URN, baseURL, &gerrit.AccountCredentials{
 		Username: conn.Username,
 		Password: conn.Password,
 	}, nil)
@@ -62,10 +62,13 @@ func (p Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, o
 		return nil, err
 	}
 
-	client := p.client.WithAuthenticator(&auth.BasicAuth{
+	client, err := p.client.WithAuthenticator(&auth.BasicAuth{
 		Username: credentials.Username,
 		Password: credentials.Password,
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	queryArgs := gerrit.ListProjectsArgs{
 		Cursor: &gerrit.Pagination{PerPage: 100, Page: 1},
