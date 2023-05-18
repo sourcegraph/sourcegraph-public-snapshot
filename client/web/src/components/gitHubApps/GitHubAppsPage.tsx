@@ -37,8 +37,10 @@ export const GitHubAppsPage: React.FC = () => {
             <div className="d-flex align-items-center">
                 <span>
                     Create and connect a GitHub App to better manage GitHub code host connections.
-                    {/* TODO: add docs link here once we have them */}
-                    <Link to="" className="ml-1">
+                    <Link
+                        to="https://docs.sourcegraph.com/admin/external_service/github#using-a-github-app"
+                        className="ml-1"
+                    >
                         See how GitHub App configuration works.
                     </Link>
                 </span>
