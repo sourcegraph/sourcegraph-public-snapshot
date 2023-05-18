@@ -1,11 +1,18 @@
 package own
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"strings"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // repoContext allows us to anchor an author reference to a repo where it stems from.
@@ -13,26 +20,56 @@ import (
 // This is important for resolving namespaced owner names
 // (like CODEOWNERS file can refer to team handle "own"), while the name in the database is "sourcegraph/own"
 // because it was pulled from github, and by convention organiziation name is prepended.
-type repoContext struct {
-	name         api.RepoName
-	codehostKind string
+type RepoContext struct {
+	Name         api.RepoName
+	CodehostKind string
 }
 
 // Reference is whatever we get from a data source, like a commit,
 // CODEOWNERS entry or file view.
 type Reference struct {
-	// repoContext is present if given owner reference is associated
+	// RepoContext is present if given owner reference is associated
 	// with specific repository.
-	repoContext *repoContext
-	// userID indicates identifying a specific user.
-	userID int
-	// handle is either a sourcegraph or code-host handle,
+	RepoContext *RepoContext
+	// UserID indicates identifying a specific user.
+	UserID int32
+	// Handle is either a sourcegraph or code-host handle,
 	// and can be considered within or outside of
-	handle string
-	// email can be found in a CODEOWNERS entry, but can also
+	Handle string
+	// Email can be found in a CODEOWNERS entry, but can also
 	// be a commit author email, which means it can be a code-host specific
 	// email generated for the purpose of merging a pull-request.
-	email string
+	Email string
+}
+
+func (r Reference) String() string {
+	var b bytes.Buffer
+	fmt.Fprint(&b, "{")
+	var needsComma bool
+	nextPart := func() {
+		if needsComma {
+			fmt.Fprint(&b, ", ")
+		}
+		needsComma = true
+	}
+	if r.UserID != 0 {
+		nextPart()
+		fmt.Fprintf(&b, "userID: %d", r.UserID)
+	}
+	if r.Handle != "" {
+		nextPart()
+		fmt.Fprintf(&b, "handle: %s", r.Handle)
+	}
+	if r.Email != "" {
+		nextPart()
+		fmt.Fprintf(&b, "email: %s", r.Email)
+	}
+	if c := r.RepoContext; c != nil {
+		nextPart()
+		fmt.Fprintf(&b, "context.%s: %s", c.CodehostKind, c.Name)
+	}
+	fmt.Fprint(&b, "}")
+	return b.String()
 }
 
 // Bag is a collection of platonic forms or identities of owners
@@ -50,59 +87,100 @@ type Bag interface {
 // that can be referred to by given text (name or email alike).
 // This can be used in search to find relevant owners by different identifiers
 // that the database reveals.
-func ByTextReference(context.Context, database.EnterpriseDB, string) (Bag, error) {
-	return nil, nil
+// TODO: Search by verified email.
+// TODO: Search by code host handle.
+func ByTextReference(ctx context.Context, db database.EnterpriseDB, text string) (Bag, error) {
+	if strings.HasPrefix(text, "@") {
+		text = text[1:]
+	}
+	var b bag
+	// Try to find a user by username (the only lookup for now):
+	user, err := db.Users().GetByUsername(ctx, text)
+	if err != nil && !errcode.IsNotFound(err) {
+		return nil, errors.Wrap(err, "Users.GetByUsername")
+	}
+	if user != nil {
+		b = append(b, &userReferences{
+			id:   user.ID,
+			user: user,
+		})
+	} else {
+		b = append(b, &userReferences{
+			handle: text,
+		})
+	}
+	for _, userRefs := range b {
+		if userRefs.id == 0 {
+			continue
+		}
+		email, verified, err := db.UserEmails().GetPrimaryEmail(ctx, userRefs.id)
+		if err != nil && !errcode.IsNotFound(err) {
+			return nil, errors.Wrap(err, "UserEmails.GetPrimaryEmail")
+		}
+		if !verified {
+			continue
+		}
+		userRefs.verifiedEmails = append(userRefs.verifiedEmails, email)
+	}
+	return b, nil
 }
 
-// Example: Implement search for f:has.owner(eseliger)
-func searchExample(db database.EnterpriseDB) error {
-	ctx := context.Background()
-	ownerSearchTerm := "jdoe"
-	// Do this at first during search and hold references to all the known entities
-	// that can be referred to by given search term
-	bag, err := ByTextReference(ctx, db, ownerSearchTerm)
-	if err != nil {
-		return err
-	}
+// bag is implemented as a slice of references for different users.
+type bag []*userReferences
 
-	// Then for given file we have owner matches (translated to references here):
-	ownerReferences := []Reference{
-		// Some possible matching entries:
-		// email entry in CODEOWNERS
-		{
-			email: "john.doe@sourcegraph.com",
-			repoContext: &repoContext{
-				name:         "github.com/sourcegraph/sourcegraph",
-				codehostKind: "github",
-			},
-		},
-		// @jdoe entry in CODEOWNERS
-		{
-			handle: "jdoe",
-			repoContext: &repoContext{
-				name:         "github.com/sourcegraph/sourcegraph",
-				codehostKind: "github",
-			},
-		},
-		{
-			handle: "jdoe.sourcegraph",
-			repoContext: &repoContext{
-				name:         "github.com/sourcegraph/sourcegraph",
-				codehostKind: "github",
-			},
-		},
-		{userID: 42}, // John Doe's user ID from assigned ownership
-	}
-	var matches bool
-	for _, ref := range ownerReferences {
-		if bag.Contains(ref) {
-			matches = true
+type userReferences struct {
+	id   int32
+	user *types.User
+	// handle text input used to search that reference,
+	// it is present if user was not found in the database.
+	handle         string
+	verifiedEmails []string
+}
+
+func (refs userReferences) containsEmail(email string) bool {
+	for _, vEmail := range refs.verifiedEmails {
+		if vEmail == email {
+			return true
 		}
 	}
-	if matches {
-		// Great! We're selecting the result of filtering.
+	return false
+}
+
+// TODO: Introduce matching on linked code host handles.
+func (refs userReferences) containsHandle(handle string) bool {
+	if strings.HasPrefix(handle, "@") {
+		handle = handle[1:]
 	}
-	return nil
+	if u := refs.user; u != nil && u.Username == handle {
+		return true
+	}
+	if refs.handle != "" && refs.handle == handle {
+		return true
+	}
+	return false
+}
+
+func (refs userReferences) containsUserID(userID int32) bool {
+	return refs.id != 0 && refs.id == userID
+}
+
+// Contains at this point returns true
+//   - if email reference matches the primary email,
+//     TODO: Match also other verified emails
+//   - if user ID matches the ID if the user in the bag,
+func (b bag) Contains(ref Reference) bool {
+	for _, userRefs := range b {
+		if userRefs.containsEmail(ref.Email) {
+			return true
+		}
+		if userRefs.containsHandle(ref.Handle) {
+			return true
+		}
+		if userRefs.containsUserID(ref.UserID) {
+			return true
+		}
+	}
+	return false
 }
 
 // Clusters is a set of associated references with the use of a database.
@@ -131,40 +209,40 @@ func resolutionExample(db database.EnterpriseDB) error {
 	ownerReferences := []Reference{
 		// email entry in CODEOWNERS
 		{
-			email: "john.doe@sourcegraph.com",
-			repoContext: &repoContext{
-				name:         "github.com/sourcegraph/sourcegraph",
-				codehostKind: "github",
+			Email: "john.doe@sourcegraph.com",
+			RepoContext: &RepoContext{
+				Name:         "github.com/sourcegraph/sourcegraph",
+				CodehostKind: "github",
 			},
 		},
 		// user handle entry in CODEOWNERS
 		{
-			handle: "johndoe",
-			repoContext: &repoContext{
-				name:         "github.com/sourcegraph/sourcegraph",
-				codehostKind: "github",
+			Handle: "johndoe",
+			RepoContext: &RepoContext{
+				Name:         "github.com/sourcegraph/sourcegraph",
+				CodehostKind: "github",
 			},
 		},
 		// team handle in CODEOWNERS - we know it's a team because of github code host and / in the name
 		{
-			handle: "sourcegraph/own",
-			repoContext: &repoContext{
-				name:         "github.com/sourcegraph/sourcegraph",
-				codehostKind: "github",
+			Handle: "sourcegraph/own",
+			RepoContext: &RepoContext{
+				Name:         "github.com/sourcegraph/sourcegraph",
+				CodehostKind: "github",
 			},
 		},
 		// Contributor email contains github username, we can figure this out based on github code host.
 		{
-			email: "githubusername@users.noreply.github.com",
+			Email: "githubusername@users.noreply.github.com",
 			// alternative:  "userID+userName@users.noreply.github.com",
 			// repo context where the commit is from
-			repoContext: &repoContext{
-				name:         "github.com/sourcegraph/sourcegraph",
-				codehostKind: "github",
+			RepoContext: &RepoContext{
+				Name:         "github.com/sourcegraph/sourcegraph",
+				CodehostKind: "github",
 			},
 		},
-		{userID: 42}, // John's user ID from assigned ownership
-		{userID: 42}, // User ID originating from recent viewer signal.
+		{UserID: 42}, // John's user ID from assigned ownership
+		{UserID: 42}, // User ID originating from recent viewer signal.
 	}
 	var cls Clusters = nil // construct somehow
 	for _, r := range ownerReferences {
