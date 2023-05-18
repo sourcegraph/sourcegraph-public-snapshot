@@ -117,27 +117,18 @@ platform() {
 # determine platform if it is not set
 PLATFORM=${PLATFORM:-$(platform)}
 export PLATFORM
-export PLATFORM_IS_MACOS=if [[ $(uname -s) == "Darwin" ]]; then 1; else 0 fi;
-
 
 VERSION=$(./enterprise/dev/app/app_version.sh)
 export VERSION
 
 if [[ ${CROSS_COMPILE_X86_64_MACOS:-0} == 1 ]]; then
+  # TODO(burmudar) fix the bazel build - the --incompatible toolchain flag in the root .bazelrc is breaking it
   go_build ${PLATFORM} ${VERSION}
 else
   bazel_build "${PLATFORM}" ".bin"
 fi
 
 # TODO(burmudar) move this to it's own file
-if [[ ${CODESIGNING} == 1 ]]; then
-  # If on a macOS host, Tauri will invoke the base64 command as part of the code signing process.
-  # it expects the macOS base64 command, not the gnutils one provided by homebrew, so we prefer
-  # that one here:
-  export PATH="/usr/bin/:$PATH"
-
-  pre_codesign "${target_path}"
-fi
 
 if [[ ${CI:-""} == "true" ]]; then
   upload_artifacts "${PLATFORM}" ".bin/sourcegraph-backend-*"
