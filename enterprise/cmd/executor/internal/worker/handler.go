@@ -124,7 +124,11 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 
 	// Create the runner that will actually run the commands.
 	logger.Info("Setting up runner")
-	runtimeRunner, err := h.jobRuntime.NewRunner(ctx, commandLogger, runtime.RunnerOptions{Path: ws.Path(), DockerAuthConfig: job.DockerAuthConfig})
+	runtimeRunner, err := h.jobRuntime.NewRunner(
+		ctx,
+		commandLogger,
+		runtime.RunnerOptions{Path: ws.Path(), DockerAuthConfig: job.DockerAuthConfig, Name: name},
+	)
 	if err != nil {
 		return errors.Wrap(err, "creating runtime runner")
 	}
