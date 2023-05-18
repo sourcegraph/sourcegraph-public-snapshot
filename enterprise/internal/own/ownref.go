@@ -8,20 +8,21 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// repoContext allows us to anchor an author reference to a repo where it stems from.
+// RepoContext allows us to anchor an author reference to a repo where it stems from.
 // For instance a handle from a CODEOWNERS file comes from github.com/sourcegraph/sourcegraph.
 // This is important for resolving namespaced owner names
 // (like CODEOWNERS file can refer to team handle "own"), while the name in the database is "sourcegraph/own"
-// because it was pulled from github, and by convention organiziation name is prepended.
+// because it was pulled from github, and by convention organization name is prepended.
 type RepoContext struct {
 	Name         api.RepoName
-	CodehostKind string
+	CodeHostKind string
 }
 
 // Reference is whatever we get from a data source, like a commit,
@@ -65,18 +66,16 @@ func (r Reference) String() string {
 	}
 	if c := r.RepoContext; c != nil {
 		nextPart()
-		fmt.Fprintf(&b, "context.%s: %s", c.CodehostKind, c.Name)
+		fmt.Fprintf(&b, "context.%s: %s", c.CodeHostKind, c.Name)
 	}
 	fmt.Fprint(&b, "}")
 	return b.String()
 }
 
-// Bag is a collection of platonic forms or identities of owners
-// (teams, people or otherwise). It is pre-seeded with database information
-// based on the search query using `ByTextReference`, and used to match owner
-// references found.
+// Bag is a collection of platonic forms or identities of owners (teams, people
+// or otherwise). It is pre-seeded with database information based on the search
+// query using `ByTextReference`, and used to match found owner references.
 type Bag interface {
-
 	// Contains answers true if given bag contains an owner form
 	// that the given reference points at in some way.
 	Contains(ref Reference) bool
@@ -88,7 +87,7 @@ type Bag interface {
 // that the database reveals.
 // TODO(#52140): Search by verified email.
 // TODO(#52141): Search by code host handle.
-func ByTextReference(ctx context.Context, db database.EnterpriseDB, text string) (Bag, error) {
+func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text string) (Bag, error) {
 	text = strings.TrimPrefix(text, "@")
 	var b bag
 	// Try to find a user by username (the only lookup for now):
@@ -110,14 +109,13 @@ func ByTextReference(ctx context.Context, db database.EnterpriseDB, text string)
 		if userRefs.id == 0 {
 			continue
 		}
-		email, verified, err := db.UserEmails().GetPrimaryEmail(ctx, userRefs.id)
-		if err != nil && !errcode.IsNotFound(err) {
-			return nil, errors.Wrap(err, "UserEmails.GetPrimaryEmail")
+		verifiedEmails, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{UserID: userRefs.id, OnlyVerified: true})
+		if err != nil {
+			return nil, errors.Wrap(err, "UserEmails.ListByUser")
 		}
-		if !verified {
-			continue
+		for _, email := range verifiedEmails {
+			userRefs.verifiedEmails = append(userRefs.verifiedEmails, email.Email)
 		}
-		userRefs.verifiedEmails = append(userRefs.verifiedEmails, email)
 	}
 	return b, nil
 }
@@ -160,8 +158,7 @@ func (refs userReferences) containsUserID(userID int32) bool {
 }
 
 // Contains at this point returns true
-//   - if email reference matches the primary email,
-//     TODO(#52143): Match also other verified emails
+//   - if email reference matches any user's verified email,
 //   - if handle reference matches the user handle,
 //   - if user ID matches the ID if the user in the bag,
 func (b bag) Contains(ref Reference) bool {
