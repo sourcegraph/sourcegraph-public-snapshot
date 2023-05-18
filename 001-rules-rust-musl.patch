@@ -1,0 +1,63 @@
+diff --git rust/platform/triple_mappings.bzl rust/platform/triple_mappings.bzl
+index 7f6ef2c7..c014270a 100644
+--- rust/platform/triple_mappings.bzl
++++ rust/platform/triple_mappings.bzl
+@@ -6,16 +6,13 @@ load("//rust/platform:triple.bzl", "triple")
+ SUPPORTED_T1_PLATFORM_TRIPLES = [
+     "aarch64-unknown-linux-gnu",
+     "i686-apple-darwin",
++    "i686-pc-windows-gnu",
+     "i686-pc-windows-msvc",
+     "i686-unknown-linux-gnu",
+     "x86_64-apple-darwin",
++    "x86_64-pc-windows-gnu",
+     "x86_64-pc-windows-msvc",
+     "x86_64-unknown-linux-gnu",
+-    # N.B. These "alternative" envs are not supported, as bazel cannot distinguish between them
+-    # and others using existing @platforms// config_values
+-    #
+-    #"i686-pc-windows-gnu",
+-    #"x86_64-pc-windows-gnu",
+ ]
+
+ # Some T2 Platforms are supported, provided we have mappings to @platforms// entries.
+@@ -27,6 +24,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = [
+     "aarch64-fuchsia",
+     "aarch64-linux-android",
+     "aarch64-pc-windows-msvc",
++    "aarch64-unknown-linux-musl",
+     "arm-unknown-linux-gnueabi",
+     "armv7-linux-androideabi",
+     "armv7-unknown-linux-gnueabi",
+@@ -44,6 +42,7 @@ SUPPORTED_T2_PLATFORM_TRIPLES = [
+     "x86_64-linux-android",
+     "x86_64-unknown-freebsd",
+     "x86_64-unknown-none",
++    "x86_64-unknown-linux-musl",
+ ]
+
+ SUPPORTED_PLATFORM_TRIPLES = SUPPORTED_T1_PLATFORM_TRIPLES + SUPPORTED_T2_PLATFORM_TRIPLES
+@@ -77,6 +76,13 @@ _CPU_ARCH_TO_BUILTIN_PLAT_SUFFIX = {
+     "x86_64": "x86_64",
+ }
+
++# ABIs that map to a platform constraints
++_ABI_TO_BUILTIN_SUFFIX = {
++    "gnu": "@platforms//abi:gnu",
++    "msvc": "@platforms//abi:msvc",
++    "musl": "@platforms//abi:musl",
++}
++
+ # Systems that map to a "@platforms//os entry
+ _SYSTEM_TO_BUILTIN_SYS_SUFFIX = {
+     "android": "android",
+@@ -252,6 +258,9 @@ def abi_to_constraints(abi, *, arch = None, system = None):
+         else:
+             return ["@build_bazel_apple_support//constraints:device"]
+
++    if abi in _ABI_TO_BUILTIN_SUFFIX:
++        return [_ABI_TO_BUILTIN_SUFFIX[abi]]
++
+     # TODO(bazelbuild/platforms#38): Implement when C++ toolchain is more mature and we
+     # figure out how they're doing this
+     return []

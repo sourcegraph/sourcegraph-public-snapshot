@@ -234,4 +234,23 @@ exports_files([
     # Used for when copy_to_directory might reference an empty filegroup
     # under certain conditions. See //ui/assets/...
     "CHANGELOG.md",
+    "001-rules-rust-musl.patch",
 ])
+
+platform(
+    name = "linux-x86_64-musl",
+    constraint_values = [
+        "@platforms//abi:musl",
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+)
+
+platform(
+    name = "linux-x86_64-gnu",
+    constraint_values = [
+        "@platforms//abi:gnu",
+        "@platforms//cpu:x86_64",
+        "@platforms//os:linux",
+    ],
+)

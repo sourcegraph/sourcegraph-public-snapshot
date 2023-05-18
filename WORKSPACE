@@ -70,8 +70,18 @@ http_archive(
 
 http_archive(
     name = "rules_rust",
-    sha256 = "dc8d79fe9a5beb79d93e482eb807266a0e066e97a7b8c48d43ecf91f32a3a8f3",
-    urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.19.0/rules_rust-v0.19.0.tar.gz"],
+    patches = [
+        "//:001-rules-rust-musl.patch",
+    ],
+    sha256 = "6ac07fefbe31b798b9ef6a90e3c2f1127f79c128cc9c07dc55cc786b20eaa65e",
+    strip_prefix = "rules_rust-f1b19c394f3edffa041b88be1bc371950476d1d2",
+    urls = ["https://github.com/bazelbuild/rules_rust/archive/f1b19c394f3edffa041b88be1bc371950476d1d2.zip"],
+)
+
+http_archive(
+    name = "platforms",
+    strip_prefix = "platforms-abi",
+    urls = ["https://github.com/UebelAndre/platforms/archive/abi.zip"],
 )
 
 http_archive(
@@ -241,25 +251,46 @@ load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
 protobuf_deps()
 
 # rust toolchain setup
-load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains")
+load("@rules_rust//rust:repositories.bzl", "rules_rust_dependencies", "rust_register_toolchains", "rust_repository_set")
 
 rules_rust_dependencies()
+
+load("@rules_rust//crate_universe:repositories.bzl", "crate_universe_dependencies")
+
+crate_universe_dependencies(bootstrap = True)
 
 rust_register_toolchains(
     edition = "2021",
     # Keep in sync with docker-images/syntax-highlighter/Dockerfile
     # and docker-images/syntax-highlighter/rust-toolchain.toml
     versions = [
-        "1.68.0",
+        "1.69.0",
     ],
 )
 
-load("@rules_rust//crate_universe:defs.bzl", "crates_repository")
+rust_repository_set(
+    name = "linux-x86_64-gnu-to-musl",
+    edition = "2021",
+    exec_triple = "x86_64-unknown-linux-gnu",
+    extra_exec_rustc_flags = ["--cfg=rustix_use_libc"],
+    extra_rustc_flags = {"x86_64-unknown-linux-musl": ["--cfg=rustix_use_libc"]},
+    extra_target_triples = ["x86_64-unknown-linux-musl"],
+    versions = ["1.69.0"],
+)
+
+load("@rules_rust//crate_universe:defs.bzl", "crates_repository", "splicing_config")
 
 crates_repository(
     name = "crate_index",
     cargo_config = "//docker-images/syntax-highlighter:.cargo/config.toml",
     cargo_lockfile = "//docker-images/syntax-highlighter:Cargo.lock",
+    generator_urls = {
+        "aarch64-apple-darwin": "https://github.com/bazelbuild/rules_rust/releases/download/0.21.1/cargo-bazel-aarch64-apple-darwin",
+        "x86_64-apple-darwin": "https://github.com/bazelbuild/rules_rust/releases/download/0.21.1/cargo-bazel-x86_64-apple-darwin",
+        "x86_64-unknown-linux-gnu": "https://github.com/bazelbuild/rules_rust/releases/download/0.21.1/cargo-bazel-x86_64-unknown-linux-gnu",
+        "x86_64-unknown-linux-musl": "https://github.com/bazelbuild/rules_rust/releases/download/0.21.1/cargo-bazel-x86_64-unknown-linux-musl",
+        "aarch64-unknown-linux-gnu": "https://github.com/bazelbuild/rules_rust/releases/download/0.21.1/cargo-bazel-aarch64-unknown-linux-gnu",
+    },
     # this file has to be manually created and it will be filled when
     # the target is ran.
     # To regenerate this file run: CARGO_BAZEL_REPIN=1 bazel sync --only=crate_index
@@ -273,6 +304,7 @@ crates_repository(
         "//docker-images/syntax-highlighter:crates/scip-treesitter-languages/Cargo.toml",
         "//docker-images/syntax-highlighter:crates/sg-syntax/Cargo.toml",
     ],
+    splicing_config = splicing_config(resolver_version = "2"),
 )
 
 load("@crate_index//:defs.bzl", "crate_repositories")

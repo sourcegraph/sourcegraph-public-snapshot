@@ -29,6 +29,9 @@ futures = { version = "^0.3.27", features = ["std"], default-features = false }
 futures-util = { version = "^0.3.27", features = ["std"], default-features = false }
 futures-task = { version = "^0.3.27", features = ["std"], default-features = false }
 
+[patch.crates-io]
+rustix  = { git = "https://github.com/bytecodealliance/rustix.git", tag = "v0.36.10", features = ["cc"] }
+
 [workspace]
 members = [
     "crates/sg-syntax",
