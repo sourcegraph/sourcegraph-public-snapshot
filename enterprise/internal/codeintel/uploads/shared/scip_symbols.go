@@ -11,6 +11,7 @@ type InvertedRangeIndex struct {
 	DefinitionRanges     []int32
 	ReferenceRanges      []int32
 	ImplementationRanges []int32
+	PrototypeRanges      []int32
 	TypeDefinitionRanges []int32
 }
 
@@ -21,6 +22,7 @@ func ExtractSymbolIndexes(document *scip.Document) []InvertedRangeIndex {
 		definitionRanges     []*scip.Range
 		referenceRanges      []*scip.Range
 		implementationRanges []*scip.Range
+		prototypeRanges      []*scip.Range // TODO - populate
 		typeDefinitionRanges []*scip.Range
 	}, len(document.Occurrences))
 
@@ -75,6 +77,7 @@ func ExtractSymbolIndexes(document *scip.Document) []InvertedRangeIndex {
 			DefinitionRanges:     collapseRanges(rangeSet.definitionRanges),
 			ReferenceRanges:      collapseRanges(rangeSet.referenceRanges),
 			ImplementationRanges: collapseRanges(rangeSet.implementationRanges),
+			PrototypeRanges:      collapseRanges(rangeSet.prototypeRanges),
 			TypeDefinitionRanges: collapseRanges(rangeSet.typeDefinitionRanges),
 		})
 	}

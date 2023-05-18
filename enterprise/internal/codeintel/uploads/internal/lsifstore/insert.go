@@ -110,6 +110,7 @@ func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, er
 		"definition_ranges",
 		"reference_ranges",
 		"implementation_ranges",
+		"prototype_ranges",
 		"type_definition_ranges",
 	)
 
@@ -139,6 +140,7 @@ CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
 	definition_ranges bytea,
 	reference_ranges bytea,
 	implementation_ranges bytea,
+	prototype_ranges bytea,
 	type_definition_ranges bytea
 ) ON COMMIT DROP
 `
@@ -339,6 +341,10 @@ func (s *scipWriter) flush(ctx context.Context) error {
 			if err != nil {
 				return err
 			}
+			prototypeRanges, err := ranges.EncodeRanges(index.PrototypeRanges)
+			if err != nil {
+				return err
+			}
 			typeDefinitionRanges, err := ranges.EncodeRanges(index.TypeDefinitionRanges)
 			if err != nil {
 				return err
@@ -356,6 +362,7 @@ func (s *scipWriter) flush(ctx context.Context) error {
 				definitionRanges,
 				referenceRanges,
 				implementationRanges,
+				prototypeRanges,
 				typeDefinitionRanges,
 			); err != nil {
 				return err
@@ -435,6 +442,7 @@ SELECT
 	source.definition_ranges,
 	source.reference_ranges,
 	source.implementation_ranges,
+	source.prototype_ranges,
 	source.type_definition_ranges
 FROM t_codeintel_scip_symbols source
 `
