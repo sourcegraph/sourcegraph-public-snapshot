@@ -47,5 +47,5 @@ docker load <"sourcegraph-wolfi-$image_name-base.tar"
 
 ## Cleanup
 echo " * Cleaning up tarball and SBOM"
-rm "sourcegraph-wolfi-$image_name-base.tar"
+# rm "sourcegraph-wolfi-$image_name-base.tar"
 rm sbom*
