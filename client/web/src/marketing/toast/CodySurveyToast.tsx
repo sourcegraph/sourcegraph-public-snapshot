@@ -1,11 +1,17 @@
 import { useState, useCallback } from 'react'
 
+import { mdiEmail } from '@mdi/js'
+
+import { asError, ErrorLike } from '@sourcegraph/common'
 import { gql, useMutation } from '@sourcegraph/http-client'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
-import { Checkbox, Form, H3, Modal, Text, useLocalStorage } from '@sourcegraph/wildcard'
+import { Checkbox, Form, H3, Modal, Text, Button, Icon, useLocalStorage } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../auth'
+import { CodyPageIcon } from '../../cody/chat/CodyPageIcon'
 import { LoaderButton } from '../../components/LoaderButton'
 import { SubmitCodySurveyResult, SubmitCodySurveyVariables } from '../../graphql-operations'
+import { resendVerificationEmail } from '../../user/settings/emails/UserEmail'
 
 const SUBMIT_CODY_SURVEY = gql`
     mutation SubmitCodySurvey($isForWork: Boolean!, $isForPersonal: Boolean!) {
@@ -47,7 +53,10 @@ const CodySurveyToastInner: React.FC<{ onSubmitEnd: () => void }> = ({ onSubmitE
 
     return (
         <Modal position="center" aria-label="Welcome message">
-            <H3 className="mb-4">Quick question...</H3>
+            <H3 className="mb-4 d-flex align-items-center">
+                <CodyPageIcon />
+                <span>Just one more thing...</span>
+            </H3>
             <Text className="mb-3">How will you be using Cody, our AI assistant?</Text>
             <Form onSubmit={handleSubmit}>
                 <Checkbox
@@ -74,6 +83,71 @@ const CodySurveyToastInner: React.FC<{ onSubmitEnd: () => void }> = ({ onSubmitE
     )
 }
 
+const CodyVerifyEmailToast: React.FC<{ onNext: () => void; authenticatedUser: AuthenticatedUser }> = ({
+    onNext,
+    authenticatedUser,
+}) => {
+    const [sending, setSending] = useState(false)
+    const [resentEmailTo, setResentEmailTo] = useState<string | null>(null)
+    const [resendEmailError, setResendEmailError] = useState<ErrorLike | null>(null)
+    const resend = useCallback(async () => {
+        const email = (authenticatedUser.emails || []).find(({ verified }) => !verified)?.email
+        if (email) {
+            setSending(true)
+            await resendVerificationEmail(authenticatedUser.id, email, {
+                onSuccess: () => {
+                    setResentEmailTo(email)
+                    setResendEmailError(null)
+                    setSending(false)
+                },
+                onError: (errors: ErrorLike) => {
+                    setResendEmailError(asError(errors))
+                    setResentEmailTo(null)
+                    setSending(false)
+                },
+            })
+        }
+    }, [authenticatedUser])
+
+    return (
+        <Modal position="center" aria-label="Welcome message">
+            <H3 className="mb-4">
+                <Icon svgPath={mdiEmail} className="mr-2" aria-hidden={true} />
+                Verify your email address
+            </H3>
+            <Text>
+                To use Cody, our AI Assistent, you'll need to click the link in the email we sent you to verify your
+                address.
+            </Text>
+            <Text className="d-flex align-items-center">
+                <span className="mr-1">Didn't get an email?</span>
+                {sending ? (
+                    <span>Sending...</span>
+                ) : (
+                    <>
+                        <span>Click to </span>
+                        <Button variant="link" className="p-0 ml-1" onClick={resend}>
+                            resend
+                        </Button>
+                        .
+                    </>
+                )}
+            </Text>
+            {resentEmailTo && (
+                <Text>
+                    Sent verification email to <strong>{resentEmailTo}</strong>.
+                </Text>
+            )}
+            {resendEmailError && <Text>{resendEmailError.message}.</Text>}
+            <div className="d-flex justify-content-end mt-4">
+                <Button variant="primary" onClick={onNext}>
+                    Next
+                </Button>
+            </div>
+        </Modal>
+    )
+}
+
 export const useCodySurveyToast = (): {
     show: boolean
     dismiss: () => void
@@ -93,10 +167,22 @@ export const useCodySurveyToast = (): {
     }
 }
 
-export const CodySurveyToast: React.FC = () => {
+export const CodySurveyToast: React.FC<{
+    authenticatedUser?: AuthenticatedUser
+    isSourcegraphDotCom?: boolean
+}> = ({ authenticatedUser, isSourcegraphDotCom = false }) => {
     const { show, dismiss } = useCodySurveyToast()
+    const [showVerifyEmail, setShowVerifyEmail] = useState(
+        show && isSourcegraphDotCom && authenticatedUser && !authenticatedUser.hasVerifiedEmail
+    )
+    const dismissVerifyEmail = useCallback(() => setShowVerifyEmail(false), [setShowVerifyEmail])
+
     if (!show) {
         return null
+    }
+
+    if (showVerifyEmail && authenticatedUser) {
+        return <CodyVerifyEmailToast onNext={dismissVerifyEmail} authenticatedUser={authenticatedUser} />
     }
 
     return <CodySurveyToastInner onSubmitEnd={dismiss} />

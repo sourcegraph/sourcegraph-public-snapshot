@@ -1,4 +1,4 @@
-import { FunctionComponent, useState } from 'react'
+import { FunctionComponent, useState, useCallback } from 'react'
 
 import { asError, ErrorLike } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
@@ -26,6 +26,36 @@ interface Props {
     onDidRemove?: (email: string) => void
     onEmailVerify?: () => void
     onEmailResendVerification?: () => void
+}
+
+export const resendVerificationEmail = async (
+    userID: string,
+    email: string,
+    options?: { onSuccess: () => void; onError: (error: ErrorLike) => void }
+): Promise<ResendVerificationEmailResult | ErrorLike> => {
+    try {
+        const data = dataOrThrowErrors(
+            await requestGraphQL<ResendVerificationEmailResult, ResendVerificationEmailVariables>(
+                gql`
+                    mutation ResendVerificationEmail($userID: ID!, $email: String!) {
+                        resendVerificationEmail(user: $userID, email: $email) {
+                            alwaysNil
+                        }
+                    }
+                `,
+                { userID, email }
+            ).toPromise()
+        )
+
+        eventLogger.log('UserEmailAddressVerificationResent')
+
+        options?.onSuccess?.()
+
+        return data
+    } catch (error) {
+        options?.onError?.(error)
+        return error
+    }
 }
 
 export const UserEmail: FunctionComponent<React.PropsWithChildren<Props>> = ({
@@ -106,31 +136,16 @@ export const UserEmail: FunctionComponent<React.PropsWithChildren<Props>> = ({
         }
     }
 
-    const resendEmailVerification = async (email: string): Promise<void> => {
+    const resendEmail = useCallback(() => {
         setIsLoading(true)
-
-        try {
-            dataOrThrowErrors(
-                await requestGraphQL<ResendVerificationEmailResult, ResendVerificationEmailVariables>(
-                    gql`
-                        mutation ResendVerificationEmail($user: ID!, $email: String!) {
-                            resendVerificationEmail(user: $user, email: $email) {
-                                alwaysNil
-                            }
-                        }
-                    `,
-                    { user, email }
-                ).toPromise()
-            )
-
-            setIsLoading(false)
-            eventLogger.log('UserEmailAddressVerificationResent')
-
-            onEmailResendVerification?.()
-        } catch (error) {
-            handleError(error)
-        }
-    }
+        resendVerificationEmail(user, email, {
+            onSuccess: () => {
+                setIsLoading(false)
+                onEmailResendVerification?.()
+            },
+            onError: handleError,
+        })
+    }, [user, email, onEmailResendVerification, handleError])
 
     return (
         <>
@@ -162,7 +177,7 @@ export const UserEmail: FunctionComponent<React.PropsWithChildren<Props>> = ({
                             <span className={styles.dot}>&bull;&nbsp;</span>
                             <Button
                                 className="p-0"
-                                onClick={() => resendEmailVerification(email)}
+                                onClick={resendEmail}
                                 disabled={isLoading || disableControls}
                                 variant="link"
                             >
