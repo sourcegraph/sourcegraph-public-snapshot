@@ -75,8 +75,8 @@ func TestGetCommitsToInsert(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.NoOp(t)
 	db := database.NewMockDB()
-	repoCommitsStore := database.NewMockRepoCommitsStore()
-	db.RepoCommitsFunc.SetDefaultReturn(repoCommitsStore)
+	repoCommitsStore := database.NewMockRepoCommitsChangelistsStore()
+	db.RepoCommitsChangelistsFunc.SetDefaultReturn(repoCommitsStore)
 
 	s := &Server{
 		Logger:         logger,
