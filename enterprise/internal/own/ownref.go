@@ -86,8 +86,8 @@ type Bag interface {
 // that can be referred to by given text (name or email alike).
 // This can be used in search to find relevant owners by different identifiers
 // that the database reveals.
-// TODO: Search by verified email.
-// TODO: Search by code host handle.
+// TODO(#52140): Search by verified email.
+// TODO(#52141): Search by code host handle.
 func ByTextReference(ctx context.Context, db database.EnterpriseDB, text string) (Bag, error) {
 	text = strings.TrimPrefix(text, "@")
 	var b bag
@@ -143,7 +143,7 @@ func (refs userReferences) containsEmail(email string) bool {
 	return false
 }
 
-// TODO: Introduce matching on linked code host handles.
+// TODO(#52142): Introduce matching on linked code host handles.
 func (refs userReferences) containsHandle(handle string) bool {
 	handle = strings.TrimPrefix(handle, "@")
 	if u := refs.user; u != nil && u.Username == handle {
@@ -161,7 +161,7 @@ func (refs userReferences) containsUserID(userID int32) bool {
 
 // Contains at this point returns true
 //   - if email reference matches the primary email,
-//     TODO: Match also other verified emails
+//     TODO(#52143): Match also other verified emails
 //   - if user ID matches the ID if the user in the bag,
 func (b bag) Contains(ref Reference) bool {
 	for _, userRefs := range b {
