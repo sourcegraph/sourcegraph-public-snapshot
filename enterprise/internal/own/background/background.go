@@ -28,12 +28,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type JobTypeID int
+// SignalJob should match the configuration name in the database table own_signal_configurations. This is used to match implementations to configuration.
+type SignalName string
 
 const (
-	_ JobTypeID = iota
-	RecentContributors
-	RecentViews
+	RecentContributors SignalName = "recent-contributors"
+	RecentViews        SignalName = "recent-views"
 )
 
 func featureFlagName(jobType IndexJobType) string {
@@ -41,6 +41,7 @@ func featureFlagName(jobType IndexJobType) string {
 }
 
 const tableName = "own_background_jobs"
+const viewName = "own_background_jobs_config_aware"
 
 type Job struct {
 	ID              int
@@ -58,6 +59,7 @@ type Job struct {
 	Cancel          bool
 	RepoId          int
 	JobType         int
+	ConfigName      string
 }
 
 func (b *Job) RecordID() int {
@@ -80,6 +82,7 @@ var jobColumns = []*sqlf.Query{
 	sqlf.Sprintf("cancel"),
 	sqlf.Sprintf("repo_id"),
 	sqlf.Sprintf("job_type"),
+	sqlf.Sprintf("config_name"),
 }
 
 func scanJob(s dbutil.Scanner) (*Job, error) {
@@ -102,6 +105,7 @@ func scanJob(s dbutil.Scanner) (*Job, error) {
 		&job.Cancel,
 		&job.RepoId,
 		&job.JobType,
+		&job.ConfigName,
 	); err != nil {
 		return nil, err
 	}
@@ -127,6 +131,7 @@ func makeWorker(ctx context.Context, db database.DB, observationCtx *observation
 	workerStore := dbworkerstore.New(observationCtx, db.Handle(), dbworkerstore.Options[*Job]{
 		Name:              fmt.Sprintf("%s_store", name),
 		TableName:         tableName,
+		ViewName:          viewName,
 		ColumnExpressions: jobColumns,
 		Scan:              dbworkerstore.BuildWorkerScan(scanJob),
 		OrderByExpression: sqlf.Sprintf("id"), // processes oldest records first
@@ -179,7 +184,7 @@ func (h *handler) Handle(ctx context.Context, lgr log.Logger, record *Job) error
 	}
 
 	var delegate signalIndexFunc
-	switch JobTypeID(record.JobType) {
+	switch SignalName(record.ConfigName) {
 	case RecentContributors:
 		delegate = handleRecentContributors
 	default:
@@ -194,7 +199,7 @@ type signalIndexFunc func(ctx context.Context, lgr log.Logger, repoId api.RepoID
 func janitorFunc(db database.DB, retention time.Duration) func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, err error) {
 	return func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, err error) {
 		ts := time.Now().Add(-1 * retention)
-		result, err := basestore.NewWithHandle(db.Handle()).ExecResult(ctx, sqlf.Sprintf("delete from %s where state not in ('queued', 'processing', 'errored') and finished_at < %s", sqlf.Sprintf(tableName), ts))
+		result, err := basestore.NewWithHandle(db.Handle()).ExecResult(ctx, sqlf.Sprintf("DELETE FROM %s WHERE (state NOT IN ('queued', 'processing', 'errored') AND finished_at < %s) OR (id NOT IN (select id from %s))", sqlf.Sprintf(tableName), ts, sqlf.Sprintf(viewName)))
 		if err != nil {
 			return 0, 0, err
 		}

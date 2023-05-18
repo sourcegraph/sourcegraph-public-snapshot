@@ -21,7 +21,6 @@ import (
 
 type IndexJobType struct {
 	Name            string
-	Id              JobTypeID
 	IndexInterval   time.Duration
 	RefreshInterval time.Duration
 }
@@ -29,7 +28,6 @@ type IndexJobType struct {
 // QueuePerRepoIndexJobs is a slice of jobs that will automatically initialize and will queue up one index job per repo every IndexInterval.
 var QueuePerRepoIndexJobs = []IndexJobType{{
 	Name:            "recent-contributors",
-	Id:              RecentContributors,
 	IndexInterval:   time.Hour * 24,
 	RefreshInterval: time.Minute * 5,
 }}
@@ -68,7 +66,6 @@ func GetOwnIndexSchedulerRoutines(db database.DB, observationCtx *observation.Co
 
 	recent := IndexJobType{
 		Name:            "recent-views",
-		Id:              RecentViews,
 		RefreshInterval: time.Minute * 5,
 	}
 	routines = append(routines, makeRoutine(recent, op(recent), newRecentViewsIndexer(db, observationCtx.Logger)))

@@ -30,7 +30,7 @@ func newRecentViewsIndexer(db database.DB, logger log.Logger) *recentViewsIndexe
 
 func (r *recentViewsIndexer) Handle(ctx context.Context) error {
 	// The job is enabled, here we go. First we need to get the ID of last processed event.
-	bookmark, err := r.db.EventLogsScrapeState().GetBookmark(ctx, int(RecentViews))
+	bookmark, err := r.db.EventLogsScrapeState().GetBookmark(ctx, string(RecentViews))
 	if err != nil {
 		return errors.Wrap(err, "getting latest processed event ID")
 	}
@@ -49,5 +49,5 @@ func (r *recentViewsIndexer) Handle(ctx context.Context) error {
 	newBookmark := int(events[numberOfEvents-1].ID)
 	r.logger.Info("events processed", log.Int("count", numberOfEvents))
 	processedEventsCounter.Add(float64(numberOfEvents))
-	return r.db.EventLogsScrapeState().UpdateBookmark(ctx, newBookmark, int(RecentViews))
+	return r.db.EventLogsScrapeState().UpdateBookmark(ctx, newBookmark, string(RecentViews))
 }

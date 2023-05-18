@@ -27,11 +27,11 @@ func TestOwnRepoIndexSchedulerJob_JobsAutoIndex(t *testing.T) {
 	insertRepo(t, db, 502, "great-repo-3", true)
 	insertRepo(t, db, 503, "great-repo-4", false)
 
-	verifyCount := func(t *testing.T, jobType IndexJobType, expected int) {
+	verifyCount := func(t *testing.T, signaName string, expected int) {
 		store := basestore.NewWithHandle(db.Handle())
 		// Check that correct rows were added to own_background_jobs
 
-		count, _, err := basestore.ScanFirstInt(store.Query(context.Background(), sqlf.Sprintf("SELECT COUNT(*) FROM own_background_jobs WHERE job_type = %s", jobType.Id)))
+		count, _, err := basestore.ScanFirstInt(store.Query(context.Background(), sqlf.Sprintf("SELECT COUNT(*) FROM own_background_jobs WHERE job_type = (select id from own_signal_configurations where name = %s)", signaName)))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -53,7 +53,7 @@ func TestOwnRepoIndexSchedulerJob_JobsAutoIndex(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			verifyCount(t, job.jobType, 3)
+			verifyCount(t, job.jobType.Name, 3)
 		})
 	}
 }
