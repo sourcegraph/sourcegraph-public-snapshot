@@ -3287,7 +3287,7 @@ Referenced by:
     TABLE "lsif_index_configuration" CONSTRAINT "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "lsif_retention_configuration" CONSTRAINT "lsif_retention_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "permission_sync_jobs" CONSTRAINT "permission_sync_jobs_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
-    TABLE "repo_commits" CONSTRAINT "repo_commits_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "repo_commits_changelists" CONSTRAINT "repo_commits_changelists_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "repo_kvps" CONSTRAINT "repo_kvps_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "repo_paths" CONSTRAINT "repo_paths_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
@@ -3306,19 +3306,19 @@ Triggers:
 
 ```
 
-# Table "public.repo_commits"
+# Table "public.repo_commits_changelists"
 ```
-         Column         |  Type   | Collation | Nullable |                 Default                  
-------------------------+---------+-----------+----------+------------------------------------------
- id                     | integer |           | not null | nextval('repo_commits_id_seq'::regclass)
+         Column         |  Type   | Collation | Nullable |                       Default                        
+------------------------+---------+-----------+----------+------------------------------------------------------
+ id                     | integer |           | not null | nextval('repo_commits_changelists_id_seq'::regclass)
  repo_id                | integer |           | not null | 
  commit_sha             | bytea   |           | not null | 
  perforce_changelist_id | integer |           | not null | 
 Indexes:
-    "repo_commits_pkey" PRIMARY KEY, btree (id)
+    "repo_commits_changelists_pkey" PRIMARY KEY, btree (id)
     "repo_id_perforce_changelist_id_unique" UNIQUE, btree (repo_id, perforce_changelist_id)
 Foreign-key constraints:
-    "repo_commits_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
+    "repo_commits_changelists_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 

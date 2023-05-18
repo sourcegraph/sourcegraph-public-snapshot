@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRepoCommits(t *testing.T) {
+func TestRepoCommitsChangelists(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
@@ -46,7 +46,7 @@ func TestRepoCommits(t *testing.T) {
 		},
 	}
 
-	s := RepoCommitsWith(logger, db)
+	s := RepoCommitsChangelistsWith(logger, db)
 
 	err = s.BatchInsertCommitSHAsWithPerforceChangelistID(ctx, api.RepoID(repoID), data)
 	if err != nil {
@@ -54,7 +54,7 @@ func TestRepoCommits(t *testing.T) {
 	}
 
 	t.Run("BatchInsertCommitSHAsWithPerforceChangelistID", func(t *testing.T) {
-		rows, err := db.QueryContext(ctx, `SELECT repo_id, commit_sha, perforce_changelist_id FROM repo_commits ORDER by id`)
+		rows, err := db.QueryContext(ctx, `SELECT repo_id, commit_sha, perforce_changelist_id FROM repo_commits_changelists ORDER by id`)
 		if err != nil {
 			t.Fatal(err)
 		}

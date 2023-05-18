@@ -1069,7 +1069,7 @@
       "CycleOption": "NO"
     },
     {
-      "Name": "repo_commits_id_seq",
+      "Name": "repo_commits_changelists_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
       "MinimumValue": 1,
@@ -21907,7 +21907,7 @@
       ]
     },
     {
-      "Name": "repo_commits",
+      "Name": "repo_commits_changelists",
       "Comment": "",
       "Columns": [
         {
@@ -21928,7 +21928,7 @@
           "Index": 1,
           "TypeName": "integer",
           "IsNullable": false,
-          "Default": "nextval('repo_commits_id_seq'::regclass)",
+          "Default": "nextval('repo_commits_changelists_id_seq'::regclass)",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -21965,12 +21965,12 @@
       ],
       "Indexes": [
         {
-          "Name": "repo_commits_pkey",
+          "Name": "repo_commits_changelists_pkey",
           "IsPrimaryKey": true,
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX repo_commits_pkey ON repo_commits USING btree (id)",
+          "IndexDefinition": "CREATE UNIQUE INDEX repo_commits_changelists_pkey ON repo_commits_changelists USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
@@ -21980,14 +21980,14 @@
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX repo_id_perforce_changelist_id_unique ON repo_commits USING btree (repo_id, perforce_changelist_id)",
+          "IndexDefinition": "CREATE UNIQUE INDEX repo_id_perforce_changelist_id_unique ON repo_commits_changelists USING btree (repo_id, perforce_changelist_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
         {
-          "Name": "repo_commits_repo_id_fkey",
+          "Name": "repo_commits_changelists_repo_id_fkey",
           "ConstraintType": "f",
           "RefTableName": "repo",
           "IsDeferrable": true,

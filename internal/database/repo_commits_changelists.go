@@ -12,29 +12,29 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-type RepoCommitsStore interface {
+type RepoCommitsChangelistsStore interface {
 	BatchInsertCommitSHAsWithPerforceChangelistID(context.Context, api.RepoID, []types.PerforceChangelist) error
 	GetLatestForRepo(ctx context.Context, repoID api.RepoID) (*types.RepoCommit, error)
 }
 
-type repoCommitsStore struct {
+type repoCommitsChangelistsStore struct {
 	*basestore.Store
 	logger log.Logger
 }
 
-var _ RepoCommitsStore = (*repoCommitsStore)(nil)
+var _ RepoCommitsChangelistsStore = (*repoCommitsChangelistsStore)(nil)
 
-func RepoCommitsWith(logger log.Logger, other basestore.ShareableStore) RepoCommitsStore {
-	return &repoCommitsStore{
+func RepoCommitsChangelistsWith(logger log.Logger, other basestore.ShareableStore) RepoCommitsChangelistsStore {
+	return &repoCommitsChangelistsStore{
 		logger: logger,
 		Store:  basestore.NewWithHandle(other.Handle()),
 	}
 }
 
-func (s *repoCommitsStore) BatchInsertCommitSHAsWithPerforceChangelistID(ctx context.Context, repo_id api.RepoID, commitsMap []types.PerforceChangelist) error {
+func (s *repoCommitsChangelistsStore) BatchInsertCommitSHAsWithPerforceChangelistID(ctx context.Context, repo_id api.RepoID, commitsMap []types.PerforceChangelist) error {
 	return s.WithTransact(ctx, func(tx *basestore.Store) error {
 
-		inserter := batch.NewInserter(ctx, tx.Handle(), "repo_commits", batch.MaxNumPostgresParameters, "repo_id", "commit_sha", "perforce_changelist_id")
+		inserter := batch.NewInserter(ctx, tx.Handle(), "repo_commits_changelists", batch.MaxNumPostgresParameters, "repo_id", "commit_sha", "perforce_changelist_id")
 		for _, item := range commitsMap {
 			if err := inserter.Insert(
 				ctx,
@@ -57,14 +57,14 @@ SELECT
 	commit_sha,
 	perforce_changelist_id
 FROM
-	repo_commits
+	repo_commits_changelists
 WHERE
 	repo_id = %s
 ORDER BY
 	id DESC
 LIMIT 1`
 
-func (s *repoCommitsStore) GetLatestForRepo(ctx context.Context, repoID api.RepoID) (*types.RepoCommit, error) {
+func (s *repoCommitsChangelistsStore) GetLatestForRepo(ctx context.Context, repoID api.RepoID) (*types.RepoCommit, error) {
 	q := sqlf.Sprintf(getLatestForRepoFmtStr, repoID)
 	row := s.QueryRow(ctx, q)
 	return scanRepoCommitRow(row)
