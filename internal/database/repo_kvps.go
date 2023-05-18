@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -48,19 +49,14 @@ func (s *repoKVPStore) Create(ctx context.Context, repoID api.RepoID, kvp KeyVal
 	q := `
 	INSERT INTO repo_kvps (repo_id, key, value)
 	VALUES (%s, %s, %s)
-	ON CONFLICT DO NOTHING
 	`
 
-	result, err := s.ExecResult(ctx, sqlf.Sprintf(q, repoID, kvp.Key, kvp.Value))
-	if err != nil {
-		return errors.Wrap(err, "executing SQL query")
-	}
-	nrows, err := result.RowsAffected()
-	if err != nil {
-		return errors.Wrap(err, "getting rows affected")
-	}
-	if nrows == 0 {
-		return errors.Newf(`Repo metadata key "%s" already exists for the given repository.`, kvp.Key)
+	if err := s.Exec(ctx, sqlf.Sprintf(q, repoID, kvp.Key, kvp.Value)); err != nil {
+		var e *pgconn.PgError
+		if errors.As(err, &e) && e.Code == "23505" {
+			return errors.Newf(`Repo metadata key "%s" already exists for the given repository.`, kvp.Key)
+		}
+		return err
 	}
 
 	return nil
