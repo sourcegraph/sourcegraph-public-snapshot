@@ -162,10 +162,10 @@ func (s *service) AssignedOwnership(ctx context.Context, repoID api.RepoID, _ ap
 		return nil, err
 	}
 	assignedOwners := AssignedOwners{}
-	for _, s := range summaries {
-		byPath := assignedOwners[s.FilePath]
-		byPath = append(byPath, *s)
-		assignedOwners[s.FilePath] = byPath
+	for _, summary := range summaries {
+		byPath := assignedOwners[summary.FilePath]
+		byPath = append(byPath, *summary)
+		assignedOwners[summary.FilePath] = byPath
 	}
 	return assignedOwners, nil
 }
