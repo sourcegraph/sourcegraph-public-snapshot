@@ -9,6 +9,7 @@ go_library(
         "downgrade.go",
         "downto.go",
         "drift.go",
+        "drift_autofix.go",
         "drift_schema.go",
         "drift_util.go",
         "help.go",

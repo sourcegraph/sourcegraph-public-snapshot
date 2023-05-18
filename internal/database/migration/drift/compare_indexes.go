@@ -35,7 +35,7 @@ func compareIndexesCallbackFor(table schemas.TableDescription) func(_ *schemas.I
 			expectedIndex,
 			*index,
 		).withStatements(
-			expectedIndex.DropStatement(),
+			expectedIndex.DropStatement(table),
 			expectedIndex.CreateStatement(table),
 		)
 	}
@@ -50,7 +50,7 @@ func compareIndexesCallbackAdditionalFor(table schemas.TableDescription) func(_ 
 				fmt.Sprintf("Unexpected index %q.%q", table.GetName(), index.GetName()),
 				"drop the index",
 			).withStatements(
-				index.DropStatement(),
+				index.DropStatement(table),
 			))
 		}
 
