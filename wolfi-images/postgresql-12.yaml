@@ -1,6 +1,7 @@
 include: ./sourcegraph-base.yaml
 
 contents:
+  packages:
     # Postgres packages
     - glibc-locale-en
     - libpq-12
