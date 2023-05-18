@@ -79,6 +79,18 @@ type repoPath struct {
 	Path     string
 }
 
+func fakeOwnDb() *database.MockDB {
+	db := database.NewMockDB()
+	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
+	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
+
+	configStore := database.NewMockSignalConfigurationStore()
+	configStore.IsEnabledFunc.SetDefaultReturn(true, nil)
+	db.OwnSignalConfigurationsFunc.SetDefaultReturn(configStore)
+
+	return db
+}
+
 type repoFiles map[repoPath]string
 
 func (g fakeGitserver) ReadFile(_ context.Context, _ authz.SubRepoPermissionChecker, repoName api.RepoName, commitID api.CommitID, file string) ([]byte, error) {
@@ -121,7 +133,7 @@ func (g fakeGitserver) Stat(_ context.Context, _ authz.SubRepoPermissionChecker,
 func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 	logger := logtest.Scoped(t)
 	fakeDB := fakedb.New()
-	db := database.NewMockDB()
+	db := fakeOwnDb()
 	fakeDB.Wire(db)
 	repoID := api.RepoID(1)
 	own := fakeOwnService{
@@ -142,8 +154,6 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	repos := database.NewMockRepoStore()
-	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
-	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
 	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
@@ -241,7 +251,7 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 func TestBlobOwnershipPanelQueryIngested(t *testing.T) {
 	logger := logtest.Scoped(t)
 	fakeDB := fakedb.New()
-	db := database.NewMockDB()
+	db := fakeOwnDb()
 	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
 	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
 	fakeDB.Wire(db)
@@ -356,6 +366,7 @@ func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
 	db.CodeownersFunc.SetDefaultReturn(enterprisedb.NewMockCodeownersStore())
 	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
 	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
+	db.OwnSignalConfigurationsFunc.SetDefaultReturn(database.NewMockSignalConfigurationStore())
 	own := own.NewService(git, db)
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
@@ -501,7 +512,7 @@ func (r paginationResponse) ownerNames() []string {
 func TestOwnershipPagination(t *testing.T) {
 	logger := logtest.Scoped(t)
 	fakeDB := fakedb.New()
-	db := database.NewMockDB()
+	db := fakeOwnDb()
 	fakeDB.Wire(db)
 	rule := &codeownerspb.Rule{
 		Pattern: "*.js",
@@ -600,7 +611,7 @@ func TestOwnershipPagination(t *testing.T) {
 func TestOwnership_WithSignals(t *testing.T) {
 	logger := logtest.Scoped(t)
 	fakeDB := fakedb.New()
-	db := database.NewMockDB()
+	db := fakeOwnDb()
 
 	recentContribStore := database.NewMockRecentContributionSignalStore()
 	santaEmail := "santa@northpole.com"
@@ -654,6 +665,7 @@ func TestOwnership_WithSignals(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	graphqlbackend.RunTest(t, &graphqlbackend.Test{
 		Schema:  schema,
 		Context: ctx,
@@ -767,7 +779,7 @@ func TestOwnership_WithSignals(t *testing.T) {
 func TestTreeOwnershipSignals(t *testing.T) {
 	logger := logtest.Scoped(t)
 	fakeDB := fakedb.New()
-	db := database.NewMockDB()
+	db := fakeOwnDb()
 
 	recentContribStore := database.NewMockRecentContributionSignalStore()
 	santaEmail := "santa@northpole.com"
@@ -912,7 +924,7 @@ func TestTreeOwnershipSignals(t *testing.T) {
 func TestCommitOwnershipSignals(t *testing.T) {
 	logger := logtest.Scoped(t)
 	fakeDB := fakedb.New()
-	db := database.NewMockDB()
+	db := fakeOwnDb()
 
 	recentContribStore := database.NewMockRecentContributionSignalStore()
 	recentContribStore.FindRecentAuthorsFunc.SetDefaultReturn([]database.RecentContributorSummary{{

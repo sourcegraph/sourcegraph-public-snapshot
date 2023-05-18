@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type SignalConfiguration struct {
@@ -21,6 +22,7 @@ type SignalConfiguration struct {
 
 type SignalConfigurationStore interface {
 	LoadConfigurations(ctx context.Context, args LoadSignalConfigurationArgs) ([]SignalConfiguration, error)
+	IsEnabled(ctx context.Context, name string) (bool, error)
 	UpdateConfiguration(ctx context.Context, args UpdateSignalConfigurationArgs) error
 	WithTransact(context.Context, func(store SignalConfigurationStore) error) error
 }
@@ -79,6 +81,16 @@ func (s *signalConfigurationStore) LoadConfigurations(ctx context.Context, args 
 	fmt.Println(qq.Args())
 
 	return multiScan(s.Query(ctx, sqlf.Sprintf(q, where)))
+}
+
+func (s *signalConfigurationStore) IsEnabled(ctx context.Context, name string) (bool, error) {
+	configurations, err := s.LoadConfigurations(ctx, LoadSignalConfigurationArgs{Name: name})
+	if err != nil {
+		return false, err
+	} else if len(configurations) == 0 {
+		return false, errors.New("signal configuration not found")
+	}
+	return configurations[0].Enabled, nil
 }
 
 func (s *signalConfigurationStore) UpdateConfiguration(ctx context.Context, args UpdateSignalConfigurationArgs) error {
