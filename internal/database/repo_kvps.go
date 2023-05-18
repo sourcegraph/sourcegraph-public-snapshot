@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -52,9 +51,8 @@ func (s *repoKVPStore) Create(ctx context.Context, repoID api.RepoID, kvp KeyVal
 	`
 
 	if err := s.Exec(ctx, sqlf.Sprintf(q, repoID, kvp.Key, kvp.Value)); err != nil {
-		var e *pgconn.PgError
-		if errors.As(err, &e) && e.Code == "23505" {
-			return errors.Newf(`Metadata key "%s" already exists for the given repository.`, kvp.Key)
+		if dbutil.IsPostgresError(err, "23505") {
+			return errors.Newf(`metadata key "%q" already exists for the given repository`, kvp.Key)
 		}
 		return err
 	}
@@ -70,10 +68,7 @@ func (s *repoKVPStore) Get(ctx context.Context, repoID api.RepoID, key string) (
 		AND key = %s
 	`
 
-	row := s.QueryRow(ctx, sqlf.Sprintf(q, repoID, key))
-
-	var kvp KeyValuePair
-	return kvp, row.Scan(&kvp.Key, &kvp.Value)
+	return scanKVP(s.QueryRow(ctx, sqlf.Sprintf(q, repoID, key)))
 }
 
 func (s *repoKVPStore) List(ctx context.Context, repoID api.RepoID) ([]KeyValuePair, error) {
@@ -82,11 +77,6 @@ func (s *repoKVPStore) List(ctx context.Context, repoID api.RepoID) ([]KeyValueP
 	FROM repo_kvps
 	WHERE repo_id = %s
 	`
-
-	scanKVPs := basestore.NewSliceScanner(func(scanner dbutil.Scanner) (KeyValuePair, error) {
-		var kvp KeyValuePair
-		return kvp, scanner.Scan(&kvp.Key, &kvp.Value)
-	})
 
 	return scanKVPs(s.Query(ctx, sqlf.Sprintf(q, repoID)))
 }
@@ -100,14 +90,15 @@ func (s *repoKVPStore) Update(ctx context.Context, repoID api.RepoID, kvp KeyVal
 	RETURNING key, value
 	`
 
-	row := s.QueryRow(ctx, sqlf.Sprintf(q, kvp.Value, repoID, kvp.Key))
+	kvp, err := scanKVP(s.QueryRow(ctx, sqlf.Sprintf(q, kvp.Value, repoID, kvp.Key)))
 
-	var updated KeyValuePair
-	err := row.Scan(&kvp.Key, &kvp.Value)
-	if errors.Is(err, sql.ErrNoRows) {
-		return updated, errors.Newf(`metadata key %q does not exist for the given repository`, kvp.Key)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return kvp, errors.Newf(`metadata key %q does not exist for the given repository`, kvp.Key)
+		}
+		return kvp, errors.Wrap(err, "scanning role")
 	}
-	return updated, err
+	return kvp, nil
 }
 
 func (s *repoKVPStore) Delete(ctx context.Context, repoID api.RepoID, key string) error {
@@ -119,3 +110,10 @@ func (s *repoKVPStore) Delete(ctx context.Context, repoID api.RepoID, key string
 
 	return s.Exec(ctx, sqlf.Sprintf(q, repoID, key))
 }
+
+func scanKVP(scanner dbutil.Scanner) (KeyValuePair, error) {
+	var kvp KeyValuePair
+	return kvp, scanner.Scan(&kvp.Key, &kvp.Value)
+}
+
+var scanKVPs = basestore.NewSliceScanner(scanKVP)
