@@ -17,6 +17,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// product subscription tokens are always a prefix of 4 characters (sgs_)
+// followed by a 64-character hex-encoded SHA256 hash
+const tokenLength = 4 + 64
+
 var (
 	minUpdateInterval = 10 * time.Minute
 
@@ -51,6 +55,10 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 	// "sgs_" is productSubscriptionAccessTokenPrefix
 	if token == "" || !strings.HasPrefix(token, "sgs_") {
 		return nil, actor.ErrNotFromSource{}
+	}
+
+	if len(token) != tokenLength {
+		return nil, errors.New("invalid token format")
 	}
 
 	data, hit := s.cache.Get(token)

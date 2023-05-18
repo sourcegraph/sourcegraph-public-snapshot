@@ -39,7 +39,7 @@ fn set_launch_path(url: String) {
 
 // Url scheme for sourcegraph:// urls.
 const SCHEME: &str = "sourcegraph";
-const BUNDLE_IDENTIFIER: &str = "com.sourcegraph.app";
+const BUNDLE_IDENTIFIER: &str = "com.sourcegraph.cody";
 
 fn main() {
     // Prepare handler for sourcegraph:// scheme urls.
@@ -95,9 +95,8 @@ fn main() {
         )
         .plugin(tauri_plugin_positioner::init())
         .setup(|app| {
+            start_embedded_services(app.handle());
             let handle = app.handle();
-            start_embedded_services(&handle);
-
             // Register handler for sourcegraph:// scheme urls.
             tauri_plugin_deep_link::register(SCHEME, move |request| {
                 let path: &str = extract_path_from_scheme_url(&request, SCHEME);
@@ -144,8 +143,10 @@ fn main() {
 }
 
 #[cfg(dev)]
-fn start_embedded_services() {
+fn start_embedded_services(app_handle: tauri::AppHandle) {
+    let args = get_sourcegraph_args(app_handle);
     println!("embedded Sourcegraph services disabled for local development");
+    println!("Sourcegraph would start with args: {:?}", args);
 }
 
 #[derive(Clone, serde::Serialize)]
@@ -160,8 +161,11 @@ static APP_SHELL_READY_PAYLOAD: RwLock<Option<AppShellReadyPayload>> = RwLock::n
 fn start_embedded_services(handle: &tauri::AppHandle) {
     let app = handle.clone();
     let sidecar = "sourcegraph-backend";
+    let args = get_sourcegraph_args(app_handle);
+    println!("Sourcegraph starting with args: {:?}", args);
     let (mut rx, _child) = Command::new_sidecar(sidecar)
         .expect(format!("failed to create `{sidecar}` binary command").as_str())
+        .args(args)
         .spawn()
         .expect(format!("failed to spawn {sidecar} sidecar").as_str());
 
@@ -189,4 +193,23 @@ fn start_embedded_services(handle: &tauri::AppHandle) {
             };
         }
     });
+}
+
+fn get_sourcegraph_args(app_handle: tauri::AppHandle) -> Vec<String> {
+    let data_dir = app_handle.path_resolver().app_data_dir();
+    let cache_dir = app_handle.path_resolver().app_cache_dir();
+    let mut args = Vec::new();
+
+    // cache_dir is where the cache goes
+    if let Some(cache_dir) = cache_dir {
+        args.push("--cacheDir".to_string());
+        args.push(cache_dir.to_string_lossy().to_string())
+    }
+
+    // configDir is where the database goes
+    if let Some(data_dir) = data_dir {
+        args.push("--configDir".to_string());
+        args.push(data_dir.to_string_lossy().to_string())
+    }
+    return args;
 }

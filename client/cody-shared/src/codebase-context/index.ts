@@ -56,7 +56,11 @@ export class CodebaseContext {
                 endpoint: this.config.serverEndpoint,
             }
         }
-        return { results: await this.getKeywordSearchResults(query, options), endpoint: this.config.serverEndpoint }
+        return {
+            results:
+                (await this.keywords?.getSearchContext(query, options.numCodeResults + options.numTextResults)) || [],
+            endpoint: this.config.serverEndpoint,
+        }
     }
 
     // We split the context into multiple messages instead of joining them into a single giant message.
@@ -119,7 +123,7 @@ export class CodebaseContext {
         if (!this.keywords) {
             return []
         }
-        return this.keywords.getSearchContext(query, options.numCodeResults + options.numTextResults)
+        return this.keywords.getContext(query, options.numCodeResults + options.numTextResults)
     }
 }
 

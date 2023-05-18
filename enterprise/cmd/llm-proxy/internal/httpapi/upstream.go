@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -22,7 +23,7 @@ type requestTransformer func(*http.Request)
 type requestMetadataRetriever[T any] func(T) (promptCharacterCount int, model string, additionalMetadata map[string]any)
 type responseParser[T any] func(T, io.Reader) (completionCharacterCount int)
 
-func makeUpstreamHandler[ReqT any](logger log.Logger, eventLogger events.Logger, upstreamAPIURL string, bodyTrans bodyTransformer[ReqT], rmr requestMetadataRetriever[ReqT], reqTrans requestTransformer, respParser responseParser[ReqT]) http.Handler {
+func makeUpstreamHandler[ReqT any](logger log.Logger, eventLogger events.Logger, upstreamAPIURL string, allowedModels []string, bodyTrans bodyTransformer[ReqT], rmr requestMetadataRetriever[ReqT], reqTrans requestTransformer, respParser responseParser[ReqT]) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		act := actor.FromContext(r.Context())
 
@@ -43,7 +44,8 @@ func makeUpstreamHandler[ReqT any](logger log.Logger, eventLogger events.Logger,
 			return
 		}
 
-		req, err := http.NewRequest(http.MethodPost, upstreamAPIURL, bytes.NewReader(upstreamPayload))
+		// Create a new request to send upstream, making sure we retain the same context.
+		req, err := http.NewRequestWithContext(r.Context(), http.MethodPost, upstreamAPIURL, bytes.NewReader(upstreamPayload))
 		if err != nil {
 			response.JSONError(logger, w, http.StatusInternalServerError, errors.Wrap(err, "failed to create request"))
 			return
@@ -52,15 +54,22 @@ func makeUpstreamHandler[ReqT any](logger log.Logger, eventLogger events.Logger,
 		// Run the request transformer.
 		reqTrans(req)
 
+		promptCharacterCount, model, am := rmr(body)
+
+		if !isAllowedModel(allowedModels, model) {
+			response.JSONError(logger, w, http.StatusBadRequest, errors.Newf("model %q is not allowed", model))
+			return
+		}
+
 		{
 			metadata := map[string]any{}
-			promptCharacterCount, model, am := rmr(body)
 			for k, v := range am {
 				metadata[k] = v
 			}
 			metadata["prompt_character_count"] = promptCharacterCount
 			metadata["model"] = model
 			err = eventLogger.LogEvent(
+				r.Context(),
 				events.Event{
 					Name:       llmproxy.EventNameCompletionsStarted,
 					Source:     act.Source.Name(),
@@ -80,6 +89,7 @@ func makeUpstreamHandler[ReqT any](logger log.Logger, eventLogger events.Logger,
 		)
 		defer func() {
 			err := eventLogger.LogEvent(
+				r.Context(),
 				events.Event{
 					Name:       llmproxy.EventNameCompletionsFinished,
 					Source:     act.Source.Name(),
@@ -123,6 +133,18 @@ func makeUpstreamHandler[ReqT any](logger log.Logger, eventLogger events.Logger,
 		if upstreamStatusCode >= 200 && upstreamStatusCode < 300 {
 			// Pass reader to response transformer to capture token counts.
 			completionCharacterCount = respParser(body, &responseBuf)
+
+		} else if upstreamStatusCode >= 500 {
+			logger.Error("error from upstream", log.String("url", upstreamAPIURL), log.Int("status_code", upstreamStatusCode))
 		}
 	})
+}
+
+func isAllowedModel(allowedModels []string, model string) bool {
+	for _, m := range allowedModels {
+		if strings.EqualFold(m, model) {
+			return true
+		}
+	}
+	return false
 }

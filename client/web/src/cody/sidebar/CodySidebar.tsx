@@ -45,8 +45,8 @@ export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose, titleContent 
         }
     }
 
-    const onReset = useCallback(() => {
-        reset()
+    const onReset = useCallback(async () => {
+        await reset()
         setShowHistory(false)
     }, [reset, setShowHistory])
 

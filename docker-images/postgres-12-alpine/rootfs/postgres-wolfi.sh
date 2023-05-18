@@ -21,6 +21,7 @@ if [ ! -s "$PGDATA/PG_VERSION" ]; then
 fi
 
 /conf.sh
+/patch-conf.sh
 
 if [ ! -s "${REINDEX_COMPLETED_FILE}" ]; then
   echo "[INFO] Re-creating all indexes for database '$POSTGRES_DB'"
