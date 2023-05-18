@@ -8,7 +8,7 @@ import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { Interaction } from '../transcript/interaction'
 
 import { computeDiff } from './concurrent-editing'
-import { Recipe, RecipeContext } from './recipe'
+import { Recipe, RecipeContext, RecipeID } from './recipe'
 import { updateRange } from './tracked-range'
 
 type TrackedDecoration = vscode.DecorationOptions
@@ -23,7 +23,7 @@ const DEBUG = true
 
 // TODO(dpc): This is similar to Cody: Fixup so if it works well, integrate them.
 export class NonStopCody implements Recipe {
-    public id = 'non-stop-cody'
+    public id: RecipeID = 'non-stop-cody'
     private tick = 0
     private decorations: Map<vscode.Uri, TrackedDecoration[]> = new Map()
     private comments: vscode.CommentController

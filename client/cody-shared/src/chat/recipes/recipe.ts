@@ -28,6 +28,7 @@ export type RecipeID =
     | 'inline-chat'
     | 'next-questions'
     | 'non-stop'
+    | 'non-stop-cody'
     | 'optimize-code'
     | 'release-notes'
     | 'translate-to-language'
