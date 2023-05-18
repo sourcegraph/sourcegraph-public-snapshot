@@ -31,7 +31,7 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
             return;
         }
         // print date/time and msg
-        System.out.println(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS").format(LocalDateTime.now()) + " Data received by callback: " + data);
+        // System.out.println(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS").format(LocalDateTime.now()) + " Data received by callback: " + data);
         if (!gotFirstMessage) {
             chat.addMessage(ChatMessage.createAssistantMessage(reformatBotMessage(data, prefix)));
             gotFirstMessage = true;
