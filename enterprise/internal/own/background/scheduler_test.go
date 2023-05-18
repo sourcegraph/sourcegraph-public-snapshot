@@ -21,6 +21,7 @@ func TestOwnRepoIndexSchedulerJob_JobsAutoIndex(t *testing.T) {
 	obsCtx := observation.TestContextTB(t)
 	logger := obsCtx.Logger
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
 
 	insertRepo(t, db, 500, "great-repo-1", true)
 	insertRepo(t, db, 501, "great-repo-2", true)
@@ -31,7 +32,7 @@ func TestOwnRepoIndexSchedulerJob_JobsAutoIndex(t *testing.T) {
 		store := basestore.NewWithHandle(db.Handle())
 		// Check that correct rows were added to own_background_jobs
 
-		count, _, err := basestore.ScanFirstInt(store.Query(context.Background(), sqlf.Sprintf("SELECT COUNT(*) FROM own_background_jobs WHERE job_type = (select id from own_signal_configurations where name = %s)", signaName)))
+		count, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf("SELECT COUNT(*) FROM own_background_jobs WHERE job_type = (select id from own_signal_configurations where name = %s)", signaName)))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -161,6 +162,9 @@ func insertRepo(t *testing.T, db database.DB, id int, name string, cloned bool) 
 
 func insertJob(t *testing.T, db database.DB, repoId int, config database.SignalConfiguration, state string, finishedAt time.Time) {
 	q := sqlf.Sprintf("insert into own_background_jobs (repo_id, job_type, state, finished_at) values (%s, %s, %s, %s);", repoId, config.ID, state, finishedAt)
+	if finishedAt.IsZero() {
+		q = sqlf.Sprintf("insert into own_background_jobs (repo_id, job_type, state) values (%s, %s, %s);", repoId, config.ID, state)
+	}
 	if _, err := db.ExecContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 		t.Fatal(err)
 	}

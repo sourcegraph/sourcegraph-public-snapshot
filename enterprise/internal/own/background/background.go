@@ -125,11 +125,11 @@ func NewOwnBackgroundWorker(ctx context.Context, db database.DB, observationCtx 
 	return []goroutine.BackgroundRoutine{worker, resetter, janitor}
 }
 
-func makeWorker(ctx context.Context, db database.DB, observationCtx *observation.Context) (*workerutil.Worker[*Job], *dbworker.Resetter[*Job], dbworkerstore.Store[*Job]) {
-	name := "own_background_worker"
+const workerName = "own_background_worker"
 
-	workerStore := dbworkerstore.New(observationCtx, db.Handle(), dbworkerstore.Options[*Job]{
-		Name:              fmt.Sprintf("%s_store", name),
+func makeWorkerStore(db database.DB, observationCtx *observation.Context) dbworkerstore.Store[*Job] {
+	return dbworkerstore.New(observationCtx, db.Handle(), dbworkerstore.Options[*Job]{
+		Name:              fmt.Sprintf("%s_store", workerName),
 		TableName:         tableName,
 		ViewName:          viewName,
 		ColumnExpressions: jobColumns,
@@ -140,6 +140,11 @@ func makeWorker(ctx context.Context, db database.DB, observationCtx *observation
 		RetryAfter:        time.Second * 30,
 		MaxNumRetries:     3,
 	})
+
+}
+
+func makeWorker(ctx context.Context, db database.DB, observationCtx *observation.Context) (*workerutil.Worker[*Job], *dbworker.Resetter[*Job], dbworkerstore.Store[*Job]) {
+	workerStore := makeWorkerStore(db, observationCtx)
 
 	limiter := getRateLimiter()
 	conf.Watch(func() {
@@ -153,18 +158,18 @@ func makeWorker(ctx context.Context, db database.DB, observationCtx *observation
 	}
 
 	worker := dbworker.NewWorker(ctx, workerStore, workerutil.Handler[*Job](&task), workerutil.WorkerOptions{
-		Name:              name,
+		Name:              workerName,
 		Description:       "Sourcegraph own background processing partitioned by repository",
 		NumHandlers:       getConcurrencyConfig(),
 		Interval:          10 * time.Second,
 		HeartbeatInterval: 20 * time.Second,
-		Metrics:           workerutil.NewMetrics(observationCtx, name+"_processor"),
+		Metrics:           workerutil.NewMetrics(observationCtx, workerName+"_processor"),
 	})
 
 	resetter := dbworker.NewResetter(log.Scoped("OwnBackgroundResetter", ""), workerStore, dbworker.ResetterOptions{
-		Name:     fmt.Sprintf("%s_resetter", name),
+		Name:     fmt.Sprintf("%s_resetter", workerName),
 		Interval: time.Second * 20,
-		Metrics:  dbworker.NewResetterMetrics(observationCtx, name),
+		Metrics:  dbworker.NewResetterMetrics(observationCtx, workerName),
 	})
 
 	return worker, resetter, workerStore
@@ -196,10 +201,15 @@ func (h *handler) Handle(ctx context.Context, lgr log.Logger, record *Job) error
 
 type signalIndexFunc func(ctx context.Context, lgr log.Logger, repoId api.RepoID, db database.DB) error
 
+// janitorQuery is split into 2 parts. The first half is records that are finished (either completed or failed), the second half is records for jobs that are not enabled.
+func janitorQuery(deleteSince time.Time) *sqlf.Query {
+	return sqlf.Sprintf("DELETE FROM %s WHERE (state NOT IN ('queued', 'processing', 'errored') AND finished_at < %s) OR (id NOT IN (select id from %s))", sqlf.Sprintf(tableName), deleteSince, sqlf.Sprintf(viewName))
+}
+
 func janitorFunc(db database.DB, retention time.Duration) func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, err error) {
 	return func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, err error) {
 		ts := time.Now().Add(-1 * retention)
-		result, err := basestore.NewWithHandle(db.Handle()).ExecResult(ctx, sqlf.Sprintf("DELETE FROM %s WHERE (state NOT IN ('queued', 'processing', 'errored') AND finished_at < %s) OR (id NOT IN (select id from %s))", sqlf.Sprintf(tableName), ts, sqlf.Sprintf(viewName)))
+		result, err := basestore.NewWithHandle(db.Handle()).ExecResult(ctx, janitorQuery(ts))
 		if err != nil {
 			return 0, 0, err
 		}
