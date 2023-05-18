@@ -1,6 +1,13 @@
 import { listen, Event } from '@tauri-apps/api/event'
 import { invoke } from '@tauri-apps/api/tauri'
 
+// Sourcegraph desktop app entrypoint. There are two:
+//
+// * app-shell.tsx: before the Go backend has started, this is served. If the Go backend crashes,
+//   then the Tauri Rust application can bring the user back here to present debugging/error handling
+//   options.
+// * app-main.tsx: served by the Go backend, renders the Sourcegraph web UI that you see everywhere else.
+
 function addRedirectParamToSignInUrl(url: string, returnTo: string) {
     const urlObject = new URL(url)
     urlObject.searchParams.append('redirect', returnTo)
@@ -20,27 +27,20 @@ async function launchWithSignInUrl(url: string) {
     window.location.href = url
 }
 
-// Sourcegraph desktop app entrypoint. There are two:
-//
-// * app-shell.tsx: before the Go backend has started, this is served. If the Go backend crashes,
-//   then the Tauri Rust application can bring the user back here to present debugging/error handling
-//   options.
-// * app-main.tsx: served by the Go backend, renders the Sourcegraph web UI that you see everywhere else.
-
-interface TauriLog {
-    level: number
-    message: string
+interface AppShellReadyPayload {
+    sign_in_url: string,
 }
 
-// TODO(burmudar): use logging service to log that this has been loaded
-const outputHandler = (event: Event<TauriLog>): void => {
-    if (event.payload.message.includes('tauri:sign-in-url: ')) {
-        const url = event.payload.message.split('tauri:sign-in-url: ')[1]
-        launchWithSignInUrl(url)
-    }
+const appShellReady = (payload: AppShellReadyPayload): void => {
+    if (!payload) return;
+    console.log('app-shell-ready', payload);
+    launchWithSignInUrl(payload.sign_in_url)
 }
 
-// Note we currently ignore the unlisten cb returned from listen
-listen('log://log', outputHandler)
-    .then(() => console.log('registered stdout handler'))
-    .catch(error => console.error(`failed to register stdout handler: ${error}`))
+listen('app-shell-ready', (event: Event<AppShellReadyPayload>) => appShellReady(event.payload))
+    .then(() => console.log('registered app-shell-ready handler'))
+    .catch(error => console.error(`failed to register app-shell-ready handler: ${error}`))
+
+await invoke('app_shell_loaded')
+    .then((payload) => appShellReady(payload as AppShellReadyPayload))
+    .catch(error => console.error('failed to inform Tauri app_shell_loaded'))

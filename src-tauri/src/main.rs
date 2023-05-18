@@ -29,6 +29,11 @@ fn get_launch_path(window: tauri::Window) -> String {
 }
 
 #[tauri::command]
+fn app_shell_loaded() -> Option<AppShellReadyPayload> {
+    return APP_SHELL_READY_PAYLOAD.read().unwrap().clone();
+}
+
+#[tauri::command]
 fn hide_window(_app: tauri::AppHandle, window: tauri::Window) {
     window.hide().unwrap();
 }
@@ -95,9 +100,8 @@ fn main() {
         )
         .plugin(tauri_plugin_positioner::init())
         .setup(|app| {
-            start_embedded_services();
-
             let handle = app.handle();
+            start_embedded_services(&handle);
 
             // Register handler for sourcegraph:// scheme urls.
             tauri_plugin_deep_link::register(SCHEME, move |request| {
@@ -139,7 +143,11 @@ fn main() {
         // its name which may suggest that it invokes something, actually only
         // *defines* an invoke() handler and does not invoke anything during
         // setup here.)
-        .invoke_handler(tauri::generate_handler![get_launch_path, hide_window,])
+        .invoke_handler(tauri::generate_handler![
+            get_launch_path,
+            hide_window,
+            app_shell_loaded,
+        ])
         .run(context)
         .expect("error while running tauri application");
 }
@@ -149,8 +157,17 @@ fn start_embedded_services() {
     println!("embedded Sourcegraph services disabled for local development");
 }
 
+#[derive(Clone, serde::Serialize)]
+struct AppShellReadyPayload {
+    sign_in_url: String,
+}
+
+// The URL to open the frontend on, if launched with a scheme url.
+static APP_SHELL_READY_PAYLOAD: RwLock<Option<AppShellReadyPayload>> = RwLock::new(None);
+
 #[cfg(not(dev))]
-fn start_embedded_services() {
+fn start_embedded_services(handle: &tauri::AppHandle) {
+    let app = handle.clone();
     let sidecar = "sourcegraph-backend";
     let (mut rx, _child) = Command::new_sidecar(sidecar)
         .expect(format!("failed to create `{sidecar}` binary command").as_str())
@@ -161,7 +178,22 @@ fn start_embedded_services() {
         while let Some(event) = rx.recv().await {
             match event {
                 CommandEvent::Stdout(line) => log::info!("{}", line),
-                CommandEvent::Stderr(line) => log::error!("{}", line),
+                CommandEvent::Stderr(line) => {
+                    if line.contains("tauri:sign-in-url: ") {
+                        let url = line.splitn(2, ' ').last().unwrap();
+                        *APP_SHELL_READY_PAYLOAD.write().unwrap() = Some(AppShellReadyPayload {
+                            sign_in_url: url.to_string(),
+                        });
+                        app.get_window("main")
+                            .unwrap()
+                            .emit(
+                                "app-shell-ready",
+                                APP_SHELL_READY_PAYLOAD.read().unwrap().clone(),
+                            )
+                            .unwrap();
+                    }
+                    log::error!("{}", line);
+                }
                 _ => continue,
             };
         }
