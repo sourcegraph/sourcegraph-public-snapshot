@@ -16,7 +16,7 @@ public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
 
     @Override
     public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-        CodyToolWindowContent toolWindowContent = new CodyToolWindowContent(project, toolWindow);
+        CodyToolWindowContent toolWindowContent = new CodyToolWindowContent(project);
         Content content = ContentFactory.SERVICE.getInstance().createContent(toolWindowContent.getContentPanel(), "", false);
         toolWindow.getContentManager().addContent(content);
     }
