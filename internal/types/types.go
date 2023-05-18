@@ -90,6 +90,7 @@ type RepoCommit struct {
 	RepoID               api.RepoID
 	CommitSHA            dbutil.CommitBytea
 	PerforceChangelistID int64
+	CreatedAt            time.Time
 }
 
 // SearchedRepo is a collection of metadata about repos that is used to decorate search results
