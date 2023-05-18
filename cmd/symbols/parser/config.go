@@ -5,28 +5,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
 )
 
-type parserConfiguration struct {
-	Default ParserType
-	Engine  map[string]ParserType
-}
-
-var supportLanguages = map[string]struct{}{
-	"rust": {},
-}
-
-var baseParserConfig = parserConfiguration{
-	Engine: map[string]ParserType{
-		// TODO: put our other languages here
-		// TODO: also list the languages we support
-		"rust": ScipCtags,
-	},
-}
-
-var parserConfig = parserConfiguration{
-	Default: UniversalCtags,
-	Engine:  map[string]ParserType{},
+var parserConfig = ctags_config.ParserConfiguration{
+	Default: ctags_config.UniversalCtags,
+	Engine:  map[string]ctags_config.ParserType{},
 }
 
 func init() {
@@ -38,7 +22,7 @@ func init() {
 		}
 
 		for _, engine := range configuration.Symbols.Engine {
-			if _, err := paserNameToParserType(engine); err != nil {
+			if _, err := ctags_config.ParserNameToParserType(engine); err != nil {
 				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid Symbols.Engine: `%s`.", engine)))
 			}
 		}
@@ -56,13 +40,13 @@ func init() {
 			}
 
 			// Set the defaults
-			parserConfig.Engine = make(map[string]ParserType)
-			for lang, engine := range baseParserConfig.Engine {
+			parserConfig.Engine = make(map[string]ctags_config.ParserType)
+			for lang, engine := range ctags_config.BaseParserConfig.Engine {
 				parserConfig.Engine[lang] = engine
 			}
 
 			for lang, engine := range configuration.Symbols.Engine {
-				if engine, err := paserNameToParserType(engine); err != nil {
+				if engine, err := ctags_config.ParserNameToParserType(engine); err != nil {
 					parserConfig.Engine[lang] = engine
 				}
 			}
@@ -70,7 +54,7 @@ func init() {
 	}()
 }
 
-func GetParserType(language string) ParserType {
+func GetParserType(language string) ctags_config.ParserType {
 	parserType, ok := parserConfig.Engine[language]
 	if !ok {
 		return parserConfig.Default

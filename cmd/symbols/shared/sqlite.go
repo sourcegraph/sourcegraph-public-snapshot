@@ -19,6 +19,7 @@ import (
 	symbolparser "github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -54,7 +55,7 @@ func SetupSqlite(observationCtx *observation.Context, db database.DB, gitserverC
 		return searchFunc, nil, []goroutine.BackgroundRoutine{}, "", nil
 	}
 
-	parserFactory := func(source symbolparser.ParserType) (ctags.Parser, error) {
+	parserFactory := func(source ctags_config.ParserType) (ctags.Parser, error) {
 		return symbolparser.SpawnCtags(logger, config.Ctags, source)
 	}
 	parserPool, err := symbolparser.NewParserPool(parserFactory, config.NumCtagsProcesses)

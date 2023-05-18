@@ -9,6 +9,7 @@ import (
 	proto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -197,23 +198,20 @@ func getIndexOptions(
 	}
 	languageMap := make([]*proto.LanguageMapping, languageMapLen)
 
-	languageMap = append(languageMap, &proto.LanguageMapping{Language: "zig", Ctags: proto.CTagsParserType_SCIP})
-	languageMap = append(languageMap, &proto.LanguageMapping{Language: "Zig", Ctags: proto.CTagsParserType_SCIP})
+	realEngine := ctags_config.BaseParserConfig.Engine
+	// realEngine := make(map[string]string)
+	for k, v := range c.SyntaxHighlighting.Symbols.Engine {
+		parser, err := ctags_config.ParserNameToParserType(v)
+		if err == nil {
+			realEngine[k] = parser
+		} else {
+			continue
+		}
+	}
 
 	if languageMapLen > 0 {
-		for language, engine := range c.SyntaxHighlighting.Symbols.Engine {
-			var ctags proto.CTagsParserType
-			switch engine {
-			case "off":
-				ctags = proto.CTagsParserType_NONE
-			case "universal-ctags":
-				ctags = proto.CTagsParserType_UNIVERSAL
-			case "scip-ctags":
-				ctags = proto.CTagsParserType_SCIP
-			default:
-				ctags = proto.CTagsParserType_UNKNOWN
-			}
-			languageMap = append(languageMap, &proto.LanguageMapping{Language: language, Ctags: ctags})
+		for language, engine := range realEngine {
+			languageMap = append(languageMap, &proto.LanguageMapping{Language: language, Ctags: proto.CTagsParserType(engine)})
 		}
 	}
 

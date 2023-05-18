@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/rockskip"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -127,7 +128,7 @@ func setupRockskip(observationCtx *observation.Context, config rockskipConfig, g
 
 	codeintelDB := mustInitializeCodeIntelDB(observationCtx)
 	createParser := func() (ctags.Parser, error) {
-		return symbolsParser.SpawnCtags(log.Scoped("parser", "ctags parser"), config.Ctags, symbolsParser.UniversalCtags)
+		return symbolsParser.SpawnCtags(log.Scoped("parser", "ctags parser"), config.Ctags, ctags_config.UniversalCtags)
 	}
 	server, err := rockskip.NewService(codeintelDB, gitserverClient, repositoryFetcher, createParser, config.MaxConcurrentlyIndexing, config.MaxRepos, config.LogQueries, config.IndexRequestsQueueSize, config.SymbolsCacheSize, config.PathSymbolsCacheSize, config.SearchLastIndexedCommit)
 	if err != nil {

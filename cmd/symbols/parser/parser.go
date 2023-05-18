@@ -16,6 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
+	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -149,7 +150,7 @@ func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- S
 	}
 
 	source := GetParserType(language)
-	if source == NoCtags || source == UnknownCtags {
+	if source == ctags_config.NoCtags || source == ctags_config.UnknownCtags {
 		return nil
 	}
 
@@ -231,8 +232,8 @@ func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- S
 	return nil
 }
 
-func (p *parser) parserFromPool(ctx context.Context, source ParserType) (ctags.Parser, error) {
-	if source == NoCtags || source == UnknownCtags {
+func (p *parser) parserFromPool(ctx context.Context, source ctags_config.ParserType) (ctags.Parser, error) {
+	if source == ctags_config.NoCtags || source == ctags_config.UnknownCtags {
 		return nil, errors.New("Should not pass NoCtags to this function")
 	}
 
@@ -266,11 +267,11 @@ func shouldPersistEntry(e *ctags.Entry) bool {
 	return true
 }
 
-func SpawnCtags(logger log.Logger, ctagsConfig types.CtagsConfig, source ParserType) (ctags.Parser, error) {
+func SpawnCtags(logger log.Logger, ctagsConfig types.CtagsConfig, source ctags_config.ParserType) (ctags.Parser, error) {
 	logger = logger.Scoped("ctags", "ctags processes")
 
 	var options ctags.Options
-	if source == UniversalCtags {
+	if source == ctags_config.UniversalCtags {
 		options = ctags.Options{
 			Bin:                ctagsConfig.UniversalCommand,
 			PatternLengthLimit: ctagsConfig.PatternLengthLimit,
