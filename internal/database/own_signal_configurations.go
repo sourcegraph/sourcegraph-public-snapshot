@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -75,10 +74,6 @@ func (s *signalConfigurationStore) LoadConfigurations(ctx context.Context, args 
 		}
 		return temp, nil
 	})
-
-	qq := sqlf.Sprintf(q, where)
-	fmt.Println(qq.Query(sqlf.PostgresBindVar))
-	fmt.Println(qq.Args())
 
 	return multiScan(s.Query(ctx, sqlf.Sprintf(q, where)))
 }

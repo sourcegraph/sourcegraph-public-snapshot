@@ -125,11 +125,6 @@ func (o *ownRepoIndexSchedulerJob) Handle(ctx context.Context) error {
 	// convert duration to hours to match the query
 	after := o.clock.Now().Add(-1 * o.jobType.IndexInterval)
 
-	// config, err := loadConfig(ctx, o.jobType, o.configStore)
-	// if err != nil {
-	// 	return errors.Wrap(err, "loadConfig")
-	// }
-
 	query := sqlf.Sprintf(ownIndexRepoQuery, o.jobType.Name, after)
 	val, err := o.store.ExecResult(ctx, query)
 	if err != nil {
