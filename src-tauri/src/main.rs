@@ -95,8 +95,8 @@ fn main() {
         )
         .plugin(tauri_plugin_positioner::init())
         .setup(|app| {
-            start_embedded_services(app.handle());
             let handle = app.handle();
+            start_embedded_services(&handle);
             // Register handler for sourcegraph:// scheme urls.
             tauri_plugin_deep_link::register(SCHEME, move |request| {
                 let path: &str = extract_path_from_scheme_url(&request, SCHEME);
@@ -161,7 +161,7 @@ static APP_SHELL_READY_PAYLOAD: RwLock<Option<AppShellReadyPayload>> = RwLock::n
 fn start_embedded_services(handle: &tauri::AppHandle) {
     let app = handle.clone();
     let sidecar = "sourcegraph-backend";
-    let args = get_sourcegraph_args(app_handle);
+    let args = get_sourcegraph_args(&app);
     println!("Sourcegraph starting with args: {:?}", args);
     let (mut rx, _child) = Command::new_sidecar(sidecar)
         .expect(format!("failed to create `{sidecar}` binary command").as_str())
@@ -195,7 +195,7 @@ fn start_embedded_services(handle: &tauri::AppHandle) {
     });
 }
 
-fn get_sourcegraph_args(app_handle: tauri::AppHandle) -> Vec<String> {
+fn get_sourcegraph_args(app_handle: &tauri::AppHandle) -> Vec<String> {
     let data_dir = app_handle.path_resolver().app_data_dir();
     let cache_dir = app_handle.path_resolver().app_cache_dir();
     let mut args = Vec::new();
