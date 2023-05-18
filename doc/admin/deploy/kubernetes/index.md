@@ -11,6 +11,8 @@ Deploying on Kubernetes is for organizations that need highly scalable and avail
 
 Below is an overview of installing Sourcegraph on Kubernetes using Kustomize.
 
+>NOTE: For deploying using Kubernetes with Helm, follow the [documentation here](./helm.md).
+
 ### Prerequisites
 
 * [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) (v1.19 or later) with [Kustomize](https://kustomize.io/) (built into [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) in version >= 1.14)
