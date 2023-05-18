@@ -199,10 +199,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 !disableFeedbackSurvey &&
                 !isCodyStandalonePage && <SurveyToast authenticatedUser={props.authenticatedUser} />}
             {props.isSourcegraphDotCom && props.authenticatedUser && (
-                <CodySurveyToast
-                    authenticatedUser={props.authenticatedUser}
-                    isSourcegraphDotCom={props.isSourcegraphDotCom}
-                />
+                <CodySurveyToast authenticatedUser={props.authenticatedUser} />
             )}
             {!isSiteInit && !isSignInOrUp && !isCodyStandalonePage && (
                 <GlobalNavbar

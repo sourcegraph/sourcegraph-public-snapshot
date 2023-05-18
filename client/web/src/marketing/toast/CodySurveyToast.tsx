@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 
 import { mdiEmail } from '@mdi/js'
 
@@ -9,6 +9,7 @@ import { Checkbox, Form, H3, Modal, Text, Button, Icon, useLocalStorage } from '
 
 import { AuthenticatedUser } from '../../auth'
 import { CodyPageIcon } from '../../cody/chat/CodyPageIcon'
+import { useIsCodyEnabled } from '../../cody/useIsCodyEnabled'
 import { LoaderButton } from '../../components/LoaderButton'
 import { SubmitCodySurveyResult, SubmitCodySurveyVariables } from '../../graphql-operations'
 import { resendVerificationEmail } from '../../user/settings/emails/UserEmail'
@@ -157,7 +158,16 @@ export const useCodySurveyToast = (): {
     // eslint-disable-next-line no-restricted-syntax
     const [shouldShowCodySurvey, setShouldShowCodySurvey] = useLocalStorage('cody.survey.show', false)
     const [hasSubmitted, setHasSubmitted] = useTemporarySetting('cody.survey.submitted', false)
-    const dismiss = useCallback(() => setHasSubmitted(true), [setHasSubmitted])
+    const dismiss = useCallback(() => {
+        setHasSubmitted(true)
+        setShouldShowCodySurvey(false)
+    }, [setHasSubmitted, setShouldShowCodySurvey])
+
+    useEffect(() => {
+        if (shouldShowCodySurvey && hasSubmitted) {
+            setShouldShowCodySurvey(false)
+        }
+    }, [shouldShowCodySurvey, hasSubmitted, setShouldShowCodySurvey])
 
     return {
         // we calculate "show" value based whether this a new signup and whether they already have submitted survey
@@ -169,12 +179,10 @@ export const useCodySurveyToast = (): {
 
 export const CodySurveyToast: React.FC<{
     authenticatedUser?: AuthenticatedUser
-    isSourcegraphDotCom?: boolean
-}> = ({ authenticatedUser, isSourcegraphDotCom = false }) => {
+}> = ({ authenticatedUser }) => {
     const { show, dismiss } = useCodySurveyToast()
-    const [showVerifyEmail, setShowVerifyEmail] = useState(
-        show && isSourcegraphDotCom && authenticatedUser && !authenticatedUser.hasVerifiedEmail
-    )
+    const codyEnabled = useIsCodyEnabled()
+    const [showVerifyEmail, setShowVerifyEmail] = useState(show && codyEnabled.needsEmailVerification)
     const dismissVerifyEmail = useCallback(() => setShowVerifyEmail(false), [setShowVerifyEmail])
 
     if (!show) {

@@ -5,9 +5,20 @@ const notEnabled = {
     sidebar: false,
     search: false,
     editorRecipes: false,
+    any: false,
+    needsEmailVerification: false,
 }
 
-export const useIsCodyEnabled = (): { chat: boolean; sidebar: boolean; search: boolean; editorRecipes: boolean } => {
+interface IsCodyEnabled {
+    chat: boolean
+    sidebar: boolean
+    search: boolean
+    editorRecipes: boolean
+    any: boolean
+    needsEmailVerification: boolean
+}
+
+export const useIsCodyEnabled = (): IsCodyEnabled => {
     const [chatEnabled] = useFeatureFlag('cody-web-chat')
     const [searchEnabled] = useFeatureFlag('cody-web-search')
     const [sidebarEnabled] = useFeatureFlag('cody-web-sidebar')
@@ -18,18 +29,12 @@ export const useIsCodyEnabled = (): { chat: boolean; sidebar: boolean; search: b
         return notEnabled
     }
 
-    if (
-        window.context?.sourcegraphDotComMode &&
-        !window.context?.currentUser?.siteAdmin &&
-        !window.context?.currentUser?.hasVerifiedEmail
-    ) {
-        return notEnabled
-    }
-
     return {
         chat: chatEnabled || allEnabled,
         sidebar: sidebarEnabled || allEnabled,
         search: searchEnabled || allEnabled,
         editorRecipes: (editorRecipesEnabled && sidebarEnabled) || allEnabled,
+        any: chatEnabled || sidebarEnabled || searchEnabled || editorRecipesEnabled || allEnabled,
+        needsEmailVerification: window.context?.sourcegraphDotComMode && !window.context?.currentUser?.hasVerifiedEmail,
     }
 }

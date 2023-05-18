@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
@@ -47,16 +47,6 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
         fetchPolicy: 'cache-and-network',
     })
     const siteFlagsValue = data?.site
-
-    const verifyEmailProps = useMemo(() => {
-        if (!authenticatedUser || !isSourcegraphDotCom) {
-            return
-        }
-        return {
-            emails: authenticatedUser.emails.filter(({ verified }) => !verified).map(({ email }) => email),
-            settingsURL: authenticatedUser.settingsURL as string,
-        }
-    }, [authenticatedUser, isSourcegraphDotCom])
 
     return (
         <div className={classNames('test-global-alert', styles.globalAlerts)}>
@@ -118,8 +108,8 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
                 </DismissibleAlert>
             )}
             <Notices alertClassName={styles.alert} location="top" />
-            {!!verifyEmailProps?.emails.length && (
-                <VerifyEmailNotices alertClassName={styles.alert} {...verifyEmailProps} />
+            {isSourcegraphDotCom && (
+                <VerifyEmailNotices authenticatedUser={authenticatedUser} alertClassName={styles.alert} />
             )}
         </div>
     )
