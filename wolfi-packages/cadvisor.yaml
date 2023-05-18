@@ -3,7 +3,7 @@
 package:
   name: cadvisor
    # libpfm version may also need updating - check cadvisor Dockerfile
-  version: 0.47.0
+  version: 0.47.1
   epoch: 1
   description: "Analyzes resource usage and performance characteristics of running containers"
   target-architecture:
