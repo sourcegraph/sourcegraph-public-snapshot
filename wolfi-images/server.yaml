@@ -40,6 +40,8 @@ contents:
     - pcre
     - postgresql-12
     - postgresql-12-contrib
+    - prometheus
+    - prometheus-alertmanager
     - prometheus-postgres-exporter=0.12.0-r1 # IMPORTANT: Pinned version for managed updates
     - python3 # TODO: Missing python2; required?
     - redis # TODO: 7.0.10; test upgrade from 5.0
@@ -51,15 +53,14 @@ contents:
     #- libc6-compat - musl-glibc compat library, I think not needed
 
     - comby@sourcegraph
-    - ctags@sourcegraph
     - coursier@sourcegraph
-    - p4cli@sourcegraph
+    - ctags@sourcegraph
     - p4-fusion@sourcegraph
-    - grafana@chainguard
-    - prometheus
-    - prometheus-alertmanager
-    - syntect-server@sourcegraph
+    - p4cli@sourcegraph
     - s3proxy@sourcegraph
+    - syntect-server@sourcegraph
+
+    - grafana@chainguard
 
 accounts:
   groups:
