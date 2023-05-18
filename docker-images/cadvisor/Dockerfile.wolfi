@@ -2,7 +2,7 @@
 
 # NOTE: Check the README before updating
 # hadolint ignore=DL3007
-FROM us.gcr.io/sourcegraph-dev/wolfi-sourcegraph-base:latest
+FROM us.gcr.io/sourcegraph-dev/wolfi-cadvisor-base:latest
 LABEL com.sourcegraph.cadvisor.version=v0.47.0
 
 ARG COMMIT_SHA="unknown"
@@ -28,4 +28,6 @@ ENTRYPOINT ["/usr/bin/cadvisor", "-logtostderr", \
     "-housekeeping_interval=10s", \
     "-max_housekeeping_interval=15s", \
     "-event_storage_event_limit=default=0", \
-    "-event_storage_age_limit=default=0"]
+    "-v=3", \
+    "-event_storage_age_limit=default=0", \
+    "-containerd=/var/run/containerd/containerd.sock"]

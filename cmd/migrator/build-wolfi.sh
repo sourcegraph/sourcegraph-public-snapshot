@@ -11,18 +11,6 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Environment for building linux binaries
-export GO111MODULE=on
-export GOARCH=amd64
-export GOOS=linux
-export CGO_ENABLED=0
-
-echo "--- go build"
-pkg=${1:-"github.com/sourcegraph/sourcegraph/cmd/migrator"}
-output="$OUTPUT/$(basename "$pkg")"
-# shellcheck disable=SC2153
-go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$output" "$pkg"
-
 echo "--- compile schema descriptions"
 mkdir -p "${OUTPUT}/schema-descriptions"
 
@@ -80,8 +68,8 @@ git_versions=(
   v4.3.0 v4.3.1
   v4.4.0 v4.4.1 v4.4.2
   v4.5.0 v4.5.1
-  v5.0.0
-)
+  v5.0.0 v5.0.1 v5.0.2 v5.0.3)
+
 for version in "${git_versions[@]}"; do
   echo "Persisting schemas for ${version} from Git..."
   git show "${version}:internal/database/schema.json" >"${OUTPUT}/schema-descriptions/${version}-internal_database_schema.json"
@@ -94,13 +82,25 @@ if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
   out=$(./dev/ci/bazel.sh cquery //cmd/migrator --output=files)
   cp "$out" "$OUTPUT"
 
-  docker build -f cmd/migrator/Dockerfile -t "$IMAGE" "$OUTPUT" \
+  docker build -f cmd/migrator/Dockerfile.wolfi -t "$IMAGE" "$OUTPUT" \
     --progress=plain \
     --build-arg COMMIT_SHA \
     --build-arg DATE \
     --build-arg VERSION
   exit $?
 fi
+
+# Environment for building linux binaries
+export GO111MODULE=on
+export GOARCH=amd64
+export GOOS=linux
+export CGO_ENABLED=0
+
+echo "--- go build"
+pkg=${1:-"github.com/sourcegraph/sourcegraph/cmd/migrator"}
+output="$OUTPUT/$(basename "$pkg")"
+# shellcheck disable=SC2153
+go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$output" "$pkg"
 
 echo "--- docker build"
 docker build -f cmd/migrator/Dockerfile.wolfi -t "$IMAGE" "$OUTPUT" \

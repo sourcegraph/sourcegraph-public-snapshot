@@ -30,4 +30,5 @@ COPY --from=zoekt_upstream /usr/local/bin/zoekt-webserver /usr/local/bin/
 ENV GOGC=25
 
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["zoekt-webserver", "-index $DATA_DIR", "-pprof", "-rpc", "-indexserver_proxy"]
+# hadolint ignore=DL3025
+CMD zoekt-webserver -index $DATA_DIR -pprof -rpc -indexserver_proxy

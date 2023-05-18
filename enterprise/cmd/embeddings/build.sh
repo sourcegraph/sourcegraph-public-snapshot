@@ -38,4 +38,3 @@ docker build -f enterprise/cmd/embeddings/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
   --build-arg VERSION
-∏

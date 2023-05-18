@@ -3,7 +3,7 @@
 package:
   name: p4-fusion
   version: 1.12
-  epoch: 0
+  epoch: 1
   description: "A fast Perforce to Git conversion tool"
   target-architecture:
     - x86_64
@@ -56,7 +56,7 @@ pipeline:
   - uses: fetch
     with:
       uri: https://www.perforce.com/downloads/perforce/r22.1/bin.linux26x86_64/p4api.tgz
-      expected-sha256: 82db09791758516ba2561d75c744f190a9562c8be26dc2cb96aea537e2a451d3
+      expected-sha256: bca0ad96aac36a4d855aa49c278da7851d1b846e0cc82608c6f2f3a4d8af8ef3
       extract: false
   - runs: |
       mkdir -p p4-fusion-src/vendor/helix-core-api/linux

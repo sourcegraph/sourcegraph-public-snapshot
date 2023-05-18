@@ -49,4 +49,5 @@ tar zcf APKINDEX.tar.gz APKINDEX DESCRIPTION
 melange sign-index --signing-key "$key_path/melange.rsa" APKINDEX.tar.gz
 
 # Upload signed APKINDEX archive
-gsutil -u "$GCP_PROJECT" cp APKINDEX.tar.gz "gs://$GCS_BUCKET/packages/$branch/$TARGET_ARCH/"
+# Use no-cache to avoid index/packages getting out of sync
+gsutil -u "$GCP_PROJECT" -h "Cache-Control:no-cache" cp APKINDEX.tar.gz "gs://$GCS_BUCKET/packages/$branch/$TARGET_ARCH/"
