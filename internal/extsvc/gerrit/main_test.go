@@ -1,7 +1,6 @@
 package gerrit
 
 import (
-	"context"
 	"flag"
 	"net/http"
 	"net/url"
@@ -13,37 +12,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
-
-var update = flag.Bool("update", false, "update testdata")
-
-func TestClient_ListProjects(t *testing.T) {
-	cli, save := NewTestClient(t, "ListProjects", *update)
-	defer save()
-
-	ctx := context.Background()
-
-	args := ListProjectsArgs{
-		Cursor: &Pagination{PerPage: 5, Page: 1},
-	}
-
-	resp, _, err := cli.ListProjects(ctx, args)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	testutil.AssertGolden(t, "testdata/golden/ListProjects.json", *update, resp)
-}
 
 func TestMain(m *testing.M) {
 	flag.Parse()
 	os.Exit(m.Run())
 }
 
+var update = flag.Bool("update", false, "update testdata")
+
 // NewTestClient returns a gerrit.Client that records its interactions
 // to testdata/vcr/.
-func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
+func NewTestClient(t testing.TB, name string, update bool) (Client, func()) {
 	t.Helper()
 
 	cassete := filepath.Join("testdata/vcr/", normalize(name))
@@ -57,14 +37,16 @@ func NewTestClient(t testing.TB, name string, update bool) (*Client, func()) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	hc = httpcli.GerritUnauthenticateMiddleware(hc)
 
-	u, err := url.Parse("https://gerrit-review.googlesource.com")
+	u, err := url.Parse("https://gerrit.sgdev.org")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cli, err := NewClient("urn", u, &AccountCredentials{}, hc)
+	cli, err := NewClient("urn", u, &AccountCredentials{
+		Username: os.Getenv("GERRIT_USERNAME"),
+		Password: os.Getenv("GERRIT_PASSWORD"),
+	}, hc)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -18,4 +18,4 @@ WORKDIR /otel-collector
 # Set up bundled configuration - see README
 COPY ./configs /etc/otel-collector/configs
 
-ENTRYPOINT [ "/usr/bin/otelcol-sourcegraph" ]
+ENTRYPOINT [ "/bin/otelcol-sourcegraph" ]
