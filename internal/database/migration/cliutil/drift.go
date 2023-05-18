@@ -161,7 +161,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 
 				autofixErr = store.RunDDLStatements(ctx, allStatements)
 				if autofixErr != nil {
-					out.WriteLine(output.Linef(output.EmojiFailure, output.StyleFailure, "Failed to apply autofix: %s", err))
+					out.WriteLine(output.Linef(output.EmojiFailure, output.StyleFailure, "Failed to apply autofix: %s", autofixErr))
 				} else {
 					out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Successfully applied autofix"))
 					out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "Re-checking drift"))
