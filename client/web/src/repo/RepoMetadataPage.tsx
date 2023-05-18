@@ -1,7 +1,10 @@
-import { FC, useCallback, useMemo, useState } from 'react'
+import { FC, useCallback, useMemo, useState, useEffect } from 'react'
+
+import { Navigate } from 'react-router-dom'
 
 import { RepoMetadata, RepoMetadataItem } from '@sourcegraph/branded'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Container,
     PageHeader,
@@ -16,20 +19,22 @@ import {
     Link,
 } from '@sourcegraph/wildcard'
 
-import { LoaderButton } from '../../components/LoaderButton'
-import { PageTitle } from '../../components/PageTitle'
+import { BreadcrumbSetters } from '../components/Breadcrumbs'
+import { LoaderButton } from '../components/LoaderButton'
+import { Page } from '../components/Page'
+import { PageTitle } from '../components/PageTitle'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import {
-    SettingsAreaRepositoryFields,
     SettingsAreaRepositoryResult,
     SettingsAreaRepositoryVariables,
     AddRepoMetadataResult,
     AddRepoMetadataVariables,
     DeleteRepoMetadataResult,
     DeleteRepoMetadataVariables,
-} from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
+    RepositoryFields,
+} from '../graphql-operations'
 
-import { ADD_REPO_METADATA_GQL, DELETE_REPO_METADATA_GQL, FETCH_SETTINGS_AREA_REPOSITORY_GQL } from './backend'
+import { ADD_REPO_METADATA_GQL, DELETE_REPO_METADATA_GQL, FETCH_SETTINGS_AREA_REPOSITORY_GQL } from './settings/backend'
 
 const AddRepoMetadata: FC<{ onDidAdd: () => void; repoID: string }> = ({ onDidAdd, repoID }) => {
     const [key, setKey] = useState<string>('')
@@ -73,7 +78,7 @@ const AddRepoMetadata: FC<{ onDidAdd: () => void; repoID: string }> = ({ onDidAd
                 </Alert>
             )}
 
-            <Container className="repo-settings-metadata-page">
+            <Container className="repo-metadata-page">
                 <section>
                     <H2>Add metadata</H2>
                     <Text>Add an additional key, or key-value pair, to this repository.</Text>
@@ -112,15 +117,25 @@ const AddRepoMetadata: FC<{ onDidAdd: () => void; repoID: string }> = ({ onDidAd
     )
 }
 
-interface RepoSettingsMetadataPageProps {
-    repo: SettingsAreaRepositoryFields
+const BREADCRUMB = { key: 'metadata', element: 'Metadata' }
+
+interface RepoMetadataPageProps extends Pick<BreadcrumbSetters, 'useBreadcrumb'>, TelemetryProps {
+    repo: RepositoryFields
 }
 
 /**
- * The repository settings metadata page.
+ * The repository metadata page.
  */
-export const RepoSettingsMetadataPage: FC<RepoSettingsMetadataPageProps> = props => {
-    eventLogger.logPageView('RepoSettingsMetadata')
+export const RepoMetadataPage: FC<RepoMetadataPageProps> = ({ telemetryService, useBreadcrumb, ...props }) => {
+    useBreadcrumb(BREADCRUMB)
+    const [repoMetadataEnabled] = useFeatureFlag('repository-metadata')
+
+    useEffect(() => {
+        if (repoMetadataEnabled) {
+            telemetryService.log('repoPage:ownershipPage:viewed')
+        }
+    }, [repoMetadataEnabled, telemetryService])
+
     const {
         data,
         error: fetchError,
@@ -171,8 +186,12 @@ export const RepoSettingsMetadataPage: FC<RepoSettingsMetadataPageProps> = props
         [repo.metadata, searchQuery]
     )
 
+    if (!repoMetadataEnabled) {
+        return <Navigate to={repo.url} replace={true} />
+    }
+
     return (
-        <>
+        <Page>
             <PageTitle title="Repo metadata settings" />
             <PageHeader path={[{ text: 'Metadata' }]} headingElement="h2" className="mb-3" />
             <Text>
@@ -198,6 +217,6 @@ export const RepoSettingsMetadataPage: FC<RepoSettingsMetadataPageProps> = props
                 )}
             </Container>
             <AddRepoMetadata onDidAdd={refetch} repoID={repo.id} />
-        </>
+        </Page>
     )
 }
