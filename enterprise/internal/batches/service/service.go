@@ -163,7 +163,9 @@ func (s *Service) WithStore(store *store.Store) *Service {
 // If it belongs to an org (orgID != 0), we check the org settings for the `orgs.allMembersBatchChangesAdmin` field:
 //   - If true, the user can administer a batch change if they are a member of that org or a site admin.
 //   - If false, the user can administer a batch change only if they are its creator or a site admin.
-func (s *Service) checkBatchChangeAdmin(ctx context.Context, orgID, creatorID int32) error {
+//
+// allowOrgMemberAccess is a boolean argument used to indicate when we simply want to check for org namespace access
+func (s *Service) checkBatchChangeAdmin(ctx context.Context, orgID, creatorID int32, allowOrgMemberAccess bool) error {
 	db := s.store.DatabaseDB()
 	if orgID != 0 {
 		// We retrieve the setting for `orgs.allMembersBatchChangesAdmin` from Settings instead of SiteConfig because
@@ -174,23 +176,23 @@ func (s *Service) checkBatchChangeAdmin(ctx context.Context, orgID, creatorID in
 			return err
 		}
 
+		var allMembersBatchChangesAdmin bool
 		if settings != nil {
 			var orgSettings schema.Settings
 			if err := jsonc.Unmarshal(settings.Contents, &orgSettings); err != nil {
 				return err
 			}
 
-			var allMembersBatchChangesAdmin bool
 			if orgSettings.OrgsAllMembersBatchChangesAdmin != nil {
 				allMembersBatchChangesAdmin = *orgSettings.OrgsAllMembersBatchChangesAdmin
 			}
+		}
 
-			if allMembersBatchChangesAdmin {
-				if err := auth.CheckOrgAccessOrSiteAdmin(ctx, db, orgID); err != nil {
-					return err
-				}
-				return nil
+		if allMembersBatchChangesAdmin || allowOrgMemberAccess {
+			if err := auth.CheckOrgAccessOrSiteAdmin(ctx, db, orgID); err != nil {
+				return err
 			}
+			return nil
 		}
 	}
 
@@ -995,7 +997,7 @@ func (s *Service) MoveBatchChange(ctx context.Context, opts MoveBatchChangeOpts)
 	// 🚨 SECURITY: Only the Author of the batch change can move it.
 	// If the batch change belongs to an org namespace, org members will be able to access it if
 	// the `orgs.allMembersBatchChangesAdmin` setting is true.
-	if err := s.checkBatchChangeAdmin(ctx, batchChange.NamespaceOrgID, batchChange.CreatorID); err != nil {
+	if err := s.checkBatchChangeAdmin(ctx, batchChange.NamespaceOrgID, batchChange.CreatorID, false); err != nil {
 		return nil, err
 	}
 	// Check if current user has access to target namespace if set.
@@ -1035,7 +1037,7 @@ func (s *Service) CloseBatchChange(ctx context.Context, id int64, closeChangeset
 		return batchChange, nil
 	}
 
-	if err := s.checkBatchChangeAdmin(ctx, batchChange.NamespaceOrgID, batchChange.CreatorID); err != nil {
+	if err := s.checkBatchChangeAdmin(ctx, batchChange.NamespaceOrgID, batchChange.CreatorID, false); err != nil {
 		return nil, err
 	}
 
@@ -1086,7 +1088,7 @@ func (s *Service) DeleteBatchChange(ctx context.Context, id int64) (err error) {
 		return err
 	}
 
-	if err := s.checkBatchChangeAdmin(ctx, batchChange.NamespaceOrgID, batchChange.CreatorID); err != nil {
+	if err := s.checkBatchChangeAdmin(ctx, batchChange.NamespaceOrgID, batchChange.CreatorID, false); err != nil {
 		return err
 	}
 
@@ -1127,7 +1129,7 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 	)
 
 	for _, c := range batchChanges {
-		err := s.checkBatchChangeAdmin(ctx, c.NamespaceOrgID, c.CreatorID)
+		err := s.checkBatchChangeAdmin(ctx, c.NamespaceOrgID, c.CreatorID, false)
 		if err != nil {
 			authErr = err
 		} else {
@@ -1178,7 +1180,7 @@ func (s *Service) ReenqueueChangeset(ctx context.Context, id int64) (changeset *
 	)
 
 	for _, c := range attachedBatchChanges {
-		err := s.checkBatchChangeAdmin(ctx, c.NamespaceOrgID, c.CreatorID)
+		err := s.checkBatchChangeAdmin(ctx, c.NamespaceOrgID, c.CreatorID, false)
 		if err != nil {
 			authErr = err
 		} else {
@@ -1216,7 +1218,7 @@ func (s *Service) CheckNamespaceAccess(ctx context.Context, namespaceUserID, nam
 // they simply don't have access, whereas CheckNamespaceAccess will return an
 // error in that case.
 func (s *Service) CanAdministerInNamespace(ctx context.Context, namespaceUserID, namespaceOrgID int32) (bool, error) {
-	err := s.CheckNamespaceAccess(ctx, namespaceUserID, namespaceOrgID)
+	err := s.checkBatchChangeAdmin(ctx, namespaceOrgID, namespaceUserID, true)
 	if err != nil && (err == auth.ErrNotAnOrgMember || errcode.IsUnauthorized(err)) {
 		// These errors indicate that the viewer is valid, but that they simply
 		// don't have access to administer this batch change. We don't want to
@@ -1330,7 +1332,7 @@ func (s *Service) CreateChangesetJobs(ctx context.Context, batchChangeID int64, 
 
 	// If the batch change belongs to an org namespace, org members will be able to access it if
 	// the `orgs.allMembersBatchChangesAdmin` setting is true.
-	if err := s.checkBatchChangeAdmin(ctx, batchChange.NamespaceOrgID, batchChange.CreatorID); err != nil {
+	if err := s.checkBatchChangeAdmin(ctx, batchChange.NamespaceOrgID, batchChange.CreatorID, false); err != nil {
 		return bulkGroupID, err
 	}
 
