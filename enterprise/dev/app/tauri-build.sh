@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -exu
+set -eu
 
 cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. || exit 1
 
@@ -186,6 +186,7 @@ if [[ ${CODESIGNING:-"0"} == 1 && $(uname -s) == "Darwin" ]]; then
   done
 fi
 
+CI="${CI:-"false"}"
 PLATFORM="$(./enterprise/dev/app/detect_platform.sh)"
 build "${PLATFORM}"
 
