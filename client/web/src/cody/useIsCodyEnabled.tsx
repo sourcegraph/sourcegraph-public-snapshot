@@ -16,6 +16,9 @@ interface IsCodyEnabled {
     needsEmailVerification: boolean
 }
 
+export const isEmailVerificationNeeded = (): boolean =>
+    window.context?.sourcegraphDotComMode && !window.context?.currentUser?.hasVerifiedEmail
+
 export const useIsCodyEnabled = (): IsCodyEnabled => {
     const [chatEnabled] = useFeatureFlag('cody-web-chat')
     const [searchEnabled] = useFeatureFlag('cody-web-search')
@@ -32,6 +35,6 @@ export const useIsCodyEnabled = (): IsCodyEnabled => {
         sidebar: sidebarEnabled || allEnabled,
         search: searchEnabled || allEnabled,
         editorRecipes: (editorRecipesEnabled && sidebarEnabled) || allEnabled,
-        needsEmailVerification: window.context?.sourcegraphDotComMode && !window.context?.currentUser?.hasVerifiedEmail,
+        needsEmailVerification: isEmailVerificationNeeded(),
     }
 }

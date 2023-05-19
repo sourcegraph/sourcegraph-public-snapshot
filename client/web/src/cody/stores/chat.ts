@@ -14,7 +14,7 @@ import { isErrorLike } from '@sourcegraph/common'
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 import { CodeMirrorEditor } from '../components/CodeMirrorEditor'
-import { useIsCodyEnabled } from '../useIsCodyEnabled'
+import { useIsCodyEnabled, isEmailVerificationNeeded } from '../useIsCodyEnabled'
 
 import { EditorStore, useEditorStore } from './editor'
 
@@ -71,8 +71,7 @@ const sortSliceTranscriptHistory = (transcriptHistory: TranscriptJSON[]): Transc
         .slice(0, SAVE_MAX_TRANSCRIPT_HISTORY)
 
 export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore => {
-    const needsEmailVerification =
-        window.context?.sourcegraphDotComMode && !window.context?.currentUser?.hasVerifiedEmail
+    const needsEmailVerification = isEmailVerificationNeeded()
     const fetchTranscriptHistory = (): TranscriptJSON[] => {
         try {
             const json = JSON.parse(
