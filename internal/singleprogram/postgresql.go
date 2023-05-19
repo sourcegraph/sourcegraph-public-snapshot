@@ -109,7 +109,7 @@ func startEmbeddedPostgreSQL(logger log.Logger, pgRootDir string) (*postgresqlEn
 			Username(vars.PGUSER).
 			Database(vars.PGDATABASE).
 			UseUnixSocket(unixSocketDir).
-			StartTimeout(30 * time.Second).
+			StartTimeout(120 * time.Second).
 			Logger(debugLogLinesWriter(logger, "postgres output line")),
 	)
 	if err := db.Start(); err != nil {
