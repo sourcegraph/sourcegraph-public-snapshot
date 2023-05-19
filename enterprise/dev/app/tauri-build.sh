@@ -30,10 +30,11 @@ bundle_path() {
 }
 
 upload_dist() {
-  echo "DEBUG 1: $(pwd)"
+  local path="$(bundle_path)"
   mkdir -p dist
-  src=$(find "./src-tauri/target/*/release/bundle" -type f \( -name "Sourcegraph*.dmg" -o -name "Sourcegraph*.tar.gz" -o -name "sourcegraph*.deb" -o -name "sourcegraph*.AppImage" -o -name "sourcegraph*.tar.gz" \) -exec realpath {} \;);
-  # we're using a while and read here because the paths may contain spaces and this handles it properly
+  echo "searching for artefacts in '${path}' and moving them to dist/"
+  src=$(find "${path}" -type f \( -name "Sourcegraph*.dmg" -o -name "Sourcegraph*.tar.gz" -o -name "sourcegraph*.deb" -o -name "sourcegraph*.AppImage" -o -name "sourcegraph*.tar.gz" \) -exec realpath {} \;);
+  # we're using while and read here because the paths may contain spaces and this handles it properly
   while IFS= read -r from; do
     mv -vf "${from}" "./${DIST_DIR}/"
   done <<< ${src}
@@ -45,14 +46,12 @@ upload_dist() {
 
 }
 
-zip_app_and_move() {
-  echo "DEBUG 2: $(pwd)"
+create_app_archive() {
   # # we have to handle Sourcegraph.App differently since it is a dir
-  local platform="$(./enterprise/dev/app/detect_platform.sh)"
-  local bundle_path="./src-tauri/target/${platform}/release/bundle"
-  local app_bundle=$(find "${bundle_path}" -type d -name "Sourcegraph.app")
+  local path="$(bundle_path)"
+  local app_path=$(find "${path}" -type d -name "Sourcegraph.app")
 
-  if [[ -d  ${app_bundle} ]]; then
+  if [[ -d  ${app_path} ]]; then
     local arch
     local target
     arch="$(uname -m)"
@@ -61,11 +60,9 @@ zip_app_and_move() {
     fi
 
     target="Sourcegraph.${arch}.app.tar.gz"
-    echo "DEBUG 3: $(pwd)"
     pushd .
-    cd "${bundle_path}/macos/"
-    echo "DEBUG 4: $(pwd)"
-    echo "--- :file_cabinet: Creating archive of ${app_bundle}"
+    cd "${path}/macos/"
+    echo "--- :file_cabinet: Creating archive of ${app_path} in $(pwd)"
     tar -czvf "${target}" "Sourcegraph.app"
     popd
   fi
@@ -86,42 +83,39 @@ pre_codesign() {
   # Tauri won't code sign our sidecar sourcegraph-backend Go binary for us, so we need to do it on
   # our own. https://github.com/tauri-apps/tauri/discussions/2269
   # For details on code signing, see doc/dev/background-information/app/codesigning.md
-  if [[ $(uname -s) == "Darwin" ]]; then
-    trap 'cleanup_codesigning' ERR INT TERM EXIT
+  trap 'cleanup_codesigning' ERR INT TERM EXIT
 
-    if [[ ${CI} == "true" ]]; then
-      local secrets
-      echo "--- :aws: Retrieving signing secrets"
-      secrets=$(aws secretsmanager get-secret-value --secret-id sourcegraph/mac-codesigning | jq '.SecretString |  fromjson')
-      export APPLE_SIGNING_IDENTITY="$(echo ${secrets} | jq -r '.APPLE_SIGNING_IDENTITY')"
-      export APPLE_CERTIFICATE="$(echo ${secrets} | jq -r '.APPLE_CERTIFICATE')"
-      export APPLE_CERTIFICATE_PASSWORD="$(echo ${secrets} | jq -r  '.APPLE_CERTIFICATE_PASSWORD')"
-      export APPLE_ID="$(echo ${secrets} | jq -r '.APPLE_ID')"
-      export APPLE_PASSWORD="$(echo ${secrets} | jq -r '.APPLE_PASSWORD')"
-    fi
-    # We expect the same APPLE_ env vars that Tauri does here, see https://tauri.app/v1/guides/distribution/sign-macos
-    cleanup_codesigning
-    security create-keychain -p my_temporary_keychain_password my_temporary_keychain.keychain
-    security set-keychain-settings my_temporary_keychain.keychain
-    security unlock-keychain -p my_temporary_keychain_password my_temporary_keychain.keychain
-    security list-keychains -d user -s my_temporary_keychain.keychain "$(security list-keychains -d user | sed 's/["]//g')"
-
-    echo "$APPLE_CERTIFICATE" >cert.p12.base64
-    base64 -d -i cert.p12.base64 -o cert.p12
-
-    security import ./cert.p12 -k my_temporary_keychain.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
-    security set-key-partition-list -S apple-tool:,apple:, -s -k my_temporary_keychain_password -D "$APPLE_SIGNING_IDENTITY" -t private my_temporary_keychain.keychain
-
-    echo "--- :mac::pencil2: binary: ${binary_path}"
-    codesign --force -s "$APPLE_SIGNING_IDENTITY" --keychain my_temporary_keychain.keychain --deep "${binary_path}"
-
-    security delete-keychain my_temporary_keychain.keychain
-    security list-keychains -d user -s login.keychain
+  if [[ ${CI} == "true" ]]; then
+    local secrets
+    echo "--- :aws: Retrieving signing secrets"
+    secrets=$(aws secretsmanager get-secret-value --secret-id sourcegraph/mac-codesigning | jq '.SecretString |  fromjson')
+    export APPLE_SIGNING_IDENTITY="$(echo ${secrets} | jq -r '.APPLE_SIGNING_IDENTITY')"
+    export APPLE_CERTIFICATE="$(echo ${secrets} | jq -r '.APPLE_CERTIFICATE')"
+    export APPLE_CERTIFICATE_PASSWORD="$(echo ${secrets} | jq -r  '.APPLE_CERTIFICATE_PASSWORD')"
+    export APPLE_ID="$(echo ${secrets} | jq -r '.APPLE_ID')"
+    export APPLE_PASSWORD="$(echo ${secrets} | jq -r '.APPLE_PASSWORD')"
   fi
+  # We expect the same APPLE_ env vars that Tauri does here, see https://tauri.app/v1/guides/distribution/sign-macos
+  cleanup_codesigning
+  security create-keychain -p my_temporary_keychain_password my_temporary_keychain.keychain
+  security set-keychain-settings my_temporary_keychain.keychain
+  security unlock-keychain -p my_temporary_keychain_password my_temporary_keychain.keychain
+  security list-keychains -d user -s my_temporary_keychain.keychain "$(security list-keychains -d user | sed 's/["]//g')"
+
+  echo "$APPLE_CERTIFICATE" >cert.p12.base64
+  base64 -d -i cert.p12.base64 -o cert.p12
+
+  security import ./cert.p12 -k my_temporary_keychain.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+  security set-key-partition-list -S apple-tool:,apple:, -s -k my_temporary_keychain_password -D "$APPLE_SIGNING_IDENTITY" -t private my_temporary_keychain.keychain
+
+  echo "--- :mac::pencil2: binary: ${binary_path}"
+  codesign --force -s "$APPLE_SIGNING_IDENTITY" --keychain my_temporary_keychain.keychain --deep "${binary_path}"
+
+  security delete-keychain my_temporary_keychain.keychain
+  security list-keychains -d user -s login.keychain
 }
 
 secret_value() {
-  # secrets are fetched slightly different depending on host
   local name
   local value
   name=$1
@@ -129,7 +123,7 @@ secret_value() {
     # host is in aws - probably
     value=$(aws secretsmanager get-secret-value --secret-id ${target} | jq '.SecretString | fromjson')
   else
-    # On Linux we assume we're in GCP thus the secret should be injected as an evironment variable. Please check the instance configuration"
+    # On Linux we assume we're in GCP thus the secret should be injected as an evironment variable. Please check the instance configuration
     value=""
   fi
   echo ${value}
@@ -161,8 +155,8 @@ fi
 VERSION=$(./enterprise/dev/app/app_version.sh)
 set_version ${VERSION}
 
-# only perform codesigning on mac
-if [[ ${CODESIGNING:-"0"} == 1 ]]; then
+
+if [[ ${CODESIGNING:-"0"} == 1 && $(uname -s) == "Darwin" ]]; then
   # We want any xcode related tools to be picked up first so inject it here in the path
   export PATH="$(xcode-select -p)/usr/bin:$PATH"
   # If on a macOS host, Tauri will invoke the base64 command as part of the code signing process.
@@ -178,9 +172,10 @@ if [[ ${CODESIGNING:-"0"} == 1 ]]; then
   done
 fi
 
-build
+PLATFORM="$(./enterprise/dev/app/detect_platform.sh)"
+build ${PLATFORM}
 
-zip_app_and_move
+create_app_archive
 
 if [[ ${CI:-""} == "true" ]]; then
   upload_dist
