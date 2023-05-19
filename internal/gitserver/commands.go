@@ -1744,14 +1744,17 @@ func parseCommitsUniqueToBranch(lines []string) (_ map[string]time.Time, err err
 
 // HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
 // contains a commit past a specified date.
-func (c *clientImplementor) HasCommitAfter(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, date string, revspec string) (bool, error) {
+func (c *clientImplementor) HasCommitAfter(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, date string, revspec string) (_ bool, err error) {
+	ctx, _, endObservation := c.operations.hasCommitAfter.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repo", string(repo)),
+		attribute.String("date", date),
+		attribute.String("revSpec", revspec),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	if authz.SubRepoEnabled(checker) {
 		return c.hasCommitAfterWithFiltering(ctx, repo, date, revspec, checker)
 	}
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: HasCommitAfter") //nolint:staticcheck // OT is deprecated
-	span.SetTag("Date", date)
-	span.SetTag("RevSpec", revspec)
-	defer span.Finish()
 
 	if revspec == "" {
 		revspec = "HEAD"
