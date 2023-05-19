@@ -2,7 +2,6 @@ package background
 
 import (
 	"context"
-	"fmt"
 	"testing"
 	"time"
 
@@ -123,7 +122,7 @@ func Test_JanitorTable(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			for _, state := range test.jobStates {
-				t.Run(fmt.Sprintf("%s_%s", test.name, state), func(t *testing.T) {
+				t.Run(state, func(t *testing.T) {
 					clearTable(t)
 					err := db.OwnSignalConfigurations().UpdateConfiguration(ctx, database.UpdateSignalConfigurationArgs{Name: config.Name, Enabled: test.isSignalEnabled})
 					require.NoError(t, err)
