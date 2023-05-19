@@ -1,37 +1,31 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 
 import { useLocation, useNavigate } from 'react-router-dom'
-import { NEVER } from 'rxjs'
-import { catchError, startWith, tap } from 'rxjs/operators'
+import { NEVER, Observable } from 'rxjs'
+import { catchError, startWith, switchMap, tap } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import {
-    Container,
-    PageHeader,
-    Button,
-    useObservable,
-    Link,
-    LoadingSpinner,
-    Alert,
-    Text,
-    ErrorAlert,
-    Form,
-} from '@sourcegraph/wildcard'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
+import { Button, Link, Text, ErrorAlert, Card, H1, H2, useEventObservable } from '@sourcegraph/wildcard'
 
 import { AccessTokenScopes } from '../../../auth/accessToken'
+import { BrandLogo } from '../../../components/branding/BrandLogo'
 import { CopyableText } from '../../../components/CopyableText'
-import { PageTitle } from '../../../components/PageTitle'
+import { LoaderButton } from '../../../components/LoaderButton'
 import { CreateAccessTokenResult } from '../../../graphql-operations'
 import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
 import { createAccessToken } from './create'
+
+import styles from './UserSettingsCreateAccessTokenCallbackPage.module.scss'
 
 /**
  * Utility function to open the callback URL in Sourcegraph App. Used where
  * window.open or target="_blank" cannot be used.
  */
 function tauriShellOpen(uri: string): void {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
     ;(window as any).__TAURI__?.shell?.open(uri)
 }
 
@@ -49,8 +43,6 @@ interface TokenRequester {
     /** The URL where the token should be added to */
     /** SECURITY: Local context only! Do not send token to non-local servers*/
     redirectURL: string
-    /** A description of where the request is coming from */
-    description: string
     /** The message to show users when the token has been created successfully */
     successMessage?: string
     /** The message to show users in case the token cannot be imported automatically */
@@ -58,8 +50,6 @@ interface TokenRequester {
     /** How the redirect URL should be open: open in same tab vs open in a new-tab */
     /** Default: Open link in same tab */
     callbackType?: 'open' | 'new-tab'
-    /** Show button to redirect URL on click */
-    showRedirectButton?: boolean
     /** If set, the requester is only allowed on dotcom */
     onlyDotCom?: boolean
     /** If true, it will forward the `destination` param to the redirect URL if it starts with / */
@@ -70,37 +60,34 @@ const REQUESTERS: Record<string, TokenRequester> = {
     VSCEAUTH: {
         name: 'VS Code Extension',
         redirectURL: 'vscode://sourcegraph.sourcegraph?code=$TOKEN',
-        description: 'Auth from VS Code Extension for Sourcegraph',
-        successMessage:
-            'Importing your token will automatically connect your Sourcegraph account in the VS Code extension.',
+        successMessage: 'Now opening VS Code...',
         infoMessage:
             'Please make sure you have VS Code running on your machine if you do not see an open dialog in your browser.',
         callbackType: 'new-tab',
-        showRedirectButton: true,
     },
     APP: {
         name: 'Sourcegraph App',
         redirectURL: 'sourcegraph://app/auth/callback?code=$TOKEN',
-        description: 'Authenticate Sourcegraph App',
-        successMessage: 'Click on the link bellow to continue in Sourcegraph App',
-        infoMessage: 'You will be redirected to Sourcegraph App',
+        successMessage: 'Now opening the Sourcegraph App...',
+        infoMessage: 'You will be redirected to Sourcegraph App.',
         callbackType: 'open',
-        showRedirectButton: true,
         onlyDotCom: true,
         forwardDestination: true,
     },
     CODY: {
         name: 'Sourcegraph Cody - VS Code Extension',
         redirectURL: 'vscode://sourcegraph.cody-ai?code=$TOKEN',
-        description: 'Auth from VS Code Extension for Sourcegraph Cody',
-        successMessage:
-            'Importing your token will automatically connect your Sourcegraph account to the Cody extension in VS Code.',
+        successMessage: 'Now opening VS Code...',
         infoMessage:
-            'If you do not see an open dialog in your browser, please make sure you have VS Code running on your machine.',
+            'Please make sure you have VS Code running on your machine if you do not see an open dialog in your browser.',
         callbackType: 'new-tab',
-        showRedirectButton: true,
     },
 }
+
+export function isAccessTokenCallbackPage(): boolean {
+    return location.pathname.startsWith('/users/') && location.pathname.endsWith('/settings/tokens/new/callback')
+}
+
 /**
  * This page acts as a callback URL after the authentication process has been completed by a user.
  * This can be shared among different SG integrations as long as the value that is being passed in
@@ -117,9 +104,10 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     isSourcegraphDotCom,
     isSourcegraphApp,
 }) => {
+    const isLightTheme = useIsLightTheme()
     const navigate = useNavigate()
     const location = useLocation()
-    useMemo(() => {
+    useEffect(() => {
         telemetryService.logPageView('NewAccessTokenCallback')
     }, [telemetryService])
     /** Get the requester from the url parameters if any */
@@ -130,6 +118,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
     const [note, setNote] = useState<string>('')
     /** The newly created token if any. */
     const [newToken, setNewToken] = useState('')
+
     // Check and Match URL Search Prams
     useEffect((): void => {
         // If a requester is already set, we don't need to run this effect
@@ -171,106 +160,116 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
         setRequester(nextRequester)
         setNote(REQUESTERS[requestFrom].name)
     }, [isSourcegraphDotCom, isSourcegraphApp, location.search, navigate, requestFrom, requester])
+
     /**
      * We use this to handle token creation request from redirections.
      * Don't create token if this page wasn't linked to from a valid
      * requester (e.g. VS Code extension).
      */
-    const creationOrError = useObservable(
-        useMemo(
-            () =>
-                (requester ? createAccessToken(user.id, [AccessTokenScopes.UserAll], note) : NEVER).pipe(
-                    tap(result => {
-                        // SECURITY: If the request was from a valid requestor, redirect to the allowlisted redirect URL.
-                        // SECURITY: Local context ONLY
-                        if (requester) {
-                            onDidCreateAccessToken(result)
-                            setNewToken(result.token)
-                            const uri = replaceToken(requester?.redirectURL, result.token)
+    const [onAuthorize, creationOrError] = useEventObservable(
+        useCallback(
+            (click: Observable<React.MouseEvent>) =>
+                click.pipe(
+                    switchMap(() =>
+                        (requester ? createAccessToken(user.id, [AccessTokenScopes.UserAll], note) : NEVER).pipe(
+                            tap(result => {
+                                // SECURITY: If the request was from a valid requestor, redirect to the allowlisted redirect URL.
+                                // SECURITY: Local context ONLY
+                                if (requester) {
+                                    onDidCreateAccessToken(result)
+                                    setNewToken(result.token)
+                                    const uri = replaceToken(requester?.redirectURL, result.token)
 
-                            // If we're in App, override the callbackType
-                            // because we need to use tauriShellOpen to open the
-                            // callback in a browser.
-                            if (isSourcegraphApp) {
-                                tauriShellOpen(uri)
-                                return
-                            }
+                                    // If we're in App, override the callbackType
+                                    // because we need to use tauriShellOpen to open the
+                                    // callback in a browser.
+                                    // Then navigate back to the home page since App doesn't
+                                    // have a back button or tab that can be closed.
+                                    if (isSourcegraphApp) {
+                                        tauriShellOpen(uri)
+                                        navigate('/')
+                                        return
+                                    }
 
-                            switch (requester.callbackType) {
-                                case 'new-tab':
-                                    window.open(uri, '_blank')
-                                default:
-                                    // open the redirect link in the same tab
-                                    window.location.replace(uri)
-                            }
-                        }
-                    }),
-                    startWith('loading'),
-                    catchError(error => [asError(error)])
+                                    switch (requester.callbackType) {
+                                        case 'new-tab':
+                                            window.open(uri, '_blank')
+                                        default:
+                                            // open the redirect link in the same tab
+                                            window.location.replace(uri)
+                                    }
+                                }
+                            }),
+                            startWith('loading'),
+                            catchError(error => [asError(error)])
+                        )
+                    )
                 ),
-            [requester, user.id, note, onDidCreateAccessToken, isSourcegraphApp]
+            [requester, user.id, note, onDidCreateAccessToken, isSourcegraphApp, navigate]
         )
     )
-    /**
-     * If there's a uriPattern but no result or error yet, we can assume that creation is
-     * in progress and show a loading spinner + message.
-     */
-    if (creationOrError === 'loading') {
-        return <LoadingSpinner />
-    }
+
     if (!requester) {
         return null
     }
+
     return (
-        <div className="user-settings-create-access-token-page">
-            <PageTitle title="Create access token" />
-            <PageHeader
-                path={[{ text: `Connect my account to ${requester ? requester.name : ''}` }]}
-                headingElement="h2"
-                className="mb-3"
-            />
-            {!isErrorLike(creationOrError) && requester?.infoMessage && (
-                <Alert className="my-2" variant="warning">
-                    <Text className="my-2">{requester?.infoMessage}</Text>
-                </Alert>
-            )}
-            {newToken && requester && (
-                <Form>
-                    <Container className="mb-3">
-                        <Alert className="access-token-created-alert mt-3" variant="success">
-                            <Text weight="bold">{requester.name} access token successfully generated</Text>
-                            <Text>{requester?.successMessage}</Text>
-                            <CopyableText className="test-access-token" text={newToken} size={48} />
-                            <Text className="form-help text-muted" size="small">
-                                This is a one-time access token to connect your account to {requester.name}. You will
-                                not be able to see this token again once the window is closed.
-                            </Text>
-                        </Alert>
-                    </Container>
-                    <div className="mb-3">
-                        {requester.showRedirectButton && (
-                            <Button
-                                className="mr-2"
-                                to={replaceToken(requester.redirectURL, newToken)}
-                                disabled={creationOrError === 'loading'}
-                                variant="primary"
-                                as={Link}
-                            >
-                                Import token to {requester.name}
-                            </Button>
-                        )}
+        <div className={styles.wrapper}>
+            <BrandLogo className={styles.logo} isLightTheme={isLightTheme} variant="logo" />
+
+            <Card className={styles.card}>
+                <H2 as={H1} className={styles.heading}>
+                    Authorize {requester.name}?
+                </H2>
+
+                <Text weight="bold">This grants access to:</Text>
+                <ul>
+                    <li>Your Sourcegraph.com account</li>
+                    <li>Perform actions on your behalf</li>
+                </ul>
+                <Text>{requester.infoMessage}</Text>
+                <Text>If you are not trying to connect {requester.name}, click cancel.</Text>
+
+                {!newToken && (
+                    <div className={styles.buttonRow}>
+                        <LoaderButton
+                            className="flex-1"
+                            variant="primary"
+                            label="Authorize"
+                            loading={creationOrError === 'loading'}
+                            onClick={onAuthorize}
+                        />
                         <Button
+                            className="flex-1"
+                            variant="secondary"
                             to={location.pathname.replace(/\/new\/callback$/, '')}
                             disabled={creationOrError === 'loading'}
-                            variant="secondary"
                             as={Link}
                         >
-                            Back
+                            Cancel
                         </Button>
                     </div>
-                </Form>
-            )}
-            {isErrorLike(creationOrError) && <ErrorAlert className="my-3" error={creationOrError} />}
+                )}
+
+                {newToken && (
+                    <>
+                        <Text weight="bold">{requester.successMessage}</Text>
+                        <details>
+                            <summary>Authorization details</summary>
+                            <div className="mt-2">
+                                <Text>{requester.name} access token successfully generated.</Text>
+                                <CopyableText className="test-access-token" text={newToken} />
+                                <Text className="form-help text-muted" size="small">
+                                    This is a one-time access token to connect your account to {requester.name}. You
+                                    will not be able to see this token again once the window is closed.
+                                </Text>
+                            </div>
+                        </details>
+                    </>
+                )}
+
+                {isErrorLike(creationOrError) && <ErrorAlert className="my-3 " error={creationOrError} />}
+            </Card>
         </div>
     )
 }

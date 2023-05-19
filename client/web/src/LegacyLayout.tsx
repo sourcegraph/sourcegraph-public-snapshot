@@ -29,6 +29,7 @@ import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
 import { parseSearchURLQuery } from './search'
 import { NotepadContainer } from './search/Notepad'
 import { SearchQueryStateObserver } from './SearchQueryStateObserver'
+import { isAccessTokenCallbackPage } from './user/settings/accessTokens/UserSettingsCreateAccessTokenCallbackPage'
 
 import styles from './storm/pages/LayoutPage/LayoutPage.module.scss'
 
@@ -56,7 +57,6 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     )
 
     const routeMatch = route?.path
-    const isFullPageRoute = route?.handle?.isFullPage
 
     const isSearchRelatedPage = (routeMatch === PageRoutes.RepoContainer || routeMatch?.startsWith('/search')) ?? false
     const isSearchHomepage = location.pathname === '/search' && !parseSearchURLQuery(location.search)
@@ -68,6 +68,13 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const isCodySearchPage = routeMatch === EnterprisePageRoutes.CodySearch
     const isRepositoryRelatedPage = routeMatch === PageRoutes.RepoContainer ?? false
     const isCodyStandalonePage = location.pathname === PageRoutes.CodyStandalone
+
+    // Since the access token callback page is rendered in a nested route, we can't use
+    // `route.handle.isFullPage` to determine whether to render the header. Instead, we check
+    // whether the current page is the access token callback page.
+    const isAuthTokenCallbackPage = isAccessTokenCallbackPage()
+
+    const isFullPageRoute = !!route?.handle?.isFullPage || isAuthTokenCallbackPage
 
     // eslint-disable-next-line no-restricted-syntax
     const [wasSetupWizardSkipped] = useLocalStorage('setup.skipped', false)
