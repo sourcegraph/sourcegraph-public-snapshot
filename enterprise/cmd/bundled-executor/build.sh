@@ -31,7 +31,7 @@ if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
     echo "copying $TARGET"
   done
 
-  docker build -f enterprise/cmd/batcheshelper/Dockerfile -t "$IMAGE" "$OUTPUT" \
+  docker build -f enterprise/cmd/bundled-executor/Dockerfile -t "$IMAGE" "$OUTPUT" \
     --progress=plain \
     --build-arg COMMIT_SHA \
     --build-arg DATE \
