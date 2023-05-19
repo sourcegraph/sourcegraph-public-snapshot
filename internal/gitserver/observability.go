@@ -11,12 +11,13 @@ import (
 )
 
 type operations struct {
-	search         *observation.Operation
-	exec           *observation.Operation
-	p4Exec         *observation.Operation
-	batchLog       *observation.Operation
-	batchLogSingle *observation.Operation
-	do             *observation.Operation
+	search           *observation.Operation
+	exec             *observation.Operation
+	p4Exec           *observation.Operation
+	contributorCount *observation.Operation
+	batchLog         *observation.Operation
+	batchLogSingle   *observation.Operation
+	do               *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -45,12 +46,13 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		search:         op("Search"),
-		exec:           op("Exec"),
-		p4Exec:         op("P4Exec"),
-		batchLog:       op("BatchLog"),
-		batchLogSingle: subOp("batchLogSingle"),
-		do:             subOp("do"),
+		search:           op("Search"),
+		exec:             op("Exec"),
+		p4Exec:           op("P4Exec"),
+		contributorCount: op("ContributorCount"),
+		batchLog:         op("BatchLog"),
+		batchLogSingle:   subOp("batchLogSingle"),
+		do:               subOp("do"),
 	}
 }
 

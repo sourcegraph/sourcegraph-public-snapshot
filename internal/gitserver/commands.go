@@ -25,6 +25,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/go-diff/diff"
 
@@ -39,6 +40,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -159,10 +161,17 @@ type ContributorOptions struct {
 	Path  string // compute stats for commits that touch this path
 }
 
-func (c *clientImplementor) ContributorCount(ctx context.Context, repo api.RepoName, opt ContributorOptions) ([]*gitdomain.ContributorCount, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: ShortLog") //nolint:staticcheck // OT is deprecated
-	span.SetTag("Opt", opt)
-	defer span.Finish()
+func (o *ContributorOptions) Attrs() []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.String("range", o.Range),
+		attribute.String("after", o.After),
+		attribute.String("path", o.Path),
+	}
+}
+
+func (c *clientImplementor) ContributorCount(ctx context.Context, repo api.RepoName, opt ContributorOptions) (_ []*gitdomain.ContributorCount, err error) {
+	ctx, _, endObservation := c.operations.contributorCount.With(ctx, &err, observation.Args{Attrs: opt.Attrs()})
+	defer endObservation(1, observation.Args{})
 
 	if opt.Range == "" {
 		opt.Range = "HEAD"
