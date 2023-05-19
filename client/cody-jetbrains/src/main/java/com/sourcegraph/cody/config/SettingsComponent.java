@@ -83,9 +83,9 @@ public class SettingsComponent implements Disposable {
         dotcomAccessTokenTextField = new JBTextField();
         dotcomAccessTokenTextField.getEmptyText().setText("Paste your access token here");
         addValidation(dotcomAccessTokenTextField, () ->
-            (dotcomAccessTokenTextField.getText().length() > 0 && dotcomAccessTokenTextField.getText().length() != 40)
-                ? new ValidationInfo("Invalid access token", dotcomAccessTokenTextField)
-                : null);
+            isValidAccessToken(dotcomAccessTokenTextField.getText())
+                ? null
+                : new ValidationInfo("Invalid access token", dotcomAccessTokenTextField));
         dotcomAccessTokenLinkComment = new JBLabel("<html><body>Have no token yet? Create one <a href=\"https://sourcegraph.com/user/settings/tokens/new\">here</a>.</body></html>", UIUtil.ComponentStyle.SMALL, UIUtil.FontColor.BRIGHTER);
         //
 
@@ -106,9 +106,9 @@ public class SettingsComponent implements Disposable {
         enterpriseAccessTokenTextField = new JBTextField();
         enterpriseAccessTokenTextField.getEmptyText().setText("Paste your access token here");
         addValidation(enterpriseAccessTokenTextField, () ->
-            (enterpriseAccessTokenTextField.getText().length() > 0 && enterpriseAccessTokenTextField.getText().length() != 40)
-                ? new ValidationInfo("Invalid access token", enterpriseAccessTokenTextField)
-                : null);
+            isValidAccessToken(enterpriseAccessTokenTextField.getText())
+                ? null
+                : new ValidationInfo("Invalid access token", enterpriseAccessTokenTextField));
 
         // Create comments
         userDocsLinkComment = new JBLabel("<html><body>You will need an access token to sign in. See our <a href=\"https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token\">user docs</a> for a video guide</body></html>", UIUtil.ComponentStyle.SMALL, UIUtil.FontColor.BRIGHTER);
@@ -316,6 +316,12 @@ public class SettingsComponent implements Disposable {
         enterpriseAccessTokenLinkComment.setText(isUrlValid(baseUrl)
             ? "<html><body>or go to <a href=\"" + settingsUrl + "\">" + settingsUrl + "</a> | \"Access tokens\" to create one.</body></html>"
             : "");
+    }
+
+    private boolean isValidAccessToken(@NotNull String accessToken) {
+        return accessToken.isEmpty() ||
+            accessToken.length() == 40 ||
+            (accessToken.startsWith("sgp_") && accessToken.length() == 44);
     }
 
     private boolean isUrlValid(@NotNull String url) {
