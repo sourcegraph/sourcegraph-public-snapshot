@@ -12,8 +12,11 @@ detect_platform() {
     "arm64")
       arch="aarch64"
       ;;
+    "x86_64")
+      arch="x86_64"
+      ;;
     *)
-      echo "unknown Arch: $(uname -s)"
+      echo "unknown arch: $(uname -m)"
       exit 1
   esac
 
