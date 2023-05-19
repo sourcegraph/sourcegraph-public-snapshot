@@ -68,6 +68,10 @@ func (s fakeOwnService) ResolveOwnersWithType(_ context.Context, owners []*codeo
 	return resolved, nil
 }
 
+func (s fakeOwnService) AssignedOwnership(context.Context, api.RepoID, api.CommitID) (own.AssignedOwners, error) {
+	return own.AssignedOwners{}, nil
+}
+
 // fakeGitServer is a limited gitserver.Client that returns a file for every Stat call.
 type fakeGitserver struct {
 	gitserver.Client

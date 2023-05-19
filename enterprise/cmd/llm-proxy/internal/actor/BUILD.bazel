@@ -11,6 +11,7 @@ go_library(
     deps = [
         "//enterprise/cmd/llm-proxy/internal/limiter",
         "//internal/goroutine",
+        "//internal/trace",
         "//lib/errors",
         "@com_github_go_redsync_redsync_v4//:redsync",
         "@com_github_sourcegraph_conc//pool",

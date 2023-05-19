@@ -4,14 +4,14 @@ You can use Sourcegraph with [GitHub.com](https://github.com) and [GitHub Enterp
 
 Feature | Supported?
 ------- | ----------
-[Repository syncing](../admin/external_service/github.md#selecting-repositories-for-code-search) | ✅
+[Repository syncing](../admin/external_service/github.md#selecting-repositories-to-sync) | ✅
 [Repository permissions](../admin/external_service/github.md#repository-permissions) | ✅
 [User authentication](../admin/external_service/github.md#user-authentication) | ✅
 [Browser extension](#browser-extension) | ✅
 
 ## Repository syncing
 
-Site admins can [add GitHub repositories to Sourcegraph](../admin/external_service/github.md#selecting-repositories-for-code-search).
+Site admins can [add GitHub repositories to Sourcegraph](../admin/external_service/github.md#selecting-repositories-to-sync).
 
 ## Repository permissions
 

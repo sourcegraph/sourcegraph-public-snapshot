@@ -2,7 +2,7 @@ import * as assert from 'assert'
 
 import * as vscode from 'vscode'
 
-import { ChatViewProvider } from '../src/chat/ChatViewProvider'
+import { ChatViewProvider } from '../../src/chat/ChatViewProvider'
 
 import { afterIntegrationTest, beforeIntegrationTest, getExtensionAPI, getTranscript } from './helpers'
 
