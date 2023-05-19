@@ -105,6 +105,10 @@ func TestAccessTokens_Delete(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
+	// enable security event logging to database
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{Log: &schema.Log{SecurityEventLog: &schema.SecurityEventLog{Location: "all"}}}})
+	defer conf.Mock(nil)
+
 	ctx := context.Background()
 
 	subject, err := db.Users().Create(ctx, NewUser{
