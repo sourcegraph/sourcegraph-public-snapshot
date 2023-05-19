@@ -54,7 +54,9 @@ export const BranchMerge: React.FunctionComponent<React.PropsWithChildren<Branch
     forkTarget,
     headRef,
 }) => (
-    <div className="d-block d-sm-inline-block">
+    // Relative positioning needed to avoid VisuallyHidden creating a double layer scrollbar in Chrome.
+    // Related bug: https://bugs.chromium.org/p/chromium/issues/detail?id=1154640#c15
+    <div className="d-block d-sm-inline-block position-relative">
         <VisuallyHidden>Request to merge commit into</VisuallyHidden>
         <Branch name={baseRef} />
         <Icon as="span" inline={false} className="p-1" aria-label="from">
