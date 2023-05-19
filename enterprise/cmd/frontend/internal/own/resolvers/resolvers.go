@@ -541,7 +541,7 @@ func (v *recentViewOwnershipSignal) Description() (string, error) {
 }
 
 func computeRecentViewSignals(ctx context.Context, logger log.Logger, db edb.EnterpriseDB, path string, repoID api.RepoID) (results []*ownershipResolver, err error) {
-	enabled, err := db.OwnSignalConfigurations().IsEnabled(ctx, "recent-views")
+	enabled, err := db.OwnSignalConfigurations().IsEnabled(ctx, owntypes.SignalRecentViews)
 	if err != nil {
 		return nil, errors.Wrap(err, "IsEnabled")
 	}
