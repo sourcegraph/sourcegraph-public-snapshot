@@ -162,8 +162,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				"syntax-highlighter",
 				"worker",
 			}, c.Version,
-				// c.candidateImageTag(),
-				"latest", // TODO: Revert before merging
+				c.candidateImageTag(),
 				(numUpdatedBaseImages > 0),
 			),
 		)
