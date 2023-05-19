@@ -62,6 +62,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const isSearchHomepage = location.pathname === '/search' && !parseSearchURLQuery(location.search)
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
     const isAppSetupPage = routeMatch?.startsWith(EnterprisePageRoutes.AppSetup)
+    const isAppAuthCallbackPage = routeMatch?.startsWith(EnterprisePageRoutes.AppAuthCallback)
     const isSearchNotebooksPage = routeMatch?.startsWith(EnterprisePageRoutes.Notebooks)
     const isSearchNotebookListPage = location.pathname === EnterprisePageRoutes.Notebooks
     const isCodySearchPage = routeMatch === EnterprisePageRoutes.CodySearch
@@ -168,8 +169,10 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     }
 
     // Redirect to the app setup pages if it's App, we haven't seen setup before,
-    // and it's not already a setup page
-    if (props.isSourcegraphApp && !wasAppSetupFinished && !isAppSetupPage) {
+    // and it's not already a setup page, NOTE: that we allow rendering AppAuthCallbackPage
+    // because this page is part of setup experience, and we should not interrupt
+    // rendering of this page even if setup hasn't been finished yet
+    if (props.isSourcegraphApp && !wasAppSetupFinished && !isAppSetupPage && !isAppAuthCallbackPage) {
         return <Navigate to={EnterprisePageRoutes.AppSetup} replace={true} />
     }
 
