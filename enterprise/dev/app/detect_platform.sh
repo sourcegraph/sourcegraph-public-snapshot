@@ -13,7 +13,8 @@ detect_platform() {
       arch="aarch64"
       ;;
     *)
-      arch=$(uname -m)
+      echo "unknown Arch: $(uname -s)"
+      exit 1
   esac
 
   case "$(uname -s)" in
@@ -24,7 +25,9 @@ detect_platform() {
       platform="${arch}-unknown-linux-gnu"
       ;;
     *)
-      platform="${arch}-unknown-unknown"
+      # if we get here something is wrong
+      echo "unknown OS: $(uname -s)"
+      exit 1
   esac
 
   if [[ -n ${PLATFORM_OVERRIDE:-""} ]]; then
