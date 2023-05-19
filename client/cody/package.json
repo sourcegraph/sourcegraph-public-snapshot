@@ -182,6 +182,11 @@
         "category": "Cody Inline Assist",
         "enablement": "!commentThreadIsEmpty",
         "icon": "$(sync~spin)"
+      },
+      {
+        "command": "cody.guardrails.debug",
+        "title": "Cody: Guardrails Debug Attribution",
+        "enablement": "config.cody.debug && config.cody.experimental.guardrails && editorHasSelection"
       }
     ],
     "keybindings": [
@@ -297,6 +302,10 @@
         {
           "command": "cody.focus",
           "when": "!cody.activated"
+        },
+        {
+          "command": "cody.guardrails.debug",
+          "when": "config.cody.debug && config.cody.experimental.guardrails && editorHasSelection"
         }
       ],
       "view/title": [
@@ -386,6 +395,10 @@
           "order": 6,
           "type": "boolean",
           "markdownDescription": "Enables Cody Inline Assist, an inline way to explicitly ask questions and propose modifications to code.",
+          "default": false
+        },
+        "cody.experimental.guardrails": {
+          "type": "boolean",
           "default": false
         },
         "cody.customHeaders": {
