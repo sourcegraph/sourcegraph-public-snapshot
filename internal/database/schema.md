@@ -71,7 +71,7 @@ Foreign-key constraints:
  assigned_at          | timestamp without time zone |           | not null | now()
 Indexes:
     "assigned_owners_pkey" PRIMARY KEY, btree (id)
-    "assigned_owners_file_path" UNIQUE, btree (file_path_id)
+    "assigned_owners_file_path" btree (file_path_id)
 Foreign-key constraints:
     "assigned_owners_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
     "assigned_owners_owner_user_id_fkey" FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
@@ -993,18 +993,24 @@ Indexes:
 
 # Table "public.codeintel_ranking_progress"
 ```
-          Column          |           Type           | Collation | Nullable |                        Default                         
---------------------------+--------------------------+-----------+----------+--------------------------------------------------------
- id                       | bigint                   |           | not null | nextval('codeintel_ranking_progress_id_seq'::regclass)
- graph_key                | text                     |           | not null | 
- mappers_started_at       | timestamp with time zone |           | not null | 
- mapper_completed_at      | timestamp with time zone |           |          | 
- seed_mapper_completed_at | timestamp with time zone |           |          | 
- reducer_started_at       | timestamp with time zone |           |          | 
- reducer_completed_at     | timestamp with time zone |           |          | 
- max_definition_id        | bigint                   |           | not null | 
- max_reference_id         | bigint                   |           | not null | 
- max_path_id              | bigint                   |           | not null | 
+             Column              |           Type           | Collation | Nullable |                        Default                         
+---------------------------------+--------------------------+-----------+----------+--------------------------------------------------------
+ id                              | bigint                   |           | not null | nextval('codeintel_ranking_progress_id_seq'::regclass)
+ graph_key                       | text                     |           | not null | 
+ mappers_started_at              | timestamp with time zone |           | not null | 
+ mapper_completed_at             | timestamp with time zone |           |          | 
+ seed_mapper_completed_at        | timestamp with time zone |           |          | 
+ reducer_started_at              | timestamp with time zone |           |          | 
+ reducer_completed_at            | timestamp with time zone |           |          | 
+ num_path_records_total          | integer                  |           |          | 
+ num_reference_records_total     | integer                  |           |          | 
+ num_count_records_total         | integer                  |           |          | 
+ num_path_records_processed      | integer                  |           |          | 
+ num_reference_records_processed | integer                  |           |          | 
+ num_count_records_processed     | integer                  |           |          | 
+ max_definition_id               | bigint                   |           | not null | 
+ max_reference_id                | bigint                   |           | not null | 
+ max_path_id                     | bigint                   |           | not null | 
 Indexes:
     "codeintel_ranking_progress_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_progress_graph_key_key" UNIQUE CONSTRAINT, btree (graph_key)
@@ -1639,23 +1645,6 @@ Referenced by:
 
 **rollout**: Rollout only defined when flag_type is rollout. Increments of 0.01%
 
-# Table "public.github_app_installs"
-```
-     Column      |           Type           | Collation | Nullable |                     Default                     
------------------+--------------------------+-----------+----------+-------------------------------------------------
- id              | integer                  |           | not null | nextval('github_app_installs_id_seq'::regclass)
- app_id          | integer                  |           | not null | 
- installation_id | integer                  |           | not null | 
- created_at      | timestamp with time zone |           | not null | now()
-Indexes:
-    "github_app_installs_pkey" PRIMARY KEY, btree (id)
-    "app_id_idx" btree (app_id)
-    "installation_id_idx" btree (installation_id)
-Foreign-key constraints:
-    "github_app_installs_app_id_fkey" FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE
-
-```
-
 # Table "public.github_apps"
 ```
       Column       |           Type           | Collation | Nullable |                 Default                 
@@ -1679,8 +1668,6 @@ Indexes:
     "github_apps_app_id_slug_base_url_unique" UNIQUE, btree (app_id, slug, base_url)
 Foreign-key constraints:
     "github_apps_webhook_id_fkey" FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE SET NULL
-Referenced by:
-    TABLE "github_app_installs" CONSTRAINT "github_app_installs_app_id_fkey" FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE
 
 ```
 
@@ -2944,6 +2931,21 @@ Indexes:
     "own_background_jobs_pkey" PRIMARY KEY, btree (id)
     "own_background_jobs_repo_id_idx" btree (repo_id)
     "own_background_jobs_state_idx" btree (state)
+
+```
+
+# Table "public.own_signal_configurations"
+```
+         Column         |  Type   | Collation | Nullable |                        Default                        
+------------------------+---------+-----------+----------+-------------------------------------------------------
+ id                     | integer |           | not null | nextval('own_signal_configurations_id_seq'::regclass)
+ name                   | text    |           | not null | 
+ description            | text    |           | not null | ''::text
+ excluded_repo_patterns | text[]  |           |          | 
+ enabled                | boolean |           | not null | false
+Indexes:
+    "own_signal_configurations_pkey" PRIMARY KEY, btree (id)
+    "own_signal_configurations_name_uidx" UNIQUE, btree (name)
 
 ```
 

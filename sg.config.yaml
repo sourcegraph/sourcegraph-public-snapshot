@@ -954,8 +954,23 @@ bazelCommands:
       GITSERVER_ADDR: 127.0.0.1:3501
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
       SRC_PROF_HTTP: 127.0.0.1:3551
+  blobstore:
+    target: //cmd/blobstore:blobstore
   searcher:
     target: //cmd/searcher
+  syntax-highlighter:
+    target: //docker-images/syntax-highlighter:syntect_server
+    ignoreStdout: true
+    ignoreStderr: true
+    env:
+      # Environment copied from Dockerfile
+      WORKERS: "1"
+      ROCKET_ENV: "production"
+      ROCKET_LIMITS: "{json=10485760}"
+      ROCKET_SECRET_KEY: "SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA="
+      ROCKET_KEEP_ALIVE: "0"
+      ROCKET_PORT: "9238"
+      QUIET: "true"
   github-proxy:
     target: //cmd/github-proxy
   frontend:
@@ -1060,10 +1075,10 @@ commandsets:
       - oss-gitserver-1
       - github-proxy
       - searcher
+      - syntax-highlighter
     commands:
       - oss-web
       - caddy
-      - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
@@ -1098,13 +1113,13 @@ commandsets:
   enterprise-bazel: &enterprise_bazel_set
     requiresDevPrivate: true
     checks:
-      - docker
       - redis
       - postgres
       - git
       - bazelisk
       - ibazel
     bazelCommands:
+      - blobstore
       - frontend
       - worker
       - repo-updater
@@ -1112,12 +1127,11 @@ commandsets:
       - gitserver-1
       - searcher
       - symbols
+      - syntax-highlighter
       - github-proxy
     commands:
       - web
-      - blobstore
       - docsite
-      - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
@@ -1197,6 +1211,7 @@ commandsets:
       - bazelisk
       - ibazel
     bazelCommands:
+      - blobstore
       - frontend
       - worker
       - repo-updater
@@ -1204,14 +1219,13 @@ commandsets:
       - gitserver-1
       - searcher
       - symbols
+      - syntax-highlighter
       - github-proxy
       - codeintel-worker
       - codeintel-executor
     commands:
       - web
-      - blobstore
       - docsite
-      - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0

@@ -14,11 +14,12 @@ import (
 
 const anthropicAPIURL = "https://api.anthropic.com/v1/complete"
 
-func newAnthropicHandler(logger log.Logger, eventLogger events.Logger, accessToken string) http.Handler {
+func newAnthropicHandler(logger log.Logger, eventLogger events.Logger, accessToken string, allowedModels []string) http.Handler {
 	return makeUpstreamHandler(
 		logger,
 		eventLogger,
 		anthropicAPIURL,
+		allowedModels,
 		func(body *anthropicRequest) {
 			// Null the metadata field, we don't want to allow users to specify it:
 			body.Metadata = nil

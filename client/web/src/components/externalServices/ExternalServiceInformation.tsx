@@ -40,7 +40,9 @@ export const ExternalServiceInformation: FC<ExternalServiceInformationProps> = p
                     <tr>
                         <th className={styles.tableHeader}>GitHub App</th>
                         <td>
-                            <Link to={`/site-admin/github-apps/${gitHubApp.id}`}>{gitHubApp.name}</Link>
+                            <Link to={`/site-admin/github-apps/${encodeURIComponent(gitHubApp.id)}`}>
+                                {gitHubApp.name}
+                            </Link>
                         </td>
                     </tr>
                 )}

@@ -5,7 +5,9 @@ import { Disposable } from 'vscode'
 
 const INTERVAL = 10000
 
-const LOCAL_APP_LOCATIONS: { [key: string]: string[] } = { darwin: ['~/Library/Application Support/sourcegraph'] }
+const LOCAL_APP_LOCATIONS: { [key: string]: string[] } = {
+    darwin: ['~/Library/Application Support/com.sourcegraph.cody'],
+}
 
 async function pathExists(path: string): Promise<boolean> {
     path = expandHomeDir(path)

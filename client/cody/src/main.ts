@@ -3,8 +3,8 @@ import * as vscode from 'vscode'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 
-import { ChatViewProvider, isValidLogin } from './chat/ChatViewProvider'
-import { DOTCOM_URL, LOCAL_APP_URL } from './chat/protocol'
+import { ChatViewProvider, getAuthStatus } from './chat/ChatViewProvider'
+import { DOTCOM_URL, LOCAL_APP_URL, isLoggedIn } from './chat/protocol'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
@@ -13,6 +13,7 @@ import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
 import { getRgPath } from './rg'
+import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { InlineController } from './services/InlineController'
 import { LocalStorage } from './services/LocalStorageProvider'
 import {
@@ -87,6 +88,7 @@ const register = async (
         codebaseContext,
         chatClient,
         completionsClient,
+        guardrails,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
     } = await configureExternalServices(initialConfig, rgPath, editor)
 
@@ -97,6 +99,7 @@ const register = async (
         chatClient,
         intentDetector,
         codebaseContext,
+        guardrails,
         editor,
         secretStorage,
         localStorage,
@@ -191,14 +194,14 @@ const register = async (
                 const token = params.get('code')
                 if (token && token.length > 8) {
                     await secretStorage.store(CODY_ACCESS_TOKEN_SECRET, token)
-                    const isAuthed = await isValidLogin({
+                    const authStatus = await getAuthStatus({
                         serverEndpoint,
                         accessToken: token,
                         customHeaders: config.customHeaders,
                     })
-                    await chatProvider.sendLogin(isAuthed)
-                    if (isAuthed) {
-                        void vscode.window.showInformationMessage('Token has been retreived and updated successfully')
+                    await chatProvider.sendLogin(authStatus)
+                    if (isLoggedIn(authStatus)) {
+                        void vscode.window.showInformationMessage('Token has been retrieved and updated successfully')
                     }
                 }
             },
@@ -237,6 +240,15 @@ const register = async (
                 return [new vscode.Range(0, 0, lineCount - 1, 0)]
             },
         }
+    }
+
+    if (initialConfig.experimentalGuardrails) {
+        const guardrailsProvider = new GuardrailsProvider(guardrails, editor)
+        disposables.push(
+            vscode.commands.registerCommand('cody.guardrails.debug', async () => {
+                await guardrailsProvider.debugEditorSelection()
+            })
+        )
     }
 
     return {

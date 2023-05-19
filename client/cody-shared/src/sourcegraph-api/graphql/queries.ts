@@ -5,6 +5,14 @@ query CurrentUser {
     }
 }`
 
+export const CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY = `
+query CurrentUser {
+    currentUser {
+        id
+        hasVerifiedEmail
+    }
+}`
+
 export const REPOSITORY_ID_QUERY = `
 query Repository($name: String!) {
 	repository(name: $name) {
@@ -57,6 +65,19 @@ query LegacyEmbeddingsSearch($repo: ID!, $query: String!, $codeResultsCount: Int
 			endLine
 			content
 		}
+	}
+}`
+
+export const SEARCH_TYPE_REPO_QUERY = `
+query SearchTypeRepo($query: String!) {
+	search(query: $query, version: V3) {
+        results {
+            results {
+                ... on Repository {
+                    name
+                }
+            }
+        }
 	}
 }`
 

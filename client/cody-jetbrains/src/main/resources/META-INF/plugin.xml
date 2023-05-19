@@ -6,15 +6,34 @@
     <depends>com.intellij.modules.platform</depends>
 
     <extensions defaultExtensionNs="com.intellij">
+        <projectService serviceImplementation="com.sourcegraph.cody.config.CodyProjectService"/>
+        <projectService serviceImplementation="com.sourcegraph.cody.config.SettingsChangeListener"/>
+        <applicationService serviceImplementation="com.sourcegraph.cody.config.CodyApplicationService"/>
+        <projectConfigurable
+            parentId="tools"
+            instance="com.sourcegraph.cody.config.ProjectSettingsConfigurable"
+            id="com.sourcegraph.cody.config.ProjectSettingsConfigurable"
+            displayName="Cody by Sourcegraph (Project Settings)"
+        />
+        <applicationConfigurable
+            parentId="tools"
+            instance="com.sourcegraph.cody.config.ApplicationSettingsConfigurable"
+            id="com.sourcegraph.cody.config.ApplicationSettingsConfigurable"
+            displayName="Cody by Sourcegraph"
+        />
         <notificationGroup id="Cody errors" displayType="BALLOON"/>
+        <notificationGroup id="Sourcegraph access" displayType="BALLOON"/>
+        <notificationGroup id="Cody plugin updates" displayType="STICKY_BALLOON"/>
         <toolWindow
             id="Cody"
             icon="/icons/codyLogo.svg"
             anchor="left"
             secondary="false"
             factoryClass="com.sourcegraph.cody.CodyToolWindowFactory"/>
+        <notificationGroup id="Cody Sourcegraph access" displayType="BALLOON"/>
+        <postStartupActivity implementation="com.sourcegraph.cody.telemetry.PostStartupActivity"/>
+        <postStartupActivity implementation="com.sourcegraph.cody.config.NotificationActivity"/>
     </extensions>
-
 
     <actions>
         <action

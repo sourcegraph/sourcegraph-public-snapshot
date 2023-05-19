@@ -1,9 +1,9 @@
 import React, { FC, useEffect, useState, useCallback, useMemo } from 'react'
 
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, ErrorAlert, PageHeader, Button, Label } from '@sourcegraph/wildcard'
+import { Container, ErrorAlert, PageHeader, ButtonLink } from '@sourcegraph/wildcard'
 
 import { AddExternalServiceInput } from '../../graphql-operations'
 import { CreatedByAndUpdatedByInfoByline } from '../Byline/CreatedByAndUpdatedByInfoByline'
@@ -94,13 +94,13 @@ export const ExternalServiceEditPage: FC<Props> = ({
 
     const path = useMemo(() => getBreadCrumbs(externalService, true), [externalService])
 
-    const externalServiceCategory = resolveExternalServiceCategory(externalService)
+    const externalServiceCategory = resolveExternalServiceCategory(externalService, ghApp)
 
     const combinedError = fetchError || updateExternalServiceError || fetchGHAppError
     const combinedLoading = fetchLoading || updateExternalServiceLoading || fetchGHAppLoading
 
     if (updated && !combinedLoading && externalService?.warning === null) {
-        return <Navigate to={`/site-admin/external-services/${externalService.id}`} replace={true} />
+        navigate(`/site-admin/external-services/${encodeURIComponent(externalService.id)}`, { replace: true })
     }
 
     return (
@@ -125,19 +125,14 @@ export const ExternalServiceEditPage: FC<Props> = ({
                         className="mb-3"
                         headingElement="h2"
                         actions={
-                            <Button onClick={() => navigate(-1)} variant="secondary">
+                            <ButtonLink
+                                to={`/site-admin/external-services/${encodeURIComponent(externalService.id)}`}
+                                variant="secondary"
+                            >
                                 Cancel
-                            </Button>
+                            </ButtonLink>
                         }
                     />
-                    {ghApp && (
-                        <Label>
-                            GitHub App:
-                            <Link className="ml-3" to={`/site-admin/github-apps/${ghApp.id}`}>
-                                {ghApp.name}
-                            </Link>
-                        </Label>
-                    )}
                     {externalServiceCategory && (
                         <ExternalServiceForm
                             input={{ ...externalService }}
@@ -154,6 +149,7 @@ export const ExternalServiceEditPage: FC<Props> = ({
                             autoFocus={autoFocusForm}
                             externalServicesFromFile={externalServicesFromFile}
                             allowEditExternalServicesWithFile={allowEditExternalServicesWithFile}
+                            additionalFormComponent={externalServiceCategory.additionalFormComponent}
                         />
                     )}
                     <ExternalServiceWebhook externalService={externalService} className="mt-3" />

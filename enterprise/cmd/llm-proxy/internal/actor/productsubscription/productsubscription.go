@@ -14,8 +14,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/dotcom"
 	llmproxy "github.com/sourcegraph/sourcegraph/enterprise/internal/llm-proxy"
+	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+// product subscription tokens are always a prefix of 4 characters (sgs_)
+// followed by a 64-character hex-encoded SHA256 hash
+const tokenLength = 4 + 64
 
 var (
 	minUpdateInterval = 10 * time.Minute
@@ -51,6 +56,10 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 	// "sgs_" is productSubscriptionAccessTokenPrefix
 	if token == "" || !strings.HasPrefix(token, "sgs_") {
 		return nil, actor.ErrNotFromSource{}
+	}
+
+	if len(token) != tokenLength {
+		return nil, errors.New("invalid token format")
 	}
 
 	data, hit := s.cache.Get(token)
@@ -91,16 +100,25 @@ func (s *Source) Update(ctx context.Context, actor *actor.Actor) {
 // All Sync implementations are called periodically - implementations can decide
 // to skip syncs if the frequency is too high.
 func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
+	syncLog := sgtrace.Logger(ctx, s.log)
+
 	resp, err := dotcom.ListProductSubscriptions(ctx, s.dotcom)
 	if err != nil {
+		if errors.Is(err, context.Canceled) {
+			syncLog.Warn("sync context cancelled")
+			return seen, nil
+		}
 		return seen, errors.Wrap(err, "failed to list subscriptions from dotcom")
 	}
+
 	for _, sub := range resp.Dotcom.ProductSubscriptions.Nodes {
 		for _, token := range sub.SourcegraphAccessTokens {
 			act := NewActor(s, token, sub.ProductSubscriptionState, s.devLicensesOnly)
 			data, err := json.Marshal(act)
 			if err != nil {
-				s.log.Error("failed to marshal actor", log.Error(err))
+				syncLog.Error("failed to marshal actor",
+					log.String("actor.ID", act.ID),
+					log.Error(err))
 				errs = errors.Append(errs, err)
 				continue
 			}

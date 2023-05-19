@@ -11,10 +11,10 @@ import {
     UserBatchChangesCodeHostsResult,
 } from '../../../graphql-operations'
 import { BATCH_CHANGES_SITE_CONFIGURATION } from '../backend'
+import { noRolloutWindowMockResult, rolloutWindowConfigMockResult } from '../mocks'
 
 import { USER_CODE_HOSTS } from './backend'
 import { BatchChangesSettingsArea } from './BatchChangesSettingsArea'
-import { noRolloutWindowMockResult, rolloutWindowConfigMockResult } from './mocks'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 

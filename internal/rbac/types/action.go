@@ -11,3 +11,4 @@ func (a NamespaceAction) String() string {
 const BatchChangesReadAction NamespaceAction = "READ"
 const BatchChangesWriteAction NamespaceAction = "WRITE"
 const OwnershipAssignAction NamespaceAction = "ASSIGN"
+const RepoMetadataWriteAction NamespaceAction = "WRITE"
