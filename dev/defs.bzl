@@ -5,7 +5,7 @@ load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@aspect_rules_js//npm:defs.bzl", _npm_package = "npm_package")
 load("@aspect_rules_ts//ts:defs.bzl", _ts_project = "ts_project")
 load("@aspect_rules_jest//jest:defs.bzl", _jest_test = "jest_test")
-load("//dev:eslint.bzl", "eslint_test_with_types")
+load("//dev:eslint.bzl", "eslint_test_with_types", "get_client_package_path")
 load(":sass.bzl", _sass = "sass")
 load(":babel.bzl", _babel = "babel")
 
@@ -26,6 +26,17 @@ def ts_project(name, srcs = [], deps = [], use_preset_env = True, **kwargs):
 
         **kwargs: Additional arguments to pass to ts_project
     """
+
+    # Add the ESLint test target which lints all srcs of the `ts_project`.
+    eslint_test_with_types(
+        name = "%s_eslint" % name,
+        srcs = srcs,
+        deps = deps,
+        testonly = True,
+        binary = "//:eslint",
+        config = "//{}:eslint_config".format(get_client_package_path()),
+    )
+
     deps = deps + [
         "//:node_modules/tslib",
     ]
@@ -40,18 +51,6 @@ def ts_project(name, srcs = [], deps = [], use_preset_env = True, **kwargs):
             "//:node_modules/@types/testing-library__jest-dom",
         ] if not d in deps]
 
-    client_package_path = "/".join(native.package_name().split("/")[:2])
-    ts_config = kwargs.pop("tsconfig", "//:tsconfig")
-
-    eslint_test_with_types(
-        name = "%s_eslint" % name,
-        testonly = True,
-        srcs = srcs,
-        binary = "//:eslint",
-        config = "//{}:eslint_config".format(client_package_path),
-        deps = deps + [ts_config],
-    )
-
     # Default arguments for ts_project.
     _ts_project(
         name = name,
@@ -59,7 +58,7 @@ def ts_project(name, srcs = [], deps = [], use_preset_env = True, **kwargs):
         deps = deps,
 
         # tsconfig options, default to the root
-        tsconfig = ts_config,
+        tsconfig = kwargs.pop("tsconfig", "//:tsconfig"),
         composite = kwargs.pop("composite", True),
         declaration = kwargs.pop("declaration", True),
         declaration_map = kwargs.pop("declaration_map", True),

@@ -4,9 +4,12 @@ load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@aspect_rules_js//js:providers.bzl", "JsInfo")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
 
-def eslint_config(deps = []):
-    client_package_path = "/".join(native.package_name().split("/")[:2])
+def get_client_package_path():
+    # Used to reference the `eslint_config` target in the client package
+    # We assume that eslint config files are located at `client/<package>`
+    return "/".join(native.package_name().split("/")[:2])
 
+def eslint_config(deps = []):
     js_library(
         name = "eslint_config",
         testonly = True,
@@ -19,7 +22,7 @@ def eslint_config(deps = []):
         deps = [
             "//:eslint_config",
         ] + deps,
-        visibility = ["//{}:__subpackages__".format(client_package_path)],
+        visibility = ["//{}:__subpackages__".format(get_client_package_path())],
     )
 
 def _custom_eslint_impl(ctx):
@@ -31,6 +34,7 @@ def _custom_eslint_impl(ctx):
             targets = [ctx.attr.config] + ctx.attr.deps,
             include_sources = False,
             include_transitive_sources = False,
+            # We have to include declarations because we need to lint the types.
             include_declarations = True,
             include_npm_linked_packages = True,
         )],
@@ -49,14 +53,18 @@ def _custom_eslint_impl(ctx):
     # args.add("--no-eslintrc")
     # args.add_all(["--config", get_path(ctx.files.config[0])])
 
+    # Ignore warnings and fail only on errors.
     args.add("--quiet")
+
+    # Use the custom formatter to ouput relative paths.
     args.add_all(["--format", "./{}".format(ctx.files.formatter[0].short_path)])
 
+    # Specify the files to lint.
+    args.add_all([s.short_path for s in copied_srcs])
+
+    # Declare the output file for the eslint output.
     output = ctx.actions.declare_file(ctx.attr.output)
     # args.add_all(["--output-file", output.short_path])
-
-    args.add_all([s.short_path for s in copied_srcs])
-    # print("ARGS", args)
 
     env = {
         "BAZEL_BINDIR": ctx.bin_dir.path,

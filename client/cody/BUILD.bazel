@@ -10,10 +10,12 @@ load("//dev:eslint.bzl", "eslint_config")
 
 npm_link_all_packages(name = "node_modules")
 
-eslint_config(deps = [
-    "//client/cody/integration-test:tsconfig",
-    "//client/cody/scripts:tsconfig",
-])
+eslint_config(
+    deps = [
+        "//client/cody/integration-test:tsconfig",
+        "//client/cody/scripts:tsconfig",
+    ],
+)
 
 ts_config(
     name = "tsconfig",

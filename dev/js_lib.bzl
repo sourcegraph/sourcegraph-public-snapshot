@@ -1,4 +1,4 @@
-"""`js_binary` helper functions.
+"""`js_binary` helper functions. Copied from rules_js internals.
 """
 
 load("@aspect_rules_js//js:providers.bzl", "JsInfo")

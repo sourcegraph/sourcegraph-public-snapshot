@@ -22,7 +22,13 @@ load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 
 npm_link_all_packages(name = "node_modules")
 
-eslint_config()
+eslint_config(
+    deps = [
+        "//client/web/src/end-to-end:tsconfig",
+        "//client/web/src/integration:tsconfig",
+        "//client/web/src/regression:tsconfig",
+    ],
+)
 
 ts_config(
     name = "tsconfig",

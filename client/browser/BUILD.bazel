@@ -22,7 +22,11 @@ load("//dev:eslint.bzl", "eslint_config")
 
 npm_link_all_packages(name = "node_modules")
 
-eslint_config()
+eslint_config(
+    deps = [
+        "//client/browser/src/end-to-end:tsconfig",
+    ],
+)
 
 ts_config(
     name = "tsconfig",
