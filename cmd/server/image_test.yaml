@@ -1,0 +1,6 @@
+commandTests:
+  - name: "sanity check"
+    command: "/server"
+    envVars:
+      - key: "SANITY_CHECK"
+        value: "true"
