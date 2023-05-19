@@ -1614,9 +1614,12 @@ func (c *clientImplementor) getCommit(ctx context.Context, checker authz.SubRepo
 // needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
 // the repository or if the commit must be fetched from the remote.
 func (c *clientImplementor) GetCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (*gitdomain.Commit, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: GetCommit") //nolint:staticcheck // OT is deprecated
-	span.SetTag("Commit", id)
-	defer span.Finish()
+	ctx, _, endObservation := c.operations.getCommit.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repo", string(repo)),
+		attribute.String("commit", string(id)),
+		attribute.Bool("noEnsureRevision", opt.NoEnsureRevision),
+	}})
+	defer endObservation(1, observation.Args{})
 
 	return c.getCommit(ctx, checker, repo, id, opt)
 }
