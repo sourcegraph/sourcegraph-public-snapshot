@@ -39,3 +39,6 @@ build --workspace_status_command=./dev/bazel_buildkite_stamp_vars.sh
 
 # temp
 build --test_env=INCLUDE_ADMIN_ONBOARDING=false
+
+# Used for container_structure_tests
+build --test_env=DOCKER_HOST
