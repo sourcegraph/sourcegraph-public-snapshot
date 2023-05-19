@@ -34,7 +34,11 @@ oci_image(
     name = "image",
     base = "@wolfi_base",
     cmd = ["serve"],
-    entrypoint =  ["/sbin/tini", "--", "/frontend"],
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+        "/frontend",
+    ],
     tars = [":tar_frontend"],
 )
 
