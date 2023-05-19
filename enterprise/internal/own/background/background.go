@@ -125,11 +125,9 @@ func NewOwnBackgroundWorker(ctx context.Context, db database.DB, observationCtx 
 	return []goroutine.BackgroundRoutine{worker, resetter, janitor}
 }
 
-const workerName = "own_background_worker"
-
 func makeWorkerStore(db database.DB, observationCtx *observation.Context) dbworkerstore.Store[*Job] {
 	return dbworkerstore.New(observationCtx, db.Handle(), dbworkerstore.Options[*Job]{
-		Name:              fmt.Sprintf("%s_store", workerName),
+		Name:              "own_background_worker_store",
 		TableName:         tableName,
 		ViewName:          viewName,
 		ColumnExpressions: jobColumns,
@@ -158,18 +156,18 @@ func makeWorker(ctx context.Context, db database.DB, observationCtx *observation
 	}
 
 	worker := dbworker.NewWorker(ctx, workerStore, workerutil.Handler[*Job](&task), workerutil.WorkerOptions{
-		Name:              workerName,
+		Name:              "own_background_worker",
 		Description:       "Sourcegraph own background processing partitioned by repository",
 		NumHandlers:       getConcurrencyConfig(),
 		Interval:          10 * time.Second,
 		HeartbeatInterval: 20 * time.Second,
-		Metrics:           workerutil.NewMetrics(observationCtx, workerName+"_processor"),
+		Metrics:           workerutil.NewMetrics(observationCtx, "own_background_worker_processor"),
 	})
 
 	resetter := dbworker.NewResetter(log.Scoped("OwnBackgroundResetter", ""), workerStore, dbworker.ResetterOptions{
-		Name:     fmt.Sprintf("%s_resetter", workerName),
+		Name:     "own_background_worker_resetter",
 		Interval: time.Second * 20,
-		Metrics:  dbworker.NewResetterMetrics(observationCtx, workerName),
+		Metrics:  dbworker.NewResetterMetrics(observationCtx, "own_background_worker"),
 	})
 
 	return worker, resetter, workerStore
