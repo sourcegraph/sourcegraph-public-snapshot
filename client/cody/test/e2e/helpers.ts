@@ -10,7 +10,7 @@ import { run } from '../fixtures/mock-server'
 
 export const test = base
     .extend<{}>({
-        page: async ({ page: _page }, use) => {
+        page: async ({ page: _page }, use, testInfo) => {
             void _page
 
             const codyRoot = path.resolve(__dirname, '..', '..')
@@ -20,6 +20,7 @@ export const test = base
 
             const userDataDirectory = mkdtempSync(path.join(tmpdir(), 'cody-vsce'))
             const extensionsDirectory = mkdtempSync(path.join(tmpdir(), 'cody-vsce'))
+            const videoDirectory = path.join(codyRoot, '..', '..', 'playwright', escapeToPath(testInfo.title))
 
             const workspaceDirectory = path.join(codyRoot, 'test', 'fixtures', 'workspace')
 
@@ -41,7 +42,7 @@ export const test = base
                 ],
                 // Record a video that can be picked up by Buildkite. Since there is no way right
                 recordVideo: {
-                    dir: '../../playwright',
+                    dir: videoDirectory,
                 },
             })
 
@@ -54,7 +55,7 @@ export const test = base
             // Wait for Cody to become activated
             // TODO(philipp-spiess): Figure out which playwright matcher we can use that works for
             // the signed-in and signed-out cases
-            await new Promise(resolve => setTimeout(resolve, 1000))
+            await new Promise(resolve => setTimeout(resolve, 500))
 
             const sidebar = await getCodySidebar(page)
 
@@ -71,6 +72,11 @@ export const test = base
             })
 
             await app.close()
+
+            // Delete the recorded video if the test passes
+            if (testInfo.status === 'passed') {
+                rmdirSync(videoDirectory, { recursive: true })
+            }
 
             rmdirSync(userDataDirectory, { recursive: true })
             rmdirSync(extensionsDirectory, { recursive: true })
@@ -110,4 +116,8 @@ async function waitUntil(predicate: () => boolean | Promise<boolean>): Promise<v
         await new Promise(resolve => setTimeout(resolve, delay))
         delay <<= 1
     }
+}
+
+function escapeToPath(text: string): string {
+    return text.replace(/\W/g, '_')
 }
