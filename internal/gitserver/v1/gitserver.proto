@@ -211,6 +211,7 @@ message ArchiveRequest {
 message ArchiveResponse {
   bytes data = 1;
 }
+
 // ReposStatsRequest is a empty request for the ReposStats RPC.
 message ReposStatsRequest {}
 
