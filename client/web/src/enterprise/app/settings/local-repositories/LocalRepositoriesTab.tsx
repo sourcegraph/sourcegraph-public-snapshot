@@ -70,10 +70,6 @@ export const LocalRepositoriesWidget: FC<LocalRepositoriesWidgetProps> = props =
         await deletePath(pathToDelete)
     }
 
-    const handlePathsAdd = async (pathsToAdd: Path[]): Promise<void> => {
-        await addNewPaths(pathsToAdd)
-    }
-
     const anyLoading = pathsLoading || repositoriesLoading
     const anyError = pathsError || repositoriesError
     const allLoaded = pathLoaded && repositoriesLoaded
