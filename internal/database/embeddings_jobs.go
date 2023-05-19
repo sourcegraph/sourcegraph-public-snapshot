@@ -38,14 +38,13 @@ ORDER BY finished_at DESC
 LIMIT 1;
 `
 
+// GetEmbeddingsJob returns the most recent completed embeddings job for the given repository.
 func (s *embeddingsJobsStore) GetEmbeddingsJob(ctx context.Context, repo api.RepoID) (*EmbeddingsJob, error) {
 	return scanEmbeddingsJob(s.QueryRow(ctx, sqlf.Sprintf(getEmbeddingsJobQueryFmtstr, repo)))
 }
 
 func scanEmbeddingsJob(sc dbutil.Scanner) (*EmbeddingsJob, error) {
-	var (
-		revision api.CommitID
-	)
+	var revision api.CommitID
 
 	if err := sc.Scan(
 		&revision,
@@ -53,7 +52,5 @@ func scanEmbeddingsJob(sc dbutil.Scanner) (*EmbeddingsJob, error) {
 		return nil, err
 	}
 
-	return &EmbeddingsJob{
-		Revision: revision,
-	}, nil
+	return &EmbeddingsJob{Revision: revision}, nil
 }

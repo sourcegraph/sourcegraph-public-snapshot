@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
@@ -23,6 +24,33 @@ func (index *EmbeddingIndex) Row(n int) []int8 {
 
 func (index *EmbeddingIndex) EstimateSize() int64 {
 	return int64(len(index.Embeddings) + len(index.RowMetadata)*(16+8+8) + len(index.Ranks)*4)
+}
+
+// Filter removes all files from the index that are not in the set
+func (index *EmbeddingIndex) filter(set map[string]struct{}) {
+	cursor := 0
+	for i, s := range index.RowMetadata {
+		if _, ok := set[s.FileName]; ok {
+			continue
+		}
+		index.RowMetadata[cursor] = index.RowMetadata[i]
+		// Ranks might not be present
+		if len(index.Ranks) > 0 {
+			index.Ranks[cursor] = index.Ranks[i]
+		}
+		copy(
+			index.Embeddings[cursor*index.ColumnDimension:(cursor+1)*index.ColumnDimension], // dst
+			index.Embeddings[i*index.ColumnDimension:(i+1)*index.ColumnDimension],
+		)
+		cursor++
+	}
+
+	// update slice length
+	index.RowMetadata = index.RowMetadata[:cursor]
+	if len(index.Ranks) > 0 {
+		index.Ranks = index.Ranks[:cursor]
+	}
+	index.Embeddings = index.Embeddings[:cursor*index.ColumnDimension]
 }
 
 type RepoEmbeddingRowMetadata struct {
@@ -133,7 +161,9 @@ type EmbedRepoStats struct {
 	HasRanks       bool
 	CodeIndexStats EmbedFilesStats
 	TextIndexStats EmbedFilesStats
-	IsDelta        bool
+
+	// IsDelta is only true if the corresponding index is a delta index
+	IsDelta bool
 }
 
 func (e *EmbedRepoStats) ToFields() []log.Field {

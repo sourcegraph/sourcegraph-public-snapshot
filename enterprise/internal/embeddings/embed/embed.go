@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	codeintelContext "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
@@ -31,6 +33,7 @@ func EmbedRepo(
 	readLister FileReadLister,
 	getDocumentRanks ranksGetter,
 	opts EmbedRepoOpts,
+	logger log.Logger,
 ) (*embeddings.RepoEmbeddingIndex, []string, *embeddings.EmbedRepoStats, error) {
 	start := time.Now()
 
@@ -43,9 +46,19 @@ func EmbedRepo(
 	if isDelta {
 		toIndex, toRemove, err = readLister.Diff(ctx, opts.IndexedRevision)
 		if err != nil {
-			return nil, nil, nil, err
+			logger.Error(
+				"failed to get diff. Falling back to full index",
+				log.String("RepoName", string(opts.RepoName)),
+				log.String("revision", string(opts.Revision)),
+				log.String("old revision", string(opts.IndexedRevision)),
+				log.Error(err),
+			)
+			toRemove = nil
+			isDelta = false
 		}
-	} else { // full index
+	}
+
+	if !isDelta { // full index
 		toIndex, err = readLister.List(ctx)
 		if err != nil {
 			return nil, nil, nil, err

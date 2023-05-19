@@ -60,15 +60,15 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		return err
 	}
 
-	isDelta := false
+	// lastSuccessfulJobRevision is the revision of the last successful embeddings
+	// job for this repo. If we can find one, we'll attempt a delta index, otherwise
+	// we fall back to a full index.
 	var lastSuccessfulJobRevision api.CommitID
 	if featureflag.FromContext(ctx).GetBoolOr("sh-delta-embeddings", false) {
-		// Check if we should do a delta index or a full index
 		lastSuccessfulJob, err := h.db.EmbeddingsJobsStore().GetEmbeddingsJob(ctx, record.RepoID)
 		if err != nil {
 			logger.Info("no previous successful embeddings job found. Falling back to full index")
 		} else {
-			isDelta = true
 			lastSuccessfulJobRevision = lastSuccessfulJob.Revision
 			logger.Info(
 				"found previous successful embeddings job. Attempting delta index",
@@ -96,10 +96,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		SplitOptions:      splitOptions,
 		MaxCodeEmbeddings: defaultTo(config.MaxCodeEmbeddingsPerRepo, defaultMaxCodeEmbeddingsPerRepo),
 		MaxTextEmbeddings: defaultTo(config.MaxTextEmbeddingsPerRepo, defaultMaxTextEmbeddingsPerRepo),
-	}
-
-	if isDelta {
-		opts.IndexedRevision = lastSuccessfulJobRevision
+		IndexedRevision:   lastSuccessfulJobRevision,
 	}
 
 	repoEmbeddingIndex, toRemove, stats, err := embed.EmbedRepo(
@@ -109,6 +106,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		fetcher,
 		getDocumentRanks,
 		opts,
+		logger,
 	)
 	if err != nil {
 		return err
@@ -121,13 +119,11 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		log.Object("stats", stats.ToFields()...),
 	)
 
-	// This is a bit of a hack to get around the fact that we don't use toRemove yet for anything
-	if isDelta && len(toRemove) > 0 {
-		logger.Debug("found outdated embeddings", log.Int("count", len(toRemove)))
+	if stats.IsDelta {
+		return embeddings.UpdateRepoEmbeddingIndex(ctx, h.uploadStore, string(embeddings.GetRepoEmbeddingIndexName(repo.Name)), repoEmbeddingIndex, toRemove)
+	} else {
+		return embeddings.UploadRepoEmbeddingIndex(ctx, h.uploadStore, string(embeddings.GetRepoEmbeddingIndexName(repo.Name)), repoEmbeddingIndex)
 	}
-
-	// TODO (stefan): If this is a delta build, we need to update the existing index, not overwrite it.
-	return embeddings.UploadRepoEmbeddingIndex(ctx, h.uploadStore, string(embeddings.GetRepoEmbeddingIndexName(repo.Name)), repoEmbeddingIndex)
 }
 
 func defaultTo(input, def int) int {
@@ -181,20 +177,18 @@ func (r *revisionFetcher) Diff(ctx context.Context, oldCommit api.CommitID) (
 		return nil, nil, err
 	}
 
-	// In addition to the file names, we need the file sizes. We could ask gitserver
-	// for the file size of each file, however my guess it that it is cheaper to
-	// call r.List(ctx) once instead of getting this information per file.
-	changedNewSet := make(map[string]struct{})
-	for _, file := range changedNew {
-		changedNewSet[file] = struct{}{}
-	}
-
-	// r.List() gives us the file size, which we use during indexing to determine if
-	// a file should be indexed or not. We only need the file size for the files in
-	// changedNewSet.
+	// toRemove only contains file names, but we also need the file sizes. We could
+	// ask gitserver for the file size of each file, however my intuition tells me
+	// it is cheaper to call r.List(ctx) once. As a downside we have to loop over
+	// allFiles.
 	allFiles, err := r.List(ctx)
 	if err != nil {
 		return nil, nil, err
+	}
+
+	changedNewSet := make(map[string]struct{})
+	for _, file := range changedNew {
+		changedNewSet[file] = struct{}{}
 	}
 
 	for _, file := range allFiles {
