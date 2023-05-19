@@ -931,6 +931,7 @@ func TestTreeOwnershipSignals(t *testing.T) {
 		mockStore := database.NewMockSignalConfigurationStore()
 		db.OwnSignalConfigurationsFunc.SetDefaultReturn(mockStore)
 		mockStore.IsEnabledFunc.SetDefaultHook(func(ctx context.Context, s string) (bool, error) {
+			t.Log(s)
 			if s == owntypes.SignalRecentContributors {
 				return false, nil
 			}
