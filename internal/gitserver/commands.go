@@ -2650,6 +2650,23 @@ type BranchesOptions struct {
 	ContainsCommit string `json:"ContainsCommit,omitempty" url:",omitempty"`
 }
 
+func (bo *BranchesOptions) Attrs() (res []attribute.KeyValue) {
+	if bo.MergedInto != "" {
+		res = append(res, attribute.String("mergedInto", bo.MergedInto))
+	}
+	res = append(res, attribute.Bool("includeCommit", bo.IncludeCommit))
+
+	if bo.BehindAheadBranch != "" {
+		res = append(res, attribute.String("behindAheadBranch", bo.BehindAheadBranch))
+	}
+
+	if bo.ContainsCommit != "" {
+		res = append(res, attribute.String("containsCommit", bo.ContainsCommit))
+	}
+
+	return res
+}
+
 // branchFilter is a filter for branch names.
 // If not empty, only contained branch names are allowed. If empty, all names are allowed.
 // The map should be made so it's not nil.
@@ -2673,10 +2690,14 @@ func (f branchFilter) add(list []string) {
 }
 
 // ListBranches returns a list of all branches in the repository.
-func (c *clientImplementor) ListBranches(ctx context.Context, repo api.RepoName, opt BranchesOptions) ([]*gitdomain.Branch, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: Branches") //nolint:staticcheck // OT is deprecated
-	span.SetTag("Opt", opt)
-	defer span.Finish()
+func (c *clientImplementor) ListBranches(ctx context.Context, repo api.RepoName, opt BranchesOptions) (_ []*gitdomain.Branch, err error) {
+	ctx, _, endObservation := c.operations.listBranches.With(ctx, &err, observation.Args{
+		Attrs: append(
+			[]attribute.KeyValue{attribute.String("repo", string(repo))},
+			opt.Attrs()...,
+		),
+	})
+	defer endObservation(1, observation.Args{})
 
 	f := make(branchFilter)
 	if opt.MergedInto != "" {

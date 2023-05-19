@@ -15,6 +15,7 @@ type operations struct {
 	exec             *observation.Operation
 	p4Exec           *observation.Operation
 	readDir          *observation.Operation
+	listBranches     *observation.Operation
 	archiveReader    *observation.Operation
 	getCommits       *observation.Operation
 	readFile         *observation.Operation
@@ -71,6 +72,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		mergeBase:        op("MergeBase"),
 		resolveRevision:  op("ResolveRevision"),
 		getCommit:        op("GetCommit"),
+		listBranches:     op("ListBranches"),
 		getCommits:       op("GetCommits"),
 		hasCommitAfter:   op("HasCommitAfter"),
 		firstEverCommit:  op("FirstEverCommit"),
