@@ -39,6 +39,10 @@ export const test = base
                     `--extensions-dir=${extensionsDirectory}`,
                     workspaceDirectory,
                 ],
+                // Record a video that can be picked up by Buildkite. Since there is no way right
+                recordVideo: {
+                    dir: '../../playwright',
+                },
             })
 
             await waitUntil(() => app.windows().length > 0)
@@ -65,6 +69,8 @@ export const test = base
 
                 await use(page)
             })
+
+            await app.close()
 
             rmdirSync(userDataDirectory, { recursive: true })
             rmdirSync(extensionsDirectory, { recursive: true })
