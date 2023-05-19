@@ -11,9 +11,6 @@ contents:
     - postgresql-12-oci-entrypoint
     - su-exec
 
-# TODO: Currently missing shadow package which would let us modify users and groups in the Dockerfile
-#       In the future, we can use accounts: and paths: directives to do that in this image
-
 # TODO: Is this needed?
 entrypoint:
   command: /var/lib/postgres/initdb/postgresql-entrypoint.sh postgres
