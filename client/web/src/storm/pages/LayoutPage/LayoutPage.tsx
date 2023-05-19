@@ -31,7 +31,7 @@ import { SearchQueryStateObserver } from '../../../SearchQueryStateObserver'
 
 import styles from './LayoutPage.module.scss'
 
-const LazySetupWizard = lazyComponent(() => import('../../../setup-wizard'), 'SetupWizard')
+const LazySetupWizard = lazyComponent(() => import('../../../setup-wizard/SetupWizard'), 'SetupWizard')
 
 export interface LegacyLayoutProps extends LegacyLayoutRouteContext {
     children?: never

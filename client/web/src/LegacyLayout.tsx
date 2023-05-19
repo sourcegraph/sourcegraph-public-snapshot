@@ -32,7 +32,7 @@ import { SearchQueryStateObserver } from './SearchQueryStateObserver'
 
 import styles from './storm/pages/LayoutPage/LayoutPage.module.scss'
 
-const LazySetupWizard = lazyComponent(() => import('./setup-wizard'), 'SetupWizard')
+const LazySetupWizard = lazyComponent(() => import('./setup-wizard/SetupWizard'), 'SetupWizard')
 
 export interface LegacyLayoutProps
     extends Omit<LegacyLayoutRouteContext, 'breadcrumbs' | 'useBreadcrumb' | 'setBreadcrumb' | 'isMacPlatform'> {
