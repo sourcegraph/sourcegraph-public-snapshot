@@ -42,7 +42,7 @@ export async function annotateAttribution(guardrails: Guardrails, text: string):
             })
 
             // TODO(keegancsmith) escape msg?
-            return `${token.raw}\n> ${msg}\n`
+            return `${token.raw}\n<div title="guardrails">🛡️ ${msg}</div>`
         })
     )
     return parts.join('')
