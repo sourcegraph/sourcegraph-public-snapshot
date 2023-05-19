@@ -86,7 +86,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
     useEffect(() => telemetryService.logViewEvent('BatchChangesListPage'), [telemetryService])
 
     const isExecutionEnabled = isBatchChangesExecutionEnabled(settingsCascade)
-    const batchChangeLicensed = !!window.context.licenseInfo?.batchChanges
+    const isBatchChangesLicensed = !!window.context.licenseInfo?.batchChanges
 
     const { selectedFilters, setSelectedFilters, availableFilters } = useBatchChangeListFilters({ isExecutionEnabled })
     const [selectedTab, setSelectedTab] = useState<SelectedTab>(
