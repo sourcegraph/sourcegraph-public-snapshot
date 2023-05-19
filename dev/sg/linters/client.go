@@ -23,7 +23,7 @@ func checkUnversionedDocsLinks() *linter {
 		return diff.IterateHunks(func(file string, hunk repo.DiffHunk) error {
 			// Ignore Sourcegraph app directory since docs links don't work
 			// with /help route there
-			if strings.hasPrefix(file, "client/web/src/enterprise/app") {
+			if strings.HasPrefix(file, "client/web/src/enterprise/app") {
 				return nil
 			}
 			for _, l := range hunk.AddedLines {
