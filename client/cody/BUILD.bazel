@@ -109,10 +109,13 @@ ts_project(
         "src/completions/provider.test.ts",
         "src/configuration.test.ts",
         "src/keyword-context/local-keyword-context-fetcher.test.ts",
+        "test/fixtures/mock-server.ts",
     ],
     tsconfig = ":tsconfig",
     deps = [
         ":cody",
+        "//:node_modules/@types/express",
         "//:node_modules/@types/node",
+        "//:node_modules/express",
     ],
 )

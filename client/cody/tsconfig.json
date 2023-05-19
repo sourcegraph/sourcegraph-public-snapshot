@@ -10,6 +10,8 @@
   },
   "include": [
     "src",
+    "test/fixtures",
+    "test/e2e",
     "webviews",
     "vite.config.ts",
     "webpack.config.js",
@@ -17,6 +19,6 @@
     ".eslintrc.js",
     "jest.config.js",
   ],
-  "exclude": ["scripts", "out", "dist", "integration-test"],
+  "exclude": ["scripts", "out", "dist", "test/integration"],
   "references": [{ "path": "../cody-shared" }, { "path": "../cody-ui" }],
 }
