@@ -68,6 +68,19 @@ query LegacyEmbeddingsSearch($repo: ID!, $query: String!, $codeResultsCount: Int
 	}
 }`
 
+export const SEARCH_TYPE_REPO_QUERY = `
+query SearchTypeRepo($query: String!) {
+	search(query: $query, version: V3) {
+        results {
+            results {
+                ... on Repository {
+                    name
+                }
+            }
+        }
+	}
+}`
+
 export const IS_CONTEXT_REQUIRED_QUERY = `
 query IsContextRequiredForChatQuery($query: String!) {
 	isContextRequiredForChatQuery(query: $query)
