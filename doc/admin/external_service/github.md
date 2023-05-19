@@ -171,7 +171,7 @@ This needs to be done for every github code host connection if there is more tha
 
 Repo-centric permission syncing is done by calling the [list repository collaborators GitHub API endpoint](https://docs.github.com/en/rest/collaborators/collaborators#list-repository-collaborators). To call this API endpoint correctly, we need a [GitHub access token](#github-api-access) with the required scopes and read and write access to all relevant repositories.
 
-> IMPORTANT: We strongly recommend configuring both read and write access to associated repositories for permission syncing due to GitHub's token scope requirements. Without write access, there will be a conflict between [user-centric sync](../permissions/syncing.md#troubleshooting) and repo-centric sync. In that case, [disable repo-centric permission sync](../permissions/syncing#disable-repo-centric-permission-sync) (supported in <span class="badge badge-note">Sourcegraph 5.0.4+</span>).
+> IMPORTANT: We strongly recommend configuring both read and write access to associated repositories for permission syncing due to GitHub's token scope requirements. Without write access, there will be a conflict between [user-centric sync](../permissions/syncing.md#troubleshooting) and repo-centric sync. In that case, [disable repo-centric permission sync](../permissions/syncing.md#disable-repo-centric-permission-sync) (supported in <span class="badge badge-note">Sourcegraph 5.0.4+</span>).
 
 <span class="virtual-br"></span>
 
