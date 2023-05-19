@@ -1007,7 +1007,7 @@ func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoNa
 	}
 	resolveRevisionCounter.WithLabelValues(labelEnsureRevisionValue).Inc()
 
-	ctx, _, endObservation := c.operations.readDir.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+	ctx, _, endObservation := c.operations.resolveRevision.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("repo", string(repo)),
 		attribute.String("spec", spec),
 		attribute.Bool("noEnsureRevision", opt.NoEnsureRevision),
@@ -1223,9 +1223,12 @@ func parseDirectoryChildren(dirnames, paths []string) map[string][]string {
 }
 
 // ListTags returns a list of all tags in the repository. If commitObjs is non-empty, only all tags pointing at those commits are returned.
-func (c *clientImplementor) ListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) ([]*gitdomain.Tag, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: Tags") //nolint:staticcheck // OT is deprecated
-	defer span.Finish()
+func (c *clientImplementor) ListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error) {
+	ctx, _, endObservation := c.operations.listTags.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repo", string(repo)),
+		attribute.StringSlice("commitObjs", commitObjs),
+	}})
+	defer endObservation(1, observation.Args{})
 
 	// Support both lightweight tags and tag objects. For creatordate, use an %(if) to prefer the
 	// taggerdate for tag objects, otherwise use the commit's committerdate (instead of just always
