@@ -178,6 +178,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}))
 
 		ops.Append(bazelTmpServerBackendIntegration(c.Version))
+		ops.Append(bazelTmpServerE2E(c.Version))
 
 		// At this stage, we don't break builds because of a Bazel failure.
 		// TODO(JH) Disabled until re-enabled with flag

@@ -40,6 +40,26 @@ func bazelTmpServerBackendIntegration(candidateImageTag string) func(*bk.Pipelin
 	}
 }
 
+func bazelTmpServerE2E(candidateImageTag string) func(*bk.Pipeline) {
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(":bazel: backend server e2e wip wip",
+			bk.DependsOn("bazel_build"),
+			bk.Agent("queue", "bazel"),
+
+			bk.Env("CANDIDATE_VERSION", candidateImageTag),
+			bk.Env("DISPLAY", ":99"),
+			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
+			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
+			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
+			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
+			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
+			bk.AnnotatedCmd("dev/ci/integration/e2e/run.sh", bk.AnnotatedCmdOpts{
+				Annotations: &bk.AnnotationOpts{},
+			}),
+			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
+	}
+}
+
 func bazelCmd(args ...string) string {
 	pre := []string{
 		"bazel",
