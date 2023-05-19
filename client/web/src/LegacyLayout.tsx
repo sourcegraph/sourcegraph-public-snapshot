@@ -1,7 +1,7 @@
 import { FC, Suspense, useCallback, useLayoutEffect, useState } from 'react'
 
 import classNames from 'classnames'
-import { matchPath, useLocation, Route, Routes, Navigate } from 'react-router-dom'
+import { matchPath, useLocation, Route, Routes, Navigate, RouteObject } from 'react-router-dom'
 
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
@@ -32,7 +32,7 @@ import { SearchQueryStateObserver } from './SearchQueryStateObserver'
 
 import styles from './storm/pages/LayoutPage/LayoutPage.module.scss'
 
-const LazySetupWizard = lazyComponent(() => import('./setup-wizard'), 'SetupWizard')
+const LazySetupWizard = lazyComponent(() => import('./setup-wizard/SetupWizard'), 'SetupWizard')
 
 export interface LegacyLayoutProps
     extends Omit<LegacyLayoutRouteContext, 'breadcrumbs' | 'useBreadcrumb' | 'setBreadcrumb' | 'isMacPlatform'> {
@@ -49,15 +49,20 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const location = useLocation()
 
     // TODO: Replace with useMatches once top-level <Router/> is V6
-    const routeMatch = props.routes.find(
+    const route = props.routes.find(
         route =>
             (route.path && matchPath(route.path, location.pathname)) ||
             (route.path && matchPath(route.path.replace(/\/\*$/, ''), location.pathname))
-    )?.path
+    )
+
+    const routeMatch = route?.path
+    const isFullPageRoute = route?.handle?.isFullPage
 
     const isSearchRelatedPage = (routeMatch === PageRoutes.RepoContainer || routeMatch?.startsWith('/search')) ?? false
     const isSearchHomepage = location.pathname === '/search' && !parseSearchURLQuery(location.search)
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
+    const isAppSetupPage = routeMatch?.startsWith(EnterprisePageRoutes.AppSetup)
+    const isAppAuthCallbackPage = routeMatch?.startsWith(EnterprisePageRoutes.AppAuthCallback)
     const isSearchNotebooksPage = routeMatch?.startsWith(EnterprisePageRoutes.Notebooks)
     const isSearchNotebookListPage = location.pathname === EnterprisePageRoutes.Notebooks
     const isCodySearchPage = routeMatch === EnterprisePageRoutes.CodySearch
@@ -66,6 +71,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
 
     // eslint-disable-next-line no-restricted-syntax
     const [wasSetupWizardSkipped] = useLocalStorage('setup.skipped', false)
+    const [wasAppSetupFinished] = useLocalStorage('app.setup.finished', false)
 
     const { fuzzyFinder } = useExperimentalFeatures(features => ({
         // enable fuzzy finder by default unless it's explicitly disabled in settings
@@ -83,7 +89,6 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     // so that Layout can always render the navbar.
     const needsSiteInit = window.context?.needsSiteInit
     const disableFeedbackSurvey = window.context?.disableFeedbackSurvey
-    const needsRepositoryConfiguration = window.context?.needsRepositoryConfiguration
     const isSiteInit = location.pathname === PageRoutes.SiteAdminInit
     const isSignInOrUp =
         routeMatch &&
@@ -135,7 +140,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
         return <Navigate replace={true} to={{ ...location, pathname: location.pathname.slice(0, -1) }} />
     }
 
-    if (isSetupWizardPage && !!props.authenticatedUser?.siteAdmin) {
+    if (isSetupWizardPage && !!props.authenticatedUser?.siteAdmin && !props.isSourcegraphApp) {
         return (
             <Suspense
                 fallback={
@@ -154,8 +159,30 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     // setup wizard state, since we don't have a good solution for this at the
     // moment, we use mutable window.context object here.
     // TODO remove window.context and use injected context store/props
-    if (needsRepositoryConfiguration && !wasSetupWizardSkipped && props.authenticatedUser?.siteAdmin) {
+    if (
+        !props.isSourcegraphApp &&
+        window.context?.needsRepositoryConfiguration &&
+        !wasSetupWizardSkipped &&
+        props.authenticatedUser?.siteAdmin
+    ) {
         return <Navigate to={PageRoutes.SetupWizard} replace={true} />
+    }
+
+    // Redirect to the app setup pages if it's App, we haven't seen setup before,
+    // and it's not already a setup page, NOTE: that we allow rendering AppAuthCallbackPage
+    // because this page is part of setup experience, and we should not interrupt
+    // rendering of this page even if setup hasn't been finished yet
+    if (props.isSourcegraphApp && !wasAppSetupFinished && !isAppSetupPage && !isAppAuthCallbackPage) {
+        return <Navigate to={EnterprisePageRoutes.AppSetup} replace={true} />
+    }
+
+    // Some routes by their design require rendering on a blank page
+    // without the UI chrome that Layout component renders by default.
+    // If route has handle: { fullPage: true } we render just the route content
+    // and its container block without rendering global nav, notepad
+    // and other standard UI chrome elements.
+    if (isFullPageRoute) {
+        return <ApplicationRoutes routes={props.routes} />
     }
 
     return (
@@ -187,7 +214,9 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 />
             )}
 
-            {!isCodyStandalonePage && <GlobalAlerts authenticatedUser={props.authenticatedUser} />}
+            {!isCodyStandalonePage && (
+                <GlobalAlerts authenticatedUser={props.authenticatedUser} isSourcegraphApp={props.isSourcegraphApp} />
+            )}
             {!isSiteInit &&
                 !isSignInOrUp &&
                 !props.isSourcegraphDotCom &&
@@ -215,35 +244,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 />
             )}
             {needsSiteInit && !isSiteInit && <Navigate replace={true} to="/site-admin/init" />}
-            <Suspense
-                fallback={
-                    <div className="flex flex-1">
-                        <LoadingSpinner className="m-2" />
-                    </div>
-                }
-            >
-                <AppRouterContainer>
-                    <Routes>
-                        {props.routes.map(({ ...route }) => (
-                            <Route
-                                key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                path={route.path}
-                                element={route.element}
-                                errorElement={<RouteError />}
-                            />
-                        ))}
-                    </Routes>
-                </AppRouterContainer>
-                {/**
-                 * The portal root is inside the suspense boundary so that it is hidden
-                 * when we navigate to the lazily loaded routes or other actions which trigger
-                 * the Suspense boundary to show the fallback UI. Existing children are not unmounted
-                 * until the promise is resolved.
-                 *
-                 * See: https://github.com/facebook/react/pull/15861
-                 */}
-                <div id="references-panel-react-portal" />
-            </Suspense>
+            <ApplicationRoutes routes={props.routes} />
             <GlobalContributions
                 key={3}
                 extensionsController={props.extensionsController}
@@ -273,5 +274,46 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 selectedSearchContextSpec={props.selectedSearchContextSpec}
             />
         </div>
+    )
+}
+
+interface ApplicationRoutes {
+    routes: RouteObject[]
+}
+
+const ApplicationRoutes: FC<ApplicationRoutes> = props => {
+    const { routes } = props
+
+    return (
+        <Suspense
+            fallback={
+                <div className="flex flex-1">
+                    <LoadingSpinner className="m-2" />
+                </div>
+            }
+        >
+            <AppRouterContainer>
+                <Routes>
+                    {routes.map(({ ...route }) => (
+                        <Route
+                            key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
+                            path={route.path}
+                            element={route.element}
+                            handle={route.handle}
+                            errorElement={<RouteError />}
+                        />
+                    ))}
+                </Routes>
+            </AppRouterContainer>
+            {/**
+             * The portal root is inside the suspense boundary so that it is hidden
+             * when we navigate to the lazily loaded routes or other actions which trigger
+             * the Suspense boundary to show the fallback UI. Existing children are not unmounted
+             * until the promise is resolved.
+             *
+             * See: https://github.com/facebook/react/pull/15861
+             */}
+            <div id="references-panel-react-portal" />
+        </Suspense>
     )
 }

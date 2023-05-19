@@ -50,7 +50,7 @@ interface SetupStepsContextData {
     onNextStep: () => void
 }
 
-const SetupStepsContext = createContext<SetupStepsContextData>({
+export const SetupStepsContext = createContext<SetupStepsContextData>({
     steps: [],
     activeStepIndex: 0,
     footerPortal: null,
@@ -65,8 +65,9 @@ const SetupStepsContext = createContext<SetupStepsContextData>({
 interface SetupStepsProps {
     initialStepId: string | undefined
     steps: StepConfiguration[]
+    baseURL?: string
     children?: ReactNode
-    onSkip: () => void
+    onSkip?: () => void
     onStepChange: (nextStep: StepConfiguration) => void
 }
 
@@ -75,7 +76,7 @@ interface SetupStepURLContext {
 }
 
 export const SetupStepsRoot: FC<SetupStepsProps> = props => {
-    const { initialStepId, steps, children, onSkip, onStepChange } = props
+    const { initialStepId, steps, baseURL = '', children, onStepChange, onSkip = noop } = props
 
     const navigate = useNavigate()
     const location = useLocation()
@@ -87,7 +88,7 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
     // Resolve current setup step and its index by URL matches
     const { activeStepIndex } = useMemo<SetupStepURLContext>(() => {
         // Try to find step by URL based on available steps
-        const urlStepIndex = steps.findIndex(step => matchPath(step.path, location.pathname) !== null)
+        const urlStepIndex = steps.findIndex(step => matchPath(`${baseURL}${step.path}`, location.pathname) !== null)
 
         if (urlStepIndex !== -1) {
             return { activeStepIndex: urlStepIndex }
@@ -103,7 +104,7 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
         // Fallback on the first available step if URL doesn't match any step, and we
         // don't have any pre-saved step
         return { activeStepIndex: 0 }
-    }, [location, initialStepId, steps])
+    }, [location, initialStepId, steps, baseURL])
 
     const currentStep = steps[activeStepIndex]
 
@@ -157,22 +158,27 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
     return <SetupStepsContext.Provider value={cachedContext}>{children}</SetupStepsContext.Provider>
 }
 
-interface SetupStepsContentProps extends TelemetryProps, HTMLAttributes<HTMLElement> {}
+interface SetupStepsContentProps extends TelemetryProps, HTMLAttributes<HTMLElement> {
+    contentContainerClass?: string
+}
 
 export const SetupStepsContent: FC<SetupStepsContentProps> = props => {
-    const { className, telemetryService, ...attributes } = props
+    const { contentContainerClass, className, telemetryService, ...attributes } = props
     const { steps, activeStepIndex } = useContext(SetupStepsContext)
 
     return (
         <div {...attributes} className={classNames(styles.root, className)}>
-            <SetupStepsHeader steps={steps} activeStepIndex={activeStepIndex} />
             <Routes>
                 {steps.map(({ path, component: Component }) => (
                     <Route
-                        key="hardcoded-key"
+                        key={path}
                         path={`${path}/*`}
                         element={
-                            <Component baseURL={path} className={styles.content} telemetryService={telemetryService} />
+                            <Component
+                                baseURL={path}
+                                className={classNames(contentContainerClass, styles.content)}
+                                telemetryService={telemetryService}
+                            />
                         }
                     />
                 ))}
@@ -182,13 +188,11 @@ export const SetupStepsContent: FC<SetupStepsContentProps> = props => {
     )
 }
 
-interface SetupStepsHeaderProps extends HTMLAttributes<HTMLElement> {
-    steps: StepConfiguration[]
-    activeStepIndex: number
-}
+interface SetupStepsHeaderProps extends HTMLAttributes<HTMLElement> {}
 
 export const SetupStepsHeader: FC<SetupStepsHeaderProps> = props => {
-    const { steps, activeStepIndex, className, ...attributes } = props
+    const { steps, activeStepIndex } = useContext(SetupStepsContext)
+    const { className, ...attributes } = props
 
     return (
         <header {...attributes} className={classNames(className, styles.header)}>
