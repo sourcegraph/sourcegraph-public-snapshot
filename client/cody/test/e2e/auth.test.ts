@@ -13,7 +13,9 @@ test('requires a valid auth token and allows logouts', async ({ page, sidebar })
     await sidebar.getByRole('textbox', { name: 'Access Token (docs)' }).fill(VALID_TOKEN)
 
     await new Promise(resolve => setTimeout(resolve, 3000))
+    console.log('preclick')
     await sidebar.getByRole('button', { name: 'Sign In' }).click()
+    console.log('postclick')
 
     await new Promise(resolve => setTimeout(resolve, 3000))
     console.log(await sidebar.innerText('body'))

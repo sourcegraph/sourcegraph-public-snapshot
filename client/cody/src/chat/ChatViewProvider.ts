@@ -187,6 +187,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 await this.executeRecipe(message.recipe)
                 break
             case 'settings': {
+                console.log('SETTINGS CHANGED', message.accessToken)
                 const isValid = await isValidLogin({
                     serverEndpoint: message.serverEndpoint,
                     accessToken: message.accessToken,
@@ -585,6 +586,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             void this.updateCodebaseContext()
             // check if new configuration change is valid or not
             // log user out if config is invalid
+            console.log('PUBLISH CONFIG')
             const isAuthed = await isValidLogin({
                 serverEndpoint: this.config.serverEndpoint,
                 accessToken: this.config.accessToken,
