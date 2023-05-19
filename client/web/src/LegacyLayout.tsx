@@ -174,11 +174,11 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
         return <Navigate to={EnterprisePageRoutes.AppSetup} replace={true} />
     }
 
-    // Some route by their design requires rendering on the blank page
-    // without some general and standard UI that Layout component renders
-    // by default. If route has handle: { fullPage: true } we render just
-    // routes and its container block without rendering global nav, notepad
-    // and other standard UI elements.
+    // Some routes by their design require rendering on a blank page
+    // without the UI chrome that Layout component renders by default.
+    // If route has handle: { fullPage: true } we render just the route content
+    // and its container block without rendering global nav, notepad
+    // and other standard UI chrome elements.
     if (isFullPageRoute) {
         return <ApplicationRoutes routes={props.routes} />
     }
