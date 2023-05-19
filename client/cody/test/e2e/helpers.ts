@@ -27,6 +27,9 @@ export const test = base
             // See: https://github.com/microsoft/vscode-test/blob/main/lib/runTest.ts
             const app = await electron.launch({
                 executablePath: vscodeExecutablePath,
+                env: {
+                    CODY_TESTING: 'true',
+                },
                 args: [
                     // https://github.com/microsoft/vscode/issues/84238
                     '--no-sandbox',
