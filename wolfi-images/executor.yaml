@@ -18,3 +18,4 @@ environment:
 paths:
   - path: /usr/local/bin
     type: directory
+    permissions: 0o755
