@@ -6,7 +6,11 @@ module.exports = {
   extends: '../../.eslintrc.js',
   parserOptions: {
     ...baseConfig.parserOptions,
-    project: [__dirname + '/tsconfig.json', __dirname + '/integration-test/tsconfig.json'],
+    project: [
+      __dirname + '/tsconfig.json',
+      __dirname + '/integration-test/tsconfig.json',
+      __dirname + '/scripts/tsconfig.json',
+    ],
   },
   overrides: baseConfig.overrides,
   rules: {

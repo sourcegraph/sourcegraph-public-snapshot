@@ -4,6 +4,24 @@ load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@aspect_rules_js//js:providers.bzl", "JsInfo")
 load("@bazel_skylib//rules:build_test.bzl", "build_test")
 
+def eslint_config(deps = []):
+    client_package_path = "/".join(native.package_name().split("/")[:2])
+
+    js_library(
+        name = "eslint_config",
+        testonly = True,
+        srcs = [".eslintrc.js"],
+        data = [
+            ".eslintignore",
+            "package.json",
+            ":tsconfig",
+        ],
+        deps = [
+            "//:eslint_config",
+        ] + deps,
+        visibility = ["//{}:__subpackages__".format(client_package_path)],
+    )
+
 def _custom_eslint_impl(ctx):
     copied_srcs = copy_files_to_bin_actions(ctx, ctx.files.srcs)
 
@@ -93,22 +111,4 @@ def eslint_test_with_types(name, **kwargs):
         name = lint_name,
         output = "%s-output.txt" % name,
         **kwargs
-    )
-
-def eslint_config():
-    client_package_path = "/".join(native.package_name().split("/")[:2])
-
-    js_library(
-        name = "eslint_config",
-        testonly = True,
-        srcs = [".eslintrc.js"],
-        data = [
-            ".eslintignore",
-            "package.json",
-            ":tsconfig",
-        ],
-        deps = [
-            "//:eslint_config",
-        ],
-        visibility = ["//{}:__subpackages__".format(client_package_path)],
     )
