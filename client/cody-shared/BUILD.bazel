@@ -54,6 +54,7 @@ ts_project(
         "src/codebase-context/messages.ts",
         "src/configuration.ts",
         "src/editor/index.ts",
+        "src/editor/vscode.ts",
         "src/editor/withPreselectedOptions.ts",
         "src/embeddings/client.ts",
         "src/embeddings/index.ts",

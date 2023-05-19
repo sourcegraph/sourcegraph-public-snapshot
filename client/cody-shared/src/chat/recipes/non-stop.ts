@@ -18,14 +18,21 @@ export class NonStop implements Recipe {
             getEmptyDocumentSelection(context.editor.getActiveTextEditor()?.filePath)
 
         if (!controllers || !selection) {
-            await context.editor.showWarningMessage('Failed to start Non-Stop Cody.')
+            await context.editor.showWarningMessage('Non-Stop Cody: Failed to start.')
             return null
         }
 
         const humanInput =
             humanChatInput ||
-            (await context.editor.showInputBox('Cody: Add instruction for your Non-Stop Fixup request.')) ||
-            ' '
+            (await context.editor.showInputBox('Non-Stop Cody: Enter instruction here for your Fixup request.')) ||
+            ''
+
+        if (!humanInput && !selection.selectedText.trim()) {
+            await context.editor.showWarningMessage(
+                'Non-Stop Cody: Failed to start due to missing instruction with empty selection.'
+            )
+            return null
+        }
 
         // Create a id using current data and use it as the key for response multiplexer
         const taskID = Date.now().toString(36).replace(/\d+/g, '')
