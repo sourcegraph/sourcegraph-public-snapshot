@@ -52,7 +52,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                 authStatus?.requiresVerifiedEmail &&
                 authStatus?.hasVerifiedEmail === false && (
                     <p className={styles.error}>
-                        Email not verified. Please add a verified email to your Sourcegraph instance account.
+                        Email not verified. Please add a verified email to your Sourcegraph.com account.
                     </p>
                 )}
             <section className={styles.section}>
