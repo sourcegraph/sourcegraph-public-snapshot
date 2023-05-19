@@ -513,11 +513,12 @@ func (oid objectInfo) OID() gitdomain.OID { return gitdomain.OID(oid) }
 // lStat returns a FileInfo describing the named file at commit. If the file is a
 // symbolic link, the returned FileInfo describes the symbolic link. lStat makes
 // no attempt to follow the link.
-func (c *clientImplementor) lStat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: lStat") //nolint:staticcheck // OT is deprecated
-	span.SetTag("Commit", commit)
-	span.SetTag("Path", path)
-	defer span.Finish()
+func (c *clientImplementor) lStat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (_ fs.FileInfo, err error) {
+	ctx, _, endObservation := c.operations.lstat.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("commit", string(commit)),
+		attribute.String("path", path),
+	}})
+	defer endObservation(1, observation.Args{})
 
 	if err := checkSpecArgSafety(string(commit)); err != nil {
 		return nil, err
