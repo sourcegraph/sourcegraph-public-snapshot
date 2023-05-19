@@ -1,0 +1,48 @@
+package:
+  name: xmlstarlet
+  version: 1.6.1 # version available on alpine...
+  epoch: 1
+  description: ""
+  target-architecture:
+    - x86_64
+  copyright:
+    - paths:
+      - "*"
+      attestation: ''
+      license: ''
+  dependencies:
+    runtime:
+      # - libxml2
+      # - libgcrypt
+      # - libgpg-error
+      # - libxslt
+
+environment:
+  contents:
+    repositories:
+      - https://packages.wolfi.dev/os
+    keyring:
+      - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    packages:
+      - wolfi-base
+      - build-base
+      # Build dependencies
+      - libxml2-dev
+      - libxslt-dev
+      - libxml2 # Required to update built-in libxml2 version to match libxml2-dev
+
+pipeline:
+  - uses: fetch
+    with:
+      uri: https://downloads.sourceforge.net/project/xmlstar/xmlstarlet/${{package.version}}/xmlstarlet-${{package.version}}.tar.gz
+      expected-sha256: 15d838c4f3375332fd95554619179b69e4ec91418a3a5296e7c631b7ed19e7ca
+  - runs: |
+      ./configure
+      make
+      make install
+      ls -al /usr/local/bin
+  - runs: |
+      mkdir -p ${{targets.destdir}}/usr/local/bin/
+      cp /usr/local/bin/xml ${{targets.destdir}}/usr/local/bin/
+      cd ${{targets.destdir}}
+      ln -s ${{targets.destdir}}/usr/local/bin/xml ${{targets.destdir}}/usr/local/bin/xmlstarlet
