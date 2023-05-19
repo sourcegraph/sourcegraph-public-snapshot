@@ -160,8 +160,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				"syntax-highlighter",
 				"worker",
 			}, c.Version,
-				// c.candidateImageTag(),
-				"latest",
+				c.candidateImageTag(),
 				(numUpdatedBaseImages > 0),
 			),
 		)
