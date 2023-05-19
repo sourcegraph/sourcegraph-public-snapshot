@@ -15,6 +15,7 @@ type operations struct {
 	exec             *observation.Operation
 	p4Exec           *observation.Operation
 	readDir          *observation.Operation
+	resolveRevision  *observation.Operation
 	lstat            *observation.Operation
 	streamBlameFile  *observation.Operation
 	blameFile        *observation.Operation
@@ -54,6 +55,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		exec:             op("Exec"),
 		p4Exec:           op("P4Exec"),
 		contributorCount: op("ContributorCount"),
+		resolveRevision:  op("ResolveRevision"),
 		streamBlameFile:  op("StreamBlameFile"),
 		blameFile:        op("BlameFile"),
 		readDir:          op("ReadDir"),

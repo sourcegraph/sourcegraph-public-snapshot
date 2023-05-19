@@ -1000,17 +1000,19 @@ var resolveRevisionCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 // * Commit does not exist: gitdomain.RevisionNotFoundError
 // * Empty repository: gitdomain.RevisionNotFoundError
 // * Other unexpected errors.
-func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt ResolveRevisionOptions) (api.CommitID, error) {
+func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt ResolveRevisionOptions) (_ api.CommitID, err error) {
 	labelEnsureRevisionValue := "true"
 	if opt.NoEnsureRevision {
 		labelEnsureRevisionValue = "false"
 	}
 	resolveRevisionCounter.WithLabelValues(labelEnsureRevisionValue).Inc()
 
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: ResolveRevision") //nolint:staticcheck // OT is deprecated
-	span.SetTag("Spec", spec)
-	span.SetTag("Opt", fmt.Sprintf("%+v", opt))
-	defer span.Finish()
+	ctx, _, endObservation := c.operations.readDir.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repo", string(repo)),
+		attribute.String("spec", spec),
+		attribute.Bool("noEnsureRevision", opt.NoEnsureRevision),
+	}})
+	defer endObservation(1, observation.Args{})
 
 	if err := checkSpecArgSafety(spec); err != nil {
 		return "", err
