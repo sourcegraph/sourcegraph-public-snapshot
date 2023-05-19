@@ -18,6 +18,7 @@ type operations struct {
 	readFile         *observation.Operation
 	stat             *observation.Operation
 	getCommit        *observation.Operation
+	commits          *observation.Operation
 	newFileReader    *observation.Operation
 	resolveRevision  *observation.Operation
 	listTags         *observation.Operation
@@ -66,6 +67,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		mergeBase:        op("MergeBase"),
 		resolveRevision:  op("ResolveRevision"),
 		getCommit:        op("GetCommit"),
+		commits:          op("Commits"),
 		listTags:         op("ListTags"),
 		streamBlameFile:  op("StreamBlameFile"),
 		blameFile:        op("BlameFile"),
