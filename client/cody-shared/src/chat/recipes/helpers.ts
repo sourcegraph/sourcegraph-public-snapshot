@@ -2,6 +2,7 @@ import path from 'path'
 
 import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
+import { ActiveTextEditorSelection } from '../../editor'
 import { populateCodeContextTemplate } from '../../prompt/templates'
 
 export const MARKDOWN_FORMAT_PROMPT = 'Enclose code snippets with three backticks like so: ```.'
@@ -56,4 +57,16 @@ export function contentSanitizer(text: string): string {
         return text.trim().slice(tagsIndex + 6) + '\n'
     }
     return text.trim() + '\n'
+}
+
+export function getEmptyDocumentSelection(fileName?: string): ActiveTextEditorSelection | null {
+    if (!fileName) {
+        return null
+    }
+    return {
+        fileName,
+        selectedText: ' ',
+        precedingText: ' ',
+        followingText: ' ',
+    }
 }

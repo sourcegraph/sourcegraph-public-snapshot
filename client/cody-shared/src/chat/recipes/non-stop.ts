@@ -5,7 +5,7 @@ import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { Interaction } from '../transcript/interaction'
 
-import { contentSanitizer } from './helpers'
+import { contentSanitizer, getEmptyDocumentSelection } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class NonStop implements Recipe {
@@ -13,19 +13,19 @@ export class NonStop implements Recipe {
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const controllers = context.editor.controllers
-        const selection = context.editor.getActiveTextEditorSelection()
-        if (!selection || !controllers) {
-            await context.editor.showWarningMessage('Select some code to fixup.')
+        const selection =
+            context.editor.getActiveTextEditorSelection() ||
+            getEmptyDocumentSelection(context.editor.getActiveTextEditor()?.filePath)
+
+        if (!controllers || !selection) {
+            await context.editor.showWarningMessage('Failed to start Non-Stop Cody.')
             return null
         }
 
         const humanInput =
             humanChatInput ||
-            (await context.editor.showInputBox('Cody: Add instruction for your Non-Stop Fixup request.'))
-        if (!humanInput) {
-            await context.editor.showWarningMessage('Missing instruction for Non-Stop Fixup request.')
-            return null
-        }
+            (await context.editor.showInputBox('Cody: Add instruction for your Non-Stop Fixup request.')) ||
+            ' '
 
         // Create a id using current data and use it as the key for response multiplexer
         const taskID = Date.now().toString(36).replace(/\d+/g, '')

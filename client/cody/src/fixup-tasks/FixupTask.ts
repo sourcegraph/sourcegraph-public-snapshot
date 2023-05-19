@@ -32,7 +32,7 @@ export class FixupTask {
         this.set(CodyTaskState.queued)
     }
     /**
-     * Set task state and update icon
+     * Set latest state for task and then update icon accordingly
      */
     private set(state: CodyTaskState): void {
         this.state = state
@@ -43,28 +43,29 @@ export class FixupTask {
 
     public start(): void {
         this.set(CodyTaskState.pending)
-        this.output(`Starting Task#${this.id}...`)
+        this.output(`Task #${this.id} is currently being processed...`)
     }
 
     public stop(): void {
         this.set(CodyTaskState.done)
-        this.output(`Task#${this.id}... has been completed...`)
+        this.output(`Task #${this.id} has been completed...`)
     }
 
     public error(text: string = ''): void {
         this.set(CodyTaskState.error)
-        this.output(`Error for Task#${this.id}: ` + text, true)
+        this.output(`Error for Task #${this.id} - ` + text, true)
     }
 
     public queue(): void {
         this.set(CodyTaskState.queued)
-        this.output(`Added to Fixup queue: Task#${this.id}`)
+        this.output(`Task #${this.id} has been added to the queue successfully...`)
     }
     /**
      * Print output to the VS Code Output Channel under Cody AI by Sourcegraph
      */
     private output(text: string, show = false): void {
-        this.outputChannel.appendLine('Non-Stop Cody: ' + text)
+        const timestamp = new Date(Date.now()).toUTCString()
+        this.outputChannel.appendLine(`${timestamp}  Non-Stop Cody: ${text}`)
         if (show) {
             this.outputChannel.show()
         }

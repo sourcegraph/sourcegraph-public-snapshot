@@ -40,9 +40,10 @@ export async function getFixupEditorSelection(
     const followingText = activeDocument.getText(
         new vscode.Range(range.end, new vscode.Position(range.end.line + 1 + SURROUNDING_LINES, 0))
     )
+    // Empty selectedText will cause error in empty file
     const selection = {
         fileName: vscode.workspace.asRelativePath(docUri),
-        selectedText: activeDocument.getText(selectionRange),
+        selectedText: activeDocument.getText(selectionRange) || ' ',
         precedingText,
         followingText,
     }
