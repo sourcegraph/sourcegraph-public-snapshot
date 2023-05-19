@@ -118,299 +118,322 @@ func (s *Accounts) TracingFields() []attribute.KeyValue {
 	}
 }
 
+// ServiceVariant enumerates different types/kinds of external services
+// It replaces both the Type... and Kind... enums
+// Types and Kinds are exposed through AsKind and AsType functions
+// so that usages relying on the particular string of Type vs Kind
+// will continue to behave correctly.
+// The Type... and Kind... enums are left in place to avoid edge-case issues and to support
+// commits that come in while the switch to Variant is ongoing.
+// The Type... and Kind... enums are turned into vars and use
+// the corresponding Variant's AsType()/AsKind() functions.
+// Consolidating Type... and Kind... into a single enum should decrease the stink
+// and increase the usability and maintainability of this code.
+// Note that Go Packages and Modules seem to have been a victim of the confusion engendered by having both Type and Kind:
+// There was `KindGoPackages` and `TypeGoModules`, both with the value of (case insensitivly) "gomodules".
+// I think that they both refer to the same thing and can be merged into one variant.
+
+type ServiceVariant int64
+
 const (
+	// VariantAWSCodeCommit is the (api.ExternalRepoSpec).ServiceType value for AWS CodeCommit
+	// repositories. The ServiceID value is the ARN (Amazon Resource Name) omitting the repository name
+	// suffix (e.g., "arn:aws:codecommit:us-west-1:123456789:").
+	VariantAWSCodeCommit ServiceVariant = iota
+
+	// VariantBitbucketServer is the (api.ExternalRepoSpec).ServiceType value for Bitbucket Server projects. The
+	// ServiceID value is the base URL to the Bitbucket Server instance.
+	VariantBitbucketServer
+
+	// VariantBitbucketCloud is the (api.ExternalRepoSpec).ServiceType value for Bitbucket Cloud projects. The
+	// ServiceID value is the base URL to the Bitbucket Cloud.
+	VariantBitbucketCloud
+
+	// VariantGerrit is the (api.ExternalRepoSpec).ServiceType value for Gerrit projects.
+	VariantGerrit
+
+	// VariantGitHub is the (api.ExternalRepoSpec).ServiceType value for GitHub repositories. The ServiceID value
+	// is the base URL to the GitHub instance (https://github.com or the GitHub Enterprise URL).
+	VariantGitHub
+
+	// VariantGitLab is the (api.ExternalRepoSpec).ServiceType value for GitLab projects. The ServiceID
+	// value is the base URL to the GitLab instance (https://gitlab.com or self-hosted GitLab URL).
+	VariantGitLab
+
+	// VariantGitolite is the (api.ExternalRepoSpec).ServiceType value for Gitolite projects.
+	VariantGitolite
+
+	// VariantPerforce is the (api.ExternalRepoSpec).ServiceType value for Perforce projects.
+	VariantPerforce
+
+	// VariantPhabricator is the (api.ExternalRepoSpec).ServiceType value for Phabricator projects.
+	VariantPhabricator
+
+	// VariangGoPackages is the (api.ExternalRepoSpec).ServiceType value for Golang packages.
+	// Duplicate of VariantGoModules?
+	VariantGoPackages
+
+	// VariantJVMPackages is the (api.ExternalRepoSpec).ServiceType value for Maven packages (Java/JVM ecosystem libraries).
+	VariantJVMPackages
+
+	// VariantPagure is the (api.ExternalRepoSpec).ServiceType value for Pagure projects.
+	VariantPagure
+
+	// VariantAzureDevOps is the (api.ExternalRepoSpec).ServiceType value for ADO projects.
+	VariantAzureDevOps
+
+	// VariantAzureDevOps is the (api.ExternalRepoSpec).ServiceType value for ADO projects.
+	VariantSCIM
+
+	// VariantNpmPackages is the (api.ExternalRepoSpec).ServiceType value for Npm packages (JavaScript/VariantScript ecosystem libraries).
+	VariantNpmPackages
+
+	// VariantGoModules is the (api.ExternalRepoSpec).ServiceType value for Go modules.
+	VariantGoModules
+
+	// VariantPythonPackages is the (api.ExternalRepoSpec).ServiceType value for Python packages.
+	VariantPythonPackages
+
+	// VariantRustPackages is the (api.ExternalRepoSpec).ServiceType value for Rust packages.
+	VariantRustPackages
+
+	// VariantRubyPackages is the (api.ExternalRepoSpec).ServiceType value for Ruby packages.
+	VariantRubyPackages
+
+	// VariantOther is the (api.ExternalRepoSpec).ServiceType value for other projects.
+	VariantOther
+)
+
+type serviceVariantValues struct {
+	AsKind                string
+	AsType                string
+	ConfigPrototype       interface{}
+	WebhookURLPath        string
+	SupportsRepoExclusion bool
+}
+
+var variantValues = map[ServiceVariant]serviceVariantValues{
+	VariantAWSCodeCommit:   {AsKind: "AWSCODECOMMIT", AsType: "awscodecommit", ConfigPrototype: &schema.AWSCodeCommitConnection{}, SupportsRepoExclusion: true},
+	VariantAzureDevOps:     {AsKind: "AZUREDEVOPS", AsType: "azuredevops", ConfigPrototype: &schema.AzureDevOpsConnection{}, SupportsRepoExclusion: true},
+	VariantBitbucketCloud:  {AsKind: "BITBUCKETCLOUD", AsType: "bitbucketCloud", ConfigPrototype: &schema.BitbucketCloudConnection{}, WebhookURLPath: "bitbucket-cloud-webhooks", SupportsRepoExclusion: true},
+	VariantBitbucketServer: {AsKind: "BITBUCKETSERVER", AsType: "bitbucketServer", ConfigPrototype: &schema.BitbucketServerConnection{}, WebhookURLPath: "bitbucket-server-webhooks", SupportsRepoExclusion: true},
+	VariantGerrit:          {AsKind: "GERRIT", AsType: "gerrit", ConfigPrototype: &schema.GerritConnection{}},
+	VariantGitHub:          {AsKind: "GITHUB", AsType: "github", ConfigPrototype: &schema.GitHubConnection{}, WebhookURLPath: "github-webhooks", SupportsRepoExclusion: true},
+	VariantGitLab:          {AsKind: "GITLAB", AsType: "gitlab", ConfigPrototype: &schema.GitLabConnection{}, WebhookURLPath: "gitlab-webhooks", SupportsRepoExclusion: true},
+	VariantGitolite:        {AsKind: "GITOLITE", AsType: "gitolite", ConfigPrototype: &schema.GitoliteConnection{}, SupportsRepoExclusion: true},
+	VariantGoModules:       {AsKind: "GOMODULES", AsType: "goModules", ConfigPrototype: &schema.GoModulesConnection{}},
+	VariantGoPackages:      {AsKind: "GOMODULES", AsType: "goModules", ConfigPrototype: &schema.GoModulesConnection{}},
+	VariantJVMPackages:     {AsKind: "JVMPACKAGES", AsType: "jvmPackages", ConfigPrototype: &schema.JVMPackagesConnection{}},
+	VariantNpmPackages:     {AsKind: "NPMPACKAGES", AsType: "npmPackages", ConfigPrototype: &schema.NpmPackagesConnection{}},
+	VariantOther:           {AsKind: "OTHER", AsType: "other", ConfigPrototype: &schema.OtherExternalServiceConnection{}},
+	VariantPagure:          {AsKind: "PAGURE", AsType: "pagure", ConfigPrototype: &schema.PagureConnection{}},
+	VariantPerforce:        {AsKind: "PERFORCE", AsType: "perforce", ConfigPrototype: &schema.PerforceConnection{}},
+	VariantPhabricator:     {AsKind: "PHABRICATOR", AsType: "phabricator", ConfigPrototype: &schema.PhabricatorConnection{}},
+	VariantPythonPackages:  {AsKind: "PYTHONPACKAGES", AsType: "pythonPackages", ConfigPrototype: &schema.PythonPackagesConnection{}},
+	VariantRubyPackages:    {AsKind: "RUBYPACKAGES", AsType: "rubyPackages", ConfigPrototype: &schema.RubyPackagesConnection{}},
+	VariantRustPackages:    {AsKind: "RUSTPACKAGES", AsType: "rustPackages", ConfigPrototype: &schema.RustPackagesConnection{}},
+	VariantSCIM:            {AsKind: "SCIM", AsType: "scim"},
+}
+
+func (sv ServiceVariant) AsKind() string {
+	return variantValues[sv].AsKind
+}
+
+func (sv ServiceVariant) AsType() string {
+	// Returns the values used in the external_service_type column of the repo table.
+	return variantValues[sv].AsType
+}
+
+func (sv ServiceVariant) ConfigPrototype() interface{} {
+	return variantValues[sv].ConfigPrototype
+}
+
+func (sv ServiceVariant) WebhookURLPath() string {
+	return variantValues[sv].WebhookURLPath
+}
+
+func (sv ServiceVariant) SupportsRepoExclusion() bool {
+	return variantValues[sv].SupportsRepoExclusion
+}
+
+// case-insensitive matching of an input string against the ServiceVariant kinds and types
+// returns the matching ServiceVariant or an error if the given value is not a kind or type value
+func ServiceVariantValueOf(input string) (ServiceVariant, error) {
+	for variant, value := range variantValues {
+		if strings.EqualFold(value.AsKind, input) || strings.EqualFold(value.AsType, input) {
+			return variant, nil
+		}
+	}
+	return 0, errors.Newf("no ServiceVariant found for %s", input)
+}
+
+// TODO: DEPRECATE/REMOVE ONCE CONVERSION TO Variants IS COMPLETE (2023-05-18)
+// the Kind... and Type... enums have been superceded by the ServiceVariant enum
+
+var (
 	// The constants below represent the different kinds of external service we support and should be used
 	// in preference to the Type values below.
 
-	KindAWSCodeCommit   = "AWSCODECOMMIT"
-	KindBitbucketServer = "BITBUCKETSERVER"
-	KindBitbucketCloud  = "BITBUCKETCLOUD"
-	KindGerrit          = "GERRIT"
-	KindGitHub          = "GITHUB"
-	KindGitLab          = "GITLAB"
-	KindGitolite        = "GITOLITE"
-	KindPerforce        = "PERFORCE"
-	KindPhabricator     = "PHABRICATOR"
-	KindGoPackages      = "GOMODULES"
-	KindJVMPackages     = "JVMPACKAGES"
-	KindPythonPackages  = "PYTHONPACKAGES"
-	KindRustPackages    = "RUSTPACKAGES"
-	KindRubyPackages    = "RUBYPACKAGES"
-	KindNpmPackages     = "NPMPACKAGES"
-	KindPagure          = "PAGURE"
-	KindAzureDevOps     = "AZUREDEVOPS"
-	KindSCIM            = "SCIM"
-	KindOther           = "OTHER"
+	KindAWSCodeCommit   = VariantAWSCodeCommit.AsKind()
+	KindBitbucketServer = VariantBitbucketServer.AsKind()
+	KindBitbucketCloud  = VariantBitbucketCloud.AsKind()
+	KindGerrit          = VariantGerrit.AsKind()
+	KindGitHub          = VariantGitHub.AsKind()
+	KindGitLab          = VariantGitLab.AsKind()
+	KindGitolite        = VariantGitolite.AsKind()
+	KindPerforce        = VariantPerforce.AsKind()
+	KindPhabricator     = VariantPhabricator.AsKind()
+	KindGoPackages      = VariantGoPackages.AsKind()
+	KindJVMPackages     = VariantJVMPackages.AsKind()
+	KindPythonPackages  = VariantPythonPackages.AsKind()
+	KindRustPackages    = VariantRustPackages.AsKind()
+	KindRubyPackages    = VariantRubyPackages.AsKind()
+	KindNpmPackages     = VariantNpmPackages.AsKind()
+	KindPagure          = VariantPagure.AsKind()
+	KindAzureDevOps     = VariantAzureDevOps.AsKind()
+	KindSCIM            = VariantSCIM.AsKind()
+	KindOther           = VariantOther.AsKind()
 )
 
-const (
+var (
 	// The constants below represent the values used for the external_service_type column of the repo table.
 
 	// TypeAWSCodeCommit is the (api.ExternalRepoSpec).ServiceType value for AWS CodeCommit
 	// repositories. The ServiceID value is the ARN (Amazon Resource Name) omitting the repository name
 	// suffix (e.g., "arn:aws:codecommit:us-west-1:123456789:").
-	TypeAWSCodeCommit = "awscodecommit"
+	TypeAWSCodeCommit = VariantAWSCodeCommit.AsType()
 
 	// TypeBitbucketServer is the (api.ExternalRepoSpec).ServiceType value for Bitbucket Server projects. The
 	// ServiceID value is the base URL to the Bitbucket Server instance.
-	TypeBitbucketServer = "bitbucketServer"
+	TypeBitbucketServer = VariantBitbucketServer.AsType()
 
 	// TypeBitbucketCloud is the (api.ExternalRepoSpec).ServiceType value for Bitbucket Cloud projects. The
 	// ServiceID value is the base URL to the Bitbucket Cloud.
-	TypeBitbucketCloud = "bitbucketCloud"
+	TypeBitbucketCloud = VariantBitbucketCloud.AsType()
 
 	// TypeGerrit is the (api.ExternalRepoSpec).ServiceType value for Gerrit projects.
-	TypeGerrit = "gerrit"
+	TypeGerrit = VariantGerrit.AsType()
 
 	// TypeGitHub is the (api.ExternalRepoSpec).ServiceType value for GitHub repositories. The ServiceID value
 	// is the base URL to the GitHub instance (https://github.com or the GitHub Enterprise URL).
-	TypeGitHub = "github"
+	TypeGitHub = VariantGitHub.AsType()
 
 	// TypeGitLab is the (api.ExternalRepoSpec).ServiceType value for GitLab projects. The ServiceID
 	// value is the base URL to the GitLab instance (https://gitlab.com or self-hosted GitLab URL).
-	TypeGitLab = "gitlab"
+	TypeGitLab = VariantGitLab.AsType()
 
 	// TypeGitolite is the (api.ExternalRepoSpec).ServiceType value for Gitolite projects.
-	TypeGitolite = "gitolite"
+	TypeGitolite = VariantGitolite.AsType()
 
 	// TypePerforce is the (api.ExternalRepoSpec).ServiceType value for Perforce projects.
-	TypePerforce = "perforce"
+	TypePerforce = VariantPerforce.AsType()
 
 	// TypePhabricator is the (api.ExternalRepoSpec).ServiceType value for Phabricator projects.
-	TypePhabricator = "phabricator"
+	TypePhabricator = VariantPhabricator.AsType()
 
 	// TypeJVMPackages is the (api.ExternalRepoSpec).ServiceType value for Maven packages (Java/JVM ecosystem libraries).
-	TypeJVMPackages = "jvmPackages"
+	TypeJVMPackages = VariantJVMPackages.AsType()
 
 	// TypePagure is the (api.ExternalRepoSpec).ServiceType value for Pagure projects.
-	TypePagure = "pagure"
+	TypePagure = VariantPagure.AsType()
 
 	// TypeAzureDevOps is the (api.ExternalRepoSpec).ServiceType value for ADO projects.
-	TypeAzureDevOps = "azuredevops"
+	TypeAzureDevOps = VariantAzureDevOps.AsType()
 
 	// TypeNpmPackages is the (api.ExternalRepoSpec).ServiceType value for Npm packages (JavaScript/TypeScript ecosystem libraries).
-	TypeNpmPackages = "npmPackages"
+	TypeNpmPackages = VariantNpmPackages.AsType()
 
 	// TypeGoModules is the (api.ExternalRepoSpec).ServiceType value for Go modules.
-	TypeGoModules = "goModules"
+	TypeGoModules = VariantGoModules.AsType()
 
 	// TypePythonPackages is the (api.ExternalRepoSpec).ServiceType value for Python packages.
-	TypePythonPackages = "pythonPackages"
+	TypePythonPackages = VariantPythonPackages.AsType()
 
 	// TypeRustPackages is the (api.ExternalRepoSpec).ServiceType value for Rust packages.
-	TypeRustPackages = "rustPackages"
+	TypeRustPackages = VariantRustPackages.AsType()
 
 	// TypeRubyPackages is the (api.ExternalRepoSpec).ServiceType value for Ruby packages.
-	TypeRubyPackages = "rubyPackages"
+	TypeRubyPackages = VariantRubyPackages.AsType()
 
 	// TypeOther is the (api.ExternalRepoSpec).ServiceType value for other projects.
-	TypeOther = "other"
+	TypeOther = VariantOther.AsType()
 )
 
+// END TODO: DEPRECATE/REMOVE
+
+// TODO: handle in a less smelly way with Variants
 // KindToType returns a Type constants given a Kind
 // It will panic when given an unknown kind
 func KindToType(kind string) string {
-	switch kind {
-	case KindAWSCodeCommit:
-		return TypeAWSCodeCommit
-	case KindBitbucketServer:
-		return TypeBitbucketServer
-	case KindBitbucketCloud:
-		return TypeBitbucketCloud
-	case KindGerrit:
-		return TypeGerrit
-	case KindGitHub:
-		return TypeGitHub
-	case KindGitLab:
-		return TypeGitLab
-	case KindGitolite:
-		return TypeGitolite
-	case KindPhabricator:
-		return TypePhabricator
-	case KindPerforce:
-		return TypePerforce
-	case KindJVMPackages:
-		return TypeJVMPackages
-	case KindPythonPackages:
-		return TypePythonPackages
-	case KindRustPackages:
-		return TypeRustPackages
-	case KindRubyPackages:
-		return TypeRubyPackages
-	case KindNpmPackages:
-		return TypeNpmPackages
-	case KindGoPackages:
-		return TypeGoModules
-	case KindPagure:
-		return TypePagure
-	case KindAzureDevOps:
-		return TypeAzureDevOps
-	case KindOther:
-		return TypeOther
-	default:
+	sv, err := ServiceVariantValueOf(kind)
+	if err != nil {
 		panic(fmt.Sprintf("unknown kind: %q", kind))
 	}
+	return sv.AsType()
 }
 
+// TODO: handle in a less smelly way with Variants
 // TypeToKind returns a Kind constants given a Type
 // It will panic when given an unknown type.
 func TypeToKind(t string) string {
-	switch t {
-	case TypeAWSCodeCommit:
-		return KindAWSCodeCommit
-	case TypeBitbucketServer:
-		return KindBitbucketServer
-	case TypeBitbucketCloud:
-		return KindBitbucketCloud
-	case TypeGerrit:
-		return KindGerrit
-	case TypeGitHub:
-		return KindGitHub
-	case TypeGitLab:
-		return KindGitLab
-	case TypeGitolite:
-		return KindGitolite
-	case TypePerforce:
-		return KindPerforce
-	case TypePhabricator:
-		return KindPhabricator
-	case TypeNpmPackages:
-		return KindNpmPackages
-	case TypeJVMPackages:
-		return KindJVMPackages
-	case TypePythonPackages:
-		return KindPythonPackages
-	case TypeRustPackages:
-		return KindRustPackages
-	case TypeRubyPackages:
-		return KindRubyPackages
-	case TypeGoModules:
-		return KindGoPackages
-	case TypePagure:
-		return KindPagure
-	case TypeAzureDevOps:
-		return KindAzureDevOps
-	case TypeOther:
-		return KindOther
-	default:
+	sv, err := ServiceVariantValueOf(t)
+	if err != nil {
 		panic(fmt.Sprintf("unknown type: %q", t))
 	}
+	return sv.AsKind()
 }
 
 var (
 	// Precompute these for use in ParseServiceType below since the constants are mixed case
-	bbsLower    = strings.ToLower(TypeBitbucketServer)
-	bbcLower    = strings.ToLower(TypeBitbucketCloud)
-	jvmLower    = strings.ToLower(TypeJVMPackages)
-	npmLower    = strings.ToLower(TypeNpmPackages)
-	goLower     = strings.ToLower(TypeGoModules)
-	pythonLower = strings.ToLower(TypePythonPackages)
-	rustLower   = strings.ToLower(TypeRustPackages)
-	rubyLower   = strings.ToLower(TypeRubyPackages)
+	bbsLower    = strings.ToLower(VariantBitbucketServer.AsType())
+	bbcLower    = strings.ToLower(VariantBitbucketCloud.AsType())
+	jvmLower    = strings.ToLower(VariantJVMPackages.AsType())
+	npmLower    = strings.ToLower(VariantNpmPackages.AsType())
+	goLower     = strings.ToLower(VariantGoModules.AsType())
+	pythonLower = strings.ToLower(VariantPythonPackages.AsType())
+	rustLower   = strings.ToLower(VariantRustPackages.AsType())
+	rubyLower   = strings.ToLower(VariantRubyPackages.AsType())
 )
 
 // ParseServiceType will return a ServiceType constant after doing a case insensitive match on s.
 // It returns ("", false) if no match was found.
 func ParseServiceType(s string) (string, bool) {
-	switch strings.ToLower(s) {
-	case TypeAWSCodeCommit:
-		return TypeAWSCodeCommit, true
-	case bbsLower:
-		return TypeBitbucketServer, true
-	case bbcLower:
-		return TypeBitbucketCloud, true
-	case TypeGerrit:
-		return TypeGerrit, true
-	case TypeGitHub:
-		return TypeGitHub, true
-	case TypeGitLab:
-		return TypeGitLab, true
-	case TypeGitolite:
-		return TypeGitolite, true
-	case TypePerforce:
-		return TypePerforce, true
-	case TypePhabricator:
-		return TypePhabricator, true
-	case goLower:
-		return TypeGoModules, true
-	case jvmLower:
-		return TypeJVMPackages, true
-	case npmLower:
-		return TypeNpmPackages, true
-	case pythonLower:
-		return TypePythonPackages, true
-	case rustLower:
-		return TypeRustPackages, true
-	case rubyLower:
-		return TypeRubyPackages, true
-	case TypePagure:
-		return TypePagure, true
-	case TypeAzureDevOps:
-		return TypeAzureDevOps, true
-	case TypeOther:
-		return TypeOther, true
-	default:
+	sv, err := ServiceVariantValueOf(s)
+	if err != nil {
 		return "", false
 	}
+	return sv.AsType(), true
 }
 
 // ParseServiceKind will return a ServiceKind constant after doing a case insensitive match on s.
 // It returns ("", false) if no match was found.
 func ParseServiceKind(s string) (string, bool) {
-	switch strings.ToUpper(s) {
-	case KindAWSCodeCommit:
-		return KindAWSCodeCommit, true
-	case KindBitbucketServer:
-		return KindBitbucketServer, true
-	case KindBitbucketCloud:
-		return KindBitbucketCloud, true
-	case KindGerrit:
-		return KindGerrit, true
-	case KindGitHub:
-		return KindGitHub, true
-	case KindGitLab:
-		return KindGitLab, true
-	case KindGitolite:
-		return KindGitolite, true
-	case KindPerforce:
-		return KindPerforce, true
-	case KindPhabricator:
-		return KindPhabricator, true
-	case KindGoPackages:
-		return KindGoPackages, true
-	case KindJVMPackages:
-		return KindJVMPackages, true
-	case KindPythonPackages:
-		return KindPythonPackages, true
-	case KindRustPackages:
-		return KindRustPackages, true
-	case KindRubyPackages:
-		return KindRubyPackages, true
-	case KindPagure:
-		return KindPagure, true
-	case KindAzureDevOps:
-		return KindAzureDevOps, true
-	case KindOther:
-		return KindOther, true
-	default:
+	sv, err := ServiceVariantValueOf(s)
+	if err != nil {
 		return "", false
 	}
+	return sv.AsKind(), true
 }
 
 var supportsRepoExclusion = map[string]bool{
-	KindAWSCodeCommit:   true,
-	KindBitbucketCloud:  true,
-	KindBitbucketServer: true,
-	KindGitHub:          true,
-	KindGitLab:          true,
-	KindGitolite:        true,
-	KindAzureDevOps:     true,
+	VariantAWSCodeCommit.AsKind():   true,
+	VariantBitbucketCloud.AsKind():  true,
+	VariantBitbucketServer.AsKind(): true,
+	VariantGitHub.AsKind():          true,
+	VariantGitLab.AsKind():          true,
+	VariantGitolite.AsKind():        true,
+	VariantAzureDevOps.AsKind():     true,
 }
 
 // SupportsRepoExclusion returns true when given external service kind supports
 // repo exclusion.
 func SupportsRepoExclusion(extSvcKind string) bool {
-	return supportsRepoExclusion[extSvcKind]
+	sv, err := ServiceVariantValueOf(extSvcKind)
+	if err != nil {
+		// no mechanism for percolating errors, so just return false
+		return false
+	}
+	return sv.SupportsRepoExclusion()
 }
 
 // AccountID is a descriptive type for the external identifier of an external account on the
@@ -454,46 +477,14 @@ func ParseConfig(kind, config string) (any, error) {
 }
 
 func getConfigPrototype(kind string) (any, error) {
-	switch strings.ToUpper(kind) {
-	case KindAWSCodeCommit:
-		return &schema.AWSCodeCommitConnection{}, nil
-	case KindAzureDevOps:
-		return &schema.AzureDevOpsConnection{}, nil
-	case KindBitbucketServer:
-		return &schema.BitbucketServerConnection{}, nil
-	case KindBitbucketCloud:
-		return &schema.BitbucketCloudConnection{}, nil
-	case KindGerrit:
-		return &schema.GerritConnection{}, nil
-	case KindGitHub:
-		return &schema.GitHubConnection{}, nil
-	case KindGitLab:
-		return &schema.GitLabConnection{}, nil
-	case KindGitolite:
-		return &schema.GitoliteConnection{}, nil
-	case KindPerforce:
-		return &schema.PerforceConnection{}, nil
-	case KindPhabricator:
-		return &schema.PhabricatorConnection{}, nil
-	case KindGoPackages:
-		return &schema.GoModulesConnection{}, nil
-	case KindJVMPackages:
-		return &schema.JVMPackagesConnection{}, nil
-	case KindPagure:
-		return &schema.PagureConnection{}, nil
-	case KindNpmPackages:
-		return &schema.NpmPackagesConnection{}, nil
-	case KindPythonPackages:
-		return &schema.PythonPackagesConnection{}, nil
-	case KindRustPackages:
-		return &schema.RustPackagesConnection{}, nil
-	case KindRubyPackages:
-		return &schema.RubyPackagesConnection{}, nil
-	case KindOther:
-		return &schema.OtherExternalServiceConnection{}, nil
-	default:
+	sv, err := ServiceVariantValueOf(kind)
+	if err != nil {
 		return nil, errors.Errorf("unknown external service kind %q", kind)
 	}
+	if sv.ConfigPrototype() == nil {
+		return nil, errors.Errorf("no config prototype for %q", kind)
+	}
+	return sv.ConfigPrototype(), nil
 }
 
 const IDParam = "externalServiceID"
@@ -501,32 +492,41 @@ const IDParam = "externalServiceID"
 // WebhookURL returns an endpoint URL for the given external service. If the kind
 // of external service does not support webhooks it returns an empty string.
 func WebhookURL(kind string, externalServiceID int64, cfg any, externalURL string) (string, error) {
-	var path, extra string
-	switch strings.ToUpper(kind) {
-	case KindGitHub:
-		path = "github-webhooks"
-	case KindBitbucketServer:
-		path = "bitbucket-server-webhooks"
-	case KindGitLab:
-		path = "gitlab-webhooks"
-	case KindBitbucketCloud:
-		path = "bitbucket-cloud-webhooks"
+	sv, err := ServiceVariantValueOf(kind)
+	if err != nil {
+		return "", errors.Errorf("unknown external service kind %q", kind)
+	}
 
+	path := sv.WebhookURLPath()
+	if path == "" {
+		// If not a supported kind, bail out.
+		return "", nil
+	}
+
+	u, err := url.Parse(externalURL)
+	if err != nil {
+		return "", err
+	}
+	u.Path = ".api/" + path
+	q := u.Query()
+	q.Set(IDParam, strconv.FormatInt(externalServiceID, 10))
+
+	if sv == VariantBitbucketCloud {
 		// Unlike other external service kinds, Bitbucket Cloud doesn't support
 		// a shared secret defined as part of the webhook. As a result, we need
 		// to include it as an explicit part of the URL that we construct.
 		switch c := cfg.(type) {
 		case *schema.BitbucketCloudConnection:
-			extra = "&secret=" + url.QueryEscape(c.WebhookSecret)
+			q.Set("secret", url.QueryEscape(c.WebhookSecret))
 		default:
-			return "", errors.Newf("external service with id=%d claims to be a Bitbucket Cloud service, but the configuration is of type %T", cfg)
+			return "", errors.Newf("external service with id=%d claims to be a Bitbucket Cloud service, but the configuration is of type %T", externalServiceID, cfg)
 		}
-	default:
-		// If not a supported kind, bail out.
-		return "", nil
 	}
+
+	u.RawQuery = q.Encode()
+
 	// eg. https://example.com/.api/github-webhooks?externalServiceID=1
-	return fmt.Sprintf("%s/.api/%s?%s=%d%s", externalURL, path, IDParam, externalServiceID, extra), nil
+	return u.String(), nil
 }
 
 func ExtractEncryptableToken(ctx context.Context, config *EncryptableConfig, kind string) (string, error) {
@@ -794,17 +794,17 @@ func uniqueCodeHostIdentifier(kind string, cfg any) (string, error) {
 		// Perforce uses the P4PORT to specify the instance, so we use that
 		return c.P4Port, nil
 	case *schema.GoModulesConnection:
-		return KindGoPackages, nil
+		return VariantGoPackages.AsKind(), nil
 	case *schema.JVMPackagesConnection:
-		return KindJVMPackages, nil
+		return VariantJVMPackages.AsKind(), nil
 	case *schema.NpmPackagesConnection:
-		return KindNpmPackages, nil
+		return VariantNpmPackages.AsKind(), nil
 	case *schema.PythonPackagesConnection:
-		return KindPythonPackages, nil
+		return VariantPythonPackages.AsKind(), nil
 	case *schema.RustPackagesConnection:
-		return KindRustPackages, nil
+		return VariantRustPackages.AsKind(), nil
 	case *schema.RubyPackagesConnection:
-		return KindRubyPackages, nil
+		return VariantRubyPackages.AsKind(), nil
 	case *schema.PagureConnection:
 		rawURL = c.Url
 	default:
