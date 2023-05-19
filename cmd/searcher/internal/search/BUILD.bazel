@@ -20,6 +20,7 @@ go_library(
     visibility = ["//cmd/searcher:__subpackages__"],
     deps = [
         "//cmd/searcher/protocol",
+        "//cmd/searcher/shared",
         "//internal/api",
         "//internal/comby",
         "//internal/conf",
