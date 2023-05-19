@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/service/servegit"
-	"github.com/sourcegraph/sourcegraph/internal/singleprogram/filepicker"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -23,7 +22,6 @@ type LocalDirectoryArgs struct {
 }
 
 type AppResolver interface {
-	LocalDirectoriesPicker(ctx context.Context) (LocalDirectoryResolver, error)
 	LocalDirectories(ctx context.Context, args *LocalDirectoryArgs) (LocalDirectoryResolver, error)
 	LocalExternalServices(ctx context.Context) ([]LocalExternalServiceResolver, error)
 }
@@ -60,25 +58,6 @@ func NewAppResolver(logger log.Logger, db database.DB) *appResolver {
 
 func (r *appResolver) checkLocalDirectoryAccess(ctx context.Context) error {
 	return auth.CheckCurrentUserIsSiteAdmin(ctx, r.db)
-}
-
-func (r *appResolver) LocalDirectoriesPicker(ctx context.Context) (LocalDirectoryResolver, error) {
-	// 🚨 SECURITY: Only site admins on app may use API which accesses local filesystem.
-	if err := r.checkLocalDirectoryAccess(ctx); err != nil {
-		return nil, err
-	}
-
-	picker, ok := filepicker.Lookup(r.logger)
-	if !ok {
-		return nil, errors.New("filepicker is not available")
-	}
-
-	paths, err := picker(ctx, true)
-	if err != nil {
-		return nil, err
-	}
-
-	return &localDirectoryResolver{paths: paths}, nil
 }
 
 func (r *appResolver) LocalDirectories(ctx context.Context, args *LocalDirectoryArgs) (LocalDirectoryResolver, error) {

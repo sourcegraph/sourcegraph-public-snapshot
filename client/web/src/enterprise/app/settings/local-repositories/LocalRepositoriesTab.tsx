@@ -1,4 +1,4 @@
-import { FC, useMemo } from 'react'
+import { FC, ReactNode, useMemo } from 'react'
 
 import { mdiFolderMultipleOutline, mdiFolderMultiplePlusOutline, mdiGit, mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
@@ -17,11 +17,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { LocalRepository } from '../../../../graphql-operations'
-import {
-    useLocalPathsPicker,
-    useLocalRepositories,
-    useNewLocalRepositoriesPaths,
-} from '../../../../setup-wizard/components'
+import { callFilePicker, useLocalRepositories, useNewLocalRepositoriesPaths } from '../../../../setup-wizard/components'
 
 import styles from './LocalRepositoriesTab.module.scss'
 
@@ -32,7 +28,28 @@ type Path = string
  * provides abilities to specify a local repositories path and see list
  * of resolved repositories by a given path.
  */
-export const LocalRepositoriesTab: FC = () => {
+export const LocalRepositoriesTab: FC = () => (
+    <LocalRepositoriesWidget>
+        {api => (
+            <PageHeader
+                headingElement="h2"
+                description="Add your local repositories"
+                path={[{ text: 'Local repositories' }]}
+                actions={<PathsPickerActions onPathsChange={api.addNewPaths} />}
+                className="mb-3"
+            />
+        )}
+    </LocalRepositoriesWidget>
+)
+
+interface LocalRepositoriesWidgetProps {
+    children: (api: { addNewPaths: (paths: Path[]) => Promise<void> }) => ReactNode
+    className?: string
+}
+
+export const LocalRepositoriesWidget: FC<LocalRepositoriesWidgetProps> = props => {
+    const { children, className } = props
+
     const {
         paths,
         loading: pathsLoading,
@@ -53,23 +70,13 @@ export const LocalRepositoriesTab: FC = () => {
         await deletePath(pathToDelete)
     }
 
-    const handlePathsAdd = async (pathsToAdd: Path[]): Promise<void> => {
-        await addNewPaths(pathsToAdd)
-    }
-
     const anyLoading = pathsLoading || repositoriesLoading
     const anyError = pathsError || repositoriesError
     const allLoaded = pathLoaded && repositoriesLoaded
 
     return (
-        <div className={styles.root}>
-            <PageHeader
-                headingElement="h2"
-                path={[{ text: 'Local repositories' }]}
-                description="Add your local repositories"
-                className="mb-3"
-                actions={<PathsPickerActions onPathsChange={handlePathsAdd} />}
-            />
+        <div className={classNames(className, styles.root)}>
+            {children({ addNewPaths })}
 
             <Container className={styles.container}>
                 {anyError && <ErrorAlert error={anyError} />}
@@ -89,6 +96,7 @@ export const LocalRepositoriesTab: FC = () => {
 }
 
 interface PathsPickerActionsProps {
+    className?: string
     onPathsChange: (paths: string[]) => void
 }
 
@@ -97,17 +105,17 @@ interface PathsPickerActionsProps {
  * but we have two buttons to improve user understanding what options
  * they have in the file picker.
  */
-const PathsPickerActions: FC<PathsPickerActionsProps> = ({ onPathsChange }) => {
-    const { callPathPicker } = useLocalPathsPicker()
-
+export const PathsPickerActions: FC<PathsPickerActionsProps> = ({ className, onPathsChange }) => {
     const handleClickCallPathPicker = async (): Promise<void> => {
-        const paths = await callPathPicker()
+        const paths = await callFilePicker()
 
-        onPathsChange(paths)
+        if (paths !== null) {
+            onPathsChange(paths)
+        }
     }
 
     return (
-        <div className={styles.headerActions}>
+        <div className={classNames(className, styles.headerActions)}>
             <Button variant="primary" onClick={handleClickCallPathPicker}>
                 <Icon svgPath={mdiGit} aria-hidden={true} /> Add a repository
             </Button>
@@ -171,7 +179,10 @@ const LocalRepositoriesList: FC<LocalRepositoriesListProps> = ({ paths, reposito
                     path,
                     repositories,
                 })
+
+                continue
             }
+
             if (repositories.length === 1 && repositories[0].path !== path) {
                 folders.push({
                     path,
@@ -212,22 +223,24 @@ const DirectoryItem: FC<DirectoryItemProps> = ({ directory, onDelete }) => (
         <Collapse>
             {({ isOpen, setOpen }) => (
                 <>
-                    <div className={styles.listItemContent}>
+                    <div className={styles.listItemDirectoryContentWrapper}>
                         <Button
                             variant="secondary"
                             outline={true}
                             onClick={() => setOpen(!isOpen)}
                             className={styles.listItemDirectoryContent}
                         >
-                            <Icon
-                                aria-hidden={true}
-                                svgPath={mdiFolderMultipleOutline}
-                                inline={false}
-                                className={styles.listItemIcon}
-                            />
-                            <Text weight="bold" className={styles.listItemName}>
-                                {directory.path}
-                            </Text>
+                            <div className={styles.listItemDirectoryPath}>
+                                <Icon
+                                    aria-hidden={true}
+                                    svgPath={mdiFolderMultipleOutline}
+                                    inline={false}
+                                    className={styles.listItemIcon}
+                                />
+                                <Text weight="bold" className={styles.listItemName}>
+                                    {directory.path}
+                                </Text>
+                            </div>
                             <Text size="small" className={styles.listItemDescription}>
                                 This folder contains {directory.repositories.length}{' '}
                                 {pluralize('repository', directory.repositories.length, 'repositories')}

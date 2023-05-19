@@ -1,0 +1,1 @@
+build --disk_cache=~/.cache/bazel

@@ -138,6 +138,12 @@ type UpdateLLMProxyAccessInput struct {
 type LLMProxyAccess interface {
 	Enabled() bool
 	RateLimit(context.Context) (LLMProxyRateLimit, error)
+	Usage(context.Context) ([]LLMProxyUsageDatapoint, error)
+}
+
+type LLMProxyUsageDatapoint interface {
+	Date() gqlutil.DateTime
+	Count() int32
 }
 
 type LLMProxyRateLimitSource string

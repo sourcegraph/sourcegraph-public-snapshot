@@ -550,7 +550,7 @@ type Completions struct {
 	CompletionModel string `json:"completionModel,omitempty"`
 	// Enabled description: Toggles whether completions are enabled.
 	Enabled bool `json:"enabled"`
-	// Endpoint description: The endpoint under which to reach the provider. Currently only used for provider type LLM proxy.
+	// Endpoint description: The endpoint under which to reach the provider. Currently only used for provider types "llmproxy" and "anthropic". The default values are "https://completions.sourcegraph.com" and "https://api.anthropic.com/v1/complete" for LLM proxy and Anthropic, respectively.
 	Endpoint string `json:"endpoint,omitempty"`
 	// Model description: DEPRECATED. Use chatModel instead.
 	Model string `json:"model"`
@@ -580,6 +580,8 @@ type DebugLog struct {
 type Dotcom struct {
 	// AppNotifications description: Notifications to display in the Sourcegraph app.
 	AppNotifications []*AppNotifications `json:"app.notifications,omitempty"`
+	// LlmProxy description: Configuration related to the LLM Proxy service management. This should only be used on sourcegraph.com.
+	LlmProxy *LlmProxy `json:"llmProxy,omitempty"`
 	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
 	SlackLicenseExpirationWebhook string `json:"slackLicenseExpirationWebhook,omitempty"`
 	// SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.
@@ -1344,6 +1346,16 @@ type ImportChangesets struct {
 type JVMPackagesConnection struct {
 	// Maven description: Configuration for resolving from Maven repositories.
 	Maven Maven `json:"maven"`
+}
+
+// LlmProxy description: Configuration related to the LLM Proxy service management. This should only be used on sourcegraph.com.
+type LlmProxy struct {
+	// BigQueryDataset description: The dataset to pull BigQuery LLM Proxy related events from.
+	BigQueryDataset string `json:"bigQueryDataset,omitempty"`
+	// BigQueryGoogleProjectID description: The project ID to pull BigQuery LLM Proxy related events from.
+	BigQueryGoogleProjectID string `json:"bigQueryGoogleProjectID,omitempty"`
+	// BigQueryTable description: The table in the dataset to pull BigQuery LLM Proxy related events from.
+	BigQueryTable string `json:"bigQueryTable,omitempty"`
 }
 
 // Log description: Configuration for logging and alerting, including to external services.

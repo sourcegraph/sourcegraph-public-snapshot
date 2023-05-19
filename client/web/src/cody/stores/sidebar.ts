@@ -1,3 +1,5 @@
+import { useCallback } from 'react'
+
 import create from 'zustand'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
@@ -20,8 +22,12 @@ const useCodySidebarSizeStore = create<CodySidebarSizeStore>(
 
 interface CodySidebarOpen {
     isOpen: boolean | undefined
+    inputNeedsFocus: boolean
+    setFocusProvided: () => void
     setIsOpen: (newValue: boolean | ((previousValue: boolean | undefined) => boolean | undefined) | undefined) => void
 }
+
+let inputNeedsFocus = false
 
 // By omitting returning the current size, we don't have to re-render users of this hook (e.g. the
 // RepoContainer) on every resize event.
@@ -29,10 +35,24 @@ export function useCodySidebarStore(): Omit<CodySidebarSizeStore, 'size'> & Cody
     const [isOpen, setIsOpen] = useTemporarySetting('cody.showSidebar', false)
     const onResize = useCodySidebarSizeStore(store => store.onResize)
 
+    const setFocusProvided = useCallback(() => {
+        inputNeedsFocus = false
+    }, [])
+
+    const setSidebarIsOpen = useCallback(
+        (...args: Parameters<typeof setIsOpen>) => {
+            setIsOpen(...args)
+            inputNeedsFocus = true
+        },
+        [setIsOpen]
+    )
+
     return {
         onResize,
         isOpen,
-        setIsOpen,
+        inputNeedsFocus,
+        setFocusProvided,
+        setIsOpen: setSidebarIsOpen,
     }
 }
 

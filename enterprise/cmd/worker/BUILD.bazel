@@ -12,6 +12,7 @@ go_library(
     deps = [
         "//enterprise/cmd/sourcegraph/enterprisecmd",
         "//enterprise/cmd/worker/shared",
+        "//internal/sanitycheck",
     ],
 )
 

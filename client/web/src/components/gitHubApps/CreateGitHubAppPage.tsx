@@ -128,8 +128,7 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
                 description={
                     <>
                         Create and connect a GitHub App to better manage GitHub code host connections.
-                        {/* TODO: add docs link here once we have them */}
-                        <Link to="" className="ml-1">
+                        <Link to="/help/admin/external_service/github#using-a-github-app" className="ml-1">
                             See how GitHub App configuration works.
                         </Link>
                     </>
@@ -139,8 +138,9 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
                 {error && <Alert variant="danger">Error creating github app: {error}</Alert>}
                 <Text>
                     Create a new GitHub App by completing the form below. Once you click "Create GitHub App", you will
-                    be redirected to GitHub where you will create your GitHub App, choose which organizations to connect
-                    to your GitHub App, and choose which repositories to install.
+                    be redirected to GitHub where you will create your GitHub App, and choose which repositories to
+                    install. By default, the GitHub App will be created under your personal account. If you would like
+                    to create the GitHub App under an organization, enter the organization name below.
                 </Text>
                 <Text>Once completing install in GitHub, you'll be redirected back here.</Text>
 
@@ -165,7 +165,7 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
                         onChange={handleUrlChange}
                         value={url}
                         placeholder="https://github.com"
-                        message="This is the URL of the GitHub account or organization that you would like to create your GitHub App in."
+                        message="This is the root URL of the GitHub instance, e.g., https://github.com, https://github.company.com."
                     />
                 </Label>
                 <Label className="w-100 mt-2">
@@ -176,7 +176,20 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
                         type="text"
                         onChange={handleOrgChange}
                         value={org}
-                        message="If creating a GitHub App for your GitHub Organization, this should match your GitHub Organization name."
+                        message={
+                            <>
+                                If creating a GitHub App for your GitHub Organization, this should match your GitHub
+                                Organization name. Only{' '}
+                                <Link
+                                    to="https://docs.github.com/en/organizations/managing-peoples-access-to-your-organization-with-roles/roles-in-an-organization#organization-owners"
+                                    target="_blank"
+                                    rel="noopener"
+                                >
+                                    organization owners
+                                </Link>{' '}
+                                can create GitHub Apps.
+                            </>
+                        }
                     />
                 </Label>
                 <div className="mt-3">

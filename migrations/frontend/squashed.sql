@@ -924,6 +924,26 @@ CREATE TABLE aggregated_user_statistics (
     user_events_count bigint
 );
 
+CREATE TABLE assigned_owners (
+    id integer NOT NULL,
+    owner_user_id integer NOT NULL,
+    file_path_id integer NOT NULL,
+    who_assigned_user_id integer,
+    assigned_at timestamp without time zone DEFAULT now() NOT NULL
+);
+
+COMMENT ON TABLE assigned_owners IS 'Table for ownership assignments, one entry contains an assigned user ID, which repo_path is assigned and the date and user who assigned the owner.';
+
+CREATE SEQUENCE assigned_owners_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE assigned_owners_id_seq OWNED BY assigned_owners.id;
+
 CREATE TABLE batch_changes (
     id bigint NOT NULL,
     name text NOT NULL,
@@ -1791,14 +1811,20 @@ ALTER SEQUENCE codeintel_ranking_path_counts_inputs_id_seq OWNED BY codeintel_ra
 CREATE TABLE codeintel_ranking_progress (
     id bigint NOT NULL,
     graph_key text NOT NULL,
-    max_definition_id integer NOT NULL,
-    max_reference_id integer NOT NULL,
-    max_path_id integer NOT NULL,
     mappers_started_at timestamp with time zone NOT NULL,
     mapper_completed_at timestamp with time zone,
     seed_mapper_completed_at timestamp with time zone,
     reducer_started_at timestamp with time zone,
-    reducer_completed_at timestamp with time zone
+    reducer_completed_at timestamp with time zone,
+    num_path_records_total integer,
+    num_reference_records_total integer,
+    num_count_records_total integer,
+    num_path_records_processed integer,
+    num_reference_records_processed integer,
+    num_count_records_processed integer,
+    max_definition_id bigint NOT NULL,
+    max_reference_id bigint NOT NULL,
+    max_path_id bigint NOT NULL
 );
 
 CREATE SEQUENCE codeintel_ranking_progress_id_seq
@@ -2397,23 +2423,6 @@ COMMENT ON COLUMN feature_flags.rollout IS 'Rollout only defined when flag_type 
 COMMENT ON CONSTRAINT required_bool_fields ON feature_flags IS 'Checks that bool_value is set IFF flag_type = bool';
 
 COMMENT ON CONSTRAINT required_rollout_fields ON feature_flags IS 'Checks that rollout is set IFF flag_type = rollout';
-
-CREATE TABLE github_app_installs (
-    id integer NOT NULL,
-    app_id integer NOT NULL,
-    installation_id integer NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-CREATE SEQUENCE github_app_installs_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE github_app_installs_id_seq OWNED BY github_app_installs.id;
 
 CREATE TABLE github_apps (
     id integer NOT NULL,
@@ -3651,6 +3660,35 @@ CREATE TABLE own_background_jobs (
     job_type integer NOT NULL
 );
 
+CREATE TABLE own_signal_configurations (
+    id integer NOT NULL,
+    name text NOT NULL,
+    description text DEFAULT ''::text NOT NULL,
+    excluded_repo_patterns text[],
+    enabled boolean DEFAULT false NOT NULL
+);
+
+CREATE VIEW own_background_jobs_config_aware AS
+ SELECT obj.id,
+    obj.state,
+    obj.failure_message,
+    obj.queued_at,
+    obj.started_at,
+    obj.finished_at,
+    obj.process_after,
+    obj.num_resets,
+    obj.num_failures,
+    obj.last_heartbeat_at,
+    obj.execution_logs,
+    obj.worker_hostname,
+    obj.cancel,
+    obj.repo_id,
+    obj.job_type,
+    osc.name AS config_name
+   FROM (own_background_jobs obj
+     JOIN own_signal_configurations osc ON ((obj.job_type = osc.id)))
+  WHERE (osc.enabled IS TRUE);
+
 CREATE SEQUENCE own_background_jobs_id_seq
     AS integer
     START WITH 1
@@ -3660,6 +3698,16 @@ CREATE SEQUENCE own_background_jobs_id_seq
     CACHE 1;
 
 ALTER SEQUENCE own_background_jobs_id_seq OWNED BY own_background_jobs.id;
+
+CREATE SEQUENCE own_signal_configurations_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE own_signal_configurations_id_seq OWNED BY own_signal_configurations.id;
 
 CREATE TABLE own_signal_recent_contribution (
     id integer NOT NULL,
@@ -4634,6 +4682,8 @@ ALTER TABLE ONLY access_requests ALTER COLUMN id SET DEFAULT nextval('access_req
 
 ALTER TABLE ONLY access_tokens ALTER COLUMN id SET DEFAULT nextval('access_tokens_id_seq'::regclass);
 
+ALTER TABLE ONLY assigned_owners ALTER COLUMN id SET DEFAULT nextval('assigned_owners_id_seq'::regclass);
+
 ALTER TABLE ONLY batch_changes ALTER COLUMN id SET DEFAULT nextval('batch_changes_id_seq'::regclass);
 
 ALTER TABLE ONLY batch_changes_site_credentials ALTER COLUMN id SET DEFAULT nextval('batch_changes_site_credentials_id_seq'::regclass);
@@ -4736,8 +4786,6 @@ ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs ALTER COLUMN id SE
 
 ALTER TABLE ONLY external_services ALTER COLUMN id SET DEFAULT nextval('external_services_id_seq'::regclass);
 
-ALTER TABLE ONLY github_app_installs ALTER COLUMN id SET DEFAULT nextval('github_app_installs_id_seq'::regclass);
-
 ALTER TABLE ONLY github_apps ALTER COLUMN id SET DEFAULT nextval('github_apps_id_seq'::regclass);
 
 ALTER TABLE ONLY gitserver_relocator_jobs ALTER COLUMN id SET DEFAULT nextval('gitserver_relocator_jobs_id_seq'::regclass);
@@ -4799,6 +4847,8 @@ ALTER TABLE ONLY own_aggregate_recent_contribution ALTER COLUMN id SET DEFAULT n
 ALTER TABLE ONLY own_aggregate_recent_view ALTER COLUMN id SET DEFAULT nextval('own_aggregate_recent_view_id_seq'::regclass);
 
 ALTER TABLE ONLY own_background_jobs ALTER COLUMN id SET DEFAULT nextval('own_background_jobs_id_seq'::regclass);
+
+ALTER TABLE ONLY own_signal_configurations ALTER COLUMN id SET DEFAULT nextval('own_signal_configurations_id_seq'::regclass);
 
 ALTER TABLE ONLY own_signal_recent_contribution ALTER COLUMN id SET DEFAULT nextval('own_signal_recent_contribution_id_seq'::regclass);
 
@@ -4874,6 +4924,9 @@ ALTER TABLE ONLY access_tokens
 
 ALTER TABLE ONLY aggregated_user_statistics
     ADD CONSTRAINT aggregated_user_statistics_pkey PRIMARY KEY (user_id);
+
+ALTER TABLE ONLY assigned_owners
+    ADD CONSTRAINT assigned_owners_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY batch_changes
     ADD CONSTRAINT batch_changes_pkey PRIMARY KEY (id);
@@ -5076,9 +5129,6 @@ ALTER TABLE ONLY feature_flag_overrides
 ALTER TABLE ONLY feature_flags
     ADD CONSTRAINT feature_flags_pkey PRIMARY KEY (flag_name);
 
-ALTER TABLE ONLY github_app_installs
-    ADD CONSTRAINT github_app_installs_pkey PRIMARY KEY (id);
-
 ALTER TABLE ONLY github_apps
     ADD CONSTRAINT github_apps_pkey PRIMARY KEY (id);
 
@@ -5210,6 +5260,9 @@ ALTER TABLE ONLY own_aggregate_recent_view
 
 ALTER TABLE ONLY own_background_jobs
     ADD CONSTRAINT own_background_jobs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY own_signal_configurations
+    ADD CONSTRAINT own_signal_configurations_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY own_signal_recent_contribution
     ADD CONSTRAINT own_signal_recent_contribution_pkey PRIMARY KEY (id);
@@ -5376,7 +5429,7 @@ CREATE INDEX access_requests_status ON access_requests USING btree (status);
 
 CREATE INDEX access_tokens_lookup ON access_tokens USING hash (value_sha256) WHERE (deleted_at IS NULL);
 
-CREATE INDEX app_id_idx ON github_app_installs USING btree (app_id);
+CREATE INDEX assigned_owners_file_path ON assigned_owners USING btree (file_path_id);
 
 CREATE INDEX batch_changes_namespace_org_id ON batch_changes USING btree (namespace_org_id);
 
@@ -5606,8 +5659,6 @@ CREATE INDEX insights_query_runner_jobs_series_id_state ON insights_query_runner
 
 CREATE INDEX insights_query_runner_jobs_state_btree ON insights_query_runner_jobs USING btree (state);
 
-CREATE INDEX installation_id_idx ON github_app_installs USING btree (installation_id);
-
 CREATE UNIQUE INDEX kind_cloud_default ON external_services USING btree (kind, cloud_default) WHERE ((cloud_default = true) AND (deleted_at IS NULL));
 
 CREATE INDEX lsif_configuration_policies_repository_id ON lsif_configuration_policies USING btree (repository_id);
@@ -5711,6 +5762,8 @@ CREATE UNIQUE INDEX own_aggregate_recent_view_viewer ON own_aggregate_recent_vie
 CREATE INDEX own_background_jobs_repo_id_idx ON own_background_jobs USING btree (repo_id);
 
 CREATE INDEX own_background_jobs_state_idx ON own_background_jobs USING btree (state);
+
+CREATE UNIQUE INDEX own_signal_configurations_name_uidx ON own_signal_configurations USING btree (name);
 
 CREATE UNIQUE INDEX package_repo_filters_unique_matcher_per_scheme ON package_repo_filters USING btree (scheme, matcher);
 
@@ -5925,6 +5978,15 @@ ALTER TABLE ONLY access_tokens
 
 ALTER TABLE ONLY aggregated_user_statistics
     ADD CONSTRAINT aggregated_user_statistics_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY assigned_owners
+    ADD CONSTRAINT assigned_owners_file_path_id_fkey FOREIGN KEY (file_path_id) REFERENCES repo_paths(id);
+
+ALTER TABLE ONLY assigned_owners
+    ADD CONSTRAINT assigned_owners_owner_user_id_fkey FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY assigned_owners
+    ADD CONSTRAINT assigned_owners_who_assigned_user_id_fkey FOREIGN KEY (who_assigned_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE;
 
 ALTER TABLE ONLY batch_changes
     ADD CONSTRAINT batch_changes_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE;
@@ -6189,9 +6251,6 @@ ALTER TABLE ONLY vulnerability_affected_symbols
 
 ALTER TABLE ONLY vulnerability_matches
     ADD CONSTRAINT fk_vulnerability_affected_packages FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY github_app_installs
-    ADD CONSTRAINT github_app_installs_app_id_fkey FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY github_apps
     ADD CONSTRAINT github_apps_webhook_id_fkey FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE SET NULL;

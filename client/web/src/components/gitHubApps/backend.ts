@@ -23,6 +23,29 @@ export const GITHUB_APPS_QUERY = gql`
     }
 `
 
+export const GITHUB_APPS_WITH_INSTALLATIONS_QUERY = gql`
+    query GitHubAppsWithInstalls {
+        gitHubApps {
+            nodes {
+                id
+                appID
+                name
+                baseURL
+                logo
+                installations {
+                    id
+                    account {
+                        login
+                        avatarURL
+                        url
+                        type
+                    }
+                }
+            }
+        }
+    }
+`
+
 export const GITHUB_APP_BY_ID_QUERY = gql`
     ${LIST_EXTERNAL_SERVICE_FRAGMENT}
     query GitHubAppByID($id: ID!) {

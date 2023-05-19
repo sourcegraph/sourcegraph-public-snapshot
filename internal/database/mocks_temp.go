@@ -4887,6 +4887,9 @@ type MockDB struct {
 	// AccessTokensFunc is an instance of a mock function object controlling
 	// the behavior of the method AccessTokens.
 	AccessTokensFunc *DBAccessTokensFunc
+	// AssignedOwnersFunc is an instance of a mock function object
+	// controlling the behavior of the method AssignedOwners.
+	AssignedOwnersFunc *DBAssignedOwnersFunc
 	// AuthzFunc is an instance of a mock function object controlling the
 	// behavior of the method Authz.
 	AuthzFunc *DBAuthzFunc
@@ -4957,6 +4960,9 @@ type MockDB struct {
 	// OutboundWebhooksFunc is an instance of a mock function object
 	// controlling the behavior of the method OutboundWebhooks.
 	OutboundWebhooksFunc *DBOutboundWebhooksFunc
+	// OwnSignalConfigurationsFunc is an instance of a mock function object
+	// controlling the behavior of the method OwnSignalConfigurations.
+	OwnSignalConfigurationsFunc *DBOwnSignalConfigurationsFunc
 	// PermissionSyncJobsFunc is an instance of a mock function object
 	// controlling the behavior of the method PermissionSyncJobs.
 	PermissionSyncJobsFunc *DBPermissionSyncJobsFunc
@@ -5055,6 +5061,11 @@ func NewMockDB() *MockDB {
 		},
 		AccessTokensFunc: &DBAccessTokensFunc{
 			defaultHook: func() (r0 AccessTokenStore) {
+				return
+			},
+		},
+		AssignedOwnersFunc: &DBAssignedOwnersFunc{
+			defaultHook: func() (r0 AssignedOwnersStore) {
 				return
 			},
 		},
@@ -5170,6 +5181,11 @@ func NewMockDB() *MockDB {
 		},
 		OutboundWebhooksFunc: &DBOutboundWebhooksFunc{
 			defaultHook: func(encryption.Key) (r0 OutboundWebhookStore) {
+				return
+			},
+		},
+		OwnSignalConfigurationsFunc: &DBOwnSignalConfigurationsFunc{
+			defaultHook: func() (r0 SignalConfigurationStore) {
 				return
 			},
 		},
@@ -5330,6 +5346,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.AccessTokens")
 			},
 		},
+		AssignedOwnersFunc: &DBAssignedOwnersFunc{
+			defaultHook: func() AssignedOwnersStore {
+				panic("unexpected invocation of MockDB.AssignedOwners")
+			},
+		},
 		AuthzFunc: &DBAuthzFunc{
 			defaultHook: func() AuthzStore {
 				panic("unexpected invocation of MockDB.Authz")
@@ -5443,6 +5464,11 @@ func NewStrictMockDB() *MockDB {
 		OutboundWebhooksFunc: &DBOutboundWebhooksFunc{
 			defaultHook: func(encryption.Key) OutboundWebhookStore {
 				panic("unexpected invocation of MockDB.OutboundWebhooks")
+			},
+		},
+		OwnSignalConfigurationsFunc: &DBOwnSignalConfigurationsFunc{
+			defaultHook: func() SignalConfigurationStore {
+				panic("unexpected invocation of MockDB.OwnSignalConfigurations")
 			},
 		},
 		PermissionSyncJobsFunc: &DBPermissionSyncJobsFunc{
@@ -5598,6 +5624,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		AccessTokensFunc: &DBAccessTokensFunc{
 			defaultHook: i.AccessTokens,
 		},
+		AssignedOwnersFunc: &DBAssignedOwnersFunc{
+			defaultHook: i.AssignedOwners,
+		},
 		AuthzFunc: &DBAuthzFunc{
 			defaultHook: i.Authz,
 		},
@@ -5666,6 +5695,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		OutboundWebhooksFunc: &DBOutboundWebhooksFunc{
 			defaultHook: i.OutboundWebhooks,
+		},
+		OwnSignalConfigurationsFunc: &DBOwnSignalConfigurationsFunc{
+			defaultHook: i.OwnSignalConfigurations,
 		},
 		PermissionSyncJobsFunc: &DBPermissionSyncJobsFunc{
 			defaultHook: i.PermissionSyncJobs,
@@ -5948,6 +5980,105 @@ func (c DBAccessTokensFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBAccessTokensFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBAssignedOwnersFunc describes the behavior when the AssignedOwners
+// method of the parent MockDB instance is invoked.
+type DBAssignedOwnersFunc struct {
+	defaultHook func() AssignedOwnersStore
+	hooks       []func() AssignedOwnersStore
+	history     []DBAssignedOwnersFuncCall
+	mutex       sync.Mutex
+}
+
+// AssignedOwners delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) AssignedOwners() AssignedOwnersStore {
+	r0 := m.AssignedOwnersFunc.nextHook()()
+	m.AssignedOwnersFunc.appendCall(DBAssignedOwnersFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the AssignedOwners
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBAssignedOwnersFunc) SetDefaultHook(hook func() AssignedOwnersStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AssignedOwners method of the parent MockDB instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBAssignedOwnersFunc) PushHook(hook func() AssignedOwnersStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBAssignedOwnersFunc) SetDefaultReturn(r0 AssignedOwnersStore) {
+	f.SetDefaultHook(func() AssignedOwnersStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBAssignedOwnersFunc) PushReturn(r0 AssignedOwnersStore) {
+	f.PushHook(func() AssignedOwnersStore {
+		return r0
+	})
+}
+
+func (f *DBAssignedOwnersFunc) nextHook() func() AssignedOwnersStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBAssignedOwnersFunc) appendCall(r0 DBAssignedOwnersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBAssignedOwnersFuncCall objects describing
+// the invocations of this function.
+func (f *DBAssignedOwnersFunc) History() []DBAssignedOwnersFuncCall {
+	f.mutex.Lock()
+	history := make([]DBAssignedOwnersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBAssignedOwnersFuncCall is an object that describes an invocation of
+// method AssignedOwners on an instance of MockDB.
+type DBAssignedOwnersFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 AssignedOwnersStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBAssignedOwnersFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBAssignedOwnersFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -8247,6 +8378,105 @@ func (c DBOutboundWebhooksFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBOutboundWebhooksFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBOwnSignalConfigurationsFunc describes the behavior when the
+// OwnSignalConfigurations method of the parent MockDB instance is invoked.
+type DBOwnSignalConfigurationsFunc struct {
+	defaultHook func() SignalConfigurationStore
+	hooks       []func() SignalConfigurationStore
+	history     []DBOwnSignalConfigurationsFuncCall
+	mutex       sync.Mutex
+}
+
+// OwnSignalConfigurations delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockDB) OwnSignalConfigurations() SignalConfigurationStore {
+	r0 := m.OwnSignalConfigurationsFunc.nextHook()()
+	m.OwnSignalConfigurationsFunc.appendCall(DBOwnSignalConfigurationsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// OwnSignalConfigurations method of the parent MockDB instance is invoked
+// and the hook queue is empty.
+func (f *DBOwnSignalConfigurationsFunc) SetDefaultHook(hook func() SignalConfigurationStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// OwnSignalConfigurations method of the parent MockDB instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *DBOwnSignalConfigurationsFunc) PushHook(hook func() SignalConfigurationStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBOwnSignalConfigurationsFunc) SetDefaultReturn(r0 SignalConfigurationStore) {
+	f.SetDefaultHook(func() SignalConfigurationStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBOwnSignalConfigurationsFunc) PushReturn(r0 SignalConfigurationStore) {
+	f.PushHook(func() SignalConfigurationStore {
+		return r0
+	})
+}
+
+func (f *DBOwnSignalConfigurationsFunc) nextHook() func() SignalConfigurationStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBOwnSignalConfigurationsFunc) appendCall(r0 DBOwnSignalConfigurationsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBOwnSignalConfigurationsFuncCall objects
+// describing the invocations of this function.
+func (f *DBOwnSignalConfigurationsFunc) History() []DBOwnSignalConfigurationsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBOwnSignalConfigurationsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBOwnSignalConfigurationsFuncCall is an object that describes an
+// invocation of method OwnSignalConfigurations on an instance of MockDB.
+type DBOwnSignalConfigurationsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 SignalConfigurationStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBOwnSignalConfigurationsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBOwnSignalConfigurationsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -54093,6 +54323,542 @@ func (c SettingsStoreWithFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c SettingsStoreWithFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// MockSignalConfigurationStore is a mock implementation of the
+// SignalConfigurationStore interface (from the package
+// github.com/sourcegraph/sourcegraph/internal/database) used for unit
+// testing.
+type MockSignalConfigurationStore struct {
+	// IsEnabledFunc is an instance of a mock function object controlling
+	// the behavior of the method IsEnabled.
+	IsEnabledFunc *SignalConfigurationStoreIsEnabledFunc
+	// LoadConfigurationsFunc is an instance of a mock function object
+	// controlling the behavior of the method LoadConfigurations.
+	LoadConfigurationsFunc *SignalConfigurationStoreLoadConfigurationsFunc
+	// UpdateConfigurationFunc is an instance of a mock function object
+	// controlling the behavior of the method UpdateConfiguration.
+	UpdateConfigurationFunc *SignalConfigurationStoreUpdateConfigurationFunc
+	// WithTransactFunc is an instance of a mock function object controlling
+	// the behavior of the method WithTransact.
+	WithTransactFunc *SignalConfigurationStoreWithTransactFunc
+}
+
+// NewMockSignalConfigurationStore creates a new mock of the
+// SignalConfigurationStore interface. All methods return zero values for
+// all results, unless overwritten.
+func NewMockSignalConfigurationStore() *MockSignalConfigurationStore {
+	return &MockSignalConfigurationStore{
+		IsEnabledFunc: &SignalConfigurationStoreIsEnabledFunc{
+			defaultHook: func(context.Context, string) (r0 bool, r1 error) {
+				return
+			},
+		},
+		LoadConfigurationsFunc: &SignalConfigurationStoreLoadConfigurationsFunc{
+			defaultHook: func(context.Context, LoadSignalConfigurationArgs) (r0 []SignalConfiguration, r1 error) {
+				return
+			},
+		},
+		UpdateConfigurationFunc: &SignalConfigurationStoreUpdateConfigurationFunc{
+			defaultHook: func(context.Context, UpdateSignalConfigurationArgs) (r0 error) {
+				return
+			},
+		},
+		WithTransactFunc: &SignalConfigurationStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(store SignalConfigurationStore) error) (r0 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockSignalConfigurationStore creates a new mock of the
+// SignalConfigurationStore interface. All methods panic on invocation,
+// unless overwritten.
+func NewStrictMockSignalConfigurationStore() *MockSignalConfigurationStore {
+	return &MockSignalConfigurationStore{
+		IsEnabledFunc: &SignalConfigurationStoreIsEnabledFunc{
+			defaultHook: func(context.Context, string) (bool, error) {
+				panic("unexpected invocation of MockSignalConfigurationStore.IsEnabled")
+			},
+		},
+		LoadConfigurationsFunc: &SignalConfigurationStoreLoadConfigurationsFunc{
+			defaultHook: func(context.Context, LoadSignalConfigurationArgs) ([]SignalConfiguration, error) {
+				panic("unexpected invocation of MockSignalConfigurationStore.LoadConfigurations")
+			},
+		},
+		UpdateConfigurationFunc: &SignalConfigurationStoreUpdateConfigurationFunc{
+			defaultHook: func(context.Context, UpdateSignalConfigurationArgs) error {
+				panic("unexpected invocation of MockSignalConfigurationStore.UpdateConfiguration")
+			},
+		},
+		WithTransactFunc: &SignalConfigurationStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(store SignalConfigurationStore) error) error {
+				panic("unexpected invocation of MockSignalConfigurationStore.WithTransact")
+			},
+		},
+	}
+}
+
+// NewMockSignalConfigurationStoreFrom creates a new mock of the
+// MockSignalConfigurationStore interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockSignalConfigurationStoreFrom(i SignalConfigurationStore) *MockSignalConfigurationStore {
+	return &MockSignalConfigurationStore{
+		IsEnabledFunc: &SignalConfigurationStoreIsEnabledFunc{
+			defaultHook: i.IsEnabled,
+		},
+		LoadConfigurationsFunc: &SignalConfigurationStoreLoadConfigurationsFunc{
+			defaultHook: i.LoadConfigurations,
+		},
+		UpdateConfigurationFunc: &SignalConfigurationStoreUpdateConfigurationFunc{
+			defaultHook: i.UpdateConfiguration,
+		},
+		WithTransactFunc: &SignalConfigurationStoreWithTransactFunc{
+			defaultHook: i.WithTransact,
+		},
+	}
+}
+
+// SignalConfigurationStoreIsEnabledFunc describes the behavior when the
+// IsEnabled method of the parent MockSignalConfigurationStore instance is
+// invoked.
+type SignalConfigurationStoreIsEnabledFunc struct {
+	defaultHook func(context.Context, string) (bool, error)
+	hooks       []func(context.Context, string) (bool, error)
+	history     []SignalConfigurationStoreIsEnabledFuncCall
+	mutex       sync.Mutex
+}
+
+// IsEnabled delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockSignalConfigurationStore) IsEnabled(v0 context.Context, v1 string) (bool, error) {
+	r0, r1 := m.IsEnabledFunc.nextHook()(v0, v1)
+	m.IsEnabledFunc.appendCall(SignalConfigurationStoreIsEnabledFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the IsEnabled method of
+// the parent MockSignalConfigurationStore instance is invoked and the hook
+// queue is empty.
+func (f *SignalConfigurationStoreIsEnabledFunc) SetDefaultHook(hook func(context.Context, string) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// IsEnabled method of the parent MockSignalConfigurationStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *SignalConfigurationStoreIsEnabledFunc) PushHook(hook func(context.Context, string) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SignalConfigurationStoreIsEnabledFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SignalConfigurationStoreIsEnabledFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, string) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *SignalConfigurationStoreIsEnabledFunc) nextHook() func(context.Context, string) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SignalConfigurationStoreIsEnabledFunc) appendCall(r0 SignalConfigurationStoreIsEnabledFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SignalConfigurationStoreIsEnabledFuncCall
+// objects describing the invocations of this function.
+func (f *SignalConfigurationStoreIsEnabledFunc) History() []SignalConfigurationStoreIsEnabledFuncCall {
+	f.mutex.Lock()
+	history := make([]SignalConfigurationStoreIsEnabledFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SignalConfigurationStoreIsEnabledFuncCall is an object that describes an
+// invocation of method IsEnabled on an instance of
+// MockSignalConfigurationStore.
+type SignalConfigurationStoreIsEnabledFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SignalConfigurationStoreIsEnabledFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SignalConfigurationStoreIsEnabledFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// SignalConfigurationStoreLoadConfigurationsFunc describes the behavior
+// when the LoadConfigurations method of the parent
+// MockSignalConfigurationStore instance is invoked.
+type SignalConfigurationStoreLoadConfigurationsFunc struct {
+	defaultHook func(context.Context, LoadSignalConfigurationArgs) ([]SignalConfiguration, error)
+	hooks       []func(context.Context, LoadSignalConfigurationArgs) ([]SignalConfiguration, error)
+	history     []SignalConfigurationStoreLoadConfigurationsFuncCall
+	mutex       sync.Mutex
+}
+
+// LoadConfigurations delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockSignalConfigurationStore) LoadConfigurations(v0 context.Context, v1 LoadSignalConfigurationArgs) ([]SignalConfiguration, error) {
+	r0, r1 := m.LoadConfigurationsFunc.nextHook()(v0, v1)
+	m.LoadConfigurationsFunc.appendCall(SignalConfigurationStoreLoadConfigurationsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the LoadConfigurations
+// method of the parent MockSignalConfigurationStore instance is invoked and
+// the hook queue is empty.
+func (f *SignalConfigurationStoreLoadConfigurationsFunc) SetDefaultHook(hook func(context.Context, LoadSignalConfigurationArgs) ([]SignalConfiguration, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// LoadConfigurations method of the parent MockSignalConfigurationStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *SignalConfigurationStoreLoadConfigurationsFunc) PushHook(hook func(context.Context, LoadSignalConfigurationArgs) ([]SignalConfiguration, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SignalConfigurationStoreLoadConfigurationsFunc) SetDefaultReturn(r0 []SignalConfiguration, r1 error) {
+	f.SetDefaultHook(func(context.Context, LoadSignalConfigurationArgs) ([]SignalConfiguration, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SignalConfigurationStoreLoadConfigurationsFunc) PushReturn(r0 []SignalConfiguration, r1 error) {
+	f.PushHook(func(context.Context, LoadSignalConfigurationArgs) ([]SignalConfiguration, error) {
+		return r0, r1
+	})
+}
+
+func (f *SignalConfigurationStoreLoadConfigurationsFunc) nextHook() func(context.Context, LoadSignalConfigurationArgs) ([]SignalConfiguration, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SignalConfigurationStoreLoadConfigurationsFunc) appendCall(r0 SignalConfigurationStoreLoadConfigurationsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// SignalConfigurationStoreLoadConfigurationsFuncCall objects describing the
+// invocations of this function.
+func (f *SignalConfigurationStoreLoadConfigurationsFunc) History() []SignalConfigurationStoreLoadConfigurationsFuncCall {
+	f.mutex.Lock()
+	history := make([]SignalConfigurationStoreLoadConfigurationsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SignalConfigurationStoreLoadConfigurationsFuncCall is an object that
+// describes an invocation of method LoadConfigurations on an instance of
+// MockSignalConfigurationStore.
+type SignalConfigurationStoreLoadConfigurationsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 LoadSignalConfigurationArgs
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []SignalConfiguration
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SignalConfigurationStoreLoadConfigurationsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SignalConfigurationStoreLoadConfigurationsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// SignalConfigurationStoreUpdateConfigurationFunc describes the behavior
+// when the UpdateConfiguration method of the parent
+// MockSignalConfigurationStore instance is invoked.
+type SignalConfigurationStoreUpdateConfigurationFunc struct {
+	defaultHook func(context.Context, UpdateSignalConfigurationArgs) error
+	hooks       []func(context.Context, UpdateSignalConfigurationArgs) error
+	history     []SignalConfigurationStoreUpdateConfigurationFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateConfiguration delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockSignalConfigurationStore) UpdateConfiguration(v0 context.Context, v1 UpdateSignalConfigurationArgs) error {
+	r0 := m.UpdateConfigurationFunc.nextHook()(v0, v1)
+	m.UpdateConfigurationFunc.appendCall(SignalConfigurationStoreUpdateConfigurationFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the UpdateConfiguration
+// method of the parent MockSignalConfigurationStore instance is invoked and
+// the hook queue is empty.
+func (f *SignalConfigurationStoreUpdateConfigurationFunc) SetDefaultHook(hook func(context.Context, UpdateSignalConfigurationArgs) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateConfiguration method of the parent MockSignalConfigurationStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *SignalConfigurationStoreUpdateConfigurationFunc) PushHook(hook func(context.Context, UpdateSignalConfigurationArgs) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SignalConfigurationStoreUpdateConfigurationFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, UpdateSignalConfigurationArgs) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SignalConfigurationStoreUpdateConfigurationFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, UpdateSignalConfigurationArgs) error {
+		return r0
+	})
+}
+
+func (f *SignalConfigurationStoreUpdateConfigurationFunc) nextHook() func(context.Context, UpdateSignalConfigurationArgs) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SignalConfigurationStoreUpdateConfigurationFunc) appendCall(r0 SignalConfigurationStoreUpdateConfigurationFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// SignalConfigurationStoreUpdateConfigurationFuncCall objects describing
+// the invocations of this function.
+func (f *SignalConfigurationStoreUpdateConfigurationFunc) History() []SignalConfigurationStoreUpdateConfigurationFuncCall {
+	f.mutex.Lock()
+	history := make([]SignalConfigurationStoreUpdateConfigurationFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SignalConfigurationStoreUpdateConfigurationFuncCall is an object that
+// describes an invocation of method UpdateConfiguration on an instance of
+// MockSignalConfigurationStore.
+type SignalConfigurationStoreUpdateConfigurationFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 UpdateSignalConfigurationArgs
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SignalConfigurationStoreUpdateConfigurationFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SignalConfigurationStoreUpdateConfigurationFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// SignalConfigurationStoreWithTransactFunc describes the behavior when the
+// WithTransact method of the parent MockSignalConfigurationStore instance
+// is invoked.
+type SignalConfigurationStoreWithTransactFunc struct {
+	defaultHook func(context.Context, func(store SignalConfigurationStore) error) error
+	hooks       []func(context.Context, func(store SignalConfigurationStore) error) error
+	history     []SignalConfigurationStoreWithTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// WithTransact delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockSignalConfigurationStore) WithTransact(v0 context.Context, v1 func(store SignalConfigurationStore) error) error {
+	r0 := m.WithTransactFunc.nextHook()(v0, v1)
+	m.WithTransactFunc.appendCall(SignalConfigurationStoreWithTransactFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WithTransact method
+// of the parent MockSignalConfigurationStore instance is invoked and the
+// hook queue is empty.
+func (f *SignalConfigurationStoreWithTransactFunc) SetDefaultHook(hook func(context.Context, func(store SignalConfigurationStore) error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WithTransact method of the parent MockSignalConfigurationStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *SignalConfigurationStoreWithTransactFunc) PushHook(hook func(context.Context, func(store SignalConfigurationStore) error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SignalConfigurationStoreWithTransactFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, func(store SignalConfigurationStore) error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SignalConfigurationStoreWithTransactFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, func(store SignalConfigurationStore) error) error {
+		return r0
+	})
+}
+
+func (f *SignalConfigurationStoreWithTransactFunc) nextHook() func(context.Context, func(store SignalConfigurationStore) error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SignalConfigurationStoreWithTransactFunc) appendCall(r0 SignalConfigurationStoreWithTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// SignalConfigurationStoreWithTransactFuncCall objects describing the
+// invocations of this function.
+func (f *SignalConfigurationStoreWithTransactFunc) History() []SignalConfigurationStoreWithTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]SignalConfigurationStoreWithTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SignalConfigurationStoreWithTransactFuncCall is an object that describes
+// an invocation of method WithTransact on an instance of
+// MockSignalConfigurationStore.
+type SignalConfigurationStoreWithTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 func(store SignalConfigurationStore) error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SignalConfigurationStoreWithTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SignalConfigurationStoreWithTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

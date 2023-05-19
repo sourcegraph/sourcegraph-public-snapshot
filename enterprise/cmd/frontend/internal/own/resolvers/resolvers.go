@@ -4,10 +4,14 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	owntypes "github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 
 	"github.com/sourcegraph/log"
@@ -482,6 +486,14 @@ func (g *recentContributorOwnershipSignal) Description() (string, error) {
 }
 
 func computeRecentContributorSignals(ctx context.Context, db edb.EnterpriseDB, path string, repoID api.RepoID) (results []*ownershipResolver, err error) {
+	enabled, err := db.OwnSignalConfigurations().IsEnabled(ctx, owntypes.SignalRecentContributors)
+	if err != nil {
+		return nil, errors.Wrap(err, "IsEnabled")
+	}
+	if !enabled {
+		return nil, nil
+	}
+
 	recentAuthors, err := db.RecentContributionSignals().FindRecentAuthors(ctx, repoID, path)
 	if err != nil {
 		return nil, errors.Wrap(err, "FindRecentAuthors")
@@ -529,6 +541,14 @@ func (v *recentViewOwnershipSignal) Description() (string, error) {
 }
 
 func computeRecentViewSignals(ctx context.Context, logger log.Logger, db edb.EnterpriseDB, path string, repoID api.RepoID) (results []*ownershipResolver, err error) {
+	enabled, err := db.OwnSignalConfigurations().IsEnabled(ctx, owntypes.SignalRecentViews)
+	if err != nil {
+		return nil, errors.Wrap(err, "IsEnabled")
+	}
+	if !enabled {
+		return nil, nil
+	}
+
 	summaries, err := db.RecentViewSignal().List(ctx, database.ListRecentViewSignalOpts{Path: path, RepoID: repoID})
 	if err != nil {
 		return nil, errors.Wrap(err, "list recent view signals")
@@ -579,4 +599,84 @@ func computeRecentViewSignals(ctx context.Context, logger log.Logger, db edb.Ent
 		results = append(results, &res)
 	}
 	return results, nil
+}
+
+func (r *ownResolver) OwnSignalConfigurations(ctx context.Context) ([]graphqlbackend.SignalConfigurationResolver, error) {
+	err := auth.CheckCurrentActorIsSiteAdmin(actor.FromContext(ctx), r.db)
+	if err != nil {
+		return nil, err
+	}
+	var resolvers []graphqlbackend.SignalConfigurationResolver
+	store := r.db.OwnSignalConfigurations()
+	configurations, err := store.LoadConfigurations(ctx, database.LoadSignalConfigurationArgs{})
+	if err != nil {
+		return nil, errors.Wrap(err, "LoadConfigurations")
+	}
+
+	for _, configuration := range configurations {
+		resolvers = append(resolvers, &signalConfigResolver{config: configuration})
+	}
+
+	return resolvers, nil
+}
+
+type signalConfigResolver struct {
+	config database.SignalConfiguration
+}
+
+func (s *signalConfigResolver) Name() string {
+	return s.config.Name
+}
+
+func (s *signalConfigResolver) Description() string {
+	return s.config.Description
+}
+
+func (s *signalConfigResolver) IsEnabled() bool {
+	return s.config.Enabled
+}
+
+func (s *signalConfigResolver) ExcludedRepoPatterns() []string {
+	return userifyPatterns(s.config.ExcludedRepoPatterns)
+}
+
+func (r *ownResolver) UpdateOwnSignalConfigurations(ctx context.Context, args graphqlbackend.UpdateSignalConfigurationsArgs) ([]graphqlbackend.SignalConfigurationResolver, error) {
+	err := auth.CheckCurrentActorIsSiteAdmin(actor.FromContext(ctx), r.db)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.db.OwnSignalConfigurations().WithTransact(ctx, func(store database.SignalConfigurationStore) error {
+		for _, config := range args.Input.Configs {
+			if err := store.UpdateConfiguration(ctx, database.UpdateSignalConfigurationArgs{
+				Name:                 config.Name,
+				ExcludedRepoPatterns: postgresifyPatterns(config.ExcludedRepoPatterns),
+				Enabled:              config.Enabled,
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return r.OwnSignalConfigurations(ctx)
+}
+
+// postgresifyPatterns will convert glob-ish patterns to postgres compatible patterns. For example github.com/* -> github.com/%
+func postgresifyPatterns(patterns []string) (results []string) {
+	for _, pattern := range patterns {
+		results = append(results, strings.ReplaceAll(pattern, "*", "%"))
+	}
+	return results
+}
+
+// postgresifyPatterns will convert postgres patterns to glob-ish patterns. For example github.com/% -> github.com/*.
+func userifyPatterns(patterns []string) (results []string) {
+	for _, pattern := range patterns {
+		results = append(results, strings.ReplaceAll(pattern, "%", "*"))
+	}
+	return results
 }

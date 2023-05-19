@@ -1,0 +1,33 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "internalerrs",
+    srcs = [
+        "common.go",
+        "logging.go",
+        "prometheus.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/internalerrs",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/env",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+    ],
+)
+
+go_test(
+    name = "internalerrs_test",
+    srcs = ["common_test.go"],
+    embed = [":internalerrs"],
+    deps = [
+        "@com_github_google_go_cmp//cmp",
+        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
+    ],
+)

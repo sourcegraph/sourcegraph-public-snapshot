@@ -5,6 +5,14 @@ query CurrentUser {
     }
 }`
 
+export const CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY = `
+query CurrentUser {
+    currentUser {
+        id
+        hasVerifiedEmail
+    }
+}`
+
 export const REPOSITORY_ID_QUERY = `
 query Repository($name: String!) {
 	repository(name: $name) {
@@ -21,7 +29,29 @@ query Repository($name: String!) {
 }`
 
 export const SEARCH_EMBEDDINGS_QUERY = `
-query EmbeddingsSearch($repo: ID!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
+query EmbeddingsSearch($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
+	embeddingsMultiSearch(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
+		codeResults {
+            repoName
+            revision
+			fileName
+			startLine
+			endLine
+			content
+		}
+		textResults {
+            repoName
+            revision
+			fileName
+			startLine
+			endLine
+			content
+		}
+	}
+}`
+
+export const LEGACY_SEARCH_EMBEDDINGS_QUERY = `
+query LegacyEmbeddingsSearch($repo: ID!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
 	embeddingsSearch(repo: $repo, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
 		codeResults {
 			fileName
@@ -35,6 +65,19 @@ query EmbeddingsSearch($repo: ID!, $query: String!, $codeResultsCount: Int!, $te
 			endLine
 			content
 		}
+	}
+}`
+
+export const SEARCH_TYPE_REPO_QUERY = `
+query SearchTypeRepo($query: String!) {
+	search(query: $query, version: V3) {
+        results {
+            results {
+                ... on Repository {
+                    name
+                }
+            }
+        }
 	}
 }`
 

@@ -13,6 +13,14 @@ export class CodeMirrorEditor implements Editor {
         this.editorStoreRef = editorStoreRef
     }
 
+    public get repoName(): string | undefined {
+        return this.editorStoreRef.current.editor?.repo
+    }
+
+    public get revision(): string | undefined {
+        return this.editorStoreRef.current.editor?.revision
+    }
+
     public getWorkspaceRootPath(): string | null {
         return null
     }
@@ -23,7 +31,7 @@ export class CodeMirrorEditor implements Editor {
             return null
         }
 
-        return { content: editor.content, filePath: editor.filename }
+        return { content: editor.content, filePath: editor.filename, repoName: this.repoName, revision: this.revision }
     }
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
@@ -43,6 +51,8 @@ export class CodeMirrorEditor implements Editor {
 
             return {
                 fileName: editor.filename,
+                repoName: this.repoName,
+                revision: this.revision,
                 precedingText,
                 selectedText,
                 followingText,
@@ -65,6 +75,8 @@ export class CodeMirrorEditor implements Editor {
 
         return {
             fileName: editor.filename,
+            repoName: this.repoName,
+            revision: this.revision,
             precedingText: '',
             selectedText: editor.content,
             followingText: '',
@@ -82,6 +94,8 @@ export class CodeMirrorEditor implements Editor {
         const content = editor.view?.state.sliceDoc(from, to)
         return {
             fileName: editor.filename,
+            repoName: this.repoName,
+            revision: this.revision,
             content,
         }
     }

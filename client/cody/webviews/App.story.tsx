@@ -44,9 +44,13 @@ const dummyVSCodeAPI: VSCodeWrapper = {
             type: 'config',
             config: {
                 debug: true,
-                hasAccessToken: true,
                 serverEndpoint: 'https://example.com',
-                experimentalConnectToApp: false,
+            },
+            authStatus: {
+                showInvalidAccessTokenError: false,
+                authenticated: true,
+                hasVerifiedEmail: false,
+                requiresVerifiedEmail: false,
             },
         })
         return () => {}

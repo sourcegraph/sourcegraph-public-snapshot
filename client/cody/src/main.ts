@@ -1,9 +1,10 @@
 import * as vscode from 'vscode'
 
+import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 
-import { ChatViewProvider, isValidLogin } from './chat/ChatViewProvider'
-import { DOTCOM_URL, LOCAL_APP_URL } from './chat/protocol'
+import { ChatViewProvider, getAuthStatus } from './chat/ChatViewProvider'
+import { DOTCOM_URL, LOCAL_APP_URL, isLoggedIn } from './chat/protocol'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
@@ -12,6 +13,7 @@ import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
 import { getRgPath } from './rg'
+import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { InlineController } from './services/InlineController'
 import { LocalStorage } from './services/LocalStorageProvider'
 import {
@@ -71,7 +73,7 @@ const register = async (
 }> => {
     const disposables: vscode.Disposable[] = []
 
-    await updateEventLogger(initialConfig, localStorage)
+    void updateEventLogger(initialConfig, localStorage)
 
     // Controller for inline assist
     const commentController = new InlineController(context.extensionPath)
@@ -86,6 +88,7 @@ const register = async (
         codebaseContext,
         chatClient,
         completionsClient,
+        guardrails,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
     } = await configureExternalServices(initialConfig, rgPath, editor)
 
@@ -96,6 +99,7 @@ const register = async (
         chatClient,
         intentDetector,
         codebaseContext,
+        guardrails,
         editor,
         secretStorage,
         localStorage,
@@ -106,11 +110,11 @@ const register = async (
     disposables.push(
         vscode.window.registerWebviewViewProvider('cody.chat', chatProvider, {
             webviewOptions: { retainContextWhenHidden: true },
-        })
+        }),
+        { dispose: () => vscode.commands.executeCommand('setContext', 'cody.activated', false) }
     )
-    disposables.push({ dispose: () => vscode.commands.executeCommand('setContext', 'cody.activated', false) })
 
-    const executeRecipe = async (recipe: string): Promise<void> => {
+    const executeRecipe = async (recipe: RecipeID): Promise<void> => {
         await vscode.commands.executeCommand('cody.chat.focus')
         await chatProvider.executeRecipe(recipe, '')
     }
@@ -138,32 +142,22 @@ const register = async (
     disposables.push(
         // File Chat Provider
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
-            const isFixMode = comment.text.startsWith('/f')
+            const isFixMode = /^\/f(ix)?\s/i.test(comment.text.trimStart())
             await commentController.chat(comment, isFixMode)
             await chatProvider.executeRecipe(isFixMode ? 'fixup' : 'inline-chat', comment.text, false)
+            logEvent(`CodyVSCodeExtension:inline-assist:${isFixMode ? 'fixup' : 'chat'}`)
         }),
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             commentController.delete(thread)
         }),
-        // Toggle Chat
-        vscode.commands.registerCommand('cody.toggle-enabled', async () => {
-            await workspaceConfig.update(
-                'cody.enabled',
-                !workspaceConfig.get('cody.enabled'),
-                vscode.ConfigurationTarget.Global
-            )
-            logEvent('CodyVSCodeExtension:codyToggleEnabled:clicked')
-        }),
-        // Access token
-        // This is only used in configuration tests
+        // Access token - this is only used in configuration tests
         vscode.commands.registerCommand('cody.set-access-token', async (args: any[]) => {
             if (args?.length && (args[0] as string)) {
                 await secretStorage.store(CODY_ACCESS_TOKEN_SECRET, args[0])
             }
         }),
         vscode.commands.registerCommand('cody.delete-access-token', async () => {
-            await secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
-            logEvent('CodyVSCodeExtension:codyDeleteAccessToken:clicked')
+            await chatProvider.logout()
         }),
         // Commands
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
@@ -171,7 +165,6 @@ const register = async (
         vscode.commands.registerCommand('cody.history', () => chatProvider.setWebviewView('history')),
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
             await chatProvider.clearAndRestartSession()
-            chatProvider.setWebviewView('chat')
         }),
         vscode.commands.registerCommand('cody.recipe.explain-code', () => executeRecipe('explain-code-detailed')),
         vscode.commands.registerCommand('cody.recipe.explain-code-high-level', () =>
@@ -201,14 +194,14 @@ const register = async (
                 const token = params.get('code')
                 if (token && token.length > 8) {
                     await secretStorage.store(CODY_ACCESS_TOKEN_SECRET, token)
-                    const isAuthed = await isValidLogin({
+                    const authStatus = await getAuthStatus({
                         serverEndpoint,
                         accessToken: token,
                         customHeaders: config.customHeaders,
                     })
-                    await chatProvider.sendLogin(isAuthed)
-                    if (isAuthed) {
-                        void vscode.window.showInformationMessage('Token has been retreived and updated successfully')
+                    await chatProvider.sendLogin(authStatus)
+                    if (isLoggedIn(authStatus)) {
+                        void vscode.window.showInformationMessage('Token has been retrieved and updated successfully')
                     }
                 }
             },
@@ -231,10 +224,8 @@ const register = async (
             vscode.commands.registerCommand('cody.experimental.suggest', async () => {
                 await completionsProvider.fetchAndShowCompletions()
             }),
-            vscode.commands.registerCommand('cody.completions.inline.accepted', (...args) => {
-                const params = {
-                    type: 'inline',
-                }
+            vscode.commands.registerCommand('cody.completions.inline.accepted', () => {
+                const params = { type: 'inline' }
                 logEvent('CodyVSCodeExtension:completion:accepted', params, params)
             }),
             vscode.languages.registerInlineCompletionItemProvider({ scheme: 'file' }, completionsProvider)
@@ -249,6 +240,15 @@ const register = async (
                 return [new vscode.Range(0, 0, lineCount - 1, 0)]
             },
         }
+    }
+
+    if (initialConfig.experimentalGuardrails) {
+        const guardrailsProvider = new GuardrailsProvider(guardrails, editor)
+        disposables.push(
+            vscode.commands.registerCommand('cody.guardrails.debug', async () => {
+                await guardrailsProvider.debugEditorSelection()
+            })
+        )
     }
 
     return {

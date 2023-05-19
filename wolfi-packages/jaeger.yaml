@@ -4,7 +4,7 @@
 package:
   name: jaeger
   version: 1.42.0
-  epoch: 0
+  epoch: 1
   description: "Distributed Tracing Platform"
   target-architecture:
     - x86_64

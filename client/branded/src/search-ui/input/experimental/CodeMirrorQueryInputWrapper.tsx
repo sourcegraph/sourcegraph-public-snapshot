@@ -239,8 +239,11 @@ const staticExtensions: Extension = [
         '.cm-line': {
             padding: 0,
         },
-        '.theme-dark .cm-selectionLayer .cm-selectionBackground': {
-            backgroundColor: 'var(--gray-08)',
+        '&.cm-focused .cm-selectionLayer .cm-selectionBackground': {
+            backgroundColor: 'var(--code-selection-bg-2)',
+        },
+        '.cm-selectionLayer .cm-selectionBackground': {
+            backgroundColor: 'var(--code-selection-bg)',
         },
         '.sg-decorated-token-hover': {
             borderRadius: '3px',

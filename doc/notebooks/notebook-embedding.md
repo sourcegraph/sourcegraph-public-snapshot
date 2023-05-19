@@ -32,7 +32,15 @@ body.theme-dark .markdown-body ul li:before {
 </style>
 # Embedding Notebooks
 
-A notebook can be embedded using a standard iframe element. To create the embedding URL, copy the notebook URL (e.g. `https://your-sourcegraph-instance.com/notebooks/notebook-id`), and add the `/embed` prefix directly before the `/notebooks` segment:
+A notebook can be embedded using a standard iframe element. In order for the iframe to load, the user must be logged into Sourcegraph. The notebook embedding URL is an authenticated endpoint. 
+
+## Domain considerations
+
+Certain browsers (i.e. Safari and Firefox) block cross-domain cookies from being sent in iframe requests. This will prevent an embedded notebook from being displayed, even when a user is logged into Sourcegraph from the same browser. To ensure that notebook embedding requests will be permitted to load for all of your logged-in Sourcegraph users, the Sourcegraph instance must be hosted on the same domain as the page that loads the iframe element. For Cloud customers, see [Custom Domains](../cloud/index.md#custom-domains).
+
+## How to embed
+
+To create the embedding URL, copy the notebook URL (e.g. `https://your-sourcegraph-instance.com/notebooks/notebook-id`), and add the `/embed` prefix directly before the `/notebooks` segment:
 
   ```
   https://{your-sourcegraph-instance.com}/embed/notebooks/{notebook-id}
