@@ -69,6 +69,7 @@ create_app_archive() {
 }
 
 cleanup_codesigning() {
+    # shellcheck disable=SC2143
     if [[ $(security list-keychains -d user | grep -q "my_temporary_keychain") ]]; then
       set +e
       echo "--- :broom: cleaning up keychains"

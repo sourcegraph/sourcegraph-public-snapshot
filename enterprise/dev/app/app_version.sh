@@ -12,7 +12,7 @@ create_version() {
     fi
 
     local build="insiders"
-    if [[ ${RELEASE_BUILD:-0} == 1 ]]; then
+    if [[ ${BUILDKITE_BRANCH:-""} == "app-release/stable" ]]; then
       build=${BUILDKITE_BUILD_NUMBER:-"release"}
     fi
     echo "$(date '+%Y.%-m.%-d')+${build}.${sha}"
@@ -24,4 +24,4 @@ else
   version=${VERSION:-"0.0.0+dev"}
 fi
 
-echo ${version}
+echo "${version}"
