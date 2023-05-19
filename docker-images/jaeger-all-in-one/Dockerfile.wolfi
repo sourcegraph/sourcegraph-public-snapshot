@@ -12,8 +12,6 @@ LABEL com.sourcegraph.jaeger.version=${JAEGER_VERSION}
 
 COPY ./config/sampling_strategies.json /etc/jaeger/sampling_strategies.json
 
-# # Ensure the /tmp directory is chown'd to user jaeger
-RUN chown -R jaeger /tmp
 USER jaeger
 VOLUME ["/tmp"]
 

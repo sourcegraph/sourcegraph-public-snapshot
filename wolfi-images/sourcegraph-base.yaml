@@ -1,20 +1,25 @@
+# Add Wolfi + Sourcegraph repositories; install base set of packages
 contents:
   keyring:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
+    - https://storage.googleapis.com/package-repository/packages/melange.rsa.pub
   repositories:
     - https://packages.wolfi.dev/os
+    - '@sourcegraph https://storage.googleapis.com/package-repository/packages/main'
   packages:
-    ## Base set of packages included in sourcegraph/alpine base image
+    ## Base set of packages
     - wolfi-baselayout
     - ca-certificates-bundle
     - tzdata
-    - tini
-    - mailcap
-    # Dev tools - may not be required in production
+
+    # TODO: Dev tools - remove in future release
     - busybox
     - curl
     - wget
+    - bind-tools
 
+# Add sourcegraph user and group
+# NOTE: Adding other accounts in files where sourcegraph-base.yaml is included will overwrite these users
 accounts:
   groups:
     - groupname: sourcegraph
@@ -29,9 +34,8 @@ accounts:
 archs:
  - amd64
 
+# NOTE: These don't seem to be applied to the image
 annotations:
   org.opencontainers.image.url: https://sourcegraph.com/
   org.opencontainers.image.source: https://github.com/sourcegraph/sourcegraph/
   org.opencontainers.image.documentation: https://docs.sourcegraph.com/
-
-# MANUAL REBUILD: Wed 25 Jan 2023 10:01:49 GMT
