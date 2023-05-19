@@ -69,7 +69,8 @@ bazel_build() {
   fi
 
   echo "--- :bazel: Building Sourcegraph Backend (${VERSION}) for platform: ${platform}"
-  ${bazel_cmd} build ${bazel_target} "${bazel_opts}"
+  # shellcheck disable=SC2086
+  ${bazel_cmd} build ${bazel_target} ${bazel_opts}
 
   out=$(bazel cquery //enterprise/cmd/sourcegraph:sourcegraph --output=files)
   mkdir -p "${bin_dir}"
