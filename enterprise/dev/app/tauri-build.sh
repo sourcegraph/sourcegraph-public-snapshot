@@ -25,11 +25,12 @@ set_version() {
 }
 
 bundle_path() {
-  local platform=$(detect_platform)
+  local platform="$(./enterprise/dev/app/detect_platform.sh)"
   echo  "./src-tauri/target/${platform}/release/bundle"
 }
 
 upload_dist() {
+  echo "DEBUG 1: $(pwd)"
   mkdir -p dist
   src=$(find "./src-tauri/target/*/release/bundle" -type f \( -name "Sourcegraph*.dmg" -o -name "Sourcegraph*.tar.gz" -o -name "sourcegraph*.deb" -o -name "sourcegraph*.AppImage" -o -name "sourcegraph*.tar.gz" \) -exec realpath {} \;);
   # we're using a while and read here because the paths may contain spaces and this handles it properly
@@ -45,8 +46,9 @@ upload_dist() {
 }
 
 zip_app_and_move() {
+  echo "DEBUG 2: $(pwd)"
   # # we have to handle Sourcegraph.App differently since it is a dir
-  local platform=$(detect_platform.sh)
+  local platform="$(./enterprise/dev/app/detect_platform.sh)"
   local bundle_path="./src-tauri/target/${platform}/release/bundle"
   local app_bundle=$(find "${bundle_path}" -type d -name "Sourcegraph.app")
 
@@ -59,9 +61,10 @@ zip_app_and_move() {
     fi
 
     target="Sourcegraph.${arch}.app.tar.gz"
-    echo "DEBUG: $(pwd)"
+    echo "DEBUG 3: $(pwd)"
     pushd
     cd "${bundle_path}/macos/"
+    echo "DEBUG 4: $(pwd)"
     echo "--- :file_cabinet: Creating archive of ${app_bundle}"
     tar -czvf "${target}" "Sourcegraph.app"
     popd
