@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -65,6 +66,10 @@ func (s fakeOwnService) ResolveOwnersWithType(_ context.Context, owners []*codeo
 		})
 	}
 	return resolved, nil
+}
+
+func (s fakeOwnService) AssignedOwnership(context.Context, api.RepoID, api.CommitID) (own.AssignedOwners, error) {
+	return own.AssignedOwners{}, nil
 }
 
 // fakeGitServer is a limited gitserver.Client that returns a file for every Stat call.

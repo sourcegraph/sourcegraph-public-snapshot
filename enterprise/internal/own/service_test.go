@@ -5,10 +5,14 @@ import (
 	"os"
 	"sort"
 	"testing"
+	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/log/logtest"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
@@ -18,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -515,5 +520,72 @@ func Test_getLastPartOfTeamHandle(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			tc.want.Equal(t, getLastPartOfTeamHandle(tc.handle))
 		})
+	}
+}
+
+func TestAssignedOwners(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// Creating 2 users.
+	user1, err := db.Users().Create(ctx, database.NewUser{Username: "user1"})
+	require.NoError(t, err)
+	user2, err := db.Users().Create(ctx, database.NewUser{Username: "user2"})
+	require.NoError(t, err)
+
+	// Create repo
+	var repoID api.RepoID = 1
+	require.NoError(t, db.Repos().Create(ctx, &itypes.Repo{
+		ID:   repoID,
+		Name: "github.com/sourcegraph/sourcegraph",
+	}))
+
+	store := db.AssignedOwners()
+	require.NoError(t, store.Insert(ctx, user1.ID, repoID, "src/test", user2.ID))
+	require.NoError(t, store.Insert(ctx, user2.ID, repoID, "src/test", user1.ID))
+	require.NoError(t, store.Insert(ctx, user2.ID, repoID, "src/main", user1.ID))
+
+	s := NewService(nil, db)
+	var exampleCommitID api.CommitID = "sha"
+	got, err := s.AssignedOwnership(ctx, repoID, exampleCommitID)
+	// Erase the time for comparison
+	for _, summaries := range got {
+		for i := range summaries {
+			summaries[i].AssignedAt = time.Time{}
+		}
+	}
+	require.NoError(t, err)
+	want := AssignedOwners{
+		"src/test": []database.AssignedOwnerSummary{
+			{
+				OwnerUserID:       user1.ID,
+				FilePath:          "src/test",
+				RepoID:            repoID,
+				WhoAssignedUserID: user2.ID,
+			},
+			{
+				OwnerUserID:       user2.ID,
+				FilePath:          "src/test",
+				RepoID:            repoID,
+				WhoAssignedUserID: user1.ID,
+			},
+		},
+		"src/main": []database.AssignedOwnerSummary{
+			{
+				OwnerUserID:       user2.ID,
+				FilePath:          "src/main",
+				RepoID:            repoID,
+				WhoAssignedUserID: user1.ID,
+			},
+		},
+	}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Fatalf("AssignedOwnership -want+got: %s", diff)
 	}
 }
