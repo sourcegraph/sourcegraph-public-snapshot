@@ -758,8 +758,7 @@ type Hunk struct {
 
 // StreamBlameFile returns Git blame information about a file.
 func (c *clientImplementor) StreamBlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) (_ HunkReader, err error) {
-	// TODO: this span does not capture the lifetime of the request because we return a reader
-	ctx, _, endObservation := c.operations.contributorCount.With(ctx, &err, observation.Args{
+	ctx, _, endObservation := c.operations.streamBlameFile.With(ctx, &err, observation.Args{
 		Attrs: append([]attribute.KeyValue{
 			attribute.String("repo", string(repo)),
 			attribute.String("path", path),
@@ -813,12 +812,15 @@ func streamBlameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChec
 }
 
 // BlameFile returns Git blame information about a file.
-func (c *clientImplementor) BlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) ([]*Hunk, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: BlameFile") //nolint:staticcheck // OT is deprecated
-	span.SetTag("repo", repo)
-	span.SetTag("path", path)
-	span.SetTag("opt", opt)
-	defer span.Finish()
+func (c *clientImplementor) BlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) (_ []*Hunk, err error) {
+	ctx, _, endObservation := c.operations.blameFile.With(ctx, &err, observation.Args{
+		Attrs: append([]attribute.KeyValue{
+			attribute.String("repo", string(repo)),
+			attribute.String("path", path),
+		}, opt.Attrs()...),
+	})
+	defer endObservation(1, observation.Args{})
+
 	return blameFileCmd(ctx, checker, c.gitserverGitCommandFunc(repo), path, opt, repo)
 }
 
