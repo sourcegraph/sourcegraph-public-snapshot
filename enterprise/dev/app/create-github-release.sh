@@ -19,7 +19,8 @@ else
 fi
 
 echo "--- :aws: fetching GitHub Token"
-export GITHUB_TOKEN=$(aws secretsmanager get-secret-value --secret-id sourcegraph/mac/github-token | jq '.SecretString |  fromjson | .token')
+token=$(aws secretsmanager get-secret-value --secret-id sourcegraph/mac/github-token | jq '.SecretString |  fromjson | .token')
+export GITHUB_TOKEN=${token}
 
 VERSION=$(./enterprise/dev/app/app_version.sh)
 echo "--- :github: Creating GitHub release for Sourcegraph App (${VERSION})"

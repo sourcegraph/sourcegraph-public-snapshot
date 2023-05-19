@@ -25,12 +25,14 @@ set_version() {
 }
 
 bundle_path() {
-  local platform="$(./enterprise/dev/app/detect_platform.sh)"
+  local platform
+  platform="$(./enterprise/dev/app/detect_platform.sh)"
   echo  "./src-tauri/target/${platform}/release/bundle"
 }
 
 upload_dist() {
-  local path="$(bundle_path)"
+  local path
+  path="$(bundle_path)"
   echo "searching for artefacts in '${path}' and moving them to dist/"
   src=$(find "${path}" -type f \( -name "Sourcegraph*.dmg" -o -name "Sourcegraph*.tar.gz" -o -name "sourcegraph*.deb" -o -name "sourcegraph*.AppImage" -o -name "sourcegraph*.tar.gz" \));
 
@@ -46,9 +48,12 @@ upload_dist() {
 }
 
 create_app_archive() {
-  local version=$1
-  local path="$(bundle_path)"
-  local app_path=$(find "${path}" -type d -name "Sourcegraph.app")
+  local version
+  local path
+  local app_path
+  version=$1
+  path="$(bundle_path)"
+  app_path=$(find "${path}" -type d -name "Sourcegraph.app")
 
   # # we have to handle Sourcegraph.App differently since it is a dir
   if [[ -d  ${app_path} ]]; then
@@ -90,11 +95,17 @@ pre_codesign() {
     local secrets
     echo "--- :aws: Retrieving signing secrets"
     secrets=$(aws secretsmanager get-secret-value --secret-id sourcegraph/mac-codesigning | jq '.SecretString |  fromjson')
-    export APPLE_SIGNING_IDENTITY="$(echo "${secrets}" | jq -r '.APPLE_SIGNING_IDENTITY')"
-    export APPLE_CERTIFICATE="$(echo "${secrets}" | jq -r '.APPLE_CERTIFICATE')"
-    export APPLE_CERTIFICATE_PASSWORD="$(echo "${secrets}" | jq -r  '.APPLE_CERTIFICATE_PASSWORD')"
-    export APPLE_ID="$(echo "${secrets}" | jq -r '.APPLE_ID')"
-    export APPLE_PASSWORD="$(echo "${secrets}" | jq -r '.APPLE_PASSWORD')"
+    APPLE_SIGNING_IDENTITY="$(echo "${secrets}" | jq -r '.APPLE_SIGNING_IDENTITY')"
+    APPLE_CERTIFICATE="$(echo "${secrets}" | jq -r '.APPLE_CERTIFICATE')"
+    APPLE_CERTIFICATE_PASSWORD="$(echo "${secrets}" | jq -r  '.APPLE_CERTIFICATE_PASSWORD')"
+    APPLE_ID="$(echo "${secrets}" | jq -r '.APPLE_ID')"
+    APPLE_PASSWORD="$(echo "${secrets}" | jq -r '.APPLE_PASSWORD')"
+
+    export APPLE_SIGNING_IDENTITY
+    export APPLE_CERTIFICATE
+    export APPLE_CERTIFICATE_PASSWORD
+    export APPLE_ID
+    export APPLE_PASSWORD
   fi
   # We expect the same APPLE_ env vars that Tauri does here, see https://tauri.app/v1/guides/distribution/sign-macos
   cleanup_codesigning
@@ -132,7 +143,8 @@ secret_value() {
 
 build() {
   echo --- :magnify_glass: detecting platform
-  local platform="$(./enterprise/dev/app/detect_platform.sh)"
+  local platform
+  platform="$(./enterprise/dev/app/detect_platform.sh)"
   echo "platform is: ${platform}"
 
   if [[ ${CI} == "true" ]]; then
@@ -159,7 +171,8 @@ set_version "${VERSION}"
 
 if [[ ${CODESIGNING:-"0"} == 1 && $(uname -s) == "Darwin" ]]; then
   # We want any xcode related tools to be picked up first so inject it here in the path
-  export PATH="$(xcode-select -p)/usr/bin:$PATH"
+  xcode_path="$(xcode-select -p)/usr/bin"
+  export PATH="${xcode_path}:$PATH"
   # If on a macOS host, Tauri will invoke the base64 command as part of the code signing process.
   # it expects the macOS base64 command, not the gnutils one provided by homebrew, so we prefer
   # that one here:
