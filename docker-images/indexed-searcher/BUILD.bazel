@@ -25,6 +25,8 @@ oci_image(
         "GOGC": "25",
     },
     tars = dependencies_tars(DEPS),
+    user = "sourcegraph",
+    workdir = "/home/sourcegraph",
 )
 
 oci_tarball(
