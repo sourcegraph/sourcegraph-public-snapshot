@@ -1,8 +1,6 @@
 # <picture title="Cody"><img class="theme-dark-only" src="https://storage.googleapis.com/sourcegraph-assets/cody/20230417/logomark-default-text-white.png" width="200"><img class="theme-light-only" src="https://storage.googleapis.com/sourcegraph-assets/cody/20230417/logomark-default-text-black.png" width="200"><div style="display:none">Cody</div></picture>
 
-<span class="badge badge-beta">Beta</span>
-
-Cody is an AI code assistant that writes code and answers questions for you by reading your entire codebase and the code graph.
+<span class="badge badge-beta">Beta</span> Cody is an AI code assistant that writes code and answers questions for you by reading your entire codebase and the code graph.
 
 Cody uses a combination of Sourcegraph's code graph and Large Language Models (LLMs) to eliminate toil and keep human devs in flow. You can think of Cody as your coding assistant who has read through all the code in open source, all the questions on StackOverflow, and your own entire codebase, and is always there to answer questions you might have or suggest ways of doing something based on prior knowledge.
 
@@ -20,11 +18,11 @@ There are currently two ways to experience Cody:
 
 Cody is available as a [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and in the Sourcegraph web interface.
 
-<div class="cta-group">
-<a class="btn btn-primary" href="quickstart">★ Cody quickstart</a>
-<a class="btn" href="explanations/use_cases">Cody use cases</a>
-<a class="btn" href="faq">FAQ</a>
-<a class="btn" href="https://discord.com/servers/sourcegraph-969688426372825169">Join our Discord</a>
+<div class="getting-started">
+  <a class="btn btn-primary text-center" href="quickstart">★ Cody quickstart</a>
+  <a class="btn text-center" href="explanations/use_cases">Cody use cases</a>
+  <a class="btn text-center" href="faq">FAQ</a>
+  <a class="btn text-center" href="https://discord.com/servers/sourcegraph-969688426372825169">Join our Discord</a>
 </div>
 
 ## Features
