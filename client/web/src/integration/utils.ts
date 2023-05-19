@@ -117,6 +117,8 @@ export const percySnapshotWithVariants = async (
 
     // Theme-dark
     await setColorScheme(page, 'dark', waitForCodeHighlighting)
+    // Wait for the theme class set by `useLayoutEffect` in `client/web/src/LegacyLayout.tsx`
+    await page.waitForSelector('html.theme.theme-dark')
     // Wait for the UI to settle before converting images and taking the
     // screenshot.
     await page.waitForTimeout(timeout)
@@ -125,6 +127,8 @@ export const percySnapshotWithVariants = async (
 
     // Theme-light
     await setColorScheme(page, 'light', waitForCodeHighlighting)
+    // Wait for the theme class set by `useLayoutEffect` in `client/web/src/LegacyLayout.tsx`
+    await page.waitForSelector('html.theme.theme-light')
     // Wait for the UI to settle before converting images and taking the
     // screenshot.
     await page.waitForTimeout(timeout)
