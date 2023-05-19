@@ -32,9 +32,9 @@ export const resendVerificationEmail = async (
     userID: string,
     email: string,
     options?: { onSuccess: () => void; onError: (error: ErrorLike) => void }
-): Promise<ResendVerificationEmailResult | ErrorLike> => {
+): Promise<void> => {
     try {
-        const data = dataOrThrowErrors(
+        dataOrThrowErrors(
             await requestGraphQL<ResendVerificationEmailResult, ResendVerificationEmailVariables>(
                 gql`
                     mutation ResendVerificationEmail($userID: ID!, $email: String!) {
@@ -50,11 +50,8 @@ export const resendVerificationEmail = async (
         eventLogger.log('UserEmailAddressVerificationResent')
 
         options?.onSuccess?.()
-
-        return data
     } catch (error) {
         options?.onError?.(error)
-        return error
     }
 }
 

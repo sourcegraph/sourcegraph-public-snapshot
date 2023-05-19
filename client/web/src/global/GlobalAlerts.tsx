@@ -24,7 +24,6 @@ import styles from './GlobalAlerts.module.scss'
 
 interface Props {
     authenticatedUser: AuthenticatedUser | null
-    isSourcegraphDotCom: boolean
 }
 
 // NOTE: The name of the query is also added in the refreshSiteFlags() function
@@ -41,7 +40,7 @@ const QUERY = gql`
 /**
  * Fetches and displays relevant global alerts at the top of the page
  */
-export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser, isSourcegraphDotCom }) => {
+export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser }) => {
     const settings = useSettings()
     const { data } = useQuery<GlobalAlertsSiteFlagsResult, GlobalAlertsSiteFlagsVariables>(QUERY, {
         fetchPolicy: 'cache-and-network',
@@ -108,9 +107,7 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
                 </DismissibleAlert>
             )}
             <Notices alertClassName={styles.alert} location="top" />
-            {isSourcegraphDotCom && (
-                <VerifyEmailNotices authenticatedUser={authenticatedUser} alertClassName={styles.alert} />
-            )}
+            <VerifyEmailNotices authenticatedUser={authenticatedUser} alertClassName={styles.alert} />
         </div>
     )
 }
