@@ -11,7 +11,7 @@ const (
 	All
 )
 
-func SecurityEventLocation(cfg schema.SiteConfiguration) SecurityEvent {
+func SecurityEventLocation(cfg schema.SiteConfiguration) SecurityEventsLocation {
 	if securityEvent := securityEventConf(cfg); securityEvent != nil {
 		switch securityEvent.Location {
 		case "none":
