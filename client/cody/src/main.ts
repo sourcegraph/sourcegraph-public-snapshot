@@ -8,7 +8,7 @@ import { DOTCOM_URL, LOCAL_APP_URL, isLoggedIn } from './chat/protocol'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
-import { getConfiguration, getFullConfig } from './configuration'
+import { getConfiguration, getFullConfig, processOlderServerEndpoint } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
@@ -42,6 +42,9 @@ export async function start(context: vscode.ExtensionContext): Promise<vscode.Di
         rgPath
     )
     disposables.push(disposable)
+
+    // process the old server endpoint if available
+    await processOlderServerEndpoint(secretStorage)
 
     // Re-initialize when configuration or secrets change.
     disposables.push(
@@ -160,7 +163,7 @@ const register = async (
             }
         }),
         vscode.commands.registerCommand('cody.set-serverEndpoint', async (serverEndpoint: string) => {
-            await secretStorage.store(CODY_SERVER_ENDPOINT, serverEndpoint)
+            await vscode.workspace.getConfiguration().update('cody.serverEndpoint', serverEndpoint)
         }),
         vscode.commands.registerCommand('cody.delete-access-token', async () => {
             await chatProvider.logout()

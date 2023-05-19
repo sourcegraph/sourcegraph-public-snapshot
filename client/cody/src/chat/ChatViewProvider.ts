@@ -231,6 +231,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     await updateConfiguration('serverEndpoint', message.serverEndpoint)
                     await this.secretStorage.store(CODY_SERVER_ENDPOINT, message.serverEndpoint)
                     await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
+                    await vscode.workspace.getConfiguration().update('cody.serverEndpoint', message.serverEndpoint)
                     this.sendEvent('auth', 'login')
                 }
                 void this.webview?.postMessage({ type: 'login', authStatus })

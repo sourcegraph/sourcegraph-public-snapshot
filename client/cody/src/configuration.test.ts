@@ -2,7 +2,6 @@ import type * as vscode from 'vscode'
 
 import { getConfiguration } from './configuration'
 
-// Fix this tests
 describe('getConfiguration', () => {
     it('returns default values when no config set', () => {
         const config: Pick<vscode.WorkspaceConfiguration, 'get'> = {
@@ -19,7 +18,6 @@ describe('getConfiguration', () => {
         })
     })
 
-    // Fix this test please
     it('reads values from config', () => {
         const config: Pick<vscode.WorkspaceConfiguration, 'get'> = {
             get: key => {

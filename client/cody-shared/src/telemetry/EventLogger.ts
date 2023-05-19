@@ -1,15 +1,15 @@
-// import * as vscode from 'vscode'
+import * as vscode from 'vscode'
 
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
-/* function _getServerEndpointFromConfig(config: vscode.WorkspaceConfiguration): string {
+function _getServerEndpointFromConfig(config: vscode.WorkspaceConfiguration): string {
     return config.get<string>('cody.serverEndpoint', '')
 }
 
-const config = vscode.workspace.getConfiguration() */
+const config = vscode.workspace.getConfiguration()
 
 export class EventLogger {
-    private serverEndpoint = ''
+    private serverEndpoint = _getServerEndpointFromConfig(config)
     private extensionDetails = { ide: 'VSCode', ideExtensionType: 'Cody' }
 
     private constructor(private gqlAPIClient: SourcegraphGraphQLAPIClient) {}

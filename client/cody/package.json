@@ -407,6 +407,14 @@
             }
           ]
         },
+        "cody.serverEndpoint": {
+          "order": 8,
+          "type": "string",
+          "default": "https://sourcegraph.com",
+          "example": "https://example.sourcegraph.com",
+          "description": "URL to the Sourcegraph instance.",
+          "deprecationMessage": "Deprecated: Please use the login settings."
+        },
         "cody.debug": {
           "order": 99,
           "type": "boolean",

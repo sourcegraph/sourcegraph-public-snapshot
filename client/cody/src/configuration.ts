@@ -6,7 +6,12 @@ import type {
     ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared/src/configuration'
 
-import { SecretStorage, getAccessToken, getServerEndpoint } from './services/SecretStorageProvider'
+import {
+    SecretStorage,
+    getAccessToken,
+    getServerEndpoint,
+    CODY_SERVER_ENDPOINT,
+} from './services/SecretStorageProvider'
 
 /**
  * All configuration values, with some sanitization performed.
@@ -46,4 +51,19 @@ export const getFullConfig = async (secretStorage: SecretStorage): Promise<Confi
     const accessToken = (await getAccessToken(secretStorage)) || null
     const serverEndpoint = await getServerEndpoint(secretStorage)
     return { ...config, accessToken, serverEndpoint }
+}
+
+export async function processOlderServerEndpoint(secretStorage: SecretStorage): Promise<void> {
+    const storageEndpoint = await secretStorage.get(CODY_SERVER_ENDPOINT)
+    const oldConfigEndpoint = vscode.workspace.getConfiguration().get<string>('cody.serverEndpoint') || ''
+    if (!storageEndpoint && oldConfigEndpoint.length > 0) {
+        await secretStorage.store(CODY_SERVER_ENDPOINT, oldConfigEndpoint)
+        await vscode.workspace
+            .getConfiguration()
+            .update('cody.serverEndpoint', undefined, vscode.ConfigurationTarget.Global)
+        await vscode.workspace
+            .getConfiguration()
+            .update('cody.serverEndpoint', undefined, vscode.ConfigurationTarget.Workspace)
+    }
+    return
 }
