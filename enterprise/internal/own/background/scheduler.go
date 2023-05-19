@@ -138,9 +138,11 @@ func (o *ownRepoIndexSchedulerJob) Handle(ctx context.Context) error {
 }
 
 // Every X duration the scheduler will run and try to index repos for each job type. It will obey the following rules:
-// 1. ignore jobs in progress, queued, or still in retry-backoff
-// 2. ignore repos that have indexed more recently than the configured index interval for the job, ex. 24 hours
-// 3. add all remaining cloned repos to the queue
+//  1. ignore jobs in progress, queued, or still in retry-backoff
+//  2. ignore repos that have indexed more recently than the configured index interval for the job, ex. 24 hours
+//     OR repos that are excluded from the signal configuration. All exclusions are pulled into the ineligible_repos CTE.
+//  3. add all remaining cloned repos to the queue
+//
 // This means each (job, repo) tuple will only be index maximum once in a single interval duration
 var ownIndexRepoQuery = `
 WITH signal_config AS (SELECT * FROM own_signal_configurations WHERE name = %s LIMIT 1),
