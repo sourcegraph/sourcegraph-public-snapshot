@@ -33,8 +33,15 @@ function createCopyButtonWithContainer(
     copyButton.textContent = 'Copy'
     copyButton.className = className
     copyButton.addEventListener('click', () => {
-        navigator.clipboard.writeText(text).catch(error => console.error(error))
-        copyButton.textContent = 'Copied!'
+        const selection = window.getSelection()
+        if (selection !== null && selection.toString().length > 0) {
+            navigator.clipboard.writeText(selection.toString()).catch(error => console.error(error))
+            copyButton.textContent = 'Selection Copied!'
+        } else {
+            navigator.clipboard.writeText(text).catch(error => console.error(error))
+            copyButton.textContent = 'Snippet Copied!'
+        }
+
         setTimeout(() => (copyButton.textContent = 'Copy'), 3000)
         if (copyButtonOnSubmit) {
             copyButtonOnSubmit('copyButton')
