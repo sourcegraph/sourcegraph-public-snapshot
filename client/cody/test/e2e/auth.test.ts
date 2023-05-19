@@ -13,6 +13,9 @@ test('requires a valid auth token and allows logouts', async ({ page, sidebar })
     await sidebar.getByRole('textbox', { name: 'Access Token (docs)' }).fill(VALID_TOKEN)
     await sidebar.getByRole('button', { name: 'Sign In' }).click()
 
+    await new Promise(resolve => setTimeout(resolve, 3000))
+    console.log(await sidebar.innerText('body'))
+
     await expect(sidebar.getByText("Hello! I'm Cody.")).toBeVisible()
 
     await page.click('[aria-label="Cody: Settings"]')
