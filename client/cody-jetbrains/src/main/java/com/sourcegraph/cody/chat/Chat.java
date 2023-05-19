@@ -1,10 +1,12 @@
 package com.sourcegraph.cody.chat;
 
 import com.sourcegraph.cody.UpdatableChat;
-import com.sourcegraph.cody.completions.*;
+import com.sourcegraph.cody.api.*;
 import com.sourcegraph.cody.prompts.Preamble;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.sourcegraph.cody.vscode.CancellationToken;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -29,7 +31,7 @@ public class Chat {
       codeContext = "Here is my current file\n" + humanMessage.getContextFiles().get(0);
     }
 
-    var input = new CompletionsInput(new ArrayList<>(), 0.5f, 1000, -1, -1);
+    var input = new CompletionsInput(new ArrayList<>(), 0.5f, null, 1000, -1, -1);
     input.addMessages(preamble);
     input.addMessage(Speaker.HUMAN, codeContext);
     input.addMessage(Speaker.ASSISTANT, "Ok.");
@@ -41,6 +43,10 @@ public class Chat {
     // ConfigUtil.getAccessToken(project) TODO: Get the access token from the plugin config
     // TODO: Don't create this each time
 
-    completionsService.streamCompletion(input, new ChatUpdaterCallbacks(chat, prefix));
+    completionsService.streamCompletion(
+        input,
+        new ChatUpdaterCallbacks(chat, prefix),
+        CompletionsService.Endpoint.Stream,
+        new CancellationToken());
   }
 }

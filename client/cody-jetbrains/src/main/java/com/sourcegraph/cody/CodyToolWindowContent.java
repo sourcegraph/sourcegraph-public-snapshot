@@ -9,7 +9,7 @@ import com.intellij.ui.scale.JBUIScale;
 import com.sourcegraph.cody.chat.Chat;
 import com.sourcegraph.cody.chat.ChatBubble;
 import com.sourcegraph.cody.chat.ChatMessage;
-import com.sourcegraph.cody.completions.Speaker;
+import com.sourcegraph.cody.api.Speaker;
 import com.sourcegraph.cody.config.ConfigUtil;
 import com.sourcegraph.cody.config.SettingsComponent;
 import com.sourcegraph.cody.editor.EditorContextGetter;

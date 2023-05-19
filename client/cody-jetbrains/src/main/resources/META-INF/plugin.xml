@@ -33,6 +33,10 @@
         <notificationGroup id="Cody Sourcegraph access" displayType="BALLOON"/>
         <postStartupActivity implementation="com.sourcegraph.cody.telemetry.PostStartupActivity"/>
         <postStartupActivity implementation="com.sourcegraph.cody.config.NotificationActivity"/>
+
+        <!-- Code completions -->
+        <applicationService serviceImplementation="com.sourcegraph.cody.completions.CodyCompletionsManager"/>
+        <editorFactoryListener implementation="com.sourcegraph.cody.completions.CodyEditorFactoryListener"/>
     </extensions>
 
     <actions>
@@ -42,6 +46,12 @@
             text="Open Cody"
             description="Opens Cody sidebar"
             icon="/icons/codyLogo.svg">
+        </action>
+        
+        <!-- Code completions -->
+        <action id="cody.acceptCompletion" class="com.sourcegraph.cody.completions.AcceptCodyCompletionAction">
+            <keyboard-shortcut first-keystroke="TAB" keymap="$default"/>
+            <override-text place="MainMenu" text="Accept Completion"/>
         </action>
     </actions>
 </idea-plugin>
