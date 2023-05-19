@@ -26,7 +26,7 @@ go_binary(
 )
 
 pkg_tar(
-    name = "tar_frontend",\
+    name = "tar_frontend",
     srcs = [":frontend"],
 )
 
