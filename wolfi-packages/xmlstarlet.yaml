@@ -8,8 +8,8 @@ package:
   copyright:
     - paths:
       - "*"
-      attestation: ''
-      license: ''
+      attestation: 'Copyright (c) 2002 Mikhail Grushinskiy'
+      license: 'MIT License'
   dependencies:
     runtime:
       - libxml2 # Here to update the built-in version
