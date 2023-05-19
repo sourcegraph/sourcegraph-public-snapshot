@@ -21,7 +21,9 @@ create_version() {
 if [[ ${CI:-""} == "true" ]]; then
   version=${VERSION:-$(create_version)}
 else
-  version=${VERSION:-"0.0.0+dev"}
+  # This CANNOT be 0.0.0+dev, or else the binary will not start:
+  # https://github.com/sourcegraph/sourcegraph/issues/50958
+  version=${VERSION:-"1.0.0+dev"}
 fi
 
 echo "${version}"
