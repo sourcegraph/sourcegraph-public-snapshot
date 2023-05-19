@@ -183,8 +183,11 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                                     // If we're in App, override the callbackType
                                     // because we need to use tauriShellOpen to open the
                                     // callback in a browser.
+                                    // Then navigate back to the home page since App doesn't
+                                    // have a back button or tab that can be closed.
                                     if (isSourcegraphApp) {
                                         tauriShellOpen(uri)
+                                        navigate('/')
                                         return
                                     }
 
@@ -202,7 +205,7 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
                         )
                     )
                 ),
-            [requester, user.id, note, onDidCreateAccessToken, isSourcegraphApp]
+            [requester, user.id, note, onDidCreateAccessToken, isSourcegraphApp, navigate]
         )
     )
 
