@@ -118,20 +118,26 @@ func (s *Accounts) TracingFields() []attribute.KeyValue {
 	}
 }
 
-// ServiceVariant enumerates different types/kinds of external services
-// It replaces both the Type... and Kind... enums
+// ServiceVariant enumerates different types/kinds of external services.
+// It replaces both the Type... and Kind... variables.
 // Types and Kinds are exposed through AsKind and AsType functions
 // so that usages relying on the particular string of Type vs Kind
 // will continue to behave correctly.
-// The Type... and Kind... enums are left in place to avoid edge-case issues and to support
+// The Type... and Kind... variables are left in place to avoid edge-case issues and to support
 // commits that come in while the switch to Variant is ongoing.
-// The Type... and Kind... enums are turned into vars and use
+// The Type... and Kind... variables are turned from consts into vars and use
 // the corresponding Variant's AsType()/AsKind() functions.
-// Consolidating Type... and Kind... into a single enum should decrease the stink
+// Consolidating Type... and Kind... into a single enum should decrease the smell
 // and increase the usability and maintainability of this code.
 // Note that Go Packages and Modules seem to have been a victim of the confusion engendered by having both Type and Kind:
 // There was `KindGoPackages` and `TypeGoModules`, both with the value of (case insensitivly) "gomodules".
 // I think that they both refer to the same thing and can be merged into one variant.
+// Olaf confirms that the name `...GoPackages` should be used to align naming conventions with the other `...Packages` variables.
+
+// To add another external service variant
+// 1. Add the name to the enum
+// 2. Add an entry to the `variantValues` map, containing the appropriate values for `AsType`, `AsKind`, and the other values, if applicable
+// 3. Use that Variant elsewhere in code, using the `AsType` and `AsKind` functions as necessary.
 
 type ServiceVariant int64
 
@@ -268,7 +274,9 @@ func ServiceVariantValueOf(input string) (ServiceVariant, error) {
 }
 
 // TODO: DEPRECATE/REMOVE ONCE CONVERSION TO Variants IS COMPLETE (2023-05-18)
-// the Kind... and Type... enums have been superceded by the ServiceVariant enum
+// the Kind... and Type... variables have been superceded by the ServiceVariant enum
+// DO NOT ADD MORE VARIABLES TO THE TYPE AND KIND VARIABLES
+// instead, follow the instructions above for adding and using Variant variables
 
 var (
 	// The constants below represent the different kinds of external service we support and should be used
@@ -362,7 +370,7 @@ var (
 // END TODO: DEPRECATE/REMOVE
 
 // TODO: handle in a less smelly way with Variants
-// KindToType returns a Type constants given a Kind
+// KindToType returns a Type constant given a Kind
 // It will panic when given an unknown kind
 func KindToType(kind string) string {
 	sv, err := ServiceVariantValueOf(kind)
@@ -373,7 +381,7 @@ func KindToType(kind string) string {
 }
 
 // TODO: handle in a less smelly way with Variants
-// TypeToKind returns a Kind constants given a Type
+// TypeToKind returns a Kind constant given a Type
 // It will panic when given an unknown type.
 func TypeToKind(t string) string {
 	sv, err := ServiceVariantValueOf(t)
