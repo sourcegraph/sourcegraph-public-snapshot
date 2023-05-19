@@ -43,6 +43,7 @@ func Init(logger log.Logger) {
 	setDefaultEnv(logger, "SYMBOLS_URL", "http://127.0.0.1:3184")
 	setDefaultEnv(logger, "SEARCHER_URL", "http://127.0.0.1:3181")
 	setDefaultEnv(logger, "BLOBSTORE_URL", "http://127.0.0.1:9000")
+	setDefaultEnv(logger, "EMBEDDINGS_URL", "http://127.0.0.1:9991")
 
 	// The syntax-highlighter might not be running, but this is a better default than an internal
 	// hostname.
