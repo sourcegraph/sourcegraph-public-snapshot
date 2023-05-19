@@ -131,6 +131,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				"codeinsights-db",
 				"codeintel-db",
 				"embeddings",
+				"executor",
 				"executor-kubernetes",
 				"frontend",
 				"github-proxy",
