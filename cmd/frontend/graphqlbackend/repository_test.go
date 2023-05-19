@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"testing"
+	"time"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/graph-gophers/graphql-go"
@@ -20,12 +21,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/rbac"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/log/logtest"
+
+	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 )
 
 const exampleCommitSHA1 = "1234567890123456789012345678901234567890"
@@ -239,9 +243,19 @@ func TestRepository_RepoMetadata(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	db := database.NewMockDBFrom(database.NewDB(logger, dbtest.NewDB(logger, t)))
+
 	users := database.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 	db.UsersFunc.SetDefaultReturn(users)
+
+	permissions := database.NewMockPermissionStore()
+	permissions.GetPermissionForUserFunc.SetDefaultReturn(&types.Permission{
+		ID:        1,
+		Namespace: rtypes.RepoMetadataNamespace,
+		Action:    rtypes.RepoMetadataWriteAction,
+		CreatedAt: time.Now(),
+	}, nil)
+	db.PermissionsFunc.SetDefaultReturn(permissions)
 
 	err := db.Repos().Create(ctx, &types.Repo{
 		Name: "testrepo",
@@ -363,5 +377,46 @@ func TestRepository_RepoMetadata(t *testing.T) {
 			return kvps[i].key < kvps[j].key
 		})
 		require.Empty(t, kvps)
+	})
+
+	t.Run("handles rbac", func(t *testing.T) {
+		permissions.GetPermissionForUserFunc.SetDefaultReturn(nil, nil)
+
+		// add
+		_, err = schema.AddRepoMetadata(ctx, struct {
+			Repo  graphql.ID
+			Key   string
+			Value *string
+		}{
+			Repo:  gqlID,
+			Key:   "key1",
+			Value: strPtr("val1"),
+		})
+		require.Error(t, err)
+		require.Equal(t, err, &rbac.ErrNotAuthorized{Permission: string(rbac.RepoMetadataWritePermission)})
+
+		// update
+		_, err = schema.UpdateRepoMetadata(ctx, struct {
+			Repo  graphql.ID
+			Key   string
+			Value *string
+		}{
+			Repo:  gqlID,
+			Key:   "key1",
+			Value: strPtr("val2"),
+		})
+		require.Error(t, err)
+		require.Equal(t, err, &rbac.ErrNotAuthorized{Permission: string(rbac.RepoMetadataWritePermission)})
+
+		// delete
+		_, err = schema.DeleteRepoMetadata(ctx, struct {
+			Repo graphql.ID
+			Key  string
+		}{
+			Repo: gqlID,
+			Key:  "key1",
+		})
+		require.Error(t, err)
+		require.Equal(t, err, &rbac.ErrNotAuthorized{Permission: string(rbac.RepoMetadataWritePermission)})
 	})
 }

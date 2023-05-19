@@ -6,3 +6,6 @@ namespaces:
   - name: OWNERSHIP
     actions:
       - ASSIGN
+  - name: REPO_METADATA
+    actions:
+      - WRITE

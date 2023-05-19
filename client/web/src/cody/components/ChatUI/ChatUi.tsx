@@ -17,6 +17,7 @@ import { Button, Icon, TextArea, Link } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { useChatStoreState } from '../../stores/chat'
+import { useCodySidebarStore } from '../../stores/sidebar'
 
 import styles from './ChatUi.module.scss'
 
@@ -164,6 +165,7 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
     onKeyDown,
     className,
 }) => {
+    const { inputNeedsFocus, setFocusProvided } = useCodySidebarStore()
     const textAreaRef = useRef<HTMLTextAreaElement>(null)
     const { width = 0 } = useResizeObserver({ ref: textAreaRef })
 
@@ -181,6 +183,13 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
     const handleChange = (): void => {
         adjustTextAreaHeight()
     }
+
+    useEffect(() => {
+        if (inputNeedsFocus && textAreaRef.current) {
+            textAreaRef.current.focus()
+            setFocusProvided()
+        }
+    }, [inputNeedsFocus, setFocusProvided])
 
     useEffect(() => {
         adjustTextAreaHeight()

@@ -4,7 +4,7 @@
 package:
   name: coursier
   version: 2.0.13
-  epoch: 0
+  epoch: 1
   description: "Java dependency resolver"
   target-architecture:
     - x86_64

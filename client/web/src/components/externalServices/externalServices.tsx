@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { ReactNode } from 'react'
 
 import { Edit, JSONPath, ModificationOptions, modify, parse as parseJSONC } from 'jsonc-parser'
 import AwsIcon from 'mdi-react/AwsIcon'
@@ -14,7 +14,6 @@ import LanguageRustIcon from 'mdi-react/LanguageRustIcon'
 import AzureDevOpsIcon from 'mdi-react/MicrosoftAzureDevopsIcon'
 import NpmIcon from 'mdi-react/NpmIcon'
 
-import { hasProperty } from '@sourcegraph/common'
 import { PerforceIcon, PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
 import { Link, Code, Text } from '@sourcegraph/wildcard'
 
@@ -38,12 +37,14 @@ import rubyPackagesSchemaJSON from '../../../../../schema/ruby-packages.schema.j
 import rustPackagesJSON from '../../../../../schema/rust-packages.schema.json'
 import {
     ExternalRepositoryFields,
-    ExternalServiceFields,
     ExternalServiceKind,
     ExternalServiceSyncJobState,
+    GitHubAppByAppIDResult,
 } from '../../graphql-operations'
 import { EditorAction } from '../../settings/EditorActionsGroup'
+import { GitHubAppSelector } from '../gitHubApps/GitHubAppSelector'
 
+import { ExternalServiceFieldsWithConfig } from './backend'
 import { GerritIcon } from './GerritIcon'
 
 /**
@@ -96,6 +97,11 @@ export interface AddExternalServiceOptions {
      * If present, denotes that we should show a status label, e.g. Beta or Experimental
      */
     status?: 'experimental' | 'beta'
+
+    /**
+     * If present, denotes that we should show additional fields on the form above the JSON
+     */
+    additionalFormComponent?: ReactNode
 }
 
 const defaultModificationOptions: ModificationOptions = {
@@ -190,6 +196,27 @@ const GitHubInstructions: React.FunctionComponent<{ isEnterprise: boolean }> = (
         <Text>
             See{' '}
             <Link rel="noopener noreferrer" target="_blank" to="/help/admin/external_service/github#configuration">
+                the docs for more options
+            </Link>
+            , or try one of the buttons below.
+        </Text>
+    </div>
+)
+
+const GitHubAppInstructions: React.FunctionComponent = () => (
+    <div>
+        <ol>
+            <li>
+                Choose a GitHub App to populate the initial JSON configuration in <Code>gitHubAppDetails</Code>.
+            </li>
+            <li>
+                If applicable, choose an associated installation. If your GitHub App has only one installation, this
+                will be pre-populated along with other GitHub App information in <Code>orgs</Code>.
+            </li>
+        </ol>
+        <Text>
+            See {/* TODO: proper docs link here */}
+            <Link rel="noopener noreferrer" target="_blank" to="">
                 the docs for more options
             </Link>
             , or try one of the buttons below.
@@ -351,6 +378,25 @@ const githubEditorActions = (isEnterprise: boolean): EditorAction[] => [
         },
     },
 ]
+
+const gitHubAppEditorActions = (isEnterprise: boolean): EditorAction[] => {
+    const actions = githubEditorActions(true).filter(
+        item =>
+            !['setURL', 'setAccessToken', 'addAffiliatedRepos', 'enablePermissions', 'addWebhooks'].includes(item.id)
+    )
+    return [
+        {
+            id: 'addAffiliatedRepos',
+            label: 'Add repositories affiliated with app installation',
+            run: (config: string) => {
+                const value = 'affiliated'
+                const edits = modify(config, ['repositoryQuery', -1], value, defaultModificationOptions)
+                return { edits, selectText: 'affiliated' }
+            },
+        },
+        ...actions,
+    ]
+}
 
 const gitlabEditorActions = (isSelfManaged: boolean): EditorAction[] => [
     ...(isSelfManaged
@@ -564,23 +610,25 @@ const GITHUB_ENTERPRISE: AddExternalServiceOptions = {
 const GITHUB_APP: AddExternalServiceOptions = {
     ...GITHUB_DOTCOM,
     title: 'GitHub App',
+    editorActions: gitHubAppEditorActions(false),
+    Instructions: () => <GitHubAppInstructions />,
+    additionalFormComponent: <GitHubAppSelector />,
 }
 export const gitHubAppConfig = (
-    baseURL: string,
-    appID: string,
-    installationID: string,
-    org: string
+    baseURL: string | null,
+    appID: string | null,
+    installationID: string | null,
+    org: string | null
 ): AddExternalServiceOptions => ({
-    ...GITHUB_DOTCOM,
-    title: 'GitHub App Installation',
+    ...GITHUB_APP,
     defaultConfig: `{
-  "url": "${decodeURI(baseURL)}",
+  "url": "${baseURL ? decodeURI(baseURL) : ''}",
   "gitHubAppDetails": {
-    "installationID": ${installationID},
-    "appID": ${appID},
-    "baseURL": "${baseURL}"
+    "installationID": ${installationID ?? -1},
+    "appID": ${appID ?? -1},
+    "baseURL": "${baseURL ?? ''}"
   },
-  "orgs": ["${org}"],
+  "orgs": ["${org ?? ''}"],
   "authorization": {}
 }`,
 })
@@ -1593,26 +1641,41 @@ export const EXTERNAL_SERVICE_SYNC_RUNNING_STATUSES = new Set<ExternalServiceSyn
 ])
 
 export const resolveExternalServiceCategory = (
-    externalService?: ExternalServiceFields
+    externalService?: ExternalServiceFieldsWithConfig,
+    gitHubApp?: GitHubAppByAppIDResult['gitHubAppByAppID']
 ): AddExternalServiceOptions | undefined => {
     let externalServiceCategory = externalService && defaultExternalServices[externalService.kind]
     if (externalService && [ExternalServiceKind.GITHUB, ExternalServiceKind.GITLAB].includes(externalService.kind)) {
-        const parsedConfig: unknown = parseJSONC(externalService.config)
-        const url =
-            typeof parsedConfig === 'object' &&
-            parsedConfig !== null &&
-            hasProperty('url')(parsedConfig) &&
-            typeof parsedConfig.url === 'string' &&
-            isValidURL(parsedConfig.url)
-                ? new URL(parsedConfig.url)
-                : undefined
-        // We have no way of finding out whether an external service is GITHUB or GitHub.com or GitHub enterprise, so we need to guess based on the URL.
-        if (externalService.kind === ExternalServiceKind.GITHUB && url?.hostname !== 'github.com') {
-            externalServiceCategory = codeHostExternalServices.ghe
+        let { parsedConfig } = externalService
+        if (!parsedConfig) {
+            parsedConfig = parseJSONC(externalService.config)
         }
-        // We have no way of finding out whether an external service is GITLAB or Gitlab.com or Gitlab self-hosted, so we need to guess based on the URL.
-        if (externalService.kind === ExternalServiceKind.GITLAB && url?.hostname !== 'gitlab.com') {
-            externalServiceCategory = codeHostExternalServices.gitlab
+        if (!parsedConfig) {
+            return externalServiceCategory
+        }
+        if (parsedConfig.url) {
+            const url = isValidURL(parsedConfig.url) ? new URL(parsedConfig.url) : undefined
+            // We have no way of finding out whether an external service is GITHUB or GitHub.com or GitHub enterprise, so we need to guess based on the URL.
+            if (externalService.kind === ExternalServiceKind.GITHUB && url?.hostname !== 'github.com') {
+                externalServiceCategory = codeHostExternalServices.ghe
+            }
+            // We have no way of finding out whether an external service is GITLAB or Gitlab.com or Gitlab self-hosted, so we need to guess based on the URL.
+            if (externalService.kind === ExternalServiceKind.GITLAB && url?.hostname !== 'gitlab.com') {
+                externalServiceCategory = codeHostExternalServices.gitlab
+            }
+        }
+        // if config contains gitHubAppDetails, we should use GitHub App instead
+        if (parsedConfig.gitHubAppDetails && gitHubApp) {
+            externalServiceCategory = { ...codeHostExternalServices.ghapp }
+            externalServiceCategory.additionalFormComponent = (
+                <GitHubAppSelector
+                    disabled={true}
+                    gitHubApp={{
+                        ...parsedConfig.gitHubAppDetails,
+                        ...gitHubApp,
+                    }}
+                />
+            )
         }
     }
     return externalServiceCategory

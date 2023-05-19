@@ -80,7 +80,7 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
-		r.Header.Set("Authorization", "Bearer sgs_abc123")
+		r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
 		(&auth.Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
@@ -105,7 +105,7 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
-		r.Header.Set("Authorization", "Bearer sgs_abc123")
+		r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
 		(&auth.Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
@@ -126,7 +126,7 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
-		r.Header.Set("Authorization", "Bearer sgs_abc123")
+		r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
 		(&auth.Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
@@ -168,7 +168,7 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
-		r.Header.Set("Authorization", "Bearer sgs_abc123")
+		r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
 		(&auth.Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
