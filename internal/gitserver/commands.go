@@ -1331,9 +1331,12 @@ func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, a,
 }
 
 // RevList makes a git rev-list call and iterates through the resulting commits, calling the provided onCommit function for each.
-func (c *clientImplementor) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+func (c *clientImplementor) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) (err error) {
+	ctx, _, endObservation := c.operations.mergeBase.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repo", repo),
+		attribute.String("commit", commit),
+	}})
+	defer endObservation(1, observation.Args{})
 
 	command := c.gitCommand(api.RepoName(repo), RevListArgs(commit)...)
 	command.DisableTimeout()

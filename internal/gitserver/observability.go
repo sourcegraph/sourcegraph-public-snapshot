@@ -22,6 +22,7 @@ type operations struct {
 	blameFile        *observation.Operation
 	contributorCount *observation.Operation
 	mergeBase        *observation.Operation
+	revList          *observation.Operation
 	batchLog         *observation.Operation
 	batchLogSingle   *observation.Operation
 	do               *observation.Operation
@@ -63,6 +64,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		streamBlameFile:  op("StreamBlameFile"),
 		blameFile:        op("BlameFile"),
 		readDir:          op("ReadDir"),
+		revList:          op("RevList"),
 		lstat:            op("lStat"),
 		batchLog:         op("BatchLog"),
 		batchLogSingle:   subOp("batchLogSingle"),
