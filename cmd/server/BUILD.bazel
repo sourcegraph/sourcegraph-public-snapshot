@@ -120,5 +120,3 @@ oci_tarball(
     image = ":image",
     repo_tags = ["server:candidate"],
 )
-
-)
