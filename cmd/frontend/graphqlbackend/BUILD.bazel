@@ -209,6 +209,7 @@ go_library(
         "codeintel.graphql",
         "completions.graphql",
         "githubapps.graphql",
+        "codeintel.ranking.graphql",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend",
     deps = [
@@ -278,6 +279,7 @@ go_library(
         "//internal/observation",
         "//internal/oobmigration",
         "//internal/perforce",
+        "//internal/rbac",
         "//internal/rcache",
         "//internal/repos",
         "//internal/repoupdater",
@@ -346,6 +348,7 @@ go_library(
         "@com_github_stretchr_testify//require",
         "@com_github_throttled_throttled_v2//:throttled",
         "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
@@ -461,6 +464,7 @@ go_test(
         "//internal/gqlutil",
         "//internal/inventory",
         "//internal/oobmigration",
+        "//internal/rbac",
         "//internal/rbac/types",
         "//internal/rcache",
         "//internal/repos",

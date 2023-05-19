@@ -8,13 +8,15 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Fixed
 
+- Setting `cody.useContext` to `none` will now limit Cody to using only the currently open file. [pull/52126](https://github.com/sourcegraph/sourcegraph/pull/52126)
+
 ### Changed
 
 ## [0.1.3]
 
 ### Added
 
-- Add support for connecting to Sourcegraph App when a supported version is installed.
+- Add support for connecting to Sourcegraph App when a supported version is installed. [pull/52075](https://github.com/sourcegraph/sourcegraph/pull/52075)
 
 ### Fixed
 

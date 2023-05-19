@@ -122,10 +122,10 @@ inserted AS (
 ),
 set_progress AS (
 	UPDATE codeintel_ranking_progress
-	SET reducer_completed_at = NOW()
-	WHERE
-		id IN (SELECT id FROM progress) AND
-		NOT EXISTS (SELECT 1 FROM processed)
+	SET
+		num_count_records_processed = COALESCE(num_count_records_processed, 0) + (SELECT COUNT(*) FROM processed),
+		reducer_completed_at        = CASE WHEN (SELECT COUNT(*) FROM input_ranks) = 0 THEN NOW() ELSE NULL END
+	WHERE id IN (SELECT id FROM progress)
 )
 SELECT
 	(SELECT COUNT(*) FROM processed) AS num_processed,

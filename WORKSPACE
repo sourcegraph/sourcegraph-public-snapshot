@@ -314,8 +314,6 @@ load("@crate_index//:defs.bzl", "crate_repositories")
 
 crate_repositories()
 
-# Hermetic cc toolchain
-
 load("@hermetic_cc_toolchain//toolchain:defs.bzl", zig_toolchains = "toolchains")
 
 zig_toolchains()

@@ -76,6 +76,7 @@ Clarification and discussion about key concepts, architecture, and development s
 ## Sourcegraph App
 
 - [Notes about signing the Sourcegraph App with Apple code signing](background-information/app/codesigning.md)
+- [Troubleshooting App not loading](background-information/app/troubleshooting.md)
 
 ### Development
 

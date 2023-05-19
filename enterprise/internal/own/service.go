@@ -31,6 +31,29 @@ type Service interface {
 	// ResolveOwnersWithType takes a list of codeownerspb.Owner and attempts to retrieve more information about the
 	// owner from the users and teams databases.
 	ResolveOwnersWithType(context.Context, []*codeownerspb.Owner) ([]codeowners.ResolvedOwner, error)
+
+	// AssignedOwnership returns the owners that were assigned for given repo within
+	// Sourcegraph. This is an owners set that is independent of CODEOWNERS files.
+	// Owners are assigned for repositories and directory hierarchies,
+	// so an owner for the whole repo transitively owns all files in that repo,
+	// and owner of 'src/test' in a given repo transitively owns all files within
+	// the directory tree at that root like 'src/test/com/sourcegraph/Test.java'.
+	AssignedOwnership(context.Context, api.RepoID, api.CommitID) (AssignedOwners, error)
+}
+
+type AssignedOwners map[string][]database.AssignedOwnerSummary
+
+// Match returns all the assigned owner summaries for the given path.
+// It implements inheritance of assigned ownership down the file tree,
+// that is so that owners of a parent directory "a/b" are the owners
+// of all files in that tree, like "a/b/c/d/foo.go".
+func (ao AssignedOwners) Match(path string) []database.AssignedOwnerSummary {
+	summaries := ao[""] // Repository owner is associated with root directory - "".
+	for lastSlash := len(path); lastSlash != -1; lastSlash = strings.LastIndex(path, "/") {
+		path = path[:lastSlash]
+		summaries = append(summaries, ao[path]...)
+	}
+	return summaries
 }
 
 var _ Service = &service{}
@@ -131,6 +154,20 @@ func (s *service) ResolveOwnersWithType(ctx context.Context, protoOwners []*code
 	}
 
 	return resolved, nil
+}
+
+func (s *service) AssignedOwnership(ctx context.Context, repoID api.RepoID, _ api.CommitID) (AssignedOwners, error) {
+	summaries, err := s.db.AssignedOwners().ListAssignedOwnersForRepo(ctx, repoID)
+	if err != nil {
+		return nil, err
+	}
+	assignedOwners := AssignedOwners{}
+	for _, summary := range summaries {
+		byPath := assignedOwners[summary.FilePath]
+		byPath = append(byPath, *summary)
+		assignedOwners[summary.FilePath] = byPath
+	}
+	return assignedOwners, nil
 }
 
 func (s *service) resolveOwner(ctx context.Context, handle, email string) (codeowners.ResolvedOwner, error) {

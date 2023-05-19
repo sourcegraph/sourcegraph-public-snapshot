@@ -10,6 +10,7 @@ go_library(
     deps = [
         "//cmd/repo-updater/shared",
         "//cmd/sourcegraph-oss/osscmd",
+        "//internal/sanitycheck",
     ],
 )
 
