@@ -23,5 +23,14 @@ module.exports = {
     ],
     'react/forbid-elements': 'off',
     'unicorn/filename-case': 'off',
+    'import/extensions': [
+      'error',
+      'never',
+      {
+        schema: 'always',
+        scss: 'always',
+        css: 'always',
+      },
+    ],
   },
 }

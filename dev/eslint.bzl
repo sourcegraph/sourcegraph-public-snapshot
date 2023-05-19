@@ -26,16 +26,19 @@ def _custom_eslint_impl(ctx):
     )
 
     args = ctx.actions.args()
-    args.add("--no-eslintrc")
+
+    # TODO: add context on why it doesn't work well with `overrides` globs.
+    # args.add("--no-eslintrc")
+    # args.add_all(["--config", get_path(ctx.files.config[0])])
+
     args.add("--quiet")
     args.add_all(["--format", "./{}".format(ctx.files.formatter[0].short_path)])
-    args.add_all(["--config", ctx.files.config[0].short_path])
 
     output = ctx.actions.declare_file(ctx.attr.output)
     # args.add_all(["--output-file", output.short_path])
 
     args.add_all([s.short_path for s in copied_srcs])
-    # print("ARGS!", args)
+    print("ARGS", args)
 
     env = {
         "BAZEL_BINDIR": ctx.bin_dir.path,

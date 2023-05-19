@@ -10,3 +10,5 @@ svelte.config.js
 vite.config.ts
 playwright.config.ts
 .vscode-test
+**/*.json
+**/*.d.ts
