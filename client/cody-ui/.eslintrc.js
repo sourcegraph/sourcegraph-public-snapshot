@@ -1,5 +1,3 @@
-// @ts-check
-
 const baseConfig = require('../../.eslintrc')
 module.exports = {
   extends: '../../.eslintrc.js',
@@ -21,14 +19,5 @@ module.exports = {
     ],
     'react/forbid-elements': 'off',
     'unicorn/filename-case': 'off',
-    'import/extensions': [
-      'error',
-      'never',
-      {
-        schema: 'always',
-        scss: 'always',
-        css: 'always',
-      },
-    ],
   },
 }

@@ -41,6 +41,7 @@ def ts_project(name, srcs = [], deps = [], use_preset_env = True, **kwargs):
         ] if not d in deps]
 
     client_package_path = "/".join(native.package_name().split("/")[:2])
+    ts_config = kwargs.pop("tsconfig", "//:tsconfig")
 
     eslint_test_with_types(
         name = "%s_eslint" % name,
@@ -48,7 +49,7 @@ def ts_project(name, srcs = [], deps = [], use_preset_env = True, **kwargs):
         srcs = srcs,
         binary = "//:eslint",
         config = "//{}:eslint_config".format(client_package_path),
-        deps = deps,
+        deps = deps + [ts_config],
     )
 
     # Default arguments for ts_project.
@@ -58,7 +59,7 @@ def ts_project(name, srcs = [], deps = [], use_preset_env = True, **kwargs):
         deps = deps,
 
         # tsconfig options, default to the root
-        tsconfig = kwargs.pop("tsconfig", "//:tsconfig"),
+        tsconfig = ts_config,
         composite = kwargs.pop("composite", True),
         declaration = kwargs.pop("declaration", True),
         declaration_map = kwargs.pop("declaration_map", True),

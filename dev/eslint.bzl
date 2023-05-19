@@ -11,8 +11,8 @@ def _custom_eslint_impl(ctx):
         copied_srcs,
         transitive = [gather_files_from_js_providers(
             targets = [ctx.attr.config] + ctx.attr.deps,
-            include_sources = True,
-            include_transitive_sources = True,
+            include_sources = False,
+            include_transitive_sources = False,
             include_declarations = True,
             include_npm_linked_packages = True,
         )],
@@ -38,7 +38,7 @@ def _custom_eslint_impl(ctx):
     # args.add_all(["--output-file", output.short_path])
 
     args.add_all([s.short_path for s in copied_srcs])
-    print("ARGS", args)
+    # print("ARGS", args)
 
     env = {
         "BAZEL_BINDIR": ctx.bin_dir.path,

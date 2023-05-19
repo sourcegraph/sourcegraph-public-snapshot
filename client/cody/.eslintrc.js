@@ -1,11 +1,12 @@
 // @ts-check
 
 const baseConfig = require('../../.eslintrc')
+
 module.exports = {
   extends: '../../.eslintrc.js',
   parserOptions: {
     ...baseConfig.parserOptions,
-    project: [__dirname + '/tsconfig.json'],
+    project: [__dirname + '/tsconfig.json', __dirname + '/integration-test/tsconfig.json'],
   },
   overrides: baseConfig.overrides,
   rules: {
@@ -23,14 +24,5 @@ module.exports = {
     ],
     'react/forbid-elements': 'off',
     'unicorn/filename-case': 'off',
-    'import/extensions': [
-      'error',
-      'never',
-      {
-        schema: 'always',
-        scss: 'always',
-        css: 'always',
-      },
-    ],
   },
 }

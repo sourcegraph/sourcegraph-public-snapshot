@@ -222,6 +222,9 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
       {
         schema: 'always',
         scss: 'always',
+        css: 'always',
+        yaml: 'always',
+        svg: 'always',
       },
     ],
     'import/order': 'off',
