@@ -3,14 +3,12 @@ package search
 import (
 	"context"
 	"fmt"
-	"strings"
 	"sync"
 
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
-	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -77,7 +75,7 @@ func (s *fileHasOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, 
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		var err error
-		event.Results, err = applyCodeOwnershipFiltering(ctx, &rules, s.includeBags, s.excludeBags, event.Results)
+		event.Results, err = applyCodeOwnershipFiltering(ctx, &rules, includeBags, excludeBags, event.Results)
 		if err != nil {
 			mu.Lock()
 			errs = errors.Append(errs, err)
@@ -144,19 +142,14 @@ matchesLoop:
 			errs = errors.Append(errs, err)
 			continue matchesLoop
 		}
-		rule := file.Match(mm.File.Path)
-		var owners []*codeownerspb.Owner
-		// If match.
-		if rule != nil {
-			owners = rule.GetOwner()
-		}
+		fileOwners := file.Match(mm.File.Path)
 		for owner, bag := range includeBags {
-			if !containsOwner(owners, owner, bag) {
+			if !containsOwner(fileOwners, owner, bag) {
 				continue matchesLoop
 			}
 		}
 		for notOwner, bag := range excludeBags {
-			if containsOwner(owners, notOwner, bag) {
+			if containsOwner(fileOwners, notOwner, bag) {
 				continue matchesLoop
 			}
 		}
@@ -170,21 +163,9 @@ matchesLoop:
 // containsOwner searches within emails and handles in a case-insensitive
 // manner. Empty string passed as search term means any, so the predicate
 // returns true if there is at least one owner, and false otherwise.
-func containsOwner(owners []*codeownerspb.Owner, owner string, bag own.Bag) bool {
+func containsOwner(owners fileOwnershipData, owner string, bag own.Bag) bool {
 	if owner == "" {
-		return len(owners) > 0
+		return owners.NonEmpty()
 	}
-	isHandle := strings.HasPrefix(owner, "@")
-	owner = strings.ToLower(strings.TrimPrefix(owner, "@"))
-	for _, o := range owners {
-		if strings.ToLower(o.Handle) == owner {
-			return true
-		}
-		// Prefixing the search term with `@` indicates intent to match a handle,
-		// so we do not match email in that case.
-		if !isHandle && (strings.ToLower(o.Email) == owner) {
-			return true
-		}
-	}
-	return false
+	return owners.Contains(owner, bag)
 }
