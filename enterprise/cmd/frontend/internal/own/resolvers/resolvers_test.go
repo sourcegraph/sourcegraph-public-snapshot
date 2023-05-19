@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
+	owntypes "github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -926,7 +927,7 @@ func TestTreeOwnershipSignals(t *testing.T) {
 		mockStore := database.NewMockSignalConfigurationStore()
 		db.OwnSignalConfigurationsFunc.SetDefaultReturn(mockStore)
 		mockStore.IsEnabledFunc.SetDefaultHook(func(ctx context.Context, s string) (bool, error) {
-			if s == "recent-contributors" {
+			if s == owntypes.SignalRecentContributors {
 				return false, nil
 			}
 			return true, nil
@@ -964,7 +965,7 @@ func TestTreeOwnershipSignals(t *testing.T) {
 		mockStore := database.NewMockSignalConfigurationStore()
 		db.OwnSignalConfigurationsFunc.SetDefaultReturn(mockStore)
 		mockStore.IsEnabledFunc.SetDefaultHook(func(ctx context.Context, s string) (bool, error) {
-			if s == "recent-views" {
+			if s == owntypes.SignalRecentViews {
 				return false, nil
 			}
 			return true, nil
@@ -1152,7 +1153,7 @@ func Test_SignalConfigurations(t *testing.T) {
 				}`,
 		Variables: map[string]any{"input": map[string]any{
 			"configs": []any{map[string]any{
-				"name": "recent-contributors", "enabled": true, "excludedRepoPatterns": []any{"github.com/*"}}},
+				"name": owntypes.SignalRecentContributors, "enabled": true, "excludedRepoPatterns": []any{"github.com/*"}}},
 		}},
 	}
 
@@ -1181,12 +1182,12 @@ func Test_SignalConfigurations(t *testing.T) {
 		autogold.Expect([]database.SignalConfiguration{
 			{
 				ID:          1,
-				Name:        "recent-contributors",
+				Name:        owntypes.SignalRecentContributors,
 				Description: "Indexes contributors in each file using repository history.",
 			},
 			{
 				ID:          2,
-				Name:        "recent-views",
+				Name:        owntypes.SignalRecentViews,
 				Description: "Indexes users that recently viewed files in Sourcegraph.",
 			},
 		}).Equal(t, configsFromDb)

@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	logger "github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -27,7 +28,7 @@ type IndexJobType struct {
 
 // QueuePerRepoIndexJobs is a slice of jobs that will automatically initialize and will queue up one index job per repo every IndexInterval.
 var QueuePerRepoIndexJobs = []IndexJobType{{
-	Name:            "recent-contributors",
+	Name:            types.SignalRecentContributors,
 	IndexInterval:   time.Hour * 24,
 	RefreshInterval: time.Minute * 5,
 }}
@@ -65,7 +66,7 @@ func GetOwnIndexSchedulerRoutines(db database.DB, observationCtx *observation.Co
 	}
 
 	recent := IndexJobType{
-		Name:            "recent-views",
+		Name:            types.SignalRecentViews,
 		RefreshInterval: time.Minute * 5,
 	}
 	routines = append(routines, makeRoutine(recent, op(recent), newRecentViewsIndexer(db, observationCtx.Logger)))

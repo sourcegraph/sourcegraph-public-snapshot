@@ -9,6 +9,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	owntypes "github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -485,7 +486,7 @@ func (g *recentContributorOwnershipSignal) Description() (string, error) {
 }
 
 func computeRecentContributorSignals(ctx context.Context, db edb.EnterpriseDB, path string, repoID api.RepoID) (results []*ownershipResolver, err error) {
-	enabled, err := db.OwnSignalConfigurations().IsEnabled(ctx, "recent-contributors")
+	enabled, err := db.OwnSignalConfigurations().IsEnabled(ctx, owntypes.SignalRecentContributors)
 	if err != nil {
 		return nil, errors.Wrap(err, "IsEnabled")
 	}

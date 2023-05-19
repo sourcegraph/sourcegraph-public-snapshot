@@ -10,6 +10,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/background"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -26,14 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-)
-
-// SignalName should match the configuration name in the database table own_signal_configurations. This is used to match implementations to configuration.
-type SignalName string
-
-const (
-	RecentContributors SignalName = "recent-contributors"
-	RecentViews        SignalName = "recent-views"
 )
 
 func featureFlagName(jobType IndexJobType) string {
@@ -185,8 +178,8 @@ func (h *handler) Handle(ctx context.Context, lgr log.Logger, record *Job) error
 	}
 
 	var delegate signalIndexFunc
-	switch SignalName(record.ConfigName) {
-	case RecentContributors:
+	switch record.ConfigName {
+	case types.SignalRecentContributors:
 		delegate = handleRecentContributors
 	default:
 		return errcode.MakeNonRetryable(errors.New("unsupported own index job type"))
