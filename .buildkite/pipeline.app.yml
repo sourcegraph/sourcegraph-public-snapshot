@@ -62,6 +62,7 @@ steps:
       - label: "wait for bundles to complete"
         wait: ~
       - label: ':github: Create GitHub release'
+        agent: { queue: stateless }
         key: create-github-release
         command:
           - './enterprise/dev/app/create-github-release.sh'
