@@ -11,10 +11,16 @@ import { BrandLogo } from '../components/branding/BrandLogo'
 import { PageTitle } from '../components/PageTitle'
 import { refreshSiteFlags } from '../site/backend'
 
-import { LocalRepositoriesStep } from './components/local-repositories-step'
-import { RemoteRepositoriesStep } from './components/remote-repositories-step'
-import { SetupStepsRoot, SetupStepsContent, SetupStepsFooter, StepConfiguration } from './components/setup-steps'
-import { SyncRepositoriesStep } from './components/SyncRepositoriesStep'
+import {
+    StepConfiguration,
+    SetupStepsRoot,
+    SetupStepsHeader,
+    SetupStepsContent,
+    SetupStepsFooter,
+    LocalRepositoriesStep,
+    RemoteRepositoriesStep,
+    SyncRepositoriesStep,
+} from './components'
 
 import styles from './Setup.module.scss'
 
@@ -117,7 +123,11 @@ export const SetupWizard: FC<SetupWizardProps> = props => {
                         </H2>
                     </header>
 
-                    <SetupStepsContent telemetryService={telemetryService} />
+                    <SetupStepsHeader className={styles.steps} />
+                    <SetupStepsContent
+                        contentContainerClass={styles.contentContainer}
+                        telemetryService={telemetryService}
+                    />
                 </div>
 
                 <SetupStepsFooter className={styles.footer} />

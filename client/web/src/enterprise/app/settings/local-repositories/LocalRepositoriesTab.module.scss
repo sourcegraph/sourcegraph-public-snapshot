@@ -1,7 +1,7 @@
 .root {
-    width: 100%;
     display: flex;
     flex-direction: column;
+    width: 100%;
 }
 
 .header-actions {
@@ -42,6 +42,19 @@
 
     &--directory {
         flex-direction: column;
+    }
+
+    &-directory-content-wrapper {
+        display: flex;
+        column-gap: 0.5rem;
+        row-gap: 0.25rem;
+        flex-grow: 1;
+    }
+
+    &-directory-path {
+        display: flex;
+        column-gap: 0.5rem;
+        flex: 1;
     }
 
     &-content {
