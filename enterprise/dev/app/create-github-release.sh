@@ -4,8 +4,6 @@ set -eu
 cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. || exit 1
 
 download_artifacts() {
-  local src
-  local target
   src=$1
   dest=$2
   mkdir -p "${dest}"

@@ -69,7 +69,7 @@ create_app_archive() {
 }
 
 cleanup_codesigning() {
-    if [[ -n $(security list-keychains -d user | grep "my_temporary_keychain") ]]; then
+    if [[ $(security list-keychains -d user | grep -q "my_temporary_keychain") ]]; then
       set +e
       echo "--- :broom: cleaning up keychains"
       security delete-keychain my_temporary_keychain.keychain
@@ -89,11 +89,11 @@ pre_codesign() {
     local secrets
     echo "--- :aws: Retrieving signing secrets"
     secrets=$(aws secretsmanager get-secret-value --secret-id sourcegraph/mac-codesigning | jq '.SecretString |  fromjson')
-    export APPLE_SIGNING_IDENTITY="$(echo ${secrets} | jq -r '.APPLE_SIGNING_IDENTITY')"
-    export APPLE_CERTIFICATE="$(echo ${secrets} | jq -r '.APPLE_CERTIFICATE')"
-    export APPLE_CERTIFICATE_PASSWORD="$(echo ${secrets} | jq -r  '.APPLE_CERTIFICATE_PASSWORD')"
-    export APPLE_ID="$(echo ${secrets} | jq -r '.APPLE_ID')"
-    export APPLE_PASSWORD="$(echo ${secrets} | jq -r '.APPLE_PASSWORD')"
+    export APPLE_SIGNING_IDENTITY="$(echo "${secrets}" | jq -r '.APPLE_SIGNING_IDENTITY')"
+    export APPLE_CERTIFICATE="$(echo "${secrets}" | jq -r '.APPLE_CERTIFICATE')"
+    export APPLE_CERTIFICATE_PASSWORD="$(echo "${secrets}" | jq -r  '.APPLE_CERTIFICATE_PASSWORD')"
+    export APPLE_ID="$(echo "${secrets}" | jq -r '.APPLE_ID')"
+    export APPLE_PASSWORD="$(echo "${secrets}" | jq -r '.APPLE_PASSWORD')"
   fi
   # We expect the same APPLE_ env vars that Tauri does here, see https://tauri.app/v1/guides/distribution/sign-macos
   cleanup_codesigning
@@ -121,12 +121,12 @@ secret_value() {
   name=$1
   if [[ $(uname -s) == "Darwin" ]]; then
     # host is in aws - probably
-    value=$(aws secretsmanager get-secret-value --secret-id ${target} | jq '.SecretString | fromjson')
+    value=$(aws secretsmanager get-secret-value --secret-id "${name}" | jq '.SecretString | fromjson')
   else
     # On Linux we assume we're in GCP thus the secret should be injected as an evironment variable. Please check the instance configuration
     value=""
   fi
-  echo ${value}
+  echo "${value}"
 }
 
 build() {
@@ -139,13 +139,13 @@ build() {
     echo "--- :aws::gcp::tauri: Retrieving tauri signing secrets"
     secrets=$(secret_value "sourcegraph/tauri-key")
     # if the value is not found in secrets we default to an empty string
-    export TAURI_PRIVATE_KEY="${TAURI_PRIVATE_KEY:-"$(echo ${secrets} | jq -r '.TAURI_PRIVATE_KEY' | base64 -d || echo '')"}"
-    export TAURI_KEY_PASSWORD="${TAURI_KEY_PASSWORD:-"$(echo ${secrets} | jq -r '.TAURI_KEY_PASSWORD' || echo '')"}"
+    export TAURI_PRIVATE_KEY="${TAURI_PRIVATE_KEY:-"$(echo "${secrets}" | jq -r '.TAURI_PRIVATE_KEY' | base64 -d || echo '')"}"
+    export TAURI_KEY_PASSWORD="${TAURI_KEY_PASSWORD:-"$(echo "${secrets}" | jq -r '.TAURI_KEY_PASSWORD' || echo '')"}"
   fi
 
   echo "--- :tauri: Building Application (${VERSION}) for platform: ${platform}"
   NODE_ENV=production pnpm run build-app-shell
-  pnpm tauri build --bundles deb,appimage,app,dmg,updater --target ${platform}
+  pnpm tauri build --bundles deb,appimage,app,dmg,updater --target "${platform}"
 }
 
 if [[ ${CI:-""} == "true" ]]; then
@@ -153,7 +153,7 @@ if [[ ${CI:-""} == "true" ]]; then
 fi
 
 VERSION=$(./enterprise/dev/app/app_version.sh)
-set_version ${VERSION}
+set_version "${VERSION}"
 
 
 if [[ ${CODESIGNING:-"0"} == 1 && $(uname -s) == "Darwin" ]]; then
@@ -173,9 +173,9 @@ if [[ ${CODESIGNING:-"0"} == 1 && $(uname -s) == "Darwin" ]]; then
 fi
 
 PLATFORM="$(./enterprise/dev/app/detect_platform.sh)"
-build ${PLATFORM}
+build "${PLATFORM}"
 
-create_app_archive ${VERSION}
+create_app_archive "${VERSION}"
 
 if [[ ${CI:-""} == "true" ]]; then
   upload_dist

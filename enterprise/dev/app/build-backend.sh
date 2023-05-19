@@ -30,7 +30,7 @@ go_build() {
 
   echo "--- :go: Building Sourcegraph Backend (${version}) for platform: ${platform}"
   GOOS=darwin GOARCH=amd64 go build \
-    -o .bin/sourcegraph-backend-${platform} \
+    -o ".bin/sourcegraph-backend-${platform}" \
     -trimpath \
     -tags dist \
     -ldflags "$ldflags" \
@@ -69,11 +69,11 @@ bazel_build() {
   fi
 
   echo "--- :bazel: Building Sourcegraph Backend (${VERSION}) for platform: ${platform}"
-  ${bazel_cmd} build ${bazel_target} ${bazel_opts}
+  ${bazel_cmd} build ${bazel_target} "${bazel_opts}"
 
   out=$(bazel cquery //enterprise/cmd/sourcegraph:sourcegraph --output=files)
   mkdir -p "${bin_dir}"
-  chmod +x ${out}
+  chmod +x "${out}"
   cp -vf "${out}" "${bin_dir}/sourcegraph-backend-${platform}"
 }
 
@@ -95,7 +95,7 @@ export VERSION
 
 if [[ ${CROSS_COMPILE_X86_64_MACOS:-0} == 1 ]]; then
   # TODO(burmudar) fix the bazel build - the --incompatible toolchain flag in the root .bazelrc is breaking it
-  go_build ${PLATFORM} ${VERSION}
+  go_build "${PLATFORM}" "${VERSION}"
 else
   bazel_build "${PLATFORM}" ".bin"
 fi

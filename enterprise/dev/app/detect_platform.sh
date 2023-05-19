@@ -34,7 +34,7 @@ detect_platform() {
     platform="${PLATFORM_OVERRIDE}"
   fi
 
-  echo ${platform}
+  echo "${platform}"
 }
 
 detect_platform
