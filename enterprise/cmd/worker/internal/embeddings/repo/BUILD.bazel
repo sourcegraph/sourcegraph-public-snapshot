@@ -11,7 +11,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/embeddings/repo",
     visibility = ["//enterprise/cmd/worker:__subpackages__"],
     deps = [
-        "//cmd/searcher/shared",
         "//cmd/worker/job",
         "//cmd/worker/shared/init/db",
         "//enterprise/cmd/worker/shared/init/codeintel",
