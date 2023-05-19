@@ -170,11 +170,15 @@ func TestBagUserFoundNoMatches(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 	ctx := context.Background()
+	const verifiedEmail = "john.doe@example.com"
 	user, err := db.Users().Create(ctx, database.NewUser{
-		Email:           "john.doe@example.com",
+		Email:           verifiedEmail,
 		Username:        "jdoe",
 		EmailIsVerified: true,
 	})
+	require.NoError(t, err)
+	// Make user email verified.
+	err = db.UserEmails().SetVerified(ctx, user.ID, verifiedEmail, true)
 	require.NoError(t, err)
 	// Now we add 1 unverified email.
 	verificationCode := "ok"
@@ -216,7 +220,7 @@ func TestBagUserFoundNoMatches(t *testing.T) {
 		validationRef Reference
 	}{
 		"Search by handle":         {searchTerm: "jdoe", validationRef: Reference{Handle: "jdoe"}},
-		"Search by verified email": {searchTerm: "john-aka-im-rich@didyouget.it", validationRef: Reference{Email: "john-aka-im-rich@didyouget.it"}},
+		"Search by verified email": {searchTerm: verifiedEmail, validationRef: Reference{Email: verifiedEmail}},
 	}
 	for testName, testCase := range tests {
 		t.Run(testName, func(t *testing.T) {
