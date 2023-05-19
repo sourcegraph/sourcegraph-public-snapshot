@@ -99,6 +99,7 @@ const register = async (
         chatClient,
         intentDetector,
         codebaseContext,
+        guardrails,
         editor,
         secretStorage,
         localStorage,

@@ -15,6 +15,7 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
+import { Guardrails, annotateAttribution } from '@sourcegraph/cody-shared/src/guardrails'
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
@@ -83,6 +84,7 @@ type Config = Pick<
     | 'accessToken'
     | 'useContext'
     | 'experimentalChatPredictions'
+    | 'experimentalGuardrails'
 >
 
 export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
@@ -116,6 +118,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         private chat: ChatClient,
         private intentDetector: IntentDetector,
         private codebaseContext: CodebaseContext,
+        private guardrails: Guardrails,
         private editor: VSCodeEditor,
         private secretStorage: SecretStorage,
         private localStorage: LocalStorage,
@@ -297,7 +300,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 const lastInteraction = this.transcript.getLastInteraction()
                 if (lastInteraction) {
                     const displayText = reformatBotMessage(text, responsePrefix)
-                    const { text: highlightedDisplayText } = await highlightTokens(displayText || '', filesExist)
+                    let { text: highlightedDisplayText } = await highlightTokens(displayText || '', filesExist)
+                    if (this.config.experimentalGuardrails) {
+                        // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
+                        highlightedDisplayText = await annotateAttribution(this.guardrails, highlightedDisplayText)
+                    }
                     this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
                     this.editor.controller.reply(highlightedDisplayText)
                 }
