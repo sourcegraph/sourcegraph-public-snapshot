@@ -6,6 +6,7 @@ Administration is usually handled by site administrators are the admins responsi
 
 - [Deployment overview](deploy/index.md)
   - [Kubernetes](deploy/kubernetes/index.md)
+  - [Docker Compose](deploy/docker-compose/index.md)
   - [Machine Images](deploy/machine-images/index.md)
   - [See all deployment options](deploy/index.md#deployment-types)
 - [Best practices](deployment_best_practices.md)
