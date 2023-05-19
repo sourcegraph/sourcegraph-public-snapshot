@@ -65,6 +65,7 @@ func Test_JanitorTable(t *testing.T) {
 	store := basestore.NewWithHandle(db.Handle())
 
 	clearTable := func(t *testing.T) {
+		t.Helper()
 		err := store.Exec(ctx, sqlf.Sprintf("truncate %s", sqlf.Sprintf(tableName)))
 		if err != nil {
 			t.Fatal(err)
@@ -72,6 +73,7 @@ func Test_JanitorTable(t *testing.T) {
 	}
 
 	countRows := func(t *testing.T) int {
+		t.Helper()
 		val, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf("select count(*) from %s", sqlf.Sprintf(tableName))))
 		if err != nil {
 			t.Fatal(err)
