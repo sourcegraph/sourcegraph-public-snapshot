@@ -1,0 +1,12 @@
+include: ./sourcegraph-base.yaml
+
+contents:
+  packages:
+    # Included by existing SG base image
+    - tini
+    - mailcap
+
+    ## executor packages
+    - ca-certificates
+    - git
+    - docker-client@sourcegraph
