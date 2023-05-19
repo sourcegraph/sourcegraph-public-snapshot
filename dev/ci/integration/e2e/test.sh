@@ -5,7 +5,7 @@ set -e
 
 URL="${1:-"http://localhost:7080"}"
 
-echo "--- pnpm run test-e2e"
+echo "--- bazel test e2e"
 bazel \
   --bazelrc=.bazelrc \
   --bazelrc=.aspect/bazelrc/ci.bazelrc \
