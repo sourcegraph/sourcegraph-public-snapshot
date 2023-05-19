@@ -1509,7 +1509,7 @@ func (br *blobReader) convertError(err error) error {
 
 // Stat returns a FileInfo describing the named file at commit.
 func (c *clientImplementor) Stat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (_ fs.FileInfo, err error) {
-	ctx, _, endObservation := c.operations.readFile.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+	ctx, _, endObservation := c.operations.stat.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("commit", string(commit)),
 		attribute.String("path", path),
 	}})
@@ -1626,7 +1626,7 @@ func (c *clientImplementor) GetCommit(ctx context.Context, checker authz.SubRepo
 // Commits returns all commits matching the options.
 func (c *clientImplementor) Commits(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, opt CommitsOptions) (_ []*gitdomain.Commit, err error) {
 	opt = addNameOnly(opt, checker)
-	ctx, _, endObservation := c.operations.getCommit.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+	ctx, _, endObservation := c.operations.commits.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("repo", string(repo)),
 		attribute.String("opts", fmt.Sprintf("%#v", opt)),
 	}})
