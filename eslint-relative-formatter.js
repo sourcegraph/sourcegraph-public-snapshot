@@ -1,3 +1,4 @@
+/* eslint-disable */
 // The default ESLint formatter with relative paths.
 // Forked from https://github.com/eslint/eslint/blob/main/lib/cli-engine/formatters/stylish.js
 
