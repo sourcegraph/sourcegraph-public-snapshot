@@ -119,9 +119,9 @@ When creating your fine-grained access token, select the following permissions d
 
 ### Private repositories
 
-A [token that has the prerequisite scopes](#github-api-token-and-access) is required in order to clone private repositories for search, as well as at least read access to the relevant private repositories.
+To clone and search private repositories, we need [a GitHub access token](#github-api-access) with the required scopes and at least read access to the relevant private repositories.
 
-See [GitHub API token and access](#github-api-token-and-access) for more details.
+For more details, see [GitHub API access](#github-api-access).
 
 ## Selecting repositories to sync
 
@@ -169,7 +169,7 @@ Then, add or edit the GitHub connection as described above and include the `auth
 
 This needs to be done for every github code host connection if there is more than one configured.
 
-A [token that has the prerequisite scopes](#github-api-token-and-access) and both read and write access to all relevant repositories is required in order to list collaborators for each repository to perform a complete sync.
+Repo-centric permission syncing is done by calling the [list repository collaborators GitHub API endpoint](https://docs.github.com/en/rest/collaborators/collaborators#list-repository-collaborators). To call this API endpoint correctly, we need a [GitHub access token](#github-api-access) with the required scopes and read and write access to all relevant repositories.
 
 > IMPORTANT: We strongly recommend configuring both read and write access to associated repositories for permission syncing due to GitHub's token scope requirements. Without write access, there will be a conflict between [user-centric sync](../permissions/syncing.md#troubleshooting) and repo-centric sync. In that case, [disable repo-centric permission sync](../permissions/syncing#disable-repo-centric-permission-sync) (supported in <span class="badge badge-note">Sourcegraph 5.0.4+</span>).
 
@@ -225,8 +225,8 @@ In the corresponding [authorization provider](../auth/index.md#github) in [site 
 }
 ```
 
-A [token that has the prerequisite scopes](#github-api-token-and-access) and both read and write access to all relevant repositories and organizations is required to fetch repository and team permissions and team memberships is required and cache them across syncs.
-Read-only access will *not* work with cached permissions sync, but will work with [regular GitHub permissions sync](#repository-permissions).
+A [token that has the required scopes](#github-api-access) and both read and write access to all relevant repositories and organizations is needed to fetch repository permissions and team memberships. 
+Read-only access will *not* work with cached permissions sync, but will work with careful configuration for [regular GitHub permissions sync](#repository-permissions).
 
 When enabling this feature, we currently recommend a default `groupsCacheTTL` of `72` (hours, or 3 days). A lower value can be set if your teams and organizations change frequently, though the chosen value must be at least several hours for the cache to be leveraged in the event of being rate-limited (which takes [an hour to recover from](https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting)).
 
