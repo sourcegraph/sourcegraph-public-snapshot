@@ -83,6 +83,11 @@ const REQUESTERS: Record<string, TokenRequester> = {
         callbackType: 'new-tab',
     },
 }
+
+export function isAccessTokenCallbackPage(): boolean {
+    return location.pathname.startsWith('/users/') && location.pathname.endsWith('/settings/tokens/new/callback')
+}
+
 /**
  * This page acts as a callback URL after the authentication process has been completed by a user.
  * This can be shared among different SG integrations as long as the value that is being passed in
