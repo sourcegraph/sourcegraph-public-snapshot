@@ -88,7 +88,6 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     // so that Layout can always render the navbar.
     const needsSiteInit = window.context?.needsSiteInit
     const disableFeedbackSurvey = window.context?.disableFeedbackSurvey
-    const needsRepositoryConfiguration = window.context?.needsRepositoryConfiguration
     const isSiteInit = location.pathname === PageRoutes.SiteAdminInit
     const isSignInOrUp =
         routeMatch &&
@@ -161,7 +160,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     // TODO remove window.context and use injected context store/props
     if (
         !props.isSourcegraphApp &&
-        needsRepositoryConfiguration &&
+        window.context?.needsRepositoryConfiguration &&
         !wasSetupWizardSkipped &&
         props.authenticatedUser?.siteAdmin
     ) {
