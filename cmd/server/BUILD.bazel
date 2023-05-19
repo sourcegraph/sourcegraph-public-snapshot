@@ -128,4 +128,5 @@ container_structure_test(
     configs = ["image_test.yaml"],
     driver = "docker",
     image = ":image_tarball",
+    tags = ["requires-network"],
 )
