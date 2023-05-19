@@ -214,8 +214,10 @@ export const UserSettingsCreateAccessTokenCallbackPage: React.FC<Props> = ({
         <div className={styles.wrapper}>
             <BrandLogo className={styles.logo} isLightTheme={isLightTheme} variant="logo" />
 
-            <Card className="p-3">
-                <H2 as={H1}>Authorize {requester.name}?</H2>
+            <Card className={styles.card}>
+                <H2 as={H1} className={styles.heading}>
+                    Authorize {requester.name}?
+                </H2>
 
                 <Text weight="bold">This grants access to:</Text>
                 <ul>

@@ -19,6 +19,17 @@
     min-height: 54px;
 }
 
+.card {
+    padding: 1.75rem 1.5rem;
+    box-shadow: var(--box-shadow);
+    border-color: var(--border-color);
+    --card-border-radius: 6px;
+}
+
+.heading {
+    letter-spacing: -0.015625rem;
+}
+
 .button-row {
     display: flex;
     flex-direction: row;
