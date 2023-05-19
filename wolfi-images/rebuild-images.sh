@@ -22,10 +22,13 @@ COMMENT_TOKEN="MANUAL REBUILD"
 DATE=$(date)
 
 # Search Wolfi YAML files - if no matching comment exists, append it
+# shellcheck disable=SC2086
 grep -L "$COMMENT_TOKEN" ./${IMAGE}.yaml | xargs -I {} sh -c "echo \"\n# $COMMENT_TOKEN: \" >> {}"
 
 # Update comment to include the current date & time
+# shellcheck disable=SC2086
 sed -i '' "s/# $COMMENT_TOKEN: .*/# $COMMENT_TOKEN: $DATE/" ./${IMAGE}.yaml
 
 echo "Buildkite will rebuild the following base images on next push:"
+# shellcheck disable=SC2086
 grep -l "# $COMMENT_TOKEN: $DATE" ./${IMAGE}.yaml | sed "s/\.\/\(${IMAGE_REGEX}\)\.yaml/ 🐳 \1/"
