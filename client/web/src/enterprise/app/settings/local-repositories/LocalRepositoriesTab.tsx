@@ -223,22 +223,24 @@ const DirectoryItem: FC<DirectoryItemProps> = ({ directory, onDelete }) => (
         <Collapse>
             {({ isOpen, setOpen }) => (
                 <>
-                    <div className={styles.listItemContent}>
+                    <div className={styles.listItemDirectoryContentWrapper}>
                         <Button
                             variant="secondary"
                             outline={true}
                             onClick={() => setOpen(!isOpen)}
                             className={styles.listItemDirectoryContent}
                         >
-                            <Icon
-                                aria-hidden={true}
-                                svgPath={mdiFolderMultipleOutline}
-                                inline={false}
-                                className={styles.listItemIcon}
-                            />
-                            <Text weight="bold" className={styles.listItemName}>
-                                {directory.path}
-                            </Text>
+                            <div className={styles.listItemDirectoryPath}>
+                                <Icon
+                                    aria-hidden={true}
+                                    svgPath={mdiFolderMultipleOutline}
+                                    inline={false}
+                                    className={styles.listItemIcon}
+                                />
+                                <Text weight="bold" className={styles.listItemName}>
+                                    {directory.path}
+                                </Text>
+                            </div>
                             <Text size="small" className={styles.listItemDescription}>
                                 This folder contains {directory.repositories.length}{' '}
                                 {pluralize('repository', directory.repositories.length, 'repositories')}
