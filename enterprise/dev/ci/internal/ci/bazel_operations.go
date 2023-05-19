@@ -28,6 +28,18 @@ func BazelOperations() []operations.Operation {
 	return ops
 }
 
+func bazelTmpServerBackendIntegration(candidateImageTag string) func(*bk.Pipeline) {
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(":bazel: backend integration wip wip",
+			bk.DependsOn("bazel_build"),
+			bk.Env("IMAGE", images.DevRegistryImage("server", candidateImageTag)),
+			bk.Cmd("dev/ci/integration/backend/run.sh"),
+			bk.ArtifactPaths("./*.log"),
+			bk.Agent("queue", "bazel"),
+		)
+	}
+}
+
 func bazelCmd(args ...string) string {
 	pre := []string{
 		"bazel",
@@ -156,6 +168,7 @@ func bazelTestWithDepends(optional bool, dependsOn string, targets ...string) fu
 
 func bazelBuild(targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
+		bk.Key("bazel_build"),
 		bk.Agent("queue", "bazel"),
 	}
 	bazelCmd := bazelCmd(fmt.Sprintf("build %s", strings.Join(targets, " ")))

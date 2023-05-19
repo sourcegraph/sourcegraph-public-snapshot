@@ -98,6 +98,13 @@ http_archive(
     ],
 )
 
+http_archive(
+    name = "container_structure_test",
+    sha256 = "42edb647b51710cb917b5850380cc18a6c925ad195986f16e3b716887267a2d7",
+    strip_prefix = "container-structure-test-104a53ede5f78fff72172639781ac52df9f5b18f",
+    urls = ["https://github.com/GoogleContainerTools/container-structure-test/archive/104a53ede5f78fff72172639781ac52df9f5b18f.zip"],
+)
+
 # hermetic_cc_toolchain setup ================================
 HERMETIC_CC_TOOLCHAIN_VERSION = "v2.0.0-rc2"
 http_archive(
@@ -356,3 +363,6 @@ nix_deps()
 load("//enterprise/cmd/embeddings/shared:assets.bzl", "embbedings_assets_deps")
 
 embbedings_assets_deps()
+
+load("@container_structure_test//:repositories.bzl", "container_structure_test_register_toolchain")
+container_structure_test_register_toolchain(name = "cst")
