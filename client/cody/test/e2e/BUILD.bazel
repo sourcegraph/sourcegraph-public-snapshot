@@ -1,21 +1,8 @@
-load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
-
-# load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "ts_project")
-
-# npm_link_all_packages(name = "node_modules")
 
 # gazelle:js_resolve vscode //:node_modules/@vscode
 # gazelle:js_files **/*.{ts,tsx}
 # gazelle:js_test_files **/*.{ts,tsx}
-
-ts_config(
-    name = "tsconfig",
-    src = "../../tsconfig.json",
-    deps = [
-        "//client/cody:tsconfig",
-    ],
-)
 
 ts_project(
     name = "e2e_tests",
@@ -24,7 +11,7 @@ ts_project(
         "auth.test.ts",
         "helpers.ts",
     ],
-    tsconfig = ":tsconfig",
+    tsconfig = "//client/cody:tsconfig",
     deps = [
         "//:node_modules/@types/node",
         "//:node_modules/@vscode/test-electron",
