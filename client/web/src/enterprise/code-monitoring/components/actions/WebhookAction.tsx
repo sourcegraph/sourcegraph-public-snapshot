@@ -10,6 +10,8 @@ import { ActionProps } from '../FormActionArea'
 
 import { ActionEditor } from './ActionEditor'
 
+;[].forEach(console.log)
+
 export const SEND_TEST_WEBHOOK = gql`
     mutation SendTestWebhook($namespace: ID!, $description: String!, $webhook: MonitorWebhookInput!) {
         triggerTestWebhookAction(namespace: $namespace, description: $description, webhook: $webhook) {
