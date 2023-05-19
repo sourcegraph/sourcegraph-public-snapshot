@@ -10,8 +10,10 @@ import {
     IS_CONTEXT_REQUIRED_QUERY,
     REPOSITORY_ID_QUERY,
     SEARCH_EMBEDDINGS_QUERY,
+    LEGACY_SEARCH_EMBEDDINGS_QUERY,
     LOG_EVENT_MUTATION,
     REPOSITORY_EMBEDDING_EXISTS_QUERY,
+    CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY,
 } from './queries'
 
 interface APIResponse<T> {
@@ -21,6 +23,10 @@ interface APIResponse<T> {
 
 interface CurrentUserIdResponse {
     currentUser: { id: string } | null
+}
+
+interface CurrentUserIdHasVerifiedEmailResponse {
+    currentUser: { id: string; hasVerifiedEmail: boolean } | null
 }
 
 interface RepositoryIdResponse {
@@ -35,9 +41,15 @@ interface EmbeddingsSearchResponse {
     embeddingsSearch: EmbeddingsSearchResults
 }
 
+interface EmbeddingsMultiSearchResponse {
+    embeddingsMultiSearch: EmbeddingsSearchResults
+}
+
 interface LogEventResponse {}
 
 export interface EmbeddingsSearchResult {
+    repoName?: string
+    revision?: string
     fileName: string
     startLine: number
     endLine: number
@@ -77,10 +89,25 @@ export class SourcegraphGraphQLAPIClient {
         this.config = newConfig
     }
 
+    public isDotCom(): boolean {
+        return new URL(this.config.serverEndpoint).origin === new URL(this.dotcomUrl).origin
+    }
+
     public async getCurrentUserId(): Promise<string | Error> {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdResponse>>(CURRENT_USER_ID_QUERY, {}).then(response =>
             extractDataOrError(response, data =>
                 data.currentUser ? data.currentUser.id : new Error('current user not found')
+            )
+        )
+    }
+
+    public async getCurrentUserIdAndVerifiedEmail(): Promise<{ id: string; hasVerifiedEmail: boolean } | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdHasVerifiedEmailResponse>>(
+            CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY,
+            {}
+        ).then(response =>
+            extractDataOrError(response, data =>
+                data.currentUser ? { ...data.currentUser } : new Error('current user not found')
             )
         )
     }
@@ -141,12 +168,27 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async searchEmbeddings(
+        repos: string[],
+        query: string,
+        codeResultsCount: number,
+        textResultsCount: number
+    ): Promise<EmbeddingsSearchResults | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<EmbeddingsMultiSearchResponse>>(SEARCH_EMBEDDINGS_QUERY, {
+            repos,
+            query,
+            codeResultsCount,
+            textResultsCount,
+        }).then(response => extractDataOrError(response, data => data.embeddingsMultiSearch))
+    }
+
+    // (Naman): This is a temporary workaround for supporting vscode cody integrated with older version of sourcegraph which do not support the latest searchEmbeddings query.
+    public async legacySearchEmbeddings(
         repo: string,
         query: string,
         codeResultsCount: number,
         textResultsCount: number
     ): Promise<EmbeddingsSearchResults | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<EmbeddingsSearchResponse>>(SEARCH_EMBEDDINGS_QUERY, {
+        return this.fetchSourcegraphAPI<APIResponse<EmbeddingsSearchResponse>>(LEGACY_SEARCH_EMBEDDINGS_QUERY, {
             repo,
             query,
             codeResultsCount,

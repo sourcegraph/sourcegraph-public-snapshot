@@ -12,6 +12,7 @@ go_library(
         "references.go",
         "retrieval.go",
         "store.go",
+        "summary.go",
         "uploads.go",
         "util.go",
     ],
@@ -31,14 +32,15 @@ go_library(
         "//lib/errors",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_lib_pq//:pq",
-        "@com_github_opentracing_opentracing_go//log",
         "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
 go_test(
     name = "store_test",
     srcs = [
+        "coordinator_test.go",
         "definitions_test.go",
         "mapper_test.go",
         "paths_test.go",
@@ -63,6 +65,7 @@ go_test(
         "//internal/database/basestore",
         "//internal/database/dbtest",
         "//internal/observation",
+        "//internal/timeutil",
         "@com_github_google_go_cmp//cmp",
         "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_lib_pq//:pq",

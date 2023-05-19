@@ -3,11 +3,9 @@ package store
 import (
 	"context"
 	"sort"
-	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -21,12 +19,12 @@ import (
 
 // GetIndexes returns a list of indexes and the total count of records matching the given conditions.
 func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []uploadsshared.Index, _ int, err error) {
-	ctx, trace, endObservation := s.operations.getIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", opts.RepositoryID),
-		log.String("state", opts.State),
-		log.String("term", opts.Term),
-		log.Int("limit", opts.Limit),
-		log.Int("offset", opts.Offset),
+	ctx, trace, endObservation := s.operations.getIndexes.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", opts.RepositoryID),
+		attribute.String("state", opts.State),
+		attribute.String("term", opts.Term),
+		attribute.Int("limit", opts.Limit),
+		attribute.Int("offset", opts.Offset),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -186,8 +184,8 @@ func scanIndex(s dbutil.Scanner) (index uploadsshared.Index, err error) {
 
 // GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
 func (s *store) GetIndexByID(ctx context.Context, id int) (_ uploadsshared.Index, _ bool, err error) {
-	ctx, _, endObservation := s.operations.getIndexByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("id", id),
+	ctx, _, endObservation := s.operations.getIndexByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -234,8 +232,8 @@ WHERE repo.deleted_at IS NULL AND u.id = %s AND %s
 // GetIndexesByIDs returns an index for each of the given identifiers. Not all given ids will necessarily
 // have a corresponding element in the returned list.
 func (s *store) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []uploadsshared.Index, err error) {
-	ctx, _, endObservation := s.operations.getIndexesByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("ids", intsToString(ids)),
+	ctx, _, endObservation := s.operations.getIndexesByIDs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.IntSlice("ids", ids),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -291,8 +289,8 @@ ORDER BY u.id
 
 // DeleteIndexByID deletes an index by its identifier.
 func (s *store) DeleteIndexByID(ctx context.Context, id int) (_ bool, err error) {
-	ctx, _, endObservation := s.operations.deleteIndexByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("id", id),
+	ctx, _, endObservation := s.operations.deleteIndexByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -306,10 +304,10 @@ DELETE FROM lsif_indexes WHERE id = %s RETURNING repository_id
 
 // DeleteIndexes deletes indexes matching the given filter criteria.
 func (s *store) DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) (err error) {
-	ctx, _, endObservation := s.operations.deleteIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", opts.RepositoryID),
-		log.String("states", strings.Join(opts.States, ",")),
-		log.String("term", opts.Term),
+	ctx, _, endObservation := s.operations.deleteIndexes.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", opts.RepositoryID),
+		attribute.StringSlice("states", opts.States),
+		attribute.String("term", opts.Term),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -358,8 +356,8 @@ WHERE u.repository_id = repo.id AND %s
 
 // ReindexIndexByID reindexes an index by its identifier.
 func (s *store) ReindexIndexByID(ctx context.Context, id int) (err error) {
-	ctx, _, endObservation := s.operations.reindexIndexByID.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("id", id),
+	ctx, _, endObservation := s.operations.reindexIndexByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -374,10 +372,10 @@ WHERE id = %s
 
 // ReindexIndexes reindexes indexes matching the given filter criteria.
 func (s *store) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOptions) (err error) {
-	ctx, _, endObservation := s.operations.reindexIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", opts.RepositoryID),
-		log.String("states", strings.Join(opts.States, ",")),
-		log.String("term", opts.Term),
+	ctx, _, endObservation := s.operations.reindexIndexes.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", opts.RepositoryID),
+		attribute.StringSlice("states", opts.States),
+		attribute.String("term", opts.Term),
 	}})
 	defer endObservation(1, observation.Args{})
 

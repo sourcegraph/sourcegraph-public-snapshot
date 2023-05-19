@@ -75,6 +75,14 @@ jobs:
           ./enterprise/dev/app/build-release.sh
         env:
           RELEASE_BUILD: 1
+          # For details on how code signing works, and where these secrets come from / how they
+          # were generated, see doc/dev/background-information/app/codesigning.md
+          CODESIGNING: 1
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

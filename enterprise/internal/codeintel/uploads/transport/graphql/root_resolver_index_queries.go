@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -20,8 +20,8 @@ import (
 const DefaultPageSize = 50
 
 func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.PreciseIndexesQueryArgs) (_ resolverstubs.PreciseIndexConnectionResolver, err error) {
-	ctx, errTracer, endObservation := r.operations.preciseIndexes.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		// log.String("uploadID", string(id)),
+	ctx, errTracer, endObservation := r.operations.preciseIndexes.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		// attribute.String("uploadID", string(id)),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -211,8 +211,8 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 }
 
 func (r *rootResolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ resolverstubs.PreciseIndexResolver, err error) {
-	ctx, errTracer, endObservation := r.operations.preciseIndexByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("id", string(id)),
+	ctx, errTracer, endObservation := r.operations.preciseIndexByID.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("id", string(id)),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 

@@ -94,6 +94,22 @@ func Init(
 				licenseInfo.KnownLicenseTags = append(licenseInfo.KnownLicenseTags, feature.FeatureName())
 			}
 			licenseInfo.KnownLicenseTags = append(licenseInfo.KnownLicenseTags, licensing.MiscTags...)
+		} else {
+			bcFeature := &licensing.FeatureBatchChanges{}
+			if err := licensing.Check(bcFeature); err == nil {
+				if bcFeature.Unrestricted {
+					licenseInfo.BatchChanges = &hooks.FeatureBatchChanges{
+						Unrestricted: true,
+						// Superceded by being unrestricted
+						MaxNumChangesets: -1,
+					}
+				} else {
+					max := int(bcFeature.MaxNumChangesets)
+					licenseInfo.BatchChanges = &hooks.FeatureBatchChanges{
+						MaxNumChangesets: max,
+					}
+				}
+			}
 		}
 
 		return licenseInfo

@@ -13,10 +13,11 @@ import {
 } from '@sourcegraph/cody-ui/src/Chat'
 import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
 import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
-import { Button, Icon, TextArea } from '@sourcegraph/wildcard'
+import { Button, Icon, TextArea, Link } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { useChatStoreState } from '../../stores/chat'
+import { useCodySidebarStore } from '../../stores/sidebar'
 
 import styles from './ChatUi.module.scss'
 
@@ -153,7 +154,8 @@ export const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({
     </button>
 )
 
-export const FileLink: React.FunctionComponent<FileLinkProps> = ({ path }) => <>{path}</>
+export const FileLink: React.FunctionComponent<FileLinkProps> = ({ path, repoName, revision }) =>
+    repoName ? <Link to={`/${repoName}${revision ? `@${revision}` : ''}/-/blob/${path}`}>{path}</Link> : <>{path}</>
 
 interface AutoResizableTextAreaProps extends ChatUITextAreaProps {}
 
@@ -163,6 +165,7 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
     onKeyDown,
     className,
 }) => {
+    const { inputNeedsFocus, setFocusProvided } = useCodySidebarStore()
     const textAreaRef = useRef<HTMLTextAreaElement>(null)
     const { width = 0 } = useResizeObserver({ ref: textAreaRef })
 
@@ -180,6 +183,13 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
     const handleChange = (): void => {
         adjustTextAreaHeight()
     }
+
+    useEffect(() => {
+        if (inputNeedsFocus && textAreaRef.current) {
+            textAreaRef.current.focus()
+            setFocusProvided()
+        }
+    }, [inputNeedsFocus, setFocusProvided])
 
     useEffect(() => {
         adjustTextAreaHeight()

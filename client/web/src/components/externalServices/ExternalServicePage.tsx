@@ -216,7 +216,9 @@ export const ExternalServicePage: FC<Props> = props => {
                                         <Tooltip content="Edit code host connection settings">
                                             <Button
                                                 className="test-edit-external-service-button"
-                                                to={`/site-admin/external-services/${externalService.id}/edit`}
+                                                to={`/site-admin/external-services/${encodeURIComponent(
+                                                    externalService.id
+                                                )}/edit`}
                                                 variant="primary"
                                                 size="sm"
                                                 as={Link}
