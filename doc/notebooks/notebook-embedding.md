@@ -36,7 +36,7 @@ A notebook can be embedded using a standard iframe element. In order for the ifr
 
 ## Domain considerations
 
-Certain browsers (i.e. Safari and Firefox) block cross-domain cookies from being sent in iframe requests. This will prevent an embedded notebook from being displayed, even when a user is logged into Sourcegraph from the same browser. To ensure that notebook embedding requests will be permitted to load for all of your logged-in Sourcegraph users, the Sourcegraph instance must be hosted on the same domain as the page that loads the iframe element. For Cloud customers, see [Custom Domains](../cloud#custom-domains).
+Certain browsers (i.e. Safari and Firefox) block cross-domain cookies from being sent in iframe requests. This will prevent an embedded notebook from being displayed, even when a user is logged into Sourcegraph from the same browser. To ensure that notebook embedding requests will be permitted to load for all of your logged-in Sourcegraph users, the Sourcegraph instance must be hosted on the same domain as the page that loads the iframe element. For Cloud customers, see [Custom Domains](../cloud/index.md#custom-domains).
 
 ## How to embed
 
