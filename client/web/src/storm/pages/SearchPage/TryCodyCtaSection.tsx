@@ -77,7 +77,7 @@ export const TryCodyCtaSection: React.FC<TelemetryProps & { className?: string }
         telemetryService.log(eventName, { type: 'ComHome' }, { type: 'ComHome' })
     const onInstallClick = (): void => logEvent(EventName.TRY_CODY_VSCODE)
     const onMarketplaceClick = (): void => logEvent(EventName.TRY_CODY_MARKETPLACE)
-    const onCookbookClick = (): void => logEvent(EventName.TRY_CODY_WEB)
+    const onTryWebClick = (): void => logEvent(EventName.TRY_CODY_WEB)
 
     if (isDismissed) {
         return null
@@ -128,18 +128,29 @@ export const TryCodyCtaSection: React.FC<TelemetryProps & { className?: string }
                 </Text>
             </MarketingBlock>
             <div className="d-flex flex-column justify-content-center p-4">
-                <H3>Try Cody AI on public code</H3>
+                <H3>Cody for Sourcegraph.com</H3>
                 <Text>
-                    Cody for Sourcegraph.com explains, generates, and translates code, right in the web interface.
+                    A free, helpful AI assistant, that explains, generates, and transpiles code, in the Sourcegraph web
+                    interface.
                 </Text>
-                <Link
-                    to="https://sourcegraph.com/github.com/openai/openai-cookbook/-/blob/apps/file-q-and-a/nextjs-with-flask-server/server/answer_question.py"
-                    className={classNames(styles.tryCookbookLink, 'd-flex align-items-center')}
-                    onClick={onCookbookClick}
+                <Text
+                    as={Link}
+                    to="/cody"
+                    className={classNames('d-flex align-items-center mb-2', styles.tryCodyLink)}
+                    onClick={onTryWebClick}
                 >
-                    Try it on the openai cookbook
-                    <Icon svgPath={mdiArrowRight} aria-hidden={true} size="md" />
-                </Link>
+                    Try Cody chat
+                    <Icon svgPath={mdiArrowRight} aria-hidden={true} size="sm" className="ml-1" />
+                </Text>
+                <Text
+                    as={Link}
+                    to="https://sourcegraph.com/github.com/openai/openai-cookbook/-/blob/apps/file-q-and-a/nextjs-with-flask-server/server/answer_question.py"
+                    className={classNames('d-flex align-items-center', styles.tryCodyLink)}
+                    onClick={onTryWebClick}
+                >
+                    Try Cody on a file
+                    <Icon svgPath={mdiArrowRight} aria-hidden={true} size="sm" className="ml-1" />
+                </Text>
             </div>
             <Button className={classNames(styles.closeButton, 'position-absolute m-0')} onClick={onDismiss}>
                 <Icon svgPath={mdiClose} aria-label="Close try Cody widget" />
