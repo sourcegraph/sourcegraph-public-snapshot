@@ -12,3 +12,4 @@ playwright.config.ts
 .vscode-test
 **/*.json
 **/*.d.ts
+eslint-relative-formatter.js
