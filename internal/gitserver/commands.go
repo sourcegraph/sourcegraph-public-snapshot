@@ -1315,11 +1315,12 @@ func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoN
 }
 
 // MergeBase returns the merge base commit for the specified commits.
-func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, a, b api.CommitID) (api.CommitID, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: MergeBase") //nolint:staticcheck // OT is deprecated
-	span.SetTag("A", a)
-	span.SetTag("B", b)
-	defer span.Finish()
+func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, a, b api.CommitID) (_ api.CommitID, err error) {
+	ctx, _, endObservation := c.operations.mergeBase.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("a", string(a)),
+		attribute.String("b", string(b)),
+	}})
+	defer endObservation(1, observation.Args{})
 
 	cmd := c.gitCommand(repo, "merge-base", "--", string(a), string(b))
 	out, err := cmd.CombinedOutput(ctx)

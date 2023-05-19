@@ -21,6 +21,7 @@ type operations struct {
 	streamBlameFile  *observation.Operation
 	blameFile        *observation.Operation
 	contributorCount *observation.Operation
+	mergeBase        *observation.Operation
 	batchLog         *observation.Operation
 	batchLogSingle   *observation.Operation
 	do               *observation.Operation
@@ -56,6 +57,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		exec:             op("Exec"),
 		p4Exec:           op("P4Exec"),
 		contributorCount: op("ContributorCount"),
+		mergeBase:        op("MergeBase"),
 		resolveRevision:  op("ResolveRevision"),
 		listTags:         op("ListTags"),
 		streamBlameFile:  op("StreamBlameFile"),
