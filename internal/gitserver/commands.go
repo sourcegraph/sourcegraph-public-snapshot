@@ -423,12 +423,13 @@ func (c *clientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, 
 }
 
 // ReadDir reads the contents of the named directory at commit.
-func (c *clientImplementor) ReadDir(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: ReadDir") //nolint:staticcheck // OT is deprecated
-	span.SetTag("Commit", commit)
-	span.SetTag("Path", path)
-	span.SetTag("Recurse", recurse)
-	defer span.Finish()
+func (c *clientImplementor) ReadDir(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string, recurse bool) (_ []fs.FileInfo, err error) {
+	ctx, _, endObservation := c.operations.readDir.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("commit", string(commit)),
+		attribute.String("path", path),
+		attribute.Bool("recurse", recurse),
+	}})
+	defer endObservation(1, observation.Args{})
 
 	if err := checkSpecArgSafety(string(commit)); err != nil {
 		return nil, err
