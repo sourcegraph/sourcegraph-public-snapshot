@@ -8,6 +8,8 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
 	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -55,9 +57,27 @@ func (s *fileHasOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, 
 
 	rules := NewRulesCache(clients.Gitserver, clients.DB)
 
+	// Bag the search terms
+	includeBags := map[string]own.Bag{}
+	for _, o := range s.includeOwners {
+		bag, err := own.ByTextReference(ctx, database.NewEnterpriseDB(clients.DB), o)
+		if err != nil {
+			return nil, errors.Wrap(err, "failure trying to resolve search term")
+		}
+		includeBags[o] = bag
+	}
+	excludeBags := map[string]own.Bag{}
+	for _, o := range s.excludeOwners {
+		bag, err := own.ByTextReference(ctx, database.NewEnterpriseDB(clients.DB), o)
+		if err != nil {
+			return nil, errors.Wrap(err, "failure trying to resolve search term")
+		}
+		excludeBags[o] = bag
+	}
+
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		var err error
-		event.Results, err = applyCodeOwnershipFiltering(ctx, &rules, s.includeOwners, s.excludeOwners, event.Results)
+		event.Results, err = applyCodeOwnershipFiltering(ctx, &rules, s.includeBags, s.excludeBags, event.Results)
 		if err != nil {
 			mu.Lock()
 			errs = errors.Append(errs, err)
@@ -103,8 +123,8 @@ func (s *fileHasOwnersJob) MapChildren(fn job.MapFunc) job.Job {
 func applyCodeOwnershipFiltering(
 	ctx context.Context,
 	rules *RulesCache,
-	includeOwners,
-	excludeOwners []string,
+	includeBags,
+	excludeBags map[string]own.Bag,
 	matches []result.Match,
 ) ([]result.Match, error) {
 	var errs error
@@ -130,13 +150,13 @@ matchesLoop:
 		if rule != nil {
 			owners = rule.GetOwner()
 		}
-		for _, owner := range includeOwners {
-			if !containsOwner(owners, owner) {
+		for owner, bag := range includeBags {
+			if !containsOwner(owners, owner, bag) {
 				continue matchesLoop
 			}
 		}
-		for _, notOwner := range excludeOwners {
-			if containsOwner(owners, notOwner) {
+		for notOwner, bag := range excludeBags {
+			if containsOwner(owners, notOwner, bag) {
 				continue matchesLoop
 			}
 		}
@@ -150,7 +170,7 @@ matchesLoop:
 // containsOwner searches within emails and handles in a case-insensitive
 // manner. Empty string passed as search term means any, so the predicate
 // returns true if there is at least one owner, and false otherwise.
-func containsOwner(owners []*codeownerspb.Owner, owner string) bool {
+func containsOwner(owners []*codeownerspb.Owner, owner string, bag own.Bag) bool {
 	if owner == "" {
 		return len(owners) > 0
 	}
