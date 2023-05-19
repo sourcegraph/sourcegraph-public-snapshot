@@ -51,6 +51,10 @@ func bazelCmd(args ...string) string {
 	return strings.Join(Cmd, " ")
 }
 
+func bazelStampedCmd(args ...string) string {
+	return bazelCmd(append(args, "--stamp", "--workspace_status_command=./dev/bazel_stamp_vars.sh")...)
+}
+
 // bazelAnalysisPhase only runs the analasys phase, ensure that the buildfiles
 // are correct, but do not actually build anything.
 func bazelAnalysisPhase() func(*bk.Pipeline) {
@@ -171,8 +175,12 @@ func bazelBuild(targets ...string) func(*bk.Pipeline) {
 		bk.Key("bazel_build"),
 		bk.Agent("queue", "bazel"),
 	}
-	bazelCmd := bazelCmd(fmt.Sprintf("build %s", strings.Join(targets, " ")))
-	cmds = append(cmds, bk.Cmd(bazelCmd))
+	cmd := bazelStampedCmd(fmt.Sprintf("build %s", strings.Join(targets, " ")))
+	cmds = append(
+		cmds,
+		bk.Cmd(cmd),
+		bk.Cmd(bazelStampedCmd("run //enteprise/cmd/server:candidate_push")),
+	)
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":bazel: Build ...",
