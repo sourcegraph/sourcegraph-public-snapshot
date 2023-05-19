@@ -23,6 +23,7 @@ steps:
           PLATFORM: x86_64-apple-darwin
           CROSS_COMPILE_X86_64_MACOS: 1
         command:
+          - './dev/ci/pnpm-install-with-retry.sh'
           - './enterprise/dev/app/build-backend.sh'
       - label: 'Wait for builds to complete'
         wait: ~
