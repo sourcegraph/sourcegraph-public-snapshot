@@ -244,11 +244,13 @@ public class SettingsComponent implements Disposable {
     }
 
     public boolean areChatPredictionsEnabled() {
-        return areChatPredictionsEnabledCheckBox.isSelected();
+        return areChatPredictionsEnabledCheckBox != null && areChatPredictionsEnabledCheckBox.isSelected();
     }
 
     public void setAreChatPredictionsEnabled(boolean value) {
-        areChatPredictionsEnabledCheckBox.setSelected(value);
+        if (areChatPredictionsEnabledCheckBox != null) {
+            areChatPredictionsEnabledCheckBox.setSelected(value);
+        }
     }
 
     private void setDotcomSettingsEnabled(boolean enable) {
