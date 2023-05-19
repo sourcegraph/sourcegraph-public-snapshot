@@ -1509,11 +1509,12 @@ func (br *blobReader) convertError(err error) error {
 }
 
 // Stat returns a FileInfo describing the named file at commit.
-func (c *clientImplementor) Stat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: Stat") //nolint:staticcheck // OT is deprecated
-	span.SetTag("Commit", commit)
-	span.SetTag("Path", path)
-	defer span.Finish()
+func (c *clientImplementor) Stat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (_ fs.FileInfo, err error) {
+	ctx, _, endObservation := c.operations.readFile.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("commit", string(commit)),
+		attribute.String("path", path),
+	}})
+	defer endObservation(1, observation.Args{})
 
 	if err := checkSpecArgSafety(string(commit)); err != nil {
 		return nil, err
