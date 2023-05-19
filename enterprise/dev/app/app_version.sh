@@ -23,7 +23,7 @@ if [[ ${CI:-""} == "true" ]]; then
 else
   # This CANNOT be 0.0.0+dev, or else the binary will not start:
   # https://github.com/sourcegraph/sourcegraph/issues/50958
-  version=${VERSION:-"1.0.0+dev"}
+  version=${VERSION:-"2023.0.0+dev"}
 fi
 
 echo "${version}"
