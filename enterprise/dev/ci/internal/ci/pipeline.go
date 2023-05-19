@@ -127,6 +127,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			WolfiImagesOperations([]string{
 				"batcheshelper",
 				"blobstore",
+				"bundled-executor",
 				"cadvisor",
 				"codeinsights-db",
 				"codeintel-db",
