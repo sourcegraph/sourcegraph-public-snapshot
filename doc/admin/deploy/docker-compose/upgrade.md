@@ -2,7 +2,7 @@
 
 This document describes the process to update a Docker Compose Sourcegraph instance.
 
-> ***Attention: Always consult the [release notes](../../updates/docker_compose.md) for the version you plan to upgrade to before an upgrade.***
+> ***⚠️ Attention: Always consult the [release notes](../../updates/docker_compose.md) for the versions your upgrade will cross.***
 
 ### Standard upgrades
 
@@ -55,22 +55,67 @@ docker-compose up -d --remove-orphans
 
 ### Multi-version upgrades
 
-> **Attention:** please see our [cautionary note](../../updates/index.md#best-practices) on upgrades, if you have any concerns about running a multiversion upgrade, please reach out to us at [support@sourcegraph.com](emailto:support@sourcegraph.com).
+> **⚠️ Attention:** please see our [cautionary note](../../updates/index.md#best-practices) on upgrades, if you have any concerns about running a multiversion upgrade, please reach out to us at [support@sourcegraph.com](emailto:support@sourcegraph.com) for advisement.
 
-**Before performing a multi-version upgrade**:
-- Check the [upgrade notes](../../updates/docker_compose.md#docker-compose-upgrade-notes) for the version range you're passing through.
-- Check the `Site Admin > Updates` page to determine [upgrade readiness](../../updates/index.md#upgrade-readiness).
+To perform a multi-version upgrade on a Sourcegraph instance running on Docker compose follow the procedure below:
 
-To perform a multi-version upgrade on a Sourcegraph instance running on Docker compose:
+1. **Check Upgrade Readiness**:
+   - Check the [upgrade notes](../../updates/docker_compose.md#docker-compose-upgrade-notes) for the version range you're passing through.
+   - Check the `Site Admin > Updates` page to determine [upgrade readiness](../../updates/index.md#upgrade-readiness).
 
-1. Spin down any pods that access the database. The easiest way to do this is to shut down the instance entirely:
-  - Run `docker-compose stop` in the directory with the `docker-compose.yaml` file.
-2. Pull the upstream changes for the target instance version and resolve any git merge conflicts. The [standard upgrade procedure](#standard-upgrades) describes this step in more detail.
-3. If using local database instances, start the containers now via `docker-compose up -d pgsql codeintel-db codeinsights-db`. The following migrator command will start these containers on-demand if this step is skipped, but running them separately will make startup errors more apparent.
-4. Follow the instructions on [how to run the migrator job in Docker Compose](../../how-to/manual_database_migrations.md#docker--docker-compose) to perform the upgrade migration. For specific documentation on the `upgrade` command, see the [command documentation](../../how-to/manual_database_migrations.md#upgrade). The following specific steps are an easy way to run the upgrade command:
-  1. Edit the definition of the `migrator` container in the `docker-compose.yaml` so that the value of the `command` key is set to `['upgrade', '--from=<old version>', '--to=<new version>']`. It is recommended to also add the `--dry-run` flag on a trial invocation to detect if there are any issues with database connection, schema drift, or mismatched versions that need to be addressed.
-  2. Run the upgrade via `docker-compose up migrator` and wait for it to complete.
-  3. Reset the `command` key altered in the previous steps to `['up']` so that the container initialization process will work as expected.
-5. The remaining infrastructure can now be updated. The [standard upgrade procedure](#standard-upgrades) describes this step in more detail.
-  - Run `docker-compose pull --include-deps` to pull new images.
-  - Run `docker-compose up -d --remove-orphans` to start the containers of the updated instance.
+2. **Disable Connections to the Database**
+   - Run the following command in the directory containing your `docker-compose.yaml` file.
+  ```
+  docker-compose stop && docker-compose up -d pgsql codeintel-db codeinsights-db
+  ```
+3. **Run Migrator with the `upgrade` command**
+   - The following procedure describes running migrator in brief, for more detailed instructions and available command flags see our [migrator docs](../../how-to/manual_database_migrations.md#docker--docker-compose).
+    1. Set the migrator `image:` in your `docker-compose.yaml` to the **latest** release. **Ex:**
+    ```
+      migrator:
+    container_name: migrator
+    image: 'index.docker.io/sourcegraph/migrator:5.0.4'
+    ```
+    2. Set the migrator `command:` to `upgrade` you'll need to supply a `--to=` argument. **Ex:**
+    ```
+    command: ['upgrade', '--from=v4.1.2', '--to=v4.4.0']
+    ```
+    > *Note: you may add the `--dry-run` flag to the `command:` to test things out before altering the dbs*
+    3. Run migrator with `docker-compose up migrator` **Ex:**
+    ```bash
+    λ ~/deploy-sourcegraph-docker/docker-compose/ docker-compose up migrator
+    codeintel-db is up-to-date
+    codeinsights-db is up-to-date
+    pgsql is up-to-date
+    Recreating migrator ... done
+    Attaching to migrator
+    migrator                         | ❗️ An error was returned when detecting the terminal size and capabilities:
+    migrator                         |
+    migrator                         |    GetWinsize: inappropriate ioctl for device
+    migrator                         |
+    migrator                         |    Execution will continue, but please report this, along with your operating
+    migrator                         |    system, terminal, and any other details, to:
+    migrator                         |      https://github.com/sourcegraph/sourcegraph/issues/new
+    migrator                         |
+    migrator                         | ✱ Sourcegraph migrator 4.4.0
+    migrator                         | 👉 Migrating to v4.3 (step 1 of 2)
+    migrator                         | 👉 Running schema migrations
+    migrator                         | ✅ Schema migrations complete
+    migrator                         | 👉 Running out of band migrations [17 18]
+    ✅ Out of band migrations complete
+    migrator                         | 👉 Migrating to v4.4 (step 2 of 2)
+    migrator                         | 👉 Running schema migrations
+    migrator                         | ✅ Schema migrations complete
+    migrator                         | migrator exited with code 0
+    ```
+
+4. **Pull and merge upstream changes** 
+   - Follow the [standard upgrade procedure](#standard-upgrades) to pull and merge upstream changes from the version you are upgrading to to your `release` branch.
+   - **⚠️ Attention:** *merging upstream changes should set the migrator `image:` version back to the release you are upgrading to, and the `command:` should be set back to `up`, this is necessary to start your instance again.*
+
+5. **Start your containers again**
+   - run `docker-compose up -d` in the folder containing your `docker-compose.yaml` file.
+   ```
+   docker-compose up -d
+   ```
+   
