@@ -139,7 +139,6 @@ func Test_JanitorTable(t *testing.T) {
 					assert.Equal(t, expected, countRows(t), "rows in table equal to expected")
 				})
 			}
-
 		})
 	}
 }
