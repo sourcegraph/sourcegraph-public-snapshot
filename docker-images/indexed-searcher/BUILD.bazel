@@ -7,7 +7,7 @@ container_dependencies(DEPS)
 
 oci_image(
     name = "image",
-    base = "@wolfi_server_base",
+    base = "@wolfi_base",
     cmd = [
         "zoekt-webserver",
         "-index",
