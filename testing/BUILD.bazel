@@ -1,0 +1,10 @@
+sh_test(
+    name = "backend",
+    srcs = [":backend.sh"],
+    args = [
+        "$(location //enterprise/cmd/server:image_tarball)",
+    ],
+    data = [
+        "//enterprise/cmd/server:image_tarball",
+    ],
+)
