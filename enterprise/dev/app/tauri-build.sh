@@ -62,7 +62,7 @@ zip_app_and_move() {
 
     target="Sourcegraph.${arch}.app.tar.gz"
     echo "DEBUG 3: $(pwd)"
-    pushd
+    pushd .
     cd "${bundle_path}/macos/"
     echo "DEBUG 4: $(pwd)"
     echo "--- :file_cabinet: Creating archive of ${app_bundle}"
