@@ -5,10 +5,6 @@ contents:
     # Included by existing SG base image
     - tini
 
-    ## TODO: Remove dev testing tools
-    - apk-tools
-    - vim
-
     ## server packages
     - bash
     - ca-certificates # TODO: Required?
