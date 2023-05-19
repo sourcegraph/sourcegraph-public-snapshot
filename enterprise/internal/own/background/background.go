@@ -28,7 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// SignalJob should match the configuration name in the database table own_signal_configurations. This is used to match implementations to configuration.
+// SignalName should match the configuration name in the database table own_signal_configurations. This is used to match implementations to configuration.
 type SignalName string
 
 const (
