@@ -81,7 +81,6 @@ var jobColumns = []*sqlf.Query{
 	sqlf.Sprintf("worker_hostname"),
 	sqlf.Sprintf("cancel"),
 	sqlf.Sprintf("repo_id"),
-	sqlf.Sprintf("job_type"),
 	sqlf.Sprintf("config_name"),
 }
 
@@ -104,7 +103,6 @@ func scanJob(s dbutil.Scanner) (*Job, error) {
 		&job.WorkerHostname,
 		&job.Cancel,
 		&job.RepoId,
-		&job.JobType,
 		&job.ConfigName,
 	); err != nil {
 		return nil, err
