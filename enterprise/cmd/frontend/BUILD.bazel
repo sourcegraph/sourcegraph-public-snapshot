@@ -33,7 +33,8 @@ pkg_tar(
 oci_image(
     name = "image",
     base = "@wolfi_base",
-    entrypoint = ["/frontend"],
+    cmd = ["serve"],
+    entrypoint =  ["/sbin/tini", "--", "/frontend"],
     tars = [":tar_frontend"],
 )
 

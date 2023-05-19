@@ -2,6 +2,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("macro.bzl", "container_dependencies", "dependencies_tars")
+load("//:stamp_tags.bzl", "stamp_tags")
 
 go_library(
     name = "server_lib",
@@ -121,9 +122,14 @@ oci_tarball(
     repo_tags = ["server:candidate"],
 )
 
+stamp_tags(
+    name = "tags",
+    remote_tags = ["""($stamp.STABLE_VERSION // "0.0.0")"""],
+)
+
 oci_push(
-    name = "push",
+    name = "candidate_push",
     image = ":image",
-    remote_tags = ["latest"],
+    remote_tags = ":tags",
     repository = "us.gcr.io/sourcegraph-dev/server",
 )

@@ -26,14 +26,14 @@ go_binary(
 )
 
 pkg_tar(
-    name = "tar_frontend",
+    name = "tar_frontend",\
     srcs = [":frontend"],
 )
 
 oci_image(
     name = "image",
     base = "@wolfi_base",
-    entrypoint = ["/frontend"],
+    entrypoint =  ["/sbin/tini", "--", "/frontend"],
     tars = [":tar_frontend"],
 )
 
