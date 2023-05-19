@@ -28,6 +28,7 @@ import {
     CollapseHeader,
     CollapsePanel,
     H3,
+    H4,
 } from '@sourcegraph/wildcard'
 
 import { LogOutput } from '../components/LogOutput'
@@ -142,22 +143,31 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                     </div>
                     {data.site.upgradeReadiness.schemaDrift.length > 0 ? (
                         <Collapse isOpen={isExpanded} onOpenChange={setIsExpanded} openByDefault={false}>
-                            <Alert className={classNames('mb-0', styles.alert)} variant="danger">
-                                <span>
-                                    There are schema drifts detected, please contact{' '}
-                                    <Link to="mailto:support@sourcegraph.com" target="_blank" rel="noopener noreferrer">
-                                        Sourcegraph support
-                                    </Link>{' '}
-                                    for assistance.
-                                </span>
-                            </Alert>
+                            <div className="mb-4">
+                                <Alert className={classNames('mb-0', styles.alert)} variant="danger">
+                                    <span>
+                                        There are schema drifts detected, please contact{' '}
+                                        <Link
+                                            to="mailto:support@sourcegraph.com"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            Sourcegraph support
+                                        </Link>{' '}
+                                        for assistance.
+                                    </span>
+                                </Alert>
+                            </div>
                             <CollapseHeader
                                 as={Button}
                                 variant="secondary"
                                 outline={true}
-                                className="p-0 m-0 mt-2 mb-2 border-0 w-100 font-weight-normal d-flex justify-content-between align-items-center"
+                                className={classNames(
+                                    'p-0 m-0 mt-2 mb-2 border-0 w-100 font-weight-normal d-flex justify-content-between align-items-center',
+                                    styles.header
+                                )}
                             >
-                                Click to {isExpanded ? 'hide' : 'show'} the drift output:
+                                <H4 className="m-0">View drift output</H4>
                                 <Icon
                                     aria-hidden={true}
                                     svgPath={isExpanded ? mdiChevronUp : mdiChevronDown}
@@ -167,34 +177,41 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                             </CollapseHeader>
                             <CollapsePanel>
                                 {data.site.upgradeReadiness.schemaDrift.map(summary => (
-                                    <div key={summary.name}>
-                                        <p>name: {summary.name}</p>
-                                        <p>problem: {summary.problem}</p>
-                                        <p>solution: {summary.solution}</p>
-                                        {summary.diff && (
-                                            <LogOutput text={summary.diff} logDescription="The object diff" />
-                                        )}
-                                        {summary.urlHint && (
-                                            <p>
-                                                <Link to={summary.urlHint}>hey check it out</Link>
-                                            </p>
-                                        )}
-                                        {summary.statements && (
-                                            <LogOutput
-                                                text={summary.statements.join('\n')}
-                                                logDescription="SQL statements to repair"
-                                            />
-                                        )}
+                                    <div key={summary.name} className={styles.container}>
+                                        <div className={styles.tableContainer}>
+                                            <div className={styles.table}>
+                                                <div className={styles.label}>Problem</div>
+                                                <div>{summary.problem}</div>
+                                            </div>
+                                            <div className={styles.table}>
+                                                <div className={styles.label}>Solution</div>
+                                                <div>{summary.solution}</div>
+                                            </div>
+                                        </div>
+                                        <div className={styles.outputContainer}>
+                                            {summary.diff && (
+                                                <LogOutput text={summary.diff} logDescription="The object diff" />
+                                            )}
+                                            {summary.urlHint && (
+                                                <p>
+                                                    <Link to={summary.urlHint}>hey check it out</Link>
+                                                </p>
+                                            )}
+                                            {summary.statements && (
+                                                <LogOutput
+                                                    text={summary.statements.join('\n')}
+                                                    logDescription="SQL statements to repair"
+                                                />
+                                            )}
+                                        </div>
                                     </div>
                                 ))}
                             </CollapsePanel>
                         </Collapse>
                     ) : (
-                        <Text>
-                            <Alert className={classNames('mb-0', styles.alert)} variant="success">
-                                There is no schema drift detected.
-                            </Alert>
-                        </Text>
+                        <Alert className={classNames('mb-0', styles.alert)} variant="success">
+                            <Text> There is no schema drift detected.</Text>
+                        </Alert>
                     )}
                     <hr className="my-3" />
                     <H3>Required out-of-band migrations</H3>
@@ -214,11 +231,9 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                             </ul>
                         </>
                     ) : (
-                        <Text>
-                            <Alert className={classNames('mb-0', styles.alert)} variant="success">
-                                There are no pending out-of-band migrations that need to complete.
-                            </Alert>
-                        </Text>
+                        <Alert className={classNames('mb-0', styles.alert)} variant="success">
+                            <Text> There are no pending out-of-band migrations that need to complete.</Text>
+                        </Alert>
                     )}
                 </>
             )}

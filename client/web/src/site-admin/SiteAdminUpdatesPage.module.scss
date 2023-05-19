@@ -6,3 +6,40 @@
 .last-checked {
     border-left: 1px solid var(--border-color-2);
 }
+
+.container {
+    padding: 2rem;
+    border-bottom: 1px solid #808080;
+
+    &:first-child {
+        padding-top: 1rem;
+    }
+
+    &:nth-child(even) {
+        background: #f5f6f6;
+    }
+}
+
+.table {
+    display: grid;
+    grid-template-columns: 8rem 1fr;
+}
+
+.table-container {
+    padding-bottom: 1rem;
+}
+
+.outputContainer {
+    padding-bottom: 1rem;
+}
+
+.header:focus {
+    outline: none;
+    box-shadow: none !important;
+    background-color: transparent !important;
+}
+
+.label {
+    font-size: 0.9rem;
+    font-weight: 600;
+}
