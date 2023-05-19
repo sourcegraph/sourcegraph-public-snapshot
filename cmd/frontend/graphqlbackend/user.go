@@ -73,22 +73,20 @@ type UserResolver struct {
 
 // NewUserResolver returns a new UserResolver with given user object.
 func NewUserResolver(ctx context.Context, db database.DB, user *types.User) *UserResolver {
-	logger := log.Scoped("userResolver", "resolves a specific user").With(log.String("user", user.Username))
 	return &UserResolver{
 		db:     db,
 		user:   user,
-		logger: logger,
+		logger: log.Scoped("userResolver", "resolves a specific user").With(log.String("user", user.Username)),
 		actor:  actor.FromContext(ctx),
 	}
 }
 
 // newUserResolverFromActor returns a new UserResolver with given user object.
 func newUserResolverFromActor(a *actor.Actor, db database.DB, user *types.User) *UserResolver {
-	logger := log.Scoped("userResolver", "resolves a specific user").With(log.String("user", user.Username))
 	return &UserResolver{
 		db:     db,
 		user:   user,
-		logger: logger,
+		logger: log.Scoped("userResolver", "resolves a specific user").With(log.String("user", user.Username)),
 		actor:  a,
 	}
 }
