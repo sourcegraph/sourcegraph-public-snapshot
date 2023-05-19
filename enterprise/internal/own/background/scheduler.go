@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	logger "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -153,7 +154,13 @@ WITH signal_config AS (SELECT * FROM own_signal_configurations WHERE name = %s L
                           WHERE job_type = signal_config.id
                               AND (state IN ('failed', 'completed') AND finished_at > %s) OR (state IN ('processing', 'errored', 'queued'))
                           UNION
-                            SELECT repo.id FROM repo, signal_config WHERE repo.name LIKE (SELECT UNNEST(signal_config.excluded_repo_patterns))
+                            SELECT repo.id
+							FROM repo, signal_config
+							WHERE EXISTS (
+								SELECT 1
+								FROM UNNEST(signal_config.excluded_repo_patterns) AS ps
+								WHERE repo.name LIKE ps
+							)
                           )
 INSERT
 INTO own_background_jobs (repo_id, job_type) (SELECT gr.repo_id, signal_config.id
