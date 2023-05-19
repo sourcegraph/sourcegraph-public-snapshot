@@ -197,7 +197,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                     </strong>
                 </LimitedAccessBanner>
             )}
-            <BatchChangesListIntro isLicensed={batchChangeLicensed || licenseAndUsageInfo?.campaigns} />
+            <BatchChangesListIntro isLicensed={batchChangeLicensed} />
             {!isSourcegraphDotCom && batchChangeLicensed && (
                 <BatchChangeListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
             )}
