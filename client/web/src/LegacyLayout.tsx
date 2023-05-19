@@ -214,11 +214,9 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 />
             )}
 
-            {!isCodyStandalonePage &&
-                <GlobalAlerts
-                    authenticatedUser={props.authenticatedUser}
-                    isSourcegraphApp={props.isSourcegraphApp}
-                />}
+            {!isCodyStandalonePage && (
+                <GlobalAlerts authenticatedUser={props.authenticatedUser} isSourcegraphApp={props.isSourcegraphApp} />
+            )}
             {!isSiteInit &&
                 !isSignInOrUp &&
                 !props.isSourcegraphDotCom &&
