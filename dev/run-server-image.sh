@@ -52,7 +52,6 @@ docker run "$@" \
   -e DB_STARTUP_TIMEOUT="$DB_STARTUP_TIMEOUT" \
   --volume "$DATA/config:/etc/sourcegraph" \
   --volume "$DATA/data:/var/opt/sourcegraph" \
-  --name sourcegraph \
   "$IMAGE"
 
 echo "--- Checking for existing Sourcegraph instance at $URL"
