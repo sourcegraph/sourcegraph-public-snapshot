@@ -28,17 +28,26 @@ func (s *eventLogsScrapeStateStore) GetBookmark(ctx context.Context, signalName 
 	}
 	defer func() { err = tx.Done(err) }()
 
-	val, found, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf("SELECT bookmark_id FROM event_logs_scrape_state_own WHERE job_type = (select id from own_signal_configurations where name = %s) ORDER BY id LIMIT 1", signalName)))
+	val, found, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
+		`SELECT bookmark_id FROM event_logs_scrape_state_own 
+				WHERE job_type = (select id from own_signal_configurations where name = %s) 
+				ORDER BY id LIMIT 1`, signalName)))
 	if err != nil {
 		return 0, err
 	}
 	if !found {
 		// generate a row and return the value
-		return basestore.ScanInt(tx.QueryRow(ctx, sqlf.Sprintf("INSERT INTO event_logs_scrape_state_own (bookmark_id, job_type) SELECT MAX(id), (select id from own_signal_configurations where name = %s) FROM event_logs RETURNING bookmark_id", signalName)))
+		return basestore.ScanInt(tx.QueryRow(ctx, sqlf.Sprintf(
+			`INSERT INTO event_logs_scrape_state_own (bookmark_id, job_type) 
+					SELECT MAX(id), (select id from own_signal_configurations where name = %s) 
+					FROM event_logs RETURNING bookmark_id`, signalName)))
 	}
 	return val, err
 }
 
 func (s *eventLogsScrapeStateStore) UpdateBookmark(ctx context.Context, val int, signalName string) error {
-	return s.Exec(ctx, sqlf.Sprintf("UPDATE event_logs_scrape_state_own SET bookmark_id = %d WHERE id = (SELECT id FROM event_logs_scrape_state_own WHERE job_type = (select id from own_signal_configurations where name = %s) ORDER BY id LIMIT 1)", val, signalName))
+	return s.Exec(ctx, sqlf.Sprintf(
+		`UPDATE event_logs_scrape_state_own SET bookmark_id = %d 
+				WHERE id = (SELECT id FROM event_logs_scrape_state_own WHERE job_type = (select id from own_signal_configurations where name = %s) 
+				ORDER BY id LIMIT 1)`, val, signalName))
 }
