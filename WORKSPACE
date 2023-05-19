@@ -74,13 +74,6 @@ http_archive(
     urls = ["https://github.com/bazelbuild/rules_rust/releases/download/0.19.0/rules_rust-v0.19.0.tar.gz"],
 )
 
-http_archive(
-    name = "io_tweag_rules_nixpkgs",
-    sha256 = "cb1030a6134f625e2d30d2a34dcfe7960157ae21ec8f20c2b1adb0665f789f50",
-    strip_prefix = "rules_nixpkgs-4dddbafba508cd2dffd95b8562cab91c9336fe36",
-    urls = ["https://github.com/tweag/rules_nixpkgs/archive/4dddbafba508cd2dffd95b8562cab91c9336fe36.tar.gz"],
-)
-
 # Container rules
 http_archive(
     name = "rules_oci",
@@ -344,19 +337,6 @@ rules_pkg_dependencies()
 
 load("//dev:oci_deps.bzl", "oci_deps")
 oci_deps()
-
-
-# nixos toolchains setup ===============================
-load("@io_tweag_rules_nixpkgs//nixpkgs:repositories.bzl", "rules_nixpkgs_dependencies")
-
-rules_nixpkgs_dependencies(toolchains = [
-    "nodejs",
-    "rust",
-])
-
-load("//dev:nix.bzl", "nix_deps")
-
-nix_deps()
 
 load("//enterprise/cmd/embeddings/shared:assets.bzl", "embbedings_assets_deps")
 
