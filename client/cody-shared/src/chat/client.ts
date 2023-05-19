@@ -5,14 +5,14 @@ import { PrefilledOptions, withPreselectedOptions } from '../editor/withPreselec
 import { SourcegraphEmbeddingsSearchClient } from '../embeddings/client'
 import { SourcegraphIntentDetectorClient } from '../intent-detector/client'
 import { SourcegraphBrowserCompletionsClient } from '../sourcegraph-api/completions/browserClient'
-import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql/client'
+import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { isError } from '../utils'
 
 import { BotResponseMultiplexer } from './bot-response-multiplexer'
 import { ChatClient } from './chat'
-import { escapeCodyMarkdown } from './markdown'
 import { getPreamble } from './preamble'
 import { getRecipe } from './recipes/browser-recipes'
+import { RecipeID } from './recipes/recipe'
 import { Transcript, TranscriptJSON } from './transcript'
 import { ChatMessage } from './transcript/messages'
 import { reformatBotMessage } from './viewHelpers'
@@ -21,7 +21,10 @@ export type { TranscriptJSON }
 export { Transcript }
 
 export interface ClientInit {
-    config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken'>
+    config: Pick<
+        ConfigurationWithAccessToken,
+        'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken' | 'customHeaders'
+    >
     setMessageInProgress: (messageInProgress: ChatMessage | null) => void
     setTranscript: (transcript: Transcript) => void
     editor: Editor
@@ -33,7 +36,7 @@ export interface Client {
     readonly isMessageInProgress: boolean
     submitMessage: (text: string) => Promise<void>
     executeRecipe: (
-        recipeId: string,
+        recipeId: RecipeID,
         options?: {
             prefilledOptions?: PrefilledOptions
         }
@@ -49,7 +52,7 @@ export async function createClient({
     editor,
     initialTranscript,
 }: ClientInit): Promise<Client> {
-    const fullConfig = { ...config, debug: false, customHeaders: {} }
+    const fullConfig = { debug: false, ...config }
 
     const completionsClient = new SourcegraphBrowserCompletionsClient(fullConfig)
     const chatClient = new ChatClient(completionsClient)
@@ -85,7 +88,7 @@ export async function createClient({
     }
 
     async function executeRecipe(
-        recipeId: string,
+        recipeId: RecipeID,
         options?: {
             prefilledOptions?: PrefilledOptions
             humanChatInput?: string
@@ -113,16 +116,22 @@ export async function createClient({
 
         const prompt = await transcript.toPrompt(getPreamble(config.codebase))
         const responsePrefix = interaction.getAssistantMessage().prefix ?? ''
+        let rawText = ''
 
         chatClient.chat(prompt, {
-            onChange(rawText) {
-                const text = reformatBotMessage(escapeCodyMarkdown(rawText), responsePrefix)
+            onChange(_rawText) {
+                rawText = _rawText
+
+                const text = reformatBotMessage(rawText, responsePrefix)
                 transcript.addAssistantResponse(text)
 
                 sendTranscript()
             },
             onComplete() {
                 isMessageInProgress = false
+
+                const text = reformatBotMessage(rawText, responsePrefix)
+                transcript.addAssistantResponse(text)
                 sendTranscript()
             },
             onError(error) {

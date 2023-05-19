@@ -3,7 +3,6 @@ package enqueuer
 import (
 	"context"
 
-	otlog "github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
@@ -57,12 +56,10 @@ func NewIndexEnqueuer(
 // will cause this method to no-op. Note that this is NOT a guarantee that there will never be any duplicate records
 // when the flag is false.
 func (s *IndexEnqueuer) QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) (_ []uploadsshared.Index, err error) {
-	ctx, trace, endObservation := s.operations.queueIndex.With(ctx, &err, observation.Args{
-		LogFields: []otlog.Field{
-			otlog.Int("repositoryID", repositoryID),
-			otlog.String("rev", rev),
-		},
-	})
+	ctx, trace, endObservation := s.operations.queueIndex.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
+		attribute.String("rev", rev),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))
@@ -83,13 +80,11 @@ func (s *IndexEnqueuer) QueueIndexes(ctx context.Context, repositoryID int, rev,
 // QueueIndexesForPackage enqueues index jobs for a dependency of a recently-processed precise code
 // intelligence index.
 func (s *IndexEnqueuer) QueueIndexesForPackage(ctx context.Context, pkg dependencies.MinimialVersionedPackageRepo, assumeSynced bool) (err error) {
-	ctx, trace, endObservation := s.operations.queueIndexForPackage.With(ctx, &err, observation.Args{
-		LogFields: []otlog.Field{
-			otlog.String("scheme", pkg.Scheme),
-			otlog.String("name", string(pkg.Name)),
-			otlog.String("version", pkg.Version),
-		},
-	})
+	ctx, trace, endObservation := s.operations.queueIndexForPackage.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("scheme", pkg.Scheme),
+		attribute.String("name", string(pkg.Name)),
+		attribute.String("version", pkg.Version),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	repoName, revision, ok := inference.InferRepositoryAndRevision(pkg)

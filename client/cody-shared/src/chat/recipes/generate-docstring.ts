@@ -8,14 +8,15 @@ import {
     getContextMessagesFromSelection,
     getFileExtension,
 } from './helpers'
-import { Recipe, RecipeContext } from './recipe'
+import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class GenerateDocstring implements Recipe {
-    public id = 'generate-docstring'
+    public id: RecipeID = 'generate-docstring'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
         if (!selection) {
+            await context.editor.showWarningMessage('No code selected. Please select some code and try again.')
             return Promise.resolve(null)
         }
 
@@ -57,7 +58,7 @@ export class GenerateDocstring implements Recipe {
                 truncatedSelectedText,
                 truncatedPrecedingText,
                 truncatedFollowingText,
-                selection.fileName,
+                selection,
                 context.codebaseContext
             )
         )

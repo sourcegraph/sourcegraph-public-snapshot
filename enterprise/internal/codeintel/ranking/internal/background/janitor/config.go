@@ -12,8 +12,6 @@ type Config struct {
 	Interval time.Duration
 }
 
-var ConfigInst = &Config{}
-
 func (c *Config) Load() {
 	c.Interval = c.GetInterval("CODEINTEL_RANKING_JANITOR_INTERVAL", "1s", "How frequently to run the ranking janitor.")
 }

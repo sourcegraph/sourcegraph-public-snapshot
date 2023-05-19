@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/urfave/cli/v2"
@@ -41,6 +42,18 @@ sg --verbose generate ... # Enable verbose output
 	Before: func(cmd *cli.Context) error {
 		if verbose && generateQuiet {
 			return errors.Errorf("-q and --verbose flags are exclusive")
+		}
+
+		// Propagate env from config. This is especially useful for 'sg gen go internal/database/gen.go'
+		// where database config is required.
+		config, _ := getConfig()
+		if config == nil {
+			return nil
+		}
+		for key, value := range config.Env {
+			if _, set := os.LookupEnv(key); !set {
+				os.Setenv(key, value)
+			}
 		}
 		return nil
 	},

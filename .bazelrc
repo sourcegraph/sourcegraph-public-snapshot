@@ -24,3 +24,6 @@ build --incompatible_enable_cc_toolchain_resolution
 
 # Except in CI run E2E tests in headless mode
 try-import %workspace%/user.bazelrc
+
+# Some special sauce for the special NixOS users in your life :) set by dev-shell shell-hook
+try-import %workspace%/.bazelrc-nix

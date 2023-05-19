@@ -299,7 +299,7 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 var siteConfigAllowEdits, _ = strconv.ParseBool(env.Get("SITE_CONFIG_ALLOW_EDITS", "false", "When SITE_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
 
 func canUpdateSiteConfiguration() bool {
-	return os.Getenv("SITE_CONFIG_FILE") == "" || siteConfigAllowEdits
+	return os.Getenv("SITE_CONFIG_FILE") == "" || siteConfigAllowEdits || deploy.IsApp()
 }
 
 // IsCodeInsightsEnabled tells if code insights are enabled or not.
@@ -493,4 +493,32 @@ func (r *siteResolver) PerUserCompletionsQuota() *int32 {
 		return &i
 	}
 	return nil
+}
+
+func (r *siteResolver) PerUserCodeCompletionsQuota() *int32 {
+	c := conf.Get()
+	if c.Completions != nil && c.Completions.PerUserCodeCompletionsDailyLimit > 0 {
+		i := int32(c.Completions.PerUserCodeCompletionsDailyLimit)
+		return &i
+	}
+	return nil
+}
+
+func (r *siteResolver) RequiresVerifiedEmailForCody(ctx context.Context) bool {
+	// App is typically forwarding Cody requests to dotcom.
+	// This section can be removed if dotcom stops requiring verified emails
+	if deploy.IsApp() {
+		// App users can specify their own keys
+		// if they use their own keys requests are not forwarded to dotcom
+		// which means a verified email is not needed
+		return conf.Get().Completions == nil
+	}
+
+	// We only require this on dotcom
+	if !envvar.SourcegraphDotComMode() {
+		return false
+	}
+
+	isAdmin := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil
+	return !isAdmin
 }

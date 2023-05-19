@@ -7,7 +7,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
@@ -17,11 +16,13 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	fakerest "k8s.io/client-go/rest/fake"
 	k8stesting "k8s.io/client-go/testing"
+	"k8s.io/utils/pointer"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -117,7 +118,7 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 				Clientset: clientset,
 			}
 
-			err := cmd.ReadLogs(context.Background(), "my-namespace", "my-pod", logger, "my-key", []string{"echo", "hello"})
+			err := cmd.ReadLogs(context.Background(), "my-namespace", "my-pod", command.KubernetesJobContainerName, logger, "my-key", []string{"echo", "hello"})
 			if test.expectedErr != nil {
 				require.Error(t, err)
 				assert.EqualError(t, err, test.expectedErr.Error())
@@ -230,51 +231,71 @@ func TestKubernetesCommand_WaitForJobToComplete(t *testing.T) {
 		{
 			name: "Job succeeded",
 			mockFunc: func(clientset *fake.Clientset) {
-				clientset.PrependReactor("get", "jobs", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, &batchv1.Job{Status: batchv1.JobStatus{Active: 0, Succeeded: 1}}, nil
+				watcher := watch.NewFakeWithChanSize(10, false)
+				watcher.Add(&batchv1.Job{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "my-job",
+					},
+					Status: batchv1.JobStatus{
+						Succeeded: 1,
+					},
 				})
+				clientset.PrependWatchReactor("jobs", k8stesting.DefaultWatchReactor(watcher, nil))
 			},
 			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
 				require.Len(t, actions, 1)
-				assert.Equal(t, "get", actions[0].GetVerb())
+				assert.Equal(t, "watch", actions[0].GetVerb())
 				assert.Equal(t, "jobs", actions[0].GetResource().Resource)
-				assert.Equal(t, "my-job", actions[0].(k8stesting.GetAction).GetName())
+				assert.Equal(t, "metadata.name=my-job", actions[0].(k8stesting.WatchActionImpl).GetWatchRestrictions().Fields.String())
 			},
 		},
 		{
 			name: "Job failed",
 			mockFunc: func(clientset *fake.Clientset) {
-				clientset.PrependReactor("get", "jobs", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, &batchv1.Job{Status: batchv1.JobStatus{Failed: 1}}, nil
+				watcher := watch.NewFakeWithChanSize(10, false)
+				watcher.Add(&batchv1.Job{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "my-job",
+					},
+					Status: batchv1.JobStatus{
+						Failed: 1,
+					},
 				})
+				clientset.PrependWatchReactor("jobs", k8stesting.DefaultWatchReactor(watcher, nil))
 			},
-			expectedErr: errors.New("job my-job failed"),
+			expectedErr: errors.New("job failed"),
 		},
 		{
 			name: "Error occurred",
 			mockFunc: func(clientset *fake.Clientset) {
-				clientset.PrependReactor("get", "jobs", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, nil, errors.New("failed")
-				})
+				clientset.PrependWatchReactor("jobs", k8stesting.DefaultWatchReactor(nil, errors.New("failed")))
 			},
-			expectedErr: errors.New("retrieving job: failed"),
+			expectedErr: errors.New("watching job: failed"),
 		},
 		{
 			name: "Job succeeded second try",
 			mockFunc: func(clientset *fake.Clientset) {
-				clientset.PrependReactor("get", "jobs", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, &batchv1.Job{Status: batchv1.JobStatus{Active: 0, Succeeded: 1}}, nil
+				watcher := watch.NewFakeWithChanSize(10, false)
+				watcher.Add(&batchv1.Job{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "my-job",
+					},
+					Status: batchv1.JobStatus{
+						Active: 1,
+					},
 				})
-
-				firstCallAllowed := true
-				clientset.PrependReactor("get", "jobs", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
-					handle := firstCallAllowed
-					firstCallAllowed = false
-					return handle, &batchv1.Job{Status: batchv1.JobStatus{Active: 0, Succeeded: 0}}, nil
+				watcher.Add(&batchv1.Job{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "my-job",
+					},
+					Status: batchv1.JobStatus{
+						Succeeded: 1,
+					},
 				})
+				clientset.PrependWatchReactor("jobs", k8stesting.DefaultWatchReactor(watcher, nil))
 			},
 			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
-				require.Len(t, actions, 2)
+				require.Len(t, actions, 1)
 			},
 		},
 	}
@@ -295,7 +316,6 @@ func TestKubernetesCommand_WaitForJobToComplete(t *testing.T) {
 				context.Background(),
 				"my-namespace",
 				"my-job",
-				command.KubernetesRetry{Attempts: 10, Backoff: 1 * time.Millisecond},
 			)
 			if test.expectedErr != nil {
 				require.Error(t, err)
@@ -334,6 +354,9 @@ func TestNewKubernetesJob(t *testing.T) {
 			CPU:    resource.MustParse("1"),
 			Memory: resource.MustParse("1Gi"),
 		},
+		SecurityContext: command.KubernetesSecurityContext{
+			FSGroup: pointer.Int64(1000),
+		},
 	}
 	job := command.NewKubernetesJob("my-job", "my-image:latest", spec, "/my/path", options)
 
@@ -346,7 +369,7 @@ func TestNewKubernetesJob(t *testing.T) {
 	assert.Equal(t, "sg-executor-job-container", job.Spec.Template.Spec.Containers[0].Name)
 	assert.Equal(t, "my-image:latest", job.Spec.Template.Spec.Containers[0].Image)
 	assert.Equal(t, []string{"echo", "hello"}, job.Spec.Template.Spec.Containers[0].Command)
-	assert.Equal(t, "/data", job.Spec.Template.Spec.Containers[0].WorkingDir)
+	assert.Equal(t, "/job", job.Spec.Template.Spec.Containers[0].WorkingDir)
 
 	require.Len(t, job.Spec.Template.Spec.Containers[0].Env, 1)
 	assert.Equal(t, "FOO", job.Spec.Template.Spec.Containers[0].Env[0].Name)
@@ -359,10 +382,14 @@ func TestNewKubernetesJob(t *testing.T) {
 
 	require.Len(t, job.Spec.Template.Spec.Containers[0].VolumeMounts, 1)
 	assert.Equal(t, "sg-executor-job-volume", job.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name)
-	assert.Equal(t, "/data", job.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath)
+	assert.Equal(t, "/job", job.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath)
 	assert.Equal(t, "/my/path", job.Spec.Template.Spec.Containers[0].VolumeMounts[0].SubPath)
 
 	require.Len(t, job.Spec.Template.Spec.Volumes, 1)
 	assert.Equal(t, "sg-executor-job-volume", job.Spec.Template.Spec.Volumes[0].Name)
 	assert.Equal(t, "my-pvc", job.Spec.Template.Spec.Volumes[0].PersistentVolumeClaim.ClaimName)
+
+	assert.Nil(t, job.Spec.Template.Spec.SecurityContext.RunAsUser)
+	assert.Nil(t, job.Spec.Template.Spec.SecurityContext.RunAsGroup)
+	assert.Equal(t, int64(1000), *job.Spec.Template.Spec.SecurityContext.FSGroup)
 }

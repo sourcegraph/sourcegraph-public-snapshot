@@ -256,7 +256,6 @@ ts_project(
         "src/search/helpers/queryExample.ts",
         "src/search/helpers/searchContext.ts",
         "src/search/index.ts",
-        "src/search/integration/index.ts",
         "src/search/integration/streaming-search-mocks.ts",
         "src/search/query/analyze.ts",
         "src/search/query/completion.ts",

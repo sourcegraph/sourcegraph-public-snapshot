@@ -6,14 +6,13 @@ import (
 	"strings"
 	"sync"
 
-	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -78,14 +77,14 @@ func (s *fileHasOwnersJob) Name() string {
 	return "FileHasOwnersFilterJob"
 }
 
-func (s *fileHasOwnersJob) Fields(v job.Verbosity) (res []otlog.Field) {
+func (s *fileHasOwnersJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 	switch v {
 	case job.VerbosityMax:
 		fallthrough
 	case job.VerbosityBasic:
 		res = append(res,
-			trace.Strings("includeOwners", s.includeOwners),
-			trace.Strings("excludeOwners", s.excludeOwners),
+			attribute.StringSlice("includeOwners", s.includeOwners),
+			attribute.StringSlice("excludeOwners", s.excludeOwners),
 		)
 	}
 	return res

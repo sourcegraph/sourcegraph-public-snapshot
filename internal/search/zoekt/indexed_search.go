@@ -8,7 +8,6 @@ import (
 
 	"github.com/RoaringBitmap/roaring"
 	"github.com/grafana/regexp"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
@@ -43,6 +42,38 @@ type IndexedRepoRevs struct {
 	// branchRepos is used to construct a zoektquery.BranchesRepos to efficiently
 	// marshal and send to zoekt
 	branchRepos map[string]*zoektquery.BranchRepos
+}
+
+// GetRepoRevsFromBranchRepos updates RepoRevs by replacing revision values that are not defined branches in
+// Zoekt and replaces with a known indexed branch.
+// This is used for structural search querying revisions of RepositoryRevisions that are indexed but not the branch name.
+func (rb *IndexedRepoRevs) GetRepoRevsFromBranchRepos() map[api.RepoID]*search.RepositoryRevisions {
+	repoRevs := make(map[api.RepoID]*search.RepositoryRevisions, len(rb.RepoRevs))
+
+	for repoID, repoRev := range rb.RepoRevs {
+		updated := *repoRev
+
+		for i, rev := range updated.Revs {
+			// check if revision should be used as a branch name for zoekt branchRepos queries and replace if not
+			if rev != "" && rb.branchRepos[rev] == nil {
+				if len(rb.branchRepos) == 1 {
+					// use the single branch that zoekt returned in branchRepos as the revision
+					for k := range rb.branchRepos {
+						updated.Revs[i] = k
+						break
+					}
+				} else {
+					// if there are multiple branches then fall back to HEAD
+					// clear value to identify to zoekt to utilize branch HEAD regardless of repo ID
+					updated.Revs[i] = ""
+				}
+			}
+		}
+
+		repoRevs[repoID] = &updated
+	}
+
+	return repoRevs
 }
 
 // add will add reporev and repo to the list of repository and branches to
@@ -669,26 +700,26 @@ func (*RepoSubsetTextSearchJob) Name() string {
 	return "ZoektRepoSubsetTextSearchJob"
 }
 
-func (z *RepoSubsetTextSearchJob) Fields(v job.Verbosity) (res []otlog.Field) {
+func (z *RepoSubsetTextSearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 	switch v {
 	case job.VerbosityMax:
 		res = append(res,
-			otlog.Int32("fileMatchLimit", z.FileMatchLimit),
-			trace.Stringer("select", z.Select),
-			otlog.Object("zoektQueryRegexps", z.ZoektQueryRegexps),
+			attribute.Int("fileMatchLimit", int(z.FileMatchLimit)),
+			attribute.Stringer("select", z.Select),
+			trace.Stringers("zoektQueryRegexps", z.ZoektQueryRegexps),
 		)
 		// z.Repos is nil for un-indexed search
 		if z.Repos != nil {
 			res = append(res,
-				otlog.Int("numRepoRevs", len(z.Repos.RepoRevs)),
-				otlog.Int("numBranchRepos", len(z.Repos.branchRepos)),
+				attribute.Int("numRepoRevs", len(z.Repos.RepoRevs)),
+				attribute.Int("numBranchRepos", len(z.Repos.branchRepos)),
 			)
 		}
 		fallthrough
 	case job.VerbosityBasic:
 		res = append(res,
-			trace.Stringer("query", z.Query),
-			otlog.String("type", string(z.Typ)),
+			attribute.Stringer("query", z.Query),
+			attribute.String("type", string(z.Typ)),
 		)
 	}
 	return res
@@ -719,23 +750,23 @@ func (*GlobalTextSearchJob) Name() string {
 	return "ZoektGlobalTextSearchJob"
 }
 
-func (t *GlobalTextSearchJob) Fields(v job.Verbosity) (res []otlog.Field) {
+func (t *GlobalTextSearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 	switch v {
 	case job.VerbosityMax:
 		res = append(res,
-			otlog.Int32("fileMatchLimit", t.ZoektArgs.FileMatchLimit),
-			trace.Stringer("select", t.ZoektArgs.Select),
-			trace.Printf("repoScope", "%q", t.GlobalZoektQuery.RepoScope),
-			otlog.Bool("includePrivate", t.GlobalZoektQuery.IncludePrivate),
-			otlog.Object("globalZoektQueryRegexps", t.GlobalZoektQueryRegexps),
+			attribute.Int("fileMatchLimit", int(t.ZoektArgs.FileMatchLimit)),
+			attribute.Stringer("select", t.ZoektArgs.Select),
+			trace.Stringers("repoScope", t.GlobalZoektQuery.RepoScope),
+			attribute.Bool("includePrivate", t.GlobalZoektQuery.IncludePrivate),
+			trace.Stringers("globalZoektQueryRegexps", t.GlobalZoektQueryRegexps),
 		)
 		fallthrough
 	case job.VerbosityBasic:
 		res = append(res,
-			trace.Stringer("query", t.GlobalZoektQuery.Query),
-			otlog.String("type", string(t.ZoektArgs.Typ)),
-			trace.Scoped("repoOpts", t.RepoOpts.Tags()...),
+			attribute.Stringer("query", t.GlobalZoektQuery.Query),
+			attribute.String("type", string(t.ZoektArgs.Typ)),
 		)
+		res = append(res, trace.Scoped("repoOpts", t.RepoOpts.Attributes()...)...)
 	}
 	return res
 }

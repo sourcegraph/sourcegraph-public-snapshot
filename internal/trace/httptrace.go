@@ -111,10 +111,15 @@ var (
 //
 // 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
 // not authenticated. It must not reveal any sensitive information.
-func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.SiteConfigQuerier) http.Handler {
-	logger = logger.Scoped("http", "http tracing middleware")
-	return loggingRecoverer(logger, http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+func HTTPMiddleware(l log.Logger, next http.Handler, siteConfig conftypes.SiteConfigQuerier) http.Handler {
+	l = l.Scoped("http", "http tracing middleware")
+	return loggingRecoverer(l, http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
+
+		// logger is a copy of l. Add fields to this logger and what not, instead of l.
+		// This ensures each request is handled with a copy of the original logger instead
+		// of the previous one.
+		logger := l
 
 		// extract propagated span
 		wireContext, err := ot.GetTracer(ctx).Extract( //nolint:staticcheck // OT is deprecated
@@ -131,7 +136,7 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 		span.SetTag("http.referer", r.Header.Get("referer"))
 		defer span.Finish()
 
-		// get trace ID
+		// get trace ID and attach it to the request logger
 		trace := Context(ctx)
 		var traceURL string
 		if trace.TraceID != "" {

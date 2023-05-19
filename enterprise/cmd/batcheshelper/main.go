@@ -12,12 +12,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/log"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/run"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/util"
+	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func main() {
+	sanitycheck.Pass()
 	if err := doMain(); err != nil {
 		fmt.Fprintf(os.Stderr, err.Error())
 		os.Exit(1)
@@ -28,7 +30,7 @@ func main() {
 func doMain() error {
 	inputPath := flag.String("input", "input.json", "The input JSON file for the workspace execution. Defaults to \"input.json\".")
 	previousPath := flag.String("previousStepPath", "", "The path to the previous step's result file. Defaults to current working directory.")
-	workspaceFilesPath := flag.String("workspaceFiles", "/data/workspace-files", "The path to the workspace files. Defaults to \"/data/workspace-files\".")
+	workspaceFilesPath := flag.String("workspaceFiles", "/job/workspace-files", "The path to the workspace files. Defaults to \"/job/workspace-files\".")
 	flag.Usage = usage
 	flag.Parse()
 

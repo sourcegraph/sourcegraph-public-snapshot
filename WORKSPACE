@@ -22,9 +22,9 @@ http_archive(
 
 http_archive(
     name = "aspect_rules_js",
-    sha256 = "a592fafd8a27b2828318cebbda0003686c6da3318df366b563e8beeffa05a02c",
-    strip_prefix = "rules_js-1.21.0",
-    url = "https://github.com/aspect-build/rules_js/releases/download/v1.21.0/rules_js-v1.21.0.tar.gz",
+    sha256 = "3e237129b3554373a80c681c4b47348f91c294ff32d4bc8f8297f40511a4eb6c",
+    strip_prefix = "rules_js-1.25.4",
+    url = "https://github.com/aspect-build/rules_js/releases/download/v1.25.4/rules_js-v1.25.4.tar.gz",
 )
 
 http_archive(
@@ -195,6 +195,26 @@ go_repository(
     version = "v1.14.1",
 )
 
+# Overrides the default provided protobuf dep from rules_go by a more
+# recent one.
+go_repository(
+    name = "org_golang_google_protobuf",
+    build_file_proto_mode = "disable_global",
+    importpath = "google.golang.org/protobuf",
+    sum = "h1:7QBf+IK2gx70Ap/hDsOmam3GE0v9HicjfEdAxE62UoM=",
+    version = "v1.29.1",
+)  # keep
+
+# Pin protoc-gen-go-grpc to 1.3.0
+# See also //:gen-go-grpc
+go_repository(
+    name = "org_golang_google_grpc_cmd_protoc_gen_go_grpc",
+    build_file_proto_mode = "disable_global",
+    importpath = "google.golang.org/grpc/cmd/protoc-gen-go-grpc",
+    sum = "h1:rNBFJjBCOgVr9pWD7rs/knKL4FRTKgpZmsRfV214zcA=",
+    version = "v1.3.0",
+)  # keep
+
 # gazelle:repository_macro deps.bzl%go_dependencies
 go_dependencies()
 
@@ -252,22 +272,25 @@ load("@crate_index//:defs.bzl", "crate_repositories")
 
 crate_repositories()
 
-BAZEL_ZIG_CC_VERSION = "v1.0.1"
+BAZEL_ZIG_CC_VERSION = "v2.0.0-rc2"
 
 http_archive(
-    name = "bazel-zig-cc",
-    sha256 = "e9f82bfb74b3df5ca0e67f4d4989e7f1f7ce3386c295fd7fda881ab91f83e509",
-    strip_prefix = "bazel-zig-cc-{}".format(BAZEL_ZIG_CC_VERSION),
+    name = "hermetic_cc_toolchain",
+    sha256 = "40dff82816735e631e8bd51ede3af1c4ed1ad4646928ffb6a0e53e228e55738c",
     urls = [
-        "https://mirror.bazel.build/github.com/uber/bazel-zig-cc/releases/download/{0}/{0}.tar.gz".format(BAZEL_ZIG_CC_VERSION),
-        "https://github.com/uber/bazel-zig-cc/releases/download/{0}/{0}.tar.gz".format(BAZEL_ZIG_CC_VERSION),
+        "https://mirror.bazel.build/github.com/uber/hermetic_cc_toolchain/releases/download/{0}/hermetic_cc_toolchain-{0}.tar.gz".format(BAZEL_ZIG_CC_VERSION),
+        "https://github.com/uber/hermetic_cc_toolchain/releases/download/{0}/hermetic_cc_toolchain-{0}.tar.gz".format(BAZEL_ZIG_CC_VERSION),
     ],
 )
 
-load("@bazel-zig-cc//toolchain:defs.bzl", zig_toolchains = "toolchains")
+load("@hermetic_cc_toolchain//toolchain:defs.bzl", zig_toolchains = "toolchains")
 
 zig_toolchains()
 
 load("//dev/backcompat:defs.bzl", "back_compat_defs")
 
 back_compat_defs()
+
+load("//enterprise/cmd/embeddings/shared:assets.bzl", "embbedings_assets_deps")
+
+embbedings_assets_deps()

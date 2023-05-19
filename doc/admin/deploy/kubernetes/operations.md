@@ -49,7 +49,7 @@ In order to deploy Sourcegraph that is configured for your cluster:
 
 #### Building manifests
 
-Build a new set of manifests using an overlay you've created following our [configuration guide for Kustomize](kustomize/configure.md):
+Build a new set of manifests using an overlay you've created following our [configuration guide for Kustomize](kustomize/index.md):
    
 ```bash
 $ kubectl kustomize $PATH_TO_OVERLAY -o cluster.yaml
