@@ -18,13 +18,13 @@ To generate an index for your codebase and enable codebase-aware answers for Cod
 
 ### Sourcegraph.com
 
-Code graph context is available only for public repositories on Sourcegraph.com that are already embedded.
+Code graph context is available instantly for public repositories on Sourcegraph.com that are already embedded. Please refer to the [list of repositories with embeddings](https://docs.sourcegraph.com/cody/embedded-repos) for the latest information.
 
-Please refer to the [list of repositories with embeddings](https://docs.sourcegraph.com/cody/embedded-repos) for instant access.
+Code graph context is not available for codebases that are not included in the list. 
 
-If the codebase you want to connect to is not on the list, it will not provide code graph context to Cody. However, you can request assistance in the #cody-embeddings channel on the Sourcegraph team's [Discord](https://discord.gg/8wJF5EdAyA).
+However, you can make requests and ask for assistance in the [Sourcegraph Discord](https://discord.gg/8wJF5EdAyA) under the `#cody-embeddings` channel.
 
-Please note that Sourcegraph.com currently does not support private repositories.
+> NOTE: Sourcegraph.com does not support connections to private repositories
 
 ## Enable Codebase-Aware Answers
 
@@ -38,12 +38,17 @@ Here are the steps to configure the `codebase` setting for Cody via the [Extensi
    - Mac: `Code` > `Settings` > `Settings`
    - Windows & Linux: `File` > `Preferences (Settings)`
 2. Enter `Cody: Codebase` in the search bar
-3. Enter the repository name as listed on your Sourcegraph instance.
-  - For example, the name for the [Sourcegraph repository on Sourcegraph.com](https://sourcegraph.com/github.com/sourcegraph/sourcegraph) is `github.com/sourcegraph/sourcegraph`, so we will enter it to the setting field without the https protocol as `github.com/sourcegraph/sourcegraph`
+3. Enter the repository name as listed on your Sourcegraph instance in the `Cody: Codebase` field
+
+For example, the name for the [Sourcegraph repository on Sourcegraph.com](https://sourcegraph.com/github.com/sourcegraph/sourcegraph) is `github.com/sourcegraph/sourcegraph`, so we will enter it to the setting field without the https protocol as:
+
+```
+github.com/sourcegraph/sourcegraph
+```
 
 ### Settings.json
 
-Alternatively, if you can configure via [settings.json](https://code.visualstudio.com/docs/getstarted/settings#_settingsjson) using the `cody.codebase` configuration contribution point:
+Alternatively, you can configure via [settings.json](https://code.visualstudio.com/docs/getstarted/settings#_settingsjson) using the `cody.codebase` configuration contribution point:
 
 ```json
 {
