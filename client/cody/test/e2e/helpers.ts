@@ -50,7 +50,7 @@ export const test = base
             // Wait for Cody to become activated
             // TODO(philipp-spiess): Figure out which playwright matcher we can use that works for
             // the signed-in and signed-out cases
-            await new Promise(resolve => setTimeout(resolve, 500))
+            await new Promise(resolve => setTimeout(resolve, 1000))
 
             const sidebar = await getCodySidebar(page)
 

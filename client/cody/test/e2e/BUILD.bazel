@@ -20,11 +20,11 @@ ts_config(
 ts_project(
     name = "e2e_tests",
     testonly = True,
-    tsconfig = ":tsconfig",
     srcs = [
         "auth.test.ts",
         "helpers.ts",
     ],
+    tsconfig = ":tsconfig",
     deps = [
         "//:node_modules/@types/node",
         "//:node_modules/@vscode/test-electron",
