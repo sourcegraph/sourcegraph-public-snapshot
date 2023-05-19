@@ -589,3 +589,121 @@ func TestAssignedOwners(t *testing.T) {
 		t.Fatalf("AssignedOwnership -want+got: %s", diff)
 	}
 }
+
+func TestAssignedOwnersMatch(t *testing.T) {
+	const (
+		repoOwnerID          = 71
+		srcMainOwnerID       = 72
+		srcMainSecondOwnerID = 73
+		srcMainJavaOwnerID   = 74
+		srcTestOwnerID       = 74 // same as src/main/java owner
+		assignerID           = 76
+		repoID               = 41
+	)
+	var (
+		repoOwner = database.AssignedOwnerSummary{
+			OwnerUserID:       repoOwnerID,
+			FilePath:          "",
+			RepoID:            repoID,
+			WhoAssignedUserID: assignerID,
+		}
+		srcMainOwner = database.AssignedOwnerSummary{
+			OwnerUserID:       srcMainOwnerID,
+			FilePath:          "src/main",
+			RepoID:            repoID,
+			WhoAssignedUserID: assignerID,
+		}
+		srcMainSecondOwner = database.AssignedOwnerSummary{
+			OwnerUserID:       srcMainSecondOwnerID,
+			FilePath:          "src/main",
+			RepoID:            repoID,
+			WhoAssignedUserID: assignerID,
+		}
+		srcMainJavaOwner = database.AssignedOwnerSummary{
+			OwnerUserID:       srcMainJavaOwnerID,
+			FilePath:          "src/main/java",
+			RepoID:            repoID,
+			WhoAssignedUserID: assignerID,
+		}
+		srcTestOwner = database.AssignedOwnerSummary{
+			OwnerUserID:       srcMainJavaOwnerID,
+			FilePath:          "src/test",
+			RepoID:            repoID,
+			WhoAssignedUserID: assignerID,
+		}
+	)
+	owners := AssignedOwners{
+		"": []database.AssignedOwnerSummary{
+			repoOwner,
+		},
+		"src/main": []database.AssignedOwnerSummary{
+			srcMainOwner,
+			srcMainSecondOwner,
+		},
+		"src/main/java": []database.AssignedOwnerSummary{
+			srcMainJavaOwner,
+		},
+		"src/test": []database.AssignedOwnerSummary{
+			srcTestOwner,
+		},
+	}
+	order := func(os []database.AssignedOwnerSummary) {
+		sort.Slice(os, func(i, j int) bool {
+			if os[i].OwnerUserID < os[j].OwnerUserID {
+				return true
+			}
+			if os[i].FilePath < os[j].FilePath {
+				return true
+			}
+			return false
+		})
+	}
+	for _, testCase := range []struct {
+		path string
+		want []database.AssignedOwnerSummary
+	}{
+		{
+			path: "",
+			want: []database.AssignedOwnerSummary{
+				repoOwner,
+			},
+		},
+		{
+			path: "resources/pom.xml",
+			want: []database.AssignedOwnerSummary{
+				repoOwner,
+			},
+		},
+		{
+			path: "src/main",
+			want: []database.AssignedOwnerSummary{
+				repoOwner,
+				srcMainOwner,
+				srcMainSecondOwner,
+			},
+		},
+		{
+			path: "src/main/java/com/sourcegraph/GitServer.java",
+			want: []database.AssignedOwnerSummary{
+				repoOwner,
+				srcMainOwner,
+				srcMainSecondOwner,
+				srcMainJavaOwner,
+			},
+		},
+		{
+			path: "src/test/java/com/sourcegraph/GitServerTest.java",
+			want: []database.AssignedOwnerSummary{
+				repoOwner,
+				srcTestOwner,
+			},
+		},
+	} {
+		got := owners.Match(testCase.path)
+		order(got)
+		order(testCase.want)
+		if diff := cmp.Diff(testCase.want, got); diff != "" {
+			t.Errorf("path: %q, unexpected owners (-want+got): %s", testCase.path, diff)
+		}
+	}
+}

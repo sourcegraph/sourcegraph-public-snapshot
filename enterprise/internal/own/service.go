@@ -48,10 +48,13 @@ type AssignedOwners map[string][]database.AssignedOwnerSummary
 // that is so that owners of a parent directory "a/b" are the owners
 // of all files in that tree, like "a/b/c/d/foo.go".
 func (ao AssignedOwners) Match(path string) []database.AssignedOwnerSummary {
-	summaries := ao[""] // Repository owner is associated with root directory - "".
+	var summaries []database.AssignedOwnerSummary
 	for lastSlash := len(path); lastSlash != -1; lastSlash = strings.LastIndex(path, "/") {
 		path = path[:lastSlash]
 		summaries = append(summaries, ao[path]...)
+	}
+	if path != "" {
+		summaries = append(summaries, ao[""]...)
 	}
 	return summaries
 }
