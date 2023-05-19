@@ -90,7 +90,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
 
     const { selectedFilters, setSelectedFilters, availableFilters } = useBatchChangeListFilters({ isExecutionEnabled })
     const [selectedTab, setSelectedTab] = useState<SelectedTab>(
-        openTab ?? (isSourcegraphDotCom || !batchChangeLicensed ? 'gettingStarted' : 'batchChanges')
+        openTab ?? (isSourcegraphDotCom || !isBatchChangesLicensed ? 'gettingStarted' : 'batchChanges')
     )
 
     // We keep state to track to the last total count of batch changes in the connection
@@ -197,8 +197,8 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                     </strong>
                 </LimitedAccessBanner>
             )}
-            <BatchChangesListIntro isLicensed={batchChangeLicensed} />
-            {!isSourcegraphDotCom && batchChangeLicensed && (
+            <BatchChangesListIntro isLicensed={isBatchChangesLicensed} />
+            {!isSourcegraphDotCom && isBatchChangesLicensed && (
                 <BatchChangeListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
             )}
             {selectedTab === 'gettingStarted' && (

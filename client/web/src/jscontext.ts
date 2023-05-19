@@ -252,6 +252,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
         codeScaleLimit?: string
         codeScaleCloseToLimit?: boolean
         codeScaleExceededLimit?: boolean
+        batchChanges?: BatchChangesLincenseInfo
         knownLicenseTags?: string[]
     }
 
@@ -262,6 +263,11 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Whether the feedback survey is enabled. */
     disableFeedbackSurvey?: boolean
+}
+
+interface BatchChangesLincenseInfo {
+    unrestricted: boolean
+    maxNumChangesets: number
 }
 
 export interface BrandAssets {
