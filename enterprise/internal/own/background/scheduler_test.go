@@ -84,8 +84,9 @@ func TestOwnRepoIndexSchedulerJob_JobsAreExcluded(t *testing.T) {
 	require.NoError(t, err)
 
 	err = db.OwnSignalConfigurations().UpdateConfiguration(ctx, database.UpdateSignalConfigurationArgs{
-		Name:    config.Name,
-		Enabled: true,
+		Name:                 config.Name,
+		Enabled:              true,
+		ExcludedRepoPatterns: []string{"excluded-repo-1", "excluded-repo-2"},
 	})
 	require.NoError(t, err)
 
@@ -96,6 +97,8 @@ func TestOwnRepoIndexSchedulerJob_JobsAreExcluded(t *testing.T) {
 	states := []string{"queued", "processing", "errored", "failed", "completed"}
 
 	insertRepo(t, db, 500, "great-repo-1", true)
+	insertRepo(t, db, 501, "excluded-repo-1", true)
+	insertRepo(t, db, 502, "excluded-repo-2", true)
 
 	for _, state := range states {
 		doTest := func(t *testing.T, expected int) {
