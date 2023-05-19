@@ -27,7 +27,7 @@ var timeNow = time.Now
 
 func (r *UserResolver) HasVerifiedEmail(ctx context.Context) (bool, error) {
 	if deploy.IsApp() {
-		return r.hasDotcomVerifiedEmail(ctx)
+		return r.hasVerifiedEmailOnDotcom(ctx)
 	}
 
 	return r.hasVerifiedEmail(ctx)
@@ -40,8 +40,8 @@ func (r *UserResolver) hasVerifiedEmail(ctx context.Context) (bool, error) {
 	return backend.NewUserEmailsService(r.db, r.logger).HasVerifiedEmail(ctx, r.user.ID)
 }
 
-// hasDotcomVerifiedEmail - checks with sourcegraph.com to ensure the app user has verified email.
-func (r *UserResolver) hasDotcomVerifiedEmail(ctx context.Context) (bool, error) {
+// hasVerifiedEmailOnDotcom - checks with sourcegraph.com to ensure the app user has verified email.
+func (r *UserResolver) hasVerifiedEmailOnDotcom(ctx context.Context) (bool, error) {
 	// 🚨 SECURITY: This resolves HasVerifiedEmail only for App by
 	// sending the request to dotcom to check if a verified email exists for the user.
 	// Dotcom will ensure that only the authenticated user and site admins can check
