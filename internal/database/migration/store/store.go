@@ -293,7 +293,7 @@ func (s *Store) RunDDLStatements(ctx context.Context, statements []string) (err 
 	defer func() { err = tx.Done(err) }()
 
 	for _, statement := range statements {
-		if err := tx.Exec(ctx, sqlf.Sprintf(statement)); err != nil {
+		if err := tx.Exec(ctx, sqlf.Sprintf(strings.ReplaceAll(statement, "%", "%%"))); err != nil {
 			return err
 		}
 	}

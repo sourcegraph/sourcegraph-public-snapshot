@@ -6,11 +6,13 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/cmd/server/shared"
+	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
 
 	_ "github.com/sourcegraph/sourcegraph/ui/assets/enterprise" // Select enterprise assets
 )
 
 func main() {
+	sanitycheck.Pass()
 	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
 	if debug {
 		log.Println("enterprise edition")

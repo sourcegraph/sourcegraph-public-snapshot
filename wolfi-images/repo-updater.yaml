@@ -20,6 +20,7 @@ contents:
 
     ## repo-updater packages
     - coursier@sourcegraph
+    - p4cli@sourcegraph
 
 accounts:
   groups:

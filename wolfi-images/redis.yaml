@@ -11,17 +11,18 @@ contents:
 accounts:
   groups:
     - groupname: redis
-      gid: 65532
+      gid: 1000
   users:
     - username: redis
-      uid: 65532
+      uid: 999
+      gid: 1000
   run-as: redis
 
 paths:
   - path: /redis-data
     type: directory
-    uid: 65532
-    gid: 65532
+    uid: 999
+    gid: 1000
     permissions: 0o755
 
 work-dir:
