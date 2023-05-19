@@ -1,12 +1,12 @@
 # Upgrade Sourcegraph on Docker Compose
 
-This document describes the process to update a Docker Compose Sourcegraph instance.
+This document describes the process to update a Docker Compose Sourcegraph instance. If you are unfamiliar with sourcegraph versioning or releases see our [general concepts documentation](../../updates/index.md).
 
-> ***⚠️ Attention: Always consult the [release notes](../../updates/docker_compose.md) for the versions your upgrade will cross.***
+> ***⚠️ Attention: Always consult the [release notes](../../updates/docker_compose.md) for the versions your upgrade will pass over and end on.***
 
 ### Standard upgrades
 
-A [standard upgrade](../../updates/index.md#upgrade-types) occurs between a Sourcegraph version and the minor or major version released immediately after it. If you are looking to jump forward several versions, you must perform a [multi-version upgrade](#multi-version-upgrades) instead.
+A [standard upgrade](../../updates/index.md#upgrade-types) occurs between a Sourcegraph version and the minor or major version released immediately after it. If you would like to jump forward several versions, you must perform a [multi-version upgrade](#multi-version-upgrades) instead.
 
 If you've [configured Docker Compose with a release branch](index.md#step-1-prepare-the-deployment-repository), please merge the upstream release tag for the next minor version into your `release` branch. In the following example, the release branch is being upgraded to v3.43.2.
 
@@ -63,25 +63,26 @@ To perform a multi-version upgrade on a Sourcegraph instance running on Docker c
    - Check the [upgrade notes](../../updates/docker_compose.md#docker-compose-upgrade-notes) for the version range you're passing through.
    - Check the `Site Admin > Updates` page to determine [upgrade readiness](../../updates/index.md#upgrade-readiness).
 
-2. **Disable Connections to the Database**
+2. **Disable Connections to the Database**:
    - Run the following command in the directory containing your `docker-compose.yaml` file.
   ```
   docker-compose stop && docker-compose up -d pgsql codeintel-db codeinsights-db
   ```
-3. **Run Migrator with the `upgrade` command**
+3. **Run Migrator with the `upgrade` command**:
    - The following procedure describes running migrator in brief, for more detailed instructions and available command flags see our [migrator docs](../../how-to/manual_database_migrations.md#docker--docker-compose).
-    1. Set the migrator `image:` in your `docker-compose.yaml` to the **latest** release. **Ex:**
-    ```
+    1. Set the migrator `image:` in your `docker-compose.yaml` to the **latest** release of `migrator`. **Example:**
+    ```yaml
       migrator:
     container_name: migrator
     image: 'index.docker.io/sourcegraph/migrator:5.0.4'
     ```
-    2. Set the migrator `command:` to `upgrade` you'll need to supply a `--to=` argument. **Ex:**
-    ```
+    > *Note: Always use the latest image version of migrator for migrator commands, except the startup command `up`*
+    2. Set the migrator `command:` to `upgrade` you'll need to supply a `--to=` argument. **Example:**
+    ```yaml
     command: ['upgrade', '--from=v4.1.2', '--to=v4.4.0']
     ```
     > *Note: you may add the `--dry-run` flag to the `command:` to test things out before altering the dbs*
-    3. Run migrator with `docker-compose up migrator` **Ex:**
+    3. Run migrator with `docker-compose up migrator` **Example:**
     ```bash
     λ ~/deploy-sourcegraph-docker/docker-compose/ docker-compose up migrator
     codeintel-db is up-to-date
@@ -109,11 +110,11 @@ To perform a multi-version upgrade on a Sourcegraph instance running on Docker c
     migrator                         | migrator exited with code 0
     ```
 
-4. **Pull and merge upstream changes** 
+4. **Pull and merge upstream changes**:
    - Follow the [standard upgrade procedure](#standard-upgrades) to pull and merge upstream changes from the version you are upgrading to to your `release` branch.
    - **⚠️ Attention:** *merging upstream changes should set the migrator `image:` version back to the release you are upgrading to, and the `command:` should be set back to `up`, this is necessary to start your instance again.*
 
-5. **Start your containers again**
+5. **Start your containers again**:
    - run `docker-compose up -d` in the folder containing your `docker-compose.yaml` file.
    ```
    docker-compose up -d

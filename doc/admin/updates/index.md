@@ -1,10 +1,10 @@
 # Updating sourcegraph
 
-This page is intended as an entry point into Sourcegraph versioning and the `migrator` service which manages our database schemas. Here we'll cover general concepts and direct you toward relevant operations pages.
+This page is intended as an entry point into Sourcegraph versioning, upgrades, and the `migrator` service which manages our database schemas. Here we'll cover general concepts and direct you toward relevant operations pages.
+
+**If you are already familiar with Sourcegraph upgrades [skip to instance specific procedures](#instance-specific-procedures).**
 
 > *Note: For product update notes, please refer to the [changelog](../../CHANGELOG.md).*
-
-**If you're already familiar with Sourcegraph upgrades [skip to instance specific procedures](#instance-specific-procedures).**
 
 ## General concepts
 
@@ -72,7 +72,8 @@ It is highly recommended to:
 Sourcegraph upgrades take the following general form:
 1. Determine if your instance is ready to Upgrade (check upgrade notes)
 2. Merge the latest Sourcegraph release into your deployment manifests
-3. Run migrator by reapplying your manifests in a **standard upgrade** (migrator by default uses the `up` command), or by disabling services connected to your databases and running `migrator` with the `upgrade` argument.
+3. Run migrator by reapplying your manifests in a **standard upgrade** (migrator by default uses the `up` command), or by disabling services connected to your databases and running `migrator` with the `upgrade` argument in a **multiversion upgrade**.
+4. With upstream changes to your manifests merged, and schema migrations conducted by migrator your instance is ready to start.
 
 > Note: For more explicit steps, specific to your deployment see the operations guides linked below.
 
@@ -110,6 +111,6 @@ If your instance has schema drift or unfinished oob migrations you may need to a
 
 ## Other helpful links
 
-- Migrations from really old versions
-- Troubleshooting migrations
-- Downgrading
+- [Upgrading Early Versions](upgrading-early-versions.md)
+- [Troubleshooting migrations](troubleshooting-upgrades.md)
+- [Downgrading](downgrading.md)
