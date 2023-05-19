@@ -255,7 +255,8 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
     {
         ...createQueryExampleFromString('has.meta({key:value})'),
         field: FilterType.repo,
-        description: 'Search only inside repositories having ({key}:{value}) pair, or ({key}) with any value or ({key}:) with no value metadata',
+        description:
+            'Search only inside repositories having ({key}:{value}) pair, or ({key}) with any value or ({key}:) with no value metadata',
         examples: [
             'repo:has.meta(owner:jordan)',
             '-repo:has.meta(team:search)',

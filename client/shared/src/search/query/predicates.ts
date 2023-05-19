@@ -215,7 +215,8 @@ export const predicateCompletion = (field: string): Completion[] => {
             {
                 label: 'has.meta(...)',
                 insertText: 'has.meta(${1:key}:${2:value})',
-                description: 'Search only inside repositories having ({key}:{value}) pair, or ({key}) with any value or ({key}:) with no value metadata',
+                description:
+                    'Search only inside repositories having ({key}:{value}) pair, or ({key}) with any value or ({key}:) with no value metadata',
                 asSnippet: true,
             },
             {
@@ -236,7 +237,8 @@ export const predicateCompletion = (field: string): Completion[] => {
                 label: 'has.key(...)',
                 insertText: 'has.key(${1})',
                 description:
-                    'DEPRECATED: Use "has.meta({key})" instead. Search only inside repositories having a specifiec key with any value',
+                    'DEPRECATED: Use "has.meta({key})" instead. Search only inside repositories having a specific key with any value',
+                asSnippet: true,
             },
         ]
     }
