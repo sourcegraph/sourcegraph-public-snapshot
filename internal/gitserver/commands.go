@@ -736,6 +736,14 @@ type BlameOptions struct {
 	EndLine   int `json:",omitempty" url:",omitempty"` // 1-indexed end line (or 0 for end of file)
 }
 
+func (o *BlameOptions) Attrs() []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.String("newestCommit", string(o.NewestCommit)),
+		attribute.Int("startLine", o.StartLine),
+		attribute.Int("endLine", o.EndLine),
+	}
+}
+
 // A Hunk is a contiguous portion of a file associated with a commit.
 type Hunk struct {
 	StartLine int // 1-indexed start line number
@@ -749,12 +757,15 @@ type Hunk struct {
 }
 
 // StreamBlameFile returns Git blame information about a file.
-func (c *clientImplementor) StreamBlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) (HunkReader, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: StreamBlameFile") //nolint:staticcheck // OT is deprecated
-	span.SetTag("repo", repo)
-	span.SetTag("path", path)
-	span.SetTag("opt", opt)
-	defer span.Finish()
+func (c *clientImplementor) StreamBlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) (_ HunkReader, err error) {
+	// TODO: this span does not capture the lifetime of the request because we return a reader
+	ctx, _, endObservation := c.operations.contributorCount.With(ctx, &err, observation.Args{
+		Attrs: append([]attribute.KeyValue{
+			attribute.String("repo", string(repo)),
+			attribute.String("path", path),
+		}, opt.Attrs()...),
+	})
+	defer endObservation(1, observation.Args{})
 
 	return streamBlameFileCmd(ctx, checker, repo, path, opt, c.gitserverGitCommandFunc(repo))
 }
