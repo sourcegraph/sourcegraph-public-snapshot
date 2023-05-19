@@ -31,14 +31,13 @@ bundle_path() {
 
 upload_dist() {
   local path="$(bundle_path)"
-  mkdir -p dist
   echo "searching for artefacts in '${path}' and moving them to dist/"
-  src=$(find "${path}" -type f \( -name "Sourcegraph*.dmg" -o -name "Sourcegraph*.tar.gz" -o -name "sourcegraph*.deb" -o -name "sourcegraph*.AppImage" -o -name "sourcegraph*.tar.gz" \) -exec realpath {} \;);
-  # we're using while and read here because the paths may contain spaces and this handles it properly
-  while IFS= read -r from; do
-    mv -vf "${from}" "./${DIST_DIR}/"
-  done <<< ${src}
+  src=$(find "${path}" -type f \( -name "Sourcegraph*.dmg" -o -name "Sourcegraph*.tar.gz" -o -name "sourcegraph*.deb" -o -name "sourcegraph*.AppImage" -o -name "sourcegraph*.tar.gz" \));
 
+  mkdir -p dist
+  for from in ${src}; do
+    mv -vf "${from}" "./${DIST_DIR}/"
+  done
 
   echo --- Uploading artifacts from dist
   ls -al ./dist
@@ -47,10 +46,11 @@ upload_dist() {
 }
 
 create_app_archive() {
-  # # we have to handle Sourcegraph.App differently since it is a dir
+  local version=$1
   local path="$(bundle_path)"
   local app_path=$(find "${path}" -type d -name "Sourcegraph.app")
 
+  # # we have to handle Sourcegraph.App differently since it is a dir
   if [[ -d  ${app_path} ]]; then
     local arch
     local target
@@ -59,10 +59,10 @@ create_app_archive() {
       arch="aarch64"
     fi
 
-    target="Sourcegraph.${arch}.app.tar.gz"
+    target="Sourcegraph.${version}.${arch}.app.tar.gz"
     pushd .
     cd "${path}/macos/"
-    echo "--- :file_cabinet: Creating archive of ${app_path} in $(pwd)"
+    echo "--- :file_cabinet: Creating archive ${target}"
     tar -czvf "${target}" "Sourcegraph.app"
     popd
   fi
@@ -175,7 +175,7 @@ fi
 PLATFORM="$(./enterprise/dev/app/detect_platform.sh)"
 build ${PLATFORM}
 
-create_app_archive
+create_app_archive ${VERSION}
 
 if [[ ${CI:-""} == "true" ]]; then
   upload_dist
