@@ -15,6 +15,7 @@ go_library(
         "//cmd/sourcegraph-oss/osscmd",
         "//cmd/symbols/shared",
         "//cmd/worker/shared",
+        "//internal/sanitycheck",
         "//internal/service",
         "//internal/service/servegit",
     ],

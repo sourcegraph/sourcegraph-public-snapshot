@@ -4,6 +4,7 @@ import (
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/sourcegraph/enterprisecmd"
+	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/service/servegit"
 
@@ -40,6 +41,7 @@ var services = []service.Service{
 }
 
 func main() {
+	sanitycheck.Pass()
 	if os.Getenv("WEBPACK_DEV_SERVER") == "1" {
 		assets.UseDevAssetsProvider()
 	}

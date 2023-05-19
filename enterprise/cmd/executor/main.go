@@ -14,10 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
+	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
 func main() {
+	sanitycheck.Pass()
 	cfg := &config.Config{}
 	cfg.Load()
 

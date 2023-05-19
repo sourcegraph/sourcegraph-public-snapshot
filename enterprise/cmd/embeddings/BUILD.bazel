@@ -8,6 +8,7 @@ go_library(
     deps = [
         "//enterprise/cmd/embeddings/shared",
         "//enterprise/cmd/sourcegraph/enterprisecmd",
+        "//internal/sanitycheck",
     ],
 )
 

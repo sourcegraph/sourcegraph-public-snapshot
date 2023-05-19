@@ -9,6 +9,7 @@ go_library(
         "//enterprise/cmd/batcheshelper/log",
         "//enterprise/cmd/batcheshelper/run",
         "//enterprise/cmd/batcheshelper/util",
+        "//internal/sanitycheck",
         "//lib/batches",
         "//lib/batches/execution",
         "//lib/errors",

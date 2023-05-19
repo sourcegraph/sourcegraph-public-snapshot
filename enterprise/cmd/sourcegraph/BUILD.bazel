@@ -23,6 +23,7 @@ go_library(
         "//enterprise/cmd/sourcegraph/enterprisecmd",
         "//enterprise/cmd/symbols/shared",
         "//enterprise/cmd/worker/shared",
+        "//internal/sanitycheck",
         "//internal/service",
         "//internal/service/servegit",
         "//ui/assets",

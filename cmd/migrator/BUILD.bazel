@@ -12,6 +12,7 @@ go_library(
     deps = [
         "//cmd/migrator/shared",
         "//internal/env",
+        "//internal/sanitycheck",
         "//internal/version",
         "@com_github_sourcegraph_log//:log",
     ],

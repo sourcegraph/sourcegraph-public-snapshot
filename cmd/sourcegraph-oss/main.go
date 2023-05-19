@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/sourcegraph-oss/osscmd"
 	symbols_shared "github.com/sourcegraph/sourcegraph/cmd/symbols/shared"
 	worker_shared "github.com/sourcegraph/sourcegraph/cmd/worker/shared"
+	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/service/servegit"
 )
@@ -31,5 +32,6 @@ var services = []service.Service{
 }
 
 func main() {
+	sanitycheck.Pass()
 	osscmd.MainOSS(services, os.Args)
 }
