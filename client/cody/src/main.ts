@@ -17,6 +17,7 @@ import { InlineController } from './services/InlineController'
 import { LocalStorage } from './services/LocalStorageProvider'
 import {
     CODY_ACCESS_TOKEN_SECRET,
+    CODY_SERVER_ENDPOINT,
     InMemorySecretStorage,
     SecretStorage,
     VSCodeSecretStorage,
@@ -46,6 +47,11 @@ export async function start(context: vscode.ExtensionContext): Promise<vscode.Di
     disposables.push(
         secretStorage.onDidChange(async key => {
             if (key === CODY_ACCESS_TOKEN_SECRET) {
+                onConfigurationChange(await getFullConfig(secretStorage))
+            }
+        }),
+        secretStorage.onDidChange(async key => {
+            if (key === CODY_SERVER_ENDPOINT) {
                 onConfigurationChange(await getFullConfig(secretStorage))
             }
         }),
@@ -153,6 +159,9 @@ const register = async (
                 await secretStorage.store(CODY_ACCESS_TOKEN_SECRET, args[0])
             }
         }),
+        vscode.commands.registerCommand('cody.set-serverEndpoint', async (serverEndpoint: string) => {
+            await secretStorage.store(CODY_SERVER_ENDPOINT, serverEndpoint)
+        }),
         vscode.commands.registerCommand('cody.delete-access-token', async () => {
             await chatProvider.logout()
         }),
@@ -187,7 +196,7 @@ const register = async (
                 if (params.get('type') === 'app') {
                     serverEndpoint = LOCAL_APP_URL.href
                 }
-                await workspaceConfig.update('cody.serverEndpoint', serverEndpoint, vscode.ConfigurationTarget.Global)
+                await secretStorage.store(CODY_SERVER_ENDPOINT, serverEndpoint)
                 const token = params.get('code')
                 if (token && token.length > 8) {
                     await secretStorage.store(CODY_ACCESS_TOKEN_SECRET, token)

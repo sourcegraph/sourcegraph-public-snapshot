@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 export const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
+export const CODY_SERVER_ENDPOINT = 'cody.server-endpoint'
 
 export async function getAccessToken(secretStorage: SecretStorage): Promise<string | null> {
     try {
@@ -11,6 +12,15 @@ export async function getAccessToken(secretStorage: SecretStorage): Promise<stri
         // Display system notification because the error was caused by system storage
         void vscode.window.showErrorMessage(`Failed to retrieve access token for Cody from secret storage: ${error}`)
         return null
+    }
+}
+export async function getServerEndpoint(secretStorage: SecretStorage): Promise<string> {
+    try {
+        return (await secretStorage.get(CODY_SERVER_ENDPOINT)) || ''
+    } catch (error) {
+        await secretStorage.delete(CODY_SERVER_ENDPOINT)
+        console.error(`Failed to retreive access token for Cody: ${error}`)
+        return ''
     }
 }
 

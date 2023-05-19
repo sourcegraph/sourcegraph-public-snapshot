@@ -28,7 +28,7 @@ import { logEvent } from '../event-logger'
 import { LocalKeywordContextFetcher } from '../keyword-context/local-keyword-context-fetcher'
 import { LocalAppDetector } from '../local-app-detector'
 import { LocalStorage } from '../services/LocalStorageProvider'
-import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../services/SecretStorageProvider'
+import { CODY_ACCESS_TOKEN_SECRET, CODY_SERVER_ENDPOINT, SecretStorage } from '../services/SecretStorageProvider'
 import { TestSupport } from '../test-support'
 
 import {
@@ -229,6 +229,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
                 if (isLoggedIn(authStatus)) {
                     await updateConfiguration('serverEndpoint', message.serverEndpoint)
+                    await this.secretStorage.store(CODY_SERVER_ENDPOINT, message.serverEndpoint)
                     await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
                     this.sendEvent('auth', 'login')
                 }

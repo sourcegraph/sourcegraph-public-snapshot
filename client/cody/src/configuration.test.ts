@@ -2,13 +2,13 @@ import type * as vscode from 'vscode'
 
 import { getConfiguration } from './configuration'
 
+// Fix this tests
 describe('getConfiguration', () => {
     it('returns default values when no config set', () => {
         const config: Pick<vscode.WorkspaceConfiguration, 'get'> = {
             get: <T>(_key: string, defaultValue?: T): typeof defaultValue | undefined => defaultValue,
         }
         expect(getConfiguration(config)).toEqual({
-            serverEndpoint: '',
             codebase: '',
             debug: false,
             useContext: 'embeddings',
@@ -19,12 +19,11 @@ describe('getConfiguration', () => {
         })
     })
 
+    // Fix this test please
     it('reads values from config', () => {
         const config: Pick<vscode.WorkspaceConfiguration, 'get'> = {
             get: key => {
                 switch (key) {
-                    case 'cody.serverEndpoint':
-                        return 'http://example.com'
                     case 'cody.codebase':
                         return 'my/codebase'
                     case 'cody.debug':
@@ -48,7 +47,6 @@ describe('getConfiguration', () => {
             },
         }
         expect(getConfiguration(config)).toEqual({
-            serverEndpoint: 'http://example.com',
             codebase: 'my/codebase',
             debug: true,
             useContext: 'keyword',

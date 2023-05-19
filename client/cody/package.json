@@ -134,6 +134,10 @@
         "title": "Cody: Set Access Token"
       },
       {
+        "command": "cody.set-serverEndpoint",
+        "title": "Cody: Set Server Endpoint"
+      },
+      {
         "command": "cody.delete-access-token",
         "title": "Cody: Sign out"
       },
@@ -242,6 +246,10 @@
           "when": "false"
         },
         {
+          "command": "cody.set-serverEndpoint",
+          "when": "false"
+        },
+        {
           "command": "cody.focus",
           "title": "Cody: Sign In",
           "when": "!cody.activated"
@@ -345,12 +353,11 @@
       "type": "object",
       "title": "Cody",
       "properties": {
-        "cody.serverEndpoint": {
+        "cody.enabled": {
           "order": 1,
-          "type": "string",
-          "default": "https://sourcegraph.com",
-          "example": "https://example.sourcegraph.com",
-          "description": "URL to the Sourcegraph instance."
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Cody"
         },
         "cody.codebase": {
           "order": 2,
