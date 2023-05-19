@@ -122,7 +122,7 @@ set_platform
 target_path=".bin/sourcegraph-backend-${PLATFORM}"
 set_version
 bazel_build "${PLATFORM}" "${target_path}"
-if [[ ${CODESIGNING} == 1 ]]; then
+if [[ ${CODESIGNING:-0} == 1 ]]; then
   # If on a macOS host, Tauri will invoke the base64 command as part of the code signing process.
   # it expects the macOS base64 command, not the gnutils one provided by homebrew, so we prefer
   # that one here:
