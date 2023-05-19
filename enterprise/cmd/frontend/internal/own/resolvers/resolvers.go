@@ -9,6 +9,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	owntypes "github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -485,6 +486,14 @@ func (g *recentContributorOwnershipSignal) Description() (string, error) {
 }
 
 func computeRecentContributorSignals(ctx context.Context, db edb.EnterpriseDB, path string, repoID api.RepoID) (results []*ownershipResolver, err error) {
+	enabled, err := db.OwnSignalConfigurations().IsEnabled(ctx, owntypes.SignalRecentContributors)
+	if err != nil {
+		return nil, errors.Wrap(err, "IsEnabled")
+	}
+	if !enabled {
+		return nil, nil
+	}
+
 	recentAuthors, err := db.RecentContributionSignals().FindRecentAuthors(ctx, repoID, path)
 	if err != nil {
 		return nil, errors.Wrap(err, "FindRecentAuthors")
@@ -532,6 +541,14 @@ func (v *recentViewOwnershipSignal) Description() (string, error) {
 }
 
 func computeRecentViewSignals(ctx context.Context, logger log.Logger, db edb.EnterpriseDB, path string, repoID api.RepoID) (results []*ownershipResolver, err error) {
+	enabled, err := db.OwnSignalConfigurations().IsEnabled(ctx, owntypes.SignalRecentViews)
+	if err != nil {
+		return nil, errors.Wrap(err, "IsEnabled")
+	}
+	if !enabled {
+		return nil, nil
+	}
+
 	summaries, err := db.RecentViewSignal().List(ctx, database.ListRecentViewSignalOpts{Path: path, RepoID: repoID})
 	if err != nil {
 		return nil, errors.Wrap(err, "list recent view signals")
@@ -591,7 +608,7 @@ func (r *ownResolver) OwnSignalConfigurations(ctx context.Context) ([]graphqlbac
 	}
 	var resolvers []graphqlbackend.SignalConfigurationResolver
 	store := r.db.OwnSignalConfigurations()
-	configurations, err := store.LoadConfigurations(ctx)
+	configurations, err := store.LoadConfigurations(ctx, database.LoadSignalConfigurationArgs{})
 	if err != nil {
 		return nil, errors.Wrap(err, "LoadConfigurations")
 	}

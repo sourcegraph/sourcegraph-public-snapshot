@@ -2,7 +2,6 @@ package background
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	logger "github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -22,15 +22,13 @@ import (
 
 type IndexJobType struct {
 	Name            string
-	Id              JobTypeID
 	IndexInterval   time.Duration
 	RefreshInterval time.Duration
 }
 
 // QueuePerRepoIndexJobs is a slice of jobs that will automatically initialize and will queue up one index job per repo every IndexInterval.
 var QueuePerRepoIndexJobs = []IndexJobType{{
-	Name:            "recent-contributors",
-	Id:              RecentContributors,
+	Name:            types.SignalRecentContributors,
 	IndexInterval:   time.Hour * 24,
 	RefreshInterval: time.Minute * 5,
 }}
@@ -68,8 +66,7 @@ func GetOwnIndexSchedulerRoutines(db database.DB, observationCtx *observation.Co
 	}
 
 	recent := IndexJobType{
-		Name:            "recent-views",
-		Id:              RecentViews,
+		Name:            types.SignalRecentViews,
 		RefreshInterval: time.Minute * 5,
 	}
 	routines = append(routines, makeRoutine(recent, op(recent), newRecentViewsIndexer(db, observationCtx.Logger)))
@@ -98,17 +95,12 @@ func (f *featureFlagWrapper) Handle(ctx context.Context) error {
 		f.logger.Info("skipping own indexing job, job disabled", logger.String("job-name", f.jobType.Name))
 	}
 
-	flag, err := database.FeatureFlagsWith(f.db).GetFeatureFlag(ctx, featureFlagName(f.jobType))
+	config, err := loadConfig(ctx, f.jobType, f.db.OwnSignalConfigurations())
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			logJobDisabled()
-			return nil
-		} else {
-			return errors.Wrap(err, "database.FeatureFlagsWith")
-		}
+		return errors.Wrap(err, "loadConfig")
 	}
-	res, ok := flag.EvaluateGlobal()
-	if !ok || !res {
+
+	if !config.Enabled {
 		logJobDisabled()
 		return nil
 	}
@@ -118,23 +110,23 @@ func (f *featureFlagWrapper) Handle(ctx context.Context) error {
 }
 
 type ownRepoIndexSchedulerJob struct {
-	store   *basestore.Store
-	jobType IndexJobType
-	logger  logger.Logger
-	clock   glock.Clock
+	store       *basestore.Store
+	jobType     IndexJobType
+	logger      logger.Logger
+	clock       glock.Clock
+	configStore database.SignalConfigurationStore
 }
 
 func newOwnRepoIndexSchedulerJob(db database.DB, jobType IndexJobType, logger logger.Logger) *ownRepoIndexSchedulerJob {
 	store := basestore.NewWithHandle(db.Handle())
-	return &ownRepoIndexSchedulerJob{jobType: jobType, store: store, logger: logger, clock: glock.NewRealClock()}
+	return &ownRepoIndexSchedulerJob{jobType: jobType, store: store, logger: logger, clock: glock.NewRealClock(), configStore: db.OwnSignalConfigurations()}
 }
 
 func (o *ownRepoIndexSchedulerJob) Handle(ctx context.Context) error {
-
 	// convert duration to hours to match the query
 	after := o.clock.Now().Add(-1 * o.jobType.IndexInterval)
 
-	query := sqlf.Sprintf(ownIndexRepoQuery, o.jobType.Id, after, o.jobType.Id)
+	query := sqlf.Sprintf(ownIndexRepoQuery, o.jobType.Name, after)
 	val, err := o.store.ExecResult(ctx, query)
 	if err != nil {
 		return errors.Wrapf(err, "ownRepoIndexSchedulerJob.Handle %s", o.jobType.Name)
@@ -147,17 +139,35 @@ func (o *ownRepoIndexSchedulerJob) Handle(ctx context.Context) error {
 }
 
 // Every X duration the scheduler will run and try to index repos for each job type. It will obey the following rules:
-// 1. ignore jobs in progress, queued, or still in retry-backoff
-// 2. ignore repos that have indexed more recently than the configured index interval for the job, ex. 24 hours
-// 3. add all remaining cloned repos to the queue
+//  1. ignore jobs in progress, queued, or still in retry-backoff
+//  2. ignore repos that have indexed more recently than the configured index interval for the job, ex. 24 hours
+//     OR repos that are excluded from the signal configuration. All exclusions are pulled into the ineligible_repos CTE.
+//  3. add all remaining cloned repos to the queue
+//
 // This means each (job, repo) tuple will only be index maximum once in a single interval duration
 var ownIndexRepoQuery = `
-WITH ineligible_repos AS (SELECT repo_id
-                          FROM own_background_jobs
-                          WHERE job_type = %d
-                              AND (state IN ('failed', 'completed') AND finished_at > %s)
-                             OR (state IN ('processing', 'errored', 'queued')))
-insert into own_background_jobs (repo_id, job_type) (SELECT gr.repo_id, %d
-FROM gitserver_repos gr
-WHERE gr.repo_id NOT IN (SELECT * FROM ineligible_repos) and gr.clone_status = 'cloned');
-`
+WITH signal_config AS (SELECT * FROM own_signal_configurations WHERE name = %s LIMIT 1),
+     ineligible_repos AS (SELECT repo_id
+                          FROM own_background_jobs,
+                               signal_config
+                          WHERE job_type = signal_config.id
+                              AND (state IN ('failed', 'completed') AND finished_at > %s) OR (state IN ('processing', 'errored', 'queued'))
+                          UNION
+                            SELECT repo.id FROM repo, signal_config WHERE repo.name LIKE (SELECT UNNEST(signal_config.excluded_repo_patterns))
+                          )
+INSERT
+INTO own_background_jobs (repo_id, job_type) (SELECT gr.repo_id, signal_config.id
+                                              FROM gitserver_repos gr,
+                                                   signal_config
+                                              WHERE gr.repo_id NOT IN (SELECT * FROM ineligible_repos)
+                                                AND gr.clone_status = 'cloned');`
+
+func loadConfig(ctx context.Context, jobType IndexJobType, store database.SignalConfigurationStore) (database.SignalConfiguration, error) {
+	configurations, err := store.LoadConfigurations(ctx, database.LoadSignalConfigurationArgs{Name: jobType.Name})
+	if err != nil {
+		return database.SignalConfiguration{}, errors.Wrap(err, "LoadConfigurations")
+	} else if len(configurations) == 0 {
+		return database.SignalConfiguration{}, errors.Newf("ownership signal configuration not found for name: %s\n", jobType.Name)
+	}
+	return configurations[0], nil
+}

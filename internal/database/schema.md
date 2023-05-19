@@ -4469,6 +4469,32 @@ Foreign-key constraints:
    FROM outbound_webhooks;
 ```
 
+# View "public.own_background_jobs_config_aware"
+
+## View query:
+
+```sql
+ SELECT obj.id,
+    obj.state,
+    obj.failure_message,
+    obj.queued_at,
+    obj.started_at,
+    obj.finished_at,
+    obj.process_after,
+    obj.num_resets,
+    obj.num_failures,
+    obj.last_heartbeat_at,
+    obj.execution_logs,
+    obj.worker_hostname,
+    obj.cancel,
+    obj.repo_id,
+    obj.job_type,
+    osc.name AS config_name
+   FROM (own_background_jobs obj
+     JOIN own_signal_configurations osc ON ((obj.job_type = osc.id)))
+  WHERE (osc.enabled IS TRUE);
+```
+
 # View "public.reconciler_changesets"
 
 ## View query:
