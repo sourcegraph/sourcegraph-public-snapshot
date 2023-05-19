@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"net/mail"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -85,13 +86,19 @@ type Bag interface {
 // that can be referred to by given text (name or email alike).
 // This can be used in search to find relevant owners by different identifiers
 // that the database reveals.
-// TODO(#52140): Search by verified email.
 // TODO(#52141): Search by code host handle.
 func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text string) (Bag, error) {
 	text = strings.TrimPrefix(text, "@")
+	if _, err := mail.ParseAddress(text); err == nil {
+		return ByEmailReference(ctx, db, text)
+	}
+	return ByUserHandleReference(ctx, db, text)
+}
+
+func ByUserHandleReference(ctx context.Context, db edb.EnterpriseDB, handle string) (Bag, error) {
 	var b bag
-	// Try to find a user by username (the only lookup for now):
-	user, err := db.Users().GetByUsername(ctx, text)
+	// Try to find a user by username.
+	user, err := db.Users().GetByUsername(ctx, handle)
 	if err != nil && !errcode.IsNotFound(err) {
 		return nil, errors.Wrap(err, "Users.GetByUsername")
 	}
@@ -102,13 +109,18 @@ func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text string) (Bag
 		})
 	} else {
 		b = append(b, &userReferences{
-			handle: text,
+			handle: handle,
 		})
 	}
+	return hydrateWithVerifiedEmails(ctx, db, b)
+}
+
+func hydrateWithVerifiedEmails(ctx context.Context, db edb.EnterpriseDB, b bag) (Bag, error) {
 	for _, userRefs := range b {
 		if userRefs.id == 0 {
 			continue
 		}
+		// Getting verified emails of this user.
 		verifiedEmails, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{UserID: userRefs.id, OnlyVerified: true})
 		if err != nil {
 			return nil, errors.Wrap(err, "UserEmails.ListByUser")
@@ -118,6 +130,43 @@ func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text string) (Bag
 		}
 	}
 	return b, nil
+}
+
+func ByEmailReference(ctx context.Context, db edb.EnterpriseDB, email string) (Bag, error) {
+	var b bag
+	// Checking that provided email is verified.
+	verifiedEmails, err := db.UserEmails().GetVerifiedEmails(ctx, email)
+	if err != nil {
+		return nil, err
+	}
+	// Email is not verified, including an input email as is and returning the bag.
+	if len(verifiedEmails) != 1 {
+		b = append(b, &userReferences{
+			verifiedEmails: []string{email},
+		})
+		return b, nil
+	}
+	verifiedEmail := verifiedEmails[0]
+	user, err := db.Users().GetByID(ctx, verifiedEmail.UserID)
+	if err != nil && !errcode.IsNotFound(err) {
+		return nil, errors.Wrap(err, "Users.GetByID")
+	}
+	if user != nil {
+		// Not adding an email here, because we will add it in hydrateWithVerifiedEmails.
+		b = append(b, &userReferences{
+			id:   user.ID,
+			user: user,
+		})
+	} else {
+		// In fact, user emails are deleted as soon as a user is soft/hard deleted, we
+		// shouldn't be here, but in some weird race condition, we still populate the ID
+		// and verified emails.
+		b = append(b, &userReferences{
+			id:             verifiedEmail.UserID,
+			verifiedEmails: []string{verifiedEmail.Email},
+		})
+	}
+	return hydrateWithVerifiedEmails(ctx, db, b)
 }
 
 // bag is implemented as a slice of references for different users.
