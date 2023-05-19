@@ -177,7 +177,7 @@ const toPredicateHover = (token: MetaPredicate): string => {
         case 'has.description':
             return '**Built-in predicate**. Search only inside repositories that have a **description** matching the given regular expression'
         case 'has.meta':
-            return '**Built-in predicate**. Search only inside repositories having a specified key:value pair metadata'
+            return '**Built-in predicate**. Search only inside repositories having ({key}:{value}) pair, or ({key}) with any value or ({key}:) with no value metadata'
         case 'has.tag':
             return '**Built-in predicate**. DEPRECATED: Use "has.meta({tag}:)" instead. Search only inside repositories that are tagged with the given tag'
         case 'has':
