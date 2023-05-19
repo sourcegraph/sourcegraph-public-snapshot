@@ -2044,10 +2044,12 @@ func (c *clientImplementor) CommitsExist(ctx context.Context, checker authz.SubR
 //
 // If ignoreErrors is true, then errors arising from any single failed git log operation will cause the
 // resulting commit to be nil, but not fail the entire operation.
-func (c *clientImplementor) GetCommits(ctx context.Context, checker authz.SubRepoPermissionChecker, repoCommits []api.RepoCommit, ignoreErrors bool) ([]*gitdomain.Commit, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: getCommits") //nolint:staticcheck // OT is deprecated
-	span.SetTag("numRepoCommits", len(repoCommits))
-	defer span.Finish()
+func (c *clientImplementor) GetCommits(ctx context.Context, checker authz.SubRepoPermissionChecker, repoCommits []api.RepoCommit, ignoreErrors bool) (_ []*gitdomain.Commit, err error) {
+	ctx, _, endObservation := c.operations.getCommits.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("numRepoCommits", len(repoCommits)),
+		attribute.Bool("ignoreErrors", ignoreErrors),
+	}})
+	defer endObservation(1, observation.Args{})
 
 	indexesByRepoCommit := make(map[api.RepoCommit]int, len(repoCommits))
 	for i, repoCommit := range repoCommits {
