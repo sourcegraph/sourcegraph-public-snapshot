@@ -7,6 +7,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, useObservable, Alert, Link, H2, Text } from '@sourcegraph/wildcard'
 
+import localSchemaJSON from '../../../../../schema/local.schema.json'
 import awsCodeCommitJSON from '../../../../schema/aws_codecommit.schema.json'
 import azureDevOpsJSON from '../../../../schema/azuredevops.schema.json'
 import bitbucketCloudSchemaJSON from '../../../../schema/bitbucket_cloud.schema.json'
@@ -60,6 +61,7 @@ const externalServices: Record<ExternalServiceKind, JSONSchema> = {
     PERFORCE: perforceSchemaJSON,
     PHABRICATOR: phabricatorSchemaJSON,
     PAGURE: pagureSchemaJSON,
+    LOCAL: localSchemaJSON,
 }
 
 const allConfigSchema = {
