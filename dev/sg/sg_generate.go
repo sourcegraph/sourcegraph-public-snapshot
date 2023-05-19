@@ -5,8 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"os/exec"
-	"strings"
 	"time"
 
 	"github.com/urfave/cli/v2"
@@ -64,24 +62,7 @@ sg --verbose generate ... # Enable verbose output
 			std.Out.WriteFailuref("unrecognized command %q provided", cmd.Args().First())
 			return flag.ErrHelp
 		}
-		// Get the index of the go target
-		var ind int
-		for i, t := range allGenerateTargets {
-			if t.Name == "go" {
-				ind = i
-			}
-		}
-		// Check if output contains any .proto files
-		out, err := exec.Command("git", "diff", "--name-only", "main...HEAD").Output()
-		if err != nil {
-			errors.Errorf("failed to run git diff: %v", err)
-		}
-		if strings.Contains(string(out), ".proto") || os.Getenv("CI") == "true" {
-			return allGenerateTargets.RunAll(cmd.Context)
-		} else {
-			_ = runGenerateAndReport(cmd.Context, allGenerateTargets[ind], []string{})
-			return nil
-		}
+		return allGenerateTargets.RunAll(cmd.Context)
 	},
 	Subcommands: allGenerateTargets.Commands(),
 }
