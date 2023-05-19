@@ -1987,9 +1987,11 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 }
 
 // FirstEverCommit returns the first commit ever made to the repository.
-func (c *clientImplementor) FirstEverCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) (*gitdomain.Commit, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: FirstEverCommit") //nolint:staticcheck // OT is deprecated
-	defer span.Finish()
+func (c *clientImplementor) FirstEverCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) (_ *gitdomain.Commit, err error) {
+	ctx, _, endObservation := c.operations.firstEverCommit.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repo", string(repo)),
+	}})
+	defer endObservation(1, observation.Args{})
 
 	args := []string{"rev-list", "--reverse", "--date-order", "--max-parents=0", "HEAD"}
 	cmd := c.gitCommand(repo, args...)

@@ -19,6 +19,7 @@ type operations struct {
 	stat             *observation.Operation
 	getCommit        *observation.Operation
 	hasCommitAfter   *observation.Operation
+	firstEverCommit  *observation.Operation
 	commits          *observation.Operation
 	newFileReader    *observation.Operation
 	resolveRevision  *observation.Operation
@@ -69,6 +70,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		resolveRevision:  op("ResolveRevision"),
 		getCommit:        op("GetCommit"),
 		hasCommitAfter:   op("HasCommitAfter"),
+		firstEverCommit:  op("FirstEverCommit"),
 		commits:          op("Commits"),
 		listTags:         op("ListTags"),
 		streamBlameFile:  op("StreamBlameFile"),
