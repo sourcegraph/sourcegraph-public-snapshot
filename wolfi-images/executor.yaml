@@ -14,3 +14,7 @@ contents:
 # Firecracker doesn't work in docker, so disable it by default
 environment:
   EXECUTOR_USE_FIRECRACKER: false
+
+paths:
+  - path: /usr/local/bin
+    type: directory
