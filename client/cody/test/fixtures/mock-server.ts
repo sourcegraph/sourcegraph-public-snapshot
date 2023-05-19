@@ -13,6 +13,7 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
     })
 
     app.post('/.api/graphql', (req, res) => {
+        console.log(req.url, req.headers.authorization)
         if (req.headers.authorization !== `token ${VALID_TOKEN}`) {
             res.sendStatus(401)
             return
