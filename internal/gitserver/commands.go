@@ -1332,7 +1332,7 @@ func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, a,
 
 // RevList makes a git rev-list call and iterates through the resulting commits, calling the provided onCommit function for each.
 func (c *clientImplementor) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) (err error) {
-	ctx, _, endObservation := c.operations.mergeBase.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+	ctx, _, endObservation := c.operations.revList.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("repo", repo),
 		attribute.String("commit", commit),
 	}})
@@ -1355,9 +1355,13 @@ func RevListArgs(givenCommit string) []string {
 
 // GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
 // revspecs).
-func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) (*gitdomain.BehindAhead, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: BehindAhead") //nolint:staticcheck // OT is deprecated
-	defer span.Finish()
+func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) (_ *gitdomain.BehindAhead, err error) {
+	ctx, _, endObservation := c.operations.getBehindAhead.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repo", string(repo)),
+		attribute.String("left", left),
+		attribute.String("right", right),
+	}})
+	defer endObservation(1, observation.Args{})
 
 	if err := checkSpecArgSafety(left); err != nil {
 		return nil, err
@@ -1385,10 +1389,13 @@ func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoNam
 
 // ReadFile returns the first maxBytes of the named file at commit. If maxBytes <= 0, the entire
 // file is read. (If you just need to check a file's existence, use Stat, not ReadFile.)
-func (c *clientImplementor) ReadFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string) ([]byte, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: ReadFile") //nolint:staticcheck // OT is deprecated
-	span.SetTag("Name", name)
-	defer span.Finish()
+func (c *clientImplementor) ReadFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string) (_ []byte, err error) {
+	ctx, _, endObservation := c.operations.readFile.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repo", string(repo)),
+		attribute.String("commit", string(commit)),
+		attribute.String("name", name),
+	}})
+	defer endObservation(1, observation.Args{})
 
 	br, err := c.NewFileReader(ctx, checker, repo, commit, name)
 	if err != nil {
@@ -1406,17 +1413,21 @@ func (c *clientImplementor) ReadFile(ctx context.Context, checker authz.SubRepoP
 
 // NewFileReader returns an io.ReadCloser reading from the named file at commit.
 // The caller should always close the reader after use
-func (c *clientImplementor) NewFileReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error) {
+func (c *clientImplementor) NewFileReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string) (_ io.ReadCloser, err error) {
+	// TODO: this does not capture the lifetime of the request since we return a reader
+	ctx, _, endObservation := c.operations.newFileReader.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repo", string(repo)),
+		attribute.String("commit", string(commit)),
+		attribute.String("name", name),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	a := actor.FromContext(ctx)
 	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, name); err != nil {
 		return nil, err
 	} else if !hasAccess {
 		return nil, os.ErrNotExist
 	}
-
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: GetFileReader") //nolint:staticcheck // OT is deprecated
-	span.SetTag("Name", name)
-	defer span.Finish()
 
 	name = rel(name)
 	br, err := c.newBlobReader(ctx, repo, commit, name)

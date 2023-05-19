@@ -15,6 +15,8 @@ type operations struct {
 	exec             *observation.Operation
 	p4Exec           *observation.Operation
 	readDir          *observation.Operation
+	readFile         *observation.Operation
+	newFileReader    *observation.Operation
 	resolveRevision  *observation.Operation
 	listTags         *observation.Operation
 	lstat            *observation.Operation
@@ -23,6 +25,7 @@ type operations struct {
 	contributorCount *observation.Operation
 	mergeBase        *observation.Operation
 	revList          *observation.Operation
+	getBehindAhead   *observation.Operation
 	batchLog         *observation.Operation
 	batchLogSingle   *observation.Operation
 	do               *observation.Operation
@@ -64,7 +67,10 @@ func newOperations(observationCtx *observation.Context) *operations {
 		streamBlameFile:  op("StreamBlameFile"),
 		blameFile:        op("BlameFile"),
 		readDir:          op("ReadDir"),
+		readFile:         op("ReadFile"),
+		newFileReader:    op("NewFileReader"),
 		revList:          op("RevList"),
+		getBehindAhead:   op("GetBehindAhead"),
 		lstat:            op("lStat"),
 		batchLog:         op("BatchLog"),
 		batchLogSingle:   subOp("batchLogSingle"),
