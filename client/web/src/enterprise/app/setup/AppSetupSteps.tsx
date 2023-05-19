@@ -3,7 +3,7 @@ import { FC, useContext } from 'react'
 import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
-import { H1, Text, Link, Button, H3, Icon } from '@sourcegraph/wildcard'
+import { H1, H2, H3, Text, Link, Button, Icon } from '@sourcegraph/wildcard'
 
 import { EnterprisePageRoutes } from '../../../routes.constants'
 import { SetupStepsContext } from '../../../setup-wizard/components'
@@ -39,7 +39,7 @@ export const AppWelcomeSetupPage: FC = () => {
 
             <div className={styles.actions}>
                 <div className={styles.actionsCard}>
-                    <H3>You’ll need a Sourcegraph.com account in order to connect Cody.</H3>
+                    <H3 as={H2}>You’ll need a Sourcegraph.com account in order to connect Cody.</H3>
 
                     <div className={styles.actionsButtons}>
                         <Button
