@@ -3,9 +3,9 @@ import * as vscode from 'vscode'
 import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 
 import { logEvent } from '../event-logger'
+import { CodyTaskState } from '../fixup-tasks/types'
 
 import { CodeLensProvider } from './CodeLensProvider'
-import { CodyTaskState } from './TaskViewProvider/CodyTask'
 import {
     editDocByUri,
     getFixupEditorSelection,

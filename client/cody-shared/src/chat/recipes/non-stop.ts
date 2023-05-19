@@ -29,7 +29,7 @@ export class NonStop implements Recipe {
 
         // Create a id using current data and use it as the key for response multiplexer
         const taskID = Date.now().toString(36).replace(/\d+/g, '')
-        controllers.task.newTask(taskID, humanInput, selection, context.editor.getWorkspaceRootPath() || '')
+        controllers.task.newTask(taskID, humanInput, selection)
 
         const quarterFileContext = Math.floor(MAX_CURRENT_FILE_TOKENS / 4)
         if (truncateText(selection.selectedText, quarterFileContext * 2) !== selection.selectedText) {
@@ -58,7 +58,7 @@ export class NonStop implements Recipe {
                 }
             })
         )
-        console.log(promptText, selection)
+
         return Promise.resolve(
             new Interaction(
                 {

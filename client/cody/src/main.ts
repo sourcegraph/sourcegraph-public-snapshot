@@ -12,6 +12,7 @@ import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
+import { TaskViewProvider } from './fixup-tasks/TaskViewProvider'
 import { getRgPath } from './rg'
 import { InlineController } from './services/InlineController'
 import { LocalStorage } from './services/LocalStorageProvider'
@@ -21,7 +22,6 @@ import {
     SecretStorage,
     VSCodeSecretStorage,
 } from './services/SecretStorageProvider'
-import { TaskViewProvider } from './services/TaskViewProvider'
 
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.

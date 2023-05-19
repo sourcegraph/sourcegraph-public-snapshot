@@ -1,7 +1,8 @@
 import * as vscode from 'vscode'
 
+import { CodyTaskState } from '../fixup-tasks/types'
+
 import { DecorationProvider } from './DecorationProvider'
-import { CodyTaskState } from './TaskViewProvider/CodyTask'
 import { getNewRangeOnChange, singleLineRange } from './utils'
 
 export class CodeLensProvider implements vscode.CodeLensProvider {

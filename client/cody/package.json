@@ -201,6 +201,11 @@
 				"title": "Cody: Add a non-stop Cody task with highlighted code",
         "icon": "resources/cody.png",
         "enablement": "cody.task.view.enabled"
+			},
+      {
+				"command": "cody.task.open",
+				"title": "Cody: Go to task file",
+        "enablement": "cody.task.view.enabled"
 			}
     ],
     "keybindings": [

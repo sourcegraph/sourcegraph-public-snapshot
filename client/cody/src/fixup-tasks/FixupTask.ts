@@ -2,63 +2,42 @@ import * as vscode from 'vscode'
 
 import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 
-import { codyOutputChannel } from '../../log'
-import { editDocByUri, getFixupEditorSelection } from '../utils'
+import { codyOutputChannel } from '../log'
+import { editDocByUri, getFixupEditorSelection } from '../services/utils'
 
-export enum CodyTaskState {
-    'idle' = 0,
-    'pending' = 1,
-    'done' = 2,
-    'error' = 3,
-    'stopped' = 4,
-    'queued' = 5,
-}
-
-type CodyTaskIcon = {
-    [key in CodyTaskState]: {
-        id: string
-        icon: string
-    }
-}
+import { CodyTaskState, fixupTaskIcon } from './types'
 
 // TODO(bee): Create CodeLens for each task
 // TODO(bee): Create decorator for each task
 // TODO(dpc): Add listener for document change to track range
-export class CodyTask extends vscode.TreeItem {
+export class FixupTask {
     private outputChannel = codyOutputChannel
-    public contextValue: string
-    private replacementContent = ''
-    public readonly label: string
-    public selectionRange: vscode.Range | vscode.Selection = new vscode.Range(0, 0, 0, 0)
-    public state: CodyTaskState = CodyTaskState.queued
     private readonly content: string
+    private replacementContent = ''
+    public iconPath: vscode.ThemeIcon | undefined = undefined
+    public selectionRange: vscode.Range
+    public state = CodyTaskState.idle
     public readonly documentUri: vscode.Uri
 
     constructor(
         public readonly id: string,
-        private input: string,
-        private selection: ActiveTextEditorSelection,
-        private editor: vscode.TextEditor
+        public readonly instruction: string,
+        public selection: ActiveTextEditorSelection,
+        private readonly editor: vscode.TextEditor
     ) {
-        super(input)
-        this.label = this.input
-        this.tooltip = `${this.label}-${selection.fileName}`
-        this.description = selection.fileName
+        this.selectionRange = editor.selection
         this.content = selection.selectedText
-        this.contextValue = 'cody.tasks'
         this.documentUri = this.editor.document.uri
 
-        const icon = this.taskIcons[this.state].icon
-        const mode = this.taskIcons[this.state].id
-        this.iconPath = new vscode.ThemeIcon(icon, new vscode.ThemeColor(mode))
+        this.set(CodyTaskState.queued)
     }
     /**
      * Set task state and update icon
      */
     private set(state: CodyTaskState): void {
         this.state = state
-        const icon = this.taskIcons[this.state].icon
-        const mode = this.taskIcons[this.state].id
+        const icon = fixupTaskIcon[this.state].icon
+        const mode = fixupTaskIcon[this.state].id
         this.iconPath = new vscode.ThemeIcon(icon, new vscode.ThemeColor(mode))
     }
 
@@ -74,7 +53,7 @@ export class CodyTask extends vscode.TreeItem {
 
     public error(text: string = ''): void {
         this.set(CodyTaskState.error)
-        this.output(`Error from Task#${this.id}: ` + text, true)
+        this.output(`Error for Task#${this.id}: ` + text, true)
     }
 
     public queue(): void {
@@ -98,7 +77,7 @@ export class CodyTask extends vscode.TreeItem {
         this.selectionRange = newRange
 
         if (!newContent.trim() || newContent.trim() === this.selection.selectedText.trim()) {
-            this.error('New content is empty')
+            this.error('Cody did not provide any replacement for your request.')
             return
         }
 
@@ -139,34 +118,5 @@ export class CodyTask extends vscode.TreeItem {
             original: this.content,
             replacement: this.replacementContent,
         }
-    }
-    /**
-     * Task Info
-     */
-    private taskIcons: CodyTaskIcon = {
-        [CodyTaskState.idle]: {
-            id: 'idle',
-            icon: 'smiley',
-        },
-        [CodyTaskState.pending]: {
-            id: 'pending',
-            icon: 'sync~spin',
-        },
-        [CodyTaskState.done]: {
-            id: 'done',
-            icon: 'issue-closed',
-        },
-        [CodyTaskState.error]: {
-            id: 'error',
-            icon: 'stop',
-        },
-        [CodyTaskState.queued]: {
-            id: 'queue',
-            icon: 'clock',
-        },
-        [CodyTaskState.stopped]: {
-            id: 'removed',
-            icon: 'circle-slash',
-        },
     }
 }
