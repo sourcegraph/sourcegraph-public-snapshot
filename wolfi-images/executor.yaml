@@ -10,3 +10,7 @@ contents:
     - ca-certificates
     - git
     - docker-client@sourcegraph
+
+# Firecracker doesn't work in docker, so disable it by default
+environment:
+  EXECUTOR_USE_FIRECRACKER: false
