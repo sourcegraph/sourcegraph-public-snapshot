@@ -1,12 +1,11 @@
 package repo
 
 import (
-	"bytes"
 	"context"
-	"sort"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/diff"
 	codeintelContext "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
@@ -172,7 +171,7 @@ func (r *revisionFetcher) Diff(ctx context.Context, oldCommit api.CommitID) (
 		return nil, nil, err
 	}
 
-	toRemove, changedNew, err := parseGitDiffNameStatus(b)
+	toRemove, changedNew, err := diff.ParseGitDiffNameStatus(b)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -198,37 +197,4 @@ func (r *revisionFetcher) Diff(ctx context.Context, oldCommit api.CommitID) (
 	}
 
 	return
-}
-
-// TODO (stefan): share this with searcher instead of duplicating it
-
-// parseGitDiffNameStatus returns the paths changedA and changedB for commits
-// A and B respectively. It expects to be parsing the output of the command
-// git diff -z --name-status --no-renames A B.
-func parseGitDiffNameStatus(out []byte) (changedA, changedB []string, err error) {
-	if len(out) == 0 {
-		return nil, nil, nil
-	}
-
-	slices := bytes.Split(bytes.TrimRight(out, "\x00"), []byte{0})
-	if len(slices)%2 != 0 {
-		return nil, nil, errors.New("uneven pairs")
-	}
-
-	for i := 0; i < len(slices); i += 2 {
-		path := string(slices[i+1])
-		switch slices[i][0] {
-		case 'D': // no longer appears in B
-			changedA = append(changedA, path)
-		case 'M':
-			changedA = append(changedA, path)
-			changedB = append(changedB, path)
-		case 'A': // doesn't exist in A
-			changedB = append(changedB, path)
-		}
-	}
-	sort.Strings(changedA)
-	sort.Strings(changedB)
-
-	return changedA, changedB, nil
 }
