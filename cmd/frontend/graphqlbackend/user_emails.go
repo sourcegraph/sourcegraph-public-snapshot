@@ -20,33 +20,37 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var timeNow = time.Now
 
-type HasVerifiedEmailResolver interface {
-	HasVerifiedEmail(ctx context.Context) (bool, error)
+func (r *UserResolver) HasVerifiedEmail(ctx context.Context) (bool, error) {
+	if deploy.IsApp() {
+		return r.hasDotcomVerifiedEmail(ctx)
+	}
+
+	return r.hasVerifiedEmail(ctx)
 }
 
-// dotcomUserHasVerifiedEmailResolver is a resolver for the hasVerifiedEmail field that should *only* be used by App.
-// Because use of Cody requires a dotcom account with a verified email, in app this sends a request
-// to sourcegraph.com to verify that the user associated with app has verified an email.
-type dotcomUserHasVerifiedEmailResolver struct {
+func (r *UserResolver) hasVerifiedEmail(ctx context.Context) (bool, error) {
+	// 🚨 SECURITY: In the UserEmailsService we check that only the
+	// authenticated user and site admins can check
+	// whether the user has a verified email.
+	return backend.NewUserEmailsService(r.db, r.logger).HasVerifiedEmail(ctx, r.user.ID)
 }
 
-// HasVerifiedEmail - checks with sourcegraph.com to ensure the app user has verified email.
-func (r *dotcomUserHasVerifiedEmailResolver) HasVerifiedEmail(ctx context.Context) (bool, error) {
+// hasDotcomVerifiedEmail - checks with sourcegraph.com to ensure the app user has verified email.
+func (r *UserResolver) hasDotcomVerifiedEmail(ctx context.Context) (bool, error) {
 	// 🚨 SECURITY: This resolves HasVerifiedEmail only for App by
 	// sending the request to dotcom to check if a verified email exists for the user.
 	// Dotcom will ensure that only the authenticated user and site admins can check
 	if !deploy.IsApp() {
-		return false, errors.New("resolver only available in sourcegraph app")
+		return false, errors.New("attempt to check dotcom email verified outside of sourcegraph app")
 	}
 
 	if envvar.SourcegraphDotComMode() {
-		return false, errors.New("resolver not available")
+		return false, errors.New("attempt to check dotcom email verified outside of sourcegraph app")
 	}
 
 	// If app isn't configured with dotcom auth return false immediately
@@ -96,34 +100,6 @@ func (r *dotcomUserHasVerifiedEmailResolver) HasVerifiedEmail(ctx context.Contex
 	}
 
 	return result.Data.CurrentUser.HasVerifiedEmail, nil
-}
-
-// hasVerifiedEmailResolver is a resolver that should be used in all cases *except* App.
-// It will use the UserEmailService to check if the user has a verified email
-type hasVerifiedEmailResolver struct {
-	logger log.Logger
-	db     database.DB
-	user   *types.User
-}
-
-func (r *hasVerifiedEmailResolver) HasVerifiedEmail(ctx context.Context) (bool, error) {
-	// 🚨 SECURITY: In the UserEmailsService we check that only the
-	// authenticated user and site admins can check
-	// whether the user has a verified email.
-	return backend.NewUserEmailsService(r.db, r.logger).HasVerifiedEmail(ctx, r.user.ID)
-}
-
-func newHasVerifiedEmailResolver(db database.DB, logger log.Logger, user *types.User) HasVerifiedEmailResolver {
-	// When running app delegate the verified email check to dotcom
-	if deploy.IsApp() {
-		return &dotcomUserHasVerifiedEmailResolver{}
-	}
-
-	return &hasVerifiedEmailResolver{
-		db:     db,
-		logger: logger,
-		user:   user,
-	}
 }
 
 func (r *UserResolver) Emails(ctx context.Context) ([]*userEmailResolver, error) {

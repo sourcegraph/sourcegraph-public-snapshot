@@ -62,7 +62,6 @@ func (r *schemaResolver) User(
 
 // UserResolver implements the GraphQL User type.
 type UserResolver struct {
-	HasVerifiedEmailResolver
 	logger log.Logger
 	db     database.DB
 	user   *types.User
@@ -76,11 +75,10 @@ type UserResolver struct {
 func NewUserResolver(ctx context.Context, db database.DB, user *types.User) *UserResolver {
 	logger := log.Scoped("userResolver", "resolves a specific user").With(log.String("user", user.Username))
 	return &UserResolver{
-		db:                       db,
-		user:                     user,
-		logger:                   logger,
-		actor:                    actor.FromContext(ctx),
-		HasVerifiedEmailResolver: newHasVerifiedEmailResolver(db, logger, user),
+		db:     db,
+		user:   user,
+		logger: logger,
+		actor:  actor.FromContext(ctx),
 	}
 }
 
@@ -88,11 +86,10 @@ func NewUserResolver(ctx context.Context, db database.DB, user *types.User) *Use
 func newUserResolverFromActor(a *actor.Actor, db database.DB, user *types.User) *UserResolver {
 	logger := log.Scoped("userResolver", "resolves a specific user").With(log.String("user", user.Username))
 	return &UserResolver{
-		db:                       db,
-		user:                     user,
-		logger:                   logger,
-		actor:                    a,
-		HasVerifiedEmailResolver: newHasVerifiedEmailResolver(db, logger, user),
+		db:     db,
+		user:   user,
+		logger: logger,
+		actor:  a,
 	}
 }
 
