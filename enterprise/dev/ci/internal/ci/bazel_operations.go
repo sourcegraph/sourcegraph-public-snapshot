@@ -57,11 +57,15 @@ func bazelStampedCmd(args ...string) string {
 		"--bazelrc=.bazelrc",
 		"--bazelrc=.aspect/bazelrc/ci.bazelrc",
 		"--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc",
+	}
+	post := []string{
 		"--stamp",
 		"--workspace_status_command=./dev/bazel_stamp_vars.sh",
 	}
-	Cmd := append(pre, args...)
-	return strings.Join(Cmd, " ")
+
+	cmd := append(pre, args...)
+	cmd = append(cmd, post...)
+	return strings.Join(cmd, " ")
 }
 
 // bazelAnalysisPhase only runs the analasys phase, ensure that the buildfiles
