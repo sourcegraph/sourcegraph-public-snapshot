@@ -386,13 +386,13 @@ func (rs *ReposStats) FromProto(x *proto.ReposStatsResponse) {
 
 	*rs = ReposStats{
 		UpdatedAt:   protoUpdatedAt,
-		GitDirBytes: protoGitDirBytes,
+		GitDirBytes: int64(protoGitDirBytes),
 	}
 }
 
 func (rs *ReposStats) ToProto() *proto.ReposStatsResponse {
 	return &proto.ReposStatsResponse{
-		GitDirBytes: rs.GitDirBytes,
+		GitDirBytes: uint64(rs.GitDirBytes),
 		UpdatedAt:   timestamppb.New(rs.UpdatedAt),
 	}
 }

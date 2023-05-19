@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"os"
 	"path/filepath"
 
 	"google.golang.org/grpc/codes"
@@ -160,13 +159,8 @@ func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 }
 
 func (gs *GRPCServer) ReposStats(ctx context.Context, req *proto.ReposStatsRequest) (*proto.ReposStatsResponse, error) {
-	b, err := os.ReadFile(filepath.Join(gs.Server.ReposDir, reposStatsName))
-	if errors.Is(err, os.ErrNotExist) {
-		// When a gitserver is new this file might not have been computed
-		// yet. Clients are expected to handle this case by noticing UpdatedAt
-		// is not set.
-		b = []byte("{}")
-	} else if err != nil {
+	b, err := gs.Server.readReposStatsFile(filepath.Join(gs.Server.ReposDir, reposStatsName))
+	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to read %s: %v", reposStatsName, err.Error())
 	}
 

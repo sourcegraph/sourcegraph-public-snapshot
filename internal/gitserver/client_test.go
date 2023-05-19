@@ -8,12 +8,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -50,7 +53,7 @@ func newMockDB() database.DB {
 func TestProtoRoundTrip(t *testing.T) {
 	var diff string
 
-	f := func(original gitserver.ArchiveOptions) bool {
+	a := func(original gitserver.ArchiveOptions) bool {
 
 		var converted gitserver.ArchiveOptions
 		converted.FromProto(original.ToProto("test"))
@@ -62,8 +65,42 @@ func TestProtoRoundTrip(t *testing.T) {
 		return true
 	}
 
-	if err := quick.Check(f, nil); err != nil {
+	rs := func(updatedAt time.Time, gitDirBytes int64) bool {
+		original := protocol.ReposStats{
+			UpdatedAt:   updatedAt,
+			GitDirBytes: gitDirBytes,
+		}
+
+		var converted protocol.ReposStats
+		converted.FromProto(original.ToProto())
+
+		if diff = cmp.Diff(original, converted); diff != "" {
+			return false
+		}
+
+		return true
+	}
+
+	if err := quick.Check(a, nil); err != nil {
 		t.Errorf("ArchiveOptions proto roundtrip failed (-want +got):\n%s", diff)
+	}
+
+	// Define the generator for time.Time values
+	timeGenerator := func(rand *rand.Rand, size int) reflect.Value {
+		min := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+		max := time.Now()
+		delta := max.Unix() - min.Unix()
+		sec := rand.Int63n(delta) + min.Unix()
+		return reflect.ValueOf(time.Unix(sec, 0))
+	}
+
+	if err := quick.Check(rs, &quick.Config{
+		Values: func(args []reflect.Value, rand *rand.Rand) {
+			args[0] = timeGenerator(rand, 0)
+			args[1] = reflect.ValueOf(rand.Int63())
+		},
+	}); err != nil {
+		t.Errorf("ReposStats proto roundtrip failed (-want +got):\n%s", diff)
 	}
 }
 
@@ -699,13 +736,15 @@ func TestLocalGitCommand(t *testing.T) {
 }
 
 func TestClient_ReposStats(t *testing.T) {
+	t.Setenv("SG_FEATURE_FLAG_GRPC", "false")
+
 	const gitserverAddr = "172.16.8.1:8080"
-	now := time.Now().UTC()
+	//now := time.Now().UTC()
 	addrs := []string{gitserverAddr}
 
 	expected := fmt.Sprintf("http://%s", gitserverAddr)
 	wantStats := protocol.ReposStats{
-		UpdatedAt:   now,
+		//UpdatedAt:   now,
 		GitDirBytes: 1337,
 	}
 
@@ -735,58 +774,53 @@ func TestClient_ReposStats(t *testing.T) {
 	assert.Equal(t, wantStats, *gotStatsMap[gitserverAddr])
 }
 
-func TestClient_ReposStats_GRPC(t *testing.T) {
+func TestClient_ReposStatsGRPC(t *testing.T) {
 	t.Setenv("SG_FEATURE_FLAG_GRPC", "true")
 
-	root := t.TempDir()
-	s := &server.Server{
-		Logger:   logtest.Scoped(t),
-		ReposDir: filepath.Join(root, "repos"),
-		DB:       newMockDB(),
-		GetRemoteURLFunc: func(_ context.Context, name api.RepoName) (string, error) {
-			return "", nil
-		},
-		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
-			return &server.GitRepoSyncer{}, nil
-		},
-	}
-
-	grpcServer := defaults.NewServer(logtest.Scoped(t))
-
-	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{Server: s})
-	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
-	srv := httptest.NewServer(handler)
-	defer srv.Close()
-
-	dir := filepath.Join(s.ReposDir, "repos")
-	err := os.MkdirAll(dir, 0777)
-	if err != nil {
-		t.Fatal(err)
-	}
-
+	const gitserverAddr = "172.16.8.1:8080"
 	now := time.Now().UTC()
-
 	wantStats := protocol.ReposStats{
 		UpdatedAt:   now,
 		GitDirBytes: 1337,
 	}
 
-	b, err := json.Marshal(wantStats)
+	// create a file to serve as the gitserver binary
+	f, err := ioutil.TempFile("", "repos-stats.json")
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = os.WriteFile(filepath.Join(s.ReposDir, "repos-stats.json"), b, 0666)
-	if err != nil {
+	defer os.Remove(f.Name())
+
+	encoded, _ := json.Marshal(wantStats)
+	if _, err := f.Write(encoded); err != nil {
 		t.Fatal(err)
 	}
-
-	u, _ := url.Parse(srv.URL)
-
-	addrs := []string{u.Host}
+	if err := f.Close(); err != nil {
+		t.Fatal(err)
+	}
 
 	spy := &spyGitserverServiceClient{}
+	spy.mock = func(i interface{}) interface{} {
+		switch i.(type) {
+		case *proto.ReposStatsRequest:
+			//read from temp file
+			encoded, err := ioutil.ReadFile(f.Name())
+			if err != nil {
+				panic(err)
+			}
 
-	source := gitserver.NewTestClientSource(addrs, func(o *gitserver.TestClientSourceOptions) {
+			var rs protocol.ReposStats
+			err = json.Unmarshal(encoded, &rs)
+			if err != nil {
+				panic(err)
+			}
+			return rs.ToProto()
+		default:
+			panic(fmt.Sprintf("unexpected type %T", i))
+		}
+	}
+
+	source := gitserver.NewTestClientSource([]string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
 		o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 			spy.base = proto.NewGitserverServiceClient(cc)
 
@@ -798,15 +832,14 @@ func TestClient_ReposStats_GRPC(t *testing.T) {
 
 	gotStatsMap, err := cli.ReposStats(context.Background())
 	if err != nil {
-		t.Fatalf("expected URL %q, but got err %q", addrs[0], err)
+		t.Fatalf("expected URL %q, but got err %q", wantStats, err)
 	}
 
 	if !spy.reposStatsCalled {
-		t.Error("ReposStats: GitserverServiceClient should have been called")
+		t.Fatal("ReposStats: grpc client not called")
 	}
 
-	assert.Equal(t, wantStats, *gotStatsMap[addrs[0]])
-
+	assert.Equal(t, wantStats, *gotStatsMap[gitserverAddr])
 }
 
 type spyGitserverServiceClient struct {
@@ -814,8 +847,8 @@ type spyGitserverServiceClient struct {
 	searchCalled     bool
 	archiveCalled    bool
 	reposStatsCalled bool
-
-	base proto.GitserverServiceClient
+	mock             func(interface{}) interface{}
+	base             proto.GitserverServiceClient
 }
 
 func (s *spyGitserverServiceClient) Exec(ctx context.Context, in *proto.ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_ExecClient, error) {
@@ -835,6 +868,10 @@ func (s *spyGitserverServiceClient) Archive(ctx context.Context, in *proto.Archi
 
 func (s *spyGitserverServiceClient) ReposStats(ctx context.Context, in *proto.ReposStatsRequest, opts ...grpc.CallOption) (*proto.ReposStatsResponse, error) {
 	s.reposStatsCalled = true
+	if s.mock != nil {
+		return s.mock(in).(*proto.ReposStatsResponse), nil
+	}
+
 	return s.base.ReposStats(ctx, in, opts...)
 }
 

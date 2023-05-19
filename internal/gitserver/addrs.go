@@ -59,9 +59,16 @@ func NewTestClientSource(addrs []string, options ...func(o *TestClientSourceOpti
 	}
 
 	conns := make(map[string]connAndErr)
+	var testAddresses []AddressWithClient
 	for _, addr := range addrs {
 		conn, err := defaults.Dial(addr)
-		conns[addr] = connAndErr{conn: conn, err: err}
+		conns[addr] = connAndErr{address: addr, conn: conn, err: err}
+		testAddresses = append(testAddresses, &testConnAndErr{
+			address:    addr,
+			conn:       conn,
+			err:        err,
+			clientFunc: opts.ClientFunc,
+		})
 	}
 
 	source := testGitserverConns{
@@ -71,6 +78,7 @@ func NewTestClientSource(addrs []string, options ...func(o *TestClientSourceOpti
 			},
 			grpcConns: conns,
 		},
+		testAddresses: testAddresses,
 
 		clientFunc: opts.ClientFunc,
 	}
@@ -79,7 +87,8 @@ func NewTestClientSource(addrs []string, options ...func(o *TestClientSourceOpti
 }
 
 type testGitserverConns struct {
-	conns *GitserverConns
+	conns         *GitserverConns
+	testAddresses []AddressWithClient
 
 	clientFunc func(conn *grpc.ClientConn) proto.GitserverServiceClient
 }
@@ -90,8 +99,8 @@ func (c *testGitserverConns) AddrForRepo(userAgent string, repo api.RepoName) st
 }
 
 // Addresses returns the current list of gitserver addresses.
-func (c *testGitserverConns) Addresses() []string {
-	return c.conns.Addresses
+func (c *testGitserverConns) Addresses() []AddressWithClient {
+	return c.testAddresses
 }
 
 // ClientForRepo returns a client or host for the given repo name.
@@ -113,7 +122,25 @@ func (c *testGitserverConns) ClientForAddr(userAgent string, addr string) (proto
 	return c.clientFunc(conn), nil
 }
 
+type testConnAndErr struct {
+	address    string
+	conn       *grpc.ClientConn
+	err        error
+	clientFunc func(conn *grpc.ClientConn) proto.GitserverServiceClient
+}
+
+// Address implements AddressWithClient
+func (t *testConnAndErr) Address() string {
+	return t.address
+}
+
+// GRPCClient implements AddressWithClient
+func (t *testConnAndErr) GRPCClient() (proto.GitserverServiceClient, error) {
+	return t.clientFunc(t.conn), t.err
+}
+
 var _ ClientSource = &testGitserverConns{}
+var _ AddressWithClient = &testConnAndErr{}
 
 type GitserverAddresses struct {
 	// The current list of gitserver addresses
@@ -162,9 +189,24 @@ func (g *GitserverConns) ConnForRepo(userAgent string, repo api.RepoName) (*grpc
 	return ce.conn, ce.err
 }
 
+// AddressWithClient is a gitserver address with a client.
+type AddressWithClient interface {
+	Address() string                                   // returns the address of the endpoint that this GRPC client is targeting
+	GRPCClient() (proto.GitserverServiceClient, error) // returns the gRPC client to use to contact the given address
+}
+
 type connAndErr struct {
-	conn *grpc.ClientConn
-	err  error
+	address string
+	conn    *grpc.ClientConn
+	err     error
+}
+
+func (c *connAndErr) Address() string {
+	return c.address
+}
+
+func (c *connAndErr) GRPCClient() (proto.GitserverServiceClient, error) {
+	return proto.NewGitserverServiceClient(c.conn), c.err
 }
 
 type atomicGitServerConns struct {
@@ -192,8 +234,17 @@ func (a *atomicGitServerConns) ClientForAddr(userAgent string, addr string) (pro
 	return proto.NewGitserverServiceClient(conn), nil
 }
 
-func (a *atomicGitServerConns) Addresses() []string {
-	return a.get().Addresses
+func (a *atomicGitServerConns) Addresses() []AddressWithClient {
+	conns := a.get()
+	addrs := make([]AddressWithClient, 0, len(conns.Addresses))
+	for _, addr := range conns.Addresses {
+		addrs = append(addrs, &connAndErr{
+			address: addr,
+			conn:    conns.grpcConns[addr].conn,
+			err:     conns.grpcConns[addr].err,
+		})
+	}
+	return addrs
 }
 
 func (a *atomicGitServerConns) get() *GitserverConns {
@@ -256,3 +307,4 @@ func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 }
 
 var _ ClientSource = &atomicGitServerConns{}
+var _ AddressWithClient = &connAndErr{}

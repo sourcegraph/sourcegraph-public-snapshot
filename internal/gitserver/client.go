@@ -72,14 +72,12 @@ var _ Client = &clientImplementor{}
 // ClientSource is a source of gitserver.Client instances.
 // It allows for mocking out the client source in tests.
 type ClientSource interface {
-	// ClientForAddr returns a Client for the given address.
-	ClientForAddr(userAgent string, addr string) (proto.GitserverServiceClient, error)
 	// ClientForRepo returns a Client for the given repo.
 	ClientForRepo(userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error)
 	// AddrForRepo returns the address of the gitserver for the given repo.
 	AddrForRepo(userAgent string, repo api.RepoName) string
 	// Address the current list of gitserver addresses.
-	Addresses() []string
+	Addresses() []AddressWithClient
 }
 
 // NewClient returns a new gitserver.Client.
@@ -449,7 +447,12 @@ type Client interface {
 }
 
 func (c *clientImplementor) Addrs() []string {
-	return c.clientSource.Addresses()
+	address := c.clientSource.Addresses()
+	var addrs []string
+	for _, addr := range address {
+		addrs = append(addrs, addr.Address())
+	}
+	return addrs
 }
 
 func (c *clientImplementor) AddrForRepo(repo api.RepoName) string {
@@ -458,10 +461,6 @@ func (c *clientImplementor) AddrForRepo(repo api.RepoName) string {
 
 func (c *clientImplementor) ClientForRepo(repo api.RepoName) (proto.GitserverServiceClient, error) {
 	return c.clientSource.ClientForRepo(c.userAgent, repo)
-}
-
-func (c *clientImplementor) ClientForAddr(addr string) (proto.GitserverServiceClient, error) {
-	return c.clientSource.ClientForAddr(c.userAgent, addr)
 }
 
 // ArchiveOptions contains options for the Archive func.
@@ -1238,30 +1237,29 @@ func (c *clientImplementor) ReposStats(ctx context.Context) (map[string]*protoco
 	stats := map[string]*protocol.ReposStats{}
 	var allErr error
 
-	for _, addr := range c.Addrs() {
+	for _, addr := range c.clientSource.Addresses() {
 		if internalgrpc.IsGRPCEnabled(ctx) {
-			rs := &protocol.ReposStats{}
-
-			client, err := c.ClientForAddr(addr)
+			client, err := addr.GRPCClient()
 			if err != nil {
 				return nil, err
 			}
 
+			rs := &protocol.ReposStats{}
 			resp, err := client.ReposStats(ctx, &proto.ReposStatsRequest{})
 			if err != nil {
 				allErr = errors.Append(allErr, err)
 			} else {
 				rs.FromProto(resp)
-				stats[addr] = rs
+				stats[addr.Address()] = rs
 			}
 			continue
 		}
 
-		stat, err := c.doReposStats(ctx, addr)
+		stat, err := c.doReposStats(ctx, addr.Address())
 		if err != nil {
 			allErr = errors.Append(allErr, err)
 		} else {
-			stats[addr] = stat
+			stats[addr.Address()] = stat
 		}
 	}
 	return stats, allErr
