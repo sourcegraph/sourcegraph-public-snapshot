@@ -13,7 +13,7 @@ func TestSecurityEventLocation(t *testing.T) {
 	tests := []struct {
 		name string
 		cfg  schema.SiteConfiguration
-		want SecurityEvent
+		want SecurityEventsLocation
 	}{
 		{
 			"base",
