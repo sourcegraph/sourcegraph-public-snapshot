@@ -190,17 +190,15 @@ func getIndexOptions(
 		}
 	}
 
-	// TODO: Integrate with cmd/symbols default, maybe move those to language
+	languageMap := make([]*proto.LanguageMapping, 0)
 
-	languageMapLen := 0
-	if c.SyntaxHighlighting != nil {
-		languageMapLen = len(c.SyntaxHighlighting.Symbols.Engine)
+	realEngine := make(map[string]uint8)
+
+	for k, v := range ctags_config.BaseParserConfig.Engine {
+		realEngine[k] = v
 	}
-	languageMap := make([]*proto.LanguageMapping, languageMapLen)
 
-	realEngine := ctags_config.BaseParserConfig.Engine
-	// realEngine := make(map[string]string)
-	if languageMapLen > 0 {
+	if c.SyntaxHighlighting != nil {
 		for k, v := range c.SyntaxHighlighting.Symbols.Engine {
 			parser, err := ctags_config.ParserNameToParserType(v)
 			if err == nil {
@@ -209,11 +207,13 @@ func getIndexOptions(
 				continue
 			}
 		}
-
-		for language, engine := range realEngine {
-			languageMap = append(languageMap, &proto.LanguageMapping{Language: language, Ctags: proto.CTagsParserType(engine)})
-		}
 	}
+
+	for language, engine := range realEngine {
+		languageMap = append(languageMap, &proto.LanguageMapping{Language: language, Ctags: proto.CTagsParserType(engine)})
+	}
+
+	println(languageMap)
 
 	o := ZoektIndexOptions{
 		Name:       opts.Name,
