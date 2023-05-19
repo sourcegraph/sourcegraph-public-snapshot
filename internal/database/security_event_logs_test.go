@@ -20,10 +20,11 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
 	logger, exportLogs := logtest.Captured(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	defer conf.Mock(nil)
+	t.Cleanup(func() {
+		conf.Mock(nil)
+	})
 
 	var testCases = []struct {
 		name  string

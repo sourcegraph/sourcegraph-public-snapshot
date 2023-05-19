@@ -12,16 +12,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // 🚨 SECURITY: This tests the routine that creates access tokens and returns the token secret value
 // to the user.
+//
+//	TestAccessTokens_Create requires the site_config to be mocked to enable security event logging to the database
 func TestAccessTokens_Create(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
+	if conf.Get().SiteConfiguration.Log.SecurityEventLog.Location == "none" || conf.Get().SiteConfiguration.Log.SecurityEventLog.Location == "auditlog" {
+		t.Fatal("Test requires security event logging to be enabled to the database")
+	}
 
 	subject, err := db.Users().Create(ctx, NewUser{
 		Email:                 "a@example.com",
@@ -42,9 +46,6 @@ func TestAccessTokens_Create(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// enable security event logging to database
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{Log: &schema.Log{SecurityEventLog: &schema.SecurityEventLog{Location: "all"}}}})
-	defer conf.Mock(nil)
 
 	assertSecurityEventCount(t, db, SecurityEventAccessTokenCreated, 0)
 	tid0, tv0, err := db.AccessTokens().Create(ctx, subject.ID, []string{"a", "b"}, "n0", creator.ID)
@@ -100,16 +101,15 @@ func TestAccessTokens_Create(t *testing.T) {
 	}
 }
 
+// TestAccessTokens_Delete requires the site_config to be mocked to enable security event logging to the database
 func TestAccessTokens_Delete(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-
-	// enable security event logging to database
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{Log: &schema.Log{SecurityEventLog: &schema.SecurityEventLog{Location: "all"}}}})
-	defer conf.Mock(nil)
-
 	ctx := context.Background()
+	if conf.Get().SiteConfiguration.Log.SecurityEventLog.Location == "none" || conf.Get().SiteConfiguration.Log.SecurityEventLog.Location == "auditlog" {
+		t.Fatal("Test requires security event logging to be enabled to the database")
+	}
 
 	subject, err := db.Users().Create(ctx, NewUser{
 		Email:                 "a@example.com",
@@ -184,6 +184,9 @@ func TestAccessTokens_CreateInternal_DoesNotCaptureSecurityEvent(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
+	if conf.Get().SiteConfiguration.Log.SecurityEventLog.Location == "none" || conf.Get().SiteConfiguration.Log.SecurityEventLog.Location == "auditlog" {
+		t.Fatal("Test requires security event logging to be enabled to the database")
+	}
 
 	subject, err := db.Users().Create(ctx, NewUser{
 		Email:                 "a@example.com",
