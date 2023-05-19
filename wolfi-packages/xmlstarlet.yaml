@@ -38,6 +38,6 @@ pipeline:
       make
       make install
   - runs: |
-      mkdir -p ${{targets.destdir}}/usr/local/bin/
-      cp /usr/local/bin/xml ${{targets.destdir}}/usr/local/bin/
-      ln -s /usr/local/bin/xml ${{targets.destdir}}/usr/local/bin/xmlstarlet
+      mkdir -p ${{targets.destdir}}/usr/bin/
+      cp /usr/local/bin/xml ${{targets.destdir}}/usr/bin/
+      ln -s /usr/bin/xml ${{targets.destdir}}/usr/bin/xmlstarlet
