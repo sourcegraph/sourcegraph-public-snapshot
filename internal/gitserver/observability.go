@@ -82,7 +82,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		listBranches:     op("ListBranches"),
 		listRefs:         op("ListRefs"),
 		listTags:         op("ListTags"),
-		lstat:            op("lStat"),
+		lstat:            subOp("lStat"),
 		mergeBase:        op("MergeBase"),
 		newFileReader:    op("NewFileReader"),
 		p4Exec:           op("P4Exec"),
