@@ -20,7 +20,7 @@ build --test_env=ENABLE_BAZEL_PACKAGES_LOAD_HACK=true
 
 # Needed by https://github.com/uber/bazel-zig-cc which we use to cross-compile
 # CGo code for cmd/symbols to be used in containers.
-build:incompat_cc_toolchain --incompatible_enable_cc_toolchain_resolution
+build --incompatible_enable_cc_toolchain_resolution
 
 # Except in CI run E2E tests in headless mode
 try-import %workspace%/user.bazelrc
