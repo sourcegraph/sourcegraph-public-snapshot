@@ -11,33 +11,33 @@ import (
 )
 
 type operations struct {
-	search           *observation.Operation
-	exec             *observation.Operation
-	p4Exec           *observation.Operation
-	readDir          *observation.Operation
-	listRefs         *observation.Operation
-	listBranches     *observation.Operation
 	archiveReader    *observation.Operation
-	getCommits       *observation.Operation
-	readFile         *observation.Operation
-	stat             *observation.Operation
-	getCommit        *observation.Operation
-	hasCommitAfter   *observation.Operation
-	firstEverCommit  *observation.Operation
-	commits          *observation.Operation
-	newFileReader    *observation.Operation
-	resolveRevision  *observation.Operation
-	listTags         *observation.Operation
-	lstat            *observation.Operation
-	streamBlameFile  *observation.Operation
-	blameFile        *observation.Operation
-	contributorCount *observation.Operation
-	mergeBase        *observation.Operation
-	revList          *observation.Operation
-	getBehindAhead   *observation.Operation
 	batchLog         *observation.Operation
 	batchLogSingle   *observation.Operation
+	blameFile        *observation.Operation
+	commits          *observation.Operation
+	contributorCount *observation.Operation
 	do               *observation.Operation
+	exec             *observation.Operation
+	firstEverCommit  *observation.Operation
+	getBehindAhead   *observation.Operation
+	getCommit        *observation.Operation
+	getCommits       *observation.Operation
+	hasCommitAfter   *observation.Operation
+	listBranches     *observation.Operation
+	listRefs         *observation.Operation
+	listTags         *observation.Operation
+	lstat            *observation.Operation
+	mergeBase        *observation.Operation
+	newFileReader    *observation.Operation
+	p4Exec           *observation.Operation
+	readDir          *observation.Operation
+	readFile         *observation.Operation
+	resolveRevision  *observation.Operation
+	revList          *observation.Operation
+	search           *observation.Operation
+	stat             *observation.Operation
+	streamBlameFile  *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -66,33 +66,33 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		search:           op("Search"),
-		exec:             op("Exec"),
-		p4Exec:           op("P4Exec"),
-		contributorCount: op("ContributorCount"),
-		mergeBase:        op("MergeBase"),
-		resolveRevision:  op("ResolveRevision"),
-		getCommit:        op("GetCommit"),
-		listBranches:     op("ListBranches"),
-		getCommits:       op("GetCommits"),
-		hasCommitAfter:   op("HasCommitAfter"),
-		firstEverCommit:  op("FirstEverCommit"),
-		commits:          op("Commits"),
-		listTags:         op("ListTags"),
-		listRefs:         op("ListRefs"),
-		streamBlameFile:  op("StreamBlameFile"),
-		blameFile:        op("BlameFile"),
-		readDir:          op("ReadDir"),
 		archiveReader:    op("ArchiveReader"),
-		stat:             op("Stat"),
-		readFile:         op("ReadFile"),
-		newFileReader:    op("NewFileReader"),
-		revList:          op("RevList"),
-		getBehindAhead:   op("GetBehindAhead"),
-		lstat:            op("lStat"),
 		batchLog:         op("BatchLog"),
 		batchLogSingle:   subOp("batchLogSingle"),
+		blameFile:        op("BlameFile"),
+		commits:          op("Commits"),
+		contributorCount: op("ContributorCount"),
 		do:               subOp("do"),
+		exec:             op("Exec"),
+		firstEverCommit:  op("FirstEverCommit"),
+		getBehindAhead:   op("GetBehindAhead"),
+		getCommit:        op("GetCommit"),
+		getCommits:       op("GetCommits"),
+		hasCommitAfter:   op("HasCommitAfter"),
+		listBranches:     op("ListBranches"),
+		listRefs:         op("ListRefs"),
+		listTags:         op("ListTags"),
+		lstat:            op("lStat"),
+		mergeBase:        op("MergeBase"),
+		newFileReader:    op("NewFileReader"),
+		p4Exec:           op("P4Exec"),
+		readDir:          op("ReadDir"),
+		readFile:         op("ReadFile"),
+		resolveRevision:  op("ResolveRevision"),
+		revList:          op("RevList"),
+		search:           op("Search"),
+		stat:             op("Stat"),
+		streamBlameFile:  op("StreamBlameFile"),
 	}
 }
 
