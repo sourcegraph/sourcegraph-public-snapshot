@@ -841,7 +841,8 @@ func TestTreeOwnershipSignals(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+
+	test := &graphqlbackend.Test{
 		Schema:  schema,
 		Context: ctx,
 		Query: `
@@ -918,6 +919,83 @@ func TestTreeOwnershipSignals(t *testing.T) {
 			"revision":    "revision",
 			"currentPath": "foo",
 		},
+	}
+	graphqlbackend.RunTest(t, test)
+
+	t.Run("disabled recent-contributor signal should not resolve", func(t *testing.T) {
+		mockStore := database.NewMockSignalConfigurationStore()
+		db.OwnSignalConfigurationsFunc.SetDefaultReturn(mockStore)
+		mockStore.IsEnabledFunc.SetDefaultHook(func(ctx context.Context, s string) (bool, error) {
+			if s == "recent-contributors" {
+				return false, nil
+			}
+			return true, nil
+		})
+
+		test.ExpectedResult = `{
+			"node": {
+				"commit": {
+					"path": {
+						"ownership": {
+							"nodes": [
+								{
+									"owner": {
+										"displayName": "santa claus",
+										"email": "santa@northpole.com"
+									},
+									"reasons": [
+										{
+											"title": "recent view",
+											"description": "Owner is associated because they have viewed this file in the last 90 days."
+										}
+									]
+								}
+							]
+						}
+					}
+				}
+			}
+		}
+`
+		graphqlbackend.RunTest(t, test)
+	})
+
+	t.Run("disabled recent-views signal should not resolve", func(t *testing.T) {
+		mockStore := database.NewMockSignalConfigurationStore()
+		db.OwnSignalConfigurationsFunc.SetDefaultReturn(mockStore)
+		mockStore.IsEnabledFunc.SetDefaultHook(func(ctx context.Context, s string) (bool, error) {
+			if s == "recent-views" {
+				return false, nil
+			}
+			return true, nil
+		})
+
+		test.ExpectedResult = `{
+			"node": {
+				"commit": {
+					"path": {
+						"ownership": {
+							"nodes": [
+								{
+									"owner": {
+										"displayName": "santa claus",
+										"email": "santa@northpole.com"
+									},
+									"reasons": [
+										{
+											"title": "recent contributor",
+											"description": "Owner is associated because they have contributed to this file in the last 90 days."
+										}
+									]
+								}
+							]
+						}
+					}
+				}
+			}
+		}
+`
+		graphqlbackend.RunTest(t, test)
 	})
 }
 
