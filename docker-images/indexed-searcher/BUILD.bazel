@@ -1,0 +1,30 @@
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+load("//cmd/server:macro.bzl", "container_dependencies", "dependencies_tars")
+
+DEPS = ["@com_github_sourcegraph_zoekt//cmd/zoekt-webserver"]
+
+container_dependencies(DEPS)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_server_base",
+    cmd = [
+        "zoekt-webserver",
+        "-index",
+        "$DATA_DIR",
+        "-pprof",
+        "-rpc",
+        "-indexserver_proxy",
+    ],
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+    ],
+    tars = dependencies_tars(DEPS),
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["zoekt-webserver:candidate"],
+)
