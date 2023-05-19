@@ -1,6 +1,6 @@
 package:
   name: xmlstarlet
-  version: 1.6.1 # version available on alpine...
+  version: 1.6.1
   epoch: 1
   description: ""
   target-architecture:
@@ -37,9 +37,7 @@ pipeline:
       ./configure
       make
       make install
-      ls -al /usr/local/bin
   - runs: |
       mkdir -p ${{targets.destdir}}/usr/local/bin/
       cp /usr/local/bin/xml ${{targets.destdir}}/usr/local/bin/
-      cd ${{targets.destdir}}
       ln -s /usr/local/bin/xml ${{targets.destdir}}/usr/local/bin/xmlstarlet
