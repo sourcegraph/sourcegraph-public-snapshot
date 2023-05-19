@@ -21,7 +21,6 @@ import (
 
 	"github.com/go-git/go-git/v5/plumbing/format/config"
 	"github.com/golang/groupcache/lru"
-	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -425,6 +424,7 @@ func (c *clientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, 
 // ReadDir reads the contents of the named directory at commit.
 func (c *clientImplementor) ReadDir(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string, recurse bool) (_ []fs.FileInfo, err error) {
 	ctx, _, endObservation := c.operations.readDir.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repo", string(repo)),
 		attribute.String("commit", string(commit)),
 		attribute.String("path", path),
 		attribute.Bool("recurse", recurse),
@@ -2481,6 +2481,15 @@ func (c *clientImplementor) ArchiveReader(
 	repo api.RepoName,
 	options ArchiveOptions,
 ) (_ io.ReadCloser, err error) {
+	// TODO: this does not capture the lifetime of the request because we return a reader
+	ctx, _, endObservation := c.operations.archiveReader.With(ctx, &err, observation.Args{
+		Attrs: append(
+			[]attribute.KeyValue{attribute.String("repo", string(repo))},
+			options.Attrs()...,
+		),
+	})
+	defer endObservation(1, observation.Args{})
+
 	if authz.SubRepoEnabled(checker) {
 		if enabled, err := authz.SubRepoEnabledForRepo(ctx, checker, repo); err != nil {
 			return nil, errors.Wrap(err, "sub-repo permissions check:")
@@ -2492,16 +2501,6 @@ func (c *clientImplementor) ArchiveReader(
 	if ClientMocks.Archive != nil {
 		return ClientMocks.Archive(ctx, repo, options)
 	}
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: Archive") //nolint:staticcheck // OT is deprecated
-	span.SetTag("Repo", repo)
-	span.SetTag("Treeish", options.Treeish)
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.LogFields(log.Error(err))
-		}
-		span.Finish()
-	}()
 
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
