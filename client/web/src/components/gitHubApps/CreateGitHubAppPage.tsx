@@ -128,10 +128,7 @@ export const AddGitHubAppPage: FC<AddGitHubPageProps> = () => {
                 description={
                     <>
                         Create and connect a GitHub App to better manage GitHub code host connections.
-                        <Link
-                            to="https://docs.sourcegraph.com/admin/external_service/github#using-a-github-app"
-                            className="ml-1"
-                        >
+                        <Link to="/help/admin/external_service/github#using-a-github-app" className="ml-1">
                             See how GitHub App configuration works.
                         </Link>
                     </>
