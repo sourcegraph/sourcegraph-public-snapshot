@@ -13,11 +13,13 @@ import {
 } from '@sourcegraph/cody-ui/src/Chat'
 import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
 import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
-import { Button, Icon, TextArea, Link } from '@sourcegraph/wildcard'
+import { Button, Icon, TextArea, Link, Tooltip, Alert, Text, H2 } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
+import { CodyPageIcon } from '../../chat/CodyPageIcon'
 import { useChatStoreState } from '../../stores/chat'
 import { useCodySidebarStore } from '../../stores/sidebar'
+import { useIsCodyEnabled } from '../../useIsCodyEnabled'
 
 import styles from './ChatUi.module.scss'
 
@@ -35,6 +37,7 @@ export const ChatUI = (): JSX.Element => {
         transcriptId,
         transcriptHistory,
     } = useChatStoreState()
+    const { needsEmailVerification } = useIsCodyEnabled()
 
     const [formInput, setFormInput] = useState('')
     const [inputHistory, setInputHistory] = useState<string[] | []>(() =>
@@ -75,6 +78,8 @@ export const ChatUI = (): JSX.Element => {
             transcriptActionClassName={styles.transcriptAction}
             FeedbackButtonsContainer={FeedbackButtons}
             feedbackButtonsOnSubmit={onFeedbackSubmit}
+            needsEmailVerification={needsEmailVerification}
+            needsEmailVerificationNotice={NeedsEmailVerificationNotice}
         />
     )
 }
@@ -164,8 +169,10 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
     onInput,
     onKeyDown,
     className,
+    disabled = false,
 }) => {
     const { inputNeedsFocus, setFocusProvided } = useCodySidebarStore()
+    const { needsEmailVerification } = useIsCodyEnabled()
     const textAreaRef = useRef<HTMLTextAreaElement>(null)
     const { width = 0 } = useResizeObserver({ ref: textAreaRef })
 
@@ -202,16 +209,37 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
     }
 
     return (
-        <TextArea
-            ref={textAreaRef}
-            className={className}
-            value={value}
-            onChange={handleChange}
-            rows={1}
-            autoFocus={false}
-            required={true}
-            onKeyDown={handleKeyDown}
-            onInput={onInput}
-        />
+        <Tooltip content={needsEmailVerification ? 'Verify your email to use Cody.' : ''}>
+            <TextArea
+                ref={textAreaRef}
+                className={className}
+                value={value}
+                onChange={handleChange}
+                rows={1}
+                autoFocus={false}
+                required={true}
+                onKeyDown={handleKeyDown}
+                onInput={onInput}
+                disabled={disabled}
+            />
+        </Tooltip>
     )
 }
+
+const NeedsEmailVerificationNotice: React.FunctionComponent = () => (
+    <div className="p-3">
+        <H2 className={classNames('d-flex gap-1 align-items-center mb-3', styles.codyMessageHeader)}>
+            <CodyPageIcon /> Cody
+        </H2>
+        <Alert variant="warning">
+            <Text className="mb-0">Verify email</Text>
+            <Text className="mb-0">
+                Using Cody requires a verified email.{' '}
+                <Link to={`${window.context.currentUser?.settingsURL}/emails`} target="_blank" rel="noreferrer">
+                    Resend email verification
+                </Link>
+                .
+            </Text>
+        </Alert>
+    </div>
+)
