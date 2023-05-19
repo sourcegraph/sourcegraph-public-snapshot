@@ -51,13 +51,9 @@ type LoadSignalConfigurationArgs struct {
 func (s *signalConfigurationStore) LoadConfigurations(ctx context.Context, args LoadSignalConfigurationArgs) ([]SignalConfiguration, error) {
 	q := "SELECT id, name, description, excluded_repo_patterns, enabled FROM own_signal_configurations %s ORDER BY id;"
 
-	var conds []*sqlf.Query
-	if len(args.Name) > 0 {
-		conds = append(conds, sqlf.Sprintf("name = %s", args.Name))
-	}
 	where := sqlf.Sprintf("")
-	if len(conds) > 0 {
-		where = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "AND"))
+	if len(args.Name) > 0 {
+		where = sqlf.Sprintf("WHERE name = %s", args.Name)
 	}
 
 	multiScan := basestore.NewSliceScanner(func(scanner dbutil.Scanner) (SignalConfiguration, error) {
