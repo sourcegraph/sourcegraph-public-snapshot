@@ -10,7 +10,9 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // 🚨 SECURITY: This tests the routine that creates access tokens and returns the token secret value
@@ -40,6 +42,9 @@ func TestAccessTokens_Create(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// enable security event logging to database
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{Log: &schema.Log{SecurityEventLog: &schema.SecurityEventLog{Location: "all"}}}})
+	defer conf.Mock(nil)
 
 	assertSecurityEventCount(t, db, SecurityEventAccessTokenCreated, 0)
 	tid0, tv0, err := db.AccessTokens().Create(ctx, subject.ID, []string{"a", "b"}, "n0", creator.ID)

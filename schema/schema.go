@@ -1984,7 +1984,7 @@ type SearchScope struct {
 
 // SecurityEventLog description: EXPERIMENTAL: Configuration for security event logging
 type SecurityEventLog struct {
-	// Location description: Where to output the security event log
+	// Location description: Where to output the security event log [none, auditlog, database, all] where auditlog is the default logging to stdout with the specified audit log format
 	Location string `json:"location,omitempty"`
 }
 
