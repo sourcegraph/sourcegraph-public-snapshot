@@ -193,7 +193,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                 />
             )}
 
-            <GlobalAlerts authenticatedUser={props.authenticatedUser} isSourcegraphDotCom={props.isSourcegraphDotCom} />
+            <GlobalAlerts authenticatedUser={props.authenticatedUser} />
             {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && !disableFeedbackSurvey && (
                 <SurveyToast authenticatedUser={props.authenticatedUser} />
             )}

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
@@ -24,7 +24,6 @@ import styles from './GlobalAlerts.module.scss'
 
 interface Props {
     authenticatedUser: AuthenticatedUser | null
-    isSourcegraphDotCom: boolean
 }
 
 // NOTE: The name of the query is also added in the refreshSiteFlags() function
@@ -41,22 +40,12 @@ const QUERY = gql`
 /**
  * Fetches and displays relevant global alerts at the top of the page
  */
-export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser, isSourcegraphDotCom }) => {
+export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser }) => {
     const settings = useSettings()
     const { data } = useQuery<GlobalAlertsSiteFlagsResult, GlobalAlertsSiteFlagsVariables>(QUERY, {
         fetchPolicy: 'cache-and-network',
     })
     const siteFlagsValue = data?.site
-
-    const verifyEmailProps = useMemo(() => {
-        if (!authenticatedUser || !isSourcegraphDotCom) {
-            return
-        }
-        return {
-            emails: authenticatedUser.emails.filter(({ verified }) => !verified).map(({ email }) => email),
-            settingsURL: authenticatedUser.settingsURL as string,
-        }
-    }, [authenticatedUser, isSourcegraphDotCom])
 
     return (
         <div className={classNames('test-global-alert', styles.globalAlerts)}>
@@ -118,9 +107,7 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
                 </DismissibleAlert>
             )}
             <Notices alertClassName={styles.alert} location="top" />
-            {!!verifyEmailProps?.emails.length && (
-                <VerifyEmailNotices alertClassName={styles.alert} {...verifyEmailProps} />
-            )}
+            <VerifyEmailNotices authenticatedUser={authenticatedUser} alertClassName={styles.alert} />
         </div>
     )
 }
