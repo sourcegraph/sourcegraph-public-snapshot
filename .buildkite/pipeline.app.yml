@@ -1,0 +1,67 @@
+steps:
+  - group: "Sourcegraph App"
+    steps:
+      - label: ':bazel::linux: Build for Linux'
+        key: 'build-sourcegraph-app-linux'
+        agents: { queue: bazel }
+        env:
+          PLATFORM: x86_64-unknown-linux-gnu
+        command:
+          - './enterprise/dev/app/build-backend.sh'
+      - label: ':bazel::mac: Build for MacOS arm64'
+        key: 'build-sourcegraph-app-macos-arm64'
+        agents: { queue: macos }
+        env:
+          PLATFORM: aarch64-apple-darwin
+        command:
+          - './enterprise/dev/app/build-backend.sh'
+      - label: ':go::mac:Build for MacOS x86_64'
+        key: 'build-sourcegraph-app-macos-x86_64'
+        depends_on: 'build-sourcegraph-app-macos-arm64'
+        agents: { queue: macos }
+        env:
+          PLATFORM: x86_64-apple-darwin
+          CROSS_COMPILE_X86_64_MACOS: 1
+        command:
+          - './dev/ci/pnpm-install-with-retry.sh'
+          - './enterprise/dev/app/build-backend.sh'
+      - label: 'Wait for builds to complete'
+        wait: ~
+      - label: ':linux::tauri: Bundle with Tauri'
+        key: 'linux-build-tauri-sourcegraph-app'
+        agents: { queue: stateless }
+        command:
+          - './dev/ci/pnpm-install-with-retry.sh'
+          - './enterprise/dev/app/tauri-build.sh'
+        env:
+          AWS_CONFIG_FILE: /buildkite/.aws/config
+          AWS_SHARED_CREDENTIALS_FILE: /buildkite/.aws/credentials
+        plugins:
+        - https://github.com/sourcegraph/cache-buildkite-plugin.git#master:
+            backend: s3
+            id: node_modules_pnpm
+            key: cache-node_modules-pnpm-{{ checksum 'pnpm-lock.yaml' }}
+            paths:
+            - node_modules
+            restore_keys:
+            - cache-node_modules-pnpm-{{ checksum 'pnpm-lock.yaml' }}
+            s3:
+              bucket: sourcegraph_buildkite_cache
+              endpoint: https://storage.googleapis.com
+              profile: buildkite
+              region: us-central1
+            tarball: {}
+      - label: ':macos::tauri: Bundle and sign with Tauri'
+        key: 'mac-build-tauri-sourcegraph-app'
+        agents: { queue: macos }
+        env:
+          CODESIGNING: 1
+        command:
+          - './dev/ci/pnpm-install-with-retry.sh'
+          - './enterprise/dev/app/tauri-build.sh'
+      - label: "wait for bundles to complete"
+        wait: ~
+      - label: ':github: Create GitHub release'
+        key: create-github-release
+        command:
+          - './enterprise/dev/app/create-github-release.sh'
