@@ -191,6 +191,20 @@ export class MultilineCompletionProvider extends CompletionProvider {
 }
 
 export class EndOfLineCompletionProvider extends CompletionProvider {
+    constructor(
+        completionsClient: SourcegraphNodeCompletionsClient,
+        promptChars: number,
+        responseTokens: number,
+        snippets: ReferenceSnippet[],
+        prefix: string,
+        suffix: string,
+        injectPrefix: string,
+        defaultN: number = 1,
+        protected multiline: boolean = false
+    ) {
+        super(completionsClient, promptChars, responseTokens, snippets, prefix, suffix, injectPrefix, defaultN)
+    }
+
     protected createPromptPrefix(): Message[] {
         // TODO(beyang): escape 'Human:' and 'Assistant:'
         const prefixLines = this.prefix.split('\n')
@@ -235,6 +249,7 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
     }
 
     private postProcess(completion: string): string {
+        console.log(completion, this.prefix)
         // Sometimes Claude emits an extra space
         if (
             completion.length > 0 &&
@@ -270,7 +285,7 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
             this.completionsClient,
             {
                 messages: prompt,
-                stopSequences: [anthropic.HUMAN_PROMPT, '\n'],
+                stopSequences: this.multiline ? [anthropic.HUMAN_PROMPT, '\n\n\n'] : [anthropic.HUMAN_PROMPT, '\n'],
                 maxTokensToSample: this.responseTokens,
                 temperature: 1,
                 topK: -1,

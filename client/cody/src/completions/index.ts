@@ -136,7 +136,23 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return []
         }
 
-        if (precedingLine.trim() === '') {
+        if (precedingLine.trim() === '' && prefix.trim().at(prefix.trim().length - 1) === '{') {
+            // Start of block: Do multiline completion
+            waitMs = 500
+            completers.push(
+                new EndOfLineCompletionProvider(
+                    this.completionsClient,
+                    remainingChars,
+                    this.responseTokens,
+                    similarCode,
+                    prefix,
+                    suffix,
+                    '',
+                    3,
+                    true // multiline
+                )
+            )
+        } else if (precedingLine.trim() === '') {
             // Start of line: medium debounce
             waitMs = 500
             completers.push(
