@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
-
+	owntypes "github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -84,6 +84,18 @@ type repoPath struct {
 	Path     string
 }
 
+func fakeOwnDb() *database.MockDB {
+	db := database.NewMockDB()
+	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
+	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
+
+	configStore := database.NewMockSignalConfigurationStore()
+	configStore.IsEnabledFunc.SetDefaultReturn(true, nil)
+	db.OwnSignalConfigurationsFunc.SetDefaultReturn(configStore)
+
+	return db
+}
+
 type repoFiles map[repoPath]string
 
 func (g fakeGitserver) ReadFile(_ context.Context, _ authz.SubRepoPermissionChecker, repoName api.RepoName, commitID api.CommitID, file string) ([]byte, error) {
@@ -126,7 +138,7 @@ func (g fakeGitserver) Stat(_ context.Context, _ authz.SubRepoPermissionChecker,
 func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 	logger := logtest.Scoped(t)
 	fakeDB := fakedb.New()
-	db := database.NewMockDB()
+	db := fakeOwnDb()
 	fakeDB.Wire(db)
 	repoID := api.RepoID(1)
 	own := fakeOwnService{
@@ -147,8 +159,6 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	repos := database.NewMockRepoStore()
-	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
-	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
 	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
@@ -246,7 +256,7 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 func TestBlobOwnershipPanelQueryIngested(t *testing.T) {
 	logger := logtest.Scoped(t)
 	fakeDB := fakedb.New()
-	db := database.NewMockDB()
+	db := fakeOwnDb()
 	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
 	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
 	fakeDB.Wire(db)
@@ -361,6 +371,7 @@ func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
 	db.CodeownersFunc.SetDefaultReturn(enterprisedb.NewMockCodeownersStore())
 	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
 	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
+	db.OwnSignalConfigurationsFunc.SetDefaultReturn(database.NewMockSignalConfigurationStore())
 	own := own.NewService(git, db)
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
@@ -506,7 +517,7 @@ func (r paginationResponse) ownerNames() []string {
 func TestOwnershipPagination(t *testing.T) {
 	logger := logtest.Scoped(t)
 	fakeDB := fakedb.New()
-	db := database.NewMockDB()
+	db := fakeOwnDb()
 	fakeDB.Wire(db)
 	rule := &codeownerspb.Rule{
 		Pattern: "*.js",
@@ -605,7 +616,7 @@ func TestOwnershipPagination(t *testing.T) {
 func TestOwnership_WithSignals(t *testing.T) {
 	logger := logtest.Scoped(t)
 	fakeDB := fakedb.New()
-	db := database.NewMockDB()
+	db := fakeOwnDb()
 
 	recentContribStore := database.NewMockRecentContributionSignalStore()
 	santaEmail := "santa@northpole.com"
@@ -659,6 +670,7 @@ func TestOwnership_WithSignals(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	graphqlbackend.RunTest(t, &graphqlbackend.Test{
 		Schema:  schema,
 		Context: ctx,
@@ -772,7 +784,7 @@ func TestOwnership_WithSignals(t *testing.T) {
 func TestTreeOwnershipSignals(t *testing.T) {
 	logger := logtest.Scoped(t)
 	fakeDB := fakedb.New()
-	db := database.NewMockDB()
+	db := fakeOwnDb()
 
 	recentContribStore := database.NewMockRecentContributionSignalStore()
 	santaEmail := "santa@northpole.com"
@@ -834,7 +846,8 @@ func TestTreeOwnershipSignals(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+
+	test := &graphqlbackend.Test{
 		Schema:  schema,
 		Context: ctx,
 		Query: `
@@ -911,13 +924,91 @@ func TestTreeOwnershipSignals(t *testing.T) {
 			"revision":    "revision",
 			"currentPath": "foo",
 		},
+	}
+	graphqlbackend.RunTest(t, test)
+
+	t.Run("disabled recent-contributor signal should not resolve", func(t *testing.T) {
+		mockStore := database.NewMockSignalConfigurationStore()
+		db.OwnSignalConfigurationsFunc.SetDefaultReturn(mockStore)
+		mockStore.IsEnabledFunc.SetDefaultHook(func(ctx context.Context, s string) (bool, error) {
+			t.Log(s)
+			if s == owntypes.SignalRecentContributors {
+				return false, nil
+			}
+			return true, nil
+		})
+
+		test.ExpectedResult = `{
+			"node": {
+				"commit": {
+					"path": {
+						"ownership": {
+							"nodes": [
+								{
+									"owner": {
+										"displayName": "santa claus",
+										"email": "santa@northpole.com"
+									},
+									"reasons": [
+										{
+											"title": "recent view",
+											"description": "Owner is associated because they have viewed this file in the last 90 days."
+										}
+									]
+								}
+							]
+						}
+					}
+				}
+			}
+		}
+`
+		graphqlbackend.RunTest(t, test)
+	})
+
+	t.Run("disabled recent-views signal should not resolve", func(t *testing.T) {
+		mockStore := database.NewMockSignalConfigurationStore()
+		db.OwnSignalConfigurationsFunc.SetDefaultReturn(mockStore)
+		mockStore.IsEnabledFunc.SetDefaultHook(func(ctx context.Context, s string) (bool, error) {
+			if s == owntypes.SignalRecentViews {
+				return false, nil
+			}
+			return true, nil
+		})
+
+		test.ExpectedResult = `{
+			"node": {
+				"commit": {
+					"path": {
+						"ownership": {
+							"nodes": [
+								{
+									"owner": {
+										"displayName": "santa claus",
+										"email": "santa@northpole.com"
+									},
+									"reasons": [
+										{
+											"title": "recent contributor",
+											"description": "Owner is associated because they have contributed to this file in the last 90 days."
+										}
+									]
+								}
+							]
+						}
+					}
+				}
+			}
+		}
+`
+		graphqlbackend.RunTest(t, test)
 	})
 }
 
 func TestCommitOwnershipSignals(t *testing.T) {
 	logger := logtest.Scoped(t)
 	fakeDB := fakedb.New()
-	db := database.NewMockDB()
+	db := fakeOwnDb()
 
 	recentContribStore := database.NewMockRecentContributionSignalStore()
 	recentContribStore.FindRecentAuthorsFunc.SetDefaultReturn([]database.RecentContributorSummary{{
@@ -1067,7 +1158,7 @@ func Test_SignalConfigurations(t *testing.T) {
 				}`,
 		Variables: map[string]any{"input": map[string]any{
 			"configs": []any{map[string]any{
-				"name": "recent-contributors", "enabled": true, "excludedRepoPatterns": []any{"github.com/*"}}},
+				"name": owntypes.SignalRecentContributors, "enabled": true, "excludedRepoPatterns": []any{"github.com/*"}}},
 		}},
 	}
 
@@ -1091,17 +1182,17 @@ func Test_SignalConfigurations(t *testing.T) {
 		graphqlbackend.RunTest(t, mutationTest)
 
 		// ensure the configs didn't change despite the error
-		configsFromDb, err := db.OwnSignalConfigurations().LoadConfigurations(ctx)
+		configsFromDb, err := db.OwnSignalConfigurations().LoadConfigurations(ctx, database.LoadSignalConfigurationArgs{})
 		require.NoError(t, err)
 		autogold.Expect([]database.SignalConfiguration{
 			{
 				ID:          1,
-				Name:        "recent-contributors",
+				Name:        owntypes.SignalRecentContributors,
 				Description: "Indexes contributors in each file using repository history.",
 			},
 			{
 				ID:          2,
-				Name:        "recent-views",
+				Name:        owntypes.SignalRecentViews,
 				Description: "Indexes users that recently viewed files in Sourcegraph.",
 			},
 		}).Equal(t, configsFromDb)
