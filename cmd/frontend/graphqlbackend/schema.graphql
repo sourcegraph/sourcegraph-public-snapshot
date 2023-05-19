@@ -9639,7 +9639,7 @@ extend type Query {
 """
 A list of repo key-value pair metadata
 """
-type RepoMetadataConnection {
+type RepoMetadataKeyOrValueConnection {
     """
     Total count of repo key-value pair metadata
     """
@@ -9647,7 +9647,7 @@ type RepoMetadataConnection {
     """
     A list of repo key-value pair metadata
     """
-    nodes: [KeyValuePair!]!
+    nodes: [String!]!
 
     """
     Pagination information.
@@ -9655,21 +9655,36 @@ type RepoMetadataConnection {
     pageInfo: BidirectionalPageInfo!
 }
 
-extend type Query {
-    """
-    List repo key-value pair metadata
-    """
-    repoMetadata(
-        queryKey: String
-        queryValue: String
+type RepoMetadataKeyResult {
+    values(
+        query: String
         """
-        Returns the first n repo key-value pair metadata
+        Pagination paramters
         """
         first: Int
         last: Int
         after: String
         before: String
-    ): RepoMetadataConnection!
+    ): RepoMetadataKeyOrValueConnection!
+}
+
+type RepoMetadata {
+    keys(
+        query: String
+        """
+        Pagination paramters
+        """
+        first: Int
+        last: Int
+        after: String
+        before: String
+    ): RepoMetadataKeyOrValueConnection!
+
+    key(key: String!): RepoMetadataKeyResult
+}
+
+extend type Query {
+    repoMeta: RepoMetadata
 }
 
 extend type Mutation {

@@ -2,22 +2,35 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
+
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/rbac"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type RepoMetadataArgs struct {
-	database.RepoKVPListOptions
+type repoMetaResolver struct {
+	db database.DB
+}
+
+func (r *schemaResolver) RepoMeta(ctx context.Context) (*repoMetaResolver, error) {
+	return &repoMetaResolver{
+		db: r.db,
+	}, nil
+}
+
+type RepoMetadataKeysArgs struct {
+	database.RepoKVPListKeysOptions
 	graphqlutil.ConnectionResolverArgs
 }
 
-func (r *schemaResolver) RepoMetadata(ctx context.Context, args *RepoMetadataArgs) (*graphqlutil.ConnectionResolver[*KeyValuePair], error) {
-	// 🚨 SECURITY: Only site admins can see access requests.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *repoMetaResolver) Keys(ctx context.Context, args *RepoMetadataKeysArgs) (*graphqlutil.ConnectionResolver[string], error) {
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
 		return nil, err
 	}
 
@@ -25,11 +38,11 @@ func (r *schemaResolver) RepoMetadata(ctx context.Context, args *RepoMetadataArg
 		return nil, errors.New("'repository-metadata' feature flag is not enabled")
 	}
 
-	listOptions := &args.RepoKVPListOptions
+	listOptions := &args.RepoKVPListKeysOptions
 	if listOptions == nil {
-		listOptions = &database.RepoKVPListOptions{}
+		listOptions = &database.RepoKVPListKeysOptions{}
 	}
-	connectionStore := &repoMetadataConnectionStore{
+	connectionStore := &repoMetaKeysConnectionStore{
 		db:          r.db,
 		listOptions: *listOptions,
 	}
@@ -37,19 +50,19 @@ func (r *schemaResolver) RepoMetadata(ctx context.Context, args *RepoMetadataArg
 	reverse := false
 	connectionOptions := graphqlutil.ConnectionResolverOptions{
 		Reverse:   &reverse,
-		OrderBy:   database.OrderBy{{Field: string(database.AccessRequestListID)}},
-		Ascending: false,
+		OrderBy:   database.OrderBy{{Field: string(database.RepoKVPListKeyColumn)}},
+		Ascending: true,
 	}
-	return graphqlutil.NewConnectionResolver[*KeyValuePair](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
+	return graphqlutil.NewConnectionResolver[string](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
 }
 
-type repoMetadataConnectionStore struct {
+type repoMetaKeysConnectionStore struct {
 	db          database.DB
-	listOptions database.RepoKVPListOptions
+	listOptions database.RepoKVPListKeysOptions
 }
 
-func (s *repoMetadataConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
-	count, err := s.db.RepoKVPs().Count(ctx, s.listOptions)
+func (s *repoMetaKeysConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+	count, err := s.db.RepoKVPs().CountKeys(ctx, s.listOptions)
 	if err != nil {
 		return nil, err
 	}
@@ -59,31 +72,96 @@ func (s *repoMetadataConnectionStore) ComputeTotal(ctx context.Context) (*int32,
 	return &totalCount, nil
 }
 
-func (s *repoMetadataConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*KeyValuePair, error) {
-	kvps, err := s.db.RepoKVPs().List(ctx, s.listOptions, *args)
+func (s *repoMetaKeysConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]string, error) {
+	return s.db.RepoKVPs().ListKeys(ctx, s.listOptions, *args)
+}
+
+func (s *repoMetaKeysConnectionStore) MarshalCursor(node string, _ database.OrderBy) (*string, error) {
+	cursor := string(relay.MarshalID("RepositoryMetadataKeyCursor", node))
+
+	return &cursor, nil
+}
+
+func (s *repoMetaKeysConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+	var value string
+	if err := relay.UnmarshalSpec(graphql.ID(cursor), &value); err != nil {
+		return nil, err
+	}
+	value = fmt.Sprintf("'%v'", value)
+	return &value, nil
+}
+
+func (r *repoMetaResolver) Key(ctx context.Context, args *struct {Key string}) (*repoMetaKeyResolver, error) {
+	return &repoMetaKeyResolver{db: r.db, key: args.Key}, nil
+}
+
+type repoMetaKeyResolver struct {
+	db database.DB
+	key string
+}
+
+type RepoMetadataValuesArgs struct {
+	Query *string
+	graphqlutil.ConnectionResolverArgs
+}
+
+func (r *repoMetaKeyResolver) Values(ctx context.Context, args *RepoMetadataValuesArgs) (*graphqlutil.ConnectionResolver[string], error) {
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
+		return nil, err
+	}
+
+	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
+		return nil, errors.New("'repository-metadata' feature flag is not enabled")
+	}
+
+	connectionStore := &repoMetaValuesConnectionStore{
+		db:          r.db,
+		listOptions: database.RepoKVPListValuesOptions{
+			Key:   r.key,
+			Query: args.Query,
+		},
+	}
+
+	reverse := false
+	connectionOptions := graphqlutil.ConnectionResolverOptions{
+		Reverse:   &reverse,
+		OrderBy:   database.OrderBy{{Field: string(database.RepoKVPListValueColumn)}},
+		Ascending: true,
+	}
+	return graphqlutil.NewConnectionResolver[string](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
+}
+
+type repoMetaValuesConnectionStore struct {
+	db          database.DB
+	listOptions database.RepoKVPListValuesOptions
+}
+
+func (s *repoMetaValuesConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+	count, err := s.db.RepoKVPs().CountValues(ctx, s.listOptions)
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]*KeyValuePair, len(kvps))
-	for i, kvp := range kvps {
-		resolvers[i] = &KeyValuePair{
-			key:   kvp.Key,
-			value: kvp.Value,
-		}
-	}
+	totalCount := int32(count)
 
-	return resolvers, nil
+	return &totalCount, nil
 }
 
-func (s *repoMetadataConnectionStore) MarshalCursor(node *KeyValuePair, _ database.OrderBy) (*string, error) {
-	if node == nil {
-		return nil, errors.New(`node is nil`)
-	}
-
-	return &node.key, nil
+func (s *repoMetaValuesConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]string, error) {
+	return s.db.RepoKVPs().ListValues(ctx, s.listOptions, *args)
 }
 
-func (s *repoMetadataConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+func (s *repoMetaValuesConnectionStore) MarshalCursor(node string, _ database.OrderBy) (*string, error) {
+	cursor := string(relay.MarshalID("RepositoryMetadataValueCursor", node))
+
 	return &cursor, nil
+}
+
+func (s *repoMetaValuesConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
+	var value string
+	if err := relay.UnmarshalSpec(graphql.ID(cursor), &value); err != nil {
+		return nil, err
+	}
+	value = fmt.Sprintf("'%v'", value)
+	return &value, nil
 }
