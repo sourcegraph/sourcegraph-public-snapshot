@@ -12,10 +12,7 @@ package:
       license: ''
   dependencies:
     runtime:
-      # - libxml2
-      # - libgcrypt
-      # - libgpg-error
-      # - libxslt
+      - libxml2 # Here to update the built-in version
 
 environment:
   contents:
@@ -27,9 +24,9 @@ environment:
       - wolfi-base
       - build-base
       # Build dependencies
+      - libxml2 # Required to update built-in libxml2 version to match libxml2-dev
       - libxml2-dev
       - libxslt-dev
-      - libxml2 # Required to update built-in libxml2 version to match libxml2-dev
 
 pipeline:
   - uses: fetch
@@ -45,4 +42,4 @@ pipeline:
       mkdir -p ${{targets.destdir}}/usr/local/bin/
       cp /usr/local/bin/xml ${{targets.destdir}}/usr/local/bin/
       cd ${{targets.destdir}}
-      ln -s ${{targets.destdir}}/usr/local/bin/xml ${{targets.destdir}}/usr/local/bin/xmlstarlet
+      ln -s /usr/local/bin/xml ${{targets.destdir}}/usr/local/bin/xmlstarlet
