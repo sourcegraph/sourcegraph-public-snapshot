@@ -11,7 +11,7 @@ load("//dev:defs.bzl", "ts_project")
 
 ts_config(
     name = "tsconfig",
-    src = "tsconfig.json",
+    src = "../../tsconfig.json",
     deps = [
         "//client/cody:tsconfig",
     ],
@@ -20,6 +20,7 @@ ts_config(
 ts_project(
     name = "e2e_tests",
     testonly = True,
+    tsconfig = ":tsconfig",
     srcs = [
         "auth.test.ts",
         "helpers.ts",
