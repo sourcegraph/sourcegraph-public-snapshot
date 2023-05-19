@@ -28,6 +28,7 @@ export const test = base
             const app = await electron.launch({
                 executablePath: vscodeExecutablePath,
                 env: {
+                    ...process.env,
                     CODY_TESTING: 'true',
                 },
                 args: [
