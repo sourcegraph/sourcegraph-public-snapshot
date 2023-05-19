@@ -20,6 +20,10 @@ oci_image(
         "/sbin/tini",
         "--",
     ],
+    env = {
+        "DATA_DIR": "/data/index",
+        "GOGC": "25",
+    },
     tars = dependencies_tars(DEPS),
 )
 
