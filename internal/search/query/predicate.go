@@ -38,6 +38,7 @@ var DefaultPredicateRegistry = PredicateRegistry{
 		"has.tag":               func() Predicate { return &RepoHasTagPredicate{} },
 		"has":                   func() Predicate { return &RepoHasKVPPredicate{} },
 		"has.key":               func() Predicate { return &RepoHasKeyPredicate{} },
+		"has.meta":              func() Predicate { return &RepoHasMetaPredicate{} },
 		"has.topic":             func() Predicate { return &RepoHasTopicPredicate{} },
 
 		// Deprecated predicates
@@ -297,6 +298,7 @@ func (f *RepoHasDescriptionPredicate) Unmarshal(params string, negated bool) (er
 func (f *RepoHasDescriptionPredicate) Field() string { return FieldRepo }
 func (f *RepoHasDescriptionPredicate) Name() string  { return "has.description" }
 
+// DEPRECATED: Use "repo:has.meta({tag}:)" instead
 type RepoHasTagPredicate struct {
 	Key     string
 	Negated bool
@@ -314,6 +316,80 @@ func (f *RepoHasTagPredicate) Unmarshal(params string, negated bool) (err error)
 func (f *RepoHasTagPredicate) Field() string { return FieldRepo }
 func (f *RepoHasTagPredicate) Name() string  { return "has.tag" }
 
+type RepoHasMetaPredicate struct {
+	Key     string
+	Value   *string
+	Negated bool
+	KeyOnly bool
+}
+
+func (p *RepoHasMetaPredicate) Unmarshal(params string, negated bool) (err error) {
+	scanLiteral := func(data string) (string, int, error) {
+		if strings.HasPrefix(data, `"`) {
+			return ScanDelimited([]byte(data), true, '"')
+		}
+		if strings.HasPrefix(data, `'`) {
+			return ScanDelimited([]byte(data), true, '\'')
+		}
+		loc := strings.Index(data, ":")
+		if loc >= 0 {
+			return data[:loc], loc, nil
+		}
+		return data, len(data), nil
+	}
+
+	// Trim leading and trailing spaces in params
+	params = strings.Trim(params, " \t")
+
+	// Scan the possibly-quoted key
+	key, advance, err := scanLiteral(params)
+	if err != nil {
+		return err
+	}
+
+	if len(key) == 0 {
+		return errors.New("key cannot be empty")
+	}
+
+	params = params[advance:]
+
+	keyOnly := false
+	var value *string = nil
+	if strings.HasPrefix(params, ":") {
+		// Chomp the leading ":"
+		params = params[len(":"):]
+
+		// Scan the possibly-quoted value
+		val, advance, err := scanLiteral(params)
+		if err != nil {
+			return err
+		}
+		params = params[advance:]
+
+		// If we have more text after scanning both the key and the value,
+		// that means someone tried to use a quoted string with data outside
+		// the quotes.
+		if len(params) != 0 {
+			return errors.New("unexpected extra content")
+		}
+		if len(val) > 0 {
+			value = &val
+		}
+	} else {
+		keyOnly = true
+	}
+
+	p.Key = key
+	p.KeyOnly = keyOnly
+	p.Value = value
+	p.Negated = negated
+	return nil
+}
+
+func (p *RepoHasMetaPredicate) Field() string { return FieldRepo }
+func (p *RepoHasMetaPredicate) Name() string  { return "has.meta" }
+
+// DEPRECATED: Use "repo:has.meta({key:value})" instead
 type RepoHasKVPPredicate struct {
 	Key     string
 	Value   string
@@ -334,10 +410,8 @@ func (p *RepoHasKVPPredicate) Unmarshal(params string, negated bool) (err error)
 		}
 		return data, len(data), nil
 	}
-
 	// Trim leading and trailing spaces in params
 	params = strings.Trim(params, " \t")
-
 	// Scan the possibly-quoted key
 	key, advance, err := scanLiteral(params)
 	if err != nil {
@@ -378,6 +452,7 @@ func (p *RepoHasKVPPredicate) Unmarshal(params string, negated bool) (err error)
 func (p *RepoHasKVPPredicate) Field() string { return FieldRepo }
 func (p *RepoHasKVPPredicate) Name() string  { return "has" }
 
+// DEPRECATED: Use "repo:has.meta({key})" instead
 type RepoHasKeyPredicate struct {
 	Key     string
 	Negated bool

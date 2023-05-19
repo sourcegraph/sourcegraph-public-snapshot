@@ -6,18 +6,18 @@
 
 Repositories tracked by Sourcegraph can be associated with user-provided key-value pairs. Once this metadata is added, it can be used to filter searches to the subset of matching repositories.
 
-Metadata can be added either as key-value pairs or as tags. Key-value pairs can be searched with the filter `repo:has(mykey:myvalue)`. `repo:has.key(mykey)` can be used to search over repositories with a given key irrespective of its value. Tags are just key-value pairs with a `null` value and can be searched with the filter `repo:has.tag(mytag)`.
+Metadata can be added either as key-value pairs or as tags. Key-value pairs can be searched with the filter `repo:has.meta(mykey:myvalue)`. `repo:has.meta(mykey)` can be used to search over repositories with a given key irrespective of its value. Tags are just key-value pairs with a `null` value and can be searched with the filter `repo:has.meta(mytag:)`.
 
 ## Examples
 ### Repository owners
 
 One way this feature might be used is to add the owning team of each repository as a key-value pair. For example, the repository `github.com/sourcegraph/security-onboarding` repository is owned by the security team, so we could add `owning-team:security` as a key-value pair on that repository. 
 
-Once those key-value pairs are added, they can be used to filter searches to only the code that is owned by a specific team with a search like `repo:has(owning-team:security) account creation`.
+Once those key-value pairs are added, they can be used to filter searches to only the code that is owned by a specific team with a search like `repo:has.meta(owning-team:security) account creation`.
 
 ### Maintenance status
 
-Another way this could be used is to associate repos with a maintenance status. Do you have a library that is commonly used but is unmaintained, deprecated, or replaced by a better solution? You can associate these custom statuses with repository metadata. After adding this info to your repositories, you can do things like `-repo:has(status:deprecated)` to exclude all results from deprecated repos.
+Another way this could be used is to associate repos with a maintenance status. Do you have a library that is commonly used but is unmaintained, deprecated, or replaced by a better solution? You can associate these custom statuses with repository metadata. After adding this info to your repositories, you can do things like `-repo:has.meta(status:deprecated)` to exclude all results from deprecated repos.
 
 ## Adding metadata
 
