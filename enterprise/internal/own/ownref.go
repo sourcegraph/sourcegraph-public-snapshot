@@ -86,7 +86,6 @@ type Bag interface {
 // that can be referred to by given text (name or email alike).
 // This can be used in search to find relevant owners by different identifiers
 // that the database reveals.
-// TODO(#52140): Search by verified email.
 // TODO(#52141): Search by code host handle.
 func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text string) (Bag, error) {
 	text = strings.TrimPrefix(text, "@")
@@ -140,20 +139,23 @@ func ByEmailReference(ctx context.Context, db edb.EnterpriseDB, email string) (B
 	if err != nil {
 		return nil, err
 	}
-	// Email is not verified, returning an empty bag.
+	// Email is not verified, including an input email as is and returning the bag.
 	if len(verifiedEmails) != 1 {
+		b = append(b, &userReferences{
+			verifiedEmails: []string{email},
+		})
 		return b, nil
 	}
 	verifiedEmail := verifiedEmails[0]
 	user, err := db.Users().GetByID(ctx, verifiedEmail.UserID)
 	if err != nil && !errcode.IsNotFound(err) {
-		return nil, errors.Wrap(err, "Users.GetByUsername")
+		return nil, errors.Wrap(err, "Users.GetByID")
 	}
 	if user != nil {
+		// Not adding an email here, because we will add it in hydrateWithVerifiedEmails.
 		b = append(b, &userReferences{
-			id:             user.ID,
-			user:           user,
-			verifiedEmails: []string{verifiedEmail.Email},
+			id:   user.ID,
+			user: user,
 		})
 	} else {
 		// In fact, user emails are deleted as soon as a user is soft/hard deleted, we

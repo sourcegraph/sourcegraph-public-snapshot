@@ -236,3 +236,57 @@ func TestBagUserFoundNoMatches(t *testing.T) {
 		})
 	}
 }
+
+func TestBagUnverifiedEmailOnlyMatchesWithItself(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	ctx := context.Background()
+	const verifiedEmail = "john.doe@example.com"
+	user, err := db.Users().Create(ctx, database.NewUser{
+		Email:           verifiedEmail,
+		Username:        "jdoe",
+		EmailIsVerified: true,
+	})
+	require.NoError(t, err)
+	// Now we add 1 unverified email.
+	verificationCode := "ok"
+	const unverifiedEmail = "john-the-unverified@example.com"
+	require.NoError(t, db.UserEmails().Add(ctx, user.ID, unverifiedEmail, &verificationCode))
+
+	// Then for given file we have owner matches (translated to references here):
+	ownerReferences := map[string]Reference{
+		"email entry in CODEOWNERS, the email is unverified but matches with search term": {
+			Email: unverifiedEmail,
+			RepoContext: &RepoContext{
+				Name:         "github.com/sourcegraph/sourcegraph",
+				CodeHostKind: "github",
+			},
+		},
+		"email entry in CODEOWNERS, although the email is verified, but the search term is an unverified email": {
+			Email: verifiedEmail,
+			RepoContext: &RepoContext{
+				Name:         "github.com/sourcegraph/sourcegraph",
+				CodeHostKind: "github",
+			},
+		},
+	}
+
+	// Imagine this is the search with filter
+	// `file:has.owner(john-the-unverified@example.com)`.
+	bag, err := ByTextReference(ctx, db, unverifiedEmail)
+	require.NoError(t, err)
+	for name, r := range ownerReferences {
+		t.Run(name, func(t *testing.T) {
+			if r.Email == unverifiedEmail {
+				assert.True(t, bag.Contains(r), fmt.Sprintf("bag.Contains(%s), want true, got false", r))
+			} else {
+				assert.False(t, bag.Contains(r), fmt.Sprintf("bag.Contains(%s), want false, got true", r))
+
+			}
+		})
+	}
+}
