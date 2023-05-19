@@ -8,8 +8,7 @@ export function messagesToText(messages: Message[]): string {
     return messages
         .map(
             message =>
-                `${message.speaker === 'human' ? anthropic.HUMAN_PROMPT : anthropic.AI_PROMPT}${
-                    message.text === undefined ? '' : ' ' + message.text
+                `${message.speaker === 'human' ? anthropic.HUMAN_PROMPT : anthropic.AI_PROMPT}${message.text === undefined ? '' : ' ' + message.text
                 }`
         )
         .join('')
@@ -134,7 +133,7 @@ export class KnowledgeBasePromptTemplate implements PromptTemplate {
                 {
                     speaker: 'human',
                     text:
-                        `Add the following code snippet (from file ${snippet.filename}) to your knowledge base:\n` +
+                        `Add the following snippet (from file ${snippet.filename}) to your knowledge base:\n` +
                         '```' +
                         `\n${snippet.text}\n` +
                         '```',

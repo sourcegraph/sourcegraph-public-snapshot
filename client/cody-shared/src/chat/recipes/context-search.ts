@@ -61,7 +61,7 @@ export class ContextSearch implements Recipe {
         })
         const endpointUri = resultContext.endpoint
 
-        let snippets = `Here are the code snippets for: ${text}\n\n`
+        let snippets = `Here are the snippets for: ${text}\n\n`
         for (const file of resultContext.results) {
             const fileContent = this.sanitizeContent(file.content)
             const extension = getFileExtension(file.fileName)

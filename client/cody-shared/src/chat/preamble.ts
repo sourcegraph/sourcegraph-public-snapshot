@@ -29,7 +29,7 @@ export function getPreamble(codebase: string | undefined): Message[] {
     if (codebase) {
         const codebasePreamble =
             `You have access to the \`${codebase}\` repository. You are able to answer questions about the \`${codebase}\` repository. ` +
-            `I will provide the relevant code snippets from the \`${codebase}\` repository when necessary to answer my questions.`
+            `I will provide the relevant snippets from the \`${codebase}\` repository when necessary to answer my questions.`
 
         preamble.push(codebasePreamble)
         preambleResponse.push(

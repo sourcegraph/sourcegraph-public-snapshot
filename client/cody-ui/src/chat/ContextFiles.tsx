@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { mdiAccessPoint, mdiAccountAlert, mdiFileDocumentOutline, mdiMagnify, mdiPacMan } from '@mdi/js'
+import { mdiBookOpenVariant, mdiFileDocumentOutline, mdiMagnify } from '@mdi/js'
 
 import { ContextFile } from '@sourcegraph/cody-shared/src/codebase-context/messages'
 import { pluralize } from '@sourcegraph/common'
@@ -43,44 +43,50 @@ interface ContextItemKind {
 function getContextItemKinds(FileLink: React.FunctionComponent<FileLinkProps>): ContextItemKind[] {
     return [
         {
-            noun: 'IRC log',
-            verb: 'Netsplit',
-            object: 'your chats',
-            searchIcon: mdiAccountAlert,
+            noun: 'wiki page',
+            verb: 'Searched',
+            object: 'NIH Wiki',
+            searchIcon: mdiBookOpenVariant,
             itemIcon: mdiFileDocumentOutline,
             contains(item): boolean {
-                return item.fileName.includes('a')
+                return item.fileName.includes('wiki.nci.nih.gov')
             },
             present(item): JSX.Element {
-                return <a href={`https://google.com/?q=${item.fileName}`}>{item.fileName}</a>
+                const trimmed = item.fileName.replace(/\.html$/, '')
+                const urlString = `https://${trimmed}`
+                console.log(urlString)
+                const url = new URL(urlString)
+                var slug = url.pathname.split('/').pop()?.replace(/\+/g, ' ')
+                const title = slug ? decodeURIComponent(slug) : trimmed
+                return <a href={urlString}>{title}</a>
             },
         },
-        {
-            noun: 'wiki pages',
-            verb: 'Considered',
-            object: 'the Megacorp wiki',
-            searchIcon: mdiAccountAlert,
-            itemIcon: mdiFileDocumentOutline,
-            contains(item): boolean {
-                return item.fileName.endsWith('.md')
-            },
-            present(item): JSX.Element {
-                return <a href={`https://google.com/?q=${item.fileName}`}>{item.fileName}</a>
-            },
-        },
-        {
-            noun: 'client file',
-            verb: 'Grokked',
-            object: 'the l337est code of the interwebz',
-            searchIcon: mdiAccessPoint,
-            itemIcon: mdiPacMan,
-            contains(item): boolean {
-                return item.fileName.startsWith('client/')
-            },
-            present(item): JSX.Element {
-                return <a href={`https://google.com/?q=${item.fileName.slice(6)}`}>{item.fileName}</a>
-            },
-        },
+        // {
+        //     noun: 'IRC log',
+        //     verb: 'Netsplit',
+        //     object: 'your chats',
+        //     searchIcon: mdiAccountAlert,
+        //     itemIcon: mdiFileDocumentOutline,
+        //     contains(item): boolean {
+        //         return item.fileName.includes('a')
+        //     },
+        //     present(item): JSX.Element {
+        //         return <a href={`https://google.com/?q=${item.fileName}`}>{item.fileName}</a>
+        //     },
+        // },
+        // {
+        //     noun: 'client file',
+        //     verb: 'Grokked',
+        //     object: 'the l337est code of the interwebz',
+        //     searchIcon: mdiAccessPoint,
+        //     itemIcon: mdiPacMan,
+        //     contains(item): boolean {
+        //         return item.fileName.startsWith('client/')
+        //     },
+        //     present(item): JSX.Element {
+        //         return <a href={`https://google.com/?q=${item.fileName.slice(6)}`}>{item.fileName}</a>
+        //     },
+        // },
         {
             noun: 'file',
             verb: 'Searched',

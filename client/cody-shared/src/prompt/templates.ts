@@ -1,6 +1,6 @@
 import path from 'path'
 
-const CODE_CONTEXT_TEMPLATE = `Use following code snippet from file \`{filePath}\`:
+const CODE_CONTEXT_TEMPLATE = `Use following snippet from file \`{filePath}\`:
 \`\`\`{language}
 {text}
 \`\`\``

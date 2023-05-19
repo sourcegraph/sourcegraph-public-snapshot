@@ -21,7 +21,7 @@ export abstract class CompletionProvider {
         protected suffix: string,
         protected injectPrefix: string,
         protected defaultN: number = 1
-    ) {}
+    ) { }
 
     // Returns the content specific prompt excluding additional referenceSnippets
     protected abstract createPromptPrefix(): Message[]
@@ -53,7 +53,7 @@ export abstract class CompletionProvider {
                     {
                         speaker: 'human',
                         text:
-                            'Add the following code snippet to your knowledge base:\n' +
+                            'Add the following snippet to your knowledge base:\n' +
                             '```' +
                             `\n${suffix}\n` +
                             '```',
@@ -77,7 +77,7 @@ export abstract class CompletionProvider {
                 {
                     speaker: 'human',
                     text:
-                        `Add the following code snippet (from file ${snippet.filename}) to your knowledge base:\n` +
+                        `Add the following snippet (from file ${snippet.filename}) to your knowledge base:\n` +
                         '```' +
                         `\n${snippet.text}\n` +
                         '```',

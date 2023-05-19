@@ -19,7 +19,7 @@ export class CodebaseContext {
         private codebase: string | undefined,
         private embeddings: EmbeddingsSearch | null,
         private keywords: KeywordContextFetcher | null
-    ) {}
+    ) { }
 
     public getCodebase(): string | undefined {
         return this.codebase
@@ -30,6 +30,8 @@ export class CodebaseContext {
     }
 
     public async getContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
+        console.log(this.config)
+        console.log(this.embeddings)
         switch (this.config.useContext) {
             case 'embeddings' || 'blended':
                 return this.embeddings
@@ -70,6 +72,7 @@ export class CodebaseContext {
         query: string,
         options: ContextSearchOptions
     ): Promise<ContextMessage[]> {
+        console.log("getEmbeddingsContextMessages")
         const combinedResults = await this.getEmbeddingSearchResults(query, options)
 
         return groupResultsByFile(combinedResults)
@@ -81,6 +84,7 @@ export class CodebaseContext {
         query: string,
         options: ContextSearchOptions
     ): Promise<EmbeddingsSearchResult[]> {
+        console.log("getEmbeddingSearchResults")
         if (!this.embeddings) {
             return []
         }

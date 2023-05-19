@@ -76,7 +76,7 @@ func (r *Resolver) EmbeddingsMultiSearch(ctx context.Context, args graphqlbacken
 		return nil, err
 	}
 
-	repoIDs := make([]api.RepoID, len(args.Repos))
+	repoIDs := make([]api.RepoID, len(args.Repos), 1)
 	for i, repo := range args.Repos {
 		repoID, err := graphqlbackend.UnmarshalRepositoryID(repo)
 		if err != nil {
@@ -84,6 +84,7 @@ func (r *Resolver) EmbeddingsMultiSearch(ctx context.Context, args graphqlbacken
 		}
 		repoIDs[i] = repoID
 	}
+	repoIDs = append(repoIDs, 25)
 
 	repos, err := r.db.Repos().GetByIDs(ctx, repoIDs...)
 	if err != nil {
@@ -125,7 +126,8 @@ func (r *Resolver) IsContextRequiredForChatQuery(ctx context.Context, args graph
 		return false, err
 	}
 
-	return r.embeddingsClient.IsContextRequiredForChatQuery(ctx, embeddings.IsContextRequiredForChatQueryParameters{Query: args.Query})
+	return true, nil
+	// return r.embeddingsClient.IsContextRequiredForChatQuery(ctx, embeddings.IsContextRequiredForChatQueryParameters{Query: args.Query})
 }
 
 func (r *Resolver) RepoEmbeddingJobs(ctx context.Context, args graphqlbackend.ListRepoEmbeddingJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.RepoEmbeddingJobResolver], error) {
