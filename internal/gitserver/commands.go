@@ -41,7 +41,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -2769,9 +2768,12 @@ func (p byteSlices) Less(i, j int) bool { return bytes.Compare(p[i], p[j]) < 0 }
 func (p byteSlices) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 
 // ListRefs returns a list of all refs in the repository.
-func (c *clientImplementor) ListRefs(ctx context.Context, repo api.RepoName) ([]gitdomain.Ref, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: ListRefs") //nolint:staticcheck // OT is deprecated
-	defer span.Finish()
+func (c *clientImplementor) ListRefs(ctx context.Context, repo api.RepoName) (_ []gitdomain.Ref, err error) {
+	ctx, _, endObservation := c.operations.listRefs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repo", string(repo)),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return c.showRef(ctx, repo)
 }
 
