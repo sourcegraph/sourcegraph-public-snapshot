@@ -7,7 +7,7 @@ go_library(
     visibility = ["//visibility:private"],
     x_defs = {
         "github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType": "app",
-        "github.com/sourcegraph/sourcegraph/internal/version.version": "5.0.2",
+        "github.com/sourcegraph/sourcegraph/internal/version.version": "{VERSION}",
         "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
     },
     deps = [
