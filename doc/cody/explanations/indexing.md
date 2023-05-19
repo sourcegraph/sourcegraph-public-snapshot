@@ -1,21 +1,20 @@
-# Generate Index to Enable Codebase-Aware Answers for Cody
+# Generate Index to Enable Codebase-Aware Answers
 
 This docs provides instructions on how to generate an index that enables codebase-aware answers for Cody. Codebase-aware answers leverage code graph context to enhance Cody's understanding of code from selected codebases. 
 
 By following the steps outlined in this guide, you can configure the necessary prerequisites and enable Cody to provide more accurate and contextually relevant answers to your coding questions based on the codebase you are working in.
 
-## General Index
+## Generate Index
 
 You can enhance Cody's understanding of existing code by generating index for your codebases to enable [code graph context](https://docs.sourcegraph.com/cody/explanations/code_graph_context).
 
 ### Sourcegraph Enterprise
 
-To generate an index for your codebase and enable codebase-aware answers for Cody, your Site Admins must:
+To generate an index for your codebase and enable codebase-aware answers for Cody, your Site Admins must complete the following:
 
-- Configure code graph context on your Sourcegraph instance
-- Enable Cody for your Sourcegraph account
-
-> If you are a Site Admin, please refer to our documentation on [Code Graph Context](https://docs.sourcegraph.com/cody/explanations/code_graph_context) for detailed instructions.
+- [Configure Code Graph Context](https://docs.sourcegraph.com/cody/explanations/code_graph_context) for your Sourcegraph instance
+- [Enable Cody for your Sourcegraph instance](../enabling_cody_enterprise.md#step-1-enable-cody-on-your-sourcegraph-instance)
+- [Enable Cody for your Sourcegraph account](../enabling_cody_enterprise.md#turning-cody-off)
 
 ### Sourcegraph.com
 
@@ -29,7 +28,7 @@ Please note that Sourcegraph.com currently does not support private repositories
 
 ## Enable Codebase-Aware Answers
 
-To enable codebase-aware answers for the Cody extension, you need to set the `Cody: Codebase` (`cody.codebase`) configuration option in VS Code. Set this option to the repository name on your Sourcegraph instance. By doing so, Cody will provide more accurate and relevant answers to your coding questions, referring to the context of the codebase you are currently working in.
+To enable codebase-aware answers for the Cody extension, you must set the `Cody: Codebase` (`cody.codebase`) configuration option in VS Code to the repository name on your Sourcegraph instance. By doing so, Cody will provide more accurate and relevant answers to your coding questions, referencing to the context of the codebase you are currently working in.
 
 ### Extension Settings
 
