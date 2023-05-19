@@ -192,7 +192,7 @@ func bazelBuild(targets ...string) func(*bk.Pipeline) {
 	cmds = append(
 		cmds,
 		bk.Cmd(cmd),
-		bk.Cmd(bazelStampedCmd("run //enteprise/cmd/server:candidate_push")),
+		bk.Cmd(bazelStampedCmd("run //enterprise/cmd/server:candidate_push")),
 	)
 
 	return func(pipeline *bk.Pipeline) {
