@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "aggregated.go",
         "aggregated_codeintel.go",
+        "aggregated_cody.go",
         "aggregated_search.go",
         "all_time_stats.go",
         "batches.go",
@@ -34,6 +35,7 @@ go_library(
     deps = [
         "//cmd/frontend/envvar",
         "//internal/actor",
+        "//internal/cody",
         "//internal/conf",
         "//internal/database",
         "//internal/database/basestore",
