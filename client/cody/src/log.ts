@@ -9,7 +9,7 @@ import {
 
 import { getConfiguration } from './configuration'
 
-let outputChannel: vscode.OutputChannel = vscode.window.createOutputChannel('Cody AI by Sourcegraph', 'json')
+const outputChannel: vscode.OutputChannel = vscode.window.createOutputChannel('Cody AI by Sourcegraph', 'json')
 
 const workspaceConfig = vscode.workspace.getConfiguration()
 const config = getConfiguration(workspaceConfig)
@@ -29,7 +29,7 @@ const config = getConfiguration(workspaceConfig)
  * debug('label', 'this is a message', 'some', 'args')
  * debug('label', 'this is a message', 'some', 'args', { verbose: 'verbose info goes here' })
  */
-export function debug(filterLabel: string, text: string, ...args: unknown[]) {
+export function debug(filterLabel: string, text: string, ...args: unknown[]): void {
     if (!outputChannel || !config.debugEnable) {
         return
     }
@@ -43,14 +43,14 @@ export function debug(filterLabel: string, text: string, ...args: unknown[]) {
         return
     }
 
-    const lastArg = args[args.length - 1]
+    const lastArg = args[-1]
     if (typeof lastArg === 'object' && lastArg && 'verbose' in lastArg) {
         if (config.debugVerbose) {
             outputChannel.appendLine(
-                `${filterLabel}: ${text} ${args.slice(0, args.length - 1).join(' ')} ${JSON.stringify(lastArg.verbose)}`
+                `${filterLabel}: ${text} ${args.slice(0, -1).join(' ')} ${JSON.stringify(lastArg.verbose)}`
             )
         } else {
-            outputChannel.appendLine(`${filterLabel}: ${text} ${args.slice(0, args.length - 1).join(' ')}`)
+            outputChannel.appendLine(`${filterLabel}: ${text} ${args.slice(0, -1).join(' ')}`)
         }
         return
     }

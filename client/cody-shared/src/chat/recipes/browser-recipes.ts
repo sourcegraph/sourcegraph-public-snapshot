@@ -18,7 +18,7 @@ export function getRecipe(id: RecipeID): Recipe | undefined {
     return registeredRecipes[id]
 }
 
-function nullLog(filterLabel: string, text: string, ...args: unknown[]) {
+function nullLog(filterLabel: string, text: string, ...args: unknown[]): void {
     // Do nothing
 }
 

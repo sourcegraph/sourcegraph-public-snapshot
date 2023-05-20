@@ -23,7 +23,7 @@ export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'ge
             }
         }
     } catch (error) {
-        vscode.window.showErrorMessage("Error parsing cody.debug.filter regex - using default '*'")
+        void vscode.window.showErrorMessage("Error parsing cody.debug.filter regex - using default '*'", error)
         debugRegex = new RegExp('.*')
     }
 
