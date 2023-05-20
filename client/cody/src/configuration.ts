@@ -11,7 +11,7 @@ import { SecretStorage, getAccessToken } from './services/SecretStorageProvider'
 /**
  * All configuration values, with some sanitization performed.
  */
-export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'get' | 'has'>): Configuration {
+export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'get' >): Configuration {
     let debugRegex: RegExp | null = null
     try {
         const debugPattern: string | null = config.get<string | null>('cody.debug.filter', null)

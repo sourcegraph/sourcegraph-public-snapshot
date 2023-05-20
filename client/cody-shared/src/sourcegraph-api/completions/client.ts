@@ -14,7 +14,7 @@ export interface CompletionLogger {
 
 export type Config = Pick<
     ConfigurationWithAccessToken,
-    'serverEndpoint' | 'accessToken' | 'debugEnable' | 'debugVerbose' | 'debugFilter' | 'customHeaders'
+    'serverEndpoint' | 'accessToken' | 'debugEnable' | 'customHeaders'
 >
 
 export abstract class SourcegraphCompletionsClient {

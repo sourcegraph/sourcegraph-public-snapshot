@@ -25,7 +25,7 @@ interface ExternalServices {
 
 type ExternalServicesConfiguration = Pick<
     ConfigurationWithAccessToken,
-    'serverEndpoint' | 'codebase' | 'useContext' | 'customHeaders' | 'accessToken' | 'debug'
+    'serverEndpoint' | 'codebase' | 'useContext' | 'customHeaders' | 'accessToken' | 'debugEnable'
 >
 
 export async function configureExternalServices(
