@@ -16,7 +16,7 @@ export const recipesList = {
     fixup: 'Fixup code from inline instructions',
     'context-search': 'Codebase context search',
     'release-notes': 'Generate release notes',
-    'pr-description': 'Generate PR description',
+    'pr-description': 'Generate pull request description',
 }
 
 export const Recipes: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
