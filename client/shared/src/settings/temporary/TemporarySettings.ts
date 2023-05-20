@@ -73,12 +73,14 @@ export interface TemporarySettingsSchema {
     'search.notebooks.minSavedPerView': number
     'repo.commitPage.diffMode': DiffMode
     'setup.activeStepId': string
+    'app-setup.activeStepId': string
     'own.panelExplanationHidden': boolean
     'cody.showSidebar': boolean
     'cody.blobPageCta.dismissed': boolean
     'cody.searchPageCta.dismissed': boolean
     'cody.chatPageCta.dismissed': boolean
     'cody.survey.submitted': boolean
+    'app.codyStandalonePage.selectedRepo': string
 }
 
 /**

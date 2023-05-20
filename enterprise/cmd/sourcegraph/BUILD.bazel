@@ -7,7 +7,7 @@ go_library(
     visibility = ["//visibility:private"],
     x_defs = {
         "github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType": "app",
-        "github.com/sourcegraph/sourcegraph/internal/version.version": "5.0.2",
+        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
         "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
     },
     deps = [
@@ -23,6 +23,7 @@ go_library(
         "//enterprise/cmd/sourcegraph/enterprisecmd",
         "//enterprise/cmd/symbols/shared",
         "//enterprise/cmd/worker/shared",
+        "//internal/sanitycheck",
         "//internal/service",
         "//internal/service/servegit",
         "//ui/assets",

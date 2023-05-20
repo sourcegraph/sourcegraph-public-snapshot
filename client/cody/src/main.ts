@@ -14,6 +14,7 @@ import { logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
 import { TaskController } from './fixup-tasks/TaskController'
 import { getRgPath } from './rg'
+import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { InlineController } from './services/InlineController'
 import { LocalStorage } from './services/LocalStorageProvider'
 import {
@@ -91,6 +92,7 @@ const register = async (
         codebaseContext,
         chatClient,
         completionsClient,
+        guardrails,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
     } = await configureExternalServices(initialConfig, rgPath, editor)
 
@@ -101,6 +103,7 @@ const register = async (
         chatClient,
         intentDetector,
         codebaseContext,
+        guardrails,
         editor,
         secretStorage,
         localStorage,
@@ -239,8 +242,17 @@ const register = async (
             provideCommentingRanges: (document: vscode.TextDocument) => {
                 const lineCount = document.lineCount
                 return [new vscode.Range(0, 0, lineCount - 1, 0)]
-            },
+            }
         }
+    }
+
+    if (initialConfig.experimentalGuardrails) {
+        const guardrailsProvider = new GuardrailsProvider(guardrails, editor)
+        disposables.push(
+            vscode.commands.registerCommand('cody.guardrails.debug', async () => {
+                await guardrailsProvider.debugEditorSelection()
+            })
+        )
     }
 
     // Register task view and non-stop cody command when feature flag is on
@@ -253,6 +265,7 @@ const register = async (
         )
         await vscode.commands.executeCommand('setContext', 'cody.task.view.enabled', true)
     }
+
 
     return {
         disposable: vscode.Disposable.from(...disposables),
