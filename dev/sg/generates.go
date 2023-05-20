@@ -2,16 +2,12 @@ package main
 
 import (
 	"context"
-	"os"
-	"os/exec"
-	"strings"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/buf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate/golang"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate/proto"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var allGenerateTargets = generateTargets{
@@ -52,14 +48,5 @@ func generateGoRunner(ctx context.Context, args []string) *generate.Report {
 }
 
 func generateProtoRunner(ctx context.Context, args []string) *generate.Report {
-	// Check if output contains any .proto files
-	out, err := exec.Command("git", "diff", "--name-only", "main...HEAD").Output()
-	if err != nil {
-		errors.Errorf("failed to run git diff: %v", err)
-	}
-	if strings.Contains(string(out), ".proto") || os.Getenv("CI") == "true" {
-		return proto.Generate(ctx, verbose)
-	} else {
-		return nil
-	}
+	return proto.Generate(ctx, verbose)
 }
