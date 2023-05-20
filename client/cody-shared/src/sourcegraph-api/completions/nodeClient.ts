@@ -25,7 +25,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     method: 'POST',
                     headers: Object.fromEntries(headersInstance.entries()),
                     // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
-                    rejectUnauthorized: !this.config.debug,
+                    rejectUnauthorized: !this.config.debugEnable,
                 },
                 (res: http.IncomingMessage) => {
                     let buffer = ''
@@ -92,7 +92,7 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     ...this.config.customHeaders,
                 },
                 // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
-                rejectUnauthorized: !this.config.debug,
+                rejectUnauthorized: !this.config.debugEnable,
             },
             (res: http.IncomingMessage) => {
                 if (res.statusCode === undefined) {
