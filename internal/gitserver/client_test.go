@@ -773,7 +773,6 @@ func TestClient_ReposStats(t *testing.T) {
 
 	assert.Equal(t, wantStats, *gotStatsMap[gitserverAddr])
 }
-
 func TestClient_ReposStatsGRPC(t *testing.T) {
 	t.Setenv("SG_FEATURE_FLAG_GRPC", "true")
 
@@ -784,7 +783,7 @@ func TestClient_ReposStatsGRPC(t *testing.T) {
 		GitDirBytes: 1337,
 	}
 
-	// create a file to serve as the gitserver binary
+	// create a temp file with the stats
 	f, err := ioutil.TempFile("", "repos-stats.json")
 	if err != nil {
 		t.Fatal(err)
@@ -799,32 +798,25 @@ func TestClient_ReposStatsGRPC(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	spy := &spyGitserverServiceClient{}
-	spy.mock = func(i interface{}) interface{} {
-		switch i.(type) {
-		case *proto.ReposStatsRequest:
-			//read from temp file
-			encoded, err := ioutil.ReadFile(f.Name())
-			if err != nil {
-				panic(err)
-			}
-
-			var rs protocol.ReposStats
-			err = json.Unmarshal(encoded, &rs)
-			if err != nil {
-				panic(err)
-			}
-			return rs.ToProto()
-		default:
-			panic(fmt.Sprintf("unexpected type %T", i))
-		}
-	}
-
+	called := false
 	source := gitserver.NewTestClientSource([]string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
 		o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
-			spy.base = proto.NewGitserverServiceClient(cc)
+			mockRepoStats := func(ctx context.Context, in *proto.ReposStatsRequest, opts ...grpc.CallOption) (*proto.ReposStatsResponse, error) {
+				called = true
+				//read from temp file
+				encoded, err := ioutil.ReadFile(f.Name())
+				if err != nil {
+					return nil, err
+				}
 
-			return spy
+				var rs protocol.ReposStats
+				err = json.Unmarshal(encoded, &rs)
+				if err != nil {
+					return nil, err
+				}
+				return rs.ToProto(), nil
+			}
+			return &mockClient{mockRepoStats: mockRepoStats}
 		}
 	})
 
@@ -835,7 +827,7 @@ func TestClient_ReposStatsGRPC(t *testing.T) {
 		t.Fatalf("expected URL %q, but got err %q", wantStats, err)
 	}
 
-	if !spy.reposStatsCalled {
+	if !called {
 		t.Fatal("ReposStats: grpc client not called")
 	}
 
@@ -876,3 +868,31 @@ func (s *spyGitserverServiceClient) ReposStats(ctx context.Context, in *proto.Re
 }
 
 var _ proto.GitserverServiceClient = &spyGitserverServiceClient{}
+
+type mockClient struct {
+	mockExec      func(ctx context.Context, in *proto.ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_ExecClient, error)
+	mockRepoStats func(ctx context.Context, in *proto.ReposStatsRequest, opts ...grpc.CallOption) (*proto.ReposStatsResponse, error)
+	mockArchive   func(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error)
+	mockSearch    func(ctx context.Context, in *proto.SearchRequest, opts ...grpc.CallOption) (proto.GitserverService_SearchClient, error)
+}
+
+// Exec implements v1.GitserverServiceClient
+func (mc *mockClient) Exec(ctx context.Context, in *proto.ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_ExecClient, error) {
+	return mc.mockExec(ctx, in, opts...)
+}
+
+// ReposStats implements v1.GitserverServiceClient
+func (ms *mockClient) ReposStats(ctx context.Context, in *proto.ReposStatsRequest, opts ...grpc.CallOption) (*proto.ReposStatsResponse, error) {
+	return ms.mockRepoStats(ctx, in, opts...)
+}
+
+// Search implements v1.GitserverServiceClient
+func (ms *mockClient) Search(ctx context.Context, in *proto.SearchRequest, opts ...grpc.CallOption) (proto.GitserverService_SearchClient, error) {
+	return ms.mockSearch(ctx, in, opts...)
+}
+
+func (mc *mockClient) Archive(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error) {
+	return mc.mockArchive(ctx, in, opts...)
+}
+
+var _ proto.GitserverServiceClient = &mockClient{}
