@@ -15,4 +15,5 @@ sh_test(
         "//testing/tools:before_run_server_image",
         "//testing/tools:run_server_image",
     ],
+    tags = ["requires-network"],
 )
