@@ -1,124 +1,150 @@
 import * as vscode from 'vscode'
 
-import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
+import { getFileNameAfterLastDash } from '../services/utils'
 
 import { FixupTask } from './FixupTask'
+import { CodyTaskState, fixupTaskIcon } from './types'
 
-export class TaskViewProvider implements vscode.TreeDataProvider<vscode.TreeItem> {
+export class TaskViewProvider implements vscode.TreeDataProvider<FixupTaskTreeItem> {
     /**
-     * FixupTask objects mapped by taskID
+     * Tree items are mapped by fsPath to taskID
      */
-    private tasks = new Map<string, FixupTask>()
-    /**
-     * Tree items mapped by:
-     * fsPath = parent items
-     * taskID = child items
-     */
-    private treeItems = new Map<string, vscode.TreeItem>()
+    private treeNodes = new Map<string, FixupTaskTreeItem>()
+    private treeItems = new Map<string, FixupTaskTreeItem>()
 
     private _disposables: vscode.Disposable[] = []
-    private _onDidChangeTreeData = new vscode.EventEmitter<vscode.TreeItem | undefined | void>()
+    private _onDidChangeTreeData = new vscode.EventEmitter<FixupTaskTreeItem | undefined | void>()
     public readonly onDidChangeTreeData = this._onDidChangeTreeData.event
 
     constructor() {
+        void vscode.commands.executeCommand('setContext', 'cody.task.view.isEmpty', true)
         this._disposables.push(vscode.commands.registerCommand('cody.task.open', taskUri => this.openFile(taskUri)))
+        this._disposables.push(vscode.commands.registerCommand('cody.task.reset', () => this.reset()))
     }
+
     /**
      * Refresh the tree view to get the latest data
      */
     public refresh(): void {
+        void vscode.commands.executeCommand('setContext', 'cody.task.view.isEmpty', this.treeNodes.size === 0)
         this._onDidChangeTreeData.fire()
     }
+
     /**
      * Get parents items first
      * Then returns children items for each parent item
      */
-    public getChildren(element?: vscode.TreeItem): vscode.TreeItem[] {
+    public getChildren(element?: FixupTaskTreeItem): FixupTaskTreeItem[] {
         if (element && element.contextValue === 'fsPath') {
-            return [...this.treeItems.values()].filter(
-                item => item.contextValue === 'task' && item.resourceUri?.fsPath === element.resourceUri?.fsPath
-            )
+            return [...this.treeItems.values()].filter(item => item.fsPath === element.fsPath)
         }
-        return [...this.treeItems.values()].filter(item => item.contextValue === 'fsPath')
+
+        return [...this.treeNodes.values()]
     }
+
+    /**
+     * Create tree item based on provided task
+     */
+    public setTreeItem(task: FixupTask): void {
+        const treeItem = new FixupTaskTreeItem(task.instruction, task)
+        this.treeItems.set(task.id, treeItem)
+
+        // Add fsPath to treeNodes
+        const treeNode = this.treeNodes.get(task.selection.fileName) || new FixupTaskTreeItem(task.selection.fileName)
+        treeNode.setChildren(task.id, task.state)
+        this.treeNodes.set(task.selection.fileName, treeNode)
+
+        this.refresh()
+    }
+
     /**
      * Get individual tree item
      */
-    public getTreeItem(element: vscode.TreeItem): vscode.TreeItem {
+    public getTreeItem(element: FixupTaskTreeItem): FixupTaskTreeItem {
         return element
     }
-    /**
-     * Create a new tree item for a task and add it to the task list that is used to create the tree view
-     */
-    public newTask(taskID: string, input: string, selection: ActiveTextEditorSelection): void {
-        const editor = vscode.window.activeTextEditor
-        if (!editor) {
-            return
-        }
-        // Create new task object
-        const newTask = new FixupTask(taskID, input, selection, editor)
 
-        // Create new tree items - fsPath
-        const newParentItem = new vscode.TreeItem(selection.fileName)
-        newParentItem.id = selection.fileName
-        newParentItem.resourceUri = newTask.documentUri
-        newParentItem.contextValue = 'fsPath'
-        newParentItem.collapsibleState = vscode.TreeItemCollapsibleState.Expanded
-        this.treeItems.set(selection.fileName, newParentItem)
-
-        // Create new child item - task under each fsPath
-        const newChildItem = new vscode.TreeItem(newTask.instruction)
-        newChildItem.contextValue = 'task'
-        newChildItem.description = taskID
-        newChildItem.iconPath = newTask.iconPath
-        newChildItem.id = taskID
-        newChildItem.resourceUri = newTask.documentUri
-        newChildItem.tooltip = new vscode.MarkdownString(`$(zap) Task#${taskID}: ${newTask.instruction}`, true)
-        newChildItem.command = { command: 'cody.task.open', title: 'Check Task', arguments: [newTask.documentUri] }
-        this.treeItems.set(taskID, newChildItem)
-
-        // Start and set task
-        newTask.start()
-        this.tasks.set(taskID, newTask)
-        this.refresh()
-    }
-    /**
-     * Mark task as completed and start replacement in doc
-     * Log error in output if no replacement is provided
-     */
-    public async stopTask(taskID: string, content: string | null): Promise<void> {
-        const task = this.tasks.get(taskID)
-        const treeItem = this.treeItems.get(taskID)
-        if (!task || !treeItem) {
-            console.error('Task not found: ' + taskID)
-            return
-        }
-        if (!content) {
-            task.error('Cody did not provide any replacement for Tash#' + taskID)
-            return
-        }
-        await task.replace(content, task.getSelectionRange())
-        // Update tree item
-        this.tasks.set(taskID, task)
-        treeItem.iconPath = task.iconPath
-        this.treeItems.set(taskID, treeItem)
-        this.refresh()
-    }
     /**
      * Open fsPath in editor on tree item click
      */
     private openFile(uri: vscode.Uri): void {
         void vscode.window.showTextDocument(uri)
     }
+
+    /**
+     * Empty the tree view
+     */
+    public reset(): void {
+        this.treeNodes = new Map<string, FixupTaskTreeItem>()
+        this.treeItems = new Map<string, FixupTaskTreeItem>()
+        this.refresh()
+    }
+
     /**
      * Dispose the disposables
      */
     public dispose(): void {
+        this.reset()
         for (const disposable of this._disposables) {
             disposable.dispose()
         }
-        this.tasks = new Map<string, FixupTask>()
-        this.treeItems = new Map<string, vscode.TreeItem>()
         this._disposables = []
+    }
+}
+
+class FixupTaskTreeItem extends vscode.TreeItem {
+    private state: CodyTaskState = CodyTaskState.idle
+    public fsPath: string
+
+    // state for parent node
+    private failed = new Set<string>()
+    private tasks = new Set<string>()
+
+    constructor(label: string, task?: FixupTask) {
+        super(label)
+        if (!task) {
+            this.fsPath = label
+            this.label = getFileNameAfterLastDash(label)
+            this.contextValue = 'fsPath'
+            this.collapsibleState = vscode.TreeItemCollapsibleState.Expanded
+            this.description = '0 fixups'
+            return
+        }
+        this.state = task.state
+        this.id = task.id
+        this.fsPath = task.selection.fileName
+        this.resourceUri = task.documentUri
+        this.contextValue = 'task'
+        this.collapsibleState = vscode.TreeItemCollapsibleState.None
+        this.tooltip = new vscode.MarkdownString(`$(zap) Task#${task.id}: ${task.instruction}`, true)
+        this.command = { command: 'cody.task.open', title: 'Go to File', arguments: [task.documentUri] }
+
+        this.updateIconPath()
+    }
+
+    // For parent node to track children states
+    public setChildren(taskID: string, state: CodyTaskState): void {
+        if (this.contextValue !== 'fsPath') {
+            return
+        }
+        this.tasks.add(taskID)
+        this.description = this.makeNodeDescription(state === CodyTaskState.pending)
+    }
+
+    private makeNodeDescription(running: boolean): string {
+        let text = `${this.tasks.size} fixups`
+        if (running) {
+            text += ', 1 running'
+        }
+        if (this.failed.size > 0) {
+            text += `, ${this.failed.size} failed`
+        }
+        return text
+    }
+
+    private updateIconPath(): void {
+        const icon = fixupTaskIcon[this.state].icon
+        const mode = fixupTaskIcon[this.state].id
+        this.iconPath = new vscode.ThemeIcon(icon, new vscode.ThemeColor(mode))
     }
 }

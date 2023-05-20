@@ -1,4 +1,4 @@
-import { InlineController, TaskViewProvider } from './vscode'
+import { InlineController, TaskContoller } from './vscode'
 
 export interface ActiveTextEditor {
     content: string
@@ -25,7 +25,7 @@ export interface ActiveTextEditorVisibleContent {
 
 export interface ActiveTextEditorViewControllers {
     inline: InlineController
-    task: TaskViewProvider
+    task: TaskContoller
 }
 
 export interface Editor {

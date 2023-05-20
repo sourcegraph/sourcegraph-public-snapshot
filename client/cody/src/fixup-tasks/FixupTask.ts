@@ -3,61 +3,56 @@ import * as vscode from 'vscode'
 import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 
 import { codyOutputChannel } from '../log'
-import { editDocByUri, getFixupEditorSelection } from '../services/utils'
+import { editDocByUri, getActiveEditorSelection } from '../services/utils'
 
-import { CodyTaskState, fixupTaskIcon } from './types'
+import { CodyTaskState } from './types'
 
 // TODO(bee): Create CodeLens for each task
 // TODO(bee): Create decorator for each task
 // TODO(dpc): Add listener for document change to track range
 export class FixupTask {
+    public id: string
     private outputChannel = codyOutputChannel
-    private readonly content: string
-    private replacementContent = ''
-    public iconPath: vscode.ThemeIcon | undefined = undefined
     public selectionRange: vscode.Range
     public state = CodyTaskState.idle
     public readonly documentUri: vscode.Uri
 
     constructor(
-        public readonly id: string,
         public readonly instruction: string,
         public selection: ActiveTextEditorSelection,
-        private readonly editor: vscode.TextEditor
+        public readonly editor: vscode.TextEditor
     ) {
+        this.id = Date.now().toString(36).replace(/\d+/g, '')
         this.selectionRange = editor.selection
-        this.content = selection.selectedText
-        this.documentUri = this.editor.document.uri
-
-        this.set(CodyTaskState.queued)
+        this.documentUri = editor.document.uri
+        this.queue()
     }
     /**
      * Set latest state for task and then update icon accordingly
      */
-    private set(state: CodyTaskState): void {
-        this.state = state
-        const icon = fixupTaskIcon[this.state].icon
-        const mode = fixupTaskIcon[this.state].id
-        this.iconPath = new vscode.ThemeIcon(icon, new vscode.ThemeColor(mode))
+    private setState(state: CodyTaskState): void {
+        if (this.state !== CodyTaskState.error) {
+            this.state = state
+        }
     }
 
     public start(): void {
-        this.set(CodyTaskState.pending)
+        this.setState(CodyTaskState.pending)
         this.output(`Task #${this.id} is currently being processed...`)
     }
 
     public stop(): void {
-        this.set(CodyTaskState.done)
+        this.setState(CodyTaskState.done)
         this.output(`Task #${this.id} has been completed...`)
     }
 
     public error(text: string = ''): void {
-        this.set(CodyTaskState.error)
+        this.setState(CodyTaskState.error)
         this.output(`Error for Task #${this.id} - ` + text, true)
     }
 
-    public queue(): void {
-        this.set(CodyTaskState.queued)
+    private queue(): void {
+        this.setState(CodyTaskState.queued)
         this.output(`Task #${this.id} has been added to the queue successfully...`)
     }
     /**
@@ -73,28 +68,20 @@ export class FixupTask {
     /**
      * Do replacement in doc and update code lens and decorator
      */
-    public async replace(newContent: string, newRange: vscode.Range): Promise<void> {
-        this.replacementContent = newContent
-        this.selectionRange = newRange
-
-        if (!newContent.trim() || newContent.trim() === this.selection.selectedText.trim()) {
+    public async replace(newContent: string | null, range?: vscode.Range): Promise<void> {
+        if (!newContent?.trim() || newContent.trim() === this.selection.selectedText.trim()) {
             this.error('Cody did not provide any replacement for your request.')
             return
         }
-
-        await editDocByUri(
-            this.documentUri,
-            { start: newRange.start.line, end: newRange.end.line },
-            this.replacementContent
-        )
-
+        range = range || this.selectionRange
+        await editDocByUri(this.documentUri, { start: range.start.line, end: range.end.line }, newContent)
         this.stop()
     }
     /**
      * Get current selection info from doc uri
      */
     public async makeSelection(): Promise<ActiveTextEditorSelection | null> {
-        const { selection, selectionRange } = await getFixupEditorSelection(this.documentUri, this.selectionRange)
+        const { selection, selectionRange } = await getActiveEditorSelection(this.documentUri, this.selectionRange)
         this.selectionRange = selectionRange
         this.selection = selection
         return selection
@@ -110,14 +97,5 @@ export class FixupTask {
      */
     public getSelectionRange(): vscode.Range | vscode.Selection {
         return this.selectionRange
-    }
-    /**
-     * Return context returned by Cody
-     */
-    public getContext(): { original: string; replacement: string } {
-        return {
-            original: this.content,
-            replacement: this.replacementContent,
-        }
     }
 }

@@ -8,14 +8,14 @@ import {
 } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
-import { TaskViewProvider } from '../fixup-tasks/TaskViewProvider'
+import { TaskController } from '../fixup-tasks/TaskController'
 import { InlineController } from '../services/InlineController'
 
 export class VSCodeEditor implements Editor {
     constructor(
         public controllers: {
             inline: InlineController
-            task: TaskViewProvider
+            task: TaskController
         }
     ) {}
 

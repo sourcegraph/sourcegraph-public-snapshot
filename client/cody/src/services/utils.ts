@@ -25,7 +25,7 @@ export async function editDocByUri(
  * Get current selection from the doc uri
  * Add an extra line to the end line to prevent empty selection on single line selection
  */
-export async function getFixupEditorSelection(
+export async function getActiveEditorSelection(
     docUri: vscode.Uri,
     range: vscode.Range
 ): Promise<{ selection: ActiveTextEditorSelection; selectionRange: vscode.Range }> {
@@ -89,4 +89,14 @@ export function getIconPath(speaker: string, extPath: string): vscode.Uri {
     const extensionPath = vscode.Uri.file(extPath)
     const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist')
     return vscode.Uri.joinPath(webviewPath, speaker === 'cody' ? 'cody.png' : 'sourcegraph.png')
+}
+/**
+ * Get the last part of the file path after the last slash
+ */
+export function getFileNameAfterLastDash(filePath: string): string {
+    const lastDashIndex = filePath.lastIndexOf('/')
+    if (lastDashIndex === -1) {
+        return filePath
+    }
+    return filePath.slice(lastDashIndex + 1)
 }

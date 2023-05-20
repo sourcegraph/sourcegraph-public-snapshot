@@ -93,15 +93,16 @@
         {
           "id": "cody.tasks.view",
           "name": "Fixups",
-          "visibility": "visible",
-          "when": "cody.task.view.enabled"
+          "when": "cody.task.view.enabled && cody.activated",
+          "icon": "cody.svg",
+          "contextualTitle": "Fixups Tasks"
         }
       ]
     },
     "viewsWelcome": [
       {
         "view": "cody.tasks.view",
-        "contents": "Task list is currently empty.",
+        "contents": "No pending Cody Fixups.",
         "when": "cody.task.view.enabled"
       }
     ],
@@ -205,7 +206,14 @@
       {
 				"command": "cody.task.open",
 				"title": "Cody: Go to task file",
-        "enablement": "cody.task.view.enabled"
+        "enablement": "cody.task.view.enabled",
+        "icon": "$(file-code)"
+			},
+      {
+				"command": "cody.task.reset",
+				"title": "Non-Stop Cody: Remove all tasks",
+        "enablement": "cody.task.view.enabled && !cody.task.view.isEmpty && !cody.task.running",
+        "icon": "$(trash)"
 			}
     ],
     "keybindings": [
@@ -222,7 +230,7 @@
       },
       {
         "command": "cody.task.add",
-        "key": "ctrl+alt+f",
+        "key": "ctrl+shift+v",
         "mac": "shift+cmd+v",
         "when": "cody.activated && editorTextFocus && !editorReadonly"
       }
@@ -287,6 +295,14 @@
         {
           "command": "cody.comment.load",
           "when": "false"
+        },
+        {
+          "command": "cody.task.open",
+          "when": "false"
+        },
+        {
+          "command": "cody.task.reset",
+          "when": "false"
         }
       ],
       "editor/context": [
@@ -347,6 +363,11 @@
           "when": "view == cody.chat && cody.activated",
           "group": "navigation@2",
           "visibility": "visible"
+        },
+        {
+          "command": "cody.task.reset",
+          "when": "view == cody.tasks.view && cody.activated && !cody.task.view.isEmpty",
+          "group": "navigation"
         }
       ],
       "editor/title": [

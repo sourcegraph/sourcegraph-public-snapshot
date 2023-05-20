@@ -4,8 +4,7 @@ export interface InlineController {
     selection: ActiveTextEditorSelection | null
 }
 
-export interface TaskViewProvider {
-    newTask(taskID: string, input: string, selection: ActiveTextEditorSelection): void
-    stopTask(taskID: string, content: string | null): Promise<void>
-    refresh(): void
+export interface TaskContoller {
+    add(input: string, selection: ActiveTextEditorSelection): string | null
+    stop(taskID: string, content: string | null): Promise<void>
 }

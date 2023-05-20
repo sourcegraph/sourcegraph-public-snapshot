@@ -27,16 +27,13 @@ export class NonStop implements Recipe {
             (await context.editor.showInputBox('Non-Stop Cody: Enter instruction here for your Fixup request.')) ||
             ''
 
-        if (!humanInput && !selection.selectedText.trim()) {
+        const taskID = controllers.task.add(humanInput, selection)
+        if ((!humanInput && !selection.selectedText.trim()) || !taskID) {
             await context.editor.showWarningMessage(
                 'Non-Stop Cody: Failed to start due to missing instruction with empty selection.'
             )
             return null
         }
-
-        // Create a id using current data and use it as the key for response multiplexer
-        const taskID = Date.now().toString(36).replace(/\d+/g, '')
-        controllers.task.newTask(taskID, humanInput, selection)
 
         const quarterFileContext = Math.floor(MAX_CURRENT_FILE_TOKENS / 4)
         if (truncateText(selection.selectedText, quarterFileContext * 2) !== selection.selectedText) {
@@ -58,11 +55,11 @@ export class NonStop implements Recipe {
         context.responseMultiplexer.sub(
             'selection',
             new BufferedBotResponseSubscriber(async content => {
-                await controllers.task.stopTask(taskID, contentSanitizer(content || ''))
-                if (!content) {
-                    await context.editor.showWarningMessage('Cody did not suggest any replacement.')
+                if (content) {
+                    await controllers.task.stop(taskID, contentSanitizer(content))
                     return
                 }
+                await context.editor.showWarningMessage('Cody did not suggest any replacement.')
             })
         )
 

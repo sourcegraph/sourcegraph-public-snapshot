@@ -12,7 +12,7 @@ import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
-import { TaskViewProvider } from './fixup-tasks/TaskViewProvider'
+import { TaskController } from './fixup-tasks/TaskController'
 import { getRgPath } from './rg'
 import { InlineController } from './services/InlineController'
 import { LocalStorage } from './services/LocalStorageProvider'
@@ -78,9 +78,9 @@ const register = async (
     // Controller for inline assist
     const commentController = new InlineController(context.extensionPath)
     disposables.push(commentController.get())
-    // Task view for Non-Stop Cody
-    const taskView = new TaskViewProvider()
-    const controllers = { inline: commentController, task: taskView }
+
+    const taskController = new TaskController()
+    const controllers = { inline: commentController, task: taskController }
 
     const editor = new VSCodeEditor(controllers)
     const workspaceConfig = vscode.workspace.getConfiguration()
@@ -245,7 +245,7 @@ const register = async (
 
     // Register task view and non-stop cody command when feature flag is on
     if (initialConfig.experimentalNonStop) {
-        disposables.push(vscode.window.registerTreeDataProvider('cody.tasks.view', taskView))
+        disposables.push(vscode.window.registerTreeDataProvider('cody.tasks.view', taskController.getTaskView()))
         disposables.push(
             vscode.commands.registerCommand('cody.task.add', async () => {
                 await chatProvider.executeRecipe('non-stop', '', false)

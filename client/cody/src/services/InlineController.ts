@@ -8,7 +8,7 @@ import { CodyTaskState } from '../fixup-tasks/types'
 import { CodeLensProvider } from './CodeLensProvider'
 import {
     editDocByUri,
-    getFixupEditorSelection,
+    getActiveEditorSelection,
     getIconPath,
     getLineNumbersFromRange,
     getNewRangeOnChange,
@@ -174,7 +174,7 @@ export class InlineController {
         if (!this.thread) {
             return null
         }
-        const { selection, selectionRange } = await getFixupEditorSelection(this.thread.uri, this.thread.range)
+        const { selection, selectionRange } = await getActiveEditorSelection(this.thread.uri, this.thread.range)
         this.selectionRange = selectionRange
         this.selection = selection
         return selection
