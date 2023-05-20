@@ -1,4 +1,4 @@
-import { FC, useCallback, useRef, useState } from 'react'
+import { FC, useState } from 'react'
 
 import { useDebounce } from 'use-debounce'
 
@@ -30,14 +30,14 @@ import {
 
 import { SEARCH_REPO_META_KEYS_GQL, ADD_REPO_METADATA_GQL, SEARCH_REPO_META_VALUES_GQL } from './query'
 
-function useThrottle<T>(value: T, throttle: number): T {
-    const [throttledValue] = useDebounce(value, throttle, { leading: true })
+function useThrottle<T>(value: T, delay: number): T {
+    const [throttledValue] = useDebounce(value, delay, { leading: true, maxWait: delay })
 
     return throttledValue
 }
 
-function useKeySuggestions(query: string, throttle = 300): { suggestions: string[]; loading: boolean } {
-    const throttledQuery = useThrottle(query, throttle)
+function useKeySuggestions(query: string, delay = 300): { suggestions: string[]; loading: boolean } {
+    const throttledQuery = useThrottle(query, delay)
     const { data, loading } = useQuery<SearchRepoMetaKeysResult, SearchRepoMetaKeysVariables>(
         SEARCH_REPO_META_KEYS_GQL,
         {
@@ -53,8 +53,8 @@ function useKeySuggestions(query: string, throttle = 300): { suggestions: string
     }
 }
 
-function useValueSuggestions(key: string, query: string, throttle = 300): { suggestions: string[]; loading: boolean } {
-    const [throttledKey, throttledQuery] = useThrottle([key, query], throttle)
+function useValueSuggestions(key: string, query: string, delay = 300): { suggestions: string[]; loading: boolean } {
+    const [throttledKey, throttledQuery] = useThrottle([key, query], delay)
     const { data, loading } = useQuery<SearchRepoMetaValuesResult, SearchRepoMetaValuesVariables>(
         SEARCH_REPO_META_VALUES_GQL,
         {
