@@ -26,6 +26,7 @@
         ((import ./dev/nix/ctags.nix { inherit nixpkgs utils; inherit (nixpkgs) lib; }).packages)
         (import ./dev/nix/p4-fusion.nix { inherit nixpkgs utils; inherit (nixpkgs) lib; })
         (import ./dev/nix/comby.nix { inherit nixpkgs utils; inherit (nixpkgs) lib; })
+        (import ./sourcegraph-app.nix { inherit nixpkgs utils; inherit (nixpkgs) lib; })
       ];
     };
 }
