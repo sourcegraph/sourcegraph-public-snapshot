@@ -40,6 +40,7 @@ ts_project(
         "src/extension-api.ts",
         "src/external-services.ts",
         "src/fixup-tasks/FixupTask.ts",
+        "src/fixup-tasks/TaskController.ts",
         "src/fixup-tasks/TaskViewProvider.ts",
         "src/fixup-tasks/types.ts",
         "src/keyword-context/local-keyword-context-fetcher.ts",

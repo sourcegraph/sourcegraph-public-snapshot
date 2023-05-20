@@ -242,7 +242,7 @@ const register = async (
             provideCommentingRanges: (document: vscode.TextDocument) => {
                 const lineCount = document.lineCount
                 return [new vscode.Range(0, 0, lineCount - 1, 0)]
-            }
+            },
         }
     }
 
@@ -265,7 +265,6 @@ const register = async (
         )
         await vscode.commands.executeCommand('setContext', 'cody.task.view.enabled', true)
     }
-
 
     return {
         disposable: vscode.Disposable.from(...disposables),

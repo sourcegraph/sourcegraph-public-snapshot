@@ -16,7 +16,7 @@ describe('getConfiguration', () => {
             experimentalChatPredictions: false,
             experimentalInline: false,
             experimentalNonStop: false,
-            experimentalConnectToApp: false,
+            experimentalGuardrails: false,
             customHeaders: {},
         })
     })
@@ -62,7 +62,7 @@ describe('getConfiguration', () => {
             experimentalChatPredictions: true,
             experimentalInline: true,
             experimentalNonStop: true,
-            experimentalConnectToApp: true,
+            experimentalGuardrails: true,
             customHeaders: {
                 'Cache-Control': 'no-cache',
                 'Proxy-Authenticate': 'Basic',
