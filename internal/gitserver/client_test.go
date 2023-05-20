@@ -739,12 +739,12 @@ func TestClient_ReposStats(t *testing.T) {
 	t.Setenv("SG_FEATURE_FLAG_GRPC", "false")
 
 	const gitserverAddr = "172.16.8.1:8080"
-	//now := time.Now().UTC()
+	now := time.Now().UTC()
 	addrs := []string{gitserverAddr}
 
 	expected := fmt.Sprintf("http://%s", gitserverAddr)
 	wantStats := protocol.ReposStats{
-		//UpdatedAt:   now,
+		UpdatedAt:   now,
 		GitDirBytes: 1337,
 	}
 
@@ -839,7 +839,6 @@ type spyGitserverServiceClient struct {
 	searchCalled     bool
 	archiveCalled    bool
 	reposStatsCalled bool
-	mock             func(interface{}) interface{}
 	base             proto.GitserverServiceClient
 }
 
@@ -860,10 +859,6 @@ func (s *spyGitserverServiceClient) Archive(ctx context.Context, in *proto.Archi
 
 func (s *spyGitserverServiceClient) ReposStats(ctx context.Context, in *proto.ReposStatsRequest, opts ...grpc.CallOption) (*proto.ReposStatsResponse, error) {
 	s.reposStatsCalled = true
-	if s.mock != nil {
-		return s.mock(in).(*proto.ReposStatsResponse), nil
-	}
-
 	return s.base.ReposStats(ctx, in, opts...)
 }
 
