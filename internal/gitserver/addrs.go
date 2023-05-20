@@ -52,6 +52,7 @@ type TestClientSourceOptions struct {
 }
 
 func NewTestClientSource(addrs []string, options ...func(o *TestClientSourceOptions)) ClientSource {
+	logger := log.Scoped("gitserver", "test client source")
 	opts := TestClientSourceOptions{
 		ClientFunc: func(conn *grpc.ClientConn) proto.GitserverServiceClient {
 			return proto.NewGitserverServiceClient(conn)
@@ -67,7 +68,7 @@ func NewTestClientSource(addrs []string, options ...func(o *TestClientSourceOpti
 	conns := make(map[string]connAndErr)
 	var testAddresses []AddressWithClient
 	for _, addr := range addrs {
-		conn, err := defaults.Dial(addr)
+		conn, err := defaults.Dial(addr, logger)
 		conns[addr] = connAndErr{address: addr, conn: conn, err: err}
 		testAddresses = append(testAddresses, &testConnAndErr{
 			address:    addr,
@@ -112,15 +113,6 @@ func (c *testGitserverConns) Addresses() []AddressWithClient {
 // ClientForRepo returns a client or host for the given repo name.
 func (c *testGitserverConns) ClientForRepo(userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error) {
 	conn, err := c.conns.ConnForRepo(userAgent, repo)
-	if err != nil {
-		return nil, err
-	}
-
-	return c.clientFunc(conn), nil
-}
-
-func (c *testGitserverConns) ClientForAddr(userAgent string, addr string) (proto.GitserverServiceClient, error) {
-	conn, err := defaults.Dial(addr)
 	if err != nil {
 		return nil, err
 	}
@@ -226,14 +218,6 @@ func (a *atomicGitServerConns) AddrForRepo(userAgent string, repo api.RepoName) 
 
 func (a *atomicGitServerConns) ClientForRepo(userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error) {
 	conn, err := a.get().ConnForRepo(userAgent, repo)
-	if err != nil {
-		return nil, err
-	}
-	return proto.NewGitserverServiceClient(conn), nil
-}
-
-func (a *atomicGitServerConns) ClientForAddr(userAgent string, addr string) (proto.GitserverServiceClient, error) {
-	conn, err := a.get().grpcConns[addr].conn, a.get().grpcConns[addr].err
 	if err != nil {
 		return nil, err
 	}
