@@ -19,4 +19,5 @@ go_test(
         "@com_github_inconshreveable_log15//:log15",
         "@com_github_json_iterator_go//:go",
     ],
+    visibility = ["//testing:__subpackages__"],
 )

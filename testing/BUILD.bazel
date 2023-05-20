@@ -2,9 +2,17 @@ sh_test(
     name = "backend",
     srcs = [":backend.sh"],
     args = [
-        "$(location //enterprise/cmd/server:image_tarball)",
+        "$(location //testing/tools:before_run_server_image)", # helper script
+        "$(location //testing/tools:run_server_image)", # helper script
+        "$(location //enterprise/cmd/server:image_tarball)", # image we're testing against
+        "$(location //dev/gqltest:gqltest_test)", # actual test
+        "$(location //dev/authtest:authtest_test)", # actual test
     ],
     data = [
         "//enterprise/cmd/server:image_tarball",
+        "//testing/tools:before_run_server_image",
+        "//testing/tools:run_server_image",
+        "//dev/gqltest:gqltest_test",
+        "//dev/authtest:authtest_test",
     ],
 )
