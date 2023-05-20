@@ -425,11 +425,6 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		return nil, errors.Wrap(err, "malformed search usage")
 	}
 
-	codyUsage, err := reserializeCodyUsage(pr.CodyUsage)
-	if err != nil {
-		return nil, errors.Wrap(err, "malformed cody usage")
-	}
-
 	return json.Marshal(&pingPayload{
 		RemoteIP:                      clientAddr,
 		RemoteSiteVersion:             pr.ClientVersionString,
@@ -474,7 +469,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		ActiveToday:                   strconv.FormatBool(pr.ActiveToday),
 		Timestamp:                     now.UTC().Format(time.RFC3339),
 		HasCodyEnabled:                strconv.FormatBool(codyFeatureFlag()),
-		CodyUsage:                     codyUsage,
+		CodyUsage:                     pr.CodyUsage,
 	})
 }
 
@@ -728,42 +723,6 @@ func reserializeSearchUsage(payload json.RawMessage) (json.RawMessage, error) {
 	}
 	if len(searchUsage.Monthly) > 0 {
 		singlePeriodUsage.Monthly = searchUsage.Monthly[0]
-	}
-
-	return json.Marshal(singlePeriodUsage)
-}
-
-// reserializeCodyUsage will reserialize a cody usage statistics
-// struct with only the first period in each period type. This reduces the
-// complexity required in the BigQuery schema and downstream ETL transform
-// logic.
-func reserializeCodyUsage(payload json.RawMessage) (json.RawMessage, error) {
-	if len(payload) == 0 {
-		return nil, nil
-	}
-
-	var codyUsage *types.CodyUsageStatistics
-	if err := json.Unmarshal(payload, &codyUsage); err != nil {
-		return nil, err
-	}
-	if codyUsage == nil {
-		return nil, nil
-	}
-
-	singlePeriodUsage := struct {
-		Daily   *types.CodyUsagePeriod
-		Weekly  *types.CodyUsagePeriod
-		Monthly *types.CodyUsagePeriod
-	}{}
-
-	if len(codyUsage.Daily) > 0 {
-		singlePeriodUsage.Daily = codyUsage.Daily[0]
-	}
-	if len(codyUsage.Weekly) > 0 {
-		singlePeriodUsage.Weekly = codyUsage.Weekly[0]
-	}
-	if len(codyUsage.Monthly) > 0 {
-		singlePeriodUsage.Monthly = codyUsage.Monthly[0]
 	}
 
 	return json.Marshal(singlePeriodUsage)

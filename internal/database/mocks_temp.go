@@ -11068,9 +11068,9 @@ type MockEventLogStore struct {
 	// function object controlling the behavior of the method
 	// AggregatedCodeIntelInvestigationEvents.
 	AggregatedCodeIntelInvestigationEventsFunc *EventLogStoreAggregatedCodeIntelInvestigationEventsFunc
-	// AggregatedCodyEventsFunc is an instance of a mock function object
-	// controlling the behavior of the method AggregatedCodyEvents.
-	AggregatedCodyEventsFunc *EventLogStoreAggregatedCodyEventsFunc
+	// AggregatedCodyStatsFunc is an instance of a mock function object
+	// controlling the behavior of the method AggregatedCodyStats.
+	AggregatedCodyStatsFunc *EventLogStoreAggregatedCodyStatsFunc
 	// AggregatedSearchEventsFunc is an instance of a mock function object
 	// controlling the behavior of the method AggregatedSearchEvents.
 	AggregatedSearchEventsFunc *EventLogStoreAggregatedSearchEventsFunc
@@ -11207,8 +11207,8 @@ func NewMockEventLogStore() *MockEventLogStore {
 				return
 			},
 		},
-		AggregatedCodyEventsFunc: &EventLogStoreAggregatedCodyEventsFunc{
-			defaultHook: func(context.Context, time.Time) (r0 []types.CodyAggregatedEvent, r1 error) {
+		AggregatedCodyStatsFunc: &EventLogStoreAggregatedCodyStatsFunc{
+			defaultHook: func(context.Context, time.Time) (r0 *types.CodyAggregatedStats, r1 error) {
 				return
 			},
 		},
@@ -11404,9 +11404,9 @@ func NewStrictMockEventLogStore() *MockEventLogStore {
 				panic("unexpected invocation of MockEventLogStore.AggregatedCodeIntelInvestigationEvents")
 			},
 		},
-		AggregatedCodyEventsFunc: &EventLogStoreAggregatedCodyEventsFunc{
-			defaultHook: func(context.Context, time.Time) ([]types.CodyAggregatedEvent, error) {
-				panic("unexpected invocation of MockEventLogStore.AggregatedCodyEvents")
+		AggregatedCodyStatsFunc: &EventLogStoreAggregatedCodyStatsFunc{
+			defaultHook: func(context.Context, time.Time) (*types.CodyAggregatedStats, error) {
+				panic("unexpected invocation of MockEventLogStore.AggregatedCodyStats")
 			},
 		},
 		AggregatedSearchEventsFunc: &EventLogStoreAggregatedSearchEventsFunc{
@@ -11598,8 +11598,8 @@ func NewMockEventLogStoreFrom(i EventLogStore) *MockEventLogStore {
 		AggregatedCodeIntelInvestigationEventsFunc: &EventLogStoreAggregatedCodeIntelInvestigationEventsFunc{
 			defaultHook: i.AggregatedCodeIntelInvestigationEvents,
 		},
-		AggregatedCodyEventsFunc: &EventLogStoreAggregatedCodyEventsFunc{
-			defaultHook: i.AggregatedCodyEvents,
+		AggregatedCodyStatsFunc: &EventLogStoreAggregatedCodyStatsFunc{
+			defaultHook: i.AggregatedCodyStats,
 		},
 		AggregatedSearchEventsFunc: &EventLogStoreAggregatedSearchEventsFunc{
 			defaultHook: i.AggregatedSearchEvents,
@@ -11929,37 +11929,37 @@ func (c EventLogStoreAggregatedCodeIntelInvestigationEventsFuncCall) Results() [
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// EventLogStoreAggregatedCodyEventsFunc describes the behavior when the
-// AggregatedCodyEvents method of the parent MockEventLogStore instance is
+// EventLogStoreAggregatedCodyStatsFunc describes the behavior when the
+// AggregatedCodyStats method of the parent MockEventLogStore instance is
 // invoked.
-type EventLogStoreAggregatedCodyEventsFunc struct {
-	defaultHook func(context.Context, time.Time) ([]types.CodyAggregatedEvent, error)
-	hooks       []func(context.Context, time.Time) ([]types.CodyAggregatedEvent, error)
-	history     []EventLogStoreAggregatedCodyEventsFuncCall
+type EventLogStoreAggregatedCodyStatsFunc struct {
+	defaultHook func(context.Context, time.Time) (*types.CodyAggregatedStats, error)
+	hooks       []func(context.Context, time.Time) (*types.CodyAggregatedStats, error)
+	history     []EventLogStoreAggregatedCodyStatsFuncCall
 	mutex       sync.Mutex
 }
 
-// AggregatedCodyEvents delegates to the next hook function in the queue and
+// AggregatedCodyStats delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockEventLogStore) AggregatedCodyEvents(v0 context.Context, v1 time.Time) ([]types.CodyAggregatedEvent, error) {
-	r0, r1 := m.AggregatedCodyEventsFunc.nextHook()(v0, v1)
-	m.AggregatedCodyEventsFunc.appendCall(EventLogStoreAggregatedCodyEventsFuncCall{v0, v1, r0, r1})
+func (m *MockEventLogStore) AggregatedCodyStats(v0 context.Context, v1 time.Time) (*types.CodyAggregatedStats, error) {
+	r0, r1 := m.AggregatedCodyStatsFunc.nextHook()(v0, v1)
+	m.AggregatedCodyStatsFunc.appendCall(EventLogStoreAggregatedCodyStatsFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the AggregatedCodyEvents
+// SetDefaultHook sets function that is called when the AggregatedCodyStats
 // method of the parent MockEventLogStore instance is invoked and the hook
 // queue is empty.
-func (f *EventLogStoreAggregatedCodyEventsFunc) SetDefaultHook(hook func(context.Context, time.Time) ([]types.CodyAggregatedEvent, error)) {
+func (f *EventLogStoreAggregatedCodyStatsFunc) SetDefaultHook(hook func(context.Context, time.Time) (*types.CodyAggregatedStats, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// AggregatedCodyEvents method of the parent MockEventLogStore instance
+// AggregatedCodyStats method of the parent MockEventLogStore instance
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *EventLogStoreAggregatedCodyEventsFunc) PushHook(hook func(context.Context, time.Time) ([]types.CodyAggregatedEvent, error)) {
+func (f *EventLogStoreAggregatedCodyStatsFunc) PushHook(hook func(context.Context, time.Time) (*types.CodyAggregatedStats, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -11967,20 +11967,20 @@ func (f *EventLogStoreAggregatedCodyEventsFunc) PushHook(hook func(context.Conte
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *EventLogStoreAggregatedCodyEventsFunc) SetDefaultReturn(r0 []types.CodyAggregatedEvent, r1 error) {
-	f.SetDefaultHook(func(context.Context, time.Time) ([]types.CodyAggregatedEvent, error) {
+func (f *EventLogStoreAggregatedCodyStatsFunc) SetDefaultReturn(r0 *types.CodyAggregatedStats, r1 error) {
+	f.SetDefaultHook(func(context.Context, time.Time) (*types.CodyAggregatedStats, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *EventLogStoreAggregatedCodyEventsFunc) PushReturn(r0 []types.CodyAggregatedEvent, r1 error) {
-	f.PushHook(func(context.Context, time.Time) ([]types.CodyAggregatedEvent, error) {
+func (f *EventLogStoreAggregatedCodyStatsFunc) PushReturn(r0 *types.CodyAggregatedStats, r1 error) {
+	f.PushHook(func(context.Context, time.Time) (*types.CodyAggregatedStats, error) {
 		return r0, r1
 	})
 }
 
-func (f *EventLogStoreAggregatedCodyEventsFunc) nextHook() func(context.Context, time.Time) ([]types.CodyAggregatedEvent, error) {
+func (f *EventLogStoreAggregatedCodyStatsFunc) nextHook() func(context.Context, time.Time) (*types.CodyAggregatedStats, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -11993,27 +11993,27 @@ func (f *EventLogStoreAggregatedCodyEventsFunc) nextHook() func(context.Context,
 	return hook
 }
 
-func (f *EventLogStoreAggregatedCodyEventsFunc) appendCall(r0 EventLogStoreAggregatedCodyEventsFuncCall) {
+func (f *EventLogStoreAggregatedCodyStatsFunc) appendCall(r0 EventLogStoreAggregatedCodyStatsFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of EventLogStoreAggregatedCodyEventsFuncCall
+// History returns a sequence of EventLogStoreAggregatedCodyStatsFuncCall
 // objects describing the invocations of this function.
-func (f *EventLogStoreAggregatedCodyEventsFunc) History() []EventLogStoreAggregatedCodyEventsFuncCall {
+func (f *EventLogStoreAggregatedCodyStatsFunc) History() []EventLogStoreAggregatedCodyStatsFuncCall {
 	f.mutex.Lock()
-	history := make([]EventLogStoreAggregatedCodyEventsFuncCall, len(f.history))
+	history := make([]EventLogStoreAggregatedCodyStatsFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// EventLogStoreAggregatedCodyEventsFuncCall is an object that describes an
-// invocation of method AggregatedCodyEvents on an instance of
+// EventLogStoreAggregatedCodyStatsFuncCall is an object that describes an
+// invocation of method AggregatedCodyStats on an instance of
 // MockEventLogStore.
-type EventLogStoreAggregatedCodyEventsFuncCall struct {
+type EventLogStoreAggregatedCodyStatsFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -12022,7 +12022,7 @@ type EventLogStoreAggregatedCodyEventsFuncCall struct {
 	Arg1 time.Time
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []types.CodyAggregatedEvent
+	Result0 *types.CodyAggregatedStats
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -12030,13 +12030,13 @@ type EventLogStoreAggregatedCodyEventsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c EventLogStoreAggregatedCodyEventsFuncCall) Args() []interface{} {
+func (c EventLogStoreAggregatedCodyStatsFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c EventLogStoreAggregatedCodyEventsFuncCall) Results() []interface{} {
+func (c EventLogStoreAggregatedCodyStatsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
