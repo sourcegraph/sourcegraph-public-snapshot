@@ -1,24 +1,27 @@
 package server
 
 import (
+	"bufio"
 	"bytes"
 	"container/list"
 	"context"
 	"database/sql"
 	"fmt"
+	"io"
 	"os/exec"
 	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"golang.org/x/sync/errgroup"
 )
 
 type perforceChangelistMappingJob struct {
@@ -177,61 +180,16 @@ func headCommitSHA(ctx context.Context, logger log.Logger, dir GitDir) (string, 
 	return string(bytes.TrimSpace(output)), nil
 }
 
-// TODO: Move to gitdomain package maybe?
-var logFormatWithoutRefs = "--format=format:%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00"
-
-func newMappableCommits(ctx context.Context, logger log.Logger, dir GitDir, lastMappedCommit, head string) ([]types.PerforceChangelist, error) {
-	cmd := exec.CommandContext(ctx, "git", "log")
-	// FIXME: When lastMappedCommit..head is an invalid range.
-	// Follow up in a separate PR.
-	if lastMappedCommit != "" {
-		cmd.Args = append(cmd.Args, fmt.Sprintf("%s..%s", lastMappedCommit, head))
-	}
-
-	cmd.Args = append(cmd.Args, logFormatWithoutRefs)
-	dir.Set(cmd)
-
-	output, err := runWith(ctx, wrexec.Wrap(ctx, logger, cmd), false, nil)
-	if err != nil {
-		return nil, &GitCommandError{Err: err, Output: string(output)}
-	}
-
-	// FIXME: This is unbounded in nature. Use a progresswriter and read from the progressreader in
-	// a goroutine. But more work needs to be done to parse one commit at a time versus the entire
-	// `git log` output.
-	commits, err := gitserver.ParseGitLogOutput(output)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse git log output")
-	}
-
-	data := make([]types.PerforceChangelist, len(commits))
-	for i, commit := range commits {
-		cid, err := perforce.GetP4ChangelistID(commit.Message.Body())
-		if err != nil {
-			return nil, errors.Wrap(err, "getP4ChangelistID")
-		}
-
-		parsedCID, err := strconv.ParseInt(cid, 10, 64)
-		if err != nil {
-			return nil, errors.Wrap(err, "failed to parse changelist ID to int64")
-		}
-
-		data[i] = types.PerforceChangelist{CommitSHA: commit.ID, ChangelistID: parsedCID}
-	}
-
-	return data, nil
-}
-
 func (s *Server) getCommitsToInsert(ctx context.Context, logger log.Logger, repoID api.RepoID, dir GitDir) (commitsMap []types.PerforceChangelist, err error) {
 	latestRowCommit, err := s.DB.RepoCommitsChangelists().GetLatestForRepo(ctx, repoID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			// This repo has not been imported into the RepoCommits table yet. Start from the beginning.
-			commitsMap, err = newMappableCommits(ctx, logger, dir, "", "")
-			return commitsMap, errors.Wrap(err, "failed to import new repo (perforce changelists will have limited functionality)")
-		} else {
-			return nil, errors.Wrap(err, "RepoCommits.GetLatestForRepo")
+			results, err := newMappableCommits(ctx, logger, dir, "", "")
+			return results, errors.Wrap(err, "failed to import new repo (perforce changelists will have limited functionality)")
 		}
+
+		return nil, errors.Wrap(err, "RepoCommits.GetLatestForRepo")
 	}
 
 	logger.Warn("continuing from latestCommit")
@@ -246,10 +204,119 @@ func (s *Server) getCommitsToInsert(ctx context.Context, logger log.Logger, repo
 		return nil, nil
 	}
 
-	commitsMap, err = newMappableCommits(ctx, logger, dir, string(latestRowCommit.CommitSHA), head)
+	results, err := newMappableCommits(ctx, logger, dir, string(latestRowCommit.CommitSHA), head)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to import existing repo's commits after HEAD: %q", head)
 	}
 
-	return commitsMap, nil
+	return results, nil
+}
+
+// logFormatWithCommitSHAAndCommitBodyOnly will print the commit SHA and the commit body (skips the
+// subject) separated by a space. These are the only two fields that we need to parse the changelist
+// ID from the commit.
+//
+// Example:
+// $ git log --format='format:%H %b'
+// 4e5b9dbc6393b195688a93ea04b98fada50bfa03 [p4-fusion: depot-paths = "//rhia-depot-test/": change = 83733]
+// e2f6d6e306490831b0fdd908fdbee702d7074a66 [p4-fusion: depot-paths = "//rhia-depot-test/": change = 83732]
+// 90b9b9574517f30810346f0ab07f66c49c77ab0f [p4-fusion: depot-paths = "//rhia-depot-test/": change = 83731]
+var logFormatWithCommitSHAAndCommitBodyOnly = "--format=format:%H %b"
+
+func newMappableCommits(ctx context.Context, logger log.Logger, dir GitDir, lastMappedCommit, head string) ([]types.PerforceChangelist, error) {
+	cmd := exec.CommandContext(ctx, "git", "log")
+	// FIXME: When lastMappedCommit..head is an invalid range.
+	// TODO: Follow up in a separate PR.
+	if lastMappedCommit != "" {
+		cmd.Args = append(cmd.Args, fmt.Sprintf("%s..%s", lastMappedCommit, head))
+	}
+
+	cmd.Args = append(cmd.Args, logFormatWithCommitSHAAndCommitBodyOnly)
+	dir.Set(cmd)
+
+	progressReader, progressWriter := io.Pipe()
+
+	logLineResults := make(chan string)
+	g, ctx := errgroup.WithContext(ctx)
+
+	// Start reading the output of the command in a goroutine.
+	g.Go(func() error {
+		defer close(logLineResults)
+		return readGitLogOutput(ctx, logger, progressReader, logLineResults)
+	})
+
+	// Run the command in a goroutine. It will start writing the output to progressWriter.
+	g.Go(func() error {
+		defer progressWriter.Close()
+
+		output, err := runWith(ctx, wrexec.Wrap(ctx, logger, cmd), false, progressWriter)
+		if err != nil {
+			return &GitCommandError{Err: err, Output: string(output)}
+		}
+		return nil
+	})
+
+	go func() {
+		g.Wait()
+	}()
+
+	// Collect the results.
+	commitMaps := []types.PerforceChangelist{}
+	for line := range logLineResults {
+		// FIXME: Something about this is generating an empty newline after each log line in tests.
+		// Skip an empty newline for the next output.
+		if line == "" {
+			continue
+		}
+
+		c, err := parseGitLogLine(line)
+		if err != nil {
+			return nil, err
+		}
+
+		commitMaps = append(commitMaps, *c)
+	}
+
+	// In case any of the goroutines failed, collect and return the error.
+	return commitMaps, errors.Wrap(g.Wait(), "command exeuction pipeline failed")
+}
+
+func readGitLogOutput(ctx context.Context, logger log.Logger, reader io.Reader, logLineResults chan<- string) error {
+	scan := bufio.NewScanner(reader)
+	scan.Split(bufio.ScanLines)
+	for scan.Scan() {
+		line := scan.Text()
+
+		select {
+		case logLineResults <- line:
+			// return errors.New("early exit")
+		case <-ctx.Done():
+			return ctx.Err()
+		}
+	}
+
+	return errors.Wrap(scan.Err(), "scanning git-log output failed")
+}
+
+func parseGitLogLine(line string) (*types.PerforceChangelist, error) {
+	// Expected format: "<commitSHA> <commitBody>"
+	parts := strings.SplitN(line, " ", 2)
+	if len(parts) != 2 {
+		return nil, errors.Newf("failed to split line %q from git log output into commitSHA and commit body, parts after splitting: %d", line, len(parts))
+	}
+
+	parsedCID, err := perforce.GetP4ChangelistID(parts[1])
+	if err != nil {
+		return nil, err
+	}
+
+	cid, err := strconv.ParseInt(parsedCID, 10, 64)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse changelist ID to int64")
+	}
+
+	return &types.PerforceChangelist{
+		CommitSHA:    api.CommitID(parts[0]),
+		ChangelistID: cid,
+	}, nil
 }

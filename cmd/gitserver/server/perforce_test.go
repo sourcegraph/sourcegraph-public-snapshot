@@ -22,7 +22,7 @@ import (
 // setupTestRepo will setup a git repo with 5 commits using p4-fusion as the format in the commit
 // messages and returns the directory where the repo is created and a list of (commits, changelist
 // IDs) ordered latest to oldest.
-func setupTestRepo(t *testing.T) (string, []types.PerforceChangelist) {
+func setupTestRepo(t *testing.T) (GitDir, []types.PerforceChangelist) {
 	commitMessage := `%d - test change
 
 [p4-fusion: depot-paths = "//test-perms/": change = %d]`
@@ -66,7 +66,7 @@ func setupTestRepo(t *testing.T) (string, []types.PerforceChangelist) {
 		cid -= 1
 	}
 
-	return dir, allCommitMaps
+	return GitDir(path.Join(dir, ".git")), allCommitMaps
 }
 
 func TestGetCommitsToInsert(t *testing.T) {
@@ -87,7 +87,7 @@ func TestGetCommitsToInsert(t *testing.T) {
 	t.Run("new repo, never mapped", func(t *testing.T) {
 		repoCommitsStore.GetLatestForRepoFunc.SetDefaultReturn(nil, sql.ErrNoRows)
 
-		commitMaps, err := s.getCommitsToInsert(ctx, logger, api.RepoID(1), GitDir(path.Join(dir, ".git")))
+		commitMaps, err := s.getCommitsToInsert(ctx, logger, api.RepoID(1), dir)
 		require.NoError(t, err)
 
 		if diff := cmp.Diff(allCommitMaps, commitMaps); diff != "" {
@@ -108,7 +108,7 @@ func TestGetCommitsToInsert(t *testing.T) {
 
 		repoCommitsStore.GetLatestForRepoFunc.SetDefaultReturn(latestRepoCommit, nil)
 
-		commitMaps, err := s.getCommitsToInsert(ctx, logger, api.RepoID(1), GitDir(path.Join(dir, ".git")))
+		commitMaps, err := s.getCommitsToInsert(ctx, logger, api.RepoID(1), dir)
 		require.NoError(t, err)
 
 		if diff := cmp.Diff(allCommitMaps[:3], commitMaps); diff != "" {
@@ -129,7 +129,7 @@ func TestGetCommitsToInsert(t *testing.T) {
 
 		repoCommitsStore.GetLatestForRepoFunc.SetDefaultReturn(latestRepoCommit, nil)
 
-		commitMaps, err := s.getCommitsToInsert(ctx, logger, api.RepoID(1), GitDir(path.Join(dir, ".git")))
+		commitMaps, err := s.getCommitsToInsert(ctx, logger, api.RepoID(1), dir)
 		require.NoError(t, err)
 		require.Nil(t, commitMaps)
 	})
@@ -141,8 +141,99 @@ func TestHeadCommitSHA(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.NoOp(t)
 
-	commitSHA, err := headCommitSHA(ctx, logger, GitDir(path.Join(dir, ".git")))
+	commitSHA, err := headCommitSHA(ctx, logger, dir)
 
 	require.NoError(t, err)
 	require.Equal(t, string(allCommitMaps[0].CommitSHA), commitSHA)
+}
+
+func TestNewMappableCommits(t *testing.T) {
+	ctx := context.Background()
+	logger := logtest.NoOp(t)
+
+	dir, allCommitMaps := setupTestRepo(t)
+
+	gotCommitMaps, err := newMappableCommits(ctx, logger, dir, "", "")
+	require.NoError(t, err, "unexpected error in newMapppableCommits")
+
+	if diff := cmp.Diff(allCommitMaps, gotCommitMaps); diff != "" {
+		t.Fatalf("mismatched commit maps, (-want,+got)\n:%v", diff)
+	}
+}
+
+func TestReadGitLogOutput(t *testing.T) {
+	logger := logtest.NoOp(t)
+
+	t.Run("clean exit, no error", func(t *testing.T) {
+		ctx := context.Background()
+
+		logLineResults := make(chan string)
+		reader := strings.NewReader("line1\nline2\nline3\n")
+
+		go func() {
+			err := readGitLogOutput(ctx, logger, reader, logLineResults)
+			if err != nil {
+				panic(fmt.Sprintf("unexpected error from readGitLogOutput: %q", err.Error()))
+			}
+		}()
+
+		// Check that we received all gotLines before the timeout
+		var gotLines []string
+		for i := 0; i < 3; i++ {
+			l := <-logLineResults
+			gotLines = append(gotLines, l)
+		}
+
+		// If readGitLogOutput attempts to write more than the three expected items, this will cause a
+		// panic with "send on closed channel".
+		close(logLineResults)
+
+		wantLines := []string{"line1", "line2", "line3"}
+
+		if diff := cmp.Diff(wantLines, gotLines); diff != "" {
+			t.Fatalf("mismatched lines, (-want,+got)\n:%v", diff)
+		}
+
+		require.NoError(t, ctx.Err(), "unexpected error in context")
+	})
+
+	t.Run("early exit, with error", func(t *testing.T) {
+		ctx, cancel := context.WithCancel(context.Background())
+		logLineResults := make(chan string)
+		reader := strings.NewReader("line1\nline2\nline3\n")
+
+		go func() {
+			err := readGitLogOutput(ctx, logger, reader, logLineResults)
+			if err != nil {
+				panic(fmt.Sprintf("unexpected error from readGitLogOutput: %q", err.Error()))
+			}
+		}()
+
+		// Cancel the context without reading anything to trigger an error. This should cause the
+		// goroutine to exit early and return the error.
+		cancel()
+
+		require.NoError(t, ctx.Err(), "no error in context")
+	})
+}
+
+func TestParseGitLogLint(t *testing.T) {
+	t.Run("passes valid perforce commit", func(t *testing.T) {
+		got, err := parseGitLogLine(`4e5b9dbc6393b195688a93ea04b98fada50bfa03 [p4-fusion: depot-paths = "//rhia-depot-test/": change = 83733]`)
+
+		want := &types.PerforceChangelist{
+			CommitSHA:    api.CommitID("4e5b9dbc6393b195688a93ea04b98fada50bfa03"),
+			ChangelistID: 83733,
+		}
+
+		require.NoError(t, err)
+		require.Equal(t, want, got)
+	})
+
+	t.Run("fails invalid perforce commit", func(t *testing.T) {
+		got, err := parseGitLogLine(`4e5b9dbc6393b195688a93ea04b98fada50bfa03 invalid format`)
+
+		require.Error(t, err)
+		require.Nil(t, got)
+	})
 }
