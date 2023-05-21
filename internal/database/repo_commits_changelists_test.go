@@ -69,17 +69,17 @@ func TestRepoCommitsChangelists(t *testing.T) {
 
 		want := []repoCommitRow{
 			{
-				RepoID:       int32(1),
+				RepoID:       1,
 				CommitSHA:    commitSHA1,
 				ChangelistID: 123,
 			},
 			{
-				RepoID:       int32(1),
+				RepoID:       1,
 				CommitSHA:    commitSHA2,
 				ChangelistID: 124,
 			},
 			{
-				RepoID:       int32(1),
+				RepoID:       1,
 				CommitSHA:    commitSHA3,
 				ChangelistID: 125,
 			},

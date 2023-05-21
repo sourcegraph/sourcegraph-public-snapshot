@@ -13,7 +13,10 @@ import (
 )
 
 type RepoCommitsChangelistsStore interface {
+	// BatchInsertCommitSHAsWithPerforceChangelistID will insert rows into the
+	// repo_commits_changelists table in batches.
 	BatchInsertCommitSHAsWithPerforceChangelistID(context.Context, api.RepoID, []types.PerforceChangelist) error
+	// GetLatestForRepo will return the latest commit that has been mapped in the database.
 	GetLatestForRepo(ctx context.Context, repoID api.RepoID) (*types.RepoCommit, error)
 }
 
