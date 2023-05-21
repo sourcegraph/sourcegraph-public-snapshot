@@ -43,8 +43,8 @@ export function debug(filterLabel: string, text: string, ...args: unknown[]): vo
         return
     }
 
-    const lastArg = args[-1]
-    if (typeof lastArg === 'object' && lastArg && 'verbose' in lastArg) {
+    const lastArg = args[args.length - 1]
+    if (lastArg && typeof lastArg === 'object' && 'verbose' in lastArg) {
         if (config.debugVerbose) {
             outputChannel.appendLine(
                 `${filterLabel}: ${text} ${args.slice(0, -1).join(' ')} ${JSON.stringify(lastArg.verbose)}`
