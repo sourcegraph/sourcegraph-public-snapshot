@@ -1822,9 +1822,7 @@ CREATE TABLE codeintel_ranking_progress (
     num_path_records_processed integer,
     num_reference_records_processed integer,
     num_count_records_processed integer,
-    max_definition_id bigint NOT NULL,
-    max_reference_id bigint NOT NULL,
-    max_path_id bigint NOT NULL
+    max_export_id bigint NOT NULL
 );
 
 CREATE SEQUENCE codeintel_ranking_progress_id_seq
