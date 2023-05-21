@@ -3,29 +3,34 @@
 
   inputs = {
     nixpkgs.url = "nixpkgs/nixos-unstable";
-    utils.url = "github:numtide/flake-utils";
+    flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs, utils }:
-    with nixpkgs.lib; with utils.lib; {
-      devShells = genAttrs defaultSystems (system:
+  outputs = { self, nixpkgs, flake-utils }:
+    flake-utils.lib.eachDefaultSystem
+      (system:
         let
-          pkgs = import nixpkgs { inherit system; overlays = [ self.overlays.ctags ]; };
+          pkgs = nixpkgs.legacyPackages.${system};
+          pkgs' = pkgs.lib.fold (a: b: b.extend a) pkgs (builtins.attrValues self.overlays);
         in
         {
-          default = pkgs.callPackage ./shell.nix { };
-        }
-      );
+          packages = {
+            ctags = pkgs.callPackage ./dev/nix/ctags.nix { };
+            comby = pkgs.callPackage ./dev/nix/comby.nix { };
+            nodejs-16_x = pkgs.callPackage ./dev/nix/nodejs.nix { };
+          } // pkgs.lib.optionalAttrs (pkgs.targetPlatform.system != "aarch64-linux") {
+            p4-fusion = pkgs.callPackage ./dev/nix/p4-fusion.nix { };
+          };
 
-      formatter = genAttrs defaultSystems (system: nixpkgs.legacyPackages.${system}.nixpkgs-fmt);
+          devShells.default = pkgs'.callPackage ./shell.nix { };
 
-      # Pin a specific version of universal-ctags to the same version as in cmd/symbols/ctags-install-alpine.sh.
-      overlays.ctags = (import ./dev/nix/ctags.nix { inherit nixpkgs utils; inherit (nixpkgs) lib; }).overlay;
-
-      packages = fold recursiveUpdate { } [
-        ((import ./dev/nix/ctags.nix { inherit nixpkgs utils; inherit (nixpkgs) lib; }).packages)
-        (import ./dev/nix/p4-fusion.nix { inherit nixpkgs utils; inherit (nixpkgs) lib; })
-        (import ./dev/nix/comby.nix { inherit nixpkgs utils; inherit (nixpkgs) lib; })
-      ];
+          formatter = pkgs.nixpkgs-fmt;
+        }) // {
+      overlays = {
+        ctags = final: prev: { universal-ctags = self.packages.${prev.system}.ctags; };
+        comby = final: prev: { comby = self.packages.${prev.system}.comby; };
+        nodejs-16_x = final: prev: { nodejs-16_x = self.packages.${prev.system}.nodejs-16_x; };
+        p4-fusion = final: prev: { p4-fusion = self.packages.${prev.system}.p4-fusion; };
+      };
     };
 }
