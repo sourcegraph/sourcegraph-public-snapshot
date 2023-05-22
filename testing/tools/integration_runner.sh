@@ -2,7 +2,7 @@
 
 set -e
 
-DB_STARTUP_TIMEOUT="${DB_STARTUP_TIMEOUT:-10}"
+DB_STARTUP_TIMEOUT="${DB_STARTUP_TIMEOUT:-10s}"
 
 function must_be_CI() {
   if [ "${BUILDKITE:-}" != "true" ]; then
