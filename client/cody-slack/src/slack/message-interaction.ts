@@ -4,7 +4,7 @@ import { Interaction } from '@sourcegraph/cody-shared/src/chat/transcript/intera
 import { InteractionMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { ContextSearchOptions } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ContextMessage, getContextMessageWithResponse } from '@sourcegraph/cody-shared/src/codebase-context/messages'
-import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
+// import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { MAX_HUMAN_INPUT_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { populateMarkdownContextTemplate } from '@sourcegraph/cody-shared/src/prompt/templates'
 import { truncateText } from '@sourcegraph/cody-shared/src/prompt/truncation'
@@ -16,7 +16,7 @@ class SlackInteraction {
 
     constructor(private humanMessage: InteractionMessage, private assistantMessage: InteractionMessage) {}
 
-    async updateContextMessagesFromVectorStore(vectorStore: HNSWLib, numResults: number) {
+    public async updateContextMessagesFromVectorStore(vectorStore: HNSWLib, numResults: number) {
         const docs = await vectorStore.similaritySearch(this.humanMessage.text!, numResults)
 
         docs.forEach(doc => {
@@ -28,11 +28,11 @@ class SlackInteraction {
         })
     }
 
-    async updateContextMessages(
+    public async updateContextMessages(
         codebaseContexts: CodebaseContexts,
         codebase: keyof CodebaseContexts,
-        contextSearchOptions: ContextSearchOptions,
-        intentDetector?: IntentDetector
+        contextSearchOptions: ContextSearchOptions
+        // intentDetector?: IntentDetector
     ) {
         // const isCodebaseContextRequired = await intentDetector.isCodebaseContextRequired(text)
         const isCodebaseContextRequired = true
@@ -55,7 +55,7 @@ class SlackInteraction {
         }
     }
 
-    getTranscriptInteraction() {
+    public getTranscriptInteraction() {
         return new Interaction(this.humanMessage, this.assistantMessage, Promise.resolve(this.contextMessages))
     }
 }
@@ -84,7 +84,7 @@ export function cleanupMessageForPrompt(text: string, isAssistantMessage = false
         if (filesSectionIndex !== -1) {
             return textWithoutFilters
                 .slice(0, filesSectionIndex)
-                .replace(/[\u200B|\u200D|\u00A0]/gm, '')
+                .replace(/[|\u00A0\u200B\u200D]/gm, '')
                 .replace(/\n+$/gm, '')
         }
     }

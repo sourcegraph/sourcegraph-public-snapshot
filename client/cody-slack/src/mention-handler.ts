@@ -108,7 +108,11 @@ function startCompletionStreaming(
     const lastInteraction = transcript.getLastInteraction()!
 
     const { contextFiles = [] } = lastInteraction.toChat().pop()!
-    const contextFilesList = contextFiles.map(file => `[${file.fileName.split('/').pop()}](${file})`).join(', ')
+
+    // Build the markdown list of file links.
+    const contextFilesList = contextFiles
+        .map(file => `[${file.fileName.split('/').pop()}](${file.fileName})`)
+        .join(', ')
 
     const suffix = contextFiles.length > 0 ? '\n\n**Files used**:\n' + contextFilesList : ''
 

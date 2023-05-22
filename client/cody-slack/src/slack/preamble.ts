@@ -1,7 +1,5 @@
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
-import { DEFAULT_APP_SETTINGS } from '../constants'
-
 const actions = `You are Cody, an AI-powered coding assistant created by Sourcegraph. You work inside a Slack workspace. You have access to the Slack thread conversation with all the replies. You perform the following actions:
 - Answer general programming questions.
 - Answer general questions about the Slack thread you're in.
@@ -26,20 +24,9 @@ I will acknowledge when I don't know an answer or need more context. I will use 
  * Creates and returns an array of two messages: one from a human, and the supposed response from the AI assistant.
  * Both messages contain an optional note about the current codebase if it's not null.
  */
-function getSlackPreamble(codebase: string): Message[] {
+function getSlackPreamble(): Message[] {
     const preamble = [actions, rules]
     const preambleResponse = [answer]
-
-    if (codebase) {
-        const codebasePreamble =
-            `You have access to the \`${codebase}\` repository. You are able to answer questions about the \`${codebase}\` repository. ` +
-            `I will provide the relevant code snippets from the \`${codebase}\` repository when necessary to answer my questions.`
-
-        preamble.push(codebasePreamble)
-        preambleResponse.push(
-            `I have access to the \`${codebase}\` repository and can answer questions about its files.`
-        )
-    }
 
     return [
         {
@@ -53,4 +40,4 @@ function getSlackPreamble(codebase: string): Message[] {
     ]
 }
 
-export const SLACK_PREAMBLE = getSlackPreamble(DEFAULT_APP_SETTINGS.codebase)
+export const SLACK_PREAMBLE = getSlackPreamble()

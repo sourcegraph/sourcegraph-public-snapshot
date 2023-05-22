@@ -24,7 +24,7 @@ export class OpenAICompletionsClient implements Pick<SourcegraphCompletionsClien
         this.openai
             .createChatCompletion(
                 {
-                    //TODO: manage prompt length
+                    // TODO: manage prompt length
                     model: 'gpt-4',
                     messages: params.messages
                         .filter(
@@ -69,7 +69,7 @@ export class OpenAICompletionsClient implements Pick<SourcegraphCompletionsClien
                                     cb.onChange(modelResponseText)
                                 }
 
-                                buffer = buffer.substring(buffer.indexOf(payload) + payload.length)
+                                buffer = buffer.slice(Math.max(0, buffer.indexOf(payload) + payload.length))
                             } catch (error) {
                                 if (error instanceof SyntaxError && buffer.length > 0) {
                                     // Incomplete JSON string, wait for more data

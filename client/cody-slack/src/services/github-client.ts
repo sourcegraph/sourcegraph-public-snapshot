@@ -21,9 +21,9 @@ export async function fetchFileContent(options: FetchFileContentOptions) {
                 content,
                 url: response.data.html_url,
             }
-        } else {
-            console.error('Unexpected response fetching file from GitHub:', response)
         }
+
+        console.error('Unexpected response fetching file from GitHub:', response)
     } catch (error) {
         console.error('Error fetching file from GitHub!', error)
     }

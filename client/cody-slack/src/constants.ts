@@ -29,7 +29,7 @@ export const DEFAULT_CODEBASES = [
 ] as const
 
 export type CodebaseContexts = Record<typeof DEFAULT_CODEBASES[number], CodebaseContext>
-export type AppContext = {
+export interface AppContext {
     codebaseContexts: CodebaseContexts
     vectorStore: HNSWLib
 }
