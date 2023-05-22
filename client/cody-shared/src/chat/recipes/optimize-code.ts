@@ -8,10 +8,10 @@ import {
     getContextMessagesFromSelection,
     getFileExtension,
 } from './helpers'
-import { Recipe, RecipeContext } from './recipe'
+import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class OptimizeCode implements Recipe {
-    public id = 'optimize-code'
+    public id: RecipeID = 'optimize-code'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
@@ -27,15 +27,14 @@ export class OptimizeCode implements Recipe {
         const displayText = `Optimize the time and space consumption of the following code:\n\`\`\`\n${selection.selectedText}\n\`\`\``
 
         const languageName = getNormalizedLanguageName(selection.fileName)
-        const promptMessage = `Optimise this code in  ${languageName}. \
-Start your response by telling if the code can/cannot be optimized. \
-You need to suggest a list of possible optimisation in less than 50 words each,\
-but if no optimisation is possible just say Code is already optimised. \
-If the code is optimisable, you provide Big O time/space comparison and \
-return updated code, however skip these details if any of them is not changed.\
-For updated code, add inline comments about changes you made and enclose it in triple backticks. \
-Output format should be: The code can/cannot be optimized. Optimisation Steps: {} Time and Space Usage: {} Updated Code: {} :\n\n\`\`\`${extension}\n${truncatedSelectedText}\n\`\`\`\n${MARKDOWN_FORMAT_PROMPT}`
-        const assistantResponsePrefix = `This code can \n\`\`\`${extension}\n`
+        const promptMessage = `Optimize the memory and time consumption of this code in  ${languageName}.\
+You first tell if the code can/cannot be optimized, then\
+if the code is optimizable, suggest a numbered list of possible optimizations in less than 50 words each,\
+then provide Big O time/space comparison for old and new code and finally return updated code.\
+Don't include the input code in your response. Beautify the response for better readability.\
+Response format should be: This code can/cannot be optimzed. Optimization Steps: {} Time and Space Usage: {} Updated Code: {}\
+However if no optimization is possible; just say the code is already optimized. \n\n\`\`\`${extension}\n${truncatedSelectedText}\n\`\`\`\n${MARKDOWN_FORMAT_PROMPT}`
+        const assistantResponsePrefix = `Here is the response  \n\`\`\`${extension}\n`
 
         return new Interaction(
             { speaker: 'human', text: promptMessage, displayText },
@@ -48,7 +47,7 @@ Output format should be: The code can/cannot be optimized. Optimisation Steps: {
                 truncatedSelectedText,
                 truncatedPrecedingText,
                 truncatedFollowingText,
-                selection.fileName,
+                selection,
                 context.codebaseContext
             )
         )
