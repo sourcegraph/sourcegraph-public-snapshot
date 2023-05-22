@@ -191,6 +191,20 @@ export class MultilineCompletionProvider extends CompletionProvider {
 }
 
 export class EndOfLineCompletionProvider extends CompletionProvider {
+    constructor(
+        completionsClient: SourcegraphNodeCompletionsClient,
+        promptChars: number,
+        responseTokens: number,
+        snippets: ReferenceSnippet[],
+        prefix: string,
+        suffix: string,
+        injectPrefix: string,
+        defaultN: number = 1,
+        protected multiline: boolean = false
+    ) {
+        super(completionsClient, promptChars, responseTokens, snippets, prefix, suffix, injectPrefix, defaultN)
+    }
+
     protected createPromptPrefix(): Message[] {
         // TODO(beyang): escape 'Human:' and 'Assistant:'
         const prefixLines = this.prefix.split('\n')
@@ -253,6 +267,40 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
         if (endBlockIndex !== -1) {
             return completion.slice(0, endBlockIndex).trimEnd()
         }
+
+        if (this.multiline) {
+            // We use a whitespace counting approach to finding the end of the completion. To find
+            // an end, we look for the first line that is below the start scope of the completion (
+            // calculated by the number of leading spaces or tabs)
+
+            const prefixLastLineIndent = this.prefix.length - this.prefix.lastIndexOf('\n') - 1
+            const completionFirstLineIndent = indentation(completion)
+            const startIndent = prefixLastLineIndent + completionFirstLineIndent
+
+            const lines = completion.split('\n')
+            let cutOffIndex = lines.length
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i]
+
+                if (i === 0 || line === '' || line.trim().startsWith('} else')) {
+                    continue
+                }
+
+                if (indentation(line) < startIndent) {
+                    // When we find the first block below the start indentation, only include it if
+                    // it is an end block
+                    if (line.trim() === '}') {
+                        cutOffIndex = i + 1
+                    } else {
+                        cutOffIndex = i
+                    }
+                    break
+                }
+            }
+
+            completion = lines.slice(0, cutOffIndex).join('\n')
+        }
+
         return completion.trimEnd()
     }
 
@@ -270,7 +318,7 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
             this.completionsClient,
             {
                 messages: prompt,
-                stopSequences: [anthropic.HUMAN_PROMPT, '\n'],
+                stopSequences: this.multiline ? [anthropic.HUMAN_PROMPT, '\n\n\n'] : [anthropic.HUMAN_PROMPT, '\n'],
                 maxTokensToSample: this.responseTokens,
                 temperature: 1,
                 topK: -1,
@@ -341,4 +389,9 @@ export function sliceUntilFirstNLinesOfSuffixMatch(suggestion: string, suffix: s
     }
 
     return suggestion
+}
+
+function indentation(line: string): number {
+    const regex = line.match(/^[\t ]*/)
+    return regex ? regex[0].length : 0
 }
