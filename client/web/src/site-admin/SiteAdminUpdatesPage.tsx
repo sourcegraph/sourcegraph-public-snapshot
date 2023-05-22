@@ -41,6 +41,7 @@ import styles from './SiteAdminUpdatesPage.module.scss'
 interface Props extends TelemetryProps {
     isSourcegraphApp: boolean
 }
+const capitalize = (s: string) => (s && s[0].toUpperCase() + s.slice(1)) || ''
 
 const SiteUpdateCheck: React.FC = () => {
     const { data, loading, error } = useQuery<SiteUpdateCheckResult, SiteUpdateCheckVariables>(SITE_UPDATE_CHECK, {})
@@ -141,23 +142,26 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                             Refresh{' '}
                         </Button>
                     </div>
+
                     {data.site.upgradeReadiness.schemaDrift.length > 0 ? (
                         <Collapse isOpen={isExpanded} onOpenChange={setIsExpanded} openByDefault={false}>
                             <div className="mb-4">
                                 <Alert className={classNames('mb-0', styles.alert)} variant="danger">
                                     <span>
-                                        There are schema drifts detected, please contact{' '}
+                                        There are schema drifts detected. Please follow suggestions below. If you need
+                                        assistance, please contact{' '}
                                         <Link
                                             to="mailto:support@sourcegraph.com"
                                             target="_blank"
                                             rel="noopener noreferrer"
                                         >
                                             Sourcegraph support
-                                        </Link>{' '}
-                                        for assistance.
+                                        </Link>
+                                        {'. '}
                                     </span>
                                 </Alert>
                             </div>
+
                             <CollapseHeader
                                 as={Button}
                                 variant="secondary"
@@ -175,34 +179,54 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                                     size="md"
                                 />
                             </CollapseHeader>
+
                             <CollapsePanel>
                                 {data.site.upgradeReadiness.schemaDrift.map(summary => (
                                     <div key={summary.name} className={styles.container}>
                                         <div className={styles.tableContainer}>
                                             <div className={styles.table}>
-                                                <div className={styles.label}>Problem</div>
+                                                <div className={styles.label}>Problem:</div>
                                                 <div>{summary.problem}</div>
                                             </div>
                                             <div className={styles.table}>
-                                                <div className={styles.label}>Solution</div>
-                                                <div>{summary.solution}</div>
+                                                <div className={styles.label}>Solution:</div>
+                                                <div>{capitalize(summary.solution)}</div>
+                                            </div>
+                                            <div className={styles.table}>
+                                                <div className={styles.label}>Hint:</div>
+                                                <div>
+                                                    {summary.urlHint ? (
+                                                        <Link to={summary.urlHint}>
+                                                            See Sourcegraph query for potential fix
+                                                        </Link>
+                                                    ) : (
+                                                        'Not Applicable'
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                         <div className={styles.outputContainer}>
-                                            {summary.diff && (
-                                                <LogOutput text={summary.diff} logDescription="The object diff" />
-                                            )}
-                                            {summary.urlHint && (
-                                                <p>
-                                                    <Link to={summary.urlHint}>hey check it out</Link>
-                                                </p>
-                                            )}
-                                            {summary.statements && (
-                                                <LogOutput
-                                                    text={summary.statements.join('\n')}
-                                                    logDescription="SQL statements to repair"
-                                                />
-                                            )}
+                                            <div className={styles.infoContainer}>
+                                                <div className={styles.label}>Current Delta:</div>
+                                                <div>
+                                                    <LogOutput
+                                                        text={summary.diff ? summary.diff : 'None'}
+                                                        logDescription="The object diff"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className={styles.infoContainer}>
+                                                <div className={styles.label}>Suggested statements to repair:</div>
+                                                <div>
+                                                    <LogOutput
+                                                        text={
+                                                            summary.statements ? summary.statements.join('\n') : 'None'
+                                                        }
+                                                        logDescription="SQL statements to repair"
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
@@ -232,7 +256,10 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                         </>
                     ) : (
                         <Alert className={classNames('mb-0', styles.alert)} variant="success">
-                            <Text> There are no pending out-of-band migrations that need to complete.</Text>
+                            <Text className="mb-0">
+                                {' '}
+                                There are no pending out-of-band migrations that need to complete.
+                            </Text>
                         </Alert>
                     )}
                 </>
