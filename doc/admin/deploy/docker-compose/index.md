@@ -137,6 +137,7 @@ If you would like to make changes to the default configurations, we highly recom
   - Expose debug port
   - Git SSH configuration
   - Update or add new environment variables
+  - Enable the Embeddings service
   - And more!
 
 Please make sure to commit any changes to your `release` branch.

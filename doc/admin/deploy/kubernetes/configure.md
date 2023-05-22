@@ -105,6 +105,14 @@ RBAC must be enabled in your cluster for the frontend to communicate with other 
 
 This will allow the frontend service to discover endpoints for each service replica and communicate with them through the Kubernetes API. Note that this component should only be added if RBAC is enabled in your cluster.
 
+### Embeddings Service
+By default the Embeddings service which is used to handle embeddings searches is disabled. To enable it the following must be commented out. By default the Embeddings service stores indexes in `blobstore`. Use the [embeddings-backend](./configure.md#external-embeddings-object-storage) patch to configure an external object store.
+```yaml
+# instances/$INSTANCE_NAME/kustomization.yaml
+components:
+  - ../../components/remove/embeddings # -- Disable Embeddings service by default
+```
+
 ---
 
 ## Monitoring stack
@@ -1136,6 +1144,34 @@ This adds the new environment variables for redis to the services listed above.
 
 > WARNING: You must restart frontend for the updated values to be activiated
 
+### External Embeddings Object Storage
+
+Sourcegraph supports specifying an external Object Store for embeddings indexes.
+
+**Step 1**: Create a subdirectory called 'patches' within the directory of your overlay
+
+```bash
+$ mkdir instances/$INSTANCE_NAME/patches
+```
+
+**Step 2**: Copy the `embeddings-backend.yaml` patch file from the components/patches directory to the new [patches subdirectory](kustomize/index.md#patches-directory)
+
+```bash
+$ cp components/patches/embeddings-backend.yaml instances/$INSTANCE_NAME/patches/embeddings-backend.yaml
+```
+
+**Step 3**: Configure the external object store [backend](../../../cody/explanations/code_graph_context.md#storing-embedding-indexes)
+
+**Step 4**: Include the patch file in your overlay under `patches`:
+   
+  ```yaml
+  # instances/$INSTANCE_NAME/kustomization.yaml
+  components:
+    - ../../components/...
+  # ...
+  patches:
+    - patch: patches/embeddings-backend.yaml
+  ```
 ---
 
 ## SSH for cloning

@@ -192,6 +192,7 @@ Common configurations that are strongly recommended for all Sourcegraph deployme
 - [Adjust storage sizes](configure.md#adjust-storage-sizes)
 - [Configure ingress](configure.md#ingress)
 - [Enable TLS](configure.md#tls)
+- [Enable Embeddings Service](configure.md#enable-embeddings-service)
 
 Other common configurations include:
 
