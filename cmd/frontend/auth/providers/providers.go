@@ -255,6 +255,15 @@ func GetProviderByConfigID(id ConfigID) Provider {
 }
 
 func GetProviderbyServiceType(serviceType string) Provider {
+	if MockProviders != nil {
+		for _, p := range MockProviders {
+			if p.ConfigID().Type == serviceType {
+				return p
+			}
+		}
+		return nil
+	}
+
 	curProvidersMu.RLock()
 	defer curProvidersMu.RUnlock()
 

@@ -9,6 +9,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/own",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
+        "//cmd/frontend/auth/providers",
         "//cmd/frontend/envvar",
         "//enterprise/internal/database",
         "//enterprise/internal/own/codeowners",
@@ -36,6 +37,7 @@ go_test(
         "requires-network",
     ],
     deps = [
+        "//cmd/frontend/auth/providers",
         "//enterprise/internal/database",
         "//enterprise/internal/own/codeowners",
         "//enterprise/internal/own/codeowners/v1:codeowners",
@@ -45,6 +47,7 @@ go_test(
         "//internal/conf",
         "//internal/database",
         "//internal/database/dbtest",
+        "//internal/extsvc",
         "//internal/gitserver",
         "//internal/types",
         "//lib/errors",
