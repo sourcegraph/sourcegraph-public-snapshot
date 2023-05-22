@@ -163,10 +163,12 @@ func (c *Client) MarkFailed(ctx context.Context, job types.Job, failureMessage s
 }
 
 func (c *Client) Heartbeat(ctx context.Context, jobIDs []int) (knownIDs, cancelIDs []int, err error) {
-	queue := c.getFirstQueueName()
+	if len(c.options.QueueNames) > 0 {
+		return nil, nil, nil
+	}
 
 	ctx, _, endObservation := c.operations.heartbeat.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("queueName", queue),
+		attribute.String("queueName", c.options.QueueName),
 		attribute.IntSlice("jobIDs", jobIDs),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -177,7 +179,7 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []int) (knownIDs, cancelI
 		// Continue, no metric errors should prevent heartbeats.
 	}
 
-	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", queue), types.HeartbeatRequest{
+	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", c.options.QueueName), types.HeartbeatRequest{
 		// Request the new-fashioned payload.
 		Version: types.ExecutorAPIVersion2,
 
