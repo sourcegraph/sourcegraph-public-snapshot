@@ -15,6 +15,7 @@ import (
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	executorstore "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
 	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/api"
@@ -189,6 +190,10 @@ func (m *MultiHandler) HandleHeartbeat(w http.ResponseWriter, r *http.Request) {
 	wrapHandler(w, r, &payload, m.logger, func() (int, any, error) {
 		return http.StatusOK, executortypes.HeartbeatResponse{KnownIDsByQueue: nil, CancelIDsByQueue: nil}, nil
 	})
+}
+
+func (m *MultiHandler) heartbeat(ctx context.Context, executor types.Executor) {
+
 }
 
 func (m *MultiHandler) validateQueues(queues []string) []string {
