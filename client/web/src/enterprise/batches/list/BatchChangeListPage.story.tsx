@@ -38,6 +38,14 @@ const config: Meta = {
 
 export default config
 
+window.context.licenseInfo = {
+    currentPlan: 'team-0',
+    batchChanges: {
+        maxNumChangesets: 10,
+        unrestricted: false,
+    },
+}
+
 const statBarData: GlobalChangesetsStatsResult = {
     __typename: 'Query',
     batchChanges: { __typename: 'BatchChangeConnection', totalCount: 30 },
@@ -171,6 +179,8 @@ export const ListOfBatchChangesServerSideExecutionEnabled: Story = () => (
 )
 
 ListOfBatchChangesServerSideExecutionEnabled.storyName = 'List of batch changes, server-side execution enabled'
+
+window.context.licenseInfo.batchChanges = undefined
 
 export const LicensingNotEnforced: Story = () => (
     <WebStory>
