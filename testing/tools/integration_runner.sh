@@ -110,7 +110,7 @@ function _run_server_image() {
   # shellcheck disable=SC2086
   docker run $docker_args \
     -d \
-    --rm \
+    --name "$container_name" \
     --publish "$port":7080 \
     -e BAZEL_SKIP_OOB_INFER_VERSION=true \
     -e ALLOW_SINGLE_DOCKER_CODE_INSIGHTS="$ALLOW_SINGLE_DOCKER_CODE_INSIGHTS" \
@@ -202,7 +202,7 @@ function cleanup() {
 
   echo "--- $container cleanup"
   docker container rm -f "$container"
-  docker image rm -f "$IMAGE"
+  docker image rm -f "$image"
 
   if [ $exit_status -ne 0 ]; then
     # This command will fail, so our last step will be expanded. We don't want
