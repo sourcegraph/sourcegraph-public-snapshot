@@ -63,8 +63,8 @@ func TestQueryStringToKeywordQuery(t *testing.T) {
 		},
 		{
 			query:        "K MEANS CLUSTERING in python",
-			wantQuery:    autogold.Expect("count:99999999 type:file lang:Python cluster"),
-			wantPatterns: autogold.Expect([]string{"cluster"}),
+			wantQuery:    autogold.Expect("count:99999999 type:file (cluster OR python)"),
+			wantPatterns: autogold.Expect([]string{"cluster", "python"}),
 		},
 	}
 
