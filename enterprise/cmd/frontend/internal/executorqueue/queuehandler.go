@@ -84,7 +84,8 @@ func newExecutorQueuesHandler(
 		queueRouter := base.PathPrefix("/queue").Subrouter()
 		// The queue route are treated as an internal actor and require the executor access token to authenticate.
 		queueRouter.Use(withInternalActor, executorAuth)
-		queueRouter.Path("/dequeue").Methods(http.MethodPost).HandlerFunc(multiHandler.ServeHTTP)
+		queueRouter.Path("/dequeue").Methods(http.MethodPost).HandlerFunc(multiHandler.HandleDequeue)
+		queueRouter.Path("/heartbeat").Methods(http.MethodPost).HandlerFunc(multiHandler.HandleHeartbeat)
 
 		jobRouter := base.PathPrefix("/queue").Subrouter()
 		// The job routes are treated as internal actor. Additionally, each job comes with a short-lived token that is
