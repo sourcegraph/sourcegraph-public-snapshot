@@ -3,7 +3,7 @@ import { FC } from 'react'
 import { Routes, Route, Outlet, Navigate, useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, H2, Link, PageHeader } from '@sourcegraph/wildcard'
+import { Button, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { RemoteRepositoriesStep } from '../../../setup-wizard/components'
 
@@ -13,7 +13,6 @@ import styles from './AppSettingsArea.module.scss'
 
 enum AppSettingURL {
     LocalRepositories = 'local-repositories',
-    ConnectToSourcegraphDotCom = 'connect-to-dot-com',
     RemoteRepositories = 'remote-repositories',
 }
 
@@ -25,11 +24,6 @@ export const AppSettingsArea: FC<TelemetryProps> = ({ telemetryService }) => (
                 path={`${AppSettingURL.RemoteRepositories}/*`}
                 element={<RemoteRepositoriesTab telemetryService={telemetryService} />}
             />
-            <Route
-                path={AppSettingURL.ConnectToSourcegraphDotCom}
-                element={<H2>Hello Connect to sourcegraph.com</H2>}
-            />
-
             <Route path="*" element={<Navigate to={AppSettingURL.LocalRepositories} replace={true} />} />
         </Route>
     </Routes>
@@ -43,7 +37,6 @@ interface AppSetting {
 const APP_SETTINGS: AppSetting[] = [
     { url: AppSettingURL.LocalRepositories, name: 'Local repositories' },
     { url: AppSettingURL.RemoteRepositories, name: 'Remote repositories' },
-    { url: AppSettingURL.ConnectToSourcegraphDotCom, name: 'Connect sourcegraph.com' },
 ]
 
 const AppSettingsLayout: FC = () => {
