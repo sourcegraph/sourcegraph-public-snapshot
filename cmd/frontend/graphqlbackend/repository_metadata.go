@@ -14,6 +14,114 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type KeyValuePair struct {
+	key   string
+	value *string
+}
+
+func (k KeyValuePair) Key() string {
+	return k.key
+}
+
+func (k KeyValuePair) Value() *string {
+	return k.value
+}
+
+// Deprecated: Use AddRepoMetadata instead.
+func (r *schemaResolver) AddRepoKeyValuePair(ctx context.Context, args struct {
+	Repo  graphql.ID
+	Key   string
+	Value *string
+},
+) (*EmptyResponse, error) {
+	return r.AddRepoMetadata(ctx, args)
+}
+
+func (r *schemaResolver) AddRepoMetadata(ctx context.Context, args struct {
+	Repo  graphql.ID
+	Key   string
+	Value *string
+},
+) (*EmptyResponse, error) {
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
+		return &EmptyResponse{}, err
+	}
+
+	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
+		return nil, errors.New("'repository-metadata' feature flag is not enabled")
+	}
+
+	repoID, err := UnmarshalRepositoryID(args.Repo)
+	if err != nil {
+		return &EmptyResponse{}, err
+	}
+
+	return &EmptyResponse{}, r.db.RepoKVPs().Create(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
+}
+
+// Deprecated: Use UpdateRepoMetadata instead.
+func (r *schemaResolver) UpdateRepoKeyValuePair(ctx context.Context, args struct {
+	Repo  graphql.ID
+	Key   string
+	Value *string
+},
+) (*EmptyResponse, error) {
+	return r.UpdateRepoMetadata(ctx, args)
+}
+
+func (r *schemaResolver) UpdateRepoMetadata(ctx context.Context, args struct {
+	Repo  graphql.ID
+	Key   string
+	Value *string
+},
+) (*EmptyResponse, error) {
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
+		return &EmptyResponse{}, err
+	}
+
+	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
+		return nil, errors.New("'repository-metadata' feature flag is not enabled")
+	}
+
+	repoID, err := UnmarshalRepositoryID(args.Repo)
+	if err != nil {
+		return &EmptyResponse{}, err
+	}
+
+	_, err = r.db.RepoKVPs().Update(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
+	return &EmptyResponse{}, err
+}
+
+// Deprecated: Use DeleteRepoMetadata instead.
+func (r *schemaResolver) DeleteRepoKeyValuePair(ctx context.Context, args struct {
+	Repo graphql.ID
+	Key  string
+},
+) (*EmptyResponse, error) {
+	return r.DeleteRepoMetadata(ctx, args)
+}
+
+func (r *schemaResolver) DeleteRepoMetadata(ctx context.Context, args struct {
+	Repo graphql.ID
+	Key  string
+},
+) (*EmptyResponse, error) {
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
+		return &EmptyResponse{}, err
+	}
+
+	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
+		return nil, errors.New("'repository-metadata' feature flag is not enabled")
+	}
+
+	repoID, err := UnmarshalRepositoryID(args.Repo)
+	if err != nil {
+		return &EmptyResponse{}, err
+	}
+
+	return &EmptyResponse{}, r.db.RepoKVPs().Delete(ctx, repoID, args.Key)
+}
+
 type repoMetaResolver struct {
 	db database.DB
 }
@@ -91,12 +199,12 @@ func (s *repoMetaKeysConnectionStore) UnmarshalCursor(cursor string, _ database.
 	return &value, nil
 }
 
-func (r *repoMetaResolver) Key(ctx context.Context, args *struct {Key string}) (*repoMetaKeyResolver, error) {
+func (r *repoMetaResolver) Key(ctx context.Context, args *struct{ Key string }) (*repoMetaKeyResolver, error) {
 	return &repoMetaKeyResolver{db: r.db, key: args.Key}, nil
 }
 
 type repoMetaKeyResolver struct {
-	db database.DB
+	db  database.DB
 	key string
 }
 
@@ -115,7 +223,7 @@ func (r *repoMetaKeyResolver) Values(ctx context.Context, args *RepoMetadataValu
 	}
 
 	connectionStore := &repoMetaValuesConnectionStore{
-		db:          r.db,
+		db: r.db,
 		listOptions: database.RepoKVPListValuesOptions{
 			Key:   r.key,
 			Query: args.Query,

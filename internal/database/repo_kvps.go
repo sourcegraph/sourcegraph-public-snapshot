@@ -43,7 +43,7 @@ func (s *repoKVPStore) With(other basestore.ShareableStore) RepoKVPStore {
 }
 
 var (
-	RepoKVPListKeyColumn = "key"
+	RepoKVPListKeyColumn   = "key"
 	RepoKVPListValueColumn = "value"
 )
 
@@ -80,7 +80,7 @@ func (s *repoKVPStore) Get(ctx context.Context, repoID api.RepoID, key string) (
 }
 
 type RepoKVPListKeysOptions struct {
-	Query   *string
+	Query *string
 }
 
 func (r *RepoKVPListKeysOptions) SQL() []*sqlf.Query {
@@ -116,10 +116,9 @@ func (s *repoKVPStore) ListKeys(ctx context.Context, options RepoKVPListKeysOpti
 	return basestore.ScanStrings(s.Query(ctx, q))
 }
 
-
 type RepoKVPListValuesOptions struct {
-	Key     string
-	Query   *string
+	Key   string
+	Query *string
 }
 
 func (r *RepoKVPListValuesOptions) SQL() []*sqlf.Query {
