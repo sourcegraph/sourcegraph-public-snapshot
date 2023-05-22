@@ -803,7 +803,11 @@ function filePathContains(container: string, contained: string): boolean {
 }
 
 async function filesExist(filePaths: string[]): Promise<{ [filePath: string]: boolean }> {
+    if (filePaths.length === 0) {
+        return Object.fromEntries(filePaths.map(fp => [fp, false]))
+    }
     const searchPath = `{${filePaths.join(',')}}`
+    debug('ChatViewProvider:filesExist', `searchPath: ${searchPath}`)
     const realFiles = await vscode.workspace.findFiles(searchPath, null, filePaths.length * 5)
     const ret: { [filePath: string]: boolean } = {}
     for (const filePath of filePaths) {
