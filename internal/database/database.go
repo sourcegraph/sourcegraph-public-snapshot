@@ -25,7 +25,6 @@ type DB interface {
 	Authz() AuthzStore
 	BitbucketProjectPermissions() BitbucketProjectPermissionsStore
 	Conf() ConfStore
-	EmbeddingsJobsStore() EmbeddingsJobsStore
 	EventLogs() EventLogStore
 	SecurityEventLogs() SecurityEventLogsStore
 	ExternalServices() ExternalServiceStore
@@ -323,8 +322,4 @@ func (d *db) AssignedOwners() AssignedOwnersStore {
 
 func (d *db) OwnSignalConfigurations() SignalConfigurationStore {
 	return SignalConfigurationStoreWith(d.Store)
-}
-
-func (d *db) EmbeddingsJobsStore() EmbeddingsJobsStore {
-	return EmbeddingsJobsStoreWith(d.Store)
 }

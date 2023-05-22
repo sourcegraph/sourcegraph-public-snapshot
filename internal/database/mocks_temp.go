@@ -4900,9 +4900,6 @@ type MockDB struct {
 	// ConfFunc is an instance of a mock function object controlling the
 	// behavior of the method Conf.
 	ConfFunc *DBConfFunc
-	// EmbeddingsJobsStoreFunc is an instance of a mock function object
-	// controlling the behavior of the method EmbeddingsJobsStore.
-	EmbeddingsJobsStoreFunc *DBEmbeddingsJobsStoreFunc
 	// EventLogsFunc is an instance of a mock function object controlling
 	// the behavior of the method EventLogs.
 	EventLogsFunc *DBEventLogsFunc
@@ -5084,11 +5081,6 @@ func NewMockDB() *MockDB {
 		},
 		ConfFunc: &DBConfFunc{
 			defaultHook: func() (r0 ConfStore) {
-				return
-			},
-		},
-		EmbeddingsJobsStoreFunc: &DBEmbeddingsJobsStoreFunc{
-			defaultHook: func() (r0 EmbeddingsJobsStore) {
 				return
 			},
 		},
@@ -5374,11 +5366,6 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.Conf")
 			},
 		},
-		EmbeddingsJobsStoreFunc: &DBEmbeddingsJobsStoreFunc{
-			defaultHook: func() EmbeddingsJobsStore {
-				panic("unexpected invocation of MockDB.EmbeddingsJobsStore")
-			},
-		},
 		EventLogsFunc: &DBEventLogsFunc{
 			defaultHook: func() EventLogStore {
 				panic("unexpected invocation of MockDB.EventLogs")
@@ -5648,9 +5635,6 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		ConfFunc: &DBConfFunc{
 			defaultHook: i.Conf,
-		},
-		EmbeddingsJobsStoreFunc: &DBEmbeddingsJobsStoreFunc{
-			defaultHook: i.EmbeddingsJobsStore,
 		},
 		EventLogsFunc: &DBEventLogsFunc{
 			defaultHook: i.EventLogs,
@@ -6392,105 +6376,6 @@ func (c DBConfFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBConfFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// DBEmbeddingsJobsStoreFunc describes the behavior when the
-// EmbeddingsJobsStore method of the parent MockDB instance is invoked.
-type DBEmbeddingsJobsStoreFunc struct {
-	defaultHook func() EmbeddingsJobsStore
-	hooks       []func() EmbeddingsJobsStore
-	history     []DBEmbeddingsJobsStoreFuncCall
-	mutex       sync.Mutex
-}
-
-// EmbeddingsJobsStore delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockDB) EmbeddingsJobsStore() EmbeddingsJobsStore {
-	r0 := m.EmbeddingsJobsStoreFunc.nextHook()()
-	m.EmbeddingsJobsStoreFunc.appendCall(DBEmbeddingsJobsStoreFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the EmbeddingsJobsStore
-// method of the parent MockDB instance is invoked and the hook queue is
-// empty.
-func (f *DBEmbeddingsJobsStoreFunc) SetDefaultHook(hook func() EmbeddingsJobsStore) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// EmbeddingsJobsStore method of the parent MockDB instance invokes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *DBEmbeddingsJobsStoreFunc) PushHook(hook func() EmbeddingsJobsStore) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBEmbeddingsJobsStoreFunc) SetDefaultReturn(r0 EmbeddingsJobsStore) {
-	f.SetDefaultHook(func() EmbeddingsJobsStore {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBEmbeddingsJobsStoreFunc) PushReturn(r0 EmbeddingsJobsStore) {
-	f.PushHook(func() EmbeddingsJobsStore {
-		return r0
-	})
-}
-
-func (f *DBEmbeddingsJobsStoreFunc) nextHook() func() EmbeddingsJobsStore {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBEmbeddingsJobsStoreFunc) appendCall(r0 DBEmbeddingsJobsStoreFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBEmbeddingsJobsStoreFuncCall objects
-// describing the invocations of this function.
-func (f *DBEmbeddingsJobsStoreFunc) History() []DBEmbeddingsJobsStoreFuncCall {
-	f.mutex.Lock()
-	history := make([]DBEmbeddingsJobsStoreFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBEmbeddingsJobsStoreFuncCall is an object that describes an invocation
-// of method EmbeddingsJobsStore on an instance of MockDB.
-type DBEmbeddingsJobsStoreFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 EmbeddingsJobsStore
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBEmbeddingsJobsStoreFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBEmbeddingsJobsStoreFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
