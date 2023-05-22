@@ -10,7 +10,6 @@ describe('getConfiguration', () => {
         expect(getConfiguration(config)).toEqual({
             serverEndpoint: '',
             codebase: '',
-            debug: false,
             useContext: 'embeddings',
             experimentalSuggest: false,
             experimentalChatPredictions: false,
@@ -19,7 +18,7 @@ describe('getConfiguration', () => {
             customHeaders: {},
             debugEnable: false,
             debugVerbose: false,
-            debugFilter: '',
+            debugFilter: null,
         })
     })
 
@@ -31,8 +30,6 @@ describe('getConfiguration', () => {
                         return 'http://example.com'
                     case 'cody.codebase':
                         return 'my/codebase'
-                    case 'cody.debug':
-                        return true
                     case 'cody.useContext':
                         return 'keyword'
                     case 'cody.customHeaders':
@@ -48,12 +45,12 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.inline':
                         return true
-                    case 'cody.experimental.enable':
+                    case 'cody.debug.enable':
                         return true
-                    case 'cody.experimental.verbose':
+                    case 'cody.debug.verbose':
                         return true
-                    case 'cody.experimental.filter':
-                        return ''
+                    case 'cody.debug.filter':
+                        return '.*'
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -62,7 +59,6 @@ describe('getConfiguration', () => {
         expect(getConfiguration(config)).toEqual({
             serverEndpoint: 'http://example.com',
             codebase: 'my/codebase',
-            debug: true,
             useContext: 'keyword',
             customHeaders: {
                 'Cache-Control': 'no-cache',
@@ -74,7 +70,7 @@ describe('getConfiguration', () => {
             experimentalInline: true,
             debugEnable: true,
             debugVerbose: true,
-            debugFilter: '',
+            debugFilter: '.*',
         })
     })
 })
