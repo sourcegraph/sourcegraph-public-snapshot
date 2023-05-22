@@ -35,7 +35,7 @@ upload_dist() {
   local target_dir
   path="$(bundle_path)"
   echo "searching for artefacts in '${path}' and moving them to dist/"
-  src=$(find "${path}" -type f \( -name "Sourcegraph*.dmg" -o -name "Sourcegraph*.tar.gz" -o -name "sourcegraph*.deb" -o -name "sourcegraph*.AppImage" -o -name "sourcegraph*.tar.gz" \));
+  src=$(find "${path}" -type f \( -name "Sourcegraph*.dmg" -o -name "Sourcegraph*.tar.gz" -o -name "sourcegraph*.deb" -o -name "sourcegraph*.AppImage" -o -name "sourcegraph*.tar.gz" -o -name "*.sig" \));
   target_dir="./${DIST_DIR}"
 
   mkdir -p "${target_dir}"
@@ -43,18 +43,9 @@ upload_dist() {
     mv -vf "${from}" "${target_dir}/"
   done
 
-  src=$(find "${path}" -type f -name "*.sig")
-  target_dir="${target_dir}/sigs"
-  mkdir -p ${target_dir}
-  for from in ${src}; do
-    mv -vf "${from}" "${target_dir}/"
-  done
-
   echo --- Uploading artifacts from dist
   ls -al "./${DIST_DIR}"
   buildkite-agent artifact upload "${DIST_DIR}/*"
-
-
 }
 
 create_app_archive() {
@@ -83,8 +74,9 @@ create_app_archive() {
     tar -czvf "${target}" "Sourcegraph.app"
     popd
   elif [[ -e ${app_tar_gz} ]]; then
-    echo "--- :file_cabinet: Moving existing archive to ${target}"
+    echo "--- :file_cabinet: Moving existing archive/signatures to ${target}"
     mv -vf "${app_tar_gz}" "$(dirname ${app_tar_gz})/${target}"
+    mv -vf "${app_tar_gz}.sig" "$(dirname ${app_tar_gz})/${target}.sig" || echo "--- signature not found - skipping"
   fi
 }
 
