@@ -8113,34 +8113,8 @@
           "Comment": ""
         },
         {
-          "Name": "max_definition_id",
-          "Index": 17,
-          "TypeName": "bigint",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "max_path_id",
-          "Index": 19,
-          "TypeName": "bigint",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "max_reference_id",
-          "Index": 18,
+          "Name": "max_export_id",
+          "Index": 20,
           "TypeName": "bigint",
           "IsNullable": false,
           "Default": "",

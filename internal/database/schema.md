@@ -1008,9 +1008,7 @@ Indexes:
  num_path_records_processed      | integer                  |           |          | 
  num_reference_records_processed | integer                  |           |          | 
  num_count_records_processed     | integer                  |           |          | 
- max_definition_id               | bigint                   |           | not null | 
- max_reference_id                | bigint                   |           | not null | 
- max_path_id                     | bigint                   |           | not null | 
+ max_export_id                   | bigint                   |           | not null | 
 Indexes:
     "codeintel_ranking_progress_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_progress_graph_key_key" UNIQUE CONSTRAINT, btree (graph_key)
