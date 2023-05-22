@@ -341,6 +341,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 void this.multiplexer.notifyTurnComplete()
             },
             onError: (err, statusCode) => {
+                // NEXT: don't necessarily need to mess with ui, maybe derive everything from state
                 if (isCancelled) {
                     this.transcript.addCancellationAsAssistantResponse()
                 } else {
@@ -377,6 +378,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     private cancelCompletion(): void {
+        this.transcript.cancelLastInteraction()
         this.cancelCompletionCallback?.()
         this.cancelCompletionCallback = null
     }
@@ -828,7 +830,7 @@ async function filesExist(filePaths: string[]): Promise<{ [filePath: string]: bo
     }
     const searchPath = `{${filePaths.join(',')}}`
     debug('ChatViewProvider:filesExist', `searchPath: ${searchPath}`)
-    const realFiles = await vscode.workspace.findFiles(searchPath, null, filePaths.length * 5)
+     const realFiles = await vscode.workspace.findFiles(searchPath, null, filePaths.length * 5)
     const ret: { [filePath: string]: boolean } = {}
     for (const filePath of filePaths) {
         let pathExists = false

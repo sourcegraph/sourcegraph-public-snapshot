@@ -9,6 +9,7 @@ export interface InteractionJSON {
     assistantMessage: InteractionMessage
     context: ContextMessage[]
     timestamp: string
+    isCanceled: boolean
 }
 
 export class Interaction {
@@ -17,6 +18,7 @@ export class Interaction {
     private cachedContextFiles: ContextFile[] = []
     public readonly timestamp: string
     private readonly context: Promise<ContextMessage[]>
+    public isCanceled: boolean
 
     constructor(
         humanMessage: InteractionMessage,
@@ -27,6 +29,7 @@ export class Interaction {
         this.humanMessage = humanMessage
         this.assistantMessage = assistantMessage
         this.timestamp = timestamp
+        this.isCanceled = false
 
         // This is some hacky behavior: returns a promise that resolves to the same array that was passed,
         // but also caches the context file names in memory as a side effect.
@@ -93,6 +96,7 @@ export class Interaction {
             assistantMessage: this.assistantMessage,
             context: await this.context,
             timestamp: this.timestamp,
+            isCanceled: this.isCanceled
         }
     }
 }

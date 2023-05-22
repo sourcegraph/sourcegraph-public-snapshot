@@ -91,6 +91,14 @@ export class Transcript {
         this.interactions.pop()
     }
 
+    public cancelLastInteraction(): void {
+        const lastInteraction = this.getLastInteraction()
+        if (!lastInteraction) {
+            return
+        }
+        lastInteraction.isCanceled = true
+    }
+
     public addAssistantResponse(text: string, displayText?: string): void {
         this.getLastInteraction()?.setAssistantMessage({
             speaker: 'assistant',

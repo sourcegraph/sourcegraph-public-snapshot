@@ -39,6 +39,7 @@ export const TranscriptItem: React.FunctionComponent<
     {
         message: ChatMessage
         inProgress: boolean
+        // isCanceled: boolean
         beingEdited: boolean
         setBeingEdited: (input: boolean) => void
         fileLinkComponent: React.FunctionComponent<FileLinkProps>
