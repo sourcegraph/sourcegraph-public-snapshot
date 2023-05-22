@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -25,6 +26,14 @@ func (k KeyValuePair) Key() string {
 
 func (k KeyValuePair) Value() *string {
 	return k.value
+}
+
+type emptyNonNilValueError struct {
+	value string
+}
+
+func (e emptyNonNilValueError) Error() string {
+	return fmt.Sprintf("value should be null or non-empty string, got %q", e.value)
 }
 
 // Deprecated: Use AddRepoMetadata instead.
@@ -54,6 +63,10 @@ func (r *schemaResolver) AddRepoMetadata(ctx context.Context, args struct {
 	repoID, err := UnmarshalRepositoryID(args.Repo)
 	if err != nil {
 		return &EmptyResponse{}, err
+	}
+
+	if args.Value != nil && strings.TrimSpace(*args.Value) == "" {
+		return &EmptyResponse{}, emptyNonNilValueError{value: *args.Value}
 	}
 
 	return &EmptyResponse{}, r.db.RepoKVPs().Create(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
@@ -86,6 +99,10 @@ func (r *schemaResolver) UpdateRepoMetadata(ctx context.Context, args struct {
 	repoID, err := UnmarshalRepositoryID(args.Repo)
 	if err != nil {
 		return &EmptyResponse{}, err
+	}
+
+	if args.Value != nil && strings.TrimSpace(*args.Value) == "" {
+		return &EmptyResponse{}, emptyNonNilValueError{value: *args.Value}
 	}
 
 	_, err = r.db.RepoKVPs().Update(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})

@@ -75,6 +75,18 @@ func TestRepositoryMetadata(t *testing.T) {
 		}{
 			Repo:  gqlID,
 			Key:   "tag1",
+			Value: strPtr(" 	"),
+		})
+		require.Error(t, err)
+		require.Equal(t, emptyNonNilValueError{value: " 	"}, err)
+
+		_, err = schema.AddRepoMetadata(ctx, struct {
+			Repo  graphql.ID
+			Key   string
+			Value *string
+		}{
+			Repo:  gqlID,
+			Key:   "tag1",
 			Value: nil,
 		})
 		require.NoError(t, err)
@@ -118,6 +130,18 @@ func TestRepositoryMetadata(t *testing.T) {
 			Value: strPtr("val3"),
 		})
 		require.NoError(t, err)
+
+		_, err = schema.UpdateRepoMetadata(ctx, struct {
+			Repo  graphql.ID
+			Key   string
+			Value *string
+		}{
+			Repo:  gqlID,
+			Key:   "tag1",
+			Value: strPtr("     "),
+		})
+		require.Error(t, err)
+		require.Equal(t, emptyNonNilValueError{value: "     "}, err)
 
 		repoResolver, err := schema.repositoryByID(ctx, gqlID)
 		require.NoError(t, err)

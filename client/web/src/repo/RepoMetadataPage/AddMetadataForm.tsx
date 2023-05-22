@@ -88,7 +88,7 @@ export const AddMetadataForm: FC<{ onDidAdd: () => void; repoID: string }> = ({ 
             await addMeta({
                 variables: {
                     key,
-                    value,
+                    value: value || null,
                     repo: repoID,
                 },
             }).then(() => onDidAdd())
