@@ -29,6 +29,7 @@ sh_test(
         "PERFORCE_PASSWORD",
         "PERFORCE_PORT",
         "PERFORCE_USER",
+        "SOURCEGRAPH_LICENSE_GENERATION_KEY",
     ],
     tags = ["requires-network"],
 )
