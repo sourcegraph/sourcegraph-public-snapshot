@@ -39,7 +39,7 @@ All notable changes to Sourcegraph are documented in this file.
 - The commit message defined in a batch spec will now be quoted when git is invoked, i.e. `git commit -m "commit message"`, to improve how the message is interpreted by the shell in certain edge cases, such as when the commit message begins with a dash. This may mean that previous escaping strategies will behave differently.
 - 429 errors from external services Sourcegraph talks to are only retried automatically if the Retry-After header doesn't indicate that a retry would be useless. The time grace period can be configured using `SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION` and `SRC_HTTP_CLI_INTERNAL_RETRY_AFTER_MAX_DURATION`. [#51743](https://github.com/sourcegraph/sourcegraph/pull/51743)
 - Security Event are NO LONGER logged to the database by default, they are logged
-  to stdout as audit logs instead. This is a performance improvement for large instances. [#51686](https://github.com/sourcegraph/sourcegraph/pull/51686)
+  to stdout as [audit logs](https://docs.sourcegraph.com/admin/audit_log) instead. This is a performance improvement for large instances. [#51686](https://github.com/sourcegraph/sourcegraph/pull/51686)
 
 ### Fixed
 
