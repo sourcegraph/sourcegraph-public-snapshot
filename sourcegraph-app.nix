@@ -6,18 +6,32 @@
     });
   in
   forAllSystems ( { pkgs }: {
-    sourcegraph-app = pkgs.stdenv.mkDerivation rec {
-    name = "sourcegraph-app";
-    src = ".";
-    pname =  name;
-    version = "1.0.0+dev";
+    sourcegraph-app = pkgs.buildBazelPackage {
+    bazel = pkgs.bazel_6;
+    name = "sourcegraph-nix";
+    bazelTargets = ["//enterprise/cmd/sourcegraph:sourcegraph"];
+    src = ./.;
+    fetchAttrs = {
+        preBuild = ''
+          echo ${pkgs.bazel_6.version} > .bazelversion
+        '';
+        sha256 = "";
+      };
+    buildAttrs = {
+        outputs = [ "out" ];
 
-    nativeBuildInputs = [
-      pkgs.bazel
-    ];
+        USE_BAZEL_VERSION =
+          if pkgs.hostPlatform.isMacOS then "" else pkgs.bazel_6.version;
 
-    buildPhase = ''
-      bazel build //enterprise/cmd/sourcegraph
-    '';
+        nativeBuildInputs = [ pkgs.libtool ];
+
+        preBuild = ''
+          echo ${pkgs.bazel_6.version} > .bazelversion
+        '';
+
+        bazelFlags = [
+        "--announce-rc"
+        ];
+      };
   };
   })
