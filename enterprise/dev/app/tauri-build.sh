@@ -34,7 +34,7 @@ upload_dist() {
   local path
   path="$(bundle_path)"
   echo "searching for artefacts in '${path}' and moving them to dist/"
-  src=$(find "${path}" -type f \( -name "Sourcegraph*.dmg" -o -name "Sourcegraph*.tar.gz" -o -name "sourcegraph*.deb" -o -name "sourcegraph*.AppImage" -o -name "sourcegraph*.tar.gz" \));
+  src=$(find "${path}" -type f \( -name "Sourcegraph*.dmg" -o -name "Sourcegraph*.tar.gz" -o -name "sourcegraph*.deb" -o -name "sourcegraph*.AppImage" -o -name "sourcegraph*.tar.gz" -name "*.sig" \));
 
   mkdir -p dist
   for from in ${src}; do
