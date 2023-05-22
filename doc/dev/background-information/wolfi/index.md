@@ -18,13 +18,15 @@ For full details, see [RFC 768: Harden container images by switching from Alpine
 
 ## How is the build process different from Alpine to Wolfi?
 
-In our Alpine images, most of the work is done in the Dockerfile: packages, fetched, third-party dependencies are built, users and directories are created, and binaries are copied.
+In our Alpine images, most of the work is done in the Dockerfile: packages are installed; third-party dependencies are fetched, built, and installed; users and directories are created; and binaries are copied.
 
-When building Wolfi images, most of this work is done outside of the Dockerfile:
+When building Wolfi images, most of this work is done **outside** of the Dockerfile:
 
-- All third-party dependencies are [packaged](packages.md) as APKs (Alpine Packages - Wolfi shares this package format).
+- All third-party dependencies are [packaged](packages.md) as APKs (Alpine Packages, a format that Wolfi uses).
 - Dependencies, user accounts, directory structure, and permissions are combined into a pre-built [base image](images.md).
-- The Dockerfile then copies over Sourcegraph Go binaries and sets the entrypoint.
+- The Dockerfile then only copies over Sourcegraph Go binaries, any configuration, and sets the entrypoint.
+
+In short, all dependencies are pre-installed in a Wolfi base image. The Dockerfile is the final step that just adds on the Sourcegraph code.
 
 ## What are base images?
 
@@ -32,5 +34,5 @@ Rather than using a customised upstream image like our [alpine-3.14](https://git
 
 ## More Information
 
-- [Wolfi packages](packages.md)
-- [Wolfi base images](images.md)
+- [Wolfi packages](packages.md) details how we package dependencies and manage our package repository.
+- [Wolfi base images](images.md) details how we configure and build each base image.
