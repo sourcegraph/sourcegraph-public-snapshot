@@ -35,6 +35,7 @@ interface CodyChatStore {
     ) => Promise<void>
     submitMessage: (text: string) => void
     editMessage: (text: string) => void
+    stopMessageInProgress: () => void
     executeRecipe: (
         recipeId: RecipeID,
         options?: {
@@ -174,6 +175,11 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
             client.transcript.removeLastInteraction()
             void client.submitMessage(text)
         }
+    }
+
+    // MARK
+    const stopMessageInProgress = (): void => {
+        console.log('# stopMessageInProgress')
     }
 
     const executeRecipe = async (
@@ -376,6 +382,7 @@ export const useChatStoreState = create<CodyChatStore>((set, get): CodyChatStore
         initializeClient,
         submitMessage,
         editMessage,
+        stopMessageInProgress,
         executeRecipe,
         reset,
         getChatContext,

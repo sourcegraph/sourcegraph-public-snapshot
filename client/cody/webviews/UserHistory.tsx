@@ -63,7 +63,8 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
                                 +new Date(b[1].lastInteractionTimestamp) - +new Date(a[1].lastInteractionTimestamp)
                         )
                         .map(chat => {
-                            const lastMessage = chat[1].interactions[chat[1].interactions.length - 1].assistantMessage
+                            const lastInteraction = chat[1].interactions[-1]
+                            const lastMessage = lastInteraction?.assistantMessage
                             if (!lastMessage?.displayText) {
                                 return null
                             }

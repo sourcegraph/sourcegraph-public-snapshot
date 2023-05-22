@@ -26,12 +26,14 @@ interface ChatProps extends ChatClassNames {
     onSubmit: (text: string, submitType: 'user' | 'suggestion') => void
     textAreaComponent: React.FunctionComponent<ChatUITextAreaProps>
     submitButtonComponent: React.FunctionComponent<ChatUISubmitButtonProps>
+    stopButtonComponent: React.FunctionComponent<StopButtonProps>
     suggestionButtonComponent?: React.FunctionComponent<ChatUISuggestionButtonProps>
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
     afterTips?: string
     className?: string
     EditButtonContainer?: React.FunctionComponent<EditButtonProps>
     editButtonOnSubmit?: (text: string) => void
+    onStopButtonClicked?: () => void
     FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
     feedbackButtonsOnSubmit?: (text: string) => void
     copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
@@ -69,6 +71,10 @@ export interface ChatUISuggestionButtonProps {
     onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
 }
 
+export interface StopButtonProps {
+    onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
+}
+
 export interface EditButtonProps {
     className: string
     disabled?: boolean
@@ -101,6 +107,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     onSubmit,
     textAreaComponent: TextArea,
     submitButtonComponent: SubmitButton,
+    stopButtonComponent: StopButton,
     suggestionButtonComponent: SuggestionButton,
     fileLinkComponent,
     afterTips,
@@ -115,6 +122,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     chatInputClassName,
     EditButtonContainer,
     editButtonOnSubmit,
+    onStopButtonClicked,
     FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
@@ -215,33 +223,29 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 
     return (
         <div className={classNames(className, styles.innerContainer)}>
-            {needsEmailVerification && NeedsEmailVerificationNotice ? (
-                <div className="flex-1">
-                    <NeedsEmailVerificationNotice />
-                </div>
-            ) : (
-                <Transcript
-                    transcript={transcriptWithWelcome}
-                    messageInProgress={messageInProgress}
-                    messageBeingEdited={messageBeingEdited}
-                    setMessageBeingEdited={setMessageBeingEdited}
-                    fileLinkComponent={fileLinkComponent}
-                    codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
-                    transcriptItemClassName={transcriptItemClassName}
-                    humanTranscriptItemClassName={humanTranscriptItemClassName}
-                    transcriptItemParticipantClassName={transcriptItemParticipantClassName}
-                    transcriptActionClassName={transcriptActionClassName}
-                    className={styles.transcriptContainer}
-                    textAreaComponent={TextArea}
-                    EditButtonContainer={EditButtonContainer}
-                    editButtonOnSubmit={editButtonOnSubmit}
-                    FeedbackButtonsContainer={FeedbackButtonsContainer}
-                    feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                    copyButtonOnSubmit={copyButtonOnSubmit}
-                    submitButtonComponent={SubmitButton}
-                    chatInputClassName={chatInputClassName}
-                />
-            )}
+            <Transcript
+                transcript={transcriptWithWelcome}
+                messageInProgress={messageInProgress}
+                messageBeingEdited={messageBeingEdited}
+                setMessageBeingEdited={setMessageBeingEdited}
+                fileLinkComponent={fileLinkComponent}
+                codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
+                transcriptItemClassName={transcriptItemClassName}
+                humanTranscriptItemClassName={humanTranscriptItemClassName}
+                transcriptItemParticipantClassName={transcriptItemParticipantClassName}
+                transcriptActionClassName={transcriptActionClassName}
+                className={styles.transcriptContainer}
+                textAreaComponent={TextArea}
+                EditButtonContainer={EditButtonContainer}
+                editButtonOnSubmit={editButtonOnSubmit}
+                onStopButtonClicked={onStopButtonClicked}
+                FeedbackButtonsContainer={FeedbackButtonsContainer}
+                feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                copyButtonOnSubmit={copyButtonOnSubmit}
+                submitButtonComponent={SubmitButton}
+                stopButtonComponent={StopButton}
+                chatInputClassName={chatInputClassName}
+            />
 
             <form className={classNames(styles.inputRow, inputRowClassName)}>
                 {suggestions !== undefined && suggestions.length !== 0 && SuggestionButton ? (

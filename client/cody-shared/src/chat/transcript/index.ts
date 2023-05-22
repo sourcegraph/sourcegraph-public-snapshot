@@ -99,19 +99,35 @@ export class Transcript {
         })
     }
 
-    public addErrorAsAssistantResponse(errorText: string): void {
+    private addAssistantResponseAnnotation(text: string, displayText: string, cssClass: string): void {
         const lastInteraction = this.getLastInteraction()
         if (!lastInteraction) {
             return
         }
-        // If assistant has responsed before, we will add the error message after it
+        // If assistant has responsed before, we will add the response annotation after it
         const lastAssistantMessage = lastInteraction.getAssistantMessage().displayText || ''
         lastInteraction.setAssistantMessage({
             speaker: 'assistant',
-            text: 'Failed to generate a response due to server error.',
+            text,
             displayText:
-                lastAssistantMessage + `<div class="cody-chat-error"><span>Request failed: </span>${errorText}</div>`,
+                lastAssistantMessage + `<div class="${cssClass}">${displayText}</div>`,
         })
+    }
+
+    public addErrorAsAssistantResponse(errorText: string): void {
+        this.addAssistantResponseAnnotation(
+            'Failed to generate a response due to server error.',
+            `<span>Request failed: </span>${errorText}`,
+            'cody-chat-error'
+        )
+    }
+
+    public addCancellationAsAssistantResponse(): void {
+        this.addAssistantResponseAnnotation(
+            'This response was canceled.',
+            '<span>Response canceled</span>',
+            'cody-chat-info'
+        )
     }
 
     private async getLastInteractionWithContextIndex(): Promise<number> {

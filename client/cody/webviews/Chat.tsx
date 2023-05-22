@@ -12,6 +12,7 @@ import {
     ChatUITextAreaProps,
     EditButtonProps,
     FeedbackButtonsProps,
+    StopButtonProps,
 } from '@sourcegraph/cody-ui/src/Chat'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
@@ -63,6 +64,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         [vscodeAPI]
     )
 
+    const onStopButtonClick = useCallback(
+        () => {
+            vscodeAPI.postMessage({ command: 'cancel' })
+        },
+        [vscodeAPI]
+    )
+
     const onFeedbackBtnClick = useCallback(
         (text: string) => {
             vscodeAPI.postMessage({ command: 'event', event: 'feedback', value: text })
@@ -91,6 +99,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             onSubmit={onSubmit}
             textAreaComponent={TextArea}
             submitButtonComponent={SubmitButton}
+            stopButtonComponent={StopButton}
             suggestionButtonComponent={SuggestionButton}
             fileLinkComponent={FileLink}
             className={styles.innerContainer}
@@ -104,6 +113,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             chatInputClassName={styles.chatInputClassName}
             EditButtonContainer={EditButton}
             editButtonOnSubmit={onEditBtnClick}
+            onStopButtonClicked={onStopButtonClick}
             FeedbackButtonsContainer={FeedbackButtons}
             feedbackButtonsOnSubmit={onFeedbackBtnClick}
             copyButtonOnSubmit={onCopyBtnClick}
@@ -206,6 +216,17 @@ const EditButton: React.FunctionComponent<EditButtonProps> = ({
             <i className={messageBeingEdited ? 'codicon codicon-close' : 'codicon codicon-edit'} />
         </VSCodeButton>
     </div>
+)
+
+const StopButton: React.FunctionComponent<StopButtonProps> = ({ onClick }) => (
+    <VSCodeButton
+        className={classNames(styles.stopButton)}
+        appearance="icon"
+        type="button"
+        onClick={onClick}
+    >
+        <i className="codicon codicon-stop-circle" />
+    </VSCodeButton>
 )
 
 const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ className, feedbackButtonsOnSubmit }) => {

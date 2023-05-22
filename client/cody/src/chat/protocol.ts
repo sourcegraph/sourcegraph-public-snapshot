@@ -14,6 +14,7 @@ export type WebviewMessage =
       }
     | { command: 'event'; event: string; value: string }
     | { command: 'submit'; text: string; submitType: 'user' | 'suggestion' }
+    | { command: 'cancel' }
     | { command: 'executeRecipe'; recipe: RecipeID }
     | { command: 'settings'; serverEndpoint: string; accessToken: string }
     | { command: 'removeToken' }

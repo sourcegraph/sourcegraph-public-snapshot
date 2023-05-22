@@ -10,6 +10,7 @@ import {
     ChatUITextAreaProps,
     EditButtonProps,
     FeedbackButtonsProps,
+    StopButtonProps,
 } from '@sourcegraph/cody-ui/src/Chat'
 import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
 import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
@@ -31,6 +32,7 @@ export const ChatUI = (): JSX.Element => {
     const {
         submitMessage,
         editMessage,
+        stopMessageInProgress,
         messageInProgress,
         transcript,
         getChatContext,
@@ -63,6 +65,7 @@ export const ChatUI = (): JSX.Element => {
             onSubmit={submitMessage}
             contextStatus={getChatContext()}
             submitButtonComponent={SubmitButton}
+            stopButtonComponent={StopButton}
             fileLinkComponent={FileLink}
             className={styles.container}
             afterTips={CODY_TERMS_MARKDOWN}
@@ -73,6 +76,7 @@ export const ChatUI = (): JSX.Element => {
             chatInputClassName={styles.chatInput}
             EditButtonContainer={EditButton}
             editButtonOnSubmit={editMessage}
+            onStopButtonClicked={stopMessageInProgress}
             textAreaComponent={AutoResizableTextArea}
             codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
             transcriptActionClassName={styles.transcriptAction}
@@ -156,6 +160,13 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ feedba
 export const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ className, disabled, onClick }) => (
     <button className={classNames(className, styles.submitButton)} type="submit" disabled={disabled} onClick={onClick}>
         <Icon aria-label="Submit" svgPath={mdiSend} />
+    </button>
+)
+
+// TODO(beyang): go back and edit
+export const StopButton: React.FunctionComponent<StopButtonProps> = ({ onClick }) => (
+    <button onClick={onClick}>
+        <i className="codicon codicon-stop-circle" />
     </button>
 )
 

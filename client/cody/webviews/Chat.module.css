@@ -84,6 +84,10 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     border-radius: 0.5rem;
 }
 
+.stop-button {
+    color: var(--vscode-descriptionForeground)
+}
+
 .suggestion-button {
     border-radius: 1rem;
     font-size: 0.7rem;

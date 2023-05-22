@@ -219,6 +219,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             case 'submit':
                 await this.onHumanMessageSubmitted(message.text, message.submitType)
                 break
+            case 'cancel':
+                this.cancelCompletion()
+                this.isMessageInProgress = false
+                this.sendTranscript()
+                break
             case 'edit':
                 this.transcript.removeLastInteraction()
                 await this.onHumanMessageSubmitted(message.text, 'user')
@@ -303,14 +308,20 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             onTurnComplete: async () => {
                 const lastInteraction = this.transcript.getLastInteraction()
                 if (lastInteraction) {
+                    const startTime = new Date().getTime()
                     const displayText = reformatBotMessage(text, responsePrefix)
+                    debug('ChatViewProvider:sendPrompt:onTurnComplete', 'reformatBotMessage done', (new Date().getTime() - startTime))
                     let { text: highlightedDisplayText } = await highlightTokens(displayText || '', filesExist)
+                    debug('ChatViewProvider:sendPrompt:onTurnComplete', 'highlightTokens done', (new Date().getTime() - startTime))
                     if (this.config.experimentalGuardrails) {
                         // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
                         highlightedDisplayText = await annotateAttribution(this.guardrails, highlightedDisplayText)
+                        debug('ChatViewProvider:sendPrompt:onTurnComplete', 'guardrails done', (new Date().getTime() - startTime))
                     }
                     this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
                     this.editor.controller.reply(highlightedDisplayText)
+                    // this.transcript.addAssistantResponse(text, text)
+                    // this.editor.controller.reply(text)
                 }
                 void this.onCompletionEnd()
             },
@@ -318,7 +329,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         let textConsumed = 0
 
-        this.cancelCompletionCallback = this.chat.chat(promptMessages, {
+        let isCancelled = false
+        const cancel = this.chat.chat(promptMessages, {
             onChange: text => {
                 // TODO(dpc): The multiplexer can handle incremental text. Change chat to provide incremental text.
                 text = text.slice(textConsumed)
@@ -329,8 +341,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 void this.multiplexer.notifyTurnComplete()
             },
             onError: (err, statusCode) => {
-                // Display error message as assistant response
-                this.transcript.addErrorAsAssistantResponse(err)
+                if (isCancelled) {
+                    this.transcript.addCancellationAsAssistantResponse()
+                } else {
+                    // Display error message as assistant response
+                    this.transcript.addErrorAsAssistantResponse(err)
+                }
                 // Log users out on unauth error
                 if (statusCode && statusCode >= 400 && statusCode <= 410) {
                     if (statusCode === 403) {
@@ -354,6 +370,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 console.error(`Completion request failed: ${err}`)
             },
         })
+        this.cancelCompletionCallback = () => {
+            isCancelled = true
+            cancel()
+        }
     }
 
     private cancelCompletion(): void {

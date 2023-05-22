@@ -10,6 +10,7 @@ import {
     FeedbackButtonsProps,
     CopyButtonProps,
     ChatUISubmitButtonProps,
+    StopButtonProps,
 } from '../Chat'
 import { CodySvg } from '../utils/icons'
 
@@ -44,12 +45,14 @@ export const TranscriptItem: React.FunctionComponent<
         textAreaComponent?: React.FunctionComponent<ChatUITextAreaProps>
         EditButtonContainer?: React.FunctionComponent<EditButtonProps>
         editButtonOnSubmit?: (text: string) => void
+        onStopButtonClicked?: () => void,
         showEditButton: boolean
         FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
         showFeedbackButtons: boolean
         copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
         submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
+        stopButtonComponent?: React.FunctionComponent<StopButtonProps>
     } & TranscriptItemClassNames
 > = ({
     message,
@@ -65,12 +68,14 @@ export const TranscriptItem: React.FunctionComponent<
     textAreaComponent: TextArea,
     EditButtonContainer,
     editButtonOnSubmit,
+    onStopButtonClicked,
     showEditButton,
     FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
     showFeedbackButtons,
     copyButtonOnSubmit,
     submitButtonComponent: SubmitButton,
+    stopButtonComponent: StopButton,
     chatInputClassName,
 }) => {
     const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
@@ -125,6 +130,11 @@ export const TranscriptItem: React.FunctionComponent<
                     {message.speaker === 'assistant' ? (
                         <>
                             <CodySvg className={styles.participantAvatar} /> Cody
+                            {inProgress && StopButton && onStopButtonClicked &&
+                                <StopButton onClick={() => {
+                                    onStopButtonClicked()
+                                }} />
+                            }
                         </>
                     ) : (
                         'Me'

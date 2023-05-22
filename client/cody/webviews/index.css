@@ -48,3 +48,13 @@ a:hover {
 .cody-chat-error > span {
     font-weight: bold;
 }
+
+.cody-chat-info {
+    color: var(--vscode-input-foreground);
+    background-color: var(--vscode-sideBar-background);
+    padding: 0.5rem;
+}
+
+.cody-chat-info > span {
+    font-weight: bold;
+}

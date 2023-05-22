@@ -35,6 +35,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [suggestions, setSuggestions] = useState<string[] | undefined>()
     const [isAppInstalled, setIsAppInstalled] = useState<boolean>(false)
 
+    // MARK
     useEffect(() => {
         vscodeAPI.onMessage(message => {
             switch (message.type) {

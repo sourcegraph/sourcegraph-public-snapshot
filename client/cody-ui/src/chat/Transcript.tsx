@@ -10,6 +10,7 @@ import {
     FeedbackButtonsProps,
     CopyButtonProps,
     ChatUISubmitButtonProps,
+    StopButtonProps,
 } from '../Chat'
 
 import { FileLinkProps } from './ContextFiles'
@@ -28,10 +29,12 @@ export const Transcript: React.FunctionComponent<
         textAreaComponent?: React.FunctionComponent<ChatUITextAreaProps>
         EditButtonContainer?: React.FunctionComponent<EditButtonProps>
         editButtonOnSubmit?: (text: string) => void
+        onStopButtonClicked?: () => void
         FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
         copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
         submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
+        stopButtonComponent?: React.FunctionComponent<StopButtonProps>
     } & TranscriptItemClassNames
 > = ({
     transcript,
@@ -48,10 +51,12 @@ export const Transcript: React.FunctionComponent<
     textAreaComponent,
     EditButtonContainer,
     editButtonOnSubmit,
+    onStopButtonClicked,
     FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
     submitButtonComponent,
+    stopButtonComponent,
     chatInputClassName,
 }) => {
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
@@ -132,7 +137,9 @@ export const Transcript: React.FunctionComponent<
                     showFeedbackButtons={false}
                     copyButtonOnSubmit={copyButtonOnSubmit}
                     submitButtonComponent={submitButtonComponent}
+                    stopButtonComponent={stopButtonComponent}
                     chatInputClassName={chatInputClassName}
+                    onStopButtonClicked={onStopButtonClicked}
                 />
             )}
         </div>
