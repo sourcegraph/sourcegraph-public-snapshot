@@ -43,7 +43,7 @@ upload_dist() {
     mv -vf "${from}" "${target_dir}/"
   done
 
-  src=$(find "${path}" -type f "*.sig")
+  src=$(find "${path}" -type f -name "*.sig")
   target_dir="${target_dir}/sigs"
   mkdir -p ${target_dir}
   for from in ${src}; do
@@ -82,7 +82,7 @@ create_app_archive() {
     echo "--- :file_cabinet: Creating archive ${target}"
     tar -czvf "${target}" "Sourcegraph.app"
     popd
-  else
+  elif [[ -e ${app_tar_gz} ]]; then
     echo "--- :file_cabinet: Moving existing archive to ${target}"
     mv -vf "${app_tar_gz}" "$(dirname ${app_tar_gz})/${target}"
   fi
