@@ -52,7 +52,7 @@ const CodySurveyToastInner: React.FC<{ onSubmitEnd: () => void }> = ({ onSubmitE
             // eslint-disable-next-line no-console
             submitCodySurvey().catch(console.error).finally(onSubmitEnd)
         },
-        [onSubmitEnd, submitCodySurvey]
+        [isCodyForPersonalStuff, isCodyForWork, onSubmitEnd, submitCodySurvey]
     )
 
     return (
