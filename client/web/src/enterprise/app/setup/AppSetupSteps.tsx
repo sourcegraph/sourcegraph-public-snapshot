@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { H1, H2, H3, Text, Link, Button, Icon } from '@sourcegraph/wildcard'
 
-import { tauriShellOpen } from '../../../api/utils'
+import { tauriShellOpen } from '../../../api/tauriUtils'
 import { EnterprisePageRoutes } from '../../../routes.constants'
 import { SetupStepsContext } from '../../../setup-wizard/components'
 import { LocalRepositoriesWidget, PathsPickerActions } from '../settings/local-repositories/LocalRepositoriesTab'
