@@ -66,7 +66,7 @@ export class CopyableText extends React.PureComponent<Props, State> {
                         readOnly={true}
                         onClick={this.onClickInput}
                     />
-                    <div className="input-group-append">
+                    <div className="input-group-append flex-shrink-0">
                         <Button
                             onClick={this.onClickButton}
                             disabled={this.state.copied}
@@ -78,7 +78,7 @@ export class CopyableText extends React.PureComponent<Props, State> {
                         </Button>
                     </div>
                     {this.props.secret && (
-                        <div className="input-group-append">
+                        <div className="input-group-append flex-shrink-0">
                             <Button
                                 onClick={this.onClickSecretButton}
                                 variant="secondary"

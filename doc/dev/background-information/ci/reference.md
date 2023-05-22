@@ -27,7 +27,7 @@ The default run type.
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
-  - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
+  - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit, integration, and E2E tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
   - **Pipeline setup**: Trigger async
 
 - Pipeline for `GraphQL` changes:
@@ -35,7 +35,7 @@ The default run type.
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
-  - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
+  - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit, integration, and E2E tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
 
 - Pipeline for `DatabaseSchema` changes:
   - **Metadata**: Pipeline metadata
@@ -132,7 +132,7 @@ sg ci build wolfi
 Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
-- **Wolfi image builds**: Build Wolfi-based batcheshelper, Build Wolfi-based blobstore, Build Wolfi-based cadvisor, Build Wolfi-based codeinsights-db, Build Wolfi-based codeintel-db, Build Wolfi-based embeddings, Build Wolfi-based executor-kubernetes, Build Wolfi-based frontend, Build Wolfi-based github-proxy, Build Wolfi-based gitserver, Build Wolfi-based indexed-searcher, Build Wolfi-based jaeger-agent, Build Wolfi-based jaeger-all-in-one, Build Wolfi-based llm-proxy, Build Wolfi-based loadtest, Build Wolfi-based migrator, Build Wolfi-based node-exporter, Build Wolfi-based opentelemetry-collector, Build Wolfi-based postgres-12-alpine, Build Wolfi-based postgres_exporter, Build Wolfi-based precise-code-intel-worker, Build Wolfi-based prometheus, Build Wolfi-based prometheus-gcp, Build Wolfi-based redis-cache, Build Wolfi-based redis-store, Build Wolfi-based redis_exporter, Build Wolfi-based repo-updater, Build Wolfi-based search-indexer, Build Wolfi-based searcher, Build Wolfi-based server, Build Wolfi-based sg, Build Wolfi-based symbols, Build Wolfi-based syntax-highlighter, Build Wolfi-based worker
+- **Wolfi image builds**: Build Wolfi-based batcheshelper, Build Wolfi-based blobstore, Build Wolfi-based bundled-executor, Build Wolfi-based cadvisor, Build Wolfi-based codeinsights-db, Build Wolfi-based codeintel-db, Build Wolfi-based embeddings, Build Wolfi-based executor, Build Wolfi-based executor-kubernetes, Build Wolfi-based frontend, Build Wolfi-based github-proxy, Build Wolfi-based gitserver, Build Wolfi-based indexed-searcher, Build Wolfi-based jaeger-agent, Build Wolfi-based jaeger-all-in-one, Build Wolfi-based llm-proxy, Build Wolfi-based loadtest, Build Wolfi-based migrator, Build Wolfi-based node-exporter, Build Wolfi-based opentelemetry-collector, Build Wolfi-based postgres-12-alpine, Build Wolfi-based postgres_exporter, Build Wolfi-based precise-code-intel-worker, Build Wolfi-based prometheus, Build Wolfi-based prometheus-gcp, Build Wolfi-based redis-cache, Build Wolfi-based redis-store, Build Wolfi-based redis_exporter, Build Wolfi-based repo-updater, Build Wolfi-based search-indexer, Build Wolfi-based searcher, Build Wolfi-based server, Build Wolfi-based sg, Build Wolfi-based symbols, Build Wolfi-based syntax-highlighter, Build Wolfi-based worker
 
 ### Release branch nightly healthcheck build
 
@@ -199,7 +199,7 @@ Base pipeline (more steps might be included based on branch changes):
 - Tests
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
-- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
+- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit, integration, and E2E tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
 - **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Upgrade
 - **Publish images**: symbols, server, executor, alpine-3.14, postgres-12-alpine, blobstore, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, migrator, node-exporter, opentelemetry-collector, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, syntax-highlighter, worker, batcheshelper, blobstore2, bundled-executor, dind, embeddings, executor-kubernetes, executor-vm, jaeger-agent, jaeger-all-in-one, llm-proxy, sg, Publish executor image, Publish executor binary, Publish docker registry mirror image
@@ -218,7 +218,7 @@ Base pipeline (more steps might be included based on branch changes):
 - Tests
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
-- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
+- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit, integration, and E2E tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
 - **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Upgrade
 - **Publish images**: symbols, server, executor, alpine-3.14, postgres-12-alpine, blobstore, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, migrator, node-exporter, opentelemetry-collector, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, syntax-highlighter, worker, batcheshelper, blobstore2, bundled-executor, dind, embeddings, executor-kubernetes, executor-vm, jaeger-agent, jaeger-all-in-one, llm-proxy, sg
@@ -261,7 +261,7 @@ Base pipeline (more steps might be included based on branch changes):
 - ESLint (all)
 - ESLint (web)
 - Stylelint (all)
-- Integration tests for the Cody VS Code extension
+- Unit, integration, and E2E tests for the Cody VS Code extension
 - Cody release
 
 ### Main branch
@@ -278,7 +278,7 @@ Base pipeline (more steps might be included based on branch changes):
 - Tests
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
-- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
+- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit, integration, and E2E tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
 - **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Upgrade
 - **Publish images**: symbols, server, executor, alpine-3.14, postgres-12-alpine, blobstore, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, migrator, node-exporter, opentelemetry-collector, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, syntax-highlighter, worker, batcheshelper, blobstore2, bundled-executor, dind, embeddings, executor-kubernetes, executor-vm, jaeger-agent, jaeger-all-in-one, llm-proxy, sg, Publish executor image, Publish executor binary
@@ -302,7 +302,7 @@ Base pipeline (more steps might be included based on branch changes):
 - Tests
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
-- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Integration tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
+- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit, integration, and E2E tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
 - **End-to-end tests**: Executors E2E, Sourcegraph E2E, Sourcegraph Upgrade
 - **Publish images**: symbols, server, executor, alpine-3.14, postgres-12-alpine, blobstore, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, migrator, node-exporter, opentelemetry-collector, postgres_exporter, precise-code-intel-worker, prometheus, prometheus-gcp, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, syntax-highlighter, worker, batcheshelper, blobstore2, bundled-executor, dind, embeddings, executor-kubernetes, executor-vm, jaeger-agent, jaeger-all-in-one, llm-proxy, sg

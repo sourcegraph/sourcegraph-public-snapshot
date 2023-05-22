@@ -3287,6 +3287,7 @@ Referenced by:
     TABLE "lsif_index_configuration" CONSTRAINT "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "lsif_retention_configuration" CONSTRAINT "lsif_retention_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "permission_sync_jobs" CONSTRAINT "permission_sync_jobs_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "repo_commits_changelists" CONSTRAINT "repo_commits_changelists_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "repo_kvps" CONSTRAINT "repo_kvps_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "repo_paths" CONSTRAINT "repo_paths_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
@@ -3302,6 +3303,23 @@ Triggers:
     trig_recalc_repo_statistics_on_repo_insert AFTER INSERT ON repo REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_insert()
     trig_recalc_repo_statistics_on_repo_update AFTER UPDATE ON repo REFERENCING OLD TABLE AS oldtab NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_update()
     trigger_gitserver_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_gitserver_repo()
+
+```
+
+# Table "public.repo_commits_changelists"
+```
+         Column         |           Type           | Collation | Nullable |                       Default                        
+------------------------+--------------------------+-----------+----------+------------------------------------------------------
+ id                     | integer                  |           | not null | nextval('repo_commits_changelists_id_seq'::regclass)
+ repo_id                | integer                  |           | not null | 
+ commit_sha             | bytea                    |           | not null | 
+ perforce_changelist_id | integer                  |           | not null | 
+ created_at             | timestamp with time zone |           | not null | now()
+Indexes:
+    "repo_commits_changelists_pkey" PRIMARY KEY, btree (id)
+    "repo_id_perforce_changelist_id_unique" UNIQUE, btree (repo_id, perforce_changelist_id)
+Foreign-key constraints:
+    "repo_commits_changelists_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 

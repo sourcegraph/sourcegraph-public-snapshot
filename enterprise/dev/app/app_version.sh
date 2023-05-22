@@ -21,7 +21,10 @@ create_version() {
 if [[ ${CI:-""} == "true" ]]; then
   version=${VERSION:-$(create_version)}
 else
-  version=${VERSION:-"0.0.0+dev"}
+  # This CANNOT be 0.0.0+dev, or else the binary will not start:
+  # https://github.com/sourcegraph/sourcegraph/issues/50958
+  # Note this also must be > any OOB migration version so that they run.
+  version=${VERSION:-"2023.0.0+dev"}
 fi
 
 echo "${version}"
