@@ -131,7 +131,7 @@ If that fails, then that points to the Sourcegraph setup or infrastructure as a 
 
 If executing the `steps.run` command fails, you can try to recreate whether executing the step manually in a container works.
 
-An approximiation of what `src` does under the hood is the following command:
+An approximation of what `src` does under the hood is the following command:
 
 ```
 docker run --rm --init --workdir /work \

@@ -80,7 +80,7 @@ You can use the filter `allowSignup`, available in the builtin configuration, to
 
   When not set, it will default to `false` -- in this case, users will see request account link. Unauthenticated users can submit request account forms and admins will get notification on the instance which they can approve or reject. Account request feature can be disabled by setting `auth.accessRequest: {enabled: false}`, and in this case new user accounts should be created by the site admin manually.
 
-  If you choose to block sign-ups by using the `allowSignup` filter avaliable in another auth provider (eg., [GitHub](#how-to-control-user-sign-up-and-sign-in-with-github-auth-provider) or [GiLab](#how-to-control-user-sign-up-and-sign-in-with-gitlab-auth-provider)), make sure this builtin filter is removed or set to `false`. Otherwise, users will have a way to bypass the restriction.
+  If you choose to block sign-ups by using the `allowSignup` filter available in another auth provider (eg., [GitHub](#how-to-control-user-sign-up-and-sign-in-with-github-auth-provider) or [GitLab](#how-to-control-user-sign-up-and-sign-in-with-gitlab-auth-provider)), make sure this builtin filter is removed or set to `false`. Otherwise, users will have a way to bypass the restriction.
 
   During the initial setup, the builtin sign-up will be available for the first user so they can create an account and become admin.
 
@@ -204,7 +204,7 @@ The new user email, during their account creation, should match one of their Git
 
 Restricts sign-ins to members of the listed organizations. If empty or unset, no restriction will be applied.
 
-If combined with `"allowSignup": true`, only membrers of the allowed orgs can create their accounts in Sourcegraph via GitHub authentitcation.
+If combined with `"allowSignup": true`, only members of the allowed orgs can create their accounts in Sourcegraph via GitHub authentitcation.
 
 When combined with `"allowSignup": false` or unset, an admin should first create the user account so that the user can sign in with GitHub if they belong to the allowed orgs.
 
@@ -423,7 +423,7 @@ See the [`openid` auth provider documentation](../config/site_config.md#openid-c
 **allowSignup**
 
   If true or not set, it allows new users to creating their Sourcegraph accounts via OpenID.
-  When `false`, sing-up won't be available and a site admin should create new users accounts.
+  When `false`, sign-up won't be available and a site admin should create new users accounts.
 
   ```json
     {

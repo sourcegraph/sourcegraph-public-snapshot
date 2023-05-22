@@ -31,7 +31,7 @@ You can also search across multiple contexts at once using the `OR` [boolean ope
 
 `(context:release1 OR context:release2 OR context:release3) someTerribleBug` 
 
-## Organzing search contexts
+## Organizing search contexts
 
 To organize your search contexts better, you can use a specific context as your default and star any number of contexts. This affects what context is selected when loading Sourcegraph and how the list of contexts is sorted.
 
