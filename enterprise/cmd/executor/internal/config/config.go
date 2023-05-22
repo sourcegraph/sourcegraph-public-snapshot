@@ -182,9 +182,9 @@ func getKubeConfigPath() string {
 
 func (c *Config) Validate() error {
 	if c.QueueName == "" && c.QueueNames == "" {
-		c.AddError(errors.New("One of EXECUTOR_QUEUE_NAME and EXECUTOR_QUEUE_NAMES should be set"))
+		c.AddError(errors.New("Neither EXECUTOR_QUEUE_NAME or EXECUTOR_QUEUE_NAMES is set"))
 	} else if c.QueueName != "" && c.QueueNames != "" {
-		c.AddError(errors.New("Only one of EXECUTOR_QUEUE_NAME and EXECUTOR_QUEUE_NAMES should be set"))
+		c.AddError(errors.New("Both EXECUTOR_QUEUE_NAME and EXECUTOR_QUEUE_NAMES are set"))
 	} else if c.QueueName != "" && c.QueueName != "batches" && c.QueueName != "codeintel" {
 		c.AddError(errors.New("EXECUTOR_QUEUE_NAME must be set to 'batches' or 'codeintel'"))
 	} else {
