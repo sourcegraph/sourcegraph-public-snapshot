@@ -277,7 +277,16 @@ func (c *Client) CanceledJobs(ctx context.Context, knownIDs []int) (canceledIDs 
 }
 
 func (c *Client) Ping(ctx context.Context) (err error) {
-	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", c.options.QueueName), types.HeartbeatRequest{
+	// TODO: temp solution to allow multi-queue executor to start up before heartbeats are implemented.
+	// Simply pick the first queue name when multiple are configured
+	var queue string
+	if len(c.options.QueueNames) > 0 {
+		queue = c.options.QueueNames[0]
+	} else {
+		queue = c.options.QueueName
+	}
+
+	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", queue), types.HeartbeatRequest{
 		ExecutorName: c.options.ExecutorName,
 	})
 	if err != nil {
