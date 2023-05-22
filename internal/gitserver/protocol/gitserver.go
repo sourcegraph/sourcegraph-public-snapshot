@@ -363,6 +363,22 @@ type IsRepoCloneableResponse struct {
 	Reason    string // if not cloneable, the reason why not
 }
 
+func (i *IsRepoCloneableResponse) ToProto() *proto.IsRepoCloneableResponse {
+	return &proto.IsRepoCloneableResponse{
+		Cloneable: i.Cloneable,
+		Cloned:    i.Cloned,
+		Reason:    i.Reason,
+	}
+}
+
+func (i *IsRepoCloneableResponse) FromProto(p *proto.IsRepoCloneableResponse) {
+	*i = IsRepoCloneableResponse{
+		Cloneable: p.GetCloneable(),
+		Cloned:    p.GetCloned(),
+		Reason:    p.GetReason(),
+	}
+}
+
 // RepoDeleteRequest is a request to delete a repository clone on gitserver
 type RepoDeleteRequest struct {
 	// Repo is the repository to delete.
