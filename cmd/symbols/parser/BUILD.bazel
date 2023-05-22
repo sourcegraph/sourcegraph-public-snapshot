@@ -16,6 +16,7 @@ go_library(
         "//cmd/symbols/types",
         "//internal/conf",
         "//internal/conf/conftypes",
+        "//internal/ctags_config",
         "//internal/metrics",
         "//internal/observation",
         "//internal/search",
