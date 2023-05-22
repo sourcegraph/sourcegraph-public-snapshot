@@ -15,6 +15,8 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 export class ChatQuestion implements Recipe {
     public id: RecipeID = 'chat-question'
 
+    constructor(private debug: (filterLabel: string, text: string, ...args: unknown[]) => void) {}
+
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const truncatedText = truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS)
 
@@ -48,6 +50,7 @@ export class ChatQuestion implements Recipe {
         }
 
         const isCodebaseContextRequired = await intentDetector.isCodebaseContextRequired(text)
+        this.debug('ChatQuestion:getContextMessages', 'isCodebaseContextRequired', isCodebaseContextRequired)
         if (isCodebaseContextRequired) {
             const codebaseContextMessages = await codebaseContext.getContextMessages(text, {
                 numCodeResults: 12,
@@ -56,7 +59,9 @@ export class ChatQuestion implements Recipe {
             contextMessages.push(...codebaseContextMessages)
         }
 
-        if (isCodebaseContextRequired || intentDetector.isEditorContextRequired(text)) {
+        const isEditorContextRequired = intentDetector.isEditorContextRequired(text)
+        this.debug('ChatQuestion:getContextMessages', 'isEditorContextRequired', isEditorContextRequired)
+        if (isCodebaseContextRequired || isEditorContextRequired) {
             contextMessages.push(...ChatQuestion.getEditorContext(editor))
         }
 

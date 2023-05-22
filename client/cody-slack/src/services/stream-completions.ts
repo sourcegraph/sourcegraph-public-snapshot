@@ -35,7 +35,7 @@ function getCompletionsClient() {
     return new SourcegraphNodeCompletionsClient({
         serverEndpoint: DEFAULT_APP_SETTINGS.serverEndpoint,
         accessToken: SOURCEGRAPH_ACCESS_TOKEN,
-        debug: DEFAULT_APP_SETTINGS.debug === 'development',
+        debugEnable: DEFAULT_APP_SETTINGS.debug === 'development',
         customHeaders: {},
     })
 }
