@@ -12,6 +12,7 @@ import { CodyPageIcon } from '../../cody/chat/CodyPageIcon'
 import { useIsCodyEnabled } from '../../cody/useIsCodyEnabled'
 import { LoaderButton } from '../../components/LoaderButton'
 import { SubmitCodySurveyResult, SubmitCodySurveyVariables } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 import { resendVerificationEmail } from '../../user/settings/emails/UserEmail'
 
 const SUBMIT_CODY_SURVEY = gql`
@@ -45,6 +46,8 @@ const CodySurveyToastInner: React.FC<{ onSubmitEnd: () => void }> = ({ onSubmitE
 
     const handleSubmit = useCallback(
         (event: React.FormEvent<HTMLFormElement>) => {
+            const eventParams = { isCodyForPersonalStuff, isCodyForWork }
+            eventLogger.log('CodyUsageToastSubmitted', eventParams, eventParams)
             event.preventDefault()
             // eslint-disable-next-line no-console
             submitCodySurvey().catch(console.error).finally(onSubmitEnd)
@@ -180,15 +183,20 @@ export const CodySurveyToast: React.FC<{
     const { show, dismiss } = useCodySurveyToast()
     const codyEnabled = useIsCodyEnabled()
     const [showVerifyEmail, setShowVerifyEmail] = useState(show && codyEnabled.needsEmailVerification)
-    const dismissVerifyEmail = useCallback(() => setShowVerifyEmail(false), [setShowVerifyEmail])
+    const dismissVerifyEmail = useCallback(() => {
+        eventLogger.log('VerifyEmailToastDismissed')
+        setShowVerifyEmail(false)
+    }, [setShowVerifyEmail])
 
     if (!show) {
         return null
     }
 
     if (showVerifyEmail && authenticatedUser) {
+        eventLogger.log('VerifyEmailToastViewed')
         return <CodyVerifyEmailToast onNext={dismissVerifyEmail} authenticatedUser={authenticatedUser} />
     }
 
+    eventLogger.log('CodySurveyToastViewed')
     return <CodySurveyToastInner onSubmitEnd={dismiss} />
 }
