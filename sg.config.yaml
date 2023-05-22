@@ -674,6 +674,15 @@ commands:
       EXECUTOR_USE_FIRECRACKER: true
       EXECUTOR_QUEUE_NAME: batches
 
+  multiqueue-executor:
+    <<: *executor_template
+    cmd: |
+      env TMPDIR="$HOME/.sourcegraph/multiqueue-executor-temp" .bin/executor
+    env:
+      EXECUTOR_QUEUE_NAME: ""
+      EXECUTOR_QUEUE_NAMES: "batches,codeintel"
+      EXECUTOR_MAXIMUM_NUM_JOBS: 8
+
   blobstore:
     cmd: .bin/blobstore
     install: |
