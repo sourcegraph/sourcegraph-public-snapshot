@@ -1,4 +1,5 @@
-{ pkgsStatic
+{ pkgs
+, pkgsStatic
 , lib
 , stdenv
 , fetchzip
@@ -10,7 +11,7 @@
 , targetPlatform
 }:
 let
-  inherit (import ./util.nix { inherit lib; }) mkStatic;
+  inherit (import ./util.nix { inherit lib; }) mkStatic unNixifyDylibs;
   http-parser-static = ((mkStatic pkgsStatic.http-parser).overrideAttrs (oldAttrs: {
     # http-parser makefile is a bit incomplete, so fill in the gaps here
     # to move the static object and header files to the right location
@@ -26,8 +27,10 @@ let
   libiconv-static = mkStatic pkgsStatic.libiconv;
   openssl-static = (mkStatic pkgsStatic.openssl).dev;
   pcre-static = (mkStatic pkgsStatic.pcre).dev;
+  # pkgsStatic.zlib.static doesn't exist on linux, but does on macos
+  zlib-static = (pkgsStatic.zlib.static or pkgsStatic.zlib);
 in
-pkgsStatic.gccStdenv.mkDerivation rec {
+unNixifyDylibs pkgs (pkgsStatic.gccStdenv.mkDerivation rec {
   name = "p4-fusion";
   version = "v1.12";
 
@@ -73,8 +76,8 @@ pkgsStatic.gccStdenv.mkDerivation rec {
     cmake
   ];
 
-  buildInputs = with pkgsStatic; [
-    zlib
+  buildInputs = [
+    zlib-static
     http-parser-static
     pcre-static
     openssl-static
@@ -120,4 +123,4 @@ pkgsStatic.gccStdenv.mkDerivation rec {
     platforms = [ "x86_64-darwin" "aarch64-darwin" "x86_64-linux" ];
     license = lib.licenses.bsd3;
   };
-}
+})

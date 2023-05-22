@@ -12,9 +12,9 @@ let
         };
       });
       sqlite = pkgsStatic.sqlite;
-      zlib = pkgsStatic.zlib;
-      # `static = true` from mkStatic is currently broken on macos, noah to
-      # fix upstream
+      # pkgsStatic.zlib.static doesn't exist on linux, but does on macos
+      zlib = pkgsStatic.zlib.static or pkgsStatic.zlib;
+      # `static = true` from mkStatic is currently broken on macos, noah to fix upstream
       libev = (mkStatic pkgsStatic.libev).override { static = false; };
       gmp = mkStatic pkgsStatic.gmp;
     });
