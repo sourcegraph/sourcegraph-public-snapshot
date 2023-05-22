@@ -9637,7 +9637,7 @@ extend type Query {
 }
 
 """
-A list of repo key-value pair metadata
+Repo metadata key or value connection result`
 """
 type RepoMetadataKeyOrValueConnection {
     """
@@ -9655,7 +9655,13 @@ type RepoMetadataKeyOrValueConnection {
     pageInfo: BidirectionalPageInfo!
 }
 
+"""
+Repo metadata key result
+"""
 type RepoMetadataKeyResult {
+    """
+    Returns paginated list of repo metadata distinct values matching a query
+    """
     values(
         query: String
         """
@@ -9668,7 +9674,13 @@ type RepoMetadataKeyResult {
     ): RepoMetadataKeyOrValueConnection!
 }
 
+"""
+Repo key-value pair metadata
+"""
 type RepoMetadata {
+    """
+    Returns paginated list of repo metadata distinct keys matching a query
+    """
     keys(
         query: String
         """
@@ -9680,10 +9692,16 @@ type RepoMetadata {
         before: String
     ): RepoMetadataKeyOrValueConnection!
 
+    """
+    Repo metadata key
+    """
     key(key: String!): RepoMetadataKeyResult
 }
 
 extend type Query {
+    """
+    Repository key-value pair metadata
+    """
     repoMeta: RepoMetadata
 }
 
