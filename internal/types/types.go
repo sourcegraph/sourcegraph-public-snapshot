@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
@@ -81,6 +82,15 @@ type Repo struct {
 	Blocked *RepoBlock `json:",omitempty"`
 	// KeyValuePairs is the set of key-value pairs associated with the repo
 	KeyValuePairs map[string]*string `json:",omitempty"`
+}
+
+// RepoCommit is a record of a repo and a corresponding commit.
+type RepoCommit struct {
+	ID                   int64
+	RepoID               api.RepoID
+	CommitSHA            dbutil.CommitBytea
+	PerforceChangelistID int64
+	CreatedAt            time.Time
 }
 
 // SearchedRepo is a collection of metadata about repos that is used to decorate search results
@@ -1991,3 +2001,8 @@ const (
 	AccessRequestStatusApproved AccessRequestStatus = "APPROVED"
 	AccessRequestStatusRejected AccessRequestStatus = "REJECTED"
 )
+
+type PerforceChangelist struct {
+	CommitSHA    api.CommitID
+	ChangelistID int64
+}
