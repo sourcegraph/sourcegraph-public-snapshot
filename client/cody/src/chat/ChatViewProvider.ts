@@ -307,7 +307,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                         highlightedDisplayText = await annotateAttribution(this.guardrails, highlightedDisplayText)
                     }
                     this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
-                    this.editor.controller.reply(highlightedDisplayText)
+                    this.editor.controllers.inline.reply(highlightedDisplayText)
                 }
                 void this.onCompletionEnd()
             },

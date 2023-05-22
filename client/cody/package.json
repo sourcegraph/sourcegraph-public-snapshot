@@ -90,9 +90,23 @@
           "id": "cody.chat",
           "name": "Chat",
           "visibility": "visible"
+        },
+        {
+          "id": "cody.tasks.view",
+          "name": "Fixups",
+          "when": "cody.task.view.enabled && cody.activated",
+          "icon": "cody.svg",
+          "contextualTitle": "Fixups Tasks"
         }
       ]
     },
+    "viewsWelcome": [
+      {
+        "view": "cody.tasks.view",
+        "contents": "No pending Cody Fixups.",
+        "when": "cody.task.view.enabled"
+      }
+    ],
     "commands": [
       {
         "command": "cody.recipe.explain-code",
@@ -188,7 +202,25 @@
         "command": "cody.guardrails.debug",
         "title": "Cody: Guardrails Debug Attribution",
         "enablement": "config.cody.debug && config.cody.experimental.guardrails && editorHasSelection"
-      }
+      },
+      {
+				"command": "cody.task.add",
+				"title": "Cody: Add a non-stop Cody task with highlighted code",
+        "icon": "resources/cody.png",
+        "enablement": "cody.task.view.enabled"
+			},
+      {
+				"command": "cody.task.open",
+				"title": "Cody: Go to task file",
+        "enablement": "cody.task.view.enabled",
+        "icon": "$(file-code)"
+			},
+      {
+				"command": "cody.task.reset",
+				"title": "Non-Stop Cody: Remove all tasks",
+        "enablement": "cody.task.view.enabled && !cody.task.view.isEmpty && !cody.task.running",
+        "icon": "$(trash)"
+			}
     ],
     "keybindings": [
       {
@@ -200,6 +232,12 @@
         "command": "cody.recipe.fixup",
         "key": "ctrl+alt+/",
         "mac": "ctrl+alt+/",
+        "when": "cody.activated && editorTextFocus && !editorReadonly"
+      },
+      {
+        "command": "cody.task.add",
+        "key": "ctrl+shift+v",
+        "mac": "shift+cmd+v",
         "when": "cody.activated && editorTextFocus && !editorReadonly"
       }
     ],
@@ -263,6 +301,14 @@
         {
           "command": "cody.comment.load",
           "when": "false"
+        },
+        {
+          "command": "cody.task.open",
+          "when": "false"
+        },
+        {
+          "command": "cody.task.reset",
+          "when": "false"
         }
       ],
       "editor/context": [
@@ -324,6 +370,19 @@
           "command": "cody.history",
           "when": "view == cody.chat && cody.activated",
           "group": "navigation@2"
+        },
+        {
+          "command": "cody.task.reset",
+          "when": "view == cody.tasks.view && cody.activated && !cody.task.view.isEmpty",
+          "group": "navigation"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "cody.task.add",
+          "when": "cody.activated",
+          "group": "navigation",
+          "visibility": "visible"
         }
       ],
       "comments/commentThread/context": [
@@ -412,6 +471,11 @@
         },
         "cody.experimental.guardrails": {
           "order": 8,
+          "type": "boolean",
+          "default": false
+        },
+        "cody.experimental.nonStop": {
+          "order": 9,
           "type": "boolean",
           "default": false
         },
