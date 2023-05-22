@@ -65,7 +65,7 @@ func TestConfig_Load(t *testing.T) {
 	assert.Equal(t, "EXECUTOR_FRONTEND_URL", cfg.FrontendURL)
 	assert.Equal(t, "EXECUTOR_FRONTEND_PASSWORD", cfg.FrontendAuthorizationToken)
 	assert.Equal(t, "EXECUTOR_QUEUE_NAME", cfg.QueueName)
-	assert.Equal(t, "EXECUTOR_QUEUE_NAMES", cfg.QueueNames)
+	assert.Equal(t, "EXECUTOR_QUEUE_NAMES", cfg.QueueNamesStr)
 	assert.Equal(t, 10*time.Second, cfg.QueuePollInterval)
 	assert.Equal(t, 10, cfg.MaximumNumJobs)
 	assert.True(t, cfg.UseFirecracker)
@@ -151,7 +151,7 @@ func TestConfig_Load_Defaults(t *testing.T) {
 	assert.Empty(t, cfg.FrontendURL)
 	assert.Empty(t, cfg.FrontendAuthorizationToken)
 	assert.Empty(t, cfg.QueueName)
-	assert.Empty(t, cfg.QueueNames)
+	assert.Empty(t, cfg.QueueNamesStr)
 	assert.Equal(t, time.Second, cfg.QueuePollInterval)
 	assert.Equal(t, 1, cfg.MaximumNumJobs)
 	assert.Equal(t, "sourcegraph/executor-vm:insiders", cfg.FirecrackerImage)
@@ -213,7 +213,7 @@ func TestConfig_Validate(t *testing.T) {
 		},
 		{
 			name:        "Default config",
-			expectedErr: errors.New("4 errors occurred:\n\t* invalid value \"\" for EXECUTOR_FRONTEND_URL: no value supplied\n\t* invalid value \"\" for EXECUTOR_FRONTEND_PASSWORD: no value supplied\n\t* invalid value \"\" for EXECUTOR_QUEUE_NAME: no value supplied\n\t* EXECUTOR_FRONTEND_URL must be in the format scheme://host (and optionally :port)"),
+			expectedErr: errors.New("4 errors occurred:\n\t* invalid value \"\" for EXECUTOR_FRONTEND_URL: no value supplied\n\t* invalid value \"\" for EXECUTOR_FRONTEND_PASSWORD: no value supplied\n\t* neither EXECUTOR_QUEUE_NAME or EXECUTOR_QUEUE_NAMES is set\n\t* EXECUTOR_FRONTEND_URL must be in the format scheme://host (and optionally :port)"),
 		},
 		{
 			name: "Invalid EXECUTOR_DOCKER_AUTH_CONFIG",
@@ -265,10 +265,10 @@ func TestConfig_Validate(t *testing.T) {
 					return defaultValue
 				}
 			},
-			expectedErr: errors.New("Only one of EXECUTOR_QUEUE_NAME and EXECUTOR_QUEUE_NAMES should be set"),
+			expectedErr: errors.New("both EXECUTOR_QUEUE_NAME and EXECUTOR_QUEUE_NAMES are set"),
 		},
 		{
-			name: "Neither of EXECUTOR_QUEUE_NAME and EXECUTOR_QUEUE_NAMES defined",
+			name: "Neither EXECUTOR_QUEUE_NAME or EXECUTOR_QUEUE_NAMES defined",
 			getterFunc: func(name string, defaultValue, description string) string {
 				switch name {
 				case "EXECUTOR_FRONTEND_URL":
@@ -279,7 +279,7 @@ func TestConfig_Validate(t *testing.T) {
 					return defaultValue
 				}
 			},
-			expectedErr: errors.New("One of EXECUTOR_QUEUE_NAME and EXECUTOR_QUEUE_NAMES should be set"),
+			expectedErr: errors.New("neither EXECUTOR_QUEUE_NAME or EXECUTOR_QUEUE_NAMES is set"),
 		},
 		{
 			name: "EXECUTOR_QUEUE_NAMES using incorrect separator",
