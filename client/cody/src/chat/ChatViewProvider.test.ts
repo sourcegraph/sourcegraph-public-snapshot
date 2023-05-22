@@ -1,6 +1,12 @@
 import { convertGitCloneURLToCodebaseName } from './ChatViewProvider'
 
 describe('convertGitCloneURLToCodebaseName', () => {
+    jest.mock('vscode', () => ({
+        window: {
+            createOutputChannel: () => {},
+        },
+    }))
+
     test('converts GitHub SSH URL', () => {
         expect(convertGitCloneURLToCodebaseName('git@github.com:sourcegraph/sourcegraph.git')).toEqual(
             'github.com/sourcegraph/sourcegraph'
