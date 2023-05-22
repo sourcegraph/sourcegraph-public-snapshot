@@ -159,9 +159,9 @@ function run_server_image() {
   local image_name
   image_name="$2"
   local url
-  url="$2"
+  url="$3"
   local port
-  port="$3"
+  port="$4"
 
   must_be_CI
   must_not_be_running "$url"
