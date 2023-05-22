@@ -127,7 +127,7 @@ enum OwnershipReasonType {
 """
 A union of all the different ownership reasons.
 """
-union OwnershipReason = CodeownersFileEntry | RecentContributorOwnershipSignal | RecentViewOwnershipSignal
+union OwnershipReason = CodeownersFileEntry | RecentContributorOwnershipSignal | RecentViewOwnershipSignal | AssignedOwner
 
 """
 A signal derived from recent code contributors.
@@ -161,6 +161,21 @@ type RecentViewOwnershipSignal {
 
 """
 The entity is an owner because they were mentioned on a codeowners file.
+"""
+type AssignedOwner {
+    """
+    Descriptive title to display in the UI for the determination.
+    """
+    title: String!
+
+    """
+    More detailed description to display in the UI for the determination.
+    """
+    description: String!
+}
+
+"""
+The entity is an owner because they were manually assigned as an owner.
 """
 type CodeownersFileEntry {
     """
