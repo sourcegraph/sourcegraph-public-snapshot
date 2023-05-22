@@ -978,7 +978,7 @@ When all pods have restarted and show as Running, you can browse to your Sourceg
     ✅ Schema migrations complete
     ```
 
-    You can learn more about running migrator operations in helm in the [migrator operations doc](../../how-to/manual_database_migrations.md#helm-kubernetes).
+    You can learn more about running migrator operations in helm in the [migrator operations doc](../../updates/migrator/migrator-operations.md#kubernetes-helm).
 4. **Upgrade your instance via `helm upgrade`**
   - Now that the databases have been migrated to the latest versions, services can be scaled up and upgrade via the [standard procedure](#standard-upgrades). For example:
     ```

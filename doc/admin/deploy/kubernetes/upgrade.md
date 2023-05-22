@@ -10,8 +10,6 @@ This guide is **not for use with Helm**. Please refer to the [Upgrading Sourcegr
 > 
 >   - *This guide assumes you have created a `release` branch following the [reference repositories docs](../repositories.md)*
 > 
->   - *Due to limitations with the Kustomize deployment method introduced in Sourcegraph 4.5.0, **multi-version upgrades (e.g. 4.2.0 -> 4.5.0) cannot be performed using the Kustomize deployment**. See our note on [using MVU to help migrate](#using-mvu-to-migrate-to-kustomize).*
-> 
 >   - ***please see our [cautionary note](../../updates/index.md#best-practices) on upgrades**, if you have any concerns about running a multiversion upgrade, please reach out to us at [support@sourcegraph.com](emailto:support@sourcegraph.com) for advisement.*
 
 ## Standard upgrades
@@ -120,11 +118,11 @@ For example, if you use [overlays to make changes to the manifests](https://gith
 
 ---
 
-## Multi-version upgrades (Legacy only)
+## Multi-version upgrades
 
 > **⚠️ Attention:** please see our [cautionary note](../../updates/index.md#best-practices) on upgrades, if you have any concerns about running a multiversion upgrade, please reach out to us at [support@sourcegraph.com](emailto:support@sourcegraph.com) for advisement.
 
-To perform a multi-version upgrade on a Sourcegraph instance running on our **kubernetes legacy** repo follow the procedure below:
+To perform a multi-version upgrade on a Sourcegraph instance running on our **kubernetes** repo follow the procedure below:
 
 1. **Check Upgrade Readiness**:
    - Check the [upgrade notes](../../updates/kubernetes.md#kubernetes-upgrade-notes) for the version range you're passing through.
@@ -150,31 +148,25 @@ To perform a multi-version upgrade on a Sourcegraph instance running on our **ku
     ```
 
 3. **Run Migrator with the `upgrade` command**:
-   - The following procedure describes running migrator in brief, for more detailed instructions and available command flags see our [migrator docs](../../how-to/manual_database_migrations.md#kubernetes).
-     1. In the [`configure/migrator/migrator.Job.yaml`](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/migrator/migrator.Job.yaml) manifest, set the `image:` to the **latest** release of `migrator`. **Example:**
-     ```yaml
-           - name: migrator
-        image: "index.docker.io/sourcegraph/migrator:5.0.3
-        args: ["up"]
-        env:
-     ```
-     > *Note: Always use the latest image version of migrator for migrator commands, except the startup command `up`*
-     2. In the [`configure/migrator/migrator.Job.yaml`](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/migrator/migrator.Job.yaml) manifest, set the `args:` value to `upgrade`. **Example:**
+   - The following procedure describes running migrator in brief, for more detailed instructions and available command flags see our [migrator docs](../../updates/migrator/migrator-operations.md#kubernetes-kustomize).
+     1. In the `configure/migrator/migrator.Job.yaml` manifest ([kustomize](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/migrator/migrator.Job.yaml) or [legacy](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/configure/migrator/migrator.Job.yaml)): 
+        - set the `image:` to the **latest** release of `migrator`
+        - set the `args:` value to `upgrade`. **Example:**
      ```yaml
            - name: migrator
         image: "index.docker.io/sourcegraph/migrator:5.0.3"
         args: ["upgrade", "--from=v3.41.0", "--to=v4.5.1"]
         env:
      ```
-     > *Note: you may add the `--dry-run` flag to the `command:` to test things out before altering the dbs*
-     3. Run the following commands to schedule the migrator job with the upgrade command and monitor its progress:
+      > *Note:* 
+      >  - *Always use the latest image version of migrator for migrator commands, except the startup command `up`*
+      >  - *You may add the `--dry-run` flag to the `command:` to test things out before altering the dbs*
+     2. Run the following commands to schedule the migrator job with the upgrade command and monitor its progress:
      ```bash
      # To ensure no previous job invocations will conflict with our current invocation
      kubectl delete -f configure/migrator/migrator.Job.yaml
      # Start the migrator job
      kubectl apply -f configure/migrator/migrator.Job.yaml
-     # Wait for the job to complete
-     kubectl wait -f configure/migrator/migrator.Job.yaml --for=condition=complete --timeout=-1s
      # Stream the migrator's stdout logs for progress
      kubectl logs job.batch/migrator -f
      ```
@@ -214,26 +206,21 @@ To perform a multi-version upgrade on a Sourcegraph instance running on our **ku
      ```
 
 4. **Pull and merge upstream changes**: 
-  - Follow the [standard legacy upgrade procedure](#upgrade-with-legacy-kubernetes) to pull and merge upstream changes from the version you are upgrading to to your `release` branch.
+     - Follow the [standard legacy upgrade procedure](#upgrade-with-legacy-kubernetes) to pull and merge upstream changes from the version you are upgrading to to your `release` branch.
 
 5. **Scale your replicas back up and apply new manifests**: 
-  - The [legacy kubernetes upgrade procedure](#upgrade-with-legacy-kubernetes) describes this step in more detail.
-    - Ensure that the replica counts adjusted in the previous steps are turned back up.
-    - Run `./kubectl-apply-all.sh` to deploy the new pods to the Kubernetes cluster.
-    - Monitor the status of the deployment via `kubectl get pods -o wide --watch`.
+     - The [legacy kubernetes upgrade procedure](#upgrade-with-legacy-kubernetes) describes this step in more detail.
+       - Ensure that the replica counts adjusted in the previous steps are turned back up.
+       - Run `./kubectl-apply-all.sh` to deploy the new pods to the Kubernetes cluster.
+       - Monitor the status of the deployment via `kubectl get pods -o wide --watch`.
 
 ---
 
 ### Using MVU to Migrate to Kustomize
 
-Due to limitations with the Kustomize deployment method introduced in Sourcegraph 4.5.0, multi-version upgrades (e.g. 4.2.0 -> 4.5.0) cannot be performed using the Kustomize deployment.
+Due to limitations with the Kustomize deployment method introduced in Sourcegraph `v4.5.0`, multi-version upgrades (e.g. `v4.2.0` -> `v5.0.3`), migrations to `deploy-sourcegraph-k8s` should be conducted seperately from a full upgrade. 
 
-To upgrade your Sourcegraph instance from a version older than 4.5.0 to 4.5.0 or above:
-
-1. Upgrade to 4.5.0 using the Kubernetes deployment method from the old [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph)
-   1. This is required as an intermediate step before the Kustomize deployment method can be used
-1. Verify that the 4.5.0 upgrade completed successfully using [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph)
-1. Migrate to the new Kustomize deployment method following the [Migration Docs for Kustomize](kustomize/migrate.md)
+Admins upgrading a Sourcegraph instance older than `v4.5.0` and migrating from our [legacy kubernetes](https://github.com/sourcegraph/deploy-sourcegraph) offering to our new [kustomize manifests](https://github.com/sourcegraph/deploy-sourcegraph-k8s) should upgrade to `v4.5.0` perform the `migrate` [procedure](../kubernetes/kustomize/migrate.md) and then perfom the remaining upgrade to bring Sourcegraph up to the desired version.
 
 ## Rollback
 
@@ -267,6 +254,12 @@ For instances deployed using the old [deploy-sourcegraph](https://github.com/sou
   ```
 
 ---
+
+## Database migrations
+
+In some situations, administrators may wish to migrate their databases before upgrading the rest of the system to reduce downtime. Sourcegraph guarantees database backward compatibility to the most recent minor point release so the database can safely be upgraded before the application code.
+
+To execute the database migrations independently, follow the [Kubernetes instructions on how to manually run database migrations](../../updates/migrator/migrator-operations.md). Running the `up` (default) command on the `migrator` of the *version you are upgrading to* will apply all migrations required by the next version of Sourcegraph.
 
 ## Improving update reliability and latency with node selectors
 
@@ -309,26 +302,6 @@ the following:
 - Database migrations are handled automatically on update when they are necessary.
 
 ---
-
-## Database migrations
-
-By default, database migrations will be performed during application startup by a `migrator` init container running prior to the `frontend` deployment. These migrations **must** succeed before Sourcegraph will become available. If the databases are large, these migrations may take a long time.
-
-In some situations, administrators may wish to migrate their databases before upgrading the rest of the system to reduce downtime. Sourcegraph guarantees database backward compatibility to the most recent minor point release so the database can safely be upgraded before the application code.
-
-To execute the database migrations independently, follow the [Kubernetes instructions on how to manually run database migrations](../../how-to/manual_database_migrations.md#kubernetes). Running the `up` (default) command on the `migrator` of the *version you are upgrading to* will apply all migrations required by the next version of Sourcegraph.
-
-### Failing migrations
-
-Migrations may fail due to transient or application errors. When this happens, the database will be marked by the migrator as _dirty_. A dirty database requires manual intervention to ensure the schema is in the expected state before continuing with migrations or application startup.
-
-In order to retrieve the error message printed by the migrator on startup, you'll need to use the `kubectl logs <frontend pod> -c migrator` to specify the init container, not the main application container. Using a bare `kubectl logs` command will result in the following error:
-
-```
-Error from server (BadRequest): container "frontend" in pod "sourcegraph-frontend-69f4b68d75-w98lx" is waiting to start: PodInitializing
-```
-
-Once a failing migration error message can be found, follow the guide on [how to troubleshoot a dirty database](../../how-to/dirty_database.md).
 
 ## Troubleshooting
 

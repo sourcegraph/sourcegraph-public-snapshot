@@ -44,6 +44,9 @@ No upgrade notes.
 
 #### Notes:
 
+- Our new [`kustomize` repo](https://github.com/sourcegraph/deploy-sourcegraph-k8s) is introduced. Admins are advised to follow our [migrate procedure](../deploy/kubernetes/kustomize/migrate.md) to migrate away from our [legacy deployment](https://github.com/sourcegraph/deploy-sourcegraph)
+  - **See our [note](../deploy/kubernetes/upgrade.md#using-mvu-to-migrate-to-kustomize) on multiversion upgrades coinciding with this migration. Admins are advised to stop at this version, [migrate](../deploy/kubernetes/kustomize/migrate.md), and then proceed with upgrading.**
+
 - This release introduces a background job that will convert all LSIF data into SCIP. **This migration is irreversible** and a rollback from this version may result in loss of precise code intelligence data. Please see the [migration notes](../how-to/lsif_scip_migration.md) for more details.
 
 **Kubernetes with Helm**

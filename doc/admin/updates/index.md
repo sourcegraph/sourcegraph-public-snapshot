@@ -52,13 +52,15 @@ Sourcegraph has two upgrade types. **Standard** upgrades and **Multiversion** up
 | `v4.5.0`     | `v5.0.0`   | Standard     | This is a major version but only one version change |
 | `v4.4.2`     | `v5.0.3`   | Multiversion  | Major, minor, and patch               |
 
-> *Note: Our major releases do not occur on a consistent interval, so make sure to check our changelog if you aren't certain about whether a major version is multiple minor versions away from your current version. You can also reach out to our support team [support@sourcegraph.com](mailto:support@sourcegraph.com)*
+> *Note:*
+> - *Our major releases do not occur on a consistent interval, so make sure to check our changelog if you aren't certain about whether a major version is multiple minor versions away from your current version. You can also reach out to our support team [support@sourcegraph.com](mailto:support@sourcegraph.com)*
+> - *Sourcegraph guarantees database backward compatibility to the most recent minor version.*
 
 ### Sourcegraph databases & migrator
 
 To facilitate the management of Sourcegraph's databases, we have created the `migrator` service. `migrator` is usually triggered automatically on Sourcegraph startup but can also be interacted with like a cli tool. Migrator's primary purpose is to manage and apply schema migrations. 
 - To learn more about migrations see our [developer docs](https://docs.sourcegraph.com/dev/background-information/sql/migrations_overview). 
-- For a full listing of migrator's command arguments see its [usage docs](https://docs.sourcegraph.com/admin/how-to/manual_database_migrations).
+- For a full listing of migrator's command arguments see its [usage docs](./migrator/migrator-operations.md).
 
 ### Best Practices
 > **Caution:** The upgrade process aggressively mutates the shape and contents of your database, and undiscovered errors in the migration process or unexpected environmental differences may cause an unusable instance or data loss.
@@ -110,7 +112,7 @@ If your instance has schema drift or unfinished oob migrations you may need to a
 - [**Pure-docker custom deployments**](pure_docker.md)
 
 ## Other helpful links
-
-- [Upgrading Early Versions](upgrading-early-versions.md)
-- [Troubleshooting migrations](troubleshooting-upgrades.md)
-- [Downgrading](downgrading.md)
+- [Migrator operations](./migrator/migrator-operations.md)
+- [Upgrading Early Versions](./migrator/upgrading-early-versions.md)
+- [Troubleshooting migrations](./migrator/troubleshooting-upgrades.md)
+- [Downgrading](./migrator/downgrading.md)
