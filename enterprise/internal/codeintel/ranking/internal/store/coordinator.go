@@ -33,8 +33,6 @@ func (s *store) Coordinate(
 		graphKey,
 		graphKey,
 		graphKey,
-		graphKey,
-		graphKey,
 		derivativeGraphKey,
 		now,
 		derivativeGraphKey,
@@ -58,9 +56,7 @@ const coordinateStartMapperQuery = `
 WITH
 progress AS (
 	SELECT
-		COALESCE((SELECT MAX(id) FROM codeintel_ranking_definitions WHERE graph_key = %s), 0) AS max_definition_id,
-		COALESCE((SELECT MAX(id) FROM codeintel_ranking_references  WHERE graph_key = %s), 0) AS max_reference_id,
-		COALESCE((SELECT MAX(id) FROM codeintel_initial_path_ranks  WHERE graph_key = %s), 0) AS max_path_id
+		COALESCE((SELECT MAX(id) FROM codeintel_ranking_exports WHERE graph_key = %s), 0) AS max_export_id
 ),
 processable_paths AS (
 	SELECT ipr.id
@@ -69,7 +65,7 @@ processable_paths AS (
 	JOIN progress p ON TRUE
 	WHERE
 		ipr.graph_key = %s AND
-		ipr.id <= p.max_path_id AND
+		cre.id <= p.max_export_id AND
 		cre.deleted_at IS NULL
 ),
 processable_references AS (
@@ -79,19 +75,17 @@ processable_references AS (
 	JOIN progress p ON TRUE
 	WHERE
 		rr.graph_key = %s AND
-		rr.id <= p.max_reference_id AND
+		cre.id <= p.max_export_id AND
 		cre.deleted_at IS NULL
 ),
 values AS (
 	SELECT
 		%s,
-		max_definition_id,
-		max_reference_id,
-		max_path_id,
+		p.max_export_id,
 		%s::timestamp with time zone,
 		(SELECT COUNT(*) FROM processable_paths),
 		(SELECT COUNT(*) FROM processable_references)
-	FROM progress
+	FROM progress p
 	WHERE NOT EXISTS (
 		SELECT 1
 		FROM codeintel_ranking_progress
@@ -100,9 +94,7 @@ values AS (
 )
 INSERT INTO codeintel_ranking_progress(
 	graph_key,
-	max_definition_id,
-	max_reference_id,
-	max_path_id,
+	max_export_id,
 	mappers_started_at,
 	num_path_records_total,
 	num_reference_records_total

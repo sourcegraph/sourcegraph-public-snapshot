@@ -79,8 +79,8 @@ func TestInsertPathRanks(t *testing.T) {
 
 	// Insert metadata to trigger mapper
 	if _, err := db.ExecContext(ctx, `
-		INSERT INTO codeintel_ranking_progress(graph_key, max_definition_id, max_reference_id, max_path_id, mappers_started_at)
-		VALUES ($1,  1000, 1000, 1000, NOW())
+		INSERT INTO codeintel_ranking_progress(graph_key, max_export_id, mappers_started_at)
+		VALUES ($1, 1000, NOW())
 	`,
 		key,
 	); err != nil {
@@ -135,12 +135,12 @@ func TestVacuumStaleRanks(t *testing.T) {
 
 	// Insert metadata to rank progress by completion date
 	if _, err := db.ExecContext(ctx, `
-		INSERT INTO codeintel_ranking_progress(graph_key, max_definition_id, max_reference_id, max_path_id, mappers_started_at, reducer_completed_at)
+		INSERT INTO codeintel_ranking_progress(graph_key, max_export_id, mappers_started_at, reducer_completed_at)
 		VALUES
-			($1,  1000, 1000, 1000, NOW() - '80 second'::interval, NOW() - '70 second'::interval),
-			($2,  1000, 1000, 1000, NOW() - '60 second'::interval, NOW() - '50 second'::interval),
-			($3,  1000, 1000, 1000, NOW() - '40 second'::interval, NOW() - '30 second'::interval),
-			($4,  1000, 1000, 1000, NOW() - '20 second'::interval, NULL)
+			($1, 1000, NOW() - '80 second'::interval, NOW() - '70 second'::interval),
+			($2, 1000, NOW() - '60 second'::interval, NOW() - '50 second'::interval),
+			($3, 1000, NOW() - '40 second'::interval, NOW() - '30 second'::interval),
+			($4, 1000, NOW() - '20 second'::interval, NULL)
 	`,
 		key1, key2, key3, key4,
 	); err != nil {

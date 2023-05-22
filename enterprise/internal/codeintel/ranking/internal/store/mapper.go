@@ -61,8 +61,7 @@ WITH
 progress AS (
 	SELECT
 		crp.id,
-		crp.max_definition_id,
-		crp.max_reference_id,
+		crp.max_export_id,
 		crp.mappers_started_at as started_at
 	FROM codeintel_ranking_progress crp
 	WHERE
@@ -87,7 +86,7 @@ refs AS (
 
 		-- Ensure that the record is within the bounds where it would be visible
 		-- to the current "snapshot" defined by the ranking computation state row.
-		rr.id <= p.max_reference_id AND
+		cre.id <= p.max_export_id AND
 		(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at) AND
 
 		-- Ensure the record isn't already processed
@@ -177,7 +176,7 @@ referenced_definitions AS (
 
 			-- Ensure that the record is within the bounds where it would be visible
 			-- to the current "snapshot" defined by the ranking computation state row.
-			rd.id <= p.max_definition_id AND
+			cre.id <= p.max_export_id AND
 			(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at)
 	) s
 
@@ -259,7 +258,7 @@ WITH
 progress AS (
 	SELECT
 		crp.id,
-		crp.max_path_id,
+		crp.max_export_id,
 		crp.mappers_started_at as started_at
 	FROM codeintel_ranking_progress crp
 	WHERE
@@ -287,7 +286,7 @@ unprocessed_path_counts AS (
 
 		-- Ensure that the record is within the bounds where it would be visible
 		-- to the current "snapshot" defined by the ranking computation state row.
-		ipr.id <= p.max_path_id AND
+		cre.id <= p.max_export_id AND
 		(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at) AND
 
 		-- Ensure the record isn't already processed

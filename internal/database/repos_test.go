@@ -768,8 +768,8 @@ func TestRepos_List_LastChanged(t *testing.T) {
 		}
 
 		if _, err := db.Handle().ExecContext(ctx, `
-			INSERT INTO codeintel_ranking_progress(graph_key, max_definition_id, max_reference_id, max_path_id, mappers_started_at, reducer_completed_at)
-			VALUES ('test', 1000, 1000, 1000, NOW(), NOW())
+			INSERT INTO codeintel_ranking_progress(graph_key, max_export_id, mappers_started_at, reducer_completed_at)
+			VALUES ('test', 1000, NOW(), NOW())
 		`,
 		); err != nil {
 			t.Fatal(err)

@@ -86,8 +86,8 @@ func TestInsertPathCountInputs(t *testing.T) {
 
 	// Insert metadata to trigger mapper
 	if _, err := db.ExecContext(ctx, `
-		INSERT INTO codeintel_ranking_progress(graph_key, max_definition_id, max_reference_id, max_path_id, mappers_started_at)
-		VALUES ($1,  1000, 1000, 1000, NOW())
+		INSERT INTO codeintel_ranking_progress(graph_key, max_export_id, mappers_started_at)
+		VALUES ($1, 1000, NOW())
 	`,
 		key,
 	); err != nil {
@@ -220,8 +220,8 @@ func TestInsertInitialPathCounts(t *testing.T) {
 
 	// Insert metadata to trigger mapper
 	if _, err := db.ExecContext(ctx, `
-		INSERT INTO codeintel_ranking_progress(graph_key, max_definition_id, max_reference_id, max_path_id, mappers_started_at)
-		VALUES ($1,  1000, 1000, 1000, NOW())
+		INSERT INTO codeintel_ranking_progress(graph_key, max_export_id, mappers_started_at)
+		VALUES ($1, 1000, NOW())
 	`,
 		key,
 	); err != nil {
