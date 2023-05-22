@@ -9,8 +9,10 @@ import (
 
 	"github.com/derision-test/glock"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -64,17 +66,8 @@ func TestOwnRepoIndexSchedulerJob_JobsAreExcluded(t *testing.T) {
 	logger := obsCtx.Logger
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
+	store := basestore.NewWithHandle(db.Handle())
 
-	verifyCount := func(t *testing.T, config database.SignalConfiguration, expected int) {
-		store := basestore.NewWithHandle(db.Handle())
-		// Check that correct rows were added to own_background_jobs
-
-		count, _, err := basestore.ScanFirstInt(store.Query(context.Background(), sqlf.Sprintf("SELECT COUNT(*) FROM own_background_jobs WHERE job_type = %s", config.ID)))
-		if err != nil {
-			t.Fatal(err)
-		}
-		require.Equal(t, expected, count)
-	}
 	jobType := IndexJobType{
 		Name:          "recent-contributors",
 		IndexInterval: time.Hour * 24,
@@ -96,34 +89,47 @@ func TestOwnRepoIndexSchedulerJob_JobsAreExcluded(t *testing.T) {
 	states := []string{"queued", "processing", "errored", "failed", "completed"}
 
 	insertRepo(t, db, 500, "great-repo-1", true)
+	insertRepo(t, db, 501, "great-repo-2", true)
+	insertRepo(t, db, 502, "great-repo-3", true)
 
-	for _, state := range states {
-		doTest := func(t *testing.T, expected int) {
-			defer clearJobs(t, db)
-			job := newOwnRepoIndexSchedulerJob(db, jobType, logger)
-			job.clock = clock
-			err := job.Handle(ctx)
-			if err != nil {
-				t.Fatal(err)
-			}
-			verifyCount(t, config, expected)
+	doTest := func(t *testing.T, expectedRepos []int) {
+		t.Helper()
+		defer clearJobs(t, db)
+		job := newOwnRepoIndexSchedulerJob(db, jobType, logger)
+		job.clock = clock
+		err := job.Handle(ctx)
+		if err != nil {
+			t.Fatal(err)
 		}
 
+		got, err := basestore.ScanInts(store.Query(ctx, sqlf.Sprintf("select repo_id from own_background_jobs where job_type = %s order by repo_id", config.ID)))
+		require.NoError(t, err)
+		assert.ElementsMatch(t, expectedRepos, got)
+	}
+
+	for _, state := range states {
 		t.Run(state+" half interval", func(t *testing.T) {
 			insertJob(t, db, 500, config, state, halfInterval)
-			doTest(t, 1) // expecting 1 means no new jobs were inserted
+			insertJob(t, db, 501, config, state, halfInterval)
+			insertJob(t, db, 502, config, state, halfInterval)
+			doTest(t, []int{500, 501, 502}) // expecting only non-existing repos to be inserted
 		})
 
 		t.Run(state+" double interval", func(t *testing.T) {
 			insertJob(t, db, 500, config, state, doubleInterval)
-			expected := 1
+			expected := []int{500, 501, 502}
 			if state == "completed" || state == "failed" {
-				expected = 2
-				// only for completed / failed records do we retry, but only after 1 full interval
+				// only for completed / failed records do we retry, but only after 1 full interval,
+				expected = []int{500, 500, 501, 502}
 			}
 			doTest(t, expected)
 		})
 	}
+	t.Run("config exclusions are not included", func(t *testing.T) {
+		err := db.OwnSignalConfigurations().UpdateConfiguration(ctx, database.UpdateSignalConfigurationArgs{Name: types.SignalRecentContributors, ExcludedRepoPatterns: []string{"great-repo-1", "great-repo-2"}})
+		require.NoError(t, err)
+		doTest(t, []int{502})
+	})
 }
 
 func insertRepo(t *testing.T, db database.DB, id int, name string, cloned bool) {
