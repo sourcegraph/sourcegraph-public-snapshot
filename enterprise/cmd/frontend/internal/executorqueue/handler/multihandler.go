@@ -47,18 +47,8 @@ func NewMultiHandler(
 	}
 }
 
-func (m *MultiHandler) validateQueues(queues []string) []string {
-	var invalidQueues []string
-	for _, queue := range queues {
-		if !slices.Contains(m.validQueues, queue) {
-			invalidQueues = append(invalidQueues, queue)
-		}
-	}
-	return invalidQueues
-}
-
-// ServeHTTP is the equivalent of ExecutorHandler.HandleDequeue for multiple queues.
-func (m *MultiHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+// HandleDequeue is the equivalent of ExecutorHandler.HandleDequeue for multiple queues.
+func (m *MultiHandler) HandleDequeue(w http.ResponseWriter, r *http.Request) {
 	var payload executortypes.DequeueRequest
 	wrapHandler(w, r, &payload, m.logger, func() (int, any, error) {
 		job, dequeued, err := m.dequeue(r.Context(), payload)
@@ -191,6 +181,21 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 	job.Token = token
 
 	return job, true, nil
+}
+
+func (m *MultiHandler) HandleHeartbeat(w http.ResponseWriter, r *http.Request) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (m *MultiHandler) validateQueues(queues []string) []string {
+	var invalidQueues []string
+	for _, queue := range queues {
+		if !slices.Contains(m.validQueues, queue) {
+			invalidQueues = append(invalidQueues, queue)
+		}
+	}
+	return invalidQueues
 }
 
 func markRecordAsFailed[T workerutil.Record](context context.Context, store dbworkerstore.Store[T], recordID int, err error, logger log.Logger) error {
