@@ -94,6 +94,11 @@ func (o *ownershipReasonResolver) ToRecentContributorOwnershipSignal() (res grap
 }
 
 func (o *ownershipReasonResolver) ToRecentViewOwnershipSignal() (res graphqlbackend.RecentViewOwnershipSignalResolver, ok bool) {
+	res, ok = o.resolver.(*assignedOwner)
+	return
+}
+
+func (o *ownershipReasonResolver) ToAssignedOwner() (res graphqlbackend.AssignedOwnerResolver, ok bool) {
 	res, ok = o.resolver.(*recentViewOwnershipSignal)
 	return
 }
