@@ -50,7 +50,7 @@ describe('getConfiguration', () => {
                     case 'cody.debug.verbose':
                         return true
                     case 'cody.debug.filter':
-                        return '.*'
+                        return /.*/
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -70,7 +70,7 @@ describe('getConfiguration', () => {
             experimentalInline: true,
             debugEnable: true,
             debugVerbose: true,
-            debugFilter: '.*',
+            debugFilter: /.*/,
         })
     })
 })
