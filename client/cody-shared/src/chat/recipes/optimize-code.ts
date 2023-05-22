@@ -28,13 +28,13 @@ export class OptimizeCode implements Recipe {
 
         const languageName = getNormalizedLanguageName(selection.fileName)
         const promptMessage = `Optimise this code in  ${languageName}. \
-            Start your response by telling if the code can/cannot be optimized. \
-            You need to suggest a list of possible optimisation in less than 50 words each,\
-            but if no optimisation is possible just say Code is already optimised. \
-            If the code is optimisable, you provide Big O time/space comparison and \
-            return updated code, however skip these details if any of them is not changed.\
-            For updated code, add inline comments about changes you made and enclose it in triple backticks. \
-            Output format should be: The code can/cannot be optimized. Optimisation Steps: {} Time and Space Usage: {} Updated Code: {} :\n\n\`\`\`${extension}\n${truncatedSelectedText}\n\`\`\`\n${MARKDOWN_FORMAT_PROMPT}`
+Start your response by telling if the code can/cannot be optimized. \
+You need to suggest a list of possible optimisation in less than 50 words each,\
+but if no optimisation is possible just say Code is already optimised. \
+If the code is optimisable, you provide Big O time/space comparison and \
+return updated code, however skip these details if any of them is not changed.\
+For updated code, add inline comments about changes you made and enclose it in triple backticks. \
+Output format should be: The code can/cannot be optimized. Optimisation Steps: {} Time and Space Usage: {} Updated Code: {} :\n\n\`\`\`${extension}\n${truncatedSelectedText}\n\`\`\`\n${MARKDOWN_FORMAT_PROMPT}`
         const assistantResponsePrefix = `This code can \n\`\`\`${extension}\n`
 
         return new Interaction(
