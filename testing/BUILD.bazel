@@ -1,6 +1,6 @@
 sh_test(
-    name = "backend",
-    srcs = [":backend.sh"],
+    name = "backend_integration_test",
+    srcs = [":backend_integration_test.sh"],
     args = [
         "$(location //testing/tools:before_run_server_image)",  # helper script
         "$(location //testing/tools:run_server_image)",  # helper script
