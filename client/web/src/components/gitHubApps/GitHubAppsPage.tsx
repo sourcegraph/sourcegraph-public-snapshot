@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 
 import { mdiPlus } from '@mdi/js'
 
@@ -6,6 +6,7 @@ import { useQuery } from '@sourcegraph/http-client'
 import { ButtonLink, ErrorAlert, Icon, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { GitHubAppsResult, GitHubAppsVariables } from '../../graphql-operations'
+import { eventLogger } from '../../tracking/eventLogger'
 import {
     ConnectionContainer,
     ConnectionLoading,
@@ -21,6 +22,10 @@ import { GitHubAppCard } from './GitHubAppCard'
 export const GitHubAppsPage: React.FC = () => {
     const { data, loading, error, refetch } = useQuery<GitHubAppsResult, GitHubAppsVariables>(GITHUB_APPS_QUERY, {})
     const gitHubApps = useMemo(() => data?.gitHubApps?.nodes ?? [], [data])
+
+    useEffect(() => {
+        eventLogger.logPageView('SiteAdminGitHubApps')
+    }, [])
 
     const reloadApps = async (): Promise<void> => {
         await refetch({})
