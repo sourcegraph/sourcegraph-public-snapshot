@@ -1,4 +1,4 @@
-import { convertGitCloneURLToCodebaseName } from './ChatViewProvider'
+import { convertGitCloneURLToCodebaseName } from './utils'
 
 describe('convertGitCloneURLToCodebaseName', () => {
     test('converts GitHub SSH URL', () => {

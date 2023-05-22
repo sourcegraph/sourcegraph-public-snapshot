@@ -154,15 +154,15 @@
       },
       {
         "command": "cody.interactive.clear",
-        "title": "Cody: Clear & Restart Chat Session",
+        "title": "Cody: Start a New Chat Session",
         "group": "Cody",
-        "icon": "$(clear-all)"
+        "icon": "$(add)"
       },
       {
         "command": "cody.history",
         "title": "Cody: Chat History",
         "group": "Cody",
-        "icon": "$(history)"
+        "icon": "$(list-unordered)"
       },
       {
         "command": "cody.comment.add",
@@ -313,17 +313,17 @@
         {
           "command": "cody.interactive.clear",
           "when": "view == cody.chat && cody.activated",
-          "group": "navigation"
+          "group": "navigation@1"
         },
         {
           "command": "cody.settings",
           "when": "view == cody.chat && cody.activated",
-          "group": "navigation"
+          "group": "navigation@3"
         },
         {
           "command": "cody.history",
           "when": "view == cody.chat && cody.activated",
-          "group": "navigation"
+          "group": "navigation@2"
         }
       ],
       "comments/commentThread/context": [
@@ -380,30 +380,8 @@
           "default": "embeddings",
           "markdownDescription": "If 'embeddings' is selected, Cody will prefer to use an embeddings-based index when fetching context to generate responses to user requests. If no such index is found, it will fall back to using keyword-based local context fetching. If 'keyword' is selected, Cody will use keyword context. Selecting 'none' will limit Cody to using only the currently open file."
         },
-        "cody.experimental.suggestions": {
-          "order": 4,
-          "type": "boolean",
-          "markdownDescription": "Enables Cody inline autocompletion in your editor.",
-          "default": false
-        },
-        "cody.experimental.chatPredictions": {
-          "order": 5,
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Adds suggestions of possible relevant messages in the chat window."
-        },
-        "cody.experimental.inline": {
-          "order": 6,
-          "type": "boolean",
-          "markdownDescription": "Enables Cody Inline Assist, an inline way to explicitly ask questions and propose modifications to code.",
-          "default": false
-        },
-        "cody.experimental.guardrails": {
-          "type": "boolean",
-          "default": false
-        },
         "cody.customHeaders": {
-          "order": 7,
+          "order": 4,
           "type": "object",
           "markdownDescription": "Adds custom HTTP headers to all network requests to the Sourcegraph endpoint. Defining required headers here ensures requests are properly forwarded through intermediary proxy servers, which may mandate certain custom headers for internal or external communication.",
           "default": {},
@@ -413,6 +391,29 @@
               "Proxy-Authenticate": "Basic"
             }
           ]
+        },
+        "cody.experimental.suggestions": {
+          "order": 5,
+          "type": "boolean",
+          "markdownDescription": "Enables Cody inline autocompletion in your editor.",
+          "default": false
+        },
+        "cody.experimental.chatPredictions": {
+          "order": 6,
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Adds suggestions of possible relevant messages in the chat window."
+        },
+        "cody.experimental.inline": {
+          "order": 7,
+          "type": "boolean",
+          "markdownDescription": "Enables Cody Inline Assist, an inline way to explicitly ask questions and propose modifications to code.",
+          "default": false
+        },
+        "cody.experimental.guardrails": {
+          "order": 8,
+          "type": "boolean",
+          "default": false
         },
         "cody.debug.enable": {
           "order": 99,
