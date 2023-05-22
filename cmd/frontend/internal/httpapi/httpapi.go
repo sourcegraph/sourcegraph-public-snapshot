@@ -157,6 +157,7 @@ func NewHandler(
 	m.Get(apirouter.CodeInsightsDataExport).Handler(trace.Route(handlers.CodeInsightsDataExportHandler))
 
 	if envvar.SourcegraphDotComMode() {
+		m.Path("/app/check/update").Handler(trace.Route(updatecheck.AppUpdateHandler(logger)))
 		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.Route(http.HandlerFunc(updatecheck.HandlerWithLog(logger))))
 	}
 
