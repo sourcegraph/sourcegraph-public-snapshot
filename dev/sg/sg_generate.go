@@ -5,8 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"os/exec"
-	"strings"
 	"time"
 
 	"github.com/urfave/cli/v2"
@@ -73,17 +71,6 @@ func runGenerateAndReport(ctx context.Context, t generate.Target, args []string)
 	_, err := root.RepositoryRoot()
 	if err != nil {
 		return err
-	}
-	// Don't run buf gen if no .proto files changed or not in CI
-	if t.Name == "buf" {
-		out, err := exec.Command("git", "diff", "--name-only", "main...HEAD").Output()
-		if err != nil {
-			return errors.Errorf("failed to run git diff: %v", err)
-		}
-		if !strings.Contains(string(out), ".proto") && os.Getenv("CI") != "true" {
-			std.Out.WriteNoticef("Skipping %q as no .proto files changed or not in CI", t.Name)
-			return nil
-		}
 	}
 	std.Out.WriteNoticef("Running target %q (%s)", t.Name, t.Help)
 	report := t.Runner(ctx, args)

@@ -2,12 +2,17 @@ package main
 
 import (
 	"context"
+	"os"
+	"os/exec"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/buf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate/golang"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate/proto"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var allGenerateTargets = generateTargets{
@@ -48,5 +53,16 @@ func generateGoRunner(ctx context.Context, args []string) *generate.Report {
 }
 
 func generateProtoRunner(ctx context.Context, args []string) *generate.Report {
+	// Don't run buf gen if no .proto files changed or not in CI
+	out, err := exec.Command("git", "diff", "--name-only", "main...HEAD").Output()
+	if err != nil {
+		return &generate.Report{Err: errors.Wrap(err, "git diff failed")} // should never happen
+	}
+	if !strings.Contains(string(out), ".proto") && os.Getenv("CI") != "true" {
+		std.Out.WriteNoticef("Skipping buf as no .proto files changed or not in CI")
+		return &generate.Report{Output: "No .proto files changed or not in CI"}
+
+	}
+
 	return proto.Generate(ctx, verbose)
 }
