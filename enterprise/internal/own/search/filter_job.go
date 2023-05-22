@@ -67,7 +67,7 @@ func (s *fileHasOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, 
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		var err error
-		event.Results, err = applyCodeOwnershipFiltering(ctx, &rules, includeBag, excludeBag, event.Results)
+		event.Results, err = applyCodeOwnershipFiltering(ctx, &rules, includeBag, s.includeOwners, excludeBag, s.excludeOwners, event.Results)
 		if err != nil {
 			mu.Lock()
 			errs = errors.Append(errs, err)
@@ -113,8 +113,10 @@ func (s *fileHasOwnersJob) MapChildren(fn job.MapFunc) job.Job {
 func applyCodeOwnershipFiltering(
 	ctx context.Context,
 	rules *RulesCache,
-	include,
+	include own.Bag,
+	includeTerms []string,
 	exclude own.Bag,
+	excludeTerms []string,
 	matches []result.Match,
 ) ([]result.Match, error) {
 	var errs error
@@ -135,10 +137,10 @@ matchesLoop:
 			continue matchesLoop
 		}
 		fileOwners := file.Match(mm.File.Path)
-		if !containsOwner(fileOwners, include) {
+		if len(includeTerms) > 0 && !containsOwner(fileOwners, includeTerms, include) {
 			continue matchesLoop
 		}
-		if containsOwner(fileOwners, exclude) {
+		if len(excludeTerms) > 0 && containsOwner(fileOwners, excludeTerms, exclude) {
 			continue matchesLoop
 		}
 
@@ -151,10 +153,9 @@ matchesLoop:
 // containsOwner searches within emails and handles in a case-insensitive
 // manner. Empty string passed as search term means any, so the predicate
 // returns true if there is at least one owner, and false otherwise.
-func containsOwner(owners fileOwnershipData, bag own.Bag) bool {
-	// Empty bag stems from no search term in `file:has.owners()`. The semantics
-	// is to match if there are _any_ owners to a file.
-	if bag.Empty() {
+func containsOwner(owners fileOwnershipData, searchTerms []string, bag own.Bag) bool {
+	// Empty search terms means any owner matches.
+	if len(searchTerms) == 1 && searchTerms[0] == "" {
 		return owners.NonEmpty()
 	}
 	return owners.Contains(bag)

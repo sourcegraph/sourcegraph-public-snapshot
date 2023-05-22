@@ -11,8 +11,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -307,11 +309,32 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 			if tt.setup != nil {
 				tt.setup(db)
 			}
+			usersStore := database.NewMockUserStore()
+			usersStore.GetByUsernameFunc.SetDefaultReturn(nil, nil)
+			usersStore.GetByVerifiedEmailFunc.SetDefaultReturn(nil, nil)
+			db.UsersFunc.SetDefaultReturn(usersStore)
+			usersEmailsStore := database.NewMockUserEmailsStore()
+			usersEmailsStore.GetVerifiedEmailsFunc.SetDefaultReturn(nil, nil)
+			db.UserEmailsFunc.SetDefaultReturn(usersEmailsStore)
+			assignedOwnersStore := database.NewMockAssignedOwnersStore()
+			assignedOwnersStore.ListAssignedOwnersForRepoFunc.SetDefaultReturn(nil, nil)
+			db.AssignedOwnersFunc.SetDefaultReturn(assignedOwnersStore)
 
 			rules := NewRulesCache(gitserverClient, db)
 
-			matches, _ := applyCodeOwnershipFiltering(ctx, &rules, tt.args.includeOwners, tt.args.excludeOwners, tt.args.matches)
-
+			include, err := own.ByTextReference(ctx, db, tt.args.includeOwners...)
+			require.NoError(t, err)
+			exclude, err := own.ByTextReference(ctx, db, tt.args.excludeOwners...)
+			require.NoError(t, err)
+			matches, _ := applyCodeOwnershipFiltering(
+				ctx,
+				&rules,
+				include,
+				tt.args.includeOwners,
+				exclude,
+				tt.args.excludeOwners,
+				tt.args.matches)
+			//require.NoError(t, err)
 			tt.want.Equal(t, matches)
 		})
 	}

@@ -80,10 +80,6 @@ type Bag interface {
 	// Contains answers true if given bag contains an owner form
 	// that the given reference points at in some way.
 	Contains(ref Reference) bool
-	// Indicates whether a bag is empty - that is has not been seeded with search terms.
-	// Note: A bag that had terms passed into `ByTextReferece`, which did not yield
-	// any users in the database is still not empty.
-	Empty() bool
 }
 
 // ByTextReference returns a Bag of all the forms (users, persons, teams)
@@ -95,7 +91,6 @@ type Bag interface {
 func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text ...string) (Bag, error) {
 	var multiBag bag
 	for _, t := range text {
-		t = strings.TrimPrefix(t, "@")
 		if _, err := mail.ParseAddress(t); err == nil {
 			b, err := ByEmailReference(ctx, db, t)
 			if err != nil {
@@ -103,7 +98,7 @@ func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text ...string) (
 			}
 			multiBag = append(multiBag, b...)
 		}
-		b, err := ByUserHandleReference(ctx, db, t)
+		b, err := ByUserHandleReference(ctx, db, strings.TrimPrefix(t, "@"))
 		if err != nil {
 			return nil, err
 		}
@@ -223,6 +218,36 @@ func (refs userReferences) containsUserID(userID int32) bool {
 	return refs.id != 0 && refs.id == userID
 }
 
+func (refs userReferences) String() string {
+	var buf bytes.Buffer
+	fmt.Fprint(&buf, "{")
+	var needsComma bool
+	comma := func() {
+		if needsComma {
+			fmt.Fprint(&buf, ", ")
+		}
+		needsComma = true
+	}
+	if refs.id != 0 {
+		comma()
+		fmt.Fprintf(&buf, "#%d", refs.id)
+	}
+	if refs.user != nil {
+		comma()
+		fmt.Fprint(&buf, refs.user.Username)
+	}
+	if refs.handle != "" {
+		comma()
+		fmt.Fprintf(&buf, "@%s", refs.handle)
+	}
+	for _, e := range refs.verifiedEmails {
+		comma()
+		fmt.Fprint(&buf, e)
+	}
+	fmt.Fprint(&buf, "}")
+	return buf.String()
+}
+
 // Contains at this point returns true
 //   - if email reference matches any user's verified email,
 //   - if handle reference matches the user handle,
@@ -242,6 +267,20 @@ func (b bag) Contains(ref Reference) bool {
 	return false
 }
 
-func (b bag) Empty() bool {
-	return len(b) == 0
+func (b bag) String() string {
+	var buf bytes.Buffer
+	fmt.Fprint(&buf, "[")
+	var needsComma bool
+	comma := func() {
+		if needsComma {
+			fmt.Fprint(&buf, ", ")
+		}
+		needsComma = true
+	}
+	for _, r := range b {
+		comma()
+		fmt.Fprint(&buf, r.String())
+	}
+	fmt.Fprint(&buf, "]")
+	return buf.String()
 }
