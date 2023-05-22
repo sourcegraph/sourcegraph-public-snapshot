@@ -163,8 +163,10 @@ func (c *Client) MarkFailed(ctx context.Context, job types.Job, failureMessage s
 }
 
 func (c *Client) Heartbeat(ctx context.Context, jobIDs []int) (knownIDs, cancelIDs []int, err error) {
+	queue := c.getFirstQueueName()
+
 	ctx, _, endObservation := c.operations.heartbeat.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("queueName", c.options.QueueName),
+		attribute.String("queueName", queue),
 		attribute.IntSlice("jobIDs", jobIDs),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -175,7 +177,7 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []int) (knownIDs, cancelI
 		// Continue, no metric errors should prevent heartbeats.
 	}
 
-	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", c.options.QueueName), types.HeartbeatRequest{
+	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", queue), types.HeartbeatRequest{
 		// Request the new-fashioned payload.
 		Version: types.ExecutorAPIVersion2,
 
@@ -277,14 +279,7 @@ func (c *Client) CanceledJobs(ctx context.Context, knownIDs []int) (canceledIDs 
 }
 
 func (c *Client) Ping(ctx context.Context) (err error) {
-	// TODO: temp solution to allow multi-queue executor to start up before heartbeats are implemented.
-	// Simply pick the first queue name when multiple are configured
-	var queue string
-	if len(c.options.QueueNames) > 0 {
-		queue = c.options.QueueNames[0]
-	} else {
-		queue = c.options.QueueName
-	}
+	queue := c.getFirstQueueName()
 
 	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", queue), types.HeartbeatRequest{
 		ExecutorName: c.options.ExecutorName,
@@ -296,14 +291,28 @@ func (c *Client) Ping(ctx context.Context) (err error) {
 	return c.client.DoAndDrop(ctx, req)
 }
 
+func (c *Client) getFirstQueueName() string {
+	// TODO: temp solution to allow multi-queue executor to start up before heartbeats are implemented.
+	// Simply pick the first queue name when multiple are configured
+	var queue string
+	if len(c.options.QueueNames) > 0 {
+		queue = c.options.QueueNames[0]
+	} else {
+		queue = c.options.QueueName
+	}
+	return queue
+}
+
 func (c *Client) AddExecutionLogEntry(ctx context.Context, job types.Job, entry internalexecutor.ExecutionLogEntry) (entryID int, err error) {
+	queue := c.inferQueueName(job)
+
 	ctx, _, endObservation := c.operations.addExecutionLogEntry.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("queueName", c.options.QueueName),
+		attribute.String("queueName", queue),
 		attribute.Int("jobID", job.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/addExecutionLogEntry", c.options.QueueName), job.Token, types.AddExecutionLogEntryRequest{
+	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/addExecutionLogEntry", queue), job.Token, types.AddExecutionLogEntryRequest{
 		JobOperationRequest: types.JobOperationRequest{
 			ExecutorName: c.options.ExecutorName,
 			JobID:        job.ID,
@@ -319,14 +328,16 @@ func (c *Client) AddExecutionLogEntry(ctx context.Context, job types.Job, entry 
 }
 
 func (c *Client) UpdateExecutionLogEntry(ctx context.Context, job types.Job, entryID int, entry internalexecutor.ExecutionLogEntry) (err error) {
+	queue := c.inferQueueName(job)
+
 	ctx, _, endObservation := c.operations.updateExecutionLogEntry.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("queueName", c.options.QueueName),
+		attribute.String("queueName", queue),
 		attribute.Int("jobID", job.ID),
 		attribute.Int("entryID", entryID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/updateExecutionLogEntry", c.options.QueueName), job.Token, types.UpdateExecutionLogEntryRequest{
+	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/updateExecutionLogEntry", queue), job.Token, types.UpdateExecutionLogEntryRequest{
 		JobOperationRequest: types.JobOperationRequest{
 			ExecutorName: c.options.ExecutorName,
 			JobID:        job.ID,
