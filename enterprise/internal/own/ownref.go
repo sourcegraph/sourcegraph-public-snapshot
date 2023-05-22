@@ -87,15 +87,28 @@ type Bag interface {
 // This can be used in search to find relevant owners by different identifiers
 // that the database reveals.
 // TODO(#52141): Search by code host handle.
-func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text string) (Bag, error) {
-	text = strings.TrimPrefix(text, "@")
-	if _, err := mail.ParseAddress(text); err == nil {
-		return ByEmailReference(ctx, db, text)
+// TODO(#52246): ByTextReference uses fewer queries.
+func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text ...string) (Bag, error) {
+	var multiBag bag
+	for _, t := range text {
+		t = strings.TrimPrefix(t, "@")
+		if _, err := mail.ParseAddress(t); err == nil {
+			b, err := ByEmailReference(ctx, db, t)
+			if err != nil {
+				return nil, err
+			}
+			multiBag = append(multiBag, b...)
+		}
+		b, err := ByUserHandleReference(ctx, db, t)
+		if err != nil {
+			return nil, err
+		}
+		multiBag = append(multiBag, b...)
 	}
-	return ByUserHandleReference(ctx, db, text)
+	return multiBag, nil
 }
 
-func ByUserHandleReference(ctx context.Context, db edb.EnterpriseDB, handle string) (Bag, error) {
+func ByUserHandleReference(ctx context.Context, db edb.EnterpriseDB, handle string) (bag, error) {
 	var b bag
 	// Try to find a user by username.
 	user, err := db.Users().GetByUsername(ctx, handle)
@@ -115,7 +128,7 @@ func ByUserHandleReference(ctx context.Context, db edb.EnterpriseDB, handle stri
 	return hydrateWithVerifiedEmails(ctx, db, b)
 }
 
-func hydrateWithVerifiedEmails(ctx context.Context, db edb.EnterpriseDB, b bag) (Bag, error) {
+func hydrateWithVerifiedEmails(ctx context.Context, db edb.EnterpriseDB, b bag) (bag, error) {
 	for _, userRefs := range b {
 		if userRefs.id == 0 {
 			continue
@@ -132,7 +145,7 @@ func hydrateWithVerifiedEmails(ctx context.Context, db edb.EnterpriseDB, b bag) 
 	return b, nil
 }
 
-func ByEmailReference(ctx context.Context, db edb.EnterpriseDB, email string) (Bag, error) {
+func ByEmailReference(ctx context.Context, db edb.EnterpriseDB, email string) (bag, error) {
 	var b bag
 	// Checking that provided email is verified.
 	verifiedEmails, err := db.UserEmails().GetVerifiedEmails(ctx, email)
