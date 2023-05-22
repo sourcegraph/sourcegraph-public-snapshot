@@ -70,7 +70,6 @@ done
 set -e
 
 echo '--- integration test ./dev/gqltest -long'
-set -x
 "$gqltest" -long -base-url "$URL"
 
 echo '--- sleep 5s to wait for site configuration to be restored from gqltest'
@@ -78,5 +77,3 @@ sleep 5
 
 echo '--- integration test ./dev/authtest -long'
 "$authtest" -long -base-url "$URL" -email "gqltest@sourcegraph.com" -username "gqltest-admin"
-
-exit 1
