@@ -5,6 +5,7 @@ import classNames from 'classnames'
 
 import { H1, H2, H3, Text, Link, Button, Icon } from '@sourcegraph/wildcard'
 
+import { tauriShellOpen } from '../../../app/tauriShellOpen'
 import { EnterprisePageRoutes } from '../../../routes.constants'
 import { SetupStepsContext } from '../../../setup-wizard/components'
 import { LocalRepositoriesWidget, PathsPickerActions } from '../settings/local-repositories/LocalRepositoriesTab'
@@ -161,12 +162,10 @@ export const InstallExtensionsSetupPage: FC = () => {
                     </Button>
 
                     <Button
-                        as={Link}
-                        to="vscode:extension/sourcegraph.cody-ai"
                         variant="primary"
                         size="lg"
-                        target="_blank"
                         className={styles.actionsButton}
+                        onClick={() => tauriShellOpen('vscode:extension/sourcegraph.cody-ai')}
                     >
                         <Icon svgPath={mdiOpenInNew} aria-hidden={true} />
                         Install VSCode extension
