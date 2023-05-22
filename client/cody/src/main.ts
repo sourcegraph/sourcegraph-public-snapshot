@@ -12,6 +12,7 @@ import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
+import { RecipesProvider } from './recipes/RecipesProvider'
 import { getRgPath } from './rg'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { InlineController } from './services/InlineController'
@@ -107,12 +108,19 @@ const register = async (
     )
     disposables.push(chatProvider)
 
+    // Create recipes tree view
+    const recipesProvider = new RecipesProvider()
+
     disposables.push(
         vscode.window.registerWebviewViewProvider('cody.chat', chatProvider, {
             webviewOptions: { retainContextWhenHidden: true },
         }),
         { dispose: () => vscode.commands.executeCommand('setContext', 'cody.activated', false) }
     )
+
+    disposables.push(vscode.window.registerTreeDataProvider('cody.recipes', recipesProvider), {
+        dispose: () => vscode.commands.executeCommand('setContext', 'cody.activated', false),
+    })
 
     const executeRecipe = async (recipe: RecipeID): Promise<void> => {
         await vscode.commands.executeCommand('cody.chat.focus')
@@ -161,8 +169,9 @@ const register = async (
         }),
         // Commands
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
-        vscode.commands.registerCommand('cody.settings', () => chatProvider.setWebviewView('settings')),
-        vscode.commands.registerCommand('cody.history', () => chatProvider.setWebviewView('history')),
+        vscode.commands.registerCommand('cody.view-chat', () => chatProvider.setWebviewView('chat')),
+        vscode.commands.registerCommand('cody.view-settings', () => chatProvider.setWebviewView('settings')),
+        vscode.commands.registerCommand('cody.view-history', () => chatProvider.setWebviewView('history')),
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
             await chatProvider.clearAndRestartSession()
         }),
@@ -182,6 +191,7 @@ const register = async (
         ),
         vscode.commands.registerCommand('cody.recipe.find-code-smells', () => executeRecipe('find-code-smells')),
         vscode.commands.registerCommand('cody.recipe.context-search', () => executeRecipe('context-search')),
+        vscode.commands.registerCommand('cody.recipes.run-from-tree-view', args => executeRecipe(args.description)),
         // Register URI Handler for resolving token sending back from sourcegraph.com
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {

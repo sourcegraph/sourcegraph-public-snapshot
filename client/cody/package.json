@@ -90,6 +90,12 @@
           "id": "cody.chat",
           "name": "Chat",
           "visibility": "visible"
+        },
+        {
+          "type": "tree",
+          "id": "cody.recipes",
+          "name": "Recipes",
+          "visibility": "visible"
         }
       ]
     },
@@ -143,7 +149,7 @@
         "title": "Cody: View Suggestions"
       },
       {
-        "command": "cody.settings",
+        "command": "cody.view-settings",
         "title": "Cody: Settings",
         "group": "Cody",
         "icon": "$(gear)"
@@ -159,7 +165,7 @@
         "icon": "$(clear-all)"
       },
       {
-        "command": "cody.history",
+        "command": "cody.view-history",
         "title": "Cody: Chat History",
         "group": "Cody",
         "icon": "$(history)"
@@ -188,6 +194,17 @@
         "command": "cody.guardrails.debug",
         "title": "Cody: Guardrails Debug Attribution",
         "enablement": "config.cody.debug && config.cody.experimental.guardrails && editorHasSelection"
+      },
+      {
+        "command": "cody.recipes.run-from-tree-view",
+        "title": "Cody: Run Recipe",
+        "icon": "$(run)"
+      },
+      {
+        "command": "cody.view-chat",
+        "title": "Cody: Chat",
+        "group": "Cody",
+        "icon": "$(comment)"
       }
     ],
     "keybindings": [
@@ -263,6 +280,10 @@
         {
           "command": "cody.comment.load",
           "when": "false"
+        },
+        {
+          "command": "cody.recipes.run-from-tree-view",
+          "when": "false"
         }
       ],
       "editor/context": [
@@ -311,17 +332,22 @@
       ],
       "view/title": [
         {
+          "command": "cody.view-chat",
+          "when": "view == cody.chat && cody.activated",
+          "group": "navigation"
+        },
+        {
           "command": "cody.interactive.clear",
           "when": "view == cody.chat && cody.activated",
           "group": "navigation"
         },
         {
-          "command": "cody.settings",
+          "command": "cody.view-settings",
           "when": "view == cody.chat && cody.activated",
           "group": "navigation"
         },
         {
-          "command": "cody.history",
+          "command": "cody.view-history",
           "when": "view == cody.chat && cody.activated",
           "group": "navigation"
         }
@@ -348,6 +374,13 @@
           "command": "cody.comment.load",
           "group": "inline@2",
           "when": "cody.activated && commentController =~ /^cody-inline/ && cody.reply.pending"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "cody.recipes.run-from-tree-view",
+          "when": "view == cody.recipes",
+          "group": "inline"
         }
       ]
     },
