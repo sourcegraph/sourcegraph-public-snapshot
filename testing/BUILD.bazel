@@ -12,6 +12,9 @@ sh_test(
         "//dev/gqltest:gqltest_test",
         "//enterprise/cmd/server:image_tarball",
     ],
+    env = {
+        "SG_FEATURE_FLAG_GRPC": "false",
+    },
     env_inherit = [
         "AWS_ACCESS_KEY_ID",
         "AWS_CODE_COMMIT_PASSWORD",
