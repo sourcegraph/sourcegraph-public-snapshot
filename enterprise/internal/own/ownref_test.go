@@ -285,8 +285,33 @@ func TestBagUnverifiedEmailOnlyMatchesWithItself(t *testing.T) {
 				assert.True(t, bag.Contains(r), fmt.Sprintf("bag.Contains(%s), want true, got false", r))
 			} else {
 				assert.False(t, bag.Contains(r), fmt.Sprintf("bag.Contains(%s), want false, got true", r))
-
 			}
 		})
 	}
+}
+
+func TestBagManyUsers(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	ctx := context.Background()
+	_, err := db.Users().Create(ctx, database.NewUser{
+		Email:           "john.doe@example.com",
+		Username:        "jdoe",
+		EmailIsVerified: true,
+	})
+	require.NoError(t, err)
+	_, err = db.Users().Create(ctx, database.NewUser{
+		Email:           "suzy.smith@example.com",
+		Username:        "ssmith",
+		EmailIsVerified: true,
+	})
+	require.NoError(t, err)
+	bag, err := ByTextReference(ctx, db, "jdoe", "ssmith")
+	require.NoError(t, err)
+	assert.True(t, bag.Contains(Reference{Handle: "ssmith"}))
+	assert.True(t, bag.Contains(Reference{Handle: "jdoe"}))
 }
