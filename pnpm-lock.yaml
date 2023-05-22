@@ -1151,6 +1151,9 @@ importers:
       string-width:
         specifier: ^4.2.0
         version: 4.2.3
+      strip-ansi:
+        specifier: ^6.0.1
+        version: 6.0.1
       style-loader:
         specifier: ^3.3.1
         version: 3.3.1(webpack@5.75.0)
@@ -1166,6 +1169,9 @@ importers:
       terser-webpack-plugin:
         specifier: ^5.3.6
         version: 5.3.6(esbuild@0.17.14)(webpack@5.75.0)
+      text-table:
+        specifier: ^0.2.0
+        version: 0.2.0
       ts-loader:
         specifier: ^9.4.2
         version: 9.4.2(typescript@5.0.2)(webpack@5.75.0)

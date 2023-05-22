@@ -1,4 +1,6 @@
-src/graphql-operations.ts
+**/graphql-operations.ts
+graphql-operations.ts
+**/node_modules/**
 dist/
 package.json
 src/vendor/*.js

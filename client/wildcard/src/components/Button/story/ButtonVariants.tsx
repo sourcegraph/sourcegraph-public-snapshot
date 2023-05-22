@@ -4,6 +4,8 @@ import { startCase } from 'lodash'
 
 import 'storybook-addon-designs'
 
+import { logger } from '@sourcegraph/common'
+
 import { Icon } from '../../Icon'
 import { Button, ButtonProps } from '../Button'
 import { BUTTON_VARIANTS } from '../constants'
@@ -24,15 +26,15 @@ export const ButtonVariants: React.FunctionComponent<React.PropsWithChildren<But
     <div className={styles.grid}>
         {variants.map(variant => (
             <React.Fragment key={variant}>
-                <Button variant={variant} size={size} outline={outline} onClick={console.log}>
+                <Button variant={variant} size={size} outline={outline} onClick={logger.log}>
                     {ButtonIcon && <Icon aria-hidden={true} as={ButtonIcon} className="mr-1" />}
                     {startCase(variant)}
                 </Button>
-                <Button variant={variant} size={size} outline={outline} onClick={console.log} className="focus">
+                <Button variant={variant} size={size} outline={outline} onClick={logger.log} className="focus">
                     {ButtonIcon && <Icon aria-hidden={true} as={ButtonIcon} className="mr-1" />}
                     Focus
                 </Button>
-                <Button variant={variant} size={size} outline={outline} onClick={console.log} disabled={true}>
+                <Button variant={variant} size={size} outline={outline} onClick={logger.log} disabled={true}>
                     {ButtonIcon && <Icon aria-hidden={true} as={ButtonIcon} className="mr-1" />}
                     Disabled
                 </Button>

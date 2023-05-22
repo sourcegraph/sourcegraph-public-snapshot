@@ -1,17 +1,3 @@
-# Merkle tree calculations will be memoized to improve the remote cache hit checking speed. The
-# memory foot print of the cache is controlled by `--experimental_remote_merkle_tree_cache_size`.
-# Docs: https://bazel.build/reference/command-line-reference#flag--experimental_remote_merkle_tree_cache
-build --experimental_remote_merkle_tree_cache
-query --experimental_remote_merkle_tree_cache
-
-# The number of Merkle trees to memoize to improve the remote cache hit checking speed. Even though
-# the cache is automatically pruned according to Java's handling of soft references, out-of-memory
-# errors can occur if set too high. If set to 0 the cache size is unlimited. Optimal value varies
-# depending on project's size.
-# Docs: https://bazel.build/reference/command-line-reference#flag--experimental_remote_merkle_tree_cache_size
-build --experimental_remote_merkle_tree_cache_size=1000
-query --experimental_remote_merkle_tree_cache_size=1000
-
 # Speed up all builds by not checking if output files have been modified. Lets you make changes to
 # the output tree without triggering a build for local debugging. For example, you can modify
 # [rules_js](https://github.com/aspect-build/rules_js) 3rd party npm packages in the output tree

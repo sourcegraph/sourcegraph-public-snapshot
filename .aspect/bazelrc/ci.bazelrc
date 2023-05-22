@@ -3,7 +3,7 @@
 # or split up into multiple test targets with sharding or manually.
 # Set this flag to exclude targets that have their timeout set to eternal (>15m) from running on CI.
 # Docs: https://bazel.build/docs/user-manual#test-timeout-filters
-build --test_timeout_filters=-eternal
+test --test_timeout_filters=-eternal
 
 # Set this flag to enable re-tries of failed tests on CI.
 # When any test target fails, try one or more times. This applies regardless of whether the "flaky"
@@ -16,7 +16,7 @@ build --test_timeout_filters=-eternal
 # is more likely to get fixed.
 # Note that when passing after the first attempt, Bazel will give a special "FLAKY" status.
 # Docs: https://bazel.build/docs/user-manual#flaky-test-attempts
-build --flaky_test_attempts=2
+test --flaky_test_attempts=2
 
 # Announce all announces command options read from the bazelrc file(s) when starting up at the
 # beginning of each Bazel invocation. This is very useful on CI to be able to inspect what Bazel rc
@@ -29,9 +29,11 @@ build --announce_rc
 # Docs: https://bazel.build/docs/user-manual#show-timestamps
 build --show_timestamps
 
-# Only show progress every 5 seconds on CI.
+# Only show progress every 60 seconds on CI.
+# We want to find a compromise between printing often enough to show that the build isn't stuck,
+# but not so often that we produce a long log file that requires a lot of scrolling.
 # https://bazel.build/reference/command-line-reference#flag--show_progress_rate_limit
-build --show_progress_rate_limit=5
+build --show_progress_rate_limit=60
 
 # Use cursor controls in screen output.
 # Docs: https://bazel.build/docs/user-manual#curses
