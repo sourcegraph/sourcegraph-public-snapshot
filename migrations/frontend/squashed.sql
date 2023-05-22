@@ -3660,6 +3660,35 @@ CREATE TABLE own_background_jobs (
     job_type integer NOT NULL
 );
 
+CREATE TABLE own_signal_configurations (
+    id integer NOT NULL,
+    name text NOT NULL,
+    description text DEFAULT ''::text NOT NULL,
+    excluded_repo_patterns text[],
+    enabled boolean DEFAULT false NOT NULL
+);
+
+CREATE VIEW own_background_jobs_config_aware AS
+ SELECT obj.id,
+    obj.state,
+    obj.failure_message,
+    obj.queued_at,
+    obj.started_at,
+    obj.finished_at,
+    obj.process_after,
+    obj.num_resets,
+    obj.num_failures,
+    obj.last_heartbeat_at,
+    obj.execution_logs,
+    obj.worker_hostname,
+    obj.cancel,
+    obj.repo_id,
+    obj.job_type,
+    osc.name AS config_name
+   FROM (own_background_jobs obj
+     JOIN own_signal_configurations osc ON ((obj.job_type = osc.id)))
+  WHERE (osc.enabled IS TRUE);
+
 CREATE SEQUENCE own_background_jobs_id_seq
     AS integer
     START WITH 1
@@ -3669,14 +3698,6 @@ CREATE SEQUENCE own_background_jobs_id_seq
     CACHE 1;
 
 ALTER SEQUENCE own_background_jobs_id_seq OWNED BY own_background_jobs.id;
-
-CREATE TABLE own_signal_configurations (
-    id integer NOT NULL,
-    name text NOT NULL,
-    description text DEFAULT ''::text NOT NULL,
-    excluded_repo_patterns text[],
-    enabled boolean DEFAULT false NOT NULL
-);
 
 CREATE SEQUENCE own_signal_configurations_id_seq
     AS integer

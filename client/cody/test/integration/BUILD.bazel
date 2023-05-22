@@ -18,7 +18,7 @@ ts_config(
 )
 
 ts_project(
-    name = "integration-test_tests",
+    name = "integration_tests",
     testonly = True,
     srcs = [
         "api.test.ts",
@@ -26,20 +26,18 @@ ts_project(
         "helpers.ts",
         "index.ts",
         "main.ts",
-        "mock-server.ts",
         "recipes.test.ts",
     ],
     tsconfig = ":tsconfig",
     deps = [
-        "//:node_modules/@types/express",
         "//:node_modules/@types/glob",
         "//:node_modules/@types/mocha",
         "//:node_modules/@types/node",
         "//:node_modules/@vscode",
         "//:node_modules/@vscode/test-electron",
-        "//:node_modules/express",
         "//:node_modules/glob",
         "//:node_modules/mocha",
         "//client/cody",
+        "//client/cody:cody_tests",
     ],
 )

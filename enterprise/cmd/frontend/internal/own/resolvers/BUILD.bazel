@@ -55,6 +55,7 @@ go_test(
         "//enterprise/internal/own",
         "//enterprise/internal/own/codeowners",
         "//enterprise/internal/own/codeowners/v1:codeowners",
+        "//enterprise/internal/own/types",
         "//internal/actor",
         "//internal/api",
         "//internal/auth",

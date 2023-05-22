@@ -57,8 +57,9 @@
     "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
-    "test:integration": "tsc -b ./integration-test && pnpm run --silent build:dev && ts-node out/integration-test/main.js",
+    "test:integration": "tsc -b ./test/integration && pnpm run --silent build:dev && node --inspect -r ts-node/register out/test/integration/main.js",
     "test:unit": "jest",
+    "test:e2e": "npx playwright install && pnpm run --silent build:dev && playwright test test/e2e",
     "vscode:prepublish": "scripts/check-rg.sh",
     "vsce:package": "pnpm --silent build && vsce package --no-dependencies -o dist/cody.vsix",
     "vsce:prerelease": "pnpm --silent build && vsce package patch --pre-release --no-dependencies -o dist/cody.vsix",
@@ -430,5 +431,9 @@
     "wink-eng-lite-web-model": "^1.5.0",
     "wink-nlp": "^1.13.1",
     "wink-nlp-utils": "^2.1.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.33.0",
+    "playwright": "^1.33.0"
   }
 }
