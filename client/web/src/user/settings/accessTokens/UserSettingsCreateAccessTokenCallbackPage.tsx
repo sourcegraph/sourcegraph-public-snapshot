@@ -9,6 +9,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, Link, Text, ErrorAlert, Card, H1, H2, useEventObservable } from '@sourcegraph/wildcard'
 
+import { tauriShellOpen } from '../../../app/tauriShellOpen'
 import { AccessTokenScopes } from '../../../auth/accessToken'
 import { BrandLogo } from '../../../components/branding/BrandLogo'
 import { CopyableText } from '../../../components/CopyableText'
@@ -19,15 +20,6 @@ import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 import { createAccessToken } from './create'
 
 import styles from './UserSettingsCreateAccessTokenCallbackPage.module.scss'
-
-/**
- * Utility function to open the callback URL in Sourcegraph App. Used where
- * window.open or target="_blank" cannot be used.
- */
-function tauriShellOpen(uri: string): void {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-explicit-any
-    ;(window as any).__TAURI__?.shell?.open(uri)
-}
 
 interface Props extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>, TelemetryProps {
     /**
