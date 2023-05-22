@@ -1,0 +1,29 @@
+load("@rules_oci//oci:defs.bzl", "oci_image")
+
+filegroup(
+    name = "redis_conf",
+    srcs = ["redis.conf"],
+)
+
+pkg_tar(
+    name = "redis_tarball",
+    srcs = [":redis_conf"],
+    remap_paths = {
+        "redis.conf": "/etc/redis/redis.conf",
+    },
+)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_redis_base",
+    entrypoint = [
+        "redis-server",
+        "/etc/redis/redis.conf",
+    ],
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["redis-cache:candidate"],
+)

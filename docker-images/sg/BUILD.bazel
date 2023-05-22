@@ -1,0 +1,24 @@
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+
+pkg_tar(
+    name = "sg_tarball",
+    srcs = ["//dev/sg"],
+    remap_paths = {
+        "sg": "/usr/local/bin/sg",
+    },
+)
+
+oci_image(
+    name = "image",
+    base = "@wolfi-sourcegraph-base",
+    entrypoint = [
+        "/usr/local/bin/sg",
+    ],
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["sg:candidate"],
+)

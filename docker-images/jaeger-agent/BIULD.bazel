@@ -1,0 +1,13 @@
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+
+oci_image(
+    name = "image",
+    base = "@wolfi_jaeger_agent_base",
+    entrypoint = ["/usr/local/bin/jaeger-agent"],
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["jaeger-agent:candidate"],
+)

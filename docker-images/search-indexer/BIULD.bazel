@@ -1,0 +1,31 @@
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+load("//cmd/server:macro.bzl", "container_dependencies", "dependencies_tars")
+
+DEPS = [
+    "@com_github_sourcegraph_zoekt//cmd/zoekt-archive-index",
+    "@com_github_sourcegraph_zoekt//cmd/zoekt-git-index",
+    "@com_github_sourcegraph_zoekt//cmd/zoekt-sourcegraph-indexserver",
+    "@com_github_sourcegraph_zoekt//cmd/zoekt-webserver",
+    "@com_github_sourcegraph_zoekt//cmd/zoekt-merge-index",
+]
+
+container_dependencies(DEPS)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_base",
+    cmd = ["/sbin/tini", "--", "zoekt-sourcegraph-indexserver"],
+    user = "sourcegraph",
+    env = {
+                "DATA_DIR": "/data/index",
+    "SRC_FRONTEND_INTERNAL":"https://sourcegraph-frontend-internal",
+    }
+    workdir = "/home/sourcegraph",
+    tars = dependencies_tars(DEPS),
+)
+
+oci_tarball(
+    name = "image_tarball"
+    image = ":image",
+    repo_tags = "zoekt-indexserver:candidate"
+)
