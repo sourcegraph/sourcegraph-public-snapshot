@@ -41,7 +41,7 @@ import styles from './SiteAdminUpdatesPage.module.scss'
 interface Props extends TelemetryProps {
     isSourcegraphApp: boolean
 }
-const capitalize = (s: string) => (s && s[0].toUpperCase() + s.slice(1)) || ''
+const capitalize = (text: string): string => (text && text[0].toUpperCase() + text.slice(1)) || ''
 
 const SiteUpdateCheck: React.FC = () => {
     const { data, loading, error } = useQuery<SiteUpdateCheckResult, SiteUpdateCheckVariables>(SITE_UPDATE_CHECK, {})
