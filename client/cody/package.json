@@ -78,7 +78,7 @@
       "activitybar": [
         {
           "id": "cody",
-          "title": "Sourcegraph Cody",
+          "title": "Sourcegraph Cody (Beta)",
           "icon": "resources/cody.svg"
         }
       ]

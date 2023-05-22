@@ -10,7 +10,6 @@ import { AuthStatus, isLoggedIn } from '../src/chat/protocol'
 
 import { Chat } from './Chat'
 import { Debug } from './Debug'
-import { Header } from './Header'
 import { LoadingPage } from './LoadingPage'
 import { Login } from './Login'
 import { Settings } from './Settings'
@@ -116,7 +115,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     return (
         <div className="outer-container">
-            <Header />
             {view === 'login' ? (
                 <Login
                     onLogin={onLogin}
