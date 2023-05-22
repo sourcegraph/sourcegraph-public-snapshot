@@ -14,6 +14,7 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -74,13 +75,15 @@ func NewPerforceChangelistMappingQueue(jobs *list.List) *perforceChangelistMappi
 	return &cq
 }
 
-func (s *Server) StartPerforceChangelistMappingPipeline(ctx context.Context) {
+type PerforceCore struct{}
+
+func (sl *PerforceCore) StartPerforceChangelistMappingPipeline(ctx context.Context) {
 	jobs := make(chan *perforceChangelistMappingJob)
 	go s.changelistMappingConsumer(ctx, jobs)
 	go s.changelistMappingProducer(ctx, jobs)
 }
 
-func (s *Server) changelistMappingProducer(ctx context.Context, jobs chan<- *perforceChangelistMappingJob) {
+func (s *PerforceCore) changelistMappingProducer(ctx context.Context, jobs chan<- *perforceChangelistMappingJob) {
 	defer close(jobs)
 
 	for {
@@ -107,7 +110,7 @@ func (s *Server) changelistMappingProducer(ctx context.Context, jobs chan<- *per
 	}
 }
 
-func (s *Server) changelistMappingConsumer(ctx context.Context, jobs <-chan *perforceChangelistMappingJob) {
+func (s *PerforceCore) changelistMappingConsumer(ctx context.Context, jobs <-chan *perforceChangelistMappingJob) {
 	logger := s.Logger.Scoped("changelistMappingConsumer", "process perforce changelist mapping jobs")
 
 	// Process only one job at a time for a simpler pipeline at the moment.
@@ -128,7 +131,7 @@ func (s *Server) changelistMappingConsumer(ctx context.Context, jobs <-chan *per
 	}
 }
 
-func (s *Server) doChangelistMapping(ctx context.Context, job *perforceChangelistMappingJob) error {
+func (s *PerforceCore) doChangelistMapping(ctx context.Context, job *perforceChangelistMappingJob) error {
 	logger := s.Logger.Scoped("doChangelistMapping", "").With(
 		log.String("repo", string(job.repo)),
 	)
@@ -169,7 +172,7 @@ func (s *Server) doChangelistMapping(ctx context.Context, job *perforceChangelis
 	return nil
 }
 
-func headCommitSHA(ctx context.Context, logger log.Logger, dir GitDir) (string, error) {
+func headCommitSHA(ctx context.Context, logger log.Logger, dir server.GitDir) (string, error) {
 	cmd := exec.CommandContext(ctx, "git", "rev-parse", "HEAD")
 	dir.Set(cmd)
 	output, err := runWith(ctx, wrexec.Wrap(ctx, logger, cmd), false, nil)
@@ -180,7 +183,7 @@ func headCommitSHA(ctx context.Context, logger log.Logger, dir GitDir) (string, 
 	return string(bytes.TrimSpace(output)), nil
 }
 
-func (s *Server) getCommitsToInsert(ctx context.Context, logger log.Logger, repoID api.RepoID, dir GitDir) (commitsMap []types.PerforceChangelist, err error) {
+func (s *PerforceCore) getCommitsToInsert(ctx context.Context, logger log.Logger, repoID api.RepoID, dir server.GitDir) (commitsMap []types.PerforceChangelist, err error) {
 	latestRowCommit, err := s.DB.RepoCommitsChangelists().GetLatestForRepo(ctx, repoID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -223,7 +226,7 @@ func (s *Server) getCommitsToInsert(ctx context.Context, logger log.Logger, repo
 // 90b9b9574517f30810346f0ab07f66c49c77ab0f [p4-fusion: depot-paths = "//rhia-depot-test/": change = 83731]
 var logFormatWithCommitSHAAndCommitBodyOnly = "--format=format:%H %b"
 
-func newMappableCommits(ctx context.Context, logger log.Logger, dir GitDir, lastMappedCommit, head string) ([]types.PerforceChangelist, error) {
+func newMappableCommits(ctx context.Context, logger log.Logger, dir server.GitDir, lastMappedCommit, head string) ([]types.PerforceChangelist, error) {
 	cmd := exec.CommandContext(ctx, "git", "log")
 	// FIXME: When lastMappedCommit..head is an invalid range.
 	// TODO: Follow up in a separate PR.
