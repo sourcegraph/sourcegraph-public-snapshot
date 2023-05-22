@@ -95,6 +95,13 @@ export const test = base
 
 export async function getCodySidebar(page: Page): Promise<Frame> {
     async function findCodySidebarFrame(): Promise<null | Frame> {
+        console.log('### debug frames')
+        for (const frame of page.frames()) {
+            const title = await frame.title()
+            console.log('+ ' + title)
+        }
+        console.log('### /debug frames')
+
         for (const frame of page.frames()) {
             try {
                 const title = await frame.title()

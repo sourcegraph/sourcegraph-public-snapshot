@@ -8,6 +8,7 @@ test('requires a valid auth token and allows logouts', async ({ page, sidebar })
     await sidebar.getByRole('textbox', { name: 'Sourcegraph Instance URL' }).fill(SERVER_URL)
 
     await sidebar.getByRole('textbox', { name: 'Access Token (docs)' }).fill('test token')
+    console.log(await sidebar.textContent('body'))
     await sidebar.getByRole('button', { name: 'Sign In' }).click()
 
     await expect(sidebar.getByText('Invalid credentials')).toBeVisible()
