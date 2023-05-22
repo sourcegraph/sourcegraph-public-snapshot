@@ -54,7 +54,7 @@ To connect GitHub to Sourcegraph with an access token:
 3. Configure the connection to GitHub using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
 4. Press **Add repositories**.
 
-In this example, the kubernetes public repository on GitHub is added by selecting **Add a singe repository** and replacing `<owner>/<repository>` with `kubernetes/kubernetes`:
+In this example, the kubernetes public repository on GitHub is added by selecting **Add a single repository** and replacing `<owner>/<repository>` with `kubernetes/kubernetes`:
 
 ```
 {
@@ -175,7 +175,7 @@ Repo-centric permission syncing is done by calling the [list repository collabor
 
 <span class="virtual-br"></span>
 
-> IMPORTANT: Optional, but strongly recommended - [continue with configuring webhoooks for permissions](../config/webhooks/incoming.md#user-permissions).
+> IMPORTANT: Optional, but strongly recommended - [continue with configuring webhooks for permissions](../config/webhooks/incoming.md#user-permissions).
 
 <span class="virtual-br"></span>
 
@@ -230,7 +230,7 @@ Read-only access will *not* work with cached permissions sync, but will work wit
 
 When enabling this feature, we currently recommend a default `groupsCacheTTL` of `72` (hours, or 3 days). A lower value can be set if your teams and organizations change frequently, though the chosen value must be at least several hours for the cache to be leveraged in the event of being rate-limited (which takes [an hour to recover from](https://docs.github.com/en/rest/overview/resources-in-the-rest-api#rate-limiting)).
 
-Cache invaldiation happens automatically on certain webhook events, so it is recommended to configure webhook support when using cached permissions sync.
+Cache invalidation happens automatically on certain webhook events, so it is recommended to configure webhook support when using cached permissions sync.
 Caches can also be [manually invalidated](#manually-invalidate-caches) if necessary.
 
 #### Manually invalidate caches
