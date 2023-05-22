@@ -1,6 +1,6 @@
 sh_test(
     name = "backend_integration_test",
-    srcs = [":bb.sh"],
+    srcs = [":backend_integration_test.sh"],
     args = [
         "$(location //enterprise/cmd/server:image_tarball)",  # image we're testing against
         "server:candidate",
