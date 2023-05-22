@@ -77,17 +77,8 @@ func UpdateRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store
 	rei.TextIndex.filter(toRemoveSet)
 
 	// append new data
-	for i, s := range index.CodeIndex.RowMetadata {
-		rei.CodeIndex.RowMetadata = append(rei.CodeIndex.RowMetadata, s)
-		rei.CodeIndex.Ranks = append(rei.CodeIndex.Ranks, index.CodeIndex.Ranks[i])
-		rei.CodeIndex.Embeddings = append(rei.CodeIndex.Embeddings, index.CodeIndex.Embeddings[i*index.CodeIndex.ColumnDimension:(i+1)*index.CodeIndex.ColumnDimension]...)
-	}
-
-	for i, s := range index.TextIndex.RowMetadata {
-		rei.TextIndex.RowMetadata = append(rei.TextIndex.RowMetadata, s)
-		rei.TextIndex.Ranks = append(rei.TextIndex.Ranks, index.TextIndex.Ranks[i])
-		rei.TextIndex.Embeddings = append(rei.TextIndex.Embeddings, index.TextIndex.Embeddings[i*index.TextIndex.ColumnDimension:(i+1)*index.TextIndex.ColumnDimension]...)
-	}
+	rei.CodeIndex.append(index.CodeIndex)
+	rei.TextIndex.append(index.TextIndex)
 
 	// re-upload
 	return UploadRepoEmbeddingIndex(ctx, uploadStore, key, rei)

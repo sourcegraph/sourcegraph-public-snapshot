@@ -26,7 +26,7 @@ func (index *EmbeddingIndex) EstimateSize() int64 {
 	return int64(len(index.Embeddings) + len(index.RowMetadata)*(16+8+8) + len(index.Ranks)*4)
 }
 
-// Filter removes all files from the index that are not in the set
+// Filter removes all files from the index that are in the set
 func (index *EmbeddingIndex) filter(set map[string]struct{}) {
 	cursor := 0
 	for i, s := range index.RowMetadata {
@@ -38,10 +38,7 @@ func (index *EmbeddingIndex) filter(set map[string]struct{}) {
 		if len(index.Ranks) > 0 {
 			index.Ranks[cursor] = index.Ranks[i]
 		}
-		copy(
-			index.Embeddings[cursor*index.ColumnDimension:(cursor+1)*index.ColumnDimension], // dst
-			index.Embeddings[i*index.ColumnDimension:(i+1)*index.ColumnDimension],
-		)
+		copy(index.Row(cursor), index.Row(i))
 		cursor++
 	}
 
@@ -51,6 +48,12 @@ func (index *EmbeddingIndex) filter(set map[string]struct{}) {
 		index.Ranks = index.Ranks[:cursor]
 	}
 	index.Embeddings = index.Embeddings[:cursor*index.ColumnDimension]
+}
+
+func (index *EmbeddingIndex) append(other EmbeddingIndex) {
+	index.RowMetadata = append(index.RowMetadata, other.RowMetadata...)
+	index.Ranks = append(index.Ranks, other.Ranks...)
+	index.Embeddings = append(index.Embeddings, other.Embeddings...)
 }
 
 type RepoEmbeddingRowMetadata struct {

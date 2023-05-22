@@ -1,6 +1,7 @@
 package embeddings
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -82,5 +83,65 @@ func TestEmbeddingIndexFilter(t *testing.T) {
 
 	if d := cmp.Diff(embeddings.Embeddings, []int8{3, 4, 7, 8}); d != "" {
 		t.Fatalf("-want, +got:\n%s", d)
+	}
+}
+
+func TestAppend(t *testing.T) {
+	index := EmbeddingIndex{
+		Embeddings:      []int8{1, 2, 3},
+		ColumnDimension: 3,
+		RowMetadata: []RepoEmbeddingRowMetadata{
+			{
+				FileName:  "file1.txt",
+				StartLine: 1,
+				EndLine:   10,
+			},
+		},
+	}
+
+	other := EmbeddingIndex{
+		Embeddings:      []int8{4, 5, 6, 7, 8, 9},
+		ColumnDimension: 3,
+		RowMetadata: []RepoEmbeddingRowMetadata{
+			{
+				FileName:  "file2.txt",
+				StartLine: 5,
+				EndLine:   15,
+			},
+			{
+				FileName:  "file3.txt",
+				StartLine: 20,
+				EndLine:   25,
+			},
+		},
+	}
+
+	expectedEmbeddings := []int8{1, 2, 3, 4, 5, 6, 7, 8, 9}
+	expectedRowMetadata := []RepoEmbeddingRowMetadata{
+		{
+			FileName:  "file1.txt",
+			StartLine: 1,
+			EndLine:   10,
+		},
+		{
+			FileName:  "file2.txt",
+			StartLine: 5,
+			EndLine:   15,
+		},
+		{
+			FileName:  "file3.txt",
+			StartLine: 20,
+			EndLine:   25,
+		},
+	}
+
+	index.append(other)
+
+	if !reflect.DeepEqual(index.Embeddings, expectedEmbeddings) {
+		t.Errorf("Expected Embeddings %v, but got %v", expectedEmbeddings, index.Embeddings)
+	}
+
+	if !reflect.DeepEqual(index.RowMetadata, expectedRowMetadata) {
+		t.Errorf("Expected RowMetadata %v, but got %v", expectedRowMetadata, index.RowMetadata)
 	}
 }
