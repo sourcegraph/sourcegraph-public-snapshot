@@ -35,9 +35,7 @@
 }
 
 .row:only-child {
-    /* For the welcome message, make it visually consume the entire height instead of being a
-    discrete message. */
-    flex: 1;
+    /* For the welcome message remove the bottom border */
     border-bottom: none;
 }
 

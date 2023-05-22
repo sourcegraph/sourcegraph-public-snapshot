@@ -196,11 +196,6 @@
         "enablement": "config.cody.debug && config.cody.experimental.guardrails && editorHasSelection"
       },
       {
-        "command": "cody.recipes.run-from-tree-view",
-        "title": "Cody: Run Recipe",
-        "icon": "$(run)"
-      },
-      {
         "command": "cody.view-chat",
         "title": "Cody: Chat",
         "group": "Cody",
@@ -279,10 +274,6 @@
         },
         {
           "command": "cody.comment.load",
-          "when": "false"
-        },
-        {
-          "command": "cody.recipes.run-from-tree-view",
           "when": "false"
         }
       ],
@@ -374,13 +365,6 @@
           "command": "cody.comment.load",
           "group": "inline@2",
           "when": "cody.activated && commentController =~ /^cody-inline/ && cody.reply.pending"
-        }
-      ],
-      "view/item/context": [
-        {
-          "command": "cody.recipes.run-from-tree-view",
-          "when": "view == cody.recipes",
-          "group": "inline"
         }
       ]
     },

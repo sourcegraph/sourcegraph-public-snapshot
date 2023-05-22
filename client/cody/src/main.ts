@@ -191,7 +191,7 @@ const register = async (
         ),
         vscode.commands.registerCommand('cody.recipe.find-code-smells', () => executeRecipe('find-code-smells')),
         vscode.commands.registerCommand('cody.recipe.context-search', () => executeRecipe('context-search')),
-        vscode.commands.registerCommand('cody.recipes.run-from-tree-view', args => executeRecipe(args.description)),
+        vscode.commands.registerCommand('cody.recipes.run-from-tree-view', recipe => executeRecipe(recipe)),
         // Register URI Handler for resolving token sending back from sourcegraph.com
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {

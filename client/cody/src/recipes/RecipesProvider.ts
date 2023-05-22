@@ -38,5 +38,10 @@ export class RecipesProvider implements vscode.TreeDataProvider<Dependency> {
 class Dependency extends vscode.TreeItem {
     constructor(public readonly label: string, public description: string, public iconPath: vscode.ThemeIcon) {
         super(label, vscode.TreeItemCollapsibleState.None)
+        this.command = {
+            title: 'Run Recipe From Tree View',
+            command: 'cody.recipes.run-from-tree-view',
+            arguments: [description],
+        }
     }
 }
