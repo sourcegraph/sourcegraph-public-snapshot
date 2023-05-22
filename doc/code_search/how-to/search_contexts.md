@@ -64,7 +64,7 @@ A search context consists of a name, description, and a set of repositories at o
 
 Contexts can be owned by a user, and can be private to the user or public to all users on the Sourcegraph instance.
 
-Contexts can also be at the global instance level, and can be private to site admins or public to all users on the Sourcegraph instance.\
+Contexts can also be at the global instance level, and can be private to site admins or public to all users on the Sourcegraph instance.
 
 ### Creating search contexts from header navigation
 
