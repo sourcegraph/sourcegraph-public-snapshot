@@ -7,10 +7,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 
 public class ChatMessage extends Message {
-    @NotNull
-    private final String displayText;
-    @NotNull
-    private final ArrayList<String> contextFiles;
+    private final @NotNull String displayText;
+    private final @NotNull ArrayList<String> contextFiles;
 
     private ChatMessage(@NotNull Speaker speaker, @NotNull String text, @NotNull String displayText, @NotNull ArrayList<String> contextFiles) {
         super(speaker, text);

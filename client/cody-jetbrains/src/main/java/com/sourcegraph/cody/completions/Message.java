@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 
 public class Message {
     protected final @NotNull Speaker speaker;
-
     protected final @NotNull String text;
 
     public Message(@NotNull Speaker speaker, @NotNull String text) {
