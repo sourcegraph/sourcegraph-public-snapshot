@@ -17,6 +17,9 @@ describe('getConfiguration', () => {
             experimentalGuardrails: false,
             experimentalInline: false,
             customHeaders: {},
+            debugEnable: false,
+            debugVerbose: false,
+            debugFilter: '',
         })
     })
 
@@ -32,6 +35,11 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.useContext':
                         return 'keyword'
+                    case 'cody.customHeaders':
+                        return {
+                            'Cache-Control': 'no-cache',
+                            'Proxy-Authenticate': 'Basic',
+                        }
                     case 'cody.experimental.suggestions':
                         return true
                     case 'cody.experimental.chatPredictions':
@@ -40,11 +48,12 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.inline':
                         return true
-                    case 'cody.customHeaders':
-                        return {
-                            'Cache-Control': 'no-cache',
-                            'Proxy-Authenticate': 'Basic',
-                        }
+                    case 'cody.experimental.enable':
+                        return true
+                    case 'cody.experimental.verbose':
+                        return true
+                    case 'cody.experimental.filter':
+                        return ''
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -55,14 +64,17 @@ describe('getConfiguration', () => {
             codebase: 'my/codebase',
             debug: true,
             useContext: 'keyword',
-            experimentalSuggest: true,
-            experimentalChatPredictions: true,
-            experimentalGuardrails: true,
-            experimentalInline: true,
             customHeaders: {
                 'Cache-Control': 'no-cache',
                 'Proxy-Authenticate': 'Basic',
             },
+            experimentalSuggest: true,
+            experimentalChatPredictions: true,
+            experimentalGuardrails: true,
+            experimentalInline: true,
+            debugEnable: true,
+            debugVerbose: true,
+            debugFilter: '',
         })
     })
 })
