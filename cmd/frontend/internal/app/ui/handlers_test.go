@@ -219,10 +219,14 @@ func TestNewCommon_repo_error(t *testing.T) {
 			repoStatistics := database.NewMockRepoStatisticsStore()
 			repoStatistics.GetRepoStatisticsFunc.SetDefaultReturn(database.RepoStatistics{Total: 1}, nil)
 
+			users := database.NewMockUserStore()
+			users.GetByCurrentAuthUserFunc.SetDefaultReturn(nil, nil)
+
 			db := database.NewMockDB()
 			db.GlobalStateFunc.SetDefaultReturn(gss)
 			db.ExternalServicesFunc.SetDefaultReturn(extSvcs)
 			db.RepoStatisticsFunc.SetDefaultReturn(repoStatistics)
+			db.UsersFunc.SetDefaultReturn(users)
 
 			_, err = newCommon(httptest.NewRecorder(), req, db, "test", index, serveError)
 			if err != nil {

@@ -17,7 +17,7 @@ interface IsCodyEnabled {
 }
 
 export const isEmailVerificationNeeded = (): boolean =>
-    window.context?.sourcegraphDotComMode && !window.context?.currentUser?.hasVerifiedEmail
+    window.context?.codyRequiresVerifiedEmail && !window.context?.currentUser?.hasVerifiedEmail
 
 export const useIsCodyEnabled = (): IsCodyEnabled => {
     const [chatEnabled] = useFeatureFlag('cody-web-chat')
