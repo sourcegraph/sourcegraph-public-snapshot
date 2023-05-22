@@ -52,7 +52,6 @@ func generateGoRunner(ctx context.Context, args []string) *generate.Report {
 }
 
 func generateProtoRunner(ctx context.Context, args []string) *generate.Report {
-
 	// Always run in CI
 	if os.Getenv("CI") == "true" {
 		return proto.Generate(ctx, verbose)
@@ -70,5 +69,4 @@ func generateProtoRunner(ctx context.Context, args []string) *generate.Report {
 	}
 	// Run buf gen by default
 	return proto.Generate(ctx, verbose)
-
 }
