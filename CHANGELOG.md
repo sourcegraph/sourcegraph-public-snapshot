@@ -30,8 +30,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Added the ability to block auto-indexing scheduling and inference via the `codeintel_autoindexing_exceptions` Postgres table. [#51578](https://github.com/sourcegraph/sourcegraph/pull/51578)
 - When an admin has configured rollout windows for Batch Changes changesets, the configuration details are now visible to all users on the Batch Changes settings page. [#50479](https://github.com/sourcegraph/sourcegraph/pull/50479)
 - Added support for regular expressions in`exclude` repositories for GitLab code host connections. [#51862](https://github.com/sourcegraph/sourcegraph/pull/51862)
-- There is a new site config setting `log.securityEventLogs` that can be used to configure security event logs to go to stdout in the audit log format
-  instead of the security_events table. This should improve performance for large instances [#51686](https://github.com/sourcegraph/sourcegraph/pull/51686)
+- Security event logs no longer write to database by default - instead, they will be written in the [audit log format](https://docs.sourcegraph.com/admin/audit_log) to console. There is a new site config setting `log.securityEventLogs` that can be used to configure security event logs to write to database if the old behaviour is desired. This new default will significantly improve performance for large instances. In addition, the old environment variable `SRC_DISABLE_LOG_PRIVATE_REPO_ACCESS` no longer does anything. [#51686](https://github.com/sourcegraph/sourcegraph/pull/51686)
 
 ### Changed
 
