@@ -117,7 +117,7 @@ export const TranscriptItem: React.FunctionComponent<
             className={classNames(
                 styles.row,
                 transcriptItemClassName,
-                message.speaker === 'human' ? humanTranscriptItemClassName : null
+                message.speaker === 'human' ? humanTranscriptItemClassName : styles.assistantRow
             )}
         >
             <header className={classNames(styles.participant, transcriptItemParticipantClassName)}>

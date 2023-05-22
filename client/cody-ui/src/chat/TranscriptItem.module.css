@@ -3,12 +3,26 @@
 }
 
 .row {
+    position: relative;
     border-bottom-width: 1px;
     border-bottom-style: solid;
 
     display: flex;
     flex-direction: column;
     gap: var(--spacing);
+}
+
+.assistant-row:before {
+    position: absolute;
+
+    top: 0;
+    left: 0;
+
+    width: 2px;
+    height: 100%;
+
+    content: '';
+    background-image: linear-gradient(to bottom, #ff5543, #b200f8, #00cbec);
 }
 
 .row:last-child {
@@ -43,7 +57,6 @@
 
     font-size: 0.8rem;
     font-weight: bold;
-    height: 2rem;
 }
 
 .participant-avatar {
