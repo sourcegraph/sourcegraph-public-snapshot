@@ -19,23 +19,23 @@ const recipesList: { [key: string]: RecipeEntry } = {
     'release-notes': { title: 'Generate release notes', icon: 'preview' },
 }
 
-export class RecipesProvider implements vscode.TreeDataProvider<Dependency> {
+export class RecipesProvider implements vscode.TreeDataProvider<Recipe> {
     constructor() {}
 
-    getTreeItem(element: Dependency): vscode.TreeItem {
+    getTreeItem(element: Recipe): vscode.TreeItem {
         return element
     }
 
-    getChildren(element?: Dependency): Thenable<Dependency[]> {
+    getChildren(element?: Recipe): Thenable<Recipe[]> {
         return Promise.resolve(
             Object.entries(recipesList).map(
-                ([id, data]) => new Dependency(data.title, id, new vscode.ThemeIcon(data.icon ?? 'zap'))
+                ([id, data]) => new Recipe(data.title, id, new vscode.ThemeIcon(data.icon ?? 'zap'))
             )
         )
     }
 }
 
-class Dependency extends vscode.TreeItem {
+class Recipe extends vscode.TreeItem {
     constructor(public readonly label: string, public description: string, public iconPath: vscode.ThemeIcon) {
         super(label, vscode.TreeItemCollapsibleState.None)
         this.command = {
