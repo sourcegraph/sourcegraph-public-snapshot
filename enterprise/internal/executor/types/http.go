@@ -72,8 +72,14 @@ const (
 )
 
 type HeartbeatResponse struct {
-	KnownIDs  []int `json:"knownIds"`
-	CancelIDs []int `json:"cancelIds"`
+	KnownIDs  []int `json:"knownIds,omitempty"`
+	CancelIDs []int `json:"cancelIds,omitempty"`
+
+	// Used by multi-queue executors.
+	// One of KnownIDsByQueue or KnownIDs must be set.
+	// One of CancelIDsByQueue or CancelIDs must be set.
+	KnownIDsByQueue  []QueueJobIDs `json:"knownIdsByQueue,omitempty"`
+	CancelIDsByQueue []QueueJobIDs `json:"cancelIdsByQueue,omitempty"`
 }
 
 // TODO: Deprecated. Can be removed in Sourcegraph 4.4.
