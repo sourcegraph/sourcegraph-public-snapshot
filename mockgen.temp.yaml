@@ -56,6 +56,7 @@
     - OutboundWebhookJobStore
     - OutboundWebhookLogStore
     - PhabricatorStore
+    - RepoCommitsChangelistsStore
     - RepoStore
     - SavedSearchStore
     - SearchContextsStore

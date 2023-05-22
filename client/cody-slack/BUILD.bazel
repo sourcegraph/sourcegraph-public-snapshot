@@ -2,8 +2,11 @@ load("@aspect_rules_js//npm:defs.bzl", "npm_package")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "ts_project")
+load("//dev:eslint.bzl", "eslint_config")
 
 npm_link_all_packages(name = "node_modules")
+
+eslint_config()
 
 ts_config(
     name = "tsconfig",
