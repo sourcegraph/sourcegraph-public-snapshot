@@ -93,7 +93,6 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 			if readLogErr := r.cmd.ReadLogs(ctx, r.options.Namespace, pod, command.KubernetesJobContainerName, r.commandLogger, spec.CommandSpec.Key, spec.CommandSpec.Command); findPodErr != nil {
 				return errors.Wrap(readLogErr, "failed to read logs")
 			}
-			fmt.Printf("Job %s failed: %+v\n", job.Name, pod)
 			if pod.Status.Message != "" {
 				return errors.Newf("job %s failed: %s", job.Name, pod.Status.Message)
 			} else {
