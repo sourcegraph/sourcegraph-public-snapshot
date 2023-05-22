@@ -214,6 +214,8 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
             } catch (error) {
                 reject(error)
             }
+            // Kill process on complete
+            proc.kill()
         })
         return fileTermCounts
     }
