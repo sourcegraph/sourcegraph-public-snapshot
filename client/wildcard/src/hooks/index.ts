@@ -18,7 +18,6 @@ export { useOnClickOutside } from './useOnClickOutside'
 export { useSearchParameters } from './useSearchParameters'
 export { useStopwatch } from './useStopwatch'
 export { useTimeoutManager } from './useTimeoutManager'
-export { useThrottle } from './useThrottle'
 export { WildcardThemeContext, useWildcardTheme } from './useWildcardTheme'
 // Export type is required to avoid Webpack warnings.
 export type { WildcardTheme } from './useWildcardTheme'
