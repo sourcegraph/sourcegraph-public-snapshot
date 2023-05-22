@@ -6,6 +6,8 @@ load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_op
 load("//client/shared/dev:tools.bzl", "module_style_typings")
 load("//dev:defs.bzl", "jest_test", "npm_package", "sass", "ts_project")
 load("//dev:webpack.bzl", "webpack_bundle", "webpack_devserver", "webpack_web_app")
+load("//dev:eslint.bzl", "eslint_config")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
@@ -18,9 +20,15 @@ load("//dev:webpack.bzl", "webpack_bundle", "webpack_devserver", "webpack_web_ap
 # gazelle:js_ignore_imports **/*.worker.ts
 # gazelle:js_ignore_imports **/SourcegraphWebApp.scss
 
-load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
-
 npm_link_all_packages(name = "node_modules")
+
+eslint_config(
+    deps = [
+        "//client/web/src/end-to-end:tsconfig",
+        "//client/web/src/integration:tsconfig",
+        "//client/web/src/regression:tsconfig",
+    ],
+)
 
 ts_config(
     name = "tsconfig",
@@ -327,6 +335,7 @@ ts_project(
         "src/components/gitHubApps/CreateGitHubAppPage.tsx",
         "src/components/gitHubApps/GitHubAppCard.tsx",
         "src/components/gitHubApps/GitHubAppPage.tsx",
+        "src/components/gitHubApps/GitHubAppSelector.tsx",
         "src/components/gitHubApps/GitHubAppsPage.tsx",
         "src/components/gitHubApps/backend.ts",
         "src/components/shared.tsx",
@@ -340,6 +349,8 @@ ts_project(
         "src/enterprise/app/AppComingSoonPage.tsx",
         "src/enterprise/app/settings/AppSettingsArea.tsx",
         "src/enterprise/app/settings/local-repositories/LocalRepositoriesTab.tsx",
+        "src/enterprise/app/setup/AppSetupSteps.tsx",
+        "src/enterprise/app/setup/AppSetupWizard.tsx",
         "src/enterprise/batches/BatchChangeTabs.tsx",
         "src/enterprise/batches/BatchSpec.tsx",
         "src/enterprise/batches/BatchSpecNode.tsx",
@@ -1165,6 +1176,7 @@ ts_project(
         "src/repo/RepoContainerError.tsx",
         "src/repo/RepoHeader.tsx",
         "src/repo/RepoHeaderContributionPortal.tsx",
+        "src/repo/RepoMetadataPage.tsx",
         "src/repo/RepoRevisionContainer.tsx",
         "src/repo/RepoRevisionSidebar.tsx",
         "src/repo/RepoRevisionSidebarCommits.tsx",
@@ -1286,7 +1298,6 @@ ts_project(
         "src/repo/repoRevisionSidebar/cody/backend.tsx",
         "src/repo/settings/RepoSettingsArea.tsx",
         "src/repo/settings/RepoSettingsIndexPage.tsx",
-        "src/repo/settings/RepoSettingsMetadataPage.tsx",
         "src/repo/settings/RepoSettingsMirrorPage.tsx",
         "src/repo/settings/RepoSettingsOptionsPage.tsx",
         "src/repo/settings/RepoSettingsSidebar.tsx",
@@ -1624,6 +1635,7 @@ ts_project(
         "src/util/getReactElements.ts",
         "src/util/index.tsx",
         "src/util/prettyBytesBigint.ts",
+        "src/util/rbac.ts",
         "src/util/security.ts",
         "src/util/settings.ts",
         "src/util/time.ts",
@@ -2004,10 +2016,10 @@ ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
     webpack_bundle(
         name = "bundle" if prod else "bundle-dev",
         srcs = BUNDLE_DATA_DEPS + [
+            ":web_lib",
             "//:babel_config",
             "//:browserslist",
             "//:package_json",
-            ":web_lib",
         ],
         entry_points = {
             "src/main.js": "app",

@@ -25,7 +25,7 @@ export async function getContextMessagesFromSelection(
     selectedText: string,
     precedingText: string,
     followingText: string,
-    fileName: string,
+    { fileName, repoName, revision }: { fileName: string; repoName?: string; revision?: string },
     codebaseContext: CodebaseContext
 ): Promise<ContextMessage[]> {
     const selectedTextContext = await codebaseContext.getContextMessages(selectedText, {
@@ -35,7 +35,11 @@ export async function getContextMessagesFromSelection(
 
     return selectedTextContext.concat(
         [precedingText, followingText].flatMap(text =>
-            getContextMessageWithResponse(populateCodeContextTemplate(text, fileName), { fileName })
+            getContextMessageWithResponse(populateCodeContextTemplate(text, fileName), {
+                fileName,
+                repoName,
+                revision,
+            })
         )
     )
 }

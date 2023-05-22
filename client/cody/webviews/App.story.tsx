@@ -43,7 +43,7 @@ const dummyVSCodeAPI: VSCodeWrapper = {
         cb({
             type: 'config',
             config: {
-                debug: true,
+                debugEnable: true,
                 serverEndpoint: 'https://example.com',
             },
             authStatus: {

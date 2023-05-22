@@ -296,12 +296,6 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 				return
 			}
 
-			err = db.GitHubApps().Install(ctx, id, installationID)
-			if err != nil {
-				http.Error(w, fmt.Sprintf("Unexpected error while installing github app: %s", err.Error()), http.StatusInternalServerError)
-				return
-			}
-
 			http.Redirect(w, req, fmt.Sprintf("/site-admin/github-apps/%s?installation_id=%d", MarshalGitHubAppID(int64(app.ID)), installationID), http.StatusFound)
 			return
 		} else {

@@ -12,6 +12,7 @@ go_library(
     deps = [
         "//cmd/gitserver/shared",
         "//cmd/sourcegraph-oss/osscmd",
+        "//internal/sanitycheck",
     ],
 )
 

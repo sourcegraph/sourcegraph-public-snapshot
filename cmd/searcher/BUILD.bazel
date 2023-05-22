@@ -8,6 +8,7 @@ go_library(
     deps = [
         "//cmd/searcher/shared",
         "//cmd/sourcegraph-oss/osscmd",
+        "//internal/sanitycheck",
     ],
 )
 

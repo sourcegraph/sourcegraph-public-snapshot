@@ -16,8 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-const maxAutofixAttempts = 3
-
 func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, development bool, expectedSchemaFactories ...ExpectedSchemaFactory) *cli.Command {
 	defaultVersion := ""
 	if development {
