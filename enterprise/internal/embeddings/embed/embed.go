@@ -21,8 +21,6 @@ const EMBEDDING_BATCH_SIZE = 512
 
 const maxFileSize = 1000000 // 1MB
 
-type ranksGetter func(ctx context.Context, repoName string) (types.RepoPathRanks, error)
-
 // EmbedRepo embeds file contents from the given file names for a repository.
 // It separates the file names into code files and text files and embeds them separately.
 // It returns a RepoEmbeddingIndex containing the embeddings and metadata.
