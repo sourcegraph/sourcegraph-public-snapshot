@@ -8,7 +8,7 @@ module.exports = {
     ...baseConfig.parserOptions,
     project: [
       __dirname + '/tsconfig.json',
-      __dirname + '/integration-test/tsconfig.json',
+      __dirname + '/test/integration/tsconfig.json',
       __dirname + '/scripts/tsconfig.json',
     ],
   },
