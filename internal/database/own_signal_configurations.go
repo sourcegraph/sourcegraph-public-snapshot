@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type SignalConfiguration struct {
@@ -19,7 +20,8 @@ type SignalConfiguration struct {
 }
 
 type SignalConfigurationStore interface {
-	LoadConfigurations(ctx context.Context) ([]SignalConfiguration, error)
+	LoadConfigurations(ctx context.Context, args LoadSignalConfigurationArgs) ([]SignalConfiguration, error)
+	IsEnabled(ctx context.Context, name string) (bool, error)
 	UpdateConfiguration(ctx context.Context, args UpdateSignalConfigurationArgs) error
 	WithTransact(context.Context, func(store SignalConfigurationStore) error) error
 }
@@ -42,8 +44,18 @@ func (s *signalConfigurationStore) With(other basestore.ShareableStore) *signalC
 	return &signalConfigurationStore{s.Store.With(other)}
 }
 
-func (s *signalConfigurationStore) LoadConfigurations(ctx context.Context) ([]SignalConfiguration, error) {
-	q := "SELECT id, name, description, excluded_repo_patterns, enabled FROM own_signal_configurations ORDER BY id;"
+type LoadSignalConfigurationArgs struct {
+	Name string
+}
+
+func (s *signalConfigurationStore) LoadConfigurations(ctx context.Context, args LoadSignalConfigurationArgs) ([]SignalConfiguration, error) {
+	q := "SELECT id, name, description, excluded_repo_patterns, enabled FROM own_signal_configurations %s ORDER BY id;"
+
+	where := sqlf.Sprintf("")
+	if len(args.Name) > 0 {
+		where = sqlf.Sprintf("WHERE name = %s", args.Name)
+	}
+
 	multiScan := basestore.NewSliceScanner(func(scanner dbutil.Scanner) (SignalConfiguration, error) {
 		var temp SignalConfiguration
 		err := scanner.Scan(
@@ -59,7 +71,17 @@ func (s *signalConfigurationStore) LoadConfigurations(ctx context.Context) ([]Si
 		return temp, nil
 	})
 
-	return multiScan(s.Query(ctx, sqlf.Sprintf(q)))
+	return multiScan(s.Query(ctx, sqlf.Sprintf(q, where)))
+}
+
+func (s *signalConfigurationStore) IsEnabled(ctx context.Context, name string) (bool, error) {
+	configurations, err := s.LoadConfigurations(ctx, LoadSignalConfigurationArgs{Name: name})
+	if err != nil {
+		return false, err
+	} else if len(configurations) == 0 {
+		return false, errors.New("signal configuration not found")
+	}
+	return configurations[0].Enabled, nil
 }
 
 func (s *signalConfigurationStore) UpdateConfiguration(ctx context.Context, args UpdateSignalConfigurationArgs) error {

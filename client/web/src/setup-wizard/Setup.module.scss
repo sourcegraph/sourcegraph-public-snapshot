@@ -22,6 +22,15 @@
     flex-direction: column;
 }
 
+.steps {
+    margin-top: -1.5rem;
+}
+
+.content-container {
+    max-width: 55rem;
+    padding: 0 0.5rem 0.5rem;
+}
+
 .content {
     flex-grow: 1;
     overflow: auto;

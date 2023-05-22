@@ -9,6 +9,7 @@ go_library(
         "//enterprise/cmd/llm-proxy/shared",
         "//internal/conf",
         "//internal/env",
+        "//internal/sanitycheck",
         "//internal/service/svcmain",
         "@com_github_getsentry_sentry_go//:sentry-go",
         "@com_github_sourcegraph_log//:log",
