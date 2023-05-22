@@ -1,10 +1,8 @@
 package search
 
 import (
-	"bytes"
 	"context"
 	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
-	"sort"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -13,6 +11,7 @@ import (
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
@@ -101,7 +100,7 @@ func (s *Service) hybrid(ctx context.Context, rootLogger log.Logger, p *protocol
 			return nil, false, err
 		}
 
-		indexedIgnore, unindexedSearch, err := parseGitDiffNameStatus(out)
+		indexedIgnore, unindexedSearch, err := diff.ParseGitDiffNameStatus(out)
 		if err != nil {
 			logger.Debug("parseGitDiffNameStatus failed",
 				log.Binary("out", out),
@@ -360,37 +359,6 @@ func zoektChunkMatches(chunkMatches []zoekt.ChunkMatch) []protocol.ChunkMatch {
 		})
 	}
 	return cms
-}
-
-// parseGitDiffNameStatus returns the paths changedA and changedB for commits
-// A and B respectively. It expects to be parsing the output of the command
-// git diff -z --name-status --no-renames A B.
-func parseGitDiffNameStatus(out []byte) (changedA, changedB []string, err error) {
-	if len(out) == 0 {
-		return nil, nil, nil
-	}
-
-	slices := bytes.Split(bytes.TrimRight(out, "\x00"), []byte{0})
-	if len(slices)%2 != 0 {
-		return nil, nil, errors.New("uneven pairs")
-	}
-
-	for i := 0; i < len(slices); i += 2 {
-		path := string(slices[i+1])
-		switch slices[i][0] {
-		case 'D': // no longer appears in B
-			changedA = append(changedA, path)
-		case 'M':
-			changedA = append(changedA, path)
-			changedB = append(changedB, path)
-		case 'A': // doesn't exist in A
-			changedB = append(changedB, path)
-		}
-	}
-	sort.Strings(changedA)
-	sort.Strings(changedB)
-
-	return changedA, changedB, nil
 }
 
 type senderFunc func(result *zoekt.SearchResult)

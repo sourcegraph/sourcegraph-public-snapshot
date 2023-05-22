@@ -19,6 +19,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search",
     visibility = ["//cmd/searcher:__subpackages__"],
     deps = [
+        "//cmd/searcher/diff",
         "//cmd/searcher/protocol",
         "//internal/api",
         "//internal/comby",

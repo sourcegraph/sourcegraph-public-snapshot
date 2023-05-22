@@ -23,6 +23,7 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//internal/api",
+        "//internal/codeintel/types",
         "//internal/conf/conftypes",
         "//internal/endpoint",
         "//internal/env",
@@ -59,8 +60,10 @@ go_test(
     embed = [":embeddings"],
     deps = [
         "//internal/api",
+        "//internal/codeintel/types",
         "//internal/uploadstore",
         "//lib/errors",
+        "@com_github_google_go_cmp//cmp",
         "@com_github_stretchr_testify//require",
     ],
 )
