@@ -45,9 +45,10 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 		repoContent   map[string]string
 	}
 	tests := []struct {
-		name string
-		args args
-		want autogold.Value
+		name  string
+		args  args
+		setup func(db *edb.MockEnterpriseDB)
+		want  autogold.Value
 	}{
 		{
 			// TODO: We should display an error in search describing why the result is empty.
@@ -303,6 +304,9 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 			codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, nil)
 			db := edb.NewMockEnterpriseDB()
 			db.CodeownersFunc.SetDefaultReturn(codeownersStore)
+			if tt.setup != nil {
+				tt.setup(db)
+			}
 
 			rules := NewRulesCache(gitserverClient, db)
 

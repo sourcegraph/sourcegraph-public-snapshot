@@ -80,6 +80,10 @@ type Bag interface {
 	// Contains answers true if given bag contains an owner form
 	// that the given reference points at in some way.
 	Contains(ref Reference) bool
+	// Indicates whether a bag is empty - that is has not been seeded with search terms.
+	// Note: A bag that had terms passed into `ByTextReferece`, which did not yield
+	// any users in the database is still not empty.
+	Empty() bool
 }
 
 // ByTextReference returns a Bag of all the forms (users, persons, teams)
@@ -223,4 +227,8 @@ func (b bag) Contains(ref Reference) bool {
 		}
 	}
 	return false
+}
+
+func (b bag) Empty() bool {
+	return len(b) == 0
 }

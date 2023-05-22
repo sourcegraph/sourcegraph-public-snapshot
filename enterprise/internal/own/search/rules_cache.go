@@ -2,7 +2,6 @@ package search
 
 import (
 	"context"
-	"strings"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
@@ -131,16 +130,12 @@ func (d fileOwnershipData) NonEmpty() bool {
 	return false
 }
 
-func (d fileOwnershipData) Contains(owner string, bag own.Bag) bool {
-	isHandle := strings.HasPrefix(owner, "@")
-	owner = strings.ToLower(strings.TrimPrefix(owner, "@"))
+func (d fileOwnershipData) Contains(bag own.Bag) bool {
 	for _, o := range d.rule.GetOwner() {
-		if strings.ToLower(o.Handle) == owner {
-			return true
-		}
-		// Prefixing the search term with `@` indicates intent to match a handle,
-		// so we do not match email in that case.
-		if !isHandle && (strings.ToLower(o.Email) == owner) {
+		if bag.Contains(own.Reference{
+			Handle: o.Handle,
+			Email:  o.Email,
+		}) {
 			return true
 		}
 	}
