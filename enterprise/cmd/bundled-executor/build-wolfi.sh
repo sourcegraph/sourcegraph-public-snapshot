@@ -33,7 +33,7 @@ if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
 
   SRC_CLI_VERSION="$(bazel run //internal/cmd/src-cli-version)"
 
-  docker build -f enterprise/cmd/bundled-executor/Dockerfile -t "$IMAGE" "$OUTPUT" \
+  docker build -f enterprise/cmd/bundled-executor/Dockerfile.wolfi -t "$IMAGE" "$OUTPUT" \
     --progress=plain \
     --build-arg SRC_CLI_VERSION="${SRC_CLI_VERSION}" \
     --build-arg COMMIT_SHA \
@@ -52,7 +52,7 @@ pkg="github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper"
 go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$OUTPUT/$(basename $pkg)" "$pkg"
 popd 1>/dev/null
 
-docker build -f enterprise/cmd/bundled-executor/Dockerfile -t "$IMAGE" "$OUTPUT" \
+docker build -f enterprise/cmd/bundled-executor/Dockerfile.wolfi -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --build-arg SRC_CLI_VERSION="${SRC_CLI_VERSION}" \
   --platform=linux/amd64 \

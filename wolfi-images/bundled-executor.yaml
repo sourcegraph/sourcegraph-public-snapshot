@@ -1,0 +1,26 @@
+include: ./sourcegraph-base.yaml
+
+contents:
+  packages:
+    # Included by existing SG base image
+    - tini
+    - mailcap
+
+    ## executor packages
+    - ca-certificates
+    - git
+    - python3
+    - py3-pip
+    - xmlstarlet@sourcegraph
+
+environment:
+  # Firecracker doesn't work in docker, so disable it by default
+  EXECUTOR_USE_FIRECRACKER: false
+  # Preconfigure bundled-executor to take 1 parallel job and restart afterwards, this is to keep the environment clean-ish.
+  EXECUTOR_MAXIMUM_NUM_JOBS: 1
+  EXECUTOR_NUM_TOTAL_JOBS: 1
+
+paths:
+  - path: /usr/local/bin
+    type: directory
+    permissions: 0o755
