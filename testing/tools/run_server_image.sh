@@ -39,6 +39,7 @@ echo "-- Starting $image_name"
 echo "Listening at: $URL"
 echo "Data and config volume bounds: $DATA"
 echo "Database startup timeout: $DB_STARTUP_TIMEOUT"
+echo "License key generator: $SOURCEGRAPH_LICENSE_GENERATION_KEY"
 
 echo "Allow single docker image code insights: $ALLOW_SINGLE_DOCKER_CODE_INSIGHTS"
 echo "GRPC Feature flag: $SG_FEATURE_FLAG_GRPC"
