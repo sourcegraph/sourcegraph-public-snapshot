@@ -1,7 +1,10 @@
+import { pluralize } from '@sourcegraph/common'
+
 import { parseMarkdown } from '../chat/markdown'
 import { isError } from '../utils'
 
 export interface Attribution {
+    limitHit: boolean
     repositories: RepositoryAttribution[]
 }
 
@@ -52,5 +55,9 @@ export function summariseAttribution(attribution: Attribution | Error): string {
         summary.push('...')
     }
 
-    return `found ${count} matching repositories ${summary.join(', ')}`
+    return `found ${count}${attribution.limitHit ? '+' : ''} matching ${pluralize(
+        'repository',
+        count,
+        'repositories'
+    )} ${summary.join(', ')}`
 }
