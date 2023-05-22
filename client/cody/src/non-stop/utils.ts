@@ -45,7 +45,8 @@ export const fixupTaskIcon: CodyTaskIcon = {
     },
 }
 /**
- * For tracking lines diff
+ * To Edit a document by its Uri
+ * Returns the range of the section with the content replaced by Cody
  */
 export async function editDocByUri(
     uri: vscode.Uri,
