@@ -36,13 +36,13 @@ type Options struct {
 
 	// QueueName is the name of the queue to process work from. Having this configurable
 	// allows us to have multiple worker pools with different resource requirements and
-	// horizontal scaling factors while still uniformly processing events. This field is
-	// ignored if QueueNames is configured.
+	// horizontal scaling factors while still uniformly processing events. Only one of
+	// QueueName and QueueNames can be set.
 	QueueName string
 
 	// QueueNames is the list of queue names to process work from. When multiple queues
 	// are configured the frontend will dequeue a job from one of those queues and return
-	// it to the executor to process. QueueNames takes precedence over QueueName.
+	// it to the executor to process. Only one of QueueNames and QueueName can be set.
 	QueueNames []string
 
 	// GitServicePath is the path to the internal git service API proxy in the frontend.
