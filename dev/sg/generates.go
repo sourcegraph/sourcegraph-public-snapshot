@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate/golang"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate/proto"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -59,10 +58,7 @@ func generateProtoRunner(ctx context.Context, args []string) *generate.Report {
 		return &generate.Report{Err: errors.Wrap(err, "git diff failed")} // should never happen
 	}
 	if !strings.Contains(string(out), ".proto") && os.Getenv("CI") != "true" {
-		std.Out.WriteNoticef("Skipping buf as no .proto files changed or not in CI")
-		return &generate.Report{Output: "No .proto files changed or not in CI"}
-
+		return &generate.Report{Output: "No .proto files changed or not in CI. Skippping buf gen."}
 	}
-
 	return proto.Generate(ctx, verbose)
 }
