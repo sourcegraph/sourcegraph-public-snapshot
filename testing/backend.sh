@@ -15,6 +15,8 @@ IDENT=${BUILDKITE_JOB_ID:-$(openssl rand -hex 12)}
 CONTAINER="integration-backend-$IDENT"
 TIMEOUT=60
 IMAGE="server:candidate"
+GITHUB_TOKEN="$GHE_GITHUB_TOKEN"
+export GITHUB_TOKEN
 
 # Ensure we exit with a clean slate regardless of the outcome
 function cleanup() {
