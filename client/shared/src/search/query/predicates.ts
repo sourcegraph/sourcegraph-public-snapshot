@@ -219,27 +219,6 @@ export const predicateCompletion = (field: string): Completion[] => {
                     'Search only inside repositories having ({key}:{value}) pair, or ({key}) with any value or ({key}:) with no value metadata',
                 asSnippet: true,
             },
-            {
-                label: 'has.tag(...)',
-                insertText: 'has.tag(${1})',
-                asSnippet: true,
-                description:
-                    'DEPRECATED: Use "has.meta({tag}:)" instead. Search only inside repositories tagged with a given tag',
-            },
-            {
-                label: 'has(...)',
-                insertText: 'has(${1:key}:${2:value})',
-                description:
-                    'DEPRECATED: Use "has.meta({key}:{value})" instead. Search only inside repositories having a specified key:value pair',
-                asSnippet: true,
-            },
-            {
-                label: 'has.key(...)',
-                insertText: 'has.key(${1})',
-                description:
-                    'DEPRECATED: Use "has.meta({key})" instead. Search only inside repositories having a specific key with any value',
-                asSnippet: true,
-            },
         ]
     }
     if (field === 'file') {
