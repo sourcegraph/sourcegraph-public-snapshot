@@ -35,7 +35,6 @@ go_library(
         "//internal/env",
         "//internal/errcode",
         "//internal/featureflag",
-        "//internal/gitserver",
         "//internal/goroutine",
         "//internal/honey",
         "//internal/httpserver",
@@ -79,8 +78,8 @@ go_test(
     srcs = [
         "context_detection_test.go",
         "context_qa_test.go",
+        "main_test.go",
         "repo_embedding_index_cache_test.go",
-        "search_test.go",
     ],
     embed = [":shared"],
     embedsrcs = [
@@ -93,10 +92,11 @@ go_test(
         "//enterprise/internal/embeddings/background/repo",
         "//internal/api",
         "//internal/database",
+        "//internal/endpoint",
         "//internal/types",
         "//internal/uploadstore/mocks",
         "//lib/errors",
-        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//require",
     ],
 )

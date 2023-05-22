@@ -7,16 +7,6 @@ import (
 	"strings"
 )
 
-// quoteTerm converts the given literal search term into a regular expression.
-func quoteTerm(searchTerm string) string {
-	terms := strings.Split(searchTerm, " ")
-	for i, term := range terms {
-		terms[i] = regexp.QuoteMeta(term)
-	}
-
-	return "(^|\\b)" + strings.Join(terms, "\\s") + "($|\\b)"
-}
-
 // makeSearchURL returns a URL to a sourcegraph.com search query within the squashed
 // definition of the given schema.
 func makeSearchURL(schemaName, version string, searchTerms ...string) string {
@@ -38,4 +28,14 @@ func makeSearchURL(schemaName, version string, searchTerms ...string) string {
 	searchUrl, _ := url.Parse("https://sourcegraph.com/search")
 	searchUrl.RawQuery = qs.Encode()
 	return searchUrl.String()
+}
+
+// quoteTerm converts the given literal search term into a regular expression.
+func quoteTerm(searchTerm string) string {
+	terms := strings.Split(searchTerm, " ")
+	for i, term := range terms {
+		terms[i] = regexp.QuoteMeta(term)
+	}
+
+	return "(^|\\b)" + strings.Join(terms, "\\s") + "($|\\b)"
 }

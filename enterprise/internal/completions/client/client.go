@@ -16,7 +16,7 @@ import (
 func Get(endpoint, provider, accessToken, model string) (types.CompletionsClient, error) {
 	switch provider {
 	case anthropic.ProviderName:
-		return anthropic.NewClient(httpcli.ExternalDoer, accessToken, model), nil
+		return anthropic.NewClient(httpcli.ExternalDoer, accessToken, model, endpoint), nil
 	case openai.ProviderName:
 		return openai.NewClient(httpcli.ExternalDoer, accessToken, model), nil
 	case dotcom.ProviderName:
@@ -35,6 +35,11 @@ func GetCompletionsConfig() *schema.Completions {
 	if completionsConfig != nil {
 		if completionsConfig.ChatModel == "" {
 			completionsConfig.ChatModel = completionsConfig.Model
+		}
+
+		// TODO: Temporary workaround to fix instances where no completion model is set.
+		if completionsConfig.CompletionModel == "" {
+			completionsConfig.CompletionModel = "claude-instant-v1.0"
 		}
 
 		if completionsConfig.Provider == llmproxy.ProviderName && completionsConfig.Endpoint == "" {

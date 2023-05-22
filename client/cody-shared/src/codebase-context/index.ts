@@ -31,14 +31,14 @@ export class CodebaseContext {
 
     public async getContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
         switch (this.config.useContext) {
-            case 'embeddings' || 'blended':
+            case 'keyword':
+                return this.getKeywordContextMessages(query, options)
+            case 'none':
+                return []
+            default:
                 return this.embeddings
                     ? this.getEmbeddingsContextMessages(query, options)
                     : this.getKeywordContextMessages(query, options)
-            case 'keyword':
-                return this.getKeywordContextMessages(query, options)
-            default:
-                return this.getEmbeddingsContextMessages(query, options)
         }
     }
 
@@ -56,7 +56,11 @@ export class CodebaseContext {
                 endpoint: this.config.serverEndpoint,
             }
         }
-        return { results: await this.getKeywordSearchResults(query, options), endpoint: this.config.serverEndpoint }
+        return {
+            results:
+                (await this.keywords?.getSearchContext(query, options.numCodeResults + options.numTextResults)) || [],
+            endpoint: this.config.serverEndpoint,
+        }
     }
 
     // We split the context into multiple messages instead of joining them into a single giant message.
@@ -119,7 +123,7 @@ export class CodebaseContext {
         if (!this.keywords) {
             return []
         }
-        return this.keywords.getSearchContext(query, options.numCodeResults + options.numTextResults)
+        return this.keywords.getContext(query, options.numCodeResults + options.numTextResults)
     }
 }
 

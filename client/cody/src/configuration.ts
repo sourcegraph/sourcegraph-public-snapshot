@@ -20,7 +20,7 @@ export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'ge
         experimentalSuggest: config.get('cody.experimental.suggestions', false),
         experimentalChatPredictions: config.get('cody.experimental.chatPredictions', false),
         experimentalInline: config.get('cody.experimental.inline', false),
-        experimentalConnectToApp: config.get('cody.experimental.connectToApp', false),
+        experimentalGuardrails: config.get('cody.experimental.guardrails', false),
         customHeaders: config.get<object>('cody.customHeaders', {}) as Record<string, string>,
     }
 }

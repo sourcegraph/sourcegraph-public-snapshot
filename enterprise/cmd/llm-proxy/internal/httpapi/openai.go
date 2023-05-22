@@ -14,11 +14,12 @@ import (
 
 const openAIURL = "https://api.openai.com/v1/chat/completions"
 
-func newOpenAIHandler(logger log.Logger, eventLogger events.Logger, accessToken string, orgID string) http.Handler {
-	return makeUpstreamHandler[openaiRequest](
+func newOpenAIHandler(logger log.Logger, eventLogger events.Logger, accessToken string, orgID string, allowedModels []string) http.Handler {
+	return makeUpstreamHandler(
 		logger,
 		eventLogger,
 		openAIURL,
+		allowedModels,
 		func(body *openaiRequest) {
 			// We don't want to let users generate multiple responses, as this would
 			// mess with rate limit counting.
@@ -58,7 +59,7 @@ func newOpenAIHandler(logger log.Logger, eventLogger events.Logger, accessToken 
 				return 0
 			}
 
-			// Otherwise, we have to parse the event stream from anthropic.
+			// Otherwise, we have to parse the event stream.
 			dec := openai.NewDecoder(r)
 			var finalCompletion string
 			// Consume all the messages, but we only care about the last completion data.

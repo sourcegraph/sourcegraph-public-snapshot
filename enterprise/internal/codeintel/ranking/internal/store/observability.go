@@ -8,6 +8,7 @@ import (
 )
 
 type operations struct {
+	summaries                      *observation.Operation
 	getStarRank                    *observation.Operation
 	getDocumentRanks               *observation.Operation
 	getReferenceCountStatistics    *observation.Operation
@@ -48,6 +49,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
+		summaries:                      op("Summaries"),
 		getStarRank:                    op("GetStarRank"),
 		getDocumentRanks:               op("GetDocumentRanks"),
 		getReferenceCountStatistics:    op("GetReferenceCountStatistics"),

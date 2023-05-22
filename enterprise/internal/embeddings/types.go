@@ -1,10 +1,14 @@
 package embeddings
 
 import (
+	"fmt"
+	"sort"
 	"time"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 )
 
 type EmbeddingIndex struct {
@@ -21,6 +25,39 @@ func (index *EmbeddingIndex) Row(n int) []int8 {
 
 func (index *EmbeddingIndex) EstimateSize() int64 {
 	return int64(len(index.Embeddings) + len(index.RowMetadata)*(16+8+8) + len(index.Ranks)*4)
+}
+
+// Filter removes all files from the index that are in the set and updates the ranks
+func (index *EmbeddingIndex) filter(set map[string]struct{}, ranks types.RepoPathRanks) {
+	// We can reset Ranks here because we are anyway going to update them based on
+	// "ranks".
+	index.Ranks = make([]float32, 0, len(index.RowMetadata))
+
+	cursor := 0
+	for i, s := range index.RowMetadata {
+		if _, ok := set[s.FileName]; ok {
+			continue
+		}
+		index.RowMetadata[cursor] = s
+
+		// Ranks might have changed since the index was created, so we need to update
+		// them
+		index.Ranks = append(index.Ranks, float32(ranks.Paths[s.FileName]))
+
+		copy(index.Row(cursor), index.Row(i))
+		cursor++
+	}
+
+	// update slice length
+	index.RowMetadata = index.RowMetadata[:cursor]
+	index.Ranks = index.Ranks[:cursor]
+	index.Embeddings = index.Embeddings[:cursor*index.ColumnDimension]
+}
+
+func (index *EmbeddingIndex) append(other EmbeddingIndex) {
+	index.RowMetadata = append(index.RowMetadata, other.RowMetadata...)
+	index.Ranks = append(index.Ranks, other.Ranks...)
+	index.Embeddings = append(index.Embeddings, other.Embeddings...)
 }
 
 type RepoEmbeddingRowMetadata struct {
@@ -45,18 +82,49 @@ type ContextDetectionEmbeddingIndex struct {
 	MessagesWithoutAdditionalContextMeanEmbedding []float32
 }
 
-type EmbeddingSearchResults struct {
-	CodeResults []EmbeddingSearchResult `json:"codeResults"`
-	TextResults []EmbeddingSearchResult `json:"textResults"`
+type EmbeddingCombinedSearchResults struct {
+	CodeResults EmbeddingSearchResults `json:"codeResults"`
+	TextResults EmbeddingSearchResults `json:"textResults"`
+}
+
+type EmbeddingSearchResults []EmbeddingSearchResult
+
+// MergeTruncate merges other into the search results, keeping only max results with the highest scores
+func (esrs *EmbeddingSearchResults) MergeTruncate(other EmbeddingSearchResults, max int) {
+	self := *esrs
+	self = append(self, other...)
+	sort.Slice(self, func(i, j int) bool { return self[i].Score() > self[j].Score() })
+	if len(self) > max {
+		self = self[:max]
+	}
+	*esrs = self
 }
 
 type EmbeddingSearchResult struct {
-	RepoName api.RepoName
-	Revision api.CommitID
-	RepoEmbeddingRowMetadata
-	Content string `json:"content"`
-	// Experimental: Clients should not rely on any particular format of debug
-	Debug string `json:"debug,omitempty"`
+	RepoName api.RepoName `json:"repoName"`
+	Revision api.CommitID `json:"revision"`
+
+	FileName  string `json:"fileName"`
+	StartLine int    `json:"startLine"`
+	EndLine   int    `json:"endLine"`
+
+	ScoreDetails SearchScoreDetails `json:"scoreDetails"`
+}
+
+func (esr *EmbeddingSearchResult) Score() int32 {
+	return esr.ScoreDetails.RankScore + esr.ScoreDetails.SimilarityScore
+}
+
+type SearchScoreDetails struct {
+	Score int32 `json:"score"`
+
+	// Breakdown
+	SimilarityScore int32 `json:"similarityScore"`
+	RankScore       int32 `json:"rankScore"`
+}
+
+func (s *SearchScoreDetails) String() string {
+	return fmt.Sprintf("score:%d, similarity:%d, rank:%d", s.Score, s.SimilarityScore, s.RankScore)
 }
 
 // DEPRECATED: to support decoding old indexes, we need a struct
@@ -100,6 +168,9 @@ type EmbedRepoStats struct {
 	HasRanks       bool
 	CodeIndexStats EmbedFilesStats
 	TextIndexStats EmbedFilesStats
+
+	// IsDelta is only true if the corresponding index is a delta index
+	IsDelta bool
 }
 
 func (e *EmbedRepoStats) ToFields() []log.Field {
@@ -108,6 +179,7 @@ func (e *EmbedRepoStats) ToFields() []log.Field {
 		log.Bool("hasRanks", e.HasRanks),
 		log.Object("codeIndex", e.CodeIndexStats.ToFields()...),
 		log.Object("textIndex", e.TextIndexStats.ToFields()...),
+		log.Bool("isDelta", e.IsDelta),
 	}
 }
 

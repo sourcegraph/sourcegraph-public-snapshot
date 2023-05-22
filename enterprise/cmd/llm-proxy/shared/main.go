@@ -9,6 +9,7 @@ import (
 	"github.com/go-redsync/redsync/v4/redis/redigo"
 	"github.com/gomodule/redigo/redis"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/events"
 	llmproxy "github.com/sourcegraph/sourcegraph/enterprise/internal/llm-proxy"
@@ -66,9 +67,11 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	// Set up our handler chain, which is run from the bottom up. Application handlers
 	// come last.
 	handler := httpapi.NewHandler(obctx.Logger, eventLogger, &httpapi.Config{
-		AnthropicAccessToken: config.Anthropic.AccessToken,
-		OpenAIAccessToken:    config.OpenAI.AccessToken,
-		OpenAIOrgID:          config.OpenAI.OrgID,
+		AnthropicAccessToken:   config.Anthropic.AccessToken,
+		AnthropicAllowedModels: config.Anthropic.AllowedModels,
+		OpenAIAccessToken:      config.OpenAI.AccessToken,
+		OpenAIOrgID:            config.OpenAI.OrgID,
+		OpenAIAllowedModels:    config.OpenAI.AllowedModels,
 	})
 
 	// Authentication and rate-limting layers
@@ -80,9 +83,18 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		Next:        handler,
 	}
 
+	// Diagnostic layers should come before auth/rate-limiting
+	handler = httpapi.NewDiagnosticsHandler(obctx.Logger, handler, config.DiagnosticsSecret)
+
 	// Instrumentation layers
-	handler = httpLogger(obctx.Logger.Scoped("httpAPI", ""), handler)
-	handler = instrumentation.HTTPMiddleware("llm-proxy", handler)
+	handler = requestLogger(obctx.Logger.Scoped("requests", "HTTP requests"), handler)
+	var otelhttpOpts []otelhttp.Option
+	if !config.InsecureDev {
+		// Outside of dev, we're probably running as a standalone service, so treat
+		// incoming spans as links
+		otelhttpOpts = append(otelhttpOpts, otelhttp.WithPublicEndpoint())
+	}
+	handler = instrumentation.HTTPMiddleware("llm-proxy", handler, otelhttpOpts...)
 
 	// Collect request client for downstream handlers. Outside of dev, we always set up
 	// Cloudflare in from of LLM-proxy. This comes first.
@@ -132,6 +144,7 @@ func rateLimit(logger log.Logger, eventLogger events.Logger, cache limiter.Redis
 		err := l.TryAcquire(r.Context())
 		if err != nil {
 			loggerErr := eventLogger.LogEvent(
+				r.Context(),
 				events.Event{
 					Name:       llmproxy.EventNameRateLimited,
 					Source:     act.Source.Name(),
@@ -164,7 +177,7 @@ func rateLimit(logger log.Logger, eventLogger events.Logger, cache limiter.Redis
 	})
 }
 
-func httpLogger(logger log.Logger, next http.Handler) http.Handler {
+func requestLogger(logger log.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		rc := requestclient.FromContext(r.Context())
 		logger.Debug("Request",

@@ -36,14 +36,14 @@ func NewClient(cli httpcli.Doer, accessToken string, model string) types.Complet
 
 func (a *dotcomClient) Complete(
 	ctx context.Context,
-	requestParams types.CodeCompletionRequestParameters,
-) (*types.CodeCompletionResponse, error) {
+	requestParams types.CompletionRequestParameters,
+) (*types.CompletionResponse, error) {
 	return nil, errors.New("not implemented")
 }
 
 func (a *dotcomClient) Stream(
 	ctx context.Context,
-	requestParams types.ChatCompletionRequestParameters,
+	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
 ) error {
 	reqBody, err := json.Marshal(requestParams)
@@ -75,7 +75,7 @@ func (a *dotcomClient) Stream(
 			return nil
 		}
 
-		var event types.ChatCompletionEvent
+		var event types.CompletionResponse
 		if err := json.Unmarshal(dec.Data(), &event); err != nil {
 			return errors.Errorf("failed to decode event payload: %w", err)
 		}

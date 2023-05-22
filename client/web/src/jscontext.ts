@@ -1,5 +1,5 @@
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { SiteConfiguration, BatchChangeRolloutWindow } from '@sourcegraph/shared/src/schema/site.schema'
+import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 
 import { TemporarySettingsResult } from './graphql-operations'
 
@@ -174,10 +174,11 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     batchChangesWebhookLogsEnabled: boolean
 
-    batchChangesRolloutWindows: BatchChangeRolloutWindow[] | null
-
     /** Whether cody is enabled for the user. */
     codyEnabled: boolean
+
+    /** Whether the site requires a verified email for cody. */
+    codyRequiresVerifiedEmail: boolean
 
     /** Whether executors are enabled on the site. */
     executorsEnabled: boolean

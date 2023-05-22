@@ -8,7 +8,40 @@ import winkUtils from 'wink-nlp-utils'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { KeywordContextFetcher, KeywordContextFetcherResult } from '@sourcegraph/cody-shared/src/keyword-context'
 
-const fileExtRipgrepParams = ['-Tmarkdown', '-Tyaml', '-Tjson', '-g', '!*.lock', '-g', '!*.snap']
+import { logEvent } from '../event-logger'
+
+/**
+ * Exclude files without extensions and hidden files (starts with '.')
+ * Limits to use 1 thread
+ * Exclude files larger than 1MB (based on search.largeFiles)
+ * Note: Ripgrep excludes binary files and respects .gitignore by default
+ */
+const fileExtRipgrepParams = [
+    '-g',
+    '*.*',
+    '-g',
+    '!.*',
+    '-g',
+    '!*.lock',
+    '-g',
+    '!*.snap',
+    '--threads',
+    '1',
+    '--max-filesize',
+    '1M',
+]
+
+interface RipgrepStreamData {
+    value: {
+        type: string
+        data: {
+            path: {
+                text: string
+            }
+            stats: { bytes_searched: number }
+        }
+    }
+}
 
 /**
  * Term represents a single term in the keyword search.
@@ -54,8 +87,8 @@ export function userQueryToKeywordQuery(query: string): Term[] {
         }
         origWords.push(...winkUtils.string.tokenize0(chunk))
     }
-    const filteredWords = winkUtils.tokens.removeWords(origWords) as string[]
-    const terms: { [stem: string]: Term } = {}
+    const filteredWords = winkUtils.tokens.removeWords(origWords)
+    const terms = new Map<string, Term>()
     for (const word of filteredWords) {
         // Ignore ASCII-only strings of length 2 or less
         if (word.length <= 2) {
@@ -73,19 +106,17 @@ export function userQueryToKeywordQuery(query: string): Term[] {
         }
 
         const stem = winkUtils.string.stem(word)
-        if (terms[stem]) {
-            terms[stem].originals.push(word)
-            terms[stem].count++
-        } else {
-            terms[stem] = {
-                stem,
-                originals: [word],
-                prefix: longestCommonPrefix(word.toLowerCase(), stem),
-                count: 1,
-            }
+        const term = terms.get(stem) || {
+            stem,
+            originals: [word],
+            prefix: longestCommonPrefix(word.toLowerCase(), stem),
+            count: 0,
         }
+        term.originals.push(word)
+        term.count++
+        terms.set(stem, term)
     }
-    return [...Object.values(terms)]
+    return [...terms.values()]
 }
 
 export class LocalKeywordContextFetcher implements KeywordContextFetcher {
@@ -93,6 +124,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
 
     public async getContext(query: string, numResults: number): Promise<KeywordContextFetcherResult[]> {
         console.log('fetching keyword matches')
+        const startTime = performance.now()
         const rootPath = this.editor.getWorkspaceRootPath()
         if (!rootPath) {
             return []
@@ -107,11 +139,14 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                 return { fileName: filename, content }
             })
         )
+        const searchDuration = performance.now() - startTime
+        logEvent('CodyVSCodeExtension:keywordContext:searchDuration', searchDuration, searchDuration)
         return messagePairs.reverse().flat()
     }
 
+    // Return context results for the Codebase Context Search recipe
     public async getSearchContext(query: string, numResults: number): Promise<KeywordContextFetcherResult[]> {
-        console.log('fetching keyword context')
+        console.log('fetching keyword search context...')
         const rootPath = this.editor.getWorkspaceRootPath()
         if (!rootPath) {
             return []
@@ -120,7 +155,6 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
         const stems = userQueryToKeywordQuery(query)
             .map(t => (t.prefix.length < 4 ? t.originals[0] : t.prefix))
             .join('|')
-
         const filesnamesWithScores = await this.fetchKeywordFiles(rootPath, query)
         const messagePairs = await Promise.all(
             filesnamesWithScores.slice(0, numResults).map(async ({ filename }) => {
@@ -128,9 +162,10 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                 const textDocument = await vscode.workspace.openTextDocument(uri)
                 const snippet = textDocument.getText()
                 const keywordPattern = new RegExp(stems, 'g')
+                // show 5 lines of code only
+                // TODO: Rewrite this to use rg instead @bee
                 const matches = snippet.match(keywordPattern)
                 const keywordIndex = snippet.indexOf(matches ? matches[0] : query)
-                // show 5 lines of code only
                 const startLine = Math.max(0, textDocument.positionAt(keywordIndex).line - 2)
                 const endLine = startLine + 5
                 const content = textDocument.getText(new vscode.Range(startLine, 0, endLine, 0))
@@ -161,14 +196,14 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                     .pipe(StreamValues.withParser())
                     .on('data', data => {
                         try {
-                            switch (data.value.type) {
+                            const typedData = data as RipgrepStreamData
+                            switch (typedData.value.type) {
                                 case 'end':
-                                    if (!fileTermCounts[data.value.data.path.text]) {
-                                        fileTermCounts[data.value.data.path.text] = {} as any
+                                    if (!fileTermCounts[typedData.value.data.path.text]) {
+                                        fileTermCounts[typedData.value.data.path.text] = { bytesSearched: 0 }
                                     }
-                                    fileTermCounts[data.value.data.path.text].bytesSearched =
-                                        data.value.data.stats.bytes_searched
-
+                                    fileTermCounts[typedData.value.data.path.text].bytesSearched =
+                                        typedData.value.data.stats.bytes_searched
                                     break
                             }
                         } catch (error) {
@@ -208,6 +243,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
                             {
                                 cwd: rootPath,
                                 maxBuffer: 1024 * 1024 * 1024,
+                                timeout: 1000 * 30, // timeout in 30secs
                             },
                             (error, stdout, stderr) => {
                                 if (error?.code === 2) {

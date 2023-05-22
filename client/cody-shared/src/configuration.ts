@@ -8,7 +8,7 @@ export interface Configuration {
     experimentalSuggest: boolean
     experimentalChatPredictions: boolean
     experimentalInline: boolean
-    experimentalConnectToApp: boolean
+    experimentalGuardrails: boolean
     customHeaders: Record<string, string>
 }
 
