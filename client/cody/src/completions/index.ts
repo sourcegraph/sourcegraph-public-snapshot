@@ -136,7 +136,32 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return []
         }
 
-        if (precedingLine.trim() === '') {
+        // TODO(philipp-spiess): Add a better detection for start-of-block and don't require C like
+        // languages.
+        const multilineEnabledLanguage =
+            document.languageId === 'typescript' || document.languageId === 'javascript' || document.languageId === 'go'
+        if (
+            multilineEnabledLanguage &&
+            // Only trigger multiline inline suggestions for empty lines
+            precedingLine.trim() === '' &&
+            // Only trigger multiline inline suggestions for the beginning of blocks
+            prefix.trim().at(prefix.trim().length - 1) === '{'
+        ) {
+            waitMs = 500
+            completers.push(
+                new EndOfLineCompletionProvider(
+                    this.completionsClient,
+                    remainingChars,
+                    this.responseTokens,
+                    similarCode,
+                    prefix,
+                    suffix,
+                    '',
+                    3,
+                    true // multiline
+                )
+            )
+        } else if (precedingLine.trim() === '') {
             // Start of line: medium debounce
             waitMs = 500
             completers.push(
