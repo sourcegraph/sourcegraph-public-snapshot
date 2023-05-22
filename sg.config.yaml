@@ -661,7 +661,7 @@ commands:
       env TMPDIR="$HOME/.sourcegraph/multiqueue-executor-temp" .bin/executor
     env:
       EXECUTOR_QUEUE_NAME: ""
-      EXECUTOR_QUEUE_NAMES: "batches,codeintel"
+      EXECUTOR_QUEUE_NAMES: "codeintel,batches"
       EXECUTOR_MAXIMUM_NUM_JOBS: 8
 
   blobstore:
