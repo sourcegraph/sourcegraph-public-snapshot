@@ -14,6 +14,7 @@ describe('getConfiguration', () => {
             useContext: 'embeddings',
             experimentalSuggest: false,
             experimentalChatPredictions: false,
+            experimentalGuardrails: false,
             experimentalInline: false,
             customHeaders: {},
         })
@@ -35,6 +36,8 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.chatPredictions':
                         return true
+                    case 'cody.experimental.guardrails':
+                        return true
                     case 'cody.experimental.inline':
                         return true
                     case 'cody.customHeaders':
@@ -54,6 +57,7 @@ describe('getConfiguration', () => {
             useContext: 'keyword',
             experimentalSuggest: true,
             experimentalChatPredictions: true,
+            experimentalGuardrails: true,
             experimentalInline: true,
             customHeaders: {
                 'Cache-Control': 'no-cache',
