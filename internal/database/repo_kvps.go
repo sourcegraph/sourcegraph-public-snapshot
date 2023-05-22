@@ -60,7 +60,7 @@ func (s *repoKVPStore) Create(ctx context.Context, repoID api.RepoID, kvp KeyVal
 
 	if err := s.Exec(ctx, sqlf.Sprintf(q, repoID, kvp.Key, kvp.Value)); err != nil {
 		if dbutil.IsPostgresError(err, "23505") {
-			return errors.Newf(`metadata key "%q" already exists for the given repository`, kvp.Key)
+			return errors.Newf(`metadata key %q already exists for the given repository`, kvp.Key)
 		}
 		return err
 	}
