@@ -10,8 +10,8 @@
 , targetPlatform
 }:
 let
-  inherit (import ./util.nix { inherit lib; }) makeStatic;
-  http-parser-static = ((makeStatic pkgsStatic.http-parser).overrideAttrs (oldAttrs: {
+  inherit (import ./util.nix { inherit lib; }) mkStatic;
+  http-parser-static = ((mkStatic pkgsStatic.http-parser).overrideAttrs (oldAttrs: {
     # http-parser makefile is a bit incomplete, so fill in the gaps here
     # to move the static object and header files to the right location
     # https://github.com/nodejs/http-parser/issues/310
@@ -23,9 +23,9 @@ let
       ls -la $out/lib $out/include
     '';
   }));
-  libiconv-static = makeStatic pkgsStatic.libiconv;
-  openssl-static = (makeStatic pkgsStatic.openssl).dev;
-  pcre-static = (makeStatic pkgsStatic.pcre).dev;
+  libiconv-static = mkStatic pkgsStatic.libiconv;
+  openssl-static = (mkStatic pkgsStatic.openssl).dev;
+  pcre-static = (mkStatic pkgsStatic.pcre).dev;
 in
 pkgsStatic.gccStdenv.mkDerivation rec {
   name = "p4-fusion";

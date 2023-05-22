@@ -1,27 +1,30 @@
 { pkgs, pkgsStatic, pkgsMusl, hostPlatform, lib }:
 let
-  inherit (import ./util.nix { inherit lib; }) makeStatic unNixifyDylibs;
-  isMacOS = hostPlatform.isMacOS;
-  combyBuilder = ocamlPkgs: systemPkgs:
+  inherit (import ./util.nix { inherit lib; }) mkStatic unNixifyDylibs;
+  combyBuilder = ocamlPkgs:
     (ocamlPkgs.comby.override {
       ocamlPackages = ocamlPkgs.ocamlPackages.overrideScope' (_: prev: {
         ocaml_pcre = prev.ocaml_pcre.override {
-          pcre = makeStatic systemPkgs.pcre;
+          pcre = mkStatic pkgsStatic.pcre;
         };
         ssl = prev.ssl.override {
-          openssl = makeStatic systemPkgs.openssl;
+          openssl = mkStatic pkgsStatic.openssl;
         };
       });
-      sqlite = systemPkgs.sqlite;
-      zlib = systemPkgs.zlib;
-      libev = (makeStatic systemPkgs.libev).override { static = false; };
-      gmp = makeStatic systemPkgs.gmp;
+      sqlite = pkgsStatic.sqlite;
+      zlib = pkgsStatic.zlib;
+      # `static = true` from mkStatic is currently broken on macos, noah to
+      # fix upstream
+      libev = (mkStatic pkgsStatic.libev).override { static = false; };
+      gmp = mkStatic pkgsStatic.gmp;
     });
 in
-if isMacOS then
-  unNixifyDylibs pkgs (combyBuilder pkgs pkgs.pkgsStatic)
+if hostPlatform.isMacOS then
+  unNixifyDylibs pkgs (combyBuilder pkgs)
 else
-  (combyBuilder pkgs.pkgsMusl pkgs.pkgsStatic).overrideAttrs (_: {
+# ocaml in pkgsStatic is problematic, so we use it from pkgsMusl instead and just
+# supply pkgsStatic system libraries such as openssl etc
+  (combyBuilder pkgsMusl).overrideAttrs (_: {
     postPatch = ''
       cat >> src/dune <<EOF
       (env (release (flags  :standard -ccopt -static)))

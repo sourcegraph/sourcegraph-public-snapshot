@@ -11,14 +11,16 @@
       (system:
         let
           pkgs = nixpkgs.legacyPackages.${system};
-          pkgs' = pkgs.lib.fold (a: b: b.extend a) pkgs (builtins.attrValues self.overlays);
+          pkgs' = import nixpkgs { inherit system; overlays = builtins.attrValues self.overlays; };
         in
         {
           packages = {
             ctags = pkgs.callPackage ./dev/nix/ctags.nix { };
             comby = pkgs.callPackage ./dev/nix/comby.nix { };
             nodejs-16_x = pkgs.callPackage ./dev/nix/nodejs.nix { };
-          } // pkgs.lib.optionalAttrs (pkgs.targetPlatform.system != "aarch64-linux") {
+          }
+          # so we don't get `packages.aarch64-linux.p4-fusion` in nix `flake show` output
+          // pkgs.lib.optionalAttrs (pkgs.targetPlatform.system != "aarch64-linux") {
             p4-fusion = pkgs.callPackage ./dev/nix/p4-fusion.nix { };
           };
 

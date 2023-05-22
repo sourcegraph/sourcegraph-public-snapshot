@@ -1,7 +1,7 @@
 { lib }:
 {
   # utility function to add some best-effort flags for emitting static objects instead of dynamic
-  makeStatic = pkg:
+  mkStatic = pkg:
     let
       auto = builtins.intersectAttrs pkg.override.__functionArgs { withStatic = true; static = true; enableStatic = true; enableShared = false; };
       overridden = pkg.overrideAttrs (oldAttrs: {
