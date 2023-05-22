@@ -31,7 +31,7 @@ func EmbedRepo(
 	client EmbeddingsClient,
 	contextService ContextService,
 	readLister FileReadLister,
-	getDocumentRanks ranksGetter,
+	ranks types.RepoPathRanks,
 	opts EmbedRepoOpts,
 	logger log.Logger,
 ) (*embeddings.RepoEmbeddingIndex, []string, *embeddings.EmbedRepoStats, error) {
@@ -72,11 +72,6 @@ func EmbedRepo(
 		} else {
 			codeFileNames = append(codeFileNames, file)
 		}
-	}
-
-	ranks, err := getDocumentRanks(ctx, string(opts.RepoName))
-	if err != nil {
-		return nil, nil, nil, err
 	}
 
 	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, ranks)

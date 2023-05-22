@@ -99,12 +99,17 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		IndexedRevision:   lastSuccessfulJobRevision,
 	}
 
+	ranks, err := getDocumentRanks(ctx, string(repo.Name))
+	if err != nil {
+		return err
+	}
+
 	repoEmbeddingIndex, toRemove, stats, err := embed.EmbedRepo(
 		ctx,
 		embeddingsClient,
 		h.contextService,
 		fetcher,
-		getDocumentRanks,
+		ranks,
 		opts,
 		logger,
 	)
@@ -120,10 +125,6 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 	)
 
 	if stats.IsDelta {
-		ranks, err := getDocumentRanks(ctx, string(repo.Name))
-		if err != nil {
-			return err
-		}
 		return embeddings.UpdateRepoEmbeddingIndex(ctx, h.uploadStore, string(embeddings.GetRepoEmbeddingIndexName(repo.Name)), repoEmbeddingIndex, toRemove, ranks)
 	} else {
 		return embeddings.UploadRepoEmbeddingIndex(ctx, h.uploadStore, string(embeddings.GetRepoEmbeddingIndexName(repo.Name)), repoEmbeddingIndex)
