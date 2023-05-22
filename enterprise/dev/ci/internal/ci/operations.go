@@ -275,17 +275,7 @@ func addCodyExtensionTests(pipeline *bk.Pipeline) {
 		bk.Cmd("pnpm --filter cody-ai run test:unit"),
 		bk.Cmd("pnpm --filter cody-shared run test"),
 		bk.Cmd("pnpm --filter cody-ai run test:integration"),
-		bk.Cmd("pnpm --filter cody-ai run test:e2e"),
-		bk.Cmd("pnpm --filter cody-ai run test:e2e"),
-		bk.Cmd("pnpm --filter cody-ai run test:e2e"),
-		bk.Cmd("pnpm --filter cody-ai run test:e2e"),
-		bk.Cmd("pnpm --filter cody-ai run test:e2e"),
-		bk.Cmd("pnpm --filter cody-ai run test:e2e"),
-		bk.Cmd("pnpm --filter cody-ai run test:e2e"),
-		bk.Cmd("pnpm --filter cody-ai run test:e2e"),
-		bk.Cmd("pnpm --filter cody-ai run test:e2e"),
-		bk.Cmd("pnpm --filter cody-ai run test:e2e"),
-		bk.Cmd("pnpm --filter cody-ai run test:e2e"),
+		bk.Cmd("until ! pnpm --filter cody-ai run test:e2e; do :; done"),
 		bk.ArtifactPaths("./playwright/*"),
 	)
 }
