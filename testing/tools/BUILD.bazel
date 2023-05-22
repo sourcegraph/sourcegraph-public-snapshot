@@ -9,3 +9,9 @@ sh_binary(
     srcs = ["run_server_image.sh"],
     visibility = ["//testing:__subpackages__"],
 )
+
+sh_library(
+    name = "integration_runner",
+    srcs = ["integration_runner.sh"],
+    visibility = ["//testing:__subpackages__"],
+)

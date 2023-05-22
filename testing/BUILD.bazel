@@ -1,19 +1,17 @@
 sh_test(
     name = "backend_integration_test",
-    srcs = [":backend_integration_test.sh"],
+    srcs = [":bb.sh"],
     args = [
-        "$(location //testing/tools:before_run_server_image)",  # helper script
-        "$(location //testing/tools:run_server_image)",  # helper script
         "$(location //enterprise/cmd/server:image_tarball)",  # image we're testing against
+        "server:candidate",
         "$(location //dev/gqltest:gqltest_test)",  # actual test
         "$(location //dev/authtest:authtest_test)",  # actual test
     ],
+    deps = ["//testing/tools:integration_runner"],
     data = [
         "//dev/authtest:authtest_test",
         "//dev/gqltest:gqltest_test",
         "//enterprise/cmd/server:image_tarball",
-        "//testing/tools:before_run_server_image",
-        "//testing/tools:run_server_image",
     ],
     env_inherit = [
         "AWS_ACCESS_KEY_ID",
