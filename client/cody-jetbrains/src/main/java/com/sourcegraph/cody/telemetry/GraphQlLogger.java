@@ -32,6 +32,17 @@ public class GraphQlLogger {
         }
     }
 
+    public static void logSearchDuration(Project project, long duration) {
+        String anonymousUserId = ConfigUtil.getAnonymousUserId();
+        if (anonymousUserId != null) {
+            JsonObject durationObject = new JsonObject();
+            durationObject.addProperty("duration", duration);
+            Event event = new Event("CodyJetBrainsExtension:keywordContext:searchDuration",
+                anonymousUserId, ConfigUtil.getSourcegraphUrl(project), durationObject, durationObject);
+            logEvent(project, event, null);
+        }
+    }
+
     // This could be exposed later (as public), but currently, we don't use it externally.
     private static void logEvent(Project project, @NotNull Event event, @Nullable Consumer<Integer> callback) {
         String instanceUrl = ConfigUtil.getSourcegraphUrl(project);
