@@ -198,6 +198,16 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			expectedStatusCode: http.StatusNoContent,
 		},
 		{
+			name: "No queue names provided",
+			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": []}`,
+			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				require.Len(t, codeintelMockStore.DequeueFunc.History(), 0)
+				require.Len(t, batchesMockStore.DequeueFunc.History(), 0)
+				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
+			},
+			expectedStatusCode: http.StatusNoContent,
+		},
+		{
 			name: "Invalid queue name",
 			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["invalidqueue"]}`,
 			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
