@@ -501,6 +501,11 @@
   "packageManager": "pnpm@8.1.0",
   "pnpm": {
     "packageExtensions": {
+      "hnswlib-node": {
+        "dependencies": {
+          "node-gyp": "*"
+        }
+       },
       "cpu-features": {
         "dependencies": {
           "node-gyp": "*"

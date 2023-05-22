@@ -26,6 +26,8 @@ ts_project(
         "src/constants.ts",
         "src/mention-handler.ts",
         "src/services/codebase-context.ts",
+        "src/services/github-client.ts",
+        "src/services/local-vector-store.ts",
         "src/services/openai-completions-client.ts",
         "src/services/sourcegraph-client.ts",
         "src/services/stream-completions.ts",
@@ -39,10 +41,13 @@ ts_project(
         ":node_modules/@slack/bolt",
         ":node_modules/@slack/web-api",
         ":node_modules/@sourcegraph/cody-shared",
+        ":node_modules/langchain",
         ":node_modules/openai",
+        ":node_modules/slackify-markdown",
         "//:node_modules/@types/lodash",
         "//:node_modules/envalid",
         "//:node_modules/lodash",
+        "//:node_modules/octokit",
     ],
 )
 
