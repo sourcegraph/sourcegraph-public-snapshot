@@ -414,10 +414,20 @@
             }
           ]
         },
-        "cody.debug": {
+        "cody.debug.enable": {
           "order": 99,
           "type": "boolean",
-          "markdownDescription": "Adds 'Debug' view to Cody Chat view that allows developers to see and log errors."
+          "markdownDescription": "Turns on debug output (visible in the VS Code Output panel under \"Cody AI by Sourcegraph\")"
+        },
+        "cody.debug.verbose": {
+          "order": 99,
+          "type": "boolean",
+          "markdownDescription": "Enables verbose debug output. Debug messages may contain more details if the invocation includes verbose information."
+        },
+        "cody.debug.filter": {
+          "order": 99,
+          "type": "string",
+          "markdownDescription": "Regular expression to filter debug output. If empty, defaults to '.*', which prints all messages."
         }
       }
     }

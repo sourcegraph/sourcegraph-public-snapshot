@@ -34,6 +34,7 @@ ts_project(
         "package.json",
         "src/chat/ChatViewProvider.ts",
         "src/chat/protocol.ts",
+        "src/chat/recipes.ts",
         "src/completions/cache.ts",
         "src/completions/context.ts",
         "src/completions/docprovider.ts",

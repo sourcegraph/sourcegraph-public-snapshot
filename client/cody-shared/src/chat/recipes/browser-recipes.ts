@@ -18,13 +18,17 @@ export function getRecipe(id: RecipeID): Recipe | undefined {
     return registeredRecipes[id]
 }
 
+function nullLog(filterLabel: string, text: string, ...args: unknown[]): void {
+    // Do nothing
+}
+
 function init(): void {
     if (Object.keys(registeredRecipes).length > 0) {
         return
     }
 
     const recipes: Recipe[] = [
-        new ChatQuestion(),
+        new ChatQuestion(nullLog),
         new ExplainCodeDetailed(),
         new ExplainCodeHighLevel(),
         new GenerateDocstring(),
