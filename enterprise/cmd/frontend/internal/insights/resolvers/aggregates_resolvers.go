@@ -36,7 +36,7 @@ const (
 const invalidQueryMsg = "Grouping is disabled because the search query is not valid."
 const fileUnsupportedFieldValueFmt = `Grouping by file is not available for searches with "%s:%s".`
 const authNotCommitDiffMsg = "Grouping by author is only available for diff and commit searches."
-const repoMetadataNotRepoSelectMsg = "Grouping by repo metadata is only available for repository match searches."
+const repoMetadataNotRepoSelectMsg = "Grouping by repo metadata is only available for repository searches."
 const cgInvalidQueryMsg = "Grouping by capture group is only available for regexp searches that contain a capturing group."
 const cgMultipleQueryPatternMsg = "Grouping by capture group does not support search patterns with the following: and, or, negation."
 const cgUnsupportedSelectFmt = `Grouping by capture group is not available for searches with "%s:%s".`
