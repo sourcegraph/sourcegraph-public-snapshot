@@ -7,7 +7,6 @@ sh_test(
         "$(location //dev/gqltest:gqltest_test)",  # actual test
         "$(location //dev/authtest:authtest_test)",  # actual test
     ],
-    deps = ["//testing/tools:integration_runner"],
     data = [
         "//dev/authtest:authtest_test",
         "//dev/gqltest:gqltest_test",
@@ -31,4 +30,5 @@ sh_test(
         "SOURCEGRAPH_LICENSE_KEY",
     ],
     tags = ["requires-network"],
+    deps = ["//testing/tools:integration_runner"],
 )
