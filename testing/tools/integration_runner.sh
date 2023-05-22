@@ -42,7 +42,7 @@ function ensure_clean_slate() {
 }
 
 function is_present() {
-  if [ ! -z "$1" ]; then
+  if [ -n "$1" ]; then
     echo "present"
   else
     echo "blank"
@@ -101,12 +101,13 @@ function _run_server_image() {
   # echo "Listening at: $url"
   echo "Data and config volume bounds: $data"
   echo "Database startup timeout: $DB_STARTUP_TIMEOUT"
-  echo "License key generator present: $(is_present $SOURCEGRAPH_LICENSE_GENERATION_KEY)"
-  echo "License key present: $(is_present $SOURCEGRAPH_LICENSE_GENERATION_KEY)"
+  echo "License key generator present: $(is_present "$SOURCEGRAPH_LICENSE_GENERATION_KEY")"
+  echo "License key present: $(is_present "$SOURCEGRAPH_LICENSE_GENERATION_KEY")"
 
   echo "Allow single docker image code insights: $ALLOW_SINGLE_DOCKER_CODE_INSIGHTS"
   echo "GRPC Feature flag: $SG_FEATURE_FLAG_GRPC"
 
+  # shellcheck disable=SC2086
   docker run $docker_args \
     -d \
     --rm \
@@ -136,18 +137,18 @@ function wait_until_container_ready() {
 
   t=1
   # timeout is a coreutils extension, not available to us here
-  curl --output /dev/null --silent --head --fail $url
+  curl --output /dev/null --silent --head --fail "$url"
   # shellcheck disable=SC2181
   while [ ! $? -eq 0 ]; do
     sleep 5
-    t=$(( $t + 5 ))
+    t=$(( t + 5 ))
     if [ "$t" -gt $timeout ]; then
       echo "$url was not accessible within $timeout."
       docker inspect "$name"
       exit 1
     fi
 
-    curl --output /dev/null --silent --head --fail $url
+    curl --output /dev/null --silent --head --fail "$url"
   done
   set -e
 }
@@ -163,7 +164,7 @@ function run_server_image() {
   port="$3"
 
   must_be_CI
-  must_not_be_running $url
+  must_not_be_running "$url"
   ensure_clean_slate
 
   local container_name
@@ -173,6 +174,8 @@ function run_server_image() {
   mkdir "$data"
   data="$(pwd)/$data"
 
+  # we want those to be expanded right now, on purpose.
+  # shellcheck disable=SC2064
   trap "cleanup $image_name $container_name" EXIT
   _run_server_image "$image_tarball" "$image_name" "$url" "$port" "$data" "$container_name"
 

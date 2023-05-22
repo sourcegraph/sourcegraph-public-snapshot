@@ -19,13 +19,13 @@ export ALLOW_SINGLE_DOCKER_CODE_INSIGHTS
 
 run_server_image "$tarball" "$image_name" "http://localhost:7080" 7080
 
-echo '--- integration test ./dev/gqltest -long'
+echo "--- integration test ./dev/gqltest -long"
 "$gqltest" -long -base-url "$URL"
 
-echo '--- sleep 5s to wait for site configuration to be restored from gqltest'
+echo "--- sleep 5s to wait for site configuration to be restored from gqltest"
 sleep 5
 
-echo '--- integration test ./dev/authtest -long'
+echo "--- integration test ./dev/authtest -long"
 "$authtest" -long -base-url "$URL" -email "gqltest@sourcegraph.com" -username "gqltest-admin"
 
-echo '--- "
+echo "--- "
