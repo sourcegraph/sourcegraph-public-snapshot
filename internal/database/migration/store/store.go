@@ -270,7 +270,11 @@ WITH ranked_migration_logs AS (
 		migration_logs.*,
 		ROW_NUMBER() OVER (PARTITION BY version ORDER BY backfilled, started_at DESC) AS row_number
 	FROM migration_logs
-	WHERE schema = %s
+	WHERE schema = %s AND NOT (
+		NOT up AND
+		NOT SUCCESS AND
+		finished_at IS NOT NULL
+	)
 )
 SELECT
 	schema,
