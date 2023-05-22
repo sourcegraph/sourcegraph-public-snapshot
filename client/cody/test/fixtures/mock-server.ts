@@ -1,6 +1,9 @@
 import express from 'express'
 
-export const SERVER_PORT = 49300
+const SERVER_PORT = 49300
+
+export const SERVER_URL = 'http://localhost:49300'
+export const VALID_TOKEN = 'abcdefgh1234'
 
 // Runs a stub Cody service for testing.
 export async function run<T>(around: () => Promise<T>): Promise<T> {
@@ -12,6 +15,11 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
     })
 
     app.post('/.api/graphql', (req, res) => {
+        if (req.headers.authorization !== `token ${VALID_TOKEN}`) {
+            res.sendStatus(401)
+            return
+        }
+
         const operation = new URL(req.url, 'https://example.com').search.replace(/^\?/, '')
         switch (operation) {
             case 'CurrentUser':

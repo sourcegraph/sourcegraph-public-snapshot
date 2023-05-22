@@ -56,6 +56,8 @@ ts_project(
         "src/editor/withPreselectedOptions.ts",
         "src/embeddings/client.ts",
         "src/embeddings/index.ts",
+        "src/guardrails/client.ts",
+        "src/guardrails/index.ts",
         "src/hallucinations-detector/index.ts",
         "src/intent-detector/client.ts",
         "src/intent-detector/index.ts",

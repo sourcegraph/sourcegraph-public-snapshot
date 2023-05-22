@@ -4,9 +4,8 @@ import * as vscode from 'vscode'
 
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { ExtensionApi } from '../src/extension-api'
-
-import * as mockServer from './mock-server'
+import { ExtensionApi } from '../../src/extension-api'
+import * as mockServer from '../fixtures/mock-server'
 
 /**
  * Setup (`beforeEach`) function for integration tests that need Cody configured and activated.
@@ -25,8 +24,9 @@ export async function beforeIntegrationTest(): Promise<void> {
 
     // Configure extension.
     const config = vscode.workspace.getConfiguration()
-    await ensureExecuteCommand('cody.set-serverEndpoint', `http://localhost:${mockServer.SERVER_PORT}`)
+    await ensureExecuteCommand('cody.set-serverEndpoint', mockServer.SERVER_URL)
     await config.update('cody.enabled', true)
+    await config.update('cody.serverEndpoint', mockServer.SERVER_URL)
     await ensureExecuteCommand('cody.set-access-token', ['test-token'])
 }
 
