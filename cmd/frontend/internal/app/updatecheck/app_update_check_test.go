@@ -15,6 +15,42 @@ import (
 
 var integrationTest = flag.Bool("IntegrationTest", false, "access external services like GCP")
 
+func TestAppVersionPlatformFormat(t *testing.T) {
+	tt := []struct {
+		Arch   string
+		Target string
+		Wanted string
+	}{
+		{
+			Arch:   "x86_64",
+			Target: "linux",
+			Wanted: "linux-x86_64",
+		},
+		{
+			Arch:   "x86_64",
+			Target: "darwin",
+			Wanted: "darwin-x86_64",
+		},
+		{
+			Arch:   "aarch64",
+			Target: "darwin",
+			Wanted: "darwin-aarch64",
+		},
+	}
+
+	for _, tc := range tt {
+		appVersion := AppVersion{
+			Target:  tc.Target,
+			Version: "0.0.0+dev",
+			Arch:    tc.Arch,
+		}
+
+		if appVersion.Platform() != tc.Wanted {
+			t.Errorf("incorrect plaform format - got %q wanted %q", appVersion.Platform(), tc.Wanted)
+		}
+	}
+}
+
 func TestReadAppClientVersion(t *testing.T) {
 	var tt = []struct {
 		Name    string

@@ -77,10 +77,10 @@ type StaticManifestResolver struct {
 
 func (v *AppVersion) Platform() string {
 	// creates a platform with string with the following format
-	// x86_64-Darwin
-	// x86_64-Linux
-	// aarch64-Darwin
-	return fmt.Sprintf("%s-%s", v.Arch, v.Target)
+	// darwin-x86_64
+	// linux-x86_64
+	// darwin-aarch64
+	return fmt.Sprintf("%s-%s", v.Target, v.Arch)
 }
 
 func NewGCSManifestResolver(ctx context.Context, bucket, manifestName string) (UpdateManifestResolver, error) {
