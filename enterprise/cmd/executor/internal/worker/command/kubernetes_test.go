@@ -379,6 +379,7 @@ func TestNewKubernetesJob(t *testing.T) {
 	job := command.NewKubernetesJob("my-job", "my-image:latest", spec, "/my/path", options)
 
 	assert.Equal(t, "my-job", job.Name)
+	assert.Equal(t, int32(0), *job.Spec.BackoffLimit)
 
 	assert.Equal(t, "my-node", job.Spec.Template.Spec.NodeName)
 	assert.Equal(t, corev1.RestartPolicyNever, job.Spec.Template.Spec.RestartPolicy)
