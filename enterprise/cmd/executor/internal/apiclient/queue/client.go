@@ -164,7 +164,9 @@ func (c *Client) MarkFailed(ctx context.Context, job types.Job, failureMessage s
 
 func (c *Client) Heartbeat(ctx context.Context, jobIDs []int) (knownIDs, cancelIDs []int, err error) {
 	if len(c.options.QueueNames) > 0 {
-		return nil, nil, nil
+		// TODO: multi-queue heartbeats are not implemented yet, so simply return the job ids immediately
+		// to allow jobs to terminate while testing
+		return jobIDs, nil, nil
 	}
 
 	ctx, _, endObservation := c.operations.heartbeat.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
