@@ -14,6 +14,9 @@ authtest="$4"
 GITHUB_TOKEN="$GHE_GITHUB_TOKEN"
 export GITHUB_TOKEN
 
+ALLOW_SINGLE_DOCKER_CODE_INSIGHTS="true"
+export ALLOW_SINGLE_DOCKER_CODE_INSIGHTS
+
 run_server_image "$tarball" "$image_name" "http://localhost:7080" 7080
 
 echo '--- integration test ./dev/gqltest -long'
