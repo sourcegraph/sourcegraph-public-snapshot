@@ -26,6 +26,7 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
     codeInsightsEnabled: true,
     executorsEnabled: true,
     codyEnabled: true,
+    codyRequiresVerifiedEmail: false,
     extsvcConfigAllowEdits: false,
     extsvcConfigFileExists: false,
     codeIntelAutoIndexingEnabled: true,
