@@ -31,6 +31,14 @@ if curl --output /dev/null --silent --head --fail "$URL"; then
   exit 1
 fi
 
+function is_present {
+  if [ ! -z "$1" ]; then
+    echo "present"
+  else
+    echo "blank"
+  fi
+}
+
 echo "--- Loading server image"
 echo "Loading $image_tarball in Docker"
 docker load --input "$image_tarball"
@@ -39,7 +47,8 @@ echo "-- Starting $image_name"
 echo "Listening at: $URL"
 echo "Data and config volume bounds: $DATA"
 echo "Database startup timeout: $DB_STARTUP_TIMEOUT"
-echo "License key generator: $SOURCEGRAPH_LICENSE_GENERATION_KEY"
+echo "License key generator present: $(is_present $SOURCEGRAPH_LICENSE_GENERATION_KEY)"
+echo "License key present: $(is_present $SOURCEGRAPH_LICENSE_GENERATION_KEY)"
 
 echo "Allow single docker image code insights: $ALLOW_SINGLE_DOCKER_CODE_INSIGHTS"
 echo "GRPC Feature flag: $SG_FEATURE_FLAG_GRPC"
