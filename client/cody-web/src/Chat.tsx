@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useRef } from 'react'
 
 import { noop } from 'lodash'
 
@@ -60,17 +60,28 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     required,
     onInput,
     onKeyDown,
-}) => (
-    <textarea
-        className={className}
-        rows={rows}
-        value={value}
-        autoFocus={autoFocus}
-        required={required}
-        onInput={onInput}
-        onKeyDown={onKeyDown}
-    />
-)
+}) => {
+    const textAreaRef = useRef<HTMLTextAreaElement>(null)
+
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>): void => {
+        if (onKeyDown) {
+            onKeyDown(event, textAreaRef.current?.selectionStart ?? null)
+        }
+    }
+
+    return (
+        <textarea
+            ref={textAreaRef}
+            className={className}
+            rows={rows}
+            value={value}
+            autoFocus={autoFocus}
+            required={required}
+            onInput={onInput}
+            onKeyDown={handleKeyDown}
+        />
+    )
+}
 
 const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ className, disabled, onClick }) => (
     <button className={className} type="submit" disabled={disabled} onClick={onClick}>

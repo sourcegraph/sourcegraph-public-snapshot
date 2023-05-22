@@ -12,6 +12,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -27,6 +28,7 @@ type GQLSearchVars struct {
 }
 
 func main() {
+	sanitycheck.Pass()
 	if err := run(); err != nil {
 		log.Fatal(err)
 	}

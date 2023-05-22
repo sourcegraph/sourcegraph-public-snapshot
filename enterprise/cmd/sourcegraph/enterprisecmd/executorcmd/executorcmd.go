@@ -10,12 +10,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/service/svcmain"
 )
 
-var config = svcmain.Config{}
+var config = svcmain.Config{
+	SkipValidate: true,
+}
 
-// DeprecatedSingleServiceMainEnterprise is called from the `main` function of a command in the
+// SingleServiceMainEnterprise is called from the `main` function of a command in the
 // enterprise (non-OSS) build to start a single service (such as frontend or gitserver).
-//
-// DEPRECATED: See svcmain.DeprecatedSingleServiceMain documentation for more info.
-func DeprecatedSingleServiceMainEnterprise(service service.Service) {
-	svcmain.DeprecatedSingleServiceMain(service, config, false, false)
+func SingleServiceMainEnterprise(service service.Service) {
+	svcmain.SingleServiceMainWithoutConf(service, config, svcmain.OutOfBandConfiguration{})
 }

@@ -6,6 +6,8 @@ load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_op
 load("//client/shared/dev:tools.bzl", "module_style_typings")
 load("//dev:defs.bzl", "jest_test", "npm_package", "sass", "ts_project")
 load("//dev:webpack.bzl", "webpack_bundle", "webpack_devserver", "webpack_web_app")
+load("//dev:eslint.bzl", "eslint_config")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
@@ -18,9 +20,15 @@ load("//dev:webpack.bzl", "webpack_bundle", "webpack_devserver", "webpack_web_ap
 # gazelle:js_ignore_imports **/*.worker.ts
 # gazelle:js_ignore_imports **/SourcegraphWebApp.scss
 
-load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
-
 npm_link_all_packages(name = "node_modules")
+
+eslint_config(
+    deps = [
+        "//client/web/src/end-to-end:tsconfig",
+        "//client/web/src/integration:tsconfig",
+        "//client/web/src/regression:tsconfig",
+    ],
+)
 
 ts_config(
     name = "tsconfig",
@@ -184,6 +192,7 @@ ts_project(
         "src/codeintel/useCodeIntel.ts",
         "src/codeintel/useRepoAndBlob.ts",
         "src/codeintel/util/helpers.ts",
+        "src/cody/CodyStandalonePage.tsx",
         "src/cody/chat/CodyChatPage.tsx",
         "src/cody/chat/CodyPageIcon.tsx",
         "src/cody/chat/index.tsx",
@@ -202,6 +211,7 @@ ts_project(
         "src/cody/stores/chat.ts",
         "src/cody/stores/editor.ts",
         "src/cody/stores/sidebar.ts",
+        "src/cody/useIsCodyEnabled.tsx",
         "src/cody/widgets/CodyRecipesWidget.tsx",
         "src/cody/widgets/components/Recipe.tsx",
         "src/cody/widgets/components/RecipeAction.tsx",
@@ -321,10 +331,11 @@ ts_project(
         "src/components/fuzzyFinder/FuzzyTabs.tsx",
         "src/components/fuzzyFinder/HighlightedLink.tsx",
         "src/components/fuzzyFinder/LazyFuzzyFinder.tsx",
-        "src/components/gitHubApps/AddGitHubAppPage.tsx",
         "src/components/gitHubApps/AuthProviderMessage.tsx",
+        "src/components/gitHubApps/CreateGitHubAppPage.tsx",
         "src/components/gitHubApps/GitHubAppCard.tsx",
         "src/components/gitHubApps/GitHubAppPage.tsx",
+        "src/components/gitHubApps/GitHubAppSelector.tsx",
         "src/components/gitHubApps/GitHubAppsPage.tsx",
         "src/components/gitHubApps/backend.ts",
         "src/components/shared.tsx",
@@ -337,6 +348,9 @@ ts_project(
         "src/enterprise/app/AppAuthCallbackPage.tsx",
         "src/enterprise/app/AppComingSoonPage.tsx",
         "src/enterprise/app/settings/AppSettingsArea.tsx",
+        "src/enterprise/app/settings/local-repositories/LocalRepositoriesTab.tsx",
+        "src/enterprise/app/setup/AppSetupSteps.tsx",
+        "src/enterprise/app/setup/AppSetupWizard.tsx",
         "src/enterprise/batches/BatchChangeTabs.tsx",
         "src/enterprise/batches/BatchSpec.tsx",
         "src/enterprise/batches/BatchSpecNode.tsx",
@@ -623,6 +637,8 @@ ts_project(
         "src/enterprise/codeintel/indexes/hooks/useReindexPreciseIndexes.tsx",
         "src/enterprise/codeintel/indexes/pages/CodeIntelPreciseIndexPage.tsx",
         "src/enterprise/codeintel/indexes/pages/CodeIntelPreciseIndexesPage.tsx",
+        "src/enterprise/codeintel/ranking/pages/CodeIntelRankingPage.tsx",
+        "src/enterprise/codeintel/ranking/pages/backend.ts",
         "src/enterprise/codeintel/repo/CodeIntelSidebar.tsx",
         "src/enterprise/codeintel/repo/RepositoryCodeIntelArea.tsx",
         "src/enterprise/codeintel/searchBased.ts",
@@ -917,6 +933,8 @@ ts_project(
         "src/enterprise/own/RepositoryOwnPage.tsx",
         "src/enterprise/own/RepositoryOwnPageContents.tsx",
         "src/enterprise/own/UploadFileButton.tsx",
+        "src/enterprise/own/admin-ui/OwnStatusPage.tsx",
+        "src/enterprise/own/admin-ui/query.ts",
         "src/enterprise/own/graphqlQueries.ts",
         "src/enterprise/productSubscription/ExpirationDate.tsx",
         "src/enterprise/productSubscription/LicenseGenerationKeyWarning.tsx",
@@ -1158,6 +1176,7 @@ ts_project(
         "src/repo/RepoContainerError.tsx",
         "src/repo/RepoHeader.tsx",
         "src/repo/RepoHeaderContributionPortal.tsx",
+        "src/repo/RepoMetadataPage.tsx",
         "src/repo/RepoRevisionContainer.tsx",
         "src/repo/RepoRevisionSidebar.tsx",
         "src/repo/RepoRevisionSidebarCommits.tsx",
@@ -1279,7 +1298,6 @@ ts_project(
         "src/repo/repoRevisionSidebar/cody/backend.tsx",
         "src/repo/settings/RepoSettingsArea.tsx",
         "src/repo/settings/RepoSettingsIndexPage.tsx",
-        "src/repo/settings/RepoSettingsMetadataPage.tsx",
         "src/repo/settings/RepoSettingsMirrorPage.tsx",
         "src/repo/settings/RepoSettingsOptionsPage.tsx",
         "src/repo/settings/RepoSettingsSidebar.tsx",
@@ -1362,6 +1380,7 @@ ts_project(
         "src/setup-wizard/components/index.ts",
         "src/setup-wizard/components/local-repositories-step/LocalRepositoriesStep.tsx",
         "src/setup-wizard/components/local-repositories-step/helpers.ts",
+        "src/setup-wizard/components/local-repositories-step/hooks.ts",
         "src/setup-wizard/components/local-repositories-step/index.ts",
         "src/setup-wizard/components/local-repositories-step/queries.ts",
         "src/setup-wizard/components/remote-repositories-step/RemoteRepositoriesStep.tsx",
@@ -1616,6 +1635,7 @@ ts_project(
         "src/util/getReactElements.ts",
         "src/util/index.tsx",
         "src/util/prettyBytesBigint.ts",
+        "src/util/rbac.ts",
         "src/util/security.ts",
         "src/util/settings.ts",
         "src/util/time.ts",
@@ -1669,6 +1689,7 @@ ts_project(
         "//:node_modules/@sentry/browser",  #keep
         "//:node_modules/@sourcegraph/extension-api-classes",
         "//:node_modules/@storybook/client-api",  #keep
+        "//:node_modules/@tauri-apps/api",
         "//:node_modules/@types/bloomfilter",
         "//:node_modules/@types/chrome",  #keep
         "//:node_modules/@types/classnames",
@@ -1784,8 +1805,8 @@ ts_project(
         "src/enterprise/batches/batch-spec/yaml-util.test.ts",
         "src/enterprise/batches/detail/BatchChangeDetailsPage.mock.ts",
         "src/enterprise/batches/detail/changesets/BatchChangeChangesets.mock.ts",
+        "src/enterprise/batches/mocks.ts",
         "src/enterprise/batches/settings/format.test.ts",
-        "src/enterprise/batches/settings/mocks.ts",
         "src/enterprise/code-monitoring/CodeMonitoringPage.test.tsx",
         "src/enterprise/code-monitoring/CreateCodeMonitorPage.test.tsx",
         "src/enterprise/code-monitoring/ManageCodeMonitorPage.test.tsx",
@@ -1995,10 +2016,10 @@ ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
     webpack_bundle(
         name = "bundle" if prod else "bundle-dev",
         srcs = BUNDLE_DATA_DEPS + [
+            ":web_lib",
             "//:babel_config",
             "//:browserslist",
             "//:package_json",
-            ":web_lib",
         ],
         entry_points = {
             "src/main.js": "app",

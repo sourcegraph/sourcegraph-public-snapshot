@@ -82,11 +82,19 @@ func (c *embeddingsClient) GetEmbeddingsWithRetries(ctx context.Context, texts [
 	return nil, err
 }
 
+var MODELS_WITHOUT_NEWLINES = map[string]struct{}{
+	"text-embedding-ada-002": {},
+}
+
 func GetEmbeddings(ctx context.Context, texts []string, config *schema.Embeddings) ([]float32, error) {
-	// Replace newlines, which can negatively affect performance.
-	augmentedTexts := make([]string, len(texts))
-	for idx, text := range texts {
-		augmentedTexts[idx] = strings.ReplaceAll(text, "\n", " ")
+	_, replaceNewlines := MODELS_WITHOUT_NEWLINES[config.Model]
+	augmentedTexts := texts
+	if replaceNewlines {
+		augmentedTexts = make([]string, len(texts))
+		// Replace newlines for certain (OpenAI) models, because they can negatively affect performance.
+		for idx, text := range texts {
+			augmentedTexts[idx] = strings.ReplaceAll(text, "\n", " ")
+		}
 	}
 
 	request := EmbeddingAPIRequest{Model: config.Model, Input: augmentedTexts}

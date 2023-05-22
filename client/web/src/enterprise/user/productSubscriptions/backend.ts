@@ -45,6 +45,10 @@ export const USER_PRODUCT_SUBSCRIPTION = gql`
         rateLimit {
             ...LLMProxyRateLimitFields
         }
+        usage {
+            date
+            count
+        }
     }
 
     fragment LLMProxyRateLimitFields on LLMProxyRateLimit {

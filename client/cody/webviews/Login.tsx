@@ -6,18 +6,27 @@ import { VSCodeTextField, VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import { renderCodyMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
 
+import { AuthStatus } from '../src/chat/protocol'
+
+import { ConnectApp } from './ConnectApp'
+import { VSCodeWrapper } from './utils/VSCodeApi'
+
 import styles from './Login.module.css'
 
 interface LoginProps {
-    isValidLogin?: boolean
+    authStatus?: AuthStatus
     onLogin: (token: string, endpoint: string) => void
     serverEndpoint?: string
+    isAppInstalled: boolean
+    vscodeAPI: VSCodeWrapper
 }
 
 export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>> = ({
-    isValidLogin,
+    authStatus,
     onLogin,
     serverEndpoint,
+    isAppInstalled,
+    vscodeAPI,
 }) => {
     const [token, setToken] = useState<string>('')
     const [endpoint, setEndpoint] = useState(serverEndpoint)
@@ -34,11 +43,18 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
 
     return (
         <div className={styles.container}>
-            {isValidLogin === false && (
+            {authStatus?.showInvalidAccessTokenError && (
                 <p className={styles.error}>
                     Invalid credentials. Please check the Sourcegraph instance URL and access token.
                 </p>
             )}
+            {authStatus?.authenticated === true &&
+                authStatus?.requiresVerifiedEmail &&
+                authStatus?.hasVerifiedEmail === false && (
+                    <p className={styles.error}>
+                        Email not verified. Please add a verified email to your Sourcegraph.com account.
+                    </p>
+                )}
             <section className={styles.section}>
                 <h2 className={styles.sectionHeader}>Enterprise User</h2>
                 <form className={styles.wrapper} onSubmit={onSubmit}>
@@ -70,7 +86,6 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
             <div className={styles.divider} />
             <section className={styles.section}>
                 <h2 className={styles.sectionHeader}>Everyone Else</h2>
-
                 <p className={styles.openMessage}>
                     Cody for open source code is available to all users with a Sourcegraph.com account
                 </p>
@@ -83,6 +98,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                         Continue with Sourcegraph.com
                     </VSCodeButton>
                 </a>
+                {isAppInstalled && <ConnectApp vscodeAPI={vscodeAPI} />}
             </section>
             <div
                 className={styles.terms}

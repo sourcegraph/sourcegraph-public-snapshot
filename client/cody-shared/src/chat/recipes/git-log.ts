@@ -5,10 +5,10 @@ import { MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
-import { Recipe, RecipeContext } from './recipe'
+import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class GitHistory implements Recipe {
-    public id = 'git-history'
+    public id: RecipeID = 'git-history'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const dirPath = context.editor.getWorkspaceRootPath()

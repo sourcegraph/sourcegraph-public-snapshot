@@ -35,10 +35,15 @@ type OwnResolver interface {
 	AddCodeownersFile(context.Context, *CodeownersFileArgs) (CodeownersIngestedFileResolver, error)
 	UpdateCodeownersFile(context.Context, *CodeownersFileArgs) (CodeownersIngestedFileResolver, error)
 	DeleteCodeownersFiles(context.Context, *DeleteCodeownersFileArgs) (*EmptyResponse, error)
+
+	// config
+	OwnSignalConfigurations(ctx context.Context) ([]SignalConfigurationResolver, error)
+	UpdateOwnSignalConfigurations(ctx context.Context, configurationsArgs UpdateSignalConfigurationsArgs) ([]SignalConfigurationResolver, error)
 }
 
 type OwnershipConnectionResolver interface {
 	TotalCount(context.Context) (int32, error)
+	TotalOwners(context.Context) (int32, error)
 	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
 	Nodes(context.Context) ([]OwnershipResolver, error)
 }
@@ -124,4 +129,25 @@ type CodeownersIngestedFileConnectionResolver interface {
 	Nodes(ctx context.Context) ([]CodeownersIngestedFileResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type SignalConfigurationResolver interface {
+	Name() string
+	Description() string
+	IsEnabled() bool
+	ExcludedRepoPatterns() []string
+}
+
+type UpdateSignalConfigurationsArgs struct {
+	Input UpdateSignalConfigurationsInput
+}
+
+type UpdateSignalConfigurationsInput struct {
+	Configs []SignalConfigurationUpdate
+}
+
+type SignalConfigurationUpdate struct {
+	Name                 string
+	ExcludedRepoPatterns []string
+	Enabled              bool
 }

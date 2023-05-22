@@ -60,6 +60,27 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.assigned_owners"
+```
+        Column        |            Type             | Collation | Nullable |                   Default                   
+----------------------+-----------------------------+-----------+----------+---------------------------------------------
+ id                   | integer                     |           | not null | nextval('assigned_owners_id_seq'::regclass)
+ owner_user_id        | integer                     |           | not null | 
+ file_path_id         | integer                     |           | not null | 
+ who_assigned_user_id | integer                     |           |          | 
+ assigned_at          | timestamp without time zone |           | not null | now()
+Indexes:
+    "assigned_owners_pkey" PRIMARY KEY, btree (id)
+    "assigned_owners_file_path" btree (file_path_id)
+Foreign-key constraints:
+    "assigned_owners_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
+    "assigned_owners_owner_user_id_fkey" FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+    "assigned_owners_who_assigned_user_id_fkey" FOREIGN KEY (who_assigned_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
+
+```
+
+Table for ownership assignments, one entry contains an assigned user ID, which repo_path is assigned and the date and user who assigned the owner.
+
 # Table "public.batch_changes"
 ```
       Column       |           Type           | Collation | Nullable |                  Default                  
@@ -844,20 +865,19 @@ Contains auto-index job inference Lua scripts as an alternative to setting via e
 
 # Table "public.codeintel_initial_path_ranks"
 ```
-     Column      |           Type           | Collation | Nullable |                         Default                          
------------------+--------------------------+-----------+----------+----------------------------------------------------------
- id              | bigint                   |           | not null | nextval('codeintel_initial_path_ranks_id_seq'::regclass)
- upload_id       | integer                  |           | not null | 
- document_path   | text                     |           | not null | ''::text
- graph_key       | text                     |           | not null | 
- last_scanned_at | timestamp with time zone |           |          | 
- document_paths  | text[]                   |           | not null | '{}'::text[]
- deleted_at      | timestamp with time zone |           |          | 
+       Column       |  Type   | Collation | Nullable |                         Default                          
+--------------------+---------+-----------+----------+----------------------------------------------------------
+ id                 | bigint  |           | not null | nextval('codeintel_initial_path_ranks_id_seq'::regclass)
+ document_path      | text    |           | not null | ''::text
+ graph_key          | text    |           | not null | 
+ document_paths     | text[]  |           | not null | '{}'::text[]
+ exported_upload_id | integer |           | not null | 
 Indexes:
     "codeintel_initial_path_ranks_pkey" PRIMARY KEY, btree (id)
+    "codeintel_initial_path_ranks_exported_upload_id" btree (exported_upload_id)
     "codeintel_initial_path_ranks_graph_key_id" btree (graph_key, id)
-    "codeintel_initial_path_ranks_graph_key_last_scanned_at" btree (graph_key, last_scanned_at NULLS FIRST, id)
-    "codeintel_initial_path_upload_id" btree (upload_id)
+Foreign-key constraints:
+    "codeintel_initial_path_ranks_exported_upload_id_fkey" FOREIGN KEY (exported_upload_id) REFERENCES codeintel_ranking_exports(id) ON DELETE CASCADE
 Referenced by:
     TABLE "codeintel_initial_path_ranks_processed" CONSTRAINT "fk_codeintel_initial_path_ranks" FOREIGN KEY (codeintel_initial_path_ranks_id) REFERENCES codeintel_initial_path_ranks(id) ON DELETE CASCADE
 
@@ -915,36 +935,42 @@ Triggers:
 
 # Table "public.codeintel_ranking_definitions"
 ```
-     Column      |           Type           | Collation | Nullable |                          Default                          
------------------+--------------------------+-----------+----------+-----------------------------------------------------------
- id              | bigint                   |           | not null | nextval('codeintel_ranking_definitions_id_seq'::regclass)
- upload_id       | integer                  |           | not null | 
- symbol_name     | text                     |           | not null | 
- document_path   | text                     |           | not null | 
- graph_key       | text                     |           | not null | 
- last_scanned_at | timestamp with time zone |           |          | 
- deleted_at      | timestamp with time zone |           |          | 
+       Column       |  Type   | Collation | Nullable |                          Default                          
+--------------------+---------+-----------+----------+-----------------------------------------------------------
+ id                 | bigint  |           | not null | nextval('codeintel_ranking_definitions_id_seq'::regclass)
+ symbol_name        | text    |           | not null | 
+ document_path      | text    |           | not null | 
+ graph_key          | text    |           | not null | 
+ exported_upload_id | integer |           | not null | 
 Indexes:
     "codeintel_ranking_definitions_pkey" PRIMARY KEY, btree (id)
-    "codeintel_ranking_definitions_graph_key_last_scanned_at_id" btree (graph_key, last_scanned_at NULLS FIRST, id)
-    "codeintel_ranking_definitions_graph_key_symbol_search" btree (graph_key, symbol_name, upload_id, document_path)
+    "codeintel_ranking_definitions_exported_upload_id" btree (exported_upload_id)
+    "codeintel_ranking_definitions_graph_key_symbol_search" btree (graph_key, symbol_name, exported_upload_id, document_path)
+Foreign-key constraints:
+    "codeintel_ranking_definitions_exported_upload_id_fkey" FOREIGN KEY (exported_upload_id) REFERENCES codeintel_ranking_exports(id) ON DELETE CASCADE
 
 ```
 
 # Table "public.codeintel_ranking_exports"
 ```
-    Column     |           Type           | Collation | Nullable |                        Default                        
----------------+--------------------------+-----------+----------+-------------------------------------------------------
- upload_id     | integer                  |           |          | 
- graph_key     | text                     |           | not null | 
- locked_at     | timestamp with time zone |           | not null | now()
- id            | integer                  |           | not null | nextval('codeintel_ranking_exports_id_seq'::regclass)
- object_prefix | text                     |           |          | 
+     Column      |           Type           | Collation | Nullable |                        Default                        
+-----------------+--------------------------+-----------+----------+-------------------------------------------------------
+ upload_id       | integer                  |           |          | 
+ graph_key       | text                     |           | not null | 
+ locked_at       | timestamp with time zone |           | not null | now()
+ id              | integer                  |           | not null | nextval('codeintel_ranking_exports_id_seq'::regclass)
+ last_scanned_at | timestamp with time zone |           |          | 
+ deleted_at      | timestamp with time zone |           |          | 
 Indexes:
     "codeintel_ranking_exports_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_exports_graph_key_upload_id" UNIQUE, btree (graph_key, upload_id)
+    "codeintel_ranking_exports_graph_key_last_scanned_at" btree (graph_key, last_scanned_at NULLS FIRST, id)
 Foreign-key constraints:
     "codeintel_ranking_exports_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL
+Referenced by:
+    TABLE "codeintel_initial_path_ranks" CONSTRAINT "codeintel_initial_path_ranks_exported_upload_id_fkey" FOREIGN KEY (exported_upload_id) REFERENCES codeintel_ranking_exports(id) ON DELETE CASCADE
+    TABLE "codeintel_ranking_definitions" CONSTRAINT "codeintel_ranking_definitions_exported_upload_id_fkey" FOREIGN KEY (exported_upload_id) REFERENCES codeintel_ranking_exports(id) ON DELETE CASCADE
+    TABLE "codeintel_ranking_references" CONSTRAINT "codeintel_ranking_references_exported_upload_id_fkey" FOREIGN KEY (exported_upload_id) REFERENCES codeintel_ranking_exports(id) ON DELETE CASCADE
 
 ```
 
@@ -967,18 +993,22 @@ Indexes:
 
 # Table "public.codeintel_ranking_progress"
 ```
-          Column          |           Type           | Collation | Nullable |                        Default                         
---------------------------+--------------------------+-----------+----------+--------------------------------------------------------
- id                       | bigint                   |           | not null | nextval('codeintel_ranking_progress_id_seq'::regclass)
- graph_key                | text                     |           | not null | 
- max_definition_id        | integer                  |           | not null | 
- max_reference_id         | integer                  |           | not null | 
- max_path_id              | integer                  |           | not null | 
- mappers_started_at       | timestamp with time zone |           | not null | 
- mapper_completed_at      | timestamp with time zone |           |          | 
- seed_mapper_completed_at | timestamp with time zone |           |          | 
- reducer_started_at       | timestamp with time zone |           |          | 
- reducer_completed_at     | timestamp with time zone |           |          | 
+             Column              |           Type           | Collation | Nullable |                        Default                         
+---------------------------------+--------------------------+-----------+----------+--------------------------------------------------------
+ id                              | bigint                   |           | not null | nextval('codeintel_ranking_progress_id_seq'::regclass)
+ graph_key                       | text                     |           | not null | 
+ mappers_started_at              | timestamp with time zone |           | not null | 
+ mapper_completed_at             | timestamp with time zone |           |          | 
+ seed_mapper_completed_at        | timestamp with time zone |           |          | 
+ reducer_started_at              | timestamp with time zone |           |          | 
+ reducer_completed_at            | timestamp with time zone |           |          | 
+ num_path_records_total          | integer                  |           |          | 
+ num_reference_records_total     | integer                  |           |          | 
+ num_count_records_total         | integer                  |           |          | 
+ num_path_records_processed      | integer                  |           |          | 
+ num_reference_records_processed | integer                  |           |          | 
+ num_count_records_processed     | integer                  |           |          | 
+ max_export_id                   | bigint                   |           | not null | 
 Indexes:
     "codeintel_ranking_progress_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_progress_graph_key_key" UNIQUE CONSTRAINT, btree (graph_key)
@@ -987,19 +1017,18 @@ Indexes:
 
 # Table "public.codeintel_ranking_references"
 ```
-     Column      |           Type           | Collation | Nullable |                         Default                          
------------------+--------------------------+-----------+----------+----------------------------------------------------------
- id              | bigint                   |           | not null | nextval('codeintel_ranking_references_id_seq'::regclass)
- upload_id       | integer                  |           | not null | 
- symbol_names    | text[]                   |           | not null | 
- graph_key       | text                     |           | not null | 
- last_scanned_at | timestamp with time zone |           |          | 
- deleted_at      | timestamp with time zone |           |          | 
+       Column       |  Type   | Collation | Nullable |                         Default                          
+--------------------+---------+-----------+----------+----------------------------------------------------------
+ id                 | bigint  |           | not null | nextval('codeintel_ranking_references_id_seq'::regclass)
+ symbol_names       | text[]  |           | not null | 
+ graph_key          | text    |           | not null | 
+ exported_upload_id | integer |           | not null | 
 Indexes:
     "codeintel_ranking_references_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_references_exported_upload_id" btree (exported_upload_id)
     "codeintel_ranking_references_graph_key_id" btree (graph_key, id)
-    "codeintel_ranking_references_graph_key_last_scanned_at_id" btree (graph_key, last_scanned_at NULLS FIRST, id)
-    "codeintel_ranking_references_upload_id" btree (upload_id)
+Foreign-key constraints:
+    "codeintel_ranking_references_exported_upload_id_fkey" FOREIGN KEY (exported_upload_id) REFERENCES codeintel_ranking_exports(id) ON DELETE CASCADE
 Referenced by:
     TABLE "codeintel_ranking_references_processed" CONSTRAINT "fk_codeintel_ranking_reference" FOREIGN KEY (codeintel_ranking_reference_id) REFERENCES codeintel_ranking_references(id) ON DELETE CASCADE
 
@@ -1614,23 +1643,6 @@ Referenced by:
 
 **rollout**: Rollout only defined when flag_type is rollout. Increments of 0.01%
 
-# Table "public.github_app_installs"
-```
-     Column      |           Type           | Collation | Nullable |                     Default                     
------------------+--------------------------+-----------+----------+-------------------------------------------------
- id              | integer                  |           | not null | nextval('github_app_installs_id_seq'::regclass)
- app_id          | integer                  |           | not null | 
- installation_id | integer                  |           | not null | 
- created_at      | timestamp with time zone |           | not null | now()
-Indexes:
-    "github_app_installs_pkey" PRIMARY KEY, btree (id)
-    "app_id_idx" btree (app_id)
-    "installation_id_idx" btree (installation_id)
-Foreign-key constraints:
-    "github_app_installs_app_id_fkey" FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE
-
-```
-
 # Table "public.github_apps"
 ```
       Column       |           Type           | Collation | Nullable |                 Default                 
@@ -1654,8 +1666,6 @@ Indexes:
     "github_apps_app_id_slug_base_url_unique" UNIQUE, btree (app_id, slug, base_url)
 Foreign-key constraints:
     "github_apps_webhook_id_fkey" FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE SET NULL
-Referenced by:
-    TABLE "github_app_installs" CONSTRAINT "github_app_installs_app_id_fkey" FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE
 
 ```
 
@@ -2922,6 +2932,21 @@ Indexes:
 
 ```
 
+# Table "public.own_signal_configurations"
+```
+         Column         |  Type   | Collation | Nullable |                        Default                        
+------------------------+---------+-----------+----------+-------------------------------------------------------
+ id                     | integer |           | not null | nextval('own_signal_configurations_id_seq'::regclass)
+ name                   | text    |           | not null | 
+ description            | text    |           | not null | ''::text
+ excluded_repo_patterns | text[]  |           |          | 
+ enabled                | boolean |           | not null | false
+Indexes:
+    "own_signal_configurations_pkey" PRIMARY KEY, btree (id)
+    "own_signal_configurations_name_uidx" UNIQUE, btree (name)
+
+```
+
 # Table "public.own_signal_recent_contribution"
 ```
         Column        |            Type             | Collation | Nullable |                          Default                           
@@ -3260,6 +3285,7 @@ Referenced by:
     TABLE "lsif_index_configuration" CONSTRAINT "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "lsif_retention_configuration" CONSTRAINT "lsif_retention_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "permission_sync_jobs" CONSTRAINT "permission_sync_jobs_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "repo_commits_changelists" CONSTRAINT "repo_commits_changelists_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "repo_kvps" CONSTRAINT "repo_kvps_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "repo_paths" CONSTRAINT "repo_paths_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
@@ -3275,6 +3301,23 @@ Triggers:
     trig_recalc_repo_statistics_on_repo_insert AFTER INSERT ON repo REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_insert()
     trig_recalc_repo_statistics_on_repo_update AFTER UPDATE ON repo REFERENCING OLD TABLE AS oldtab NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_update()
     trigger_gitserver_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_gitserver_repo()
+
+```
+
+# Table "public.repo_commits_changelists"
+```
+         Column         |           Type           | Collation | Nullable |                       Default                        
+------------------------+--------------------------+-----------+----------+------------------------------------------------------
+ id                     | integer                  |           | not null | nextval('repo_commits_changelists_id_seq'::regclass)
+ repo_id                | integer                  |           | not null | 
+ commit_sha             | bytea                    |           | not null | 
+ perforce_changelist_id | integer                  |           | not null | 
+ created_at             | timestamp with time zone |           | not null | now()
+Indexes:
+    "repo_commits_changelists_pkey" PRIMARY KEY, btree (id)
+    "repo_id_perforce_changelist_id_unique" UNIQUE, btree (repo_id, perforce_changelist_id)
+Foreign-key constraints:
+    "repo_commits_changelists_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -3331,6 +3374,7 @@ Foreign-key constraints:
     "repo_paths_parent_id_fkey" FOREIGN KEY (parent_id) REFERENCES repo_paths(id)
     "repo_paths_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
+    TABLE "assigned_owners" CONSTRAINT "assigned_owners_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
     TABLE "own_aggregate_recent_contribution" CONSTRAINT "own_aggregate_recent_contribution_changed_file_path_id_fkey" FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id)
     TABLE "own_aggregate_recent_view" CONSTRAINT "own_aggregate_recent_view_viewed_file_path_id_fkey" FOREIGN KEY (viewed_file_path_id) REFERENCES repo_paths(id)
     TABLE "own_signal_recent_contribution" CONSTRAINT "own_signal_recent_contribution_changed_file_path_id_fkey" FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id)
@@ -3916,6 +3960,8 @@ Referenced by:
     TABLE "access_tokens" CONSTRAINT "access_tokens_creator_user_id_fkey" FOREIGN KEY (creator_user_id) REFERENCES users(id)
     TABLE "access_tokens" CONSTRAINT "access_tokens_subject_user_id_fkey" FOREIGN KEY (subject_user_id) REFERENCES users(id)
     TABLE "aggregated_user_statistics" CONSTRAINT "aggregated_user_statistics_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    TABLE "assigned_owners" CONSTRAINT "assigned_owners_owner_user_id_fkey" FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
+    TABLE "assigned_owners" CONSTRAINT "assigned_owners_who_assigned_user_id_fkey" FOREIGN KEY (who_assigned_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_initial_applier_id_fkey" FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_last_applier_id_fkey" FOREIGN KEY (last_applier_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "batch_changes" CONSTRAINT "batch_changes_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
@@ -4437,6 +4483,32 @@ Foreign-key constraints:
            FROM outbound_webhook_event_types
           WHERE (outbound_webhook_event_types.outbound_webhook_id = outbound_webhooks.id))) AS event_types
    FROM outbound_webhooks;
+```
+
+# View "public.own_background_jobs_config_aware"
+
+## View query:
+
+```sql
+ SELECT obj.id,
+    obj.state,
+    obj.failure_message,
+    obj.queued_at,
+    obj.started_at,
+    obj.finished_at,
+    obj.process_after,
+    obj.num_resets,
+    obj.num_failures,
+    obj.last_heartbeat_at,
+    obj.execution_logs,
+    obj.worker_hostname,
+    obj.cancel,
+    obj.repo_id,
+    obj.job_type,
+    osc.name AS config_name
+   FROM (own_background_jobs obj
+     JOIN own_signal_configurations osc ON ((obj.job_type = osc.id)))
+  WHERE (osc.enabled IS TRUE);
 ```
 
 # View "public.reconciler_changesets"

@@ -10,9 +10,14 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/hexops/autogold/v2"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
+	owntypes "github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -63,6 +68,10 @@ func (s fakeOwnService) ResolveOwnersWithType(_ context.Context, owners []*codeo
 	return resolved, nil
 }
 
+func (s fakeOwnService) AssignedOwnership(context.Context, api.RepoID, api.CommitID) (own.AssignedOwners, error) {
+	return own.AssignedOwners{}, nil
+}
+
 // fakeGitServer is a limited gitserver.Client that returns a file for every Stat call.
 type fakeGitserver struct {
 	gitserver.Client
@@ -73,6 +82,18 @@ type repoPath struct {
 	Repo     api.RepoName
 	CommitID api.CommitID
 	Path     string
+}
+
+func fakeOwnDb() *database.MockDB {
+	db := database.NewMockDB()
+	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
+	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
+
+	configStore := database.NewMockSignalConfigurationStore()
+	configStore.IsEnabledFunc.SetDefaultReturn(true, nil)
+	db.OwnSignalConfigurationsFunc.SetDefaultReturn(configStore)
+
+	return db
 }
 
 type repoFiles map[repoPath]string
@@ -117,7 +138,7 @@ func (g fakeGitserver) Stat(_ context.Context, _ authz.SubRepoPermissionChecker,
 func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 	logger := logtest.Scoped(t)
 	fakeDB := fakedb.New()
-	db := database.NewMockDB()
+	db := fakeOwnDb()
 	fakeDB.Wire(db)
 	repoID := api.RepoID(1)
 	own := fakeOwnService{
@@ -138,8 +159,6 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	repos := database.NewMockRepoStore()
-	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
-	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
 	db.ReposFunc.SetDefaultReturn(repos)
 	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
 	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
@@ -237,7 +256,7 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 func TestBlobOwnershipPanelQueryIngested(t *testing.T) {
 	logger := logtest.Scoped(t)
 	fakeDB := fakedb.New()
-	db := database.NewMockDB()
+	db := fakeOwnDb()
 	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
 	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
 	fakeDB.Wire(db)
@@ -352,6 +371,7 @@ func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
 	db.CodeownersFunc.SetDefaultReturn(enterprisedb.NewMockCodeownersStore())
 	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
 	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
+	db.OwnSignalConfigurationsFunc.SetDefaultReturn(database.NewMockSignalConfigurationStore())
 	own := own.NewService(git, db)
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
@@ -497,7 +517,7 @@ func (r paginationResponse) ownerNames() []string {
 func TestOwnershipPagination(t *testing.T) {
 	logger := logtest.Scoped(t)
 	fakeDB := fakedb.New()
-	db := database.NewMockDB()
+	db := fakeOwnDb()
 	fakeDB.Wire(db)
 	rule := &codeownerspb.Rule{
 		Pattern: "*.js",
@@ -596,7 +616,7 @@ func TestOwnershipPagination(t *testing.T) {
 func TestOwnership_WithSignals(t *testing.T) {
 	logger := logtest.Scoped(t)
 	fakeDB := fakedb.New()
-	db := database.NewMockDB()
+	db := fakeOwnDb()
 
 	recentContribStore := database.NewMockRecentContributionSignalStore()
 	santaEmail := "santa@northpole.com"
@@ -650,6 +670,7 @@ func TestOwnership_WithSignals(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	graphqlbackend.RunTest(t, &graphqlbackend.Test{
 		Schema:  schema,
 		Context: ctx,
@@ -670,6 +691,8 @@ func TestOwnership_WithSignals(t *testing.T) {
 						commit(rev: $revision) {
 							blob(path: $currentPath) {
 								ownership {
+									totalOwners
+									totalCount
 									nodes {
 										owner {
 											...on Person {
@@ -700,6 +723,8 @@ func TestOwnership_WithSignals(t *testing.T) {
 				"commit": {
 					"blob": {
 						"ownership": {
+							"totalOwners": 1,
+							"totalCount": 3,
 							"nodes": [
 								{
 									"owner": {
@@ -759,7 +784,7 @@ func TestOwnership_WithSignals(t *testing.T) {
 func TestTreeOwnershipSignals(t *testing.T) {
 	logger := logtest.Scoped(t)
 	fakeDB := fakedb.New()
-	db := database.NewMockDB()
+	db := fakeOwnDb()
 
 	recentContribStore := database.NewMockRecentContributionSignalStore()
 	santaEmail := "santa@northpole.com"
@@ -821,7 +846,8 @@ func TestTreeOwnershipSignals(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+
+	test := &graphqlbackend.Test{
 		Schema:  schema,
 		Context: ctx,
 		Query: `
@@ -898,13 +924,91 @@ func TestTreeOwnershipSignals(t *testing.T) {
 			"revision":    "revision",
 			"currentPath": "foo",
 		},
+	}
+	graphqlbackend.RunTest(t, test)
+
+	t.Run("disabled recent-contributor signal should not resolve", func(t *testing.T) {
+		mockStore := database.NewMockSignalConfigurationStore()
+		db.OwnSignalConfigurationsFunc.SetDefaultReturn(mockStore)
+		mockStore.IsEnabledFunc.SetDefaultHook(func(ctx context.Context, s string) (bool, error) {
+			t.Log(s)
+			if s == owntypes.SignalRecentContributors {
+				return false, nil
+			}
+			return true, nil
+		})
+
+		test.ExpectedResult = `{
+			"node": {
+				"commit": {
+					"path": {
+						"ownership": {
+							"nodes": [
+								{
+									"owner": {
+										"displayName": "santa claus",
+										"email": "santa@northpole.com"
+									},
+									"reasons": [
+										{
+											"title": "recent view",
+											"description": "Owner is associated because they have viewed this file in the last 90 days."
+										}
+									]
+								}
+							]
+						}
+					}
+				}
+			}
+		}
+`
+		graphqlbackend.RunTest(t, test)
+	})
+
+	t.Run("disabled recent-views signal should not resolve", func(t *testing.T) {
+		mockStore := database.NewMockSignalConfigurationStore()
+		db.OwnSignalConfigurationsFunc.SetDefaultReturn(mockStore)
+		mockStore.IsEnabledFunc.SetDefaultHook(func(ctx context.Context, s string) (bool, error) {
+			if s == owntypes.SignalRecentViews {
+				return false, nil
+			}
+			return true, nil
+		})
+
+		test.ExpectedResult = `{
+			"node": {
+				"commit": {
+					"path": {
+						"ownership": {
+							"nodes": [
+								{
+									"owner": {
+										"displayName": "santa claus",
+										"email": "santa@northpole.com"
+									},
+									"reasons": [
+										{
+											"title": "recent contributor",
+											"description": "Owner is associated because they have contributed to this file in the last 90 days."
+										}
+									]
+								}
+							]
+						}
+					}
+				}
+			}
+		}
+`
+		graphqlbackend.RunTest(t, test)
 	})
 }
 
 func TestCommitOwnershipSignals(t *testing.T) {
 	logger := logtest.Scoped(t)
 	fakeDB := fakedb.New()
-	db := database.NewMockDB()
+	db := fakeOwnDb()
 
 	recentContribStore := database.NewMockRecentContributionSignalStore()
 	recentContribStore.FindRecentAuthorsFunc.SetDefaultReturn([]database.RecentContributorSummary{{
@@ -913,6 +1017,7 @@ func TestCommitOwnershipSignals(t *testing.T) {
 		ContributionCount: 5,
 	}}, nil)
 	db.RecentContributionSignalsFunc.SetDefaultReturn(recentContribStore)
+	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
 
 	fakeDB.Wire(db)
 	repoID := api.RepoID(1)
@@ -984,5 +1089,142 @@ func TestCommitOwnershipSignals(t *testing.T) {
 		Variables: map[string]any{
 			"repo": string(relay.MarshalID("Repository", repoID)),
 		},
+	})
+}
+
+func Test_SignalConfigurations(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	git := fakeGitserver{}
+	own := fakeOwnService{}
+
+	ctx := context.Background()
+
+	admin, err := db.Users().Create(context.Background(), database.NewUser{Username: "admin"})
+	require.NoError(t, err)
+
+	user, err := db.Users().Create(context.Background(), database.NewUser{Username: "non-admin"})
+	require.NoError(t, err)
+
+	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, git, own, logger)})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	adminActor := actor.FromUser(admin.ID)
+	adminCtx := actor.WithActor(ctx, adminActor)
+
+	baseReadTest := &graphqlbackend.Test{
+		Context: adminCtx,
+		Schema:  schema,
+		Query: `
+			query asdf {
+			  ownSignalConfigurations {
+				name
+				description
+				isEnabled
+				excludedRepoPatterns
+			  }
+			}`,
+		ExpectedResult: `{
+		  "ownSignalConfigurations": [
+			{
+			  "name": "recent-contributors",
+			  "description": "Indexes contributors in each file using repository history.",
+			  "isEnabled": false,
+			  "excludedRepoPatterns": []
+			},
+			{
+			  "name": "recent-views",
+			  "description": "Indexes users that recently viewed files in Sourcegraph.",
+			  "isEnabled": false,
+			  "excludedRepoPatterns": []
+			}
+		  ]
+		}`,
+	}
+
+	mutationTest := &graphqlbackend.Test{
+		Context: ctx,
+		Schema:  schema,
+		Query: `
+				mutation asdf($input:UpdateSignalConfigurationsInput!) {
+				  updateOwnSignalConfigurations(input:$input) {
+					isEnabled
+					name
+					description
+					excludedRepoPatterns
+				  }
+				}`,
+		Variables: map[string]any{"input": map[string]any{
+			"configs": []any{map[string]any{
+				"name": owntypes.SignalRecentContributors, "enabled": true, "excludedRepoPatterns": []any{"github.com/*"}}},
+		}},
+	}
+
+	t.Run("admin access can read", func(t *testing.T) {
+		graphqlbackend.RunTest(t, baseReadTest)
+	})
+
+	t.Run("user without admin access", func(t *testing.T) {
+		userActor := actor.FromUser(user.ID)
+		userCtx := actor.WithActor(ctx, userActor)
+
+		expectedErrs := []*gqlerrors.QueryError{{
+			Message: "must be site admin",
+			Path:    []any{"updateOwnSignalConfigurations"},
+		}}
+
+		mutationTest.Context = userCtx
+		mutationTest.ExpectedErrors = expectedErrs
+		mutationTest.ExpectedResult = `null`
+
+		graphqlbackend.RunTest(t, mutationTest)
+
+		// ensure the configs didn't change despite the error
+		configsFromDb, err := db.OwnSignalConfigurations().LoadConfigurations(ctx, database.LoadSignalConfigurationArgs{})
+		require.NoError(t, err)
+		autogold.Expect([]database.SignalConfiguration{
+			{
+				ID:          1,
+				Name:        owntypes.SignalRecentContributors,
+				Description: "Indexes contributors in each file using repository history.",
+			},
+			{
+				ID:          2,
+				Name:        owntypes.SignalRecentViews,
+				Description: "Indexes users that recently viewed files in Sourcegraph.",
+			},
+		}).Equal(t, configsFromDb)
+
+		readTest := baseReadTest
+
+		// ensure they can't read configs
+		readTest.ExpectedErrors = expectedErrs
+		readTest.ExpectedResult = "null"
+		readTest.Context = userCtx
+	})
+
+	t.Run("user with admin access", func(t *testing.T) {
+		mutationTest.Context = adminCtx
+		mutationTest.ExpectedErrors = nil
+		mutationTest.ExpectedResult = `{
+		  "updateOwnSignalConfigurations": [
+			{
+			  "name": "recent-contributors",
+			  "description": "Indexes contributors in each file using repository history.",
+			  "isEnabled": true,
+			  "excludedRepoPatterns": ["github.com/*"]
+			},
+			{
+			  "name": "recent-views",
+			  "description": "Indexes users that recently viewed files in Sourcegraph.",
+			  "isEnabled": false,
+			  "excludedRepoPatterns": []
+			}
+		  ]
+		}`
+
+		graphqlbackend.RunTest(t, mutationTest)
 	})
 }

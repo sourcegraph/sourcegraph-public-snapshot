@@ -25,7 +25,7 @@ import (
 //   - metadata.yaml
 //
 // For historic revisions, squashed migrations are not necessarily split into privileged unprivileged
-// cateogories. When there is a single squashed migration, this function will extract the privileged
+// categories. When there is a single squashed migration, this function will extract the privileged
 // statements into a new migration. These migrations will have a negative-valued identifier, whose
 // absolute value indicates the squashed migration it was split from. NOTE: Callers must take care to
 // stitch these relations back together, as it can't be done easily pre-composition across versions.

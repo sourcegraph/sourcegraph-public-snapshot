@@ -3,24 +3,28 @@
   "build": {
     "beforeBuildCommand": "./src-tauri/compose-assets.sh",
     "devPath": "http://localhost:3080/sign-in?secret=foobar&returnTo=/",
-    "distDir": "./assets"
+    "distDir": "./assets",
+    "withGlobalTauri": true
   },
   "package": {
-    "productName": "Sourcegraph App",
+    "productName": "Sourcegraph",
     "version": "1.0.0"
   },
   "tauri": {
     "allowlist": {
+      "dialog": {
+        "open": true
+      },
       "shell": {
-        "open": true,
         "sidecar": true,
         "scope": [
           {
             "name": "../.bin/sourcegraph-backend",
-            "sidecar": true
+            "sidecar": true,
+            "args": ["--cacheDir", "$APPCONFIG", "--configDir", "$APPLOCALDATA"]
           }
         ],
-        "open": "^https?:|com.sourcegraph.app/.*.log$"
+        "open": "^(vscode:|https?:)|com.sourcegraph.cody/.*.log$"
       },
       "window": {
         "startDragging": true
@@ -39,7 +43,7 @@
       },
       "externalBin": ["../.bin/sourcegraph-backend"],
       "icon": ["icons/32x32.png", "icons/128x128.png", "icons/128x128@2x.png", "icons/icon.icns", "icons/icon.ico"],
-      "identifier": "com.sourcegraph.app",
+      "identifier": "com.sourcegraph.cody",
       "longDescription": "",
       "macOS": {
         "entitlements": null,

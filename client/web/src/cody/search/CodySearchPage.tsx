@@ -8,12 +8,13 @@ import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Alert, Form, Input, LoadingSpinner, Text, Badge, useSessionStorage } from '@sourcegraph/wildcard'
+import { Alert, Form, Input, LoadingSpinner, Text, Badge, Link, useSessionStorage } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { useURLSyncedString } from '../../hooks/useUrlSyncedString'
 import { eventLogger } from '../../tracking/eventLogger'
 import { CodyIcon } from '../components/CodyIcon'
+import { useIsCodyEnabled } from '../useIsCodyEnabled'
 
 import { translateToQuery } from './translateToQuery'
 
@@ -106,20 +107,14 @@ export const CodySearchPage: React.FunctionComponent<CodeSearchPageProps> = ({ a
         <div className={classNames('d-flex flex-column align-items-center px-3', searchPageStyles.searchPage)}>
             <BrandLogo className={searchPageStyles.logo} isLightTheme={isLightTheme} variant="logo" />
             <div className="text-muted mt-3 mr-sm-2 pr-2 text-center">Searching millions of public repositories</div>
-            {window.context?.codyEnabled ? (
-                <SearchInput
-                    value={input}
-                    onChange={onInputChange}
-                    onSubmit={onSubmit}
-                    loading={loading}
-                    error={inputError}
-                    className={classNames('mt-5 w-100', styles.inputContainer)}
-                />
-            ) : (
-                <Alert variant="info" className="mt-5">
-                    Cody is not enabled on this Sourcegraph instance.
-                </Alert>
-            )}
+            <SearchInput
+                value={input}
+                onChange={onInputChange}
+                onSubmit={onSubmit}
+                loading={loading}
+                error={inputError}
+                className={classNames('mt-5 w-100', styles.inputContainer)}
+            />
         </div>
     )
 }
@@ -132,6 +127,7 @@ const SearchInput: React.FunctionComponent<{
     onSubmit: () => void
     className?: string
 }> = ({ value, loading, error, onChange, onSubmit: parentOnSubmit, className }) => {
+    const cody = useIsCodyEnabled()
     const onInput = useCallback<React.FormEventHandler<HTMLInputElement>>(
         event => {
             onChange(event.currentTarget.value)
@@ -147,13 +143,25 @@ const SearchInput: React.FunctionComponent<{
         [parentOnSubmit]
     )
 
-    return (
+    return cody.search ? (
         <Form onSubmit={onSubmit} className={className}>
+            {cody.needsEmailVerification && (
+                <Alert variant="warning">
+                    <Text className="mb-0">Verify email</Text>
+                    <Text className="mb-0">
+                        Using Cody requires a verified email.{' '}
+                        <Link to={`${window.context.currentUser?.settingsURL}/emails`} target="_blank" rel="noreferrer">
+                            Resend email verification
+                        </Link>
+                        .
+                    </Text>
+                </Alert>
+            )}
             <Input
                 inputClassName={styles.input}
                 value={value}
                 onInput={onInput}
-                disabled={loading}
+                disabled={loading || cody.needsEmailVerification}
                 autoFocus={true}
                 placeholder="Search for code or files in natural language..."
             />
@@ -171,5 +179,9 @@ const SearchInput: React.FunctionComponent<{
                 <LoadingSpinner className="mt-2 d-block mx-auto" />
             ) : null}
         </Form>
+    ) : (
+        <Alert variant="info" className="mt-5">
+            Cody is not enabled on this Sourcegraph instance.
+        </Alert>
     )
 }

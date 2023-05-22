@@ -1,13 +1,21 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "ts_project")
-
-npm_link_all_packages(name = "node_modules")
+load("//dev:eslint.bzl", "eslint_config")
 
 # gazelle:js_resolve vscode //:node_modules/@vscode
 # gazelle:js_files src/**/*.{ts,tsx}
 # gazelle:js_files webviews/**/*.{ts,tsx}
 # gazelle:js_ignore_imports **/*.css
+
+npm_link_all_packages(name = "node_modules")
+
+eslint_config(
+    deps = [
+        "//client/cody/scripts:tsconfig",
+        "//client/cody/test/integration:tsconfig",
+    ],
+)
 
 ts_config(
     name = "tsconfig",
@@ -40,10 +48,13 @@ ts_project(
         "src/extension-api.ts",
         "src/external-services.ts",
         "src/keyword-context/local-keyword-context-fetcher.ts",
+        "src/local-app-detector.ts",
+        "src/log.ts",
         "src/main.ts",
         "src/rg.ts",
         "src/services/CodeLensProvider.ts",
         "src/services/DecorationProvider.ts",
+        "src/services/GuardrailsProvider.ts",
         "src/services/InlineController.ts",
         "src/services/LocalStorageProvider.ts",
         "src/services/SecretStorageProvider.ts",
@@ -52,6 +63,7 @@ ts_project(
         "webviews/App.story.tsx",
         "webviews/App.tsx",
         "webviews/Chat.tsx",
+        "webviews/ConnectApp.tsx",
         "webviews/Debug.tsx",
         "webviews/FileLink.tsx",
         "webviews/Header.tsx",
@@ -82,6 +94,7 @@ ts_project(
         "//:node_modules/@types/react",
         "//:node_modules/@types/react-dom",
         "//:node_modules/@types/stream-json",
+        "//:node_modules/@types/uuid",
         "//:node_modules/@types/vscode",  #keep
         "//:node_modules/@vscode",
         "//:node_modules/@vscode/webview-ui-toolkit",
@@ -90,6 +103,7 @@ ts_project(
         "//:node_modules/react-dom",
         "//:node_modules/stream-json",
         "//:node_modules/util",
+        "//:node_modules/uuid",
     ],
 )
 
@@ -98,14 +112,18 @@ ts_project(
     testonly = True,
     srcs = [
         "src/chat/ChatViewProvider.test.ts",
+        "src/completions/cache.test.ts",
         "src/completions/context.test.ts",
         "src/completions/provider.test.ts",
         "src/configuration.test.ts",
         "src/keyword-context/local-keyword-context-fetcher.test.ts",
+        "test/fixtures/mock-server.ts",
     ],
     tsconfig = ":tsconfig",
     deps = [
         ":cody",
+        "//:node_modules/@types/express",
         "//:node_modules/@types/node",
+        "//:node_modules/express",
     ],
 )

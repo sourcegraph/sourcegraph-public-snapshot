@@ -924,6 +924,26 @@ CREATE TABLE aggregated_user_statistics (
     user_events_count bigint
 );
 
+CREATE TABLE assigned_owners (
+    id integer NOT NULL,
+    owner_user_id integer NOT NULL,
+    file_path_id integer NOT NULL,
+    who_assigned_user_id integer,
+    assigned_at timestamp without time zone DEFAULT now() NOT NULL
+);
+
+COMMENT ON TABLE assigned_owners IS 'Table for ownership assignments, one entry contains an assigned user ID, which repo_path is assigned and the date and user who assigned the owner.';
+
+CREATE SEQUENCE assigned_owners_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE assigned_owners_id_seq OWNED BY assigned_owners.id;
+
 CREATE TABLE batch_changes (
     id bigint NOT NULL,
     name text NOT NULL,
@@ -1669,12 +1689,10 @@ COMMENT ON TABLE codeintel_inference_scripts IS 'Contains auto-index job inferen
 
 CREATE TABLE codeintel_initial_path_ranks (
     id bigint NOT NULL,
-    upload_id integer NOT NULL,
     document_path text DEFAULT ''::text NOT NULL,
     graph_key text NOT NULL,
-    last_scanned_at timestamp with time zone,
     document_paths text[] DEFAULT '{}'::text[] NOT NULL,
-    deleted_at timestamp with time zone
+    exported_upload_id integer NOT NULL
 );
 
 CREATE SEQUENCE codeintel_initial_path_ranks_id_seq
@@ -1738,12 +1756,10 @@ ALTER SEQUENCE codeintel_path_ranks_id_seq OWNED BY codeintel_path_ranks.id;
 
 CREATE TABLE codeintel_ranking_definitions (
     id bigint NOT NULL,
-    upload_id integer NOT NULL,
     symbol_name text NOT NULL,
     document_path text NOT NULL,
     graph_key text NOT NULL,
-    last_scanned_at timestamp with time zone,
-    deleted_at timestamp with time zone
+    exported_upload_id integer NOT NULL
 );
 
 CREATE SEQUENCE codeintel_ranking_definitions_id_seq
@@ -1760,7 +1776,8 @@ CREATE TABLE codeintel_ranking_exports (
     graph_key text NOT NULL,
     locked_at timestamp with time zone DEFAULT now() NOT NULL,
     id integer NOT NULL,
-    object_prefix text
+    last_scanned_at timestamp with time zone,
+    deleted_at timestamp with time zone
 );
 
 CREATE SEQUENCE codeintel_ranking_exports_id_seq
@@ -1794,14 +1811,18 @@ ALTER SEQUENCE codeintel_ranking_path_counts_inputs_id_seq OWNED BY codeintel_ra
 CREATE TABLE codeintel_ranking_progress (
     id bigint NOT NULL,
     graph_key text NOT NULL,
-    max_definition_id integer NOT NULL,
-    max_reference_id integer NOT NULL,
-    max_path_id integer NOT NULL,
     mappers_started_at timestamp with time zone NOT NULL,
     mapper_completed_at timestamp with time zone,
     seed_mapper_completed_at timestamp with time zone,
     reducer_started_at timestamp with time zone,
-    reducer_completed_at timestamp with time zone
+    reducer_completed_at timestamp with time zone,
+    num_path_records_total integer,
+    num_reference_records_total integer,
+    num_count_records_total integer,
+    num_path_records_processed integer,
+    num_reference_records_processed integer,
+    num_count_records_processed integer,
+    max_export_id bigint NOT NULL
 );
 
 CREATE SEQUENCE codeintel_ranking_progress_id_seq
@@ -1815,11 +1836,9 @@ ALTER SEQUENCE codeintel_ranking_progress_id_seq OWNED BY codeintel_ranking_prog
 
 CREATE TABLE codeintel_ranking_references (
     id bigint NOT NULL,
-    upload_id integer NOT NULL,
     symbol_names text[] NOT NULL,
     graph_key text NOT NULL,
-    last_scanned_at timestamp with time zone,
-    deleted_at timestamp with time zone
+    exported_upload_id integer NOT NULL
 );
 
 COMMENT ON TABLE codeintel_ranking_references IS 'References for a given upload proceduced by background job consuming SCIP indexes.';
@@ -2402,23 +2421,6 @@ COMMENT ON COLUMN feature_flags.rollout IS 'Rollout only defined when flag_type 
 COMMENT ON CONSTRAINT required_bool_fields ON feature_flags IS 'Checks that bool_value is set IFF flag_type = bool';
 
 COMMENT ON CONSTRAINT required_rollout_fields ON feature_flags IS 'Checks that rollout is set IFF flag_type = rollout';
-
-CREATE TABLE github_app_installs (
-    id integer NOT NULL,
-    app_id integer NOT NULL,
-    installation_id integer NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-CREATE SEQUENCE github_app_installs_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE github_app_installs_id_seq OWNED BY github_app_installs.id;
 
 CREATE TABLE github_apps (
     id integer NOT NULL,
@@ -3656,6 +3658,35 @@ CREATE TABLE own_background_jobs (
     job_type integer NOT NULL
 );
 
+CREATE TABLE own_signal_configurations (
+    id integer NOT NULL,
+    name text NOT NULL,
+    description text DEFAULT ''::text NOT NULL,
+    excluded_repo_patterns text[],
+    enabled boolean DEFAULT false NOT NULL
+);
+
+CREATE VIEW own_background_jobs_config_aware AS
+ SELECT obj.id,
+    obj.state,
+    obj.failure_message,
+    obj.queued_at,
+    obj.started_at,
+    obj.finished_at,
+    obj.process_after,
+    obj.num_resets,
+    obj.num_failures,
+    obj.last_heartbeat_at,
+    obj.execution_logs,
+    obj.worker_hostname,
+    obj.cancel,
+    obj.repo_id,
+    obj.job_type,
+    osc.name AS config_name
+   FROM (own_background_jobs obj
+     JOIN own_signal_configurations osc ON ((obj.job_type = osc.id)))
+  WHERE (osc.enabled IS TRUE);
+
 CREATE SEQUENCE own_background_jobs_id_seq
     AS integer
     START WITH 1
@@ -3665,6 +3696,16 @@ CREATE SEQUENCE own_background_jobs_id_seq
     CACHE 1;
 
 ALTER SEQUENCE own_background_jobs_id_seq OWNED BY own_background_jobs.id;
+
+CREATE SEQUENCE own_signal_configurations_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE own_signal_configurations_id_seq OWNED BY own_signal_configurations.id;
 
 CREATE TABLE own_signal_recent_contribution (
     id integer NOT NULL,
@@ -3980,6 +4021,24 @@ CREATE SEQUENCE registry_extensions_id_seq
     CACHE 1;
 
 ALTER SEQUENCE registry_extensions_id_seq OWNED BY registry_extensions.id;
+
+CREATE TABLE repo_commits_changelists (
+    id integer NOT NULL,
+    repo_id integer NOT NULL,
+    commit_sha bytea NOT NULL,
+    perforce_changelist_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE repo_commits_changelists_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE repo_commits_changelists_id_seq OWNED BY repo_commits_changelists.id;
 
 CREATE TABLE repo_embedding_jobs (
     id integer NOT NULL,
@@ -4639,6 +4698,8 @@ ALTER TABLE ONLY access_requests ALTER COLUMN id SET DEFAULT nextval('access_req
 
 ALTER TABLE ONLY access_tokens ALTER COLUMN id SET DEFAULT nextval('access_tokens_id_seq'::regclass);
 
+ALTER TABLE ONLY assigned_owners ALTER COLUMN id SET DEFAULT nextval('assigned_owners_id_seq'::regclass);
+
 ALTER TABLE ONLY batch_changes ALTER COLUMN id SET DEFAULT nextval('batch_changes_id_seq'::regclass);
 
 ALTER TABLE ONLY batch_changes_site_credentials ALTER COLUMN id SET DEFAULT nextval('batch_changes_site_credentials_id_seq'::regclass);
@@ -4741,8 +4802,6 @@ ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs ALTER COLUMN id SE
 
 ALTER TABLE ONLY external_services ALTER COLUMN id SET DEFAULT nextval('external_services_id_seq'::regclass);
 
-ALTER TABLE ONLY github_app_installs ALTER COLUMN id SET DEFAULT nextval('github_app_installs_id_seq'::regclass);
-
 ALTER TABLE ONLY github_apps ALTER COLUMN id SET DEFAULT nextval('github_apps_id_seq'::regclass);
 
 ALTER TABLE ONLY gitserver_relocator_jobs ALTER COLUMN id SET DEFAULT nextval('gitserver_relocator_jobs_id_seq'::regclass);
@@ -4805,6 +4864,8 @@ ALTER TABLE ONLY own_aggregate_recent_view ALTER COLUMN id SET DEFAULT nextval('
 
 ALTER TABLE ONLY own_background_jobs ALTER COLUMN id SET DEFAULT nextval('own_background_jobs_id_seq'::regclass);
 
+ALTER TABLE ONLY own_signal_configurations ALTER COLUMN id SET DEFAULT nextval('own_signal_configurations_id_seq'::regclass);
+
 ALTER TABLE ONLY own_signal_recent_contribution ALTER COLUMN id SET DEFAULT nextval('own_signal_recent_contribution_id_seq'::regclass);
 
 ALTER TABLE ONLY package_repo_filters ALTER COLUMN id SET DEFAULT nextval('package_repo_filters_id_seq'::regclass);
@@ -4822,6 +4883,8 @@ ALTER TABLE ONLY registry_extension_releases ALTER COLUMN id SET DEFAULT nextval
 ALTER TABLE ONLY registry_extensions ALTER COLUMN id SET DEFAULT nextval('registry_extensions_id_seq'::regclass);
 
 ALTER TABLE ONLY repo ALTER COLUMN id SET DEFAULT nextval('repo_id_seq'::regclass);
+
+ALTER TABLE ONLY repo_commits_changelists ALTER COLUMN id SET DEFAULT nextval('repo_commits_changelists_id_seq'::regclass);
 
 ALTER TABLE ONLY repo_embedding_jobs ALTER COLUMN id SET DEFAULT nextval('repo_embedding_jobs_id_seq'::regclass);
 
@@ -4879,6 +4942,9 @@ ALTER TABLE ONLY access_tokens
 
 ALTER TABLE ONLY aggregated_user_statistics
     ADD CONSTRAINT aggregated_user_statistics_pkey PRIMARY KEY (user_id);
+
+ALTER TABLE ONLY assigned_owners
+    ADD CONSTRAINT assigned_owners_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY batch_changes
     ADD CONSTRAINT batch_changes_pkey PRIMARY KEY (id);
@@ -5081,9 +5147,6 @@ ALTER TABLE ONLY feature_flag_overrides
 ALTER TABLE ONLY feature_flags
     ADD CONSTRAINT feature_flags_pkey PRIMARY KEY (flag_name);
 
-ALTER TABLE ONLY github_app_installs
-    ADD CONSTRAINT github_app_installs_pkey PRIMARY KEY (id);
-
 ALTER TABLE ONLY github_apps
     ADD CONSTRAINT github_apps_pkey PRIMARY KEY (id);
 
@@ -5216,6 +5279,9 @@ ALTER TABLE ONLY own_aggregate_recent_view
 ALTER TABLE ONLY own_background_jobs
     ADD CONSTRAINT own_background_jobs_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY own_signal_configurations
+    ADD CONSTRAINT own_signal_configurations_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY own_signal_recent_contribution
     ADD CONSTRAINT own_signal_recent_contribution_pkey PRIMARY KEY (id);
 
@@ -5251,6 +5317,9 @@ ALTER TABLE ONLY registry_extension_releases
 
 ALTER TABLE ONLY registry_extensions
     ADD CONSTRAINT registry_extensions_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY repo_commits_changelists
+    ADD CONSTRAINT repo_commits_changelists_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY repo_embedding_jobs
     ADD CONSTRAINT repo_embedding_jobs_pkey PRIMARY KEY (id);
@@ -5381,7 +5450,7 @@ CREATE INDEX access_requests_status ON access_requests USING btree (status);
 
 CREATE INDEX access_tokens_lookup ON access_tokens USING hash (value_sha256) WHERE (deleted_at IS NULL);
 
-CREATE INDEX app_id_idx ON github_app_installs USING btree (app_id);
+CREATE INDEX assigned_owners_file_path ON assigned_owners USING btree (file_path_id);
 
 CREATE INDEX batch_changes_namespace_org_id ON batch_changes USING btree (namespace_org_id);
 
@@ -5467,13 +5536,11 @@ CREATE INDEX cm_webhooks_monitor ON cm_webhooks USING btree (monitor);
 
 CREATE UNIQUE INDEX codeintel_autoindex_queue_repository_id_commit ON codeintel_autoindex_queue USING btree (repository_id, rev);
 
+CREATE INDEX codeintel_initial_path_ranks_exported_upload_id ON codeintel_initial_path_ranks USING btree (exported_upload_id);
+
 CREATE INDEX codeintel_initial_path_ranks_graph_key_id ON codeintel_initial_path_ranks USING btree (graph_key, id);
 
-CREATE INDEX codeintel_initial_path_ranks_graph_key_last_scanned_at ON codeintel_initial_path_ranks USING btree (graph_key, last_scanned_at NULLS FIRST, id);
-
 CREATE UNIQUE INDEX codeintel_initial_path_ranks_processed_cgraph_key_codeintel_ini ON codeintel_initial_path_ranks_processed USING btree (graph_key, codeintel_initial_path_ranks_id);
-
-CREATE INDEX codeintel_initial_path_upload_id ON codeintel_initial_path_ranks USING btree (upload_id);
 
 CREATE UNIQUE INDEX codeintel_langugage_support_requests_user_id_language ON codeintel_langugage_support_requests USING btree (user_id, language_id);
 
@@ -5483,9 +5550,11 @@ CREATE UNIQUE INDEX codeintel_path_ranks_graph_key_repository_id ON codeintel_pa
 
 CREATE INDEX codeintel_path_ranks_repository_id_updated_at_id ON codeintel_path_ranks USING btree (repository_id, updated_at NULLS FIRST, id);
 
-CREATE INDEX codeintel_ranking_definitions_graph_key_last_scanned_at_id ON codeintel_ranking_definitions USING btree (graph_key, last_scanned_at NULLS FIRST, id);
+CREATE INDEX codeintel_ranking_definitions_exported_upload_id ON codeintel_ranking_definitions USING btree (exported_upload_id);
 
-CREATE INDEX codeintel_ranking_definitions_graph_key_symbol_search ON codeintel_ranking_definitions USING btree (graph_key, symbol_name, upload_id, document_path);
+CREATE INDEX codeintel_ranking_definitions_graph_key_symbol_search ON codeintel_ranking_definitions USING btree (graph_key, symbol_name, exported_upload_id, document_path);
+
+CREATE INDEX codeintel_ranking_exports_graph_key_last_scanned_at ON codeintel_ranking_exports USING btree (graph_key, last_scanned_at NULLS FIRST, id);
 
 CREATE UNIQUE INDEX codeintel_ranking_exports_graph_key_upload_id ON codeintel_ranking_exports USING btree (graph_key, upload_id);
 
@@ -5493,15 +5562,13 @@ CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_id ON codeintel_rank
 
 CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_repository_id_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository_id, id) WHERE (NOT processed);
 
-CREATE INDEX codeintel_ranking_references_graph_key_id ON codeintel_ranking_references USING btree (graph_key, id);
+CREATE INDEX codeintel_ranking_references_exported_upload_id ON codeintel_ranking_references USING btree (exported_upload_id);
 
-CREATE INDEX codeintel_ranking_references_graph_key_last_scanned_at_id ON codeintel_ranking_references USING btree (graph_key, last_scanned_at NULLS FIRST, id);
+CREATE INDEX codeintel_ranking_references_graph_key_id ON codeintel_ranking_references USING btree (graph_key, id);
 
 CREATE UNIQUE INDEX codeintel_ranking_references_processed_graph_key_codeintel_rank ON codeintel_ranking_references_processed USING btree (graph_key, codeintel_ranking_reference_id);
 
 CREATE INDEX codeintel_ranking_references_processed_reference_id ON codeintel_ranking_references_processed USING btree (codeintel_ranking_reference_id);
-
-CREATE INDEX codeintel_ranking_references_upload_id ON codeintel_ranking_references USING btree (upload_id);
 
 CREATE UNIQUE INDEX commit_authors_email_name ON commit_authors USING btree (email, name);
 
@@ -5613,8 +5680,6 @@ CREATE INDEX insights_query_runner_jobs_series_id_state ON insights_query_runner
 
 CREATE INDEX insights_query_runner_jobs_state_btree ON insights_query_runner_jobs USING btree (state);
 
-CREATE INDEX installation_id_idx ON github_app_installs USING btree (installation_id);
-
 CREATE UNIQUE INDEX kind_cloud_default ON external_services USING btree (kind, cloud_default) WHERE ((cloud_default = true) AND (deleted_at IS NULL));
 
 CREATE INDEX lsif_configuration_policies_repository_id ON lsif_configuration_policies USING btree (repository_id);
@@ -5719,6 +5784,8 @@ CREATE INDEX own_background_jobs_repo_id_idx ON own_background_jobs USING btree 
 
 CREATE INDEX own_background_jobs_state_idx ON own_background_jobs USING btree (state);
 
+CREATE UNIQUE INDEX own_signal_configurations_name_uidx ON own_signal_configurations USING btree (name);
+
 CREATE UNIQUE INDEX package_repo_filters_unique_matcher_per_scheme ON package_repo_filters USING btree (scheme, matcher);
 
 CREATE INDEX package_repo_versions_blocked ON package_repo_versions USING btree (blocked);
@@ -5766,6 +5833,8 @@ CREATE UNIQUE INDEX repo_external_unique_idx ON repo USING btree (external_servi
 CREATE INDEX repo_fork ON repo USING btree (fork);
 
 CREATE INDEX repo_hashed_name_idx ON repo USING btree (sha256((lower((name)::text))::bytea)) WHERE (deleted_at IS NULL);
+
+CREATE UNIQUE INDEX repo_id_perforce_changelist_id_unique ON repo_commits_changelists USING btree (repo_id, perforce_changelist_id);
 
 CREATE INDEX repo_is_not_blocked_idx ON repo USING btree (((blocked IS NULL)));
 
@@ -5933,6 +6002,15 @@ ALTER TABLE ONLY access_tokens
 ALTER TABLE ONLY aggregated_user_statistics
     ADD CONSTRAINT aggregated_user_statistics_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
+ALTER TABLE ONLY assigned_owners
+    ADD CONSTRAINT assigned_owners_file_path_id_fkey FOREIGN KEY (file_path_id) REFERENCES repo_paths(id);
+
+ALTER TABLE ONLY assigned_owners
+    ADD CONSTRAINT assigned_owners_owner_user_id_fkey FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY assigned_owners
+    ADD CONSTRAINT assigned_owners_who_assigned_user_id_fkey FOREIGN KEY (who_assigned_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE;
+
 ALTER TABLE ONLY batch_changes
     ADD CONSTRAINT batch_changes_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE;
 
@@ -6092,8 +6170,17 @@ ALTER TABLE ONLY cm_webhooks
 ALTER TABLE ONLY codeintel_autoindexing_exceptions
     ADD CONSTRAINT codeintel_autoindexing_exceptions_repository_id_fkey FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE;
 
+ALTER TABLE ONLY codeintel_initial_path_ranks
+    ADD CONSTRAINT codeintel_initial_path_ranks_exported_upload_id_fkey FOREIGN KEY (exported_upload_id) REFERENCES codeintel_ranking_exports(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY codeintel_ranking_definitions
+    ADD CONSTRAINT codeintel_ranking_definitions_exported_upload_id_fkey FOREIGN KEY (exported_upload_id) REFERENCES codeintel_ranking_exports(id) ON DELETE CASCADE;
+
 ALTER TABLE ONLY codeintel_ranking_exports
     ADD CONSTRAINT codeintel_ranking_exports_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL;
+
+ALTER TABLE ONLY codeintel_ranking_references
+    ADD CONSTRAINT codeintel_ranking_references_exported_upload_id_fkey FOREIGN KEY (exported_upload_id) REFERENCES codeintel_ranking_exports(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY codeowners
     ADD CONSTRAINT codeowners_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
@@ -6187,9 +6274,6 @@ ALTER TABLE ONLY vulnerability_affected_symbols
 
 ALTER TABLE ONLY vulnerability_matches
     ADD CONSTRAINT fk_vulnerability_affected_packages FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE;
-
-ALTER TABLE ONLY github_app_installs
-    ADD CONSTRAINT github_app_installs_app_id_fkey FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE;
 
 ALTER TABLE ONLY github_apps
     ADD CONSTRAINT github_apps_webhook_id_fkey FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE SET NULL;
@@ -6334,6 +6418,9 @@ ALTER TABLE ONLY registry_extensions
 
 ALTER TABLE ONLY registry_extensions
     ADD CONSTRAINT registry_extensions_publisher_user_id_fkey FOREIGN KEY (publisher_user_id) REFERENCES users(id);
+
+ALTER TABLE ONLY repo_commits_changelists
+    ADD CONSTRAINT repo_commits_changelists_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY repo_kvps
     ADD CONSTRAINT repo_kvps_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;

@@ -23,6 +23,29 @@ export const GITHUB_APPS_QUERY = gql`
     }
 `
 
+export const GITHUB_APPS_WITH_INSTALLATIONS_QUERY = gql`
+    query GitHubAppsWithInstalls {
+        gitHubApps {
+            nodes {
+                id
+                appID
+                name
+                baseURL
+                logo
+                installations {
+                    id
+                    account {
+                        login
+                        avatarURL
+                        url
+                        type
+                    }
+                }
+            }
+        }
+    }
+`
+
 export const GITHUB_APP_BY_ID_QUERY = gql`
     ${LIST_EXTERNAL_SERVICE_FRAGMENT}
     query GitHubAppByID($id: ID!) {
@@ -47,12 +70,12 @@ export const GITHUB_APP_BY_ID_QUERY = gql`
                     url
                     type
                 }
-            }
-            externalServices(first: 100) {
-                nodes {
-                    ...ListExternalServiceFields
+                externalServices(first: 100) {
+                    nodes {
+                        ...ListExternalServiceFields
+                    }
+                    totalCount
                 }
-                totalCount
             }
             webhook {
                 id
@@ -94,14 +117,6 @@ export const SITE_SETTINGS_QUERY = gql`
 export const DELETE_GITHUB_APP_BY_ID_QUERY = gql`
     mutation DeleteGitHubApp($gitHubApp: ID!) {
         deleteGitHubApp(gitHubApp: $gitHubApp) {
-            alwaysNil
-        }
-    }
-`
-
-export const CONNECT_WEBHOOK_TO_GITHUB_APP_QUERY = gql`
-    mutation ConnectWebhookToGitHubApp($gitHubApp: ID!, $webhook: ID!) {
-        connectWebhookToGitHubApp(gitHubApp: $gitHubApp, webhook: $webhook) {
             alwaysNil
         }
     }
