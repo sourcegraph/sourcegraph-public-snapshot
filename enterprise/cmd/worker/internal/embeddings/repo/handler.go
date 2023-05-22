@@ -22,10 +22,11 @@ import (
 )
 
 type handler struct {
-	db              edb.EnterpriseDB
-	uploadStore     uploadstore.Store
-	gitserverClient gitserver.Client
-	contextService  embed.ContextService
+	db                     edb.EnterpriseDB
+	uploadStore            uploadstore.Store
+	gitserverClient        gitserver.Client
+	contextService         embed.ContextService
+	repoEmbeddingJobsStore repoembeddingsbg.RepoEmbeddingJobsStore
 }
 
 var _ workerutil.Handler[*repoembeddingsbg.RepoEmbeddingJob] = &handler{}
@@ -64,7 +65,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 	// we fall back to a full index.
 	var lastSuccessfulJobRevision api.CommitID
 	if featureflag.FromContext(ctx).GetBoolOr("sh-delta-embeddings", false) {
-		lastSuccessfulJob, err := h.db.EmbeddingsJobsStore().GetEmbeddingsJob(ctx, record.RepoID)
+		lastSuccessfulJob, err := h.repoEmbeddingJobsStore.GetLastCompletedRepoEmbeddingJob(ctx, record.RepoID)
 		if err != nil {
 			logger.Info("no previous successful embeddings job found. Falling back to full index")
 		} else {
