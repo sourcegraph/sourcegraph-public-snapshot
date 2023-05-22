@@ -1,18 +1,6 @@
-import { convertGitCloneURLToCodebaseName } from './ChatViewProvider'
+import { convertGitCloneURLToCodebaseName } from './utils'
 
 describe('convertGitCloneURLToCodebaseName', () => {
-    // before each test, mock the createOutputChannel function from vscode with globalThis
-    beforeEach(() => {
-        globalThis.vscode = {
-            window: {
-                createOutputChannel: () => ({
-                    appendLine: () => {},
-                    show: () => {},
-                }),
-            },
-        } as unknown as typeof import('vscode')
-    })
-
     test('converts GitHub SSH URL', () => {
         expect(convertGitCloneURLToCodebaseName('git@github.com:sourcegraph/sourcegraph.git')).toEqual(
             'github.com/sourcegraph/sourcegraph'
