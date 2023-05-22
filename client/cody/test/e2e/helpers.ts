@@ -78,9 +78,9 @@ export const test = base
             await app.close()
 
             // Delete the recorded video if the test passes
-            console.log({ testInfo })
+            console.log({ status: testInfo.status })
             if (testInfo.status === 'passed') {
-                // rmdirSync(videoDirectory, { recursive: true })
+                rmdirSync(videoDirectory, { recursive: true })
             }
 
             rmdirSync(userDataDirectory, { recursive: true })
@@ -96,17 +96,6 @@ export const test = base
 
 export async function getCodySidebar(page: Page): Promise<Frame> {
     async function findCodySidebarFrame(): Promise<null | Frame> {
-        console.log('### debug frames')
-        for (const frame of page.frames()) {
-            try {
-                const title = await frame.title()
-                console.log('+ ' + title)
-            } catch (error: any) {
-                void error
-            }
-        }
-        console.log('### /debug frames')
-
         for (const frame of page.frames()) {
             try {
                 const title = await frame.title()
