@@ -8,10 +8,10 @@ type Options struct {
 	// ExecutorName is a unique identifier for the requesting executor.
 	ExecutorName string
 
-	// QueueName is the name of the queue being processed. If QueueNames is set, this field is ignored.
+	// QueueName is the name of the queue being processed. Only one of QueueName and QueueNames can be set.
 	QueueName string
 
-	// QueueNames are the names of the queues being processed. If this field is set, it takes precedence over QueueName.
+	// QueueNames are the names of the queues being processed. Only one of QueueNames and QueueName can be set.
 	QueueNames []string
 
 	// BaseClientOptions are the underlying HTTP client options.
