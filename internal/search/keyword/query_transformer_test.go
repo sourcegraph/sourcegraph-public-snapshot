@@ -11,7 +11,7 @@ import (
 func TestTransformPattern(t *testing.T) {
 	patterns := []string{
 		"compute",
-		"K", // very short terms should be removed
+		"K",     // very short terms should be removed
 		"Means", // stop words should be removed
 		"Clustering",
 		"implement", // common code-related terms should be removed
@@ -19,7 +19,7 @@ func TestTransformPattern(t *testing.T) {
 		"to",
 		"string",
 		"finding",
-		"\"time", // leading punctuation should be removed
+		"\"time",    // leading punctuation should be removed
 		"elapsed\"", // trailing punctuation should be removed
 		"using",
 		"a",

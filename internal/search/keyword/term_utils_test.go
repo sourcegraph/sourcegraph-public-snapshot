@@ -6,31 +6,31 @@ import (
 
 func TestRemovePunctuation(t *testing.T) {
 	tests := []struct {
-		term        string
-		wantTerm    string
+		term     string
+		wantTerm string
 	}{
 		{
-			term: "“abc123",
+			term:     "“abc123",
 			wantTerm: "abc123",
 		},
 		{
-			term: "“!!abc123",
+			term:     "“!!abc123",
 			wantTerm: "abc123",
 		},
 		{
-			term: "abc!”",
+			term:     "abc!”",
 			wantTerm: "abc",
 		},
 		{
-			term: "/abc/.*",
+			term:     "/abc/.*",
 			wantTerm: "abc",
 		},
 		{
-			term: "package/name",
+			term:     "package/name",
 			wantTerm: "package/name",
 		},
 		{
-			term: "!!??",
+			term:     "!!??",
 			wantTerm: "",
 		},
 	}
