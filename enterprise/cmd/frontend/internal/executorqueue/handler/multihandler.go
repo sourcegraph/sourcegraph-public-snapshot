@@ -184,8 +184,11 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 }
 
 func (m *MultiHandler) HandleHeartbeat(w http.ResponseWriter, r *http.Request) {
-	//TODO implement me
-	panic("implement me")
+	var payload executortypes.HeartbeatRequest
+
+	wrapHandler(w, r, &payload, m.logger, func() (int, any, error) {
+		return http.StatusOK, executortypes.HeartbeatResponse{KnownIDsByQueue: nil, CancelIDsByQueue: nil}, nil
+	})
 }
 
 func (m *MultiHandler) validateQueues(queues []string) []string {
