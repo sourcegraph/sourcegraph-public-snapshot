@@ -20,37 +20,35 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	// test setup and teardown
+	prevConf := conf.Get()
+	t.Cleanup(func() {
+		conf.Mock(prevConf)
+	})
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+		Log: &schema.Log{
+			SecurityEventLog: &schema.SecurityEventLog{Location: "all"},
+		},
+	}})
+
 	logger, exportLogs := logtest.Captured(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	t.Cleanup(func() {
-		conf.Mock(nil)
-	})
-
 	var testCases = []struct {
 		name  string
 		actor *actor.Actor // optional
 		event *SecurityEvent
-		conf  *conf.Unified
 		err   string
 	}{
 		{
 			name:  "EmptyName",
 			event: &SecurityEvent{UserID: 1, URL: "http://sourcegraph.com", Source: "WEB"},
-			conf: &conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{Log: &schema.Log{
-					SecurityEventLog: &schema.SecurityEventLog{Location: "all"}}},
-			},
-			err: `INSERT: ERROR: new row for relation "security_event_logs" violates check constraint "security_event_logs_check_name_not_empty" (SQLSTATE 23514)`,
+			err:   `INSERT: ERROR: new row for relation "security_event_logs" violates check constraint "security_event_logs_check_name_not_empty" (SQLSTATE 23514)`,
 		},
 		{
 			name: "InvalidUser",
 			event: &SecurityEvent{Name: "test_event", URL: "http://sourcegraph.com", Source: "WEB",
 				// a UserID or AnonymousUserID is required to identify a user, unless internal
 				UserID: 0, AnonymousUserID: ""},
-			conf: &conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{Log: &schema.Log{
-					SecurityEventLog: &schema.SecurityEventLog{Location: "all"}}},
-			},
 			err: `INSERT: ERROR: new row for relation "security_event_logs" violates check constraint "security_event_logs_check_has_user" (SQLSTATE 23514)`,
 		},
 		{
@@ -59,56 +57,33 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 			event: &SecurityEvent{Name: "test_event", URL: "http://sourcegraph.com", Source: "WEB",
 				// unset UserID and AnonymousUserID will error in other scenarios
 				UserID: 0, AnonymousUserID: ""},
-			conf: &conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{Log: &schema.Log{
-					SecurityEventLog: &schema.SecurityEventLog{Location: "all"}}},
-			},
 			err: "<nil>",
 		},
 		{
 			name:  "EmptySource",
 			event: &SecurityEvent{Name: "test_event", URL: "http://sourcegraph.com", UserID: 1},
-			conf: &conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{Log: &schema.Log{
-					SecurityEventLog: &schema.SecurityEventLog{Location: "all"}}},
-			},
-			err: `INSERT: ERROR: new row for relation "security_event_logs" violates check constraint "security_event_logs_check_source_not_empty" (SQLSTATE 23514)`,
+			err:   `INSERT: ERROR: new row for relation "security_event_logs" violates check constraint "security_event_logs_check_source_not_empty" (SQLSTATE 23514)`,
 		},
 		{
 			name:  "UserAndAnonymousMissing",
 			event: &SecurityEvent{Name: "test_event", URL: "http://sourcegraph.com", Source: "WEB", UserID: 0, AnonymousUserID: ""},
-			conf: &conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{Log: &schema.Log{
-					SecurityEventLog: &schema.SecurityEventLog{Location: "all"}}},
-			},
+
 			err: `INSERT: ERROR: new row for relation "security_event_logs" violates check constraint "security_event_logs_check_has_user" (SQLSTATE 23514)`,
 		},
 		{
 			name:  "JustUser",
 			event: &SecurityEvent{Name: "test_event", URL: "http://sourcegraph.com", Source: "Web", UserID: 1, AnonymousUserID: ""},
-			conf: &conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{Log: &schema.Log{
-					SecurityEventLog: &schema.SecurityEventLog{Location: "all"}}},
-			},
-			err: "<nil>",
+			err:   "<nil>",
 		},
 		{
 			name:  "JustAnonymous",
 			event: &SecurityEvent{Name: "test_event", URL: "http://sourcegraph.com", Source: "Web", UserID: 0, AnonymousUserID: "blah"},
-			conf: &conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{Log: &schema.Log{
-					SecurityEventLog: &schema.SecurityEventLog{Location: "all"}}},
-			},
-			err: "<nil>",
+			err:   "<nil>",
 		},
 		{
 			name:  "ValidInsert",
 			event: &SecurityEvent{Name: "test_event", UserID: 1, URL: "http://sourcegraph.com", Source: "WEB"},
-			conf: &conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{Log: &schema.Log{
-					SecurityEventLog: &schema.SecurityEventLog{Location: "all"}}},
-			},
-			err: "<nil>",
+			err:   "<nil>",
 		},
 	}
 	for _, tc := range testCases {
@@ -117,7 +92,6 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 			if tc.actor != nil {
 				ctx = actor.WithActor(ctx, tc.actor)
 			}
-			conf.Mock(tc.conf)
 			err := db.SecurityEventLogs().Insert(ctx, tc.event)
 			got := fmt.Sprintf("%v", err)
 			assert.Equal(t, tc.err, got)

@@ -7,9 +7,6 @@ import (
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
-
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestMain(m *testing.M) {
@@ -19,10 +16,5 @@ func TestMain(m *testing.M) {
 	} else {
 		logtest.Init(m)
 	}
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-		Log: &schema.Log{
-			SecurityEventLog: &schema.SecurityEventLog{Location: "all"},
-		},
-	}})
 	os.Exit(m.Run())
 }
