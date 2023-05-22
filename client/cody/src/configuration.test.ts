@@ -1,4 +1,4 @@
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 
 import { getConfiguration } from './configuration'
 
@@ -10,7 +10,9 @@ describe('getConfiguration', () => {
         expect(getConfiguration(config)).toEqual({
             serverEndpoint: '',
             codebase: '',
-            debug: false,
+            debugEnable: false,
+            debugFilter: null,
+            debugVerbose: false,
             useContext: 'embeddings',
             experimentalSuggest: false,
             experimentalChatPredictions: false,
@@ -28,7 +30,11 @@ describe('getConfiguration', () => {
                         return 'http://example.com'
                     case 'cody.codebase':
                         return 'my/codebase'
-                    case 'cody.debug':
+                    case 'cody.debug.enable':
+                        return true
+                    case 'cody.debug.filter':
+                        return '.*'
+                    case 'cody.debug.verbose':
                         return true
                     case 'cody.useContext':
                         return 'keyword'
@@ -53,7 +59,9 @@ describe('getConfiguration', () => {
         expect(getConfiguration(config)).toEqual({
             serverEndpoint: 'http://example.com',
             codebase: 'my/codebase',
-            debug: true,
+            debugEnable: true,
+            debugVerbose: true,
+            debugFilter: /.*/,
             useContext: 'keyword',
             experimentalSuggest: true,
             experimentalChatPredictions: true,
