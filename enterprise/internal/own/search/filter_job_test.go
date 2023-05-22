@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestFeatureFlaggedFileHasOwnerJob(t *testing.T) {
@@ -288,6 +289,48 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 				},
 			}),
 		},
+		{
+			name: "selects result with assigned owner",
+			args: args{
+				includeOwners: []string{"test"},
+				excludeOwners: []string{},
+				matches: []result.Match{
+					&result.FileMatch{
+						File: result.File{
+							Path: "src/main/README.md",
+						},
+					},
+				},
+				// No CODEOWNERS
+				repoContent: map[string]string{},
+			},
+			setup: func(db *edb.MockEnterpriseDB) {
+				user := &types.User{
+					ID:       42,
+					Username: "test",
+				}
+				assignedOwners := []*database.AssignedOwnerSummary{
+					{
+						OwnerUserID: user.ID,
+						FilePath:    "src/main",
+					},
+				}
+				usersStore := database.NewMockUserStore()
+				usersStore.GetByUsernameFunc.SetDefaultReturn(user, nil)
+				usersStore.GetByVerifiedEmailFunc.SetDefaultReturn(nil, nil)
+				db.UsersFunc.SetDefaultReturn(usersStore)
+				assignedOwnersStore := database.NewMockAssignedOwnersStore()
+				assignedOwnersStore.ListAssignedOwnersForRepoFunc.SetDefaultReturn(assignedOwners, nil)
+				db.AssignedOwnersFunc.SetDefaultReturn(assignedOwnersStore)
+			},
+			want: autogold.Expect([]result.Match{
+				&result.FileMatch{
+					File: result.File{
+						Path: "src/main/README.md",
+					},
+				},
+			}),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -306,9 +349,6 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 			codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, nil)
 			db := edb.NewMockEnterpriseDB()
 			db.CodeownersFunc.SetDefaultReturn(codeownersStore)
-			if tt.setup != nil {
-				tt.setup(db)
-			}
 			usersStore := database.NewMockUserStore()
 			usersStore.GetByUsernameFunc.SetDefaultReturn(nil, nil)
 			usersStore.GetByVerifiedEmailFunc.SetDefaultReturn(nil, nil)
@@ -319,6 +359,12 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 			assignedOwnersStore := database.NewMockAssignedOwnersStore()
 			assignedOwnersStore.ListAssignedOwnersForRepoFunc.SetDefaultReturn(nil, nil)
 			db.AssignedOwnersFunc.SetDefaultReturn(assignedOwnersStore)
+			userExternalAccountsStore := database.NewMockUserExternalAccountsStore()
+			userExternalAccountsStore.ListFunc.SetDefaultReturn(nil, nil)
+			db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccountsStore)
+			if tt.setup != nil {
+				tt.setup(db)
+			}
 
 			rules := NewRulesCache(gitserverClient, db)
 
