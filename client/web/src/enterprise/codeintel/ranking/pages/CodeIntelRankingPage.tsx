@@ -1,5 +1,6 @@
 import { FunctionComponent, useEffect } from 'react'
 
+import classNames from 'classnames'
 import { formatDistance, format, parseISO } from 'date-fns'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
@@ -46,16 +47,20 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
                 className="mb-3"
             />
 
-            <Container>
+            <Container className="mb-3">
                 {data &&
                     (data.rankingSummary.length === 0 ? (
                         <>No data.</>
                     ) : (
                         <>
-                            <H3>Current ranking calculation</H3>
+                            <H3>Current ranking calculation ({data.rankingSummary[0].graphKey})</H3>
 
-                            <div className="py-3">
-                                <Summary key={data.rankingSummary[0].graphKey} summary={data.rankingSummary[0]} />
+                            <div className="p-2">
+                                <Summary
+                                    key={data.rankingSummary[0].graphKey}
+                                    summary={data.rankingSummary[0]}
+                                    displayGraphKey={false}
+                                />
                             </div>
                         </>
                     ))}
@@ -64,11 +69,9 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
             {data && data.rankingSummary.length > 1 && (
                 <Container>
                     <Collapsible title="Historic ranking calculations" titleAtStart={true} titleClassName="h3">
-                        <div className="py-3">
-                            {data.rankingSummary.slice(1).map(summary => (
-                                <Summary key={summary.graphKey} summary={summary} />
-                            ))}
-                        </div>
+                        {data.rankingSummary.slice(1).map(summary => (
+                            <Summary key={summary.graphKey} summary={summary} displayGraphKey={true} />
+                        ))}
                     </Collapsible>
                 </Container>
             )}
@@ -92,25 +95,39 @@ interface Progress {
 
 interface SummaryProps {
     summary: Summary
+    displayGraphKey: boolean
 }
 
-const Summary: FunctionComponent<SummaryProps> = ({ summary }) => (
-    <div>
-        <Progress title="Path Aggregation Process" progress={summary.pathMapperProgress} />
-        <Progress title="Reference Aggregation Process" progress={summary.referenceMapperProgress} />
-        {summary.reducerProgress && <Progress title="Reducing Process" progress={summary.reducerProgress} />}
+const Summary: FunctionComponent<SummaryProps> = ({ summary, displayGraphKey }) => (
+    <div className="py-2">
+        {displayGraphKey && <H4>Historic ranking calculation ({summary.graphKey})</H4>}
+
+        <div className={displayGraphKey ? 'px-4' : ''}>
+            <Progress title="Path Aggregation Process" progress={summary.pathMapperProgress} />
+
+            <Progress
+                title="Reference Aggregation Process"
+                progress={summary.referenceMapperProgress}
+                className="mt-4"
+            />
+
+            {summary.reducerProgress && (
+                <Progress title="Reducing Process" progress={summary.reducerProgress} className="mt-4" />
+            )}
+        </div>
     </div>
 )
 
 interface ProgressProps {
     title: string
     progress: Progress
+    className?: string
 }
 
-const Progress: FunctionComponent<ProgressProps> = ({ title, progress }) => (
+const Progress: FunctionComponent<ProgressProps> = ({ title, progress, className }) => (
     <div>
-        <div className={styles.tableContainer}>
-            <H4>{title}</H4>
+        <div className={classNames(styles.tableContainer, className)}>
+            <H4 className="p-0 m-0">{title}</H4>
             <div className={styles.row}>
                 <div>Queued records</div>
                 <div>
@@ -126,8 +143,8 @@ const Progress: FunctionComponent<ProgressProps> = ({ title, progress }) => (
             <div className={styles.row}>
                 <div>Started</div>
                 <div>
-                    {format(parseISO(progress.startedAt), 'MMM L y h:mm:ss a')} (
-                    <Timestamp date={progress.startedAt} />){' '}
+                    {format(parseISO(progress.startedAt), 'MMM d y h:mm:ss a')} (
+                    <Timestamp date={progress.startedAt} />)
                 </div>
             </div>
             <div className={styles.row}>
@@ -135,8 +152,8 @@ const Progress: FunctionComponent<ProgressProps> = ({ title, progress }) => (
                 <div>
                     {progress.completedAt ? (
                         <>
-                            {format(parseISO(progress.completedAt), 'MMM L y h:mm:ss a')} (
-                            <Timestamp date={progress.completedAt} />){' '}
+                            {format(parseISO(progress.completedAt), 'MMM d y h:mm:ss a')} (
+                            <Timestamp date={progress.completedAt} />)
                         </>
                     ) : (
                         '-'
