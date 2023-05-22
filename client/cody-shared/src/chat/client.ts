@@ -66,7 +66,7 @@ export async function createClient({
         )
     }
 
-    const embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId) : null
+    const embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId, true) : null
 
     const codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null)
 
