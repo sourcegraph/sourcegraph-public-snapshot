@@ -1,15 +1,3 @@
-sh_binary(
-    name = "before_run_server_image",
-    srcs = ["before_run_server_image.sh"],
-    visibility = ["//testing:__subpackages__"],
-)
-
-sh_binary(
-    name = "run_server_image",
-    srcs = ["run_server_image.sh"],
-    visibility = ["//testing:__subpackages__"],
-)
-
 sh_library(
     name = "integration_runner",
     srcs = ["integration_runner.sh"],
