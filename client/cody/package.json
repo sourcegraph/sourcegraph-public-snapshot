@@ -95,7 +95,8 @@
           "type": "tree",
           "id": "cody.recipes",
           "name": "Recipes",
-          "visibility": "visible"
+          "visibility": "collapsed",
+          "when": "cody.activated"
         }
       ]
     },
