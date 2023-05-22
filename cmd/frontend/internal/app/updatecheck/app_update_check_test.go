@@ -24,17 +24,17 @@ func TestAppVersionPlatformFormat(t *testing.T) {
 		{
 			Arch:   "x86_64",
 			Target: "linux",
-			Wanted: "linux-x86_64",
+			Wanted: "x86_64-linux",
 		},
 		{
 			Arch:   "x86_64",
 			Target: "darwin",
-			Wanted: "darwin-x86_64",
+			Wanted: "x86_64-darwin",
 		},
 		{
 			Arch:   "aarch64",
 			Target: "darwin",
-			Wanted: "darwin-aarch64",
+			Wanted: "aarch64-darwin",
 		},
 	}
 
