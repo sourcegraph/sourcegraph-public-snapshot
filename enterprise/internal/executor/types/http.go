@@ -38,15 +38,22 @@ type MarkErroredRequest struct {
 	ErrorMessage string `json:"errorMessage"`
 }
 
+type QueueJobIDs struct {
+	Queue  string `json:"queue"`
+	JobIDs []int  `json:"jobIds"`
+}
+
 type HeartbeatRequest struct {
 	// TODO: This field is set to become unneccesary in Sourcegraph 4.4.
 	Version ExecutorAPIVersion `json:"version"`
 
 	ExecutorName string `json:"executorName"`
-	JobIDs       []int  `json:"jobIds"`
+	JobIDs       []int  `json:"jobIds,omitempty"`
+
+	// Used by multi-queue executors. One of JobIDsByQueue or JobIDs must be set.
+	JobIDsByQueue []QueueJobIDs `json:"jobIdsByQueue,omitempty"`
 
 	// Telemetry data.
-
 	OS              string `json:"os"`
 	Architecture    string `json:"architecture"`
 	DockerVersion   string `json:"dockerVersion"`
