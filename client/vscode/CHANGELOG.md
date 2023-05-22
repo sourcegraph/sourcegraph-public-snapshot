@@ -2,19 +2,17 @@
 
 The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release versions and major.ODD_NUMBER.patch (eg. 2.1.1) for pre-release versions.
 
-### Future Plans
-
-- Import Sourcegraph Access token automatically after completing authentication in the browser for Sourcegraph Cloud users [issues/28311](https://github.com/sourcegraph/sourcegraph/issues/28311)
-
 ## Unreleased
 
 ### Changes
 
+- Change the extension name from "Sourcegraph" to "Search by Sourcegraph" [pull/51790](https://github.com/sourcegraph/sourcegraph/pull/51790)
+
 ### Fixes
 
-## 2.2.15
+- Various UI fixes for dark and light themes [pull/50598](https://github.com/sourcegraph/sourcegraph/pull/50598)
 
-### Changes
+## 2.2.15
 
 ### Fixes
 
@@ -26,8 +24,6 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 ### Changes
 
 - Implement proxy support in the process that has access to node APIs [issues/41181](https://github.com/sourcegraph/sourcegraph/issues/41181)
-
-### Fixes
 
 ## 2.2.13
 
@@ -44,8 +40,6 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 
 ## 2.2.12
 
-### Changes
-
 ### Fixes
 
 - Vary search pattern type depending on Sourcegraph instance version: [issues/41236](https://github.com/sourcegraph/sourcegraph/issues/41236), [pull/42178](https://github.com/sourcegraph/sourcegraph/pull/42178)
@@ -61,8 +55,6 @@ The Sourcegraph extension uses major.EVEN_NUMBER.patch (eg. 2.0.1) for release v
 - Fix Sourcegraph blob link generation: [issues/42060](https://github.com/sourcegraph/sourcegraph/issues/42060), [pull/42065](https://github.com/sourcegraph/sourcegraph/pull/42065)
 
 ## 2.2.9
-
-### Changes
 
 ### Fixes
 

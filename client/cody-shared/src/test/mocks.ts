@@ -1,3 +1,6 @@
+import { BotResponseMultiplexer } from '../chat/bot-response-multiplexer'
+import { RecipeContext } from '../chat/recipes/recipe'
+import { CodebaseContext } from '../codebase-context'
 import { ActiveTextEditor, ActiveTextEditorSelection, ActiveTextEditorVisibleContent, Editor } from '../editor'
 import { EmbeddingsSearch } from '../embeddings'
 import { IntentDetector } from '../intent-detector'
@@ -37,6 +40,10 @@ export class MockKeywordContextFetcher implements KeywordContextFetcher {
     public getContext(query: string, numResults: number): Promise<KeywordContextFetcherResult[]> {
         return this.mocks.getContext?.(query, numResults) ?? Promise.resolve([])
     }
+
+    public getSearchContext(query: string, numResults: number): Promise<KeywordContextFetcherResult[]> {
+        return this.mocks.getSearchContext?.(query, numResults) ?? Promise.resolve([])
+    }
 }
 
 export class MockEditor implements Editor {
@@ -50,6 +57,10 @@ export class MockEditor implements Editor {
         return this.mocks.getActiveTextEditorSelection?.() ?? null
     }
 
+    public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
+        return this.mocks.getActiveTextEditorSelection?.() ?? null
+    }
+
     public getActiveTextEditor(): ActiveTextEditor | null {
         return this.mocks.getActiveTextEditor?.() ?? null
     }
@@ -58,12 +69,20 @@ export class MockEditor implements Editor {
         return this.mocks.getActiveTextEditorVisibleContent?.() ?? null
     }
 
+    public replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
+        return this.mocks.replaceSelection?.(fileName, selectedText, replacement) ?? Promise.resolve()
+    }
+
     public showQuickPick(labels: string[]): Promise<string | undefined> {
         return this.mocks.showQuickPick?.(labels) ?? Promise.resolve(undefined)
     }
 
     public showWarningMessage(message: string): Promise<void> {
         return this.mocks.showWarningMessage?.(message) ?? Promise.resolve()
+    }
+
+    public showInputBox(prompt?: string): Promise<string | undefined> {
+        return this.mocks.showInputBox?.(prompt) ?? Promise.resolve(undefined)
     }
 }
 
@@ -74,3 +93,20 @@ export const defaultIntentDetector = new MockIntentDetector()
 export const defaultKeywordContextFetcher = new MockKeywordContextFetcher()
 
 export const defaultEditor = new MockEditor()
+
+export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
+    args = args || {}
+    return {
+        editor: args.editor || defaultEditor,
+        intentDetector: args.intentDetector || defaultIntentDetector,
+        codebaseContext:
+            args.codebaseContext ||
+            new CodebaseContext(
+                { useContext: 'none', serverEndpoint: 'https://example.com' },
+                'dummy-codebase',
+                defaultEmbeddingsClient,
+                defaultKeywordContextFetcher
+            ),
+        responseMultiplexer: args.responseMultiplexer || new BotResponseMultiplexer(),
+    }
+}

@@ -4,7 +4,7 @@ import * as path from 'path'
 import { subDays } from 'date-fns'
 
 import { encodeURIPathComponent } from '@sourcegraph/common'
-import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
+import { RepositoryType, SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
 import { createDriverForTest, Driver } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -27,7 +27,7 @@ import {
     createResolveCloningRepoRevisionResult,
     createFileTreeEntriesResult,
 } from './graphQlResponseHelpers'
-import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
+import { commonWebGraphQlResults } from './graphQlResults'
 import { createEditorAPI, percySnapshotWithVariants, removeContextFromQuery } from './utils'
 
 export const getCommonRepositoryGraphQlResults = (
@@ -36,13 +36,6 @@ export const getCommonRepositoryGraphQlResults = (
     fileEntries: string[] = []
 ): Partial<WebGraphQlOperations & SharedGraphQlOperations> => ({
     ...commonWebGraphQlResults,
-    ...createViewerSettingsGraphQLOverride({
-        user: {
-            experimentalFeatures: {
-                enableCodeMirrorFileView: false,
-            },
-        },
-    }),
     RepoChangesetsStats: () => createRepoChangesetsStatsResult(),
     ResolveRepoRev: () => createResolveRepoRevisionResult(repositoryName),
     FileNames: () => createFileNamesResult(),
@@ -52,6 +45,7 @@ export const getCommonRepositoryGraphQlResults = (
     TreeCommits: () => ({
         node: {
             __typename: 'Repository',
+            sourceType: RepositoryType.GIT_REPOSITORY,
             externalURLs: [
                 {
                     __typename: 'ExternalLink',
@@ -109,6 +103,7 @@ describe('Repository', () => {
                 TreeCommits: () => ({
                     node: {
                         __typename: 'Repository',
+                        sourceType: RepositoryType.GIT_REPOSITORY,
                         externalURLs: [
                             {
                                 __typename: 'ExternalLink',
@@ -124,6 +119,7 @@ describe('Repository', () => {
                                         id: 'CommitID1',
                                         oid: '15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
                                         abbreviatedOID: '15c2290',
+                                        perforceChangelist: null,
                                         message: 'update LSIF indexing CI workflow\n',
                                         subject: 'update LSIF indexing CI workflow',
                                         body: null,
@@ -153,11 +149,13 @@ describe('Repository', () => {
                                             {
                                                 oid: '96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                                 abbreviatedOID: '96c4efa',
+                                                perforceChangelist: null,
                                                 url: '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                             },
                                             {
                                                 oid: '9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                                 abbreviatedOID: '9e615b1',
+                                                perforceChangelist: null,
                                                 url: '/github.com/sourcegraph/jsonrpc2/-/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                             },
                                         ],
@@ -179,6 +177,7 @@ describe('Repository', () => {
                                         id: 'CommitID2',
                                         oid: '9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                         abbreviatedOID: '9e615b1',
+                                        perforceChangelist: null,
                                         message: 'LSIF Indexing Campaign',
                                         subject: 'LSIF Indexing Campaign',
                                         body: null,
@@ -208,6 +207,7 @@ describe('Repository', () => {
                                             {
                                                 oid: '96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                                 abbreviatedOID: '96c4efa',
+                                                perforceChangelist: null,
                                                 url: '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                             },
                                         ],
@@ -230,6 +230,7 @@ describe('Repository', () => {
                                         id: 'CommitID3',
                                         oid: '96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                         abbreviatedOID: '96c4efa',
+                                        perforceChangelist: null,
                                         message:
                                             'Produce LSIF data for each commit for fast/precise code nav (#35)\n\n* Produce LSIF data for each commit for fast/precise code nav\r\n\r\n* Update lsif.yml\r',
                                         subject: 'Produce LSIF data for each commit for fast/precise code nav (#35)',
@@ -265,6 +266,7 @@ describe('Repository', () => {
                                             {
                                                 oid: 'cee7209801bf50cee868f8e0696ba0b76ae21792',
                                                 abbreviatedOID: 'cee7209',
+                                                perforceChangelist: null,
                                                 url: '/github.com/sourcegraph/jsonrpc2/-/commit/cee7209801bf50cee868f8e0696ba0b76ae21792',
                                             },
                                         ],
@@ -291,11 +293,13 @@ describe('Repository', () => {
                 RepositoryCommit: () => ({
                     node: {
                         __typename: 'Repository',
+                        sourceType: RepositoryType.GIT_REPOSITORY,
                         commit: {
                             __typename: 'GitCommit',
                             id: 'CommitID1',
                             oid: '15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
                             abbreviatedOID: '15c2290',
+                            perforceChangelist: null,
                             message: 'update LSIF indexing CI workflow\n',
                             subject: 'update LSIF indexing CI workflow',
                             body: null,
@@ -328,12 +332,14 @@ describe('Repository', () => {
                                     __typename: 'GitCommit',
                                     oid: '96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                     abbreviatedOID: '96c4efa',
+                                    perforceChangelist: null,
                                     url: '/github.com/sourcegraph/jsonrpc2/-/commit/96c4efab7ee28f3d1cf1d248a0139cea37368b18',
                                 },
                                 {
                                     __typename: 'GitCommit',
                                     oid: '9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                     abbreviatedOID: '9e615b1',
+                                    perforceChangelist: null,
                                     url: '/github.com/sourcegraph/jsonrpc2/-/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                 },
                             ],
@@ -534,6 +540,7 @@ describe('Repository', () => {
             const breadcrumbTexts = await driver.page.evaluate(() =>
                 [...document.querySelectorAll('.test-breadcrumb')].map(breadcrumb => breadcrumb.textContent?.trim())
             )
+
             assert.deepStrictEqual(breadcrumbTexts, [
                 shortRepositoryName,
                 '@master',
@@ -557,9 +564,11 @@ describe('Repository', () => {
             )
 
             const blobContent = await driver.page.evaluate(
-                () => document.querySelector('[data-testid="repo-blob"]')?.textContent
+                () => document.querySelector('[data-testid="repo-blob"] .cm-content')?.textContent
             )
-            assert.strictEqual(blobContent, `content for: ${filePath}\nsecond line\nthird line`)
+            // CodeMirror blob content has no newline characters
+            const expectedBlobContent = `content for: ${filePath}\nsecond line\nthird line`.replace(/\n/g, '')
+            assert.strictEqual(blobContent, expectedBlobContent)
         })
 
         it('works with a plus sign in the repository name', async () => {
@@ -658,6 +667,7 @@ describe('Repository', () => {
                     __typename: 'Query',
                     node: {
                         __typename: 'Repository',
+                        sourceType: RepositoryType.GIT_REPOSITORY,
                         externalURLs: [
                             {
                                 __typename: 'ExternalLink',
@@ -675,6 +685,7 @@ describe('Repository', () => {
                                         id: 'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3hORGs9IiwiYyI6IjI4NGFiYTAyNGIxYjU1ODU5MGU4ZTJmOTdkYmMzNTUzYTVlMGM3NmIifQ==',
                                         oid: '284aba024b1b558590e8e2f97dbc3553a5e0c76b',
                                         abbreviatedOID: '284aba0',
+                                        perforceChangelist: null,
                                         message: 'sg: create a test command to run e2e tests locally (#34627)\n',
                                         subject: 'sg: create a test command to run e2e tests locally (#34627)',
                                         body: null,
@@ -706,6 +717,7 @@ describe('Repository', () => {
                                             {
                                                 oid: 'a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
                                                 abbreviatedOID: 'a2d1fd4',
+                                                perforceChangelist: null,
                                                 url: '/github.com/sourcegraph/sourcegraph/-/commit/a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
                                             },
                                         ],
@@ -728,6 +740,7 @@ describe('Repository', () => {
                                         id: 'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3hORGs9IiwiYyI6ImEyZDFmZDQ3NGQ3OWRjMjlhZjZjN2I0YzMzZjAyZmUyMjI4N2JkMTEifQ==',
                                         oid: 'a2d1fd474d79dc29af6c7b4c33f02fe22287bd11',
                                         abbreviatedOID: 'a2d1fd4',
+                                        perforceChangelist: null,
                                         message:
                                             'Wildcard V2: <Checkbox /> migration (#34324)\n\nCo-authored-by: gitstart-sourcegraph <gitstart@users.noreply.github.com>',
                                         subject: 'Wildcard V2: <Checkbox /> migration (#34324)',
@@ -760,6 +773,7 @@ describe('Repository', () => {
                                             {
                                                 oid: '3a163b92b5c45921fbc730ff2047ff7e60d8689b',
                                                 abbreviatedOID: '3a163b9',
+                                                perforceChangelist: null,
                                                 url: '/github.com/sourcegraph/sourcegraph/-/commit/3a163b92b5c45921fbc730ff2047ff7e60d8689b',
                                             },
                                         ],
@@ -782,6 +796,7 @@ describe('Repository', () => {
                                         id: 'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3hORGs9IiwiYyI6IjNhMTYzYjkyYjVjNDU5MjFmYmM3MzBmZjIwNDdmZjdlNjBkODY4OWIifQ==',
                                         oid: '3a163b92b5c45921fbc730ff2047ff7e60d8689b',
                                         abbreviatedOID: '3a163b9',
+                                        perforceChangelist: null,
                                         message: 'web: ban `reactstrap` imports (#34881)\n',
                                         subject: 'web: ban `reactstrap` imports (#34881)',
                                         body: null,
@@ -813,6 +828,7 @@ describe('Repository', () => {
                                             {
                                                 oid: 'e2e91f0dcdc90811c4f2f4df638bc459b2358e7d',
                                                 abbreviatedOID: 'e2e91f0',
+                                                perforceChangelist: null,
                                                 url: '/github.com/sourcegraph/sourcegraph/-/commit/e2e91f0dcdc90811c4f2f4df638bc459b2358e7d',
                                             },
                                         ],
@@ -1222,6 +1238,7 @@ describe('Repository', () => {
                     }),
                     RepositoryComparisonCommits: () => ({
                         node: {
+                            sourceType: RepositoryType.GIT_REPOSITORY,
                             comparison: {
                                 commits: {
                                     nodes: [
@@ -1229,6 +1246,7 @@ describe('Repository', () => {
                                             id: '1'.repeat(70),
                                             oid: '1'.repeat(40),
                                             abbreviatedOID: '1'.repeat(7),
+                                            perforceChangelist: null,
                                             message: 'update README',
                                             subject: 'update README',
                                             body: null,
@@ -1266,6 +1284,7 @@ describe('Repository', () => {
                                                 {
                                                     oid: '2'.repeat(40),
                                                     abbreviatedOID: '2'.repeat(7),
+                                                    perforceChangelist: null,
                                                     url: '/github.com/sourcegraph/sourcegraph@2'.repeat(70),
                                                 },
                                             ],

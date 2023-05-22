@@ -2,9 +2,8 @@ export interface DoneEvent {
     type: 'done'
 }
 
-export interface CompletionEvent {
+export interface CompletionEvent extends CompletionResponse {
     type: 'completion'
-    completion: string
 }
 
 export interface ErrorEvent {
@@ -16,19 +15,26 @@ export type Event = DoneEvent | CompletionEvent | ErrorEvent
 
 export interface Message {
     speaker: 'human' | 'assistant'
-    text: string
+    text?: string
+}
+
+export interface CompletionResponse {
+    completion: string
+    stopReason: string
 }
 
 export interface CompletionParameters {
     messages: Message[]
-    temperature: number
     maxTokensToSample: number
-    topK: number
-    topP: number
+    temperature?: number
+    stopSequences?: string[]
+    topK?: number
+    topP?: number
+    model?: string
 }
 
 export interface CompletionCallbacks {
     onChange: (text: string) => void
     onComplete: () => void
-    onError: (message: string) => void
+    onError: (message: string, statusCode?: number) => void
 }

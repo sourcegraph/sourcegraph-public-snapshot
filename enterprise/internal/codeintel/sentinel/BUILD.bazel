@@ -3,7 +3,6 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "sentinel",
     srcs = [
-        "config.go",
         "init.go",
         "observability.go",
         "service.go",
@@ -12,10 +11,11 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/sentinel/internal/background",
+        "//enterprise/internal/codeintel/sentinel/internal/background/downloader",
+        "//enterprise/internal/codeintel/sentinel/internal/background/matcher",
         "//enterprise/internal/codeintel/sentinel/internal/store",
         "//enterprise/internal/codeintel/sentinel/shared",
         "//internal/database",
-        "//internal/env",
         "//internal/goroutine",
         "//internal/observation",
     ],

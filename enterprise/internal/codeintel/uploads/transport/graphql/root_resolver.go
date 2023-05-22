@@ -11,7 +11,8 @@ type rootResolver struct {
 	uploadSvc                   UploadsService
 	autoindexSvc                AutoIndexingService
 	siteAdminChecker            sharedresolvers.SiteAdminChecker
-	prefetcherFactory           *PrefetcherFactory
+	uploadLoaderFactory         UploadLoaderFactory
+	indexLoaderFactory          IndexLoaderFactory
 	locationResolverFactory     *gitresolvers.CachedLocationResolverFactory
 	preciseIndexResolverFactory *PreciseIndexResolverFactory
 	operations                  *operations
@@ -22,7 +23,8 @@ func NewRootResolver(
 	uploadSvc UploadsService,
 	autoindexSvc AutoIndexingService,
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
-	prefetcherFactory *PrefetcherFactory,
+	uploadLoaderFactory UploadLoaderFactory,
+	indexLoaderFactory IndexLoaderFactory,
 	locationResolverFactory *gitresolvers.CachedLocationResolverFactory,
 	preciseIndexResolverFactory *PreciseIndexResolverFactory,
 ) resolverstubs.UploadsServiceResolver {
@@ -30,7 +32,8 @@ func NewRootResolver(
 		uploadSvc:                   uploadSvc,
 		autoindexSvc:                autoindexSvc,
 		siteAdminChecker:            siteAdminChecker,
-		prefetcherFactory:           prefetcherFactory,
+		uploadLoaderFactory:         uploadLoaderFactory,
+		indexLoaderFactory:          indexLoaderFactory,
 		locationResolverFactory:     locationResolverFactory,
 		preciseIndexResolverFactory: preciseIndexResolverFactory,
 		operations:                  newOperations(observationCtx),

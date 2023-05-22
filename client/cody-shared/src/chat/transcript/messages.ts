@@ -1,14 +1,15 @@
+import { ContextFile } from '../../codebase-context/messages'
 import { Message } from '../../sourcegraph-api'
 
+import { TranscriptJSON } from '.'
+
 export interface ChatMessage extends Message {
-    displayText: string
-    timestamp: string
-    contextFiles?: string[]
+    displayText?: string
+    contextFiles?: ContextFile[]
 }
 
 export interface InteractionMessage extends Message {
-    displayText: string
-    timestamp: string
+    displayText?: string
     prefix?: string
 }
 
@@ -18,5 +19,16 @@ export interface UserLocalHistory {
 }
 
 export interface ChatHistory {
+    [chatID: string]: TranscriptJSON
+}
+
+// For migrations
+
+export interface OldUserLocalHistory {
+    chat: OldChatHistory
+    input: string[]
+}
+
+export interface OldChatHistory {
     [chatID: string]: ChatMessage[]
 }

@@ -2,13 +2,13 @@ package embed
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"math"
 	"net/http"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -30,33 +30,22 @@ type EmbeddingAPIResponse struct {
 }
 
 type EmbeddingsClient interface {
-	GetEmbeddingsWithRetries(texts []string, maxRetries int) ([]float32, error)
+	GetEmbeddingsWithRetries(ctx context.Context, texts []string, maxRetries int) ([]float32, error)
 	GetDimensions() (int, error)
 }
 
 func NewEmbeddingsClient() EmbeddingsClient {
-	client := &embeddingsClient{config: conf.Get().Embeddings}
-
-	mu := sync.Mutex{}
-	conf.Watch(func() {
-		mu.Lock()
-		defer mu.Unlock()
-		client.setConfig(conf.Get().Embeddings)
-	})
-
-	return client
+	return &embeddingsClient{conf.Get().Embeddings}
 }
 
 type embeddingsClient struct {
 	config *schema.Embeddings
 }
 
+// isDisabled checks the current state of the site config to see if embeddings are
+// enabled. This gives an "escape hatch" for cancelling a long-running embeddings job.
 func (c *embeddingsClient) isDisabled() bool {
-	return c.config == nil || !c.config.Enabled
-}
-
-func (c *embeddingsClient) setConfig(config *schema.Embeddings) {
-	c.config = config
+	return !conf.EmbeddingsEnabled()
 }
 
 func (c *embeddingsClient) GetDimensions() (int, error) {
@@ -69,18 +58,18 @@ func (c *embeddingsClient) GetDimensions() (int, error) {
 // GetEmbeddingsWithRetries tries to embed the given texts using the external service specified in the config.
 // In case of failure, it retries the embedding procedure up to maxRetries. This due to the OpenAI API which
 // often hangs up when downloading large embedding responses.
-func (c *embeddingsClient) GetEmbeddingsWithRetries(texts []string, maxRetries int) ([]float32, error) {
+func (c *embeddingsClient) GetEmbeddingsWithRetries(ctx context.Context, texts []string, maxRetries int) ([]float32, error) {
 	if c.isDisabled() {
 		return nil, errors.New("embeddings are not configured or disabled")
 	}
 
-	embeddings, err := getEmbeddings(texts, c.config)
+	embeddings, err := GetEmbeddings(ctx, texts, c.config)
 	if err == nil {
 		return embeddings, nil
 	}
 
 	for i := 0; i < maxRetries; i++ {
-		embeddings, err = getEmbeddings(texts, c.config)
+		embeddings, err = GetEmbeddings(ctx, texts, c.config)
 		if err == nil {
 			return embeddings, nil
 		} else {
@@ -93,11 +82,19 @@ func (c *embeddingsClient) GetEmbeddingsWithRetries(texts []string, maxRetries i
 	return nil, err
 }
 
-func getEmbeddings(texts []string, config *schema.Embeddings) ([]float32, error) {
-	// Replace newlines, which can negatively affect performance.
-	augmentedTexts := make([]string, len(texts))
-	for idx, text := range texts {
-		augmentedTexts[idx] = strings.ReplaceAll(text, "\n", " ")
+var MODELS_WITHOUT_NEWLINES = map[string]struct{}{
+	"text-embedding-ada-002": {},
+}
+
+func GetEmbeddings(ctx context.Context, texts []string, config *schema.Embeddings) ([]float32, error) {
+	_, replaceNewlines := MODELS_WITHOUT_NEWLINES[config.Model]
+	augmentedTexts := texts
+	if replaceNewlines {
+		augmentedTexts = make([]string, len(texts))
+		// Replace newlines for certain (OpenAI) models, because they can negatively affect performance.
+		for idx, text := range texts {
+			augmentedTexts[idx] = strings.ReplaceAll(text, "\n", " ")
+		}
 	}
 
 	request := EmbeddingAPIRequest{Model: config.Model, Input: augmentedTexts}
@@ -107,7 +104,7 @@ func getEmbeddings(texts []string, config *schema.Embeddings) ([]float32, error)
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", config.Url, bytes.NewReader(bodyBytes))
+	req, err := http.NewRequestWithContext(ctx, "POST", config.Url, bytes.NewReader(bodyBytes))
 	if err != nil {
 		return nil, err
 	}

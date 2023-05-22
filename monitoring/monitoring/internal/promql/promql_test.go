@@ -187,20 +187,6 @@ func TestInjectGroupings(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name:       "with existing by()",
-			expression: `max by (type) (src_repoupdater_perms_syncer_perms_gap_seconds)`,
-			groupings:  []string{"project_id"},
-			want:       `max by (type, project_id) (src_repoupdater_perms_syncer_perms_gap_seconds)`,
-			wantErr:    false,
-		},
-		{
-			name:       "without existing by()",
-			expression: `max(src_repoupdater_perms_syncer_perms_gap_seconds)`,
-			groupings:  []string{"project_id"},
-			want:       `max by (project_id) (src_repoupdater_perms_syncer_perms_gap_seconds)`,
-			wantErr:    false,
-		},
-		{
 			name:       "repeated and without existing by()",
 			expression: `max((max(src_codeintel_commit_graph_queued_duration_seconds_total)) >= 3600)`,
 			groupings:  []string{"project_id"},

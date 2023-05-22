@@ -40,6 +40,8 @@ type RealCommand struct {
 	Logger    log.Logger
 }
 
+var _ Command = &RealCommand{}
+
 type Spec struct {
 	Key       string
 	Command   []string
@@ -59,7 +61,12 @@ func (c *RealCommand) Run(ctx context.Context, cmdLogger Logger, spec Spec) (err
 	ctx, _, endObservation := spec.Operation.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	c.Logger.Info("Running command", log.Strings("command", spec.Command), log.String("workingDir", spec.Dir))
+	c.Logger.Info(
+		"Running command",
+		log.String("key", spec.Key),
+		log.Strings("command", spec.Command),
+		log.String("workingDir", spec.Dir),
+	)
 
 	// Check if we can even run the command.
 	if err := validateCommand(spec.Command); err != nil {
@@ -136,6 +143,7 @@ func validateCommand(command []string) error {
 	return ErrIllegalCommand
 }
 
+// ErrIllegalCommand is returned when a command is not allowed to be run.
 var ErrIllegalCommand = errors.New("illegal command")
 
 func (c *RealCommand) prepCommand(ctx context.Context, options Spec) (cmd *exec.Cmd, stdout, stderr io.ReadCloser, err error) {

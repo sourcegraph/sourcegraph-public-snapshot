@@ -1,69 +1,33 @@
+import { ExtensionMessage, WebviewMessage } from '../../src/chat/protocol'
+
 declare const acquireVsCodeApi: () => VSCodeApi
 
 interface VSCodeApi {
-    getState: () => any
-    setState: (newState: any) => any
-    postMessage: (message: any) => void
+    getState: () => unknown
+    setState: (newState: unknown) => unknown
+    postMessage: (message: unknown) => void
 }
 
-class VSCodeWrapper {
-    private readonly vscodeApi: VSCodeApi = acquireVsCodeApi()
+export interface VSCodeWrapper {
+    postMessage(message: WebviewMessage): void
+    onMessage(callback: (message: ExtensionMessage) => void): () => void
+}
 
-    public postMessage(message: WebviewMessage): void {
-        this.vscodeApi.postMessage(message)
+let api: VSCodeWrapper
+
+export function getVSCodeAPI(): VSCodeWrapper {
+    if (!api) {
+        const vsCodeApi = acquireVsCodeApi()
+        api = {
+            postMessage: message => vsCodeApi.postMessage(message),
+            onMessage: callback => {
+                const listener = (event: MessageEvent<ExtensionMessage>): void => {
+                    callback(event.data)
+                }
+                window.addEventListener('message', listener)
+                return () => window.removeEventListener('message', listener)
+            },
+        }
     }
-
-    public onMessage(callback: (message: any) => void): () => void {
-        window.addEventListener('message', callback)
-        return () => window.removeEventListener('message', callback)
-    }
+    return api
 }
-
-export const vscodeAPI: VSCodeWrapper = new VSCodeWrapper()
-
-interface IntializedWebviewMessage {
-    command: 'initialized'
-}
-
-interface ResetWebviewMessage {
-    command: 'reset'
-}
-
-interface RemoveTokenWebviewMessage {
-    command: 'removeToken'
-}
-
-interface SettingsWebviewMessage {
-    command: 'settings'
-    serverEndpoint: string
-    accessToken: string
-}
-
-interface SubmitWebviewMessage {
-    command: 'submit'
-    text: string
-}
-
-interface ExecuteRecipeWebviewMessage {
-    command: 'executeRecipe'
-    recipe: string
-}
-
-interface RemoveChatHistoryWebviewMessage {
-    command: 'removeHistory'
-}
-
-interface OpenFileWebviewMessage {
-    command: 'openFile'
-    filePath: string
-}
-
-type WebviewMessage =
-    | IntializedWebviewMessage
-    | ResetWebviewMessage
-    | RemoveTokenWebviewMessage
-    | SettingsWebviewMessage
-    | SubmitWebviewMessage
-    | ExecuteRecipeWebviewMessage
-    | RemoveChatHistoryWebviewMessage
-    | OpenFileWebviewMessage

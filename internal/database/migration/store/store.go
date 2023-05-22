@@ -10,7 +10,7 @@ import (
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
@@ -282,6 +282,25 @@ WHERE row_number = 1
 ORDER BY version
 `
 
+func (s *Store) RunDDLStatements(ctx context.Context, statements []string) (err error) {
+	ctx, _, endObservation := s.operations.runDDLStatements.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	for _, statement := range statements {
+		if err := tx.Exec(ctx, sqlf.Sprintf(strings.ReplaceAll(statement, "%", "%%"))); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // TryLock attempts to create hold an advisory lock. This method returns a function that should be
 // called once the lock should be released. This method accepts the current function's error output
 // and wraps any additional errors that occur on close. Calling this method when the lock was not
@@ -293,8 +312,8 @@ ORDER BY version
 func (s *Store) TryLock(ctx context.Context) (_ bool, _ func(err error) error, err error) {
 	key := s.lockKey()
 
-	ctx, _, endObservation := s.operations.tryLock.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int32("key", key),
+	ctx, _, endObservation := s.operations.tryLock.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("key", int(key)),
 	}})
 	defer endObservation(1, observation.Args{})
 

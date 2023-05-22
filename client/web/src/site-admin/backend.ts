@@ -694,6 +694,8 @@ export function fetchFeatureFlags(): Observable<FeatureFlagFields[]> {
                     overrides {
                         ...OverrideFields
                     }
+                    createdAt
+                    updatedAt
                 }
                 ... on FeatureFlagRollout {
                     name
@@ -701,6 +703,8 @@ export function fetchFeatureFlags(): Observable<FeatureFlagFields[]> {
                     overrides {
                         ...OverrideFields
                     }
+                    createdAt
+                    updatedAt
                 }
             }
 
@@ -730,6 +734,12 @@ export const STATUS_AND_REPO_STATS = gql`
         }
         statusMessages {
             ... on GitUpdatesDisabled {
+                __typename
+
+                message
+            }
+
+            ... on NoRepositoriesDetected {
                 __typename
 
                 message

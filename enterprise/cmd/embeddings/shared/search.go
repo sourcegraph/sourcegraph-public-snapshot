@@ -2,103 +2,66 @@ package shared
 
 import (
 	"context"
-	"os"
 	"runtime"
-	"strings"
-
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type readFileFn func(ctx context.Context, repoName api.RepoName, revision api.CommitID, fileName string) ([]byte, error)
-type getRepoEmbeddingIndexFn func(ctx context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error)
-type getQueryEmbeddingFn func(query string) ([]float32, error)
+const SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT = 1000
 
-func searchRepoEmbeddingIndex(
+type getRepoEmbeddingIndexFn func(ctx context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error)
+type getQueryEmbeddingFn func(ctx context.Context, query string) ([]float32, error)
+
+func searchRepoEmbeddingIndexes(
 	ctx context.Context,
-	logger log.Logger,
 	params embeddings.EmbeddingsSearchParameters,
-	readFile readFileFn,
 	getRepoEmbeddingIndex getRepoEmbeddingIndexFn,
 	getQueryEmbedding getQueryEmbeddingFn,
-) (*embeddings.EmbeddingSearchResults, error) {
-	embeddingIndex, err := getRepoEmbeddingIndex(ctx, params.RepoName)
-	if err != nil {
-		return nil, errors.Wrap(err, "getting repo embedding index")
-	}
-
-	embeddedQuery, err := getQueryEmbedding(params.Query)
+	weaviate *weaviateClient,
+) (*embeddings.EmbeddingCombinedSearchResults, error) {
+	floatQuery, err := getQueryEmbedding(ctx, params.Query)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting query embedding")
 	}
+	embeddedQuery := embeddings.Quantize(floatQuery)
 
-	opts := embeddings.SearchOptions{
-		Debug:            params.Debug,
+	workerOpts := embeddings.WorkerOptions{
+		NumWorkers:     runtime.GOMAXPROCS(0),
+		MinRowsToSplit: SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT,
+	}
+
+	searchOpts := embeddings.SearchOptions{
 		UseDocumentRanks: params.UseDocumentRanks,
 	}
 
-	var codeResults, textResults []embeddings.EmbeddingSearchResult
-	if params.CodeResultsCount > 0 && len(embeddingIndex.CodeIndex.Embeddings) > 0 {
-		codeResults = searchEmbeddingIndex(ctx, logger, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.CodeIndex, readFile, embeddedQuery, params.CodeResultsCount, opts)
-	}
+	var result embeddings.EmbeddingCombinedSearchResults
 
-	if params.TextResultsCount > 0 && len(embeddingIndex.TextIndex.Embeddings) > 0 {
-		textResults = searchEmbeddingIndex(ctx, logger, embeddingIndex.RepoName, embeddingIndex.Revision, &embeddingIndex.TextIndex, readFile, embeddedQuery, params.TextResultsCount, opts)
-	}
-
-	return &embeddings.EmbeddingSearchResults{CodeResults: codeResults, TextResults: textResults}, nil
-}
-
-const SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT = 1000
-
-func searchEmbeddingIndex(
-	ctx context.Context,
-	logger log.Logger,
-	repoName api.RepoName,
-	revision api.CommitID,
-	index *embeddings.EmbeddingIndex,
-	readFile readFileFn,
-	query []float32,
-	nResults int,
-	opts embeddings.SearchOptions,
-) []embeddings.EmbeddingSearchResult {
-	numWorkers := runtime.GOMAXPROCS(0)
-	rows := index.SimilaritySearch(query, nResults, embeddings.WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: SIMILARITY_SEARCH_MIN_ROWS_TO_SPLIT}, opts)
-
-	// Hydrate content
-	for idx, row := range rows {
-		fileContent, err := readFile(ctx, repoName, revision, row.FileName)
-		if err != nil {
-			if !os.IsNotExist(err) {
-				logger.Error("error reading file", log.String("repoName", string(repoName)), log.String("revision", string(revision)), log.String("fileName", row.FileName), log.Error(err))
+	for i, repoName := range params.RepoNames {
+		if weaviate.Use(ctx) {
+			codeResults, textResults, err := weaviate.Search(ctx, repoName, params.RepoIDs[i], params.Query, params.CodeResultsCount, params.TextResultsCount)
+			if err != nil {
+				return nil, err
 			}
+
+			result.CodeResults.MergeTruncate(codeResults, params.CodeResultsCount)
+			result.TextResults.MergeTruncate(textResults, params.TextResultsCount)
 			continue
 		}
-		lines := strings.Split(string(fileContent), "\n")
 
-		// Sanity check: check that startLine and endLine are within 0 and len(lines).
-		startLine := max(0, min(len(lines), row.StartLine))
-		endLine := max(0, min(len(lines), row.EndLine))
+		embeddingIndex, err := getRepoEmbeddingIndex(ctx, repoName)
+		if err != nil {
+			return nil, errors.Wrapf(err, "getting repo embedding index for repo %q", repoName)
+		}
 
-		rows[idx].Content = strings.Join(lines[startLine:endLine], "\n")
+		codeResults := embeddingIndex.CodeIndex.SimilaritySearch(embeddedQuery, params.CodeResultsCount, workerOpts, searchOpts, embeddingIndex.RepoName, embeddingIndex.Revision)
+		textResults := embeddingIndex.TextIndex.SimilaritySearch(embeddedQuery, params.TextResultsCount, workerOpts, searchOpts, embeddingIndex.RepoName, embeddingIndex.Revision)
+
+		result.CodeResults.MergeTruncate(codeResults, params.CodeResultsCount)
+		result.TextResults.MergeTruncate(textResults, params.TextResultsCount)
+
 	}
 
-	return rows
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
+	return &result, nil
 }

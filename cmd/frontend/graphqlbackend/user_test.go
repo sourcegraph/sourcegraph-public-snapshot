@@ -231,7 +231,7 @@ func TestUser_LatestSettings(t *testing.T) {
 
 func TestUser_ViewerCanAdminister(t *testing.T) {
 	db := database.NewMockDB()
-	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+	t.Run("settings edit only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
 		users := database.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
@@ -256,13 +256,13 @@ func TestUser_ViewerCanAdminister(t *testing.T) {
 		}
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
-				ok, _ := NewUserResolver(test.ctx, db, &types.User{ID: 1}).ViewerCanAdminister()
+				ok, _ := NewUserResolver(test.ctx, db, &types.User{ID: 1}).viewerCanAdministerSettings()
 				assert.False(t, ok, "ViewerCanAdminister")
 			})
 		}
 	})
 
-	t.Run("allowed by same user or site admin not on Sourcegraph.com", func(t *testing.T) {
+	t.Run("allowed by same user or site admin", func(t *testing.T) {
 		users := database.NewMockUserStore()
 		db.UsersFunc.SetDefaultReturn(users)
 
@@ -507,10 +507,6 @@ func TestUpdateUser(t *testing.T) {
 	})
 
 	t.Run("bad avatarURL", func(t *testing.T) {
-		users := database.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
-		db.UsersFunc.SetDefaultReturn(users)
-
 		tests := []struct {
 			name      string
 			avatarURL string
@@ -530,9 +526,9 @@ func TestUpdateUser(t *testing.T) {
 		for _, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
 				_, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).UpdateUser(
-					context.Background(),
+					actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
 					&updateUserArgs{
-						User:      MarshalUserID(1),
+						User:      MarshalUserID(2),
 						AvatarURL: &test.avatarURL,
 					},
 				)
@@ -757,6 +753,157 @@ func TestUser_Organizations(t *testing.T) {
 
 		t.Run("site admin", func(t *testing.T) {
 			expectOrgSuccess(t, 3)
+		})
+	})
+}
+
+func TestSchema_SetUserCompletionsQuota(t *testing.T) {
+	db := database.NewMockDB()
+
+	t.Run("not site admin", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+			return &types.User{
+				ID:       id,
+				Username: strconv.Itoa(int(id)),
+			}, nil
+		})
+		// Different user.
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, Username: "2"}, nil)
+		db.UsersFunc.SetDefaultReturn(users)
+
+		result, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).SetUserCompletionsQuota(context.Background(),
+			SetUserCompletionsQuotaArgs{
+				User:  MarshalUserID(1),
+				Quota: nil,
+			},
+		)
+		got := fmt.Sprintf("%v", err)
+		want := auth.ErrMustBeSiteAdmin.Error()
+		assert.Equal(t, want, got)
+		assert.Nil(t, result)
+	})
+
+	t.Run("site admin can change quota", func(t *testing.T) {
+		mockUser := &types.User{
+			ID:        1,
+			Username:  "alice",
+			SiteAdmin: true,
+		}
+		users := database.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultReturn(mockUser, nil)
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(mockUser, nil)
+		users.UpdateFunc.SetDefaultReturn(nil)
+		db.UsersFunc.SetDefaultReturn(users)
+		var quota *int
+		users.SetCompletionsQuotaFunc.SetDefaultHook(func(ctx context.Context, i1 int32, i2 *int) error {
+			quota = i2
+			return nil
+		})
+		users.GetCompletionsQuotaFunc.SetDefaultHook(func(ctx context.Context, i int32) (*int, error) {
+			return quota, nil
+		})
+
+		RunTests(t, []*Test{
+			{
+				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+				Schema:  mustParseGraphQLSchema(t, db),
+				Query: `
+			mutation {
+				setUserCompletionsQuota(
+					user: "VXNlcjox",
+					quota: 10
+				) {
+					username
+					completionsQuotaOverride
+				}
+			}
+		`,
+				ExpectedResult: `
+			{
+				"setUserCompletionsQuota": {
+					"username": "alice",
+					"completionsQuotaOverride": 10
+				}
+			}
+		`,
+			},
+		})
+	})
+}
+
+func TestSchema_SetUserCodeCompletionsQuota(t *testing.T) {
+	db := database.NewMockDB()
+
+	t.Run("not site admin", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+			return &types.User{
+				ID:       id,
+				Username: strconv.Itoa(int(id)),
+			}, nil
+		})
+		// Different user.
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, Username: "2"}, nil)
+		db.UsersFunc.SetDefaultReturn(users)
+
+		schemaResolver := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs())
+		result, err := schemaResolver.SetUserCodeCompletionsQuota(context.Background(),
+			SetUserCodeCompletionsQuotaArgs{
+				User:  MarshalUserID(1),
+				Quota: nil,
+			},
+		)
+		got := fmt.Sprintf("%v", err)
+		want := auth.ErrMustBeSiteAdmin.Error()
+		assert.Equal(t, want, got)
+		assert.Nil(t, result)
+	})
+
+	t.Run("site admin can change quota", func(t *testing.T) {
+		mockUser := &types.User{
+			ID:        1,
+			Username:  "alice",
+			SiteAdmin: true,
+		}
+		users := database.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultReturn(mockUser, nil)
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(mockUser, nil)
+		users.UpdateFunc.SetDefaultReturn(nil)
+		db.UsersFunc.SetDefaultReturn(users)
+		var quota *int
+		users.SetCodeCompletionsQuotaFunc.SetDefaultHook(func(ctx context.Context, i1 int32, i2 *int) error {
+			quota = i2
+			return nil
+		})
+		users.GetCodeCompletionsQuotaFunc.SetDefaultHook(func(ctx context.Context, i int32) (*int, error) {
+			return quota, nil
+		})
+
+		RunTests(t, []*Test{
+			{
+				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+				Schema:  mustParseGraphQLSchema(t, db),
+				Query: `
+			mutation {
+				setUserCodeCompletionsQuota(
+					user: "VXNlcjox",
+					quota: 18
+				) {
+					username
+					codeCompletionsQuotaOverride
+				}
+			}
+		`,
+				ExpectedResult: `
+			{
+				"setUserCodeCompletionsQuota": {
+					"username": "alice",
+					"codeCompletionsQuotaOverride": 18
+				}
+			}
+		`,
+			},
 		})
 	})
 }

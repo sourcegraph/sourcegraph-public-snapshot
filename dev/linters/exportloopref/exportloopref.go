@@ -2,6 +2,7 @@ package exportloopref
 
 import (
 	"github.com/kyoh86/exportloopref"
+	"github.com/sourcegraph/sourcegraph/dev/linters/nolint"
 )
 
-var Analyzer = exportloopref.Analyzer
+var Analyzer = nolint.Wrap(exportloopref.Analyzer)

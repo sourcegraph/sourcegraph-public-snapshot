@@ -150,6 +150,7 @@ lazy_static::lazy_static! {
             Java,
             Javascript,
             Jsonnet,
+            Kotlin,
             Nickel,
             Perl,
             Pod,
@@ -158,7 +159,8 @@ lazy_static::lazy_static! {
             Rust,
             Scala,
             Sql,
-            Xlsg
+            Xlsg,
+            Zig
         )
     };
 }

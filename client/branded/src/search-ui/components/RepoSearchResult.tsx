@@ -5,10 +5,12 @@ import classNames from 'classnames'
 
 import { highlightNode } from '@sourcegraph/common'
 import { codeHostSubstrLength, displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
+import { BuildSearchQueryURLParameters, QueryState } from '@sourcegraph/shared/src/search'
 import { getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 import { Icon, Link } from '@sourcegraph/wildcard'
 
 import { LastSyncedIcon } from './LastSyncedIcon'
+import { RepoMetadata } from './RepoMetadata'
 import { ResultContainer } from './ResultContainer'
 
 import styles from './SearchResult.module.scss'
@@ -18,9 +20,12 @@ const REPO_DESCRIPTION_CHAR_LIMIT = 500
 export interface RepoSearchResultProps {
     result: RepositoryMatch
     onSelect: () => void
+    buildSearchURLQueryFromQueryState?: (queryParameters: BuildSearchQueryURLParameters) => string
+    queryState?: QueryState
     containerClassName?: string
     as?: React.ElementType
     index: number
+    enableRepositoryMetadata?: boolean
 }
 
 export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = ({
@@ -29,6 +34,9 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
     containerClassName,
     as,
     index,
+    enableRepositoryMetadata,
+    buildSearchURLQueryFromQueryState,
+    queryState,
 }) => {
     const repoDescriptionElement = useRef<HTMLDivElement>(null)
     const repoNameElement = useRef<HTMLAnchorElement>(null)
@@ -136,6 +144,15 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                             </>
                         )}
                     </div>
+                    {enableRepositoryMetadata && !!result.metadata && (
+                        <RepoMetadata
+                            small={true}
+                            className="mt-1"
+                            queryState={queryState}
+                            buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
+                            items={Object.entries(result.metadata).map(([key, value]) => ({ key, value }))}
+                        />
+                    )}
                     {result.description && (
                         <>
                             <div className={styles.dividerVertical} />

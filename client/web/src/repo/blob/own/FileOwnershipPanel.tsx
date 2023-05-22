@@ -13,7 +13,12 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Alert, Button, ErrorAlert, H3, H4, Icon, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
-import { FetchOwnershipResult, FetchOwnershipVariables, SearchPatternType } from '../../../graphql-operations'
+import {
+    FetchOwnershipResult,
+    FetchOwnershipVariables,
+    OwnerFields,
+    SearchPatternType,
+} from '../../../graphql-operations'
 
 import { FileOwnershipEntry } from './FileOwnershipEntry'
 import { FETCH_OWNERS } from './grapqlQueries'
@@ -62,9 +67,13 @@ export const FileOwnershipPanel: React.FunctionComponent<
         data.node.commit?.blob &&
         data.node.commit.blob.ownership.nodes.length > 0
     ) {
+        const nodes = data.node.commit.blob.ownership.nodes
         return (
             <div className={styles.contents}>
-                <OwnExplanation />
+                <OwnExplanation owners={nodes.map(ownership => ownership.owner)} />
+                {data.node.commit.blob.ownership.totalOwners === 0 && (
+                    <Alert variant="info">No ownership data for this file.</Alert>
+                )}
                 <Accordion
                     as="table"
                     collapsible={true}
@@ -80,7 +89,7 @@ export const FileOwnershipPanel: React.FunctionComponent<
                             <th>Reason</th>
                         </tr>
                     </thead>
-                    {data.node.commit.blob?.ownership.nodes.map((ownership, index) => (
+                    {nodes.map((ownership, index) => (
                         <FileOwnershipEntry
                             // This list is not expected to change, so it's safe to use the index as a key.
                             // eslint-disable-next-line react/no-array-index-key
@@ -102,7 +111,11 @@ export const FileOwnershipPanel: React.FunctionComponent<
     )
 }
 
-const OwnExplanation: React.FunctionComponent<{}> = () => {
+interface OwnExplanationProps {
+    owners?: OwnerFields[]
+}
+
+const OwnExplanation: React.FunctionComponent<OwnExplanationProps> = ({ owners }) => {
     const [dismissed, setDismissed] = useTemporarySetting('own.panelExplanationHidden')
 
     const onDismiss = React.useCallback(() => {
@@ -112,6 +125,8 @@ const OwnExplanation: React.FunctionComponent<{}> = () => {
     if (dismissed) {
         return null
     }
+
+    const ownerSearchPredicate = resolveOwnerSearchPredicate(owners)
 
     return (
         <MarketingBlock contentClassName={styles.ownExplanationContainer} wrapperClassName="mb-3">
@@ -133,11 +148,11 @@ const OwnExplanation: React.FunctionComponent<{}> = () => {
                         size="sm"
                         outline={true}
                         as={Link}
-                        to="/search?q=file:has.owner(johndoe)"
+                        to={`/search?q=file:has.owner(${ownerSearchPredicate})`}
                         className="mr-2"
                     >
                         <SyntaxHighlightedSearchQuery
-                            query="file:has.owner(johndoe)"
+                            query={`file:has.owner(${ownerSearchPredicate})`}
                             searchPatternType={SearchPatternType.standard}
                         />
                     </Button>
@@ -154,4 +169,15 @@ const OwnExplanation: React.FunctionComponent<{}> = () => {
             </div>
         </MarketingBlock>
     )
+}
+
+const resolveOwnerSearchPredicate = (owners?: OwnerFields[]): string => {
+    if (owners) {
+        for (const owner of owners) {
+            if (owner.__typename === 'Person' && owner.user?.username) {
+                return `@${owner.user.username}`
+            }
+        }
+    }
+    return 'johndoe'
 }

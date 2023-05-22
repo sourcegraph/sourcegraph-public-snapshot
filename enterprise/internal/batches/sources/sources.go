@@ -304,7 +304,7 @@ func loadExternalService(ctx context.Context, s database.ExternalServiceStore, o
 func buildChangesetSource(ctx context.Context, cf *httpcli.Factory, externalService *types.ExternalService) (ChangesetSource, error) {
 	switch externalService.Kind {
 	case extsvc.KindGitHub:
-		return NewGithubSource(ctx, externalService, cf)
+		return NewGitHubSource(ctx, externalService, cf)
 	case extsvc.KindGitLab:
 		return NewGitLabSource(ctx, externalService, cf)
 	case extsvc.KindBitbucketServer:

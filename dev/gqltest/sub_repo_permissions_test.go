@@ -16,7 +16,7 @@ import (
 const (
 	perforceRepoName = "perforce/test-perms"
 	testPermsDepot   = "test-perms"
-	aliceEmail       = "alice@perforce.sgdev.org"
+	aliceEmail       = "alice@perforce-tests.sgdev.org"
 	aliceUsername    = "alice"
 )
 

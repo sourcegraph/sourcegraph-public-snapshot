@@ -39,7 +39,8 @@ func NewPreciseIndexResolverFactory(
 
 func (f *PreciseIndexResolverFactory) Create(
 	ctx context.Context,
-	prefetcher *Prefetcher,
+	uploadLoader UploadLoader,
+	indexLoader IndexLoader,
 	locationResolver *gitresolvers.CachedLocationResolver,
 	traceErrs *observation.ErrCollector,
 	upload *shared.Upload,
@@ -50,7 +51,8 @@ func (f *PreciseIndexResolverFactory) Create(
 		f.uploadsSvc,
 		f.policySvc,
 		f.gitserverClient,
-		prefetcher,
+		uploadLoader,
+		indexLoader,
 		f.siteAdminChecker,
 		f.repoStore,
 		locationResolver,

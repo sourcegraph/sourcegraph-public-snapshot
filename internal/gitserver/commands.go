@@ -21,7 +21,6 @@ import (
 
 	"github.com/go-git/go-git/v5/plumbing/format/config"
 	"github.com/golang/groupcache/lru"
-	"github.com/grafana/regexp"
 	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -36,6 +35,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -323,6 +324,66 @@ func (c *clientImplementor) CommitGraph(ctx context.Context, repo api.RepoName, 
 	}
 
 	return gitdomain.ParseCommitGraph(strings.Split(string(out), "\n")), nil
+}
+
+// CommitLog returns the repository commit log, including the file paths that were changed. The general approach to parsing
+// is to separate the first line (the metadata line) from the remaining lines (the files), and then parse the metadata line
+// into component parts separately.
+func (c *clientImplementor) CommitLog(ctx context.Context, repo api.RepoName, after time.Time) ([]CommitLog, error) {
+	args := []string{"log", "--pretty=format:%H<!>%ae<!>%an<!>%ad", "--name-only", "--topo-order", "--no-merges"}
+	if !after.IsZero() {
+		args = append(args, fmt.Sprintf("--after=%s", after.Format(time.RFC3339)))
+	}
+
+	cmd := c.gitCommand(repo, args...)
+	out, err := cmd.CombinedOutput(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "gitCommand")
+	}
+
+	var ls []CommitLog
+	lines := strings.Split(string(out), "\n\n")
+
+	for _, logOutput := range lines {
+		partitions := strings.Split(logOutput, "\n")
+		if len(partitions) < 2 {
+			continue
+		}
+		metaLine := partitions[0]
+		var changedFiles []string
+		for _, pt := range partitions[1:] {
+			if pt != "" {
+				changedFiles = append(changedFiles, pt)
+			}
+		}
+
+		parts := strings.Split(metaLine, "<!>")
+		if len(parts) != 4 {
+			continue
+		}
+		sha, authorEmail, authorName, timestamp := parts[0], parts[1], parts[2], parts[3]
+		t, err := parseTimestamp(timestamp)
+		if err != nil {
+			return nil, errors.Wrapf(err, "parseTimestamp %s", timestamp)
+		}
+		ls = append(ls, CommitLog{
+			SHA:          sha,
+			AuthorEmail:  authorEmail,
+			AuthorName:   authorName,
+			Timestamp:    t,
+			ChangedFiles: changedFiles,
+		})
+	}
+	return ls, nil
+}
+
+func parseTimestamp(timestamp string) (time.Time, error) {
+	layout := "Mon Jan 2 15:04:05 2006 -0700"
+	t, err := time.Parse(layout, timestamp)
+	if err != nil {
+		return time.Time{}, err
+	}
+	return t, nil
 }
 
 // DevNullSHA 4b825dc642cb6eb9a060e54bf8d69288fbee4904 is `git hash-object -t
@@ -1025,28 +1086,24 @@ func (c *clientImplementor) LsFiles(ctx context.Context, checker authz.SubRepoPe
 
 // ListFiles returns a list of root-relative file paths matching the given
 // pattern in a particular commit of a repository.
-func (c *clientImplementor) ListFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pattern *regexp.Regexp) (_ []string, err error) {
-	cmd := c.gitCommand(repo, "ls-tree", "-z", "--name-only", "-r", string(commit), "--")
-
-	out, err := cmd.CombinedOutput(ctx)
+func (c *clientImplementor) ListFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, opts *protocol.ListFilesOpts) (_ []string, err error) {
+	files, err := c.ReadDir(ctx, checker, repo, commit, "", true)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "reading directory")
 	}
+	var filteredFiles []string
 
-	files := strings.Split(string(out), "\x00")
-	// Drop trailing empty string
-	if len(files) > 0 && files[len(files)-1] == "" {
-		files = files[:len(files)-1]
-	}
-
-	var matching []string
-	for _, path := range files {
-		if pattern.MatchString(path) {
-			matching = append(matching, path)
+	for _, file := range files {
+		if file.IsDir() && !opts.IncludeDirs {
+			continue
+		} else if opts.MaxFileSizeBytes != 0 && file.Size() > opts.MaxFileSizeBytes {
+			continue
 		}
+
+		filteredFiles = append(filteredFiles, file.Name())
 	}
 
-	return filterPaths(ctx, checker, repo, matching)
+	return filterPaths(ctx, checker, repo, filteredFiles)
 }
 
 // 🚨 SECURITY: All git methods that deal with file or path access need to have
@@ -2407,40 +2464,119 @@ func (c *clientImplementor) ArchiveReader(
 		return nil, err
 	}
 
-	u := c.archiveURL(repo, options)
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		client, err := c.clientSource.ClientForRepo(c.userAgent, repo)
+		if err != nil {
+			return nil, err
+		}
 
-	resp, err := c.do(ctx, repo, "POST", u.String(), nil)
-	if err != nil {
-		return nil, err
-	}
+		req := options.ToProto(string(repo)) // HACK: ArchiveOptions doesn't have a repository here, so we have to add it ourselves.
 
-	switch resp.StatusCode {
-	case http.StatusOK:
+		ctx, cancel := context.WithCancel(ctx)
+
+		stream, err := client.Archive(ctx, req)
+		if err != nil {
+			cancel()
+			return nil, err
+		}
+
+		// first message from the gRPC stream needs to be read to check for errors before continuing
+		// to read the rest of the stream. If the first message is an error, we cancel the stream
+		// and return the error.
+		//
+		// This is necessary to provide parity between the REST and gRPC implementations of
+		// ArchiveReader. Users of cli.ArchiveReader may assume error handling occurs immediately,
+		// as is the case with the HTTP implementation where errors are returned as soon as the
+		// function returns. gRPC is asynchronous, so we have to start consuming messages from
+		// the stream to see any errors from the server. Reading the first message ensures we
+		// handle any errors synchronously, similar to the HTTP implementation.
+
+		firstMessage, firstError := stream.Recv()
+		if firstError != nil {
+			// Hack: The ArchiveReader.Read() implementation handles surfacing the
+			// any "revision not found" errors returned from the invoked git binary.
+			//
+			// In order to maintainparity with the HTTP API, we return this error in the ArchiveReader.Read() method
+			// instead of returning it immediately.
+
+			// We return early only if this isn't a revision not found error.
+
+			err := convertGRPCErrorToGitDomainError(firstError)
+
+			var cse *CommandStatusError
+			if !errors.As(err, &cse) || !isRevisionNotFound(cse.Stderr) {
+				cancel()
+				return nil, convertGRPCErrorToGitDomainError(err)
+			}
+		}
+
+		firstMessageRead := false
+
+		// Create a reader to read from the gRPC stream.
+		r := streamio.NewReader(func() ([]byte, error) {
+			// Check if we've read the first message yet. If not, read it and return.
+			if !firstMessageRead {
+				firstMessageRead = true
+
+				if firstError != nil {
+					return nil, firstError
+				}
+
+				return firstMessage.GetData(), nil
+			}
+
+			// Receive the next message from the stream.
+			msg, err := stream.Recv()
+			if err != nil {
+				return nil, convertGRPCErrorToGitDomainError(err)
+			}
+
+			// Return the data from the received message.
+			return msg.GetData(), nil
+		})
+
 		return &archiveReader{
-			base: &cmdReader{
-				rc:      resp.Body,
-				trailer: resp.Trailer,
-			},
+			base: &readCloseWrapper{r: r, closeFn: cancel},
 			repo: repo,
 			spec: options.Treeish,
 		}, nil
-	case http.StatusNotFound:
-		var payload protocol.NotFoundPayload
-		if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
-			resp.Body.Close()
+
+	} else {
+		// Fall back to http request
+		u := c.archiveURL(repo, options)
+		resp, err := c.do(ctx, repo, "POST", u.String(), nil)
+		if err != nil {
 			return nil, err
 		}
-		resp.Body.Close()
-		return nil, &badRequestError{
-			error: &gitdomain.RepoNotExistError{
-				Repo:            repo,
-				CloneInProgress: payload.CloneInProgress,
-				CloneProgress:   payload.CloneProgress,
-			},
+
+		switch resp.StatusCode {
+		case http.StatusOK:
+			return &archiveReader{
+				base: &cmdReader{
+					rc:      resp.Body,
+					trailer: resp.Trailer,
+				},
+				repo: repo,
+				spec: options.Treeish,
+			}, nil
+		case http.StatusNotFound:
+			var payload protocol.NotFoundPayload
+			if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+				resp.Body.Close()
+				return nil, err
+			}
+			resp.Body.Close()
+			return nil, &badRequestError{
+				error: &gitdomain.RepoNotExistError{
+					Repo:            repo,
+					CloneInProgress: payload.CloneInProgress,
+					CloneProgress:   payload.CloneProgress,
+				},
+			}
+		default:
+			resp.Body.Close()
+			return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
 		}
-	default:
-		resp.Body.Close()
-		return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
 }
 

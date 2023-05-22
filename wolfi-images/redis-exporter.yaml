@@ -1,0 +1,10 @@
+include: ./sourcegraph-base.yaml
+
+contents:
+  packages:
+    # Included by existing SG base image
+    - tini
+    - mailcap
+
+    ## redis_exporter packages
+    - redis_exporter@sourcegraph

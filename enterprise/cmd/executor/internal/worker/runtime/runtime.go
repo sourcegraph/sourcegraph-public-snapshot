@@ -4,6 +4,9 @@ import (
 	"context"
 
 	"github.com/sourcegraph/log"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
@@ -23,6 +26,7 @@ type Runtime interface {
 	NewRunner(ctx context.Context, logger command.Logger, options RunnerOptions) (runner.Runner, error)
 	// NewRunnerSpecs builds and returns the commands that the runner will execute.
 	NewRunnerSpecs(ws workspace.Workspace, steps []types.DockerStep) ([]runner.Spec, error)
+	//CommandKey() string
 }
 
 // RunnerOptions are the options to create a runner.
@@ -83,6 +87,34 @@ func New(
 		}
 	}
 
+	if runnerOpts.KubernetesOptions.Enabled {
+		configPath := runnerOpts.KubernetesOptions.ConfigPath
+		kubeConfig, err := clientcmd.BuildConfigFromFlags("", configPath)
+		if err != nil {
+			kubeConfig, err = rest.InClusterConfig()
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to create kubernetes client config")
+			}
+		}
+		clientset, err := kubernetes.NewForConfig(kubeConfig)
+		if err != nil {
+			return nil, err
+		}
+		kubeCmd := &command.KubernetesCommand{
+			Logger:    logger,
+			Clientset: clientset,
+		}
+		logger.Info("using runtime 'kubernetes'")
+		return &kubernetesRuntime{
+			cmd:          cmd,
+			kubeCmd:      kubeCmd,
+			filesStore:   filesStore,
+			cloneOptions: cloneOpts,
+			operations:   ops,
+			options:      runnerOpts.KubernetesOptions.ContainerOptions,
+		}, nil
+	}
+
 	// Default to Docker runtime.
 	if err := util.ValidateDockerTools(runner); err != nil {
 		var errMissingTools *util.ErrMissingTools
@@ -113,5 +145,17 @@ type Name string
 const (
 	NameDocker      Name = "docker"
 	NameFirecracker Name = "firecracker"
+	NameKubernetes  Name = "kubernetes"
 	NameShell       Name = "shell"
 )
+
+// CommandKey returns the fully formatted key for the command.
+func CommandKey(name Name, rawStepKey string, index int) string {
+	switch name {
+	case NameKubernetes:
+		return kubernetesKey(rawStepKey, index)
+	default:
+		// shell, docker, and firecracker all use the same key format.
+		return dockerKey(rawStepKey, index)
+	}
+}

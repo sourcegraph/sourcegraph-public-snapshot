@@ -4,7 +4,6 @@ import (
 	atypes "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -27,7 +26,7 @@ func NewAuthzProviders(
 	initResults := &atypes.ProviderInitResult{}
 	// Authorization (i.e., permissions) providers
 	for _, c := range conns {
-		pluginPerm := conf.BitbucketServerPluginPerm() || (c.Plugin != nil && c.Plugin.Permissions == "enabled")
+		pluginPerm := c.Plugin != nil && c.Plugin.Permissions == "enabled"
 		p, err := newAuthzProvider(c, pluginPerm)
 		if err != nil {
 			initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypeBitbucketServer)

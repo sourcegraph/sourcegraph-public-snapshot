@@ -1,0 +1,52 @@
+load("@aspect_rules_js//npm:defs.bzl", "npm_package")
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("@npm//:defs.bzl", "npm_link_all_packages")
+load("//dev:defs.bzl", "ts_project")
+
+npm_link_all_packages(name = "node_modules")
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:tsconfig",
+        "//client/cody-shared:tsconfig",
+        "//client/common:tsconfig",
+    ],
+)
+
+ts_project(
+    name = "cody-slack",
+    srcs = [
+        "src/app.ts",
+        "src/constants.ts",
+        "src/mention-handler.ts",
+        "src/services/codebase-context.ts",
+        "src/services/openai-completions-client.ts",
+        "src/services/sourcegraph-client.ts",
+        "src/services/stream-completions.ts",
+        "src/slack/helpers.ts",
+        "src/slack/init.ts",
+        "src/slack/message-interaction.ts",
+        "src/slack/preamble.ts",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        ":node_modules/@slack/bolt",
+        ":node_modules/@slack/web-api",
+        ":node_modules/@sourcegraph/cody-shared",
+        ":node_modules/openai",
+        "//:node_modules/@types/lodash",
+        "//:node_modules/envalid",
+        "//:node_modules/lodash",
+    ],
+)
+
+npm_package(
+    name = "cody-slack_pkg",
+    srcs = [
+        "package.json",
+        ":cody-slack",
+    ],
+)

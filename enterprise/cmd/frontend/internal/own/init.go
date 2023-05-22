@@ -15,7 +15,7 @@ import (
 // Init initializes the given enterpriseServices to include the required
 // resolvers for Sourcegraph Own.
 func Init(
-	ctx context.Context,
+	_ context.Context,
 	observationCtx *observation.Context,
 	db database.DB,
 	_ codeintel.Services,

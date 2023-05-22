@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -134,7 +135,7 @@ func TestValidateSrcCLIVersion(t *testing.T) {
 			}))
 			defer server.Close()
 
-			client, err := apiclient.NewBaseClient(apiclient.BaseClientOptions{
+			client, err := apiclient.NewBaseClient(logtest.Scoped(t), apiclient.BaseClientOptions{
 				EndpointOptions: apiclient.EndpointOptions{
 					URL: server.URL,
 				},

@@ -386,9 +386,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRangesWithContext}
                             executedQuery={context.submittedSearchQueryState.queryState.query}
                             resultClassName="mr-0"
-                            // TODO "no results" video thumbnail assets
-                            // In build, copy ui/assets/img folder to dist/
-                            assetsRoot="https://raw.githubusercontent.com/sourcegraph/sourcegraph/main/ui/assets"
                             showQueryExamplesOnNoResultsPage={true}
                             setQueryState={setUserQueryState}
                             selectedSearchContextSpec={context.selectedSearchContextSpec}

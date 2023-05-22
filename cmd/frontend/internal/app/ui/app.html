@@ -56,13 +56,6 @@
 		window.pageError = {{.Error }}
 	</script>
 	{{.Injected.HeadBottom}}
-</head>
-
-<body>
-	{{ if .Context.SourcegraphDotComMode }}
-	<!-- Google Tag Manager (noscript) -->
-	<noscript><iframe ignore-csp src="https://www.googletagmanager.com/ns.html?id=GTM-TB4NLS7" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-	<!-- End Google Tag Manager (noscript) -->
 
 	<!-- Google Search Result SearchBox -->
 	<!-- See https://developers.google.com/search/docs/advanced/structured-data/sitelinks-searchbox -->
@@ -83,6 +76,13 @@
 		}
 	</script>
 	<!-- End Google Search Result SearchBox -->
+</head>
+
+<body>
+	{{ if .Context.SourcegraphDotComMode }}
+	<!-- Google Tag Manager (noscript) -->
+	<noscript><iframe ignore-csp src="https://www.googletagmanager.com/ns.html?id=GTM-TB4NLS7" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+	<!-- End Google Tag Manager (noscript) -->
 
 	{{ end }}
 	{{.Injected.BodyTop}}

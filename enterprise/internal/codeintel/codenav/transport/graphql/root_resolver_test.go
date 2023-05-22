@@ -33,7 +33,10 @@ func TestRanges(t *testing.T) {
 
 	resolver := newGitBlobLSIFDataResolver(
 		mockCodeNavService,
+		nil,
 		mockRequestState,
+		nil,
+		nil,
 		nil,
 		mockOperations,
 	)
@@ -65,7 +68,10 @@ func TestDefinitions(t *testing.T) {
 
 	resolver := newGitBlobLSIFDataResolver(
 		mockCodeNavService,
+		nil,
 		mockRequestState,
+		nil,
+		nil,
 		nil,
 		mockOperations,
 	)
@@ -97,7 +103,10 @@ func TestReferences(t *testing.T) {
 
 	resolver := newGitBlobLSIFDataResolver(
 		mockCodeNavService,
+		nil,
 		mockRequestState,
+		nil,
+		nil,
 		nil,
 		mockOperations,
 	)
@@ -147,7 +156,10 @@ func TestReferencesDefaultLimit(t *testing.T) {
 
 	resolver := newGitBlobLSIFDataResolver(
 		mockCodeNavService,
+		nil,
 		mockRequestState,
+		nil,
+		nil,
 		nil,
 		mockOperations,
 	)
@@ -183,7 +195,10 @@ func TestReferencesDefaultIllegalLimit(t *testing.T) {
 
 	resolver := newGitBlobLSIFDataResolver(
 		mockCodeNavService,
+		nil,
 		mockRequestState,
+		nil,
+		nil,
 		nil,
 		mockOperations,
 	)
@@ -213,7 +228,10 @@ func TestHover(t *testing.T) {
 
 	resolver := newGitBlobLSIFDataResolver(
 		mockCodeNavService,
+		nil,
 		mockRequestState,
+		nil,
+		nil,
 		nil,
 		mockOperations,
 	)
@@ -246,7 +264,10 @@ func TestDiagnostics(t *testing.T) {
 
 	resolver := newGitBlobLSIFDataResolver(
 		mockCodeNavService,
+		nil,
 		mockRequestState,
+		nil,
+		nil,
 		nil,
 		mockOperations,
 	)
@@ -279,7 +300,10 @@ func TestDiagnosticsDefaultLimit(t *testing.T) {
 
 	resolver := newGitBlobLSIFDataResolver(
 		mockCodeNavService,
+		nil,
 		mockRequestState,
+		nil,
+		nil,
 		nil,
 		mockOperations,
 	)
@@ -309,7 +333,10 @@ func TestDiagnosticsDefaultIllegalLimit(t *testing.T) {
 
 	resolver := newGitBlobLSIFDataResolver(
 		mockCodeNavService,
+		nil,
 		mockRequestState,
+		nil,
+		nil,
 		nil,
 		mockOperations,
 	)

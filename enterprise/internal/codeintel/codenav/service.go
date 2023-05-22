@@ -1,11 +1,13 @@
 package codenav
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"strings"
 
-	traceLog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/lsifstore"
@@ -49,17 +51,15 @@ func newService(
 
 // GetHover returns the set of locations defining the symbol at the given position.
 func (s *Service) GetHover(ctx context.Context, args RequestArgs, requestState RequestState) (_ string, _ shared.Range, _ bool, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getHover, serviceObserverThreshold, observation.Args{
-		LogFields: []traceLog.Field{
-			traceLog.Int("repositoryID", args.RepositoryID),
-			traceLog.String("commit", args.Commit),
-			traceLog.String("path", args.Path),
-			traceLog.Int("numUploads", len(requestState.GetCacheUploads())),
-			traceLog.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
-			traceLog.Int("line", args.Line),
-			traceLog.Int("character", args.Character),
-		},
-	})
+	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getHover, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", args.RepositoryID),
+		attribute.String("commit", args.Commit),
+		attribute.String("path", args.Path),
+		attribute.Int("numUploads", len(requestState.GetCacheUploads())),
+		attribute.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
+		attribute.Int("line", args.Line),
+		attribute.Int("character", args.Character),
+	}})
 	defer endObservation()
 
 	adjustedUploads, err := s.getVisibleUploads(ctx, args.Line, args.Character, requestState)
@@ -175,17 +175,15 @@ func (s *Service) GetHover(ctx context.Context, args RequestArgs, requestState R
 
 // GetReferences returns the list of source locations that reference the symbol at the given position.
 func (s *Service) GetReferences(ctx context.Context, args RequestArgs, requestState RequestState, cursor ReferencesCursor) (_ []shared.UploadLocation, _ ReferencesCursor, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getReferences, serviceObserverThreshold, observation.Args{
-		LogFields: []traceLog.Field{
-			traceLog.Int("repositoryID", args.RepositoryID),
-			traceLog.String("commit", args.Commit),
-			traceLog.String("path", args.Path),
-			traceLog.Int("numUploads", len(requestState.GetCacheUploads())),
-			traceLog.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
-			traceLog.Int("line", args.Line),
-			traceLog.Int("character", args.Character),
-		},
-	})
+	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getReferences, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", args.RepositoryID),
+		attribute.String("commit", args.Commit),
+		attribute.String("path", args.Path),
+		attribute.Int("numUploads", len(requestState.GetCacheUploads())),
+		attribute.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
+		attribute.Int("line", args.Line),
+		attribute.Int("character", args.Character),
+	}})
 	defer endObservation()
 
 	// Adjust the path and position for each visible upload based on its git difference to
@@ -652,17 +650,15 @@ func (s *Service) getBulkMonikerLocations(ctx context.Context, uploads []uploads
 const DefinitionsLimit = 100
 
 func (s *Service) GetImplementations(ctx context.Context, args RequestArgs, requestState RequestState, cursor ImplementationsCursor) (_ []shared.UploadLocation, _ ImplementationsCursor, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getImplementations, serviceObserverThreshold, observation.Args{
-		LogFields: []traceLog.Field{
-			traceLog.Int("repositoryID", args.RepositoryID),
-			traceLog.String("commit", args.Commit),
-			traceLog.String("path", args.Path),
-			traceLog.Int("numUploads", len(requestState.GetCacheUploads())),
-			traceLog.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
-			traceLog.Int("line", args.Line),
-			traceLog.Int("character", args.Character),
-		},
-	})
+	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getImplementations, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", args.RepositoryID),
+		attribute.String("commit", args.Commit),
+		attribute.String("path", args.Path),
+		attribute.Int("numUploads", len(requestState.GetCacheUploads())),
+		attribute.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
+		attribute.Int("line", args.Line),
+		attribute.Int("character", args.Character),
+	}})
 	defer endObservation()
 
 	// Adjust the path and position for each visible upload based on its git difference to
@@ -710,39 +706,13 @@ func (s *Service) GetImplementations(ctx context.Context, args RequestArgs, requ
 			locations = append(locations, localLocations...)
 
 			if !hasMore {
-				cursor.Phase = "dependencies"
+				cursor.Phase = "dependents"
 				break
 			}
 		}
 	}
 
-	// Phase 2: Gather all "remote" locations in dependencies via moniker search. We only do this if
-	// there are no more local results. We'll continue to request additional locations until we fill an
-	// entire page or there are no more local results remaining, just as we did above.
-	if cursor.Phase == "dependencies" {
-		uploads, err := s.getUploadsWithDefinitionsForMonikers(ctx, cursor.OrderedImplementationMonikers, requestState)
-		if err != nil {
-			return nil, cursor, err
-		}
-		trace.AddEvent("TODO Domain Owner",
-			attribute.Int("numGetUploadsWithDefinitionsForMonikers", len(uploads)),
-			attribute.String("getUploadsWithDefinitionsForMonikers", uploadIDsToString(uploads)))
-
-		definitionLocations, _, err := s.getBulkMonikerLocations(ctx, uploads, cursor.OrderedImplementationMonikers, "definitions", DefinitionsLimit, 0)
-		if err != nil {
-			return nil, cursor, err
-		}
-		locations = append(locations, definitionLocations...)
-
-		implementationLocations, _, err := s.getBulkMonikerLocations(ctx, uploads, cursor.OrderedImplementationMonikers, "implementations", DefinitionsLimit, 0)
-		if err != nil {
-			return nil, cursor, err
-		}
-		locations = append(locations, implementationLocations...)
-
-		cursor.Phase = "dependents"
-	}
-
+	// Phase 2: Is skipped as it seems redundant to gathering all "dependencies" from a SCIP document.
 	// Phase 3: Gather all "remote" locations in dependents via moniker search.
 	if cursor.Phase == "dependents" {
 		for len(locations) < args.Limit {
@@ -774,19 +744,95 @@ func (s *Service) GetImplementations(ctx context.Context, args RequestArgs, requ
 	return implementationLocations, cursor, nil
 }
 
+func (s *Service) GetPrototypes(ctx context.Context, args RequestArgs, requestState RequestState, cursor ImplementationsCursor) (_ []shared.UploadLocation, _ ImplementationsCursor, err error) {
+	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getImplementations, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", args.RepositoryID),
+		attribute.String("commit", args.Commit),
+		attribute.String("path", args.Path),
+		attribute.Int("numUploads", len(requestState.GetCacheUploads())),
+		attribute.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
+		attribute.Int("line", args.Line),
+		attribute.Int("character", args.Character),
+	}})
+	defer endObservation()
+
+	// Adjust the path and position for each visible upload based on its git difference to
+	// the target commit. This data may already be stashed in the cursor decoded above, in
+	// which case we don't need to hit the database.
+	visibleUploads, cursorsToVisibleUploads, err := s.getVisibleUploadsFromCursor(ctx, args.Line, args.Character, &cursor.CursorsToVisibleUploads, requestState)
+	if err != nil {
+		return nil, cursor, err
+	}
+
+	// Update the cursors with the updated visible uploads.
+	cursor.CursorsToVisibleUploads = cursorsToVisibleUploads
+
+	// Gather all monikers attached to the ranges enclosing the requested position. This data
+	// may already be stashed in the cursor decoded above, in which case we don't need to hit
+	// the database.
+	if cursor.OrderedImplementationMonikers == nil {
+		if cursor.OrderedImplementationMonikers, err = s.getOrderedMonikers(ctx, visibleUploads, precise.Implementation, "import", "export"); err != nil {
+			return nil, cursor, err
+		}
+	}
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numImplementationMonikers", len(cursor.OrderedImplementationMonikers)),
+		attribute.String("implementationMonikers", monikersToString(cursor.OrderedImplementationMonikers)))
+
+	if cursor.OrderedExportMonikers == nil {
+		if cursor.OrderedExportMonikers, err = s.getOrderedMonikers(ctx, visibleUploads, "export"); err != nil {
+			return nil, cursor, err
+		}
+	}
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numExportMonikers", len(cursor.OrderedExportMonikers)),
+		attribute.String("exportMonikers", monikersToString(cursor.OrderedExportMonikers)))
+
+	// Phase 1: Gather all "local" locations via LSIF graph traversal. We'll continue to request additional
+	// locations until we fill an entire page (the size of which is denoted by the given limit) or there are
+	// no more local results remaining.
+	var locations []shared.Location
+	if cursor.Phase == "local" {
+		for len(locations) < args.Limit {
+			localLocations, hasMore, err := s.getPageLocalLocations(ctx, s.lsifstore.GetPrototypeLocations, visibleUploads, &cursor.LocalCursor, args.Limit-len(locations), trace)
+			if err != nil {
+				return nil, cursor, err
+			}
+			locations = append(locations, localLocations...)
+
+			if !hasMore {
+				cursor.Phase = "done"
+				break
+			}
+		}
+	}
+
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numLocations", len(locations)))
+
+	// Adjust the locations back to the appropriate range in the target commits. This adjusts
+	// locations within the repository the user is browsing so that it appears all implementations
+	// are occurring at the same commit they are looking at.
+
+	prototypeLocations, err := s.getUploadLocations(ctx, args, requestState, locations, true)
+	if err != nil {
+		return nil, cursor, err
+	}
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numPrototypesLocations", len(prototypeLocations)))
+
+	return prototypeLocations, cursor, nil
+}
+
 // GetDefinitions returns the set of locations defining the symbol at the given position.
 func (s *Service) GetDefinitions(ctx context.Context, args RequestArgs, requestState RequestState) (_ []shared.UploadLocation, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getDefinitions, serviceObserverThreshold, observation.Args{
-		LogFields: []traceLog.Field{
-			traceLog.Int("repositoryID", args.RepositoryID),
-			traceLog.String("commit", args.Commit),
-			traceLog.String("path", args.Path),
-			traceLog.Int("numUploads", len(requestState.GetCacheUploads())),
-			traceLog.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
-			traceLog.Int("line", args.Line),
-			traceLog.Int("character", args.Character),
-		},
-	})
+	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getDefinitions, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", args.RepositoryID),
+		attribute.String("commit", args.Commit),
+		attribute.String("path", args.Path),
+		attribute.Int("numUploads", len(requestState.GetCacheUploads())),
+		attribute.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
+		attribute.Int("line", args.Line),
+		attribute.Int("character", args.Character),
+	}})
 	defer endObservation()
 
 	// Adjust the path and position for each visible upload based on its git difference to
@@ -861,16 +907,14 @@ func (s *Service) GetDefinitions(ctx context.Context, args RequestArgs, requestS
 }
 
 func (s *Service) GetDiagnostics(ctx context.Context, args RequestArgs, requestState RequestState) (diagnosticsAtUploads []DiagnosticAtUpload, _ int, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getDiagnostics, serviceObserverThreshold, observation.Args{
-		LogFields: []traceLog.Field{
-			traceLog.Int("repositoryID", args.RepositoryID),
-			traceLog.String("commit", args.Commit),
-			traceLog.String("path", args.Path),
-			traceLog.Int("numUploads", len(requestState.GetCacheUploads())),
-			traceLog.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
-			traceLog.Int("limit", args.Limit),
-		},
-	})
+	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getDiagnostics, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", args.RepositoryID),
+		attribute.String("commit", args.Commit),
+		attribute.String("path", args.Path),
+		attribute.Int("numUploads", len(requestState.GetCacheUploads())),
+		attribute.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
+		attribute.Int("limit", args.Limit),
+	}})
 	defer endObservation()
 
 	visibleUploads, err := s.getUploadPaths(ctx, args.Path, requestState)
@@ -970,6 +1014,30 @@ func (s *Service) getRequestedCommitDiagnostic(ctx context.Context, args Request
 	}, nil
 }
 
+func (s *Service) VisibleUploadsForPath(ctx context.Context, requestState RequestState) (dumps []uploadsshared.Dump, err error) {
+	ctx, _, endObservation := s.operations.visibleUploadsForPath.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("path", requestState.Path),
+		attribute.String("commit", requestState.Commit),
+		attribute.Int("repositoryID", requestState.RepositoryID),
+	}})
+	defer func() {
+		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
+			attribute.Int("numUploads", len(dumps)),
+		}})
+	}()
+
+	visibleUploads, err := s.getUploadPaths(ctx, requestState.Path, requestState)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, upload := range visibleUploads {
+		dumps = append(dumps, upload.Upload)
+	}
+
+	return
+}
+
 // getUploadPaths adjusts the current target path for each upload visible from the current target
 // commit. If an upload cannot be adjusted, it will be omitted from the returned slice.
 func (s *Service) getUploadPaths(ctx context.Context, path string, requestState RequestState) ([]visibleUpload, error) {
@@ -995,17 +1063,15 @@ func (s *Service) getUploadPaths(ctx context.Context, path string, requestState 
 }
 
 func (s *Service) GetRanges(ctx context.Context, args RequestArgs, requestState RequestState, startLine, endLine int) (adjustedRanges []AdjustedCodeIntelligenceRange, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getRanges, serviceObserverThreshold, observation.Args{
-		LogFields: []traceLog.Field{
-			traceLog.Int("repositoryID", args.RepositoryID),
-			traceLog.String("commit", args.Commit),
-			traceLog.String("path", args.Path),
-			traceLog.Int("numUploads", len(requestState.GetCacheUploads())),
-			traceLog.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
-			traceLog.Int("startLine", startLine),
-			traceLog.Int("endLine", endLine),
-		},
-	})
+	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getRanges, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", args.RepositoryID),
+		attribute.String("commit", args.Commit),
+		attribute.String("path", args.Path),
+		attribute.Int("numUploads", len(requestState.GetCacheUploads())),
+		attribute.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
+		attribute.Int("startLine", startLine),
+		attribute.Int("endLine", endLine),
+	}})
 	defer endObservation()
 
 	uploadsWithPath, err := s.getUploadPaths(ctx, args.Path, requestState)
@@ -1079,15 +1145,13 @@ func (s *Service) getCodeIntelligenceRange(ctx context.Context, args RequestArgs
 
 // GetStencil returns the set of locations defining the symbol at the given position.
 func (s *Service) GetStencil(ctx context.Context, args RequestArgs, requestState RequestState) (adjustedRanges []shared.Range, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getStencil, serviceObserverThreshold, observation.Args{
-		LogFields: []traceLog.Field{
-			traceLog.Int("repositoryID", args.RepositoryID),
-			traceLog.String("commit", args.Commit),
-			traceLog.String("path", args.Path),
-			traceLog.Int("numUploads", len(requestState.GetCacheUploads())),
-			traceLog.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
-		},
-	})
+	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getStencil, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", args.RepositoryID),
+		attribute.String("commit", args.Commit),
+		attribute.String("path", args.Path),
+		attribute.Int("numUploads", len(requestState.GetCacheUploads())),
+		attribute.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
+	}})
 	defer endObservation()
 
 	adjustedUploads, err := s.getUploadPaths(ctx, args.Path, requestState)
@@ -1131,15 +1195,13 @@ func (s *Service) GetDumpsByIDs(ctx context.Context, ids []int) ([]uploadsshared
 }
 
 func (s *Service) GetClosestDumpsForBlob(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []uploadsshared.Dump, err error) {
-	ctx, trace, endObservation := s.operations.getClosestDumpsForBlob.With(ctx, &err, observation.Args{
-		LogFields: []traceLog.Field{
-			traceLog.Int("repositoryID", repositoryID),
-			traceLog.String("commit", commit),
-			traceLog.String("path", path),
-			traceLog.Bool("exactPath", exactPath),
-			traceLog.String("indexer", indexer),
-		},
-	})
+	ctx, trace, endObservation := s.operations.getClosestDumpsForBlob.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
+		attribute.String("commit", commit),
+		attribute.String("path", path),
+		attribute.Bool("exactPath", exactPath),
+		attribute.String("indexer", indexer),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	candidates, err := s.uploadSvc.InferClosestUploads(ctx, repositoryID, commit, path, exactPath, indexer)
@@ -1307,4 +1369,105 @@ func (s *Service) getVisibleUpload(ctx context.Context, line, character int, upl
 		TargetPosition:        targetPosition,
 		TargetPathWithoutRoot: strings.TrimPrefix(targetPath, upload.Root),
 	}, true, nil
+}
+
+func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, commit, path string, uploadID int) (data []shared.SnapshotData, err error) {
+	ctx, _, endObservation := s.operations.snapshotForDocument.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repoID", repositoryID),
+		attribute.String("commit", commit),
+		attribute.String("path", path),
+		attribute.Int("uploadID", uploadID),
+	}})
+	defer func() {
+		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
+			attribute.Int("snapshotSymbols", len(data)),
+		}})
+	}()
+
+	dumps, err := s.GetDumpsByIDs(ctx, []int{uploadID})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(dumps) == 0 {
+		return nil, nil
+	}
+
+	dump := dumps[0]
+
+	document, err := s.lsifstore.SCIPDocument(ctx, dump.ID, strings.TrimPrefix(path, dump.Root))
+	if err != nil || document == nil {
+		return nil, err
+	}
+
+	file, err := s.gitserver.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, api.RepoName(dump.RepositoryName), api.CommitID(dump.Commit), path)
+	if err != nil {
+		return nil, err
+	}
+
+	repo, err := s.repoStore.Get(ctx, api.RepoID(dump.RepositoryID))
+	if err != nil {
+		return nil, err
+	}
+
+	// cache is keyed by repoID:sourceCommit:targetCommit:path, so we only need a size of 1
+	hunkcache, err := NewHunkCache(1)
+	if err != nil {
+		return nil, err
+	}
+	gittranslator := NewGitTreeTranslator(s.gitserver, &requestArgs{
+		repo:   repo,
+		commit: commit,
+		path:   path,
+	}, hunkcache)
+
+	linemap := newLinemap(string(file))
+	formatter := scip.LenientVerboseSymbolFormatter
+	// symtab := document.SymbolTable()
+
+	for _, occ := range document.Occurrences {
+		formatted, err := formatter.Format(occ.Symbol)
+		if err != nil {
+			formatted = fmt.Sprintf("error formatting %q", occ.Symbol)
+		}
+
+		originalRange := scip.NewRange(occ.Range)
+
+		lineOffset := int32(linemap.positions[originalRange.Start.Line])
+		line := file[lineOffset : lineOffset+originalRange.Start.Character]
+
+		tabCount := bytes.Count(line, []byte("\t"))
+
+		var snap strings.Builder
+		snap.WriteString(strings.Repeat(" ", (int(originalRange.Start.Character)-tabCount)+(tabCount*4)))
+		snap.WriteString(strings.Repeat("^", int(originalRange.End.Character-originalRange.Start.Character)))
+		snap.WriteRune(' ')
+
+		if occ.SymbolRoles&int32(scip.SymbolRole_Definition) > 0 {
+			snap.WriteString("definition")
+		} else {
+			snap.WriteString("reference")
+		}
+		snap.WriteRune(' ')
+		snap.WriteString(formatted)
+
+		_, newRange, ok, err := gittranslator.GetTargetCommitPositionFromSourcePosition(ctx, dump.Commit, shared.Position{
+			Line:      int(originalRange.Start.Line),
+			Character: int(originalRange.Start.Character),
+		}, false)
+		if err != nil {
+			return nil, err
+		}
+		// if the line was changed, then we're not providing precise codeintel for this line, so skip it
+		if !ok {
+			continue
+		}
+
+		data = append(data, shared.SnapshotData{
+			DocumentOffset: linemap.positions[newRange.Line+1],
+			Symbol:         snap.String(),
+		})
+	}
+
+	return
 }

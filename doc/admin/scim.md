@@ -49,7 +49,7 @@ To configure:
 
 To set up user provisioning in [Okta](https://help.okta.com/en-us/Content/Topics/Apps/Apps_App_Integration_Wizard_SCIM.htm), you must first set up a new app integration of the "SAML 2.0" type, then configure it to use SCIM. Here are the steps to do this:
 
-1. Follow our [SAML guide](auth/saml/okta) to set up a new app integration with SAML, then open the integration you just created.
+1. Follow our [SAML guide](auth/saml/okta.md) to set up a new app integration with SAML, then open the integration you just created.
     - If you already have the integration, just open your existing app integration.
 1. Go to the "General" tab and click "Edit" in the "App Settings" section.
 1. Set "Provisioning" to "SCIM". This creates a new tab called "Provisioning".
@@ -60,9 +60,9 @@ To set up user provisioning in [Okta](https://help.okta.com/en-us/Content/Topics
 1. Set "Authentication mode" to "HTTP Header"
 1. Under "HTTP Header", paste the same alphanumeric bearer token you used in your site config.
 1. Click "Test Connection Configuration" (first four items should be green—the user-related ones), then "Save".
-1. Switch to "Provisioning" → "To App" and click "Edit". Enable "Create Users" and "Update User Attributes". Only enable "Deactivate Users" if you acknowledge that we don't currently support soft deletion, and users will be deleted in Sourcegraph when they are deactivated in Okta.
+1. Switch to "Provisioning" → "To App" and click "Edit". Enable "Create Users", "Update User Attributes" and "Deactivate Users".
 
-> NOTE: You can also use our [SAML](auth/saml/okta) and [OpenID Connect](auth#openid-connect) integrations with Okta.
+> NOTE: You can also use our [SAML](auth/saml/okta.md) and [OpenID Connect](auth.md#openid-connect) integrations with Okta.
 
 ## Features and limitations
 
@@ -101,5 +101,4 @@ We support the following SCIM 2.0 features:
 - ❌ Sorting – when listing users
 - ❌ Entity tags (ETags)
 - ❌ Multi-tenancy – you can only have 1 SCIM client configured at a time.
-- ❌ Soft delete – Currently, we do not support soft deletion through SCIM. When a user is deleted (typically, when removed from a group of users who can access Sourcegraph), we **permanently delete** their user in Sourcegraph. This means that if the user is re-added to such a group, their settings will be reset.
 - ❌ Tests with many IdPs – we’ve only validated the endpoint with Okta and Azure AD.

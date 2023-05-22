@@ -7,6 +7,10 @@
     margin-top: 0.5rem;
     margin-bottom: 0.5rem;
 
+    @media (--md-breakpoint-up) {
+        min-width: 800px;
+    }
+
     :global(.navbar-nav) {
         white-space: nowrap;
 

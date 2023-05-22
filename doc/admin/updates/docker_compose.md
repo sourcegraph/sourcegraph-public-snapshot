@@ -20,6 +20,18 @@ This page lists the changes that are relevant for [upgrading Sourcegraph on Dock
 
 <!-- Add changes changes to this section before release. -->
 
+## v5.0.3 ➔ v5.0.4
+
+#### Notes:
+
+## v5.0.2 ➔ v5.0.3
+
+#### Notes:
+
+## v5.0.1 ➔ v5.0.2
+
+#### Notes:
+
 ## v5.0.0 ➔ v5.0.1
 
 #### Notes:
@@ -36,7 +48,7 @@ This page lists the changes that are relevant for [upgrading Sourcegraph on Dock
 
 #### Notes:
 
-This release introduces a background job that will convert all LSIF data into SCIP. **This migration is irreversible** and a rollback from this version may result in loss of precise code intelligence data. Please see the [migration notes](/admin/how-to/lsif_scip_migration) for more details.
+This release introduces a background job that will convert all LSIF data into SCIP. **This migration is irreversible** and a rollback from this version may result in loss of precise code intelligence data. Please see the [migration notes](../how-to/lsif_scip_migration.md) for more details.
 
 ## v4.4.1 ➔ v4.4.2
 

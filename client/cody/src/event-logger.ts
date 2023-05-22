@@ -1,26 +1,49 @@
-import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { EventLogger } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
 
-import { LocalStorage } from './command/LocalStorageProvider'
-import { sanitizeServerEndpoint } from './sanitize'
-import { SecretStorage, getAccessToken } from './secret-storage'
+import { version as packageVersion } from '../package.json'
 
+import { LocalStorage } from './services/LocalStorageProvider'
+
+let eventLoggerGQLClient: SourcegraphGraphQLAPIClient
 let eventLogger: EventLogger | null = null
+let anonymousUserID: string | null
 
 export async function updateEventLogger(
-    config: Configuration,
-    secretStorage: SecretStorage,
+    config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>,
     localStorage: LocalStorage
 ): Promise<void> {
-    const accessToken = await getAccessToken(secretStorage)
-    const gqlAPIClient = new SourcegraphGraphQLAPIClient(sanitizeServerEndpoint(config.serverEndpoint), accessToken)
-    eventLogger = await EventLogger.create(localStorage, gqlAPIClient)
+    await localStorage.setAnonymousUserID()
+    if (!eventLoggerGQLClient) {
+        eventLoggerGQLClient = new SourcegraphGraphQLAPIClient(config)
+        eventLogger = EventLogger.create(eventLoggerGQLClient)
+        await logCodyInstalled()
+    } else {
+        eventLoggerGQLClient.onConfigurationChange(config)
+    }
 }
 
 export function logEvent(eventName: string, eventProperties?: any, publicProperties?: any): void {
-    if (!eventLogger) {
+    if (!eventLogger || !anonymousUserID) {
         return
     }
-    void eventLogger.log(eventName, eventProperties, publicProperties)
+
+    const argument = {
+        ...eventProperties,
+        version: packageVersion,
+    }
+
+    const publicArgument = {
+        ...publicProperties,
+        version: packageVersion,
+    }
+    void eventLogger.log(eventName, anonymousUserID, argument, publicArgument)
+}
+
+export async function logCodyInstalled(): Promise<void> {
+    if (!eventLogger || !anonymousUserID) {
+        return
+    }
+    await eventLogger.log('CodyInstalled', anonymousUserID)
 }

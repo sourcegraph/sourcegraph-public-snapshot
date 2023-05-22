@@ -307,6 +307,7 @@ const oldUISelectors: UISelectors = {
     blobContainer: '.js-file-line-container',
 }
 
+// new GitHub code view: https://docs.github.com/en/repositories/working-with-files/managing-files/navigating-files-with-the-new-code-view
 const newUISelectors: UISelectors = {
     codeCell: '.react-code-line-contents',
     blobContainer: '.react-code-lines',
@@ -318,6 +319,9 @@ const newUISelectors: UISelectors = {
 export const getSelectorFor = (key: keyof UISelectors): string => `${oldUISelectors[key]}, ${newUISelectors[key]}`
 
 interface GitHubEmbeddedData {
+    repo: {
+        private: boolean
+    }
     refInfo: {
         name: string
         currentOid: string

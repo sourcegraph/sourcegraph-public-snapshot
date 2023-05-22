@@ -15,8 +15,11 @@ Sourcegraph supports the following ways for users to sign in:
 - [Username normalization](#username-normalization)
 - [Troubleshooting](#troubleshooting)
 
-The authentication provider is configured in the [`auth.providers`](../config/site_config.md#authentication-providers) site configuration option.
+The authentication providers are configured in the [`auth.providers`](../config/site_config.md#authentication-providers) site configuration option.
 
+## Login form configuration
+
+To configure the presentation of the login form, see the [login form configuration page](./login_form.md).
 ## Recommendations
 
 If you are unsure which auth provider is right for you, we recommend applying the following rules in
@@ -335,7 +338,7 @@ Sourcegraph instance:
   - `Repositories`: `Read` (more information in [repository permissions section](../permissions/index.md))
 
 After the consumer is created, you will need the `Key` and the `Secret`, which can be found by expanding OAuth consumer in the list.
-Then add the following lines to your [site configuration](config/site_config.md):
+Then add the following lines to your [site configuration](../config/site_config.md):
 
 ```json
 {
@@ -356,7 +359,7 @@ Replace the `clientKey` and `clientSecret` values with the values from your Bitb
 <span class="badge badge-beta">Beta</span>
 
 To enable users to add Gerrit credentials and verify their access to repositories on Sourcegraph,
-add the following lines to your [site configuration](config/site_config.md):
+add the following lines to your [site configuration](../config/site_config.md):
 
 ```json
 {

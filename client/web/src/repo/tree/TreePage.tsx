@@ -16,7 +16,7 @@ import classNames from 'classnames'
 import { Navigate } from 'react-router-dom'
 import { catchError } from 'rxjs/operators'
 
-import { asError, encodeURIPathComponent, ErrorLike, isErrorLike, logger } from '@sourcegraph/common'
+import { asError, encodeURIPathComponent, ErrorLike, isErrorLike, logger, basename } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
@@ -37,11 +37,11 @@ import {
     Link,
     LoadingSpinner,
     PageHeader,
-    Text,
     Tooltip,
     useObservable,
 } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
 import { RepoBatchChangesButton } from '../../batches/RepoBatchChangesButton'
 import { CodeIntelligenceProps } from '../../codeintel'
@@ -50,7 +50,6 @@ import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { RepositoryFields } from '../../graphql-operations'
 import { OwnConfigProps } from '../../own/OwnConfigProps'
-import { basename } from '../../util/path'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { isPackageServiceType } from '../packages/isPackageServiceType'
 
@@ -76,6 +75,7 @@ export interface Props
     revision: string
     isSourcegraphDotCom: boolean
     className?: string
+    authenticatedUser: AuthenticatedUser | null
 }
 
 export const treePageRepositoryFragment = gql`
@@ -85,6 +85,11 @@ export const treePageRepositoryFragment = gql`
         description
         viewerCanAdminister
         url
+        metadata {
+            key
+            value
+        }
+        sourceType
     }
 `
 
@@ -223,18 +228,17 @@ export const TreePage: FC<Props> = ({
                         <Icon aria-hidden={true} svgPath={getIcon()} className="mr-2" />
                         <span data-testid="repo-header">{displayRepoName(repo?.name || '')}</span>
                         {repo?.isFork && (
-                            <Badge variant="outlineSecondary" className="mx-2 mt-2" data-testid="repo-fork-badge">
+                            <Badge variant="outlineSecondary" className="mx-2 mt-1" data-testid="repo-fork-badge">
                                 Fork
                             </Badge>
                         )}
                     </PageHeader.Heading>
                 </PageHeader>
-                {repo?.description && <Text>{repo.description}</Text>}
             </div>
             <div className={styles.menu}>
                 <ButtonGroup>
                     {!isPackage && (
-                        <Tooltip content="Branches">
+                        <Tooltip content="Git branches">
                             <Button
                                 className="flex-shrink-0"
                                 to={`/${encodeURIPathComponent(repoName)}/-/branches`}
@@ -247,7 +251,7 @@ export const TreePage: FC<Props> = ({
                             </Button>
                         </Tooltip>
                     )}
-                    <Tooltip content={isPackage ? 'Versions' : 'Tags'}>
+                    <Tooltip content={isPackage ? 'Package versions' : 'Git tags'}>
                         <Button
                             className="flex-shrink-0"
                             to={`/${encodeURIPathComponent(repoName)}/-${isPackage ? '/versions' : '/tags'}`}
@@ -259,7 +263,7 @@ export const TreePage: FC<Props> = ({
                             <span className={styles.text}>{isPackage ? 'Versions' : 'Tags'}</span>
                         </Button>
                     </Tooltip>
-                    <Tooltip content="Compare">
+                    <Tooltip content="Compare branches">
                         <Button
                             className="flex-shrink-0"
                             to={
@@ -301,7 +305,7 @@ export const TreePage: FC<Props> = ({
                         </Tooltip>
                     )}
                     {showOwnership && (
-                        <Tooltip content="Ownership">
+                        <Tooltip content="Repository ownership settings">
                             <Button
                                 className="flex-shrink-0"
                                 to={`/${encodeURIPathComponent(repoName)}/-/own`}
@@ -316,7 +320,7 @@ export const TreePage: FC<Props> = ({
                         </Tooltip>
                     )}
                     {repo?.viewerCanAdminister && (
-                        <Tooltip content="Settings">
+                        <Tooltip content="Repository settings">
                             <Button
                                 className="flex-shrink-0"
                                 to={`/${encodeURIPathComponent(repoName)}/-/settings`}
@@ -325,7 +329,7 @@ export const TreePage: FC<Props> = ({
                                 as={Link}
                                 aria-label="Repository settings"
                             >
-                                <Icon aria-hidden={true} svgPath={mdiCog} />
+                                <Icon aria-hidden={true} svgPath={mdiCog} />{' '}
                                 <span className={styles.text}>Settings</span>
                             </Button>
                         </Tooltip>

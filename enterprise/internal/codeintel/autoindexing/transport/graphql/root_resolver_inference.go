@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"strings"
 
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -19,10 +19,10 @@ import (
 
 // 🚨 SECURITY: Only site admins may infer auto-index jobs
 func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.InferAutoIndexJobsForRepoArgs) (_ []resolverstubs.AutoIndexJobDescriptionResolver, err error) {
-	ctx, _, endObservation := r.operations.inferAutoIndexJobsForRepo.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repository", string(args.Repository)),
-		log.String("rev", resolverstubs.Deref(args.Rev, "")),
-		log.String("script", resolverstubs.Deref(args.Script, "")),
+	ctx, _, endObservation := r.operations.inferAutoIndexJobsForRepo.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repository", string(args.Repository)),
+		attribute.String("rev", resolverstubs.Deref(args.Rev, "")),
+		attribute.String("script", resolverstubs.Deref(args.Script, "")),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -63,10 +63,10 @@ func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *reso
 
 // 🚨 SECURITY: Only site admins may queue auto-index jobs
 func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.QueueAutoIndexJobsForRepoArgs) (_ []resolverstubs.PreciseIndexResolver, err error) {
-	ctx, traceErrs, endObservation := r.operations.queueAutoIndexJobsForRepo.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repository", string(args.Repository)),
-		log.String("rev", resolverstubs.Deref(args.Rev, "")),
-		log.String("configuration", resolverstubs.Deref(args.Configuration, "")),
+	ctx, traceErrs, endObservation := r.operations.queueAutoIndexJobsForRepo.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repository", string(args.Repository)),
+		attribute.String("rev", resolverstubs.Deref(args.Rev, "")),
+		attribute.String("configuration", resolverstubs.Deref(args.Configuration, "")),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -97,17 +97,20 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 		return nil, err
 	}
 
-	prefetcher := r.prefetcherFactory.Create()
-	locationResolver := r.locationResolverFactory.Create()
+	// Create index loader with data we already have
+	indexLoader := r.indexLoaderFactory.CreateWithInitialData(indexes)
 
-	for _, index := range indexes {
-		prefetcher.MarkIndex(index.ID)
-	}
+	// Pre-submit associated upload ids for subsequent loading
+	uploadLoader := r.uploadLoaderFactory.Create()
+	uploadsgraphql.PresubmitAssociatedUploads(uploadLoader, indexes...)
+
+	// No data to load for git data (yet)
+	locationResolver := r.locationResolverFactory.Create()
 
 	resolvers := make([]resolverstubs.PreciseIndexResolver, 0, len(indexes))
 	for _, index := range indexes {
 		index := index
-		resolver, err := r.preciseIndexResolverFactory.Create(ctx, prefetcher, locationResolver, traceErrs, nil, &index)
+		resolver, err := r.preciseIndexResolverFactory.Create(ctx, uploadLoader, indexLoader, locationResolver, traceErrs, nil, &index)
 		if err != nil {
 			return nil, err
 		}

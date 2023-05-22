@@ -15,10 +15,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+const maxMessageSizeBytes = 64 * 1024 * 1024 // 64MiB
 
 var addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "src_gitserver_addr_for_repo_invoked",
@@ -37,19 +41,76 @@ func NewGitserverAddressesFromConf(cfg *conf.Unified) GitserverAddresses {
 	return addrs
 }
 
-func newTestGitserverConns(addrs []string) *GitserverConns {
+type TestClientSourceOptions struct {
+	// ClientFunc is the function that is used to return a gRPC client
+	// given the provided connection.
+	ClientFunc func(conn *grpc.ClientConn) proto.GitserverServiceClient
+
+	// Logger is the log.Logger instance that the test ClientSource will use to
+	// log various metadata to.
+	Logger log.Logger
+}
+
+func NewTestClientSource(addrs []string, options ...func(o *TestClientSourceOptions)) ClientSource {
+	opts := TestClientSourceOptions{
+		ClientFunc: func(conn *grpc.ClientConn) proto.GitserverServiceClient {
+			return proto.NewGitserverServiceClient(conn)
+		},
+
+		Logger: log.Scoped("test gitserver client source", ""),
+	}
+
+	for _, o := range options {
+		o(&opts)
+	}
+
 	conns := make(map[string]connAndErr)
 	for _, addr := range addrs {
-		conn, err := defaults.Dial(addr)
+		conn, err := defaults.Dial(addr, opts.Logger)
 		conns[addr] = connAndErr{conn: conn, err: err}
 	}
-	return &GitserverConns{
-		GitserverAddresses: GitserverAddresses{
-			Addresses: addrs,
+
+	source := testGitserverConns{
+		conns: &GitserverConns{
+			GitserverAddresses: GitserverAddresses{
+				Addresses: addrs,
+			},
+			grpcConns: conns,
 		},
-		grpcConns: conns,
+
+		clientFunc: opts.ClientFunc,
 	}
+
+	return &source
 }
+
+type testGitserverConns struct {
+	conns *GitserverConns
+
+	clientFunc func(conn *grpc.ClientConn) proto.GitserverServiceClient
+}
+
+// AddrForRepo returns the gitserver address to use for the given repo name.
+func (c *testGitserverConns) AddrForRepo(userAgent string, repo api.RepoName) string {
+	return c.conns.AddrForRepo(userAgent, repo)
+}
+
+// Addresses returns the current list of gitserver addresses.
+func (c *testGitserverConns) Addresses() []string {
+	return c.conns.Addresses
+}
+
+// ClientForRepo returns a client or host for the given repo name.
+func (c *testGitserverConns) ClientForRepo(userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error) {
+	conn, err := c.conns.ConnForRepo(userAgent, repo)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.clientFunc(conn), nil
+}
+
+var _ ClientSource = &testGitserverConns{}
 
 type GitserverAddresses struct {
 	// The current list of gitserver addresses
@@ -108,6 +169,22 @@ type atomicGitServerConns struct {
 	watchOnce sync.Once
 }
 
+func (a *atomicGitServerConns) AddrForRepo(userAgent string, repo api.RepoName) string {
+	return a.get().AddrForRepo(userAgent, repo)
+}
+
+func (a *atomicGitServerConns) ClientForRepo(userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error) {
+	conn, err := a.get().ConnForRepo(userAgent, repo)
+	if err != nil {
+		return nil, err
+	}
+	return proto.NewGitserverServiceClient(conn), nil
+}
+
+func (a *atomicGitServerConns) Addresses() []string {
+	return a.get().Addresses
+}
+
 func (a *atomicGitServerConns) get() *GitserverConns {
 	a.initOnce()
 	return a.conns.Load()
@@ -147,9 +224,17 @@ func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 	)
 
 	// Open connections for each address
+	clientLogger := log.Scoped("gitserver.client", "gitserver gRPC client")
+
 	after.grpcConns = make(map[string]connAndErr, len(after.Addresses))
 	for _, addr := range after.Addresses {
-		conn, err := defaults.Dial(addr)
+		conn, err := defaults.Dial(
+			addr,
+			clientLogger,
+
+			// Allow large messages to accomodate large diffs
+			grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxMessageSizeBytes)),
+		)
 		after.grpcConns[addr] = connAndErr{conn: conn, err: err}
 	}
 
@@ -162,3 +247,5 @@ func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 		}
 	}
 }
+
+var _ ClientSource = &atomicGitServerConns{}

@@ -18,6 +18,12 @@ func NewDoubleLockedCache[K comparable, V Identifier[K]](factory MultiFactory[K,
 	}
 }
 
+func (c *DoubleLockedCache[K, V]) SetAll(objs []V) {
+	c.Lock()
+	defer c.Unlock()
+	c.internalSetAll(objs)
+}
+
 func (c *DoubleLockedCache[K, V]) GetOrLoad(ctx context.Context, id K) (obj V, ok bool, _ error) {
 	c.RLock()
 	obj, ok = c.cache[id]
@@ -37,10 +43,14 @@ func (c *DoubleLockedCache[K, V]) GetOrLoad(ctx context.Context, id K) (obj V, o
 	if err != nil {
 		return obj, false, err
 	}
+
+	c.internalSetAll(objs)
+	obj, ok = c.cache[id]
+	return obj, ok, nil
+}
+
+func (c *DoubleLockedCache[K, V]) internalSetAll(objs []V) {
 	for _, obj := range objs {
 		c.cache[obj.RecordID()] = obj
 	}
-
-	obj, ok = c.cache[id]
-	return obj, ok, nil
 }

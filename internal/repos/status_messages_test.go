@@ -75,6 +75,11 @@ func TestStatusMessages(t *testing.T) {
 						Message: "Repositories will not be cloned or updated.",
 					},
 				},
+				{
+					NoRepositoriesDetected: &NoRepositoriesDetected{
+						Message: "No repositories have been added to Sourcegraph.",
+					},
+				},
 			},
 		},
 		{
@@ -156,6 +161,18 @@ func TestStatusMessages(t *testing.T) {
 				},
 				{
 					Indexing: &IndexingProgress{Indexed: 1, NotIndexed: 5},
+				},
+			},
+		},
+		{
+			name:       "site-admin: no repos detected",
+			repos:      []*types.Repo{},
+			sourcerErr: nil,
+			res: []StatusMessage{
+				{
+					NoRepositoriesDetected: &NoRepositoriesDetected{
+						Message: "No repositories have been added to Sourcegraph.",
+					},
 				},
 			},
 		},
@@ -320,6 +337,15 @@ func TestStatusMessages(t *testing.T) {
 					)
 					mockDB.ExternalServicesFunc.SetDefaultReturn(externalServices)
 				}
+			}
+
+			if len(tc.repos) < 1 && tc.sourcerErr == nil {
+				externalServices := database.NewMockExternalServiceStore()
+				externalServices.GetLatestSyncErrorsFunc.SetDefaultReturn(
+					[]*database.SyncError{},
+					nil,
+				)
+				mockDB.ExternalServicesFunc.SetDefaultReturn(externalServices)
 			}
 
 			if tc.err == "" {

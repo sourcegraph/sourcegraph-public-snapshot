@@ -70,7 +70,7 @@ func InitGitserver() {
 	}
 
 	grpcServer := defaults.NewServer(logger)
-	grpcServer.RegisterService(&proto.GitserverService_ServiceDesc, &server.GRPCServer{Server: &s})
+	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{Server: &s})
 	handler := internalgrpc.MultiplexHandlers(grpcServer, s.Handler())
 
 	srv := &http.Server{
@@ -83,7 +83,8 @@ func InitGitserver() {
 	}()
 
 	serverAddress := l.Addr().String()
-	testGitserverClient = gitserver.NewTestClient(httpcli.InternalDoer, []string{serverAddress})
+	source := gitserver.NewTestClientSource([]string{serverAddress})
+	testGitserverClient = gitserver.NewTestClient(httpcli.InternalDoer, source)
 	GitserverAddresses = []string{serverAddress}
 }
 

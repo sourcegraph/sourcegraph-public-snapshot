@@ -1,35 +1,34 @@
-import path from 'path'
-
 import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage, getContextMessageWithResponse } from '../../codebase-context/messages'
-import { Editor } from '../../editor'
+import { ActiveTextEditorSelection, Editor } from '../../editor'
 import { IntentDetector } from '../../intent-detector'
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
+import {
+    populateCurrentEditorContextTemplate,
+    populateCurrentEditorSelectedContextTemplate,
+} from '../../prompt/templates'
 import { truncateText } from '../../prompt/truncation'
-import { getShortTimestamp } from '../../timestamp'
 import { Interaction } from '../transcript/interaction'
 
-import { Recipe } from './recipe'
+import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class ChatQuestion implements Recipe {
-    public getID(): string {
-        return 'chat-question'
-    }
+    public id: RecipeID = 'chat-question'
 
-    public async getInteraction(
-        humanChatInput: string,
-        editor: Editor,
-        intentDetector: IntentDetector,
-        codebaseContext: CodebaseContext
-    ): Promise<Interaction | null> {
-        const timestamp = getShortTimestamp()
+    public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const truncatedText = truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS)
 
         return Promise.resolve(
             new Interaction(
-                { speaker: 'human', text: truncatedText, displayText: humanChatInput, timestamp },
-                { speaker: 'assistant', text: '', displayText: '', timestamp },
-                this.getContextMessages(truncatedText, editor, intentDetector, codebaseContext)
+                { speaker: 'human', text: truncatedText, displayText: humanChatInput },
+                { speaker: 'assistant' },
+                this.getContextMessages(
+                    truncatedText,
+                    context.editor,
+                    context.intentDetector,
+                    context.codebaseContext,
+                    context.editor.getActiveTextEditorSelection() || null
+                )
             )
         )
     }
@@ -38,9 +37,15 @@ export class ChatQuestion implements Recipe {
         text: string,
         editor: Editor,
         intentDetector: IntentDetector,
-        codebaseContext: CodebaseContext
+        codebaseContext: CodebaseContext,
+        selection: ActiveTextEditorSelection | null
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
+
+        // Add selected text as context when available
+        if (selection?.selectedText) {
+            contextMessages.push(...ChatQuestion.getEditorSelectionContext(selection))
+        }
 
         const isCodebaseContextRequired = await intentDetector.isCodebaseContextRequired(text)
         if (isCodebaseContextRequired) {
@@ -52,34 +57,29 @@ export class ChatQuestion implements Recipe {
         }
 
         if (isCodebaseContextRequired || intentDetector.isEditorContextRequired(text)) {
-            contextMessages.push(...this.getEditorContext(editor))
+            contextMessages.push(...ChatQuestion.getEditorContext(editor))
         }
 
         return contextMessages
     }
 
-    private getEditorContext(editor: Editor): ContextMessage[] {
+    public static getEditorContext(editor: Editor): ContextMessage[] {
         const visibleContent = editor.getActiveTextEditorVisibleContent()
         if (!visibleContent) {
             return []
         }
         const truncatedContent = truncateText(visibleContent.content, MAX_CURRENT_FILE_TOKENS)
         return getContextMessageWithResponse(
-            populateCurrentEditorCodeContextTemplate(truncatedContent, visibleContent.fileName),
-            visibleContent.fileName,
-            `You currently have \`${visibleContent.fileName}\` open in your editor, and I can answer questions about that file's contents.`
+            populateCurrentEditorContextTemplate(truncatedContent, visibleContent.fileName),
+            visibleContent
         )
     }
-}
 
-const CURRENT_EDITOR_CODE_TEMPLATE = `I have the \`{filePath}\` file opened in my editor. You are able to answer questions about \`{filePath}\`. The following code snippet is from the currently open file in my editor \`{filePath}\`:
-\`\`\`{language}
-{text}
-\`\`\``
-
-function populateCurrentEditorCodeContextTemplate(code: string, filePath: string): string {
-    const language = path.extname(filePath).slice(1)
-    return CURRENT_EDITOR_CODE_TEMPLATE.replace(/{filePath}/g, filePath)
-        .replace('{language}', language)
-        .replace('{text}', code)
+    public static getEditorSelectionContext(selection: ActiveTextEditorSelection): ContextMessage[] {
+        const truncatedContent = truncateText(selection.selectedText, MAX_CURRENT_FILE_TOKENS)
+        return getContextMessageWithResponse(
+            populateCurrentEditorSelectedContextTemplate(truncatedContent, selection.fileName),
+            selection
+        )
+    }
 }

@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "unparam",
+    srcs = ["unparam.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/dev/linters/unparam",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//dev/linters/nolint",
+        "@cc_mvdan_unparam//check:go_default_library",
+        "@org_golang_x_tools//go/analysis",
+        "@org_golang_x_tools//go/analysis/passes/buildssa",
+        "@org_golang_x_tools//go/packages",
+    ],
+)

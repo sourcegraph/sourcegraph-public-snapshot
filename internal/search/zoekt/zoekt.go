@@ -5,8 +5,8 @@ import (
 	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 
@@ -55,7 +55,7 @@ func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSen
 	}, nil
 }
 
-func getSpanContext(ctx context.Context) (shouldTrace bool, spanContext map[string]string) {
+func getSpanContext(ctx context.Context, logger log.Logger) (shouldTrace bool, spanContext map[string]string) {
 	if !policy.ShouldTrace(ctx) {
 		return false, nil
 	}
@@ -63,7 +63,7 @@ func getSpanContext(ctx context.Context) (shouldTrace bool, spanContext map[stri
 	spanContext = make(map[string]string)
 	if span := opentracing.SpanFromContext(ctx); span != nil {
 		if err := ot.GetTracer(ctx).Inject(span.Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err != nil { //nolint:staticcheck // Drop once we get rid of OpenTracing
-			log15.Warn("Error injecting span context into map: %s", err)
+			logger.Warn("Error injecting span context into map", log.Error(err))
 			return true, nil
 		}
 	}
@@ -90,13 +90,31 @@ type Options struct {
 	Features search.Features
 }
 
-func (o *Options) ToSearch(ctx context.Context) *zoekt.SearchOptions {
-	shouldTrace, spanContext := getSpanContext(ctx)
+func (o *Options) ToSearch(ctx context.Context, logger log.Logger) *zoekt.SearchOptions {
+	shouldTrace, spanContext := getSpanContext(ctx, logger)
 	searchOpts := &zoekt.SearchOptions{
 		Trace:        shouldTrace,
 		SpanContext:  spanContext,
 		MaxWallTime:  defaultTimeout,
 		ChunkMatches: true,
+	}
+
+	// These are reasonable default amounts of work to do per shard and
+	// replica respectively.
+	searchOpts.ShardMaxMatchCount = 10_000
+	searchOpts.TotalMaxMatchCount = 100_000
+
+	// Tell each zoekt replica to not send back more than limit results.
+	limit := int(o.FileMatchLimit)
+	searchOpts.MaxDocDisplayCount = limit
+
+	// If we are searching for large limits, raise the amount of work we
+	// are willing to do per shard and zoekt replica respectively.
+	if limit > searchOpts.ShardMaxMatchCount {
+		searchOpts.ShardMaxMatchCount = limit
+	}
+	if limit > searchOpts.TotalMaxMatchCount {
+		searchOpts.TotalMaxMatchCount = limit
 	}
 
 	// If we're searching repos, ignore the other options and only check one file per repo
@@ -117,24 +135,6 @@ func (o *Options) ToSearch(ctx context.Context) *zoekt.SearchOptions {
 		// This enables the use of document ranks in scoring, if they are available.
 		searchOpts.UseDocumentRanks = true
 		searchOpts.DocumentRanksWeight = conf.SearchDocumentRanksWeight()
-	}
-
-	// These are reasonable default amounts of work to do per shard and
-	// replica respectively.
-	searchOpts.ShardMaxMatchCount = 10_000
-	searchOpts.TotalMaxMatchCount = 100_000
-
-	// Tell each zoekt replica to not send back more than limit results.
-	limit := int(o.FileMatchLimit)
-	searchOpts.MaxDocDisplayCount = limit
-
-	// If we are searching for large limits, raise the amount of work we
-	// are willing to do per shard and zoekt replica respectively.
-	if limit > searchOpts.ShardMaxMatchCount {
-		searchOpts.ShardMaxMatchCount = limit
-	}
-	if limit > searchOpts.TotalMaxMatchCount {
-		searchOpts.TotalMaxMatchCount = limit
 	}
 
 	return searchOpts

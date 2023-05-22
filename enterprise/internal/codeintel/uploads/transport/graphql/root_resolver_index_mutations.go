@@ -19,7 +19,7 @@ func (r *rootResolver) DeletePreciseIndex(ctx context.Context, args *struct{ ID 
 		return nil, err
 	}
 
-	uploadID, indexID, err := unmarshalPreciseIndexGQLID(args.ID)
+	uploadID, indexID, err := UnmarshalPreciseIndexGQLID(args.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -110,7 +110,7 @@ func (r *rootResolver) ReindexPreciseIndex(ctx context.Context, args *struct{ ID
 		return nil, err
 	}
 
-	uploadID, indexID, err := unmarshalPreciseIndexGQLID(args.ID)
+	uploadID, indexID, err := UnmarshalPreciseIndexGQLID(args.ID)
 	if err != nil {
 		return nil, err
 	}

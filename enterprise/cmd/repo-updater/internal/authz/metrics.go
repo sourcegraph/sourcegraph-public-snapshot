@@ -11,18 +11,6 @@ var (
 		Name: "src_repoupdater_perms_syncer_no_perms",
 		Help: "The number of records that do not have any permissions",
 	}, []string{"type"})
-	metricsStalePerms = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "src_repoupdater_perms_syncer_stale_perms",
-		Help: "The number of records that have stale permissions",
-	}, []string{"type"})
-	metricsStrictStalePerms = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "src_repoupdater_perms_syncer_strict_stale_perms",
-		Help: "The number of records that have permissions older than 1h",
-	}, []string{"type"})
-	metricsPermsGap = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "src_repoupdater_perms_syncer_perms_gap_seconds",
-		Help: "The time gap between least and most up to date permissions",
-	}, []string{"type"})
 	metricsSyncDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name:    "src_repoupdater_perms_syncer_sync_duration_seconds",
 		Help:    "Time spent on syncing permissions",
@@ -31,14 +19,6 @@ var (
 	metricsSyncErrors = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_repoupdater_perms_syncer_sync_errors_total",
 		Help: "Total number of permissions sync errors",
-	}, []string{"type"})
-	metricsQueueSize = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_repoupdater_perms_syncer_queue_size",
-		Help: "The size of the sync request queue",
-	})
-	metricsConcurrentSyncs = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "src_repoupdater_perms_syncer_concurrent_syncs",
-		Help: "The number of concurrent permissions syncs",
 	}, []string{"type"})
 	metricsSuccessPermsSyncs = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_repoupdater_perms_syncer_success_syncs",
@@ -60,8 +40,4 @@ var (
 		Name: "src_repoupdater_perms_syncer_perms_first_sync_delay",
 		Help: "The duration in seconds it took for first user/repo complete perms sync after creation",
 	}, []string{"type"})
-	metricsItemsSyncScheduled = promauto.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "src_repoupdater_perms_syncer_items_sync_scheduled",
-		Help: "The number of users/repos scheduled for sync",
-	}, []string{"type", "priority"})
 )

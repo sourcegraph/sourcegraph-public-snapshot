@@ -34,12 +34,12 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, _ *contextdetec
 
 	embeddingsClient := embed.NewEmbeddingsClient()
 
-	messagesWithAdditionalContextMeanEmbedding, err := getContextDetectionMessagesMeanEmbedding(MESSAGES_WITH_ADDITIONAL_CONTEXT, embeddingsClient)
+	messagesWithAdditionalContextMeanEmbedding, err := getContextDetectionMessagesMeanEmbedding(ctx, MESSAGES_WITH_ADDITIONAL_CONTEXT, embeddingsClient)
 	if err != nil {
 		return err
 	}
 
-	messagesWithoutAdditionalContextMeanEmbedding, err := getContextDetectionMessagesMeanEmbedding(MESSAGES_WITHOUT_ADDITIONAL_CONTEXT, embeddingsClient)
+	messagesWithoutAdditionalContextMeanEmbedding, err := getContextDetectionMessagesMeanEmbedding(ctx, MESSAGES_WITHOUT_ADDITIONAL_CONTEXT, embeddingsClient)
 	if err != nil {
 		return err
 	}
@@ -52,8 +52,8 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, _ *contextdetec
 	return embeddings.UploadIndex(ctx, h.uploadStore, embeddings.CONTEXT_DETECTION_INDEX_NAME, contextDetectionIndex)
 }
 
-func getContextDetectionMessagesMeanEmbedding(messages []string, client embed.EmbeddingsClient) ([]float32, error) {
-	messagesEmbeddings, err := client.GetEmbeddingsWithRetries(messages, MAX_EMBEDDINGS_RETRIES)
+func getContextDetectionMessagesMeanEmbedding(ctx context.Context, messages []string, client embed.EmbeddingsClient) ([]float32, error) {
+	messagesEmbeddings, err := client.GetEmbeddingsWithRetries(ctx, messages, MAX_EMBEDDINGS_RETRIES)
 	if err != nil {
 		return nil, err
 	}

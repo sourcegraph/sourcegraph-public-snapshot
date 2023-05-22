@@ -1,8 +1,10 @@
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
-import { vscodeAPI } from './utils/VSCodeApi'
+import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 
-import './Recipes.css'
+import { VSCodeWrapper } from './utils/VSCodeApi'
+
+import styles from './Recipes.module.css'
 
 export const recipesList = {
     'explain-code-detailed': 'Explain selected code (detailed)',
@@ -12,23 +14,27 @@ export const recipesList = {
     'improve-variable-names': 'Improve variable names',
     'translate-to-language': 'Translate to different language',
     'git-history': 'Summarize recent code changes',
+    'find-code-smells': 'Smell code',
+    fixup: 'Fixup code from inline instructions',
+    'context-search': 'Codebase context search',
+    'release-notes': 'Generate release notes',
 }
 
-export function Recipes(): React.ReactElement {
-    const onRecipeClick = (recipeID: string): void => {
+export const Recipes: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
+    const onRecipeClick = (recipeID: RecipeID): void => {
         vscodeAPI.postMessage({ command: 'executeRecipe', recipe: recipeID })
     }
 
     return (
         <div className="inner-container">
             <div className="non-transcript-container">
-                <div className="recipes">
+                <div className={styles.recipes}>
                     {Object.entries(recipesList).map(([key, value]) => (
                         <VSCodeButton
                             key={key}
-                            className="recipe-button"
+                            className={styles.recipeButton}
                             type="button"
-                            onClick={() => onRecipeClick(key)}
+                            onClick={() => onRecipeClick(key as RecipeID)}
                         >
                             {value}
                         </VSCodeButton>

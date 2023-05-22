@@ -3,7 +3,7 @@
 package:
   name: http-server-stabilizer
   version: 1.0.5
-  epoch: 0
+  epoch: 1
   description: "HTTP server stabilizer for unruly servers"
   target-architecture:
     - x86_64
@@ -32,4 +32,5 @@ pipeline:
   - uses: go/build
     with:
       packages: main.go
+      prefix: /usr/local
       output: http-server-stabilizer

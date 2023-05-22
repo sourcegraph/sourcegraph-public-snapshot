@@ -29,7 +29,6 @@ const {
 } = require('@sourcegraph/build-config')
 
 const { IS_PRODUCTION, IS_DEVELOPMENT, ENVIRONMENT_CONFIG, writeIndexHTMLPlugin } = require('./dev/utils')
-const { isHotReloadEnabled } = require('./src/integration/environment')
 
 const {
   NODE_ENV,
@@ -41,7 +40,7 @@ const {
   ENABLE_OPEN_TELEMETRY,
   SOURCEGRAPH_API_URL,
   WEBPACK_BUNDLE_ANALYZER,
-  WEBPACK_EXPORT_STATS_FILENAME,
+  WEBPACK_EXPORT_STATS,
   WEBPACK_SERVE_INDEX,
   WEBPACK_STATS_NAME,
   WEBPACK_USE_NAMED_CHUNKS,
@@ -52,8 +51,10 @@ const {
   SENTRY_DOT_COM_AUTH_TOKEN,
   SENTRY_ORGANIZATION,
   SENTRY_PROJECT,
+  SOURCEGRAPH_APP,
 } = ENVIRONMENT_CONFIG
 
+const isHotReloadEnabled = NODE_ENV !== 'production' && !IS_CI
 const IS_PERSISTENT_CACHE_ENABLED = IS_DEVELOPMENT && !IS_CI
 const IS_EMBED_ENTRY_POINT_ENABLED = ENTERPRISE && (IS_PRODUCTION || (IS_DEVELOPMENT && EMBED_DEVELOPMENT))
 
@@ -110,7 +111,7 @@ const config = {
           chunks: 'all',
         },
         [initialChunkNames.opentelemetry]: {
-          test: /[/\\]node_modules[/\\](@opentelemetry)[/\\]/,
+          test: /[/\\]node_modules[/\\](@opentelemetry|zone.js)[/\\]/,
           name: initialChunkNames.opentelemetry,
           chunks: 'all',
         },
@@ -126,9 +127,13 @@ const config = {
     }),
   },
   entry: {
-    // Enterprise vs. OSS builds use different entrypoints. The enterprise entrypoint imports a
-    // strict superset of the OSS entrypoint.
-    app: ENTERPRISE ? path.join(enterpriseDirectory, 'main.tsx') : path.join(__dirname, 'src', 'main.tsx'),
+    // Desktop app vs. Enterprise vs. OSS builds use different entrypoints. The enterprise entrypoint imports a
+    // strict superset of the OSS entrypoint. The app endoint imports a strict superset of the enterprise entrypoint.
+    app: SOURCEGRAPH_APP
+      ? path.join(enterpriseDirectory, 'app-main.tsx')
+      : ENTERPRISE
+      ? path.join(enterpriseDirectory, 'main.tsx')
+      : path.join(__dirname, 'src', 'main.tsx'),
     // Embedding entrypoint. It uses a small subset of the main webapp intended to be embedded into
     // iframes on 3rd party sites. Added only in production enterprise builds or if embed development is enabled.
     ...(IS_EMBED_ENTRY_POINT_ENABLED && { embed: path.join(enterpriseDirectory, 'embed', 'main.tsx') }),
@@ -211,9 +216,9 @@ const config = {
         release: `frontend@${VERSION}`,
         include: path.join(STATIC_ASSETS_PATH, 'scripts', '*.map'),
       }),
-    WEBPACK_EXPORT_STATS_FILENAME &&
+    WEBPACK_EXPORT_STATS &&
       new StatsWriterPlugin({
-        filename: WEBPACK_EXPORT_STATS_FILENAME,
+        filename: `stats-${process.env.BUILDKITE_COMMIT || 'unknown-commit'}.json`,
         stats: {
           all: false, // disable all the stats
           hash: true, // compilation hash

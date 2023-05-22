@@ -21,12 +21,10 @@ go_library(
         "//internal/rcache",
         "//internal/redispool",
         "//internal/types",
-        "//internal/version",
         "//lib/errors",
         "@com_github_fatih_color//:color",
         "@com_github_gomodule_redigo//redis",
         "@com_github_inconshreveable_log15//:log15",
-        "@com_github_pkg_browser//:browser",
         "@com_github_sourcegraph_log//:log",
     ],
 )

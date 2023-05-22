@@ -1,0 +1,20 @@
+include: ./sourcegraph-base.yaml
+
+contents:
+  packages:
+    ## postgres-exporter packages
+    - 'prometheus-postgres-exporter=0.12.0-r1' # IMPORTANT: Pinned version for managed updates
+
+accounts:
+  groups:
+    - groupname: sourcegraph
+      gid: 101
+    - groupname: postgres_exporter
+      gid: 102
+  users:
+    - username: sourcegraph
+      uid: 100
+      gid: 101
+    - username: postgres_exporter
+      uid: 20001
+      gid: 102

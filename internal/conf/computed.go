@@ -220,6 +220,14 @@ func ExecutorsSrcCLIImageTag() string {
 	return srccli.MinimumVersion
 }
 
+func ExecutorsLsifGoImage() string {
+	current := Get()
+	if current.ExecutorsLsifGoImage != "" {
+		return current.ExecutorsLsifGoImage
+	}
+	return "sourcegraph/lsif-go"
+}
+
 func ExecutorsBatcheshelperImage() string {
 	current := Get()
 	if current.ExecutorsBatcheshelperImage != "" {
@@ -353,11 +361,6 @@ func SearchSymbolsParallelism() int {
 		return 20
 	}
 	return val
-}
-
-func BitbucketServerPluginPerm() bool {
-	val := ExperimentalFeatures().BitbucketServerFastPerm
-	return val == "enabled"
 }
 
 func EventLoggingEnabled() bool {

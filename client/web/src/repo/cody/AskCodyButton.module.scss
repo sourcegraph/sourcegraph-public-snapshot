@@ -1,0 +1,16 @@
+.cody-button {
+    padding: 0.1rem 0.15rem 0.1rem 0.15rem;
+    display: flex;
+    height: fit-content;
+    // stylelint-disable-next-line declaration-property-unit-allowed-list
+    width: 90px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color-2);
+    border-radius: var(--border-radius);
+    font-weight: normal;
+    letter-spacing: normal;
+    line-height: normal;
+    font-size: 0.75rem;
+    overflow: hidden;
+}

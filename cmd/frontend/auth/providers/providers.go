@@ -197,13 +197,22 @@ func GetAuthProviderCommon(p Provider) schema.AuthProviderCommon {
 		field := v.FieldByName(f.Name)
 		if !field.IsNil() {
 			// the field struct incorporates all the fields from schema.AuthProviderCommon
+			// except for builtin and http-header auth providers
 			e := field.Elem()
-			common.Hidden = e.FieldByName("Hidden").Bool()
-			common.Order = int(e.FieldByName("Order").Int())
-			common.DisplayName = e.FieldByName("DisplayName").String()
-
+			hidden := e.FieldByName("Hidden")
+			if hidden.IsValid() {
+				common.Hidden = hidden.Bool()
+			}
+			order := e.FieldByName("Order")
+			if order.IsValid() {
+				common.Order = order.Interface().(int)
+			}
+			dN := e.FieldByName("DisplayName")
+			if dN.IsValid() {
+				common.DisplayName = dN.Interface().(string)
+			}
 			dP := e.FieldByName("DisplayPrefix")
-			if !dP.IsNil() {
+			if dP.IsValid() && !dP.IsNil() {
 				s := dP.Elem().String()
 				common.DisplayPrefix = &s
 			}

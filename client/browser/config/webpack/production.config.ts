@@ -13,12 +13,14 @@ export const config: webpack.Configuration = {
         minimize: true,
         minimizer: [
             new TerserPlugin({
+                extractComments: false,
                 terserOptions: {
                     output: {
                         // Without this, Uglify will change \u0000 to \0 (NULL byte),
                         // which causes Chrome to complain that the bundle is not UTF8
                         ascii_only: true,
                         beautify: false,
+                        comments: false,
                     },
                 },
             }) as webpack.WebpackPluginInstance,

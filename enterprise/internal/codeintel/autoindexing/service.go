@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -27,11 +26,9 @@ import (
 type Service struct {
 	store           store.Store
 	repoStore       database.RepoStore
-	inferenceSvc    InferenceService
 	gitserverClient gitserver.Client
 	indexEnqueuer   *enqueuer.IndexEnqueuer
 	jobSelector     *jobselector.JobSelector
-	logger          log.Logger
 	operations      *operations
 }
 
@@ -70,11 +67,9 @@ func newService(
 	return &Service{
 		store:           store,
 		repoStore:       repoStore,
-		inferenceSvc:    inferenceSvc,
 		gitserverClient: gitserverClient,
 		indexEnqueuer:   indexEnqueuer,
 		jobSelector:     jobSelector,
-		logger:          observationCtx.Logger,
 		operations:      newOperations(observationCtx),
 	}
 }
@@ -86,11 +81,9 @@ func (s *Service) GetIndexConfigurationByRepositoryID(ctx context.Context, repos
 // InferIndexConfiguration looks at the repository contents at the latest commit on the default branch of the given
 // repository and determines an index configuration that is likely to succeed.
 func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) (_ *config.IndexConfiguration, _ []config.IndexJobHint, err error) {
-	ctx, trace, endObservation := s.operations.inferIndexConfiguration.With(ctx, &err, observation.Args{
-		LogFields: []otlog.Field{
-			otlog.Int("repositoryID", repositoryID),
-		},
-	})
+	ctx, trace, endObservation := s.operations.inferIndexConfiguration.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))
@@ -121,7 +114,7 @@ func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int,
 		return nil, nil, err
 	}
 
-	indexJobHints, err := s.jobSelector.InferIndexJobHintsFromRepositoryStructure(ctx, repo.Name, commit)
+	indexJobHints, err := s.jobSelector.InferIndexJobHintsFromRepositoryStructure(ctx, repositoryID, repo.Name, commit)
 	if err != nil {
 		return nil, nil, err
 	}

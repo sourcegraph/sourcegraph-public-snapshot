@@ -11,7 +11,7 @@ import (
 	"path"
 	"strconv"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 	"golang.org/x/net/context/ctxhttp"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -52,6 +52,7 @@ type BaseClient struct {
 	httpClient *http.Client
 	options    BaseClientOptions
 	baseURL    *url.URL
+	logger     log.Logger
 }
 
 type BaseClientOptions struct {
@@ -77,7 +78,7 @@ type EndpointOptions struct {
 }
 
 // NewBaseClient creates a new BaseClient with the given transport.
-func NewBaseClient(options BaseClientOptions) (*BaseClient, error) {
+func NewBaseClient(logger log.Logger, options BaseClientOptions) (*BaseClient, error) {
 	// Parse the base url upfront to save on overhead.
 	baseURL, err := url.Parse(options.EndpointOptions.URL)
 	if err != nil {
@@ -87,6 +88,7 @@ func NewBaseClient(options BaseClientOptions) (*BaseClient, error) {
 		httpClient: httpcli.InternalClient,
 		options:    options,
 		baseURL:    baseURL,
+		logger:     logger,
 	}, nil
 }
 
@@ -110,9 +112,13 @@ func (c *BaseClient) Do(ctx context.Context, req *http.Request) (hasContent bool
 		}
 
 		if content, err := io.ReadAll(resp.Body); err != nil {
-			log15.Error("Failed to read response body", "error", err)
+			c.logger.Error("Failed to read response body", log.Error(err))
 		} else {
-			log15.Error("apiclient got unexpected status code", "code", resp.StatusCode, "body", string(content))
+			c.logger.Error(
+				"apiclient got unexpected status code",
+				log.Int("code", resp.StatusCode),
+				log.String("body", string(content)),
+			)
 		}
 
 		return false, nil, &UnexpectedStatusCodeErr{StatusCode: resp.StatusCode}

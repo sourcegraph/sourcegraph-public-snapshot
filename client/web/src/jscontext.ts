@@ -55,6 +55,7 @@ export type SourcegraphContextCurrentUser = Pick<
     | 'emails'
     | 'latestSettings'
     | 'permissions'
+    | 'hasVerifiedEmail'
 >
 
 /**
@@ -151,17 +152,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     runningOnMacOS: boolean
 
     /**
-     * Likely running within a Docker container under a Mac host OS.
-     */
-    likelyDockerOnMac: boolean
-
-    /**
-     * Whether the setup wizard supports file picker query, it's used
-     * only for the Sourcegraph App (in all others deploy types it's always false)
-     */
-    localFilePickerAvailable: boolean
-
-    /**
      * Whether or not the server needs to restart in order to apply a pending
      * configuration change.
      */
@@ -183,6 +173,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     batchChangesDisableWebhooksWarning: boolean
 
     batchChangesWebhookLogsEnabled: boolean
+
+    /** Whether cody is enabled for the user. */
+    codyEnabled: boolean
 
     /** Whether executors are enabled on the site. */
     executorsEnabled: boolean

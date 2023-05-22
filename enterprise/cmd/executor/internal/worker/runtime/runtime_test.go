@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runtime"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
@@ -16,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func TestNewRuntime(t *testing.T) {
+func TestNew(t *testing.T) {
 	tests := []struct {
 		name           string
 		runnerOpts     runner.Options
@@ -207,7 +208,124 @@ func TestNewRuntime(t *testing.T) {
 				assert.Equal(t, test.expectedName, r.Name())
 			}
 
-			test.assertMockFunc(t, cmdRunner)
+			if test.assertMockFunc != nil {
+				test.assertMockFunc(t, cmdRunner)
+			}
+		})
+	}
+}
+
+func TestNew_Kubernetes(t *testing.T) {
+	tempFile, err := os.CreateTemp("", "kubeconfig")
+	require.NoError(t, err)
+	defer os.Remove(tempFile.Name())
+	content := `
+apiVersion: v1
+clusters:
+- cluster:
+    server: https://localhost:8080
+  name: foo-cluster
+contexts:
+- context:
+    cluster: foo-cluster
+    user: foo-user
+    namespace: bar
+  name: foo-context
+current-context: foo-context
+kind: Config
+`
+	err = os.WriteFile(tempFile.Name(), []byte(content), 0644)
+	require.NoError(t, err)
+
+	r, err := runtime.New(
+		logtest.Scoped(t),
+		nil,
+		nil,
+		workspace.CloneOptions{},
+		runner.Options{
+			KubernetesOptions: runner.KubernetesOptions{
+				Enabled:          true,
+				ConfigPath:       tempFile.Name(),
+				ContainerOptions: command.KubernetesContainerOptions{},
+			},
+		},
+		runtime.NewMockCmdRunner(),
+		nil,
+	)
+	require.NoError(t, err)
+
+	assert.Equal(t, runtime.NameKubernetes, r.Name())
+}
+
+func TestCommandKey(t *testing.T) {
+	tests := []struct {
+		name        string
+		runtimeName runtime.Name
+		key         string
+		index       int
+		expectedKey string
+	}{
+		{
+			name:        "Docker",
+			runtimeName: runtime.NameDocker,
+			key:         "step.1.pre",
+			index:       0,
+			expectedKey: "step.docker.step.1.pre",
+		},
+		{
+			name:        "Docker with index",
+			runtimeName: runtime.NameDocker,
+			key:         "",
+			index:       1,
+			expectedKey: "step.docker.1",
+		},
+		{
+			name:        "Firecracker",
+			runtimeName: runtime.NameFirecracker,
+			key:         "step.1.pre",
+			index:       0,
+			expectedKey: "step.docker.step.1.pre",
+		},
+		{
+			name:        "Firecracker with index",
+			runtimeName: runtime.NameFirecracker,
+			key:         "",
+			index:       1,
+			expectedKey: "step.docker.1",
+		},
+		{
+			name:        "Kubernetes",
+			runtimeName: runtime.NameKubernetes,
+			key:         "step.1.pre",
+			index:       0,
+			expectedKey: "step.kubernetes.step.1.pre",
+		},
+		{
+			name:        "Kubernetes with index",
+			runtimeName: runtime.NameKubernetes,
+			key:         "",
+			index:       1,
+			expectedKey: "step.kubernetes.1",
+		},
+		{
+			name:        "Shell",
+			runtimeName: runtime.NameShell,
+			key:         "step.1.pre",
+			index:       0,
+			expectedKey: "step.docker.step.1.pre",
+		},
+		{
+			name:        "Shell with index",
+			runtimeName: runtime.NameShell,
+			key:         "",
+			index:       1,
+			expectedKey: "step.docker.1",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			key := runtime.CommandKey(test.runtimeName, test.key, test.index)
+			assert.Equal(t, test.expectedKey, key)
 		})
 	}
 }

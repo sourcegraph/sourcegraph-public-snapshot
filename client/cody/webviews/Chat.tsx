@@ -1,50 +1,89 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { VSCodeButton, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
+import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { Chat as ChatUI, ChatUISubmitButtonProps, ChatUITextAreaProps } from '@sourcegraph/cody-ui/src/Chat'
-import { SubmitSvg, ResetIcon } from '@sourcegraph/cody-ui/src/utils/icons'
+import {
+    Chat as ChatUI,
+    ChatUISubmitButtonProps,
+    ChatUISuggestionButtonProps,
+    ChatUITextAreaProps,
+    EditButtonProps,
+    FeedbackButtonsProps,
+} from '@sourcegraph/cody-ui/src/Chat'
+import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
 import { FileLink } from './FileLink'
-import { vscodeAPI } from './utils/VSCodeApi'
+import { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Chat.module.css'
 
 interface ChatboxProps {
     messageInProgress: ChatMessage | null
+    messageBeingEdited: boolean
+    setMessageBeingEdited: (input: boolean) => void
     transcript: ChatMessage[]
+    contextStatus: ChatContextStatus | null
     formInput: string
     setFormInput: (input: string) => void
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
+    vscodeAPI: VSCodeWrapper
+    suggestions?: string[]
+    setSuggestions?: (suggestions: undefined | string[]) => void
 }
-
-const TIPS_RECOMMENDATIONS: JSX.Element[] = [
-    <>Visit the `Recipes` tab for special actions like Generate a unit test or Summarize recent code changes.</>,
-    <>
-        Use the <ResetIcon /> button in the upper right to reset the chat when you want to start a new line of thought.
-        Cody does not remember anything outside the current chat.
-    </>,
-]
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
     messageInProgress,
+    messageBeingEdited,
+    setMessageBeingEdited,
     transcript,
+    contextStatus,
     formInput,
     setFormInput,
     inputHistory,
     setInputHistory,
+    vscodeAPI,
+    suggestions,
+    setSuggestions,
 }) => {
-    const onSubmit = useCallback((text: string) => {
-        vscodeAPI.postMessage({ command: 'submit', text })
-    }, [])
+    const onSubmit = useCallback(
+        (text: string, submitType: 'user' | 'suggestion') => {
+            vscodeAPI.postMessage({ command: 'submit', text, submitType })
+        },
+        [vscodeAPI]
+    )
+
+    const onEditBtnClick = useCallback(
+        (text: string) => {
+            vscodeAPI.postMessage({ command: 'edit', text })
+        },
+        [vscodeAPI]
+    )
+
+    const onFeedbackBtnClick = useCallback(
+        (text: string) => {
+            vscodeAPI.postMessage({ command: 'event', event: 'feedback', value: text })
+        },
+        [vscodeAPI]
+    )
+
+    const onCopyBtnClick = useCallback(
+        (text: string) => {
+            vscodeAPI.postMessage({ command: 'event', event: 'click', value: text })
+        },
+        [vscodeAPI]
+    )
 
     return (
         <ChatUI
             messageInProgress={messageInProgress}
+            messageBeingEdited={messageBeingEdited}
+            setMessageBeingEdited={setMessageBeingEdited}
             transcript={transcript}
+            contextStatus={contextStatus}
             formInput={formInput}
             setFormInput={setFormInput}
             inputHistory={inputHistory}
@@ -52,20 +91,24 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             onSubmit={onSubmit}
             textAreaComponent={TextArea}
             submitButtonComponent={SubmitButton}
+            suggestionButtonComponent={SuggestionButton}
             fileLinkComponent={FileLink}
-            tipsRecommendations={TIPS_RECOMMENDATIONS}
             className={styles.innerContainer}
-            transcriptContainerClassName={
-                transcript.length > 0 ? styles.transcriptContainer : styles.emptyTranscriptContainer
-            }
-            bubbleContentClassName={styles.bubbleContent}
-            humanBubbleContentClassName={styles.humanBubbleContent}
-            botBubbleContentClassName={styles.botBubbleContent}
             codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
-            bubbleFooterClassName={styles.bubbleFooter}
-            bubbleLoaderDotClassName={styles.bubbleLoaderDot}
+            transcriptItemClassName={styles.transcriptItem}
+            humanTranscriptItemClassName={styles.humanTranscriptItem}
+            transcriptItemParticipantClassName={styles.transcriptItemParticipant}
+            transcriptActionClassName={styles.transcriptAction}
             inputRowClassName={styles.inputRow}
+            chatInputContextClassName={styles.chatInputContext}
             chatInputClassName={styles.chatInputClassName}
+            EditButtonContainer={EditButton}
+            editButtonOnSubmit={onEditBtnClick}
+            FeedbackButtonsContainer={FeedbackButtons}
+            feedbackButtonsOnSubmit={onFeedbackBtnClick}
+            copyButtonOnSubmit={onCopyBtnClick}
+            suggestions={suggestions}
+            setSuggestions={setSuggestions}
         />
     )
 }
@@ -78,17 +121,54 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     required,
     onInput,
     onKeyDown,
-}) => (
-    <VSCodeTextArea
-        className={classNames(styles.chatInput, className)}
-        rows={rows}
-        value={value}
-        autofocus={autoFocus}
-        required={required}
-        onInput={e => onInput(e as React.FormEvent<HTMLTextAreaElement>)}
-        onKeyDown={onKeyDown}
-    />
-)
+}) => {
+    // Focus the textarea when the webview gains focus (unless there is text selected). This makes
+    // it so that the user can immediately start typing to Cody after invoking `Cody: Focus on Chat
+    // View` with the keyboard.
+    const inputRef = useRef<HTMLTextAreaElement>(null)
+    useEffect(() => {
+        const handleFocus = (): void => {
+            if (document.getSelection()?.isCollapsed) {
+                inputRef.current?.focus()
+            }
+        }
+        window.addEventListener('focus', handleFocus)
+        return () => {
+            window.removeEventListener('focus', handleFocus)
+        }
+    }, [])
+
+    // <VSCodeTextArea autofocus> does not work, so implement autofocus ourselves.
+    useEffect(() => {
+        if (autoFocus) {
+            inputRef.current?.focus()
+        }
+    }, [autoFocus])
+
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>): void => {
+        if (onKeyDown) {
+            onKeyDown(event, (inputRef.current as any)?.control.selectionStart)
+        }
+    }
+
+    return (
+        <VSCodeTextArea
+            className={classNames(styles.chatInput, className)}
+            rows={rows}
+            ref={
+                // VSCodeTextArea has a very complex type.
+                //
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                inputRef as any
+            }
+            value={value}
+            autofocus={autoFocus}
+            required={required}
+            onInput={e => onInput(e as React.FormEvent<HTMLTextAreaElement>)}
+            onKeyDown={handleKeyDown}
+        />
+    )
+}
 
 const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ className, disabled, onClick }) => (
     <VSCodeButton
@@ -101,3 +181,72 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ classN
         <SubmitSvg />
     </VSCodeButton>
 )
+
+const SuggestionButton: React.FunctionComponent<ChatUISuggestionButtonProps> = ({ suggestion, onClick }) => (
+    <VSCodeButton className={styles.suggestionButton} appearance="secondary" type="button" onClick={onClick}>
+        <i className="codicon codicon-sparkle" slot="start">
+            {/* Fallback emoji because this icon is a new addition and doesn't seem to work for me? */}✨
+        </i>{' '}
+        {suggestion}
+    </VSCodeButton>
+)
+
+const EditButton: React.FunctionComponent<EditButtonProps> = ({
+    className,
+    messageBeingEdited,
+    setMessageBeingEdited,
+}) => (
+    <div className={className}>
+        <VSCodeButton
+            className={classNames(styles.editButton)}
+            appearance="icon"
+            type="button"
+            onClick={() => setMessageBeingEdited(!messageBeingEdited)}
+        >
+            <i className={messageBeingEdited ? 'codicon codicon-close' : 'codicon codicon-edit'} />
+        </VSCodeButton>
+    </div>
+)
+
+const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ className, feedbackButtonsOnSubmit }) => {
+    const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
+
+    const onFeedbackBtnSubmit = useCallback(
+        (text: string) => {
+            feedbackButtonsOnSubmit(text)
+            setFeedbackSubmitted(true)
+        },
+        [feedbackButtonsOnSubmit]
+    )
+
+    if (feedbackSubmitted) {
+        return (
+            <div className={className}>
+                <VSCodeButton className={classNames(styles.submitButton)} title="Feedback submitted." disabled={true}>
+                    <i className="codicon codicon-check" />
+                </VSCodeButton>
+            </div>
+        )
+    }
+
+    return (
+        <div className={classNames(styles.feedbackButtons, className)}>
+            <VSCodeButton
+                className={classNames(styles.submitButton)}
+                appearance="icon"
+                type="button"
+                onClick={() => onFeedbackBtnSubmit('thumbsUp')}
+            >
+                <i className="codicon codicon-thumbsup" />
+            </VSCodeButton>
+            <VSCodeButton
+                className={classNames(styles.submitButton)}
+                appearance="icon"
+                type="button"
+                onClick={() => onFeedbackBtnSubmit('thumbsDown')}
+            >
+                <i className="codicon codicon-thumbsdown" />
+            </VSCodeButton>
+        </div>
+    )
+}

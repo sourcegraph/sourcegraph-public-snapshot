@@ -11,7 +11,6 @@ import (
 )
 
 type dockerWorkspace struct {
-	path            string
 	scriptFilenames []string
 	workspaceDir    string
 	logger          command.Logger
@@ -47,7 +46,6 @@ func NewDockerWorkspace(
 	}
 
 	return &dockerWorkspace{
-		path:            workspaceDir,
 		scriptFilenames: scriptPaths,
 		workspaceDir:    workspaceDir,
 		logger:          logger,
@@ -66,7 +64,7 @@ func makeTemporaryDirectory(prefix string) (string, error) {
 }
 
 func (w dockerWorkspace) Path() string {
-	return w.path
+	return w.workspaceDir
 }
 
 func (w dockerWorkspace) ScriptFilenames() []string {

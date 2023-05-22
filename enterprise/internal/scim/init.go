@@ -63,7 +63,9 @@ func newHandler(ctx context.Context, db database.DB, observationCtx *observation
 
 	var userResourceHandler = NewUserResourceHandler(ctx, observationCtx, db)
 
-	resourceTypes := []scim.ResourceType{createUserResourceType(userResourceHandler)}
+	resourceTypes := []scim.ResourceType{
+		createResourceType("User", "/Users", "User Account", userResourceHandler),
+	}
 
 	server := scim.Server{
 		Config:        config,

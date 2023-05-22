@@ -306,11 +306,20 @@ function findOperatorNode(position: number, node: Node | null): Extract<Node, { 
     if (!node || node.type !== 'operator' || node.range.start >= position || node.range.end <= position) {
         return null
     }
-    for (const operand of node.operands) {
-        const result = findOperatorNode(position, operand)
+
+    if (node.left) {
+        const result = findOperatorNode(position, node.left)
         if (result) {
             return result
         }
     }
+
+    if (node.right) {
+        const result = findOperatorNode(position, node.right)
+        if (result) {
+            return result
+        }
+    }
+
     return node
 }

@@ -153,6 +153,7 @@ export interface RepositoryMatch {
     private?: boolean
     branches?: string[]
     descriptionMatches?: Range[]
+    metadata?: Record<string, string | undefined>
 }
 
 export type OwnerMatch = PersonMatch | TeamMatch
@@ -279,7 +280,7 @@ interface Alert {
 // Same key values from internal/search/alert.go
 export type AnnotationName = 'ResultCount'
 
-interface ProposedQuery {
+export interface ProposedQuery {
     description?: string | null
     annotations?: { name: AnnotationName; value: string }[]
     query: string
@@ -471,10 +472,9 @@ export interface StreamSearchOptions {
     featureOverrides?: string[]
     searchMode?: SearchMode
     sourcegraphURL?: string
-    decorationKinds?: string[]
-    decorationContextLines?: number
     displayLimit?: number
     chunkMatches?: boolean
+    enableRepositoryMetadata?: boolean
 }
 
 function initiateSearchStream(
@@ -485,8 +485,6 @@ function initiateSearchStream(
         caseSensitive,
         trace,
         featureOverrides,
-        decorationKinds,
-        decorationContextLines,
         searchMode = SearchMode.Precise,
         displayLimit = 1500,
         sourcegraphURL = '',
@@ -502,9 +500,6 @@ function initiateSearchStream(
             ['v', version],
             ['t', patternType as string],
             ['sm', searchMode.toString()],
-            ['dl', '0'],
-            ['dk', (decorationKinds || ['html']).join('|')],
-            ['dc', (decorationContextLines || '1').toString()],
             ['display', displayLimit.toString()],
             ['cm', chunkMatches ? 't' : 'f'],
         ]

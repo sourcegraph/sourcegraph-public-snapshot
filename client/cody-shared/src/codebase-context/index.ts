@@ -1,13 +1,12 @@
-import path from 'path'
-
+import { Configuration } from '../configuration'
 import { EmbeddingsSearch } from '../embeddings'
-import { KeywordContextFetcher } from '../keyword-context'
-import { populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
+import { KeywordContextFetcher, KeywordContextFetcherResult } from '../keyword-context'
+import { isMarkdownFile, populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
 import { Message } from '../sourcegraph-api'
 import { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
 import { isError } from '../utils'
 
-import { ContextMessage, getContextMessageWithResponse } from './messages'
+import { ContextMessage, ContextFile, getContextMessageWithResponse } from './messages'
 
 export interface ContextSearchOptions {
     numCodeResults: number
@@ -16,23 +15,51 @@ export interface ContextSearchOptions {
 
 export class CodebaseContext {
     constructor(
-        private contextType: 'embeddings' | 'keyword' | 'none' | 'blended',
+        private config: Pick<Configuration, 'useContext' | 'serverEndpoint'>,
+        private codebase: string | undefined,
         private embeddings: EmbeddingsSearch | null,
-        private keywords: KeywordContextFetcher
+        private keywords: KeywordContextFetcher | null
     ) {}
 
+    public getCodebase(): string | undefined {
+        return this.codebase
+    }
+
+    public onConfigurationChange(newConfig: typeof this.config): void {
+        this.config = newConfig
+    }
+
     public async getContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
-        switch (this.contextType) {
-            case 'blended':
+        switch (this.config.useContext) {
+            case 'keyword':
+                return this.getKeywordContextMessages(query, options)
+            case 'none':
+                return []
+            default:
                 return this.embeddings
                     ? this.getEmbeddingsContextMessages(query, options)
                     : this.getKeywordContextMessages(query, options)
-            case 'embeddings':
-                return this.getEmbeddingsContextMessages(query, options)
-            case 'keyword':
-                return this.getKeywordContextMessages(query, options)
-            default:
-                return []
+        }
+    }
+
+    public checkEmbeddingsConnection(): boolean {
+        return !!this.embeddings
+    }
+
+    public async getSearchResults(
+        query: string,
+        options: ContextSearchOptions
+    ): Promise<{ results: KeywordContextFetcherResult[] | EmbeddingsSearchResult[]; endpoint: string }> {
+        if (this.embeddings && this.config.useContext !== 'keyword') {
+            return {
+                results: await this.getEmbeddingSearchResults(query, options),
+                endpoint: this.config.serverEndpoint,
+            }
+        }
+        return {
+            results:
+                (await this.keywords?.getSearchContext(query, options.numCodeResults + options.numTextResults)) || [],
+            endpoint: this.config.serverEndpoint,
         }
     }
 
@@ -43,6 +70,17 @@ export class CodebaseContext {
         query: string,
         options: ContextSearchOptions
     ): Promise<ContextMessage[]> {
+        const combinedResults = await this.getEmbeddingSearchResults(query, options)
+
+        return groupResultsByFile(combinedResults)
+            .reverse() // Reverse results so that they appear in ascending order of importance (least -> most).
+            .flatMap(groupedResults => this.makeContextMessageWithResponse(groupedResults))
+    }
+
+    private async getEmbeddingSearchResults(
+        query: string,
+        options: ContextSearchOptions
+    ): Promise<EmbeddingsSearchResult[]> {
         if (!this.embeddings) {
             return []
         }
@@ -57,38 +95,43 @@ export class CodebaseContext {
             return []
         }
 
-        const combinedResults = embeddingsSearchResults.codeResults.concat(embeddingsSearchResults.textResults)
+        return embeddingsSearchResults.codeResults.concat(embeddingsSearchResults.textResults)
+    }
 
-        return groupResultsByFile(combinedResults)
-            .reverse() // Reverse results so that they appear in ascending order of importance (least -> most).
-            .flatMap(groupedResults => {
-                const contextTemplateFn = isMarkdownFile(groupedResults.fileName)
-                    ? populateMarkdownContextTemplate
-                    : populateCodeContextTemplate
+    private makeContextMessageWithResponse(groupedResults: { file: ContextFile; results: string[] }): ContextMessage[] {
+        const contextTemplateFn = isMarkdownFile(groupedResults.file.fileName)
+            ? populateMarkdownContextTemplate
+            : populateCodeContextTemplate
 
-                return groupedResults.results.flatMap<Message>(text =>
-                    getContextMessageWithResponse(
-                        contextTemplateFn(text, groupedResults.fileName),
-                        groupedResults.fileName
-                    )
-                )
-            })
+        return groupedResults.results.flatMap<Message>(text =>
+            getContextMessageWithResponse(contextTemplateFn(text, groupedResults.file.fileName), groupedResults.file)
+        )
     }
 
     private async getKeywordContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
-        const results = await this.keywords.getContext(query, options.numCodeResults + options.numTextResults)
-        return results.flatMap(({ content, fileName }) => {
+        const results = await this.getKeywordSearchResults(query, options)
+        return results.flatMap(({ content, fileName, repoName, revision }) => {
             const messageText = populateCodeContextTemplate(content, fileName)
-            return getContextMessageWithResponse(messageText, fileName)
+            return getContextMessageWithResponse(messageText, { fileName, repoName, revision })
         })
+    }
+
+    private async getKeywordSearchResults(
+        query: string,
+        options: ContextSearchOptions
+    ): Promise<KeywordContextFetcherResult[]> {
+        if (!this.keywords) {
+            return []
+        }
+        return this.keywords.getContext(query, options.numCodeResults + options.numTextResults)
     }
 }
 
-function groupResultsByFile(results: EmbeddingsSearchResult[]): { fileName: string; results: string[] }[] {
-    const originalFileOrder: string[] = []
+function groupResultsByFile(results: EmbeddingsSearchResult[]): { file: ContextFile; results: string[] }[] {
+    const originalFileOrder: ContextFile[] = []
     for (const result of results) {
-        if (!originalFileOrder.includes(result.fileName)) {
-            originalFileOrder.push(result.fileName)
+        if (!originalFileOrder.find((ogFile: ContextFile) => ogFile.fileName === result.fileName)) {
+            originalFileOrder.push({ fileName: result.fileName, repoName: result.repoName, revision: result.revision })
         }
     }
 
@@ -102,9 +145,9 @@ function groupResultsByFile(results: EmbeddingsSearchResult[]): { fileName: stri
         }
     }
 
-    return originalFileOrder.map(fileName => ({
-        fileName,
-        results: mergeConsecutiveResults(resultsGroupedByFile.get(fileName)!),
+    return originalFileOrder.map(file => ({
+        file,
+        results: mergeConsecutiveResults(resultsGroupedByFile.get(file.fileName)!),
     }))
 }
 
@@ -124,11 +167,4 @@ function mergeConsecutiveResults(results: EmbeddingsSearchResult[]): string[] {
     }
 
     return mergedResults
-}
-
-const MARKDOWN_EXTENSIONS = new Set(['md', 'markdown'])
-
-function isMarkdownFile(filePath: string): boolean {
-    const extension = path.extname(filePath).slice(1)
-    return MARKDOWN_EXTENSIONS.has(extension)
 }

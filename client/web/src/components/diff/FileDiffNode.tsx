@@ -5,11 +5,11 @@ import classNames from 'classnames'
 import prettyBytes from 'pretty-bytes'
 import { useLocation } from 'react-router-dom'
 
+import { dirname } from '@sourcegraph/common'
 import { Button, Badge, Link, Icon, Text, createLinkUrl, Tooltip } from '@sourcegraph/wildcard'
 
 import { FileDiffFields } from '../../graphql-operations'
 import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
-import { dirname } from '../../util/path'
 
 import { DiffStat, DiffStatSquares } from './DiffStat'
 import { FileDiffHunks } from './FileDiffHunks'

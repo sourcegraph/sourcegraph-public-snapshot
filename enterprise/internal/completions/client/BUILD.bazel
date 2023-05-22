@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "client",
+    srcs = ["client.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//enterprise/internal/completions/client/anthropic",
+        "//enterprise/internal/completions/client/dotcom",
+        "//enterprise/internal/completions/client/llmproxy",
+        "//enterprise/internal/completions/client/openai",
+        "//enterprise/internal/completions/types",
+        "//internal/conf",
+        "//internal/conf/deploy",
+        "//internal/httpcli",
+        "//lib/errors",
+        "//schema",
+    ],
+)

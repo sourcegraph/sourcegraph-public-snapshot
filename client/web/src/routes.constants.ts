@@ -23,6 +23,7 @@ export enum PageRoutes {
     InstallGitHubAppSuccess = '/install-github-app-success',
     Teams = '/teams/*',
     RequestAccess = '/request-access/*',
+    CodyStandalone = '/cody-standalone',
 }
 
 export enum EnterprisePageRoutes {
@@ -38,8 +39,10 @@ export enum EnterprisePageRoutes {
     Notebooks = '/notebooks',
     SearchNotebook = '/search/notebook',
     CodySearch = '/search/cody',
+    Cody = '/cody',
     Own = '/own',
     AppComingSoon = '/app/coming-soon',
     AppAuthCallback = '/app/auth/callback',
     Sentinel = '/sentinel/*',
+    AppSetup = '/app-setup',
 }

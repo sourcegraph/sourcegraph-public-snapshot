@@ -2,9 +2,9 @@ package honey
 
 import (
 	"github.com/honeycombio/libhoney-go"
-	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // Event represents a mockable/noop-able single event in Honeycomb terms, as per
@@ -14,8 +14,8 @@ type Event interface {
 	Dataset() string
 	// AddField adds a single key-value pair to this event.
 	AddField(key string, val any)
-	// AddLogFields adds each opentracing-go/log key-value field to this event.
-	AddLogFields(fields []log.Field)
+	// AddAttributes adds each otel/attribute key-value field to this event.
+	AddAttributes([]attribute.KeyValue)
 	// Add adds a complex type to the event. For structs, it adds each exported field.
 	// For maps, it adds each key/value. Add will error on all other types.
 	Add(data any) error
@@ -58,9 +58,9 @@ func (w eventWrapper) AddField(name string, val any) {
 	w.event.AddField(name, data)
 }
 
-func (w eventWrapper) AddLogFields(fields []log.Field) {
-	for _, field := range fields {
-		w.AddField(field.Key(), field.Value())
+func (w eventWrapper) AddAttributes(attrs []attribute.KeyValue) {
+	for _, attr := range attrs {
+		w.AddField(string(attr.Key), attr.Value.AsInterface())
 	}
 }
 

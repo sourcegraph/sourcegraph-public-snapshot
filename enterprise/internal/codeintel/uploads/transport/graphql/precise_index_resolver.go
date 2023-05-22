@@ -42,7 +42,8 @@ func newPreciseIndexResolver(
 	uploadsSvc UploadsService,
 	policySvc PolicyService,
 	gitserverClient gitserver.Client,
-	prefetcher *Prefetcher,
+	uploadLoader UploadLoader,
+	indexLoader IndexLoader,
 	siteAdminChecker sharedresolvers.SiteAdminChecker,
 	repoStore database.RepoStore,
 	locationResolver *gitresolvers.CachedLocationResolver,
@@ -51,7 +52,7 @@ func newPreciseIndexResolver(
 	index *uploadsshared.Index,
 ) (resolverstubs.PreciseIndexResolver, error) {
 	if index != nil && index.AssociatedUploadID != nil && upload == nil {
-		v, ok, err := prefetcher.GetUploadByID(ctx, *index.AssociatedUploadID)
+		v, ok, err := uploadLoader.GetByID(ctx, *index.AssociatedUploadID)
 		if err != nil {
 			return nil, err
 		}
@@ -62,7 +63,7 @@ func newPreciseIndexResolver(
 
 	if upload != nil {
 		if upload.AssociatedIndexID != nil {
-			v, ok, err := prefetcher.GetIndexByID(ctx, *upload.AssociatedIndexID)
+			v, ok, err := indexLoader.GetByID(ctx, *upload.AssociatedIndexID)
 			if err != nil {
 				return nil, err
 			}

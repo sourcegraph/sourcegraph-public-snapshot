@@ -26,7 +26,7 @@ func (f BasicFeature) FeatureName() string {
 
 func (f BasicFeature) Check(info *Info) error {
 	if info == nil {
-		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", f))
+		return newFeatureRequiresSubscriptionError(f.FeatureName())
 	}
 
 	featureTrimmed := BasicFeature(strings.TrimSpace(f.FeatureName()))
@@ -49,7 +49,7 @@ func (f BasicFeature) Check(info *Info) error {
 		return false
 	}
 	if !(info.Plan().HasFeature(featureTrimmed, info.IsExpired()) || hasFeature(featureTrimmed)) {
-		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", f))
+		return newFeatureRequiresUpgradeError(f.FeatureName())
 	}
 	return nil
 }
@@ -69,7 +69,7 @@ func (*FeatureBatchChanges) FeatureName() string {
 
 func (f *FeatureBatchChanges) Check(info *Info) error {
 	if info == nil {
-		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", f.FeatureName()))
+		return newFeatureRequiresSubscriptionError(f.FeatureName())
 	}
 
 	// If the deprecated campaigns are enabled, use unrestricted batch changes.
@@ -90,7 +90,7 @@ func (f *FeatureBatchChanges) Check(info *Info) error {
 		return nil
 	}
 
-	return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", f.FeatureName()))
+	return newFeatureRequiresUpgradeError(f.FeatureName())
 }
 
 type FeaturePrivateRepositories struct {
@@ -108,7 +108,7 @@ func (*FeaturePrivateRepositories) FeatureName() string {
 
 func (f *FeaturePrivateRepositories) Check(info *Info) error {
 	if info == nil {
-		return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", f.FeatureName()))
+		return newFeatureRequiresSubscriptionError(f.FeatureName())
 	}
 
 	// If the private repositories tag exists on the license, use unrestricted
@@ -123,7 +123,7 @@ func (f *FeaturePrivateRepositories) Check(info *Info) error {
 		return nil
 	}
 
-	return NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", f.FeatureName()))
+	return newFeatureRequiresUpgradeError(f.FeatureName())
 }
 
 // Check checks whether the feature is activated based on the current license. If
@@ -174,6 +174,16 @@ func TestingSkipFeatureChecks() func() {
 func NewFeatureNotActivatedError(message string) featureNotActivatedError {
 	e := errcode.NewPresentationError(message).(errcode.PresentationError)
 	return featureNotActivatedError{e}
+}
+
+func newFeatureRequiresSubscriptionError(feature string) featureNotActivatedError {
+	msg := fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", feature)
+	return NewFeatureNotActivatedError(msg)
+}
+
+func newFeatureRequiresUpgradeError(feature string) featureNotActivatedError {
+	msg := fmt.Sprintf("The feature %q is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.", feature)
+	return NewFeatureNotActivatedError(msg)
 }
 
 type featureNotActivatedError struct{ errcode.PresentationError }

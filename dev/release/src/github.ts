@@ -638,11 +638,11 @@ export async function createTag(
     const branch = JSON.stringify(rawBranch)
     const tag = JSON.stringify(rawTag)
     const finalizeTag = dryRun ? `git --no-pager show ${tag} --no-patch` : `git push origin ${tag}`
-    console.log(
-        dryRun
-            ? `Dry-run enabled - creating and printing tag ${tag} on ${owner}/${repo}@${branch}`
-            : `Creating and pushing tag ${tag} on ${owner}/${repo}@${branch}`
-    )
+    if (dryRun) {
+        console.log(`Dry-run enabled - creating and printing tag ${tag} on ${owner}/${repo}@${branch}`)
+        return
+    }
+    console.log(`Creating and pushing tag ${tag} on ${owner}/${repo}@${branch}`)
     await execa('bash', ['-c', `git tag -a ${tag} -m ${tag} && ${finalizeTag}`], { stdio: 'inherit', cwd: workdir })
 }
 

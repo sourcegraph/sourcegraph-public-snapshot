@@ -15,10 +15,12 @@ type operations struct {
 	getPackageInformation      *observation.Operation
 	getDefinitionLocations     *observation.Operation
 	getImplementationLocations *observation.Operation
+	getPrototypesLocations     *observation.Operation
 	getReferenceLocations      *observation.Operation
 	getBulkMonikerLocations    *observation.Operation
 	getHover                   *observation.Operation
 	getDiagnostics             *observation.Operation
+	scipDocument               *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -49,9 +51,11 @@ func newOperations(observationCtx *observation.Context) *operations {
 		getPackageInformation:      op("GetPackageInformation"),
 		getDefinitionLocations:     op("GetDefinitionLocations"),
 		getImplementationLocations: op("GetImplementationLocations"),
+		getPrototypesLocations:     op("GetPrototypesLocations"),
 		getReferenceLocations:      op("GetReferenceLocations"),
 		getBulkMonikerLocations:    op("GetBulkMonikerLocations"),
 		getHover:                   op("GetHover"),
 		getDiagnostics:             op("GetDiagnostics"),
+		scipDocument:               op("SCIPDocument"),
 	}
 }

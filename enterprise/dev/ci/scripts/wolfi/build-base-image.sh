@@ -47,6 +47,10 @@ tag=${2-latest}
 
 cd "wolfi-images/"
 
+# Export date for apko (defaults to 0 for reproducibility)
+SOURCE_DATE_EPOCH="$(date +%s)"
+export SOURCE_DATE_EPOCH
+
 # Build base image with apko
 echo " * Building base image '$name' with apko..."
 image_name="sourcegraph-wolfi/${name}-base"
@@ -61,3 +65,6 @@ docker load <"$tarball"
 
 docker tag "$image_name" "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:$tag"
 docker push "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:$tag"
+# Temporary convenience during initial development, as this doesn't scale to multiple branches!
+docker tag "$image_name" "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:latest"
+docker push "us.gcr.io/sourcegraph-dev/wolfi-${name}-base:latest"

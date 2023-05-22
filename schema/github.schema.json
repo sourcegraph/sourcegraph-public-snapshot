@@ -173,8 +173,29 @@
       }
     },
     "githubAppInstallationID": {
-      "description": "The installation ID of the GitHub App.",
+      "description": "DEPRECATED: The installation ID of the GitHub App.",
       "type": "string"
+    },
+    "gitHubAppDetails": {
+      "description": "If non-null, this is a GitHub App connection with some additional properties.",
+      "type": "object",
+      "properties": {
+        "baseURL": {
+          "description": "The base URL of the GitHub App.",
+          "type": "string",
+          "pattern": "^https?://"
+        },
+        "appID": {
+          "description": "The ID of the GitHub App.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "installationID": {
+          "description": "The installation ID of this connection.",
+          "type": "integer",
+          "minimum": 1
+        }
+      }
     },
     "pending": {
       "description": "Whether the code host connection is in a pending state.",

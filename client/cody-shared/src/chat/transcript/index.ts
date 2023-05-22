@@ -1,12 +1,80 @@
+import { OldContextMessage } from '../../codebase-context/messages'
 import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
 import { Message } from '../../sourcegraph-api'
-import { getShortTimestamp } from '../../timestamp'
 
-import { Interaction } from './interaction'
+import { Interaction, InteractionJSON } from './interaction'
 import { ChatMessage } from './messages'
 
+export interface TranscriptJSON {
+    // This is the timestamp of the first interaction.
+    id: string
+    interactions: InteractionJSON[]
+    lastInteractionTimestamp: string
+}
+
+/**
+ * A transcript of a conversation between a human and an assistant.
+ */
 export class Transcript {
+    public static fromJSON(json: TranscriptJSON): Transcript {
+        return new Transcript(
+            json.interactions.map(
+                ({ humanMessage, assistantMessage, context, timestamp }) =>
+                    new Interaction(
+                        humanMessage,
+                        assistantMessage,
+                        Promise.resolve(
+                            context.map(message => {
+                                if (message.file) {
+                                    return message
+                                }
+
+                                const { fileName } = message as any as OldContextMessage
+                                if (fileName) {
+                                    return { ...message, file: { fileName } }
+                                }
+
+                                return message
+                            })
+                        ),
+                        timestamp || new Date().toISOString()
+                    )
+            ),
+            json.id
+        )
+    }
+
     private interactions: Interaction[] = []
+
+    private internalID: string
+
+    constructor(interactions: Interaction[] = [], id?: string) {
+        this.interactions = interactions
+        this.internalID =
+            id ||
+            this.interactions.find(({ timestamp }) => !isNaN(new Date(timestamp) as any))?.timestamp ||
+            new Date().toISOString()
+    }
+
+    public get id(): string {
+        return this.internalID
+    }
+
+    public get isEmpty(): boolean {
+        return this.interactions.length === 0
+    }
+
+    public get lastInteractionTimestamp(): string {
+        for (let index = this.interactions.length - 1; index >= 0; index--) {
+            const { timestamp } = this.interactions[index]
+
+            if (!isNaN(new Date(timestamp) as any)) {
+                return timestamp
+            }
+        }
+
+        return this.internalID
+    }
 
     public addInteraction(interaction: Interaction | null): void {
         if (!interaction) {
@@ -15,16 +83,34 @@ export class Transcript {
         this.interactions.push(interaction)
     }
 
-    private getLastInteraction(): Interaction | null {
+    public getLastInteraction(): Interaction | null {
         return this.interactions.length > 0 ? this.interactions[this.interactions.length - 1] : null
     }
 
-    public addAssistantResponse(text: string): void {
+    public removeLastInteraction(): void {
+        this.interactions.pop()
+    }
+
+    public addAssistantResponse(text: string, displayText?: string): void {
         this.getLastInteraction()?.setAssistantMessage({
             speaker: 'assistant',
             text,
-            displayText: text,
-            timestamp: getShortTimestamp(),
+            displayText: displayText ?? text,
+        })
+    }
+
+    public addErrorAsAssistantResponse(errorText: string): void {
+        const lastInteraction = this.getLastInteraction()
+        if (!lastInteraction) {
+            return
+        }
+        // If assistant has responsed before, we will add the error message after it
+        const lastAssistantMessage = lastInteraction.getAssistantMessage().displayText || ''
+        lastInteraction.setAssistantMessage({
+            speaker: 'assistant',
+            text: 'Failed to generate a response due to server error.',
+            displayText:
+                lastAssistantMessage + `<div class="cody-chat-error"><span>Request failed: </span>${errorText}</div>`,
         })
     }
 
@@ -58,11 +144,31 @@ export class Transcript {
         return this.interactions.flatMap(interaction => interaction.toChat())
     }
 
+    public async toChatPromise(): Promise<ChatMessage[]> {
+        return [...(await Promise.all(this.interactions.map(interaction => interaction.toChatPromise())))].flat()
+    }
+
+    public async toJSON(): Promise<TranscriptJSON> {
+        const interactions = await Promise.all(this.interactions.map(interaction => interaction.toJSON()))
+
+        return {
+            id: this.id,
+            interactions,
+            lastInteractionTimestamp: this.lastInteractionTimestamp,
+        }
+    }
+
     public reset(): void {
         this.interactions = []
+        this.internalID = new Date().toISOString()
     }
 }
 
+/**
+ * Truncates the given prompt messages to fit within the available tokens budget.
+ * The truncation is done by removing the oldest pairs of messages first.
+ * No individual message will be truncated. We just remove pairs of messages if they exceed the available tokens budget.
+ */
 function truncatePrompt(messages: Message[], maxTokens: number): Message[] {
     const newPromptMessages = []
     let availablePromptTokensBudget = maxTokens
@@ -84,6 +190,9 @@ function truncatePrompt(messages: Message[], maxTokens: number): Message[] {
     return newPromptMessages.reverse()
 }
 
+/**
+ * Gives a rough estimate for the number of tokens used by the message.
+ */
 function estimateTokensUsage(message: Message): number {
-    return Math.round(message.text.length / CHARS_PER_TOKEN)
+    return Math.round((message.text || '').length / CHARS_PER_TOKEN)
 }

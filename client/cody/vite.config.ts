@@ -14,9 +14,14 @@ export default defineConfig({
             localsConvention: 'camelCaseOnly',
         },
     },
+    logLevel: 'warn',
     build: {
         emptyOutDir: false,
         outDir: 'dist',
+        target: 'esnext',
+        minify: false,
+        sourcemap: 'inline',
+        reportCompressedSize: false,
         rollupOptions: {
             external: [/^vscode/],
             watch: {

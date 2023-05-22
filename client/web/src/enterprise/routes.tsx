@@ -2,7 +2,6 @@ import { Navigate, RouteObject } from 'react-router-dom'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { LegacyRoute } from '../LegacyRouteContext'
 import { routes } from '../routes'
 import { EnterprisePageRoutes } from '../routes.constants'
@@ -33,12 +32,24 @@ const EditSearchContextPage = lazyComponent(
     'EditSearchContextPage'
 )
 const SearchContextPage = lazyComponent(() => import('./searchContexts/SearchContextPage'), 'SearchContextPage')
-const CodySearchPage = lazyComponent(() => import('./cody/search/CodySearchPage'), 'CodySearchPage')
+const CodySearchPage = lazyComponent(() => import('../cody/search/CodySearchPage'), 'CodySearchPage')
+const CodyChatPage = lazyComponent(() => import('../cody/chat/CodyChatPage'), 'CodyChatPage')
 const OwnPage = lazyComponent(() => import('./own/OwnPage'), 'OwnPage')
 const AppComingSoonPage = lazyComponent(() => import('./app/AppComingSoonPage'), 'AppComingSoonPage')
 const AppAuthCallbackPage = lazyComponent(() => import('./app/AppAuthCallbackPage'), 'AppAuthCallbackPage')
+const AppSetup = lazyComponent(() => import('./app/setup/AppSetupWizard'), 'AppSetupWizard')
 
 export const enterpriseRoutes: RouteObject[] = [
+    {
+        path: `${EnterprisePageRoutes.AppSetup}/*`,
+        handle: { isFullPage: true },
+        element: (
+            <LegacyRoute
+                render={props => <AppSetup telemetryService={props.telemetryService} />}
+                condition={({ isSourcegraphApp }) => isSourcegraphApp}
+            />
+        ),
+    },
     {
         path: EnterprisePageRoutes.BatchChanges,
         element: (
@@ -60,7 +71,7 @@ export const enterpriseRoutes: RouteObject[] = [
         element: (
             <LegacyRoute
                 render={props => <CodeInsightsRouter {...props} />}
-                condition={props => isCodeInsightsEnabled(props.settingsCascade)}
+                condition={({ codeInsightsEnabled }) => !!codeInsightsEnabled}
             />
         ),
     },
@@ -99,7 +110,11 @@ export const enterpriseRoutes: RouteObject[] = [
     },
     {
         path: EnterprisePageRoutes.CodySearch,
-        element: <CodySearchPage />,
+        element: <LegacyRoute render={props => <CodySearchPage {...props} />} />,
+    },
+    {
+        path: EnterprisePageRoutes.Cody,
+        element: <LegacyRoute render={props => <CodyChatPage {...props} />} />,
     },
     {
         path: EnterprisePageRoutes.Own,

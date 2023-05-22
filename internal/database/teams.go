@@ -137,7 +137,7 @@ type TeamStore interface {
 	ListTeams(ctx context.Context, opts ListTeamsOpts) ([]*types.Team, int32, error)
 	// CountTeams counts teams given the options.
 	CountTeams(ctx context.Context, opts ListTeamsOpts) (int32, error)
-	// Contains tells whether given search conditions contain team with given ID.
+	// ContainsTeam tells whether given search conditions contain team with given ID.
 	ContainsTeam(ctx context.Context, id int32, opts ListTeamsOpts) (bool, error)
 	// ListTeamMembers lists team members given the options. The matching teams,
 	// plus the next cursor are returned.
@@ -153,7 +153,7 @@ type TeamStore interface {
 	// CreateTeamMember creates the team members in the database. If any of the inserts fail,
 	// all inserts are reverted.
 	CreateTeamMember(ctx context.Context, members ...*types.TeamMember) error
-	// DeleteTeam deletes the given team members from the database.
+	// DeleteTeamMember deletes the given team members from the database.
 	DeleteTeamMember(ctx context.Context, members ...*types.TeamMember) error
 	// IsTeamMember checks if the given user is a member of the given team.
 	IsTeamMember(ctx context.Context, teamID, userID int32) (bool, error)

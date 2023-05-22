@@ -131,3 +131,17 @@ func dedupeRanges(ranges []shared.Range) []shared.Range {
 	}
 	return dedup
 }
+
+type linemap struct {
+	positions []int
+}
+
+func newLinemap(source string) linemap {
+	l := linemap{positions: []int{0}}
+	for i, char := range source {
+		if char == '\n' {
+			l.positions = append(l.positions, i+1)
+		}
+	}
+	return l
+}

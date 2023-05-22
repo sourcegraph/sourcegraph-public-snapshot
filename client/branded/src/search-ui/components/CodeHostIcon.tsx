@@ -4,14 +4,20 @@ import { mdiBitbucket, mdiGithub, mdiGitlab } from '@mdi/js'
 
 import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
+const iconMap: { [key: string]: string } = {
+    'github.com': mdiGithub,
+    'gitlab.com': mdiGitlab,
+    'bitbucket.org': mdiBitbucket,
+}
 export function codeHostIcon(repoName: string): { hostName: string; svgPath?: string } {
     const hostName = repoName.split('/')[0]
-    const iconMap: { [key: string]: string } = {
-        'github.com': mdiGithub,
-        'gitlab.com': mdiGitlab,
-        'bitbucket.org': mdiBitbucket,
-    }
+
     return { hostName, svgPath: iconMap[hostName] }
+}
+
+export function isValidCodeHost(repoName: string): boolean {
+    const hostName = repoName.split('/')[0]
+    return iconMap[hostName] !== undefined
 }
 
 /**

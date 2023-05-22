@@ -4,10 +4,9 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/dataloader"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
 	uploadsgraphql "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/transport/graphql"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
@@ -17,8 +16,9 @@ import (
 
 type rootResolver struct {
 	sentinelSvc                 SentinelService
-	bulkLoaderFactory           *bulkLoaderFactory
-	prefetcherFactory           *uploadsgraphql.PrefetcherFactory
+	vulnerabilityLoaderFactory  VulnerabilityLoaderFactory
+	uploadLoaderFactory         uploadsgraphql.UploadLoaderFactory
+	indexLoaderFactory          uploadsgraphql.IndexLoaderFactory
 	locationResolverFactory     *gitresolvers.CachedLocationResolverFactory
 	preciseIndexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory
 	operations                  *operations
@@ -27,14 +27,16 @@ type rootResolver struct {
 func NewRootResolver(
 	observationCtx *observation.Context,
 	sentinelSvc SentinelService,
-	prefetcherFactory *uploadsgraphql.PrefetcherFactory,
+	uploadLoaderFactory uploadsgraphql.UploadLoaderFactory,
+	indexLoaderFactory uploadsgraphql.IndexLoaderFactory,
 	locationResolverFactory *gitresolvers.CachedLocationResolverFactory,
 	preciseIndexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory,
 ) resolverstubs.SentinelServiceResolver {
 	return &rootResolver{
 		sentinelSvc:                 sentinelSvc,
-		bulkLoaderFactory:           &bulkLoaderFactory{sentinelSvc},
-		prefetcherFactory:           prefetcherFactory,
+		vulnerabilityLoaderFactory:  NewVulnerabilityLoaderFactory(sentinelSvc),
+		uploadLoaderFactory:         uploadLoaderFactory,
+		indexLoaderFactory:          indexLoaderFactory,
 		locationResolverFactory:     locationResolverFactory,
 		preciseIndexResolverFactory: preciseIndexResolverFactory,
 		operations:                  newOperations(observationCtx),
@@ -42,9 +44,9 @@ func NewRootResolver(
 }
 
 func (r *rootResolver) Vulnerabilities(ctx context.Context, args resolverstubs.GetVulnerabilitiesArgs) (_ resolverstubs.VulnerabilityConnectionResolver, err error) {
-	ctx, _, endObservation := r.operations.getVulnerabilities.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int32("first", resolverstubs.Deref(args.First, 0)),
-		log.String("after", resolverstubs.Deref(args.After, "")),
+	ctx, _, endObservation := r.operations.getVulnerabilities.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("first", int(resolverstubs.Deref(args.First, 0))),
+		attribute.String("after", resolverstubs.Deref(args.After, "")),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -70,9 +72,9 @@ func (r *rootResolver) Vulnerabilities(ctx context.Context, args resolverstubs.G
 }
 
 func (r *rootResolver) VulnerabilityMatches(ctx context.Context, args resolverstubs.GetVulnerabilityMatchesArgs) (_ resolverstubs.VulnerabilityMatchConnectionResolver, err error) {
-	ctx, errTracer, endObservation := r.operations.getMatches.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int32("first", resolverstubs.Deref(args.First, 0)),
-		log.String("after", resolverstubs.Deref(args.After, "")),
+	ctx, errTracer, endObservation := r.operations.getMatches.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("first", int(resolverstubs.Deref(args.First, 0))),
+		attribute.String("after", resolverstubs.Deref(args.After, "")),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -107,25 +109,24 @@ func (r *rootResolver) VulnerabilityMatches(ctx context.Context, args resolverst
 		return nil, err
 	}
 
-	// Create a new prefetcher here as we only want to cache upload and index records in
-	// the same graphQL request, not across different request.
-	prefetcher := r.prefetcherFactory.Create()
-	bulkLoader := r.bulkLoaderFactory.Create()
-	locationResolver := r.locationResolverFactory.Create()
+	// Pre-submit vulnerability and upload ids for loading
+	vulnerabilityLoader := r.vulnerabilityLoaderFactory.Create()
+	uploadLoader := r.uploadLoaderFactory.Create()
+	PresubmitMatches(vulnerabilityLoader, uploadLoader, matches...)
 
-	for _, match := range matches {
-		prefetcher.MarkUpload(match.UploadID)
-		bulkLoader.MarkVulnerability(match.VulnerabilityID)
-	}
+	// No data to load for associated indexes or git data (yet)
+	indexLoader := r.indexLoaderFactory.Create()
+	locationResolver := r.locationResolverFactory.Create()
 
 	var resolvers []resolverstubs.VulnerabilityMatchResolver
 	for _, m := range matches {
 		resolvers = append(resolvers, &vulnerabilityMatchResolver{
-			prefetcher:       prefetcher,
-			locationResolver: locationResolver,
-			errTracer:        errTracer,
-			bulkLoader:       bulkLoader,
-			m:                m,
+			uploadLoader:        uploadLoader,
+			indexLoader:         indexLoader,
+			locationResolver:    locationResolver,
+			errTracer:           errTracer,
+			vulnerabilityLoader: vulnerabilityLoader,
+			m:                   m,
 		})
 	}
 
@@ -133,7 +134,7 @@ func (r *rootResolver) VulnerabilityMatches(ctx context.Context, args resolverst
 }
 
 func (r *rootResolver) VulnerabilityMatchesCountByRepository(ctx context.Context, args resolverstubs.GetVulnerabilityMatchCountByRepositoryArgs) (_ resolverstubs.VulnerabilityMatchCountByRepositoryConnectionResolver, err error) {
-	ctx, _, endObservation := r.operations.vulnerabilityMatchesCountByRepository.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, _, endObservation := r.operations.vulnerabilityMatchesCountByRepository.WithErrors(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	limit, offset, err := args.ParseLimitOffset(50)
@@ -164,8 +165,8 @@ func (r *rootResolver) VulnerabilityMatchesCountByRepository(ctx context.Context
 }
 
 func (r *rootResolver) VulnerabilityByID(ctx context.Context, vulnerabilityID graphql.ID) (_ resolverstubs.VulnerabilityResolver, err error) {
-	ctx, _, endObservation := r.operations.vulnerabilityByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("vulnerabilityID", string(vulnerabilityID)),
+	ctx, _, endObservation := r.operations.vulnerabilityByID.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("vulnerabilityID", string(vulnerabilityID)),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -183,8 +184,8 @@ func (r *rootResolver) VulnerabilityByID(ctx context.Context, vulnerabilityID gr
 }
 
 func (r *rootResolver) VulnerabilityMatchByID(ctx context.Context, vulnerabilityMatchID graphql.ID) (_ resolverstubs.VulnerabilityMatchResolver, err error) {
-	ctx, errTracer, endObservation := r.operations.vulnerabilityMatchByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("vulnerabilityMatchID", string(vulnerabilityMatchID)),
+	ctx, errTracer, endObservation := r.operations.vulnerabilityMatchByID.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("vulnerabilityMatchID", string(vulnerabilityMatchID)),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -198,18 +199,29 @@ func (r *rootResolver) VulnerabilityMatchByID(ctx context.Context, vulnerability
 		return nil, err
 	}
 
+	// Pre-submit vulnerability and upload ids for loading
+	vulnerabilityLoader := r.vulnerabilityLoaderFactory.Create()
+	uploadLoader := r.uploadLoaderFactory.Create()
+	PresubmitMatches(vulnerabilityLoader, uploadLoader, match)
+
+	// No data to load for associated indexes or git data (yet)
+	indexLoader := r.indexLoaderFactory.Create()
+	locationResolver := r.locationResolverFactory.Create()
+
 	return &vulnerabilityMatchResolver{
-		prefetcher:                  r.prefetcherFactory.Create(),
-		locationResolver:            r.locationResolverFactory.Create(),
+		uploadLoader:     uploadLoader,
+		indexLoader:      indexLoader,
+		locationResolver: locationResolver,
+
 		errTracer:                   errTracer,
-		bulkLoader:                  r.bulkLoaderFactory.Create(),
+		vulnerabilityLoader:         vulnerabilityLoader,
 		m:                           match,
 		preciseIndexResolverFactory: r.preciseIndexResolverFactory,
 	}, nil
 }
 
 func (r *rootResolver) VulnerabilityMatchesSummaryCounts(ctx context.Context) (_ resolverstubs.VulnerabilityMatchesSummaryCountResolver, err error) {
-	ctx, _, endObservation := r.operations.vulnerabilityMatchesSummaryCounts.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, _, endObservation := r.operations.vulnerabilityMatchesSummaryCounts.WithErrors(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	counts, err := r.sentinelSvc.GetVulnerabilityMatchesSummaryCounts(ctx)
@@ -303,42 +315,12 @@ type vulnerabilityAffectedSymbolResolver struct {
 func (r *vulnerabilityAffectedSymbolResolver) Path() string      { return r.s.Path }
 func (r *vulnerabilityAffectedSymbolResolver) Symbols() []string { return r.s.Symbols }
 
-//
-//
-
-type bulkLoaderFactory struct {
-	sentinelSvc SentinelService
-}
-
-func (f *bulkLoaderFactory) Create() *bulkLoader {
-	return NewBulkLoader(f.sentinelSvc)
-}
-
-type bulkLoader struct {
-	loader *dataloader.DataLoader[int, shared.Vulnerability]
-}
-
-func NewBulkLoader(sentinelSvc SentinelService) *bulkLoader {
-	return &bulkLoader{
-		loader: dataloader.New[int, shared.Vulnerability](dataloader.BackingServiceFunc[int, shared.Vulnerability](func(ctx context.Context, ids ...int) ([]shared.Vulnerability, error) {
-			return sentinelSvc.GetVulnerabilitiesByIDs(ctx, ids...)
-		})),
-	}
-}
-
-func (l *bulkLoader) MarkVulnerability(id int) {
-	l.loader.Presubmit(id)
-}
-
-func (l *bulkLoader) GetVulnerabilityByID(ctx context.Context, id int) (shared.Vulnerability, bool, error) {
-	return l.loader.GetByID(ctx, id)
-}
-
 type vulnerabilityMatchResolver struct {
-	prefetcher                  *uploadsgraphql.Prefetcher
+	uploadLoader                uploadsgraphql.UploadLoader
+	indexLoader                 uploadsgraphql.IndexLoader
 	locationResolver            *gitresolvers.CachedLocationResolver
 	errTracer                   *observation.ErrCollector
-	bulkLoader                  *bulkLoader
+	vulnerabilityLoader         VulnerabilityLoader
 	m                           shared.VulnerabilityMatch
 	preciseIndexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory
 }
@@ -348,7 +330,7 @@ func (r *vulnerabilityMatchResolver) ID() graphql.ID {
 }
 
 func (r *vulnerabilityMatchResolver) Vulnerability(ctx context.Context) (resolverstubs.VulnerabilityResolver, error) {
-	vulnerability, ok, err := r.bulkLoader.GetVulnerabilityByID(ctx, r.m.VulnerabilityID)
+	vulnerability, ok, err := r.vulnerabilityLoader.GetByID(ctx, r.m.VulnerabilityID)
 	if err != nil || !ok {
 		return nil, err
 	}
@@ -361,12 +343,12 @@ func (r *vulnerabilityMatchResolver) AffectedPackage(ctx context.Context) (resol
 }
 
 func (r *vulnerabilityMatchResolver) PreciseIndex(ctx context.Context) (resolverstubs.PreciseIndexResolver, error) {
-	upload, ok, err := r.prefetcher.GetUploadByID(ctx, r.m.UploadID)
+	upload, ok, err := r.uploadLoader.GetByID(ctx, r.m.UploadID)
 	if err != nil || !ok {
 		return nil, err
 	}
 
-	return r.preciseIndexResolverFactory.Create(ctx, r.prefetcher, r.locationResolver, r.errTracer, &upload, nil)
+	return r.preciseIndexResolverFactory.Create(ctx, r.uploadLoader, r.indexLoader, r.locationResolver, r.errTracer, &upload, nil)
 }
 
 //

@@ -10,6 +10,7 @@ pub enum BundledParser {
     Java,
     Javascript,
     Jsonnet,
+    Kotlin,
     Nickel,
     Perl,
     Pod,
@@ -19,6 +20,7 @@ pub enum BundledParser {
     Scala,
     Sql,
     Xlsg,
+    Zig,
 
     // These two are special cases
     Typescript,
@@ -35,6 +37,7 @@ impl BundledParser {
             BundledParser::Java => tree_sitter_java::language(),
             BundledParser::Javascript => tree_sitter_javascript::language(),
             BundledParser::Jsonnet => tree_sitter_jsonnet::language(),
+            BundledParser::Kotlin => tree_sitter_kotlin::language(),
             BundledParser::Nickel => tree_sitter_nickel::language(),
             BundledParser::Perl => tree_sitter_perl::language(),
             BundledParser::Pod => tree_sitter_pod::language(),
@@ -46,6 +49,7 @@ impl BundledParser {
             BundledParser::Typescript => tree_sitter_typescript::language_typescript(),
             BundledParser::Tsx => tree_sitter_typescript::language_tsx(),
             BundledParser::Xlsg => tree_sitter_xlsg::language(),
+            BundledParser::Zig => tree_sitter_zig::language(),
         }
     }
 
@@ -58,6 +62,7 @@ impl BundledParser {
             "java" => Some(BundledParser::Java),
             "javascript" => Some(BundledParser::Javascript),
             "jsonnet" => Some(BundledParser::Jsonnet),
+            "kotlin" => Some(BundledParser::Kotlin),
             "nickel" => Some(BundledParser::Nickel),
             "perl" => Some(BundledParser::Perl),
             "pod" => Some(BundledParser::Pod),
@@ -69,6 +74,7 @@ impl BundledParser {
             "typescript" => Some(BundledParser::Typescript),
             "tsx" => Some(BundledParser::Tsx),
             "xlsg" => Some(BundledParser::Xlsg),
+            "zig" => Some(BundledParser::Zig),
             _ => None,
         }
     }

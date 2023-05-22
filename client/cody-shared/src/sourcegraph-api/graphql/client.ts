@@ -1,5 +1,8 @@
 import fetch from 'isomorphic-fetch'
 
+import { buildGraphQLUrl } from '@sourcegraph/http-client'
+
+import { ConfigurationWithAccessToken } from '../../configuration'
 import { isError } from '../../utils'
 
 import {
@@ -7,7 +10,11 @@ import {
     IS_CONTEXT_REQUIRED_QUERY,
     REPOSITORY_ID_QUERY,
     SEARCH_EMBEDDINGS_QUERY,
+    LEGACY_SEARCH_EMBEDDINGS_QUERY,
     LOG_EVENT_MUTATION,
+    REPOSITORY_EMBEDDING_EXISTS_QUERY,
+    SEARCH_TYPE_REPO_QUERY,
+    CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY,
 } from './queries'
 
 interface APIResponse<T> {
@@ -19,17 +26,35 @@ interface CurrentUserIdResponse {
     currentUser: { id: string } | null
 }
 
+interface CurrentUserIdHasVerifiedEmailResponse {
+    currentUser: { id: string; hasVerifiedEmail: boolean } | null
+}
+
 interface RepositoryIdResponse {
     repository: { id: string } | null
+}
+
+interface RepositoryEmbeddingExistsResponse {
+    repository: { id: string; embeddingExists: boolean } | null
 }
 
 interface EmbeddingsSearchResponse {
     embeddingsSearch: EmbeddingsSearchResults
 }
 
+interface EmbeddingsMultiSearchResponse {
+    embeddingsMultiSearch: EmbeddingsSearchResults
+}
+
+interface SearchTypeRepoResponse {
+    search: { results: { results: { name: string }[] } }
+}
+
 interface LogEventResponse {}
 
 export interface EmbeddingsSearchResult {
+    repoName?: string
+    revision?: string
     fileName: string
     startLine: number
     endLine: number
@@ -39,6 +64,10 @@ export interface EmbeddingsSearchResult {
 export interface EmbeddingsSearchResults {
     codeResults: EmbeddingsSearchResult[]
     textResults: EmbeddingsSearchResult[]
+}
+
+export interface SearchTypeRepoResults {
+    repositories: { name: string }[]
 }
 
 interface IsContextRequiredForChatQueryResponse {
@@ -61,7 +90,17 @@ function extractDataOrError<T, R>(response: APIResponse<T> | Error, extract: (da
 export class SourcegraphGraphQLAPIClient {
     private dotcomUrl = 'https://sourcegraph.com'
 
-    constructor(private instanceUrl: string, private accessToken: string | null) {}
+    constructor(
+        private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
+    ) {}
+
+    public onConfigurationChange(newConfig: typeof this.config): void {
+        this.config = newConfig
+    }
+
+    public isDotCom(): boolean {
+        return new URL(this.config.serverEndpoint).origin === new URL(this.dotcomUrl).origin
+    }
 
     public async getCurrentUserId(): Promise<string | Error> {
         return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdResponse>>(CURRENT_USER_ID_QUERY, {}).then(response =>
@@ -71,13 +110,35 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
+    public async getCurrentUserIdAndVerifiedEmail(): Promise<{ id: string; hasVerifiedEmail: boolean } | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<CurrentUserIdHasVerifiedEmailResponse>>(
+            CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY,
+            {}
+        ).then(response =>
+            extractDataOrError(response, data =>
+                data.currentUser ? { ...data.currentUser } : new Error('current user not found')
+            )
+        )
+    }
+
     public async getRepoId(repoName: string): Promise<string | Error> {
         return this.fetchSourcegraphAPI<APIResponse<RepositoryIdResponse>>(REPOSITORY_ID_QUERY, {
             name: repoName,
         }).then(response =>
             extractDataOrError(response, data =>
-                data.repository ? data.repository.id : new Error(`repository ${repoName} not found`)
+                data.repository ? data.repository.id : new RepoNotFoundError(`repository ${repoName} not found`)
             )
+        )
+    }
+
+    public async getRepoIdIfEmbeddingExists(repoName: string): Promise<string | null | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<RepositoryEmbeddingExistsResponse>>(
+            REPOSITORY_EMBEDDING_EXISTS_QUERY,
+            {
+                name: repoName,
+            }
+        ).then(response =>
+            extractDataOrError(response, data => (data.repository?.embeddingExists ? data.repository.id : null))
         )
     }
 
@@ -90,7 +151,7 @@ export class SourcegraphGraphQLAPIClient {
         publicArgument?: string | {}
     }): Promise<void | Error> {
         try {
-            if (this.instanceUrl === this.dotcomUrl) {
+            if (this.config.serverEndpoint === this.dotcomUrl) {
                 await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
                     response => {
                         extractDataOrError(response, data => {})
@@ -116,17 +177,42 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     public async searchEmbeddings(
+        repos: string[],
+        query: string,
+        codeResultsCount: number,
+        textResultsCount: number
+    ): Promise<EmbeddingsSearchResults | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<EmbeddingsMultiSearchResponse>>(SEARCH_EMBEDDINGS_QUERY, {
+            repos,
+            query,
+            codeResultsCount,
+            textResultsCount,
+        }).then(response => extractDataOrError(response, data => data.embeddingsMultiSearch))
+    }
+
+    // (Naman): This is a temporary workaround for supporting vscode cody integrated with older version of sourcegraph which do not support the latest searchEmbeddings query.
+    public async legacySearchEmbeddings(
         repo: string,
         query: string,
         codeResultsCount: number,
         textResultsCount: number
     ): Promise<EmbeddingsSearchResults | Error> {
-        return this.fetchSourcegraphAPI<APIResponse<EmbeddingsSearchResponse>>(SEARCH_EMBEDDINGS_QUERY, {
+        return this.fetchSourcegraphAPI<APIResponse<EmbeddingsSearchResponse>>(LEGACY_SEARCH_EMBEDDINGS_QUERY, {
             repo,
             query,
             codeResultsCount,
             textResultsCount,
         }).then(response => extractDataOrError(response, data => data.embeddingsSearch))
+    }
+
+    public async searchTypeRepo(query: string): Promise<SearchTypeRepoResults | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<SearchTypeRepoResponse>>(SEARCH_TYPE_REPO_QUERY, {
+            query,
+        }).then(response =>
+            extractDataOrError(response, data => ({
+                repositories: data.search.results.results,
+            }))
+        )
     }
 
     public async isContextRequiredForQuery(query: string): Promise<boolean | Error> {
@@ -136,25 +222,33 @@ export class SourcegraphGraphQLAPIClient {
     }
 
     private fetchSourcegraphAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
-        return fetch(`${this.instanceUrl}/.api/graphql`, {
-            headers: { ...(this.accessToken ? { Authorization: `token ${this.accessToken}` } : null) },
+        const headers = new Headers(this.config.customHeaders as HeadersInit)
+        headers.set('Content-Type', 'application/json; charset=utf-8')
+        if (this.config.accessToken) {
+            headers.set('Authorization', `token ${this.config.accessToken}`)
+        }
+
+        const url = buildGraphQLUrl({ request: query, baseUrl: this.config.serverEndpoint })
+        return fetch(url, {
             method: 'POST',
             body: JSON.stringify({ query, variables }),
+            headers,
         })
             .then(verifyResponseCode)
             .then(response => response.json() as T)
-            .catch(error => new Error(`accessing Sourcegraph GraphQL API: ${error}`))
+            .catch(error => new Error(`accessing Sourcegraph GraphQL API: ${error} (${url})`))
     }
 
     // make an anonymous request to the dotcom API
     private async fetchSourcegraphDotcomAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
-        return fetch(`${this.dotcomUrl}/.api/graphql`, {
+        const url = buildGraphQLUrl({ request: query, baseUrl: this.dotcomUrl })
+        return fetch(url, {
             method: 'POST',
             body: JSON.stringify({ query, variables }),
         })
             .then(verifyResponseCode)
             .then(response => response.json() as T)
-            .catch(() => new Error('error fetching Sourcegraph GraphQL API'))
+            .catch(error => new Error(`error fetching Sourcegraph GraphQL API: ${error} (${url})`))
     }
 }
 
@@ -164,3 +258,6 @@ function verifyResponseCode(response: Response): Response {
     }
     return response
 }
+
+class RepoNotFoundError extends Error {}
+export const isRepoNotFoundError = (value: unknown): value is RepoNotFoundError => value instanceof RepoNotFoundError

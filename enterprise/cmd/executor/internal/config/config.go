@@ -3,12 +3,16 @@ package config
 import (
 	"encoding/json"
 	"net/url"
+	"path/filepath"
 	"runtime"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/c2h5oh/datasize"
 	"github.com/google/uuid"
+	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/util/homedir"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
@@ -20,36 +24,66 @@ import (
 type Config struct {
 	env.BaseConfig
 
-	FrontendURL                    string
-	FrontendAuthorizationToken     string
-	QueueName                      string
-	QueuePollInterval              time.Duration
-	MaximumNumJobs                 int
-	FirecrackerImage               string
-	FirecrackerKernelImage         string
-	FirecrackerSandboxImage        string
-	VMStartupScriptPath            string
-	VMPrefix                       string
-	KeepWorkspaces                 bool
-	DockerHostMountPath            string
-	UseFirecracker                 bool
-	JobNumCPUs                     int
-	JobMemory                      string
-	FirecrackerDiskSpace           string
-	FirecrackerBandwidthIngress    int
-	FirecrackerBandwidthEgress     int
-	MaximumRuntimePerJob           time.Duration
-	CleanupTaskInterval            time.Duration
-	NumTotalJobs                   int
-	MaxActiveTime                  time.Duration
-	NodeExporterURL                string
-	DockerRegistryNodeExporterURL  string
-	WorkerHostname                 string
-	DockerRegistryMirrorURL        string
-	DockerAddHostGateway           bool
-	DockerAuthConfig               types.DockerAuthConfig
-	dockerAuthConfigStr            string
-	dockerAuthConfigUnmarshalError error
+	FrontendURL                                    string
+	FrontendAuthorizationToken                     string
+	QueueName                                      string
+	QueuePollInterval                              time.Duration
+	MaximumNumJobs                                 int
+	FirecrackerImage                               string
+	FirecrackerKernelImage                         string
+	FirecrackerSandboxImage                        string
+	VMStartupScriptPath                            string
+	VMPrefix                                       string
+	KeepWorkspaces                                 bool
+	DockerHostMountPath                            string
+	UseFirecracker                                 bool
+	JobNumCPUs                                     int
+	JobMemory                                      string
+	FirecrackerDiskSpace                           string
+	FirecrackerBandwidthIngress                    int
+	FirecrackerBandwidthEgress                     int
+	MaximumRuntimePerJob                           time.Duration
+	CleanupTaskInterval                            time.Duration
+	NumTotalJobs                                   int
+	MaxActiveTime                                  time.Duration
+	NodeExporterURL                                string
+	DockerRegistryNodeExporterURL                  string
+	WorkerHostname                                 string
+	DockerRegistryMirrorURL                        string
+	DockerAddHostGateway                           bool
+	DockerAuthConfig                               types.DockerAuthConfig
+	KubernetesConfigPath                           string
+	KubernetesNodeName                             string
+	KubernetesNodeSelector                         string
+	KubernetesNodeRequiredAffinityMatchExpressions []corev1.NodeSelectorRequirement
+	KubernetesNodeRequiredAffinityMatchFields      []corev1.NodeSelectorRequirement
+	KubernetesPodAffinity                          []corev1.PodAffinityTerm
+	KubernetesPodAntiAffinity                      []corev1.PodAffinityTerm
+	KubernetesNodeTolerations                      []corev1.Toleration
+	KubernetesNamespace                            string
+	KubernetesPersistenceVolumeName                string
+	KubernetesResourceLimitCPU                     string
+	KubernetesResourceLimitMemory                  string
+	KubernetesResourceRequestCPU                   string
+	KubernetesResourceRequestMemory                string
+	KubernetesJobDeadline                          int
+	KubernetesKeepJobs                             bool
+	KubernetesSecurityContextRunAsUser             int
+	KubernetesSecurityContextRunAsGroup            int
+	KubernetesSecurityContextFSGroup               int
+
+	dockerAuthConfigStr                                          string
+	dockerAuthConfigUnmarshalError                               error
+	kubernetesNodeRequiredAffinityMatchExpressions               string
+	kubernetesNodeRequiredAffinityMatchExpressionsUnmarshalError error
+	kubernetesNodeRequiredAffinityMatchFields                    string
+	kubernetesNodeRequiredAffinityMatchFieldsUnmarshalError      error
+	kubernetesPodAffinity                                        string
+	kubernetesPodAffinityUnmarshalError                          error
+	kubernetesPodAntiAffinity                                    string
+	kubernetesPodAntiAffinityUnmarshalError                      error
+	kubernetesNodeTolerations                                    string
+	kubernetesNodeTolerationsUnmarshalError                      error
 
 	defaultFrontendPassword string
 }
@@ -66,7 +100,7 @@ func (c *Config) Load() {
 	c.QueueName = c.Get("EXECUTOR_QUEUE_NAME", "", "The name of the queue to listen to.")
 	c.QueuePollInterval = c.GetInterval("EXECUTOR_QUEUE_POLL_INTERVAL", "1s", "Interval between dequeue requests.")
 	c.MaximumNumJobs = c.GetInt("EXECUTOR_MAXIMUM_NUM_JOBS", "1", "Number of virtual machines or containers that can be running at once.")
-	c.UseFirecracker = c.GetBool("EXECUTOR_USE_FIRECRACKER", strconv.FormatBool(runtime.GOOS == "linux"), "Whether to isolate commands in virtual machines. Requires ignite and firecracker. Linux hosts only.")
+	c.UseFirecracker = c.GetBool("EXECUTOR_USE_FIRECRACKER", strconv.FormatBool(runtime.GOOS == "linux" && !IsKubernetes()), "Whether to isolate commands in virtual machines. Requires ignite and firecracker. Linux hosts only. Kubernetes is not supported.")
 	c.FirecrackerImage = c.Get("EXECUTOR_FIRECRACKER_IMAGE", DefaultFirecrackerImage, "The base image to use for virtual machines.")
 	c.FirecrackerKernelImage = c.Get("EXECUTOR_FIRECRACKER_KERNEL_IMAGE", DefaultFirecrackerKernelImage, "The base image containing the kernel binary to use for virtual machines.")
 	c.FirecrackerSandboxImage = c.Get("EXECUTOR_FIRECRACKER_SANDBOX_IMAGE", DefaultFirecrackerSandboxImage, "The OCI image for the ignite VM sandbox.")
@@ -86,16 +120,62 @@ func (c *Config) Load() {
 	c.DockerRegistryNodeExporterURL = c.GetOptional("DOCKER_REGISTRY_NODE_EXPORTER_URL", "The URL of the Docker Registry instance's node_exporter, without the /metrics path.")
 	c.MaxActiveTime = c.GetInterval("EXECUTOR_MAX_ACTIVE_TIME", "0", "The maximum time that can be spent by the worker dequeueing records to be handled.")
 	c.DockerRegistryMirrorURL = c.GetOptional("EXECUTOR_DOCKER_REGISTRY_MIRROR_URL", "The address of a docker registry mirror to use in firecracker VMs. Supports multiple values, separated with a comma.")
+	c.KubernetesConfigPath = c.GetOptional("EXECUTOR_KUBERNETES_CONFIG_PATH", "The path to the Kubernetes config file.")
+	c.KubernetesNodeName = c.GetOptional("EXECUTOR_KUBERNETES_NODE_NAME", "The name of the Kubernetes node to run executor jobs in.")
+	c.KubernetesNodeSelector = c.GetOptional("EXECUTOR_KUBERNETES_NODE_SELECTOR", "A comma separated list of values to use as a node selector for Kubernetes Jobs. e.g. foo=bar,app=my-app")
+	c.kubernetesNodeRequiredAffinityMatchExpressions = c.GetOptional("EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_EXPRESSIONS", "The JSON encoded required affinity match expressions for Kubernetes Jobs. e.g. [{\"key\": \"foo\", \"operator\": \"In\", \"values\": [\"bar\"]}]")
+	c.kubernetesNodeRequiredAffinityMatchFields = c.GetOptional("EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_FIELDS", "The JSON encoded required affinity match fields for Kubernetes Jobs. e.g. [{\"key\": \"foo\", \"operator\": \"In\", \"values\": [\"bar\"]}]")
+	c.kubernetesPodAffinity = c.GetOptional("EXECUTOR_KUBERNETES_POD_AFFINITY", "The JSON encoded pod affinity for Kubernetes Jobs. e.g. {\"requiredDuringSchedulingIgnoredDuringExecution\": [{\"labelSelector\": {\"matchExpressions\": [{\"key\": \"foo\", \"operator\": \"In\", \"values\": [\"bar\"]}]}, \"topologyKey\": \"kubernetes.io/hostname\"}]}")
+	c.kubernetesPodAntiAffinity = c.GetOptional("EXECUTOR_KUBERNETES_POD_ANTI_AFFINITY", "The JSON encoded pod anti-affinity for Kubernetes Jobs. e.g. {\"requiredDuringSchedulingIgnoredDuringExecution\": [{\"labelSelector\": {\"matchExpressions\": [{\"key\": \"foo\", \"operator\": \"In\", \"values\": [\"bar\"]}]}, \"topologyKey\": \"kubernetes.io/hostname\"}]}")
+	c.kubernetesNodeTolerations = c.GetOptional("EXECUTOR_KUBERNETES_NODE_TOLERATIONS", "The JSON encoded tolerations for Kubernetes Jobs. e.g. [{\"key\": \"foo\", \"operator\": \"Equal\", \"value\": \"bar\", \"effect\": \"NoSchedule\"}]")
+	c.KubernetesNamespace = c.Get("EXECUTOR_KUBERNETES_NAMESPACE", "default", "The namespace to run executor jobs in.")
+	c.KubernetesPersistenceVolumeName = c.Get("EXECUTOR_KUBERNETES_PERSISTENCE_VOLUME_NAME", "sg-executor-pvc", "The name of the Kubernetes persistence volume to use for executor jobs.")
+	c.KubernetesResourceLimitCPU = c.GetOptional("EXECUTOR_KUBERNETES_RESOURCE_LIMIT_CPU", "The maximum CPU resource for Kubernetes Jobs.")
+	c.KubernetesResourceLimitMemory = c.Get("EXECUTOR_KUBERNETES_RESOURCE_LIMIT_MEMORY", "12Gi", "The maximum memory resource for Kubernetes Jobs.")
+	c.KubernetesResourceRequestCPU = c.GetOptional("EXECUTOR_KUBERNETES_RESOURCE_REQUEST_CPU", "The minimum CPU resource for Kubernetes Jobs.")
+	c.KubernetesResourceRequestMemory = c.Get("EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY", "12Gi", "The minimum memory resource for Kubernetes Jobs.")
 	c.DockerAddHostGateway = c.GetBool("EXECUTOR_DOCKER_ADD_HOST_GATEWAY", "false", "If true, host.docker.internal will be exposed to the docker commands run by the runtime. Warn: Can be insecure. Only use this if you understand what you're doing. This is mostly used for running against a Sourcegraph on the same host.")
 	c.dockerAuthConfigStr = c.GetOptional("EXECUTOR_DOCKER_AUTH_CONFIG", "The content of the docker config file including auth for services. If using firecracker, only static credentials are supported, not credential stores nor credential helpers.")
+	c.KubernetesJobDeadline = c.GetInt("KUBERNETES_JOB_DEADLINE", "300", "The number of seconds after which a Kubernetes job will be terminated.")
+	c.KubernetesKeepJobs = c.GetBool("KUBERNETES_KEEP_JOBS", "false", "If true, Kubernetes jobs will not be deleted after they complete. Useful for debugging.")
+	c.KubernetesSecurityContextRunAsUser = c.GetInt("KUBERNETES_RUN_AS_USER", "-1", "The user ID to run Kubernetes jobs as.")
+	c.KubernetesSecurityContextRunAsGroup = c.GetInt("KUBERNETES_RUN_AS_GROUP", "-1", "The group ID to run Kubernetes jobs as.")
+	c.KubernetesSecurityContextFSGroup = c.GetInt("KUBERNETES_FS_GROUP", "1000", "The group ID to run all containers in the Kubernetes jobs as. Defaults to 1000, the group ID of the docker group in the executor container.")
 
 	if c.dockerAuthConfigStr != "" {
 		c.dockerAuthConfigUnmarshalError = json.Unmarshal([]byte(c.dockerAuthConfigStr), &c.DockerAuthConfig)
 	}
 
+	if c.kubernetesNodeRequiredAffinityMatchExpressions != "" {
+		c.kubernetesNodeRequiredAffinityMatchExpressionsUnmarshalError = json.Unmarshal([]byte(c.kubernetesNodeRequiredAffinityMatchExpressions), &c.KubernetesNodeRequiredAffinityMatchExpressions)
+	}
+	if c.kubernetesNodeRequiredAffinityMatchFields != "" {
+		c.kubernetesNodeRequiredAffinityMatchFieldsUnmarshalError = json.Unmarshal([]byte(c.kubernetesNodeRequiredAffinityMatchFields), &c.KubernetesNodeRequiredAffinityMatchFields)
+	}
+	if c.kubernetesPodAffinity != "" {
+		c.kubernetesPodAffinityUnmarshalError = json.Unmarshal([]byte(c.kubernetesPodAffinity), &c.KubernetesPodAffinity)
+	}
+	if c.kubernetesPodAntiAffinity != "" {
+		c.kubernetesPodAntiAffinityUnmarshalError = json.Unmarshal([]byte(c.kubernetesPodAntiAffinity), &c.KubernetesPodAntiAffinity)
+	}
+	if c.kubernetesNodeTolerations != "" {
+		c.kubernetesNodeTolerationsUnmarshalError = json.Unmarshal([]byte(c.kubernetesNodeTolerations), &c.KubernetesNodeTolerations)
+	}
+
+	if c.KubernetesConfigPath == "" {
+		c.KubernetesConfigPath = getKubeConfigPath()
+	}
+
 	hn := hostname.Get()
 	// Be unique but also descriptive.
 	c.WorkerHostname = hn + "-" + uuid.New().String()
+}
+
+func getKubeConfigPath() string {
+	if home := homedir.HomeDir(); home != "" {
+		return filepath.Join(home, ".kube", "config")
+	}
+	return ""
 }
 
 func (c *Config) Validate() error {
@@ -118,6 +198,42 @@ func (c *Config) Validate() error {
 		c.AddError(errors.Wrap(c.dockerAuthConfigUnmarshalError, "invalid EXECUTOR_DOCKER_AUTH_CONFIG, failed to parse"))
 	}
 
+	if c.kubernetesNodeRequiredAffinityMatchExpressionsUnmarshalError != nil {
+		c.AddError(errors.Wrap(c.kubernetesNodeRequiredAffinityMatchExpressionsUnmarshalError, "invalid EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_EXPRESSIONS, failed to parse"))
+	}
+
+	if c.kubernetesNodeRequiredAffinityMatchFieldsUnmarshalError != nil {
+		c.AddError(errors.Wrap(c.kubernetesNodeRequiredAffinityMatchFieldsUnmarshalError, "invalid EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_FIELDS, failed to parse"))
+	}
+
+	if c.kubernetesPodAffinityUnmarshalError != nil {
+		c.AddError(errors.Wrap(c.kubernetesPodAffinityUnmarshalError, "invalid EXECUTOR_KUBERNETES_POD_AFFINITY, failed to parse"))
+	}
+
+	if len(c.KubernetesPodAffinity) > 0 {
+		for _, podAffinity := range c.KubernetesPodAffinity {
+			if len(podAffinity.TopologyKey) == 0 {
+				c.AddError(errors.New("EXECUTOR_KUBERNETES_POD_AFFINITY must contain a topologyKey"))
+			}
+		}
+	}
+
+	if c.kubernetesPodAntiAffinityUnmarshalError != nil {
+		c.AddError(errors.Wrap(c.kubernetesPodAntiAffinityUnmarshalError, "invalid EXECUTOR_KUBERNETES_POD_ANTI_AFFINITY, failed to parse"))
+	}
+
+	if len(c.KubernetesPodAntiAffinity) > 0 {
+		for _, podAntiAffinity := range c.KubernetesPodAntiAffinity {
+			if len(podAntiAffinity.TopologyKey) == 0 {
+				c.AddError(errors.New("EXECUTOR_KUBERNETES_POD_ANTI_AFFINITY must contain a topologyKey"))
+			}
+		}
+	}
+
+	if c.kubernetesNodeTolerationsUnmarshalError != nil {
+		c.AddError(errors.Wrap(c.kubernetesNodeTolerationsUnmarshalError, "invalid EXECUTOR_KUBERNETES_NODE_TOLERATIONS, failed to parse"))
+	}
+
 	if c.UseFirecracker {
 		// Validate that firecracker can work on this host.
 		if runtime.GOOS != "linux" {
@@ -136,6 +252,16 @@ func (c *Config) Validate() error {
 		_, err := datasize.ParseString(c.FirecrackerDiskSpace)
 		if err != nil {
 			c.AddError(errors.Wrapf(err, "invalid disk size provided for EXECUTOR_FIRECRACKER_DISK_SPACE: %q", c.FirecrackerDiskSpace))
+		}
+	}
+
+	if len(c.KubernetesNodeSelector) > 0 {
+		nodeSelectorValues := strings.Split(c.KubernetesNodeSelector, ",")
+		for _, value := range nodeSelectorValues {
+			parts := strings.Split(value, "=")
+			if len(parts) != 2 {
+				c.AddError(errors.New("EXECUTOR_KUBERNETES_NODE_SELECTOR must be a comma separated list of key=value pairs"))
+			}
 		}
 	}
 

@@ -3,7 +3,7 @@
 # file, please don't be scared to make it more pleasant / remove hadolint
 # ignores.
 
-FROM sourcegraph/alpine-3.14:211375_2023-04-02_5.0-05ccd1762636@sha256:cd5089e0b0f7e5a5cd18996f5acd23cfa2bde33f6b7ffb9ace47f552941f0be2
+FROM sourcegraph/alpine-3.14:213466_2023-04-17_5.0-bdda34a71619@sha256:6354a4ff578b685e36c8fbde81f62125ae0011b047fb2cc22d1b0de616b3c59a
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -26,7 +26,8 @@ ENV EXECUTOR_NUM_TOTAL_JOBS=1
 RUN apk add --no-cache \
     # Minimal version requirement to address vulnerabilities
     # https://github.blog/2023-02-14-git-security-vulnerabilities-announced-3/
-    'git>=2.39.2-r0' --repository=http://dl-cdn.alpinelinux.org/alpine/edge/main \
+    # Don't use alpine/edge, the git release on this segfaults
+    'git>=2.38.0' --repository=http://dl-cdn.alpinelinux.org/alpine/v3.17/main \
     ca-certificates
 
 # Install src-cli.
@@ -40,7 +41,8 @@ RUN set -ex && \
 
 # Install additional common tools for running batch changes.
 RUN apk add --no-cache \
-    xmlstarlet
+    xmlstarlet \
+    python3 py3-pip
 
 # Install batcheshelper.
 COPY batcheshelper /usr/local/bin/

@@ -4,11 +4,9 @@ package jscontext
 
 import (
 	"context"
-	"net"
 	"net/http"
 	"runtime"
 	"strings"
-	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	logger "github.com/sourcegraph/log"
@@ -24,12 +22,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/singleprogram/filepicker"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -107,6 +105,7 @@ type CurrentUser struct {
 	ViewerCanAdminister bool       `json:"viewerCanAdminister"`
 	TosAccepted         bool       `json:"tosAccepted"`
 	Searchable          bool       `json:"searchable"`
+	HasVerifiedEmail    bool       `json:"hasVerifiedEmail"`
 
 	Organizations  *UserOrganizationsConnection `json:"organizations"`
 	Session        *UserSession                 `json:"session"`
@@ -145,7 +144,6 @@ type JSContext struct {
 	EmailEnabled  bool   `json:"emailEnabled"`
 
 	Site              schema.SiteConfiguration `json:"site"` // public subset of site configuration
-	LikelyDockerOnMac bool                     `json:"likelyDockerOnMac"`
 	NeedServerRestart bool                     `json:"needServerRestart"`
 	DeployType        string                   `json:"deployType"`
 
@@ -172,9 +170,17 @@ type JSContext struct {
 
 	Branding *schema.Branding `json:"branding"`
 
+	// BatchChangesEnabled is true if:
+	// * Batch Changes is NOT disabled by a flag in the site config
+	// * Batch Changes is NOT limited to admins-only, or it is, but the user issuing
+	//   the request is an admin and thus can access batch changes
+	// It does NOT reflect whether or not the site license has batch changes available.
+	// Use LicenseInfo for that.
 	BatchChangesEnabled                bool `json:"batchChangesEnabled"`
 	BatchChangesDisableWebhooksWarning bool `json:"batchChangesDisableWebhooksWarning"`
 	BatchChangesWebhookLogsEnabled     bool `json:"batchChangesWebhookLogsEnabled"`
+
+	CodyEnabled bool `json:"codyEnabled"`
 
 	ExecutorsEnabled                         bool `json:"executorsEnabled"`
 	CodeIntelAutoIndexingEnabled             bool `json:"codeIntelAutoIndexingEnabled"`
@@ -203,8 +209,6 @@ type JSContext struct {
 	ExtsvcConfigAllowEdits bool `json:"extsvcConfigAllowEdits"`
 
 	RunningOnMacOS bool `json:"runningOnMacOS"`
-
-	LocalFilePickerAvailable bool `json:"localFilePickerAvailable"`
 
 	SrcServeGitUrl string `json:"srcServeGitUrl"`
 }
@@ -324,7 +328,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		NeedsSiteInit:     needsSiteInit,
 		EmailEnabled:      conf.CanSendEmail(),
 		Site:              publicSiteConfiguration(),
-		LikelyDockerOnMac: likelyDockerOnMac(),
 		NeedServerRestart: globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
 		DeployType:        deploy.Type(),
 
@@ -357,6 +360,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		BatchChangesDisableWebhooksWarning: conf.Get().BatchChangesDisableWebhooksWarning,
 		BatchChangesWebhookLogsEnabled:     webhooks.LoggingEnabled(conf.Get()),
 
+		CodyEnabled: cody.IsCodyEnabled(ctx),
+
 		ExecutorsEnabled:                         conf.ExecutorsEnabled(),
 		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
 		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
@@ -382,8 +387,6 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		ExtsvcConfigAllowEdits: envvar.ExtsvcConfigAllowEdits(),
 
 		RunningOnMacOS: runningOnMacOS,
-
-		LocalFilePickerAvailable: deploy.IsApp() && filepicker.Available(),
 
 		SrcServeGitUrl: srcServeGitUrl,
 	}
@@ -415,6 +418,11 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		return nil
 	}
 
+	hasVerifiedEmail, err := userResolver.HasVerifiedEmail(ctx)
+	if err != nil {
+		return nil
+	}
+
 	return &CurrentUser{
 		GraphQLTypename:     "User",
 		AvatarURL:           userResolver.AvatarURL(),
@@ -433,6 +441,7 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		Username:            userResolver.Username(),
 		ViewerCanAdminister: canAdminister,
 		Permissions:         resolveUserPermissions(ctx, userResolver),
+		HasVerifiedEmail:    hasVerifiedEmail,
 	}
 }
 
@@ -546,15 +555,4 @@ var isBotPat = lazyregexp.New(`(?i:googlecloudmonitoring|pingdom.com|go .* packa
 
 func isBot(userAgent string) bool {
 	return isBotPat.MatchString(userAgent)
-}
-
-func likelyDockerOnMac() bool {
-	r := net.DefaultResolver
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
-	defer cancel()
-	addrs, err := r.LookupHost(ctx, "host.docker.internal")
-	if err != nil || len(addrs) == 0 {
-		return false //  Assume we're not docker for mac.
-	}
-	return true
 }

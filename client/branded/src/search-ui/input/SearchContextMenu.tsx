@@ -41,6 +41,7 @@ export interface SearchContextMenuProps
     selectSearchContextSpec: (spec: string) => void
     className?: string
     onMenuClose: (isEscapeKey?: boolean) => void
+    ignoreDefaultContextDoesNotExistError?: boolean
 }
 
 interface PageInfo {
@@ -197,7 +198,7 @@ export const SearchContextMenu: FC<SearchContextMenuProps> = props => {
             <ComboboxList ref={infiniteScrollList} data-testid="search-context-menu-list" className={styles.list}>
                 {loadingState !== 'LOADING' && (
                     <>
-                        {defaultContextExists === false && (
+                        {defaultContextExists === false && !props.ignoreDefaultContextDoesNotExistError && (
                             <Alert variant="warning" className="mx-2 mt-2">
                                 Your default search context is no longer available.
                                 <br />

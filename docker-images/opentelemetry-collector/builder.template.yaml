@@ -30,7 +30,9 @@ extensions:
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v$OTEL_COLLECTOR_VERSION
 
 processors:
+  - gomod: go.opentelemetry.io/collector/processor/batchprocessor v$OTEL_COLLECTOR_VERSION
   # Contrib extensions - https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/processor
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/groupbytraceprocessor v$OTEL_COLLECTOR_VERSION
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/probabilisticsamplerprocessor v$OTEL_COLLECTOR_VERSION
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/tailsamplingprocessor v$OTEL_COLLECTOR_VERSION
   - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/processor/filterprocessor v$OTEL_COLLECTOR_VERSION

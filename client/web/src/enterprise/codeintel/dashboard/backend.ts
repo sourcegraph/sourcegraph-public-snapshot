@@ -116,3 +116,25 @@ export const repoCodeIntelStatusQuery = gql`
     ${repoCodeIntelStatusSummaryFragment}
     ${repoCodeIntelStatusCommitGraphFragment}
 `
+
+export const visibleIndexesQuery = gql`
+    query VisibleIndexes($repository: String!, $commit: String!, $path: String!) {
+        repository(name: $repository) {
+            commit(rev: $commit) {
+                blob(path: $path) {
+                    lsif {
+                        visibleIndexes {
+                            id
+                            uploadedAt
+                            inputCommit
+                            indexer {
+                                name
+                                url
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+`

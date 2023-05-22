@@ -1,14 +1,32 @@
-import { Event, CompletionParameters, CompletionCallbacks } from './types'
+import { ConfigurationWithAccessToken } from '../../configuration'
+
+import { Event, CompletionCallbacks, CompletionParameters, CompletionResponse } from './types'
+
+export interface CompletionLogger {
+    startCompletion(params: CompletionParameters):
+        | undefined
+        | {
+              onError: (error: string) => void
+              onComplete: (response: string | CompletionResponse) => void
+              onEvents: (events: Event[]) => void
+          }
+}
+
+export type Config = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'debug' | 'customHeaders'>
 
 export abstract class SourcegraphCompletionsClient {
-    protected completionsEndpoint: string
+    constructor(protected config: Config, protected logger?: CompletionLogger) {}
 
-    constructor(
-        instanceUrl: string,
-        protected accessToken: string | null,
-        protected mode: 'development' | 'production'
-    ) {
-        this.completionsEndpoint = `${instanceUrl}/.api/completions/stream`
+    public onConfigurationChange(newConfig: Config): void {
+        this.config = newConfig
+    }
+
+    protected get completionsEndpoint(): string {
+        return new URL('/.api/completions/stream', this.config.serverEndpoint).href
+    }
+
+    protected get codeCompletionsEndpoint(): string {
+        return new URL('/.api/completions/code', this.config.serverEndpoint).href
     }
 
     protected sendEvents(events: Event[], cb: CompletionCallbacks): void {
@@ -28,4 +46,5 @@ export abstract class SourcegraphCompletionsClient {
     }
 
     public abstract stream(params: CompletionParameters, cb: CompletionCallbacks): () => void
+    public abstract complete(params: CompletionParameters, abortSignal: AbortSignal): Promise<CompletionResponse>
 }

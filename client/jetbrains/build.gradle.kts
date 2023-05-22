@@ -5,8 +5,9 @@ fun properties(key: String) = project.findProperty(key).toString()
 
 plugins {
     id("java")
+    // Dependencies are locked at this version to work with JDK 11 on CI.
     id("org.jetbrains.kotlin.jvm") version "1.7.0"
-    id("org.jetbrains.intellij") version "1.11.0"
+    id("org.jetbrains.intellij") version "1.13.3"
     id("org.jetbrains.changelog") version "1.3.1"
 }
 
@@ -24,9 +25,12 @@ intellij {
 
     // Plugin Dependencies. Uses `platformPlugins` property from the gradle.properties file.
     plugins.set(properties("platformPlugins").split(',').map(String::trim).filter(String::isNotEmpty))
+
+    updateSinceUntilBuild.set(false)
 }
 
 dependencies {
+    implementation(project(":jetbrains-shared", "instrumentedJar"))
     testImplementation(platform("org.junit:junit-bom:5.7.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 }
@@ -49,7 +53,6 @@ tasks {
 
     patchPluginXml {
         version.set(properties("pluginVersion"))
-        sinceBuild.set(properties("pluginSinceBuild"))
 
         // Extract the <!-- Plugin description --> section from README.md and provide for the plugin's manifest
         pluginDescription.set(

@@ -37,7 +37,7 @@ import {
 } from '@sourcegraph/shared/src/settings/settings'
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
-import { setLinkComponent, RouterLink, WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'
+import { WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'
 
 import { authenticatedUser as authenticatedUserSubject, AuthenticatedUser, authenticatedUserValue } from './auth'
 import { getWebGraphQLClient } from './backend/graphql'
@@ -81,8 +81,6 @@ interface LegacySourcegraphWebAppState extends SettingsCascadeProps {
 const WILDCARD_THEME: WildcardTheme = {
     isBranded: true,
 }
-
-setLinkComponent(RouterLink)
 
 /**
  * The root component.
@@ -219,6 +217,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                             telemetryService={eventLogger}
                             isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                             isSourcegraphApp={window.context.sourcegraphAppMode}
+                            isSearchContextSpecAvailable={isSearchContextSpecAvailable}
                             searchContextsEnabled={this.props.searchContextsEnabled}
                             getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                             fetchSearchContexts={fetchSearchContexts}
@@ -227,7 +226,6 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                             createSearchContext={createSearchContext}
                             updateSearchContext={updateSearchContext}
                             deleteSearchContext={deleteSearchContext}
-                            isSearchContextSpecAvailable={isSearchContextSpecAvailable}
                             streamSearch={aggregateStreamingSearch}
                         />
                     }

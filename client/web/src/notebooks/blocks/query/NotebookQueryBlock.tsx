@@ -26,6 +26,8 @@ import { AuthenticatedUser } from '../../../auth'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { SearchPatternType } from '../../../graphql-operations'
 import { OwnConfigProps } from '../../../own/OwnConfigProps'
+import { submitSearch } from '../../../search/helpers'
+import { setSearchMode, useNavbarQueryState } from '../../../stores'
 import { blockKeymap, focusEditor as focusCodeMirrorInput } from '../../codemirror-utils'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
@@ -80,6 +82,10 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
             useExperimentalFeatures(features => features.applySearchQuerySuggestionOnEnter) ?? true
         const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership', false)
         const enableOwnershipSearch = ownEnabled && ownFeatureFlagEnabled
+
+        const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
+        const searchMode = useNavbarQueryState(state => state.searchMode)
+        const submittedURLQuery = useNavbarQueryState(state => state.searchQueryFromURL)
 
         const onInputChange = useCallback(
             (query: string) => onBlockInputChange(id, { type: 'query', input: { query } }),
@@ -201,10 +207,14 @@ export const NotebookQueryBlock: React.FunctionComponent<React.PropsWithChildren
                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 telemetryService={telemetryService}
                                 settingsCascade={settingsCascade}
-                                assetsRoot={window.context?.assetsRoot || ''}
                                 platformContext={props.platformContext}
                                 openMatchesInNewTab={true}
                                 executedQuery={executedQuery}
+                                searchMode={searchMode}
+                                setSearchMode={setSearchMode}
+                                submitSearch={submitSearch}
+                                caseSensitive={caseSensitive}
+                                searchQueryFromURL={submittedURLQuery}
                             />
                         </div>
                     )}

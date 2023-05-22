@@ -45,7 +45,6 @@ export interface UserNavItemProps extends TelemetryProps {
     authenticatedUser: MinimalAuthenticatedUser
     isSourcegraphDotCom: boolean
     isSourcegraphApp: boolean
-    codeHostIntegrationMessaging: 'browser-extension' | 'native-integration'
     menuButtonRef?: React.Ref<HTMLButtonElement>
     showFeedbackModal: () => void
     showKeyboardShortcutsHelp: () => void
@@ -60,7 +59,6 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
         authenticatedUser,
         isSourcegraphDotCom,
         isSourcegraphApp,
-        codeHostIntegrationMessaging,
         menuButtonRef,
         showFeedbackModal,
         showKeyboardShortcutsHelp,
@@ -70,7 +68,6 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
     const { themeSetting, setThemeSetting } = useTheme()
     const keyboardShortcutSwitchTheme = useKeyboardShortcut('switchTheme')
     const [enableTeams] = useFeatureFlag('search-ownership')
-    const [enableAppConnectDotCom] = useFeatureFlag('app-connect-dotcom')
 
     const supportsSystemTheme = useMemo(
         () => Boolean(window.matchMedia?.('not all and (prefers-color-scheme), (prefers-color-scheme)').matches),
@@ -158,7 +155,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     Repositories
                                 </MenuLink>
                             )}
-                            {isSourcegraphApp && enableAppConnectDotCom && <AppUserConnectDotComAccount />}
+                            {isSourcegraphApp && <AppUserConnectDotComAccount />}
                             {enableTeams && !isSourcegraphDotCom && (
                                 <MenuLink as={Link} to="/teams">
                                     Teams
@@ -253,9 +250,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     Sign out
                                 </MenuLink>
                             )}
-                            {(isSourcegraphDotCom || codeHostIntegrationMessaging === 'browser-extension') && (
-                                <MenuDivider className={styles.dropdownDivider} />
-                            )}
+                            {isSourcegraphDotCom && <MenuDivider className={styles.dropdownDivider} />}
                             {isSourcegraphDotCom && (
                                 <MenuLink
                                     as={AnchorLink}
@@ -264,16 +259,6 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     rel="noopener"
                                 >
                                     About Sourcegraph <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
-                                </MenuLink>
-                            )}
-                            {codeHostIntegrationMessaging === 'browser-extension' && (
-                                <MenuLink
-                                    as={AnchorLink}
-                                    to="/help/integration/browser_extension"
-                                    target="_blank"
-                                    rel="noopener"
-                                >
-                                    Browser extension <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                                 </MenuLink>
                             )}
                         </MenuList>

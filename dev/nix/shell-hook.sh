@@ -8,6 +8,13 @@
 # sourcegraph's developer tools. In particular this is our databases, which
 # are used by both our tests and development server.
 
+if [ -f /etc/NIXOS ]; then
+  cat <<EOF > .bazelrc-nix
+build --extra_toolchains=@zig_sdk//toolchain:linux_amd64_gnu.2.34
+build --action_env=PATH=$BAZEL_ACTION_PATH
+EOF
+fi
+
 pushd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null || exit
 
 . ./start-postgres.sh

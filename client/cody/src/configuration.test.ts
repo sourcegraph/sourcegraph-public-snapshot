@@ -8,13 +8,14 @@ describe('getConfiguration', () => {
             get: <T>(_key: string, defaultValue?: T): typeof defaultValue | undefined => defaultValue,
         }
         expect(getConfiguration(config)).toEqual({
-            enabled: true,
             serverEndpoint: '',
-            codebase: undefined,
+            codebase: '',
             debug: false,
             useContext: 'embeddings',
             experimentalSuggest: false,
-            openaiKey: null,
+            experimentalChatPredictions: false,
+            experimentalInline: false,
+            customHeaders: {},
         })
     })
 
@@ -22,8 +23,6 @@ describe('getConfiguration', () => {
         const config: Pick<vscode.WorkspaceConfiguration, 'get'> = {
             get: key => {
                 switch (key) {
-                    case 'cody.enabled':
-                        return false
                     case 'cody.serverEndpoint':
                         return 'http://example.com'
                     case 'cody.codebase':
@@ -34,21 +33,32 @@ describe('getConfiguration', () => {
                         return 'keyword'
                     case 'cody.experimental.suggestions':
                         return true
-                    case 'cody.experimental.keys.openai':
-                        return 'sk-XXX'
+                    case 'cody.experimental.chatPredictions':
+                        return true
+                    case 'cody.experimental.inline':
+                        return true
+                    case 'cody.customHeaders':
+                        return {
+                            'Cache-Control': 'no-cache',
+                            'Proxy-Authenticate': 'Basic',
+                        }
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
             },
         }
         expect(getConfiguration(config)).toEqual({
-            enabled: false,
             serverEndpoint: 'http://example.com',
             codebase: 'my/codebase',
             debug: true,
             useContext: 'keyword',
             experimentalSuggest: true,
-            openaiKey: 'sk-XXX',
+            experimentalChatPredictions: true,
+            experimentalInline: true,
+            customHeaders: {
+                'Cache-Control': 'no-cache',
+                'Proxy-Authenticate': 'Basic',
+            },
         })
     })
 })

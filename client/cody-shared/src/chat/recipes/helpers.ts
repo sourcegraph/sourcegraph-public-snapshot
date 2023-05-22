@@ -18,21 +18,14 @@ const EXTENSION_TO_LANGUAGE: { [key: string]: string } = {
 }
 
 export function getNormalizedLanguageName(extension: string): string {
-    if (!extension) {
-        return ''
-    }
-    const language = EXTENSION_TO_LANGUAGE[extension]
-    if (language) {
-        return language
-    }
-    return extension.charAt(0).toUpperCase() + extension.slice(1)
+    return extension ? EXTENSION_TO_LANGUAGE[extension] ?? extension.charAt(0).toUpperCase() + extension.slice(1) : ''
 }
 
 export async function getContextMessagesFromSelection(
     selectedText: string,
     precedingText: string,
     followingText: string,
-    fileName: string,
+    { fileName, repoName, revision }: { fileName: string; repoName?: string; revision?: string },
     codebaseContext: CodebaseContext
 ): Promise<ContextMessage[]> {
     const selectedTextContext = await codebaseContext.getContextMessages(selectedText, {
@@ -42,11 +35,25 @@ export async function getContextMessagesFromSelection(
 
     return selectedTextContext.concat(
         [precedingText, followingText].flatMap(text =>
-            getContextMessageWithResponse(populateCodeContextTemplate(text, fileName), fileName)
+            getContextMessageWithResponse(populateCodeContextTemplate(text, fileName), {
+                fileName,
+                repoName,
+                revision,
+            })
         )
     )
 }
 
 export function getFileExtension(fileName: string): string {
     return path.extname(fileName).slice(1).toLowerCase()
+}
+
+// This cleans up the code returned by Cody based on current behavior
+// ex. Remove  `tags:` that Cody sometimes include in the returned content
+export function contentSanitizer(text: string): string {
+    const tagsIndex = text.indexOf('tags:')
+    if (tagsIndex !== -1) {
+        return text.trim().slice(tagsIndex + 6) + '\n'
+    }
+    return text.trim() + '\n'
 }

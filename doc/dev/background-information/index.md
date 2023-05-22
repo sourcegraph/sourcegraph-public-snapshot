@@ -12,6 +12,10 @@
 - [Overview](architecture/index.md)
 - [Introducing a new service](architecture/introducing_a_new_service.md)
 
+## [Sourcegraph App](app/index.md)
+
+- [Notes about code signing the Sourcegraph App](./app/codesigning.md)
+
 ## Development
 
 - [`sg` - the Sourcegraph developer tool](./sg/index.md)
@@ -59,6 +63,7 @@
 
 ## [SQL](sql/index.md)
 
+- [Migrations overview](sql/migrations_overview.md)
 - [Migrations](sql/migrations.md)
 - High-performance guides
   - [Batch operations](sql/batch_operations.md)

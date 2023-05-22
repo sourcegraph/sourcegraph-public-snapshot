@@ -1,43 +1,49 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
+import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { isDefined } from '@sourcegraph/common'
 
-import { CodeBlocks } from './chat/CodeBlocks'
-import { ContextFiles, FileLinkProps } from './chat/ContextFiles'
-import { Tips } from './Tips'
+import { FileLinkProps } from './chat/ContextFiles'
+import { ChatInputContext } from './chat/inputContext/ChatInputContext'
+import { Transcript } from './chat/Transcript'
+import { TranscriptItemClassNames } from './chat/TranscriptItem'
 
 import styles from './Chat.module.css'
 
-const SCROLL_THRESHOLD = 15
-
 interface ChatProps extends ChatClassNames {
-    messageInProgress: ChatMessage | null
     transcript: ChatMessage[]
+    messageInProgress: ChatMessage | null
+    messageBeingEdited: boolean
+    setMessageBeingEdited: (input: boolean) => void
+    contextStatus?: ChatContextStatus | null
     formInput: string
     setFormInput: (input: string) => void
     inputHistory: string[]
     setInputHistory: (history: string[]) => void
-    onSubmit: (text: string) => void
+    onSubmit: (text: string, submitType: 'user' | 'suggestion') => void
     textAreaComponent: React.FunctionComponent<ChatUITextAreaProps>
     submitButtonComponent: React.FunctionComponent<ChatUISubmitButtonProps>
+    suggestionButtonComponent?: React.FunctionComponent<ChatUISuggestionButtonProps>
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
-    tipsRecommendations?: JSX.Element[]
-    afterTips?: JSX.Element
+    afterTips?: string
     className?: string
+    EditButtonContainer?: React.FunctionComponent<EditButtonProps>
+    editButtonOnSubmit?: (text: string) => void
+    FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
+    feedbackButtonsOnSubmit?: (text: string) => void
+    copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
+    suggestions?: string[]
+    setSuggestions?: (suggestions: undefined | []) => void
+    needsEmailVerification?: boolean
+    needsEmailVerificationNotice?: React.FunctionComponent
 }
 
-interface ChatClassNames {
-    transcriptContainerClassName?: string
-    bubbleContentClassName?: string
-    humanBubbleContentClassName?: string
-    botBubbleContentClassName?: string
-    codeBlocksCopyButtonClassName?: string
-    bubbleFooterClassName?: string
-    bubbleLoaderDotClassName?: string
+interface ChatClassNames extends TranscriptItemClassNames {
     inputRowClassName?: string
+    chatInputContextClassName?: string
     chatInputClassName?: string
 }
 
@@ -47,8 +53,9 @@ export interface ChatUITextAreaProps {
     autoFocus: boolean
     value: string
     required: boolean
+    disabled?: boolean
     onInput: React.FormEventHandler<HTMLElement>
-    onKeyDown: React.KeyboardEventHandler<HTMLElement>
+    onKeyDown?: (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null) => void
 }
 
 export interface ChatUISubmitButtonProps {
@@ -56,9 +63,37 @@ export interface ChatUISubmitButtonProps {
     disabled: boolean
     onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
 }
+
+export interface ChatUISuggestionButtonProps {
+    suggestion: string
+    onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
+}
+
+export interface EditButtonProps {
+    className: string
+    disabled?: boolean
+    messageBeingEdited: boolean
+    setMessageBeingEdited: (input: boolean) => void
+}
+
+export interface FeedbackButtonsProps {
+    className: string
+    disabled?: boolean
+    feedbackButtonsOnSubmit: (text: string) => void
+}
+
+export interface CopyButtonProps {
+    copyButtonOnSubmit: (text: string) => void
+}
+/**
+ * The Cody chat interface, with a transcript of all messages and a message form.
+ */
 export const Chat: React.FunctionComponent<ChatProps> = ({
     messageInProgress,
+    messageBeingEdited,
+    setMessageBeingEdited,
     transcript,
+    contextStatus,
     formInput,
     setFormInput,
     inputHistory,
@@ -66,26 +101,33 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     onSubmit,
     textAreaComponent: TextArea,
     submitButtonComponent: SubmitButton,
+    suggestionButtonComponent: SuggestionButton,
     fileLinkComponent,
-    tipsRecommendations,
     afterTips,
     className,
-    transcriptContainerClassName,
-    bubbleContentClassName,
-    humanBubbleContentClassName,
-    botBubbleContentClassName,
     codeBlocksCopyButtonClassName,
-    bubbleFooterClassName,
-    bubbleLoaderDotClassName,
+    transcriptItemClassName,
+    humanTranscriptItemClassName,
+    transcriptItemParticipantClassName,
+    transcriptActionClassName,
     inputRowClassName,
+    chatInputContextClassName,
     chatInputClassName,
+    EditButtonContainer,
+    editButtonOnSubmit,
+    FeedbackButtonsContainer,
+    feedbackButtonsOnSubmit,
+    copyButtonOnSubmit,
+    suggestions,
+    setSuggestions,
+    needsEmailVerification = false,
+    needsEmailVerificationNotice: NeedsEmailVerificationNotice,
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
-    const transcriptContainerRef = useRef<HTMLDivElement>(null)
 
     const inputHandler = useCallback(
-        (inputValue: string) => {
+        (inputValue: string): void => {
             const rowsCount = inputValue.match(/\n/g)?.length
             if (rowsCount) {
                 setInputRows(rowsCount < 5 ? 5 : rowsCount > 25 ? 25 : rowsCount)
@@ -100,179 +142,154 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [historyIndex, inputHistory, setFormInput]
     )
 
-    const onChatSubmit = useCallback(() => {
-        // Submit chat only when input is not empty
-        if (formInput !== undefined) {
-            onSubmit(formInput)
+    const submitInput = useCallback(
+        (input: string, submitType: 'user' | 'suggestion'): void => {
+            if (messageInProgress) {
+                return
+            }
+
+            onSubmit(input, submitType)
+            setSuggestions?.(undefined)
             setHistoryIndex(inputHistory.length + 1)
-            setInputHistory([...inputHistory, formInput])
+            setInputHistory([...inputHistory, input])
+        },
+        [inputHistory, messageInProgress, onSubmit, setInputHistory, setSuggestions]
+    )
+
+    const onChatSubmit = useCallback((): void => {
+        // Submit chat only when input is not empty and not in progress
+        if (formInput.trim() && !messageInProgress) {
             setInputRows(5)
             setFormInput('')
+            submitInput(formInput, 'user')
         }
-    }, [formInput, inputHistory, onSubmit, setFormInput, setInputHistory])
+    }, [formInput, messageInProgress, setFormInput, submitInput])
 
     const onChatKeyDown = useCallback(
-        (event: React.KeyboardEvent<HTMLDivElement>): void => {
+        (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null): void => {
             // Submit input on Enter press (without shift) and
             // trim the formInput to make sure input value is not empty.
-            if (event.key === 'Enter' && !event.shiftKey && formInput && formInput.trim()) {
+            if (
+                event.key === 'Enter' &&
+                !event.shiftKey &&
+                !event.nativeEvent.isComposing &&
+                formInput &&
+                formInput.trim()
+            ) {
                 event.preventDefault()
                 event.stopPropagation()
+                setMessageBeingEdited(false)
                 onChatSubmit()
             }
+
             // Loop through input history on up arrow press
-            if (event.key === 'ArrowUp' && inputHistory.length) {
-                if (formInput === inputHistory[historyIndex] || !formInput) {
+            if (!inputHistory.length) {
+                return
+            }
+
+            if (formInput === inputHistory[historyIndex] || !formInput) {
+                if (event.key === 'ArrowUp' && caretPosition === 0) {
                     const newIndex = historyIndex - 1 < 0 ? inputHistory.length - 1 : historyIndex - 1
+                    setHistoryIndex(newIndex)
+                    setFormInput(inputHistory[newIndex])
+                } else if (event.key === 'ArrowDown' && caretPosition === formInput.length) {
+                    const newIndex = historyIndex + 1 >= inputHistory.length ? 0 : historyIndex + 1
                     setHistoryIndex(newIndex)
                     setFormInput(inputHistory[newIndex])
                 }
             }
         },
-        [inputHistory, onChatSubmit, formInput, historyIndex, setFormInput]
+        [inputHistory, historyIndex, setFormInput, onChatSubmit, formInput, setMessageBeingEdited]
     )
 
-    const getBubbleClassName = (speaker: string): string => (speaker === 'human' ? 'human' : 'bot')
-
-    useEffect(() => {
-        if (transcriptContainerRef.current) {
-            // Only scroll if the user didn't scroll up manually more than the scrolling threshold.
-            // That is so that you can freely copy content or read up on older content while new
-            // content is being produced.
-            // We allow some small threshold for "what is considered not scrolled up" so that minimal
-            // scroll doesn't affect it (ie. if I'm not all the way scrolled down by like a pixel or two,
-            // I probably still want it to scroll).
-            // Sice this container uses flex-direction: column-reverse, the scrollTop starts in the negatives
-            // and ends at 0.
-            if (transcriptContainerRef.current.scrollTop >= -SCROLL_THRESHOLD) {
-                transcriptContainerRef.current.scrollTo({ behavior: 'smooth', top: 0 })
-            }
-        }
-    }, [transcript, transcriptContainerRef])
+    const transcriptWithWelcome = useMemo<ChatMessage[]>(
+        () => [
+            {
+                speaker: 'assistant',
+                displayText: welcomeText(afterTips),
+            },
+            ...transcript,
+        ],
+        [afterTips, transcript]
+    )
 
     return (
         <div className={classNames(className, styles.innerContainer)}>
-            <div
-                ref={transcriptContainerRef}
-                className={classNames(styles.transcriptContainer, transcriptContainerClassName)}
-            >
-                {/* Show Tips view if no conversation has happened */}
-                {transcript.length === 0 && !messageInProgress && (
-                    <Tips recommendations={tipsRecommendations} after={afterTips} />
-                )}
-                {transcript.length > 0 && (
-                    <div className={styles.bubbleContainer}>
-                        {transcript.map((message, index) => (
-                            <div
-                                // eslint-disable-next-line react/no-array-index-key
-                                key={`message-${index}`}
-                                className={classNames(
-                                    styles.bubbleRow,
-                                    styles[`${getBubbleClassName(message.speaker)}BubbleRow`]
-                                )}
-                            >
-                                <div className={styles.bubble}>
-                                    <div
-                                        className={classNames(
-                                            styles.bubbleContent,
-                                            styles[`${getBubbleClassName(message.speaker)}BubbleContent`],
-                                            bubbleContentClassName,
-                                            message.speaker === 'human'
-                                                ? humanBubbleContentClassName
-                                                : botBubbleContentClassName
-                                        )}
-                                    >
-                                        {message.displayText && (
-                                            <CodeBlocks
-                                                displayText={message.displayText}
-                                                copyButtonClassName={codeBlocksCopyButtonClassName}
-                                            />
-                                        )}
-                                        {message.contextFiles && message.contextFiles.length > 0 && (
-                                            <ContextFiles
-                                                contextFiles={message.contextFiles}
-                                                fileLinkComponent={fileLinkComponent}
-                                            />
-                                        )}
-                                    </div>
-                                    <div
-                                        className={classNames(
-                                            styles.bubbleFooter,
-                                            styles[`${getBubbleClassName(message.speaker)}BubbleFooter`],
-                                            bubbleFooterClassName
-                                        )}
-                                    >
-                                        <div className={styles.bubbleFooterTimestamp}>{`${
-                                            message.speaker === 'assistant' ? 'Cody' : 'Me'
-                                        } · ${message.timestamp}`}</div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
+            {needsEmailVerification && NeedsEmailVerificationNotice ? (
+                <div className="flex-1">
+                    <NeedsEmailVerificationNotice />
+                </div>
+            ) : (
+                <Transcript
+                    transcript={transcriptWithWelcome}
+                    messageInProgress={messageInProgress}
+                    messageBeingEdited={messageBeingEdited}
+                    setMessageBeingEdited={setMessageBeingEdited}
+                    fileLinkComponent={fileLinkComponent}
+                    codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
+                    transcriptItemClassName={transcriptItemClassName}
+                    humanTranscriptItemClassName={humanTranscriptItemClassName}
+                    transcriptItemParticipantClassName={transcriptItemParticipantClassName}
+                    transcriptActionClassName={transcriptActionClassName}
+                    className={styles.transcriptContainer}
+                    textAreaComponent={TextArea}
+                    EditButtonContainer={EditButtonContainer}
+                    editButtonOnSubmit={editButtonOnSubmit}
+                    FeedbackButtonsContainer={FeedbackButtonsContainer}
+                    feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                    copyButtonOnSubmit={copyButtonOnSubmit}
+                    submitButtonComponent={SubmitButton}
+                    chatInputClassName={chatInputClassName}
+                />
+            )}
 
-                        {messageInProgress && messageInProgress.speaker === 'assistant' && (
-                            <div className={classNames(styles.bubbleRow, styles.botBubbleRow)}>
-                                <div className={styles.bubble}>
-                                    <div
-                                        className={classNames(
-                                            styles.bubbleContent,
-                                            styles.botBubbleContent,
-                                            botBubbleContentClassName
-                                        )}
-                                    >
-                                        {messageInProgress.displayText ? (
-                                            <p
-                                                dangerouslySetInnerHTML={{
-                                                    __html: renderMarkdown(messageInProgress.displayText),
-                                                }}
-                                            />
-                                        ) : (
-                                            <div className={styles.bubbleLoader}>
-                                                <div
-                                                    className={classNames(
-                                                        styles.bubbleLoaderDot,
-                                                        bubbleLoaderDotClassName
-                                                    )}
-                                                />
-                                                <div
-                                                    className={classNames(
-                                                        styles.bubbleLoaderDot,
-                                                        bubbleLoaderDotClassName
-                                                    )}
-                                                />
-                                                <div
-                                                    className={classNames(
-                                                        styles.bubbleLoaderDot,
-                                                        bubbleLoaderDotClassName
-                                                    )}
-                                                />
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className={styles.bubbleFooter}>
-                                        <span>Cody is typing...</span>
-                                    </div>
-                                </div>
-                            </div>
+            <form className={classNames(styles.inputRow, inputRowClassName)}>
+                {suggestions !== undefined && suggestions.length !== 0 && SuggestionButton ? (
+                    <div className={styles.suggestions}>
+                        {suggestions.map((suggestion: string) =>
+                            suggestion.trim().length > 0 ? (
+                                <SuggestionButton
+                                    key={suggestion}
+                                    suggestion={suggestion}
+                                    onClick={() => submitInput(suggestion, 'suggestion')}
+                                />
+                            ) : null
                         )}
                     </div>
+                ) : null}
+                <div className={styles.textAreaContainer}>
+                    <TextArea
+                        className={classNames(styles.chatInput, chatInputClassName)}
+                        rows={inputRows}
+                        value={formInput}
+                        autoFocus={true}
+                        required={true}
+                        disabled={needsEmailVerification}
+                        onInput={({ target }) => {
+                            const { value } = target as HTMLInputElement
+                            inputHandler(value)
+                        }}
+                        onKeyDown={onChatKeyDown}
+                    />
+                    <SubmitButton
+                        className={styles.submitButton}
+                        onClick={onChatSubmit}
+                        disabled={!!messageInProgress || needsEmailVerification}
+                    />
+                </div>
+                {contextStatus && (
+                    <ChatInputContext contextStatus={contextStatus} className={chatInputContextClassName} />
                 )}
-            </div>
-            <form className={classNames(styles.inputRow, inputRowClassName)}>
-                <TextArea
-                    className={classNames(styles.chatInput, chatInputClassName)}
-                    rows={inputRows}
-                    value={formInput}
-                    autoFocus={true}
-                    required={true}
-                    onInput={({ target }) => {
-                        const { value } = target as HTMLInputElement
-                        inputHandler(value)
-                    }}
-                    onKeyDown={onChatKeyDown}
-                />
-                <SubmitButton className={styles.submitButton} onClick={onChatSubmit} disabled={!!messageInProgress} />
             </form>
         </div>
     )
+}
+
+function welcomeText(afterTips?: string): string {
+    return [
+        "Hello! I'm Cody. I can write code and answer questions for you. See [Cody documentation](https://docs.sourcegraph.com/cody) for help and tips.",
+        afterTips,
+    ]
+        .filter(isDefined)
+        .join('\n\n')
 }

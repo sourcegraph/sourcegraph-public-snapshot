@@ -774,7 +774,7 @@ test('returns repo:has.tag hovers', () => {
         {
           "contents": [
             {
-              "value": "**Built-in predicate**. Search only inside repositories that are tagged with the given tag"
+              "value": "**Built-in predicate**. DEPRECATED: Use \\"has.meta({tag}:)\\" instead. Search only inside repositories that are tagged with the given tag"
             }
           ],
           "range": {
@@ -782,6 +782,27 @@ test('returns repo:has.tag hovers', () => {
             "endLineNumber": 1,
             "startColumn": 6,
             "endColumn": 18
+          }
+        }
+    `)
+})
+
+test('returns repo:has.meta hovers', () => {
+    const input = 'repo:has.meta(tag)'
+    const scannedQuery = toSuccess(scanSearchQuery(input, false, SearchPatternType.standard))
+
+    expect(getHoverResult(scannedQuery, new Position(1, 8), editor.createModel(input))).toMatchInlineSnapshot(`
+        {
+          "contents": [
+            {
+              "value": "**Built-in predicate**. Search only inside repositories having ({key}:{value}) pair, or ({key}) with any value or ({key}:) with no value metadata"
+            }
+          ],
+          "range": {
+            "startLineNumber": 1,
+            "endLineNumber": 1,
+            "startColumn": 6,
+            "endColumn": 19
           }
         }
     `)

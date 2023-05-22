@@ -3,6 +3,16 @@
     <name>Sourcegraph</name>
     <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">Sourcegraph</vendor>
 
+    <!--
+        See https://plugins.jetbrains.com/docs/intellij/build-number-ranges.html
+        for insight into build numbers and IntelliJ Platform versions.
+        - 2020.2 was the first version to have JCEF enabled by default
+            -> https://plugins.jetbrains.com/docs/intellij/jcef.html
+        - Version 2020.2 and 2020.3 have issues with adding custom HTTP headers to requests from within the JCEF view
+             -> https://github.com/sourcegraph/sourcegraph/issues/37475#issuecomment-1171355831
+    -->
+    <idea-version since-build="211.0" />
+
     <depends>com.intellij.modules.platform</depends>
     <depends optional="true" config-file="plugin-git.xml">Git4Idea</depends>
     <depends optional="true" config-file="plugin-perforce.xml">PerforceDirectPlugin</depends>

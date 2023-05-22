@@ -9,7 +9,7 @@ The Sourcegraph GraphQL API supports the following types of queries:
 - Repository and user metadata
 
 > NOTE: The API is under active development. Backwards compatibility will be maintained in most
-> cases, and backwards-incompatible changes will be documented in the
+> cases, and backwards-incompatible changes will be documented in the 
 > [changelog](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md).
 
 ## Quickstart

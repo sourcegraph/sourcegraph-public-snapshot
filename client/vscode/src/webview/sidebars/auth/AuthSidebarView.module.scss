@@ -28,18 +28,8 @@
 }
 
 .cta-title {
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    font-weight: 600;
-    font-size: var(--vscode-editor-font-size) !important;
-    margin-top: 0;
-    margin-bottom: 0.25rem;
-    display: flex;
-    align-items: center;
-    text-align: left;
-    width: calc(100% + 0.5rem); // Take full width + account for negative margin
-    border: none;
-    padding-left: 0;
+    margin-top: 0.25rem !important;
+    margin-bottom: 0.5rem !important;
 }
 
 .cta {
@@ -51,15 +41,14 @@
 }
 
 .cta-button {
-    background-color: var(--vscode-button-background);
-    color: var(--vscode-button-foreground);
-    border: 0;
+    justify-content: center;
     width: 100%;
-    font-size: var(--vscode-editor-font-size) !important;
+}
 
+.cta-link {
     &:hover {
-        color: var(--vscode-button-foreground);
-        background-color: var(--vscode-button-hoverBackground);
+        background: var(--button-primary-hover-background);
+        text-decoration: none !important;
     }
 }
 

@@ -123,6 +123,29 @@ WHERE name = 'ShareButtonClicked'
 GROUP BY my_flag;
 ```
 
+## Show usernames using a specific feature flag
+
+If you ever need a list of users that have a feature flag enabled (for example `cody-experimental`), you could use a query like the following:
+
+```graphql
+query {
+  featureFlag(name:"cody-experimental") {
+    __typename
+    ...  on FeatureFlagBoolean {
+      overrides {
+        namespace {
+          ... on User {
+            username
+            displayName
+          }
+        }
+        value
+      }
+    }
+  }
+}
+```
+
 ## Update a feature flag
 
 Depending on how you implement a feature flag, you can disable a feature flag to turn off a feature or update the rollout basis point value to roll out a feature to more or less users.

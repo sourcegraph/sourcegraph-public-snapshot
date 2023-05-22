@@ -95,6 +95,7 @@ type RepoStore interface {
 	ListMinimalRepos(context.Context, ReposListOptions) ([]types.MinimalRepo, error)
 	Metadata(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error)
 	StreamMinimalRepos(context.Context, ReposListOptions, func(*types.MinimalRepo)) error
+	RepoEmbeddingExists(ctx context.Context, repoID api.RepoID) (bool, error)
 }
 
 var _ RepoStore = (*repoStore)(nil)
@@ -878,6 +879,16 @@ func (s *repoStore) StreamMinimalRepos(ctx context.Context, opt ReposListOptions
 	return nil
 }
 
+const repoEmbeddingExists = `SELECT EXISTS(SELECT 1 FROM repo_embedding_jobs WHERE repo_id = %s AND state = 'completed')`
+
+// RepoEmbeddingExists returns boolean indicating whether embeddings are generated for the repo.
+func (s *repoStore) RepoEmbeddingExists(ctx context.Context, repoID api.RepoID) (bool, error) {
+	q := sqlf.Sprintf(repoEmbeddingExists, repoID)
+	exists, _, err := basestore.ScanFirstBool(s.Query(ctx, q))
+
+	return exists, err
+}
+
 // ListMinimalRepos returns a list of repositories names and ids.
 func (s *repoStore) ListMinimalRepos(ctx context.Context, opt ReposListOptions) (results []types.MinimalRepo, err error) {
 	preallocSize := 128
@@ -1081,8 +1092,24 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 
 	if !opt.MinLastChanged.IsZero() {
 		conds := []*sqlf.Query{
+			sqlf.Sprintf(`
+				EXISTS (
+					SELECT 1
+					FROM codeintel_path_ranks pr
+					WHERE
+						pr.graph_key IN (
+							SELECT crp.graph_key
+							FROM codeintel_ranking_progress crp
+							WHERE crp.reducer_completed_at IS NOT NULL
+							ORDER BY crp.reducer_completed_at DESC
+							LIMIT 1
+						) AND
+						pr.repository_id = repo.id AND
+						pr.updated_at >= %s
+				)
+			`, opt.MinLastChanged),
+
 			sqlf.Sprintf("EXISTS (SELECT 1 FROM gitserver_repos gr WHERE gr.repo_id = repo.id AND gr.last_changed >= %s)", opt.MinLastChanged),
-			sqlf.Sprintf("EXISTS (SELECT 1 FROM codeintel_path_ranks pr WHERE pr.repository_id = repo.id AND pr.updated_at >= %s)", opt.MinLastChanged),
 			sqlf.Sprintf("COALESCE(repo.updated_at, repo.created_at) >= %s", opt.MinLastChanged),
 			sqlf.Sprintf("EXISTS (SELECT 1 FROM search_context_repos scr LEFT JOIN search_contexts sc ON scr.search_context_id = sc.id WHERE scr.repo_id = repo.id AND sc.updated_at >= %s)", opt.MinLastChanged),
 		}

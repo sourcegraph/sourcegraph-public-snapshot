@@ -63,19 +63,21 @@ func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Sto
 	if err != nil {
 		return nil, err
 	}
+	defer file.Close()
 
 	dec := gob.NewDecoder(file)
 
 	rei, err := decodeRepoEmbeddingIndex(dec)
 	// If decoding fails, assume it is an old index and decode with a generic decoder.
 	if err != nil {
-		// Close the existing file.
-		_ = file.Close()
-
-		return DownloadIndex[RepoEmbeddingIndex](ctx, uploadStore, key)
+		oldRei, err2 := DownloadIndex[OldRepoEmbeddingIndex](ctx, uploadStore, key)
+		if err2 != nil {
+			return nil, errors.Append(err, err2)
+		}
+		return oldRei.ToNewIndex(), nil
 	}
 
-	return rei, err
+	return rei, nil
 }
 
 const embeddingsChunkSize = 10_000
@@ -118,7 +120,7 @@ func encodeRepoEmbeddingIndex(enc *gob.Encoder, rei *RepoEmbeddingIndex, chunkSi
 				end = len(ei.Embeddings)
 			}
 
-			if err := enc.Encode(ei.Embeddings[start:end]); err != nil {
+			if err := enc.Encode(Dequantize(ei.Embeddings[start:end])); err != nil {
 				return err
 			}
 		}
@@ -156,13 +158,13 @@ func decodeRepoEmbeddingIndex(dec *gob.Decoder) (*RepoEmbeddingIndex, error) {
 			return nil, err
 		}
 
-		ei.Embeddings = make([]float32, 0, numChunks*ei.ColumnDimension)
+		ei.Embeddings = make([]int8, 0, numChunks*ei.ColumnDimension)
 		for i := 0; i < numChunks; i++ {
 			var embeddingSlice []float32
 			if err := dec.Decode(&embeddingSlice); err != nil {
 				return nil, err
 			}
-			ei.Embeddings = append(ei.Embeddings, embeddingSlice...)
+			ei.Embeddings = append(ei.Embeddings, Quantize(embeddingSlice)...)
 		}
 	}
 
