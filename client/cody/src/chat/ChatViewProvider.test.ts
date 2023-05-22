@@ -4,11 +4,13 @@ describe('convertGitCloneURLToCodebaseName', () => {
     // before each test, mock the createOutputChannel function from vscode with globalThis
     beforeEach(() => {
         globalThis.vscode = {
-            createOutputChannel: () => ({
-                appendLine: () => {},
-                show: () => {},
-            }),
-        } as unknown
+            window: {
+                createOutputChannel: () => ({
+                    appendLine: () => {},
+                    show: () => {},
+                }),
+            },
+        } as unknown as typeof import('vscode')
     })
 
     test('converts GitHub SSH URL', () => {
