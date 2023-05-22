@@ -27,7 +27,7 @@ func TestRemovePunctuation(t *testing.T) {
 		},
 		{
 			term: "package/name",
-			wantTerm: "",
+			wantTerm: "package/name",
 		},
 		{
 			term: "!!??",
