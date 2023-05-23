@@ -184,6 +184,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
         const proc = spawn(this.rgPath, ['-i', ...fileExtRipgrepParams, '--json', regexQuery, './'], {
             cwd: rootPath,
             stdio: ['ignore', 'pipe', process.stderr],
+            windowsHide: true,
         })
         const fileTermCounts: {
             [filename: string]: {
