@@ -48,7 +48,7 @@ func newExecutorQueuesHandler(
 	batchesHandler := handler.NewHandler(executorStore, jobTokenStore, metricsStore, batchesQueueHandler)
 	handlers := []handler.ExecutorHandler{codeintelHandler, batchesHandler}
 
-	multiHandler := handler.NewMultiHandler(jobTokenStore, codeIntelQueueHandler, batchesQueueHandler)
+	multiHandler := handler.NewMultiHandler(executorStore, jobTokenStore, metricsStore, codeIntelQueueHandler, batchesQueueHandler)
 
 	gitserverClient := gitserver.NewClient()
 

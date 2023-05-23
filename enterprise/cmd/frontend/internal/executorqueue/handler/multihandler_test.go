@@ -17,6 +17,8 @@ import (
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	executorstore "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
 	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	dbworkerstoremocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
@@ -440,7 +442,9 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			batchesMockStore := dbworkerstoremocks.NewMockStore[*btypes.BatchSpecWorkspaceExecutionJob]()
 
 			mh := handler.NewMultiHandler(
+				database.NewMockExecutorStore(),
 				jobTokenStore,
+				metricsstore.NewMockDistributedStore(),
 				handler.QueueHandler[uploadsshared.Index]{Name: "codeintel", Store: codeIntelMockStore, RecordTransformer: transformerFunc[uploadsshared.Index]},
 				handler.QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]{Name: "batches", Store: batchesMockStore, RecordTransformer: transformerFunc[*btypes.BatchSpecWorkspaceExecutionJob]},
 			)
@@ -457,7 +461,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			mh.RandomGenerator = &MockRandom{IntnResults: intnResults}
 
 			router := mux.NewRouter()
-			router.HandleFunc("/dequeue", mh.ServeHTTP)
+			router.HandleFunc("/dequeue", mh.HandleDequeue)
 
 			if test.mockFunc != nil {
 				test.mockFunc(codeIntelMockStore, batchesMockStore, jobTokenStore)

@@ -39,8 +39,8 @@ type MarkErroredRequest struct {
 }
 
 type QueueJobIDs struct {
-	Queue  string `json:"queue"`
-	JobIDs []int  `json:"jobIds"`
+	QueueName string `json:"queueName"`
+	JobIDs    []int  `json:"jobIds"`
 }
 
 type HeartbeatRequest struct {
