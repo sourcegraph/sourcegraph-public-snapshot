@@ -6,15 +6,10 @@ import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants
 import { logEvent } from '../event-logger'
 
 import { CodeLensProvider } from './CodeLensProvider'
+import { CodyTaskState, getIconPath, updateRangeOnDocChange } from './InlineAssist'
 
 const initPost = new vscode.Position(0, 0)
 const initRange = new vscode.Range(initPost, initPost)
-
-export enum CodyTaskState {
-    'idle' = 0,
-    'pending' = 1,
-    'done' = 2,
-}
 
 export class InlineController {
     // Controller init
@@ -74,7 +69,7 @@ export class InlineController {
                 return
             }
             for (const change of e.contentChanges) {
-                this.selectionRange = lineTracker(change.range, this.selectionRange, change.text) || this.selectionRange
+                this.selectionRange = updateRangeOnDocChange(this.selectionRange, change.range, change.text)
             }
         })
     }
@@ -328,37 +323,4 @@ export class Comment implements vscode.Comment {
         markdownText.supportHtml = true
         return markdownText
     }
-}
-
-/**
- * For tracking lines diff on file changes
- */
-export function lineTracker(change: vscode.Range, cur: vscode.Range, changeText: string): vscode.Range | null {
-    if (change.start.line > cur.end.line) {
-        return null
-    }
-    let addedLines = 0
-    if (changeText.includes('\n')) {
-        addedLines = changeText.split('\n').length - 1
-    } else if (change.end.line - change.start.line > 0) {
-        addedLines -= change.end.line - change.start.line
-    }
-    const newStartLine = change.start.line > cur.start.line ? cur.start.line : cur.start.line + addedLines
-    const newRange = new vscode.Range(newStartLine, 0, cur.end.line + addedLines, 0)
-    return newRange
-}
-/**
- * Create selection range for a single line
- * This is used for display the Cody icon and Code action on top of the first line of selected code
- */
-export function singleLineRange(line: number): vscode.Range {
-    return new vscode.Range(line, 0, line, 0)
-}
-/**
- * Generate icon path for each speaker: cody vs human (sourcegraph)
- */
-export function getIconPath(speaker: string, extPath: string): vscode.Uri {
-    const extensionPath = vscode.Uri.file(extPath)
-    const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist')
-    return vscode.Uri.joinPath(webviewPath, speaker === 'cody' ? 'cody.png' : 'sourcegraph.png')
 }
