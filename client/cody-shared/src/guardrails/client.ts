@@ -1,5 +1,4 @@
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
-import { isError } from '../utils'
 
 import { Guardrails, Attribution } from '.'
 
@@ -7,15 +6,9 @@ export class SourcegraphGuardrailsClient implements Guardrails {
     constructor(private client: SourcegraphGraphQLAPIClient) {}
 
     public async searchAttribution(snippet: string): Promise<Attribution | Error> {
-        // TODO(keegancsmith) adjust implementation to respect line count thresholds and to handle resultLimitHit.
+        // TODO(keegancsmith) adjust implementation to respect line count thresholds
         const query = `type:file select:repo content:${goEscapeString(snippet)}`
-        const results = await this.client.searchTypeRepo(query)
-        if (isError(results)) {
-            return results
-        }
-        return {
-            repositories: results.repositories,
-        }
+        return this.client.searchTypeRepo(query)
     }
 }
 
