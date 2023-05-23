@@ -117,7 +117,7 @@ if [ ! -s "${REINDEX_COMPLETED_FILE}" ]; then
   reindex --all
 
   # mark reindexing process as done
-  echo "Re-indexing for 3.31 release completed successfully at $(date)" >"${REINDEX_COMPLETED_FILE}"
+  echo "Re-indexing for 5.1 release completed successfully at $(date)" >"${REINDEX_COMPLETED_FILE}"
 
   echo
   echo 'PostgreSQL reindexing process complete - ready for start up.'

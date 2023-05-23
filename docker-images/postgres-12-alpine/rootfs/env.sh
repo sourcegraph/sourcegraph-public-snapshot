@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-export REINDEX_COMPLETED_FILE="${PGDATA}/3.31-reindex.completed"
+export REINDEX_COMPLETED_FILE="${PGDATA}/5.1-reindex.completed"
