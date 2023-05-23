@@ -47,7 +47,12 @@ interface EmbeddingsMultiSearchResponse {
 }
 
 interface SearchTypeRepoResponse {
-    search: { results: { results: { name: string }[] } }
+    search: {
+        results: {
+            limitHit: boolean
+            results: { name: string }[]
+        }
+    }
 }
 
 interface LogEventResponse {}
@@ -67,6 +72,7 @@ export interface EmbeddingsSearchResults {
 }
 
 export interface SearchTypeRepoResults {
+    limitHit: boolean
     repositories: { name: string }[]
 }
 
@@ -210,6 +216,7 @@ export class SourcegraphGraphQLAPIClient {
             query,
         }).then(response =>
             extractDataOrError(response, data => ({
+                limitHit: data.search.results.limitHit,
                 repositories: data.search.results.results,
             }))
         )

@@ -111,6 +111,7 @@ ts_project(
     srcs = [
         "src/chat/bot-response-multiplexer.test.ts",
         "src/chat/transcript/transcript.test.ts",
+        "src/guardrails/index.test.ts",
         "src/hallucinations-detector/index.test.ts",
         "src/sourcegraph-api/utils.test.ts",
         "src/test/mocks.ts",
