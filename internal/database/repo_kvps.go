@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"fmt"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -17,12 +18,14 @@ type RepoKVPStore interface {
 	WithTransact(context.Context, func(RepoKVPStore) error) error
 	With(basestore.ShareableStore) RepoKVPStore
 	Get(context.Context, api.RepoID, string) (KeyValuePair, error)
-	List(context.Context, api.RepoID) ([]KeyValuePair, error)
+	CountKeys(context.Context, RepoKVPListKeysOptions) (int, error)
+	ListKeys(context.Context, RepoKVPListKeysOptions, PaginationArgs) ([]string, error)
+	CountValues(context.Context, RepoKVPListValuesOptions) (int, error)
+	ListValues(context.Context, RepoKVPListValuesOptions, PaginationArgs) ([]string, error)
 	Create(context.Context, api.RepoID, KeyValuePair) error
 	Update(context.Context, api.RepoID, KeyValuePair) (KeyValuePair, error)
 	Delete(context.Context, api.RepoID, string) error
 }
-
 type repoKVPStore struct {
 	*basestore.Store
 }
@@ -39,6 +42,11 @@ func (s *repoKVPStore) With(other basestore.ShareableStore) RepoKVPStore {
 	return &repoKVPStore{Store: s.Store.With(other)}
 }
 
+var (
+	RepoKVPListKeyColumn   = "key"
+	RepoKVPListValueColumn = "value"
+)
+
 type KeyValuePair struct {
 	Key   string
 	Value *string
@@ -52,7 +60,7 @@ func (s *repoKVPStore) Create(ctx context.Context, repoID api.RepoID, kvp KeyVal
 
 	if err := s.Exec(ctx, sqlf.Sprintf(q, repoID, kvp.Key, kvp.Value)); err != nil {
 		if dbutil.IsPostgresError(err, "23505") {
-			return errors.Newf(`metadata key "%q" already exists for the given repository`, kvp.Key)
+			return errors.Newf(`metadata key %q already exists for the given repository`, kvp.Key)
 		}
 		return err
 	}
@@ -71,14 +79,74 @@ func (s *repoKVPStore) Get(ctx context.Context, repoID api.RepoID, key string) (
 	return scanKVP(s.QueryRow(ctx, sqlf.Sprintf(q, repoID, key)))
 }
 
-func (s *repoKVPStore) List(ctx context.Context, repoID api.RepoID) ([]KeyValuePair, error) {
-	q := `
-	SELECT key, value
-	FROM repo_kvps
-	WHERE repo_id = %s
-	`
+type RepoKVPListKeysOptions struct {
+	Query *string
+}
 
-	return scanKVPs(s.Query(ctx, sqlf.Sprintf(q, repoID)))
+func (r *RepoKVPListKeysOptions) SQL() []*sqlf.Query {
+	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	if r.Query != nil {
+		conds = append(conds, sqlf.Sprintf("key ILIKE %s", "%"+*r.Query+"%"))
+	}
+	return conds
+}
+
+func (s *repoKVPStore) CountKeys(ctx context.Context, options RepoKVPListKeysOptions) (int, error) {
+	q := `
+	WITH kvps AS (
+		SELECT COUNT(*) FROM repo_kvps WHERE (%s) GROUP BY key
+	)
+	SELECT COUNT(*) FROM kvps
+	`
+	where := options.SQL()
+	return basestore.ScanInt(s.QueryRow(ctx, sqlf.Sprintf(q, sqlf.Join(where, ") AND ("))))
+}
+
+func (s *repoKVPStore) ListKeys(ctx context.Context, options RepoKVPListKeysOptions, orderOptions PaginationArgs) ([]string, error) {
+	where := options.SQL()
+	p := orderOptions.SQL()
+	if p.Where != nil {
+		where = append(where, p.Where)
+	}
+	q := sqlf.Sprintf(`SELECT key FROM repo_kvps WHERE (%s) GROUP BY key`, sqlf.Join(where, ") AND ("))
+	q = p.AppendOrderToQuery(q)
+	q = p.AppendLimitToQuery(q)
+	fmt.Println(q.Query(sqlf.PostgresBindVar))
+	fmt.Println(q.Args())
+	return basestore.ScanStrings(s.Query(ctx, q))
+}
+
+type RepoKVPListValuesOptions struct {
+	Key   string
+	Query *string
+}
+
+func (r *RepoKVPListValuesOptions) SQL() []*sqlf.Query {
+	conds := []*sqlf.Query{sqlf.Sprintf("key = %s", r.Key), sqlf.Sprintf("value IS NOT NULL")}
+	if r.Query != nil {
+		conds = append(conds, sqlf.Sprintf("value ILIKE %s", "%"+*r.Query+"%"))
+	}
+	return conds
+}
+
+func (s *repoKVPStore) CountValues(ctx context.Context, options RepoKVPListValuesOptions) (int, error) {
+	q := `SELECT COUNT(DISTINCT value) FROM repo_kvps WHERE (%s)`
+	where := options.SQL()
+	return basestore.ScanInt(s.QueryRow(ctx, sqlf.Sprintf(q, sqlf.Join(where, ") AND ("))))
+}
+
+func (s *repoKVPStore) ListValues(ctx context.Context, options RepoKVPListValuesOptions, orderOptions PaginationArgs) ([]string, error) {
+	where := options.SQL()
+	p := orderOptions.SQL()
+	if p.Where != nil {
+		where = append(where, p.Where)
+	}
+	q := sqlf.Sprintf(`SELECT DISTINCT value FROM repo_kvps WHERE (%s)`, sqlf.Join(where, ") AND ("))
+	q = p.AppendOrderToQuery(q)
+	q = p.AppendLimitToQuery(q)
+	fmt.Println(q.Query(sqlf.PostgresBindVar))
+	fmt.Println(q.Args())
+	return basestore.ScanStrings(s.Query(ctx, q))
 }
 
 func (s *repoKVPStore) Update(ctx context.Context, repoID api.RepoID, kvp KeyValuePair) (KeyValuePair, error) {
@@ -115,5 +183,3 @@ func scanKVP(scanner dbutil.Scanner) (KeyValuePair, error) {
 	var kvp KeyValuePair
 	return kvp, scanner.Scan(&kvp.Key, &kvp.Value)
 }
-
-var scanKVPs = basestore.NewSliceScanner(scanKVP)
