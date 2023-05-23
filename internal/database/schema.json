@@ -12268,7 +12268,7 @@
           "Index": 15,
           "TypeName": "text",
           "IsNullable": false,
-          "Default": "'repo'::text",
+          "Default": "'repos'::text",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
