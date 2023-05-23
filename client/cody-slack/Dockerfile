@@ -11,6 +11,7 @@ COPY ${PROJECT_ROOT}/dist ./dist
 COPY ${PROJECT_ROOT}/package/package.json ./
 
 # Install only production dependencies
+# hadolint ignore=DL3016
 RUN npm install -g pnpm && pnpm install --prod
 
 # The application's default port is picked from the environment

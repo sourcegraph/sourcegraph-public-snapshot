@@ -24,7 +24,6 @@ trap cleanup EXIT
 # fi
 
 echo "--- pnpm build"
-pkg="github.com/sourcegraph/sourcegraph/client/cody-slack"
 pnpm install
 pnpm run build
 
