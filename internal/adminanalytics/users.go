@@ -87,12 +87,7 @@ func (f *Users) Frequencies(ctx context.Context) ([]*UsersFrequencyNode, error) 
 		return nil, err
 	}
 
-	defaultConds, err := getDefaultConds(f.Ctx, f.DB, f.Cache)
-	if err != nil {
-		return nil, err
-	}
-
-	query := sqlf.Sprintf(frequencyQuery, dateRangeCond, sqlf.Join(defaultConds, " AND "))
+	query := sqlf.Sprintf(frequencyQuery, dateRangeCond, sqlf.Join(getDefaultConds(), " AND "))
 
 	rows, err := f.DB.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 
@@ -163,12 +158,7 @@ func (f *Users) MonthlyActiveUsers(ctx context.Context) ([]*MonthlyActiveUsersRo
 	prevMonth := now.AddDate(0, -2, 0) // going back 2 months
 	from := time.Date(prevMonth.Year(), prevMonth.Month(), 1, 0, 0, 0, 0, now.Location()).Format(time.RFC3339)
 
-	defaultConds, err := getDefaultConds(f.Ctx, f.DB, f.Cache)
-	if err != nil {
-		return nil, err
-	}
-
-	query := sqlf.Sprintf(mauQuery, from, to, sqlf.Join(defaultConds, " AND "))
+	query := sqlf.Sprintf(mauQuery, from, to, sqlf.Join(getDefaultConds(), " AND "))
 
 	rows, err := f.DB.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
