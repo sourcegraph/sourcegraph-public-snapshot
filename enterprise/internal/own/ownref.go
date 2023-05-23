@@ -92,7 +92,6 @@ type Bag interface {
 func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text ...string) (Bag, error) {
 	var multiBag bag
 	for _, t := range text {
-		t = strings.TrimPrefix(t, "@")
 		if _, err := mail.ParseAddress(t); err == nil {
 			b, err := ByEmailReference(ctx, db, t)
 			if err != nil {
@@ -100,7 +99,7 @@ func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text ...string) (
 			}
 			multiBag = append(multiBag, b...)
 		}
-		b, err := ByUserHandleReference(ctx, db, t)
+		b, err := ByUserHandleReference(ctx, db, strings.TrimPrefix(t, "@"))
 		if err != nil {
 			return nil, err
 		}
