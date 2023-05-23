@@ -156,7 +156,7 @@ manifest=$(generate_manifest ${version} )
 if [[ ${CI:-""} == "true" ]]; then
   mkdir -p manifest
   echo ${manifest} | jq >> manifest/app.update.manifest
-  buildkite-agent artefact upload manifest/app.update.manifest
+  buildkite-agent artifact upload manifest/app.update.manifest
 else
   echo "--- app update manifest ---"
   echo "${manifest}" | jq
