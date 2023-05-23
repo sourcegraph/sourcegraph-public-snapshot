@@ -64,6 +64,7 @@ go_test(
         "//enterprise/cmd/llm-proxy/internal/auth",
         "//enterprise/cmd/llm-proxy/internal/dotcom",
         "//enterprise/cmd/llm-proxy/internal/events",
+        "//enterprise/internal/licensing",
         "@com_github_derision_test_go_mockgen//testutil/require",
         "@com_github_gregjones_httpcache//:httpcache",
         "@com_github_khan_genqlient//graphql",

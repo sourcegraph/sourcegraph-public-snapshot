@@ -21,9 +21,9 @@ type Config struct {
 	DiagnosticsSecret string
 
 	Dotcom struct {
-		URL             string
-		AccessToken     string
-		DevLicensesOnly bool
+		URL          string
+		AccessToken  string
+		InternalMode bool
 	}
 
 	Anthropic struct {
@@ -63,7 +63,8 @@ func (c *Config) Load() {
 
 	c.Dotcom.AccessToken = c.Get("LLM_PROXY_DOTCOM_ACCESS_TOKEN", "", "The Sourcegraph.com access token to be used.")
 	c.Dotcom.URL = c.Get("LLM_PROXY_DOTCOM_API_URL", "https://sourcegraph.com/.api/graphql", "Custom override for the dotcom API endpoint")
-	c.Dotcom.DevLicensesOnly = c.GetBool("LLM_PROXY_DOTCOM_DEV_LICENSES_ONLY", "false", "Only allow tokens associated with active dev licenses to be used.")
+	c.Dotcom.InternalMode = c.GetBool("LLM_PROXY_DOTCOM_INTERNAL_MODE", "false", "Only allow tokens associated with active internal and dev licenses to be used.") ||
+		c.GetBool("LLM_PROXY_DOTCOM_DEV_LICENSES_ONLY", "false", "DEPRECATED, use LLM_PROXY_DOTCOM_INTERNAL_MODE")
 
 	c.Anthropic.AccessToken = c.Get("LLM_PROXY_ANTHROPIC_ACCESS_TOKEN", "", "The Anthropic access token to be used.")
 	c.Anthropic.AllowedModels = splitMaybe(c.Get("LLM_PROXY_ANTHROPIC_ALLOWED_MODELS", "claude-v1,claude-v1.0,claude-v1.2,claude-v1.3,claude-instant-v1,claude-instant-v1.0", "The Anthropic access token to be used."))

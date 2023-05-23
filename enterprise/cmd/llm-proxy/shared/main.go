@@ -61,7 +61,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			obctx.Logger,
 			rcache.New("product-subscriptions"),
 			dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken),
-			config.Dotcom.DevLicensesOnly),
+			config.Dotcom.InternalMode),
 	}
 
 	// Set up our handler chain, which is run from the bottom up. Application handlers

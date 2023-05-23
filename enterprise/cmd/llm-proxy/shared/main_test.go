@@ -19,8 +19,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/events"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 )
 
+// TODO(@bobheadxi): Try to rewrite this as a table-driven test for less copy-pasta.
 func TestAuthenticateEndToEnd(t *testing.T) {
 	logger := logtest.Scoped(t)
 	next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
@@ -136,7 +138,7 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 		assert.Equal(t, http.StatusForbidden, w.Code)
 	})
 
-	t.Run("authenticated but not dev license", func(t *testing.T) {
+	t.Run("internal mode, authenticated but not dev license", func(t *testing.T) {
 		cache := NewMockCache()
 		client := NewMockClient()
 		client.MakeRequestFunc.SetDefaultHook(func(_ context.Context, _ *graphql.Request, resp *graphql.Response) error {
@@ -176,5 +178,89 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 			Next:        next,
 		}).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusForbidden, w.Code)
+	})
+
+	t.Run("internal mode, authenticated dev license", func(t *testing.T) {
+		cache := NewMockCache()
+		client := NewMockClient()
+		client.MakeRequestFunc.SetDefaultHook(func(_ context.Context, _ *graphql.Request, resp *graphql.Response) error {
+			resp.Data.(*dotcom.CheckAccessTokenResponse).Dotcom = dotcom.CheckAccessTokenDotcomDotcomQuery{
+				ProductSubscriptionByAccessToken: dotcom.CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription{
+					ProductSubscriptionState: dotcom.ProductSubscriptionState{
+						Id:         "UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==",
+						Uuid:       "6452a8fc-e650-45a7-a0a2-357f776b3b46",
+						IsArchived: false,
+						LlmProxyAccess: dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccess{
+							LLMProxyAccessFields: dotcom.LLMProxyAccessFields{
+								Enabled: true,
+								RateLimit: &dotcom.LLMProxyAccessFieldsRateLimitLLMProxyRateLimit{
+									Limit:           10,
+									IntervalSeconds: 10,
+								},
+							},
+						},
+						ActiveLicense: &dotcom.ProductSubscriptionStateActiveLicenseProductLicense{
+							Info: &dotcom.ProductSubscriptionStateActiveLicenseProductLicenseInfo{
+								Tags: []string{licensing.DevTag},
+							},
+						},
+					},
+				},
+			}
+			return nil
+		})
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
+		r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
+		(&auth.Authenticator{
+			Logger:      logger,
+			EventLogger: events.NewStdoutLogger(logger),
+			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client, true)},
+			Next:        next,
+		}).ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code)
+	})
+
+	t.Run("internal mode, authenticated internal license", func(t *testing.T) {
+		cache := NewMockCache()
+		client := NewMockClient()
+		client.MakeRequestFunc.SetDefaultHook(func(_ context.Context, _ *graphql.Request, resp *graphql.Response) error {
+			resp.Data.(*dotcom.CheckAccessTokenResponse).Dotcom = dotcom.CheckAccessTokenDotcomDotcomQuery{
+				ProductSubscriptionByAccessToken: dotcom.CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription{
+					ProductSubscriptionState: dotcom.ProductSubscriptionState{
+						Id:         "UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==",
+						Uuid:       "6452a8fc-e650-45a7-a0a2-357f776b3b46",
+						IsArchived: false,
+						LlmProxyAccess: dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccess{
+							LLMProxyAccessFields: dotcom.LLMProxyAccessFields{
+								Enabled: true,
+								RateLimit: &dotcom.LLMProxyAccessFieldsRateLimitLLMProxyRateLimit{
+									Limit:           10,
+									IntervalSeconds: 10,
+								},
+							},
+						},
+						ActiveLicense: &dotcom.ProductSubscriptionStateActiveLicenseProductLicense{
+							Info: &dotcom.ProductSubscriptionStateActiveLicenseProductLicenseInfo{
+								Tags: []string{licensing.DevTag},
+							},
+						},
+					},
+				},
+			}
+			return nil
+		})
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
+		r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
+		(&auth.Authenticator{
+			Logger:      logger,
+			EventLogger: events.NewStdoutLogger(logger),
+			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client, true)},
+			Next:        next,
+		}).ServeHTTP(w, r)
+		assert.Equal(t, http.StatusOK, w.Code)
 	})
 }

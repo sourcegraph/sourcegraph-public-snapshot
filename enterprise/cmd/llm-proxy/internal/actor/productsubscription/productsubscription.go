@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/dotcom"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	llmproxy "github.com/sourcegraph/sourcegraph/enterprise/internal/llm-proxy"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -33,20 +34,22 @@ type Source struct {
 	cache  httpcache.Cache // TODO: add something to regularly clean up the cache
 	dotcom graphql.Client
 
-	devLicensesOnly bool
+	// internalMode, if true, indicates only dev and internal licenses may use
+	// this LLM-proxy instance.
+	internalMode bool
 }
 
 var _ actor.Source = &Source{}
 var _ actor.SourceUpdater = &Source{}
 var _ actor.SourceSyncer = &Source{}
 
-func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client, devLicensesOnly bool) *Source {
+func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client, internalMode bool) *Source {
 	return &Source{
 		log:    logger.Scoped("productsubscriptions", "product subscription actor source"),
 		cache:  cache,
 		dotcom: dotComClient,
 
-		devLicensesOnly: devLicensesOnly,
+		internalMode: internalMode,
 	}
 }
 
@@ -113,7 +116,7 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 
 	for _, sub := range resp.Dotcom.ProductSubscriptions.Nodes {
 		for _, token := range sub.SourcegraphAccessTokens {
-			act := NewActor(s, token, sub.ProductSubscriptionState, s.devLicensesOnly)
+			act := NewActor(s, token, sub.ProductSubscriptionState, s.internalMode)
 			data, err := json.Marshal(act)
 			if err != nil {
 				syncLog.Error("failed to marshal actor",
@@ -136,11 +139,11 @@ func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor,
 	resp, checkErr := dotcom.CheckAccessToken(ctx, s.dotcom, token)
 	if checkErr != nil {
 		// Generate a stateless actor so that we aren't constantly hitting the dotcom API
-		act = NewActor(s, token, dotcom.ProductSubscriptionState{}, s.devLicensesOnly)
+		act = NewActor(s, token, dotcom.ProductSubscriptionState{}, s.internalMode)
 	} else {
 		act = NewActor(s, token,
 			resp.Dotcom.ProductSubscriptionByAccessToken.ProductSubscriptionState,
-			s.devLicensesOnly)
+			s.internalMode)
 	}
 
 	if data, err := json.Marshal(act); err != nil {
@@ -157,7 +160,7 @@ func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor,
 }
 
 // NewActor creates an actor from Sourcegraph.com product subscription state.
-func NewActor(source *Source, token string, s dotcom.ProductSubscriptionState, devLicensesOnly bool) *actor.Actor {
+func NewActor(source *Source, token string, s dotcom.ProductSubscriptionState, internalMode bool) *actor.Actor {
 	var rateLimit actor.RateLimit
 	if s.LlmProxyAccess.RateLimit != nil {
 		rateLimit = actor.RateLimit{
@@ -166,17 +169,27 @@ func NewActor(source *Source, token string, s dotcom.ProductSubscriptionState, d
 		}
 	}
 
-	// In dev mode, only allow dev licenses.
-	disabledBecauseOfDevMode := devLicensesOnly &&
-		(s.ActiveLicense == nil || s.ActiveLicense.Info == nil || !slices.Contains(s.ActiveLicense.Info.Tags, "dev"))
+	// In internal mode, only allow dev and internal licenses.
+	disallowedLicense := internalMode &&
+		(s.ActiveLicense == nil || s.ActiveLicense.Info == nil ||
+			!containsOneOf(s.ActiveLicense.Info.Tags, licensing.DevTag, licensing.InternalTag))
 
 	now := time.Now()
 	return &actor.Actor{
 		Key:           token,
 		ID:            s.Uuid,
-		AccessEnabled: !disabledBecauseOfDevMode && !s.IsArchived && s.LlmProxyAccess.Enabled && rateLimit.IsValid(),
+		AccessEnabled: !disallowedLicense && !s.IsArchived && s.LlmProxyAccess.Enabled && rateLimit.IsValid(),
 		RateLimit:     rateLimit,
 		LastUpdated:   &now,
 		Source:        source,
 	}
+}
+
+func containsOneOf(s []string, needles ...string) bool {
+	for _, needle := range needles {
+		if slices.Contains(s, needle) {
+			return true
+		}
+	}
+	return false
 }
