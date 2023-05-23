@@ -32,44 +32,51 @@ bundle_path() {
 
 upload_dist() {
   local path
+  local target_dir
   path="$(bundle_path)"
   echo "searching for artefacts in '${path}' and moving them to dist/"
-  src=$(find "${path}" -type f \( -name "Sourcegraph*.dmg" -o -name "Sourcegraph*.tar.gz" -o -name "sourcegraph*.deb" -o -name "sourcegraph*.AppImage" -o -name "sourcegraph*.tar.gz" \));
+  src=$(find "${path}" -type f \( -name "Sourcegraph*.dmg" -o -name "Sourcegraph*.tar.gz" -o -name "sourcegraph*.deb" -o -name "sourcegraph*.AppImage" -o -name "sourcegraph*.tar.gz" -o -name "*.sig" \));
+  target_dir="./${DIST_DIR}"
 
-  mkdir -p dist
+  mkdir -p "${target_dir}"
   for from in ${src}; do
-    mv -vf "${from}" "./${DIST_DIR}/"
+    mv -vf "${from}" "${target_dir}/"
   done
 
   echo --- Uploading artifacts from dist
-  ls -al ./dist
-  buildkite-agent artifact upload "./${DIST_DIR}/*"
-
+  ls -al "./${DIST_DIR}"
+  buildkite-agent artifact upload "${DIST_DIR}/*"
 }
 
 create_app_archive() {
   local version
   local path
   local app_path
+  local arch
+  local target
+
   version=$1
   path="$(bundle_path)"
   app_path=$(find "${path}" -type d -name "Sourcegraph.app")
+  app_tar_gz=$(find "${path}" -type f -name "Sourcegraph.app.tar.gz")
 
+  arch="$(uname -m)"
+  if [[ "${arch}" == "arm64" ]]; then
+    arch="aarch64"
+  fi
+
+  target="Sourcegraph.${version}.${arch}.app.tar.gz"
   # # we have to handle Sourcegraph.App differently since it is a dir
-  if [[ -d  ${app_path} ]]; then
-    local arch
-    local target
-    arch="$(uname -m)"
-    if [[ "${arch}" == "arm64" ]]; then
-      arch="aarch64"
-    fi
-
-    target="Sourcegraph.${version}.${arch}.app.tar.gz"
+  if [[ -d  ${app_path} && -z ${app_tar_gz} ]]; then
     pushd .
     cd "${path}/macos/"
     echo "--- :file_cabinet: Creating archive ${target}"
     tar -czvf "${target}" "Sourcegraph.app"
     popd
+  elif [[ -e ${app_tar_gz} ]]; then
+    echo "--- :file_cabinet: Moving existing archive/signatures to ${target}"
+    mv -vf "${app_tar_gz}" "$(dirname "${app_tar_gz}")/${target}"
+    mv -vf "${app_tar_gz}.sig" "$(dirname "${app_tar_gz}")/${target}.sig" || echo "--- signature not found - skipping"
   fi
 }
 
@@ -143,11 +150,21 @@ secret_value() {
 
 build() {
   echo --- :magnify_glass: detecting platform
+  local version
+  local do_updater_bundle
   local platform
-  platform="$(./enterprise/dev/app/detect_platform.sh)"
+  local bundles
+
+  platform="$1"
+  version="$2"
+  do_updater_bundle="$3"
+
+  # we only allow the updater build once we're in CI or see "SRC_APP_UPDATER_BUILD=1"
+  bundles="deb,appimage,app,dmg"
+
   echo "platform is: ${platform}"
 
-  if [[ ${CI} == "true" ]]; then
+  if [[ ${CI:-""} == "true" ]]; then
     local secrets
     echo "--- :aws::gcp::tauri: Retrieving tauri signing secrets"
     secrets=$(secret_value "sourcegraph/tauri-key")
@@ -156,9 +173,13 @@ build() {
     export TAURI_KEY_PASSWORD="${TAURI_KEY_PASSWORD:-"$(echo "${secrets}" | jq -r '.TAURI_KEY_PASSWORD' || echo '')"}"
   fi
 
-  echo "--- :tauri: Building Application (${VERSION}) for platform: ${platform}"
+  if [[ ${do_updater_bundle} == 1 ]]; then
+    bundles="$bundles,updater"
+  fi
+
+  echo "--- :tauri: Building Application (${version}) with bundles '${bundles}' for platform: ${platform}"
   NODE_ENV=production pnpm run build-app-shell
-  pnpm tauri build --bundles deb,appimage,app,dmg,updater --target "${platform}"
+  pnpm tauri build --bundles ${bundles} --target "${platform}"
 }
 
 if [[ ${CI:-""} == "true" ]]; then
@@ -188,7 +209,8 @@ fi
 
 CI="${CI:-"false"}"
 PLATFORM="$(./enterprise/dev/app/detect_platform.sh)"
-build "${PLATFORM}"
+SRC_APP_UPDATER_BUILD="${SRC_APP_UPDATER_BUILD:-"0"}"
+build "${PLATFORM}" "${VERSION}" "${SRC_APP_UPDATER_BUILD:-"0"}"
 
 create_app_archive "${VERSION}"
 
