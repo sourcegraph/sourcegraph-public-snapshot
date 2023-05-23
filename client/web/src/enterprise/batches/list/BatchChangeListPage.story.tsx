@@ -39,10 +39,10 @@ const config: Meta = {
 export default config
 
 window.context.licenseInfo = {
-    currentPlan: 'team-0',
+    currentPlan: 'enterprise-0',
     batchChanges: {
-        maxNumChangesets: 10,
-        unrestricted: false,
+        maxNumChangesets: -1,
+        unrestricted: true,
     },
 }
 
