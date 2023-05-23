@@ -262,6 +262,8 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 			Name: name,
 		},
 		Spec: batchv1.JobSpec{
+			// Prevent K8s from retrying. This will lead to the retried jobs always failing as the workspace will get
+			// cleaned up from the first failure.
 			BackoffLimit: pointer.Int32(0),
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
