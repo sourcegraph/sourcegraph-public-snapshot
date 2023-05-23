@@ -16,7 +16,6 @@ import (
 )
 
 func TestSecurityEventLogs_ValidInfo(t *testing.T) {
-
 	if testing.Short() {
 		t.Skip()
 	}
@@ -33,6 +32,7 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 
 	logger, exportLogs := logtest.Captured(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
+
 	var testCases = []struct {
 		name  string
 		actor *actor.Actor // optional
@@ -67,8 +67,7 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 		{
 			name:  "UserAndAnonymousMissing",
 			event: &SecurityEvent{Name: "test_event", URL: "http://sourcegraph.com", Source: "WEB", UserID: 0, AnonymousUserID: ""},
-
-			err: `INSERT: ERROR: new row for relation "security_event_logs" violates check constraint "security_event_logs_check_has_user" (SQLSTATE 23514)`,
+			err:   `INSERT: ERROR: new row for relation "security_event_logs" violates check constraint "security_event_logs_check_has_user" (SQLSTATE 23514)`,
 		},
 		{
 			name:  "JustUser",
