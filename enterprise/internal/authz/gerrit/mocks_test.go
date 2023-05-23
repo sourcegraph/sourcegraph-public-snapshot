@@ -8,10 +8,11 @@ package gerrit
 
 import (
 	"context"
-	auth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	gerrit "github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"net/url"
 	"sync"
+
+	auth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	gerrit "github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 )
 
 // MockGerritClient is a mock implementation of the Client interface (from
@@ -64,7 +65,7 @@ func NewMockGerritClient() *MockGerritClient {
 			},
 		},
 		AuthenticatorFunc: &GerritClientAuthenticatorFunc{
-			defaultHook: func() (r0 *auth.Authenticator) {
+			defaultHook: func() (r0 auth.Authenticator) {
 				return
 			},
 		},
@@ -126,7 +127,7 @@ func NewStrictMockGerritClient() *MockGerritClient {
 			},
 		},
 		AuthenticatorFunc: &GerritClientAuthenticatorFunc{
-			defaultHook: func() *auth.Authenticator {
+			defaultHook: func() auth.Authenticator {
 				panic("unexpected invocation of MockGerritClient.Authenticator")
 			},
 		},
@@ -330,15 +331,15 @@ func (c GerritClientAbandonChangeFuncCall) Results() []interface{} {
 // GerritClientAuthenticatorFunc describes the behavior when the
 // Authenticator method of the parent MockGerritClient instance is invoked.
 type GerritClientAuthenticatorFunc struct {
-	defaultHook func() *auth.Authenticator
-	hooks       []func() *auth.Authenticator
+	defaultHook func() auth.Authenticator
+	hooks       []func() auth.Authenticator
 	history     []GerritClientAuthenticatorFuncCall
 	mutex       sync.Mutex
 }
 
 // Authenticator delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGerritClient) Authenticator() *auth.Authenticator {
+func (m *MockGerritClient) Authenticator() auth.Authenticator {
 	r0 := m.AuthenticatorFunc.nextHook()()
 	m.AuthenticatorFunc.appendCall(GerritClientAuthenticatorFuncCall{r0})
 	return r0
@@ -347,7 +348,7 @@ func (m *MockGerritClient) Authenticator() *auth.Authenticator {
 // SetDefaultHook sets function that is called when the Authenticator method
 // of the parent MockGerritClient instance is invoked and the hook queue is
 // empty.
-func (f *GerritClientAuthenticatorFunc) SetDefaultHook(hook func() *auth.Authenticator) {
+func (f *GerritClientAuthenticatorFunc) SetDefaultHook(hook func() auth.Authenticator) {
 	f.defaultHook = hook
 }
 
@@ -355,7 +356,7 @@ func (f *GerritClientAuthenticatorFunc) SetDefaultHook(hook func() *auth.Authent
 // Authenticator method of the parent MockGerritClient instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *GerritClientAuthenticatorFunc) PushHook(hook func() *auth.Authenticator) {
+func (f *GerritClientAuthenticatorFunc) PushHook(hook func() auth.Authenticator) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -363,20 +364,20 @@ func (f *GerritClientAuthenticatorFunc) PushHook(hook func() *auth.Authenticator
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GerritClientAuthenticatorFunc) SetDefaultReturn(r0 *auth.Authenticator) {
-	f.SetDefaultHook(func() *auth.Authenticator {
+func (f *GerritClientAuthenticatorFunc) SetDefaultReturn(r0 auth.Authenticator) {
+	f.SetDefaultHook(func() auth.Authenticator {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GerritClientAuthenticatorFunc) PushReturn(r0 *auth.Authenticator) {
-	f.PushHook(func() *auth.Authenticator {
+func (f *GerritClientAuthenticatorFunc) PushReturn(r0 auth.Authenticator) {
+	f.PushHook(func() auth.Authenticator {
 		return r0
 	})
 }
 
-func (f *GerritClientAuthenticatorFunc) nextHook() func() *auth.Authenticator {
+func (f *GerritClientAuthenticatorFunc) nextHook() func() auth.Authenticator {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -411,7 +412,7 @@ func (f *GerritClientAuthenticatorFunc) History() []GerritClientAuthenticatorFun
 type GerritClientAuthenticatorFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *auth.Authenticator
+	Result0 auth.Authenticator
 }
 
 // Args returns an interface slice containing the arguments of this
