@@ -76,6 +76,7 @@ type ChangesetSpec struct {
 
 	Title string `json:"title,omitempty"`
 	Body  string `json:"body,omitempty"`
+	Fork  *bool  `json:"fork,omitempty"`
 
 	Commits []GitCommitDescription `json:"commits,omitempty"`
 
