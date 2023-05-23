@@ -1205,10 +1205,10 @@
     },
     {
       "Name": "user_repo_permissions_id_seq",
-      "TypeName": "integer",
+      "TypeName": "bigint",
       "StartValue": 1,
       "MinimumValue": 1,
-      "MaximumValue": 2147483647,
+      "MaximumValue": 9223372036854775807,
       "Increment": 1,
       "CycleOption": "NO"
     },
@@ -25263,7 +25263,7 @@
         {
           "Name": "id",
           "Index": 1,
-          "TypeName": "integer",
+          "TypeName": "bigint",
           "IsNullable": false,
           "Default": "nextval('user_repo_permissions_id_seq'::regclass)",
           "CharacterMaximumLength": 0,
