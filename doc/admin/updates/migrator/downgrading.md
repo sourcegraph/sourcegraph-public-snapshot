@@ -33,7 +33,7 @@ codeinsights-db is up-to-date
 codeintel-db is up-to-date
 pgsql is up-to-date
 Recreating migrator ... done
-λ ~/deploy-sourcegraph-docker/docker-compose/ v4.5.1* docker logs migrator
+$ ~/deploy-sourcegraph-docker/docker-compose/ v4.5.1* docker logs migrator
 ✱ Sourcegraph migrator 5.0.3
 👉 Migrating to v4.3 (step 1 of 2)
 👉 Running schema migrations

@@ -84,7 +84,7 @@ To perform a multi-version upgrade on a Sourcegraph instance running on Docker c
     > *Note: you may add the `--dry-run` flag to the `command:` to test things out before altering the dbs*
     3. Run migrator with `docker-compose up migrator` **Example:**
     ```bash
-    λ ~/deploy-sourcegraph-docker/docker-compose/ docker-compose up migrator
+    $ ~/deploy-sourcegraph-docker/docker-compose/ docker-compose up migrator
     codeintel-db is up-to-date
     codeinsights-db is up-to-date
     pgsql is up-to-date

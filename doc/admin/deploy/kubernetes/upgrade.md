@@ -172,12 +172,12 @@ To perform a multi-version upgrade on a Sourcegraph instance running on our **ku
      ```
      **Example:**
      ```bash
-     λ kubectl -n sourcegraph apply -f ./migrator.Job.yaml
+     $ kubectl -n sourcegraph apply -f ./migrator.Job.yaml
      job.batch/migrator created
-     λ kubectl -n sourcegraph get jobs
+     $ kubectl -n sourcegraph get jobs
      NAME       COMPLETIONS   DURATION   AGE
      migrator   0/1           9s         9s
-     λ kubectl -n sourcegraph logs job/migrator
+     $ kubectl -n sourcegraph logs job/migrator
      ❗️ An error was returned when detecting the terminal size and capabilities:
      
         GetWinsize: inappropriate ioctl for device
@@ -200,7 +200,7 @@ To perform a multi-version upgrade on a Sourcegraph instance running on our **ku
      👉 Migrating to v4.5 (step 3 of 3)
      👉 Running schema migrations
      ✅ Schema migrations complete
-     λ kubectl -n sourcegraph get jobs
+     $ kubectl -n sourcegraph get jobs
      NAME       COMPLETIONS   DURATION   AGE
      migrator   1/1           9s         35s
      ```
@@ -224,34 +224,7 @@ Admins upgrading a Sourcegraph instance older than `v4.5.0` and migrating from o
 
 ## Rollback
 
-You can rollback by resetting your `release` branch to the old state before redeploying the instance.
 
-If you are rolling back more than a single version, then you must also [rollback your database](../../how-to/rollback_database.md), as database migrations (which may have run at some point during the upgrade) are guaranteed to be compatible with one previous minor version.
-
-### Rollback with Kustomize
-
-**For Sourcegraph version 4.5.0 and above**
-
-For instances deployed using the [deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s) repository:
-
-  ```bash
-  # Re-generate manifests
-  $ kubectl kustomize instances/$YOUR_INSTANCE -o cluster-rollback.yaml
-  # Review manifests
-  $ less cluster-rollback.yaml
-  # Re-deploy
-  $ kubectl apply --prune -l deploy=sourcegraph -f cluster-rollback.yaml
-  ```
-
-### Rollback without Kustomize
-
-**For Sourcegraph version prior to 4.5.0**
-
-For instances deployed using the old [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository:
-
-  ```bash
-  $ ./kubectl-apply-all.sh
-  ```
 
 ---
 
