@@ -32,6 +32,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -41,6 +42,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func newMockDB() database.DB {
@@ -908,7 +910,13 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 	}
 
 	t.Run("GRPC", func(t *testing.T) {
-		t.Setenv("SG_FEATURE_FLAG_GRPC", "true")
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{
+					EnableGRPC: true,
+				},
+			},
+		})
 
 		for _, tc := range testCases {
 
@@ -936,7 +944,13 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 	})
 
 	t.Run("HTTP", func(t *testing.T) {
-		t.Setenv("SG_FEATURE_FLAG_GRPC", "false")
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{
+					EnableGRPC: false,
+				},
+			},
+		})
 		expected := fmt.Sprintf("http://%s", gitserverAddr)
 
 		for _, tc := range testCases {
