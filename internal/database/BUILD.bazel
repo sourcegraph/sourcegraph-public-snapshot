@@ -112,6 +112,7 @@ go_library(
         "//internal/hashutil",
         "//internal/httpcli",
         "//internal/jsonc",
+        "//internal/lazyregexp",
         "//internal/oauthutil",
         "//internal/randstring",
         "//internal/ratelimit",
