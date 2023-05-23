@@ -359,11 +359,11 @@ const RepositoryAndGitObjectDescription: FunctionComponent<RepositoryAndGitObjec
     </div>
 )
 
-interface RepositoryDescriptionProps {
+interface GitObjectDescriptionProps {
     policy: CodeIntelligenceConfigurationPolicyFields
 }
 
-const RepositoryDescription: FunctionComponent<RepositoryDescriptionProps> = ({ policy }) => {
+const GitObjectDescription: FunctionComponent<GitObjectDescriptionProps> = ({ policy }) => {
     if (policy.type === GitObjectType.GIT_COMMIT) {
         if (policy.pattern === 'HEAD') {
             return (
@@ -407,11 +407,11 @@ const RepositoryDescription: FunctionComponent<RepositoryDescriptionProps> = ({ 
     return <></>
 }
 
-interface GitObjectDescriptionProps {
+interface RepositoryDescriptionProps {
     policy: CodeIntelligenceConfigurationPolicyFields
 }
 
-const GitObjectDescription: FunctionComponent<GitObjectDescriptionProps> = ({ policy }) => {
+const RepositoryDescription: FunctionComponent<RepositoryDescriptionProps> = ({ policy }) => {
     if (policy.repository) {
         return (
             <Badge variant="outlineSecondary">
