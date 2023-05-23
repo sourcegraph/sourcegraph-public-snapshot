@@ -142,7 +142,7 @@ func readProcessPipe(w io.WriteCloser, stdout io.Reader) *errgroup.Group {
 func (c *KubernetesCommand) FindPod(ctx context.Context, namespace string, name string) (*corev1.Pod, error) {
 	list, err := c.Clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: "job-name=" + name})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "finding pod")
 	}
 	if len(list.Items) == 0 {
 		return nil, errors.Newf("no pods found for job %s", name)
