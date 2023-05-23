@@ -11,8 +11,6 @@ import {
     mdiLock,
     mdiPencil,
     mdiSourceRepository,
-    mdiVectorIntersection,
-    mdiVectorLine,
     mdiVectorPolyline,
 } from '@mdi/js'
 import classNames from 'classnames'

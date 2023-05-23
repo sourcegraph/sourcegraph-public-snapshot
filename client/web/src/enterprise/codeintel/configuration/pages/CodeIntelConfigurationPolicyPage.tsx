@@ -168,7 +168,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
 
         setPolicy(configWithDefaults)
         setSaved(configWithDefaults)
-    }, [policyConfig, repo, location.search])
+    }, [policyConfig, repo, domain, location.search])
 
     if (loadingPolicyConfig) {
         return <LoadingSpinner />

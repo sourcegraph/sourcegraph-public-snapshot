@@ -11,7 +11,6 @@ import {
     mdiSourceFork,
     mdiSourceRepository,
     mdiTag,
-    mdiVectorPolygon,
     mdiVectorPolyline,
 } from '@mdi/js'
 import classNames from 'classnames'

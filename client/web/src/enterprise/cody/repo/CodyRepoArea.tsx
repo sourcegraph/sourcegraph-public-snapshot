@@ -41,7 +41,7 @@ export const codyRepoAreaRoutes: readonly CodyRepoAreaRoute[] = [
     },
     {
         path: '/configuration/:id',
-        render: props => <CodeIntelConfigurationPolicyPage {...props} domain={'embeddings'} />,
+        render: props => <CodeIntelConfigurationPolicyPage {...props} domain="embeddings" />,
     },
 ]
 
