@@ -37,8 +37,19 @@ const CodyChatPage = lazyComponent(() => import('../cody/chat/CodyChatPage'), 'C
 const OwnPage = lazyComponent(() => import('./own/OwnPage'), 'OwnPage')
 const AppComingSoonPage = lazyComponent(() => import('./app/AppComingSoonPage'), 'AppComingSoonPage')
 const AppAuthCallbackPage = lazyComponent(() => import('./app/AppAuthCallbackPage'), 'AppAuthCallbackPage')
+const AppSetup = lazyComponent(() => import('./app/setup/AppSetupWizard'), 'AppSetupWizard')
 
 export const enterpriseRoutes: RouteObject[] = [
+    {
+        path: `${EnterprisePageRoutes.AppSetup}/*`,
+        handle: { isFullPage: true },
+        element: (
+            <LegacyRoute
+                render={props => <AppSetup telemetryService={props.telemetryService} />}
+                condition={({ isSourcegraphApp }) => isSourcegraphApp}
+            />
+        ),
+    },
     {
         path: EnterprisePageRoutes.BatchChanges,
         element: (

@@ -1,14 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
-import { mdiClose, mdiReload, mdiHistory } from '@mdi/js'
+import { mdiClose, mdiFormatListBulleted, mdiPlus, mdiDelete } from '@mdi/js'
 
 import { CodyLogo } from '@sourcegraph/cody-ui/src/icons/CodyLogo'
-import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Icon, Tooltip, Badge } from '@sourcegraph/wildcard'
 
 import { ChatUI, ScrollDownButton } from '../components/ChatUI'
+import { HistoryList } from '../components/HistoryList'
 import { useChatStoreState } from '../stores/chat'
-
-import { History } from './History'
 
 import styles from './CodySidebar.module.scss'
 
@@ -16,10 +15,11 @@ export const SCROLL_THRESHOLD = 100
 
 interface CodySidebarProps {
     onClose?: () => void
+    titleContent?: JSX.Element
 }
 
-export const CodySidebar = ({ onClose }: CodySidebarProps): JSX.Element => {
-    const { reset, transcript, messageInProgress } = useChatStoreState()
+export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose, titleContent }) => {
+    const { reset, transcript, messageInProgress, clearHistory } = useChatStoreState()
 
     const codySidebarRef = useRef<HTMLDivElement>(null)
     const [showHistory, setShowHistory] = useState(false)
@@ -45,10 +45,14 @@ export const CodySidebar = ({ onClose }: CodySidebarProps): JSX.Element => {
         }
     }
 
-    const onReset = useCallback(() => {
-        reset()
+    const onReset = useCallback(async () => {
+        await reset()
         setShowHistory(false)
     }, [reset, setShowHistory])
+
+    const closeHistory = useCallback(() => {
+        setShowHistory(false)
+    }, [setShowHistory])
 
     useEffect(() => {
         const sidebar = codySidebarRef.current
@@ -57,41 +61,61 @@ export const CodySidebar = ({ onClose }: CodySidebarProps): JSX.Element => {
         }
     }, [transcript, shouldScrollToBottom, messageInProgress])
 
-    const closeHistory = useCallback(() => setShowHistory(false), [setShowHistory])
-
     return (
         <div className={styles.mainWrapper}>
             <div className={styles.codySidebar} ref={codySidebarRef} onScroll={handleScroll}>
                 <div className={styles.codySidebarHeader}>
-                    <div>
-                        <Tooltip content="Start a new conversation">
-                            <Button variant="icon" aria-label="Start a new conversation" onClick={onReset}>
-                                <Icon aria-hidden={true} svgPath={mdiReload} />
-                            </Button>
-                        </Tooltip>
-                    </div>
-                    <div>
-                        <CodyLogo />
-                        Ask Cody
-                    </div>
-                    <div className="d-flex">
+                    <div className="d-flex col-2 p-0">
                         <Tooltip content="Chat history">
                             <Button
                                 variant="icon"
                                 className="mr-2"
-                                aria-label="Chat history"
+                                aria-label="Active chats"
                                 onClick={() => setShowHistory(showing => !showing)}
+                                aria-pressed={showHistory}
                             >
-                                <Icon aria-hidden={true} svgPath={mdiHistory} />
+                                <Icon aria-hidden={true} svgPath={mdiFormatListBulleted} />
                             </Button>
                         </Tooltip>
-                        <Button variant="icon" aria-label="Close" onClick={onClose}>
-                            <Icon aria-hidden={true} svgPath={mdiClose} />
-                        </Button>
+                        <Tooltip content="Start a new chat">
+                            <Button variant="icon" aria-label="Start a new chat" onClick={onReset}>
+                                <Icon aria-hidden={true} svgPath={mdiPlus} />
+                            </Button>
+                        </Tooltip>
+                        {showHistory && (
+                            <Tooltip content="Clear all chats">
+                                <Button
+                                    variant="icon"
+                                    className="ml-2"
+                                    aria-label="Clear all chats"
+                                    onClick={clearHistory}
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiDelete} />
+                                </Button>
+                            </Tooltip>
+                        )}
+                    </div>
+                    <div className="col-8 d-flex justify-content-center">
+                        {titleContent || (
+                            <div className="d-flex flex-shrink-0 align-items-center">
+                                <CodyLogo />
+                                {showHistory ? 'Chats' : 'Ask Cody'}
+                                <div className="ml-2">
+                                    <Badge variant="info">Beta</Badge>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                    <div className="col-2 d-flex justify-content-end p-0">
+                        {onClose && (
+                            <Button variant="icon" aria-label="Close" onClick={onClose}>
+                                <Icon aria-hidden={true} svgPath={mdiClose} />
+                            </Button>
+                        )}
                     </div>
                 </div>
 
-                {showHistory ? <History closeHistory={closeHistory} /> : <ChatUI />}
+                {showHistory ? <HistoryList onSelect={closeHistory} itemClassName="rounded-0" /> : <ChatUI />}
             </div>
             {showScrollDownButton && <ScrollDownButton onClick={() => scrollToBottom('smooth')} />}
         </div>

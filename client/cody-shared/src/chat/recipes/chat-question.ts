@@ -10,10 +10,12 @@ import {
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
-import { Recipe, RecipeContext } from './recipe'
+import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class ChatQuestion implements Recipe {
-    public id = 'chat-question'
+    public id: RecipeID = 'chat-question'
+
+    constructor(private debug: (filterLabel: string, text: string, ...args: unknown[]) => void) {}
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const truncatedText = truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS)
@@ -44,10 +46,11 @@ export class ChatQuestion implements Recipe {
 
         // Add selected text as context when available
         if (selection?.selectedText) {
-            contextMessages.push(...this.getEditorSelectionContext(selection))
+            contextMessages.push(...ChatQuestion.getEditorSelectionContext(selection))
         }
 
         const isCodebaseContextRequired = await intentDetector.isCodebaseContextRequired(text)
+        this.debug('ChatQuestion:getContextMessages', 'isCodebaseContextRequired', isCodebaseContextRequired)
         if (isCodebaseContextRequired) {
             const codebaseContextMessages = await codebaseContext.getContextMessages(text, {
                 numCodeResults: 12,
@@ -56,14 +59,16 @@ export class ChatQuestion implements Recipe {
             contextMessages.push(...codebaseContextMessages)
         }
 
-        if (isCodebaseContextRequired || intentDetector.isEditorContextRequired(text)) {
-            contextMessages.push(...this.getEditorContext(editor))
+        const isEditorContextRequired = intentDetector.isEditorContextRequired(text)
+        this.debug('ChatQuestion:getContextMessages', 'isEditorContextRequired', isEditorContextRequired)
+        if (isCodebaseContextRequired || isEditorContextRequired) {
+            contextMessages.push(...ChatQuestion.getEditorContext(editor))
         }
 
         return contextMessages
     }
 
-    private getEditorContext(editor: Editor): ContextMessage[] {
+    public static getEditorContext(editor: Editor): ContextMessage[] {
         const visibleContent = editor.getActiveTextEditorVisibleContent()
         if (!visibleContent) {
             return []
@@ -71,15 +76,15 @@ export class ChatQuestion implements Recipe {
         const truncatedContent = truncateText(visibleContent.content, MAX_CURRENT_FILE_TOKENS)
         return getContextMessageWithResponse(
             populateCurrentEditorContextTemplate(truncatedContent, visibleContent.fileName),
-            visibleContent.fileName
+            visibleContent
         )
     }
 
-    private getEditorSelectionContext(selection: ActiveTextEditorSelection): ContextMessage[] {
+    public static getEditorSelectionContext(selection: ActiveTextEditorSelection): ContextMessage[] {
         const truncatedContent = truncateText(selection.selectedText, MAX_CURRENT_FILE_TOKENS)
         return getContextMessageWithResponse(
             populateCurrentEditorSelectedContextTemplate(truncatedContent, selection.fileName),
-            selection.fileName
+            selection
         )
     }
 }

@@ -2,13 +2,14 @@ import * as anthropic from '@anthropic-ai/sdk'
 
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import {
-    CodeCompletionParameters,
-    CodeCompletionResponse,
+    CompletionParameters,
+    CompletionResponse,
+    Message,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { Completion } from '.'
 import { ReferenceSnippet } from './context'
-import { Message, messagesToText } from './prompts'
+import { messagesToText } from './prompts'
 
 export abstract class CompletionProvider {
     constructor(
@@ -32,7 +33,7 @@ export abstract class CompletionProvider {
 
     // Creates the resulting prompt and adds as many snippets from the reference
     // list as possible.
-    protected createPrompt(): string {
+    protected createPrompt(): Message[] {
         const prefixMessages = this.createPromptPrefix()
         const referenceSnippetMessages: Message[] = []
 
@@ -50,7 +51,7 @@ export abstract class CompletionProvider {
             if (suffix.length > 0) {
                 const suffixContext: Message[] = [
                     {
-                        role: 'human',
+                        speaker: 'human',
                         text:
                             'Add the following code snippet to your knowledge base:\n' +
                             '```' +
@@ -58,7 +59,7 @@ export abstract class CompletionProvider {
                             '```',
                     },
                     {
-                        role: 'ai',
+                        speaker: 'assistant',
                         text: 'Okay, I have added it to my knowledge base.',
                     },
                 ]
@@ -74,7 +75,7 @@ export abstract class CompletionProvider {
         for (const snippet of this.snippets) {
             const snippetMessages: Message[] = [
                 {
-                    role: 'human',
+                    speaker: 'human',
                     text:
                         `Add the following code snippet (from file ${snippet.filename}) to your knowledge base:\n` +
                         '```' +
@@ -82,7 +83,7 @@ export abstract class CompletionProvider {
                         '```',
                 },
                 {
-                    role: 'ai',
+                    speaker: 'assistant',
                     text: 'Okay, I have added it to my knowledge base.',
                 },
             ]
@@ -94,7 +95,7 @@ export abstract class CompletionProvider {
             remainingChars -= numSnippetChars
         }
 
-        return messagesToText([...referenceSnippetMessages, ...prefixMessages])
+        return [...referenceSnippetMessages, ...prefixMessages]
     }
 
     public abstract generateCompletions(abortSignal: AbortSignal, n?: number): Promise<Completion[]>
@@ -115,7 +116,7 @@ export class MultilineCompletionProvider extends CompletionProvider {
             const endLine = Math.max(Math.floor(prefixLines.length / 2), prefixLines.length - 5)
             prefixMessages = [
                 {
-                    role: 'human',
+                    speaker: 'human',
                     text:
                         'Complete the following file:\n' +
                         '```' +
@@ -123,18 +124,18 @@ export class MultilineCompletionProvider extends CompletionProvider {
                         '```',
                 },
                 {
-                    role: 'ai',
+                    speaker: 'assistant',
                     text: `Here is the completion of the file:\n\`\`\`\n${prefixLines.slice(endLine).join('\n')}`,
                 },
             ]
         } else {
             prefixMessages = [
                 {
-                    role: 'human',
+                    speaker: 'human',
                     text: 'Write some code',
                 },
                 {
-                    role: 'ai',
+                    speaker: 'assistant',
                     text: `Here is some code:\n\`\`\`\n${prefix}`,
                 },
             ]
@@ -164,7 +165,8 @@ export class MultilineCompletionProvider extends CompletionProvider {
 
         // Create prompt
         const prompt = this.createPrompt()
-        if (prompt.length > this.promptChars) {
+        const textPrompt = messagesToText(prompt)
+        if (textPrompt.length > this.promptChars) {
             throw new Error('prompt length exceeded maximum alloted chars')
         }
 
@@ -172,13 +174,8 @@ export class MultilineCompletionProvider extends CompletionProvider {
         const responses = await batchCompletions(
             this.completionsClient,
             {
-                prompt,
-                stopSequences: [anthropic.HUMAN_PROMPT],
+                messages: prompt,
                 maxTokensToSample: this.responseTokens,
-                model: 'claude-instant-v1.0',
-                temperature: 1, // default value (source: https://console.anthropic.com/docs/api/reference)
-                topK: -1, // default value
-                topP: -1, // default value
             },
             n || this.defaultN,
             abortSignal
@@ -186,7 +183,7 @@ export class MultilineCompletionProvider extends CompletionProvider {
         // Post-process
         return responses.map(resp => ({
             prefix,
-            prompt,
+            messages: prompt,
             content: this.postProcess(resp.completion),
             stopReason: resp.stopReason,
         }))
@@ -194,6 +191,20 @@ export class MultilineCompletionProvider extends CompletionProvider {
 }
 
 export class EndOfLineCompletionProvider extends CompletionProvider {
+    constructor(
+        completionsClient: SourcegraphNodeCompletionsClient,
+        promptChars: number,
+        responseTokens: number,
+        snippets: ReferenceSnippet[],
+        prefix: string,
+        suffix: string,
+        injectPrefix: string,
+        defaultN: number = 1,
+        protected multiline: boolean = false
+    ) {
+        super(completionsClient, promptChars, responseTokens, snippets, prefix, suffix, injectPrefix, defaultN)
+    }
+
     protected createPromptPrefix(): Message[] {
         // TODO(beyang): escape 'Human:' and 'Assistant:'
         const prefixLines = this.prefix.split('\n')
@@ -206,7 +217,7 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
             const endLine = Math.max(Math.floor(prefixLines.length / 2), prefixLines.length - 5)
             prefixMessages = [
                 {
-                    role: 'human',
+                    speaker: 'human',
                     text:
                         'Complete the following file:\n' +
                         '```' +
@@ -214,7 +225,7 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
                         '```',
                 },
                 {
-                    role: 'ai',
+                    speaker: 'assistant',
                     text:
                         'Here is the completion of the file:\n' +
                         '```' +
@@ -224,11 +235,11 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
         } else {
             prefixMessages = [
                 {
-                    role: 'human',
+                    speaker: 'human',
                     text: 'Write some code',
                 },
                 {
-                    role: 'ai',
+                    speaker: 'assistant',
                     text: `Here is some code:\n\`\`\`\n${this.prefix}${this.injectPrefix}`,
                 },
             ]
@@ -256,6 +267,40 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
         if (endBlockIndex !== -1) {
             return completion.slice(0, endBlockIndex).trimEnd()
         }
+
+        if (this.multiline) {
+            // We use a whitespace counting approach to finding the end of the completion. To find
+            // an end, we look for the first line that is below the start scope of the completion (
+            // calculated by the number of leading spaces or tabs)
+
+            const prefixLastLineIndent = this.prefix.length - this.prefix.lastIndexOf('\n') - 1
+            const completionFirstLineIndent = indentation(completion)
+            const startIndent = prefixLastLineIndent + completionFirstLineIndent
+
+            const lines = completion.split('\n')
+            let cutOffIndex = lines.length
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i]
+
+                if (i === 0 || line === '' || line.trim().startsWith('} else')) {
+                    continue
+                }
+
+                if (indentation(line) < startIndent) {
+                    // When we find the first block below the start indentation, only include it if
+                    // it is an end block
+                    if (line.trim() === '}') {
+                        cutOffIndex = i + 1
+                    } else {
+                        cutOffIndex = i
+                    }
+                    break
+                }
+            }
+
+            completion = lines.slice(0, cutOffIndex).join('\n')
+        }
+
         return completion.trimEnd()
     }
 
@@ -272,10 +317,9 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
         const responses = await batchCompletions(
             this.completionsClient,
             {
-                prompt,
-                stopSequences: [anthropic.HUMAN_PROMPT, '\n'],
+                messages: prompt,
+                stopSequences: this.multiline ? [anthropic.HUMAN_PROMPT, '\n\n\n'] : [anthropic.HUMAN_PROMPT, '\n'],
                 maxTokensToSample: this.responseTokens,
-                model: 'claude-instant-v1.0',
                 temperature: 1,
                 topK: -1,
                 topP: -1,
@@ -286,7 +330,7 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
         // Post-process
         return responses.map(resp => ({
             prefix,
-            prompt,
+            messages: prompt,
             content: this.postProcess(resp.completion),
             stopReason: resp.stopReason,
         }))
@@ -295,11 +339,11 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
 
 async function batchCompletions(
     client: SourcegraphNodeCompletionsClient,
-    params: CodeCompletionParameters,
+    params: CompletionParameters,
     n: number,
     abortSignal: AbortSignal
-): Promise<CodeCompletionResponse[]> {
-    const responses: Promise<CodeCompletionResponse>[] = []
+): Promise<CompletionResponse[]> {
+    const responses: Promise<CompletionResponse>[] = []
     for (let i = 0; i < n; i++) {
         responses.push(client.complete(params, abortSignal))
     }
@@ -345,4 +389,9 @@ export function sliceUntilFirstNLinesOfSuffixMatch(suggestion: string, suffix: s
     }
 
     return suggestion
+}
+
+function indentation(line: string): number {
+    const regex = line.match(/^[\t ]*/)
+    return regex ? regex[0].length : 0
 }

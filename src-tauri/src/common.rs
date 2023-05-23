@@ -1,10 +1,12 @@
 use tauri::AppHandle;
 use tauri::Manager;
 
-pub fn show_window(app: &AppHandle) {
-    let window = app.get_window("main").unwrap();
-    window.show().unwrap();
-    window.set_focus().unwrap();
+pub fn show_window(app: &AppHandle, label: &str) {
+    let window = app.get_window(label).unwrap();
+    if !window.is_visible().unwrap() {
+        window.show().unwrap()
+    }
+    window.set_focus().unwrap()
 }
 
 /// Extracts the path from a URL that starts with the scheme followed by `://`.
@@ -23,6 +25,7 @@ pub fn extract_path_from_scheme_url<'a>(url: &'a str, scheme: &str) -> &'a str {
 }
 
 /// Checks if a URL starts with the scheme (sourcegraph://)
+#[cfg(not(target_os = "macos"))]
 pub fn is_scheme_url(url: &str, scheme: &str) -> bool {
     url.starts_with(scheme) && url[scheme.len()..].starts_with("://")
 }

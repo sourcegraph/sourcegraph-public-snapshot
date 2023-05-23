@@ -18,6 +18,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/internal/cacert"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -28,37 +29,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// GitDir is an absolute path to a GIT_DIR.
-// They will all follow the form:
-//
-//	${s.ReposDir}/${name}/.git
-type GitDir string
-
-// Path is a helper which returns filepath.Join(dir, elem...)
-func (dir GitDir) Path(elem ...string) string {
-	return filepath.Join(append([]string{string(dir)}, elem...)...)
-}
-
-// Set updates cmd so that it will run in dir.
-//
-// Note: GitDir is always a valid GIT_DIR, so we additionally set the
-// environment variable GIT_DIR. This is to avoid git doing discovery in case
-// of a bad repo, leading to hard to diagnose error messages.
-func (dir GitDir) Set(cmd *exec.Cmd) {
-	cmd.Dir = string(dir)
-	if cmd.Env == nil {
-		// Do not strip out existing env when setting.
-		cmd.Env = os.Environ()
-	}
-	cmd.Env = append(cmd.Env, "GIT_DIR="+string(dir))
-}
-
-func (s *Server) dir(name api.RepoName) GitDir {
+func (s *Server) dir(name api.RepoName) common.GitDir {
 	p := string(protocol.NormalizeRepo(name))
-	return GitDir(filepath.Join(s.ReposDir, filepath.FromSlash(p), ".git"))
+	return common.GitDir(filepath.Join(s.ReposDir, filepath.FromSlash(p), ".git"))
 }
 
-func (s *Server) name(dir GitDir) api.RepoName {
+func (s *Server) name(dir common.GitDir) api.RepoName {
 	// dir == ${s.ReposDir}/${name}/.git
 	parent := filepath.Dir(string(dir))                   // remove suffix "/.git"
 	name := strings.TrimPrefix(parent, s.ReposDir)        // remove prefix "${s.ReposDir}"
@@ -306,7 +282,7 @@ func writeTempFile(pattern string, data []byte) (path string, err error) {
 }
 
 // repoCloned checks if dir or `${dir}/.git` is a valid GIT_DIR.
-var repoCloned = func(dir GitDir) bool {
+var repoCloned = func(dir common.GitDir) bool {
 	_, err := os.Stat(dir.Path("HEAD"))
 	return !os.IsNotExist(err)
 }
@@ -316,7 +292,7 @@ var repoCloned = func(dir GitDir) bool {
 // none of those other two operations have been run (and so FETCH_HEAD does not exist), it will return the mtime of HEAD.
 //
 // This breaks on file systems that do not record mtime and if Git ever changes this undocumented behavior.
-var repoLastFetched = func(dir GitDir) (time.Time, error) {
+var repoLastFetched = func(dir common.GitDir) (time.Time, error) {
 	fi, err := os.Stat(dir.Path("FETCH_HEAD"))
 	if os.IsNotExist(err) {
 		fi, err = os.Stat(dir.Path("HEAD"))
@@ -337,7 +313,7 @@ var repoLastFetched = func(dir GitDir) (time.Time, error) {
 //
 // As a special case, tries both the directory given, and the .git subdirectory,
 // because we're a bit inconsistent about which name to use.
-var repoLastChanged = func(dir GitDir) (time.Time, error) {
+var repoLastChanged = func(dir common.GitDir) (time.Time, error) {
 	fi, err := os.Stat(dir.Path("sg_refhash"))
 	if os.IsNotExist(err) {
 		return repoLastFetched(dir)

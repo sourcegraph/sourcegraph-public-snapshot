@@ -100,6 +100,14 @@
 .edit-button {
     border: none;
     background: none;
+
+    svg {
+        color: var(--text-muted);
+
+        &:hover {
+            color: var(--body-color);
+        }
+    }
 }
 
 .code-blocks-copy-button {
@@ -121,4 +129,26 @@
 
 :global(.cody-chat-error) > span {
     font-weight: bold;
+}
+
+.feedback-buttons-wrapper {
+    button {
+        svg {
+            color: var(--text-muted);
+
+            &:hover {
+                color: var(--body-color);
+            }
+        }
+    }
+}
+
+.cody-message-header {
+    font-size: 0.8rem;
+    font-weight: bold;
+    height: 2rem;
+    svg {
+        height: 1.5rem;
+        width: 1.5rem;
+    }
 }

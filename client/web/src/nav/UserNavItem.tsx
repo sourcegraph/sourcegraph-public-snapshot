@@ -146,11 +146,6 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                 Saved searches
                             </MenuLink>
                             {isSourcegraphApp && (
-                                <MenuLink as={Link} to="/setup">
-                                    Setup wizard
-                                </MenuLink>
-                            )}
-                            {isSourcegraphApp && (
                                 <MenuLink as={Link} to="/site-admin/repositories">
                                     Repositories
                                 </MenuLink>

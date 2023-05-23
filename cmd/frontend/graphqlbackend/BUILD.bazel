@@ -13,6 +13,10 @@ js_library(
     srcs = glob([
         "*.graphql",
     ]),
+    visibility = [
+        "//client/backstage-backend/node_modules/@sourcegraph/shared/dev:__pkg__",
+        "//client/shared/dev:__pkg__",
+    ],
 )
 
 linter_bin.graphql_schema_linter_test(
@@ -124,6 +128,7 @@ go_library(
         "repository_cursor.go",
         "repository_external.go",
         "repository_git_refs.go",
+        "repository_metadata.go",
         "repository_mirror.go",
         "repository_reindex.go",
         "repository_stats.go",
@@ -205,6 +210,7 @@ go_library(
         "codeintel.graphql",
         "completions.graphql",
         "githubapps.graphql",
+        "codeintel.ranking.graphql",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend",
     deps = [
@@ -273,6 +279,8 @@ go_library(
         "//internal/markdown",
         "//internal/observation",
         "//internal/oobmigration",
+        "//internal/perforce",
+        "//internal/rbac",
         "//internal/rcache",
         "//internal/repos",
         "//internal/repoupdater",
@@ -288,7 +296,6 @@ go_library(
         "//internal/search/symbol",
         "//internal/search/zoekt",
         "//internal/service/servegit",
-        "//internal/singleprogram/filepicker",
         "//internal/src-prometheus",
         "//internal/symbols",
         "//internal/syncx",
@@ -342,6 +349,7 @@ go_library(
         "@com_github_stretchr_testify//require",
         "@com_github_throttled_throttled_v2//:throttled",
         "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
@@ -386,6 +394,7 @@ go_test(
         "repository_comparison_test.go",
         "repository_contributors_test.go",
         "repository_cursor_test.go",
+        "repository_metadata_test.go",
         "repository_mirror_test.go",
         "repository_test.go",
         "repository_text_search_index_test.go",
@@ -457,6 +466,8 @@ go_test(
         "//internal/gqlutil",
         "//internal/inventory",
         "//internal/oobmigration",
+        "//internal/rbac",
+        "//internal/rbac/types",
         "//internal/rcache",
         "//internal/repos",
         "//internal/repoupdater",

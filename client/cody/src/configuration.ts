@@ -6,21 +6,38 @@ import type {
     ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared/src/configuration'
 
-import { SecretStorage, getAccessToken } from './secret-storage'
+import { SecretStorage, getAccessToken } from './services/SecretStorageProvider'
 
 /**
  * All configuration values, with some sanitization performed.
  */
 export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'get'>): Configuration {
+    let debugRegex: RegExp | null = null
+    try {
+        const debugPattern: string | null = config.get<string | null>('cody.debug.filter', null)
+        if (debugPattern) {
+            if (debugPattern === '*') {
+                debugRegex = new RegExp('.*')
+            } else {
+                debugRegex = new RegExp(debugPattern)
+            }
+        }
+    } catch (error) {
+        void vscode.window.showErrorMessage("Error parsing cody.debug.filter regex - using default '*'", error)
+        debugRegex = new RegExp('.*')
+    }
+
     return {
-        enabled: config.get('cody.enabled', true),
         serverEndpoint: sanitizeServerEndpoint(config.get('cody.serverEndpoint', '')),
         codebase: sanitizeCodebase(config.get('cody.codebase')),
-        debug: config.get('cody.debug', false),
+        debugEnable: config.get<boolean>('cody.debug.enable', false),
+        debugVerbose: config.get<boolean>('cody.debug.verbose', false),
+        debugFilter: debugRegex,
         useContext: config.get<ConfigurationUseContext>('cody.useContext') || 'embeddings',
         experimentalSuggest: config.get('cody.experimental.suggestions', false),
         experimentalChatPredictions: config.get('cody.experimental.chatPredictions', false),
-        anthropicKey: config.get('cody.experimental.keys.anthropic', null),
+        experimentalInline: config.get('cody.experimental.inline', false),
+        experimentalGuardrails: config.get('cody.experimental.guardrails', false),
         customHeaders: config.get<object>('cody.customHeaders', {}) as Record<string, string>,
     }
 }

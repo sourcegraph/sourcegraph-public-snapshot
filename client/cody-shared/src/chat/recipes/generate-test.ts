@@ -8,10 +8,10 @@ import {
     getFileExtension,
     getContextMessagesFromSelection,
 } from './helpers'
-import { Recipe, RecipeContext } from './recipe'
+import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class GenerateTest implements Recipe {
-    public id = 'generate-unit-test'
+    public id: RecipeID = 'generate-unit-test'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
@@ -42,7 +42,7 @@ export class GenerateTest implements Recipe {
                 truncatedSelectedText,
                 truncatedPrecedingText,
                 truncatedFollowingText,
-                selection.fileName,
+                selection,
                 context.codebaseContext
             )
         )

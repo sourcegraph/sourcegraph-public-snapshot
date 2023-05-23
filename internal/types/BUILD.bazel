@@ -20,10 +20,12 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
+        "//internal/database/dbutil",
         "//internal/encryption",
         "//internal/executor",
         "//internal/extsvc",
         "//internal/jsonc",
+        "//internal/rbac/types",
         "//lib/errors",
         "//schema",
         "@com_github_google_uuid//:uuid",

@@ -2,9 +2,8 @@ export interface DoneEvent {
     type: 'done'
 }
 
-export interface CompletionEvent {
+export interface CompletionEvent extends CompletionResponse {
     type: 'completion'
-    completion: string
 }
 
 export interface ErrorEvent {
@@ -19,31 +18,19 @@ export interface Message {
     text?: string
 }
 
-export interface CodeCompletionResponse {
+export interface CompletionResponse {
     completion: string
-    stop: string | null
     stopReason: string
-    truncated: boolean
-    exception: string | null
-    logID: string
-}
-
-export interface CodeCompletionParameters {
-    prompt: string
-    temperature: number
-    maxTokensToSample: number
-    stopSequences: string[]
-    topK: number
-    topP: number
-    model?: string
 }
 
 export interface CompletionParameters {
     messages: Message[]
-    temperature: number
     maxTokensToSample: number
-    topK: number
-    topP: number
+    temperature?: number
+    stopSequences?: string[]
+    topK?: number
+    topP?: number
+    model?: string
 }
 
 export interface CompletionCallbacks {

@@ -97,8 +97,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	//
 	// PERF: Try to order steps such that slower steps are first.
 	switch c.RunType {
-	case runtype.BazelExpBranch:
-		ops.Merge(BazelOperations())
 	case runtype.WolfiExpBranch:
 		// Rebuild packages if package configs have changed
 		updatePackages := c.Diff.Has(changed.WolfiPackages)
@@ -128,39 +126,41 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// TODO: Just hardcode specific images initially
 			WolfiImagesOperations([]string{
 				"batcheshelper",
+				"blobstore",
+				"bundled-executor",
+				"cadvisor",
+				"codeinsights-db",
+				"codeintel-db",
 				"embeddings",
+				"executor",
 				"executor-kubernetes",
 				"frontend",
 				"github-proxy",
 				"gitserver",
-				"llm-proxy",
-				"loadtest",
-				"migrator",
-				"precise-code-intel-worker",
-				"repo-updater",
-				"searcher",
-				"server",
-				"symbols",
-				"worker",
-				"blobstore",
-				"cadvisor",
-				"codeinsights-db",
-				"codeintel-db",
 				"indexed-searcher",
 				"jaeger-agent",
 				"jaeger-all-in-one",
+				"llm-proxy",
+				"loadtest",
+				"migrator",
 				"node-exporter",
 				"opentelemetry-collector",
 				"postgres-12-alpine",
 				"postgres_exporter",
+				"precise-code-intel-worker",
 				"prometheus",
 				"prometheus-gcp",
 				"redis-cache",
 				"redis-store",
 				"redis_exporter",
+				"repo-updater",
 				"search-indexer",
+				"searcher",
+				"server",
 				"sg",
+				"symbols",
 				"syntax-highlighter",
+				"worker",
 			}, c.Version,
 				c.candidateImageTag(),
 				(numUpdatedBaseImages > 0),

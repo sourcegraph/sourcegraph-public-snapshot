@@ -10,6 +10,7 @@ load("//dev:mocha.bzl", "mocha_test")
 ts_config(
     name = "tsconfig",
     src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
     deps = [
         "//client/shared/src/testing:tsconfig",
         "//client/web:tsconfig",
@@ -115,6 +116,7 @@ mocha_test(
     is_percy_enabled = True,
     tags = [
         "no-sandbox",
+        "requires-network",
     ],
     tests = [test.replace(".ts", ".js") for test in glob(["**/*.test.ts"])],
     deps = [":integration_tests"],

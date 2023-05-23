@@ -4,10 +4,10 @@ import { MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
-import { Recipe, RecipeContext } from './recipe'
+import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class ReleaseNotes implements Recipe {
-    public id = 'release-notes'
+    public id: RecipeID = 'release-notes'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const dirPath = context.editor.getWorkspaceRootPath()
@@ -19,12 +19,12 @@ export class ReleaseNotes implements Recipe {
         const logFormat = '--pretty="Commit author: %an%nCommit message: %s%nChange description:%b%n"'
 
         // check for tags first
-        const gitTagCommand = spawnSync('git', ['tag'], { cwd: dirPath })
+        const gitTagCommand = spawnSync('git', ['tag', '--sort=-creatordate'], { cwd: dirPath })
         const gitTagOutput = gitTagCommand.stdout.toString().trim()
         let tagsPromptText = ''
 
         if (gitTagOutput) {
-            const tags = gitTagOutput.split(/\r?\n/).reverse()
+            const tags = gitTagOutput.split(/\r?\n/)
             for (const tag of tags.slice(0, 3)) {
                 quickPickItems.push({
                     label: tag,

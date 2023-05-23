@@ -2,11 +2,10 @@ package graphql
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
@@ -21,9 +20,9 @@ const (
 )
 
 func (r *rootResolver) PreviewRepositoryFilter(ctx context.Context, args *resolverstubs.PreviewRepositoryFilterArgs) (_ resolverstubs.RepositoryFilterPreviewResolver, err error) {
-	ctx, _, endObservation := r.operations.previewRepoFilter.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int32("first", resolverstubs.Deref(args.First, 0)),
-		log.String("patterns", strings.Join(args.Patterns, ", ")),
+	ctx, _, endObservation := r.operations.previewRepoFilter.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("first", int(resolverstubs.Deref(args.First, 0))),
+		attribute.StringSlice("patterns", args.Patterns),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -56,10 +55,10 @@ func (r *rootResolver) PreviewRepositoryFilter(ctx context.Context, args *resolv
 }
 
 func (r *rootResolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *resolverstubs.PreviewGitObjectFilterArgs) (_ resolverstubs.GitObjectFilterPreviewResolver, err error) {
-	ctx, _, endObservation := r.operations.previewGitObjectFilter.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int32("first", resolverstubs.Deref(args.First, 0)),
-		log.String("type", string(args.Type)),
-		log.String("pattern", args.Pattern),
+	ctx, _, endObservation := r.operations.previewGitObjectFilter.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("first", int(resolverstubs.Deref(args.First, 0))),
+		attribute.String("type", string(args.Type)),
+		attribute.String("pattern", args.Pattern),
 	}})
 	defer endObservation(1, observation.Args{})
 
