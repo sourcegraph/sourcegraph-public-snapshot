@@ -124,6 +124,7 @@ func testAccessTokens_Create(t *testing.T) {
 }
 
 // testAccessTokens_Delete requires the site_config to be mocked to enable security event logging to the database
+// This test is run in TestAccessTokens
 func testAccessTokens_Delete(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
