@@ -4,6 +4,7 @@
 , stdenv
 , fetchzip
 , fetchFromGitHub
+  # nativeBuildInputs only, the rest we fetch from pkgsStatic
 , cmake
 , patchelf
 , pkg-config

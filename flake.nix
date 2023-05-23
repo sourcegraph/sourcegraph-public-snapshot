@@ -14,6 +14,8 @@
           pkgs' = import nixpkgs { inherit system; overlays = builtins.attrValues self.overlays; };
         in
         {
+          legacyPackages = pkgs';
+
           packages = {
             ctags = pkgs.callPackage ./dev/nix/ctags.nix { };
             comby = pkgs.callPackage ./dev/nix/comby.nix { };

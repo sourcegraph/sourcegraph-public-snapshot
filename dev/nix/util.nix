@@ -26,7 +26,7 @@
       '';
     });
 
-  # removed packages from a list of packages by name.
+  # removes packages from a list of packages by name.
   # Copied from https://sourcegraph.com/github.com/NixOS/nixpkgs@4d924a6b3376c5e3cae3ba8c971007bf736084c5/-/blob/nixos/lib/utils.nix?L219
   removePackagesByName = packages: packagesToRemove:
     let
