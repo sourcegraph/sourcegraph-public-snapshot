@@ -1243,11 +1243,11 @@ func (c *clientImplementor) ReposStats(ctx context.Context) (map[string]*protoco
 				return nil, err
 			}
 
-			rs := &protocol.ReposStats{}
 			resp, err := client.ReposStats(ctx, &proto.ReposStatsRequest{})
 			if err != nil {
 				allErr = errors.Append(allErr, err)
 			} else {
+				rs := &protocol.ReposStats{}
 				rs.FromProto(resp)
 				stats[addr.Address()] = rs
 			}

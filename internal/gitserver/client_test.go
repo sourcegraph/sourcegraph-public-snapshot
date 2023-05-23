@@ -32,6 +32,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -41,6 +42,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func newMockDB() database.DB {
@@ -290,7 +292,13 @@ func TestClient_ArchiveReader(t *testing.T) {
 	}
 
 	t.Run("grpc", func(t *testing.T) {
-		t.Setenv("SG_FEATURE_FLAG_GRPC", "true")
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{
+					EnableGRPC: true,
+				},
+			},
+		})
 		for _, test := range tests {
 			repoName := api.RepoName(test.name)
 
@@ -320,7 +328,14 @@ func TestClient_ArchiveReader(t *testing.T) {
 	})
 
 	t.Run("http", func(t *testing.T) {
-		t.Setenv("SG_FEATURE_FLAG_GRPC", "false")
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{
+					EnableGRPC: false,
+				},
+			},
+		})
+
 		for _, test := range tests {
 			repoName := api.RepoName(test.name)
 
@@ -736,7 +751,14 @@ func TestLocalGitCommand(t *testing.T) {
 }
 
 func TestClient_ReposStats(t *testing.T) {
-	t.Setenv("SG_FEATURE_FLAG_GRPC", "false")
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				EnableGRPC: false,
+			},
+		},
+	})
+	defer conf.Mock(nil)
 
 	const gitserverAddr = "172.16.8.1:8080"
 	now := time.Now().UTC()
@@ -774,7 +796,13 @@ func TestClient_ReposStats(t *testing.T) {
 	assert.Equal(t, wantStats, *gotStatsMap[gitserverAddr])
 }
 func TestClient_ReposStatsGRPC(t *testing.T) {
-	t.Setenv("SG_FEATURE_FLAG_GRPC", "true")
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				EnableGRPC: true,
+			},
+		},
+	})
 
 	const gitserverAddr = "172.16.8.1:8080"
 	now := time.Now().UTC()
