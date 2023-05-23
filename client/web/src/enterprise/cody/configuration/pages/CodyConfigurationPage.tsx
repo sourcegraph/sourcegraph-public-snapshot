@@ -8,22 +8,21 @@ import { Subject } from 'rxjs'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, ErrorAlert, Link, PageHeader } from '@sourcegraph/wildcard'
+import { Button, Container, ErrorAlert, Link, PageHeader } from '@sourcegraph/wildcard'
 
-import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../components/FilteredConnection'
-import { PageTitle } from '../../../components/PageTitle'
-import { CodeIntelligenceConfigurationPolicyFields } from '../../../graphql-operations'
-import { CreatePolicyButtons } from '../../codeintel/configuration/components/CreatePolicyButtons'
-import { EmptyPoliciesList } from '../../codeintel/configuration/components/EmptyPoliciesList'
-import { FlashMessage } from '../../codeintel/configuration/components/FlashMessage'
-import { queryPolicies as defaultQueryPolicies } from '../../codeintel/configuration/hooks/queryPolicies'
-import { useDeletePolicies } from '../../codeintel/configuration/hooks/useDeletePolicies'
+import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
+import { PageTitle } from '../../../../components/PageTitle'
+import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
+import { EmptyPoliciesList } from '../../../codeintel/configuration/components/EmptyPoliciesList'
+import { FlashMessage } from '../../../codeintel/configuration/components/FlashMessage'
+import { queryPolicies as defaultQueryPolicies } from '../../../codeintel/configuration/hooks/queryPolicies'
+import { useDeletePolicies } from '../../../codeintel/configuration/hooks/useDeletePolicies'
 import {
     PoliciesNode,
     UnprotectedPoliciesNodeProps,
-} from '../../codeintel/configuration/pages/CodeIntelConfigurationPage'
+} from '../../../codeintel/configuration/pages/CodeIntelConfigurationPage'
 
-import styles from '../../codeintel/configuration/pages/CodeIntelConfigurationPage.module.scss'
+import styles from '../../../codeintel/configuration/pages/CodeIntelConfigurationPage.module.scss'
 
 export interface CodyConfigurationPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
@@ -103,7 +102,13 @@ export const CodyConfigurationPage: FC<CodyConfigurationPageProps> = ({
                     },
                 ]}
                 description={<>Rules that control auto-indexing and data retention behavior of code graph data.</>}
-                actions={authenticatedUser?.siteAdmin && <CreatePolicyButtons repo={repo} />}
+                actions={
+                    authenticatedUser?.siteAdmin && (
+                        <Button to="./new?type=head" variant="primary" as={Link}>
+                            Create new {!repo && 'global'} policy
+                        </Button>
+                    )
+                }
                 className="mb-3"
             />
 
@@ -128,7 +133,7 @@ export const CodyConfigurationPage: FC<CodyConfigurationPageProps> = ({
                     noun="configuration policy"
                     pluralNoun="configuration policies"
                     nodeComponent={PoliciesNode}
-                    nodeComponentProps={{ isDeleting, onDelete, indexingEnabled: true }}
+                    nodeComponentProps={{ isDeleting, onDelete, domain: 'embeddings' }}
                     queryConnection={queryPoliciesCallback}
                     cursorPaging={true}
                     inputClassName="ml-2 flex-1"

@@ -62,6 +62,7 @@ export interface CodeIntelConfigurationPolicyPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     indexingEnabled?: boolean
     allowGlobalPolicies?: boolean
+    domain?: 'scip' | 'embeddings'
 }
 
 type PolicyUpdater = <K extends keyof CodeIntelligenceConfigurationPolicyFields>(updates: {
@@ -73,6 +74,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
     authenticatedUser,
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
     allowGlobalPolicies = window.context?.codeIntelAutoIndexingAllowGlobalPolicies,
+    domain = 'scip',
     telemetryService,
 }) => {
     const navigate = useNavigate()
@@ -152,7 +154,9 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
     useEffect(() => {
         const urlType = new URLSearchParams(location.search).get('type')
         const defaultTypes =
-            urlType === 'branch'
+            domain === 'embeddings'
+                ? { type: GitObjectType.GIT_COMMIT, embeddingsEnabled: true }
+                : urlType === 'branch'
                 ? { type: GitObjectType.GIT_TREE, pattern: '*' }
                 : urlType === 'tag'
                 ? { type: GitObjectType.GIT_TAG, pattern: '*' }
@@ -220,11 +224,19 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
             )}
 
             <Container className="container form">
-                <NameSettingsSection policy={policy} updatePolicy={updatePolicy} repo={repo} />
-                <GitConfiguration policy={policy} updatePolicy={updatePolicy} repo={repo} />
+                <NameSettingsSection policy={policy} updatePolicy={updatePolicy} domain={domain} repo={repo} />
+                {domain === 'scip' && <GitConfiguration policy={policy} updatePolicy={updatePolicy} repo={repo} />}
                 {!policy.repository && <RepositorySettingsSection policy={policy} updatePolicy={updatePolicy} />}
-                {indexingEnabled && <IndexSettingsSection policy={policy} updatePolicy={updatePolicy} repo={repo} />}
-                <RetentionSettingsSection policy={policy} updatePolicy={updatePolicy} />
+                {domain === 'scip' ? (
+                    <>
+                        {indexingEnabled && (
+                            <IndexSettingsSection policy={policy} updatePolicy={updatePolicy} repo={repo} />
+                        )}
+                        <RetentionSettingsSection policy={policy} updatePolicy={updatePolicy} />
+                    </>
+                ) : (
+                    <EmbeddingsSettingsSection policy={policy} updatePolicy={updatePolicy} />
+                )}
 
                 <div className="mt-4">
                     <Button
@@ -322,12 +334,13 @@ const NavigationCTA: FunctionComponent<NavigationCTAProps> = ({ repo }) => (
 )
 
 interface NameSettingsSectionProps {
+    domain: 'scip' | 'embeddings'
     policy: CodeIntelligenceConfigurationPolicyFields
     updatePolicy: PolicyUpdater
     repo?: { id: string; name: string }
 }
 
-const NameSettingsSection: FunctionComponent<NameSettingsSectionProps> = ({ repo, policy, updatePolicy }) => (
+const NameSettingsSection: FunctionComponent<NameSettingsSectionProps> = ({ domain, repo, policy, updatePolicy }) => (
     <div className="form-group">
         <div className="input-group">
             <Input
@@ -340,7 +353,15 @@ const NameSettingsSection: FunctionComponent<NameSettingsSectionProps> = ({ repo
                 required={true}
                 error={policy.name === '' ? 'Please supply a value' : undefined}
                 placeholder={`Custom ${!repo ? 'global ' : ''}${
-                    policy.indexingEnabled ? 'indexing ' : policy.retentionEnabled ? 'retention ' : ''
+                    domain === 'scip'
+                        ? policy.indexingEnabled
+                            ? 'indexing '
+                            : policy.retentionEnabled
+                            ? 'retention '
+                            : ''
+                        : policy.embeddingsEnabled
+                        ? 'embeddings '
+                        : ''
                 }policy${repo ? ` for ${displayRepoName(repo.name)}` : ''}`}
             />
         </div>
@@ -858,6 +879,33 @@ const RetentionSettings: FunctionComponent<RetentionSettingsProps> = ({ policy, 
             <></>
         )}
     </>
+)
+
+interface EmbeddingsSettingsSectionProps {
+    policy: CodeIntelligenceConfigurationPolicyFields
+    updatePolicy: PolicyUpdater
+}
+
+const EmbeddingsSettingsSection: FunctionComponent<EmbeddingsSettingsSectionProps> = ({ policy, updatePolicy }) => (
+    <div className="form-group">
+        <Label className="mb-0">
+            Keep embeddings up-to-date
+            <div className={styles.toggleContainer}>
+                <Toggle
+                    id="embeddings-enabled"
+                    value={policy.embeddingsEnabled}
+                    className={styles.toggle}
+                    onToggle={embeddingsEnabled => {
+                        updatePolicy({ embeddingsEnabled })
+                    }}
+                />
+
+                <Text size="small" className="text-muted mb-0">
+                    Shove your codebase into a multi-thousand-dimensional plane on a periodic cadence.
+                </Text>
+            </div>
+        </Label>
+    </div>
 )
 
 function validatePolicy(

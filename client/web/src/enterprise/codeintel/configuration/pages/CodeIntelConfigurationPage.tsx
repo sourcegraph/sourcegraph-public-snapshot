@@ -11,6 +11,9 @@ import {
     mdiLock,
     mdiPencil,
     mdiSourceRepository,
+    mdiVectorIntersection,
+    mdiVectorLine,
+    mdiVectorPolyline,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate, useLocation } from 'react-router-dom'
@@ -212,6 +215,7 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
 interface ProtectedPoliciesNodeProps {
     node: CodeIntelligenceConfigurationPolicyFields
     indexingEnabled?: boolean
+    domain?: 'scip' | 'embeddings'
 }
 
 export interface UnprotectedPoliciesNodeProps {
@@ -219,6 +223,7 @@ export interface UnprotectedPoliciesNodeProps {
     isDeleting: boolean
     onDelete: (id: string, name: string) => Promise<void>
     indexingEnabled?: boolean
+    domain?: 'scip' | 'embeddings'
 }
 
 type PoliciesNodeProps = ProtectedPoliciesNodeProps | UnprotectedPoliciesNodeProps
@@ -226,24 +231,28 @@ type PoliciesNodeProps = ProtectedPoliciesNodeProps | UnprotectedPoliciesNodePro
 export const PoliciesNode: FunctionComponent<React.PropsWithChildren<PoliciesNodeProps>> = ({
     node: policy,
     indexingEnabled = false,
+    domain = 'scip',
     ...props
 }) => (
     <>
         <span className={styles.separator} />
 
         <div className={classNames(styles.name, 'd-flex flex-column')}>
-            <PolicyDescription policy={policy} indexingEnabled={indexingEnabled} />
+            <PolicyDescription policy={policy} indexingEnabled={indexingEnabled} domain={domain} />
             <RepositoryAndGitObjectDescription policy={policy} />
             {policy.indexingEnabled && indexingEnabled && <AutoIndexingDescription policy={policy} />}
             {policy.retentionEnabled && <RetentionDescription policy={policy} />}
+            {policy.embeddingsEnabled && <EmbeddingsDescription policy={policy} />}
         </div>
 
         <div className="h-100">
             <Link
                 to={
                     policy.repository === null
-                        ? `/site-admin/code-graph/configuration/${policy.id}`
-                        : `/${policy.repository.name}/-/code-graph/configuration/${policy.id}`
+                        ? `/site-admin/${domain === 'scip' ? 'code-graph' : 'cody'}/configuration/${policy.id}`
+                        : `/${policy.repository.name}/-/${domain === 'scip' ? 'code-graph' : 'cody'}/configuration/${
+                              policy.id
+                          }`
                 }
             >
                 <Tooltip content="Edit this policy">
@@ -283,19 +292,23 @@ interface PolicyDescriptionProps {
     policy: CodeIntelligenceConfigurationPolicyFields
     indexingEnabled?: boolean
     allowGlobalPolicies?: boolean
+    domain?: 'scip' | 'embeddings'
 }
 
 const PolicyDescription: FunctionComponent<PolicyDescriptionProps> = ({
     policy,
     indexingEnabled = false,
     allowGlobalPolicies = window.context?.codeIntelAutoIndexingAllowGlobalPolicies,
+    domain = 'scip',
 }) => (
     <div className={styles.policyDescription}>
         <Link
             to={
                 policy.repository === null
-                    ? `/site-admin/code-graph/configuration/${policy.id}`
-                    : `/${policy.repository.name}/-/code-graph/configuration/${policy.id}`
+                    ? `/site-admin/${domain === 'scip' ? 'code-graph' : 'cody'}/configuration/${policy.id}`
+                    : `/${policy.repository.name}/-/${domain === 'scip' ? 'code-graph' : 'cody'}/configuration/${
+                          policy.id
+                      }`
             }
         >
             <Text weight="bold" className="mb-0">
@@ -518,5 +531,24 @@ const RetentionDescription: FunctionComponent<RetentionDescriptionProps> = ({ po
             </Badge>
             .
         </span>
+    </div>
+)
+
+interface EmbeddingsDescriptionProps {
+    policy: CodeIntelligenceConfigurationPolicyFields
+}
+
+const EmbeddingsDescription: FunctionComponent<EmbeddingsDescriptionProps> = ({ policy }) => (
+    <div>
+        <Tooltip content="This policy affects embeddings.">
+            <Icon
+                svgPath={mdiVectorPolyline}
+                inline={true}
+                aria-label="This policy affects embeddings."
+                className="mr-2"
+            />
+        </Tooltip>
+
+        <span>Maintains embeddings.</span>
     </div>
 )

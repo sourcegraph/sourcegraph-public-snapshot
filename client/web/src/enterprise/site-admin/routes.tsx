@@ -76,7 +76,7 @@ const OwnStatusPage = lazyComponent(() => import('../own/admin-ui/OwnStatusPage'
 
 const SiteAdminCodyPage = lazyComponent(() => import('./cody/SiteAdminCodyPage'), 'SiteAdminCodyPage')
 const CodyConfigurationPage = lazyComponent(
-    () => import('../cody/configuration/CodyConfigurationPage'),
+    () => import('../cody/configuration/pages/CodyConfigurationPage'),
     'CodyConfigurationPage'
 )
 
@@ -208,7 +208,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
         },
         {
             path: '/cody/configuration/:id',
-            render: props => <CodeIntelConfigurationPolicyPage {...props} />,
+            render: props => <CodeIntelConfigurationPolicyPage domain={'embeddings'} {...props} />,
         },
 
         // rbac-related routes
