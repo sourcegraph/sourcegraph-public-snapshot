@@ -183,8 +183,8 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
             <PageTitle
                 title={
                     repo
-                        ? 'Code graph configuration policy for repository'
-                        : 'Global code graph data configuration policy'
+                        ? (domain === 'scip' ? 'Code graph' : 'Embeddings') + ' configuration policy for repository'
+                        : `Global ${domain === 'scip' ? 'code graph' : 'embeddings'} data configuration policy`
                 }
             />
             <PageHeader
@@ -193,25 +193,31 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                     {
                         text: repo ? (
                             <>
-                                {policy?.id === '' ? 'Create a new' : 'Update a'} code graph configuration policy for{' '}
+                                {policy?.id === '' ? 'Create a new' : 'Update a'}{' '}
+                                {domain === 'scip' ? 'code graph' : 'embeddings'} configuration policy for{' '}
                                 <RepoLink repoName={repo.name} to={null} />
                             </>
                         ) : (
                             <>
-                                {policy?.id === '' ? 'Create a new' : 'Update a'} global code graph configuration policy
+                                {policy?.id === '' ? 'Create a new' : 'Update a'} global{' '}
+                                {domain === 'scip' ? 'code graph' : 'embeddings'} configuration policy
                             </>
                         ),
                     },
                 ]}
                 description={
-                    <>
-                        Rules that control{indexingEnabled && <> auto-indexing and</>} data retention behavior of code
-                        graph data.
-                    </>
+                    domain === 'scip' ? (
+                        <>
+                            Rules that control{indexingEnabled && <> auto-indexing and</>} data retention behavior of
+                            code graph data.
+                        </>
+                    ) : (
+                        <>Rules that control embeddings re-indexing.</>
+                    )
                 }
                 className="mb-3"
             />
-            {!policy.id && authenticatedUser?.siteAdmin && <NavigationCTA repo={repo} />}
+            {!policy.id && authenticatedUser?.siteAdmin && <NavigationCTA repo={repo} domain={domain} />}
 
             {savingError && <ErrorAlert prefix="Error saving configuration policy" error={savingError} />}
             {deleteError && <ErrorAlert prefix="Error deleting configuration policy" error={deleteError} />}
@@ -315,19 +321,23 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
 
 interface NavigationCTAProps {
     repo?: { id: string; name: string }
+    domain?: 'scip' | 'embeddings'
 }
 
-const NavigationCTA: FunctionComponent<NavigationCTAProps> = ({ repo }) => (
+const NavigationCTA: FunctionComponent<NavigationCTAProps> = ({ repo, domain = 'scip' }) => (
     <Container className="mb-2">
         {repo ? (
             <>
                 Alternatively,{' '}
-                <Link to="/site-admin/code-graph/configuration/new">create global configuration policy</Link> that
-                applies to more than this repository.
+                <Link to={`/site-admin/${domain === 'scip' ? 'code-graph' : 'embeddings'}/configuration/new`}>
+                    create global configuration policy
+                </Link>{' '}
+                that applies to more than this repository.
             </>
         ) : (
             <>
-                To create a policy that applies to a particular repository, visit that repository's code graph settings.
+                To create a policy that applies to a particular repository, visit that repository's{' '}
+                {domain === 'scip' ? 'code graph' : 'embeddings'} settings.
             </>
         )}
     </Container>

@@ -148,11 +148,11 @@ export const codyGroup: SiteAdminSideBarGroup = {
     items: [
         {
             label: 'Embeddings',
-            to: '/site-admin/cody',
+            to: '/site-admin/embeddings',
         },
         {
             label: 'Configuration',
-            to: '/site-admin/cody/configuration',
+            to: '/site-admin/embeddings/configuration',
         },
     ],
     condition: () => window.context?.embeddingsEnabled,

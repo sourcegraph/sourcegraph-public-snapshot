@@ -13,7 +13,6 @@ import { Button, Container, ErrorAlert, Link, PageHeader } from '@sourcegraph/wi
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
-import { EmptyPoliciesList } from '../../../codeintel/configuration/components/EmptyPoliciesList'
 import { FlashMessage } from '../../../codeintel/configuration/components/FlashMessage'
 import { queryPolicies as defaultQueryPolicies } from '../../../codeintel/configuration/hooks/queryPolicies'
 import { useDeletePolicies } from '../../../codeintel/configuration/hooks/useDeletePolicies'
@@ -21,6 +20,7 @@ import {
     PoliciesNode,
     UnprotectedPoliciesNodeProps,
 } from '../../../codeintel/configuration/pages/CodeIntelConfigurationPage'
+import { EmptyPoliciesList } from '../components/EmptyPoliciesList'
 
 import styles from '../../../codeintel/configuration/pages/CodeIntelConfigurationPage.module.scss'
 
@@ -84,8 +84,8 @@ export const CodyConfigurationPage: FC<CodyConfigurationPageProps> = ({
             <PageTitle
                 title={
                     repo
-                        ? 'Code graph data configuration policies for repository'
-                        : 'Global code graph data configuration policies'
+                        ? 'Embeddings data configuration policies for repository'
+                        : 'Global embeddings data configuration policies'
                 }
             />
             <PageHeader
@@ -94,14 +94,14 @@ export const CodyConfigurationPage: FC<CodyConfigurationPageProps> = ({
                     {
                         text: repo ? (
                             <>
-                                Code graph data configuration for <RepoLink repoName={repo.name} to={null} />
+                                Embeddings data configuration for <RepoLink repoName={repo.name} to={null} />
                             </>
                         ) : (
-                            'Global code graph data configuration'
+                            'Global embeddings data configuration'
                         ),
                     },
                 ]}
-                description={<>Rules that control auto-indexing and data retention behavior of code graph data.</>}
+                description={<>Rules that control embeddings re-indexing.</>}
                 actions={
                     authenticatedUser?.siteAdmin && (
                         <Button to="./new?type=head" variant="primary" as={Link}>
@@ -117,7 +117,7 @@ export const CodyConfigurationPage: FC<CodyConfigurationPageProps> = ({
 
             {authenticatedUser?.siteAdmin && repo && (
                 <Container className="mb-2">
-                    View <Link to="/site-admin/code-graph/configuration">additional configuration policies</Link> that
+                    View <Link to="/site-admin/embeddings/configuration">additional configuration policies</Link> that
                     do not affect this repository.
                 </Container>
             )}

@@ -3,12 +3,13 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { RedirectRoute } from '../../components/RedirectRoute'
 import { RepoContainerRoute } from '../../repo/RepoContainer'
 import { repoContainerRoutes } from '../../repo/repoContainerRoutes'
-import { CodeIntelConfigurationPolicyPage } from '../codeintel/configuration/pages/CodeIntelConfigurationPolicyPage'
 
 const RepositoryCodeIntelArea = lazyComponent(
     () => import('../codeintel/repo/RepositoryCodeIntelArea'),
     'RepositoryCodeIntelArea'
 )
+
+const CodyRepoArea = lazyComponent(() => import('../cody/repo/CodyRepoArea'), 'CodyRepoArea')
 
 const RepositoryBatchChangesArea = lazyComponent(
     () => import('../batches/repo/RepositoryBatchChangesArea'),
@@ -17,15 +18,9 @@ const RepositoryBatchChangesArea = lazyComponent(
 
 const RepositoryOwnPage = lazyComponent(() => import('../own/RepositoryOwnPage'), 'RepositoryOwnPage')
 
-const CodyConfigurationPage = lazyComponent(
-    () => import('../cody/configuration/pages/CodyConfigurationPage'),
-    'CodyConfigurationPage'
-)
-
 export const enterpriseRepoContainerRoutes: readonly RepoContainerRoute[] = [
     ...repoContainerRoutes,
 
-    // Code graph routes
     {
         path: '/-/code-intelligence/*',
         render: () => (
@@ -38,18 +33,10 @@ export const enterpriseRepoContainerRoutes: readonly RepoContainerRoute[] = [
         path: '/-/code-graph/*',
         render: context => <RepositoryCodeIntelArea {...context} />,
     },
-
-    // Cody configuration routes
     {
-        path: '/cody/configuration',
-        render: props => <CodyConfigurationPage {...props} />,
-        condition: () => Boolean(window.context?.embeddingsEnabled),
+        path: '/-/embeddings/*',
+        render: context => <CodyRepoArea {...context} />,
     },
-    {
-        path: '/cody/configuration/:id',
-        render: props => <CodeIntelConfigurationPolicyPage domain={'embeddings'} {...props} />,
-    },
-
     {
         path: '/-/batch-changes',
         condition: ({ batchChangesEnabled }) => batchChangesEnabled,

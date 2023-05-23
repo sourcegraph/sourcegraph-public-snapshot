@@ -249,10 +249,10 @@ export const PoliciesNode: FunctionComponent<React.PropsWithChildren<PoliciesNod
             <Link
                 to={
                     policy.repository === null
-                        ? `/site-admin/${domain === 'scip' ? 'code-graph' : 'cody'}/configuration/${policy.id}`
-                        : `/${policy.repository.name}/-/${domain === 'scip' ? 'code-graph' : 'cody'}/configuration/${
-                              policy.id
-                          }`
+                        ? `/site-admin/${domain === 'scip' ? 'code-graph' : 'embeddings'}/configuration/${policy.id}`
+                        : `/${policy.repository.name}/-/${
+                              domain === 'scip' ? 'code-graph' : 'embeddings'
+                          }/configuration/${policy.id}`
                 }
             >
                 <Tooltip content="Edit this policy">
@@ -305,8 +305,8 @@ const PolicyDescription: FunctionComponent<PolicyDescriptionProps> = ({
         <Link
             to={
                 policy.repository === null
-                    ? `/site-admin/${domain === 'scip' ? 'code-graph' : 'cody'}/configuration/${policy.id}`
-                    : `/${policy.repository.name}/-/${domain === 'scip' ? 'code-graph' : 'cody'}/configuration/${
+                    ? `/site-admin/${domain === 'scip' ? 'code-graph' : 'embeddings'}/configuration/${policy.id}`
+                    : `/${policy.repository.name}/-/${domain === 'scip' ? 'code-graph' : 'embeddings'}/configuration/${
                           policy.id
                       }`
             }
@@ -316,7 +316,7 @@ const PolicyDescription: FunctionComponent<PolicyDescriptionProps> = ({
             </Text>
         </Link>
 
-        {!policy.retentionEnabled && !(indexingEnabled && policy.indexingEnabled) && (
+        {!policy.retentionEnabled && !(indexingEnabled && policy.indexingEnabled) && !policy.embeddingsEnabled && (
             <Tooltip content="This policy has no enabled behaviors.">
                 <Icon
                     svgPath={mdiCircleOffOutline}

@@ -191,24 +191,25 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
         {
             exact: true,
             path: '/cody',
-            render: () => <Navigate to="./embeddings" />,
+            render: () => <Navigate to="/site-admin/embeddings" />,
             condition: () => Boolean(window.context?.embeddingsEnabled),
         },
         {
             exact: true,
-            path: '/cody/embeddings',
+            path: '/embeddings',
             render: props => <SiteAdminCodyPage {...props} />,
             condition: () => Boolean(window.context?.embeddingsEnabled),
         },
         {
             exact: true,
-            path: '/cody/configuration',
+            path: '/embeddings/configuration',
             render: props => <CodyConfigurationPage {...props} />,
             condition: () => Boolean(window.context?.embeddingsEnabled),
         },
         {
-            path: '/cody/configuration/:id',
-            render: props => <CodeIntelConfigurationPolicyPage domain={'embeddings'} {...props} />,
+            path: '/embeddings/configuration/:id',
+            render: props => <CodeIntelConfigurationPolicyPage {...props} domain={'embeddings'} />,
+            condition: () => Boolean(window.context?.embeddingsEnabled),
         },
 
         // rbac-related routes
