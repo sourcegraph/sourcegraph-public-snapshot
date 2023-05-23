@@ -52,6 +52,10 @@ type GitHubApp implements Node {
     """
     name: String!
     """
+    The domain of the GitHub App (e.g. "repos" or "batches")
+    """
+    domain: String!
+    """
     The slug of the GitHub App
     """
     slug: String!

@@ -187,6 +187,10 @@ func (r *gitHubAppResolver) Name() string {
 	return r.app.Name
 }
 
+func (r *gitHubAppResolver) Domain() string {
+	return r.app.Domain
+}
+
 func (r *gitHubAppResolver) Slug() string {
 	return r.app.Slug
 }
