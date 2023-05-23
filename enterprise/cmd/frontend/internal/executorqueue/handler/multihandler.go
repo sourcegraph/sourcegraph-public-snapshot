@@ -263,14 +263,18 @@ func (m *MultiHandler) heartbeat(ctx context.Context, executor types.Executor, i
 		case m.CodeIntelQueueHandler.Name:
 			known, cancel, err = m.CodeIntelQueueHandler.Store.Heartbeat(ctx, queue.JobIDs, heartbeatOptions)
 		}
-		knownIDs = append(knownIDs, executortypes.QueueJobIDs{
-			QueueName: queue.QueueName,
-			JobIDs:    known,
-		})
-		cancelIDs = append(cancelIDs, executortypes.QueueJobIDs{
-			QueueName: queue.QueueName,
-			JobIDs:    cancel,
-		})
+		if len(known) > 0 {
+			knownIDs = append(knownIDs, executortypes.QueueJobIDs{
+				QueueName: queue.QueueName,
+				JobIDs:    known,
+			})
+		}
+		if len(cancel) > 0 {
+			cancelIDs = append(cancelIDs, executortypes.QueueJobIDs{
+				QueueName: queue.QueueName,
+				JobIDs:    cancel,
+			})
+		}
 	}
 
 	return knownIDs, cancelIDs, errors.Wrap(err, "multiqueue.UpsertHeartbeat")
