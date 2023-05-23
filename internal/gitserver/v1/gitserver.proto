@@ -237,8 +237,8 @@ message RepoCloneRequest {
 }
 
 message RepoCloneResponse {
-    // error is the error that occurred during cloning.
-    string error = 1;
+  // error is the error that occurred during cloning.
+  string error = 1;
 }
 
 // ReposStatsRequest is a empty request for the ReposStats RPC.
