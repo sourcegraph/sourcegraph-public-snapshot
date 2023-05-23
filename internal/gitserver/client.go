@@ -447,7 +447,7 @@ type Client interface {
 
 func (c *clientImplementor) Addrs() []string {
 	address := c.clientSource.Addresses()
-	var addrs []string
+	addrs := make([]string, 0, len(address))
 	for _, addr := range address {
 		addrs = append(addrs, addr.Address())
 	}
