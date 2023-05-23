@@ -10,7 +10,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/src-cli/internal/scout/resource/style"
+	"github.com/sourcegraph/src-cli/internal/scout/style"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
