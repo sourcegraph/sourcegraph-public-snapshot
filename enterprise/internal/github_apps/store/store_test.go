@@ -27,7 +27,7 @@ func TestCreateGitHubApp(t *testing.T) {
 	app := &types.GitHubApp{
 		AppID:        1,
 		Name:         "Test App",
-		Domain:       "repo",
+		Domain:       "repos",
 		Slug:         "test-app",
 		ClientID:     "abc123",
 		ClientSecret: "secret",
@@ -69,7 +69,7 @@ func TestDeleteGitHubApp(t *testing.T) {
 
 	app := &types.GitHubApp{
 		Name:         "Test App",
-		Domain:       "repo",
+		Domain:       "repos",
 		Slug:         "test-app",
 		ClientID:     "abc123",
 		ClientSecret: "secret",
@@ -105,7 +105,7 @@ func TestUpdateGitHubApp(t *testing.T) {
 	app := &types.GitHubApp{
 		AppID:        123,
 		Name:         "Test App",
-		Domain:       "repo",
+		Domain:       "repos",
 		Slug:         "test-app",
 		BaseURL:      "https://example.com",
 		AppURL:       "https://example.com/apps/testapp",
@@ -123,7 +123,7 @@ func TestUpdateGitHubApp(t *testing.T) {
 	updated := &types.GitHubApp{
 		AppID:        234,
 		Name:         "Updated Name",
-		Domain:       "repo",
+		Domain:       "repos",
 		Slug:         "updated-slug",
 		BaseURL:      "https://updated-example.com",
 		AppURL:       "https://updated-example.com/apps/updated-app",
@@ -164,7 +164,7 @@ func TestGetByID(t *testing.T) {
 	app1 := &types.GitHubApp{
 		AppID:        1234,
 		Name:         "Test App 1",
-		Domain:       "repo",
+		Domain:       "repos",
 		Slug:         "test-app-1",
 		BaseURL:      "https://github.com",
 		AppURL:       "https://github.com/apps/testapp",
@@ -177,7 +177,7 @@ func TestGetByID(t *testing.T) {
 	app2 := &types.GitHubApp{
 		AppID:        5678,
 		Name:         "Test App 2",
-		Domain:       "repo",
+		Domain:       "repos",
 		Slug:         "test-app-2",
 		BaseURL:      "https://enterprise.github.com",
 		AppURL:       "https://enterprise.github.com/apps/testapp",
@@ -227,7 +227,7 @@ func TestGetByAppID(t *testing.T) {
 	app1 := &types.GitHubApp{
 		AppID:        1234,
 		Name:         "Test App 1",
-		Domain:       "repo",
+		Domain:       "repos",
 		Slug:         "test-app-1",
 		BaseURL:      "https://github.com",
 		ClientID:     "abc123",
@@ -239,7 +239,7 @@ func TestGetByAppID(t *testing.T) {
 	app2 := &types.GitHubApp{
 		AppID:        1234,
 		Name:         "Test App 2",
-		Domain:       "repo",
+		Domain:       "repos",
 		Slug:         "test-app-2",
 		BaseURL:      "https://enterprise.github.com",
 		ClientID:     "abc123",
@@ -289,7 +289,7 @@ func TestGetBySlug(t *testing.T) {
 	app1 := &types.GitHubApp{
 		AppID:        1234,
 		Name:         "Test App 1",
-		Domain:       "repo",
+		Domain:       "repos",
 		Slug:         "test-app",
 		BaseURL:      "https://github.com",
 		AppURL:       "https://github.com/apps/testapp1",
@@ -302,7 +302,7 @@ func TestGetBySlug(t *testing.T) {
 	app2 := &types.GitHubApp{
 		AppID:        5678,
 		Name:         "Test App",
-		Domain:       "repo",
+		Domain:       "repos",
 		Slug:         "test-app",
 		BaseURL:      "https://enterprise.github.com",
 		AppURL:       "https://enterprise.github.com/apps/testapp",
