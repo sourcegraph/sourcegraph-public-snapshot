@@ -262,6 +262,36 @@ func (refs userReferences) containsUserID(userID int32) bool {
 	return refs.id != 0 && refs.id == userID
 }
 
+func (refs userReferences) String() string {
+	var buf bytes.Buffer
+	fmt.Fprint(&buf, "{")
+	var needsComma bool
+	comma := func() {
+		if needsComma {
+			fmt.Fprint(&buf, ", ")
+		}
+		needsComma = true
+	}
+	if refs.id != 0 {
+		comma()
+		fmt.Fprintf(&buf, "#%d", refs.id)
+	}
+	if refs.user != nil {
+		comma()
+		fmt.Fprint(&buf, refs.user.Username)
+	}
+	if refs.handle != "" {
+		comma()
+		fmt.Fprintf(&buf, "@%s", refs.handle)
+	}
+	for _, e := range refs.verifiedEmails {
+		comma()
+		fmt.Fprint(&buf, e)
+	}
+	fmt.Fprint(&buf, "}")
+	return buf.String()
+}
+
 // Contains at this point returns true
 //   - if email reference matches any user's verified email,
 //   - if handle reference matches the user handle,
@@ -279,4 +309,22 @@ func (b bag) Contains(ref Reference) bool {
 		}
 	}
 	return false
+}
+
+func (b bag) String() string {
+	var buf bytes.Buffer
+	fmt.Fprint(&buf, "[")
+	var needsComma bool
+	comma := func() {
+		if needsComma {
+			fmt.Fprint(&buf, ", ")
+		}
+		needsComma = true
+	}
+	for _, r := range b {
+		comma()
+		fmt.Fprint(&buf, r.String())
+	}
+	fmt.Fprint(&buf, "]")
+	return buf.String()
 }
