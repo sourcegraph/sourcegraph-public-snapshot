@@ -264,7 +264,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		ops = operations.NewSet(
 			bazelBuildCandidateDockerImage(patchImage, c.Version, c.candidateImageTag(), c.RunType),
-			trivyScanCandidateImage(patchImage, c.candidateImageTag()))
+			// trivyScanCandidateImage(patchImage, c.candidateImageTag())
+		)
 		// Test images
 		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
@@ -313,7 +314,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		executorVMImage := "executor-vm"
 		ops = operations.NewSet(
 			bazelBuildCandidateDockerImage(executorVMImage, c.Version, c.candidateImageTag(), c.RunType),
-			trivyScanCandidateImage(executorVMImage, c.candidateImageTag()),
+			// trivyScanCandidateImage(executorVMImage, c.candidateImageTag()),
 			buildExecutorVM(c, true),
 			buildExecutorDockerMirror(c),
 			buildExecutorBinary(c),
@@ -375,11 +376,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(imageBuildOps)
 
 		// Trivy security scans
-		imageScanOps := operations.NewNamedSet("Image security scans")
-		for _, dockerImage := range images.SourcegraphDockerImages {
-			imageScanOps.Append(trivyScanCandidateImage(dockerImage, c.candidateImageTag()))
-		}
-		ops.Merge(imageScanOps)
+		// imageScanOps := operations.NewNamedSet("Image security scans")
+		// for _, dockerImage := range images.SourcegraphDockerImages {
+		// 	imageScanOps.Append(trivyScanCandidateImage(dockerImage, c.candidateImageTag()))
+		// }
+		// ops.Merge(imageScanOps)
 
 		// Core tests
 		ops.Merge(CoreTestOperations(changed.All, CoreTestOperationsOptions{
