@@ -68,3 +68,4 @@ steps:
         key: create-github-release
         command:
           - './enterprise/dev/app/create-github-release.sh'
+          - './enterprise/dev/app/create-update_manifest.sh'

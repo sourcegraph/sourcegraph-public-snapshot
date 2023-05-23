@@ -2,6 +2,8 @@
 
 set -eu
 
+cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. || exit 1
+
 # deterimes the Sourcegraph App filename based on the platform string given
 # args:
 # - 1: platform string
