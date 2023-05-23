@@ -408,12 +408,12 @@ func AddRepoMetadataFilter(query BasicQuery, repoMeta string) (BasicQuery, error
 	mutatedQuery := searchquery.MapPlan(plan, func(basic searchquery.Basic) searchquery.Basic {
 		modified := make([]searchquery.Parameter, 0, len(basic.Parameters)+1)
 		modified = append(modified, basic.Parameters...)
-		fValue := fmt.Sprint("has.key(", repoMeta, ")")
+		fValue := fmt.Sprint("has.meta(", repoMeta, ")")
 		meta := strings.Split(repoMeta, ":")
 		if len(meta) == 2 {
 			key := meta[0]
 			value := meta[1]
-			fValue = fmt.Sprint("has(", key, ":", value, ")")
+			fValue = fmt.Sprint("has.meta(", key, ":", value, ")")
 		}
 		modified = append(modified, searchquery.Parameter{
 			Field:      searchquery.FieldRepo,

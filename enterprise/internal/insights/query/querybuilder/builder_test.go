@@ -636,13 +636,13 @@ func Test_addRepoMetadataFilter(t *testing.T) {
 			name:         "no repo meta value",
 			input:        "myquery",
 			repoMetadata: "open-source",
-			want:         autogold.Expect(BasicQuery("repo:has.key(open-source) myquery")),
+			want:         autogold.Expect(BasicQuery("repo:has.meta(open-source) myquery")),
 		},
 		{
 			name:         "with repo meta value",
 			input:        "myquery repo:supergreat",
 			repoMetadata: "team:backend",
-			want:         autogold.Expect(BasicQuery("repo:supergreat repo:has(team:backend) myquery")),
+			want:         autogold.Expect(BasicQuery("repo:supergreat repo:has.meta(team:backend) myquery")),
 		},
 	}
 	for _, test := range tests {
