@@ -511,6 +511,25 @@ func (r *UserResolver) CompletionsQuotaOverride(ctx context.Context) (*int32, er
 	return &iv, nil
 }
 
+func (r *UserResolver) CodeCompletionsQuotaOverride(ctx context.Context) (*int32, error) {
+	// 🚨 SECURITY: Only the user and admins are allowed to see quotas.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+		return nil, err
+	}
+
+	v, err := r.db.Users().GetCodeCompletionsQuota(ctx, r.user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	if v == nil {
+		return nil, nil
+	}
+
+	iv := int32(*v)
+	return &iv, nil
+}
+
 func (r *UserResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
 	id := r.ID()
 	args.Namespace = &id
@@ -616,6 +635,44 @@ func (r *schemaResolver) SetUserCompletionsQuota(ctx context.Context, args SetUs
 		quota = &i
 	}
 	if err := r.db.Users().SetCompletionsQuota(ctx, user.ID, quota); err != nil {
+		return nil, err
+	}
+
+	return UserByIDInt32(ctx, r.db, user.ID)
+}
+
+type SetUserCodeCompletionsQuotaArgs struct {
+	User  graphql.ID
+	Quota *int32
+}
+
+func (r *schemaResolver) SetUserCodeCompletionsQuota(ctx context.Context, args SetUserCodeCompletionsQuotaArgs) (*UserResolver, error) {
+	// 🚨 SECURITY: Only site admins are allowed to change a users quota.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	if args.Quota != nil && *args.Quota <= 0 {
+		return nil, errors.New("quota must be 1 or greater")
+	}
+
+	id, err := UnmarshalUserID(args.User)
+	if err != nil {
+		return nil, err
+	}
+
+	// Verify the ID is valid.
+	user, err := r.db.Users().GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	var quota *int
+	if args.Quota != nil {
+		i := int(*args.Quota)
+		quota = &i
+	}
+	if err := r.db.Users().SetCodeCompletionsQuota(ctx, user.ID, quota); err != nil {
 		return nil, err
 	}
 

@@ -6,17 +6,19 @@ import { toPartialUtf8String } from '../utils'
 
 import { SourcegraphCompletionsClient } from './client'
 import { parseEvents } from './parse'
-import { CompletionParameters, CompletionCallbacks, CodeCompletionParameters, CodeCompletionResponse } from './types'
+import { CompletionParameters, CompletionCallbacks, CompletionResponse } from './types'
 
 export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClient {
-    public async complete(params: CodeCompletionParameters, abortSignal: AbortSignal): Promise<CodeCompletionResponse> {
+    public async complete(params: CompletionParameters, abortSignal: AbortSignal): Promise<CompletionResponse> {
+        const log = this.logger?.startCompletion(params)
+
         const requestFn = this.codeCompletionsEndpoint.startsWith('https://') ? https.request : http.request
         const headersInstance = new Headers(this.config.customHeaders as HeadersInit)
         headersInstance.set('Content-Type', 'application/json')
         if (this.config.accessToken) {
             headersInstance.set('Authorization', `token ${this.config.accessToken}`)
         }
-        const completion = await new Promise<CodeCompletionResponse>((resolve, reject) => {
+        const completion = await new Promise<CompletionResponse>((resolve, reject) => {
             const req = requestFn(
                 this.codeCompletionsEndpoint,
                 {
@@ -37,18 +39,24 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                     res.on('end', () => {
                         req.destroy()
                         try {
-                            const resp = JSON.parse(buffer) as CodeCompletionResponse
+                            // When rate-limiting occurs, the response is an error message
+                            if (res.statusCode === 429) {
+                                reject(new Error(buffer))
+                            }
+
+                            const resp = JSON.parse(buffer) as CompletionResponse
                             if (typeof resp.completion !== 'string' || typeof resp.stopReason !== 'string') {
-                                reject(new Error(`response does not satisfy CodeCompletionResponse: ${buffer}`))
+                                const message = `response does not satisfy CodeCompletionResponse: ${buffer}`
+                                log?.onError(message)
+                                reject(new Error(message))
                             } else {
+                                log?.onComplete(resp)
                                 resolve(resp)
                             }
                         } catch (error) {
-                            reject(
-                                new Error(
-                                    `error parsing response CodeCompletionResponse: ${error}, response text: ${buffer}`
-                                )
-                            )
+                            const message = `error parsing response CodeCompletionResponse: ${error}, response text: ${buffer}`
+                            log?.onError(message)
+                            reject(new Error(message))
                         }
                     })
 
@@ -70,6 +78,8 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
     }
 
     public stream(params: CompletionParameters, cb: CompletionCallbacks): () => void {
+        const log = this.logger?.startCompletion(params)
+
         const requestFn = this.completionsEndpoint.startsWith('https://') ? https.request : http.request
 
         const request = requestFn(
@@ -106,8 +116,14 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         bufferBin = buf
                     })
 
-                    res.on('error', e => cb.onError(e.message, res.statusCode))
-                    res.on('end', () => cb.onError(errorMessage, res.statusCode))
+                    res.on('error', e => {
+                        log?.onError(e.message)
+                        cb.onError(e.message, res.statusCode)
+                    })
+                    res.on('end', () => {
+                        log?.onError(errorMessage)
+                        cb.onError(errorMessage, res.statusCode)
+                    })
                     return
                 }
 
@@ -132,11 +148,15 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                         return
                     }
 
+                    log?.onEvents(parseResult.events)
                     this.sendEvents(parseResult.events, cb)
                     bufferText = parseResult.remainingBuffer
                 })
 
-                res.on('error', e => cb.onError(e.message))
+                res.on('error', e => {
+                    log?.onError(e.message)
+                    cb.onError(e.message)
+                })
             }
         )
 

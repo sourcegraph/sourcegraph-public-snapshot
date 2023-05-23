@@ -394,6 +394,13 @@ commands:
 
       go build -gcflags="$GCFLAGS" -o .bin/llm-proxy github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy
     checkBinary: .bin/llm-proxy
+    env:
+      LLM_PROXY_ANTHROPIC_ACCESS_TOKEN: foobar
+      LLM_PROXY_DOTCOM_ACCESS_TOKEN: foobar
+      LLM_PROXY_DOTCOM_API_URL: https://sourcegraph.test:3443/.api/graphql
+      LLM_PROXY_ALLOW_ANONYMOUS: true
+      LLM_PROXY_DIAGNOSTICS_SECRET: sekret
+      SRC_LOG_LEVEL: dbug
     watch:
       - lib
       - internal
@@ -947,8 +954,23 @@ bazelCommands:
       GITSERVER_ADDR: 127.0.0.1:3501
       SRC_REPOS_DIR: $HOME/.sourcegraph/repos_1
       SRC_PROF_HTTP: 127.0.0.1:3551
+  blobstore:
+    target: //cmd/blobstore:blobstore
   searcher:
     target: //cmd/searcher
+  syntax-highlighter:
+    target: //docker-images/syntax-highlighter:syntect_server
+    ignoreStdout: true
+    ignoreStderr: true
+    env:
+      # Environment copied from Dockerfile
+      WORKERS: "1"
+      ROCKET_ENV: "production"
+      ROCKET_LIMITS: "{json=10485760}"
+      ROCKET_SECRET_KEY: "SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA="
+      ROCKET_KEEP_ALIVE: "0"
+      ROCKET_PORT: "9238"
+      QUIET: "true"
   github-proxy:
     target: //cmd/github-proxy
   frontend:
@@ -1053,10 +1075,10 @@ commandsets:
       - oss-gitserver-1
       - github-proxy
       - searcher
+      - syntax-highlighter
     commands:
       - oss-web
       - caddy
-      - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
@@ -1091,13 +1113,13 @@ commandsets:
   enterprise-bazel: &enterprise_bazel_set
     requiresDevPrivate: true
     checks:
-      - docker
       - redis
       - postgres
       - git
       - bazelisk
       - ibazel
     bazelCommands:
+      - blobstore
       - frontend
       - worker
       - repo-updater
@@ -1105,17 +1127,17 @@ commandsets:
       - gitserver-1
       - searcher
       - symbols
+      - syntax-highlighter
       - github-proxy
     commands:
       - web
-      - blobstore
       - docsite
-      - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
       - zoekt-web-1
       - caddy
+  # If you modify this command set, please consider also updating the dotcom runset.
   enterprise: &enterprise_set
     requiresDevPrivate: true
     checks:
@@ -1150,7 +1172,32 @@ commandsets:
       EXTSVC_CONFIG_FILE: ''
 
   dotcom:
-    <<: *enterprise_set
+    # This is 95% the enterprise runset, with the addition of LLM-proxy.
+    requiresDevPrivate: true
+    checks:
+      - docker
+      - redis
+      - postgres
+      - git
+    commands:
+      - frontend
+      - worker
+      - repo-updater
+      - web
+      - gitserver-0
+      - gitserver-1
+      - searcher
+      - symbols
+      - caddy
+      - docsite
+      - syntax-highlighter
+      - github-proxy
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
+      - blobstore
+      - llm-proxy
     env:
       SOURCEGRAPHDOTCOM_MODE: true
 
@@ -1164,6 +1211,7 @@ commandsets:
       - bazelisk
       - ibazel
     bazelCommands:
+      - blobstore
       - frontend
       - worker
       - repo-updater
@@ -1171,14 +1219,13 @@ commandsets:
       - gitserver-1
       - searcher
       - symbols
+      - syntax-highlighter
       - github-proxy
       - codeintel-worker
       - codeintel-executor
     commands:
       - web
-      - blobstore
       - docsite
-      - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
@@ -1424,8 +1471,6 @@ commandsets:
       - redis
     commands:
       - llm-proxy
-    env:
-      LLM_PROXY_ANTHROPIC_ACCESS_TOKEN: foobar
 
 tests:
   # These can be run with `sg test [name]`

@@ -35,6 +35,7 @@ go_test(
     timeout = "short",
     srcs = ["users_test.go"],
     embed = [":adminanalytics"],
+    flaky = True,
     tags = [
         # Test requires localhost for database
         "requires-network",

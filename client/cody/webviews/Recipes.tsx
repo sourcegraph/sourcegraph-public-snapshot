@@ -1,3 +1,4 @@
+import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Recipes.module.css'
@@ -12,10 +13,12 @@ export const recipesList = {
     'git-history': 'Summarize recent code changes',
     'find-code-smells': 'Smell code',
     fixup: 'Fixup code from inline instructions',
+    'context-search': 'Codebase context search',
+    'release-notes': 'Generate release notes',
 }
 
 export const Recipes: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const onRecipeClick = (recipeID: string): void => {
+    const onRecipeClick = (recipeID: RecipeID): void => {
         vscodeAPI.postMessage({ command: 'executeRecipe', recipe: recipeID })
     }
 
@@ -28,7 +31,7 @@ export const Recipes: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({
                             key={key}
                             className={styles.recipeButton}
                             type="button"
-                            onClick={() => onRecipeClick(key)}
+                            onClick={() => onRecipeClick(key as RecipeID)}
                         >
                             {value}
                         </button>

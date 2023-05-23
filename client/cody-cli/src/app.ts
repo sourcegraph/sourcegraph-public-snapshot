@@ -3,6 +3,7 @@ import { Command } from 'commander'
 import prompts from 'prompts'
 
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
+import { ConfigurationUseContext } from '@sourcegraph/cody-shared/src/configuration'
 import { SourcegraphIntentDetectorClient } from '@sourcegraph/cody-shared/src/intent-detector/client'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
@@ -33,26 +34,27 @@ async function startCLI() {
 
     const options = program.opts()
 
-    const codebase: string = options.codebase || DEFAULTS.codebase
-    const endpoint: string = options.endpoint || DEFAULTS.serverEndpoint
-    const contextType: 'keyword' | 'embeddings' | 'none' | 'blended' = options.contextType || DEFAULTS.contextType
+    const codebase: string = (options.codebase as string) || DEFAULTS.codebase
+    const endpoint: string = (options.endpoint as string) || DEFAULTS.serverEndpoint
+    const contextType: ConfigurationUseContext =
+        (options.contextType as ConfigurationUseContext) || DEFAULTS.contextType
     const accessToken: string | undefined = ENVIRONMENT_CONFIG.SRC_ACCESS_TOKEN
     if (accessToken === undefined || accessToken === '') {
         console.error(
-            `No access token found. Set SRC_ACCESS_TOKEN to an access token created on the Sourcegraph instance.`
+            'No access token found. Set SRC_ACCESS_TOKEN to an access token created on the Sourcegraph instance.'
         )
         process.exit(1)
     }
 
     const sourcegraphClient = new SourcegraphGraphQLAPIClient({
         serverEndpoint: endpoint,
-        accessToken: accessToken,
+        accessToken,
         customHeaders: {},
     })
 
     let codebaseContext
     try {
-        codebaseContext = await createCodebaseContext(sourcegraphClient, codebase, contextType)
+        codebaseContext = await createCodebaseContext(sourcegraphClient, codebase, contextType, endpoint)
     } catch (error) {
         let errorMessage = ''
         if (isRepoNotFoundError(error)) {
@@ -77,7 +79,7 @@ async function startCLI() {
         customHeaders: {},
     })
 
-    let prompt = options.prompt
+    let prompt = options.prompt as string
     if (prompt === undefined || prompt === '') {
         const response = await prompts({
             type: 'text',
@@ -85,7 +87,7 @@ async function startCLI() {
             message: 'What do you want to ask Cody?',
         })
 
-        prompt = response.value
+        prompt = response.value as string
     }
 
     const transcript = new Transcript()

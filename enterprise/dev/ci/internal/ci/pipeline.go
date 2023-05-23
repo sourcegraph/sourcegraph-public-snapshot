@@ -97,8 +97,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	//
 	// PERF: Try to order steps such that slower steps are first.
 	switch c.RunType {
-	case runtype.BazelExpBranch:
-		ops.Merge(BazelOperations())
 	case runtype.WolfiExpBranch:
 		// Rebuild packages if package configs have changed
 		updatePackages := c.Diff.Has(changed.WolfiPackages)
@@ -128,39 +126,39 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			// TODO: Just hardcode specific images initially
 			WolfiImagesOperations([]string{
 				"batcheshelper",
+				"blobstore",
+				"cadvisor",
+				"codeinsights-db",
+				"codeintel-db",
 				"embeddings",
 				"executor-kubernetes",
 				"frontend",
 				"github-proxy",
 				"gitserver",
-				"llm-proxy",
-				"loadtest",
-				"migrator",
-				"precise-code-intel-worker",
-				"repo-updater",
-				"searcher",
-				"server",
-				"symbols",
-				"worker",
-				"blobstore",
-				"cadvisor",
-				"codeinsights-db",
-				"codeintel-db",
 				"indexed-searcher",
 				"jaeger-agent",
 				"jaeger-all-in-one",
+				"llm-proxy",
+				"loadtest",
+				"migrator",
 				"node-exporter",
 				"opentelemetry-collector",
 				"postgres-12-alpine",
 				"postgres_exporter",
+				"precise-code-intel-worker",
 				"prometheus",
 				"prometheus-gcp",
 				"redis-cache",
 				"redis-store",
 				"redis_exporter",
+				"repo-updater",
 				"search-indexer",
+				"searcher",
+				"server",
 				"sg",
+				"symbols",
 				"syntax-highlighter",
+				"worker",
 			}, c.Version,
 				c.candidateImageTag(),
 				(numUpdatedBaseImages > 0),
@@ -197,14 +195,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.BackendIntegrationTests:
 		ops.Append(
 			bazelBuildCandidateDockerImage("server", c.Version, c.candidateImageTag(), c.RunType),
-			backendIntegrationTests(c.candidateImageTag()))
-
-		// always include very backend-oriented changes in this set of tests
-		testDiff := c.Diff | changed.DatabaseSchema | changed.Go
-		ops.Merge(CoreTestOperations(
-			testDiff,
-			CoreTestOperationsOptions{MinimumUpgradeableVersion: minimumUpgradeableVersion},
-		))
+			backendIntegrationTests(c.candidateImageTag(), "server"),
+		)
 
 	case runtype.BextReleaseBranch:
 		// If this is a browser extension release branch, run the browser-extension tests and
@@ -397,8 +389,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}))
 
 		// Integration tests
+		// Temporary: on main branches, we build images with bazel binaries based on their toolchain and/or purpose. This step key is the first image in the array.
+		// This will be removed once we build images with wolfi.
 		ops.Merge(operations.NewNamedSet("Integration tests",
-			backendIntegrationTests(c.candidateImageTag()),
+			backendIntegrationTests(c.candidateImageTag(), "symbols"),
 			codeIntelQA(c.candidateImageTag()),
 		))
 		// End-to-end tests

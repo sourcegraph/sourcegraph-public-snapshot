@@ -10,7 +10,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/tracer/internal/exporters"
+	"github.com/sourcegraph/sourcegraph/internal/tracer/oteldefaults/exporters"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 

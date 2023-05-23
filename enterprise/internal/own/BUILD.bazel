@@ -2,7 +2,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "own",
-    srcs = ["service.go"],
+    srcs = [
+        "ownref.go",
+        "service.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/own",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
@@ -17,14 +20,21 @@ go_library(
         "//internal/errcode",
         "//internal/gitserver",
         "//internal/types",
+        "//lib/errors",
     ],
 )
 
 go_test(
     name = "own_test",
     timeout = "short",
-    srcs = ["service_test.go"],
+    srcs = [
+        "ownref_test.go",
+        "service_test.go",
+    ],
     embed = [":own"],
+    tags = [
+        "requires-network",
+    ],
     deps = [
         "//enterprise/internal/database",
         "//enterprise/internal/own/codeowners",
@@ -34,10 +44,12 @@ go_test(
         "//internal/authz",
         "//internal/conf",
         "//internal/database",
+        "//internal/database/dbtest",
         "//internal/gitserver",
         "//internal/types",
         "//lib/errors",
         "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],

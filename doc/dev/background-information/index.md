@@ -12,6 +12,10 @@
 - [Overview](architecture/index.md)
 - [Introducing a new service](architecture/introducing_a_new_service.md)
 
+## [Sourcegraph App](app/index.md)
+
+- [Notes about code signing the Sourcegraph App](./app/codesigning.md)
+
 ## Development
 
 - [`sg` - the Sourcegraph developer tool](./sg/index.md)

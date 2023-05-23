@@ -29,7 +29,7 @@ Index jobs are run asynchronously from a queue. Each index job has an attached _
 
 ![Index job state diagram](./diagrams/index-states.svg)
 
-The general happy-path for an index job is: `QUEUED_FOR_INDEXING`, `INDEXING`, then `INDEXING_COMPLETED`. Once uploaded, the remaining lifecycle is described in [lifecycle of an upload](uploads#lifecycle-of-an-upload).
+The general happy-path for an index job is: `QUEUED_FOR_INDEXING`, `INDEXING`, then `INDEXING_COMPLETED`. Once uploaded, the remaining lifecycle is described in [lifecycle of an upload](uploads.md#lifecycle-of-an-upload).
 
 Index jobs may fail to complete due to the job configuration not aligning with the repository contents or due to transient errors related to the network (for example). An index job will enter the `INDEXING_ERRORED` state on such conditions. Errored index jobs may be retried a number of times before moving into a permanently errored state.
 

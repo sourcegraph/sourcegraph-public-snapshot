@@ -115,7 +115,7 @@ type EventLogStore interface {
 	// ListAll gets all event logs in descending order of timestamp.
 	ListAll(ctx context.Context, opt EventLogsListOptions) ([]*Event, error)
 
-	// ListExportableEvents gets all event logs that are allowed to be exported.
+	// ListExportableEvents gets a batch of event logs that are allowed to be exported.
 	ListExportableEvents(ctx context.Context, after, limit int) ([]*Event, error)
 
 	ListUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) ([]int32, error)
@@ -300,7 +300,7 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 }
 
 func (l *eventLogStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*Event, error) {
-	q := sqlf.Sprintf("SELECT id, name, url, user_id, anonymous_user_id, source, argument, version, timestamp, feature_flags, cohort_id, first_source_url, last_source_url, referrer, device_id, insert_id FROM event_logs %s", querySuffix)
+	q := sqlf.Sprintf("SELECT id, name, url, user_id, anonymous_user_id, source, argument, public_argument, version, timestamp, feature_flags, cohort_id, first_source_url, last_source_url, referrer, device_id, insert_id FROM event_logs %s", querySuffix)
 	rows, err := l.Query(ctx, q)
 	if err != nil {
 		return nil, err
@@ -310,7 +310,7 @@ func (l *eventLogStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) (
 	for rows.Next() {
 		r := Event{}
 		var rawFlags []byte
-		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.UserID, &r.AnonymousUserID, &r.Source, &r.Argument, &r.Version, &r.Timestamp, &rawFlags, &r.CohortID, &r.FirstSourceURL, &r.LastSourceURL, &r.Referrer, &r.DeviceID, &r.InsertID)
+		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.UserID, &r.AnonymousUserID, &r.Source, &r.Argument, &r.PublicArgument, &r.Version, &r.Timestamp, &rawFlags, &r.CohortID, &r.FirstSourceURL, &r.LastSourceURL, &r.Referrer, &r.DeviceID, &r.InsertID)
 		if err != nil {
 			return nil, err
 		}
@@ -332,21 +332,27 @@ func (l *eventLogStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) (
 type EventLogsListOptions struct {
 	// UserID specifies the user whose events should be included.
 	UserID int32
-
 	*LimitOffset
-
 	EventName *string
+	// AfterID specifies a minimum event ID of listed events.
+	AfterID int
 }
 
 func (l *eventLogStore) ListAll(ctx context.Context, opt EventLogsListOptions) ([]*Event, error) {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	orderDirection := "DESC"
+	if opt.AfterID > 0 {
+		conds = append(conds, sqlf.Sprintf("id > %d", opt.AfterID))
+		orderDirection = "ASC"
+	}
 	if opt.UserID != 0 {
 		conds = append(conds, sqlf.Sprintf("user_id = %d", opt.UserID))
 	}
 	if opt.EventName != nil {
 		conds = append(conds, sqlf.Sprintf("name = %s", opt.EventName))
 	}
-	return l.getBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY timestamp DESC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL()))
+	queryTemplate := fmt.Sprintf("WHERE %%s ORDER BY id %s %%s", orderDirection)
+	return l.getBySQL(ctx, sqlf.Sprintf(queryTemplate, sqlf.Join(conds, "AND"), opt.LimitOffset.SQL()))
 }
 
 func (l *eventLogStore) ListExportableEvents(ctx context.Context, after, limit int) ([]*Event, error) {

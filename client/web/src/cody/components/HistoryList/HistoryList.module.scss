@@ -1,0 +1,26 @@
+.history-item {
+    display: flex;
+    flex-direction: column;
+    background: var(--body-bg);
+    cursor: pointer;
+    padding: var(--spacing);
+    margin-bottom: 0;
+    border-radius: 0.25rem;
+    border: none;
+    &:hover {
+        background: var(--color-bg-1);
+    }
+
+    &.selected,
+    &.selected:hover {
+        background: var(--color-bg-2);
+    }
+
+    .delete-button {
+        visibility: hidden;
+    }
+
+    &:hover .delete-button {
+        visibility: visible;
+    }
+}

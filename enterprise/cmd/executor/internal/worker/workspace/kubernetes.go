@@ -29,6 +29,10 @@ func NewKubernetesWorkspace(
 ) (Workspace, error) {
 	workspaceDir := filepath.Join(mountPath, fmt.Sprintf("job-%d", job.ID))
 
+	if err := os.MkdirAll(workspaceDir, os.ModePerm); err != nil {
+		return nil, err
+	}
+
 	if job.RepositoryName != "" {
 		if err := cloneRepo(ctx, workspaceDir, job, cmd, logger, cloneOpts, operations); err != nil {
 			_ = os.RemoveAll(workspaceDir)

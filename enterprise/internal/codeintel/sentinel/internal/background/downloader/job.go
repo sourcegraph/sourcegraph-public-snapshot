@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/internal/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -19,7 +20,7 @@ func NewCVEDownloader(store store.Store, observationCtx *observation.Context, co
 	metrics := newMetrics(observationCtx)
 
 	return goroutine.NewPeriodicGoroutine(
-		context.Background(),
+		actor.WithInternalActor(context.Background()),
 		"codeintel.sentinel-cve-downloader", "Periodically syncs GitHub advisory records into Postgres.",
 		config.DownloaderInterval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {

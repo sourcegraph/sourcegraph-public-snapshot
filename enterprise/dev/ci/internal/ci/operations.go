@@ -48,7 +48,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 	ops := operations.NewSet()
 
 	if opts.ForceBazel {
-		ops.Merge(BazelOperations())
+		ops.Append(BazelOperations()...)
 	}
 
 	// Simple, fast-ish linter checks
@@ -77,8 +77,7 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 				// addBrowserExtensionsUnitTests is now covered by Bazel
 				// addBrowserExtensionUnitTests, // ~4.5m
 				addJetBrainsUnitTests, // ~2.5m
-				// addTypescriptCheck is now covered by Bazel, but some Cody stuff not being is Bazel still requires it.
-				addTypescriptCheck,    // ~4m
+				// addTypescriptCheck is now covered by Bazel
 				addVsceTests,          // ~3.0m
 				addCodyExtensionTests, // ~2.5m
 			)
@@ -502,24 +501,24 @@ func addGoBuild(pipeline *bk.Pipeline) {
 }
 
 // Adds backend integration tests step.
-//
-// Runtime: ~11m
-func backendIntegrationTests(candidateImageTag string) operations.Operation {
+func backendIntegrationTests(candidateImageTag string, imageDep string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		for _, enableGRPC := range []bool{true, false} {
-			description := ":chains: Backend integration tests"
+			description := ":bazel::docker: :chains: Backend integration tests"
 			if enableGRPC {
 				description += " (gRPC)"
 			}
 			pipeline.AddStep(
 				description,
 				// Run tests against the candidate server image
-				bk.DependsOn(candidateImageStepKey("symbols")),
+				bk.DependsOn(candidateImageStepKey(imageDep)),
+				bk.AutomaticRetry(1), // TODO: @jhchabran, flaky, investigate
 				bk.Env("IMAGE",
 					images.DevRegistryImage("server", candidateImageTag)),
 				bk.Env("SG_FEATURE_FLAG_GRPC", strconv.FormatBool(enableGRPC)),
 				bk.Cmd("dev/ci/integration/backend/run.sh"),
-				bk.ArtifactPaths("./*.log"))
+				bk.ArtifactPaths("./*.log"),
+				bk.Agent("queue", "bazel"))
 		}
 	}
 }
@@ -662,7 +661,7 @@ func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operatio
 
 func codeIntelQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
-		p.AddStep(":docker::brain: Code Intel QA",
+		p.AddStep(":bazel::docker::brain: Code Intel QA",
 			bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
 				Message:     ":alert: :noemi-handwriting: Code Intel QA Flake detected <@Noah S-C>",
 				ChannelName: "code-intel-buildkite",
@@ -672,6 +671,7 @@ func codeIntelQA(candidateTag string) operations.Operation {
 			}),
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("symbols")),
+			bk.Agent("queue", "bazel"),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
@@ -685,7 +685,7 @@ func codeIntelQA(candidateTag string) operations.Operation {
 
 func executorsE2E(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
-		p.AddStep(":docker::packer: Executors E2E",
+		p.AddStep(":bazel::docker::packer: Executors E2E",
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("symbols")),
 			bk.Agent("queue", "bazel"),

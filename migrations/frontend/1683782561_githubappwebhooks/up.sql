@@ -1,0 +1,2 @@
+ALTER TABLE github_apps
+    ADD COLUMN IF NOT EXISTS webhook_id INTEGER REFERENCES webhooks(id) ON DELETE SET NULL;

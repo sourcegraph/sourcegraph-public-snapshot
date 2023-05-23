@@ -6,21 +6,20 @@ import type {
     ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared/src/configuration'
 
-import { SecretStorage, getAccessToken } from './secret-storage'
+import { SecretStorage, getAccessToken } from './services/SecretStorageProvider'
 
 /**
  * All configuration values, with some sanitization performed.
  */
 export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'get'>): Configuration {
     return {
-        enabled: config.get('cody.enabled', true),
         serverEndpoint: sanitizeServerEndpoint(config.get('cody.serverEndpoint', '')),
         codebase: sanitizeCodebase(config.get('cody.codebase')),
         debug: config.get('cody.debug', false),
         useContext: config.get<ConfigurationUseContext>('cody.useContext') || 'embeddings',
         experimentalSuggest: config.get('cody.experimental.suggestions', false),
         experimentalChatPredictions: config.get('cody.experimental.chatPredictions', false),
-        anthropicKey: config.get('cody.experimental.keys.anthropic', null),
+        experimentalInline: config.get('cody.experimental.inline', false),
         customHeaders: config.get<object>('cody.customHeaders', {}) as Record<string, string>,
     }
 }
@@ -48,5 +47,6 @@ export async function updateConfiguration(configKey: string, configValue: string
 
 export const getFullConfig = async (secretStorage: SecretStorage): Promise<ConfigurationWithAccessToken> => {
     const config = getConfiguration(vscode.workspace.getConfiguration())
-    return { ...config, accessToken: await getAccessToken(secretStorage) }
+    const accessToken = (await getAccessToken(secretStorage)) || null
+    return { ...config, accessToken }
 }

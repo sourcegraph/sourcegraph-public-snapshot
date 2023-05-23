@@ -5,11 +5,12 @@ import (
 )
 
 type DequeueRequest struct {
-	ExecutorName string `json:"executorName"`
-	Version      string `json:"version"`
-	NumCPUs      int    `json:"numCPUs,omitempty"`
-	Memory       string `json:"memory,omitempty"`
-	DiskSpace    string `json:"diskSpace,omitempty"`
+	Queues       []string `json:"queues,omitempty"`
+	ExecutorName string   `json:"executorName"`
+	Version      string   `json:"version"`
+	NumCPUs      int      `json:"numCPUs,omitempty"`
+	Memory       string   `json:"memory,omitempty"`
+	DiskSpace    string   `json:"diskSpace,omitempty"`
 }
 
 type JobOperationRequest struct {
