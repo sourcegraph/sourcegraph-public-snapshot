@@ -54,7 +54,7 @@ helm repo add sourcegraph https://helm.sourcegraph.com/release
 Install the Sourcegraph chart using default values:
 
 ```sh
-helm install --version 5.0.3 sourcegraph sourcegraph/sourcegraph
+helm install --version 5.0.4 sourcegraph sourcegraph/sourcegraph
 ```
 
 Sourcegraph should now be available via the address set. Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account.
@@ -81,7 +81,7 @@ Example overrides can be found in the [examples](https://github.com/sourcegraph/
 
 Providing the override file to Helm is done with the inclusion of the values flag and the name of the file:
 ```sh
-helm upgrade --install --values ./override.yaml --version 5.0.3 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 5.0.4 sourcegraph sourcegraph/sourcegraph
 ```
 When making configuration changes, it's recommended to review the changes that will be applied—see [Reviewing Changes](#reviewing-changes).
 
@@ -277,6 +277,64 @@ preciseCodeIntel:
   env:
     <<: *objectStorageEnv
 ```
+
+#### Enabling the Embeddings Service
+To enable the Embeddings Service using the built-in `blobstore` storage specify the following in your override file.
+```yaml
+embeddings:
+  enabled: true
+```
+
+#### Using external Object Storage for Embeddings Indexes
+To use an external Object Storage service (S3-compatible services, or GCS), first review our [general recommendations](https://docs.sourcegraph.com/cody/explanations/code_graph_context#storing-embedding-indexes). Then review the following example and adjust to your use case.
+
+> The example assumes the use of AWS S3. You may configure the environment variables accordingly for your own use case based on our [general recommendations](https://docs.sourcegraph.com/cody/explanations/code_graph_context#storing-embedding-indexes).
+
+If you provide credentials with an access key / secret key, we recommend storing the credentials in [Secrets] created outside of the helm chart and managed in a secure manner. An example Secret is shown here:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sourcegraph-s3-credentials
+data:
+  # notes: secrets data has to be base64-encoded
+  EMBEDDINGS_UPLOAD_AWS_ACCESS_KEY_ID: ""
+  EMBEDDINGS_UPLOAD_AWS_SECRET_ACCESS_KEY: ""
+```
+
+In your [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/external-object-storage-embeddings/override.yaml), reference this Secret and the necessary environment variables:
+
+```yaml
+# we use YAML anchors and alias to keep override file clean
+objectStorageEnv: &objectStorageEnv
+  EMBEDDINGS_UPLOAD_BACKEND:
+    value: S3 # external object stoage type, one of "S3" or "GCS"
+  EMBEDDINGS_UPLOAD_BUCKET:
+    value: embeddings-uploads # external object storage bucket name
+  EMBEDDINGS_UPLOAD_AWS_ENDPOINT:
+    value: https://s3.us-east-1.amazonaws.com
+  EMBEDDINGS_UPLOAD_AWS_REGION:
+    value: us-east-1
+  EMBEDDINGS_UPLOAD_AWS_ACCESS_KEY_ID:
+    secretKeyRef: # Pre-existing secret, not created by this chart
+      name: sourcegraph-s3-credentials
+      key: EMBEDDINGS_UPLOAD_AWS_ACCESS_KEY_ID
+  EMBEDDINGS_UPLOAD_AWS_SECRET_ACCESS_KEY:
+    secretKeyRef: # Pre-existing secret, not created by this chart
+      name: sourcegraph-s3-credentials
+      key: EMBEDDINGS_UPLOAD_AWS_SECRET_ACCESS_KEY
+
+embeddings:
+  enabled: true # Enable the Embeddings service
+  env:
+    <<: *objectStorageEnv
+
+worker:
+  env:
+    <<: *objectStorageEnv
+```
+
 
 #### Using SSH to clone repositories
 
@@ -518,7 +576,7 @@ The override file includes a [BackendConfig] CRD. This is necessary to instruct 
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 5.0.3 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 5.0.4 sourcegraph sourcegraph/sourcegraph
 ```
 
 It will take around 10 minutes for the load balancer to be fully ready, you may check on the status and obtain the load balancer IP using the following command:
@@ -637,7 +695,7 @@ storageClass:
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 5.0.3 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 5.0.4 sourcegraph sourcegraph/sourcegraph
 ```
 
 It will take some time for the load balancer to be fully ready, use the following to check on the status and obtain the load balancer address (once available):
@@ -722,7 +780,7 @@ storageClass:
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 5.0.3 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 5.0.4 sourcegraph sourcegraph/sourcegraph
 ```
 
 It will take some time for the load balancer to be fully ready, you can check on the status and obtain the load balancer address (when ready) using:
@@ -808,7 +866,7 @@ storageClass:
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 5.0.3 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 5.0.4 sourcegraph sourcegraph/sourcegraph
 ```
 
 It may take some time before your ingress is up and ready to proceed. Depending on how your Ingress Controller works, you may be able to check on its status and obtain the public address of your Ingress using:
@@ -911,7 +969,7 @@ helm repo update sourcegraph
 4.  Install the new version:
 
 ```bash
-helm upgrade --install -f override.yaml --version 5.0.3 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install -f override.yaml --version 5.0.4 sourcegraph sourcegraph/sourcegraph
 ```
 
 5.  Verify the installation has started:

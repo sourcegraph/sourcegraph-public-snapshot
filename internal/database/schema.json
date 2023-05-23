@@ -700,15 +700,6 @@
       "CycleOption": "NO"
     },
     {
-      "Name": "github_app_installs_id_seq",
-      "TypeName": "integer",
-      "StartValue": 1,
-      "MinimumValue": 1,
-      "MaximumValue": 2147483647,
-      "Increment": 1,
-      "CycleOption": "NO"
-    },
-    {
       "Name": "github_apps_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
@@ -997,6 +988,15 @@
       "CycleOption": "NO"
     },
     {
+      "Name": "own_signal_configurations_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
       "Name": "own_signal_recent_contribution_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
@@ -1065,6 +1065,15 @@
       "StartValue": 1,
       "MinimumValue": 1,
       "MaximumValue": 9223372036854775807,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
+      "Name": "repo_commits_changelists_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
       "Increment": 1,
       "CycleOption": "NO"
     },
@@ -1196,10 +1205,10 @@
     },
     {
       "Name": "user_repo_permissions_id_seq",
-      "TypeName": "integer",
+      "TypeName": "bigint",
       "StartValue": 1,
       "MinimumValue": 1,
-      "MaximumValue": 2147483647,
+      "MaximumValue": 9223372036854775807,
       "Increment": 1,
       "CycleOption": "NO"
     },
@@ -8104,8 +8113,8 @@
           "Comment": ""
         },
         {
-          "Name": "max_definition_id",
-          "Index": 11,
+          "Name": "max_export_id",
+          "Index": 20,
           "TypeName": "bigint",
           "IsNullable": false,
           "Default": "",
@@ -8117,10 +8126,23 @@
           "Comment": ""
         },
         {
-          "Name": "max_path_id",
+          "Name": "num_count_records_processed",
+          "Index": 16,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "num_count_records_total",
           "Index": 13,
-          "TypeName": "bigint",
-          "IsNullable": false,
+          "TypeName": "integer",
+          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -8130,10 +8152,49 @@
           "Comment": ""
         },
         {
-          "Name": "max_reference_id",
+          "Name": "num_path_records_processed",
+          "Index": 14,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "num_path_records_total",
+          "Index": 11,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "num_reference_records_processed",
+          "Index": 15,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "num_reference_records_total",
           "Index": 12,
-          "TypeName": "bigint",
-          "IsNullable": false,
+          "TypeName": "integer",
+          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -12116,106 +12177,6 @@
           "RefTableName": "",
           "IsDeferrable": false,
           "ConstraintDefinition": "CHECK (1 =\nCASE\n    WHEN flag_type = 'rollout'::feature_flag_type AND rollout IS NULL THEN 0\n    WHEN flag_type \u003c\u003e 'rollout'::feature_flag_type AND rollout IS NOT NULL THEN 0\n    ELSE 1\nEND)"
-        }
-      ],
-      "Triggers": []
-    },
-    {
-      "Name": "github_app_installs",
-      "Comment": "",
-      "Columns": [
-        {
-          "Name": "app_id",
-          "Index": 2,
-          "TypeName": "integer",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "created_at",
-          "Index": 4,
-          "TypeName": "timestamp with time zone",
-          "IsNullable": false,
-          "Default": "now()",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "id",
-          "Index": 1,
-          "TypeName": "integer",
-          "IsNullable": false,
-          "Default": "nextval('github_app_installs_id_seq'::regclass)",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "installation_id",
-          "Index": 3,
-          "TypeName": "integer",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        }
-      ],
-      "Indexes": [
-        {
-          "Name": "github_app_installs_pkey",
-          "IsPrimaryKey": true,
-          "IsUnique": true,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX github_app_installs_pkey ON github_app_installs USING btree (id)",
-          "ConstraintType": "p",
-          "ConstraintDefinition": "PRIMARY KEY (id)"
-        },
-        {
-          "Name": "app_id_idx",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX app_id_idx ON github_app_installs USING btree (app_id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "installation_id_idx",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX installation_id_idx ON github_app_installs USING btree (installation_id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        }
-      ],
-      "Constraints": [
-        {
-          "Name": "github_app_installs_app_id_fkey",
-          "ConstraintType": "f",
-          "RefTableName": "github_apps",
-          "IsDeferrable": false,
-          "ConstraintDefinition": "FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE"
         }
       ],
       "Triggers": []
@@ -19524,6 +19485,101 @@
       "Triggers": []
     },
     {
+      "Name": "own_signal_configurations",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "description",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "''::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "enabled",
+          "Index": 5,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "excluded_repo_patterns",
+          "Index": 4,
+          "TypeName": "text[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('own_signal_configurations_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "name",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "own_signal_configurations_name_uidx",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX own_signal_configurations_name_uidx ON own_signal_configurations USING btree (name)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "own_signal_configurations_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX own_signal_configurations_pkey ON own_signal_configurations USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
       "Name": "own_signal_recent_contribution",
       "Comment": "One entry per file changed in every commit that classifies as a contribution signal.",
       "Columns": [
@@ -21823,6 +21879,109 @@
           "Definition": "CREATE TRIGGER trigger_gitserver_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_gitserver_repo()"
         }
       ]
+    },
+    {
+      "Name": "repo_commits_changelists",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "commit_sha",
+          "Index": 3,
+          "TypeName": "bytea",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "created_at",
+          "Index": 5,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('repo_commits_changelists_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "perforce_changelist_id",
+          "Index": 4,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "repo_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "repo_commits_changelists_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX repo_commits_changelists_pkey ON repo_commits_changelists USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "repo_id_perforce_changelist_id_unique",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX repo_id_perforce_changelist_id_unique ON repo_commits_changelists USING btree (repo_id, perforce_changelist_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "repo_commits_changelists_repo_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "repo",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE"
+        }
+      ],
+      "Triggers": []
     },
     {
       "Name": "repo_embedding_jobs",
@@ -25104,7 +25263,7 @@
         {
           "Name": "id",
           "Index": 1,
-          "TypeName": "integer",
+          "TypeName": "bigint",
           "IsNullable": false,
           "Default": "nextval('user_repo_permissions_id_seq'::regclass)",
           "CharacterMaximumLength": 0,
@@ -26854,6 +27013,10 @@
     {
       "Name": "outbound_webhooks_with_event_types",
       "Definition": " SELECT outbound_webhooks.id,\n    outbound_webhooks.created_by,\n    outbound_webhooks.created_at,\n    outbound_webhooks.updated_by,\n    outbound_webhooks.updated_at,\n    outbound_webhooks.encryption_key_id,\n    outbound_webhooks.url,\n    outbound_webhooks.secret,\n    array_to_json(ARRAY( SELECT json_build_object('id', outbound_webhook_event_types.id, 'outbound_webhook_id', outbound_webhook_event_types.outbound_webhook_id, 'event_type', outbound_webhook_event_types.event_type, 'scope', outbound_webhook_event_types.scope) AS json_build_object\n           FROM outbound_webhook_event_types\n          WHERE (outbound_webhook_event_types.outbound_webhook_id = outbound_webhooks.id))) AS event_types\n   FROM outbound_webhooks;"
+    },
+    {
+      "Name": "own_background_jobs_config_aware",
+      "Definition": " SELECT obj.id,\n    obj.state,\n    obj.failure_message,\n    obj.queued_at,\n    obj.started_at,\n    obj.finished_at,\n    obj.process_after,\n    obj.num_resets,\n    obj.num_failures,\n    obj.last_heartbeat_at,\n    obj.execution_logs,\n    obj.worker_hostname,\n    obj.cancel,\n    obj.repo_id,\n    obj.job_type,\n    osc.name AS config_name\n   FROM (own_background_jobs obj\n     JOIN own_signal_configurations osc ON ((obj.job_type = osc.id)))\n  WHERE (osc.enabled IS TRUE);"
     },
     {
       "Name": "reconciler_changesets",

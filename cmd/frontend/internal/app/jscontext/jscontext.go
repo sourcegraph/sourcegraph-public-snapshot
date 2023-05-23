@@ -176,12 +176,12 @@ type JSContext struct {
 	//   the request is an admin and thus can access batch changes
 	// It does NOT reflect whether or not the site license has batch changes available.
 	// Use LicenseInfo for that.
-	BatchChangesEnabled                bool                                `json:"batchChangesEnabled"`
-	BatchChangesDisableWebhooksWarning bool                                `json:"batchChangesDisableWebhooksWarning"`
-	BatchChangesWebhookLogsEnabled     bool                                `json:"batchChangesWebhookLogsEnabled"`
-	BatchChangesRolloutWindows         *[]*schema.BatchChangeRolloutWindow `json:"batchChangesRolloutWindows"`
+	BatchChangesEnabled                bool `json:"batchChangesEnabled"`
+	BatchChangesDisableWebhooksWarning bool `json:"batchChangesDisableWebhooksWarning"`
+	BatchChangesWebhookLogsEnabled     bool `json:"batchChangesWebhookLogsEnabled"`
 
-	CodyEnabled bool `json:"codyEnabled"`
+	CodyEnabled               bool `json:"codyEnabled"`
+	CodyRequiresVerifiedEmail bool `json:"codyRequiresVerifiedEmail"`
 
 	ExecutorsEnabled                         bool `json:"executorsEnabled"`
 	CodeIntelAutoIndexingEnabled             bool `json:"codeIntelAutoIndexingEnabled"`
@@ -360,9 +360,9 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		BatchChangesEnabled:                enterprise.BatchChangesEnabledForUser(ctx, db) == nil,
 		BatchChangesDisableWebhooksWarning: conf.Get().BatchChangesDisableWebhooksWarning,
 		BatchChangesWebhookLogsEnabled:     webhooks.LoggingEnabled(conf.Get()),
-		BatchChangesRolloutWindows:         conf.Get().BatchChangesRolloutWindows,
 
-		CodyEnabled: cody.IsCodyEnabled(ctx),
+		CodyEnabled:               cody.IsCodyEnabled(ctx),
+		CodyRequiresVerifiedEmail: siteResolver.RequiresVerifiedEmailForCody(ctx),
 
 		ExecutorsEnabled:                         conf.ExecutorsEnabled(),
 		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),

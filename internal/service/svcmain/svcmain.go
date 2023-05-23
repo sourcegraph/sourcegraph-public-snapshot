@@ -62,7 +62,7 @@ func Main(services []sgservice.Service, config Config, args []string) {
 
 	app := cli.NewApp()
 	app.Name = filepath.Base(args[0])
-	app.Usage = "The Sourcegraph App"
+	app.Usage = "The Sourcegraph app"
 	app.Version = version.Version()
 	app.Flags = []cli.Flag{
 		&cli.PathFlag{
@@ -178,9 +178,7 @@ func run(
 	}
 
 	if oobConfig.Logging != nil {
-		go oobConfig.Logging.Watch(func() {
-			liblog.Update(oobConfig.Logging.SinksConfig)
-		})
+		go oobConfig.Logging.Watch(liblog.Update(oobConfig.Logging.SinksConfig))
 	}
 	if oobConfig.Tracing != nil {
 		tracer.Init(log.Scoped("tracer", "internal tracer package"), oobConfig.Tracing)

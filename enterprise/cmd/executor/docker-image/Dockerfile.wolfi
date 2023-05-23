@@ -1,0 +1,25 @@
+# hadolint ignore=DL3007
+FROM us.gcr.io/sourcegraph-dev/wolfi-executor-base:latest
+
+ARG COMMIT_SHA="unknown"
+ARG DATE="unknown"
+ARG VERSION="unknown"
+
+LABEL org.opencontainers.image.revision=${COMMIT_SHA}
+LABEL org.opencontainers.image.created=${DATE}
+LABEL org.opencontainers.image.version=${VERSION}
+LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
+
+# Install src-cli
+# TODO: Replace with a bazel-built binary
+ARG SRC_CLI_VERSION
+RUN set -ex && \
+    curl -f -L -o src-cli.tar.gz "https://github.com/sourcegraph/src-cli/releases/download/${SRC_CLI_VERSION}/src-cli_${SRC_CLI_VERSION}_linux_amd64.tar.gz" && \
+    tar -xvzf src-cli.tar.gz src && \
+    mv src /usr/local/bin/src && \
+    chmod +x /usr/local/bin/src && \
+    rm -rf src-cli.tar.gz
+
+USER sourcegraph
+ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/executor"]
+COPY executor /usr/local/bin/

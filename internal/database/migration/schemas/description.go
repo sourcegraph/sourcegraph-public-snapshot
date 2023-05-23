@@ -282,7 +282,11 @@ func (d IndexDescription) CreateStatement(table TableDescription) string {
 	return fmt.Sprintf("%s;", d.IndexDefinition)
 }
 
-func (d IndexDescription) DropStatement() string {
+func (d IndexDescription) DropStatement(table TableDescription) string {
+	if d.ConstraintType == "u" || d.ConstraintType == "p" {
+		return fmt.Sprintf("ALTER TABLE %s DROP CONSTRAINT %s;", table.Name, d.Name)
+	}
+
 	return fmt.Sprintf("DROP INDEX IF EXISTS %s;", d.GetName())
 }
 
@@ -395,19 +399,23 @@ func (d ConstraintDescription) GetName() string { return d.Name }
 func (d TriggerDescription) GetName() string    { return d.Name }
 func (d ViewDescription) GetName() string       { return d.Name }
 
-type Normalizer[T any] interface{ Normalize() T }
-type PreComparisonNormalizer[T any] interface{ PreComparisonNormalize() T }
+type (
+	Normalizer[T any]              interface{ Normalize() T }
+	PreComparisonNormalizer[T any] interface{ PreComparisonNormalize() T }
+)
 
 func (d FunctionDescription) PreComparisonNormalize() FunctionDescription {
 	d.Definition = normalizeFunction(d.Definition)
 	return d
 }
+
 func (d TableDescription) Normalize() TableDescription {
 	d.Comment = ""
 	return d
 }
 
 func (d ColumnDescription) Normalize() ColumnDescription {
+	d.Index = -1
 	d.Comment = ""
 	return d
 }

@@ -90,11 +90,8 @@ export const GitHubAppPage: FC<Props> = ({
         try {
             const req = await fetch(`/.auth/githubapp/state?id=${app?.id}`)
             const state = await req.text()
-            window.open(
-                app.appURL.endsWith('/')
-                    ? app.appURL + 'installations/new?state=' + state
-                    : app.appURL + '/installations/new?state=' + state
-            )
+            const trailingSlash = app.appURL.endsWith('/') ? '' : '/'
+            window.location.assign(`${app.appURL}${trailingSlash}installations/new?state=${state}`)
         } catch (error) {
             handleError(error)
         }
@@ -216,7 +213,7 @@ export const GitHubAppPage: FC<Props> = ({
                                                     <ButtonLink
                                                         variant="primary"
                                                         className="ml-auto"
-                                                        to={`/site-admin/external-services/new?id=github&appID=${
+                                                        to={`/site-admin/external-services/new?id=ghapp&appID=${
                                                             app.appID
                                                         }&installationID=${installation.id}&url=${encodeURI(
                                                             app.baseURL

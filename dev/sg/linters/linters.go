@@ -4,6 +4,7 @@ package linters
 import (
 	"bytes"
 	"context"
+	"os"
 
 	"github.com/sourcegraph/run"
 	"go.bobheadxi.dev/streamline/pipeline"
@@ -47,6 +48,13 @@ var Targets = []Target{
 		},
 	},
 	{
+		Name:        "graphql",
+		Description: "Checks the graphql code for linting errors [bazel]",
+		Checks: []*linter{
+			onlyLocal(bazelTest("graphql schema lint (bazel)", "//cmd/frontend/graphqlbackend:graphql_schema_lint_test")),
+		},
+	},
+	{
 		Name:        "docs",
 		Description: "Documentation checks",
 		Checks: []*linter{
@@ -68,6 +76,8 @@ var Targets = []Target{
 			tsEnterpriseImport,
 			inlineTemplates,
 			runScript("pnpm dedupe", "dev/check/pnpm-deduplicate.sh"),
+			// we only run this linter locally, since on CI it has it's own job
+			onlyLocal(runScript("pnpm list:js:web", "dev/ci/pnpm-run.sh lint:js:web")),
 			checkUnversionedDocsLinks(),
 		},
 	},
@@ -108,6 +118,15 @@ var Formatting = Target{
 	},
 }
 
+func onlyLocal(l *linter) *linter {
+	if os.Getenv("CI") == "true" {
+		l.Enabled = func(ctx context.Context, args *repo.State) error {
+			return errors.New("check is disabled in CI")
+		}
+	}
+	return l
+}
+
 // runScript creates check that runs the given script from the root of sourcegraph/sourcegraph.
 func runScript(name string, script string) *linter {
 	return &linter{
@@ -123,6 +142,15 @@ func runCheck(name string, check check.CheckAction[*repo.State]) *linter {
 	return &linter{
 		Name:  name,
 		Check: check,
+	}
+}
+
+func bazelTest(name, target string) *linter {
+	return &linter{
+		Name: name,
+		Check: func(ctx context.Context, out *std.Output, args *repo.State) error {
+			return root.Run(run.Cmd(ctx, "bazel", "test", target)).StreamLines(out.Write)
+		},
 	}
 }
 

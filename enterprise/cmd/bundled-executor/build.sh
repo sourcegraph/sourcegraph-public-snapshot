@@ -31,8 +31,11 @@ if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
     echo "copying $TARGET"
   done
 
-  docker build -f enterprise/cmd/batcheshelper/Dockerfile -t "$IMAGE" "$OUTPUT" \
+  SRC_CLI_VERSION="$(bazel run //internal/cmd/src-cli-version)"
+
+  docker build -f enterprise/cmd/bundled-executor/Dockerfile -t "$IMAGE" "$OUTPUT" \
     --progress=plain \
+    --build-arg SRC_CLI_VERSION="${SRC_CLI_VERSION}" \
     --build-arg COMMIT_SHA \
     --build-arg DATE \
     --build-arg VERSION

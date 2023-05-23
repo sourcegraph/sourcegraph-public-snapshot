@@ -26,7 +26,22 @@ CREATE TABLE IF NOT EXISTS gitserver_localclone_jobs (
 );
 
 -- create the old view
-CREATE OR REPLACE VIEW gitserver_localclone_jobs_with_repo_name AS
-  SELECT glj.*, r.name AS repo_name
-  FROM gitserver_localclone_jobs glj
-  JOIN repo r ON r.id = glj.repo_id;
+CREATE OR REPLACE VIEW gitserver_localclone_jobs_with_repo_name AS SELECT glj.id,
+  glj.state,
+  glj.failure_message,
+  glj.started_at,
+  glj.finished_at,
+  glj.process_after,
+  glj.num_resets,
+  glj.num_failures,
+  glj.last_heartbeat_at,
+  glj.execution_logs,
+  glj.worker_hostname,
+  glj.repo_id,
+  glj.source_hostname,
+  glj.dest_hostname,
+  glj.delete_source,
+  glj.queued_at,
+  r.name AS repo_name
+FROM (gitserver_localclone_jobs glj
+JOIN repo r ON ((r.id = glj.repo_id)));

@@ -7,6 +7,7 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//cmd/server/shared",
+        "//internal/sanitycheck",
         "//ui/assets/enterprise",
     ],
 )

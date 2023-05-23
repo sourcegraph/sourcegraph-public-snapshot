@@ -17,7 +17,7 @@ type Tracer struct {
 }
 
 // New returns a new Trace with the specified family and title. Must be closed with Finish().
-func (t Tracer) New(ctx context.Context, family, title string, tags ...Tag) (*Trace, context.Context) {
+func (t Tracer) New(ctx context.Context, family, title string, attrs ...attribute.KeyValue) (*Trace, context.Context) {
 	if t.TracerProvider == nil {
 		t.TracerProvider = otel.GetTracerProvider()
 	}
@@ -27,7 +27,7 @@ func (t Tracer) New(ctx context.Context, family, title string, tags ...Tag) (*Tr
 		Tracer("sourcegraph/internal/trace").
 		Start(ctx, family,
 			oteltrace.WithAttributes(attribute.String("title", title)),
-			oteltrace.WithAttributes(tagSet(tags).toAttributes()...))
+			oteltrace.WithAttributes(attrs...))
 
 	// Create the nettrace trace to tee to.
 	ntTrace := nettrace.New(family, title)
@@ -42,26 +42,8 @@ func (t Tracer) New(ctx context.Context, family, title string, tags ...Tag) (*Tr
 		ntTrace.LazyPrintf("parent: %s", parent.family)
 		trace.family = parent.family + " > " + family
 	}
-	for _, t := range tags {
+	for _, t := range attrs {
 		ntTrace.LazyPrintf("%s: %s", t.Key, t.Value)
 	}
 	return trace, contextWithTrace(ctx, trace)
-}
-
-// Tag may be passed when creating a new span. See
-// https://github.com/opentracing/specification/blob/master/semantic_conventions.md
-// for common tags.
-type Tag struct {
-	Key   string
-	Value string
-}
-
-type tagSet []Tag
-
-func (t tagSet) toAttributes() []attribute.KeyValue {
-	attributes := make([]attribute.KeyValue, len(t))
-	for i, tag := range t {
-		attributes[i] = attribute.String(tag.Key, tag.Value)
-	}
-	return attributes
 }
