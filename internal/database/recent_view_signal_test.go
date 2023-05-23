@@ -146,7 +146,7 @@ func TestRecentViewSignalStore_BuildAggregateFromEvents_WithExcludedRepos(t *tes
 	require.NoError(t, err)
 
 	// Creating 3 repos.
-	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"}, &types.Repo{ID: 2, Name: "github.com/sourcegraph/sourcegraph2"}, &types.Repo{ID: 3, Name: "github.com/sourcegraph/sourcegraph3"})
+	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"}, &types.Repo{ID: 2, Name: "github.com/sourcegraph/pattern-repo-1337"}, &types.Repo{ID: 3, Name: "github.com/sourcegraph/pattern-repo-421337"})
 	require.NoError(t, err)
 
 	// Creating ViewBlob events.
@@ -184,17 +184,17 @@ func TestRecentViewSignalStore_BuildAggregateFromEvents_WithExcludedRepos(t *tes
 		{
 			UserID:         2,
 			Name:           "ViewBlob",
-			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/patch.go", "repoName": "github.com/sourcegraph/sourcegraph2"}`),
+			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/patch.go", "repoName": "github.com/sourcegraph/pattern-repo-1337"}`),
 		},
 		{
 			UserID:         2,
 			Name:           "ViewBlob",
-			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/patch.go", "repoName": "github.com/sourcegraph/sourcegraph3"}`),
+			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/patch.go", "repoName": "github.com/sourcegraph/pattern-repo-421337"}`),
 		},
 		{
 			UserID:         2,
 			Name:           "ViewBlob",
-			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/lock.go", "repoName": "github.com/sourcegraph/sourcegraph3"}`),
+			PublicArgument: json.RawMessage(`{"filePath": "cmd/gitserver/server/lock.go", "repoName": "github.com/sourcegraph/pattern-repo-421337"}`),
 		},
 		{
 			UserID:         2,
@@ -205,7 +205,7 @@ func TestRecentViewSignalStore_BuildAggregateFromEvents_WithExcludedRepos(t *tes
 
 	// Adding a config with excluded repos.
 	configStore := SignalConfigurationStoreWith(db)
-	err = configStore.UpdateConfiguration(ctx, UpdateSignalConfigurationArgs{Name: "recent-views", Enabled: true, ExcludedRepoPatterns: []string{"github.com/sourcegraph/sourcegraph2", "github.com/sourcegraph/sourcegraph3"}})
+	err = configStore.UpdateConfiguration(ctx, UpdateSignalConfigurationArgs{Name: "recent-views", Enabled: true, ExcludedRepoPatterns: []string{"github.com/sourcegraph/pattern-repo%"}})
 	require.NoError(t, err)
 	err = configStore.UpdateConfiguration(ctx, UpdateSignalConfigurationArgs{Name: "recent-contributors", Enabled: true, ExcludedRepoPatterns: []string{"github.com/sourcegraph/sourcegraph"}})
 	require.NoError(t, err)
@@ -244,8 +244,8 @@ func TestRecentViewSignalStore_BuildAggregateFromEvents_WithExcludedRepos(t *tes
 	assert.Contains(t, summaries, RecentViewSummary{UserID: 2, FilePathID: repo1PathToID["enterprise/cmd/frontend/main.go"], ViewsCount: 1})
 
 	// We shouldn't have any paths inserted for repos
-	// "github.com/sourcegraph/sourcegraph2" and
-	// "github.com/sourcegraph/sourcegraph3" because they are excluded.
+	// "github.com/sourcegraph/pattern-repo-1337" and
+	// "github.com/sourcegraph/pattern-repo-421337" because they are excluded.
 	count, _, err := basestore.ScanFirstInt(db.QueryContext(context.Background(), "SELECT COUNT(*) FROM repo_paths WHERE repo_id IN (2, 3)"))
 	require.NoError(t, err)
 	assert.Zero(t, count)
