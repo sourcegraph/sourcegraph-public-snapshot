@@ -11,12 +11,15 @@ import (
 	"github.com/stretchr/testify/require"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestFeatureFlaggedFileHasOwnerJob(t *testing.T) {
@@ -45,9 +48,10 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 		repoContent   map[string]string
 	}
 	tests := []struct {
-		name string
-		args args
-		want autogold.Value
+		name  string
+		args  args
+		setup func(db *edb.MockEnterpriseDB)
+		want  autogold.Value
 	}{
 		{
 			// TODO: We should display an error in search describing why the result is empty.
@@ -285,6 +289,48 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 				},
 			}),
 		},
+		{
+			name: "selects result with assigned owner",
+			args: args{
+				includeOwners: []string{"test"},
+				excludeOwners: []string{},
+				matches: []result.Match{
+					&result.FileMatch{
+						File: result.File{
+							Path: "src/main/README.md",
+						},
+					},
+				},
+				// No CODEOWNERS
+				repoContent: map[string]string{},
+			},
+			setup: func(db *edb.MockEnterpriseDB) {
+				user := &types.User{
+					ID:       42,
+					Username: "test",
+				}
+				assignedOwners := []*database.AssignedOwnerSummary{
+					{
+						OwnerUserID: user.ID,
+						FilePath:    "src/main",
+					},
+				}
+				usersStore := database.NewMockUserStore()
+				usersStore.GetByUsernameFunc.SetDefaultReturn(user, nil)
+				usersStore.GetByVerifiedEmailFunc.SetDefaultReturn(nil, nil)
+				db.UsersFunc.SetDefaultReturn(usersStore)
+				assignedOwnersStore := database.NewMockAssignedOwnersStore()
+				assignedOwnersStore.ListAssignedOwnersForRepoFunc.SetDefaultReturn(assignedOwners, nil)
+				db.AssignedOwnersFunc.SetDefaultReturn(assignedOwnersStore)
+			},
+			want: autogold.Expect([]result.Match{
+				&result.FileMatch{
+					File: result.File{
+						Path: "src/main/README.md",
+					},
+				},
+			}),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -303,11 +349,38 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 			codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, nil)
 			db := edb.NewMockEnterpriseDB()
 			db.CodeownersFunc.SetDefaultReturn(codeownersStore)
+			usersStore := database.NewMockUserStore()
+			usersStore.GetByUsernameFunc.SetDefaultReturn(nil, nil)
+			usersStore.GetByVerifiedEmailFunc.SetDefaultReturn(nil, nil)
+			db.UsersFunc.SetDefaultReturn(usersStore)
+			usersEmailsStore := database.NewMockUserEmailsStore()
+			usersEmailsStore.GetVerifiedEmailsFunc.SetDefaultReturn(nil, nil)
+			db.UserEmailsFunc.SetDefaultReturn(usersEmailsStore)
+			assignedOwnersStore := database.NewMockAssignedOwnersStore()
+			assignedOwnersStore.ListAssignedOwnersForRepoFunc.SetDefaultReturn(nil, nil)
+			db.AssignedOwnersFunc.SetDefaultReturn(assignedOwnersStore)
+			userExternalAccountsStore := database.NewMockUserExternalAccountsStore()
+			userExternalAccountsStore.ListFunc.SetDefaultReturn(nil, nil)
+			db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccountsStore)
+			if tt.setup != nil {
+				tt.setup(db)
+			}
 
 			rules := NewRulesCache(gitserverClient, db)
 
-			matches, _ := applyCodeOwnershipFiltering(ctx, &rules, tt.args.includeOwners, tt.args.excludeOwners, tt.args.matches)
-
+			include, err := own.ByTextReference(ctx, db, tt.args.includeOwners...)
+			require.NoError(t, err)
+			exclude, err := own.ByTextReference(ctx, db, tt.args.excludeOwners...)
+			require.NoError(t, err)
+			matches, _ := applyCodeOwnershipFiltering(
+				ctx,
+				&rules,
+				include,
+				tt.args.includeOwners,
+				exclude,
+				tt.args.excludeOwners,
+				tt.args.matches)
+			//require.NoError(t, err)
 			tt.want.Equal(t, matches)
 		})
 	}

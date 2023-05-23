@@ -10,6 +10,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/own/search",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//enterprise/internal/database",
         "//enterprise/internal/own",
         "//enterprise/internal/own/codeowners",
         "//enterprise/internal/own/codeowners/v1:codeowners",
@@ -35,6 +36,7 @@ go_test(
     embed = [":search"],
     deps = [
         "//enterprise/internal/database",
+        "//enterprise/internal/own",
         "//internal/api",
         "//internal/authz",
         "//internal/database",

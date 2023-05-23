@@ -2811,6 +2811,425 @@ func (c AccessTokenStoreWithTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// MockAssignedOwnersStore is a mock implementation of the
+// AssignedOwnersStore interface (from the package
+// github.com/sourcegraph/sourcegraph/internal/database) used for unit
+// testing.
+type MockAssignedOwnersStore struct {
+	// DeleteOwnerFunc is an instance of a mock function object controlling
+	// the behavior of the method DeleteOwner.
+	DeleteOwnerFunc *AssignedOwnersStoreDeleteOwnerFunc
+	// InsertFunc is an instance of a mock function object controlling the
+	// behavior of the method Insert.
+	InsertFunc *AssignedOwnersStoreInsertFunc
+	// ListAssignedOwnersForRepoFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// ListAssignedOwnersForRepo.
+	ListAssignedOwnersForRepoFunc *AssignedOwnersStoreListAssignedOwnersForRepoFunc
+}
+
+// NewMockAssignedOwnersStore creates a new mock of the AssignedOwnersStore
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockAssignedOwnersStore() *MockAssignedOwnersStore {
+	return &MockAssignedOwnersStore{
+		DeleteOwnerFunc: &AssignedOwnersStoreDeleteOwnerFunc{
+			defaultHook: func(context.Context, int32, api.RepoID, string) (r0 error) {
+				return
+			},
+		},
+		InsertFunc: &AssignedOwnersStoreInsertFunc{
+			defaultHook: func(context.Context, int32, api.RepoID, string, int32) (r0 error) {
+				return
+			},
+		},
+		ListAssignedOwnersForRepoFunc: &AssignedOwnersStoreListAssignedOwnersForRepoFunc{
+			defaultHook: func(context.Context, api.RepoID) (r0 []*AssignedOwnerSummary, r1 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockAssignedOwnersStore creates a new mock of the
+// AssignedOwnersStore interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockAssignedOwnersStore() *MockAssignedOwnersStore {
+	return &MockAssignedOwnersStore{
+		DeleteOwnerFunc: &AssignedOwnersStoreDeleteOwnerFunc{
+			defaultHook: func(context.Context, int32, api.RepoID, string) error {
+				panic("unexpected invocation of MockAssignedOwnersStore.DeleteOwner")
+			},
+		},
+		InsertFunc: &AssignedOwnersStoreInsertFunc{
+			defaultHook: func(context.Context, int32, api.RepoID, string, int32) error {
+				panic("unexpected invocation of MockAssignedOwnersStore.Insert")
+			},
+		},
+		ListAssignedOwnersForRepoFunc: &AssignedOwnersStoreListAssignedOwnersForRepoFunc{
+			defaultHook: func(context.Context, api.RepoID) ([]*AssignedOwnerSummary, error) {
+				panic("unexpected invocation of MockAssignedOwnersStore.ListAssignedOwnersForRepo")
+			},
+		},
+	}
+}
+
+// NewMockAssignedOwnersStoreFrom creates a new mock of the
+// MockAssignedOwnersStore interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockAssignedOwnersStoreFrom(i AssignedOwnersStore) *MockAssignedOwnersStore {
+	return &MockAssignedOwnersStore{
+		DeleteOwnerFunc: &AssignedOwnersStoreDeleteOwnerFunc{
+			defaultHook: i.DeleteOwner,
+		},
+		InsertFunc: &AssignedOwnersStoreInsertFunc{
+			defaultHook: i.Insert,
+		},
+		ListAssignedOwnersForRepoFunc: &AssignedOwnersStoreListAssignedOwnersForRepoFunc{
+			defaultHook: i.ListAssignedOwnersForRepo,
+		},
+	}
+}
+
+// AssignedOwnersStoreDeleteOwnerFunc describes the behavior when the
+// DeleteOwner method of the parent MockAssignedOwnersStore instance is
+// invoked.
+type AssignedOwnersStoreDeleteOwnerFunc struct {
+	defaultHook func(context.Context, int32, api.RepoID, string) error
+	hooks       []func(context.Context, int32, api.RepoID, string) error
+	history     []AssignedOwnersStoreDeleteOwnerFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteOwner delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockAssignedOwnersStore) DeleteOwner(v0 context.Context, v1 int32, v2 api.RepoID, v3 string) error {
+	r0 := m.DeleteOwnerFunc.nextHook()(v0, v1, v2, v3)
+	m.DeleteOwnerFunc.appendCall(AssignedOwnersStoreDeleteOwnerFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the DeleteOwner method
+// of the parent MockAssignedOwnersStore instance is invoked and the hook
+// queue is empty.
+func (f *AssignedOwnersStoreDeleteOwnerFunc) SetDefaultHook(hook func(context.Context, int32, api.RepoID, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteOwner method of the parent MockAssignedOwnersStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *AssignedOwnersStoreDeleteOwnerFunc) PushHook(hook func(context.Context, int32, api.RepoID, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AssignedOwnersStoreDeleteOwnerFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32, api.RepoID, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AssignedOwnersStoreDeleteOwnerFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32, api.RepoID, string) error {
+		return r0
+	})
+}
+
+func (f *AssignedOwnersStoreDeleteOwnerFunc) nextHook() func(context.Context, int32, api.RepoID, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AssignedOwnersStoreDeleteOwnerFunc) appendCall(r0 AssignedOwnersStoreDeleteOwnerFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of AssignedOwnersStoreDeleteOwnerFuncCall
+// objects describing the invocations of this function.
+func (f *AssignedOwnersStoreDeleteOwnerFunc) History() []AssignedOwnersStoreDeleteOwnerFuncCall {
+	f.mutex.Lock()
+	history := make([]AssignedOwnersStoreDeleteOwnerFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AssignedOwnersStoreDeleteOwnerFuncCall is an object that describes an
+// invocation of method DeleteOwner on an instance of
+// MockAssignedOwnersStore.
+type AssignedOwnersStoreDeleteOwnerFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 api.RepoID
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AssignedOwnersStoreDeleteOwnerFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AssignedOwnersStoreDeleteOwnerFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// AssignedOwnersStoreInsertFunc describes the behavior when the Insert
+// method of the parent MockAssignedOwnersStore instance is invoked.
+type AssignedOwnersStoreInsertFunc struct {
+	defaultHook func(context.Context, int32, api.RepoID, string, int32) error
+	hooks       []func(context.Context, int32, api.RepoID, string, int32) error
+	history     []AssignedOwnersStoreInsertFuncCall
+	mutex       sync.Mutex
+}
+
+// Insert delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockAssignedOwnersStore) Insert(v0 context.Context, v1 int32, v2 api.RepoID, v3 string, v4 int32) error {
+	r0 := m.InsertFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.InsertFunc.appendCall(AssignedOwnersStoreInsertFuncCall{v0, v1, v2, v3, v4, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Insert method of the
+// parent MockAssignedOwnersStore instance is invoked and the hook queue is
+// empty.
+func (f *AssignedOwnersStoreInsertFunc) SetDefaultHook(hook func(context.Context, int32, api.RepoID, string, int32) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Insert method of the parent MockAssignedOwnersStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *AssignedOwnersStoreInsertFunc) PushHook(hook func(context.Context, int32, api.RepoID, string, int32) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AssignedOwnersStoreInsertFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32, api.RepoID, string, int32) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AssignedOwnersStoreInsertFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32, api.RepoID, string, int32) error {
+		return r0
+	})
+}
+
+func (f *AssignedOwnersStoreInsertFunc) nextHook() func(context.Context, int32, api.RepoID, string, int32) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AssignedOwnersStoreInsertFunc) appendCall(r0 AssignedOwnersStoreInsertFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of AssignedOwnersStoreInsertFuncCall objects
+// describing the invocations of this function.
+func (f *AssignedOwnersStoreInsertFunc) History() []AssignedOwnersStoreInsertFuncCall {
+	f.mutex.Lock()
+	history := make([]AssignedOwnersStoreInsertFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AssignedOwnersStoreInsertFuncCall is an object that describes an
+// invocation of method Insert on an instance of MockAssignedOwnersStore.
+type AssignedOwnersStoreInsertFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 api.RepoID
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AssignedOwnersStoreInsertFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AssignedOwnersStoreInsertFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// AssignedOwnersStoreListAssignedOwnersForRepoFunc describes the behavior
+// when the ListAssignedOwnersForRepo method of the parent
+// MockAssignedOwnersStore instance is invoked.
+type AssignedOwnersStoreListAssignedOwnersForRepoFunc struct {
+	defaultHook func(context.Context, api.RepoID) ([]*AssignedOwnerSummary, error)
+	hooks       []func(context.Context, api.RepoID) ([]*AssignedOwnerSummary, error)
+	history     []AssignedOwnersStoreListAssignedOwnersForRepoFuncCall
+	mutex       sync.Mutex
+}
+
+// ListAssignedOwnersForRepo delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockAssignedOwnersStore) ListAssignedOwnersForRepo(v0 context.Context, v1 api.RepoID) ([]*AssignedOwnerSummary, error) {
+	r0, r1 := m.ListAssignedOwnersForRepoFunc.nextHook()(v0, v1)
+	m.ListAssignedOwnersForRepoFunc.appendCall(AssignedOwnersStoreListAssignedOwnersForRepoFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// ListAssignedOwnersForRepo method of the parent MockAssignedOwnersStore
+// instance is invoked and the hook queue is empty.
+func (f *AssignedOwnersStoreListAssignedOwnersForRepoFunc) SetDefaultHook(hook func(context.Context, api.RepoID) ([]*AssignedOwnerSummary, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListAssignedOwnersForRepo method of the parent MockAssignedOwnersStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *AssignedOwnersStoreListAssignedOwnersForRepoFunc) PushHook(hook func(context.Context, api.RepoID) ([]*AssignedOwnerSummary, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AssignedOwnersStoreListAssignedOwnersForRepoFunc) SetDefaultReturn(r0 []*AssignedOwnerSummary, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoID) ([]*AssignedOwnerSummary, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AssignedOwnersStoreListAssignedOwnersForRepoFunc) PushReturn(r0 []*AssignedOwnerSummary, r1 error) {
+	f.PushHook(func(context.Context, api.RepoID) ([]*AssignedOwnerSummary, error) {
+		return r0, r1
+	})
+}
+
+func (f *AssignedOwnersStoreListAssignedOwnersForRepoFunc) nextHook() func(context.Context, api.RepoID) ([]*AssignedOwnerSummary, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AssignedOwnersStoreListAssignedOwnersForRepoFunc) appendCall(r0 AssignedOwnersStoreListAssignedOwnersForRepoFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// AssignedOwnersStoreListAssignedOwnersForRepoFuncCall objects describing
+// the invocations of this function.
+func (f *AssignedOwnersStoreListAssignedOwnersForRepoFunc) History() []AssignedOwnersStoreListAssignedOwnersForRepoFuncCall {
+	f.mutex.Lock()
+	history := make([]AssignedOwnersStoreListAssignedOwnersForRepoFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AssignedOwnersStoreListAssignedOwnersForRepoFuncCall is an object that
+// describes an invocation of method ListAssignedOwnersForRepo on an
+// instance of MockAssignedOwnersStore.
+type AssignedOwnersStoreListAssignedOwnersForRepoFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoID
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*AssignedOwnerSummary
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AssignedOwnersStoreListAssignedOwnersForRepoFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AssignedOwnersStoreListAssignedOwnersForRepoFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // MockAuthzStore is a mock implementation of the AuthzStore interface (from
 // the package github.com/sourcegraph/sourcegraph/internal/database) used
 // for unit testing.

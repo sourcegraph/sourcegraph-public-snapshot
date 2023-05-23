@@ -3,12 +3,12 @@ package search
 import (
 	"context"
 	"fmt"
-	"strings"
 	"sync"
 
 	"go.opentelemetry.io/otel/attribute"
 
-	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -55,9 +55,19 @@ func (s *fileHasOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, 
 
 	rules := NewRulesCache(clients.Gitserver, clients.DB)
 
+	// Bag the search terms
+	includeBag, err := own.ByTextReference(ctx, database.NewEnterpriseDB(clients.DB), s.includeOwners...)
+	if err != nil {
+		return nil, errors.Wrap(err, "failure trying to resolve search term")
+	}
+	excludeBag, err := own.ByTextReference(ctx, database.NewEnterpriseDB(clients.DB), s.excludeOwners...)
+	if err != nil {
+		return nil, errors.Wrap(err, "failure trying to resolve search term")
+	}
+
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		var err error
-		event.Results, err = applyCodeOwnershipFiltering(ctx, &rules, s.includeOwners, s.excludeOwners, event.Results)
+		event.Results, err = applyCodeOwnershipFiltering(ctx, &rules, includeBag, s.includeOwners, excludeBag, s.excludeOwners, event.Results)
 		if err != nil {
 			mu.Lock()
 			errs = errors.Append(errs, err)
@@ -103,8 +113,10 @@ func (s *fileHasOwnersJob) MapChildren(fn job.MapFunc) job.Job {
 func applyCodeOwnershipFiltering(
 	ctx context.Context,
 	rules *RulesCache,
-	includeOwners,
-	excludeOwners []string,
+	include own.Bag,
+	includeTerms []string,
+	exclude own.Bag,
+	excludeTerms []string,
 	matches []result.Match,
 ) ([]result.Match, error) {
 	var errs error
@@ -124,21 +136,12 @@ matchesLoop:
 			errs = errors.Append(errs, err)
 			continue matchesLoop
 		}
-		rule := file.Match(mm.File.Path)
-		var owners []*codeownerspb.Owner
-		// If match.
-		if rule != nil {
-			owners = rule.GetOwner()
+		fileOwners := file.Match(mm.File.Path)
+		if len(includeTerms) > 0 && !containsOwner(fileOwners, includeTerms, include) {
+			continue matchesLoop
 		}
-		for _, owner := range includeOwners {
-			if !containsOwner(owners, owner) {
-				continue matchesLoop
-			}
-		}
-		for _, notOwner := range excludeOwners {
-			if containsOwner(owners, notOwner) {
-				continue matchesLoop
-			}
+		if len(excludeTerms) > 0 && containsOwner(fileOwners, excludeTerms, exclude) {
+			continue matchesLoop
 		}
 
 		filtered = append(filtered, m)
@@ -150,21 +153,10 @@ matchesLoop:
 // containsOwner searches within emails and handles in a case-insensitive
 // manner. Empty string passed as search term means any, so the predicate
 // returns true if there is at least one owner, and false otherwise.
-func containsOwner(owners []*codeownerspb.Owner, owner string) bool {
-	if owner == "" {
-		return len(owners) > 0
+func containsOwner(owners fileOwnershipData, searchTerms []string, bag own.Bag) bool {
+	// Empty search terms means any owner matches.
+	if len(searchTerms) == 1 && searchTerms[0] == "" {
+		return owners.NonEmpty()
 	}
-	isHandle := strings.HasPrefix(owner, "@")
-	owner = strings.ToLower(strings.TrimPrefix(owner, "@"))
-	for _, o := range owners {
-		if strings.ToLower(o.Handle) == owner {
-			return true
-		}
-		// Prefixing the search term with `@` indicates intent to match a handle,
-		// so we do not match email in that case.
-		if !isHandle && (strings.ToLower(o.Email) == owner) {
-			return true
-		}
-	}
-	return false
+	return owners.Contains(bag)
 }
