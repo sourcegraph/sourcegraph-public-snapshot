@@ -9,6 +9,7 @@ module.exports = {
   },
   overrides: baseConfig.overrides,
   rules: {
+    'ban/ban': 'off',
     'id-length': 'off',
     'no-console': 'off',
     'no-restricted-imports': [

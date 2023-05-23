@@ -1,0 +1,39 @@
+.wrapper {
+    width: 23rem;
+    margin: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.logo {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    width: 13rem;
+    max-width: 90%;
+    margin-bottom: 1.875rem;
+
+    /* Reserve the image's height to avoid jitter before it loads. */
+    min-height: 54px;
+}
+
+.card {
+    padding: 1.75rem 1.5rem;
+    box-shadow: var(--box-shadow);
+    border-color: var(--border-color);
+
+    --card-border-radius: 6px;
+}
+
+.heading {
+    letter-spacing: -0.015625rem;
+}
+
+.button-row {
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    justify-content: stretch;
+}

@@ -9,8 +9,10 @@ import (
 
 	"github.com/derision-test/glock"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -21,17 +23,18 @@ func TestOwnRepoIndexSchedulerJob_JobsAutoIndex(t *testing.T) {
 	obsCtx := observation.TestContextTB(t)
 	logger := obsCtx.Logger
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
 
 	insertRepo(t, db, 500, "great-repo-1", true)
 	insertRepo(t, db, 501, "great-repo-2", true)
 	insertRepo(t, db, 502, "great-repo-3", true)
 	insertRepo(t, db, 503, "great-repo-4", false)
 
-	verifyCount := func(t *testing.T, jobType IndexJobType, expected int) {
+	verifyCount := func(t *testing.T, signaName string, expected int) {
 		store := basestore.NewWithHandle(db.Handle())
 		// Check that correct rows were added to own_background_jobs
 
-		count, _, err := basestore.ScanFirstInt(store.Query(context.Background(), sqlf.Sprintf("SELECT COUNT(*) FROM own_background_jobs WHERE job_type = %s", jobType.Id)))
+		count, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf("SELECT COUNT(*) FROM own_background_jobs WHERE job_type = (select id from own_signal_configurations where name = %s)", signaName)))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -53,7 +56,7 @@ func TestOwnRepoIndexSchedulerJob_JobsAutoIndex(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			verifyCount(t, job.jobType, 3)
+			verifyCount(t, job.jobType.Name, 3)
 		})
 	}
 }
@@ -63,27 +66,21 @@ func TestOwnRepoIndexSchedulerJob_JobsAreExcluded(t *testing.T) {
 	logger := obsCtx.Logger
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
-
-	verifyCount := func(t *testing.T, jobType IndexJobType, expected int) {
-		store := basestore.NewWithHandle(db.Handle())
-		// Check that correct rows were added to own_background_jobs
-
-		count, _, err := basestore.ScanFirstInt(store.Query(context.Background(), sqlf.Sprintf("SELECT COUNT(*) FROM own_background_jobs WHERE job_type = %s", jobType.Id)))
-		if err != nil {
-			t.Fatal(err)
-		}
-		require.Equal(t, expected, count)
-	}
+	store := basestore.NewWithHandle(db.Handle())
 
 	jobType := IndexJobType{
-		Name:          "test-job-1",
-		Id:            3,
+		Name:          "recent-contributors",
 		IndexInterval: time.Hour * 24,
 	}
-	_, err := db.FeatureFlags().CreateBool(ctx, featureFlagName(jobType), true)
-	if err != nil {
-		t.Fatal(err)
-	}
+
+	config, err := loadConfig(ctx, jobType, db.OwnSignalConfigurations())
+	require.NoError(t, err)
+
+	err = db.OwnSignalConfigurations().UpdateConfiguration(ctx, database.UpdateSignalConfigurationArgs{
+		Name:    config.Name,
+		Enabled: true,
+	})
+	require.NoError(t, err)
 
 	clock := glock.NewMockClockAt(time.Now())
 
@@ -92,34 +89,47 @@ func TestOwnRepoIndexSchedulerJob_JobsAreExcluded(t *testing.T) {
 	states := []string{"queued", "processing", "errored", "failed", "completed"}
 
 	insertRepo(t, db, 500, "great-repo-1", true)
+	insertRepo(t, db, 501, "great-repo-2", true)
+	insertRepo(t, db, 502, "great-repo-3", true)
 
-	for _, state := range states {
-		doTest := func(t *testing.T, expected int) {
-			defer clearJobs(t, db)
-			job := newOwnRepoIndexSchedulerJob(db, jobType, logger)
-			job.clock = clock
-			err := job.Handle(ctx)
-			if err != nil {
-				t.Fatal(err)
-			}
-			verifyCount(t, jobType, expected)
+	doTest := func(t *testing.T, expectedRepos []int) {
+		t.Helper()
+		defer clearJobs(t, db)
+		job := newOwnRepoIndexSchedulerJob(db, jobType, logger)
+		job.clock = clock
+		err := job.Handle(ctx)
+		if err != nil {
+			t.Fatal(err)
 		}
 
+		got, err := basestore.ScanInts(store.Query(ctx, sqlf.Sprintf("select repo_id from own_background_jobs where job_type = %s order by repo_id", config.ID)))
+		require.NoError(t, err)
+		assert.ElementsMatch(t, expectedRepos, got)
+	}
+
+	for _, state := range states {
 		t.Run(state+" half interval", func(t *testing.T) {
-			insertJob(t, db, 500, jobType, state, halfInterval)
-			doTest(t, 1) // expecting 1 means no new jobs were inserted
+			insertJob(t, db, 500, config, state, halfInterval)
+			insertJob(t, db, 501, config, state, halfInterval)
+			insertJob(t, db, 502, config, state, halfInterval)
+			doTest(t, []int{500, 501, 502}) // expecting only non-existing repos to be inserted
 		})
 
 		t.Run(state+" double interval", func(t *testing.T) {
-			insertJob(t, db, 500, jobType, state, doubleInterval)
-			expected := 1
+			insertJob(t, db, 500, config, state, doubleInterval)
+			expected := []int{500, 501, 502}
 			if state == "completed" || state == "failed" {
-				expected = 2
-				// only for completed / failed records do we retry, but only after 1 full interval
+				// only for completed / failed records do we retry, but only after 1 full interval,
+				expected = []int{500, 500, 501, 502}
 			}
 			doTest(t, expected)
 		})
 	}
+	t.Run("config exclusions are not included", func(t *testing.T) {
+		err := db.OwnSignalConfigurations().UpdateConfiguration(ctx, database.UpdateSignalConfigurationArgs{Name: types.SignalRecentContributors, ExcludedRepoPatterns: []string{"great-repo-1", "great-repo-2"}})
+		require.NoError(t, err)
+		doTest(t, []int{502})
+	})
 }
 
 func insertRepo(t *testing.T, db database.DB, id int, name string, cloned bool) {
@@ -156,8 +166,11 @@ func insertRepo(t *testing.T, db database.DB, id int, name string, cloned bool) 
 	}
 }
 
-func insertJob(t *testing.T, db database.DB, repoId int, jobType IndexJobType, state string, finishedAt time.Time) {
-	q := sqlf.Sprintf("insert into own_background_jobs (repo_id, job_type, state, finished_at) values (%s, %s, %s, %s);", repoId, jobType.Id, state, finishedAt)
+func insertJob(t *testing.T, db database.DB, repoId int, config database.SignalConfiguration, state string, finishedAt time.Time) {
+	q := sqlf.Sprintf("insert into own_background_jobs (repo_id, job_type, state, finished_at) values (%s, %s, %s, %s);", repoId, config.ID, state, finishedAt)
+	if finishedAt.IsZero() {
+		q = sqlf.Sprintf("insert into own_background_jobs (repo_id, job_type, state) values (%s, %s, %s);", repoId, config.ID, state)
+	}
 	if _, err := db.ExecContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 		t.Fatal(err)
 	}

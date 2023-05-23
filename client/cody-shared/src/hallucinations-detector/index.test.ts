@@ -8,7 +8,9 @@ This is \`/some/hallucinated/file/path\`. Hosted on github.com/sourcegraph.
 
 Quoted "file/path.js". Unquoted hallucinated file/path/Class.java file.
 
-This is a cool/awesome test.
+This is a cool/awesome test. this/is/a/directory and so/is/this/ btw this/is/a/directory/ and so/is/this
+
+The best file is file/path.js. The best directories are this/is/a/directory and this/is/a/directory/ and so/is/this. Another one: so/is/this/.
 
 \`\`\`
 /file/path.go -- should be ignored
@@ -21,14 +23,16 @@ This is  <span class="token-file token-hallucinated">\`/some/hallucinated/file/p
 
 Quoted  <span class="token-file token-not-hallucinated">"file/path.js"</span> . Unquoted hallucinated <span class="token-file token-hallucinated">file/path/Class.java</span> file.
 
-This is a cool/awesome test.
+This is a cool/awesome test. <span class="token-file token-not-hallucinated">this/is/a/directory</span> and <span class="token-file token-not-hallucinated">so/is/this/</span> btw <span class="token-file token-not-hallucinated">this/is/a/directory/</span> and <span class="token-file token-not-hallucinated">so/is/this</span> 
+
+The best file is file/path.js. The best directories are <span class="token-file token-not-hallucinated">this/is/a/directory</span> and <span class="token-file token-not-hallucinated">this/is/a/directory/</span> and <span class="token-file token-not-hallucinated">so/is/this</span> . Another one: <span class="token-file token-not-hallucinated">so/is/this</span> /.
 
 \`\`\`
 /file/path.go -- should be ignored
 \`\`\`
 `
 
-const validFilePaths = new Set(['file/path.js'])
+const validFilePaths = new Set(['file/path.js', 'this/is/a/directory', 'so/is/this'])
 
 describe('Hallucinations detector', () => {
     it('highlights hallucinated file paths', async () => {

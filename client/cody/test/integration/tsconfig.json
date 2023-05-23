@@ -9,6 +9,6 @@
     "jsx": "react-jsx",
   },
   "references": [{ "path": "../../" }],
-  "include": ["*", "**/*", ".eslintrc.js", "../fixtures/mock-server.ts"],
+  "include": ["*", "**/*", "../fixtures/mock-server.ts"],
   "exclude": ["out", "testdata"],
 }

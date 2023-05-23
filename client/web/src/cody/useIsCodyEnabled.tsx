@@ -17,17 +17,23 @@ interface IsCodyEnabled {
 }
 
 export const isEmailVerificationNeeded = (): boolean =>
-    window.context?.sourcegraphDotComMode && !window.context?.currentUser?.hasVerifiedEmail
+    window.context?.codyRequiresVerifiedEmail && !window.context?.currentUser?.hasVerifiedEmail
 
 export const useIsCodyEnabled = (): IsCodyEnabled => {
     const [chatEnabled] = useFeatureFlag('cody-web-chat')
     const [searchEnabled] = useFeatureFlag('cody-web-search')
     const [sidebarEnabled] = useFeatureFlag('cody-web-sidebar')
     const [editorRecipesEnabled] = useFeatureFlag('cody-web-editor-recipes')
-    const [allEnabled] = useFeatureFlag('cody-web-all')
+    let [allEnabled] = useFeatureFlag('cody-web-all')
 
     if (!window.context?.codyEnabled) {
         return notEnabled
+    }
+    if (window.context.sourcegraphAppMode) {
+        // TODO(app-team): This is temporary to force code always-on; we will make this enabled/disabled
+        // based on the GraphQL API that can detect if you can enable it based on your account (connected
+        // to Sourcegraph.com, email verified, etc.) in the future.
+        allEnabled = true
     }
 
     return {

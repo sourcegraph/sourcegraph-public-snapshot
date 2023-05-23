@@ -65,7 +65,7 @@ async function detectTokens(
     const filePathsExist = await filesExist([...Object.keys(filePathToFullMatch)])
     const highlightedTokens: HighlightedToken[] = []
     for (const [filePath, fullMatches] of Object.entries(filePathToFullMatch)) {
-        const exists = filePathsExist[filePath]
+        const exists = filePathsExist[filePath.endsWith('/') ? filePath.slice(0, -1) : filePath]
         for (const fullMatch of fullMatches) {
             highlightedTokens.push({
                 type: 'file',

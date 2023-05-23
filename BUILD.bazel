@@ -7,6 +7,7 @@ load("@io_bazel_rules_go//proto:compiler.bzl", "go_proto_compiler")
 load("@io_bazel_rules_go//proto/wkt:well_known_types.bzl", "WELL_KNOWN_TYPES_APIV2")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev/linters/staticcheck:analyzers.bzl", "STATIC_CHECK_ANALYZERS")
+load("@npm//:eslint/package_json.bzl", eslint_bin = "bin")
 
 # Gazelle config
 #
@@ -24,6 +25,12 @@ package(default_visibility = ["//visibility:public"])
 
 npm_link_all_packages(name = "node_modules")
 
+eslint_bin.eslint_binary(
+    name = "eslint",
+    testonly = True,
+    visibility = ["//visibility:public"],
+)
+
 js_library(
     name = "prettier_config_js",
     srcs = ["prettier.config.js"],
@@ -38,6 +45,15 @@ ts_config(
     visibility = ["//visibility:public"],
     deps = [
         "//:node_modules/@sourcegraph/tsconfig",
+    ],
+)
+
+ts_config(
+    name = "tsconfig-eslint",
+    src = "tsconfig.eslint.json",
+    visibility = ["//visibility:public"],
+    deps = [
+        ":tsconfig",
     ],
 )
 
@@ -204,6 +220,53 @@ js_library(
         "graphql-schema-linter.config.js",
     ],
     visibility = ["//visibility:public"],
+)
+
+js_library(
+    name = "eslint-relative-formatter",
+    srcs = [
+        "eslint-relative-formatter.js",
+    ],
+    deps = [
+        ":node_modules/chalk",
+        ":node_modules/strip-ansi",
+        ":node_modules/text-table",
+    ],
+)
+
+js_library(
+    name = "eslint_config",
+    testonly = True,
+    srcs = [
+        ".eslintrc.js",
+    ],
+    data = [
+        ".eslintignore",
+        ":eslint-relative-formatter",
+    ],
+    deps = [
+        ":node_modules/@sourcegraph/eslint-config",
+        ":node_modules/@sourcegraph/eslint-plugin-sourcegraph",
+        ":node_modules/@sourcegraph/eslint-plugin-wildcard",
+        ":node_modules/@typescript-eslint/eslint-plugin",
+        ":node_modules/eslint-config-prettier",
+        ":node_modules/eslint-import-resolver-node",
+        ":node_modules/eslint-plugin-ban",
+        ":node_modules/eslint-plugin-etc",
+        ":node_modules/eslint-plugin-import",
+        ":node_modules/eslint-plugin-jest-dom",
+        ":node_modules/eslint-plugin-jsdoc",
+        ":node_modules/eslint-plugin-jsx-a11y",
+        ":node_modules/eslint-plugin-monorepo",
+        ":node_modules/eslint-plugin-react",
+        ":node_modules/eslint-plugin-react-hooks",
+        ":node_modules/eslint-plugin-rxjs",
+        ":node_modules/eslint-plugin-unicorn",
+        ":node_modules/eslint-plugin-unused-imports",
+        ":node_modules/react",  # required to resolve the react version for eslint-plugin-react
+        ":tsconfig-eslint",
+        "//:node_modules/tslib",
+    ],
 )
 
 # Go
