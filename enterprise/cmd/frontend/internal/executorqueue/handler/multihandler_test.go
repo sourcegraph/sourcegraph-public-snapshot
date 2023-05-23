@@ -19,6 +19,7 @@ import (
 	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	dbworkerstoremocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
@@ -489,6 +490,102 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 				if test.assertionFunc != nil {
 					test.assertionFunc(t, codeIntelMockStore, batchesMockStore, jobTokenStore)
 				}
+			}
+		})
+	}
+}
+
+type heartbeatTestCase struct {
+	name                 string
+	body                 string
+	mockFunc             func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob])
+	expectedStatusCode   int
+	expectedResponseBody string
+	assertionFunc        func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob])
+}
+
+func TestMultiHandler_HandleHeartbeat(t *testing.T) {
+	tests := []heartbeatTestCase{
+		{
+			name: "Heartbeat",
+			body: `{"executorName": "test-executor", "jobIdsByQueue": [{"queueName": "codeintel", "jobIds": [42, 7]} {"queueName": "batches", "jobIds": [43, 8]}], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
+				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
+				codeintelMockStore.HeartbeatFunc.PushReturn([]int{42, 7}, nil, nil)
+				batchesMockStore.HeartbeatFunc.PushReturn([]int{43, 8}, nil, nil)
+			},
+			expectedStatusCode:   http.StatusOK,
+			expectedResponseBody: `{"knownIdsByQueue": [{"queueName": "codeintel", "jobIds": [42,7]}, {"queueName": "batches", "jobIds": [43,8]}]}`,
+			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
+				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
+
+				assert.Equal(
+					t,
+					types.Executor{
+						Hostname:        "test-executor",
+						QueueNames:      []string{"codeintel", "batches"},
+						OS:              "test-os",
+						Architecture:    "test-arch",
+						DockerVersion:   "1.0",
+						ExecutorVersion: "2.0",
+						GitVersion:      "3.0",
+						IgniteVersion:   "4.0",
+						SrcCliVersion:   "5.0",
+					},
+					executorStore.UpsertHeartbeatFunc.History()[0].Arg1,
+				)
+				require.Len(t, codeintelMockStore.HeartbeatFunc.History(), 1)
+				assert.Equal(t, []int{42, 7}, codeintelMockStore.HeartbeatFunc.History()[0].Arg1)
+				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, codeintelMockStore.HeartbeatFunc.History()[0].Arg2)
+
+				require.Len(t, batchesMockStore.HeartbeatFunc.History(), 1)
+				assert.Equal(t, []int{43, 8}, batchesMockStore.HeartbeatFunc.History()[0].Arg1)
+				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, batchesMockStore.HeartbeatFunc.History()[0].Arg2)
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			executorStore := database.NewMockExecutorStore()
+			metricsStore := metricsstore.NewMockDistributedStore()
+			codeIntelMockStore := dbworkerstoremocks.NewMockStore[uploadsshared.Index]()
+			batchesMockStore := dbworkerstoremocks.NewMockStore[*btypes.BatchSpecWorkspaceExecutionJob]()
+
+			mh := handler.NewMultiHandler(
+				executorStore,
+				executorstore.NewMockJobTokenStore(),
+				metricsStore,
+				handler.QueueHandler[uploadsshared.Index]{Name: "codeintel", Store: codeIntelMockStore},
+				handler.QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]{Name: "batches", Store: batchesMockStore},
+			)
+
+			router := mux.NewRouter()
+			router.HandleFunc("/heartbeat", mh.HandleHeartbeat)
+
+			req, err := http.NewRequest(http.MethodPost, "/heartbeat", strings.NewReader(test.body))
+			require.NoError(t, err)
+
+			rw := httptest.NewRecorder()
+
+			if test.mockFunc != nil {
+				test.mockFunc(metricsStore, executorStore, codeIntelMockStore, batchesMockStore)
+			}
+
+			router.ServeHTTP(rw, req)
+
+			assert.Equal(t, test.expectedStatusCode, rw.Code)
+
+			b, err := io.ReadAll(rw.Body)
+			require.NoError(t, err)
+
+			if len(test.expectedResponseBody) > 0 {
+				assert.JSONEq(t, test.expectedResponseBody, string(b))
+			} else {
+				assert.Empty(t, string(b))
+			}
+
+			if test.assertionFunc != nil {
+				test.assertionFunc(t, metricsStore, executorStore, codeIntelMockStore, batchesMockStore)
 			}
 		})
 	}
