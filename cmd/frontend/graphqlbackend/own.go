@@ -69,6 +69,7 @@ type OwnershipReasonResolver interface {
 	ToCodeownersFileEntry() (CodeownersFileEntryResolver, bool)
 	ToRecentContributorOwnershipSignal() (RecentContributorOwnershipSignalResolver, bool)
 	ToRecentViewOwnershipSignal() (RecentViewOwnershipSignalResolver, bool)
+	ToAssignedOwner() (AssignedOwnerResolver, bool)
 }
 
 type SimpleOwnReasonResolver interface {
@@ -89,6 +90,11 @@ type RecentContributorOwnershipSignalResolver interface {
 }
 
 type RecentViewOwnershipSignalResolver interface {
+	Title() (string, error)
+	Description() (string, error)
+}
+
+type AssignedOwnerResolver interface {
 	Title() (string, error)
 	Description() (string, error)
 }

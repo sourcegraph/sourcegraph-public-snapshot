@@ -38,6 +38,11 @@ import (
 	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
 )
 
+const (
+	santaEmail = "santa@northpole.com"
+	santaName  = "santa claus"
+)
+
 // userCtx returns a context where give user ID identifies logged in user.
 func userCtx(userID int32) context.Context {
 	ctx := context.Background()
@@ -47,7 +52,8 @@ func userCtx(userID int32) context.Context {
 
 // fakeOwnService returns given owners file and resolves owners to UnknownOwner.
 type fakeOwnService struct {
-	Ruleset *codeowners.Ruleset
+	Ruleset        *codeowners.Ruleset
+	AssignedOwners own.AssignedOwners
 }
 
 func (s fakeOwnService) RulesetForRepo(context.Context, api.RepoName, api.RepoID, api.CommitID) (*codeowners.Ruleset, error) {
@@ -69,7 +75,7 @@ func (s fakeOwnService) ResolveOwnersWithType(_ context.Context, owners []*codeo
 }
 
 func (s fakeOwnService) AssignedOwnership(context.Context, api.RepoID, api.CommitID) (own.AssignedOwners, error) {
-	return own.AssignedOwners{}, nil
+	return s.AssignedOwners, nil
 }
 
 // fakeGitServer is a limited gitserver.Client that returns a file for every Stat call.
@@ -88,6 +94,7 @@ func fakeOwnDb() *database.MockDB {
 	db := database.NewMockDB()
 	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
 	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
+	db.AssignedOwnersFunc.SetDefaultReturn(database.NewMockAssignedOwnersStore())
 
 	configStore := database.NewMockSignalConfigurationStore()
 	configStore.IsEnabledFunc.SetDefaultReturn(true, nil)
@@ -257,8 +264,6 @@ func TestBlobOwnershipPanelQueryIngested(t *testing.T) {
 	logger := logtest.Scoped(t)
 	fakeDB := fakedb.New()
 	db := fakeOwnDb()
-	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
-	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
 	fakeDB.Wire(db)
 	repoID := api.RepoID(1)
 	own := fakeOwnService{
@@ -371,6 +376,7 @@ func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
 	db.CodeownersFunc.SetDefaultReturn(enterprisedb.NewMockCodeownersStore())
 	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
 	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
+	db.AssignedOwnersFunc.SetDefaultReturn(database.NewMockAssignedOwnersStore())
 	db.OwnSignalConfigurationsFunc.SetDefaultReturn(database.NewMockSignalConfigurationStore())
 	own := own.NewService(git, db)
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
@@ -541,8 +547,6 @@ func TestOwnershipPagination(t *testing.T) {
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	repos := database.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
-	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
-	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
 	repos.GetFunc.SetDefaultReturn(&types.Repo{}, nil)
 	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
 		return "42", nil
@@ -619,8 +623,6 @@ func TestOwnership_WithSignals(t *testing.T) {
 	db := fakeOwnDb()
 
 	recentContribStore := database.NewMockRecentContributionSignalStore()
-	santaEmail := "santa@northpole.com"
-	santaName := "santa claus"
 	recentContribStore.FindRecentAuthorsFunc.SetDefaultReturn([]database.RecentContributorSummary{{
 		AuthorName:        santaName,
 		AuthorEmail:       santaEmail,
@@ -787,8 +789,6 @@ func TestTreeOwnershipSignals(t *testing.T) {
 	db := fakeOwnDb()
 
 	recentContribStore := database.NewMockRecentContributionSignalStore()
-	santaEmail := "santa@northpole.com"
-	santaName := "santa claus"
 	recentContribStore.FindRecentAuthorsFunc.SetDefaultReturn([]database.RecentContributorSummary{{
 		AuthorName:        santaName,
 		AuthorEmail:       santaEmail,
@@ -1017,7 +1017,6 @@ func TestCommitOwnershipSignals(t *testing.T) {
 		ContributionCount: 5,
 	}}, nil)
 	db.RecentContributionSignalsFunc.SetDefaultReturn(recentContribStore)
-	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
 
 	fakeDB.Wire(db)
 	repoID := api.RepoID(1)
@@ -1226,5 +1225,177 @@ func Test_SignalConfigurations(t *testing.T) {
 		}`
 
 		graphqlbackend.RunTest(t, mutationTest)
+	})
+}
+
+func TestOwnership_WithAssignedOwners(t *testing.T) {
+	logger := logtest.Scoped(t)
+	fakeDB := fakedb.New()
+	db := fakeOwnDb()
+
+	userEmails := database.NewMockUserEmailsStore()
+	userEmails.GetPrimaryEmailFunc.SetDefaultHook(func(_ context.Context, id int32) (email string, verified bool, err error) {
+		verified = true
+		switch id {
+		case 1:
+			email = "assigned@owner1.com"
+		case 2:
+			email = "assigned@owner2.com"
+		default:
+			email = santaEmail
+		}
+		return
+	})
+	db.UserEmailsFunc.SetDefaultReturn(userEmails)
+
+	fakeDB.Wire(db)
+	repoID := api.RepoID(1)
+	assignedOwnerID1 := fakeDB.AddUser(types.User{Username: "assigned owner 1", DisplayName: "I am an assigned owner #1"})
+	assignedOwnerID2 := fakeDB.AddUser(types.User{Username: "assigned owner 2", DisplayName: "I am an assigned owner #2"})
+	own := fakeOwnService{
+		Ruleset: codeowners.NewRuleset(
+			codeowners.IngestedRulesetSource{ID: int32(repoID)},
+			&codeownerspb.File{
+				Rule: []*codeownerspb.Rule{
+					{
+						Pattern: "*.js",
+						Owner: []*codeownerspb.Owner{
+							{Handle: "js-owner"},
+						},
+						LineNumber: 1,
+					},
+				},
+			},
+		),
+		AssignedOwners: own.AssignedOwners{
+			"foo/bar.js": []database.AssignedOwnerSummary{{OwnerUserID: assignedOwnerID1, FilePath: "foo/bar.js", RepoID: repoID}},
+			"foo":        []database.AssignedOwnerSummary{{OwnerUserID: assignedOwnerID2, FilePath: "foo", RepoID: repoID}},
+		},
+	}
+	ctx := userCtx(fakeDB.AddUser(types.User{Username: santaName, DisplayName: santaName, SiteAdmin: true}))
+	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
+	repos := database.NewMockRepoStore()
+	db.ReposFunc.SetDefaultReturn(repos)
+	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
+	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+		return "deadbeef", nil
+	}
+	git := fakeGitserver{}
+	schema, err := graphqlbackend.NewSchema(db, git, nil, graphqlbackend.OptionalResolver{OwnResolver: resolvers.NewWithService(db, git, own, logger)})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	graphqlbackend.RunTest(t, &graphqlbackend.Test{
+		Schema:  schema,
+		Context: ctx,
+		Query: `
+			fragment CodeownersFileEntryFields on CodeownersFileEntry {
+				title
+				description
+				codeownersFile {
+					__typename
+					url
+				}
+				ruleLineMatch
+			}
+
+			query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
+				node(id: $repo) {
+					... on Repository {
+						commit(rev: $revision) {
+							blob(path: $currentPath) {
+								ownership {
+									totalOwners
+									totalCount
+									nodes {
+										owner {
+											...on Person {
+												displayName
+												email
+											}
+										}
+										reasons {
+											...CodeownersFileEntryFields
+											...on RecentContributorOwnershipSignal {
+											  title
+											  description
+											}
+											... on RecentViewOwnershipSignal {
+											  title
+											  description
+											}
+											... on AssignedOwner {
+											  title
+											  description
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}`,
+		ExpectedResult: `{
+			"node": {
+				"commit": {
+					"blob": {
+						"ownership": {
+							"totalOwners": 3,
+							"totalCount": 3,
+							"nodes": [
+								{
+									"owner": {
+										"displayName": "I am an assigned owner #1",
+										"email": "assigned@owner1.com"
+									},
+									"reasons": [
+										{
+											"title": "assigned owner",
+											"description": "Owner is manually assigned."
+										}
+									]
+								},
+								{
+									"owner": {
+										"displayName": "I am an assigned owner #2",
+										"email": "assigned@owner2.com"
+									},
+									"reasons": [
+										{
+											"title": "assigned owner",
+											"description": "Owner is manually assigned."
+										}
+									]
+								},
+								{
+									"owner": {
+										"displayName": "js-owner",
+										"email": ""
+									},
+									"reasons": [
+										{
+											"title": "codeowners",
+											"description": "Owner is associated with a rule in a CODEOWNERS file.",
+											"codeownersFile": {
+												"__typename": "VirtualFile",
+												"url": "/github.com/sourcegraph/own/-/own"
+											},
+											"ruleLineMatch": 1
+										}
+									]
+								}
+							]
+						}
+					}
+				}
+			}
+		}`,
+		Variables: map[string]any{
+			"repo":        string(relay.MarshalID("Repository", repoID)),
+			"revision":    "revision",
+			"currentPath": "foo/bar.js",
+		},
 	})
 }

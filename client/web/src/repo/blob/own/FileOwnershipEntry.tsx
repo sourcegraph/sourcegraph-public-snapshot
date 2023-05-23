@@ -8,6 +8,7 @@ import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { Badge, Button, ButtonLink, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import {
+    AssignedOwnerFields,
     CodeownersFileEntryFields,
     OwnerFields,
     RecentContributorOwnershipSignalFields,
@@ -26,6 +27,7 @@ type OwnershipReason =
     | CodeownersFileEntryFields
     | RecentContributorOwnershipSignalFields
     | RecentViewOwnershipSignalFields
+    | AssignedOwnerFields
 
 export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reasons }) => {
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
