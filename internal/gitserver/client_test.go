@@ -1000,6 +1000,7 @@ type spyGitserverServiceClient struct {
 	isRepoCloneable  bool
 	searchCalled     bool
 	archiveCalled    bool
+	repoClone        bool
 	reposStatsCalled bool
 	base             proto.GitserverServiceClient
 }
@@ -1007,6 +1008,11 @@ type spyGitserverServiceClient struct {
 func (s *spyGitserverServiceClient) Exec(ctx context.Context, in *proto.ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_ExecClient, error) {
 	s.execCalled = true
 	return s.base.Exec(ctx, in, opts...)
+}
+
+func (s *spyGitserverServiceClient) RepoClone(ctx context.Context, in *proto.RepoCloneRequest, opts ...grpc.CallOption) (proto.GitserverService_RepoCloneClient, error) {
+	s.repoClone = true
+	return s.base.RepoClone(ctx, in, opts...)
 }
 
 func (s *spyGitserverServiceClient) IsRepoCloneable(ctx context.Context, in *proto.IsRepoCloneableRequest, opts ...grpc.CallOption) (*proto.IsRepoCloneableResponse, error) {
@@ -1034,6 +1040,7 @@ var _ proto.GitserverServiceClient = &spyGitserverServiceClient{}
 type mockClient struct {
 	mockExec            func(ctx context.Context, in *proto.ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_ExecClient, error)
 	mockIsRepoCloneable func(ctx context.Context, in *proto.IsRepoCloneableRequest, opts ...grpc.CallOption) (*proto.IsRepoCloneableResponse, error)
+	mockRepoClone       func(ctx context.Context, in *proto.RepoCloneRequest, opts ...grpc.CallOption) (proto.GitserverService_RepoCloneClient, error)
 	mockRepoStats       func(ctx context.Context, in *proto.ReposStatsRequest, opts ...grpc.CallOption) (*proto.ReposStatsResponse, error)
 	mockArchive         func(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error)
 	mockSearch          func(ctx context.Context, in *proto.SearchRequest, opts ...grpc.CallOption) (proto.GitserverService_SearchClient, error)
@@ -1042,6 +1049,11 @@ type mockClient struct {
 // Exec implements v1.GitserverServiceClient
 func (mc *mockClient) Exec(ctx context.Context, in *proto.ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_ExecClient, error) {
 	return mc.mockExec(ctx, in, opts...)
+}
+
+// RepoClone implements v1.GitserverServiceClient
+func (mc *mockClient) RepoClone(ctx context.Context, in *proto.RepoCloneRequest, opts ...grpc.CallOption) (proto.GitserverService_RepoCloneClient, error) {
+	return mc.mockRepoClone(ctx, in, opts...)
 }
 
 func (ms *mockClient) IsRepoCloneable(ctx context.Context, in *proto.IsRepoCloneableRequest, opts ...grpc.CallOption) (*proto.IsRepoCloneableResponse, error) {

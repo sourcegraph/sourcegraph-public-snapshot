@@ -1077,6 +1077,38 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 
 // RequestRepoClone requests that the gitserver does an asynchronous clone of the repository.
 func (c *clientImplementor) RequestRepoClone(ctx context.Context, repo api.RepoName) (*protocol.RepoCloneResponse, error) {
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		client, err := c.ClientForRepo(repo)
+		if err != nil {
+			return nil, err
+		}
+		ctx, cancel := context.WithCancel(ctx)
+		stream, err := client.RepoClone(ctx, &proto.RepoCloneRequest{
+			Repo: string(repo),
+		})
+
+		if err != nil {
+			cancel()
+			return nil, err
+		}
+		for {
+			msg, err := stream.Recv()
+			if err != nil {
+				cancel()
+				return nil, err
+			}
+
+			if msg.Error != "" {
+				cancel()
+				return &protocol.RepoCloneResponse{
+					Error: msg.Error,
+				}, nil
+			}
+
+		}
+
+	}
+
 	req := &protocol.RepoCloneRequest{
 		Repo: repo,
 	}

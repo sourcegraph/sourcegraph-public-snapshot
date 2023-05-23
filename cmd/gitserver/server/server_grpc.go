@@ -173,6 +173,19 @@ func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 	})
 }
 
+func (gs *GRPCServer) RepoClone(req *proto.RepoCloneRequest, ss proto.GitserverService_RepoCloneServer) error {
+	if req.Repo == "" {
+		return status.Error(codes.InvalidArgument, "empty repo")
+	}
+	_, err := gs.Server.cloneRepo(ss.Context(), api.RepoName(req.Repo), &cloneOptions{Block: false})
+	if err != nil {
+		return ss.Send(&proto.RepoCloneResponse{
+			Error: err.Error(),
+		})
+	}
+	return ss.Send(&proto.RepoCloneResponse{})
+}
+
 func (gs *GRPCServer) ReposStats(ctx context.Context, req *proto.ReposStatsRequest) (*proto.ReposStatsResponse, error) {
 	b, err := gs.Server.readReposStatsFile(filepath.Join(gs.Server.ReposDir, reposStatsName))
 	if err != nil {
