@@ -119,8 +119,7 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 			act := NewActor(s, token, sub.ProductSubscriptionState, s.internalMode)
 			data, err := json.Marshal(act)
 			if err != nil {
-				syncLog.Error("failed to marshal actor",
-					log.String("actor.ID", act.ID),
+				act.Logger(syncLog).Error("failed to marshal actor",
 					log.Error(err))
 				errs = errors.Append(errs, err)
 				continue
