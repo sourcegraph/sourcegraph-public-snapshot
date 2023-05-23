@@ -31,10 +31,12 @@ export class OptimizeCode implements Recipe {
 You first tell if the code can/cannot be optimized, then\
 if the code is optimizable, suggest a numbered list of possible optimizations in less than 50 words each,\
 then provide Big O time/space comparison for old and new code and finally return updated code.\
+Include inline comments to explain the optimizations in updated code.\
+Show the old vs. new time/space optimizations in a table.\
 Don't include the input code in your response. Beautify the response for better readability.\
 Response format should be: This code can/cannot be optimzed. Optimization Steps: {} Time and Space Usage: {} Updated Code: {}\
 However if no optimization is possible; just say the code is already optimized. \n\n\`\`\`${extension}\n${truncatedSelectedText}\n\`\`\`\n${MARKDOWN_FORMAT_PROMPT}`
-        const assistantResponsePrefix = `Here is the response  \n\`\`\`${extension}\n`
+        const assistantResponsePrefix = ''
 
         return new Interaction(
             { speaker: 'human', text: promptMessage, displayText },
