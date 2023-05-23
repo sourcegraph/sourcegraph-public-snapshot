@@ -146,3 +146,14 @@ func (d fileOwnershipData) Contains(bag own.Bag) bool {
 	}
 	return false
 }
+
+func (d fileOwnershipData) References() []own.Reference {
+	var rs []own.Reference
+	for _, o := range d.rule.GetOwner() {
+		rs = append(rs, own.Reference{Handle: o.Handle, Email: o.Email})
+	}
+	for _, o := range d.assignedOwners {
+		rs = append(rs, own.Reference{UserID: o.OwnerUserID})
+	}
+	return rs
+}

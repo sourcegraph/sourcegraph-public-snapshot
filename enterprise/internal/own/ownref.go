@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -80,7 +81,123 @@ func (r Reference) String() string {
 type Bag interface {
 	// Contains answers true if given bag contains an owner form
 	// that the given reference points at in some way.
-	Contains(ref Reference) bool
+	Contains(Reference) bool
+
+	Add(Reference)
+
+	Resolve(context.Context, edb.EnterpriseDB) error
+
+	Get(Reference) codeowners.ResolvedOwner
+}
+
+func EmptyBag() Bag {
+	return &bag{}
+}
+
+func (b *bag) Add(ref Reference) {
+	manyResolved := b.find(ref)
+	if len(manyResolved) == 0 {
+		*b = append(*b, &userReferences{unresolvedReferences: []Reference{ref}})
+		return
+	}
+	var oneResolved *userReferences
+	if len(manyResolved) == 1 {
+		oneResolved = manyResolved[0]
+	} else {
+		// TODO: Unification case where we learn many references are one
+		// For now we just pick the first one.
+		oneResolved = manyResolved[0]
+	}
+	oneResolved.add(ref)
+}
+
+func (b *bag) Resolve(ctx context.Context, db edb.EnterpriseDB) error {
+	// TODO: We should keep track of which user references were resolved
+	// For now we try to resolve all unresolved references.
+	for _, userRef := range *b {
+		if userRef.id != 0 {
+			// TODO: Probably in that case try to resolve references to see
+			// if they don't point to some other user?
+			continue
+		}
+		rs := userRef.unresolvedReferences
+		for _, r := range rs {
+			if r.Email != "" {
+				bb, err := ByEmailReference(ctx, db, r.Email)
+				if err != nil {
+					return err
+				}
+				// TODO: Properly handle what if search yields more than one userRef.
+				if len(bb) > 0 {
+					// TODO: Properly merge data rather than just override
+					*userRef = *bb[0]
+				}
+			}
+			if r.Handle != "" {
+				bb, err := ByUserHandleReference(ctx, db, r.Handle)
+				if err != nil {
+					return err
+				}
+				// TODO: Properly handle what if search yields more than one userRef.
+				if len(bb) > 0 {
+					// TODO: Properly merge data rather than just override
+					*userRef = *bb[0]
+				}
+			}
+			if r.UserID != 0 {
+				userRef.id = r.UserID
+				var err error
+				userRef.user, err = db.Users().GetByID(ctx, r.UserID)
+				if err != nil {
+					return err
+				}
+			}
+			// TODO if we're here, either user is still not resolved
+			// or the user ref is updated. Anywho we can iterate further.
+		}
+		userRef.unresolvedReferences = nil
+	}
+	return nil
+}
+
+func (b *bag) Get(ref Reference) codeowners.ResolvedOwner {
+	refs := b.find(ref)
+	if len(refs) > 0 {
+		// TODO: The object should be crafted so that only one ref
+		// is returned here.
+		r := refs[0]
+		var primaryEmail *string
+		// TODO: Assumption primary email is the first verified
+		if len(r.verifiedEmails) > 0 {
+			e := r.verifiedEmails[0]
+			primaryEmail = &e
+		}
+		var handle string
+		if r.user != nil {
+			handle = r.user.Username
+		} else if r.handle != "" {
+			handle = r.handle
+		} else {
+			handle = ref.Handle
+		}
+		var email string
+		if primaryEmail != nil {
+			email = *primaryEmail
+		} else {
+			email = ref.Email
+		}
+		return &codeowners.Person{
+			User:         r.user,
+			PrimaryEmail: primaryEmail,
+			Handle:       handle,
+			Email:        email,
+		}
+	}
+	// TODO: We need to be able to return an owner with stable identifier here
+	return &codeowners.Person{
+		Handle: ref.Handle,
+		Email:  ref.Email,
+	}
 }
 
 // ByTextReference returns a Bag of all the forms (users, persons, teams)
@@ -105,7 +222,7 @@ func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text ...string) (
 		}
 		multiBag = append(multiBag, b...)
 	}
-	return multiBag, nil
+	return &multiBag, nil
 }
 
 func ByUserHandleReference(ctx context.Context, db edb.EnterpriseDB, handle string) (bag, error) {
@@ -229,8 +346,9 @@ type userReferences struct {
 	// it is present if user was not found in the database.
 	handle string
 	// codeHostHandles are user handles of connected code hosts of a resolved user.
-	codeHostHandles []string
-	verifiedEmails  []string
+	codeHostHandles      []string
+	verifiedEmails       []string
+	unresolvedReferences []Reference
 }
 
 func (refs userReferences) containsEmail(email string) bool {
@@ -260,6 +378,15 @@ func (refs userReferences) containsHandle(handle string) bool {
 
 func (refs userReferences) containsUserID(userID int32) bool {
 	return refs.id != 0 && refs.id == userID
+}
+
+func (refs userReferences) add(ref Reference) {
+	if refs.user != nil {
+		// Merge in identifiers from given reference if any missing
+		// For now do nothing
+		return
+	}
+	refs.unresolvedReferences = append(refs.unresolvedReferences, ref)
 }
 
 func (refs userReferences) String() string {
@@ -296,19 +423,27 @@ func (refs userReferences) String() string {
 //   - if email reference matches any user's verified email,
 //   - if handle reference matches the user handle,
 //   - if user ID matches the ID if the user in the bag,
-func (b bag) Contains(ref Reference) bool {
+func (b *bag) Contains(ref Reference) bool {
+	return len(b.find(ref)) > 0
+}
+
+func (b bag) find(ref Reference) []*userReferences {
+	var found []*userReferences
 	for _, userRefs := range b {
 		if userRefs.containsEmail(ref.Email) {
-			return true
+			found = append(found, userRefs)
+			continue
 		}
 		if userRefs.containsHandle(ref.Handle) {
-			return true
+			found = append(found, userRefs)
+			continue
 		}
 		if userRefs.containsUserID(ref.UserID) {
-			return true
+			found = append(found, userRefs)
+			continue
 		}
 	}
-	return false
+	return found
 }
 
 func (b bag) String() string {
