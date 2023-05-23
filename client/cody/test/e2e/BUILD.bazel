@@ -10,6 +10,7 @@ ts_project(
     srcs = [
         "auth.test.ts",
         "helpers.ts",
+        "inline-assist.test.ts",
     ],
     tsconfig = "//client/cody:tsconfig",
     deps = [
