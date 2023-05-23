@@ -117,6 +117,7 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
                                 repoName={repoName}
                                 isSourcegraphDotCom={context.isSourcegraphDotCom}
                                 className={styles.pageContent}
+                                authenticatedUser={context.authenticatedUser}
                             />
                         ) : (
                             <LoadingSpinner />

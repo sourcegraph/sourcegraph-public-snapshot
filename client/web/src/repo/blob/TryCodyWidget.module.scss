@@ -4,5 +4,26 @@
 }
 
 .card {
-    background-color: var(--color-bg-1);
+    background: var(--marketing-gradient-3);
+    padding-top: 2.9375rem;
+    gap: 1rem;
+}
+
+.card-title {
+    font-weight: 600;
+    font-size: 1.25rem;
+    line-height: 1.5rem;
+    letter-spacing: -0.25px;
+    margin-bottom: 0.6875rem;
+}
+
+.card-list {
+    font-size: 1rem;
+    line-height: 1.25rem;
+    color: var(--black);
+    width: max-content;
+}
+
+.card-images {
+    width: 100%;
 }

@@ -218,6 +218,8 @@ $theme-colors: (
         rgba(228, 211, 252, 0.25) 3.11%,
         rgba(215, 240, 253, 0.25) 83.64%
     );
+    --marketing-gradient-3: linear-gradient(360deg, #ffffff -44.65%, #d0b9f5 -16.82%, rgba(255, 255, 255, 0) 88.23%),
+        #ffffff;
     --modal-bg: #{rgba($gray-04, 0.5)};
     --sidebar-bg: var(--color-bg-1);
     --sidebar-border-color: var(--border-color-2);

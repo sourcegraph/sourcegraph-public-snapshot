@@ -50,6 +50,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { RepositoryFields } from '../../graphql-operations'
 import { OwnConfigProps } from '../../own/OwnConfigProps'
+import { TryCodyWidget } from '../blob/TryCodyWidget'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { isPackageServiceType } from '../packages/isPackageServiceType'
 
@@ -104,6 +105,7 @@ export const TreePage: FC<Props> = ({
     codeIntelligenceEnabled,
     batchChangesEnabled,
     isSourcegraphDotCom,
+    authenticatedUser,
     ownEnabled,
     className,
     ...props
@@ -341,6 +343,9 @@ export const TreePage: FC<Props> = ({
 
     return (
         <div className={classNames(styles.treePage, className)}>
+            {isSourcegraphDotCom && !!authenticatedUser && (
+                <TryCodyWidget className="mb-2" telemetryService={props.telemetryService} type="repo" />
+            )}
             <Container className={styles.container}>
                 <div className={classNames(styles.header)}>
                     <PageTitle title={getPageTitle()} />
@@ -377,6 +382,7 @@ export const TreePage: FC<Props> = ({
                             revision={revision}
                             commitID={commitID}
                             isPackage={isPackage}
+                            authenticatedUser={authenticatedUser}
                             {...props}
                         />
                     )}
