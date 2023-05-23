@@ -138,8 +138,9 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         // TODO(philipp-spiess): Add a better detection for start-of-block and don't require C like
         // languages.
-        const multilineEnabledLanguage =
-            document.languageId === 'typescript' || document.languageId === 'javascript' || document.languageId === 'go'
+        // TODO(philipp-spiess): Temporary delete multi-line inline completions while I fix a bug
+        const multilineEnabledLanguage = false
+        // document.languageId === 'typescript' || document.languageId === 'javascript' || document.languageId === 'go'
         if (
             multilineEnabledLanguage &&
             // Only trigger multiline inline suggestions for empty lines
