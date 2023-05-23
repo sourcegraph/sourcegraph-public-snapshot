@@ -6,6 +6,14 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Added
 
+### Fixed
+
+### Changed
+
+## [0.1.4]
+
+### Added
+
 - Added support for local keyword search on Windows. [pull/52251](https://github.com/sourcegraph/sourcegraph/pull/52251)
 
 ### Fixed
