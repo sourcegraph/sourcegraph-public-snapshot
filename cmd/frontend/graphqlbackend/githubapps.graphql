@@ -52,7 +52,7 @@ type GitHubApp implements Node {
     """
     name: String!
     """
-    The domain of the GitHub App, ie: repos or batches
+    The domain of the GitHub App (e.g. "repos" or "batches")
     """
     domain: String!
     """
