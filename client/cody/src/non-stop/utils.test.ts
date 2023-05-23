@@ -29,8 +29,12 @@ jest.mock('vscode', () => {
     }
     // TODO: Implement delete and insert mocks
     class WorkspaceEdit {
-        public delete(uri: vscode.Uri, range: Range): void {}
-        public insert(uri: vscode.Uri, position: Position, content: string): void {}
+        public delete(uri: vscode.Uri, range: Range): Range {
+            return range
+        }
+        public insert(uri: vscode.Uri, position: Position, content: string): content {
+            return content
+        }
     }
 
     return {
@@ -38,7 +42,10 @@ jest.mock('vscode', () => {
         Range,
         WorkspaceEdit,
         Uri: {
-            file: (path: string) => path,
+            file: (path: string) => ({
+                fsPath: path,
+                path,
+            }),
         },
         workspace: {
             openTextDocument: (uri: string) => ({
