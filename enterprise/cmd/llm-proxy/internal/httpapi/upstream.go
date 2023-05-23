@@ -3,6 +3,7 @@ package httpapi
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -15,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/response"
 	llmproxy "github.com/sourcegraph/sourcegraph/enterprise/internal/llm-proxy"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -23,9 +25,21 @@ type requestTransformer func(*http.Request)
 type requestMetadataRetriever[T any] func(T) (promptCharacterCount int, model string, additionalMetadata map[string]any)
 type responseParser[T any] func(T, io.Reader) (completionCharacterCount int)
 
-func makeUpstreamHandler[ReqT any](logger log.Logger, eventLogger events.Logger, upstreamAPIURL string, allowedModels []string, bodyTrans bodyTransformer[ReqT], rmr requestMetadataRetriever[ReqT], reqTrans requestTransformer, respParser responseParser[ReqT]) http.Handler {
+func makeUpstreamHandler[ReqT any](
+	baseLogger log.Logger,
+	eventLogger events.Logger,
+	upstreamName, upstreamAPIURL string,
+	allowedModels []string,
+	bodyTrans bodyTransformer[ReqT],
+	rmr requestMetadataRetriever[ReqT],
+	reqTrans requestTransformer,
+	respParser responseParser[ReqT],
+) http.Handler {
+	baseLogger = baseLogger.Scoped(strings.ToLower(upstreamName), fmt.Sprintf("%s upstream handler", upstreamName))
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		act := actor.FromContext(r.Context())
+		logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))
 
 		// Parse the request body.
 		var body ReqT
@@ -108,7 +122,8 @@ func makeUpstreamHandler[ReqT any](logger log.Logger, eventLogger events.Logger,
 
 		resp, err := httpcli.ExternalDoer.Do(req)
 		if err != nil {
-			response.JSONError(logger, w, http.StatusInternalServerError, errors.Wrap(err, "failed to make request to Anthropic"))
+			response.JSONError(logger, w, http.StatusInternalServerError,
+				errors.Wrapf(err, "failed to make request to upstream provider %s", upstreamName))
 			return
 		}
 		defer func() { _ = resp.Body.Close() }()
@@ -135,7 +150,9 @@ func makeUpstreamHandler[ReqT any](logger log.Logger, eventLogger events.Logger,
 			completionCharacterCount = respParser(body, &responseBuf)
 
 		} else if upstreamStatusCode >= 500 {
-			logger.Error("error from upstream", log.String("url", upstreamAPIURL), log.Int("status_code", upstreamStatusCode))
+			logger.Error("error from upstream",
+				log.String("url", upstreamAPIURL),
+				log.Int("status_code", upstreamStatusCode))
 		}
 	})
 }

@@ -18,6 +18,7 @@ func newOpenAIHandler(logger log.Logger, eventLogger events.Logger, accessToken 
 	return makeUpstreamHandler(
 		logger,
 		eventLogger,
+		"OpenAI",
 		openAIURL,
 		allowedModels,
 		func(body *openaiRequest) {

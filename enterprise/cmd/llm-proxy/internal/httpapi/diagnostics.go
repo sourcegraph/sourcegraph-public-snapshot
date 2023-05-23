@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -16,13 +17,15 @@ import (
 // NewDiagnosticsHandler creates a handler for diagnostic endpoints typically served
 // on "/-/..." paths. It should be placed before any authentication middleware, since
 // we do a simple auth on a static secret instead.
-func NewDiagnosticsHandler(logger log.Logger, next http.Handler, secret string) http.Handler {
-	logger = logger.Scoped("diagnostics", "healthz checks")
+func NewDiagnosticsHandler(baseLogger log.Logger, next http.Handler, secret string) http.Handler {
+	baseLogger = baseLogger.Scoped("diagnostics", "healthz checks")
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		// For service liveness and readiness probes
 		case "/-/healthz":
+			logger := sgtrace.Logger(r.Context(), baseLogger)
+
 			if secret != "" {
 				token, err := auth.ExtractBearer(r.Header)
 				if err != nil {

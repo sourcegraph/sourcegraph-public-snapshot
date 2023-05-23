@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/service"
+	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor"
@@ -136,14 +137,18 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	return nil
 }
 
-func rateLimit(logger log.Logger, eventLogger events.Logger, cache limiter.RedisStore, next http.Handler) http.Handler {
+func rateLimit(baseLogger log.Logger, eventLogger events.Logger, cache limiter.RedisStore, next http.Handler) http.Handler {
+	baseLogger = baseLogger.Scoped("rateLimit", "rate limit handler")
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		act := actor.FromContext(r.Context())
+		logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))
+
 		l := act.Limiter(cache)
 
 		err := l.TryAcquire(r.Context())
 		if err != nil {
-			loggerErr := eventLogger.LogEvent(
+			if loggerErr := eventLogger.LogEvent(
 				r.Context(),
 				events.Event{
 					Name:       llmproxy.EventNameRateLimited,
@@ -153,8 +158,7 @@ func rateLimit(logger log.Logger, eventLogger events.Logger, cache limiter.Redis
 						"error": err.Error(),
 					},
 				},
-			)
-			if loggerErr != nil {
+			); loggerErr != nil {
 				logger.Error("failed to log event", log.Error(loggerErr))
 			}
 
@@ -179,12 +183,15 @@ func rateLimit(logger log.Logger, eventLogger events.Logger, cache limiter.Redis
 
 func requestLogger(logger log.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Only requestclient is available at the point, actor middleware is later
 		rc := requestclient.FromContext(r.Context())
-		logger.Debug("Request",
+
+		sgtrace.Logger(r.Context(), logger).Debug("Request",
 			log.String("method", r.Method),
 			log.String("path", r.URL.Path),
 			log.String("requestclient.ip", rc.IP),
 			log.String("requestclient.forwardedFor", rc.ForwardedFor))
+
 		next.ServeHTTP(w, r)
 	})
 }
