@@ -1,14 +1,16 @@
 # Wolfi
 
-Sourcegraph is in the process of migrating from Alpine-based Docker images to Wolfi-based images. This section covers the migration, and highlight changes to our images build process.
+Sourcegraph is in the process of migrating from Alpine-based Docker images to Wolfi-based images. This page covers the migration, and highlight changes to our images build process.
+
+For information on how to build and update packages and base images, see [More Information](#more-information).
 
 ## What is Wolfi?
 
 [Wolfi](https://github.com/wolfi-dev) is a stripped-down open Linux distro designed for cloud-native containers. It has several key features that make it a good fit for distributing Sourcegraph:
 
-* A distroless build system that lets us build containers with only the precise dependencies we need, reducing attack surface area and the number of components that need to be kept patched.
-* A package repository that receives fast security patches and splits larger dependencies into smaller packages, keeping our images minimal and secure.
-* High quality build-time SBOM (software bill of materials) support, allowing us to be transparent about our image composition.
+- A distroless build system that lets us build containers with only the precise dependencies we need, reducing attack surface area and the number of components that need to be kept up-to-date.
+- A package repository that receives fast security patches and splits larger dependencies into smaller packages, keeping our images minimal and secure.
+- High quality build-time SBOM (software bill of materials) support, allowing us to be transparent about our image composition.
 
 ## Why have we adopted Wolfi?
 
@@ -28,11 +30,7 @@ When building Wolfi images, most of this work is done **outside** of the Dockerf
 
 In short, all dependencies are pre-installed in a Wolfi base image. The Dockerfile is the final step that just adds on the Sourcegraph code.
 
-## What are base images?
-
-Rather than using a customised upstream image like our [alpine-3.14](https://github.com/sourcegraph/sourcegraph/blob/main/docker-images/alpine-3.14/Dockerfile) base image, Wolfi base images are built from scratch using a [configuration file](https://github.com/sourcegraph/sourcegraph/tree/main/wolfi-images). This allows the image to be fully customised - for instance, an image doesn't need to include a shell or apk-tools. 
-
 ## More Information
 
-- [Wolfi packages](packages.md) details how we package dependencies and manage our package repository.
-- [Wolfi base images](images.md) details how we configure and build each base image.
+- [How to add and update Wolfi packages](../how-to/wolfi/add_update_packages.md)
+- [How to add and update Wolfi base images](../how-to/wolfi/add_update_images.md)

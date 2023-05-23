@@ -1,9 +1,8 @@
-
-# Wolfi base images
+# Add and Update Wolfi Base Images
 
 When writing a Dockerfile, you typically base your image on an upstream release such as Alpine. Historically, we've used our [alpine-3.14](https://github.com/sourcegraph/sourcegraph/blob/main/docker-images/alpine-3.14/Dockerfile) base image for this purpose.
 
-Wolfi base images are built *from scratch* using [apko](https://github.com/chainguard-dev/apko/tree/main). This allows the image to be fully customised - for instance, an image doesn't need to include a shell or apk-tools.
+Wolfi base images are built _from scratch_ using [apko](https://github.com/chainguard-dev/apko/tree/main). This allows the image to be fully customised - for instance, an image doesn't need to include a shell or apk-tools.
 
 ## How base images are built
 
@@ -11,9 +10,9 @@ Base images are defined using an apko YAML configuration file, found under [wolf
 
 These configuration files can be processed with apko, which will generate a base image. You can build these locally using [`local-build.sh <image-name>.yaml`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/wolfi-images/local-build.sh).
 
-## Making Changes
+## How to...
 
-### Updating base image packages
+### Update base image packages
 
 In order to pull in updated packages with new features or fixed vulnerabilities, we need to periodically rebuild the base images.
 
@@ -21,9 +20,10 @@ This is currently a two-step process, but will be automated in the future:
 
 - Run the [`wolfi-images/rebuild-images.sh`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@will/wolfi-docs/-/blob/wolfi-images/rebuild-images.sh?L1) script (with an optional argument to just update one base image), commit the updated YAML files, and merge to main.
   - This will trigger Buildkite to rebuild the base images and publish them.
-- Currently we use the `latest` label, but we will switch to using a `sha256` tag once deployed in production. Update the relevant Dockerfiles with the new base image's `sha256` hash, commit the change, and merge to main.
+- Update the relevant Dockerfiles with the new base image's `sha256` hash, commit the change, and merge to main.
+  - NOTE: Currently we use the `latest` label, but we will switch to using a `sha256` tag once deployed in production.
 
-### Modifying an existing base image
+### Modify an existing base image
 
 To modify a base image to add packages, users, or directories:
 
@@ -31,9 +31,10 @@ To modify a base image to add packages, users, or directories:
 - Build and testing it locally using [`local-build.sh <image-name>.yaml`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/wolfi-images/local-build.sh).
   - You can use this local image in your Dockerfiles, or exec into it directly.
 - Once happy with changes, create a PR and merge to main. Buildkite will detect the changes and rebuild the base image.
-- Currently we use the `latest` label on Wolfi images, but we will switch to using a `sha256` tag once deployed in production. Update the relevant Dockerfiles with the new base image's `sha256` hash, commit the change, and merge to main.
+- Update the relevant Dockerfiles with the new base image's `sha256` hash, commit the change, and merge to main.
+  - NOTE: Currently we use the `latest` label, but we will switch to using a `sha256` tag once deployed in production.
 
-### Creating a new base image
+### Create a new base image
 
 If your new image does not have any dependencies, use the [`sourcegraph`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/wolfi-images/sourcegraph.yaml) base image.
 
