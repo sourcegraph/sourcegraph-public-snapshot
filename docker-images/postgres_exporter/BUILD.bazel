@@ -25,5 +25,5 @@ oci_image(
 oci_tarball(
     name = "image_tarball",
     image = ":image",
-    repo_tags = ["postgres-12-alpine:candidate"],
+    repo_tags = ["postgres-exporter:candidate"],
 )

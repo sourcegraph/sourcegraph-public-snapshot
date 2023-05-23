@@ -10,7 +10,7 @@ pkg_tar(
     name = "redis_tarball",
     srcs = [":redis_conf"],
     remap_paths = {
-        "redis.conf": "/etc/redis/redis.conf",
+        "/redis.conf": "/etc/redis/redis.conf",
     },
 )
 
@@ -21,6 +21,7 @@ oci_image(
         "redis-server",
         "/etc/redis/redis.conf",
     ],
+    tars = [":redis_tarball"],
 )
 
 oci_tarball(
