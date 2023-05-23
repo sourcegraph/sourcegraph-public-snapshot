@@ -81,8 +81,6 @@
 ## Wolfi
 
 - [Wolfi Overview](wolfi/index.md)
-- [Wolfi Packages](wolfi/packages.md)
-- [Wolfi Base Images](wolfi/images.md)
 
 ## Other
 
