@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/internal/cacert"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot" //nolint:staticcheck // OT is deprecated
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 )
 
