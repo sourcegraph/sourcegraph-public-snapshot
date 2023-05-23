@@ -32,5 +32,5 @@ In short, all dependencies are pre-installed in a Wolfi base image. The Dockerfi
 
 ## More Information
 
-- [How to add and update Wolfi packages](../how-to/wolfi/add_update_packages.md)
-- [How to add and update Wolfi base images](../how-to/wolfi/add_update_images.md)
+- [How to add and update Wolfi packages](../../how-to/wolfi/add_update_packages.md)
+- [How to add and update Wolfi base images](../../how-to/wolfi/add_update_images.md)
