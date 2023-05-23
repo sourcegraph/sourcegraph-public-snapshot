@@ -35,17 +35,18 @@ func TestGetConfigurationPolicies(t *testing.T) {
 			indexing_enabled,
 			index_commit_max_age_hours,
 			index_intermediate_commits,
+			embeddings_enabled,
 			protected
 		) VALUES
-			(101, 42,   'policy  1 abc', 'GIT_TREE', '', null,              false, 0, false, true,  0, false, true),
-			(102, 42,   'policy  2 def', 'GIT_TREE', '', null,              true , 0, false, false, 0, false, true),
-			(103, 43,   'policy  3 bcd', 'GIT_TREE', '', null,              false, 0, false, true,  0, false, true),
-			(104, NULL, 'policy  4 abc', 'GIT_TREE', '', null,              true , 0, false, false, 0, false, false),
-			(105, NULL, 'policy  5 bcd', 'GIT_TREE', '', null,              false, 0, false, true,  0, false, false),
-			(106, NULL, 'policy  6 bcd', 'GIT_TREE', '', '{gitlab.com/*}',  true , 0, false, false, 0, false, false),
-			(107, NULL, 'policy  7 def', 'GIT_TREE', '', '{gitlab.com/*1}', false, 0, false, true,  0, false, false),
-			(108, NULL, 'policy  8 abc', 'GIT_TREE', '', '{gitlab.com/*2}', true , 0, false, false, 0, false, false),
-			(109, NULL, 'policy  9 def', 'GIT_TREE', '', '{github.com/*}',  false, 0, false, true,  0, false, false)
+			(101, 42,   'policy  1 abc', 'GIT_TREE', '', null,              false, 0, false, true,  0, false, false, true),
+			(102, 42,   'policy  2 def', 'GIT_TREE', '', null,              true , 0, false, false, 0, false, false, true),
+			(103, 43,   'policy  3 bcd', 'GIT_TREE', '', null,              false, 0, false, true,  0, false, false, true),
+			(104, NULL, 'policy  4 abc', 'GIT_TREE', '', null,              true , 0, false, false, 0, false, false, false),
+			(105, NULL, 'policy  5 bcd', 'GIT_TREE', '', null,              false, 0, false, true,  0, false, false, false),
+			(106, NULL, 'policy  6 bcd', 'GIT_TREE', '', '{gitlab.com/*}',  true , 0, false, false, 0, false, false, false),
+			(107, NULL, 'policy  7 def', 'GIT_TREE', '', '{gitlab.com/*1}', false, 0, false, true,  0, false, false, false),
+			(108, NULL, 'policy  8 abc', 'GIT_TREE', '', '{gitlab.com/*2}', true , 0, false, false, 0, false, false, false),
+			(109, NULL, 'policy  9 def', 'GIT_TREE', '', '{github.com/*}',  false, 0, false, true,  0, false, false, false)
 	`
 	if _, err := db.ExecContext(ctx, query); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
@@ -114,8 +115,9 @@ func TestGetConfigurationPolicies(t *testing.T) {
 			policies, totalCount, err := store.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
 				RepositoryID:     testCase.repositoryID,
 				Term:             testCase.term,
-				ForDataRetention: testCase.forDataRetention,
-				ForIndexing:      testCase.forIndexing,
+				ForDataRetention: &testCase.forDataRetention, // TODO
+				ForIndexing:      &testCase.forIndexing,      // TODO
+				ForEmbeddings:    nil,                        // TODO
 				Protected:        testCase.protected,
 				Limit:            3,
 				Offset:           lo,
