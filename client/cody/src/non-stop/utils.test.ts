@@ -32,7 +32,7 @@ jest.mock('vscode', () => {
         public delete(uri: vscode.Uri, range: Range): Range {
             return range
         }
-        public insert(uri: vscode.Uri, position: Position, content: string): content {
+        public insert(uri: vscode.Uri, position: Position, content: string): string {
             return content
         }
     }
