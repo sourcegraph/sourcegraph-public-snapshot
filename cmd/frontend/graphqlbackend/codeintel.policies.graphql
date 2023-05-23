@@ -17,17 +17,20 @@ extend type Query {
         query: String
 
         """
-        If set to true, then only configuration policies with data retention enabled are returned.
+        If set to true, then only configuration policies with SCIP data retention enabled are returned.
+        If set to false, then configuration policies with SCIP data retention enabled are filtered out.
         """
         forDataRetention: Boolean
 
         """
         If set to true, then only configuration policies with indexing enabled are returned.
+        If set to false, then configuration policies with indexing enabled are filtered out.
         """
         forIndexing: Boolean
 
         """
-        TODO - update docs
+        If set to true, then only configuration policies with embeddings enabled are returned.
+        If set to false, then configuration policies with embeddings enabled are filtered out.
         """
         forEmbeddings: Boolean
 
@@ -253,7 +256,7 @@ type CodeIntelligenceConfigurationPolicy implements Node {
     indexIntermediateCommits: Boolean!
 
     """
-    TODO - update docs
+    Whether or not this configuration policy affects embeddings.
     """
     embeddingsEnabled: Boolean!
 }
