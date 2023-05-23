@@ -137,7 +137,7 @@ export const CodyConfigurationPage: FC<CodyConfigurationPageProps> = ({
                     queryConnection={queryPoliciesCallback}
                     cursorPaging={true}
                     inputClassName="ml-2 flex-1"
-                    emptyElement={<EmptyPoliciesList repo={repo} showCta={authenticatedUser?.siteAdmin} />}
+                    emptyElement={<EmptyPoliciesList />}
                     updates={updates}
                 />
             </Container>
