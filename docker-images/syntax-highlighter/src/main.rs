@@ -8,7 +8,7 @@ use std::path;
 use ::scip::types::Document;
 use protobuf::Message;
 use rocket::serde::json::{json, Json, Value as JsonValue};
-use scip_syntax::{get_globals, globals::MemoryBundle};
+use scip_syntax::get_globals;
 use scip_treesitter_languages::parsers::BundledParser;
 use serde::Deserialize;
 use sg_syntax::{ScipHighlightQuery, SourcegraphQuery};
@@ -57,15 +57,6 @@ pub fn jsonify_err(e: impl ToString) -> JsonValue {
 
 #[post("/symbols", format = "application/json", data = "<q>")]
 fn symbols(q: Json<SymbolQuery>) -> JsonValue {
-    let mut bundle = MemoryBundle {
-        scopes: Vec::with_capacity(64),
-        globals: Vec::with_capacity(64),
-        descriptors: Vec::with_capacity(256),
-
-        children: Vec::with_capacity(256),
-        scope_stack: Vec::with_capacity(64),
-    };
-
     let path = path::Path::new(&q.filename);
     let extension = match match path.extension() {
         Some(vals) => vals,
@@ -85,7 +76,7 @@ fn symbols(q: Json<SymbolQuery>) -> JsonValue {
         None => return json!({"error": "Could not infer parser from extension"}),
     };
 
-    match match get_globals(parser, q.content.as_bytes(), &mut bundle) {
+    let (mut scope, hint) = match match get_globals(parser, q.content.as_bytes()) {
         Some(globals) => globals,
         None => return json!({"error": "Failed to get globals"}),
     } {
@@ -97,9 +88,7 @@ fn symbols(q: Json<SymbolQuery>) -> JsonValue {
 
     let mut document = Document::default();
 
-    document.occurrences = bundle.into_occurrences(vec![]);
-
-    eprintln!("{:?}", document.occurrences);
+    document.occurrences = scope.into_occurrences(hint, vec![]);
 
     let encoded = match document.write_to_bytes() {
         Ok(vals) => vals,
@@ -131,8 +120,8 @@ fn rocket() -> _ {
         Ok(v) if v == "true" => {
             println!("Sanity check passed, exiting without error");
             std::process::exit(0)
-        },
-        _ => {},
+        }
+        _ => {}
     };
 
     // load configurations on-startup instead of on-first-request.
