@@ -16,6 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slices"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -45,7 +46,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 
 	remoteURL := &vcs.URL{URL: url.URL{Path: "fake/foo"}}
 
-	dir := GitDir(t.TempDir())
+	dir := common.GitDir(t.TempDir())
 	_, err := s.CloneCommand(ctx, remoteURL, string(dir))
 	require.NoError(t, err)
 
@@ -384,7 +385,7 @@ func (s *vcsPackagesSyncer) assertDownloadCounts(t *testing.T, depsSource *fakeD
 	require.Equal(t, want, depsSource.downloadCount)
 }
 
-func (s *vcsPackagesSyncer) assertRefs(t *testing.T, dir GitDir, want map[string]string) {
+func (s *vcsPackagesSyncer) assertRefs(t *testing.T, dir common.GitDir, want map[string]string) {
 	t.Helper()
 
 	cmd := exec.Command("git", "show-ref", "--head", "--dereference")

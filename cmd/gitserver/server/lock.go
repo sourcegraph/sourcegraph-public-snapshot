@@ -2,6 +2,8 @@ package server
 
 import (
 	"sync"
+
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 )
 
 // RepositoryLocker provides locks for doing operations to a repository
@@ -20,18 +22,18 @@ type RepositoryLocker struct {
 	mu sync.RWMutex
 	// status tracks directories that are locked. The value is the status. If
 	// a directory is in status, the directory is locked.
-	status map[GitDir]string
+	status map[common.GitDir]string
 }
 
 // TryAcquire acquires the lock for dir. If it is already held, ok is false
 // and lock is nil. Otherwise a non-nil lock is returned and true. When
 // finished with the lock you must call lock.Release.
-func (rl *RepositoryLocker) TryAcquire(dir GitDir, initialStatus string) (lock *RepositoryLock, ok bool) {
+func (rl *RepositoryLocker) TryAcquire(dir common.GitDir, initialStatus string) (lock *RepositoryLock, ok bool) {
 	rl.mu.Lock()
 	_, failed := rl.status[dir]
 	if !failed {
 		if rl.status == nil {
-			rl.status = make(map[GitDir]string)
+			rl.status = make(map[common.GitDir]string)
 		}
 		rl.status[dir] = initialStatus
 	}
@@ -49,7 +51,7 @@ func (rl *RepositoryLocker) TryAcquire(dir GitDir, initialStatus string) (lock *
 
 // Status returns the status of the locked directory dir. If dir is not
 // locked, then locked is false.
-func (rl *RepositoryLocker) Status(dir GitDir) (status string, locked bool) {
+func (rl *RepositoryLocker) Status(dir common.GitDir) (status string, locked bool) {
 	rl.mu.RLock()
 	defer rl.mu.RUnlock()
 	status, locked = rl.status[dir]
@@ -60,7 +62,7 @@ func (rl *RepositoryLocker) Status(dir GitDir) (status string, locked bool) {
 // updating the status of a directory lock, as well as releasing the lock.
 type RepositoryLock struct {
 	locker *RepositoryLocker
-	dir    GitDir
+	dir    common.GitDir
 
 	// done is protected by locker.mu
 	done bool

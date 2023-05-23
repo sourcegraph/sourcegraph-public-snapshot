@@ -23,6 +23,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -216,7 +217,7 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.Gits
 		}
 	}()
 
-	collectSizeAndMaybeDeleteWrongShardRepos := func(dir GitDir) (done bool, err error) {
+	collectSizeAndMaybeDeleteWrongShardRepos := func(dir common.GitDir) (done bool, err error) {
 		size := dirSize(dir.Path("."))
 		stats.GitDirBytes += size
 		name := s.name(dir)
@@ -247,7 +248,7 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.Gits
 		return false, nil
 	}
 
-	maybeRemoveCorrupt := func(dir GitDir) (done bool, _ error) {
+	maybeRemoveCorrupt := func(dir common.GitDir) (done bool, _ error) {
 		corrupt, reason, err := checkRepoDirCorrupt(dir)
 		if !corrupt || err != nil {
 			return false, err
@@ -267,7 +268,7 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.Gits
 		return true, nil
 	}
 
-	maybeRemoveNonExisting := func(dir GitDir) (bool, error) {
+	maybeRemoveNonExisting := func(dir common.GitDir) (bool, error) {
 		if !removeNonExistingRepos {
 			return false, nil
 		}
@@ -285,15 +286,15 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.Gits
 		return false, nil
 	}
 
-	ensureGitAttributes := func(dir GitDir) (done bool, err error) {
+	ensureGitAttributes := func(dir common.GitDir) (done bool, err error) {
 		return false, setGitAttributes(dir)
 	}
 
-	ensureAutoGC := func(dir GitDir) (done bool, err error) {
+	ensureAutoGC := func(dir common.GitDir) (done bool, err error) {
 		return false, gitSetAutoGC(dir)
 	}
 
-	maybeReclone := func(dir GitDir) (done bool, err error) {
+	maybeReclone := func(dir common.GitDir) (done bool, err error) {
 		repoType, err := getRepositoryType(dir)
 		if err != nil {
 			return false, err
@@ -371,7 +372,7 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.Gits
 		return true, nil
 	}
 
-	removeStaleLocks := func(gitDir GitDir) (done bool, err error) {
+	removeStaleLocks := func(gitDir common.GitDir) (done bool, err error) {
 		// if removing a lock fails, we still want to try the other locks.
 		var multi error
 
@@ -423,21 +424,21 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.Gits
 		return false, multi
 	}
 
-	performGC := func(dir GitDir) (done bool, err error) {
+	performGC := func(dir common.GitDir) (done bool, err error) {
 		return false, gitGC(dir)
 	}
 
-	performSGMaintenance := func(dir GitDir) (done bool, err error) {
+	performSGMaintenance := func(dir common.GitDir) (done bool, err error) {
 		return false, sgMaintenance(logger, dir)
 	}
 
-	performGitPrune := func(dir GitDir) (done bool, err error) {
+	performGitPrune := func(dir common.GitDir) (done bool, err error) {
 		return false, pruneIfNeeded(dir, looseObjectsLimit)
 	}
 
 	type cleanupFn struct {
 		Name string
-		Do   func(GitDir) (bool, error)
+		Do   func(common.GitDir) (bool, error)
 	}
 	cleanups := []cleanupFn{
 		// Compute the amount of space used by the repo
@@ -501,7 +502,7 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.Gits
 		}
 
 		// We are sure this is a GIT_DIR after the above check
-		gitDir := GitDir(dir)
+		gitDir := common.GitDir(dir)
 
 		for _, cfn := range cleanups {
 			start := time.Now()
@@ -546,7 +547,7 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.Gits
 	}
 }
 
-func checkRepoDirCorrupt(dir GitDir) (bool, string, error) {
+func checkRepoDirCorrupt(dir common.GitDir) (bool, string, error) {
 	// We treat repositories missing HEAD to be corrupt. Both our cloning
 	// and fetching ensure there is a HEAD file.
 	if _, err := os.Stat(dir.Path("HEAD")); os.IsNotExist(err) {
@@ -662,7 +663,7 @@ func (s *Server) freeUpSpace(logger log.Logger, howManyBytesToFree int64) error 
 	if err != nil {
 		return errors.Wrap(err, "finding git dirs")
 	}
-	dirModTimes := make(map[GitDir]time.Time, len(gitDirs))
+	dirModTimes := make(map[common.GitDir]time.Time, len(gitDirs))
 	for _, d := range gitDirs {
 		mt, err := gitDirModTime(d)
 		if err != nil {
@@ -717,7 +718,7 @@ func (s *Server) freeUpSpace(logger log.Logger, howManyBytesToFree int64) error 
 	return nil
 }
 
-func gitDirModTime(d GitDir) (time.Time, error) {
+func gitDirModTime(d common.GitDir) (time.Time, error) {
 	head, err := os.Stat(d.Path("HEAD"))
 	if err != nil {
 		return time.Time{}, errors.Wrap(err, "getting repository modification time")
@@ -725,8 +726,8 @@ func gitDirModTime(d GitDir) (time.Time, error) {
 	return head.ModTime(), nil
 }
 
-func (s *Server) findGitDirs() ([]GitDir, error) {
-	var dirs []GitDir
+func (s *Server) findGitDirs() ([]common.GitDir, error) {
+	var dirs []common.GitDir
 	err := bestEffortWalk(s.ReposDir, func(path string, fi fs.DirEntry) error {
 		if s.ignorePath(path) {
 			if fi.IsDir() {
@@ -737,7 +738,7 @@ func (s *Server) findGitDirs() ([]GitDir, error) {
 		if !fi.IsDir() || fi.Name() != ".git" {
 			return nil
 		}
-		dirs = append(dirs, GitDir(path))
+		dirs = append(dirs, common.GitDir(path))
 		return filepath.SkipDir
 	})
 	if err != nil {
@@ -773,7 +774,7 @@ func dirSize(d string) int64 {
 // the directory.
 //
 // Additionally, it removes parent empty directories up until s.ReposDir.
-func (s *Server) removeRepoDirectory(gitDir GitDir, logger log.Logger, updateCloneStatus bool) error {
+func (s *Server) removeRepoDirectory(gitDir common.GitDir, logger log.Logger, updateCloneStatus bool) error {
 	ctx := context.Background()
 	dir := string(gitDir)
 
@@ -853,7 +854,7 @@ func (s *Server) removeRepoDirectory(gitDir GitDir, logger log.Logger, updateClo
 // and would be purged by `git gc --prune=now`, but `git gc` is
 // very slow. Removing these files while they're in use will cause
 // an operation to fail, but not damage the repository.
-func (s *Server) cleanTmpFiles(dir GitDir) {
+func (s *Server) cleanTmpFiles(dir common.GitDir) {
 	now := time.Now()
 	logger := s.Logger.Scoped("cleanup.cleanTmpFiles", "tries to remove tmp_pack_* files from .git/objects/pack")
 	packdir := dir.Path("objects", "pack")
@@ -934,12 +935,12 @@ func (s *Server) SetupAndClearTmp() (string, error) {
 }
 
 // setRepositoryType sets the type of the repository.
-func setRepositoryType(dir GitDir, typ string) error {
+func setRepositoryType(dir common.GitDir, typ string) error {
 	return gitConfigSet(dir, "sourcegraph.type", typ)
 }
 
 // getRepositoryType returns the type of the repository.
-func getRepositoryType(dir GitDir) (string, error) {
+func getRepositoryType(dir common.GitDir) (string, error) {
 	val, err := gitConfigGet(dir, "sourcegraph.type")
 	if err != nil {
 		return "", err
@@ -948,7 +949,7 @@ func getRepositoryType(dir GitDir) (string, error) {
 }
 
 // setRecloneTime sets the time a repository is cloned.
-func setRecloneTime(dir GitDir, now time.Time) error {
+func setRecloneTime(dir common.GitDir, now time.Time) error {
 	err := gitConfigSet(dir, "sourcegraph.recloneTimestamp", strconv.FormatInt(now.Unix(), 10))
 	if err != nil {
 		ensureHEAD(dir)
@@ -960,7 +961,7 @@ func setRecloneTime(dir GitDir, now time.Time) error {
 // getRecloneTime returns an approximate time a repository is cloned. If the
 // value is not stored in the repository, the re-clone time for the repository is
 // set to now.
-func getRecloneTime(dir GitDir) (time.Time, error) {
+func getRecloneTime(dir common.GitDir) (time.Time, error) {
 	// We store the time we re-cloned the repository. If the value is missing,
 	// we store the current time. This decouples this timestamp from the
 	// different ways a clone can appear in gitserver.
@@ -990,7 +991,7 @@ func getRecloneTime(dir GitDir) (time.Time, error) {
 	return time.Unix(sec, 0), nil
 }
 
-func checkMaybeCorruptRepo(logger log.Logger, repo api.RepoName, dir GitDir, stderr string) bool {
+func checkMaybeCorruptRepo(logger log.Logger, repo api.RepoName, dir common.GitDir, stderr string) bool {
 	if !stdErrIndicatesCorruption(stderr) {
 		return false
 	}
@@ -1037,7 +1038,7 @@ var (
 // Note: it is not always possible to check if a repository is bare since a
 // lock file may prevent the check from succeeding. We only want bare
 // repositories and want to avoid transient false positives.
-func gitIsNonBareBestEffort(dir GitDir) bool {
+func gitIsNonBareBestEffort(dir common.GitDir) bool {
 	cmd := exec.Command("git", "-C", dir.Path(), "rev-parse", "--is-bare-repository")
 	dir.Set(cmd)
 	b, _ := cmd.Output()
@@ -1048,7 +1049,7 @@ func gitIsNonBareBestEffort(dir GitDir) bool {
 // gitGC will invoke `git-gc` to clean up any garbage in the repo. It will
 // operate synchronously and be aggressive with its internal heuristics when
 // deciding to act (meaning it will act now at lower thresholds).
-func gitGC(dir GitDir) error {
+func gitGC(dir common.GitDir) error {
 	cmd := exec.Command("git", "-c", "gc.auto=1", "-c", "gc.autoDetach=false", "gc", "--auto")
 	dir.Set(cmd)
 	err := cmd.Run()
@@ -1075,7 +1076,7 @@ repository should be recloned.`
 //	<sgmLogPrefix>=<int>
 //
 //	<error message>
-func writeSGMLog(dir GitDir, m []byte) error {
+func writeSGMLog(dir common.GitDir, m []byte) error {
 	return os.WriteFile(
 		dir.Path(sgmLog),
 		[]byte(fmt.Sprintf("%s\n\n%s%d\n\n%s\n", sgmLogHeader, sgmLogPrefix, bestEffortReadFailed(dir)+1, m)),
@@ -1083,7 +1084,7 @@ func writeSGMLog(dir GitDir, m []byte) error {
 	)
 }
 
-func bestEffortReadFailed(dir GitDir) int {
+func bestEffortReadFailed(dir common.GitDir) int {
 	b, err := os.ReadFile(dir.Path(sgmLog))
 	if err != nil {
 		return 0
@@ -1112,7 +1113,7 @@ func bestEffortParseFailed(b []byte) int {
 // concurrently with git gc. sgMaintenance will check the state of the repository
 // to avoid running the cleanup tasks if possible. If a sgmLog file is present in
 // dir, sgMaintenance will not run unless the file is old.
-func sgMaintenance(logger log.Logger, dir GitDir) (err error) {
+func sgMaintenance(logger log.Logger, dir common.GitDir) (err error) {
 	// Don't run if sgmLog file is younger than sgmLogExpire hours. There is no need
 	// to report an error, because the error has already been logged in a previous
 	// run.
@@ -1163,7 +1164,7 @@ func sgMaintenance(logger log.Logger, dir GitDir) (err error) {
 
 const gcLockFile = "gc.pid"
 
-func lockRepoForGC(dir GitDir) (error, func() error) {
+func lockRepoForGC(dir common.GitDir) (error, func() error) {
 	// Setting permissions to 644 to mirror the permissions that git gc sets for gc.pid.
 	f, err := os.OpenFile(dir.Path(gcLockFile), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
 	if err != nil {
@@ -1198,7 +1199,7 @@ func lockRepoForGC(dir GitDir) (error, func() error) {
 
 // We run git-prune only if there are enough loose objects. This approach is
 // adapted from https://gitlab.com/gitlab-org/gitaly.
-func pruneIfNeeded(dir GitDir, limit int) (err error) {
+func pruneIfNeeded(dir common.GitDir, limit int) (err error) {
 	needed, err := tooManyLooseObjects(dir, limit)
 	defer func() {
 		pruneStatus.WithLabelValues(strconv.FormatBool(err == nil), strconv.FormatBool(!needed)).Inc()
@@ -1224,7 +1225,7 @@ func pruneIfNeeded(dir GitDir, limit int) (err error) {
 	return nil
 }
 
-func needsMaintenance(dir GitDir) (bool, string, error) {
+func needsMaintenance(dir common.GitDir) (bool, string, error) {
 	// Bitmaps store reachability information about the set of objects in a
 	// packfile which speeds up clone and fetch operations.
 	hasBm, err := hasBitmap(dir)
@@ -1269,7 +1270,7 @@ var reHexadecimal = lazyregexp.New("^[0-9a-f]+$")
 // loose objects by counting the objects in a sentinel folder and extrapolating
 // based on the assumption that loose objects are randomly distributed in the
 // 256 possible folders.
-func tooManyLooseObjects(dir GitDir, limit int) (bool, error) {
+func tooManyLooseObjects(dir common.GitDir, limit int) (bool, error) {
 	// We use the same folder git uses to estimate the number of loose objects.
 	objs, err := os.ReadDir(filepath.Join(dir.Path(), "objects", "17"))
 	if err != nil {
@@ -1296,7 +1297,7 @@ func tooManyLooseObjects(dir GitDir, limit int) (bool, error) {
 	return count*256 > limit, nil
 }
 
-func hasBitmap(dir GitDir) (bool, error) {
+func hasBitmap(dir common.GitDir) (bool, error) {
 	bitmaps, err := filepath.Glob(dir.Path("objects", "pack", "*.bitmap"))
 	if err != nil {
 		return false, err
@@ -1304,7 +1305,7 @@ func hasBitmap(dir GitDir) (bool, error) {
 	return len(bitmaps) > 0, nil
 }
 
-func hasCommitGraph(dir GitDir) (bool, error) {
+func hasCommitGraph(dir common.GitDir) (bool, error) {
 	if _, err := os.Stat(dir.Path("objects", "info", "commit-graph")); err == nil {
 		return true, nil
 	} else if errors.Is(err, fs.ErrNotExist) {
@@ -1316,7 +1317,7 @@ func hasCommitGraph(dir GitDir) (bool, error) {
 
 // tooManyPackfiles counts the packfiles in objects/pack. Packfiles with an
 // accompanying .keep file are ignored.
-func tooManyPackfiles(dir GitDir, limit int) (bool, error) {
+func tooManyPackfiles(dir common.GitDir, limit int) (bool, error) {
 	packs, err := filepath.Glob(dir.Path("objects", "pack", "*.pack"))
 	if err != nil {
 		return false, err
@@ -1343,7 +1344,7 @@ func tooManyPackfiles(dir GitDir, limit int) (bool, error) {
 //
 // The purpose is to avoid repository corruption which can happen if several
 // git-gc operations are running at the same time.
-func gitSetAutoGC(dir GitDir) error {
+func gitSetAutoGC(dir common.GitDir) error {
 	switch gitGCMode {
 	case gitGCModeGitAutoGC, gitGCModeJanitorAutoGC:
 		return gitConfigUnset(dir, "gc.auto")
@@ -1357,7 +1358,7 @@ func gitSetAutoGC(dir GitDir) error {
 	}
 }
 
-func gitConfigGet(dir GitDir, key string) (string, error) {
+func gitConfigGet(dir common.GitDir, key string) (string, error) {
 	cmd := exec.Command("git", "config", "--get", key)
 	dir.Set(cmd)
 	out, err := cmd.Output()
@@ -1372,7 +1373,7 @@ func gitConfigGet(dir GitDir, key string) (string, error) {
 	return strings.TrimSpace(string(out)), nil
 }
 
-func gitConfigSet(dir GitDir, key, value string) error {
+func gitConfigSet(dir common.GitDir, key, value string) error {
 	cmd := exec.Command("git", "config", key, value)
 	dir.Set(cmd)
 	err := cmd.Run()
@@ -1382,7 +1383,7 @@ func gitConfigSet(dir GitDir, key, value string) error {
 	return nil
 }
 
-func gitConfigUnset(dir GitDir, key string) error {
+func gitConfigUnset(dir common.GitDir, key string) error {
 	cmd := exec.Command("git", "config", "--unset-all", key)
 	dir.Set(cmd)
 	err := cmd.Run()
