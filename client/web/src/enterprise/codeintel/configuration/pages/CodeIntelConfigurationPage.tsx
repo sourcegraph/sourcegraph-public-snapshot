@@ -59,12 +59,12 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
     const apolloClient = useApolloClient()
     const queryDefaultPoliciesCallback = useCallback(
         (args: FilteredConnectionQueryArguments) =>
-            queryPolicies({ ...args, repository: repo?.id, protected: true }, apolloClient),
+            queryPolicies({ ...args, repository: repo?.id, forEmbeddings: false, protected: true }, apolloClient),
         [queryPolicies, repo?.id, apolloClient]
     )
     const queryCustomPoliciesCallback = useCallback(
         (args: FilteredConnectionQueryArguments) =>
-            queryPolicies({ ...args, repository: repo?.id, protected: false }, apolloClient),
+            queryPolicies({ ...args, repository: repo?.id, forEmbeddings: false, protected: false }, apolloClient),
         [queryPolicies, repo?.id, apolloClient]
     )
 
