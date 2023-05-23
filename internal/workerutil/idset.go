@@ -2,45 +2,52 @@ package workerutil
 
 import (
 	"context"
-	"sort"
 	"sync"
 )
 
-type IDSet struct {
-	sync.RWMutex
-	ids map[int]context.CancelFunc
+type internalWrapper[T Record] struct {
+	cancel context.CancelFunc
+	r      T
 }
 
-func newIDSet() *IDSet {
-	return &IDSet{ids: map[int]context.CancelFunc{}}
+type RecordSet[T Record] struct {
+	sync.RWMutex
+	records map[int]internalWrapper[T]
+}
+
+func newIDSet[T Record]() *RecordSet[T] {
+	return &RecordSet[T]{records: map[int]internalWrapper[T]{}}
 }
 
 // Add associates the given identifier with the given cancel function
 // in the set. If the identifier was already present then the set is
 // unchanged.
-func (i *IDSet) Add(id int, cancel context.CancelFunc) bool {
+func (i *RecordSet[T]) Add(r T, cancel context.CancelFunc) bool {
 	i.Lock()
 	defer i.Unlock()
 
-	if _, ok := i.ids[id]; ok {
+	if _, ok := i.records[r.RecordID()]; ok {
 		return false
 	}
 
-	i.ids[id] = cancel
+	i.records[r.RecordID()] = internalWrapper[T]{
+		cancel: cancel,
+		r:      r,
+	}
 	return true
 }
 
 // Remove invokes the cancel function associated with the given identifier
 // in the set and removes the identifier from the set. If the identifier is
 // not a member of the set, then no action is performed.
-func (i *IDSet) Remove(id int) bool {
+func (i *RecordSet[T]) Remove(r T) bool {
 	i.Lock()
-	cancel, ok := i.ids[id]
-	delete(i.ids, id)
+	w, ok := i.records[r.RecordID()]
+	delete(i.records, r.RecordID())
 	i.Unlock()
 
 	if ok {
-		cancel()
+		w.cancel()
 	}
 
 	return ok
@@ -49,34 +56,36 @@ func (i *IDSet) Remove(id int) bool {
 // Remove invokes the cancel function associated with the given identifier
 // in the set. If the identifier is not a member of the set, then no action
 // is performed.
-func (i *IDSet) Cancel(id int) {
+func (i *RecordSet[T]) Cancel(r T) {
 	i.RLock()
-	cancel, ok := i.ids[id]
+	w, ok := i.records[r.RecordID()]
 	i.RUnlock()
 
 	if ok {
-		cancel()
+		w.cancel()
 	}
 }
 
 // Slice returns an ordered copy of the identifiers composing the set.
-func (i *IDSet) Slice() []int {
+func (i *RecordSet[T]) Slice() []T {
 	i.RLock()
 	defer i.RUnlock()
 
-	ids := make([]int, 0, len(i.ids))
-	for id := range i.ids {
-		ids = append(ids, id)
+	ids := make([]T, 0, len(i.records))
+	for _, r := range i.records {
+		ids = append(ids, r.r)
 	}
-	sort.Ints(ids)
+	// TODO: This is likely only for testing, but should still reimplement it.
+	// sort.Ints(ids)
 
 	return ids
 }
 
 // Has returns whether the IDSet contains the given id.
-func (i *IDSet) Has(id int) bool {
+func (i *RecordSet[T]) Has(r T) bool {
+	id := r.RecordID()
 	for _, have := range i.Slice() {
-		if id == have {
+		if id == have.RecordID() {
 			return true
 		}
 	}

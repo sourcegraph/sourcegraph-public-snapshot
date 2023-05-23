@@ -64,6 +64,11 @@ const (
 	ExecutorAPIVersion2 ExecutorAPIVersion = "V2"
 )
 
+type HeartbeatRecord struct {
+	ID    int
+	Queue string
+}
+
 type HeartbeatResponse struct {
 	KnownIDs  []int `json:"knownIds"`
 	CancelIDs []int `json:"cancelIds"`

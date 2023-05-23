@@ -35,7 +35,7 @@ type Client struct {
 }
 
 // Compile time validation.
-var _ workerutil.Store[types.Job] = &Client{}
+var _ workerutil.Store[types.Job, types.HeartbeatRecord] = &Client{}
 var _ command.ExecutionLogEntryStore = &Client{}
 
 func New(observationCtx *observation.Context, options Options, metricsGatherer prometheus.Gatherer) (*Client, error) {
@@ -149,10 +149,10 @@ func (c *Client) MarkFailed(ctx context.Context, job types.Job, failureMessage s
 	return true, nil
 }
 
-func (c *Client) Heartbeat(ctx context.Context, jobIDs []int) (knownIDs, cancelIDs []int, err error) {
+func (c *Client) Heartbeat(ctx context.Context, records []types.Job) (knownIDs, cancelIDs []types.HeartbeatRecord, err error) {
 	ctx, _, endObservation := c.operations.heartbeat.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("queueName", c.options.QueueName),
-		attribute.IntSlice("jobIDs", jobIDs),
+		// attribute.IntSlice("jobIDs", jobIDs),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -167,7 +167,7 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []int) (knownIDs, cancelI
 		Version: types.ExecutorAPIVersion2,
 
 		ExecutorName: c.options.ExecutorName,
-		JobIDs:       jobIDs,
+		JobIDs:       nil, // TODO: Transform records to something like {queue, id}
 
 		OS:              c.options.TelemetryOptions.OS,
 		Architecture:    c.options.TelemetryOptions.Architecture,
@@ -214,10 +214,10 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []int) (knownIDs, cancelI
 	// are talking to a pre-4.3 Sourcegraph API and that doesn't return canceled
 	// jobs as part of heartbeats.
 
-	cancelIDs, err = c.CanceledJobs(ctx, jobIDs)
-	if err != nil {
-		return nil, nil, err
-	}
+	// cancelIDs, err = c.CanceledJobs(ctx, jobIDs)
+	// if err != nil {
+	// 	return nil, nil, err
+	// }
 
 	return respV1, cancelIDs, nil
 }

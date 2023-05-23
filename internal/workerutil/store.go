@@ -11,7 +11,7 @@ type Record interface {
 }
 
 // Store is the persistence layer for the workerutil package that handles worker-side operations.
-type Store[T Record] interface {
+type Store[T Record, U Record] interface {
 	// QueuedCount returns the number of records in the queued state.
 	QueuedCount(ctx context.Context) (int, error)
 
@@ -22,7 +22,7 @@ type Store[T Record] interface {
 
 	// Heartbeat updates last_heartbeat_at of all the given jobs, when they're processing. All IDs of records that were
 	// touched are returned. Additionally, jobs in the working set that are flagged as to be canceled are returned.
-	Heartbeat(ctx context.Context, jobIDs []int) (knownIDs, cancelIDs []int, err error)
+	Heartbeat(ctx context.Context, records []U) (knownIDs, cancelIDs []U, err error)
 
 	// MarkComplete attempts to update the state of the record to complete. This method returns a boolean flag indicating
 	// if the record was updated.

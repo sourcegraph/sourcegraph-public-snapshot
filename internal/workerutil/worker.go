@@ -24,24 +24,29 @@ import (
 // ErrJobAlreadyExists occurs when a duplicate job identifier is dequeued.
 var ErrJobAlreadyExists = errors.New("job already exists")
 
+type IntRecord int
+
+func (i IntRecord) RecordID() int { return int(i) }
+
 // Worker is a generic consumer of records from the workerutil store.
-type Worker[T Record] struct {
-	store            Store[T]
-	handler          Handler[T]
-	options          WorkerOptions
-	dequeueClock     glock.Clock
-	heartbeatClock   glock.Clock
-	shutdownClock    glock.Clock
-	numDequeues      int             // tracks number of dequeue attempts
-	handlerSemaphore chan struct{}   // tracks available handler slots
-	rootCtx          context.Context // root context passed to the handler
-	dequeueCtx       context.Context // context used for dequeue loop (based on root)
-	dequeueCancel    func()          // cancels the dequeue context
-	wg               sync.WaitGroup  // tracks active handler routines
-	finished         chan struct{}   // signals that Start has finished
-	runningIDSet     *IDSet          // tracks the running job IDs to heartbeat
-	jobName          string
-	recorder         *recorder.Recorder
+type Worker[T Record, U Record] struct {
+	store             Store[T, U]
+	handler           Handler[T]
+	options           WorkerOptions
+	dequeueClock      glock.Clock
+	heartbeatClock    glock.Clock
+	shutdownClock     glock.Clock
+	numDequeues       int             // tracks number of dequeue attempts
+	handlerSemaphore  chan struct{}   // tracks available handler slots
+	rootCtx           context.Context // root context passed to the handler
+	dequeueCtx        context.Context // context used for dequeue loop (based on root)
+	dequeueCancel     func()          // cancels the dequeue context
+	wg                sync.WaitGroup  // tracks active handler routines
+	finished          chan struct{}   // signals that Start has finished
+	runningIDSet      *RecordSet[T]   // tracks the running job IDs to heartbeat
+	recordTransformer func(T) U
+	jobName           string
+	recorder          *recorder.Recorder
 }
 
 // dummyType is only for this compile-time test.
@@ -49,7 +54,7 @@ type dummyType struct{}
 
 func (d dummyType) RecordID() int { return 0 }
 
-var _ recorder.Recordable = &Worker[dummyType]{}
+var _ recorder.Recordable = &Worker[dummyType, IntRecord]{}
 
 type WorkerOptions struct {
 	// Name denotes the name of the worker used to distinguish log messages and
@@ -135,7 +140,7 @@ func newWorker[T Record](ctx context.Context, store Store[T], handler Handler[T]
 		dequeueCtx:       dequeueContext,
 		dequeueCancel:    cancel,
 		finished:         make(chan struct{}),
-		runningIDSet:     newIDSet(),
+		runningIDSet:     newIDSet[T](),
 	}
 }
 
@@ -158,32 +163,32 @@ func (w *Worker[T]) Start() {
 			case <-w.heartbeatClock.After(w.options.HeartbeatInterval):
 			}
 
-			ids := w.runningIDSet.Slice()
-			knownIDs, canceledIDs, err := w.store.Heartbeat(w.rootCtx, ids)
+			records := w.runningIDSet.Slice()
+			knownIDs, canceledIDs, err := w.store.Heartbeat(w.rootCtx, records)
 			if err != nil {
 				w.options.Metrics.logger.Error("Failed to refresh heartbeats",
-					log.Ints("ids", ids),
+					// log.Ints("ids", ids), todo
 					log.Error(err))
 				// Bail out and restart the for loop.
 				continue
 			}
 			knownIDsMap := map[int]struct{}{}
 			for _, id := range knownIDs {
-				knownIDsMap[id] = struct{}{}
+				knownIDsMap[id.RecordID()] = struct{}{}
 			}
 
-			for _, id := range ids {
-				if _, ok := knownIDsMap[id]; !ok {
-					if w.runningIDSet.Remove(id) {
+			for _, r := range records {
+				if _, ok := knownIDsMap[r.RecordID()]; !ok {
+					if w.runningIDSet.Remove(r) {
 						w.options.Metrics.logger.Error("Removed unknown job from running set",
-							log.Int("id", id))
+							log.Int("id", r.RecordID()))
 					}
 				}
 			}
 
-			if len(canceledIDs) > 0 {
-				w.options.Metrics.logger.Info("Found jobs to cancel", log.Ints("IDs", canceledIDs))
-			}
+			// if len(canceledIDs) > 0 {
+			// 	w.options.Metrics.logger.Info("Found jobs to cancel", log.Ints("IDs", canceledIDs))
+			// }
 
 			for _, id := range canceledIDs {
 				w.runningIDSet.Cancel(id)
@@ -316,7 +321,7 @@ func (w *Worker[T]) dequeueAndHandle() (dequeued bool, err error) {
 	processLog := trace.Logger(workerCtxWithSpan, w.options.Metrics.logger)
 
 	// Register the record as running so it is included in heartbeat updates.
-	if !w.runningIDSet.Add(record.RecordID(), cancel) {
+	if !w.runningIDSet.Add(record, cancel) {
 		workerSpan.LogFields(otlog.Error(ErrJobAlreadyExists))
 		workerSpan.Finish()
 		return false, ErrJobAlreadyExists
@@ -353,7 +358,7 @@ func (w *Worker[T]) dequeueAndHandle() (dequeued bool, err error) {
 
 			// Remove the record from the set of running jobs, so it is not included
 			// in heartbeat updates anymore.
-			defer w.runningIDSet.Remove(record.RecordID())
+			defer w.runningIDSet.Remove(record)
 			w.options.Metrics.numJobs.Dec()
 			w.handlerSemaphore <- struct{}{}
 			w.wg.Done()
@@ -400,7 +405,7 @@ func (w *Worker[T]) handle(ctx, workerContext context.Context, record T) (err er
 		go w.recorder.LogRun(w, duration, handleErr)
 	}
 
-	if errcode.IsNonRetryable(handleErr) || handleErr != nil && w.isJobCanceled(record.RecordID(), handleErr, ctx.Err()) {
+	if errcode.IsNonRetryable(handleErr) || handleErr != nil && w.isJobCanceled(record, handleErr, ctx.Err()) {
 		if marked, markErr := w.store.MarkFailed(workerContext, record, handleErr.Error()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkFailed")
 		} else if marked {
@@ -427,8 +432,8 @@ func (w *Worker[T]) handle(ctx, workerContext context.Context, record T) (err er
 // isJobCanceled returns true if the job has been canceled through the Cancel interface.
 // If the context is canceled, and the job is still part of the running ID set,
 // we know that it has been canceled for that reason.
-func (w *Worker[T]) isJobCanceled(id int, handleErr, ctxErr error) bool {
-	return errors.Is(handleErr, ctxErr) && w.runningIDSet.Has(id) && !errors.Is(handleErr, context.DeadlineExceeded)
+func (w *Worker[T]) isJobCanceled(r T, handleErr, ctxErr error) bool {
+	return errors.Is(handleErr, ctxErr) && w.runningIDSet.Has(r) && !errors.Is(handleErr, context.DeadlineExceeded)
 }
 
 // preDequeueHook invokes the handler's pre-dequeue hook if it exists.
