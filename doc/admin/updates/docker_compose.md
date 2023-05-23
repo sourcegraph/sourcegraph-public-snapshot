@@ -20,6 +20,10 @@ This page lists the changes that are relevant for [upgrading Sourcegraph on Dock
 
 <!-- Add changes changes to this section before release. -->
 
+#### Notes:
+
+- The **built-in** main Postgres (`pgsql`), codeintel (`codeintel-db`), and codeinsights (`codinsights-db`) databases have switched to a Wolfi-based Docker image. Upon upgrading, Sourcegraph will need to re-index the entire database. All users that use our bundled (built-in) database instances **must** read through the [5.1 upgrade guide](../migration/5_1.md) _before_ upgrading.
+
 ## v5.0.3 ➔ v5.0.4
 
 #### Notes:
