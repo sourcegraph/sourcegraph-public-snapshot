@@ -13,13 +13,19 @@ filename_from() {
   local filename
   arch=$(echo "$1" | cut -d '-' -f1)
   os=$(echo "$1" | cut -d '-' -f3)
+  # this is kind of annoying but tauri uses `x86_64` as a target platform but generates
+  # bundles using `amd64`
+  if [[ ${arch} == "x86_64" ]]; then
+    arch="amd64"
+  fi
 
   case "${os}" in
     "darwin")
       filename="Sourcegraph.${version}.${arch}.app.tar.gz"
       ;;
     "linux")
-      filename="sourcegraph.${version}.${arch}.AppImage"
+      # note the UNDERSCORES
+      filename="sourcegraph_${version}_${arch}.AppImage.tar.gz"
       ;;
     *)
       echo "cannot determine filename for unsupported os: ${os}"
