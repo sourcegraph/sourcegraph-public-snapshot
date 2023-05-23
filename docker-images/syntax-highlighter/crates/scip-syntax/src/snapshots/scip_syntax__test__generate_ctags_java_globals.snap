@@ -4,8 +4,6 @@ expression: "String::from_utf8_lossy(buf_writer.buffer())"
 ---
 {"_type":"tag","name":"globals","path":"globals.java","language":"go","line":1,"kind":"type","scope":null}
 {"_type":"tag","name":"ClassInAClass","path":"globals.java","language":"go","line":18,"kind":"type","scope":"globals"}
-{"_type":"tag","name":"Goated","path":"globals.java","language":"go","line":30,"kind":"type","scope":"globals.ClassInAClass"}
-{"_type":"tag","name":"withTheSauce","path":"globals.java","language":"go","line":31,"kind":"method","scope":"globals.ClassInAClass.Goated"}
 {"_type":"tag","name":"Enum","path":"globals.java","language":"go","line":21,"kind":"type","scope":"globals.ClassInAClass"}
 {"_type":"tag","name":"terms","path":"globals.java","language":"go","line":27,"kind":"variable","scope":"globals.ClassInAClass.Enum"}
 {"_type":"tag","name":"as","path":"globals.java","language":"go","line":26,"kind":"variable","scope":"globals.ClassInAClass.Enum"}
@@ -13,6 +11,8 @@ expression: "String::from_utf8_lossy(buf_writer.buffer())"
 {"_type":"tag","name":"be","path":"globals.java","language":"go","line":24,"kind":"variable","scope":"globals.ClassInAClass.Enum"}
 {"_type":"tag","name":"should","path":"globals.java","language":"go","line":23,"kind":"variable","scope":"globals.ClassInAClass.Enum"}
 {"_type":"tag","name":"these","path":"globals.java","language":"go","line":22,"kind":"variable","scope":"globals.ClassInAClass.Enum"}
+{"_type":"tag","name":"Goated","path":"globals.java","language":"go","line":30,"kind":"type","scope":"globals.ClassInAClass"}
+{"_type":"tag","name":"withTheSauce","path":"globals.java","language":"go","line":31,"kind":"method","scope":"globals.ClassInAClass.Goated"}
 {"_type":"tag","name":"myCoolMethod","path":"globals.java","language":"go","line":34,"kind":"method","scope":"globals.ClassInAClass"}
 {"_type":"tag","name":"classy","path":"globals.java","language":"go","line":19,"kind":"variable","scope":"globals.ClassInAClass"}
 {"_type":"tag","name":"COOLEST_STRING","path":"globals.java","language":"go","line":16,"kind":"variable","scope":"globals"}

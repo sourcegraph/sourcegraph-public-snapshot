@@ -1,5 +1,4 @@
 use anyhow::Result;
-use globals::MemoryBundle;
 use scip::types::Occurrence;
 use scip_treesitter_languages::parsers::BundledParser;
 use tree_sitter::Parser;
@@ -13,13 +12,12 @@ pub mod ts_scip;
 pub fn get_globals(
     parser: BundledParser,
     source_bytes: &[u8],
-    bundle: &mut MemoryBundle,
-) -> Option<Result<()>> {
+) -> Option<Result<(globals::Scope, usize)>> {
     let config = languages::get_tag_configuration(parser)?;
     let mut parser = Parser::new();
     parser.set_language(config.language).unwrap();
     let tree = parser.parse(source_bytes, None).unwrap();
-    Some(globals::parse_tree(config, &tree, source_bytes, bundle))
+    Some(globals::parse_tree(config, &tree, source_bytes))
 }
 
 pub fn get_locals(parser: BundledParser, source_bytes: &[u8]) -> Option<Result<Vec<Occurrence>>> {
@@ -31,31 +29,16 @@ pub fn get_locals(parser: BundledParser, source_bytes: &[u8]) -> Option<Result<V
 #[macro_export]
 macro_rules! generate_tags_and_snapshot {
     ($a:literal) => {{
-        let mut bundle = MemoryBundle {
-            scopes: vec![],
-            globals: vec![],
-            descriptors: vec![],
-
-            children: vec![],
-            scope_stack: vec![],
-        };
-
         let mut buffer = vec![0u8; 1024];
         let mut buf_writer = BufWriter::new(&mut buffer);
 
-        generate_tags(
-            &mut buf_writer,
-            $a.to_string(),
-            include_bytes!($a),
-            &mut bundle,
-        );
+        generate_tags(&mut buf_writer, $a.to_string(), include_bytes!($a));
         insta::assert_snapshot!(String::from_utf8_lossy(buf_writer.buffer()));
     }};
 }
 
 #[cfg(test)]
 mod test {
-    use crate::globals::MemoryBundle;
     use std::io::BufWriter;
 
     use crate::ctags::generate_tags;
