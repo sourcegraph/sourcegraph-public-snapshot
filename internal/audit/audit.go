@@ -86,6 +86,7 @@ const (
 
 // IsEnabled returns the value of the respective setting from the site config (if set).
 // Otherwise, it returns the default value for the setting.
+// NOTE: This does not affect security_event logs, these are separately configured
 func IsEnabled(cfg schema.SiteConfiguration, setting AuditLogSetting) bool {
 	if auditCfg := getAuditCfg(cfg); auditCfg != nil {
 		switch setting {
@@ -101,7 +102,7 @@ func IsEnabled(cfg schema.SiteConfiguration, setting AuditLogSetting) bool {
 	return false
 }
 
-// getLoggerFuncWithSeverity returns a specific logger function (logger.Info, logger.Warn, etc.), a the severity is configurable.
+// getLoggerFuncWithSeverity returns a specific logger function (logger.Info, logger.Warn, etc.), the severity is configurable.
 func getLoggerFuncWithSeverity(logger log.Logger, cfg schema.SiteConfiguration) func(string, ...log.Field) {
 	if auditCfg := getAuditCfg(cfg); auditCfg != nil {
 		switch auditCfg.SeverityLevel {

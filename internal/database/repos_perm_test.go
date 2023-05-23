@@ -817,7 +817,15 @@ VALUES
 
 func benchmarkAuthzQuery(b *testing.B, numRepos, numUsers, reposPerUser int) {
 	// disable security access logs, which pollute the output of benchmark
-	b.Setenv("SRC_DISABLE_LOG_PRIVATE_REPO_ACCESS", "true")
+	prevConf := conf.Get()
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+		Log: &schema.Log{
+			SecurityEventLog: &schema.SecurityEventLog{Location: "none"},
+		},
+	}})
+	b.Cleanup(func() {
+		conf.Mock(prevConf)
+	})
 
 	logger := logtest.Scoped(b)
 	db := NewDB(logger, dbtest.NewDB(logger, b))

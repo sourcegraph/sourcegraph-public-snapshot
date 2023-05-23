@@ -10,14 +10,26 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	// test setup and teardown
+	prevConf := conf.Get()
+	t.Cleanup(func() {
+		conf.Mock(prevConf)
+	})
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+		Log: &schema.Log{
+			SecurityEventLog: &schema.SecurityEventLog{Location: "all"},
+		},
+	}})
+
 	logger, exportLogs := logtest.Captured(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
