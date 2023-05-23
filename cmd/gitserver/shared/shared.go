@@ -21,6 +21,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -144,11 +145,11 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
 			return getVCSSyncer(ctx, externalServiceStore, repoStore, dependenciesSvc, repo, config.ReposDir, config.CoursierCacheDir)
 		},
-		Hostname:                       externalAddress(),
-		DB:                             db,
-		CloneQueue:                     server.NewCloneQueue(list.New()),
-		GlobalBatchLogSemaphore:        semaphore.NewWeighted(int64(batchLogGlobalConcurrencyLimit)),
-		PerforceChangelistMappingQueue: server.NewPerforceChangelistMappingQueue(list.New()),
+		Hostname:                externalAddress(),
+		DB:                      db,
+		CloneQueue:              server.NewCloneQueue(list.New()),
+		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(batchLogGlobalConcurrencyLimit)),
+		Perforce:                perforce.NewService(logger, db, list.New()),
 	}
 
 	configurationWatcher := conf.DefaultClient()
@@ -212,7 +213,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	gitserver.StartClonePipeline(ctx)
 
 	if conf.ExperimentalFeatures().Perforce == "enabled" {
-		gitserver.StartPerforceChangelistMappingPipeline(ctx)
+		gitserver.Perforce.StartPerforceChangelistMappingPipeline(ctx)
 	}
 
 	addr := getAddr()

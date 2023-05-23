@@ -37,6 +37,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -289,7 +290,7 @@ type Server struct {
 	recordingCommandFactory *wrexec.RecordingCommandFactory
 
 	// TODO: Update docsstring
-	PerforceChangelistMappingQueue *perforceChangelistMappingQueue
+	Perforce perforce.Service
 }
 
 type locks struct {
@@ -2349,7 +2350,10 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	if r, err := s.DB.Repos().GetByName(ctx, repo); err != nil {
 		logger.Warn("failed to retrieve repo from DB (this could be a data inconsistency)", log.Error(err))
 	} else if r.ExternalRepo.ServiceType == extsvc.TypePerforce {
-		s.PerforceChangelistMappingQueue.push(&perforceChangelistMappingJob{repo: repo})
+		s.Perforce.EnqueueChangelistMappingJob(&perforce.ChangelistMappingJob{
+			RepoName: repo,
+			RepoDir:  dir,
+		})
 	}
 
 	return nil
@@ -2622,7 +2626,10 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 	case <-done:
 		if err != nil {
 			s.Logger.Warn("Pushing to perforcechangelistmapping queue")
-			s.PerforceChangelistMappingQueue.push(&perforceChangelistMappingJob{repo: repo})
+			s.Perforce.EnqueueChangelistMappingJob(&perforce.ChangelistMappingJob{
+				RepoName: repo,
+				RepoDir:  s.dir(repo),
+			})
 		}
 		return errors.Wrapf(err, "repo %s:", repo)
 	case <-ctx.Done():
