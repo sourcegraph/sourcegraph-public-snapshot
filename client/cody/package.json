@@ -94,17 +94,17 @@
         {
           "id": "cody.tasks.view",
           "name": "Fixups",
-          "when": "cody.task.view.enabled && cody.activated",
+          "when": "cody.tasks.view.enabled && cody.activated",
           "icon": "cody.svg",
-          "contextualTitle": "Fixups Tasks"
+          "contextualTitle": "Fixups"
         }
       ]
     },
     "viewsWelcome": [
       {
         "view": "cody.tasks.view",
-        "contents": "No pending Cody Fixups.",
-        "when": "cody.task.view.enabled"
+        "contents": "No pending Cody fixups",
+        "when": "cody.tasks.view.enabled"
       }
     ],
     "commands": [
@@ -205,21 +205,21 @@
       },
       {
 				"command": "cody.task.add",
-				"title": "Cody: Add a non-stop Cody task with highlighted code",
+				"title": "Cody: Add a Cody task with highlighted code",
         "icon": "resources/cody.png",
-        "enablement": "cody.task.view.enabled"
+        "enablement": "cody.tasks.view.enabled"
 			},
       {
 				"command": "cody.task.open",
-				"title": "Cody: Go to task file",
-        "enablement": "cody.task.view.enabled",
+				"title": "Cody: Show this Fixup",
+        "enablement": "cody.tasks.view.enabled",
         "icon": "$(file-code)"
 			},
       {
-				"command": "cody.task.reset",
-				"title": "Non-Stop Cody: Remove all tasks",
-        "enablement": "cody.task.view.enabled && !cody.task.view.isEmpty && !cody.task.running",
-        "icon": "$(trash)"
+				"command": "cody.task.apply",
+				"title": "Cody: Apply fixup",
+        "enablement": "!cody.task.view.isEmpty && !cody.task.running",
+        "icon": "$(check-all)"
 			}
     ],
     "keybindings": [
@@ -307,7 +307,7 @@
           "when": "false"
         },
         {
-          "command": "cody.task.reset",
+          "command": "cody.task.apply",
           "when": "false"
         }
       ],
@@ -372,15 +372,15 @@
           "group": "navigation@2"
         },
         {
-          "command": "cody.task.reset",
-          "when": "view == cody.tasks.view && cody.activated && !cody.task.view.isEmpty",
+          "command": "cody.task.apply",
+          "when": "cody.tasks.view.enabled && view == cody.tasks.view && cody.activated",
           "group": "navigation"
         }
       ],
       "editor/title": [
         {
           "command": "cody.task.add",
-          "when": "cody.activated",
+          "when": "cody.tasks.view.enabled && cody.activated",
           "group": "navigation",
           "visibility": "visible"
         }

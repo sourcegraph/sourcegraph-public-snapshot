@@ -50,6 +50,11 @@ export class FixupTask {
         this.output(`Error for Task #${this.id} - ` + text)
     }
 
+    public apply(): void {
+        this.setState(CodyTaskState.applying)
+        this.output(`Task #${this.id} is being applied...`)
+    }
+
     private queue(): void {
         this.setState(CodyTaskState.queued)
         this.output(`Task #${this.id} has been added to the queue successfully...`)

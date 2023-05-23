@@ -2,8 +2,8 @@ export enum CodyTaskState {
     'idle' = 0,
     'queued' = 1,
     'pending' = 2,
-    'stopped' = 3,
-    'done' = 4,
+    'done' = 3,
+    'applying' = 4,
     'error' = 5,
 }
 
@@ -37,9 +37,9 @@ export const fixupTaskIcon: CodyTaskIcon = {
         id: 'queue',
         icon: 'clock',
     },
-    [CodyTaskState.stopped]: {
-        id: 'removed',
-        icon: 'circle-slash',
+    [CodyTaskState.applying]: {
+        id: 'applying',
+        icon: 'sync~spin',
     },
 }
 /**

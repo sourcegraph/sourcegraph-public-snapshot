@@ -131,7 +131,6 @@ ts_project(
         ":cody",
         "//:node_modules/@types/express",
         "//:node_modules/@types/node",
-        "//:node_modules/@vscode",
         "//:node_modules/express",
     ],
 )

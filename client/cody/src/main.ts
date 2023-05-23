@@ -263,7 +263,7 @@ const register = async (
                 await chatProvider.executeRecipe('non-stop', '', false)
             })
         )
-        await vscode.commands.executeCommand('setContext', 'cody.task.view.enabled', true)
+        await vscode.commands.executeCommand('setContext', 'cody.tasks.view.enabled', true)
     }
 
     return {
