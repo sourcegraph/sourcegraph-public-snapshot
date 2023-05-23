@@ -3885,7 +3885,7 @@ Foreign-key constraints:
 ```
           Column          |           Type           | Collation | Nullable |                      Default                      
 --------------------------+--------------------------+-----------+----------+---------------------------------------------------
- id                       | integer                  |           | not null | nextval('user_repo_permissions_id_seq'::regclass)
+ id                       | bigint                   |           | not null | nextval('user_repo_permissions_id_seq'::regclass)
  user_id                  | integer                  |           |          | 
  repo_id                  | integer                  |           | not null | 
  user_external_account_id | integer                  |           |          | 
