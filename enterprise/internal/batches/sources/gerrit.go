@@ -96,19 +96,19 @@ func (s GerritSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 // CreateChangeset will create the Changeset on the source. If it already
 // exists, *Changeset will be populated and the return value will be true.
 // noop, Gerrit creates changes through commits directly
-func (s GerritSource) CreateChangeset(ctx context.Context, cs *Changeset) (bool, error) {
+func (s GerritSource) CreateChangeset(_ context.Context, _ *Changeset) (bool, error) {
 	return true, nil
 }
 
 // CreateDraftChangeset creates the given changeset on the code host in draft mode.
 // no-op, Gerrit creates changes through commits directly
-func (s GerritSource) CreateDraftChangeset(ctx context.Context, cs *Changeset) (bool, error) {
+func (s GerritSource) CreateDraftChangeset(context.Context, *Changeset) (bool, error) {
 	return true, nil
 }
 
 // UndraftChangeset will update the Changeset on the source to be not in draft mode anymore.
 // Noop, Gerrit creates changes through commits directly
-func (s GerritSource) UndraftChangeset(ctx context.Context, cs *Changeset) error {
+func (s GerritSource) UndraftChangeset(context.Context, *Changeset) error {
 	return nil
 }
 
@@ -126,7 +126,7 @@ func (s GerritSource) CloseChangeset(ctx context.Context, cs *Changeset) error {
 
 // UpdateChangeset can update Changesets.
 // Noop, Gerrit updates changes through git push directly
-func (s GerritSource) UpdateChangeset(ctx context.Context, cs *Changeset) error {
+func (s GerritSource) UpdateChangeset(context.Context, *Changeset) error {
 	return nil
 }
 
@@ -171,11 +171,11 @@ func (s GerritSource) MergeChangeset(ctx context.Context, cs *Changeset, squash 
 // If name is not provided, the fork will be named with the default Sourcegraph convention:
 // "${original-namespace}-${original-name}"
 // Noop, Gerrit does not support Changes from forks.
-func (s GerritSource) GetFork(ctx context.Context, targetRepo *types.Repo, ns, n *string) (*types.Repo, error) {
+func (s GerritSource) GetFork(_ context.Context, _ *types.Repo, _, _ *string) (*types.Repo, error) {
 	return nil, nil
 }
 
-func (s GerritSource) setChangesetMetadata(ctx context.Context, pr *gerrit.Change, cs *Changeset) error {
+func (s GerritSource) setChangesetMetadata(_ context.Context, pr *gerrit.Change, cs *Changeset) error {
 	if err := cs.SetMetadata(pr); err != nil {
 		return errors.Wrap(err, "setting changeset metadata")
 	}
