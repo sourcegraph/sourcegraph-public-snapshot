@@ -1,5 +1,7 @@
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
+
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
+
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Recipes.module.css'

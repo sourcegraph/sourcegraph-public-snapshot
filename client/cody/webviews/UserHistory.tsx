@@ -2,10 +2,11 @@
 
 import { useCallback } from 'react'
 
+import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
+
 import { ChatHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { View } from './NavBar'
-import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
 import chatStyles from './Chat.module.css'
@@ -63,7 +64,8 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
                                     +new Date(b[1].lastInteractionTimestamp) - +new Date(a[1].lastInteractionTimestamp)
                             )
                             .map(chat => {
-                                const lastMessage = chat[1].interactions[chat[1].interactions.length - 1].assistantMessage
+                                const lastMessage =
+                                    chat[1].interactions[chat[1].interactions.length - 1].assistantMessage
                                 if (!lastMessage?.displayText) {
                                     return null
                                 }
@@ -76,12 +78,8 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
                                         type="button"
                                     >
                                         <div className={styles.itemButtonInnerContainer}>
-                                            <div className={styles.itemDate}>
-                                                {new Date(chat[0]).toLocaleString()}
-                                            </div>
-                                            <div className={styles.itemLastMessage}>
-                                                {lastMessage.displayText}
-                                            </div>
+                                            <div className={styles.itemDate}>{new Date(chat[0]).toLocaleString()}</div>
+                                            <div className={styles.itemLastMessage}>{lastMessage.displayText}</div>
                                         </div>
                                     </VSCodeButton>
                                 )
