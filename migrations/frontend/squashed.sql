@@ -2437,7 +2437,7 @@ CREATE TABLE github_apps (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     app_url text DEFAULT ''::text NOT NULL,
     webhook_id integer,
-    domain text DEFAULT 'repo'::text NOT NULL
+    domain text DEFAULT 'repos'::text NOT NULL
 );
 
 CREATE SEQUENCE github_apps_id_seq
