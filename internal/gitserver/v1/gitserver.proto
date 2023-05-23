@@ -215,18 +215,18 @@ message ArchiveResponse {
 
 // IsRepoCloneableRequest is a request to check if a repository is cloneable.
 message IsRepoCloneableRequest {
-    // repo is the name of the repo to check.
-    string repo = 1;
+  // repo is the name of the repo to check.
+  string repo = 1;
 }
 
 // IsRepoCloneableResponse is the response from the IsCloneable RPC.
 message IsRepoCloneableResponse {
-    // cloneable is true if the repository is cloneable.
-    bool cloneable = 1;
-    // cloned is true if the repository was cloned in the past.
-    bool cloned = 2;
-    // reason is why the repository is not cloneable.
-    string reason = 3;
+  // cloneable is true if the repository is cloneable.
+  bool cloneable = 1;
+  // cloned is true if the repository was cloned in the past.
+  bool cloned = 2;
+  // reason is why the repository is not cloneable.
+  string reason = 3;
 }
 
 // ReposStatsRequest is a empty request for the ReposStats RPC.
