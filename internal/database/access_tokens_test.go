@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestAccessTokens_parallel(t *testing.T) {
+func TestAccessTokens(t *testing.T) {
 	// perform test setup and teardown
 	prevConfg := conf.Get()
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
