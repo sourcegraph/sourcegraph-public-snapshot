@@ -129,7 +129,6 @@ export class InlineController {
         const codyReply = new Comment(text, 'Cody', this.codyIcon, false, this.thread, undefined)
         this.thread.comments = [...this.thread.comments, codyReply]
         this.thread.canReply = true
-        this.currentTaskId = ''
         void vscode.commands.executeCommand('setContext', 'cody.replied', true)
     }
     /**
