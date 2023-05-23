@@ -6,7 +6,7 @@ import { tauriInvoke } from '../app/tauriInvoke'
 import { HeroPage } from '../components/HeroPage'
 import { GetReposForCodyResult, GetReposForCodyVariables } from '../graphql-operations'
 
-import { CodyIcon } from './components/CodyIcon'
+import { CodyLogo } from './components/CodyLogo'
 import { CodySidebar } from './sidebar/CodySidebar'
 import { useChatStore } from './stores/chat'
 import { useIsCodyEnabled } from './useIsCodyEnabled'
@@ -68,14 +68,33 @@ const CodyDisabledNotice: React.FunctionComponent<{ reason: CodyDisabledReason }
             </>
         ),
         emailNotVerified: (
-            <Text className="mt-3">
-                Your Sourcegraph.com account does not have a verified email address. Please verify your email and
-                restart the Sourcegraph app.
-            </Text>
+            <>
+                <Text className="mt-3">
+                    Your Sourcegraph.com account does not have a verified email address. Please verify your email and
+                    restart the Sourcegraph app.
+                </Text>
+                <Button
+                    variant="primary"
+                    size="lg"
+                    as={Link}
+                    to="https://sourcegraph.com/user/settings/emails"
+                    target="_blank"
+                >
+                    Verify Email
+                </Button>
+            </>
         ),
     }
 
-    return <HeroPage className="mx-3" icon={CodyIcon} title="Cody is disabled" body={reasonBodies[reason]} />
+    return (
+        <HeroPage
+            className="mx-3"
+            icon={CodyLogo}
+            iconClassName="pr-1" // Optically center the icon
+            title="Cody is disabled"
+            body={reasonBodies[reason]}
+        />
+    )
 }
 
 const CodyChat: React.FunctionComponent<{}> = () => {
