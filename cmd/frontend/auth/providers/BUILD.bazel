@@ -2,7 +2,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "providers",
-    srcs = ["providers.go"],
+    srcs = [
+        "mock_auth_provider.go",
+        "providers.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers",
     visibility = ["//visibility:public"],
     deps = [
@@ -17,7 +20,6 @@ go_test(
     srcs = ["providers_test.go"],
     embed = [":providers"],
     deps = [
-        "//internal/extsvc",
         "//schema",
         "@com_github_stretchr_testify//require",
     ],

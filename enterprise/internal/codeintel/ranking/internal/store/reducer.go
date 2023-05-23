@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
-	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -17,8 +17,8 @@ func (s *store) InsertPathRanks(
 	derivativeGraphKey string,
 	batchSize int,
 ) (numInputsProcessed int, numPathRanksInserted int, err error) {
-	ctx, _, endObservation := s.operations.insertPathRanks.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("derivativeGraphKey", derivativeGraphKey),
+	ctx, _, endObservation := s.operations.insertPathRanks.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("derivativeGraphKey", derivativeGraphKey),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -122,10 +122,10 @@ inserted AS (
 ),
 set_progress AS (
 	UPDATE codeintel_ranking_progress
-	SET reducer_completed_at = NOW()
-	WHERE
-		id IN (SELECT id FROM progress) AND
-		NOT EXISTS (SELECT 1 FROM processed)
+	SET
+		num_count_records_processed = COALESCE(num_count_records_processed, 0) + (SELECT COUNT(*) FROM processed),
+		reducer_completed_at        = CASE WHEN (SELECT COUNT(*) FROM input_ranks) = 0 THEN NOW() ELSE NULL END
+	WHERE id IN (SELECT id FROM progress)
 )
 SELECT
 	(SELECT COUNT(*) FROM processed) AS num_processed,
@@ -133,7 +133,7 @@ SELECT
 `
 
 func (s *store) VacuumStaleRanks(ctx context.Context, derivativeGraphKey string) (rankRecordsDeleted, rankRecordsScanned int, err error) {
-	ctx, _, endObservation := s.operations.vacuumStaleRanks.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	ctx, _, endObservation := s.operations.vacuumStaleRanks.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	if _, ok := rankingshared.GraphKeyFromDerivativeGraphKey(derivativeGraphKey); !ok {

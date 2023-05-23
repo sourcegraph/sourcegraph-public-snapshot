@@ -125,7 +125,7 @@ var (
 	downToCommand   = cliutil.DownTo("sg migration", makeRunner, outputFactory, true)
 	validateCommand = cliutil.Validate("sg migration", makeRunner, outputFactory)
 	describeCommand = cliutil.Describe("sg migration", makeRunner, outputFactory)
-	driftCommand    = cliutil.Drift("sg migration", makeRunner, outputFactory, schemaFactories...)
+	driftCommand    = cliutil.Drift("sg migration", makeRunner, outputFactory, true, schemaFactories...)
 	addLogCommand   = cliutil.AddLog("sg migration", makeRunner, outputFactory)
 
 	leavesCommand = &cli.Command{

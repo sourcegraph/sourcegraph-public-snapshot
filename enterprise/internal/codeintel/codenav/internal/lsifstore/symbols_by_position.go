@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -20,11 +19,11 @@ import (
 // of monikers are attached to a single range. The order of the output slice is "outside-in", so that
 // the range attached to earlier monikers enclose the range attached to later monikers.
 func (s *store) GetMonikersByPosition(ctx context.Context, uploadID int, path string, line, character int) (_ [][]precise.MonikerData, err error) {
-	ctx, trace, endObservation := s.operations.getMonikersByPosition.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("uploadID", uploadID),
-		log.String("path", path),
-		log.Int("line", line),
-		log.Int("character", character),
+	ctx, trace, endObservation := s.operations.getMonikersByPosition.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("uploadID", uploadID),
+		attribute.String("path", path),
+		attribute.Int("line", line),
+		attribute.Int("character", character),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -109,10 +108,10 @@ LIMIT 1
 
 // GetPackageInformation returns package information data by identifier.
 func (s *store) GetPackageInformation(ctx context.Context, bundleID int, path, packageInformationID string) (_ precise.PackageInformationData, _ bool, err error) {
-	_, _, endObservation := s.operations.getPackageInformation.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("bundleID", bundleID),
-		log.String("path", path),
-		log.String("packageInformationID", packageInformationID),
+	_, _, endObservation := s.operations.getPackageInformation.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("bundleID", bundleID),
+		attribute.String("path", path),
+		attribute.String("packageInformationID", packageInformationID),
 	}})
 	defer endObservation(1, observation.Args{})
 

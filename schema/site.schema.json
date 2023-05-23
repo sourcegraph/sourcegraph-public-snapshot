@@ -2366,7 +2366,7 @@
         },
         "endpoint": {
           "type": "string",
-          "description": "The endpoint under which to reach the provider. Currently only used for provider type LLM proxy."
+          "description": "The endpoint under which to reach the provider. Currently only used for provider types \"llmproxy\" and \"anthropic\". The default values are \"https://completions.sourcegraph.com\" and \"https://api.anthropic.com/v1/complete\" for LLM proxy and Anthropic, respectively."
         },
         "perUserDailyLimit": {
           "description": "If > 0, enables the maximum number of completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.",

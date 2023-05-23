@@ -12,6 +12,7 @@ go_library(
     deps = [
         "//cmd/blobstore/shared",
         "//cmd/sourcegraph-oss/osscmd",
+        "//internal/sanitycheck",
     ],
 )
 

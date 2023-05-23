@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -82,11 +81,9 @@ func (s *Service) GetIndexConfigurationByRepositoryID(ctx context.Context, repos
 // InferIndexConfiguration looks at the repository contents at the latest commit on the default branch of the given
 // repository and determines an index configuration that is likely to succeed.
 func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) (_ *config.IndexConfiguration, _ []config.IndexJobHint, err error) {
-	ctx, trace, endObservation := s.operations.inferIndexConfiguration.With(ctx, &err, observation.Args{
-		LogFields: []otlog.Field{
-			otlog.Int("repositoryID", repositoryID),
-		},
-	})
+	ctx, trace, endObservation := s.operations.inferIndexConfiguration.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))

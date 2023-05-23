@@ -1,4 +1,3 @@
-import { spawnSync } from 'child_process'
 import path from 'path'
 
 import * as vscode from 'vscode'
@@ -7,14 +6,12 @@ import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-re
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
-import { getRecipe } from '@sourcegraph/cody-shared/src/chat/recipes/vscode-recipes'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ChatMessage, ChatHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { Editor } from '@sourcegraph/cody-shared/src/editor'
-import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
+import { Guardrails, annotateAttribution } from '@sourcegraph/cody-shared/src/guardrails'
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
@@ -25,32 +22,69 @@ import { View } from '../../webviews/NavBar'
 import { getFullConfig, updateConfiguration } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { logEvent } from '../event-logger'
-import { LocalKeywordContextFetcher } from '../keyword-context/local-keyword-context-fetcher'
 import { LocalAppDetector } from '../local-app-detector'
+import { debug } from '../log'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../services/SecretStorageProvider'
 import { TestSupport } from '../test-support'
 
-import { ConfigurationSubsetForWebview, DOTCOM_URL, ExtensionMessage, WebviewMessage } from './protocol'
+import {
+    AuthStatus,
+    ConfigurationSubsetForWebview,
+    DOTCOM_URL,
+    ExtensionMessage,
+    WebviewMessage,
+    isLocalApp,
+    isLoggedIn,
+} from './protocol'
+import { getRecipe } from './recipes'
+import { filesExist, getCodebaseContext } from './utils'
 
-export async function isValidLogin(
+export async function getAuthStatus(
     config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
-): Promise<boolean> {
+): Promise<AuthStatus> {
+    if (!config.accessToken) {
+        return {
+            showInvalidAccessTokenError: false,
+            authenticated: false,
+            hasVerifiedEmail: false,
+            requiresVerifiedEmail: false,
+        }
+    }
+
     const client = new SourcegraphGraphQLAPIClient(config)
-    const userId = await client.getCurrentUserId()
-    return !isError(userId)
+    if (client.isDotCom() || isLocalApp(config.serverEndpoint)) {
+        const data = await client.getCurrentUserIdAndVerifiedEmail()
+        return {
+            showInvalidAccessTokenError: isError(data),
+            authenticated: !isError(data),
+            hasVerifiedEmail: !isError(data) && data?.hasVerifiedEmail,
+            // on sourcegraph.com this is always true
+            requiresVerifiedEmail: true,
+        }
+    }
+
+    const currentUserID = await client.getCurrentUserId()
+    return {
+        showInvalidAccessTokenError: isError(currentUserID),
+        authenticated: !isError(currentUserID),
+        hasVerifiedEmail: false,
+        requiresVerifiedEmail: false,
+    }
 }
 
-type Config = Pick<
+export type Config = Pick<
     ConfigurationWithAccessToken,
     | 'codebase'
     | 'serverEndpoint'
-    | 'debug'
+    | 'debugEnable'
+    | 'debugFilter'
+    | 'debugVerbose'
     | 'customHeaders'
     | 'accessToken'
     | 'useContext'
     | 'experimentalChatPredictions'
-    | 'experimentalConnectToApp'
+    | 'experimentalGuardrails'
 >
 
 export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
@@ -84,6 +118,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         private chat: ChatClient,
         private intentDetector: IntentDetector,
         private codebaseContext: CodebaseContext,
+        private guardrails: Guardrails,
         private editor: VSCodeEditor,
         private secretStorage: SecretStorage,
         private localStorage: LocalStorage,
@@ -171,6 +206,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
             case 'initialized':
+                debug('ChatViewProvider:onDidReceiveMessage:initialized', '')
                 this.loadChatHistory()
                 this.publishContextStatus()
                 this.publishConfig()
@@ -188,27 +224,26 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 await this.executeRecipe(message.recipe)
                 break
             case 'settings': {
-                const isValid = await isValidLogin({
+                const authStatus = await getAuthStatus({
                     serverEndpoint: message.serverEndpoint,
                     accessToken: message.accessToken,
                     customHeaders: this.config.customHeaders,
                 })
                 // activate when user has valid login
-                await vscode.commands.executeCommand('setContext', 'cody.activated', isValid)
-                if (isValid) {
+                await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
+                if (isLoggedIn(authStatus)) {
                     await updateConfiguration('serverEndpoint', message.serverEndpoint)
                     await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
                     this.sendEvent('auth', 'login')
                 }
-                void this.webview?.postMessage({ type: 'login', isValid })
+                void this.webview?.postMessage({ type: 'login', authStatus })
                 break
             }
             case 'event':
                 this.sendEvent(message.event, message.value)
                 break
             case 'removeToken':
-                await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
-                this.sendEvent('token', 'Delete')
+                await this.logout()
                 break
             case 'removeHistory':
                 await this.clearHistory()
@@ -266,7 +301,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 const lastInteraction = this.transcript.getLastInteraction()
                 if (lastInteraction) {
                     const displayText = reformatBotMessage(text, responsePrefix)
-                    const { text: highlightedDisplayText } = await highlightTokens(displayText || '', filesExist)
+                    let { text: highlightedDisplayText } = await highlightTokens(displayText || '', filesExist)
+                    if (this.config.experimentalGuardrails) {
+                        // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
+                        highlightedDisplayText = await annotateAttribution(this.guardrails, highlightedDisplayText)
+                    }
                     this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
                     this.editor.controller.reply(highlightedDisplayText)
                 }
@@ -291,7 +330,21 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.transcript.addErrorAsAssistantResponse(err)
                 // Log users out on unauth error
                 if (statusCode && statusCode >= 400 && statusCode <= 410) {
-                    void this.sendLogin(false)
+                    if (statusCode === 403) {
+                        void this.sendLogin({
+                            showInvalidAccessTokenError: false,
+                            authenticated: true,
+                            hasVerifiedEmail: false,
+                            requiresVerifiedEmail: true,
+                        })
+                    } else {
+                        void this.sendLogin({
+                            showInvalidAccessTokenError: true,
+                            authenticated: false,
+                            hasVerifiedEmail: false,
+                            requiresVerifiedEmail: false,
+                        })
+                    }
                     void this.clearAndRestartSession()
                 }
                 this.onCompletionEnd()
@@ -314,6 +367,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion'): Promise<void> {
+        debug('ChatViewProvider:onHumanMessageSubmitted', '', { verbose: { text, submitType } })
         if (submitType === 'suggestion') {
             logEvent('CodyVSCodeExtension:chatPredictions:used')
         }
@@ -325,14 +379,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     private async executeChatCommands(text: string): Promise<void> {
-        const command = text.split(' ')[0]
-        switch (command) {
-            case '/reset':
-            case '/r':
+        switch (true) {
+            case /^\/r(est)?\s/i.test(text):
                 await this.clearAndRestartSession()
                 break
-            case '/search':
-            case '/s':
+            case /^\/s(earch)?\s/i.test(text):
                 await this.executeRecipe('context-search', text)
                 break
             default:
@@ -365,6 +416,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     public async executeRecipe(recipeId: RecipeID, humanChatInput: string = '', showTab = true): Promise<void> {
+        debug('ChatViewProvider:executeRecipe', recipeId, { verbose: humanChatInput })
         if (this.isMessageInProgress) {
             this.sendErrorToWebview('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
             return
@@ -514,13 +566,28 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     /**
      * Save Login state to webview
      */
-    public async sendLogin(isValid: boolean): Promise<void> {
+    public async sendLogin(authStatus: AuthStatus): Promise<void> {
         this.sendEvent('token', 'Set')
-        await vscode.commands.executeCommand('setContext', 'cody.activated', isValid)
-        if (isValid) {
+        await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
+        if (isLoggedIn(authStatus)) {
             this.sendEvent('auth', 'login')
         }
-        void this.webview?.postMessage({ type: 'login', isValid })
+        void this.webview?.postMessage({
+            type: 'login',
+            authStatus,
+        })
+    }
+
+    /**
+     * Logout deletes token from secret storage
+     * Also removes the avtivate status for the extension to disable access to all commands and set webview back to login view
+     */
+    public async logout(): Promise<void> {
+        await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
+        await vscode.commands.executeCommand('setContext', 'cody.activated', false)
+        this.sendEvent('token', 'Delete')
+        this.sendEvent('auth', 'logout')
+        this.setWebviewView('login')
     }
 
     /**
@@ -578,27 +645,25 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             void this.updateCodebaseContext()
             // check if new configuration change is valid or not
             // log user out if config is invalid
-            const isAuthed = await isValidLogin({
+            const authStatus = await getAuthStatus({
                 serverEndpoint: this.config.serverEndpoint,
                 accessToken: this.config.accessToken,
                 customHeaders: this.config.customHeaders,
             })
 
             // Ensure local app detector is running
-            if (this.config.experimentalConnectToApp && !isAuthed) {
+            if (!isLoggedIn(authStatus)) {
                 this.localAppDetector.start()
             } else {
                 this.localAppDetector.stop()
             }
 
             const configForWebview: ConfigurationSubsetForWebview = {
-                debug: this.config.debug,
+                debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
-                hasAccessToken: isAuthed,
-                experimentalConnectToApp: this.config.experimentalConnectToApp,
             }
-            void vscode.commands.executeCommand('setContext', 'cody.activated', isAuthed)
-            void this.webview?.postMessage({ type: 'config', config: configForWebview })
+            void vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
+            void this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
         }
 
         this.disposables.push(this.configurationChangeEvent.event(() => send()))
@@ -715,106 +780,4 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
         this.disposables = []
     }
-}
-
-function filePathContains(container: string, contained: string): boolean {
-    let trimmedContained = contained
-    if (trimmedContained.endsWith(path.sep)) {
-        trimmedContained = trimmedContained.slice(0, -path.sep.length)
-    }
-    if (trimmedContained.startsWith(path.sep)) {
-        trimmedContained = trimmedContained.slice(path.sep.length)
-    }
-    if (trimmedContained.startsWith('.' + path.sep)) {
-        trimmedContained = trimmedContained.slice(1 + path.sep.length)
-    }
-    return (
-        container.includes(path.sep + trimmedContained + path.sep) || // mid-level directory
-        container.endsWith(path.sep + trimmedContained) // child
-    )
-}
-
-async function filesExist(filePaths: string[]): Promise<{ [filePath: string]: boolean }> {
-    const searchPath = `{${filePaths.join(',')}}`
-    const realFiles = await vscode.workspace.findFiles(searchPath, null, filePaths.length * 5)
-    const ret: { [filePath: string]: boolean } = {}
-    for (const filePath of filePaths) {
-        let pathExists = false
-        for (const realFile of realFiles) {
-            if (filePathContains(realFile.fsPath, filePath)) {
-                pathExists = true
-                break
-            }
-        }
-        ret[filePath] = pathExists
-    }
-    return ret
-}
-
-// Converts a git clone URL to the codebase name that includes the slash-separated code host, owner, and repository name
-// This should captures:
-// - "github:sourcegraph/sourcegraph" a common SSH host alias
-// - "https://github.com/sourcegraph/deploy-sourcegraph-k8s.git"
-// - "git@github.com:sourcegraph/sourcegraph.git"
-export function convertGitCloneURLToCodebaseName(cloneURL: string): string | null {
-    if (!cloneURL) {
-        console.error(`Unable to determine the git clone URL for this workspace.\ngit output: ${cloneURL}`)
-        return null
-    }
-    try {
-        const uri = new URL(cloneURL.replace('git@', ''))
-        // Handle common Git SSH URL format
-        const match = cloneURL.match(/git@([^:]+):([\w-]+)\/([\w-]+)(\.git)?/)
-        if (cloneURL.startsWith('git@') && match) {
-            const host = match[1]
-            const owner = match[2]
-            const repo = match[3]
-            return `${host}/${owner}/${repo}`
-        }
-        // Handle GitHub URLs
-        if (uri.protocol.startsWith('github') || uri.href.startsWith('github')) {
-            return `github.com/${uri.pathname.replace('.git', '')}`
-        }
-        // Handle GitLab URLs
-        if (uri.protocol.startsWith('gitlab') || uri.href.startsWith('gitlab')) {
-            return `gitlab.com/${uri.pathname.replace('.git', '')}`
-        }
-        // Handle HTTPS URLs
-        if (uri.protocol.startsWith('http') && uri.hostname && uri.pathname) {
-            return `${uri.hostname}${uri.pathname.replace('.git', '')}`
-        }
-        // Generic URL
-        if (uri.hostname && uri.pathname) {
-            return `${uri.hostname}${uri.pathname.replace('.git', '')}`
-        }
-        return null
-    } catch (error) {
-        console.error(`Cody could not extract repo name from clone URL ${cloneURL}:`, error)
-        return null
-    }
-}
-
-async function getCodebaseContext(config: Config, rgPath: string, editor: Editor): Promise<CodebaseContext | null> {
-    const client = new SourcegraphGraphQLAPIClient(config)
-    const workspaceRoot = editor.getWorkspaceRootPath()
-    if (!workspaceRoot) {
-        return null
-    }
-    const gitCommand = spawnSync('git', ['remote', 'get-url', 'origin'], { cwd: workspaceRoot })
-    const gitOutput = gitCommand.stdout.toString().trim()
-    // Get codebase from config or fallback to getting repository name from git clone URL
-    const codebase = config.codebase || convertGitCloneURLToCodebaseName(gitOutput)
-    if (!codebase) {
-        return null
-    }
-    // Check if repo is embedded in endpoint
-    const repoId = await client.getRepoIdIfEmbeddingExists(codebase)
-    if (isError(repoId)) {
-        const infoMessage = `Cody could not find embeddings for '${codebase}' on your Sourcegraph instance.\n`
-        console.info(infoMessage)
-        return null
-    }
-
-    const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
-    return new CodebaseContext(config, codebase, embeddingsSearch, new LocalKeywordContextFetcher(rgPath, editor))
 }
