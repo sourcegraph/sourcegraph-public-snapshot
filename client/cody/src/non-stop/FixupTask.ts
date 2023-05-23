@@ -4,7 +4,7 @@ import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 
 import { debug } from '../log'
 
-import { CodyTaskState, editDocByUri } from './utils'
+import { CodyTaskState } from './utils'
 
 // TODO(bee): Create CodeLens for each task
 // TODO(bee): Create decorator for each task
@@ -59,19 +59,6 @@ export class FixupTask {
      */
     private output(text: string): void {
         this.outputChannel('Non-Stop Cody:', text)
-    }
-    /**
-     * Do replacement in document
-     * TODO: Add codelens and decorations
-     */
-    public async replace(newContent: string | null, range?: vscode.Range): Promise<void> {
-        if (!newContent?.trim() || newContent.trim() === this.selection.selectedText.trim()) {
-            this.error('Cody did not provide any replacement for your request.')
-            return
-        }
-        range = range || this.selectionRange
-        await editDocByUri(this.documentUri, { start: range.start.line, end: range.end.line }, newContent)
-        this.stop()
     }
     /**
      * Return latest selection

@@ -27,7 +27,7 @@ interface VsCodeInlineController {
 
 interface VsCodeTaskContoller {
     add(input: string, selection: ActiveTextEditorSelection): string | null
-    stop(taskID: string, content: string | null): Promise<void>
+    stop(taskID: string): void
 }
 
 export interface ActiveTextEditorViewControllers {

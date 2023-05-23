@@ -54,10 +54,16 @@ export class NonStop implements Recipe {
             'selection',
             new BufferedBotResponseSubscriber(async content => {
                 if (content) {
-                    await controllers.task.stop(taskID, contentSanitizer(content))
-                    return
+                    await context.editor.replaceSelection(
+                        selection.fileName,
+                        selection.selectedText,
+                        contentSanitizer(content)
+                    )
+                } else {
+                    await context.editor.showWarningMessage('Cody did not suggest any replacement.')
                 }
-                await context.editor.showWarningMessage('Cody did not suggest any replacement.')
+                // Mark the task as done
+                controllers.task.stop(taskID)
             })
         )
 

@@ -34,13 +34,12 @@ export class TaskController {
 
     // Replaces content of the file before mark the task as done
     // Then update the tree view with the new task state
-    public async stop(taskID: string, content: string | null): Promise<void> {
+    public stop(taskID: string): void {
         const task = this.tasks.get(taskID)
         if (!task) {
             return
         }
-        // Runs replacement
-        await task.replace(content, task.getSelectionRange())
+        task.stop()
         // Save states of the task
         this.tasks.set(task.id, task)
         this.taskViewProvider.setTreeItem(task)
