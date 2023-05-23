@@ -176,6 +176,7 @@ export class ManualCompletionProvider extends CompletionProvider {
             {
                 messages: prompt,
                 maxTokensToSample: this.responseTokens,
+                temperature: 0,
             },
             // We over-fetch the number of completions to account for potential
             // empty results
@@ -333,7 +334,7 @@ export class InlineCompletionProvider extends CompletionProvider {
                 messages: prompt,
                 stopSequences: this.multiline ? [anthropic.HUMAN_PROMPT, '\n\n\n'] : [anthropic.HUMAN_PROMPT, '\n'],
                 maxTokensToSample: this.responseTokens,
-                temperature: 1,
+                temperature: 0,
                 topK: -1,
                 topP: -1,
             },
