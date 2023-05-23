@@ -49,7 +49,7 @@ To configure:
 
 To set up user provisioning in [Okta](https://help.okta.com/en-us/Content/Topics/Apps/Apps_App_Integration_Wizard_SCIM.htm), you must first set up a new app integration of the "SAML 2.0" type, then configure it to use SCIM. Here are the steps to do this:
 
-1. Follow our [SAML guide](auth/saml/okta) to set up a new app integration with SAML, then open the integration you just created.
+1. Follow our [SAML guide](auth/saml/okta.md) to set up a new app integration with SAML, then open the integration you just created.
     - If you already have the integration, just open your existing app integration.
 1. Go to the "General" tab and click "Edit" in the "App Settings" section.
 1. Set "Provisioning" to "SCIM". This creates a new tab called "Provisioning".
@@ -62,7 +62,7 @@ To set up user provisioning in [Okta](https://help.okta.com/en-us/Content/Topics
 1. Click "Test Connection Configuration" (first four items should be green—the user-related ones), then "Save".
 1. Switch to "Provisioning" → "To App" and click "Edit". Enable "Create Users", "Update User Attributes" and "Deactivate Users".
 
-> NOTE: You can also use our [SAML](auth/saml/okta) and [OpenID Connect](auth#openid-connect) integrations with Okta.
+> NOTE: You can also use our [SAML](auth/saml/okta.md) and [OpenID Connect](auth.md#openid-connect) integrations with Okta.
 
 ## Features and limitations
 

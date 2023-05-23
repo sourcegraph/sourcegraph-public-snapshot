@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -22,7 +23,7 @@ import (
 // in Sourcegraph via the external services configuration.
 type GerritSource struct {
 	svc             *types.ExternalService
-	cli             *gerrit.Client
+	cli             gerrit.Client
 	serviceID       string
 	perPage         int
 	private         bool
@@ -71,7 +72,7 @@ func NewGerritSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 		svc:             svc,
 		cli:             cli,
 		allowedProjects: allowedProjects,
-		serviceID:       extsvc.NormalizeBaseURL(cli.URL).String(),
+		serviceID:       extsvc.NormalizeBaseURL(cli.GetURL()).String(),
 		perPage:         100,
 		private:         c.Authorization != nil,
 	}, nil
@@ -139,7 +140,7 @@ func (s *GerritSource) ExternalServices() types.ExternalServices {
 func (s *GerritSource) makeRepo(projectName string, p *gerrit.Project) (*types.Repo, error) {
 	urn := s.svc.URN()
 
-	fullURL, err := urlx.Parse(s.cli.URL.JoinPath(projectName).String())
+	fullURL, err := urlx.Parse(s.cli.GetURL().JoinPath(projectName).String())
 	if err != nil {
 		return nil, err
 	}
@@ -164,4 +165,18 @@ func (s *GerritSource) makeRepo(projectName string, p *gerrit.Project) (*types.R
 		Metadata: p,
 		Private:  s.private,
 	}, nil
+}
+
+// WithAuthenticator returns a copy of the original Source configured to use the
+// given authenticator, provided that authenticator type is supported by the
+// code host.
+func (s *GerritSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
+	sc := *s
+	cli, err := sc.cli.WithAuthenticator(a)
+	if err != nil {
+		return nil, err
+	}
+	sc.cli = cli
+
+	return &sc, nil
 }

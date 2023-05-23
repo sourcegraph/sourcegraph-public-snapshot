@@ -21,6 +21,12 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.util.Objects;
 
+/**
+ * Listens to changes in the plugin settings and:
+ *    - notifies JCEF about them.
+ *    - logs install/uninstall events.
+ *    - notifies the user about a successful connection.
+ */
 public class SettingsChangeListener implements Disposable {
     private final MessageBusConnection connection;
     private JavaToJSBridge javaToJSBridge;

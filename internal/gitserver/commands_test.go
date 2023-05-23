@@ -15,6 +15,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	godiff "github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 
@@ -2016,7 +2018,7 @@ func TestParseCommitsUniqueToBranch(t *testing.T) { // KEEP
 	}
 }
 
-func TestParseBranchesContaining(t *testing.T) { //KEEP
+func TestParseBranchesContaining(t *testing.T) { // KEEP
 	names := parseBranchesContaining([]string{
 		"refs/tags/v0.7.0",
 		"refs/tags/v0.5.1",
@@ -3205,4 +3207,55 @@ func TestBlameHunkReader(t *testing.T) {
 			}
 		}
 	})
+}
+
+func Test_CommitLog(t *testing.T) {
+	ClientMocks.LocalGitserver = true
+	defer ResetClientMocks()
+
+	tests := map[string]struct {
+		extraGitCommands []string
+		wantFiles        [][]string // put these in log reverse order
+		wantCommits      int
+		wantErr          string
+	}{
+		"commit changes files": {
+			extraGitCommands: getGitCommandsWithFileLists([]string{"file1.txt", "file2.txt"}, []string{"file3.txt"}),
+			wantFiles:        [][]string{{"file3.txt"}, {"file1.txt", "file2.txt"}},
+			wantCommits:      2,
+		},
+		"no commits": {
+			wantErr: "gitCommand: exit status 128",
+		},
+		"one file two commits": {
+			extraGitCommands: getGitCommandsWithFileLists([]string{"file1.txt"}, []string{"file1.txt"}),
+			wantFiles:        [][]string{{"file1.txt"}, {"file1.txt"}},
+			wantCommits:      2,
+		},
+		"one commit": {
+			extraGitCommands: getGitCommandsWithFileLists([]string{"file1.txt"}),
+			wantFiles:        [][]string{{"file1.txt"}},
+			wantCommits:      1,
+		},
+	}
+
+	for label, test := range tests {
+		t.Run(label, func(t *testing.T) {
+			repo := MakeGitRepository(t, test.extraGitCommands...)
+			logResults, err := NewClient().CommitLog(context.Background(), repo, time.Time{})
+			if err != nil {
+				require.ErrorContains(t, err, test.wantErr)
+			}
+
+			t.Log(test)
+			for i, result := range logResults {
+				t.Log(result)
+				assert.Equal(t, "a@a.com", result.AuthorEmail)
+				assert.Equal(t, "a", result.AuthorName)
+				assert.Equal(t, 40, len(result.SHA))
+				assert.ElementsMatch(t, test.wantFiles[i], result.ChangedFiles)
+			}
+			assert.Equal(t, test.wantCommits, len(logResults))
+		})
+	}
 }

@@ -13,7 +13,7 @@ import { SourcegraphContext } from '../jscontext'
 import { LegacyLayoutRouteContext, LegacyRouteContext } from '../LegacyRouteContext'
 
 import { BreadcrumbSetters, BreadcrumbsProps, useBreadcrumbs } from './Breadcrumbs'
-import { legacyLayoutRouteContextMock } from './legacyLayoutRouteContext'
+import { legacyLayoutRouteContextMock } from './legacyLayoutRouteContext.mock'
 
 import webStyles from '../SourcegraphWebApp.scss'
 

@@ -280,7 +280,6 @@ func (r *externalServiceAvailabilityStateResolver) ToExternalServiceAvailable() 
 
 func (r *externalServiceAvailabilityStateResolver) ToExternalServiceUnavailable() (*externalServiceAvailabilityStateResolver, bool) {
 	return r, r.unavailable != nil
-
 }
 
 func (r *externalServiceAvailabilityStateResolver) ToExternalServiceAvailabilityUnknown() (*externalServiceAvailabilityStateResolver, bool) {
@@ -466,7 +465,6 @@ func (r *externalServiceNamespaceConnectionResolver) compute(ctx context.Context
 		}
 
 		externalServiceID, err := TryUnmarshalExternalServiceID(r.args.ID)
-
 		if err != nil {
 			r.err = err
 			return
@@ -542,7 +540,6 @@ func (r *externalServiceRepositoryConnectionResolver) compute(ctx context.Contex
 		}
 
 		externalServiceID, err := TryUnmarshalExternalServiceID(r.args.ID)
-
 		if err != nil {
 			r.err = err
 			return

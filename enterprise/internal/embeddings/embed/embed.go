@@ -4,18 +4,15 @@ import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-
+	codeintelContext "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/split"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const GET_EMBEDDINGS_MAX_RETRIES = 5
-const MAX_CODE_EMBEDDING_VECTORS = 3_072_000
-const MAX_TEXT_EMBEDDING_VECTORS = 512_000
 
 const EMBEDDING_BATCHES = 5
 const EMBEDDING_BATCH_SIZE = 512
@@ -29,13 +26,11 @@ type ranksGetter func(ctx context.Context, repoName string) (types.RepoPathRanks
 // It returns a RepoEmbeddingIndex containing the embeddings and metadata.
 func EmbedRepo(
 	ctx context.Context,
-	repoName api.RepoName,
-	revision api.CommitID,
-	excludePatterns []*paths.GlobPattern,
 	client EmbeddingsClient,
-	splitOptions split.SplitOptions,
+	contextService ContextService,
 	readLister FileReadLister,
 	getDocumentRanks ranksGetter,
+	opts EmbedRepoOpts,
 ) (*embeddings.RepoEmbeddingIndex, *embeddings.EmbedRepoStats, error) {
 	start := time.Now()
 
@@ -53,25 +48,25 @@ func EmbedRepo(
 		}
 	}
 
-	ranks, err := getDocumentRanks(ctx, string(repoName))
+	ranks, err := getDocumentRanks(ctx, string(opts.RepoName))
 	if err != nil {
 		return nil, nil, err
 	}
 
-	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, excludePatterns, splitOptions, readLister, MAX_CODE_EMBEDDING_VECTORS, ranks)
+	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, ranks)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	textIndex, textIndexStats, err := embedFiles(ctx, textFileNames, client, excludePatterns, splitOptions, readLister, MAX_TEXT_EMBEDDING_VECTORS, ranks)
+	textIndex, textIndexStats, err := embedFiles(ctx, textFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, ranks)
 	if err != nil {
 		return nil, nil, err
 
 	}
 
 	index := &embeddings.RepoEmbeddingIndex{
-		RepoName:  repoName,
-		Revision:  revision,
+		RepoName:  opts.RepoName,
+		Revision:  opts.Revision,
 		CodeIndex: codeIndex,
 		TextIndex: textIndex,
 	}
@@ -86,6 +81,15 @@ func EmbedRepo(
 	return index, stats, nil
 }
 
+type EmbedRepoOpts struct {
+	RepoName          api.RepoName
+	Revision          api.CommitID
+	ExcludePatterns   []*paths.GlobPattern
+	SplitOptions      codeintelContext.SplitOptions
+	MaxCodeEmbeddings int
+	MaxTextEmbeddings int
+}
+
 // embedFiles embeds file contents from the given file names. Since embedding models can only handle a certain amount of text (tokens) we cannot embed
 // entire files. So we split the file contents into chunks and get embeddings for the chunks in batches. Functions returns an EmbeddingIndex containing
 // the embeddings and metadata about the chunks the embeddings correspond to.
@@ -93,8 +97,9 @@ func embedFiles(
 	ctx context.Context,
 	files []FileEntry,
 	client EmbeddingsClient,
+	contextService ContextService,
 	excludePatterns []*paths.GlobPattern,
-	splitOptions split.SplitOptions,
+	splitOptions codeintelContext.SplitOptions,
 	reader FileReader,
 	maxEmbeddingVectors int,
 	repoPathRanks types.RepoPathRanks,
@@ -113,7 +118,7 @@ func embedFiles(
 		Ranks:           make([]float32, 0, len(files)/2),
 	}
 
-	var batch []split.EmbeddableChunk
+	var batch []codeintelContext.EmbeddableChunk
 
 	flush := func() error {
 		if len(batch) == 0 {
@@ -141,7 +146,7 @@ func embedFiles(
 		return nil
 	}
 
-	addToBatch := func(chunk split.EmbeddableChunk) error {
+	addToBatch := func(chunk codeintelContext.EmbeddableChunk) error {
 		batch = append(batch, chunk)
 		if len(batch) >= EMBEDDING_BATCH_SIZE {
 			// Flush if we've hit batch size
@@ -158,7 +163,7 @@ func embedFiles(
 	)
 	for _, file := range files {
 		// This is a fail-safe measure to prevent producing an extremely large index for large repositories.
-		if len(index.RowMetadata) >= maxEmbeddingVectors {
+		if statsEmbeddedChunkCount >= maxEmbeddingVectors {
 			statsSkipped.Add(SkipReasonMaxEmbeddings, int(file.Size))
 			continue
 		}
@@ -184,8 +189,11 @@ func embedFiles(
 		}
 
 		// At this point, we have determined that we want to embed this file.
-
-		for _, chunk := range split.SplitIntoEmbeddableChunks(string(contentBytes), file.Name, splitOptions) {
+		chunks, err := contextService.SplitIntoEmbeddableChunks(ctx, string(contentBytes), file.Name, splitOptions)
+		if err != nil {
+			return embeddings.EmbeddingIndex{}, embeddings.EmbedFilesStats{}, errors.Wrap(err, "error while splitting file")
+		}
+		for _, chunk := range chunks {
 			if err := addToBatch(chunk); err != nil {
 				return embeddings.EmbeddingIndex{}, embeddings.EmbedFilesStats{}, err
 			}

@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/rbac"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -140,6 +141,19 @@ func (r *RepositoryResolver) IsPrivate(ctx context.Context) (bool, error) {
 func (r *RepositoryResolver) URI(ctx context.Context) (string, error) {
 	repo, err := r.repo(ctx)
 	return repo.URI, err
+}
+
+func (r *RepositoryResolver) SourceType(ctx context.Context) (*SourceType, error) {
+	repo, err := r.repo(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to retrieve innerRepo")
+	}
+
+	if repo.ExternalRepo.ServiceType == extsvc.TypePerforce {
+		return &PerforceDepotSourceType, nil
+	}
+
+	return &GitRepositorySourceType, nil
 }
 
 func (r *RepositoryResolver) Description(ctx context.Context) (string, error) {
@@ -661,7 +675,7 @@ func (r *schemaResolver) AddRepoMetadata(ctx context.Context, args struct {
 	Value *string
 },
 ) (*EmptyResponse, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
 		return &EmptyResponse{}, err
 	}
 
@@ -693,7 +707,7 @@ func (r *schemaResolver) UpdateRepoMetadata(ctx context.Context, args struct {
 	Value *string
 },
 ) (*EmptyResponse, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
 		return &EmptyResponse{}, err
 	}
 
@@ -724,7 +738,7 @@ func (r *schemaResolver) DeleteRepoMetadata(ctx context.Context, args struct {
 	Key  string
 },
 ) (*EmptyResponse, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
 		return &EmptyResponse{}, err
 	}
 
@@ -742,4 +756,17 @@ func (r *schemaResolver) DeleteRepoMetadata(ctx context.Context, args struct {
 
 func (r *RepositoryResolver) IngestedCodeowners(ctx context.Context) (CodeownersIngestedFileResolver, error) {
 	return EnterpriseResolvers.ownResolver.RepoIngestedCodeowners(ctx, r.IDInt32())
+}
+
+// isPerforceDepot is a helper to avoid the repetitive error handling of calling r.SourceType, and
+// where we want to only take a custom action if this function returns true. For false we want to
+// ignore and continue on the default behaviour.
+func (r *RepositoryResolver) isPerforceDepot(ctx context.Context) bool {
+	s, err := r.SourceType(ctx)
+	if err != nil {
+		r.logger.Error("failed to retrieve sourceType of repository", log.Error(err))
+		return false
+	}
+
+	return s == &PerforceDepotSourceType
 }

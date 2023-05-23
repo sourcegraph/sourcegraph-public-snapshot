@@ -14,6 +14,9 @@ Embeddings for relevant code files must be enabled for each repository that you'
 
 ### Configuring embeddings
 
+> NOTE: Enterprise Cloud customers should reach out to their Sourcegraph representative to enable embeddings. 
+> See [Enabling Cody Enterprise](./enabling_cody_enterprise.md#cody-on-sourcegraph-cloud)
+
 1. Go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance
 1. Add the following to configure OpenAI embeddings:
     ```json

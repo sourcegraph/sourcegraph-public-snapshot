@@ -6,9 +6,45 @@
 #[cfg(not(dev))]
 use {tauri::api::process::Command, tauri::api::process::CommandEvent};
 
+mod cody;
+mod common;
+mod tray;
+use common::{extract_path_from_scheme_url, show_window};
+use std::sync::RwLock;
 use tauri::Manager;
+use tauri_utils::config::RemoteDomainAccessScope;
+
+#[cfg(not(target_os = "macos"))]
+use common::is_scheme_url;
+
+// The URL to open the frontend on, if launched with a scheme url.
+static LAUNCH_PATH: RwLock<String> = RwLock::new(String::new());
+
+#[tauri::command]
+fn get_launch_path(window: tauri::Window) -> String {
+    if window.label() == "cody" {
+        return "/cody-standalone".to_string();
+    }
+    LAUNCH_PATH.read().unwrap().clone()
+}
+
+#[tauri::command]
+fn app_shell_loaded() -> Option<AppShellReadyPayload> {
+    return APP_SHELL_READY_PAYLOAD.read().unwrap().clone();
+}
+
+fn set_launch_path(url: String) {
+    *LAUNCH_PATH.write().unwrap() = url;
+}
+
+// Url scheme for sourcegraph:// urls.
+const SCHEME: &str = "sourcegraph";
+const BUNDLE_IDENTIFIER: &str = "com.sourcegraph.cody";
 
 fn main() {
+    // Prepare handler for sourcegraph:// scheme urls.
+    tauri_plugin_deep_link::prepare(BUNDLE_IDENTIFIER);
+
     match fix_path_env::fix() {
         Ok(_) => {}
         Err(e) => {
@@ -16,55 +52,164 @@ fn main() {
         }
     }
 
+    let tray = tray::create_system_tray();
+
+    let scope = RemoteDomainAccessScope {
+        scheme: Some("http".to_string()),
+        domain: "localhost".to_string(),
+        windows: vec!["main".to_string(), "cody".to_string()],
+        plugins: vec![],
+        enable_tauri_api: true,
+    };
+    let mut context = tauri::generate_context!();
+    context
+        .config_mut()
+        .tauri
+        .security
+        .dangerous_remote_domain_ipc_access = vec![scope];
+
     tauri::Builder::default()
+        .system_tray(tray)
+        .on_system_tray_event(tray::on_system_tray_event)
+        .on_system_tray_event(|app, event| {
+            tauri_plugin_positioner::on_tray_event(app, &event);
+        })
+        .on_window_event(|event| match event.event() {
+            tauri::WindowEvent::CloseRequested { api, .. } => {
+                // Ensure the app stays open after the last window is closed.
+                if event.window().label() == "main" {
+                    event.window().hide().unwrap();
+                    api.prevent_close();
+                }
+            }
+            _ => {}
+        })
+        .plugin(
+            tauri_plugin_log::Builder::default()
+                .targets([
+                    tauri_plugin_log::LogTarget::LogDir,
+                    tauri_plugin_log::LogTarget::Webview,
+                ])
+                .level(log::LevelFilter::Info)
+                .build(),
+        )
+        .plugin(tauri_plugin_positioner::init())
         .setup(|app| {
-            let window = app.get_window("main").unwrap();
-            start_embedded_services(window);
+            let handle = app.handle();
+            start_embedded_services(&handle);
+            // Register handler for sourcegraph:// scheme urls.
+            tauri_plugin_deep_link::register(SCHEME, move |request| {
+                let path: &str = extract_path_from_scheme_url(&request, SCHEME);
+
+                // Case 1: the app has been *launched* with the scheme
+                // url. In the frontend, app-shell.tsx will read it with
+                // getLaunchPath().
+                set_launch_path(path.to_string());
+
+                // Case 2: the app was *already running* when the scheme url was
+                // opened. This currently doesn't collide with Case 1 because it
+                // doesn't do anything while we're still launching, probably
+                // because the webview isn't ready yet.
+                // TODO(marek) add a guard to check whether we're still launching.
+                handle
+                    .get_window("main")
+                    .unwrap()
+                    .eval(&format!("window.location.href = '{}'", path))
+                    .unwrap();
+                show_window(&handle, "main");
+            })
+            .unwrap();
+
+            // If launched with a scheme url, on non-mac the app receives the url as an argument.
+            // On mac, this is handled by the same handler that receives the url when the app is
+            // already running.
+            #[cfg(not(target_os = "macos"))]
+            if let Some(url) = std::env::args().nth(1) {
+                if is_scheme_url(&url, SCHEME) {
+                    let path = extract_path_from_scheme_url(&url, SCHEME);
+                    set_launch_path(url)
+                }
+            }
             Ok(())
         })
-        .run(tauri::generate_context!())
+        // Define a handler so that invoke("get_launch_scheme_url") can be
+        // called on the frontend. (The Tauri invoke_handler function, despite
+        // its name which may suggest that it invokes something, actually only
+        // *defines* an invoke() handler and does not invoke anything during
+        // setup here.)
+        .invoke_handler(tauri::generate_handler![get_launch_path, app_shell_loaded])
+        .run(context)
         .expect("error while running tauri application");
 }
 
 #[cfg(dev)]
-fn start_embedded_services(_window: tauri::Window) {
+fn start_embedded_services(app_handle: &tauri::AppHandle) {
+    let args = get_sourcegraph_args(app_handle);
     println!("embedded Sourcegraph services disabled for local development");
+    println!("Sourcegraph would start with args: {:?}", args);
 }
 
+#[derive(Clone, serde::Serialize)]
+struct AppShellReadyPayload {
+    sign_in_url: String,
+}
+
+// The URL to open the frontend on, if launched with a scheme url.
+static APP_SHELL_READY_PAYLOAD: RwLock<Option<AppShellReadyPayload>> = RwLock::new(None);
+
 #[cfg(not(dev))]
-fn start_embedded_services(window: tauri::Window) {
+fn start_embedded_services(handle: &tauri::AppHandle) {
+    let app = handle.clone();
     let sidecar = "sourcegraph-backend";
+    let args = get_sourcegraph_args(&app);
+    println!("Sourcegraph starting with args: {:?}", args);
     let (mut rx, _child) = Command::new_sidecar(sidecar)
         .expect(format!("failed to create `{sidecar}` binary command").as_str())
+        .args(args)
         .spawn()
         .expect(format!("failed to spawn {sidecar} sidecar").as_str());
 
     tauri::async_runtime::spawn(async move {
-        // read events such as stdout
         while let Some(event) = rx.recv().await {
             match event {
-                CommandEvent::Stdout(line) => {
-                    window
-                        .emit(format!("{sidecar}-stdout").as_str(), Some(line.clone()))
-                        .expect("failed to emit event");
-
-                    let _ = window.eval(&format!(
-                        "console.log(\":: {}\")",
-                        line.replace("\"", "\\\"")
-                    ));
-                }
+                CommandEvent::Stdout(line) => log::info!("{}", line),
                 CommandEvent::Stderr(line) => {
-                    window
-                        .emit(format!("{sidecar}-stderr").as_str(), Some(line.clone()))
-                        .expect("failed to emit event");
-
-                    let _ = window.eval(&format!(
-                        "console.log(\":: {}\")",
-                        line.replace("\"", "\\\"")
-                    ));
+                    if line.contains("tauri:sign-in-url: ") {
+                        let url = line.splitn(2, ' ').last().unwrap();
+                        *APP_SHELL_READY_PAYLOAD.write().unwrap() = Some(AppShellReadyPayload {
+                            sign_in_url: url.to_string(),
+                        });
+                        app.get_window("main")
+                            .unwrap()
+                            .emit(
+                                "app-shell-ready",
+                                APP_SHELL_READY_PAYLOAD.read().unwrap().clone(),
+                            )
+                            .unwrap();
+                    }
+                    log::error!("{}", line);
                 }
                 _ => continue,
             };
         }
     });
+}
+
+fn get_sourcegraph_args(app_handle: &tauri::AppHandle) -> Vec<String> {
+    let data_dir = app_handle.path_resolver().app_data_dir();
+    let cache_dir = app_handle.path_resolver().app_cache_dir();
+    let mut args = Vec::new();
+
+    // cache_dir is where the cache goes
+    if let Some(cache_dir) = cache_dir {
+        args.push("--cacheDir".to_string());
+        args.push(cache_dir.to_string_lossy().to_string())
+    }
+
+    // configDir is where the database goes
+    if let Some(data_dir) = data_dir {
+        args.push("--configDir".to_string());
+        args.push(data_dir.to_string_lossy().to_string())
+    }
+    return args;
 }

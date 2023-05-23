@@ -352,6 +352,17 @@ func getAndMarshalCodeHostVersionsJSON(_ context.Context, _ database.DB) (_ json
 	return json.Marshal(v)
 }
 
+func getAndMarshalCodyUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalCodyUsageJSON")(&err)
+
+	codyUsage, err := usagestats.GetAggregatedCodyStats(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(codyUsage)
+}
+
 func getDependencyVersions(ctx context.Context, db database.DB, logger log.Logger) (json.RawMessage, error) {
 	logFunc := logFuncFrom(logger.Scoped("getDependencyVersions", "gets the version of various dependency services"))
 	var (
@@ -507,6 +518,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		CodeHostIntegrationUsage:      []byte("{}"),
 		IDEExtensionsUsage:            []byte("{}"),
 		MigratedExtensionsUsage:       []byte("{}"),
+		CodyUsage:                     []byte("{}"),
 	}
 
 	totalUsers, err := getTotalUsersCount(ctx, db)
@@ -651,6 +663,11 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		logFunc("ownUsage failed", log.Error(err))
 	}
 
+	r.CodyUsage, err = getAndMarshalCodyUsageJSON(ctx, db)
+	if err != nil {
+		logFunc("codyUsage failed", log.Error(err))
+	}
+
 	r.HasExtURL = conf.UsingExternalURL()
 	r.BuiltinSignupAllowed = conf.IsBuiltinSignupAllowed()
 	r.AccessRequestEnabled = conf.IsAccessRequestEnabled()
@@ -748,7 +765,7 @@ var telemetryHTTPProxy = env.Get("TELEMETRY_HTTP_PROXY", "", "if set, HTTP proxy
 
 // check performs an update check and updates the global state.
 func check(logger log.Logger, db database.DB) {
-	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
 	updateBodyFunc := updateBody

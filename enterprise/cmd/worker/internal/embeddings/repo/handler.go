@@ -5,11 +5,11 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	codeintelContext "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	repoembeddingsbg "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/split"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -22,6 +22,7 @@ type handler struct {
 	db              edb.EnterpriseDB
 	uploadStore     uploadstore.Store
 	gitserverClient gitserver.Client
+	contextService  embed.ContextService
 }
 
 var _ workerutil.Handler[*repoembeddingsbg.RepoEmbeddingJob] = &handler{}
@@ -32,9 +33,12 @@ const (
 	embedEntireFileTokensThreshold          = 384
 	embeddingChunkTokensThreshold           = 256
 	embeddingChunkEarlySplitTokensThreshold = embeddingChunkTokensThreshold - 32
+
+	defaultMaxCodeEmbeddingsPerRepo = 3_072_000
+	defaultMaxTextEmbeddingsPerRepo = 512_000
 )
 
-var splitOptions = split.SplitOptions{
+var splitOptions = codeintelContext.SplitOptions{
 	NoSplitTokensThreshold:         embedEntireFileTokensThreshold,
 	ChunkTokensThreshold:           embeddingChunkTokensThreshold,
 	ChunkEarlySplitTokensThreshold: embeddingChunkEarlySplitTokensThreshold,
@@ -61,15 +65,22 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 	excludedGlobPatterns := embed.GetDefaultExcludedFilePathPatterns()
 	excludedGlobPatterns = append(excludedGlobPatterns, embed.CompileGlobPatterns(config.ExcludedFilePathPatterns)...)
 
+	opts := embed.EmbedRepoOpts{
+		RepoName:          repo.Name,
+		Revision:          record.Revision,
+		ExcludePatterns:   excludedGlobPatterns,
+		SplitOptions:      splitOptions,
+		MaxCodeEmbeddings: defaultTo(config.MaxCodeEmbeddingsPerRepo, defaultMaxCodeEmbeddingsPerRepo),
+		MaxTextEmbeddings: defaultTo(config.MaxTextEmbeddingsPerRepo, defaultMaxTextEmbeddingsPerRepo),
+	}
+
 	repoEmbeddingIndex, stats, err := embed.EmbedRepo(
 		ctx,
-		repo.Name,
-		record.Revision,
-		excludedGlobPatterns,
 		embeddingsClient,
-		splitOptions,
+		h.contextService,
 		fetcher,
 		getDocumentRanks,
+		opts,
 	)
 	if err != nil {
 		return err
@@ -83,6 +94,13 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 	)
 
 	return embeddings.UploadRepoEmbeddingIndex(ctx, h.uploadStore, string(embeddings.GetRepoEmbeddingIndexName(repo.Name)), repoEmbeddingIndex)
+}
+
+func defaultTo(input, def int) int {
+	if input == 0 {
+		return def
+	}
+	return input
 }
 
 type revisionFetcher struct {

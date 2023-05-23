@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"fmt"
 	"path"
 	"time"
 
@@ -17,6 +16,8 @@ import (
 type RecentContributionSignalStore interface {
 	AddCommit(ctx context.Context, commit Commit) error
 	FindRecentAuthors(ctx context.Context, repoID api.RepoID, path string) ([]RecentContributorSummary, error)
+	ClearSignals(ctx context.Context, repoID api.RepoID) error
+	WithTransact(context.Context, func(store RecentContributionSignalStore) error) error
 }
 
 func RecentContributionSignalStoreWith(other basestore.ShareableStore) RecentContributionSignalStore {
@@ -42,11 +43,17 @@ type recentContributionSignalStore struct {
 	*basestore.Store
 }
 
+func (s *recentContributionSignalStore) WithTransact(ctx context.Context, f func(store RecentContributionSignalStore) error) error {
+	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(RecentContributionSignalStoreWith(tx))
+	})
+}
+
 func (s *recentContributionSignalStore) With(other basestore.ShareableStore) *recentContributionSignalStore {
 	return &recentContributionSignalStore{Store: s.Store.With(other)}
 }
 
-func (s *recentContributionSignalStore) Transact(ctx context.Context) (*recentContributionSignalStore, error) {
+func (s *recentContributionSignalStore) transact(ctx context.Context) (*recentContributionSignalStore, error) {
 	txBase, err := s.Store.Transact(ctx)
 	return &recentContributionSignalStore{Store: txBase}, err
 }
@@ -120,24 +127,37 @@ const pathInsertFmtstr = `
 // The result int slice is guaranteed to be in order corresponding to the order
 // of `commit.FilesChanged`.
 func (s *recentContributionSignalStore) ensureRepoPaths(ctx context.Context, commit Commit) ([]int, error) {
-	db := s.Store
-	// compute all the ancestor paths for all changed files in a commit
+	return ensureRepoPaths(ctx, s.Store, commit.FilesChanged, commit.RepoID)
+}
+
+// ensureRepoPaths takes paths and makes sure they all exist in the database
+// (alongside with their ancestor paths) as per the schema.
+//
+// The operation makes a number of queries to the database that is comparable to
+// the size of the given file tree. In other words, every directory mentioned in
+// the `files` (including parents and ancestors) will be queried or inserted with
+// a single query (no repetitions though). Optimizing this into fewer queries
+// seems to make the implementation very hard to read.
+//
+// The result int slice is guaranteed to be in order corresponding to the order
+// of `files`.
+func ensureRepoPaths(ctx context.Context, db *basestore.Store, files []string, repoID api.RepoID) ([]int, error) {
+	// Compute all the ancestor paths for all given files.
 	var paths []string
-	for _, file := range commit.FilesChanged {
+	for _, file := range files {
 		for p := file; p != "."; p = path.Dir(p) {
 			paths = append(paths, p)
 		}
 	}
-	// add empty string which references the repo root directory
+	// Add empty string which references the repo root directory.
 	paths = append(paths, "")
-	// reverse paths so we start at the root
+	// Reverse paths so we start at the root.
 	for i := 0; i < len(paths)/2; i++ {
 		j := len(paths) - i - 1
 		paths[i], paths[j] = paths[j], paths[i]
 	}
-	// remove duplicates from paths, to avoid extra query,
-	// especially if many files within the same directory structure
-	// are referenced
+	// Remove duplicates from paths, to avoid extra query, especially if many files
+	// within the same directory structure are referenced.
 	seen := make(map[string]bool)
 	j := 0
 	for i := 0; i < len(paths); i++ {
@@ -148,7 +168,7 @@ func (s *recentContributionSignalStore) ensureRepoPaths(ctx context.Context, com
 		}
 	}
 	paths = paths[:j]
-	// insert all directories one query each and note the IDs
+	// Insert all directories one query each and note the IDs.
 	ids := map[string]int{}
 	for _, p := range paths {
 		var parentID *int
@@ -161,16 +181,16 @@ func (s *recentContributionSignalStore) ensureRepoPaths(ctx context.Context, com
 		} else if p != "" {
 			return nil, errors.Newf("cannot find parent id of %q: this is a bug", p)
 		}
-		r := db.QueryRow(ctx, sqlf.Sprintf(pathInsertFmtstr, commit.RepoID, p, commit.RepoID, p, parentID))
+		r := db.QueryRow(ctx, sqlf.Sprintf(pathInsertFmtstr, repoID, p, repoID, p, parentID))
 		var id int
 		if err := r.Scan(&id); err != nil {
 			return nil, errors.Wrapf(err, "failed to insert or retrieve %q", p)
 		}
 		ids[p] = id
 	}
-	// return the IDs of inserted files changed, in order of `commit.FilesChanged`
-	fIDs := make([]int, len(commit.FilesChanged))
-	for i, f := range commit.FilesChanged {
+	// Return the IDs of inserted files changed, in order of `files`.
+	fIDs := make([]int, len(files))
+	for i, f := range files {
 		id, ok := ids[f]
 		if !ok {
 			return nil, errors.Newf("cannot find id of %q which should have been inserted, this is a bug", f)
@@ -189,6 +209,25 @@ const insertRecentContributorSignalFmtstr = `
 	) VALUES (%s, %s, %s, %s)
 `
 
+const clearSignalsFmtstr = `
+    WITH rps AS (
+        SELECT id FROM repo_paths WHERE repo_id = %s
+    ) 
+    DELETE FROM %s 
+    WHERE changed_file_path_id IN (SELECT * FROM rps)
+`
+
+func (s *recentContributionSignalStore) ClearSignals(ctx context.Context, repoID api.RepoID) error {
+	tables := []string{"own_signal_recent_contribution", "own_aggregate_recent_contribution"}
+
+	for _, table := range tables {
+		if err := s.Exec(ctx, sqlf.Sprintf(clearSignalsFmtstr, repoID, sqlf.Sprintf(table))); err != nil {
+			return errors.Wrapf(err, "table: %s", table)
+		}
+	}
+	return nil
+}
+
 // AddCommit inserts a recent contribution signal for each file changed by given commit.
 //
 // As per schema, `commit_id` is the git sha stored as bytea.
@@ -197,23 +236,16 @@ const insertRecentContributorSignalFmtstr = `
 // for each new signal appearing in `own_signal_recent_contribution` by using
 // a trigger: `update_own_aggregate_recent_contribution`.
 func (s *recentContributionSignalStore) AddCommit(ctx context.Context, commit Commit) (err error) {
-	tx, err := s.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
-
 	// Get or create commit author:
-	authorID, err := tx.ensureAuthor(ctx, commit)
+	authorID, err := s.ensureAuthor(ctx, commit)
 	if err != nil {
 		return errors.Wrap(err, "cannot insert commit author")
 	}
 	// Get or create necessary repo paths:
-	pathIDs, err := tx.ensureRepoPaths(ctx, commit)
+	pathIDs, err := s.ensureRepoPaths(ctx, commit)
 	if err != nil {
 		return errors.Wrap(err, "cannot insert repo paths")
 	}
-	fmt.Printf("commit: %s\n", commit.CommitSHA)
 	// Insert individual signals into own_signal_recent_contribution:
 	for _, pathID := range pathIDs {
 		q := sqlf.Sprintf(insertRecentContributorSignalFmtstr,
@@ -222,7 +254,7 @@ func (s *recentContributionSignalStore) AddCommit(ctx context.Context, commit Co
 			commit.Timestamp,
 			dbutil.CommitBytea(commit.CommitSHA),
 		)
-		err = tx.Exec(ctx, q)
+		err = s.Exec(ctx, q)
 		if err != nil {
 			return err
 		}

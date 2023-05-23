@@ -19,7 +19,8 @@ import (
 //   - If the HTTP header, X-Sourcegraph-Should-Trace, is set to a truthy value, set the
 //     shouldTraceKey context.Context value to true
 //   - go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp, which applies the
-//     desired instrumentation.
+//     desired instrumentation, including picking up traces propagated in the request headers
+//     using the globally configured propagator.
 //
 // The provided operation name is used to add details to spans.
 func HTTPMiddleware(operation string, h http.Handler, opts ...otelhttp.Option) http.Handler {
@@ -36,7 +37,12 @@ func HTTPMiddleware(operation string, h http.Handler, opts ...otelhttp.Option) h
 					}
 					return fmt.Sprintf("%s %s", r.Method, r.URL.Path)
 				}),
+				// Disable OTEL metrics which can be quite high-cardinality
 				otelhttp.WithMeterProvider(metric.NewNoopMeterProvider()),
+				// Make sure we use the global propagator, which should be set up on
+				// service initialization to support all our commonly used propagation
+				// formats (OpenTelemetry, W3c, Jaeger, etc)
+				otelhttp.WithPropagators(otel.GetTextMapPropagator()),
 			},
 			opts...,
 		)...)

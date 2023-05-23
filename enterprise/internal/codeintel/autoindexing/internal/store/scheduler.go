@@ -6,7 +6,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -33,10 +33,10 @@ func (s *store) GetRepositoriesForIndexScan(
 		repositoryMatchLimitValue = *repositoryMatchLimit
 	}
 
-	ctx, _, endObservation := s.operations.getRepositoriesForIndexScan.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Bool("allowGlobalPolicies", allowGlobalPolicies),
-		log.Int("repositoryMatchLimit", repositoryMatchLimitValue),
-		log.Int("limit", limit),
+	ctx, _, endObservation := s.operations.getRepositoriesForIndexScan.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Bool("allowGlobalPolicies", allowGlobalPolicies),
+		attribute.Int("repositoryMatchLimit", repositoryMatchLimitValue),
+		attribute.Int("limit", limit),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -173,8 +173,8 @@ WHERE
 //
 
 func (s *store) GetQueuedRepoRev(ctx context.Context, batchSize int) (_ []RepoRev, err error) {
-	ctx, _, endObservation := s.operations.getQueuedRepoRev.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("batchSize", batchSize),
+	ctx, _, endObservation := s.operations.getQueuedRepoRev.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("batchSize", batchSize),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -194,8 +194,8 @@ LIMIT %s
 `
 
 func (s *store) MarkRepoRevsAsProcessed(ctx context.Context, ids []int) (err error) {
-	ctx, _, endObservation := s.operations.markRepoRevsAsProcessed.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("numIDs", len(ids)),
+	ctx, _, endObservation := s.operations.markRepoRevsAsProcessed.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("numIDs", len(ids)),
 	}})
 	defer endObservation(1, observation.Args{})
 

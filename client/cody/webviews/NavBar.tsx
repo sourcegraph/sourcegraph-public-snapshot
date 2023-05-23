@@ -25,12 +25,12 @@ export const NavBar: React.FunctionComponent<React.PropsWithChildren<NavBarProps
         <div className={styles.tabMenuGroup}>
             {navBarItems.map(({ title, tab }) => (
                 <button key={title} onClick={() => setView(tab)} className={styles.tabBtn} type="button">
-                    <p className={view === tab ? styles.tabBtnSelected : ''}>{title}</p>
+                    <span className={view === tab ? styles.tabBtnSelected : ''}>{title}</span>
                 </button>
             ))}
             {devMode && (
                 <button onClick={() => setView('debug')} className={styles.tabBtn} type="button">
-                    <p className={view === 'debug' ? styles.tabBtnSelected : ''}>Debug</p>
+                    <span className={view === 'debug' ? styles.tabBtnSelected : ''}>Debug</span>
                 </button>
             )}
         </div>

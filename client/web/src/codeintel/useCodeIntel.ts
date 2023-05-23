@@ -16,6 +16,10 @@ export interface CodeIntelData {
         endCursor: string | null
         nodes: Location[]
     }
+    prototypes: {
+        endCursor: string | null
+        nodes: Location[]
+    }
     definitions: {
         endCursor: string | null
         nodes: Location[]
@@ -34,6 +38,10 @@ export interface UseCodeIntelResult {
     implementationsHasNextPage: boolean
     fetchMoreImplementations: () => void
     fetchMoreImplementationsLoading: boolean
+
+    prototypesHasNextPage: boolean
+    fetchMorePrototypes: () => void
+    fetchMorePrototypesLoading: boolean
 }
 
 export interface UseCodeIntelParameters {
