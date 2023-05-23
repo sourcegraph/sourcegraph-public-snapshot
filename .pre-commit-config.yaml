@@ -1,0 +1,23 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.3.0
+    hooks:
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+  - repo: https://github.com/keith/pre-commit-buildifier
+    rev: 5.0.1
+    hooks:
+      - id: buildifier
+      - id: buildifier-lint
+  - repo: local
+    hooks:
+    - id: prettier
+      name: prettier
+      description: ''
+      entry: pnpm prettier --write --list-different --ignore-unknown --config prettier.config.js
+      language: system
+      'types': [text]
+      files: \.(js|json|ts|tsx|graphql|md|scss)
+      args: []
+      require_serial: false
