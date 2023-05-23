@@ -36,6 +36,7 @@ type GitHubAppResolver interface {
 	ID() graphql.ID
 	AppID() int32
 	Name() string
+	Domain() string
 	Slug() string
 	BaseURL() string
 	AppURL() string

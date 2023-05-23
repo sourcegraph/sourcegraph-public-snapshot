@@ -27,6 +27,7 @@ func TestCreateGitHubApp(t *testing.T) {
 	app := &types.GitHubApp{
 		AppID:        1,
 		Name:         "Test App",
+		Domain:       "repos",
 		Slug:         "test-app",
 		ClientID:     "abc123",
 		ClientSecret: "secret",
@@ -39,10 +40,11 @@ func TestCreateGitHubApp(t *testing.T) {
 	require.NoError(t, err)
 
 	var createdApp types.GitHubApp
-	query := sqlf.Sprintf(`SELECT app_id, name, slug, base_url, app_url, client_id, client_secret, private_key, encryption_key_id, logo FROM github_apps WHERE id=%s`, id)
+	query := sqlf.Sprintf(`SELECT app_id, name, domain, slug, base_url, app_url, client_id, client_secret, private_key, encryption_key_id, logo FROM github_apps WHERE id=%s`, id)
 	err = store.QueryRow(ctx, query).Scan(
 		&createdApp.AppID,
 		&createdApp.Name,
+		&createdApp.Domain,
 		&createdApp.Slug,
 		&createdApp.BaseURL,
 		&createdApp.AppURL,
@@ -67,6 +69,7 @@ func TestDeleteGitHubApp(t *testing.T) {
 
 	app := &types.GitHubApp{
 		Name:         "Test App",
+		Domain:       "repos",
 		Slug:         "test-app",
 		ClientID:     "abc123",
 		ClientSecret: "secret",
@@ -102,6 +105,7 @@ func TestUpdateGitHubApp(t *testing.T) {
 	app := &types.GitHubApp{
 		AppID:        123,
 		Name:         "Test App",
+		Domain:       "repos",
 		Slug:         "test-app",
 		BaseURL:      "https://example.com",
 		AppURL:       "https://example.com/apps/testapp",
@@ -119,6 +123,7 @@ func TestUpdateGitHubApp(t *testing.T) {
 	updated := &types.GitHubApp{
 		AppID:        234,
 		Name:         "Updated Name",
+		Domain:       "repos",
 		Slug:         "updated-slug",
 		BaseURL:      "https://updated-example.com",
 		AppURL:       "https://updated-example.com/apps/updated-app",
@@ -134,6 +139,7 @@ func TestUpdateGitHubApp(t *testing.T) {
 
 	require.Equal(t, updated.AppID, fetched.AppID)
 	require.Equal(t, updated.Name, fetched.Name)
+	require.Equal(t, updated.Domain, fetched.Domain)
 	require.Equal(t, updated.Slug, fetched.Slug)
 	require.Equal(t, updated.BaseURL, fetched.BaseURL)
 	require.Equal(t, updated.ClientID, fetched.ClientID)
@@ -158,6 +164,7 @@ func TestGetByID(t *testing.T) {
 	app1 := &types.GitHubApp{
 		AppID:        1234,
 		Name:         "Test App 1",
+		Domain:       "repos",
 		Slug:         "test-app-1",
 		BaseURL:      "https://github.com",
 		AppURL:       "https://github.com/apps/testapp",
@@ -170,6 +177,7 @@ func TestGetByID(t *testing.T) {
 	app2 := &types.GitHubApp{
 		AppID:        5678,
 		Name:         "Test App 2",
+		Domain:       "repos",
 		Slug:         "test-app-2",
 		BaseURL:      "https://enterprise.github.com",
 		AppURL:       "https://enterprise.github.com/apps/testapp",
@@ -188,6 +196,7 @@ func TestGetByID(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, app1.AppID, fetched.AppID)
 	require.Equal(t, app1.Name, fetched.Name)
+	require.Equal(t, app1.Domain, fetched.Domain)
 	require.Equal(t, app1.Slug, fetched.Slug)
 	require.Equal(t, app1.BaseURL, fetched.BaseURL)
 	require.Equal(t, app1.ClientID, fetched.ClientID)
@@ -218,6 +227,7 @@ func TestGetByAppID(t *testing.T) {
 	app1 := &types.GitHubApp{
 		AppID:        1234,
 		Name:         "Test App 1",
+		Domain:       "repos",
 		Slug:         "test-app-1",
 		BaseURL:      "https://github.com",
 		ClientID:     "abc123",
@@ -229,6 +239,7 @@ func TestGetByAppID(t *testing.T) {
 	app2 := &types.GitHubApp{
 		AppID:        1234,
 		Name:         "Test App 2",
+		Domain:       "repos",
 		Slug:         "test-app-2",
 		BaseURL:      "https://enterprise.github.com",
 		ClientID:     "abc123",
@@ -246,6 +257,7 @@ func TestGetByAppID(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, app1.AppID, fetched.AppID)
 	require.Equal(t, app1.Name, fetched.Name)
+	require.Equal(t, app1.Domain, fetched.Domain)
 	require.Equal(t, app1.Slug, fetched.Slug)
 	require.Equal(t, app1.BaseURL, fetched.BaseURL)
 	require.Equal(t, app1.ClientID, fetched.ClientID)
@@ -277,6 +289,7 @@ func TestGetBySlug(t *testing.T) {
 	app1 := &types.GitHubApp{
 		AppID:        1234,
 		Name:         "Test App 1",
+		Domain:       "repos",
 		Slug:         "test-app",
 		BaseURL:      "https://github.com",
 		AppURL:       "https://github.com/apps/testapp1",
@@ -289,6 +302,7 @@ func TestGetBySlug(t *testing.T) {
 	app2 := &types.GitHubApp{
 		AppID:        5678,
 		Name:         "Test App",
+		Domain:       "repos",
 		Slug:         "test-app",
 		BaseURL:      "https://enterprise.github.com",
 		AppURL:       "https://enterprise.github.com/apps/testapp",
@@ -307,6 +321,7 @@ func TestGetBySlug(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, app1.AppID, fetched.AppID)
 	require.Equal(t, app1.Name, fetched.Name)
+	require.Equal(t, app1.Domain, fetched.Domain)
 	require.Equal(t, app1.Slug, fetched.Slug)
 	require.Equal(t, app1.BaseURL, fetched.BaseURL)
 	require.Equal(t, app1.ClientID, fetched.ClientID)
