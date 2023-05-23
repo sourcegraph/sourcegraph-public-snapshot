@@ -91,34 +91,39 @@ var propagationPolicy = metav1.DeletePropagationBackground
 
 // ReadLogs reads the logs of the given pod and writes them to the logger.
 func (c *KubernetesCommand) ReadLogs(ctx context.Context, namespace string, pod *corev1.Pod, containerName string, cmdLogger Logger, key string, command []string) error {
-	req := c.Clientset.CoreV1().Pods(namespace).GetLogs(pod.Name, &corev1.PodLogOptions{Container: containerName})
-	stream, err := req.Stream(ctx)
-	if err != nil {
-		return errors.Wrapf(err, "opening log stream for pod %s", pod.Name)
-	}
-
 	logEntry := cmdLogger.LogEntry(key, command)
 	defer logEntry.Close()
 
-	pipeReaderWaitGroup := readProcessPipe(logEntry, stream)
+	// If the pod just failed to even start, then we can't get logs from it.
+	if pod.Status.Phase == corev1.PodFailed && len(pod.Status.ContainerStatuses) == 0 {
+		logEntry.Finalize(1)
+	} else {
+		exitCode := 0
+		for _, status := range pod.Status.ContainerStatuses {
+			if status.Name == containerName {
+				exitCode = int(status.State.Terminated.ExitCode)
+				break
+			}
+		}
+		// Ensure we always get the exit code in case an error occurs when reading the logs.
+		defer logEntry.Finalize(exitCode)
 
-	select {
-	case <-ctx.Done():
-	case err = <-watchErrGroup(pipeReaderWaitGroup):
+		req := c.Clientset.CoreV1().Pods(namespace).GetLogs(pod.Name, &corev1.PodLogOptions{Container: containerName})
+		stream, err := req.Stream(ctx)
 		if err != nil {
-			return errors.Wrap(err, "reading process pipes")
+			return errors.Wrapf(err, "opening log stream for pod %s", pod.Name)
+		}
+
+		pipeReaderWaitGroup := readProcessPipe(logEntry, stream)
+
+		select {
+		case <-ctx.Done():
+		case err = <-watchErrGroup(pipeReaderWaitGroup):
+			if err != nil {
+				return errors.Wrap(err, "reading process pipes")
+			}
 		}
 	}
-
-	exitCode := 0
-	for _, status := range pod.Status.ContainerStatuses {
-		if status.Name == containerName {
-			exitCode = int(status.State.Terminated.ExitCode)
-			break
-		}
-	}
-
-	logEntry.Finalize(exitCode)
 
 	return nil
 }
