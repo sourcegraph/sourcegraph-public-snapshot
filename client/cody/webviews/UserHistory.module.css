@@ -20,36 +20,14 @@
     flex-direction: column;
 }
 
-/**
-    Sadly we have to use our own button instead of VSCodeButton because it has a
-    #shadow-root style with max-width: 300px AND we get a weird border when the
-    window is wide. So we use a <button> and set our own styles (mostly found by
-    inspecting the standard button)
-**/
 .item-button {
-    all: unset;
-    box-sizing: border-box;
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    padding: var(--button-padding-vertical) var(--button-padding-horizontal);
-    outline: none;
-    text-decoration: none;
-    border: calc(var(--border-width) * 1px) solid var(--button-border);
-    color: var(--button-primary-foreground);
-    background: var(--button-primary-background);
-    border-radius: calc(var(--corner-radius) * 1px);
-    cursor: pointer;
-
-}
-.item-button:hover {
-    background: var(--button-primary-hover-background);
-}
-.item-button:active {
-    background: var(--button-primary-background);
+    display: block;
+    padding-top: .5rem;
+    padding-bottom: .5rem;
 }
 
 .item-button-inner-container {
+    text-align: left;
     padding-top: .25rem;
     padding-bottom: .25rem;
 }

@@ -1,3 +1,4 @@
+import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
@@ -27,14 +28,14 @@ export const Recipes: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({
             <div className="non-transcript-container">
                 <div className={styles.recipes}>
                     {Object.entries(recipesList).map(([key, value]) => (
-                        <button
+                        <VSCodeButton
                             key={key}
                             className={styles.recipeButton}
                             type="button"
                             onClick={() => onRecipeClick(key as RecipeID)}
                         >
                             {value}
-                        </button>
+                        </VSCodeButton>
                     ))}
                 </div>
             </div>

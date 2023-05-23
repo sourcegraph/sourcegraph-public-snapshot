@@ -69,7 +69,7 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
                                 }
 
                                 return (
-                                    <button
+                                    <VSCodeButton
                                         key={chat[0]}
                                         className={styles.itemButton}
                                         onClick={() => restoreMetadata(chat[0])}
@@ -83,7 +83,7 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
                                                 {lastMessage.displayText}
                                             </div>
                                         </div>
-                                    </button>
+                                    </VSCodeButton>
                                 )
                             })}
                 </div>
