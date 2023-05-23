@@ -141,6 +141,7 @@ func (checker *AppUpdateChecker) Handler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		appClientVersion := readClientAppVersion(r.URL)
 		if err := appClientVersion.validate(); err != nil {
+			checker.logger.Error("app client version failed validation", log.Error(err))
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
