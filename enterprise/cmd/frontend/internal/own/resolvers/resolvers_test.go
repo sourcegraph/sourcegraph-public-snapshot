@@ -1325,6 +1325,10 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 											  title
 											  description
 											}
+											... on AssignedOwner {
+											  title
+											  description
+											}
 										}
 									}
 								}
@@ -1338,26 +1342,9 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 				"commit": {
 					"blob": {
 						"ownership": {
-							"totalOwners": 1,
+							"totalOwners": 3,
 							"totalCount": 3,
 							"nodes": [
-								{
-									"owner": {
-										"displayName": "js-owner",
-										"email": ""
-									},
-									"reasons": [
-										{
-											"title": "codeowners",
-											"description": "Owner is associated with a rule in a CODEOWNERS file.",
-											"codeownersFile": {
-												"__typename": "VirtualFile",
-												"url": "/github.com/sourcegraph/own/-/own"
-											},
-											"ruleLineMatch": 1
-										}
-									]
-								},
 								{
 									"owner": {
 										"displayName": "I am an assigned owner #1",
@@ -1379,6 +1366,23 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 										{
 											"title": "assigned owner",
 											"description": "Owner is manually assigned."
+										}
+									]
+								},
+								{
+									"owner": {
+										"displayName": "js-owner",
+										"email": ""
+									},
+									"reasons": [
+										{
+											"title": "codeowners",
+											"description": "Owner is associated with a rule in a CODEOWNERS file.",
+											"codeownersFile": {
+												"__typename": "VirtualFile",
+												"url": "/github.com/sourcegraph/own/-/own"
+											},
+											"ruleLineMatch": 1
 										}
 									]
 								}
