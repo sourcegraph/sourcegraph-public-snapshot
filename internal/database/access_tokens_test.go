@@ -199,6 +199,7 @@ func assertSecurityEventCount(t *testing.T, db DB, event SecurityEventName, expe
 	assert.Equal(t, expectedCount, count)
 }
 
+// This test is run in TestAccessTokens
 func testAccessTokens_CreateInternal_DoesNotCaptureSecurityEvent(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
@@ -234,6 +235,7 @@ func testAccessTokens_CreateInternal_DoesNotCaptureSecurityEvent(t *testing.T) {
 
 }
 
+// This test is run in TestAccessTokens
 func testAccessTokens_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -314,6 +316,7 @@ func testAccessTokens_List(t *testing.T) {
 
 // 🚨 SECURITY: This tests the routine that verifies access tokens, which the security of the entire
 // system depends on.
+// This test is run in TestAccessTokens
 func testAccessTokens_Lookup(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -384,6 +387,7 @@ func testAccessTokens_Lookup(t *testing.T) {
 
 // 🚨 SECURITY: This tests that deleting the subject or creator user of an access token invalidates
 // the token, and that no new access tokens may be created for deleted users.
+// This test is run in TestAccessTokens
 func testAccessTokens_Lookup_deletedUser(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -466,6 +470,7 @@ func testAccessTokens_Lookup_deletedUser(t *testing.T) {
 	})
 }
 
+// This test is run in TestAccessTokens
 func testAccessTokens_tokenSHA256Hash(t *testing.T) {
 	testCases := []struct {
 		name      string
