@@ -12,6 +12,7 @@ import {
     ChatUITextAreaProps,
     EditButtonProps,
     FeedbackButtonsProps,
+    GetStartedProps,
 } from '@sourcegraph/cody-ui/src/Chat'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
@@ -109,6 +110,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             copyButtonOnSubmit={onCopyBtnClick}
             suggestions={suggestions}
             setSuggestions={setSuggestions}
+            getStartedComponent={GetStarted}
         />
     )
 }
@@ -247,6 +249,30 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ classN
             >
                 <i className="codicon codicon-thumbsdown" />
             </VSCodeButton>
+        </div>
+    )
+}
+
+const getStartedActions = [
+    'What does this repo do?',
+    'How does this repo work?',
+    'What resources could I use to learn more about this repo?',
+]
+
+const GetStarted: React.FunctionComponent<GetStartedProps> = ({ submit }) => {
+    return (
+        <div className={classNames(styles.getStartedButtons)}>
+            {getStartedActions.map((action, index) => (
+                <VSCodeButton
+                    key={index}
+                    appearance="secondary"
+                    onClick={() => {
+                        submit(action)
+                    }}
+                >
+                    <div className={classNames(styles.getStartedButton)}>{action}</div>
+                </VSCodeButton>
+            ))}
         </div>
     )
 }

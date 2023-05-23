@@ -127,3 +127,7 @@
 .submit-button:hover {
     opacity: 1;
 }
+
+.get-started-text {
+    font-weight: 600;
+}

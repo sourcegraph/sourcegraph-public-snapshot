@@ -39,6 +39,7 @@ interface ChatProps extends ChatClassNames {
     setSuggestions?: (suggestions: undefined | []) => void
     needsEmailVerification?: boolean
     needsEmailVerificationNotice?: React.FunctionComponent
+    getStartedComponent?: React.FunctionComponent<GetStartedProps>
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {
@@ -85,6 +86,11 @@ export interface FeedbackButtonsProps {
 export interface CopyButtonProps {
     copyButtonOnSubmit: (text: string) => void
 }
+
+export interface GetStartedProps {
+    submit: (input: string) => void
+}
+
 /**
  * The Cody chat interface, with a transcript of all messages and a message form.
  */
@@ -122,6 +128,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     setSuggestions,
     needsEmailVerification = false,
     needsEmailVerificationNotice: NeedsEmailVerificationNotice,
+    getStartedComponent,
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
@@ -240,6 +247,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     copyButtonOnSubmit={copyButtonOnSubmit}
                     submitButtonComponent={SubmitButton}
                     chatInputClassName={chatInputClassName}
+                    getStartedComponent={getStartedComponent}
+                    submitInput={submitInput}
                 />
             )}
 

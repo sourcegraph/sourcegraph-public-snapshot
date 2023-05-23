@@ -10,6 +10,7 @@ import {
     FeedbackButtonsProps,
     CopyButtonProps,
     ChatUISubmitButtonProps,
+    GetStartedProps,
 } from '../Chat'
 
 import { FileLinkProps } from './ContextFiles'
@@ -32,6 +33,8 @@ export const Transcript: React.FunctionComponent<
         feedbackButtonsOnSubmit?: (text: string) => void
         copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
         submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
+        getStartedComponent?: React.FunctionComponent<GetStartedProps>
+        submitInput?: (input: string, submitType: 'user' | 'suggestion') => void
     } & TranscriptItemClassNames
 > = ({
     transcript,
@@ -53,6 +56,8 @@ export const Transcript: React.FunctionComponent<
     copyButtonOnSubmit,
     submitButtonComponent,
     chatInputClassName,
+    getStartedComponent,
+    submitInput,
 }) => {
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
     useEffect(() => {
@@ -114,6 +119,9 @@ export const Transcript: React.FunctionComponent<
                             showFeedbackButtons={index > 0 && transcript.length - index === 1}
                             submitButtonComponent={submitButtonComponent}
                             chatInputClassName={chatInputClassName}
+                            getStartedComponent={getStartedComponent}
+                            showGetStarted={index === 0}
+                            submitInput={submitInput}
                         />
                     )
             )}

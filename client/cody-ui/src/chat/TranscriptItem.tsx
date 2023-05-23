@@ -10,6 +10,7 @@ import {
     FeedbackButtonsProps,
     CopyButtonProps,
     ChatUISubmitButtonProps,
+    GetStartedProps,
 } from '../Chat'
 import { CodySvg } from '../utils/icons'
 
@@ -50,6 +51,9 @@ export const TranscriptItem: React.FunctionComponent<
         showFeedbackButtons: boolean
         copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
         submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
+        getStartedComponent?: React.FunctionComponent<GetStartedProps>
+        showGetStarted?: boolean
+        submitInput?: (input: string, submitType: 'user' | 'suggestion') => void
     } & TranscriptItemClassNames
 > = ({
     message,
@@ -72,6 +76,9 @@ export const TranscriptItem: React.FunctionComponent<
     copyButtonOnSubmit,
     submitButtonComponent: SubmitButton,
     chatInputClassName,
+    showGetStarted,
+    getStartedComponent: GetStarted,
+    submitInput,
 }) => {
     const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
     const textarea =
@@ -175,6 +182,17 @@ export const TranscriptItem: React.FunctionComponent<
                 ) : inProgress ? (
                     <BlinkingCursor />
                 ) : null}
+                {GetStarted && showGetStarted && submitInput && (
+                    <div>
+                        <p className={styles.getStartedText}>Here are some ideas to get you started:</p>
+                        <GetStarted
+                            submit={text => {
+                                setBeingEdited(false)
+                                submitInput(text, 'suggestion')
+                            }}
+                        />
+                    </div>
+                )}
             </div>
         </div>
     )

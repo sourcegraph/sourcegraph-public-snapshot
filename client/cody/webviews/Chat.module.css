@@ -88,3 +88,18 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     border-radius: 1rem;
     font-size: 0.7rem;
 }
+
+.get-started-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.get-started-buttons > * {
+    border-radius: 0.25rem;
+    font-size: 0.7rem;
+}
+
+.get-started-button {
+    padding: 0.4rem;
+}
