@@ -38,14 +38,6 @@ const config: Meta = {
 
 export default config
 
-window.context.licenseInfo = {
-    currentPlan: 'enterprise-0',
-    batchChanges: {
-        maxNumChangesets: -1,
-        unrestricted: true,
-    },
-}
-
 const statBarData: GlobalChangesetsStatsResult = {
     __typename: 'Query',
     batchChanges: { __typename: 'BatchChangeConnection', totalCount: 30 },
