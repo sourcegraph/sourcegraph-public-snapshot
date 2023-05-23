@@ -324,6 +324,10 @@ const BatchSpecJSON = `{
           "type": "string",
           "description": "The name of the Git branch to create or update on each repository with the changes."
         },
+        "fork": {
+          "type": "boolean",
+          "description": "Force the default forking behaivor of the code host"
+        },
         "commit": {
           "title": "ExpandedGitCommitDescription",
           "type": "object",
