@@ -146,7 +146,7 @@ func rateLimit(baseLogger log.Logger, eventLogger events.Logger, cache limiter.R
 
 		l := act.Limiter(cache)
 
-		err := l.TryAcquire(r.Context())
+		commit, err := l.TryAcquire(r.Context())
 		if err != nil {
 			if loggerErr := eventLogger.LogEvent(
 				r.Context(),
@@ -177,7 +177,15 @@ func rateLimit(baseLogger log.Logger, eventLogger events.Logger, cache limiter.R
 			return
 		}
 
-		next.ServeHTTP(w, r)
+		responseRecorder := response.NewStatusHeaderRecorder(w)
+		next.ServeHTTP(responseRecorder, r)
+
+		// If response is healthy, consume the rate limit
+		if responseRecorder.StatusCode >= 200 || responseRecorder.StatusCode < 300 {
+			if err := commit(); err != nil {
+				logger.Error("failed to commit rate limit consumption", log.Error(err))
+			}
+		}
 	})
 }
 
