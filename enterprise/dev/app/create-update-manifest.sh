@@ -84,9 +84,11 @@ platform_json_for() {
 
   key=$(short_platform ${platform})
 
-  if [[ -n "${signature:""}" ]]; then
+  if [[ -n "${signature:-""}" ]]; then
     echo ${RELEASE_JSON} | jq -r --arg key "${key}" --arg filename "${filename}" --arg sig "${signature}" \
       '.assets[] | select(.name == $filename) | { ($key): { "signature": $sig, "url": .url }}'
+  else
+    echo ""
   fi
 }
 
