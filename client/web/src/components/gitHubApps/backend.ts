@@ -6,8 +6,8 @@ import { GitHubAppByAppIDResult, GitHubAppByAppIDVariables } from '../../graphql
 import { ExternalServiceFieldsWithConfig, LIST_EXTERNAL_SERVICE_FRAGMENT } from '../externalServices/backend'
 
 export const GITHUB_APPS_QUERY = gql`
-    query GitHubApps {
-        gitHubApps {
+    query GitHubApps($domain: String) {
+        gitHubApps(domain: $domain) {
             nodes {
                 id
                 appID

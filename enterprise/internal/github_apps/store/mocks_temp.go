@@ -76,7 +76,7 @@ func NewMockGitHubAppsStore() *MockGitHubAppsStore {
 			},
 		},
 		ListFunc: &GitHubAppsStoreListFunc{
-			defaultHook: func(context.Context) (r0 []*types.GitHubApp, r1 error) {
+			defaultHook: func(context.Context, *string) (r0 []*types.GitHubApp, r1 error) {
 				return
 			},
 		},
@@ -123,7 +123,7 @@ func NewStrictMockGitHubAppsStore() *MockGitHubAppsStore {
 			},
 		},
 		ListFunc: &GitHubAppsStoreListFunc{
-			defaultHook: func(context.Context) ([]*types.GitHubApp, error) {
+			defaultHook: func(context.Context, *string) ([]*types.GitHubApp, error) {
 				panic("unexpected invocation of MockGitHubAppsStore.List")
 			},
 		},
@@ -718,24 +718,24 @@ func (c GitHubAppsStoreGetBySlugFuncCall) Results() []interface{} {
 // GitHubAppsStoreListFunc describes the behavior when the List method of
 // the parent MockGitHubAppsStore instance is invoked.
 type GitHubAppsStoreListFunc struct {
-	defaultHook func(context.Context) ([]*types.GitHubApp, error)
-	hooks       []func(context.Context) ([]*types.GitHubApp, error)
+	defaultHook func(context.Context, *string) ([]*types.GitHubApp, error)
+	hooks       []func(context.Context, *string) ([]*types.GitHubApp, error)
 	history     []GitHubAppsStoreListFuncCall
 	mutex       sync.Mutex
 }
 
 // List delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitHubAppsStore) List(v0 context.Context) ([]*types.GitHubApp, error) {
-	r0, r1 := m.ListFunc.nextHook()(v0)
-	m.ListFunc.appendCall(GitHubAppsStoreListFuncCall{v0, r0, r1})
+func (m *MockGitHubAppsStore) List(v0 context.Context, v1 *string) ([]*types.GitHubApp, error) {
+	r0, r1 := m.ListFunc.nextHook()(v0, v1)
+	m.ListFunc.appendCall(GitHubAppsStoreListFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the List method of the
 // parent MockGitHubAppsStore instance is invoked and the hook queue is
 // empty.
-func (f *GitHubAppsStoreListFunc) SetDefaultHook(hook func(context.Context) ([]*types.GitHubApp, error)) {
+func (f *GitHubAppsStoreListFunc) SetDefaultHook(hook func(context.Context, *string) ([]*types.GitHubApp, error)) {
 	f.defaultHook = hook
 }
 
@@ -743,7 +743,7 @@ func (f *GitHubAppsStoreListFunc) SetDefaultHook(hook func(context.Context) ([]*
 // List method of the parent MockGitHubAppsStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *GitHubAppsStoreListFunc) PushHook(hook func(context.Context) ([]*types.GitHubApp, error)) {
+func (f *GitHubAppsStoreListFunc) PushHook(hook func(context.Context, *string) ([]*types.GitHubApp, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -752,19 +752,19 @@ func (f *GitHubAppsStoreListFunc) PushHook(hook func(context.Context) ([]*types.
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitHubAppsStoreListFunc) SetDefaultReturn(r0 []*types.GitHubApp, r1 error) {
-	f.SetDefaultHook(func(context.Context) ([]*types.GitHubApp, error) {
+	f.SetDefaultHook(func(context.Context, *string) ([]*types.GitHubApp, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitHubAppsStoreListFunc) PushReturn(r0 []*types.GitHubApp, r1 error) {
-	f.PushHook(func(context.Context) ([]*types.GitHubApp, error) {
+	f.PushHook(func(context.Context, *string) ([]*types.GitHubApp, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitHubAppsStoreListFunc) nextHook() func(context.Context) ([]*types.GitHubApp, error) {
+func (f *GitHubAppsStoreListFunc) nextHook() func(context.Context, *string) ([]*types.GitHubApp, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -800,6 +800,9 @@ type GitHubAppsStoreListFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []*types.GitHubApp
@@ -811,7 +814,7 @@ type GitHubAppsStoreListFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitHubAppsStoreListFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this

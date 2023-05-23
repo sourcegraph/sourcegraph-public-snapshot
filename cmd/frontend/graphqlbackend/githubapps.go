@@ -19,7 +19,7 @@ type GitHubAppsResolver interface {
 	NodeResolvers() map[string]NodeByIDFunc
 
 	// Queries
-	GitHubApps(ctx context.Context) (GitHubAppConnectionResolver, error)
+	GitHubApps(ctx context.Context, args *GitHubAppsArgs) (GitHubAppConnectionResolver, error)
 	GitHubApp(ctx context.Context, args *GitHubAppArgs) (GitHubAppResolver, error)
 	GitHubAppByAppID(ctx context.Context, args *GitHubAppByAppIDArgs) (GitHubAppResolver, error)
 
@@ -54,9 +54,10 @@ type DeleteGitHubAppArgs struct {
 }
 
 type GitHubAppsArgs struct {
-	graphqlutil.ConnectionArgs
-	After     *string
-	Namespace *graphql.ID
+	// graphqlutil.ConnectionArgs
+	// After     *string
+	// Namespace *graphql.ID
+	Domain *string
 }
 
 type GitHubAppArgs struct {

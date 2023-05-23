@@ -36,8 +36,8 @@ type GitHubAppsStore interface {
 	// WithEncryptionKey sets encryption key on store. Returns a new GitHubAppsStore
 	WithEncryptionKey(key encryption.Key) GitHubAppsStore
 
-	// List lists all GitHub Apps in the store
-	List(ctx context.Context) ([]*types.GitHubApp, error)
+	// List lists all GitHub Apps in the store (it can be filtered by domain)
+	List(ctx context.Context, domain *string) ([]*types.GitHubApp, error)
 }
 
 // gitHubAppStore handles storing and retrieving GitHub Apps from the database.
@@ -260,6 +260,10 @@ func (s *gitHubAppsStore) GetBySlug(ctx context.Context, slug string, baseURL st
 }
 
 // List lists all GitHub Apps in the store
-func (s *gitHubAppsStore) List(ctx context.Context) ([]*types.GitHubApp, error) {
-	return s.list(ctx, sqlf.Sprintf(`true`))
+func (s *gitHubAppsStore) List(ctx context.Context, domain *string) ([]*types.GitHubApp, error) {
+	where := sqlf.Sprintf(`true`)
+	if domain != nil {
+		where = sqlf.Sprintf("domain = %s", *domain)
+	}
+	return s.list(ctx, where)
 }

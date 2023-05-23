@@ -27,7 +27,11 @@ interface Props {
 }
 
 export const GitHubAppsPage: React.FC<Props> = ({ batchChangesEnabled }) => {
-    const { data, loading, error, refetch } = useQuery<GitHubAppsResult, GitHubAppsVariables>(GITHUB_APPS_QUERY, {})
+    const { data, loading, error, refetch } = useQuery<GitHubAppsResult, GitHubAppsVariables>(GITHUB_APPS_QUERY, {
+        variables: {
+            domain: 'repos',
+        },
+    })
     const gitHubApps = useMemo(() => data?.gitHubApps?.nodes ?? [], [data])
 
     useEffect(() => {

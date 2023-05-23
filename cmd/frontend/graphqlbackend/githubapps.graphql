@@ -10,7 +10,7 @@ extend type Query {
     """
     All configured GitHub Apps.
     """
-    gitHubApps: GitHubAppConnection!
+    gitHubApps(domain: String): GitHubAppConnection!
     """
     Looks up a GitHub App by its ID.
     """
