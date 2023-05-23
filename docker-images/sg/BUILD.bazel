@@ -11,7 +11,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = "@wolfi-sourcegraph-base",
+    base = "@wolfi_base",
     entrypoint = [
         "/usr/local/bin/sg",
     ],

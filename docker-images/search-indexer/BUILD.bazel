@@ -14,18 +14,22 @@ container_dependencies(DEPS)
 oci_image(
     name = "image",
     base = "@wolfi_base",
-    cmd = ["/sbin/tini", "--", "zoekt-sourcegraph-indexserver"],
-    user = "sourcegraph",
+    cmd = [
+        "/sbin/tini",
+        "--",
+        "zoekt-sourcegraph-indexserver",
+    ],
     env = {
-                "DATA_DIR": "/data/index",
-    "SRC_FRONTEND_INTERNAL":"https://sourcegraph-frontend-internal",
-    }
-    workdir = "/home/sourcegraph",
+        "DATA_DIR": "/data/index",
+        "SRC_FRONTEND_INTERNAL": "https://sourcegraph-frontend-internal",
+    },
     tars = dependencies_tars(DEPS),
+    user = "sourcegraph",
+    workdir = "/home/sourcegraph",
 )
 
 oci_tarball(
-    name = "image_tarball"
+    name = "image_tarball",
     image = ":image",
-    repo_tags = "zoekt-indexserver:candidate"
+    repo_tags = ["zoekt-indexserver:candidate"],
 )

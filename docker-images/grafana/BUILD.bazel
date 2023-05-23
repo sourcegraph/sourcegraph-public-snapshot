@@ -1,0 +1,37 @@
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+
+filegroup(
+    name = "config_files",
+    srcs = glob(["config/*"]) + ["entry-alpine.sh"],
+)
+
+pkg_tar(
+    name = "config_tar",
+    srcs = [
+        "//docker-images/grafana/config",
+        "//monitoring:generate_config_zip",
+    ],
+    remap_paths = {
+        "docker-images/grafana/config": "/sg_config_grafana",
+        "monitoring/outputs/grafana": "/sg_config_grafana/provisioning/dashboards/sourcegraph",
+        "entry-alpine.sh": "/entry.sh",
+    },
+)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_grafana_base",
+    entrypoint = ["/entry.sh"],
+    env = {
+        "PG_EXPORTER_EXTEND_QUERY_PATH": "/config.queries.yaml",
+    },
+    tars = [":config_tar"],
+    user = "grafana",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["grafana:candidate"],
+)

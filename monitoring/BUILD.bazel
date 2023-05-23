@@ -28,6 +28,7 @@ genrule(
         zip -r $@ monitoring
         """,
     tools = ["//monitoring"],
+    visibility = ["//docker-images/grafana:__pkg__"],
 )
 
 # Bazel expects all outputs to be explicitly defined. Therefore we have
