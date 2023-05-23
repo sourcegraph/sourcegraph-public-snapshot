@@ -5,6 +5,7 @@ import { ExplainCodeHighLevel } from '@sourcegraph/cody-shared/src/chat/recipes/
 import { FindCodeSmells } from '@sourcegraph/cody-shared/src/chat/recipes/find-code-smells'
 import { Fixup } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
 import { GenerateDocstring } from '@sourcegraph/cody-shared/src/chat/recipes/generate-docstring'
+import { PrDescription } from '@sourcegraph/cody-shared/src/chat/recipes/generate-pr-description'
 import { ReleaseNotes } from '@sourcegraph/cody-shared/src/chat/recipes/generate-release-notes'
 import { GenerateTest } from '@sourcegraph/cody-shared/src/chat/recipes/generate-test'
 import { GitHistory } from '@sourcegraph/cody-shared/src/chat/recipes/git-log'
@@ -46,6 +47,7 @@ function init(): void {
         new NextQuestions(),
         new ContextSearch(),
         new ReleaseNotes(),
+        new PrDescription(),
     ]
 
     for (const recipe of recipes) {
