@@ -1,4 +1,4 @@
-package server
+package perforce
 
 import (
 	"bufio"
@@ -14,10 +14,10 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
@@ -25,12 +25,33 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-type perforceChangelistMappingJob struct {
-	repo api.RepoName
+type Service struct {
+	Logger                 log.Logger
+	DB                     database.DB
+	changelistMappingQueue *changelistMappingQueue
+}
+
+func (s *Service) EnqueueChangelistMappingJob(job *ChangelistMappingJob) {
+	s.changelistMappingQueue.push(job)
+}
+
+// NewCloneQueue initializes a new cloneQueue.
+func NewService(logger log.Logger, db database.DB, jobs *list.List) Service {
+	cq := changelistMappingQueue{jobs: jobs}
+	cq.cond = sync.NewCond(&cq.cmu)
+
+	return Service{
+		changelistMappingQueue: &cq,
+	}
+}
+
+type ChangelistMappingJob struct {
+	RepoName api.RepoName
+	RepoDir  common.GitDir
 }
 
 // FIXME: Use generics.
-type perforceChangelistMappingQueue struct {
+type changelistMappingQueue struct {
 	mu   sync.Mutex
 	jobs *list.List
 
@@ -39,7 +60,7 @@ type perforceChangelistMappingQueue struct {
 }
 
 // push will queue the cloneJob to the end of the queue.
-func (p *perforceChangelistMappingQueue) push(pj *perforceChangelistMappingJob) {
+func (p *changelistMappingQueue) push(pj *ChangelistMappingJob) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -48,7 +69,7 @@ func (p *perforceChangelistMappingQueue) push(pj *perforceChangelistMappingJob) 
 }
 
 // pop will return the next cloneJob. If there's no next job available, it returns nil.
-func (p *perforceChangelistMappingQueue) pop() *perforceChangelistMappingJob {
+func (p *changelistMappingQueue) pop() *ChangelistMappingJob {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
@@ -57,45 +78,35 @@ func (p *perforceChangelistMappingQueue) pop() *perforceChangelistMappingJob {
 		return nil
 	}
 
-	return p.jobs.Remove(next).(*perforceChangelistMappingJob)
+	return p.jobs.Remove(next).(*ChangelistMappingJob)
 }
 
-func (p *perforceChangelistMappingQueue) empty() bool {
+func (p *changelistMappingQueue) empty() bool {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
 	return p.jobs.Len() == 0
 }
 
-// NewCloneQueue initializes a new cloneQueue.
-func NewPerforceChangelistMappingQueue(jobs *list.List) *perforceChangelistMappingQueue {
-	cq := perforceChangelistMappingQueue{jobs: jobs}
-	cq.cond = sync.NewCond(&cq.cmu)
-
-	return &cq
-}
-
-type PerforceCore struct{}
-
-func (sl *PerforceCore) StartPerforceChangelistMappingPipeline(ctx context.Context) {
-	jobs := make(chan *perforceChangelistMappingJob)
+func (s *Service) StartPerforceChangelistMappingPipeline(ctx context.Context) {
+	jobs := make(chan *ChangelistMappingJob)
 	go s.changelistMappingConsumer(ctx, jobs)
 	go s.changelistMappingProducer(ctx, jobs)
 }
 
-func (s *PerforceCore) changelistMappingProducer(ctx context.Context, jobs chan<- *perforceChangelistMappingJob) {
+func (s *Service) changelistMappingProducer(ctx context.Context, jobs chan<- *ChangelistMappingJob) {
 	defer close(jobs)
 
 	for {
-		s.PerforceChangelistMappingQueue.cmu.Lock()
-		if s.PerforceChangelistMappingQueue.empty() {
-			s.PerforceChangelistMappingQueue.cond.Wait()
+		s.changelistMappingQueue.cmu.Lock()
+		if s.changelistMappingQueue.empty() {
+			s.changelistMappingQueue.cond.Wait()
 		}
 
-		s.PerforceChangelistMappingQueue.cmu.Unlock()
+		s.changelistMappingQueue.cmu.Unlock()
 
 		for {
-			job := s.PerforceChangelistMappingQueue.pop()
+			job := s.changelistMappingQueue.pop()
 			if job == nil {
 				break
 			}
@@ -110,12 +121,12 @@ func (s *PerforceCore) changelistMappingProducer(ctx context.Context, jobs chan<
 	}
 }
 
-func (s *PerforceCore) changelistMappingConsumer(ctx context.Context, jobs <-chan *perforceChangelistMappingJob) {
+func (s *Service) changelistMappingConsumer(ctx context.Context, jobs <-chan *ChangelistMappingJob) {
 	logger := s.Logger.Scoped("changelistMappingConsumer", "process perforce changelist mapping jobs")
 
 	// Process only one job at a time for a simpler pipeline at the moment.
 	for j := range jobs {
-		logger := logger.With(log.String("job.repo", string(j.repo)))
+		logger := logger.With(log.String("job.repo", string(j.RepoName)))
 
 		select {
 		case <-ctx.Done():
@@ -131,14 +142,14 @@ func (s *PerforceCore) changelistMappingConsumer(ctx context.Context, jobs <-cha
 	}
 }
 
-func (s *PerforceCore) doChangelistMapping(ctx context.Context, job *perforceChangelistMappingJob) error {
+func (s *Service) doChangelistMapping(ctx context.Context, job *ChangelistMappingJob) error {
 	logger := s.Logger.Scoped("doChangelistMapping", "").With(
-		log.String("repo", string(job.repo)),
+		log.String("repo", string(job.RepoName)),
 	)
 
 	logger.Warn("started")
 
-	repo, err := s.DB.Repos().GetByName(ctx, job.repo)
+	repo, err := s.DB.Repos().GetByName(ctx, job.RepoName)
 	if err != nil {
 		return errors.Wrap(err, "Repos.GetByName")
 	}
@@ -150,7 +161,8 @@ func (s *PerforceCore) doChangelistMapping(ctx context.Context, job *perforceCha
 
 	logger.Warn("repo received from DB")
 
-	dir := s.dir(protocol.NormalizeRepo(repo.Name))
+	// dir := s.dir(protocol.NormalizeRepo(repo.Name))
+	dir := job.RepoDir
 
 	logger.Warn("latestRowCommit")
 
@@ -172,18 +184,23 @@ func (s *PerforceCore) doChangelistMapping(ctx context.Context, job *perforceCha
 	return nil
 }
 
-func headCommitSHA(ctx context.Context, logger log.Logger, dir server.GitDir) (string, error) {
+// FIXME
+func runWith(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
+	return nil, nil
+}
+
+func headCommitSHA(ctx context.Context, logger log.Logger, dir common.GitDir) (string, error) {
 	cmd := exec.CommandContext(ctx, "git", "rev-parse", "HEAD")
 	dir.Set(cmd)
 	output, err := runWith(ctx, wrexec.Wrap(ctx, logger, cmd), false, nil)
 	if err != nil {
-		return "", &GitCommandError{Err: err, Output: string(output)}
+		return "", &common.GitCommandError{Err: err, Output: string(output)}
 	}
 
 	return string(bytes.TrimSpace(output)), nil
 }
 
-func (s *PerforceCore) getCommitsToInsert(ctx context.Context, logger log.Logger, repoID api.RepoID, dir server.GitDir) (commitsMap []types.PerforceChangelist, err error) {
+func (s *Service) getCommitsToInsert(ctx context.Context, logger log.Logger, repoID api.RepoID, dir common.GitDir) (commitsMap []types.PerforceChangelist, err error) {
 	latestRowCommit, err := s.DB.RepoCommitsChangelists().GetLatestForRepo(ctx, repoID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -226,7 +243,7 @@ func (s *PerforceCore) getCommitsToInsert(ctx context.Context, logger log.Logger
 // 90b9b9574517f30810346f0ab07f66c49c77ab0f [p4-fusion: depot-paths = "//rhia-depot-test/": change = 83731]
 var logFormatWithCommitSHAAndCommitBodyOnly = "--format=format:%H %b"
 
-func newMappableCommits(ctx context.Context, logger log.Logger, dir server.GitDir, lastMappedCommit, head string) ([]types.PerforceChangelist, error) {
+func newMappableCommits(ctx context.Context, logger log.Logger, dir common.GitDir, lastMappedCommit, head string) ([]types.PerforceChangelist, error) {
 	cmd := exec.CommandContext(ctx, "git", "log")
 	// FIXME: When lastMappedCommit..head is an invalid range.
 	// TODO: Follow up in a separate PR.
@@ -254,7 +271,7 @@ func newMappableCommits(ctx context.Context, logger log.Logger, dir server.GitDi
 
 		output, err := runWith(ctx, wrexec.Wrap(ctx, logger, cmd), false, progressWriter)
 		if err != nil {
-			return &GitCommandError{Err: err, Output: string(output)}
+			return &common.GitCommandError{Err: err, Output: string(output)}
 		}
 		return nil
 	})
