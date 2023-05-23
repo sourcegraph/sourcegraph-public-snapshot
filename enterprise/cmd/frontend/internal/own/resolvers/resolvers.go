@@ -55,6 +55,8 @@ var (
 	_ graphqlbackend.SimpleOwnReasonResolver                  = &recentContributorOwnershipSignal{}
 	_ graphqlbackend.RecentViewOwnershipSignalResolver        = &recentViewOwnershipSignal{}
 	_ graphqlbackend.SimpleOwnReasonResolver                  = &recentViewOwnershipSignal{}
+	_ graphqlbackend.AssignedOwnerResolver                    = &assignedOwner{}
+	_ graphqlbackend.SimpleOwnReasonResolver                  = &assignedOwner{}
 	_ graphqlbackend.SimpleOwnReasonResolver                  = &codeownersFileEntryResolver{}
 )
 
@@ -92,18 +94,19 @@ func (o *ownershipReasonResolver) ToRecentContributorOwnershipSignal() (res grap
 }
 
 func (o *ownershipReasonResolver) ToRecentViewOwnershipSignal() (res graphqlbackend.RecentViewOwnershipSignalResolver, ok bool) {
-	res, ok = o.resolver.(*assignedOwner)
-	return
-}
-
-func (o *ownershipReasonResolver) ToAssignedOwner() (res graphqlbackend.AssignedOwnerResolver, ok bool) {
 	res, ok = o.resolver.(*recentViewOwnershipSignal)
 	return
 }
 
+func (o *ownershipReasonResolver) ToAssignedOwner() (res graphqlbackend.AssignedOwnerResolver, ok bool) {
+	res, ok = o.resolver.(*assignedOwner)
+	return
+}
+
 func (o *ownershipReasonResolver) makesAnOwner() bool {
-	_, ok := o.resolver.(*codeownersFileEntryResolver)
-	return ok
+	_, makesAnOwner := o.resolver.(*codeownersFileEntryResolver)
+	_, makesAnAssignedOwner := o.resolver.(*assignedOwner)
+	return makesAnOwner || makesAnAssignedOwner
 }
 
 func (r *ownResolver) GitBlobOwnership(

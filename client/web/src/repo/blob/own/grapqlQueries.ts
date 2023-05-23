@@ -78,6 +78,7 @@ export const FETCH_OWNERS = gql`
                                     ...CodeownersFileEntryFields
                                     ...RecentContributorOwnershipSignalFields
                                     ...RecentViewOwnershipSignalFields
+                                    ...AssignedOwnerFields
                                 }
                             }
                         }

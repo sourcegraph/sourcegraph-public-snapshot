@@ -94,6 +94,7 @@ func fakeOwnDb() *database.MockDB {
 	db := database.NewMockDB()
 	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
 	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
+	db.AssignedOwnersFunc.SetDefaultReturn(database.NewMockAssignedOwnersStore())
 
 	configStore := database.NewMockSignalConfigurationStore()
 	configStore.IsEnabledFunc.SetDefaultReturn(true, nil)
@@ -263,8 +264,6 @@ func TestBlobOwnershipPanelQueryIngested(t *testing.T) {
 	logger := logtest.Scoped(t)
 	fakeDB := fakedb.New()
 	db := fakeOwnDb()
-	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
-	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
 	fakeDB.Wire(db)
 	repoID := api.RepoID(1)
 	own := fakeOwnService{
@@ -377,6 +376,7 @@ func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
 	db.CodeownersFunc.SetDefaultReturn(enterprisedb.NewMockCodeownersStore())
 	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
 	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
+	db.AssignedOwnersFunc.SetDefaultReturn(database.NewMockAssignedOwnersStore())
 	db.OwnSignalConfigurationsFunc.SetDefaultReturn(database.NewMockSignalConfigurationStore())
 	own := own.NewService(git, db)
 	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
@@ -547,8 +547,6 @@ func TestOwnershipPagination(t *testing.T) {
 	ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(map[string]bool{"search-ownership": true}, nil, nil))
 	repos := database.NewMockRepoStore()
 	db.ReposFunc.SetDefaultReturn(repos)
-	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
-	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
 	repos.GetFunc.SetDefaultReturn(&types.Repo{}, nil)
 	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
 		return "42", nil
@@ -1019,7 +1017,6 @@ func TestCommitOwnershipSignals(t *testing.T) {
 		ContributionCount: 5,
 	}}, nil)
 	db.RecentContributionSignalsFunc.SetDefaultReturn(recentContribStore)
-	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
 
 	fakeDB.Wire(db)
 	repoID := api.RepoID(1)
@@ -1328,6 +1325,10 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 											  title
 											  description
 											}
+											... on AssignedOwner {
+											  title
+											  description
+											}
 										}
 									}
 								}
@@ -1341,26 +1342,9 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 				"commit": {
 					"blob": {
 						"ownership": {
-							"totalOwners": 1,
+							"totalOwners": 3,
 							"totalCount": 3,
 							"nodes": [
-								{
-									"owner": {
-										"displayName": "js-owner",
-										"email": ""
-									},
-									"reasons": [
-										{
-											"title": "codeowners",
-											"description": "Owner is associated with a rule in a CODEOWNERS file.",
-											"codeownersFile": {
-												"__typename": "VirtualFile",
-												"url": "/github.com/sourcegraph/own/-/own"
-											},
-											"ruleLineMatch": 1
-										}
-									]
-								},
 								{
 									"owner": {
 										"displayName": "I am an assigned owner #1",
@@ -1382,6 +1366,23 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 										{
 											"title": "assigned owner",
 											"description": "Owner is manually assigned."
+										}
+									]
+								},
+								{
+									"owner": {
+										"displayName": "js-owner",
+										"email": ""
+									},
+									"reasons": [
+										{
+											"title": "codeowners",
+											"description": "Owner is associated with a rule in a CODEOWNERS file.",
+											"codeownersFile": {
+												"__typename": "VirtualFile",
+												"url": "/github.com/sourcegraph/own/-/own"
+											},
+											"ruleLineMatch": 1
 										}
 									]
 								}
