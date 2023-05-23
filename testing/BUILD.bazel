@@ -43,6 +43,7 @@ sh_test(
         "$(location //enterprise/cmd/server:image_tarball)",  # image we're testing against
         "server:candidate",
         "$(location //client/web/src/end-to-end:e2e)",  # actual test
+        "//client/web/src/end-to-end:e2e"
     ],
     data = [
         "//client/web/src/end-to-end:e2e",
