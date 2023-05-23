@@ -42,7 +42,8 @@ func TestAccessTokens(t *testing.T) {
 // 🚨 SECURITY: This tests the routine that creates access tokens and returns the token secret value
 // to the user.
 //
-//	testAccessTokens_Create requires the site_config to be mocked to enable security event logging to the database
+// testAccessTokens_Create requires the site_config to be mocked to enable security event logging to the database.
+// This test is run in TestAccessTokens
 func testAccessTokens_Create(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
