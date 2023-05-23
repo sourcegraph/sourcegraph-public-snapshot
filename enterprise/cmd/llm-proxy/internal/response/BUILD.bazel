@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "response",
@@ -6,4 +6,11 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/response",
     visibility = ["//enterprise/cmd/llm-proxy:__subpackages__"],
     deps = ["@com_github_sourcegraph_log//:log"],
+)
+
+go_test(
+    name = "response_test",
+    srcs = ["response_test.go"],
+    embed = [":response"],
+    deps = ["@com_github_stretchr_testify//assert"],
 )

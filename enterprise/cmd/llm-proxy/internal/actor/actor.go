@@ -102,8 +102,8 @@ type updateOnFailureLimiter struct {
 	*Actor
 }
 
-func (u updateOnFailureLimiter) TryAcquire(ctx context.Context) error {
-	err := (limiter.StaticLimiter{
+func (u updateOnFailureLimiter) TryAcquire(ctx context.Context) (func() error, error) {
+	commit, err := (limiter.StaticLimiter{
 		Identifier: u.ID,
 		Redis:      u.Redis,
 		Limit:      u.RateLimit.Limit,
@@ -116,5 +116,5 @@ func (u updateOnFailureLimiter) TryAcquire(ctx context.Context) error {
 		u.Actor.Update(ctx) // TODO: run this in goroutine+background context maybe?
 	}
 
-	return err
+	return commit, err
 }

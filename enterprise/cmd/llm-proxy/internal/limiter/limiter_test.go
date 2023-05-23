@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/hexops/autogold/v2"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -16,13 +17,15 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 	for _, tc := range []struct {
 		name string
 
-		limiter StaticLimiter
+		limiter  StaticLimiter
+		noCommit bool
 
 		wantErr   autogold.Value
 		wantStore autogold.Value
 	}{
 		{
 			name:      "no limits set",
+			noCommit:  true, // error scenario
 			wantErr:   autogold.Expect("completions access has not been granted"),
 			wantStore: autogold.Expect(mockStore{}),
 		},
@@ -54,6 +57,26 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 			wantErr: nil,
 			wantStore: autogold.Expect(mockStore{"foobar": mockRedisEntry{
 				value: 10,
+				ttl:   60,
+			}}),
+		},
+		{
+			name: "no increment without commit",
+			limiter: StaticLimiter{
+				Identifier: "foobar",
+				Redis: mockStore{
+					"foobar": mockRedisEntry{
+						value: 5,
+						ttl:   60,
+					},
+				},
+				Limit:    10,
+				Interval: 24 * time.Hour,
+			},
+			noCommit: true, // value should be the same
+			wantErr:  nil,
+			wantStore: autogold.Expect(mockStore{"foobar": mockRedisEntry{
+				value: 5,
 				ttl:   60,
 			}}),
 		},
@@ -110,7 +133,8 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 				Limit:    10,
 				Interval: 24 * time.Hour,
 			},
-			wantErr: autogold.Expect("you exceeded the rate limit for completions. Current usage: 10 out of 10 requests. Retry after 2000-01-01 00:01:00 +0000 UTC"),
+			noCommit: true, // error scenario
+			wantErr:  autogold.Expect("you exceeded the rate limit for completions. Current usage: 10 out of 10 requests. Retry after 2000-01-01 00:01:00 +0000 UTC"),
 			wantStore: autogold.Expect(mockStore{"foobar": mockRedisEntry{
 				value: 10,
 				ttl:   60,
@@ -122,12 +146,15 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 				tc.limiter.Redis = mockStore{}
 			}
 			tc.limiter.nowFunc = func() time.Time { return now }
-			err := tc.limiter.TryAcquire(context.Background())
+			commit, err := tc.limiter.TryAcquire(context.Background())
 			if tc.wantErr != nil {
 				require.Error(t, err)
 				tc.wantErr.Equal(t, err.Error())
 			} else {
 				require.NoError(t, err)
+			}
+			if !tc.noCommit {
+				assert.NoError(t, commit())
 			}
 			if tc.wantStore != nil {
 				tc.wantStore.Equal(t, tc.limiter.Redis)
