@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -18,11 +20,13 @@ func (r *RateLimit) IsValid() bool {
 }
 
 type Actor struct {
-	// Key is the original key used to identify the actor.
+	// Key is the original key used to identify the actor. It may be a sensitive value
+	// so use with care!
 	//
 	// For example, for product subscriptions this is the license-based access token.
 	Key string `json:"key"`
-	// ID is the identifier for this actor's rate-limiting pool.
+	// ID is the identifier for this actor's rate-limiting pool. It is not a sensitive
+	// value.
 	//
 	// For example, for product subscriptions this is the subscription UUID. For
 	// Sourcegraph.com users, this is the string representation of the user ID.
@@ -53,6 +57,19 @@ func FromContext(ctx context.Context) *Actor {
 		return &Actor{}
 	}
 	return a
+}
+
+// Logger returns a logger that has metadata about the actor attached to it.
+func (a *Actor) Logger(logger log.Logger) log.Logger {
+	if a == nil {
+		return logger
+	}
+	return logger.With(
+		log.String("actor.ID", a.ID),
+		log.String("actor.Source", a.Source.Name()),
+		log.Bool("actor.AccessEnabled", a.AccessEnabled),
+		log.Timep("actor.LastUpdated", a.LastUpdated),
+	)
 }
 
 // Update updates the given actor's state using the actor's originating source

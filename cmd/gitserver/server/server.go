@@ -38,6 +38,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -221,7 +222,7 @@ func runCommandGraceful(ctx context.Context, logger log.Logger, cmd wrexec.Cmder
 // moment.
 type cloneJob struct {
 	repo   api.RepoName
-	dir    GitDir
+	dir    common.GitDir
 	syncer VCSSyncer
 
 	// TODO: cloneJobConsumer should acquire a new lock. We are trying to keep the changes simple
@@ -2114,7 +2115,7 @@ func (s *Server) setRepoSize(ctx context.Context, name api.RepoName) error {
 	return s.DB.GitserverRepos().SetRepoSize(ctx, name, dirSize(s.dir(name).Path(".")), s.Hostname)
 }
 
-func (s *Server) logIfCorrupt(ctx context.Context, repo api.RepoName, dir GitDir, stderr string) {
+func (s *Server) logIfCorrupt(ctx context.Context, repo api.RepoName, dir common.GitDir, stderr string) {
 	if checkMaybeCorruptRepo(s.Logger, repo, dir, stderr) {
 		reason := stderr
 		if err := s.DB.GitserverRepos().LogCorruption(ctx, repo, reason, s.Hostname); err != nil {
@@ -2126,7 +2127,7 @@ func (s *Server) logIfCorrupt(ctx context.Context, repo api.RepoName, dir GitDir
 // setGitAttributes writes our global gitattributes to
 // gitDir/info/attributes. This will override .gitattributes inside of
 // repositories. It is used to unset attributes such as export-ignore.
-func setGitAttributes(dir GitDir) error {
+func setGitAttributes(dir common.GitDir) error {
 	infoDir := dir.Path("info")
 	if err := os.Mkdir(infoDir, os.ModePerm); err != nil && !os.IsExist(err) {
 		return errors.Wrap(err, "failed to set git attributes")
@@ -2147,7 +2148,7 @@ func setGitAttributes(dir GitDir) error {
 
 // testRepoCorrupter is used by tests to disrupt a cloned repository (e.g. deleting
 // HEAD, zeroing it out, etc.)
-var testRepoCorrupter func(ctx context.Context, tmpDir GitDir)
+var testRepoCorrupter func(ctx context.Context, tmpDir common.GitDir)
 
 // cloneOptions specify optional behaviour for the cloneRepo function.
 type cloneOptions struct {
@@ -2278,7 +2279,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	return "", nil
 }
 
-func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syncer VCSSyncer, lock *RepositoryLock, remoteURL *vcs.URL, opts *cloneOptions) (err error) {
+func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitDir, syncer VCSSyncer, lock *RepositoryLock, remoteURL *vcs.URL, opts *cloneOptions) (err error) {
 	logger := s.Logger.Scoped("doClone", "").With(log.String("repo", string(repo)))
 
 	defer lock.Release()
@@ -2313,7 +2314,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 	}
 	defer os.RemoveAll(tmpPath)
 	tmpPath = filepath.Join(tmpPath, ".git")
-	tmp := GitDir(tmpPath)
+	tmp := common.GitDir(tmpPath)
 
 	// It may already be cloned
 	if !repoCloned(dir) {
@@ -2787,7 +2788,7 @@ var badRefs = syncx.OnceValue(func() []string {
 //	warning: refname 'HEAD' is ambiguous.
 //
 // Instead we just remove this ref.
-func removeBadRefs(ctx context.Context, dir GitDir) {
+func removeBadRefs(ctx context.Context, dir common.GitDir) {
 	args := append([]string{"branch", "-D"}, badRefs()...)
 	cmd := exec.CommandContext(ctx, "git", args...)
 	dir.Set(cmd)
@@ -2802,7 +2803,7 @@ func removeBadRefs(ctx context.Context, dir GitDir) {
 // ensureHEAD verifies that there is a HEAD file within the repo, and that it
 // is of non-zero length. If either condition is met, we configure a
 // best-effort default.
-func ensureHEAD(dir GitDir) {
+func ensureHEAD(dir common.GitDir) {
 	head, err := os.Stat(dir.Path("HEAD"))
 	if os.IsNotExist(err) || head.Size() == 0 {
 		os.WriteFile(dir.Path("HEAD"), []byte("ref: refs/heads/master"), 0o600)
@@ -2811,7 +2812,7 @@ func ensureHEAD(dir GitDir) {
 
 // setHEAD configures git repo defaults (such as what HEAD is) which are
 // needed for git commands to work.
-func setHEAD(ctx context.Context, logger log.Logger, rf *wrexec.RecordingCommandFactory, dir GitDir, syncer VCSSyncer, remoteURL *vcs.URL) error {
+func setHEAD(ctx context.Context, logger log.Logger, rf *wrexec.RecordingCommandFactory, dir common.GitDir, syncer VCSSyncer, remoteURL *vcs.URL) error {
 	// Verify that there is a HEAD file within the repo, and that it is of
 	// non-zero length.
 	ensureHEAD(dir)
@@ -2892,7 +2893,7 @@ func setHEAD(ctx context.Context, logger log.Logger, rf *wrexec.RecordingCommand
 // an empty repository (not an error) or some kind of actual error
 // that is possibly causing our data to be incorrect, which should
 // be reported.
-func setLastChanged(logger log.Logger, dir GitDir) error {
+func setLastChanged(logger log.Logger, dir common.GitDir) error {
 	hashFile := dir.Path("sg_refhash")
 
 	hash, err := computeRefHash(dir)
@@ -2926,7 +2927,7 @@ func setLastChanged(logger log.Logger, dir GitDir) error {
 // computeLatestCommitTimestamp returns the timestamp of the most recent
 // commit if any. If there are no commits or the latest commit is in the
 // future, or there is any error, time.Now is returned.
-func computeLatestCommitTimestamp(logger log.Logger, dir GitDir) time.Time {
+func computeLatestCommitTimestamp(logger log.Logger, dir common.GitDir) time.Time {
 	logger = logger.Scoped("computeLatestCommitTimestamp", "compute the timestamp of the most recent commit").
 		With(log.String("repo", string(dir)))
 
@@ -2963,7 +2964,7 @@ func computeLatestCommitTimestamp(logger log.Logger, dir GitDir) time.Time {
 
 // computeRefHash returns a hash of the refs for dir. The hash should only
 // change if the set of refs and the commits they point to change.
-func computeRefHash(dir GitDir) ([]byte, error) {
+func computeRefHash(dir common.GitDir) ([]byte, error) {
 	// Do not use CommandContext since this is a fast operation we do not want
 	// to interrupt.
 	cmd := exec.Command("git", "show-ref")
@@ -2992,7 +2993,7 @@ func computeRefHash(dir GitDir) ([]byte, error) {
 	return hash, nil
 }
 
-func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev string, repoDir GitDir) (didUpdate bool) {
+func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev string, repoDir common.GitDir) (didUpdate bool) {
 	if rev == "" || rev == "HEAD" {
 		return false
 	}
@@ -3024,7 +3025,7 @@ const headFileRefPrefix = "ref: "
 
 // quickSymbolicRefHead best-effort mimics the execution of `git symbolic-ref HEAD`, but doesn't exec a child process.
 // It just reads the .git/HEAD file from the bare git repository directory.
-func quickSymbolicRefHead(dir GitDir) (string, error) {
+func quickSymbolicRefHead(dir common.GitDir) (string, error) {
 	// See if HEAD contains a commit hash and fail if so.
 	head, err := os.ReadFile(dir.Path("HEAD"))
 	if err != nil {
@@ -3045,7 +3046,7 @@ func quickSymbolicRefHead(dir GitDir) (string, error) {
 
 // quickRevParseHead best-effort mimics the execution of `git rev-parse HEAD`, but doesn't exec a child process.
 // It just reads the relevant files from the bare git repository directory.
-func quickRevParseHead(dir GitDir) (string, error) {
+func quickRevParseHead(dir common.GitDir) (string, error) {
 	// See if HEAD contains a commit hash and return it if so.
 	head, err := os.ReadFile(dir.Path("HEAD"))
 	if err != nil {

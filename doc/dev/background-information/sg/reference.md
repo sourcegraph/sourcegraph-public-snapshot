@@ -429,6 +429,15 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
+### sg lint graphql
+
+Checks the graphql code for linting errors [bazel].
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
 ### sg lint docs
 
 Documentation checks.

@@ -8,6 +8,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -56,6 +57,39 @@ func UploadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store
 	})
 
 	return eg.Wait()
+}
+
+func UpdateRepoEmbeddingIndex(
+	ctx context.Context,
+	uploadStore uploadstore.Store,
+	key string,
+	index *RepoEmbeddingIndex,
+	toRemove []string,
+	ranks types.RepoPathRanks,
+) error {
+	// download existing index
+	rei, err := DownloadRepoEmbeddingIndex(ctx, uploadStore, key)
+	if err != nil {
+		return err
+	}
+
+	// update revision
+	rei.Revision = index.Revision
+
+	// filter based on toRemove
+	toRemoveSet := make(map[string]struct{}, len(toRemove))
+	for _, s := range toRemove {
+		toRemoveSet[s] = struct{}{}
+	}
+	rei.CodeIndex.filter(toRemoveSet, ranks)
+	rei.TextIndex.filter(toRemoveSet, ranks)
+
+	// append new data
+	rei.CodeIndex.append(index.CodeIndex)
+	rei.TextIndex.append(index.TextIndex)
+
+	// re-upload
+	return UploadRepoEmbeddingIndex(ctx, uploadStore, key, rei)
 }
 
 func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store, key string) (*RepoEmbeddingIndex, error) {
