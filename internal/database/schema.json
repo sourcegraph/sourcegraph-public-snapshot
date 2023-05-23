@@ -12264,6 +12264,19 @@
           "Comment": ""
         },
         {
+          "Name": "domain",
+          "Index": 15,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "'repos'::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "encryption_key_id",
           "Index": 9,
           "TypeName": "text",

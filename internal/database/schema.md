@@ -1661,6 +1661,7 @@ Referenced by:
  updated_at        | timestamp with time zone |           | not null | now()
  app_url           | text                     |           | not null | ''::text
  webhook_id        | integer                  |           |          | 
+ domain            | text                     |           | not null | 'repos'::text
 Indexes:
     "github_apps_pkey" PRIMARY KEY, btree (id)
     "github_apps_app_id_slug_base_url_unique" UNIQUE, btree (app_id, slug, base_url)
