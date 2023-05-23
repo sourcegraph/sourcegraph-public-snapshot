@@ -8,7 +8,8 @@ import (
 )
 
 type operations struct {
-	x *observation.Operation
+	getSCIPDocumentsByFuzzySelector   *observation.Operation
+	getSCIPDocumentsByPreciseSelector *observation.Operation
 }
 
 var m = new(metrics.SingletonREDMetrics)
@@ -32,6 +33,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 	}
 
 	return &operations{
-		x: op("X"),
+		getSCIPDocumentsByFuzzySelector:   op("GetSCIPDocumentsByFuzzySelector"),
+		getSCIPDocumentsByPreciseSelector: op("GetSCIPDocumentsByPreciseSelector"),
 	}
 }
