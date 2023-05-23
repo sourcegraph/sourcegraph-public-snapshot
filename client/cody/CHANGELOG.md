@@ -8,6 +8,8 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Fixed
 
+- Inline Assist broken decorations on Fixup tasks []()
+
 ### Changed
 
 ## [0.1.4]
