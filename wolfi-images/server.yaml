@@ -21,7 +21,7 @@ contents:
     - postgresql-12-contrib
     - prometheus-postgres-exporter=0.12.0-r1 # IMPORTANT: Pinned version for managed updates
     - python3 # TODO: Missing python2; required?
-    - redis # TODO: 7.0.10; test upgrade from 5.0
+    - redis-6.2
     - sqlite-libs
     - su-exec
 
