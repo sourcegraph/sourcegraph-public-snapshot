@@ -753,7 +753,7 @@ func postgresifyPatterns(patterns []string) (results []string) {
 	return results
 }
 
-// postgresifyPatterns will convert postgres patterns to glob-ish patterns. For example github.com/% -> github.com/*.
+// userifyPatterns will convert postgres patterns to glob-ish patterns. For example github.com/% -> github.com/*.
 func userifyPatterns(patterns []string) (results []string) {
 	for _, pattern := range patterns {
 		results = append(results, strings.ReplaceAll(pattern, "%", "*"))
