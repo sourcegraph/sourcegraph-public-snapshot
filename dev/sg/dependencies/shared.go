@@ -135,6 +135,21 @@ func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) categ
 				},
 			},
 			{
+				Name: "python",
+				Check: func(ctx context.Context, _ *std.Output, _ CheckArgs) error {
+					return check.Combine(
+						check.InPath("python"),
+						check.CommandExitCode("python -v", 0),
+					)(ctx)
+				},
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					if err := forceASDFPluginAdd(ctx, "python", ""); err != nil {
+						return err
+					}
+					return root.Run(usershell.Command(ctx, "asdf install python")).StreamLines(cio.Verbose)
+				},
+			},
+			{
 				Name:        "pnpm",
 				Description: "Run `asdf plugin add pnpm && asdf install pnpm`",
 				Check:       checkPnpmVersion,
