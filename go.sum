@@ -2056,8 +2056,8 @@ github.com/sourcegraph/httpgzip v0.0.0-20211015085752-0bad89b3b4df h1:VaS8k40GiN
 github.com/sourcegraph/httpgzip v0.0.0-20211015085752-0bad89b3b4df/go.mod h1:RqWagzxNGCvucQQC9vX6aps474LCCOgshDpUTTyb+O8=
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf h1:oAdWFqhStsWiiMP/vkkHiMXqFXzl1XfUNOdxKJbd6bI=
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf/go.mod h1:ppFaPm6kpcHnZGqQTFhUIAQRIEhdQDWP1PCv4/ON354=
-github.com/sourcegraph/log v0.0.0-20230518041250-1102986b54c0 h1:uM5fgDq5EZ/efHIiWateMAPWL0RwlqGP3Pedv3ZihL4=
-github.com/sourcegraph/log v0.0.0-20230518041250-1102986b54c0/go.mod h1:IDp09QkoqS8Z3CyN2RW6vXjgABkNpDbyjLIHNQwQ8P8=
+github.com/sourcegraph/log v0.0.0-20230523201558-ad2d71b4d2ee h1:xz1lIhx6YvYYhiLio9INCIWHCZFH9MoRVuFye/lz07c=
+github.com/sourcegraph/log v0.0.0-20230523201558-ad2d71b4d2ee/go.mod h1:IDp09QkoqS8Z3CyN2RW6vXjgABkNpDbyjLIHNQwQ8P8=
 github.com/sourcegraph/mountinfo v0.0.0-20230106004439-7026e28cef67 h1:NSYSPQOE7yyyytLbKQHjxSkPnBagaGQblgVMQrQ1je0=
 github.com/sourcegraph/mountinfo v0.0.0-20230106004439-7026e28cef67/go.mod h1:4DAabK408OEbyK2NUEQ5YRApyB/p0XNGJyC1YPBAKq4=
 github.com/sourcegraph/run v0.12.0 h1:3A8w5e8HIYPfafHekvmdmmh42RHKGVhmiTZAPJclg7I=

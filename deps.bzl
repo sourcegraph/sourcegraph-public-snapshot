@@ -6311,8 +6311,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_log",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/log",
-        sum = "h1:uM5fgDq5EZ/efHIiWateMAPWL0RwlqGP3Pedv3ZihL4=",
-        version = "v0.0.0-20230518041250-1102986b54c0",
+        sum = "h1:xz1lIhx6YvYYhiLio9INCIWHCZFH9MoRVuFye/lz07c=",
+        version = "v0.0.0-20230523201558-ad2d71b4d2ee",
     )
     go_repository(
         name = "com_github_sourcegraph_mountinfo",
@@ -6356,8 +6356,8 @@ def go_dependencies():
             "//third_party/com_github_sourcegraph_zoekt:zoekt_webserver.patch",
             "//third_party/com_github_sourcegraph_zoekt:zoekt_indexserver.patch",
         ],
-        sum = "h1:lCxBFbLdzt0m789CNyYWEqPURhta69aRA9ixPyWilvI=",
-        version = "v0.0.0-20230503105159-f818d968ddad",
+        sum = "h1:/5s1HW1DdlGpgr9PkOIgLcdFMHR1IHAJibXqT2Op5fk=",
+        version = "v0.0.0-20230523175034-5250e0e52a1b",
     )
 
     go_repository(
