@@ -1822,9 +1822,7 @@ CREATE TABLE codeintel_ranking_progress (
     num_path_records_processed integer,
     num_reference_records_processed integer,
     num_count_records_processed integer,
-    max_definition_id bigint NOT NULL,
-    max_reference_id bigint NOT NULL,
-    max_path_id bigint NOT NULL
+    max_export_id bigint NOT NULL
 );
 
 CREATE SEQUENCE codeintel_ranking_progress_id_seq
@@ -4505,7 +4503,7 @@ CREATE TABLE user_public_repos (
 );
 
 CREATE TABLE user_repo_permissions (
-    id integer NOT NULL,
+    id bigint NOT NULL,
     user_id integer,
     repo_id integer NOT NULL,
     user_external_account_id integer,
@@ -4515,7 +4513,6 @@ CREATE TABLE user_repo_permissions (
 );
 
 CREATE SEQUENCE user_repo_permissions_id_seq
-    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE

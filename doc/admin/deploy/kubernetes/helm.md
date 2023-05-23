@@ -278,6 +278,64 @@ preciseCodeIntel:
     <<: *objectStorageEnv
 ```
 
+#### Enabling the Embeddings Service
+To enable the Embeddings Service using the built-in `blobstore` storage specify the following in your override file.
+```yaml
+embeddings:
+  enabled: true
+```
+
+#### Using external Object Storage for Embeddings Indexes
+To use an external Object Storage service (S3-compatible services, or GCS), first review our [general recommendations](https://docs.sourcegraph.com/cody/explanations/code_graph_context#storing-embedding-indexes). Then review the following example and adjust to your use case.
+
+> The example assumes the use of AWS S3. You may configure the environment variables accordingly for your own use case based on our [general recommendations](https://docs.sourcegraph.com/cody/explanations/code_graph_context#storing-embedding-indexes).
+
+If you provide credentials with an access key / secret key, we recommend storing the credentials in [Secrets] created outside of the helm chart and managed in a secure manner. An example Secret is shown here:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sourcegraph-s3-credentials
+data:
+  # notes: secrets data has to be base64-encoded
+  EMBEDDINGS_UPLOAD_AWS_ACCESS_KEY_ID: ""
+  EMBEDDINGS_UPLOAD_AWS_SECRET_ACCESS_KEY: ""
+```
+
+In your [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/external-object-storage-embeddings/override.yaml), reference this Secret and the necessary environment variables:
+
+```yaml
+# we use YAML anchors and alias to keep override file clean
+objectStorageEnv: &objectStorageEnv
+  EMBEDDINGS_UPLOAD_BACKEND:
+    value: S3 # external object stoage type, one of "S3" or "GCS"
+  EMBEDDINGS_UPLOAD_BUCKET:
+    value: embeddings-uploads # external object storage bucket name
+  EMBEDDINGS_UPLOAD_AWS_ENDPOINT:
+    value: https://s3.us-east-1.amazonaws.com
+  EMBEDDINGS_UPLOAD_AWS_REGION:
+    value: us-east-1
+  EMBEDDINGS_UPLOAD_AWS_ACCESS_KEY_ID:
+    secretKeyRef: # Pre-existing secret, not created by this chart
+      name: sourcegraph-s3-credentials
+      key: EMBEDDINGS_UPLOAD_AWS_ACCESS_KEY_ID
+  EMBEDDINGS_UPLOAD_AWS_SECRET_ACCESS_KEY:
+    secretKeyRef: # Pre-existing secret, not created by this chart
+      name: sourcegraph-s3-credentials
+      key: EMBEDDINGS_UPLOAD_AWS_SECRET_ACCESS_KEY
+
+embeddings:
+  enabled: true # Enable the Embeddings service
+  env:
+    <<: *objectStorageEnv
+
+worker:
+  env:
+    <<: *objectStorageEnv
+```
+
+
 #### Using SSH to clone repositories
 
 Create a [Secret](https://kubernetes.io/docs/concepts/configuration/secret/) that contains the base64 encoded contents of your SSH private key (make sure it doesn’t require a passphrase) and known_hosts file. The [Secret] will be mounted in the `gitserver` deployment to authenticate with your code host.

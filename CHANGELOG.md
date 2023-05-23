@@ -36,6 +36,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Access tokens now begin with the prefix `sgp_` to make them identifiable as secrets. You can also prepend `sgp_` to previously generated access tokens, although they will continue to work as-is without that prefix.
 - The commit message defined in a batch spec will now be quoted when git is invoked, i.e. `git commit -m "commit message"`, to improve how the message is interpreted by the shell in certain edge cases, such as when the commit message begins with a dash. This may mean that previous escaping strategies will behave differently.
 - 429 errors from external services Sourcegraph talks to are only retried automatically if the Retry-After header doesn't indicate that a retry would be useless. The time grace period can be configured using `SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION` and `SRC_HTTP_CLI_INTERNAL_RETRY_AFTER_MAX_DURATION`. [#51743](https://github.com/sourcegraph/sourcegraph/pull/51743)
+- Update minimum supported Redis version to 6.2 [#52248](https://github.com/sourcegraph/sourcegraph/pull/52248)
 
 ### Fixed
 
@@ -48,6 +49,7 @@ All notable changes to Sourcegraph are documented in this file.
 - GitLab code host connections will disable repo-centric repository permission syncs when the authentication provider is set as "oauth". This prevents repo-centric permission sync from getting incorrect data. [#51452](https://github.com/sourcegraph/sourcegraph/pull/51452)
 - Code intelligence background jobs did not correctly use an internal context, causing SCIP data to sometimes be prematurely deleted. [#51591](https://github.com/sourcegraph/sourcegraph/pull/51591)
 - Slow request logs now have the correct trace and span IDs attached if a trace is present on the request. [#51826](https://github.com/sourcegraph/sourcegraph/pull/51826)
+- `id` column of `user_repo_permissions` table was switched to `bigint` to avoid `int` overflow. #[52299](https://github.com/sourcegraph/sourcegraph/pull/52299)
 
 ### Removed
 

@@ -47,7 +47,6 @@ ts_project(
         "src/chat/recipes/next-questions.ts",
         "src/chat/recipes/recipe.ts",
         "src/chat/recipes/translate.ts",
-        "src/chat/recipes/vscode-recipes.ts",
         "src/chat/transcript/index.ts",
         "src/chat/transcript/interaction.ts",
         "src/chat/transcript/messages.ts",
