@@ -24,8 +24,8 @@ In our Alpine images, most of the work is done in the Dockerfile: packages are i
 
 When building Wolfi images, most of this work is done **outside** of the Dockerfile:
 
-- All third-party dependencies are [packaged](packages.md) as APKs (Alpine Packages, a format that Wolfi uses).
-- Dependencies, user accounts, directory structure, and permissions are combined into a pre-built [base image](images.md).
+- All third-party dependencies are [packaged](../../how-to/wolfi/add_update_packages.md) as APKs (Alpine Packages, a format that Wolfi uses).
+- Dependencies, user accounts, directory structure, and permissions are combined into a pre-built [base image](../../how-to/wolfi/add_update_images.md).
 - The Dockerfile then only copies over Sourcegraph Go binaries, any configuration, and sets the entrypoint.
 
 In short, all dependencies are pre-installed in a Wolfi base image. The Dockerfile is the final step that just adds on the Sourcegraph code.
