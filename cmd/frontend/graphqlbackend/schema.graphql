@@ -9636,6 +9636,75 @@ extend type Query {
     ): AccessRequestConnection!
 }
 
+"""
+Repo metadata key or value connection result`
+"""
+type RepoMetadataKeyOrValueConnection {
+    """
+    Total count of repo key-value pair metadata
+    """
+    totalCount: Int!
+    """
+    A list of repo key-value pair metadata
+    """
+    nodes: [String!]!
+
+    """
+    Pagination information.
+    """
+    pageInfo: BidirectionalPageInfo!
+}
+
+"""
+Repo metadata key result
+"""
+type RepoMetadataKeyResult {
+    """
+    Returns paginated list of repo metadata distinct values matching a query
+    """
+    values(
+        query: String
+        """
+        Pagination paramters
+        """
+        first: Int
+        last: Int
+        after: String
+        before: String
+    ): RepoMetadataKeyOrValueConnection!
+}
+
+"""
+Repo key-value pair metadata
+"""
+type RepoMetadata {
+    """
+    Returns paginated list of repo metadata distinct keys matching a query
+    """
+    keys(
+        query: String
+        """
+        Pagination paramters
+        """
+        first: Int
+        last: Int
+        after: String
+        before: String
+    ): RepoMetadataKeyOrValueConnection!
+
+    """
+    Repo metadata key
+    """
+    key(key: String!): RepoMetadataKeyResult
+}
+
+extend type Query {
+    """
+    Repository key-value pair metadata
+    """
+    repoMeta: RepoMetadata
+}
+
 extend type Mutation {
     """
     Marks access_request as rejected
