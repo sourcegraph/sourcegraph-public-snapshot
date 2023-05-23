@@ -277,7 +277,7 @@ WITH ranked_migration_logs AS (
 		-- therefore all reverts are applied in a txn.
 		NOT (
 			NOT up AND
-			NOT SUCCESS AND
+			NOT success AND
 			finished_at IS NOT NULL
 		)
 )
