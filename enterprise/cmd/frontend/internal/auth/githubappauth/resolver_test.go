@@ -106,6 +106,9 @@ func TestResolver_GitHubApps(t *testing.T) {
 	id := 1
 	graphqlID := MarshalGitHubAppID(int64(id))
 
+	id2 := 2
+	graphqlID2 := MarshalGitHubAppID(int64(id2))
+
 	userStore := database.NewMockUserStore()
 	userStore.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
 		a := actor.FromContext(ctx)
@@ -119,11 +122,12 @@ func TestResolver_GitHubApps(t *testing.T) {
 	})
 
 	gitHubAppsStore := store.NewStrictMockGitHubAppsStore()
-	gitHubAppsStore.ListFunc.SetDefaultReturn([]*ghtypes.GitHubApp{
-		{
-			ID: 1,
-		},
-	}, nil)
+	gitHubAppsStore.ListFunc.SetDefaultHook(func(ctx context.Context, domain *string) ([]*ghtypes.GitHubApp, error) {
+		if domain != nil {
+			return []*ghtypes.GitHubApp{{ID: 2}}, nil
+		}
+		return []*ghtypes.GitHubApp{{ID: 1}, {ID: 2}}, nil
+	})
 
 	db := edb.NewStrictMockEnterpriseDB()
 
@@ -136,41 +140,64 @@ func TestResolver_GitHubApps(t *testing.T) {
 	schema, err := graphqlbackend.NewSchema(db, gitserver.NewClient(), nil, graphqlbackend.OptionalResolver{GitHubAppsResolver: NewResolver(logger, db)})
 	require.NoError(t, err)
 
-	graphqlbackend.RunTests(t, []*graphqlbackend.Test{{
-		Schema:  schema,
-		Context: adminCtx,
-		Query: `
-			query GitHubApps() {
-				gitHubApps {
-					nodes {
-						id
+	graphqlbackend.RunTests(t, []*graphqlbackend.Test{
+		{
+			Schema:  schema,
+			Context: adminCtx,
+			Query: `
+				query GitHubApps() {
+					gitHubApps {
+						nodes {
+							id
+						}
 					}
+				}`,
+			ExpectedResult: fmt.Sprintf(`{
+				"gitHubApps": {
+					"nodes": [
+						{"id":"%s"},
+						{"id":"%s"}
+					]
 				}
-			}`,
-		ExpectedResult: fmt.Sprintf(`{
-			"gitHubApps": {
-				"nodes": [
-					{"id":"%s"}
-				]
-			}
-		}`, graphqlID),
-	}, {
-		Schema:  schema,
-		Context: userCtx,
-		Query: `
-			query GitHubApps() {
-				gitHubApps {
-					nodes {
-						id
+			}`, graphqlID, graphqlID2),
+		},
+		{
+			Schema:  schema,
+			Context: adminCtx,
+			Query: `
+				query GitHubApps() {
+					gitHubApps(domain: "repos") {
+						nodes {
+							id
+						}
 					}
+				}`,
+			ExpectedResult: fmt.Sprintf(`{
+				"gitHubApps": {
+					"nodes": [
+						{"id":"%s"}
+					]
 				}
-			}`,
-		ExpectedResult: `null`,
-		ExpectedErrors: []*gqlerrors.QueryError{{
-			Message: "must be site admin",
-			Path:    []any{string("gitHubApps")},
-		}},
-	}})
+			}`, graphqlID2),
+		},
+		{
+			Schema:  schema,
+			Context: userCtx,
+			Query: `
+				query GitHubApps() {
+					gitHubApps {
+						nodes {
+							id
+						}
+					}
+				}`,
+			ExpectedResult: `null`,
+			ExpectedErrors: []*gqlerrors.QueryError{{
+				Message: "must be site admin",
+				Path:    []any{string("gitHubApps")},
+			}},
+		},
+	})
 }
 
 func TestResolver_GitHubApp(t *testing.T) {

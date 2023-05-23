@@ -339,3 +339,86 @@ func TestGetBySlug(t *testing.T) {
 	_, err = store.GetBySlug(ctx, "foo", "bar")
 	require.Error(t, err)
 }
+
+func TestListGitHubApp(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := &gitHubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
+	ctx := context.Background()
+
+	app1 := &types.GitHubApp{
+		AppID: 1234,
+		Name:  "Test App 1",
+		// Domain: "repos",
+		Slug:         "test-app-1",
+		BaseURL:      "https://github.com",
+		AppURL:       "https://github.com/apps/testapp",
+		ClientID:     "abc123",
+		ClientSecret: "secret",
+		PrivateKey:   "private-key",
+		Logo:         "logo.png",
+	}
+
+	app2 := &types.GitHubApp{
+		AppID: 5678,
+		Name:  "Test App 2",
+		// Domain: "batches",
+		Slug:         "test-app-2",
+		BaseURL:      "https://enterprise.github.com",
+		AppURL:       "https://enterprise.github.com/apps/testapp",
+		ClientID:     "abc123",
+		ClientSecret: "secret",
+		PrivateKey:   "private-key",
+		Logo:         "logo.png",
+	}
+
+	_, err := store.Create(ctx, app1)
+	require.NoError(t, err)
+	_, err = store.Create(ctx, app2)
+	require.NoError(t, err)
+
+	t.Run("all github apps", func(t *testing.T) {
+		fetched, err := store.List(ctx, nil)
+		require.NoError(t, err)
+		require.Len(t, fetched, 2)
+
+		apps := []*types.GitHubApp{app1, app2}
+		for index, curr := range fetched {
+			app := apps[index]
+			require.Equal(t, app.AppID, curr.AppID)
+			require.Equal(t, app.Name, curr.Name)
+			// require.Equal(t, app.Domain, curr.Domain)
+			require.Equal(t, app.Slug, curr.Slug)
+			require.Equal(t, app.BaseURL, curr.BaseURL)
+			require.Equal(t, app.ClientID, curr.ClientID)
+			require.Equal(t, app.ClientSecret, curr.ClientSecret)
+			require.Equal(t, app.PrivateKey, curr.PrivateKey)
+			require.Equal(t, app.Logo, curr.Logo)
+			require.NotZero(t, curr.CreatedAt)
+			require.NotZero(t, curr.UpdatedAt)
+		}
+	})
+
+	t.Run("domain-filtered github apps", func(t *testing.T) {
+		domain := "repos"
+		fetched, err := store.List(ctx, &domain)
+		require.NoError(t, err)
+		require.Len(t, fetched, 1)
+
+		curr := fetched[0]
+		require.Equal(t, curr.AppID, app1.AppID)
+		require.Equal(t, curr.Name, app1.Name)
+		// require.Equal(t, curr.Domain, app1.Domain)
+		require.Equal(t, curr.Slug, app1.Slug)
+		require.Equal(t, curr.BaseURL, app1.BaseURL)
+		require.Equal(t, curr.ClientID, app1.ClientID)
+		require.Equal(t, curr.ClientSecret, app1.ClientSecret)
+		require.Equal(t, curr.PrivateKey, app1.PrivateKey)
+		require.Equal(t, curr.Logo, app1.Logo)
+		require.NotZero(t, app1.CreatedAt)
+		require.NotZero(t, app1.UpdatedAt)
+	})
+}
