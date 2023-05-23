@@ -200,6 +200,28 @@ func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) categ
 					`asdf reshim`,
 				),
 			},
+			{
+				Name: "pre-commit.com is installed",
+				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
+					return check.Combine(
+						check.FileExists(".bin/pre-commit-3.3.2.pyz"),
+						func(context.Context) error {
+							return root.Run(usershell.Command(ctx, "cat .git/hooks/pre-commit | grep https://pre-commit.com")).Wait()
+						},
+					)(ctx)
+				},
+				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+					err := root.Run(usershell.Command(ctx, "curl -L https://github.com/pre-commit/pre-commit/releases/download/v3.3.2/pre-commit-3.3.2.pyz --output .bin/pre-commit-3.3.2.pyz --silent")).StreamLines(cio.Verbose)
+					if err != nil {
+						return errors.Wrap(err, "failed to download pre-commit release")
+					}
+					err = root.Run(usershell.Command(ctx, "python .bin/pre-commit-3.3.2.pyz install")).StreamLines(cio.Verbose)
+					if err != nil {
+						return errors.Wrap(err, "failed to install pre-commit")
+					}
+					return nil
+				},
+			},
 		},
 	}
 	categories.Checks = append(categories.Checks, additionalChecks...)
