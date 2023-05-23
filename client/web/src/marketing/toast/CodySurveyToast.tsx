@@ -5,6 +5,7 @@ import { mdiEmail } from '@mdi/js'
 import { asError, ErrorLike } from '@sourcegraph/common'
 import { gql, useMutation } from '@sourcegraph/http-client'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Checkbox, Form, H3, Modal, Text, Button, Icon, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -12,7 +13,6 @@ import { CodyPageIcon } from '../../cody/chat/CodyPageIcon'
 import { useIsCodyEnabled } from '../../cody/useIsCodyEnabled'
 import { LoaderButton } from '../../components/LoaderButton'
 import { SubmitCodySurveyResult, SubmitCodySurveyVariables } from '../../graphql-operations'
-import { eventLogger } from '../../tracking/eventLogger'
 import { resendVerificationEmail } from '../../user/settings/emails/UserEmail'
 
 const SUBMIT_CODY_SURVEY = gql`
@@ -23,7 +23,10 @@ const SUBMIT_CODY_SURVEY = gql`
     }
 `
 
-const CodySurveyToastInner: React.FC<{ onSubmitEnd: () => void }> = ({ onSubmitEnd }) => {
+const CodySurveyToastInner: React.FC<{ onSubmitEnd: () => void } & TelemetryProps> = ({
+    onSubmitEnd,
+    telemetryService,
+}) => {
     const [isCodyForWork, setIsCodyForWork] = useState(false)
     const [isCodyForPersonalStuff, setIsCodyForPersonalStuff] = useState(false)
 
@@ -47,13 +50,17 @@ const CodySurveyToastInner: React.FC<{ onSubmitEnd: () => void }> = ({ onSubmitE
     const handleSubmit = useCallback(
         (event: React.FormEvent<HTMLFormElement>) => {
             const eventParams = { isCodyForPersonalStuff, isCodyForWork }
-            eventLogger.log('CodyUsageToastSubmitted', eventParams, eventParams)
+            telemetryService.log('CodyUsageToastSubmitted', eventParams, eventParams)
             event.preventDefault()
             // eslint-disable-next-line no-console
             submitCodySurvey().catch(console.error).finally(onSubmitEnd)
         },
-        [isCodyForPersonalStuff, isCodyForWork, onSubmitEnd, submitCodySurvey]
+        [isCodyForPersonalStuff, isCodyForWork, onSubmitEnd, submitCodySurvey, telemetryService]
     )
+
+    useEffect(() => {
+        telemetryService.log('CodySurveyToastViewed')
+    }, [telemetryService])
 
     return (
         <Modal position="center" aria-label="Welcome message">
@@ -87,9 +94,10 @@ const CodySurveyToastInner: React.FC<{ onSubmitEnd: () => void }> = ({ onSubmitE
     )
 }
 
-const CodyVerifyEmailToast: React.FC<{ onNext: () => void; authenticatedUser: AuthenticatedUser }> = ({
+const CodyVerifyEmailToast: React.FC<{ onNext: () => void; authenticatedUser: AuthenticatedUser } & TelemetryProps> = ({
     onNext,
     authenticatedUser,
+    telemetryService,
 }) => {
     const [sending, setSending] = useState(false)
     const [resentEmailTo, setResentEmailTo] = useState<string | null>(null)
@@ -112,6 +120,10 @@ const CodyVerifyEmailToast: React.FC<{ onNext: () => void; authenticatedUser: Au
             })
         }
     }, [authenticatedUser])
+
+    useEffect(() => {
+        telemetryService.log('VerifyEmailToastViewed')
+    }, [telemetryService])
 
     return (
         <Modal position="center" aria-label="Welcome message">
@@ -177,26 +189,32 @@ export const useCodySurveyToast = (): {
     }
 }
 
-export const CodySurveyToast: React.FC<{
-    authenticatedUser?: AuthenticatedUser
-}> = ({ authenticatedUser }) => {
+export const CodySurveyToast: React.FC<
+    {
+        authenticatedUser?: AuthenticatedUser
+    } & TelemetryProps
+> = ({ authenticatedUser, telemetryService }) => {
     const { show, dismiss } = useCodySurveyToast()
     const codyEnabled = useIsCodyEnabled()
     const [showVerifyEmail, setShowVerifyEmail] = useState(show && codyEnabled.needsEmailVerification)
     const dismissVerifyEmail = useCallback(() => {
-        eventLogger.log('VerifyEmailToastDismissed')
+        telemetryService.log('VerifyEmailToastDismissed')
         setShowVerifyEmail(false)
-    }, [setShowVerifyEmail])
+    }, [telemetryService])
 
     if (!show) {
         return null
     }
 
     if (showVerifyEmail && authenticatedUser) {
-        eventLogger.log('VerifyEmailToastViewed')
-        return <CodyVerifyEmailToast onNext={dismissVerifyEmail} authenticatedUser={authenticatedUser} />
+        return (
+            <CodyVerifyEmailToast
+                onNext={dismissVerifyEmail}
+                authenticatedUser={authenticatedUser}
+                telemetryService={telemetryService}
+            />
+        )
     }
 
-    eventLogger.log('CodySurveyToastViewed')
-    return <CodySurveyToastInner onSubmitEnd={dismiss} />
+    return <CodySurveyToastInner onSubmitEnd={dismiss} telemetryService={telemetryService} />
 }
