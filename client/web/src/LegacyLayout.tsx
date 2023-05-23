@@ -179,7 +179,13 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     // and it's not already a setup page, NOTE: that we allow rendering AppAuthCallbackPage
     // because this page is part of setup experience, and we should not interrupt
     // rendering of this page even if setup hasn't been finished yet
-    if (props.isSourcegraphApp && !wasAppSetupFinished && !isAppSetupPage && !isAppAuthCallbackPage) {
+    if (
+        props.isSourcegraphApp &&
+        !wasAppSetupFinished &&
+        !isAppSetupPage &&
+        !isAppAuthCallbackPage &&
+        !isCodyStandalonePage
+    ) {
         return <Navigate to={EnterprisePageRoutes.AppSetup} replace={true} />
     }
 
