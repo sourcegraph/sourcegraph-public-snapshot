@@ -75,8 +75,8 @@ create_app_archive() {
     popd
   elif [[ -e ${app_tar_gz} ]]; then
     echo "--- :file_cabinet: Moving existing archive/signatures to ${target}"
-    mv -vf "${app_tar_gz}" "$(dirname ${app_tar_gz})/${target}"
-    mv -vf "${app_tar_gz}.sig" "$(dirname ${app_tar_gz})/${target}.sig" || echo "--- signature not found - skipping"
+    mv -vf "${app_tar_gz}" "$(dirname "${app_tar_gz}")/${target}"
+    mv -vf "${app_tar_gz}.sig" "$(dirname "${app_tar_gz}")/${target}.sig" || echo "--- signature not found - skipping"
   fi
 }
 

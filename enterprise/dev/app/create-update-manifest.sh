@@ -11,8 +11,8 @@ filename_from() {
   local arch
   local os
   local filename
-  arch=$(echo $1 | cut -d '-' -f1)
-  os=$(echo $1 | cut -d '-' -f3)
+  arch=$(echo "$1" | cut -d '-' -f1)
+  os=$(echo "$1" | cut -d '-' -f3)
 
   case "${os}" in
     "darwin")
@@ -26,7 +26,7 @@ filename_from() {
       exit 1
   esac
 
-  echo ${filename}
+  echo "${filename}"
 }
 #
 # short_platform breaks a long form platform strings like <arch>-<vendor>-<os> up into just <arch>-<os>
@@ -34,8 +34,8 @@ filename_from() {
 short_platform() {
   local arch
   local os
-  arch=$(echo $1 | cut -d '-' -f1)
-  os=$(echo $1 | cut -d '-' -f3)
+  arch=$(echo "$1" | cut -d '-' -f1)
+  os=$(echo "$1" | cut -d '-' -f3)
 
   echo "${arch}-${os}"
 }
@@ -82,10 +82,10 @@ platform_json_for() {
     signature=""
   fi
 
-  key=$(short_platform ${platform})
+  key=$(short_platform "${platform}")
 
   if [[ -n "${signature:-""}" ]]; then
-    echo ${RELEASE_JSON} | jq -r --arg key "${key}" --arg filename "${filename}" --arg sig "${signature}" \
+    echo "${RELEASE_JSON}" | jq -r --arg key "${key}" --arg filename "${filename}" --arg sig "${signature}" \
       '.assets[] | select(.name == $filename) | { ($key): { "signature": $sig, "url": .url }}'
   else
     echo ""
@@ -109,12 +109,11 @@ platform_json_for() {
 generate_manifest() {
   local manifest
   local version
-  local json_data
   local pub_date
 
   version="$1"
 
-  pub_date="$(echo ${RELEASE_JSON} | jq -r ".createdAt")"
+  pub_date="$(echo "${RELEASE_JSON}" | jq -r ".createdAt")"
 
   # This is the base manifest, which we will append platform json too
   manifest=$(cat <<EOF
@@ -132,11 +131,11 @@ EOF
     json="$(platform_json_for ${platform})"
 
     if [[ -n ${json} ]]; then
-      manifest=$(echo ${manifest} | jq --argjson platform_json "${json}" '.platforms += $platform_json')
+      manifest=$(echo "${manifest}" | jq --argjson platform_json "${json}" '.platforms += $platform_json')
     fi
   done
 
-  echo ${manifest}
+  echo "${manifest}"
 }
 
 version=$(./enterprise/dev/app/app_version.sh)
@@ -151,11 +150,11 @@ if [[ -z "${RELEASE_JSON}" ]]; then
 fi
 
 echo "--- generating app update manifest for version: ${version}"
-manifest=$(generate_manifest ${version} )
+manifest=$(generate_manifest "${version}" )
 
 if [[ ${CI:-""} == "true" ]]; then
   mkdir -p manifest
-  echo ${manifest} | jq >> manifest/app.update.manifest
+  echo "${manifest}" | jq >> manifest/app.update.manifest
   buildkite-agent artifact upload manifest/app.update.manifest
 else
   echo "--- app update manifest ---"
