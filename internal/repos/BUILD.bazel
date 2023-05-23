@@ -19,7 +19,7 @@ go_library(
         "gitolite.go",
         "go_packages.go",
         "jvm_packages.go",
-        "local.go",
+        "localgit.go",
         "metrics.go",
         "mocks_temp.go",
         "npm_packages.go",

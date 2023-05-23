@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "local.schema.json#",
-  "title": "LocalExternalService",
+  "$id": "localgit.schema.json#",
+  "title": "LocalGitExternalService",
   "description": "Configuration for integration local Git repositories.",
   "allowComments": true,
   "type": "object",
@@ -13,7 +13,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "title": "LocalRepoPattern",
+        "title": "LocalGitRepoPattern",
         "additionalProperties": false,
         "description:": "Glob pattern.",
         "properties": {

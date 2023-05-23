@@ -27,7 +27,7 @@ func ensureExtSVC(observationCtx *observation.Context, config *Config) error {
 	}
 	store := database.NewDB(observationCtx.Logger, sqlDB).ExternalServices()
 	ctx := context.Background()
-	serviceConfig, err := json.Marshal(schema.LocalExternalService{
+	serviceConfig, err := json.Marshal(schema.LocalGitExternalService{
 		Repos: config.Repos,
 	})
 	if err != nil {
@@ -44,7 +44,7 @@ func ensureExtSVC(observationCtx *observation.Context, config *Config) error {
 
 type Config struct {
 	env.BaseConfig
-	Repos []*schema.LocalRepoPattern
+	Repos []*schema.LocalGitRepoPattern
 }
 
 func (c *Config) Load() {
@@ -54,11 +54,11 @@ func (c *Config) Load() {
 	if err != nil {
 		return
 	}
-	config, err := extsvc.ParseConfig(extsvc.KindLocal, string(configJSON))
+	config, err := extsvc.ParseConfig(extsvc.KindLocalGit, string(configJSON))
 	if err != nil {
 		return
 	}
-	c.Repos = config.(*schema.LocalExternalService).Repos
+	c.Repos = config.(*schema.LocalGitExternalService).Repos
 }
 
 type svc struct{}

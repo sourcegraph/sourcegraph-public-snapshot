@@ -1364,11 +1364,12 @@ type JVMPackagesConnection struct {
 	Maven Maven `json:"maven"`
 }
 
-// LocalExternalService description: Configuration for integration local Git repositories.
-type LocalExternalService struct {
-	Repos []*LocalRepoPattern `json:"repos,omitempty"`
+
+// LocalGitExternalService description: Configuration for integration local Git repositories.
+type LocalGitExternalService struct {
+	Repos []*LocalGitRepoPattern `json:"repos,omitempty"`
 }
-type LocalRepoPattern struct {
+type LocalGitRepoPattern struct {
 	Group   string `json:"group,omitempty"`
 	Pattern string `json:"pattern,omitempty"`
 }

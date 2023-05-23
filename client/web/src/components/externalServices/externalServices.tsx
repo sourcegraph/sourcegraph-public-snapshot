@@ -27,7 +27,7 @@ import gitlabSchemaJSON from '../../../../../schema/gitlab.schema.json'
 import gitoliteSchemaJSON from '../../../../../schema/gitolite.schema.json'
 import goModulesSchemaJSON from '../../../../../schema/go-modules.schema.json'
 import jvmPackagesSchemaJSON from '../../../../../schema/jvm-packages.schema.json'
-import localSchemaJSON from '../../../../../schema/local.schema.json'
+import localGitSchemaJSON from '../../../../../schema/localgit.schema.json'
 import npmPackagesSchemaJSON from '../../../../../schema/npm-packages.schema.json'
 import otherExternalServiceSchemaJSON from '../../../../../schema/other_external_service.schema.json'
 import pagureSchemaJSON from '../../../../../schema/pagure.schema.json'
@@ -1245,7 +1245,7 @@ const LOCAL_GIT: AddExternalServiceOptions = {
     kind: ExternalServiceKind.LOCAL,
     title: 'Local Git repos',
     icon: GitIcon,
-    jsonSchema: localSchemaJSON,
+    jsonSchema: localGitSchemaJSON,
     defaultDisplayName: 'Git repositories',
     defaultConfig: '',
 }

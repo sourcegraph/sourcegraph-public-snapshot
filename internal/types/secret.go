@@ -104,7 +104,7 @@ func (e *ExternalService) RedactedConfig(ctx context.Context) (string, error) {
 		if err != nil {
 			return "", err
 		}
-	case *schema.LocalExternalService:
+	case *schema.LocalGitExternalService:
 		// Nothing to redact
 	default:
 		// return an error; it's safer to fail than to incorrectly return unsafe data.

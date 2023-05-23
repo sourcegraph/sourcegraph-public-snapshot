@@ -87,7 +87,7 @@ func cloneURL(ctx context.Context, parsed any, logger log.Logger, kind string, r
 		if r, ok := repo.Metadata.(*extsvc.OtherRepoMetadata); ok {
 			return otherCloneURL(repo, r), nil
 		}
-	case *schema.LocalExternalService:
+	case *schema.LocalGitExternalService:
 		return localCloneURL(repo), nil
 	case *schema.GoModulesConnection:
 		return string(repo.Name), nil

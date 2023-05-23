@@ -829,8 +829,8 @@ func uniqueCodeHostIdentifier(kind string, cfg any) (string, error) {
 		return VariantRubyPackages.AsKind(), nil
 	case *schema.PagureConnection:
 		rawURL = c.Url
-	case *schema.LocalExternalService:
-		return "localhost", nil
+	case *schema.LocalGitExternalService:
+		return VariantLocalGit.AsKind(), nil
 	default:
 		return "", errors.Errorf("unknown external service kind: %s", kind)
 	}

@@ -20,44 +20,41 @@ type LocalRepoMetadata struct {
 	AbsPath string
 }
 
-// LocalSource connects to a local code host.
-type LocalSource struct {
+// LocalGitSource connects to a local code host.
+type LocalGitSource struct {
 	svc    *types.ExternalService
-	config *schema.LocalExternalService
+	config *schema.LocalGitExternalService
 	logger log.Logger
 }
 
-func NewLocalSource(ctx context.Context, logger log.Logger, svc *types.ExternalService) (*LocalSource, error) {
+func NewLocalGitSource(ctx context.Context, logger log.Logger, svc *types.ExternalService) (*LocalGitSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	var config schema.LocalExternalService
+	var config schema.LocalGitExternalService
 	if err := jsonc.Unmarshal(rawConfig, &config); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
 
-	return &LocalSource{
+	return &LocalGitSource{
 		svc:    svc,
 		config: &config,
 		logger: logger,
 	}, nil
 }
 
-// CheckConnection at this point assumes availability and relies on errors returned
-// from the subsequent calls. This is going to be expanded as part of issue #44683
-// to actually only return true if the source can serve requests.
-func (s *LocalSource) CheckConnection(ctx context.Context) error {
+func (s *LocalGitSource) CheckConnection(ctx context.Context) error {
 	return nil
 }
 
-func (s *LocalSource) ExternalServices() types.ExternalServices {
+func (s *LocalGitSource) ExternalServices() types.ExternalServices {
 	return types.ExternalServices{s.svc}
 }
 
-func (s *LocalSource) ListRepos(ctx context.Context, results chan SourceResult) {
+func (s *LocalGitSource) ListRepos(ctx context.Context, results chan SourceResult) {
 	urn := s.svc.URN()
-	repoPaths := getRepoPaths(s.config)
+	repoPaths := getRepoPaths(s.config, s.logger)
 	for _, r := range repoPaths {
 		uri := "file:///" + r.Path
 		s.logger.Info("found repo ", log.String("uri", uri))
@@ -118,21 +115,25 @@ func (c repoConfig) fullName() api.RepoName {
 	return api.RepoName(name)
 }
 
-func getRepoPaths(config *schema.LocalExternalService) []repoConfig {
+func getRepoPaths(config *schema.LocalGitExternalService, logger log.Logger) []repoConfig {
 	paths := []repoConfig{}
 	for _, pathConfig := range config.Repos {
 		pattern, err := homedir.Expand(pathConfig.Pattern)
 		if err != nil {
+			logger.Error("unable to resolve home directory", log.String("pattern", pattern), log.Error(err))
 			continue
 		}
 		matches, err := filepath.Glob(pattern)
 		if err != nil {
+			logger.Error("unable to resolve glob pattern", log.String("pattern", pattern), log.Error(err))
 			continue
 		}
 
 		for _, match := range matches {
 			if isGitRepo(match) {
 				paths = append(paths, repoConfig{Path: match, Group: pathConfig.Group})
+			} else {
+				logger.Info("path matches glob pattern but is not a git repository", log.String("pattern", pattern), log.String("path", match))
 			}
 		}
 	}
