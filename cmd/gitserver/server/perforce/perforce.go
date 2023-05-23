@@ -41,6 +41,8 @@ func NewService(logger log.Logger, db database.DB, jobs *list.List) Service {
 	cq.cond = sync.NewCond(&cq.cmu)
 
 	return Service{
+		Logger:                 logger,
+		DB:                     db,
 		changelistMappingQueue: &cq,
 	}
 }
@@ -184,15 +186,10 @@ func (s *Service) doChangelistMapping(ctx context.Context, job *ChangelistMappin
 	return nil
 }
 
-// FIXME
-func runWith(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
-	return nil, nil
-}
-
 func headCommitSHA(ctx context.Context, logger log.Logger, dir common.GitDir) (string, error) {
 	cmd := exec.CommandContext(ctx, "git", "rev-parse", "HEAD")
 	dir.Set(cmd)
-	output, err := runWith(ctx, wrexec.Wrap(ctx, logger, cmd), false, nil)
+	output, err := common.RunWith(ctx, wrexec.Wrap(ctx, logger, cmd), false, nil)
 	if err != nil {
 		return "", &common.GitCommandError{Err: err, Output: string(output)}
 	}
@@ -269,7 +266,7 @@ func newMappableCommits(ctx context.Context, logger log.Logger, dir common.GitDi
 	g.Go(func() error {
 		defer progressWriter.Close()
 
-		output, err := runWith(ctx, wrexec.Wrap(ctx, logger, cmd), false, progressWriter)
+		output, err := common.RunWith(ctx, wrexec.Wrap(ctx, logger, cmd), false, progressWriter)
 		if err != nil {
 			return &common.GitCommandError{Err: err, Output: string(output)}
 		}
