@@ -1,3 +1,4 @@
+# This test target runs the container on port=7081
 sh_test(
     name = "backend_integration_test",
     srcs = [":backend_integration_test.sh"],
@@ -36,6 +37,7 @@ sh_test(
     deps = ["//testing/tools:integration_runner"],
 )
 
+# This test target runs the container on port=7080
 sh_test(
     name = "e2e_test",
     srcs = [":e2e_test.sh"],
