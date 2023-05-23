@@ -8,11 +8,10 @@ package gerrit
 
 import (
 	"context"
-	"net/url"
-	"sync"
-
 	auth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	gerrit "github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
+	"net/url"
+	"sync"
 )
 
 // MockGerritClient is a mock implementation of the Client interface (from

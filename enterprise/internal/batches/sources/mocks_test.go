@@ -8,9 +8,6 @@ package sources
 
 import (
 	"context"
-	"net/url"
-	"sync"
-
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	types1 "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
@@ -20,6 +17,8 @@ import (
 	gerrit "github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	protocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	types "github.com/sourcegraph/sourcegraph/internal/types"
+	"net/url"
+	"sync"
 )
 
 // MockChangesetSource is a mock implementation of the ChangesetSource
