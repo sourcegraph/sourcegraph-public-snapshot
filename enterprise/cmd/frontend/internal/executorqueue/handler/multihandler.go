@@ -15,6 +15,8 @@ import (
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	executorstore "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
 	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -24,7 +26,9 @@ import (
 
 // MultiHandler handles the HTTP requests of an executor for more than one queue. See ExecutorHandler for single-queue implementation.
 type MultiHandler struct {
+	executorStore         database.ExecutorStore
 	JobTokenStore         executorstore.JobTokenStore
+	metricsStore          metricsstore.DistributedStore
 	CodeIntelQueueHandler QueueHandler[uploadsshared.Index]
 	BatchesQueueHandler   QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]
 	validQueues           []string
@@ -34,12 +38,16 @@ type MultiHandler struct {
 
 // NewMultiHandler creates a new MultiHandler.
 func NewMultiHandler(
+	executorStore database.ExecutorStore,
 	jobTokenStore executorstore.JobTokenStore,
+	metricsStore metricsstore.DistributedStore,
 	codeIntelQueueHandler QueueHandler[uploadsshared.Index],
 	batchesQueueHandler QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob],
 ) MultiHandler {
 	return MultiHandler{
+		executorStore:         executorStore,
 		JobTokenStore:         jobTokenStore,
+		metricsStore:          metricsStore,
 		CodeIntelQueueHandler: codeIntelQueueHandler,
 		BatchesQueueHandler:   batchesQueueHandler,
 		validQueues:           []string{codeIntelQueueHandler.Name, batchesQueueHandler.Name},
@@ -188,12 +196,84 @@ func (m *MultiHandler) HandleHeartbeat(w http.ResponseWriter, r *http.Request) {
 	var payload executortypes.HeartbeatRequest
 
 	wrapHandler(w, r, &payload, m.logger, func() (int, any, error) {
-		return http.StatusOK, executortypes.HeartbeatResponse{KnownIDsByQueue: nil, CancelIDsByQueue: nil}, nil
+		var queueNames []string
+		for _, queue := range payload.JobIDsByQueue {
+			queueNames = append(queueNames, queue.QueueName)
+		}
+
+		e := types.Executor{
+			Hostname:        payload.ExecutorName,
+			QueueNames:      queueNames,
+			OS:              payload.OS,
+			Architecture:    payload.Architecture,
+			DockerVersion:   payload.DockerVersion,
+			ExecutorVersion: payload.ExecutorVersion,
+			GitVersion:      payload.GitVersion,
+			IgniteVersion:   payload.IgniteVersion,
+			SrcCliVersion:   payload.SrcCliVersion,
+		}
+
+		// Handle metrics in the background, this should not delay the heartbeat response being
+		// delivered. It is critical for keeping jobs alive.
+		go func() {
+			metrics, err := decodeAndLabelMetrics(payload.PrometheusMetrics, payload.ExecutorName)
+			if err != nil {
+				// Just log the error but don't panic. The heartbeat is more important.
+				m.logger.Error("failed to decode metrics and apply labels for executor heartbeat", log.Error(err))
+				return
+			}
+
+			if err = m.metricsStore.Ingest(payload.ExecutorName, metrics); err != nil {
+				// Just log the error but don't panic. The heartbeat is more important.
+				m.logger.Error("failed to ingest metrics for executor heartbeat", log.Error(err))
+			}
+		}()
+
+		knownIDs, cancelIDs, err := m.heartbeat(r.Context(), e, payload.JobIDsByQueue)
+
+		return http.StatusOK, executortypes.HeartbeatResponse{KnownIDsByQueue: knownIDs, CancelIDsByQueue: cancelIDs}, err
 	})
 }
 
-func (m *MultiHandler) heartbeat(ctx context.Context, executor types.Executor) {
+func (m *MultiHandler) heartbeat(ctx context.Context, executor types.Executor, idsByQueue []executortypes.QueueJobIDs) (knownIDs, cancelIDs []executortypes.QueueJobIDs, err error) {
+	if err = validateWorkerHostname(executor.Hostname); err != nil {
+		return nil, nil, err
+	}
 
+	logger := log.Scoped("multiqueue.heartbeat", "Write the heartbeat of multiple queues to the database")
+
+	// Write this heartbeat to the database so that we can populate the UI with recent executor activity.
+	// TODO: update UpsertHeartbeat to write multiple queue names to DB
+	if err = m.executorStore.UpsertHeartbeat(ctx, executor); err != nil {
+		logger.Error("Failed to upsert executor heartbeat", log.Error(err), log.Strings("queues", executor.QueueNames))
+	}
+
+	for _, queue := range idsByQueue {
+		heartbeatOptions := dbworkerstore.HeartbeatOptions{
+			// see handler.heartbeat for explanation of this field
+			WorkerHostname: executor.Hostname,
+		}
+
+		var known []int
+		var cancel []int
+
+		switch queue.QueueName {
+		case m.BatchesQueueHandler.Name:
+			known, cancel, err = m.BatchesQueueHandler.Store.Heartbeat(ctx, queue.JobIDs, heartbeatOptions)
+		case m.CodeIntelQueueHandler.Name:
+			known, cancel, err = m.CodeIntelQueueHandler.Store.Heartbeat(ctx, queue.JobIDs, heartbeatOptions)
+		}
+		knownIDs = append(knownIDs, executortypes.QueueJobIDs{
+			QueueName: queue.QueueName,
+			JobIDs:    known,
+		})
+		cancelIDs = append(cancelIDs, executortypes.QueueJobIDs{
+			QueueName: queue.QueueName,
+			JobIDs:    cancel,
+		})
+	}
+
+	return knownIDs, cancelIDs, errors.Wrap(err, "multiqueue.UpsertHeartbeat")
 }
 
 func (m *MultiHandler) validateQueues(queues []string) []string {
