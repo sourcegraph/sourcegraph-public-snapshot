@@ -89,6 +89,9 @@ func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, er
 	if err := s.db.Exec(ctx, sqlf.Sprintf(newSCIPWriterTemporarySymbolsTableQuery)); err != nil {
 		return nil, err
 	}
+	if err := s.db.Exec(ctx, sqlf.Sprintf(newSCIPWriterTemporarySymbolLookupTableQuery)); err != nil {
+		return nil, err
+	}
 
 	symbolNameInserter := batch.NewInserter(
 		ctx,
@@ -111,14 +114,33 @@ func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, er
 		"reference_ranges",
 		"implementation_ranges",
 		"type_definition_ranges",
+
+		"scheme_id",
+		"package_manager_id",
+		"package_name_id",
+		"package_version_id",
+		"descriptor_id",
+		"descriptor_no_suffix_id",
+	)
+
+	symbolLookupInserter := batch.NewInserter(
+		ctx,
+		s.db.Handle(),
+		"t_codeintel_scip_symbols_lookup",
+		batch.MaxNumPostgresParameters,
+		"id",
+		"upload_id",
+		"name",
+		"scip_name_type",
 	)
 
 	scipWriter := &scipWriter{
-		uploadID:           uploadID,
-		db:                 s.db,
-		symbolNameInserter: symbolNameInserter,
-		symbolInserter:     symbolInserter,
-		count:              0,
+		uploadID:             uploadID,
+		db:                   s.db,
+		symbolNameInserter:   symbolNameInserter,
+		symbolInserter:       symbolInserter,
+		symbolLookupInserter: symbolLookupInserter,
+		count:                0,
 	}
 
 	return scipWriter, nil
@@ -139,19 +161,36 @@ CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
 	definition_ranges bytea,
 	reference_ranges bytea,
 	implementation_ranges bytea,
-	type_definition_ranges bytea
+	type_definition_ranges bytea,
+
+	scheme_id integer,
+	package_manager_id integer,
+	package_name_id integer,
+	package_version_id integer,
+	descriptor_id integer,
+	descriptor_no_suffix_id integer
+) ON COMMIT DROP
+`
+
+const newSCIPWriterTemporarySymbolLookupTableQuery = `
+CREATE TEMPORARY TABLE t_codeintel_scip_symbols_lookup(
+	id integer NOT NULL,
+	upload_id integer NOT NULL,
+	name text NOT NULL,
+	scip_name_type text NOT NULL
 ) ON COMMIT DROP
 `
 
 type scipWriter struct {
-	uploadID           int
-	nextID             int
-	db                 *basestore.Store
-	symbolNameInserter *batch.Inserter
-	symbolInserter     *batch.Inserter
-	count              uint32
-	batchPayloadSum    int
-	batch              []bufferedDocument
+	uploadID             int
+	nextID               int
+	db                   *basestore.Store
+	symbolNameInserter   *batch.Inserter
+	symbolInserter       *batch.Inserter
+	symbolLookupInserter *batch.Inserter
+	count                uint32
+	batchPayloadSum      int
+	batch                []bufferedDocument
 }
 
 type bufferedDocument struct {
@@ -325,6 +364,85 @@ func (s *scipWriter) flush(ctx context.Context) error {
 		return err
 	}
 
+	currentID := 1
+	schemes := make(map[string]int)
+	managers := make(map[string]int)
+	packageNames := make(map[string]int)
+	packageVersions := make(map[string]int)
+	descriptors := make(map[string]int)
+	descriptorsNoSuffix := make(map[string]int)
+
+	for _, symbolName := range symbolNames {
+		p, err := scip.ParseSymbol(symbolName)
+		if err != nil {
+			return err
+		}
+
+		if _, ok := schemes[p.Scheme]; !ok {
+			schemes[p.Scheme] = currentID
+			currentID++
+		}
+
+		if _, ok := managers[p.Package.Manager]; !ok {
+			managers[p.Package.Manager] = currentID
+			currentID++
+		}
+
+		if _, ok := packageNames[p.Package.Name]; !ok {
+			packageNames[p.Package.Name] = currentID
+			currentID++
+		}
+
+		if _, ok := packageVersions[p.Package.Version]; !ok {
+			packageVersions[p.Package.Version] = currentID
+			currentID++
+		}
+
+		desc := scip.DescriptorOnlyFormatter.FormatSymbol(p)
+		if _, ok := descriptors[desc]; !ok {
+			descriptors[desc] = currentID
+			currentID++
+		}
+
+		descNoSuffix := scip.SyntacticDescriptorOnlyFormatter.FormatSymbol(p)
+		if _, ok := descriptorsNoSuffix[descNoSuffix]; !ok {
+			descriptorsNoSuffix[descNoSuffix] = currentID
+			currentID++
+		}
+
+	}
+
+	for scheme, schemeID := range schemes {
+		if err := s.symbolLookupInserter.Insert(ctx, schemeID, s.uploadID, scheme, "SCHEME"); err != nil {
+			return err
+		}
+	}
+	for manager, managerID := range managers {
+		if err := s.symbolLookupInserter.Insert(ctx, managerID, s.uploadID, manager, "PACKAGE_MANAGER"); err != nil {
+			return err
+		}
+	}
+	for packageName, packageNameID := range packageNames {
+		if err := s.symbolLookupInserter.Insert(ctx, packageNameID, s.uploadID, packageName, "PACKAGE_NAME"); err != nil {
+			return err
+		}
+	}
+	for packageVersion, packageVersionID := range packageVersions {
+		if err := s.symbolLookupInserter.Insert(ctx, packageVersionID, s.uploadID, packageVersion, "PACKAGE_VERSION"); err != nil {
+			return err
+		}
+	}
+	for descriptor, descriptorID := range descriptors {
+		if err := s.symbolLookupInserter.Insert(ctx, descriptorID, s.uploadID, descriptor, "DESCRIPTOR"); err != nil {
+			return err
+		}
+	}
+	for descriptorNoSuffix, descriptorNoSuffixID := range descriptorsNoSuffix {
+		if err := s.symbolLookupInserter.Insert(ctx, descriptorNoSuffixID, s.uploadID, descriptorNoSuffix, "DESCRIPTOR_NO_SUFFIX"); err != nil {
+			return err
+		}
+	}
+
 	for i, invertedRangeIndexes := range invertedRangeIndexes {
 		for _, index := range invertedRangeIndexes {
 			definitionRanges, err := ranges.EncodeRanges(index.DefinitionRanges)
@@ -344,6 +462,18 @@ func (s *scipWriter) flush(ctx context.Context) error {
 				return err
 			}
 
+			p, err := scip.ParseSymbol(index.SymbolName)
+			if err != nil {
+				return err
+			}
+
+			schemeID := schemes[p.Scheme]
+			packageManagerID := managers[p.Package.Manager]
+			packageNameID := packageNames[p.Package.Name]
+			packageVersionID := packageVersions[p.Package.Version]
+			descriptorID := descriptors[scip.DescriptorOnlyFormatter.FormatSymbol(p)]
+			descriptorNoDisambiguatorID := descriptors[scip.SyntacticDescriptorOnlyFormatter.FormatSymbol(p)]
+
 			symbolID, ok := idsBySymbolName[index.SymbolName]
 			if !ok {
 				return errors.Newf("malformed trie - expected %q to be a member", index.SymbolName)
@@ -357,6 +487,13 @@ func (s *scipWriter) flush(ctx context.Context) error {
 				referenceRanges,
 				implementationRanges,
 				typeDefinitionRanges,
+
+				schemeID,
+				packageManagerID,
+				packageNameID,
+				packageVersionID,
+				descriptorID,
+				descriptorNoDisambiguatorID,
 			); err != nil {
 				return err
 			}
@@ -389,12 +526,18 @@ func (s *scipWriter) Flush(ctx context.Context) (uint32, error) {
 	if err := s.symbolInserter.Flush(ctx); err != nil {
 		return 0, err
 	}
+	if err := s.symbolLookupInserter.Flush(ctx); err != nil {
+		return 0, err
+	}
 
 	// Move all data from temp tables into target tables
 	if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolNamesQuery, s.uploadID)); err != nil {
 		return 0, err
 	}
 	if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolsQuery, s.uploadID, 1)); err != nil {
+		return 0, err
+	}
+	if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolLookupQuery, s.uploadID)); err != nil {
 		return 0, err
 	}
 
@@ -416,6 +559,21 @@ SELECT
 FROM t_codeintel_scip_symbol_names source
 `
 
+const scipWriterFlushSymbolLookupQuery = `
+INSERT INTO codeintel_scip_symbols_lookup (
+	upload_id,
+	id,
+	name,
+	scip_name_type
+)
+SELECT
+	%s,
+	source.id,
+	source.name,
+	source.scip_name_type
+FROM t_codeintel_scip_symbols_lookup source
+`
+
 const scipWriterFlushSymbolsQuery = `
 INSERT INTO codeintel_scip_symbols (
 	upload_id,
@@ -425,7 +583,14 @@ INSERT INTO codeintel_scip_symbols (
 	definition_ranges,
 	reference_ranges,
 	implementation_ranges,
-	type_definition_ranges
+	type_definition_ranges,
+
+	scheme_id,
+	package_manager_id,
+	package_name_id,
+	package_version_id,
+	descriptor_id,
+	descriptor_no_suffix_id
 )
 SELECT
 	%s,
@@ -435,7 +600,14 @@ SELECT
 	source.definition_ranges,
 	source.reference_ranges,
 	source.implementation_ranges,
-	source.type_definition_ranges
+	source.type_definition_ranges,
+
+	source.scheme_id,
+	source.package_manager_id,
+	source.package_name_id,
+	source.package_version_id,
+	source.descriptor_id,
+	source.descriptor_no_suffix_id
 FROM t_codeintel_scip_symbols source
 `
 
