@@ -147,8 +147,12 @@ export const codyGroup: SiteAdminSideBarGroup = {
     header: { label: 'Cody', icon: RobotOutlineIcon },
     items: [
         {
-            label: 'Cody',
+            label: 'Embeddings',
             to: '/site-admin/cody',
+        },
+        {
+            label: 'Configuration',
+            to: '/site-admin/cody/configuration',
         },
     ],
     condition: () => window.context?.embeddingsEnabled,

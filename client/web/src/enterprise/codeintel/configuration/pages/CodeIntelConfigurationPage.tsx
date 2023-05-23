@@ -214,7 +214,7 @@ interface ProtectedPoliciesNodeProps {
     indexingEnabled?: boolean
 }
 
-interface UnprotectedPoliciesNodeProps {
+export interface UnprotectedPoliciesNodeProps {
     node: CodeIntelligenceConfigurationPolicyFields
     isDeleting: boolean
     onDelete: (id: string, name: string) => Promise<void>
@@ -223,7 +223,7 @@ interface UnprotectedPoliciesNodeProps {
 
 type PoliciesNodeProps = ProtectedPoliciesNodeProps | UnprotectedPoliciesNodeProps
 
-const PoliciesNode: FunctionComponent<React.PropsWithChildren<PoliciesNodeProps>> = ({
+export const PoliciesNode: FunctionComponent<React.PropsWithChildren<PoliciesNodeProps>> = ({
     node: policy,
     indexingEnabled = false,
     ...props
