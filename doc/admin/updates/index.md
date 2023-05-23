@@ -114,5 +114,5 @@ If your instance has schema drift or unfinished oob migrations you may need to a
 ## Other helpful links
 - [Migrator operations](./migrator/migrator-operations.md)
 - [Upgrading Early Versions](./migrator/upgrading-early-versions.md)
-- [Troubleshooting migrations](./migrator/troubleshooting-upgrades.md)
+- [Troubleshooting upgrades](./migrator/troubleshooting-upgrades.md)
 - [Downgrading](./migrator/downgrading.md)

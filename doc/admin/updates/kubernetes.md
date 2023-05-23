@@ -157,6 +157,7 @@ No upgrade notes.
 **Notes**:
 
 - This release adds a new `migrator` initContainer to the frontend deployment to run database migrations. Confirm the environment variables on this new container match your database settings. [Docs](https://docs.sourcegraph.com/admin/deploy/kubernetes/update#database-migrations)
+- **If performing a multiversion upgrade from an instance prior to this version see our [upgrading early versions documentation](./migrator/upgrading-early-versions.md#before-v3370)**
 
 ## v3.35 ➔ v3.36
 
@@ -239,6 +240,7 @@ previously deploying using the `non-root` overlay, you should now generate overl
 > space to accommodate the migration. A rough guide would be 2x the current on-disk database size
 
 - If you are using an external database, [upgrade your database](https://docs.sourcegraph.com/admin/postgres#upgrading-external-postgresql-instances) to Postgres 12 or above prior to upgrading Sourcegraph. No action is required if you are using the supplied database images.
+- **If performing a multiversion upgrade from an instance prior to this version see our [upgrading early versions documentation](./migrator/upgrading-early-versions.md#before-v3270)**
 
 ## v3.25 ➔ v3.26
 

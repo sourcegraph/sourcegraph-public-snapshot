@@ -159,7 +159,8 @@ Target the tag [`v3.37.0`](https://github.com/sourcegraph/deploy-sourcegraph-doc
 
 **Notes**:
 
-- This release adds a new container that runs database migrations (`migrator`) independently of the frontend container. Confirm the environment variables on this new container match your database settings.
+- This release adds a new container that runs database migrations (`migrator`) independently of the frontend container. Confirm the environment variables on this new container match your database settings. 
+- **If performing a multiversion upgrade from an instance prior to this version see our [upgrading early versions documentation](./migrator/upgrading-early-versions.md#before-v3370)**
 
 ## v3.35 ➔ v3.36
 
@@ -242,6 +243,7 @@ Target the tag [`v3.27.0`](https://github.com/sourcegraph/deploy-sourcegraph-doc
 **Notes**:
 
 - If you are using an external database, [upgrade your database](https://docs.sourcegraph.com/admin/postgres#upgrading-external-postgresql-instances) to Postgres 12 or above prior to upgrading Sourcegraph. No action is required if you are using the supplied supplied database images.
+- **If performing a multiversion upgrade from an instance prior to this version see our [upgrading early versions documentation](./migrator/upgrading-early-versions.md#before-v3270)**
 
 ## v3.25 ➔ v3.26
 
