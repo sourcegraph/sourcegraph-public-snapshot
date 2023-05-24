@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/url"
 
+	gerritbatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
@@ -175,10 +176,22 @@ func (s GerritSource) GetFork(_ context.Context, _ *types.Repo, _, _ *string) (*
 	return nil, nil
 }
 
-func (s GerritSource) setChangesetMetadata(_ context.Context, pr *gerrit.Change, cs *Changeset) error {
-	if err := cs.SetMetadata(pr); err != nil {
+func (s GerritSource) setChangesetMetadata(ctx context.Context, change *gerrit.Change, cs *Changeset) error {
+	apr, err := s.annotatePullRequest(ctx, change)
+	if err != nil {
+		return errors.Wrap(err, "annotating pull request")
+	}
+
+	if err := cs.SetMetadata(apr); err != nil {
 		return errors.Wrap(err, "setting changeset metadata")
 	}
 
 	return nil
+}
+
+func (s GerritSource) annotatePullRequest(ctx context.Context, change *gerrit.Change) (*gerritbatches.AnnotatedChange, error) {
+	return &gerritbatches.AnnotatedChange{
+		Change: change,
+		URL:    s.client.GetURL(),
+	}, nil
 }

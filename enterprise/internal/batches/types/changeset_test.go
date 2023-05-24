@@ -1,6 +1,7 @@
 package types
 
 import (
+	"net/url"
 	"testing"
 	"time"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 	adobatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
+	gerritbatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -223,10 +225,12 @@ func TestChangeset_SetMetadata(t *testing.T) {
 			},
 		},
 		"Gerrit": {
-			meta: &gerrit.Change{
-				ID:      "I5de272baea22ef34dfbd00d6e96c45b25019697f",
-				Branch:  "branch",
-				Updated: time.Unix(10, 0),
+			meta: &gerritbatches.AnnotatedChange{
+				Change: &gerrit.Change{
+					ID:      "I5de272baea22ef34dfbd00d6e96c45b25019697f",
+					Branch:  "branch",
+					Updated: time.Unix(10, 0),
+				},
 			},
 			want: &Changeset{
 				ExternalID:            "I5de272baea22ef34dfbd00d6e96c45b25019697f",
@@ -265,8 +269,10 @@ func TestChangeset_Title(t *testing.T) {
 		"bitbucketserver": &bitbucketserver.PullRequest{
 			Title: want,
 		},
-		"Gerrit": &gerrit.Change{
-			Subject: want,
+		"Gerrit": &gerritbatches.AnnotatedChange{
+			Change: &gerrit.Change{
+				Subject: want,
+			},
 		},
 		"GitHub": &github.PullRequest{
 			Title: want,
@@ -307,8 +313,10 @@ func TestChangeset_ExternalCreatedAt(t *testing.T) {
 		"bitbucketserver": &bitbucketserver.PullRequest{
 			CreatedDate: 10 * 1000,
 		},
-		"Gerrit": &gerrit.Change{
-			Created: want,
+		"Gerrit": &gerritbatches.AnnotatedChange{
+			Change: &gerrit.Change{
+				Created: want,
+			},
 		},
 		"GitHub": &github.PullRequest{
 			CreatedAt: want,
@@ -352,8 +360,10 @@ func TestChangeset_Body(t *testing.T) {
 		"bitbucketserver": &bitbucketserver.PullRequest{
 			Description: want,
 		},
-		"Gerrit": &gerrit.Change{
-			Subject: want,
+		"Gerrit": &gerritbatches.AnnotatedChange{
+			Change: &gerrit.Change{
+				Subject: want,
+			},
 		},
 		"GitHub": &github.PullRequest{
 			Body: want,
@@ -429,9 +439,14 @@ func TestChangeset_URL(t *testing.T) {
 			want: want,
 		},
 		"Gerrit": {
-			// Currently just an empty string until fixed
-			pr:   &gerrit.Change{},
-			want: "",
+			pr: &gerritbatches.AnnotatedChange{
+				Change: &gerrit.Change{
+					ChangeNumber: 1,
+					Project:      "foo",
+				},
+				URL: &url.URL{Scheme: "https", Host: "gerrit.sgdev.org"},
+			},
+			want: "https://gerrit.sgdev.org/c/foo/+/1",
 		},
 		"GitHub": {
 			pr: &github.PullRequest{
@@ -490,7 +505,7 @@ func TestChangeset_HeadRefOid(t *testing.T) {
 			want: "",
 		},
 		"Gerrit": {
-			meta: &gerrit.Change{},
+			meta: &gerritbatches.AnnotatedChange{},
 			want: "",
 		},
 		"GitHub": {
@@ -555,7 +570,7 @@ func TestChangeset_HeadRef(t *testing.T) {
 		},
 		"Gerrit": {
 			// Gerrit does not return the head ref
-			meta: &gerrit.Change{},
+			meta: &gerritbatches.AnnotatedChange{},
 			want: "",
 		},
 		"GitHub": {
@@ -615,7 +630,7 @@ func TestChangeset_BaseRefOid(t *testing.T) {
 			want: "",
 		},
 		"Gerrit": {
-			meta: &gerrit.Change{},
+			meta: &gerritbatches.AnnotatedChange{},
 			want: "",
 		},
 		"GitHub": {
@@ -677,8 +692,10 @@ func TestChangeset_BaseRef(t *testing.T) {
 			want: "foo",
 		},
 		"Gerrit": {
-			meta: &gerrit.Change{
-				Branch: "foo",
+			meta: &gerritbatches.AnnotatedChange{
+				Change: &gerrit.Change{
+					Branch: "foo",
+				},
 			},
 			want: "refs/heads/foo",
 		},
@@ -731,8 +748,10 @@ func TestChangeset_Labels(t *testing.T) {
 			want: []ChangesetLabel{},
 		},
 		"Gerrit": {
-			meta: &gerrit.Change{
-				Hashtags: []string{"black", "green"},
+			meta: &gerritbatches.AnnotatedChange{
+				Change: &gerrit.Change{
+					Hashtags: []string{"black", "green"},
+				},
 			},
 			want: []ChangesetLabel{
 				{Name: "black", Color: "000000"},

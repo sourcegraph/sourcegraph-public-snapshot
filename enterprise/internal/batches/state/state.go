@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
+	gerritbatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/gerrit"
 	adobatches "github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 
@@ -119,7 +120,7 @@ func computeCheckState(c *btypes.Changeset, events ChangesetEvents) btypes.Chang
 		return computeBitbucketCloudBuildState(c.UpdatedAt, m, events)
 	case *azuredevops.AnnotatedPullRequest:
 		return computeAzureDevOpsBuildState(m)
-	case *gerrit.Change:
+	case gerritbatches.AnnotatedChange:
 		// Gerrit doesn't have builds built-in, I think its better to be explicit by still
 		// including this case for clarity.
 		return btypes.ChangesetCheckStateUnknown
@@ -569,7 +570,7 @@ func computeSingleChangesetExternalState(c *btypes.Changeset) (s btypes.Changese
 		default:
 			return "", errors.Errorf("unknown Azure DevOps pull request state: %s", m.Status)
 		}
-	case *gerrit.Change:
+	case *gerritbatches.AnnotatedChange:
 		switch m.Status {
 		case gerrit.ChangeStatusAbandoned:
 			s = btypes.ChangesetExternalStateClosed
@@ -670,7 +671,7 @@ func computeSingleChangesetReviewState(c *btypes.Changeset) (s btypes.ChangesetR
 				states[btypes.ChangesetReviewStatePending] = true
 			}
 		}
-	case *gerrit.Change:
+	case gerritbatches.AnnotatedChange:
 		// TODO: @varsanojidan tackling reviews in a separate PR
 		states[btypes.ChangesetReviewStatePending] = true
 	default:

@@ -39,6 +39,7 @@ type Change struct {
 	Reviewed       bool         `json:"reviewed"`
 	WorkInProgress bool         `json:"work_in_progress"`
 	Hashtags       []string     `json:"hashtags"`
+	ChangeNumber   int          `json:"_number"`
 	Owner          struct {
 		Name     string `json:"name"`
 		Email    string `json:"email"`
