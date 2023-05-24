@@ -26,7 +26,7 @@ export class TaskController {
     public add(input: string, selection: ActiveTextEditorSelection): string | null {
         const editor = vscode.window.activeTextEditor
         if (!editor) {
-            void vscode.window.showErrorMessage('No active editor found...')
+            void vscode.window.showInformationMessage('No active editor found...')
             return null
         }
 
@@ -70,6 +70,7 @@ export class TaskController {
     private showThisFixup(taskID: taskID): void {
         const task = this.tasks.get(taskID)
         if (!task) {
+            void vscode.window.showInformationMessage('No fixup was found...')
             return
         }
         // Create vscode Uri from task uri and selection range
@@ -78,6 +79,10 @@ export class TaskController {
 
     public getTaskView(): TaskViewProvider {
         return this.taskViewProvider
+    }
+
+    public getTasks(): FixupTask[] {
+        return Array.from(this.tasks.values())
     }
 
     private reset(): void {

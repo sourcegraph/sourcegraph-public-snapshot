@@ -96,6 +96,7 @@ class FixupTaskTreeItem extends vscode.TreeItem {
         super(label)
         if (!task) {
             this.fsPath = label
+            this.tooltip = label
             this.label = getFileNameAfterLastDash(label)
             this.contextValue = 'fsPath'
             this.collapsibleState = vscode.TreeItemCollapsibleState.Expanded
@@ -108,7 +109,7 @@ class FixupTaskTreeItem extends vscode.TreeItem {
         this.resourceUri = task.documentUri
         this.contextValue = 'task'
         this.collapsibleState = vscode.TreeItemCollapsibleState.None
-        this.tooltip = new vscode.MarkdownString(`$(zap) Task#${task.id}: ${task.instruction}`, true)
+        this.tooltip = new vscode.MarkdownString(`Task #${task.id}: ${task.instruction}`, true)
         this.command = { command: 'cody.task.open', title: 'Go to File', arguments: [task.id] }
 
         this.updateIconPath()

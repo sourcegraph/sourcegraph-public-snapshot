@@ -16,19 +16,19 @@ export class NonStop implements Recipe {
         const selection = context.editor.getActiveTextEditorSelection()
 
         if (!controllers || !selection) {
-            await context.editor.showWarningMessage('Non-Stop Cody: Failed to start.')
+            await context.editor.showWarningMessage('Cody Fixups: Failed to start.')
             return null
         }
 
         const humanInput =
             humanChatInput ||
-            (await context.editor.showInputBox('Non-Stop Cody: Enter instruction here for your Fixup request.')) ||
+            (await context.editor.showInputBox('Ask Cody to edit your code, or use /chat to ask a question.')) ||
             ''
 
         const taskID = controllers.task.add(humanInput, selection)
         if ((!humanInput && !selection.selectedText.trim()) || !taskID) {
             await context.editor.showWarningMessage(
-                'Non-Stop Cody: Failed to start due to missing instruction with empty selection.'
+                'Cody Fixups: Failed to start due to missing instruction with empty selection.'
             )
             return null
         }
@@ -72,7 +72,7 @@ export class NonStop implements Recipe {
                 {
                     speaker: 'human',
                     text: promptText,
-                    displayText: 'Non-stop Cody: ' + humanInput,
+                    displayText: 'Cody Fixups: ' + humanInput,
                 },
                 {
                     speaker: 'assistant',

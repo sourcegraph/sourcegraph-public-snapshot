@@ -94,7 +94,7 @@
         {
           "id": "cody.tasks.view",
           "name": "Fixups",
-          "when": "cody.tasks.view.enabled && cody.activated",
+          "when": "cody.nonstop.fixups.enabled && cody.activated",
           "icon": "cody.svg",
           "contextualTitle": "Fixups"
         }
@@ -104,7 +104,7 @@
       {
         "view": "cody.tasks.view",
         "contents": "No pending Cody fixups",
-        "when": "cody.tasks.view.enabled"
+        "when": "cody.nonstop.fixups.enabled"
       }
     ],
     "commands": [
@@ -204,15 +204,15 @@
         "enablement": "config.cody.debug && config.cody.experimental.guardrails && editorHasSelection"
       },
       {
-				"command": "cody.task.add",
-				"title": "Cody: Add a Cody task with highlighted code",
+				"command": "cody.recipe.non-stop",
+				"title": "Cody: Add Fixups with highlighted code",
         "icon": "resources/cody.png",
-        "enablement": "cody.tasks.view.enabled"
+        "enablement": "cody.nonstop.fixups.enabled"
 			},
       {
 				"command": "cody.task.open",
 				"title": "Cody: Show this Fixup",
-        "enablement": "cody.tasks.view.enabled",
+        "enablement": "cody.nonstop.fixups.enabled",
         "icon": "$(file-code)"
 			},
       {
@@ -235,7 +235,7 @@
         "when": "cody.activated && editorTextFocus && !editorReadonly"
       },
       {
-        "command": "cody.task.add",
+        "command": "cody.recipe.non-stop",
         "key": "ctrl+shift+v",
         "mac": "shift+cmd+v",
         "when": "cody.activated && editorTextFocus && !editorReadonly"
@@ -373,14 +373,14 @@
         },
         {
           "command": "cody.task.apply",
-          "when": "cody.tasks.view.enabled && view == cody.tasks.view && cody.activated",
+          "when": "cody.nonstop.fixups.enabled && view == cody.tasks.view && cody.activated",
           "group": "navigation"
         }
       ],
       "editor/title": [
         {
-          "command": "cody.task.add",
-          "when": "cody.tasks.view.enabled && cody.activated",
+          "command": "cody.recipe.non-stop",
+          "when": "cody.nonstop.fixups.enabled && cody.activated",
           "group": "navigation",
           "visibility": "visible"
         }

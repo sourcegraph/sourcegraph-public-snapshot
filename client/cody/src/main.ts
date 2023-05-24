@@ -254,16 +254,15 @@ const register = async (
             })
         )
     }
-
     // Register task view and non-stop cody command when feature flag is on
-    if (initialConfig.experimentalNonStop) {
+    if (initialConfig.experimentalNonStop || process.env.CODY_TESTING === 'true') {
         disposables.push(vscode.window.registerTreeDataProvider('cody.tasks.view', taskController.getTaskView()))
         disposables.push(
-            vscode.commands.registerCommand('cody.task.add', async () => {
+            vscode.commands.registerCommand('cody.recipe.non-stop', async () => {
                 await chatProvider.executeRecipe('non-stop', '', false)
             })
         )
-        await vscode.commands.executeCommand('setContext', 'cody.tasks.view.enabled', true)
+        await vscode.commands.executeCommand('setContext', 'cody.nonstop.fixups.enabled', true)
     }
 
     return {

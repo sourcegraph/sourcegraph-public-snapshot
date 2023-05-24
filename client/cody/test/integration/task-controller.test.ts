@@ -1,0 +1,87 @@
+import * as assert from 'assert'
+
+import * as vscode from 'vscode'
+
+import { ChatViewProvider } from '../../src/chat/ChatViewProvider'
+
+import { afterIntegrationTest, beforeIntegrationTest, getExtensionAPI, getFixupTasks, getTranscript } from './helpers'
+
+async function getChatViewProvider(): Promise<ChatViewProvider> {
+    const chatViewProvider = await getExtensionAPI().exports.testing?.chatViewProvider.get()
+    assert.ok(chatViewProvider)
+    return chatViewProvider
+}
+
+suite('Cody Fixup Task Controller', function () {
+    this.beforeEach(() => beforeIntegrationTest())
+    this.afterEach(() => afterIntegrationTest())
+
+    let textEditor = vscode.window.activeTextEditor
+
+    // Run the non-stop recipe to create a new task before every test
+    this.beforeEach(async () => {
+        await vscode.commands.executeCommand('cody.chat.focus')
+        const chatView = await getChatViewProvider()
+
+        // Open index.html
+        assert.ok(vscode.workspace.workspaceFolders)
+
+        const indexUri = vscode.Uri.parse(`${vscode.workspace.workspaceFolders[0].uri.toString()}/index.html`)
+        textEditor = await vscode.window.showTextDocument(indexUri)
+
+        // Select the "title" tags to run the recipe on
+        textEditor.selection = new vscode.Selection(6, 0, 7, 0)
+
+        await chatView.executeRecipe('non-stop', 'Replace hello with goodbye', false)
+
+        // Check the chat transcript contains markdown
+        const humanMessage = await getTranscript(0)
+
+        assert.match(humanMessage.displayText || '', /^Cody Fixups: Replace hello with goodbye/)
+        assert.match((await getTranscript(1)).displayText || '', /^Check your document for updates from Cody/)
+    })
+
+    test('task controller', async () => {
+        if (textEditor === undefined) {
+            assert.fail('editor is undefined')
+        }
+        // Check the Fixup Tasks from Task Controller contains the new task
+        const tasks = await getFixupTasks()
+        assert.strictEqual(tasks.length, 1)
+
+        assert.match(tasks[0].instruction, /^Replace hello with goodbye/)
+
+        // Get selection text from editor whch should match <title>Goodbye Cody</title>
+        const selectionText = textEditor.document.getText(textEditor.selection)
+        assert.match(selectionText, /^<title>Goodbye Cody<\/title>/)
+
+        // Run the apply command should remove all tasks from the task controller
+        await vscode.commands.executeCommand('cody.task.apply')
+        assert.strictEqual((await getFixupTasks()).length, 0)
+    })
+
+    test('show this fixup', async () => {
+        // Check the Fixup Tasks from Task Controller contains the new task
+        const tasks = await getFixupTasks()
+        assert.strictEqual(tasks.length, 1)
+
+        // Switch to a different file
+        const mainJavaUri = vscode.Uri.parse(`${vscode.workspace.workspaceFolders?.[0].uri.toString()}/Main.java`)
+        await vscode.workspace.openTextDocument(mainJavaUri)
+
+        // Run show command to open fixup file with range selected
+        await vscode.commands.executeCommand('cody.task.open', tasks[0].id)
+
+        const newEditor = vscode.window.activeTextEditor
+        assert.strictEqual(newEditor, textEditor)
+    })
+
+    test('apply fixups', async () => {
+        const tasks = await getFixupTasks()
+        assert.strictEqual(tasks.length, 2)
+
+        // Run the apply command should remove all tasks from the task controller
+        await vscode.commands.executeCommand('cody.task.apply')
+        assert.strictEqual((await getFixupTasks()).length, 0)
+    })
+})

@@ -63,7 +63,7 @@ export class FixupTask {
      * Print output to the VS Code Output Channel under Cody AI by Sourcegraph
      */
     private output(text: string): void {
-        this.outputChannel('Non-Stop Cody:', text)
+        this.outputChannel('Cody Fixups:', text)
     }
     /**
      * Return latest selection
