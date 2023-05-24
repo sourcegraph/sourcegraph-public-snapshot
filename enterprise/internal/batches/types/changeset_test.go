@@ -222,11 +222,11 @@ func TestChangeset_SetMetadata(t *testing.T) {
 				ExternalUpdatedAt:     time.Unix(10, 0),
 			},
 		},
-		"Gerrit without fork": {
+		"Gerrit": {
 			meta: &gerrit.Change{
 				ID:      "I5de272baea22ef34dfbd00d6e96c45b25019697f",
 				Branch:  "branch",
-				Created: "2023-05-24 19:04:01.000000000",
+				Updated: time.Unix(10, 0),
 			},
 			want: &Changeset{
 				ExternalID:            "I5de272baea22ef34dfbd00d6e96c45b25019697f",
@@ -234,6 +234,7 @@ func TestChangeset_SetMetadata(t *testing.T) {
 				ExternalBranch:        "refs/heads/branch",
 				ExternalForkNamespace: "",
 				ExternalForkName:      "",
+				ExternalUpdatedAt:     time.Unix(10, 0),
 			},
 		},
 	} {
@@ -305,6 +306,9 @@ func TestChangeset_ExternalCreatedAt(t *testing.T) {
 		},
 		"bitbucketserver": &bitbucketserver.PullRequest{
 			CreatedDate: 10 * 1000,
+		},
+		"Gerrit": &gerrit.Change{
+			Created: want,
 		},
 		"GitHub": &github.PullRequest{
 			CreatedAt: want,

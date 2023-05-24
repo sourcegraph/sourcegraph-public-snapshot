@@ -457,8 +457,7 @@ func (c *Changeset) SetMetadata(meta any) error {
 		c.ExternalID = pr.ID
 		c.ExternalServiceType = extsvc.TypeGerrit
 		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.Branch)
-		// TODO: @varsanojidan fix the time unmarshaling
-		// c.ExternalUpdatedAt = pr.Updated
+		c.ExternalUpdatedAt = pr.Updated
 	default:
 		return errors.New("unknown changeset type")
 	}
@@ -569,8 +568,7 @@ func (c *Changeset) ExternalCreatedAt() time.Time {
 	case *adobatches.AnnotatedPullRequest:
 		return m.CreationDate
 	case *gerrit.Change:
-		// TODO: @varsanojidan replace this once the time conversion is complete
-		return time.Time{}
+		return m.Created
 	default:
 		return time.Time{}
 	}
