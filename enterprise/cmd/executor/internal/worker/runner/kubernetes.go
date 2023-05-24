@@ -115,7 +115,7 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 	}
 	pod, err := r.cmd.FindPod(ctx, r.options.Namespace, job.Name)
 	if err != nil {
-		return errors.Wrap(err, "finding pod")
+		return err
 	}
 
 	return r.cmd.ReadLogs(ctx, r.options.Namespace, pod, command.KubernetesJobContainerName, r.commandLogger, spec.CommandSpec.Key, spec.CommandSpec.Command)
