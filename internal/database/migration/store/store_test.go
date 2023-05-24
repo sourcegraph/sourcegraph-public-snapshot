@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func TestEnsureSchemaTable(t *testing.T) {
@@ -198,35 +199,45 @@ func TestVersions(t *testing.T) {
 	})
 
 	type testCase struct {
+		startedAt    time.Time
 		version      int
 		up           bool
 		success      *bool
 		errorMessage *string
 	}
-	makeCase := func(version int, up bool, failed *bool) testCase {
+	makeCase := func(t time.Time, version int, up bool, failed *bool) testCase {
 		if failed == nil {
-			return testCase{version, up, nil, nil}
+			return testCase{t, version, up, nil, nil}
 		}
 		if *failed {
-			return testCase{version, up, boolPtr(false), strPtr("uh-oh")}
+			return testCase{t, version, up, boolPtr(false), strPtr("uh-oh")}
 		}
-		return testCase{version, up, boolPtr(true), nil}
+		return testCase{t, version, up, boolPtr(true), nil}
 	}
+
+	t3 := timeutil.Now()
+	t2 := t3.Add(-time.Hour * 24)
+	t1 := t2.Add(-time.Hour * 24)
 
 	for _, migrationLog := range []testCase{
 		// Historic attempts
-		makeCase(1003, true, boolPtr(true)), makeCase(1003, false, boolPtr(true)), // 1003: successful up, successful down
-		makeCase(1004, true, boolPtr(true)),                                       // 1004: successful up
-		makeCase(1006, true, boolPtr(false)), makeCase(1006, true, boolPtr(true)), // 1006: failed up, successful up
+		makeCase(t1, 1003, true, boolPtr(true)), makeCase(t2, 1003, false, boolPtr(true)), // 1003: successful up, successful down
+		makeCase(t1, 1004, true, boolPtr(true)),                                           // 1004: successful up
+		makeCase(t1, 1006, true, boolPtr(false)), makeCase(t2, 1006, true, boolPtr(true)), // 1006: failed up, successful up
 
 		// Last attempts
-		makeCase(1001, true, boolPtr(false)),  // successful up
-		makeCase(1002, false, boolPtr(false)), // successful down
-		makeCase(1003, true, nil),             // pending up
-		makeCase(1004, false, nil),            // pending down
-		makeCase(1005, true, boolPtr(true)),   // failed up
-		makeCase(1006, false, boolPtr(true)),  // failed down
+		makeCase(t3, 1001, true, boolPtr(false)),  // successful up
+		makeCase(t3, 1002, false, boolPtr(false)), // successful down
+		makeCase(t3, 1003, true, nil),             // pending up
+		makeCase(t3, 1004, false, nil),            // pending down
+		makeCase(t3, 1005, true, boolPtr(true)),   // failed up
+		makeCase(t3, 1006, false, boolPtr(true)),  // failed down
 	} {
+		finishedAt := &migrationLog.startedAt
+		if migrationLog.success == nil {
+			finishedAt = nil
+		}
+
 		if err := store.Exec(ctx, sqlf.Sprintf(`INSERT INTO migration_logs (
 				migration_logs_schema_version,
 				schema,
@@ -236,12 +247,14 @@ func TestVersions(t *testing.T) {
 				success,
 				finished_at,
 				error_message
-			) VALUES (%s, %s, %s, %s, NOW(), %s, NOW(), %s)`,
+			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)`,
 			currentMigrationLogSchemaVersion,
 			defaultTestTableName,
 			migrationLog.version,
 			migrationLog.up,
+			migrationLog.startedAt,
 			migrationLog.success,
+			finishedAt,
 			migrationLog.errorMessage,
 		)); err != nil {
 			t.Fatalf("unexpected error inserting data: %s", err)
@@ -545,7 +558,7 @@ func TestWrappedDown(t *testing.T) {
 			Success: boolPtr(false),
 		})
 		assertLogs(t, ctx, store, logs)
-		assertVersions(t, ctx, store, []int{12}, nil, []int{13})
+		assertVersions(t, ctx, store, []int{12, 13}, nil, nil)
 	})
 }
 
