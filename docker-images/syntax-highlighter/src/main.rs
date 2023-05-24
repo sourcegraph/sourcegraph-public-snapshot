@@ -76,7 +76,7 @@ fn symbols(q: Json<SymbolQuery>) -> JsonValue {
         None => return json!({"error": "Could not infer parser from extension"}),
     };
 
-    let (mut scope, hint) = match match get_globals(parser, q.content.as_bytes()) {
+    let (mut scope, hint) = match match get_globals(&parser, q.content.as_bytes()) {
         Some(globals) => globals,
         None => return json!({"error": "Failed to get globals"}),
     } {

@@ -10,7 +10,7 @@ pub mod locals;
 pub mod ts_scip;
 
 pub fn get_globals(
-    parser: BundledParser,
+    parser: &BundledParser,
     source_bytes: &[u8],
 ) -> Option<Result<(globals::Scope, usize)>> {
     let config = languages::get_tag_configuration(parser)?;
