@@ -526,9 +526,6 @@ func WebhookURL(kind string, externalServiceID int64, cfg any, externalURL strin
 	q.Set(IDParam, strconv.FormatInt(externalServiceID, 10))
 
 	if variant == VariantBitbucketCloud {
-		if cfg == nil {
-			return "", errors.Newf("external service with id=%d claims to be a Bitbucket Cloud service, but the configuration is of type %T", externalServiceID, cfg)
-		}
 		// Unlike other external service kinds, Bitbucket Cloud doesn't support
 		// a shared secret defined as part of the webhook. As a result, we need
 		// to include it as an explicit part of the URL that we construct.
