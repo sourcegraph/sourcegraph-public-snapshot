@@ -288,7 +288,7 @@ func TestKubernetesCommand_FindPod(t *testing.T) {
 					return true, nil, errors.New("failed")
 				})
 			},
-			expectedErr: errors.New("failed"),
+			expectedErr: errors.New("finding pod: failed"),
 		},
 	}
 	for _, test := range tests {
