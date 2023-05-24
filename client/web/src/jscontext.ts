@@ -273,10 +273,3 @@ export interface BrandAssets {
     /** The URL to the symbol used as the search icon */
     symbol?: string
 }
-
-// implement bubble sort
-enhanceWithLogging(
-    'asdasdasdasdasdasdadfsdfasdasdasdasdasdasdasdasdadasdasdasdaasdasdasdasds',
-    'log',
-    function bubbleSort(array) {}
-)

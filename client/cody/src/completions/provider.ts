@@ -103,7 +103,7 @@ export abstract class CompletionProvider {
 
 export class MultilineCompletionProvider extends CompletionProvider {
     protected createPromptPrefix(): Message[] {
-        // TODO(beyang): escape 'Hfluman:' and 'Assistant:'
+        // TODO(beyang): escape 'Human:' and 'Assistant:'
         const prefix = this.prefix.trim()
 
         const prefixLines = prefix.split('\n')

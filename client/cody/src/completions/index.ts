@@ -241,13 +241,15 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         }
 
         logEvent('CodyVSCodeExtension:completion:started', LOG_INLINE, LOG_INLINE)
+        const start = Date.now()
 
         const results = rankCompletions(
             (await Promise.all(completers.map(c => c.generateCompletions(abortController.signal)))).flat()
         )
 
         if (hasVisibleCompletions(results)) {
-            logEvent('CodyVSCodeExtension:completion:suggested', LOG_INLINE, LOG_INLINE)
+            const params = { ...LOG_INLINE, latency: Date.now() - start, timeout }
+            logEvent('CodyVSCodeExtension:completion:suggested', params, params)
             inlineCompletionsCache.add(results)
             return results.map(toInlineCompletionItem)
         } else {
