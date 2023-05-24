@@ -36,7 +36,6 @@ func (s *store) InsertPathCountInputs(
 		batchSize,
 		derivativeGraphKey,
 		derivativeGraphKey,
-		graphKey,
 		derivativeGraphKey,
 	))
 	if err != nil {
@@ -174,16 +173,8 @@ referenced_definitions AS (
 			) AS rank
 		FROM codeintel_ranking_definitions rd
 		JOIN referenced_symbols rs ON rs.symbol_name = rd.symbol_name
-		JOIN codeintel_ranking_exports cre ON cre.id = rd.exported_upload_id
-		JOIN lsif_uploads u ON u.id = cre.upload_id
-		JOIN progress p ON TRUE
-		WHERE
-			rd.graph_key = %s AND
-
-			-- Ensure that the record is within the bounds where it would be visible
-			-- to the current "snapshot" defined by the ranking computation state row.
-			cre.id <= p.max_export_id AND
-			(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at)
+		JOIN exported_uploads eu ON eu.id = rd.exported_upload_id
+		JOIN lsif_uploads u ON u.id = eu.upload_id
 	) s
 
 	-- For multiple uploads in the same repository/root/indexer, only consider
