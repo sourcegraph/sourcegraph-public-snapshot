@@ -245,7 +245,12 @@ func run(
 
 			err := service.Start(ctx, obctx, ready, serviceConfig)
 			if err != nil {
-				logger.Fatal("failed to start service", log.String("service", service.Name()), log.Error(err))
+				// Special case in App: continue without executor if it fails to start.
+				if deploy.IsApp() && service.Name() == "executor" {
+					logger.Warn("failed to start service (skipping)", log.String("service", service.Name()), log.Error(err))
+				} else {
+					logger.Fatal("failed to start service", log.String("service", service.Name()), log.Error(err))
+				}
 			}
 		}()
 	}
