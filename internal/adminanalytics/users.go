@@ -42,6 +42,7 @@ const (
             CASE WHEN user_id = 0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END AS user_id,
             COUNT(DISTINCT DATE(timestamp)) AS days_used
         FROM event_logs
+		LEFT OUTER JOIN users ON users.id = event_logs.user_id
         WHERE
             DATE(timestamp) %s
             AND (%s)
@@ -88,6 +89,7 @@ func (f *Users) Frequencies(ctx context.Context) ([]*UsersFrequencyNode, error) 
 	}
 
 	query := sqlf.Sprintf(frequencyQuery, dateRangeCond, sqlf.Join(getDefaultConds(), ") AND ("))
+	fmt.Printf("Query %v", query)
 
 	rows, err := f.DB.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 
