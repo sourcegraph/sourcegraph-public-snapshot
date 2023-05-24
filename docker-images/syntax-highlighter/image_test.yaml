@@ -8,3 +8,6 @@ commandTests:
         value: "true"
   - name: "http-server-stabilizer binary is runnable"
     command: "/usr/local/bin/http-server-stabilizer"
+
+  - name: "not running as root"
+    command: "id -u | grep -v '0'"

@@ -4,3 +4,6 @@ commandTests:
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
+
+  - name: "not running as root"
+    command: "id -u | grep -v '0'"
