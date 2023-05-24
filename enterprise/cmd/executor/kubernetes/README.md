@@ -21,6 +21,12 @@ The following is a guide to setting up a local development environment for the e
   - `minikube image load executor-kubernetes:latest`
   - `minikube image load sourcegraph/batcheshelper:insiders`
 
+### Memory
+
+If you run `codeintel`, you may need to tinker with the `EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY`
+and `EXECUTOR_MAXIMUM_NUM_JOBS` to ensure that each Job has enough memory to run and that the node does not run out of
+memory.
+
 ## Build Image
 
 Run the following command to build the image.

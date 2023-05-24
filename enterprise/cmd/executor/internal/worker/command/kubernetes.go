@@ -13,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/utils/pointer"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -89,27 +90,40 @@ func (c *KubernetesCommand) DeleteJob(ctx context.Context, namespace string, job
 var propagationPolicy = metav1.DeletePropagationBackground
 
 // ReadLogs reads the logs of the given pod and writes them to the logger.
-func (c *KubernetesCommand) ReadLogs(ctx context.Context, namespace string, podName string, containerName string, cmdLogger Logger, key string, command []string) error {
-	req := c.Clientset.CoreV1().Pods(namespace).GetLogs(podName, &corev1.PodLogOptions{Container: containerName})
-	stream, err := req.Stream(ctx)
-	if err != nil {
-		return errors.Wrapf(err, "opening log stream for pod %s", podName)
-	}
-
+func (c *KubernetesCommand) ReadLogs(ctx context.Context, namespace string, pod *corev1.Pod, containerName string, cmdLogger Logger, key string, command []string) error {
 	logEntry := cmdLogger.LogEntry(key, command)
 	defer logEntry.Close()
 
-	pipeReaderWaitGroup := readProcessPipe(logEntry, stream)
+	// If the pod just failed to even start, then we can't get logs from it.
+	if pod.Status.Phase == corev1.PodFailed && len(pod.Status.ContainerStatuses) == 0 {
+		logEntry.Finalize(1)
+	} else {
+		exitCode := 0
+		for _, status := range pod.Status.ContainerStatuses {
+			if status.Name == containerName {
+				exitCode = int(status.State.Terminated.ExitCode)
+				break
+			}
+		}
+		// Ensure we always get the exit code in case an error occurs when reading the logs.
+		defer logEntry.Finalize(exitCode)
 
-	select {
-	case <-ctx.Done():
-	case err = <-watchErrGroup(pipeReaderWaitGroup):
+		req := c.Clientset.CoreV1().Pods(namespace).GetLogs(pod.Name, &corev1.PodLogOptions{Container: containerName})
+		stream, err := req.Stream(ctx)
 		if err != nil {
-			return errors.Wrap(err, "reading process pipes")
+			return errors.Wrapf(err, "opening log stream for pod %s", pod.Name)
+		}
+
+		pipeReaderWaitGroup := readProcessPipe(logEntry, stream)
+
+		select {
+		case <-ctx.Done():
+		case err = <-watchErrGroup(pipeReaderWaitGroup):
+			if err != nil {
+				return errors.Wrap(err, "reading process pipes")
+			}
 		}
 	}
-
-	logEntry.Finalize(0)
 
 	return nil
 }
@@ -128,7 +142,7 @@ func readProcessPipe(w io.WriteCloser, stdout io.Reader) *errgroup.Group {
 func (c *KubernetesCommand) FindPod(ctx context.Context, namespace string, name string) (*corev1.Pod, error) {
 	list, err := c.Clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: "job-name=" + name})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "finding pod")
 	}
 	if len(list.Items) == 0 {
 		return nil, errors.Newf("no pods found for job %s", name)
@@ -248,6 +262,9 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 			Name: name,
 		},
 		Spec: batchv1.JobSpec{
+			// Prevent K8s from retrying. This will lead to the retried jobs always failing as the workspace will get
+			// cleaned up from the first failure.
+			BackoffLimit: pointer.Int32(0),
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
 					NodeName:     options.NodeName,
@@ -263,11 +280,12 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 					ActiveDeadlineSeconds: options.Deadline,
 					Containers: []corev1.Container{
 						{
-							Name:       KubernetesJobContainerName,
-							Image:      image,
-							Command:    spec.Command,
-							WorkingDir: filepath.Join(KubernetesJobMountPath, spec.Dir),
-							Env:        jobEnvs,
+							Name:            KubernetesJobContainerName,
+							Image:           image,
+							ImagePullPolicy: corev1.PullIfNotPresent,
+							Command:         spec.Command,
+							WorkingDir:      filepath.Join(KubernetesJobMountPath, spec.Dir),
+							Env:             jobEnvs,
 							Resources: corev1.ResourceRequirements{
 								Limits:   resourceLimit,
 								Requests: resourceRequest,

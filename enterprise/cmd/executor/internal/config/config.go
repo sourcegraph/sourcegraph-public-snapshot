@@ -136,7 +136,7 @@ func (c *Config) Load() {
 	c.KubernetesResourceRequestMemory = c.Get("EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY", "12Gi", "The minimum memory resource for Kubernetes Jobs.")
 	c.DockerAddHostGateway = c.GetBool("EXECUTOR_DOCKER_ADD_HOST_GATEWAY", "false", "If true, host.docker.internal will be exposed to the docker commands run by the runtime. Warn: Can be insecure. Only use this if you understand what you're doing. This is mostly used for running against a Sourcegraph on the same host.")
 	c.dockerAuthConfigStr = c.GetOptional("EXECUTOR_DOCKER_AUTH_CONFIG", "The content of the docker config file including auth for services. If using firecracker, only static credentials are supported, not credential stores nor credential helpers.")
-	c.KubernetesJobDeadline = c.GetInt("KUBERNETES_JOB_DEADLINE", "300", "The number of seconds after which a Kubernetes job will be terminated.")
+	c.KubernetesJobDeadline = c.GetInt("KUBERNETES_JOB_DEADLINE", "1200", "The number of seconds after which a Kubernetes job will be terminated.")
 	c.KubernetesKeepJobs = c.GetBool("KUBERNETES_KEEP_JOBS", "false", "If true, Kubernetes jobs will not be deleted after they complete. Useful for debugging.")
 	c.KubernetesSecurityContextRunAsUser = c.GetInt("KUBERNETES_RUN_AS_USER", "-1", "The user ID to run Kubernetes jobs as.")
 	c.KubernetesSecurityContextRunAsGroup = c.GetInt("KUBERNETES_RUN_AS_GROUP", "-1", "The group ID to run Kubernetes jobs as.")
