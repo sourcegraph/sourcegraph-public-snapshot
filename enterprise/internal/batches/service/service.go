@@ -1212,6 +1212,16 @@ func (s *Service) CheckNamespaceAccess(ctx context.Context, namespaceUserID, nam
 	return s.checkNamespaceAccessWithDB(ctx, s.store.DatabaseDB(), namespaceUserID, namespaceOrgID)
 }
 
+func (s *Service) checkNamespaceAccessWithDB(ctx context.Context, db database.DB, namespaceUserID, namespaceOrgID int32) (err error) {
+	if namespaceOrgID != 0 {
+		return auth.CheckOrgAccessOrSiteAdmin(ctx, db, namespaceOrgID)
+	} else if namespaceUserID != 0 {
+		return auth.CheckSiteAdminOrSameUser(ctx, db, namespaceUserID)
+	} else {
+		return ErrNoNamespace
+	}
+}
+
 // CanAdministerInNamespace checks whether the current user can administer a
 // batch change in the given namespace. This essentially wraps
 // CheckNamespaceAccess and returns false, nil if a valid user is logged in but
@@ -1226,16 +1236,6 @@ func (s *Service) CanAdministerInNamespace(ctx context.Context, namespaceUserID,
 		return false, nil
 	}
 	return err == nil, err
-}
-
-func (s *Service) checkNamespaceAccessWithDB(ctx context.Context, db database.DB, namespaceUserID, namespaceOrgID int32) (err error) {
-	if namespaceOrgID != 0 {
-		return auth.CheckOrgAccessOrSiteAdmin(ctx, db, namespaceOrgID)
-	} else if namespaceUserID != 0 {
-		return auth.CheckSiteAdminOrSameUser(ctx, db, namespaceUserID)
-	} else {
-		return ErrNoNamespace
-	}
 }
 
 // ErrNoNamespace is returned by checkNamespaceAccess if no valid namespace ID is given.

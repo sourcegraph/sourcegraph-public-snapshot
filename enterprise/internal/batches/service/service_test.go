@@ -297,6 +297,7 @@ func TestService(t *testing.T) {
 	admin := bt.CreateTestUser(t, db, true)
 	user := bt.CreateTestUser(t, db, false)
 	user2 := bt.CreateTestUser(t, db, false)
+	user3 := bt.CreateTestUser(t, db, false)
 
 	adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
 	userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
@@ -313,6 +314,113 @@ func TestService(t *testing.T) {
 
 	svc := New(s)
 	svc.sourcer = sourcer
+
+	t.Run("CanAdministerInNamespace", func(t *testing.T) {
+		org := bt.CreateTestOrg(t, db, "test-org-1", user.ID, user2.ID)
+
+		spec := testBatchSpec(user.ID)
+		if err := s.CreateBatchSpec(ctx, spec); err != nil {
+			t.Fatal(err)
+		}
+
+		userBatchChange := testBatchChange(user.ID, spec)
+		if err := s.CreateBatchChange(ctx, userBatchChange); err != nil {
+			t.Fatal(err)
+		}
+
+		orgSpec := testOrgBatchSpec(user.ID, org.ID)
+		if err := s.CreateBatchSpec(ctx, orgSpec); err != nil {
+			t.Fatal(err)
+		}
+		orgBatchChange := testOrgBatchChange(user.ID, org.ID, orgSpec)
+		if err := s.CreateBatchChange(ctx, orgBatchChange); err != nil {
+			t.Fatal(err)
+		}
+
+		tests := []struct {
+			name        string
+			batchChange *btypes.BatchChange
+			user        int32
+
+			canAdminister              bool
+			orgMembersBatchChangeAdmin bool
+		}{
+			{
+				name:                       "user batch change accessed by creator",
+				batchChange:                userBatchChange,
+				user:                       user.ID,
+				canAdminister:              true,
+				orgMembersBatchChangeAdmin: false,
+			},
+			{
+				name:                       "user batch change accessed by site-admin",
+				batchChange:                userBatchChange,
+				user:                       admin.ID,
+				canAdminister:              true,
+				orgMembersBatchChangeAdmin: false,
+			},
+			{
+				name:                       "user batch change accessed by regular user",
+				batchChange:                userBatchChange,
+				user:                       user2.ID,
+				canAdminister:              false,
+				orgMembersBatchChangeAdmin: false,
+			},
+			{
+				name:                       "org batch change accessed by creator",
+				batchChange:                orgBatchChange,
+				user:                       user.ID,
+				canAdminister:              true,
+				orgMembersBatchChangeAdmin: false,
+			},
+			{
+				name:                       "org batch change accessed by site-admin",
+				batchChange:                orgBatchChange,
+				user:                       admin.ID,
+				canAdminister:              true,
+				orgMembersBatchChangeAdmin: false,
+			},
+			{
+				name:                       "org batch change accessed by org member",
+				batchChange:                orgBatchChange,
+				user:                       user2.ID,
+				canAdminister:              true,
+				orgMembersBatchChangeAdmin: false,
+			},
+			{
+				name:                       "org batch change accessed by non-org member when `orgs.allMembersBatchChangesAdmin` is true",
+				batchChange:                orgBatchChange,
+				user:                       user2.ID,
+				canAdminister:              true,
+				orgMembersBatchChangeAdmin: true,
+			},
+			{
+				name:                       "org batch change accessed by non-org member",
+				batchChange:                orgBatchChange,
+				user:                       user3.ID,
+				canAdminister:              false,
+				orgMembersBatchChangeAdmin: false,
+			},
+		}
+
+		for _, tc := range tests {
+			t.Run(tc.name, func(t *testing.T) {
+				ctx := actor.WithActor(context.Background(), actor.FromUser(tc.user))
+				if tc.orgMembersBatchChangeAdmin {
+					contents := "{\"orgs.allMembersBatchChangesAdmin\": true}"
+					_, err := db.Settings().CreateIfUpToDate(ctx, api.SettingsSubject{Org: &org.ID}, nil, nil, contents)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
+				canAdminister, _ := svc.CanAdministerInNamespace(ctx, tc.batchChange.NamespaceUserID, tc.batchChange.NamespaceOrgID)
+
+				if canAdminister != tc.canAdminister {
+					t.Fatalf("expected canAdminister to be %t, got %t", tc.canAdminister, canAdminister)
+				}
+			})
+		}
+	})
 
 	t.Run("DeleteBatchChange", func(t *testing.T) {
 		spec := testBatchSpec(admin.ID)
