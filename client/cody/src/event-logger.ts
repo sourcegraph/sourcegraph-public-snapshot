@@ -14,7 +14,7 @@ export async function updateEventLogger(
     config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>,
     localStorage: LocalStorage
 ): Promise<void> {
-    let status = await localStorage.setAnonymousUserID()
+    const status = await localStorage.setAnonymousUserID()
     anonymousUserID = localStorage.getAnonymousUserID() || ''
     if (!eventLoggerGQLClient) {
         eventLoggerGQLClient = new SourcegraphGraphQLAPIClient(config)
