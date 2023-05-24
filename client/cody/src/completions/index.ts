@@ -66,7 +66,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                 return []
             }
             console.error(error)
-            debug('CodyCompletionProvider:inline:error', `${error}\n${error.stack()}`)
+            debug('CodyCompletionProvider:inline:error', `${error.toString()}\n${error.stack}`)
             return []
         }
     }
