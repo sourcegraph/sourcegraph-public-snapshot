@@ -12,8 +12,8 @@ test('start a fixup job from inline assist with valid auth', async ({ page, side
 
     await expect(sidebar.getByText("Hello! I'm Cody.")).toBeVisible()
 
-    // Open the Explorer view
-    await page.click('[aria-label=^"Explorer"]')
+    // Open the Explorer view in the sidebar that would match on Mac and Linux
+    await sidebar.getByRole('tab', { name: 'Explorer' }).click()
     // Select the second element from the tree view, which is the index.html file
     await page.locator('.monaco-highlighted-label').nth(1).click()
 
