@@ -23,6 +23,20 @@ environment:
 # entrypoint:
 #   command: /var/lib/postgres/initdb/postgresql-entrypoint.sh postgres
 
+accounts:
+  groups:
+    - groupname: postgres
+      gid: 999
+    - groupname: ping
+      gid: 99
+  users:
+    - username: postgres
+      uid: 999
+      gid: 999
+    - username: ping
+      uid: 99
+      gid: 99
+
 paths:
   - path: /data/pgdata-12
     type: directory
@@ -34,28 +48,6 @@ paths:
     type: directory
     permissions: 0o755
 
-<<<<<<< HEAD
-users:
-  - username: postgres
-    uid: 999
-    gid: 999
-  - username: ping
-    uid: 99
-    gid: 99
-=======
-accounts:
-  groups:
-  - groupname: postgres
-    gid: 999
-  - groupname: ping
-    gid: 99
-  users:
-    - username: postgres
-      uid: 999
-      gid: 999
-    - username: ping
-      uid: 99
-      gid: 99
->>>>>>> jh/bzl-rules_oci
+
 
 # MANUAL REBUILD:
