@@ -16,16 +16,15 @@ import (
 func BazelOperations() []operations.Operation {
 	ops := []operations.Operation{}
 	ops = append(ops, bazelConfigure())
-	ops = append(ops, bazelTest("//docker-images/syntax-highlighter/...")) //, "//client/web:test"))
-	// ops = append(ops, bazelTest("//...", "//client/web:test"))
-	// ops = append(ops, bazelBackCompatTest(
-	// 	"@sourcegraph_back_compat//cmd/...",
-	// 	"@sourcegraph_back_compat//lib/...",
-	// 	"@sourcegraph_back_compat//internal/...",
-	// 	"@sourcegraph_back_compat//enterprise/cmd/...",
-	// 	"@sourcegraph_back_compat//enterprise/internal/...",
-	// ))
-	// ops = append(ops, bazelBuild(`$$(bazel query 'kind("oci_tarball rule", //...)')`))
+	ops = append(ops, bazelTest("//...", "//client/web:test"))
+	ops = append(ops, bazelBackCompatTest(
+		"@sourcegraph_back_compat//cmd/...",
+		"@sourcegraph_back_compat//lib/...",
+		"@sourcegraph_back_compat//internal/...",
+		"@sourcegraph_back_compat//enterprise/cmd/...",
+		"@sourcegraph_back_compat//enterprise/internal/...",
+	))
+	ops = append(ops, bazelBuild(`$$(bazel query 'kind("oci_tarball rule", //...)')`))
 	return ops
 }
 
