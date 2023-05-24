@@ -36,7 +36,6 @@ func (s *store) InsertPathCountInputs(
 		batchSize,
 		derivativeGraphKey,
 		derivativeGraphKey,
-		graphKey,
 		derivativeGraphKey,
 	))
 	if err != nil {
@@ -68,16 +67,14 @@ progress AS (
 		crp.graph_key = %s AND
 		crp.mapper_completed_at IS NULL
 ),
-refs AS (
+exported_uploads AS (
 	SELECT
-		rr.id,
-		cre.upload_id,
-		rr.symbol_names
-	FROM codeintel_ranking_references rr
-	JOIN codeintel_ranking_exports cre ON cre.id = rr.exported_upload_id
+		cre.id,
+		cre.upload_id
+	FROM codeintel_ranking_exports cre
 	JOIN progress p ON TRUE
 	WHERE
-		rr.graph_key = %s AND
+		cre.graph_key = %s AND
 
 		-- Note that we do a check in the processable_symbols CTE below that will
 		-- ensure that we don't process a record AND the one it shadows. We end up
@@ -87,8 +84,17 @@ refs AS (
 		-- Ensure that the record is within the bounds where it would be visible
 		-- to the current "snapshot" defined by the ranking computation state row.
 		cre.id <= p.max_export_id AND
-		(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at) AND
-
+		(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at)
+	ORDER BY cre.graph_key, cre.deleted_at DESC NULLS FIRST, cre.id
+),
+refs AS (
+	SELECT
+		rr.id,
+		eu.upload_id,
+		rr.symbol_names
+	FROM codeintel_ranking_references rr
+	JOIN exported_uploads eu ON eu.id = rr.exported_upload_id
+	WHERE
 		-- Ensure the record isn't already processed
 		NOT EXISTS (
 			SELECT 1
@@ -97,7 +103,6 @@ refs AS (
 				rrp.graph_key = %s AND
 				rrp.codeintel_ranking_reference_id = rr.id
 		)
-	ORDER BY rr.id
 	LIMIT %s
 	FOR UPDATE SKIP LOCKED
 ),
@@ -168,16 +173,8 @@ referenced_definitions AS (
 			) AS rank
 		FROM codeintel_ranking_definitions rd
 		JOIN referenced_symbols rs ON rs.symbol_name = rd.symbol_name
-		JOIN codeintel_ranking_exports cre ON cre.id = rd.exported_upload_id
-		JOIN lsif_uploads u ON u.id = cre.upload_id
-		JOIN progress p ON TRUE
-		WHERE
-			rd.graph_key = %s AND
-
-			-- Ensure that the record is within the bounds where it would be visible
-			-- to the current "snapshot" defined by the ranking computation state row.
-			cre.id <= p.max_export_id AND
-			(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at)
+		JOIN exported_uploads eu ON eu.id = rd.exported_upload_id
+		JOIN lsif_uploads u ON u.id = eu.upload_id
 	) s
 
 	-- For multiple uploads in the same repository/root/indexer, only consider
@@ -265,30 +262,38 @@ progress AS (
 		crp.graph_key = %s AND
 		crp.seed_mapper_completed_at IS NULL
 ),
+exported_uploads AS (
+	SELECT
+		cre.id,
+		cre.upload_id
+	FROM codeintel_ranking_exports cre
+	JOIN progress p ON TRUE
+	WHERE
+		cre.graph_key = %s AND
+
+		-- Note that we do a check in the processable_symbols CTE below that will
+		-- ensure that we don't process a record AND the one it shadows. We end up
+		-- taking the lowest ID and no-oping any others that happened to fall into
+		-- the window.
+
+		-- Ensure that the record is within the bounds where it would be visible
+		-- to the current "snapshot" defined by the ranking computation state row.
+		cre.id <= p.max_export_id AND
+		(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at)
+	ORDER BY cre.graph_key, cre.deleted_at DESC NULLS FIRST, cre.id
+),
 unprocessed_path_counts AS (
 	SELECT
 		ipr.id,
-		cre.upload_id,
+		eu.upload_id,
 		ipr.graph_key,
 		CASE
 			WHEN ipr.document_path != '' THEN array_append('{}'::text[], ipr.document_path)
 			ELSE ipr.document_paths
 		END AS document_paths
 	FROM codeintel_initial_path_ranks ipr
-	JOIN codeintel_ranking_exports cre ON cre.id = ipr.exported_upload_id
-	JOIN progress p ON TRUE
+	JOIN exported_uploads eu ON eu.id = ipr.exported_upload_id
 	WHERE
-		ipr.graph_key = %s AND
-
-		-- Note that we don't do any special precautions here to de-duplicate the
-		-- zero-rank path data, as duplicate paths add a zero count (no-op), and
-		-- extra paths will no be resolvable in gitserver.
-
-		-- Ensure that the record is within the bounds where it would be visible
-		-- to the current "snapshot" defined by the ranking computation state row.
-		cre.id <= p.max_export_id AND
-		(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at) AND
-
 		-- Ensure the record isn't already processed
 		NOT EXISTS (
 			SELECT 1
