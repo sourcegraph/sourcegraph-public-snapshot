@@ -91,7 +91,7 @@ func (s GerritSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 		return errors.Wrap(err, "getting pull request")
 	}
 
-	return errors.Wrap(s.setChangesetMetadata(ctx, pr, cs), "setting Gerrit changeset metadata")
+	return errors.Wrap(s.setChangesetMetadata(pr, cs), "setting Gerrit changeset metadata")
 }
 
 // CreateChangeset will create the Changeset on the source. If it already
@@ -122,7 +122,7 @@ func (s GerritSource) CloseChangeset(ctx context.Context, cs *Changeset) error {
 		return errors.Wrap(err, "abandoning pull request")
 	}
 
-	return errors.Wrap(s.setChangesetMetadata(ctx, updated, cs), "setting Gerrit changeset metadata")
+	return errors.Wrap(s.setChangesetMetadata(updated, cs), "setting Gerrit changeset metadata")
 }
 
 // UpdateChangeset can update Changesets.
@@ -139,7 +139,7 @@ func (s GerritSource) ReopenChangeset(ctx context.Context, cs *Changeset) error 
 		return errors.Wrap(err, "updating pull request")
 	}
 
-	return errors.Wrap(s.setChangesetMetadata(ctx, updated, cs), "setting Gerrit changeset metadata")
+	return errors.Wrap(s.setChangesetMetadata(updated, cs), "setting Gerrit changeset metadata")
 }
 
 // CreateComment posts a comment on the Changeset.
@@ -155,7 +155,7 @@ func (s GerritSource) CreateComment(ctx context.Context, cs *Changeset, comment 
 // merge. If the changeset cannot be merged, because it is in an unmergeable
 // state, ChangesetNotMergeableError must be returned.
 // Gerrit changes are always single commit, so squash does not matter.
-func (s GerritSource) MergeChangeset(ctx context.Context, cs *Changeset, squash bool) error {
+func (s GerritSource) MergeChangeset(ctx context.Context, cs *Changeset, _ bool) error {
 	updated, err := s.client.SubmitChange(ctx, cs.ExternalID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
@@ -164,7 +164,7 @@ func (s GerritSource) MergeChangeset(ctx context.Context, cs *Changeset, squash 
 		return ChangesetNotMergeableError{ErrorMsg: err.Error()}
 	}
 
-	return errors.Wrap(s.setChangesetMetadata(ctx, updated, cs), "setting Gerrit changeset metadata")
+	return errors.Wrap(s.setChangesetMetadata(updated, cs), "setting Gerrit changeset metadata")
 }
 
 // GetFork returns a repo pointing to a fork of the target repo, ensuring that the fork
@@ -176,8 +176,8 @@ func (s GerritSource) GetFork(_ context.Context, _ *types.Repo, _, _ *string) (*
 	return nil, nil
 }
 
-func (s GerritSource) setChangesetMetadata(ctx context.Context, change *gerrit.Change, cs *Changeset) error {
-	apr, err := s.annotatePullRequest(ctx, change)
+func (s GerritSource) setChangesetMetadata(change *gerrit.Change, cs *Changeset) error {
+	apr, err := s.annotatePullRequest(change)
 	if err != nil {
 		return errors.Wrap(err, "annotating pull request")
 	}
@@ -189,7 +189,7 @@ func (s GerritSource) setChangesetMetadata(ctx context.Context, change *gerrit.C
 	return nil
 }
 
-func (s GerritSource) annotatePullRequest(ctx context.Context, change *gerrit.Change) (*gerritbatches.AnnotatedChange, error) {
+func (s GerritSource) annotatePullRequest(change *gerrit.Change) (*gerritbatches.AnnotatedChange, error) {
 	return &gerritbatches.AnnotatedChange{
 		Change: change,
 		URL:    s.client.GetURL(),
