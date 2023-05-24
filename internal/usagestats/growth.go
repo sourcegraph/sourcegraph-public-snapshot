@@ -78,14 +78,6 @@ SELECT COUNT(*) FILTER ( WHERE recent_usage_by_user.created_month = DATE_TRUNC('
                    AND (deleted_month < DATE_TRUNC('month', $1::timestamp) OR deleted_month IS NULL)) AS retained_users
   FROM recent_usage_by_user
     `
-	const accessRequestsQuery = `
-	SELECT
-		COUNT(*) FILTER (WHERE status = 'PENDING') AS pending_access_requests,
-		COUNT(*) FILTER (WHERE status = 'APPROVED') AS approved_access_requests,
-		COUNT(*) FILTER (WHERE status = 'REJECTED') AS rejected_access_requests
-	FROM access_requests
-	WHERE created_at >= DATE_TRUNC('month', $1::timestamp)
-	`
 	var (
 		createdUsers     int
 		deletedUsers     int
