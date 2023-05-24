@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -170,6 +171,7 @@ type RemoteGitCommand struct {
 	noTimeout      bool
 	exitStatus     int
 	execer         execer
+	execOp         *observation.Operation
 }
 
 type execer interface {
