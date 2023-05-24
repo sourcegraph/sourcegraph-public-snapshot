@@ -122,7 +122,7 @@ func (s *Accounts) TracingFields() []attribute.KeyValue {
 // Currently it backs the Type... and Kind... variables, avoiding duplication.
 // Eventually it will replace the Type... and Kind... variables,
 // providing a single place to declare and resolve values for Type and Kind
-
+//
 // Types and Kinds are exposed through AsKind and AsType functions
 // so that usages relying on the particular string of Type vs Kind
 // will continue to behave correctly.
