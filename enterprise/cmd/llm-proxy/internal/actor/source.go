@@ -179,7 +179,6 @@ func (s *sourcesPeriodicHandler) Handle(ctx context.Context) (err error) {
 				syncLogger.Info("Starting a new sync")
 				seen, err := src.Sync(ctx)
 				if err != nil {
-					syncLogger.Error("Failed sync", log.Error(err))
 					return errors.Wrapf(err, "failed to sync %s", src.Name())
 				}
 				syncLogger.Info("Completed sync", log.Duration("sync_duration", time.Since(start)), log.Int("seen", seen))

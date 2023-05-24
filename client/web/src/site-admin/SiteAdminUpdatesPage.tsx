@@ -28,6 +28,7 @@ import {
     CollapseHeader,
     CollapsePanel,
     H3,
+    H4,
 } from '@sourcegraph/wildcard'
 
 import { LogOutput } from '../components/LogOutput'
@@ -40,6 +41,7 @@ import styles from './SiteAdminUpdatesPage.module.scss'
 interface Props extends TelemetryProps {
     isSourcegraphApp: boolean
 }
+const capitalize = (text: string): string => (text && text[0].toUpperCase() + text.slice(1)) || ''
 
 const SiteUpdateCheck: React.FC = () => {
     const { data, loading, error } = useQuery<SiteUpdateCheckResult, SiteUpdateCheckVariables>(SITE_UPDATE_CHECK, {})
@@ -140,24 +142,36 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                             Refresh{' '}
                         </Button>
                     </div>
+
                     {data.site.upgradeReadiness.schemaDrift.length > 0 ? (
                         <Collapse isOpen={isExpanded} onOpenChange={setIsExpanded} openByDefault={false}>
-                            <Alert className={classNames('mb-0', styles.alert)} variant="danger">
-                                <span>
-                                    There are schema drifts detected, please contact{' '}
-                                    <Link to="mailto:support@sourcegraph.com" target="_blank" rel="noopener noreferrer">
-                                        Sourcegraph support
-                                    </Link>{' '}
-                                    for assistance.
-                                </span>
-                            </Alert>
+                            <div className="mb-4">
+                                <Alert className={classNames('mb-0', styles.alert)} variant="danger">
+                                    <span>
+                                        There are schema drifts detected. Please follow suggestions below. If you need
+                                        assistance, please contact{' '}
+                                        <Link
+                                            to="mailto:support@sourcegraph.com"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                        >
+                                            Sourcegraph support
+                                        </Link>
+                                        {'. '}
+                                    </span>
+                                </Alert>
+                            </div>
+
                             <CollapseHeader
                                 as={Button}
                                 variant="secondary"
                                 outline={true}
-                                className="p-0 m-0 mt-2 mb-2 border-0 w-100 font-weight-normal d-flex justify-content-between align-items-center"
+                                className={classNames(
+                                    'p-0 m-0 mt-2 mb-2 border-0 w-100 font-weight-normal d-flex justify-content-between align-items-center',
+                                    styles.header
+                                )}
                             >
-                                Click to view the drift output:
+                                <H4 className="m-0">View drift output</H4>
                                 <Icon
                                     aria-hidden={true}
                                     svgPath={isExpanded ? mdiChevronUp : mdiChevronDown}
@@ -165,19 +179,63 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                                     size="md"
                                 />
                             </CollapseHeader>
+
                             <CollapsePanel>
-                                <LogOutput
-                                    text={data.site.upgradeReadiness.schemaDrift}
-                                    logDescription="Drift details:"
-                                />
+                                {data.site.upgradeReadiness.schemaDrift.map(summary => (
+                                    <div key={summary.name} className={styles.container}>
+                                        <div className={styles.tableContainer}>
+                                            <div className={styles.table}>
+                                                <div className={styles.label}>Problem:</div>
+                                                <div>{summary.problem}</div>
+                                            </div>
+                                            <div className={styles.table}>
+                                                <div className={styles.label}>Solution:</div>
+                                                <div>{capitalize(summary.solution)}</div>
+                                            </div>
+                                            <div className={styles.table}>
+                                                <div className={styles.label}>Hint:</div>
+                                                <div>
+                                                    {summary.urlHint ? (
+                                                        <Link to={summary.urlHint}>
+                                                            See Sourcegraph query for potential fix
+                                                        </Link>
+                                                    ) : (
+                                                        'Not Applicable'
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className={styles.outputContainer}>
+                                            <div className={styles.infoContainer}>
+                                                <div className={styles.label}>Current Delta:</div>
+                                                <div>
+                                                    <LogOutput
+                                                        text={summary.diff ? summary.diff : 'None'}
+                                                        logDescription="The object diff"
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            <div className={styles.infoContainer}>
+                                                <div className={styles.label}>Suggested statements to repair:</div>
+                                                <div>
+                                                    <LogOutput
+                                                        text={
+                                                            summary.statements ? summary.statements.join('\n') : 'None'
+                                                        }
+                                                        logDescription="SQL statements to repair"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </CollapsePanel>
                         </Collapse>
                     ) : (
-                        <Text>
-                            <Alert className={classNames('mb-0', styles.alert)} variant="success">
-                                There is no schema drift detected.
-                            </Alert>
-                        </Text>
+                        <Alert className={classNames('mb-0', styles.alert)} variant="success">
+                            <Text> There is no schema drift detected.</Text>
+                        </Alert>
                     )}
                     <hr className="my-3" />
                     <H3>Required out-of-band migrations</H3>
@@ -197,11 +255,12 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                             </ul>
                         </>
                     ) : (
-                        <Text>
-                            <Alert className={classNames('mb-0', styles.alert)} variant="success">
+                        <Alert className={classNames('mb-0', styles.alert)} variant="success">
+                            <Text className="mb-0">
+                                {' '}
                                 There are no pending out-of-band migrations that need to complete.
-                            </Alert>
-                        </Text>
+                            </Text>
+                        </Alert>
                     )}
                 </>
             )}

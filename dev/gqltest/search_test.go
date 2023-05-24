@@ -143,7 +143,6 @@ func addKVPs(t *testing.T, client *gqltestutil.Client) {
 		t.Fatal(err)
 	}
 
-	err = client.SetFeatureFlag("repository-metadata", true)
 	if err != nil {
 		t.Fatal(err)
 	}

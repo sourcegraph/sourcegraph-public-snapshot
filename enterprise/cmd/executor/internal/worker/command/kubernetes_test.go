@@ -72,13 +72,31 @@ func TestKubernetesCommand_DeleteJob(t *testing.T) {
 func TestKubernetesCommand_ReadLogs(t *testing.T) {
 	tests := []struct {
 		name           string
-		mockFunc       func(clientset *fake.Clientset, logger *command.MockLogger)
-		mockAssertFunc func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger)
+		pod            *corev1.Pod
+		mockFunc       func(clientset *fake.Clientset, logger *command.MockLogger, logEntry *command.MockLogEntry)
+		mockAssertFunc func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger, logEntry *command.MockLogEntry)
 		expectedErr    error
 	}{
 		{
 			name: "Logs read",
-			mockFunc: func(clientset *fake.Clientset, logger *command.MockLogger) {
+			pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "my-pod",
+				},
+				Status: corev1.PodStatus{
+					ContainerStatuses: []corev1.ContainerStatus{
+						{
+							Name: command.KubernetesJobContainerName,
+							State: corev1.ContainerState{
+								Terminated: &corev1.ContainerStateTerminated{
+									ExitCode: 0,
+								},
+							},
+						},
+					},
+				},
+			},
+			mockFunc: func(clientset *fake.Clientset, logger *command.MockLogger, logEntry *command.MockLogEntry) {
 				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
 					return true, &corev1.PodList{Items: []corev1.Pod{
 						{ObjectMeta: metav1.ObjectMeta{
@@ -87,11 +105,8 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 						}}},
 					}, nil
 				})
-
-				logEntry := command.NewMockLogEntry()
-				logger.LogEntryFunc.PushReturn(logEntry)
 			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger) {
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger, logEntry *command.MockLogEntry) {
 				require.Len(t, actions, 1)
 				assert.Equal(t, "get", actions[0].GetVerb())
 				assert.Equal(t, "pods", actions[0].GetResource().Resource)
@@ -101,6 +116,79 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 				require.Len(t, logger.LogEntryFunc.History(), 1)
 				assert.Equal(t, "my-key", logger.LogEntryFunc.History()[0].Arg0)
 				assert.Equal(t, []string{"echo", "hello"}, logger.LogEntryFunc.History()[0].Arg1)
+
+				require.Len(t, logEntry.WriteFunc.History(), 1)
+				assert.Equal(t, "stdout: fake logs\n", string(logEntry.WriteFunc.History()[0].Arg0))
+
+				require.Len(t, logEntry.FinalizeFunc.History(), 1)
+				assert.Equal(t, 0, logEntry.FinalizeFunc.History()[0].Arg0)
+
+				require.Len(t, logEntry.CloseFunc.History(), 1)
+			},
+		},
+		{
+			name: "Out of memory",
+			pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "my-pod",
+				},
+				Status: corev1.PodStatus{
+					Phase: corev1.PodFailed,
+				},
+			},
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger, logEntry *command.MockLogEntry) {
+				require.Len(t, actions, 0)
+
+				require.Len(t, logger.LogEntryFunc.History(), 1)
+
+				require.Len(t, logEntry.WriteFunc.History(), 0)
+
+				require.Len(t, logEntry.FinalizeFunc.History(), 1)
+				assert.Equal(t, 1, logEntry.FinalizeFunc.History()[0].Arg0)
+
+				require.Len(t, logEntry.CloseFunc.History(), 1)
+			},
+		},
+		{
+			name: "Bad exit code",
+			pod: &corev1.Pod{
+				ObjectMeta: metav1.ObjectMeta{
+					Name: "my-pod",
+				},
+				Status: corev1.PodStatus{
+					ContainerStatuses: []corev1.ContainerStatus{
+						{
+							Name: command.KubernetesJobContainerName,
+							State: corev1.ContainerState{
+								Terminated: &corev1.ContainerStateTerminated{
+									ExitCode: 128,
+								},
+							},
+						},
+					},
+				},
+			},
+			mockFunc: func(clientset *fake.Clientset, logger *command.MockLogger, logEntry *command.MockLogEntry) {
+				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
+					return true, &corev1.PodList{Items: []corev1.Pod{
+						{ObjectMeta: metav1.ObjectMeta{
+							Name:   "my-pod",
+							Labels: map[string]string{"job-name": "job-some-queue-42-some-key"},
+						}}},
+					}, nil
+				})
+			},
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger, logEntry *command.MockLogEntry) {
+				require.Len(t, actions, 1)
+
+				require.Len(t, logger.LogEntryFunc.History(), 1)
+
+				require.Len(t, logEntry.WriteFunc.History(), 1)
+
+				require.Len(t, logEntry.FinalizeFunc.History(), 1)
+				assert.Equal(t, 128, logEntry.FinalizeFunc.History()[0].Arg0)
+
+				require.Len(t, logEntry.CloseFunc.History(), 1)
 			},
 		},
 	}
@@ -108,9 +196,11 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			clientset := fake.NewSimpleClientset()
 			logger := command.NewMockLogger()
+			logEntry := command.NewMockLogEntry()
+			logger.LogEntryFunc.PushReturn(logEntry)
 
 			if test.mockFunc != nil {
-				test.mockFunc(clientset, logger)
+				test.mockFunc(clientset, logger, logEntry)
 			}
 
 			cmd := &command.KubernetesCommand{
@@ -118,7 +208,15 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 				Clientset: clientset,
 			}
 
-			err := cmd.ReadLogs(context.Background(), "my-namespace", "my-pod", command.KubernetesJobContainerName, logger, "my-key", []string{"echo", "hello"})
+			err := cmd.ReadLogs(
+				context.Background(),
+				"my-namespace",
+				test.pod,
+				command.KubernetesJobContainerName,
+				logger,
+				"my-key",
+				[]string{"echo", "hello"},
+			)
 			if test.expectedErr != nil {
 				require.Error(t, err)
 				assert.EqualError(t, err, test.expectedErr.Error())
@@ -127,7 +225,7 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 			}
 
 			if test.mockAssertFunc != nil {
-				test.mockAssertFunc(t, clientset.Actions(), logger)
+				test.mockAssertFunc(t, clientset.Actions(), logger, logEntry)
 			}
 		})
 	}
@@ -190,7 +288,7 @@ func TestKubernetesCommand_FindPod(t *testing.T) {
 					return true, nil, errors.New("failed")
 				})
 			},
-			expectedErr: errors.New("failed"),
+			expectedErr: errors.New("finding pod: failed"),
 		},
 	}
 	for _, test := range tests {
@@ -361,6 +459,7 @@ func TestNewKubernetesJob(t *testing.T) {
 	job := command.NewKubernetesJob("my-job", "my-image:latest", spec, "/my/path", options)
 
 	assert.Equal(t, "my-job", job.Name)
+	assert.Equal(t, int32(0), *job.Spec.BackoffLimit)
 
 	assert.Equal(t, "my-node", job.Spec.Template.Spec.NodeName)
 	assert.Equal(t, corev1.RestartPolicyNever, job.Spec.Template.Spec.RestartPolicy)
