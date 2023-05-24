@@ -1,7 +1,7 @@
 import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { ApolloError } from '@apollo/client'
-import { mdiDelete, mdiGraveStone } from '@mdi/js'
+import { mdiCheck, mdiDelete, mdiGraveStone } from '@mdi/js'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
 import { useNavigate, useParams, useLocation } from 'react-router-dom'
@@ -899,19 +899,10 @@ interface EmbeddingsSettingsSectionProps {
 const EmbeddingsSettingsSection: FunctionComponent<EmbeddingsSettingsSectionProps> = ({ policy, updatePolicy }) => (
     <div className="form-group">
         <Label className="mb-0">
-            Keep embeddings up-to-date
+            <Icon aria-hidden={true} svgPath={mdiCheck} /> Keep embeddings up-to-date
             <div className={styles.toggleContainer}>
-                <Toggle
-                    id="embeddings-enabled"
-                    value={policy.embeddingsEnabled}
-                    className={styles.toggle}
-                    onToggle={embeddingsEnabled => {
-                        updatePolicy({ embeddingsEnabled })
-                    }}
-                />
-
                 <Text size="small" className="text-muted mb-0">
-                    Shove your codebase into a multi-thousand-dimensional plane on a periodic cadence.
+                    This policy will ensure that embeddings will be maintained for the matching repositories.
                 </Text>
             </div>
         </Label>
