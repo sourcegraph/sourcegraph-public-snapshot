@@ -40,14 +40,12 @@ accounts:
 paths:
   - path: /data/pgdata-12
     type: directory
-    permissions: 0o766
+    permissions: 0o777
   - path: /var/lib/postgresql
     type: directory
-    permissions: 0o766
+    permissions: 0o777
   - path: /var/run/postgresql
     type: directory
-    permissions: 0o766
-
-
+    permissions: 0o777
 
 # MANUAL REBUILD:
