@@ -59,7 +59,11 @@ export const RepoMetadataPage: FC<RepoMetadataPageProps> = ({ telemetryService, 
 
     const onDelete = useCallback(
         (meta: RepoMetadataItem): void => {
-            if (!window.confirm(`Delete metadata "${meta.key}${meta.value ? `:${meta.value}` : ''}"?`)) {
+            if (
+                !window.confirm(
+                    `Remove metadata "${meta.key}${meta.value ? `:${meta.value}` : ''}" from this repository?`
+                )
+            ) {
                 return
             }
             deleteRepoMetadata({
@@ -104,25 +108,33 @@ export const RepoMetadataPage: FC<RepoMetadataPageProps> = ({ telemetryService, 
             <PageTitle title="Repo metadata settings" />
             <PageHeader path={[{ text: 'Metadata' }]} headingElement="h2" className="mb-3" />
             <Text>
-                Repository metadata allows you to search, filter and navigate between repositories. Administrators can
-                add repository metadata via the web, cli or API. Learn more about{' '}
-                <Link to="/help/admin/repo/metadata">Repository Metadata</Link>.
+                Add repository metadata to help search, filter and navigate between repositories. Repository metadata
+                can also be added via the CLI and API. See the{' '}
+                <Link to="/help/admin/repo/metadata">Repository Metadata Documentation</Link> to learn more.
             </Text>
             <Container className="repo-settings-metadata-page mb-2">
                 {fetchError && <ErrorAlert error={fetchError} />}
                 {deleteError && <ErrorAlert error={deleteError} />}
                 {fetchLoading && deleteLoading && <LoadingSpinner />}
-                <Input
-                    placeholder="Filter metadata by key or value…"
-                    value={searchQuery}
-                    onChange={handleSearchChange}
-                    type="search"
-                    className="mb-3"
-                />
-                {filteredMetadata.length ? (
-                    <RepoMetadata items={filteredMetadata} onDelete={onDelete} />
+                {items.length ? (
+                    <>
+                        <Input
+                            placeholder="Filter metadata by key or value…"
+                            value={searchQuery}
+                            onChange={handleSearchChange}
+                            type="search"
+                            className="mb-3"
+                        />
+                        {filteredMetadata.length ? (
+                            <RepoMetadata items={filteredMetadata} onDelete={onDelete} />
+                        ) : (
+                            searchQuery.length > 0 && (
+                                <Text className="text-muted m-0">No metadata containing "{searchQuery}"</Text>
+                            )
+                        )}
+                    </>
                 ) : (
-                    <Text className="text-muted">No metadata containing "{searchQuery}"</Text>
+                    <Text className="text-muted m-0">No metadata</Text>
                 )}
             </Container>
             <AddMetadataForm onDidAdd={refetch} repoID={repo.id} />
