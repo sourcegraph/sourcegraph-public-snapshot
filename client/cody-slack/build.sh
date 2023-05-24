@@ -19,13 +19,13 @@ declare -A targets=(
 
 # Build and copy the targets
 for target in "${!targets[@]}"; do
-  ./dev/ci/bazel.sh build $target
-  mkdir -p ${targets[$target]}
+  ./dev/ci/bazel.sh build "$target"
+  mkdir -p "${targets[$target]}"
 
-  files=($(./dev/ci/bazel.sh cquery $target --output=files))
+  files=($(./dev/ci/bazel.sh cquery "$target" --output=files))
   for file in "${files[@]}"
   do
-    cp "$file" ${targets[$target]}
+    cp "$file" "${targets[$target]}"
   done
 done
 
