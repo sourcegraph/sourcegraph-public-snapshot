@@ -48,7 +48,7 @@ func NewUploadProcessorJob(
 			uploadStore,
 			config,
 		),
-		processor.NewUploadResetter(observationCtx.Logger, uploadsResetterStore, config, metrics),
+		processor.NewUploadResetter(observationCtx.Logger, uploadsResetterStore, metrics),
 	}
 }
 

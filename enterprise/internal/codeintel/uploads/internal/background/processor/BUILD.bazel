@@ -20,7 +20,6 @@ go_library(
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
-        "//internal/env",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/honey",
