@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/log"
 	"google.golang.org/api/option"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -22,6 +23,9 @@ const RouteAppUpdateCheck = "app.update.check"
 
 // ManifestBucket the name of the bucket where the Sourcegraph App update manifest is stored
 const ManifestBucket = "sourcegraph-app"
+
+// ManifestBucketDev the name of the bucket where the Sourcegraph App update manifest is stored for dev instances
+const ManifestBucketDev = "sourcegraph-app-dev"
 
 // ManifestName is the name of the manifest object that is in the ManifestBucket
 const ManifestName = "app.update.prod.manifest.json"
@@ -252,8 +256,12 @@ func (checker *AppNoopUpdateChecker) Handler() http.HandlerFunc {
 }
 
 func AppUpdateHandler(logger log.Logger) http.HandlerFunc {
-	// We store the Sourcegraph App manifest in a GCS bucket
-	resolver, err := NewGCSManifestResolver(context.Background(), ManifestBucket, ManifestName)
+	// We store the Sourcegraph App manifest in a different GCS bucket, since buckets are globally unique we use different names
+	var bucket = ManifestBucket
+	if deploy.IsDev(deploy.Type()) {
+		bucket = ManifestBucketDev
+	}
+	resolver, err := NewGCSManifestResolver(context.Background(), bucket, ManifestName)
 	if err != nil {
 		logger.Error("failed to initialize GCS Manifest resolver. Using NoopUpdateChecker which will tell all clients that there are no updates", log.Error(err))
 		return (&AppNoopUpdateChecker{}).Handler()
