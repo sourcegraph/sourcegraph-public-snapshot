@@ -9,6 +9,7 @@ import (
 	proto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -55,6 +56,8 @@ type ZoektIndexOptions struct {
 
 	// Error if non-empty indicates the request failed for the repo.
 	Error string `json:",omitempty"`
+
+	LanguageMap []*proto.LanguageMapping
 }
 
 func (o *ZoektIndexOptions) FromProto(p *proto.ZoektIndexOptions) {
@@ -78,6 +81,7 @@ func (o *ZoektIndexOptions) FromProto(p *proto.ZoektIndexOptions) {
 	}
 
 	o.Branches = branches
+	o.LanguageMap = p.GetLanguageMap()
 }
 
 func (o *ZoektIndexOptions) ToProto() *proto.ZoektIndexOptions {
@@ -101,6 +105,7 @@ func (o *ZoektIndexOptions) ToProto() *proto.ZoektIndexOptions {
 		Priority:             o.Priority,
 		DocumentRanksVersion: o.DocumentRanksVersion,
 		Error:                o.Error,
+		LanguageMap:          o.LanguageMap,
 	}
 }
 
@@ -185,6 +190,31 @@ func getIndexOptions(
 		}
 	}
 
+	languageMap := make([]*proto.LanguageMapping, 0)
+
+	realEngine := make(map[string]uint8)
+
+	for k, v := range ctags_config.BaseParserConfig.Engine {
+		realEngine[k] = v
+	}
+
+	if c.SyntaxHighlighting != nil {
+		for k, v := range c.SyntaxHighlighting.Symbols.Engine {
+			parser, err := ctags_config.ParserNameToParserType(v)
+			if err == nil {
+				realEngine[k] = parser
+			} else {
+				continue
+			}
+		}
+	}
+
+	for language, engine := range realEngine {
+		languageMap = append(languageMap, &proto.LanguageMapping{Language: language, Ctags: proto.CTagsParserType(engine)})
+	}
+
+	println(languageMap)
+
 	o := ZoektIndexOptions{
 		Name:       opts.Name,
 		RepoID:     opts.RepoID,
@@ -196,6 +226,7 @@ func getIndexOptions(
 		Symbols:    getBoolPtr(c.SearchIndexSymbolsEnabled, true),
 
 		DocumentRanksVersion: opts.DocumentRanksVersion,
+		LanguageMap:          languageMap,
 	}
 
 	// Set of branch names. Always index HEAD
