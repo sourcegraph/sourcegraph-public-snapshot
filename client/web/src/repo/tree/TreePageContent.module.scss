@@ -62,6 +62,25 @@
     }
 }
 
+.extra-info {
+    align-self: start;
+    grid-area: contributors;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding: 1rem;
+
+    @media (--lg-breakpoint-up) {
+        padding: 0 0 0 1.5rem;
+        border-top: none;
+        border-bottom: none;
+        border-right: none;
+    }
+
+    p {
+        margin: 0;
+    }
+}
+
 .extra-info-section-item {
     &-header-icon {
         opacity: 0;
