@@ -1,8 +1,10 @@
 schemaVersion: "2.0.0"
 
 commandTests:
-  - name: "binary is runnable"
+  - name: "syntect_server binary is runnable"
     command: "/syntect_server"
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
+  - name: "http-server-stabilizer binary is runnable"
+    command: "/usr/local/bin/http-server-stabilizer"
