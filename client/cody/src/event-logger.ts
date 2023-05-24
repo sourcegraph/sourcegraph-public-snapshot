@@ -24,6 +24,17 @@ export async function updateEventLogger(
     }
 }
 
+/**
+ * Logs an event.
+ *
+ * PRIVACY: Do NOT include any potentially private information in this field.
+ * These properties get sent to our analytics tools for Cloud, so must not
+ * include private information, such as search queries or repository names.
+ *
+ * @param eventName The name of the event.
+ * @param eventProperties The additional argument information.
+ * @param publicProperties Public argument information.
+ */
 export function logEvent(eventName: string, eventProperties?: any, publicProperties?: any): void {
     if (!eventLogger || !anonymousUserID) {
         return
