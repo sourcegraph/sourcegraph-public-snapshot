@@ -47,6 +47,10 @@ func (s *Server) handleCreateCommitFromPatchBinary(w http.ResponseWriter, r *htt
 }
 
 func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse) {
+	fmt.Println("here's the repo name", req.Repo)
+	if req.Push != nil {
+		fmt.Println("===>>>", req.Push.RemoteURL)
+	}
 	logger := s.Logger.Scoped("createCommitFromPatch", "").
 		With(
 			log.String("repo", string(req.Repo)),
