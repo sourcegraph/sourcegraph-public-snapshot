@@ -5,16 +5,25 @@ cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. || exit 1
 
 create_version() {
     local sha
+    local build
     # In a GitHub action this can result in an empty sha
     sha=$(git rev-parse --short HEAD)
     if [[ -z ${sha} ]]; then
       sha=${BUILDKITE_COMMIT:-""}
     fi
 
-    local build="insiders"
-    if [[ ${BUILDKITE_BRANCH:-""} == "app-release/stable" ]]; then
-      build=${BUILDKITE_BUILD_NUMBER:-"release"}
-    fi
+    case ${BUILDKITE_BRANCH:-""} in
+      "app-release/stable")
+        build=${BUILDKITE_BUILD_NUMBER:-"release"}
+        ;;
+      "app-release/debug")
+        build="debug"
+        ;;
+      *)
+        build="insiders"
+        ;;
+    esac
+
     echo "$(date '+%Y.%-m.%-d')+${build}.${sha}"
 }
 

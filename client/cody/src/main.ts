@@ -82,7 +82,7 @@ const register = async (
 }> => {
     const disposables: vscode.Disposable[] = []
 
-    void updateEventLogger(initialConfig, localStorage)
+    await updateEventLogger(initialConfig, localStorage)
 
     // Controller for inline assist
     const commentController = new InlineController(context.extensionPath)

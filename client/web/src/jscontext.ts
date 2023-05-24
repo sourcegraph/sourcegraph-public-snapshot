@@ -177,6 +177,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether cody is enabled for the user. */
     codyEnabled: boolean
 
+    /** Whether the site requires a verified email for cody. */
+    codyRequiresVerifiedEmail: boolean
+
     /** Whether executors are enabled on the site. */
     executorsEnabled: boolean
 

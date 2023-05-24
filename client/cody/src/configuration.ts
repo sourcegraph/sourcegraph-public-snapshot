@@ -16,12 +16,30 @@ import {
 /**
  * All configuration values, with some sanitization performed.
  */
-export function getConfiguration(
-    config: Pick<vscode.WorkspaceConfiguration, 'get'>
-): Omit<Configuration, 'serverEndpoint'> {
+/**
+ * All configuration values, with some sanitization performed.
+ */
+export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'get'>): Omit<Configuration, 'serverEndpoint'> {
+    let debugRegex: RegExp | null = null
+    try {
+        const debugPattern: string | null = config.get<string | null>('cody.debug.filter', null)
+        if (debugPattern) {
+            if (debugPattern === '*') {
+                debugRegex = new RegExp('.*')
+            } else {
+                debugRegex = new RegExp(debugPattern)
+            }
+        }
+    } catch (error) {
+        void vscode.window.showErrorMessage("Error parsing cody.debug.filter regex - using default '*'", error)
+        debugRegex = new RegExp('.*')
+    }
+
     return {
         codebase: sanitizeCodebase(config.get('cody.codebase')),
-        debug: config.get('cody.debug', false),
+        debugEnable: config.get<boolean>('cody.debug.enable', false),
+        debugVerbose: config.get<boolean>('cody.debug.verbose', false),
+        debugFilter: debugRegex,
         useContext: config.get<ConfigurationUseContext>('cody.useContext') || 'embeddings',
         experimentalSuggest: config.get('cody.experimental.suggestions', false),
         experimentalChatPredictions: config.get('cody.experimental.chatPredictions', false),

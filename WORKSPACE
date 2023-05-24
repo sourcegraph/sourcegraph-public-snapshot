@@ -15,23 +15,23 @@ bazel_skylib_workspace()
 
 http_archive(
     name = "aspect_bazel_lib",
-    sha256 = "2518c757715d4f5fc7cc7e0a68742dd1155eaafc78fb9196b8a18e13a738cea2",
-    strip_prefix = "bazel-lib-1.28.0",
-    url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.28.0/bazel-lib-v1.28.0.tar.gz",
+    sha256 = "0da75299c5a52737b2ac39458398b3f256e41a1a6748e5457ceb3a6225269485",
+    strip_prefix = "bazel-lib-1.31.2",
+    url = "https://github.com/aspect-build/bazel-lib/releases/download/v1.31.2/bazel-lib-v1.31.2.tar.gz",
 )
 
 http_archive(
     name = "aspect_rules_js",
-    sha256 = "3e237129b3554373a80c681c4b47348f91c294ff32d4bc8f8297f40511a4eb6c",
-    strip_prefix = "rules_js-1.25.4",
-    url = "https://github.com/aspect-build/rules_js/releases/download/v1.25.4/rules_js-v1.25.4.tar.gz",
+    sha256 = "08061ba5e5e7f4b1074538323576dac819f9337a0c7d75aee43afc8ae7cb6e18",
+    strip_prefix = "rules_js-1.26.1",
+    url = "https://github.com/aspect-build/rules_js/releases/download/v1.26.1/rules_js-v1.26.1.tar.gz",
 )
 
 http_archive(
     name = "aspect_rules_ts",
-    sha256 = "02480b6a1cd12516edf364e678412e9da10445fe3f1070c014ac75e922c969ea",
-    strip_prefix = "rules_ts-1.3.1",
-    url = "https://github.com/aspect-build/rules_ts/releases/download/v1.3.1/rules_ts-v1.3.1.tar.gz",
+    sha256 = "ace5b609603d9b5b875d56c9c07182357c4ee495030f40dcefb10d443ba8c208",
+    strip_prefix = "rules_ts-1.4.0",
+    url = "https://github.com/aspect-build/rules_ts/releases/download/v1.4.0/rules_ts-v1.4.0.tar.gz",
 )
 
 http_archive(
@@ -95,6 +95,26 @@ npm_translate_lock(
     npm_package_target_name = "{dirname}_pkg",
     npmrc = "//:.npmrc",
     pnpm_lock = "//:pnpm-lock.yaml",
+    # Required for ESLint test targets.
+    # See https://github.com/aspect-build/rules_js/issues/239
+    # See `public-hoist-pattern[]=*eslint*` in the `.npmrc` of this monorepo.
+    public_hoist_packages = {
+        "@typescript-eslint/eslint-plugin": [""],
+        "@typescript-eslint/parser@5.56.0_qxbo2xm47qt6fxnlmgbosp4hva": [""],
+        "eslint-config-prettier": [""],
+        "eslint-plugin-ban": [""],
+        "eslint-plugin-etc": [""],
+        "eslint-plugin-import": [""],
+        "eslint-plugin-jest-dom": [""],
+        "eslint-plugin-jsdoc": [""],
+        "eslint-plugin-jsx-a11y": [""],
+        "eslint-plugin-react@7.32.1_eslint_8.34.0": [""],
+        "eslint-plugin-react-hooks": [""],
+        "eslint-plugin-rxjs": [""],
+        "eslint-plugin-unicorn": [""],
+        "eslint-plugin-unused-imports": [""],
+        "eslint-import-resolver-node": [""],
+    },
     verify_node_modules_ignored = "//:.bazelignore",
 )
 

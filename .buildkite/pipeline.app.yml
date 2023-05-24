@@ -34,6 +34,7 @@ steps:
           - './dev/ci/pnpm-install-with-retry.sh'
           - './enterprise/dev/app/tauri-build.sh'
         env:
+          SRC_APP_UPDATER_BUILD: 1
           AWS_CONFIG_FILE: /buildkite/.aws/config
           AWS_SHARED_CREDENTIALS_FILE: /buildkite/.aws/credentials
         plugins:
@@ -56,13 +57,15 @@ steps:
         agents: { queue: macos }
         env:
           CODESIGNING: 1
+          SRC_APP_UPDATER_BUILD: 1
         command:
           - './dev/ci/pnpm-install-with-retry.sh'
           - './enterprise/dev/app/tauri-build.sh'
       - label: "wait for bundles to complete"
         wait: ~
       - label: ':github: Create GitHub release'
-        agent: { queue: stateless }
+        agents: { queue: stateless }
         key: create-github-release
         command:
           - './enterprise/dev/app/create-github-release.sh'
+          - './enterprise/dev/app/create-update-manifest.sh'
