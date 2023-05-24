@@ -106,6 +106,11 @@ type GitHubAppResponse struct {
 	Events        []string          `json:"events"`
 }
 
+type gitHubAppStateDetails struct {
+	WebhookUUID string `json:"webhookUUID"`
+	Domain      string `json:"domain"`
+}
+
 func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.Handler {
 	r := mux.NewRouter()
 
@@ -149,6 +154,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 
 		webhookURN := req.URL.Query().Get("webhookURN")
 		appName := req.URL.Query().Get("appName")
+		domain := req.URL.Query().Get("domain")
 		var webhookUUID string
 		if webhookURN != "" {
 			ws := backend.NewWebhookService(db, keyring.Default())
@@ -166,7 +172,17 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			return
 		}
 
-		cache.Set(s, []byte(webhookUUID))
+		stateDetails := gitHubAppStateDetails{
+			WebhookUUID: webhookUUID,
+			Domain:      domain,
+		}
+		stateDeets, err := json.Marshal(stateDetails)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("unexpected error when marshalling state: %s", err.Error()), http.StatusInternalServerError)
+			return
+		}
+
+		cache.Set(s, stateDeets)
 
 		resp := struct {
 			State       string `json:"state"`
@@ -202,7 +218,14 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 		}
 		cache.Delete(state)
 
-		webhookUUID, err := uuid.Parse(string(stateValue))
+		var stateDeets gitHubAppStateDetails
+		err := json.Unmarshal(stateValue, &stateDeets)
+		if err != nil {
+			http.Error(w, "Bad request, invalid state", http.StatusInternalServerError)
+			return
+		}
+
+		webhookUUID, err := uuid.Parse(stateDeets.WebhookUUID)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Bad request, could not parse webhook UUID: %s", err.Error()), http.StatusBadRequest)
 			return
@@ -213,7 +236,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			http.Error(w, fmt.Sprintf("Unexpected error when creating github API url: %s", err.Error()), http.StatusInternalServerError)
 			return
 		}
-		app, err := createGitHubApp(u)
+		app, err := createGitHubApp(u, stateDeets.Domain)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Unexpected error while converting github app: %s", err.Error()), http.StatusInternalServerError)
 			return
@@ -320,7 +343,7 @@ func getAPIUrl(req *http.Request, code string) (string, error) {
 	return u, nil
 }
 
-func createGitHubApp(conversionURL string) (*types.GitHubApp, error) {
+func createGitHubApp(conversionURL, domain string) (*types.GitHubApp, error) {
 	r, err := http.NewRequest("POST", conversionURL, http.NoBody)
 	if err != nil {
 		return nil, err
@@ -355,6 +378,7 @@ func createGitHubApp(conversionURL string) (*types.GitHubApp, error) {
 		PrivateKey:    response.PEM,
 		BaseURL:       htmlURL.Scheme + "://" + htmlURL.Host,
 		AppURL:        htmlURL.String(),
+		Domain:        domain,
 		Logo:          fmt.Sprintf("%s://%s/identicons/app/app/%s", htmlURL.Scheme, htmlURL.Host, response.Slug),
 	}, nil
 }
