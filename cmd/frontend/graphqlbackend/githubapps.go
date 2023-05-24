@@ -54,9 +54,6 @@ type DeleteGitHubAppArgs struct {
 }
 
 type GitHubAppsArgs struct {
-	// graphqlutil.ConnectionArgs
-	// After     *string
-	// Namespace *graphql.ID
 	Domain *string
 }
 
