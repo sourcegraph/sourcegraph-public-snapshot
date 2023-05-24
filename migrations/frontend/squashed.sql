@@ -4503,7 +4503,7 @@ CREATE TABLE user_public_repos (
 );
 
 CREATE TABLE user_repo_permissions (
-    id integer NOT NULL,
+    id bigint NOT NULL,
     user_id integer,
     repo_id integer NOT NULL,
     user_external_account_id integer,
@@ -4513,7 +4513,6 @@ CREATE TABLE user_repo_permissions (
 );
 
 CREATE SEQUENCE user_repo_permissions_id_seq
-    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE

@@ -1437,6 +1437,24 @@
               "severityLevel": "INFO"
             }
           ]
+        },
+        "securityEventLog": {
+          "description": "EXPERIMENTAL: Configuration for security event logging",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "location": {
+              "description": "Where to output the security event log [none, auditlog, database, all] where auditlog is the default logging to stdout with the specified audit log format",
+              "type": "string",
+              "enum": ["none", "auditlog", "database", "all"],
+              "default": "auditlog"
+            }
+          },
+          "examples": [
+            {
+              "location": "auditlog"
+            }
+          ]
         }
       }
     },

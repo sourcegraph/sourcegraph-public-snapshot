@@ -9,6 +9,7 @@
     "start": "node ./app.js"
   },
   "dependencies": {
-    "hnswlib-node": "^1.4.2"
+    "hnswlib-node": "^1.4.2",
+    "jsonc-parser": "^3.0.0"
   }
 }
