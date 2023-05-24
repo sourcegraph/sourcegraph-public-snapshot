@@ -19,7 +19,7 @@ Another way this could be used is to associate repos with a maintenance status. 
 
 There are three ways to add metadata to a repository: via web UI, Sourcegraph's GraphQL API, and the [`src-cli` command line tool](https://github.com/sourcegraph/src-cli). 
 
-**NOTE:** That user needs to have `Repository metadata / Write` RBAC permission to be able to edit repo metadata.
+**NOTE:** That user needs to have `Repository metadata / Write` [RBAC permission](../access_control/index.md) to be able to edit repo metadata.
 
 ### Limitations
 
@@ -36,7 +36,7 @@ Metadata can be added with the `addRepoMetadata` mutation, updated with the `upd
 
 ```graphql
 mutation AddSecurityOwner($repoID: ID!) {
-  addRepoMetadata(repo: $repoID, key: "open-source", value: "security") {
+  addRepoMetadata(repo: $repoID, key: "owning-team", value: "security") {
     alwaysNil
   }
 }
