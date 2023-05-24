@@ -3,7 +3,7 @@ import * as vscode from 'vscode'
 import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 
 import { FixupTask } from './FixupTask'
-import { TaskViewProvider } from './TaskViewProvider'
+import { TaskViewProvider, FixupTaskTreeItem } from './TaskViewProvider'
 import { CodyTaskState } from './utils'
 
 type taskID = string
@@ -18,7 +18,9 @@ export class TaskController {
     constructor() {
         this.taskViewProvider = new TaskViewProvider()
         this._disposables.push(vscode.commands.registerCommand('cody.task.open', id => this.showThisFixup(id)))
-        this._disposables.push(vscode.commands.registerCommand('cody.task.apply', () => this.applyFixup()))
+        this._disposables.push(vscode.commands.registerCommand('cody.task.apply', id => this.applyFixup(id)))
+        this._disposables.push(vscode.commands.registerCommand('cody.task.applyAll', () => this.applyFixup()))
+        this._disposables.push(vscode.commands.registerCommand('cody.task.diff', id => this.showDiff(id)))
     }
 
     // Adds a new task to the list of tasks
@@ -54,18 +56,6 @@ export class TaskController {
         void vscode.commands.executeCommand('setContext', 'cody.task.running', false)
     }
 
-    // TODO: Add support for applying fixup
-    // Placeholder function for applying fixup
-    private applyFixup(): void {
-        for (const task of this.tasks.values()) {
-            if (task.state === CodyTaskState.done) {
-                task.apply()
-            }
-        }
-        // Clear task view after applying fixups
-        this.reset()
-    }
-
     // Open fsPath at the selected line in editor on tree item click
     private showThisFixup(taskID: taskID): void {
         const task = this.tasks.get(taskID)
@@ -75,6 +65,38 @@ export class TaskController {
         }
         // Create vscode Uri from task uri and selection range
         void vscode.window.showTextDocument(task.documentUri, { selection: task.selectionRange })
+    }
+
+    // TODO: Add support for applying fixup
+    // Placeholder function for applying fixup
+    private applyFixup(treeItem?: FixupTaskTreeItem): void {
+        void vscode.window.showInformationMessage(`Applying fixup for task #${treeItem?.id} is not implemented yet...`)
+        if (treeItem?.id) {
+            const task = this.tasks.get(treeItem.id)
+            task?.apply()
+            return
+        }
+        // Apply all fixups
+        for (const task of this.tasks.values()) {
+            if (task.state === CodyTaskState.done) {
+                task.apply()
+            }
+        }
+        // Clear task view after applying fixups
+        this.reset()
+    }
+
+    // TODO: Add support for showing diff
+    // Placeholder function for showing diff
+    private showDiff(treeItem: FixupTaskTreeItem): string {
+        if (!treeItem?.id) {
+            void vscode.window.showInformationMessage('No fixup was found...')
+            return ''
+        }
+        const task = this.tasks.get(treeItem?.id)
+        // TODO: Implement diff view
+        void vscode.window.showInformationMessage(`Diff view for task #${task?.id} is not implemented yet...`)
+        return task?.selection.selectedText || ''
     }
 
     public getTaskView(): TaskViewProvider {

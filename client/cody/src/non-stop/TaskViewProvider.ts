@@ -84,7 +84,7 @@ export class TaskViewProvider implements vscode.TreeDataProvider<FixupTaskTreeIt
     }
 }
 
-class FixupTaskTreeItem extends vscode.TreeItem {
+export class FixupTaskTreeItem extends vscode.TreeItem {
     private state: CodyTaskState = CodyTaskState.idle
     public fsPath: string
 

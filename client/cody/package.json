@@ -219,7 +219,19 @@
 				"command": "cody.task.apply",
 				"title": "Cody: Apply fixup",
         "enablement": "!cody.task.view.isEmpty && !cody.task.running",
+        "icon": "$(check)"
+			},
+      {
+				"command": "cody.task.applyAll",
+				"title": "Cody: Apply all fixups",
+        "enablement": "!cody.task.view.isEmpty && !cody.task.running",
         "icon": "$(check-all)"
+			},
+      {
+				"command": "cody.task.diff",
+				"title": "Cody: Show diff for fixup",
+        "enablement": "!cody.task.view.isEmpty && !cody.task.running",
+        "icon": "$(diff)"
 			}
     ],
     "keybindings": [
@@ -303,11 +315,15 @@
           "when": "false"
         },
         {
-          "command": "cody.task.open",
+          "command": "cody.task.apply",
           "when": "false"
         },
         {
-          "command": "cody.task.apply",
+          "command": "cody.task.applyAll",
+          "when": "false"
+        },
+        {
+          "command": "cody.task.diff",
           "when": "false"
         }
       ],
@@ -372,7 +388,7 @@
           "group": "navigation@2"
         },
         {
-          "command": "cody.task.apply",
+          "command": "cody.task.applyAll",
           "when": "cody.nonstop.fixups.enabled && view == cody.tasks.view && cody.activated",
           "group": "navigation"
         }
@@ -407,6 +423,17 @@
           "command": "cody.comment.load",
           "group": "inline@2",
           "when": "cody.activated && commentController =~ /^cody-inline/ && cody.reply.pending"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "cody.task.apply",
+          "when": "cody.nonstop.fixups.enabled && view == cody.tasks.view && cody.activated && viewItem == task",
+          "group": "inline@2"
+        }, {
+          "command": "cody.task.diff",
+          "when": "cody.nonstop.fixups.enabled && view == cody.tasks.view && cody.activated && viewItem == task",
+          "group": "inline@1"
         }
       ]
     },
