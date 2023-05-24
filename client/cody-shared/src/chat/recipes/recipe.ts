@@ -10,6 +10,7 @@ export interface RecipeContext {
     intentDetector: IntentDetector
     codebaseContext: CodebaseContext
     responseMultiplexer: BotResponseMultiplexer
+    firstInteraction: boolean
 }
 
 export type RecipeID =

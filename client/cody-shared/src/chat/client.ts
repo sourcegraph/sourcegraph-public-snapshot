@@ -105,6 +105,7 @@ export async function createClient({
             intentDetector,
             codebaseContext,
             responseMultiplexer: new BotResponseMultiplexer(),
+            firstInteraction: transcript.isEmpty,
         })
         if (!interaction) {
             return
