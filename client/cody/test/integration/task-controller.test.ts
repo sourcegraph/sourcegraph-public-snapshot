@@ -81,7 +81,7 @@ suite('Cody Fixup Task Controller', function () {
         assert.strictEqual(tasks.length, 2)
 
         // Run the apply command should remove all tasks from the task controller
-        await vscode.commands.executeCommand('cody.task.apply')
+        await vscode.commands.executeCommand('cody.task.applyAll')
         assert.strictEqual((await getFixupTasks()).length, 0)
     })
 })
