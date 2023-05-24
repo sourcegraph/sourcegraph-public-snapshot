@@ -350,9 +350,9 @@ func TestListGitHubApp(t *testing.T) {
 	ctx := context.Background()
 
 	app1 := &types.GitHubApp{
-		AppID: 1234,
-		Name:  "Test App 1",
-		// Domain: "repos",
+		AppID:        1234,
+		Name:         "Test App 1",
+		Domain:       "repos",
 		Slug:         "test-app-1",
 		BaseURL:      "https://github.com",
 		AppURL:       "https://github.com/apps/testapp",
@@ -363,9 +363,9 @@ func TestListGitHubApp(t *testing.T) {
 	}
 
 	app2 := &types.GitHubApp{
-		AppID: 5678,
-		Name:  "Test App 2",
-		// Domain: "batches",
+		AppID:        5678,
+		Name:         "Test App 2",
+		Domain:       "batches",
 		Slug:         "test-app-2",
 		BaseURL:      "https://enterprise.github.com",
 		AppURL:       "https://enterprise.github.com/apps/testapp",
@@ -390,7 +390,7 @@ func TestListGitHubApp(t *testing.T) {
 			app := apps[index]
 			require.Equal(t, app.AppID, curr.AppID)
 			require.Equal(t, app.Name, curr.Name)
-			// require.Equal(t, app.Domain, curr.Domain)
+			require.Equal(t, app.Domain, curr.Domain)
 			require.Equal(t, app.Slug, curr.Slug)
 			require.Equal(t, app.BaseURL, curr.BaseURL)
 			require.Equal(t, app.ClientID, curr.ClientID)
@@ -411,14 +411,14 @@ func TestListGitHubApp(t *testing.T) {
 		curr := fetched[0]
 		require.Equal(t, curr.AppID, app1.AppID)
 		require.Equal(t, curr.Name, app1.Name)
-		// require.Equal(t, curr.Domain, app1.Domain)
+		require.Equal(t, curr.Domain, app1.Domain)
 		require.Equal(t, curr.Slug, app1.Slug)
 		require.Equal(t, curr.BaseURL, app1.BaseURL)
 		require.Equal(t, curr.ClientID, app1.ClientID)
 		require.Equal(t, curr.ClientSecret, app1.ClientSecret)
 		require.Equal(t, curr.PrivateKey, app1.PrivateKey)
 		require.Equal(t, curr.Logo, app1.Logo)
-		require.NotZero(t, app1.CreatedAt)
-		require.NotZero(t, app1.UpdatedAt)
+		require.NotZero(t, curr.CreatedAt)
+		require.NotZero(t, curr.UpdatedAt)
 	})
 }
