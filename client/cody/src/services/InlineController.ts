@@ -6,15 +6,10 @@ import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants
 import { logEvent } from '../event-logger'
 
 import { CodeLensProvider } from './CodeLensProvider'
+import { CodyTaskState, getIconPath, updateRangeOnDocChange } from './InlineAssist'
 
 const initPost = new vscode.Position(0, 0)
 const initRange = new vscode.Range(initPost, initPost)
-
-export enum CodyTaskState {
-    'idle' = 0,
-    'pending' = 1,
-    'done' = 2,
-}
 
 export class InlineController {
     // Controller init
@@ -73,9 +68,8 @@ export class InlineController {
             ) {
                 return
             }
-            const newRange = lineTracker(e, this.selectionRange)
-            if (newRange) {
-                this.selectionRange = newRange
+            for (const change of e.contentChanges) {
+                this.selectionRange = updateRangeOnDocChange(this.selectionRange, change.range, change.text)
             }
         })
     }
@@ -328,42 +322,4 @@ export class Comment implements vscode.Comment {
         markdownText.supportHtml = true
         return markdownText
     }
-}
-
-/**
- * For tracking lines diff
- */
-export function lineTracker(e: vscode.TextDocumentChangeEvent, cur: vscode.Range): vscode.Range | null {
-    for (const change of e.contentChanges) {
-        if (change.range.start.line > cur.end.line) {
-            return null
-        }
-        let addedLines = 0
-        if (change.text.includes('\n')) {
-            addedLines = change.text.split('\n').length - 1
-        } else if (change.range.end.line - change.range.start.line > 0) {
-            addedLines -= change.range.end.line - change.range.start.line
-        }
-        const newRange = new vscode.Range(
-            new vscode.Position(cur.start.line + addedLines, 0),
-            new vscode.Position(cur.end.line + addedLines, 0)
-        )
-        return newRange
-    }
-    return null
-}
-/**
- * Create selection range for a single line
- * This is used for display the Cody icon and Code action on top of the first line of selected code
- */
-export function singleLineRange(line: number): vscode.Range {
-    return new vscode.Range(line, 0, line, 0)
-}
-/**
- * Generate icon path for each speaker: cody vs human (sourcegraph)
- */
-export function getIconPath(speaker: string, extPath: string): vscode.Uri {
-    const extensionPath = vscode.Uri.file(extPath)
-    const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist')
-    return vscode.Uri.joinPath(webviewPath, speaker === 'cody' ? 'cody.png' : 'sourcegraph.png')
 }

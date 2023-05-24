@@ -57,6 +57,7 @@ ts_project(
         "src/services/CodeLensProvider.ts",
         "src/services/DecorationProvider.ts",
         "src/services/GuardrailsProvider.ts",
+        "src/services/InlineAssist.ts",
         "src/services/InlineController.ts",
         "src/services/LocalStorageProvider.ts",
         "src/services/SecretStorageProvider.ts",
@@ -119,6 +120,7 @@ ts_project(
         "src/completions/provider.test.ts",
         "src/configuration.test.ts",
         "src/keyword-context/local-keyword-context-fetcher.test.ts",
+        "src/services/InlineAssist.test.ts",
         "test/fixtures/mock-server.ts",
     ],
     tsconfig = ":tsconfig",
@@ -126,6 +128,7 @@ ts_project(
         ":cody",
         "//:node_modules/@types/express",
         "//:node_modules/@types/node",
+        "//:node_modules/@vscode",
         "//:node_modules/express",
     ],
 )
