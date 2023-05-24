@@ -261,7 +261,7 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
         return prefixMessages
     }
 
-    private postProcess(completion: string, suffix: string): null | string {
+    private postProcess(completion: string): null | string {
         // Extract a few common parts for the processing
         const currentLinePrefix = this.prefix.slice(this.prefix.lastIndexOf('\n') + 1)
         const firstNlInSuffix = this.suffix.indexOf('\n') + 1
@@ -307,7 +307,7 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
             if (hasOddIndentation) {
                 for (let i = 1; i < lines.length; i++) {
                     if (indentation(lines[i]) >= startIndent) {
-                        lines[i] = lines[i].replace(/^\ /, '')
+                        lines[i] = lines[i].replace(/^ /, '')
                     }
                 }
             }
@@ -342,11 +342,11 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
                 line = currentLinePrefix + line
             }
             if (line.trim() !== '' && nextLine.trim() !== '') {
-                // We need a trimRight here because the machine likes to add trailing whitespace.
+                // We need a trimEnd here because the machine likes to add trailing whitespace.
                 //
                 // TODO: Fix this earlier in the post process run but this needs to be careful not
                 // to alter the meaning
-                return line.trimRight() === nextLine
+                return line.trimEnd() === nextLine
             }
             return false
         })

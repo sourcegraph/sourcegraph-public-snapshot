@@ -250,9 +250,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             logEvent('CodyVSCodeExtension:completion:suggested', params, params)
             inlineCompletionsCache.add(results)
             return results.map(toInlineCompletionItem)
-        } else {
-            return []
         }
+        return []
     }
 
     public async fetchAndShowCompletions(): Promise<void> {
