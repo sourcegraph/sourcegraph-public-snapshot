@@ -7,15 +7,15 @@ ARG PROJECT_ROOT="."
 WORKDIR /app
 
 # Copy only the build artifact and package.json into our app directory
-COPY ${PROJECT_ROOT}/dist ./dist
-COPY ${PROJECT_ROOT}/package/package.json ./
+COPY ${PROJECT_ROOT}/dist .
+COPY ${PROJECT_ROOT}/package .
 
 # Install only production dependencies
 # hadolint ignore=DL3016
-RUN npm install -g pnpm && pnpm install --prod
+RUN npm install --omit=dev --silent
 
 # The application's default port is picked from the environment
 EXPOSE $PORT
 
 # Start the application
-CMD [ "node", "dist/app.js" ]
+CMD [ "node", "app.js" ]
