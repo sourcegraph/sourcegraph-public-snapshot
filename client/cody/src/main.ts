@@ -23,13 +23,12 @@ import {
     VSCodeSecretStorage,
 } from './services/SecretStorageProvider'
 
-const inTestMode = process.env.CODY_TESTING === 'true'
-
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
  */
 export async function start(context: vscode.ExtensionContext): Promise<vscode.Disposable> {
-    const secretStorage = inTestMode ? new InMemorySecretStorage() : new VSCodeSecretStorage(context.secrets)
+    const secretStorage =
+        process.env.CODY_TESTING === 'true' ? new InMemorySecretStorage() : new VSCodeSecretStorage(context.secrets)
     const localStorage = new LocalStorage(context.globalState)
     const rgPath = await getRgPath(context.extensionPath)
 
@@ -234,7 +233,7 @@ const register = async (
     }
 
     // Initiate inline assist when feature flag is on
-    if (initialConfig.experimentalInline || inTestMode) {
+    if (initialConfig.experimentalInline) {
         commentController.get().commentingRangeProvider = {
             provideCommentingRanges: (document: vscode.TextDocument) => {
                 const lineCount = document.lineCount
