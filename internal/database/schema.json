@@ -10412,7 +10412,7 @@
       ],
       "Constraints": [
         {
-          "Name": "queue_not_null",
+          "Name": "one_of_queue_name_queue_names",
           "ConstraintType": "c",
           "RefTableName": "",
           "IsDeferrable": false,

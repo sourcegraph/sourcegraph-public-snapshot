@@ -1352,7 +1352,7 @@ Indexes:
     "executor_heartbeats_pkey" PRIMARY KEY, btree (id)
     "executor_heartbeats_hostname_key" UNIQUE CONSTRAINT, btree (hostname)
 Check constraints:
-    "queue_not_null" CHECK (queue_name IS NOT NULL AND queue_names IS NULL OR queue_names IS NOT NULL AND queue_name IS NULL)
+    "one_of_queue_name_queue_names" CHECK (queue_name IS NOT NULL AND queue_names IS NULL OR queue_names IS NOT NULL AND queue_name IS NULL)
 
 ```
 
