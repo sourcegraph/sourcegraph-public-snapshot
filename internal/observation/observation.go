@@ -381,7 +381,7 @@ func (op *Operation) finishTrace(err *error, tr *trace.Trace, attrs []attribute.
 		tr.SetError(*err)
 	}
 
-	tr.AddEvent("done", attrs...)
+	tr.SetAttributes(attrs...)
 	tr.Finish()
 }
 
