@@ -42,7 +42,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = "@wolfi_base",
+    base = "@wolfi_syntax_highlighter_base",
     entrypoint = [
         "/sbin/tini",
         "--",

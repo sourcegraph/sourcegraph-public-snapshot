@@ -66,3 +66,9 @@ def oci_deps():
         digest = "sha256:4c0072ee682f54ba793cd182fbe186a6a3c9672c245e04fc4f04cda192ca6dac",
         image = "us.gcr.io/sourcegraph-dev/wolfi-redis-exporter-base",
     )
+
+    oci_pull(
+        name = "wolfi_syntax_highlighter_base",
+        digest = "sha256:4426b2d74fcd966219a70dfebb340dd9ebcd3b638a40aa73efb7d84f40642fb3",
+        image = "us.gcr.io/sourcegraph-dev/wolfi-syntax-highlighter"
+    )
