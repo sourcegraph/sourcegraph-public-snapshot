@@ -2,6 +2,7 @@ package actor
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/go-redsync/redsync/v4"
@@ -14,6 +15,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -77,19 +79,27 @@ func (s Sources) Get(ctx context.Context, token string) (_ *Actor, err error) {
 // Worker is a goroutine.BackgroundRoutine that runs any SourceSyncer implementations
 // at a regular interval. It uses a redsync.Mutex to ensure only one worker is running
 // at a time.
-func (s Sources) Worker(logger log.Logger, rmux *redsync.Mutex, rootInterval time.Duration) goroutine.BackgroundRoutine {
+func (s Sources) Worker(obCtx *observation.Context, rmux *redsync.Mutex, rootInterval time.Duration) goroutine.BackgroundRoutine {
+	logger := obCtx.Logger.Scoped("sources.worker", "sources background routie")
+
 	return &redisLockedBackgroundRoutine{
-		logger: logger.Scoped("Sources.Worker", ""),
+		logger: logger.Scoped("redisLock", "distributed lock layer for sources sync"),
 		rmux:   rmux,
-		routine: goroutine.NewPeriodicGoroutine(
+
+		routine: goroutine.NewPeriodicGoroutineWithMetrics(
 			context.Background(),
-			"sources", "sources sync worker",
+			"periodic.sourcesSync", "periodic sources sync worker",
 			rootInterval,
-			&sourcesPeriodicHandler{
-				logger:  logger.Scoped("sourcesPeriodicHandler", ""),
+			&sourcesSyncHandler{
+				logger:  logger.Scoped("handler", "handler for actor sources sync"),
 				rmux:    rmux,
 				sources: s,
+			},
+			obCtx.Operation(observation.Op{
+				Name:        "sourcesSync",
+				Description: "sync actor sources",
 			}),
+		),
 	}
 }
 
@@ -104,6 +114,7 @@ type redisLockedBackgroundRoutine struct {
 
 func (s *redisLockedBackgroundRoutine) Start() {
 	s.logger.Info("Starting background sync routine")
+
 	// Best-effort attempt to acquire lock immediately.
 	// We check if we have the lock first because in tests we may manually acquire
 	// it first to keep tests stable.
@@ -120,6 +131,7 @@ func (s *redisLockedBackgroundRoutine) Stop() {
 
 	// If we have the lock, release it and let somebody else work
 	if expire := s.rmux.Until(); !expire.IsZero() {
+		s.logger.Info("Releasing held lock")
 		_, err := s.rmux.Unlock()
 		if err != nil {
 			s.logger.Warn("Failed to unlock mutex after work completed", log.Error(err))
@@ -127,16 +139,16 @@ func (s *redisLockedBackgroundRoutine) Stop() {
 	}
 }
 
-// sourcesPeriodicHandler is a handler for NewPeriodicGoroutine
-type sourcesPeriodicHandler struct {
+// sourcesSyncHandler is a handler for NewPeriodicGoroutine
+type sourcesSyncHandler struct {
 	logger  log.Logger
 	rmux    *redsync.Mutex
 	sources Sources
 }
 
-var _ goroutine.Handler = &sourcesPeriodicHandler{}
+var _ goroutine.Handler = &sourcesSyncHandler{}
 
-func (s *sourcesPeriodicHandler) Handle(ctx context.Context) (err error) {
+func (s *sourcesSyncHandler) Handle(ctx context.Context) (err error) {
 	handleLogger := sgtrace.Logger(ctx, s.logger)
 
 	// If we are not holding a lock, try to acquire it.
@@ -145,7 +157,10 @@ func (s *sourcesPeriodicHandler) Handle(ctx context.Context) (err error) {
 		// do anything. We should check every time still in case the current worker
 		// goes offline, we want to be ready to pick up the work.
 		if err := s.rmux.LockContext(ctx); errors.HasType(err, &redsync.ErrTaken{}) {
-			handleLogger.Debug("Not starting a new sync, another one is likely in progress")
+			msg := fmt.Sprintf("did not acquire lock, another worker is likely active: %s", err.Error())
+			handleLogger.Debug(msg)
+			trace.SpanFromContext(ctx).AddEvent(msg)
+
 			return nil // ignore lock contention errors
 		} else if err != nil {
 			return errors.Wrap(err, "acquire worker lock")
@@ -161,8 +176,7 @@ func (s *sourcesPeriodicHandler) Handle(ctx context.Context) (err error) {
 		if src, ok := src.(SourceSyncer); ok {
 			p.Go(func(ctx context.Context) error {
 				var span trace.Span
-				ctx, span = tracer.Start(ctx, "sourcesPeriodicHandler.Handle",
-					trace.WithAttributes(attribute.String("source", src.Name())))
+				ctx, span = tracer.Start(ctx, src.Name()+".Sync")
 				defer func() {
 					if err != nil {
 						span.RecordError(err)
@@ -172,7 +186,7 @@ func (s *sourcesPeriodicHandler) Handle(ctx context.Context) (err error) {
 				}()
 
 				syncLogger := sgtrace.Logger(ctx, handleLogger).
-					With(log.String("syncer", src.Name()))
+					With(log.String("source", src.Name()))
 
 				start := time.Now()
 
