@@ -70,7 +70,7 @@ oci_image(
         # this is a bug in Hyper 0.10 (see https://github.com/SergioBenitez/Rocket/issues/928#issuecomment-464632953).
         # See https://github.com/sourcegraph/sourcegraph/issues/2615 for details on
         # what we observed when this was enabled with the default 5s.
-        "ROCKET_KEEP_ALIVE": 0,
+        "ROCKET_KEEP_ALIVE": "0",
     },
     tars = [":tar_syntect_server"],
 )
