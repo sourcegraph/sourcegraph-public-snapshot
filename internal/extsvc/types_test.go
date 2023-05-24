@@ -11,6 +11,28 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
+func TestVariantConfigPrototypePointers(t *testing.T) {
+	// every call to `Variant::ConfigPrototype` should return a new instance of the prototype type
+	// or nil if there is no prototype defined for that variant
+	for variant, _ := range variantValuesMap {
+		x := variant.ConfigPrototype()
+		y := variant.ConfigPrototype()
+		if x != nil && x == y {
+			t.Errorf("%s pointers are the same: %p == %p", variant.AsKind(), x, y)
+		}
+	}
+	// spot-check a few of the prototypes
+	if _, ok := VariantGerrit.ConfigPrototype().(schema.GerritConnection); ok {
+		t.Error("wrong type for Gerrit configuration prototype")
+	}
+	if _, ok := VariantPhabricator.ConfigPrototype().(schema.PhabricatorConnection); ok {
+		t.Error("wrong type for Gerrit configuration prototype")
+	}
+	if _, ok := VariantAzureDevOps.ConfigPrototype().(schema.AzureDevOpsConnection); ok {
+		t.Error("wrong type for Gerrit configuration prototype")
+	}
+}
+
 func TestExtractToken(t *testing.T) {
 	for _, tc := range []struct {
 		config string
