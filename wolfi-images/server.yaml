@@ -73,3 +73,5 @@ paths:
   - path: /var/run
     type: directory
     permissions: 0o755
+
+# MANUAL REBUILD: 

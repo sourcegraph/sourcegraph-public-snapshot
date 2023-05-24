@@ -22,3 +22,5 @@ environment:
 # means this won't work. We can't create one as the UID/GID depends on the image.
 # entrypoint:
 #   command: /var/lib/postgres/initdb/postgresql-entrypoint.sh postgres
+
+# MANUAL REBUILD: 
