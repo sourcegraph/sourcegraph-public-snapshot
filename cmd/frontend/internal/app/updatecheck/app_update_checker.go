@@ -24,7 +24,7 @@ const RouteAppUpdateCheck = "app.update.check"
 const ManifestBucket = "sourcegraph_app"
 
 // ManifestName is the name of the manifest object that is in the ManifestBucket
-const ManifestName = "update.test.manifest.json"
+const ManifestName = "app.update.prod.manifest.json"
 
 type AppVersion struct {
 	Target  string
@@ -119,7 +119,7 @@ func (r *StaticManifestResolver) Resolve(_ context.Context) (*AppUpdateManifest,
 
 func NewAppUpdateChecker(logger log.Logger, resolver UpdateManifestResolver) *AppUpdateChecker {
 	return &AppUpdateChecker{
-		logger:           logger,
+		logger:           logger.Scoped("app.update.checker", "Handler that handles sourcegraph app requests that check for updates"),
 		manifestResolver: resolver,
 	}
 }
