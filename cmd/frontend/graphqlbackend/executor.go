@@ -28,9 +28,21 @@ type ExecutorResolver struct {
 func (e *ExecutorResolver) ID() graphql.ID {
 	return relay.MarshalID("Executor", int64(e.executor.ID))
 }
-func (e *ExecutorResolver) Hostname() string     { return e.executor.Hostname }
-func (e *ExecutorResolver) QueueName() string    { return e.executor.QueueName }
-func (e *ExecutorResolver) QueueNames() []string { return e.executor.QueueNames }
+func (e *ExecutorResolver) Hostname() string { return e.executor.Hostname }
+func (e *ExecutorResolver) QueueName() *string {
+	queueName := e.executor.QueueName
+	if queueName == "" {
+		return nil
+	}
+	return &queueName
+}
+func (e *ExecutorResolver) QueueNames() *[]string {
+	queueNames := e.executor.QueueNames
+	if len(queueNames) > 0 {
+		return &queueNames
+	}
+	return nil
+}
 func (e *ExecutorResolver) Active() bool {
 	// TODO: Read the value of the executor worker heartbeat interval in here.
 	heartbeatInterval := 5 * time.Second

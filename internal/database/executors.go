@@ -135,6 +135,7 @@ SELECT
 	h.id,
 	h.hostname,
 	h.queue_name,
+	h.queue_names,
 	h.os,
 	h.architecture,
 	h.docker_version,
@@ -191,6 +192,7 @@ SELECT
 	h.id,
 	h.hostname,
 	h.queue_name,
+	h.queue_names,
 	h.os,
 	h.architecture,
 	h.docker_version,
@@ -282,10 +284,13 @@ func scanExecutors(rows *sql.Rows, queryErr error) (_ []types.Executor, err erro
 	var executors []types.Executor
 	for rows.Next() {
 		var executor types.Executor
+		var sqlQueueName *string
+		var sqlQueueNames pq.StringArray
 		if err := rows.Scan(
 			&executor.ID,
 			&executor.Hostname,
-			&executor.QueueName,
+			&sqlQueueName,
+			&sqlQueueNames,
 			&executor.OS,
 			&executor.Architecture,
 			&executor.DockerVersion,
@@ -298,6 +303,16 @@ func scanExecutors(rows *sql.Rows, queryErr error) (_ []types.Executor, err erro
 		); err != nil {
 			return nil, err
 		}
+
+		if sqlQueueName != nil {
+			executor.QueueName = *sqlQueueName
+		}
+
+		var queueNames []string
+		for _, name := range sqlQueueNames {
+			queueNames = append(queueNames, name)
+		}
+		executor.QueueNames = queueNames
 
 		executors = append(executors, executor)
 	}

@@ -287,28 +287,29 @@ func (c *Client) CanceledJobs(ctx context.Context, knownIDs []int) (canceledIDs 
 }
 
 func (c *Client) Ping(ctx context.Context) (err error) {
-	queue := c.getFirstQueueName()
-
-	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", queue), types.HeartbeatRequest{
-		ExecutorName: c.options.ExecutorName,
-	})
+	var req *http.Request
+	if len(c.options.QueueNames) > 0 {
+		var jobIDsByQueue []types.QueueJobIDs
+		for _, queueName := range c.options.QueueNames {
+			jobIDsByQueue = append(jobIDsByQueue, types.QueueJobIDs{
+				QueueName: queueName,
+				JobIDs:    nil,
+			})
+		}
+		req, err = c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("/heartbeat"), types.HeartbeatRequest{
+			ExecutorName:  c.options.ExecutorName,
+			JobIDsByQueue: jobIDsByQueue,
+		})
+	} else {
+		req, err = c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", c.options.QueueName), types.HeartbeatRequest{
+			ExecutorName: c.options.ExecutorName,
+		})
+	}
 	if err != nil {
 		return err
 	}
 
 	return c.client.DoAndDrop(ctx, req)
-}
-
-func (c *Client) getFirstQueueName() string {
-	// TODO: temp solution to allow multi-queue executor to start up before heartbeats are implemented.
-	// Simply pick the first queue name when multiple are configured
-	var queue string
-	if len(c.options.QueueNames) > 0 {
-		queue = c.options.QueueNames[0]
-	} else {
-		queue = c.options.QueueName
-	}
-	return queue
 }
 
 func (c *Client) AddExecutionLogEntry(ctx context.Context, job types.Job, entry internalexecutor.ExecutionLogEntry) (entryID int, err error) {
