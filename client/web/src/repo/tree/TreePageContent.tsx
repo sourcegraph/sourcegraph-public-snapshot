@@ -313,23 +313,25 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
 
     return (
         <>
-            <section className={classNames('container mb-3 px-0', styles.section)}>
-                {readmeEntry && (
-                    <ReadmePreviewCard
-                        entry={readmeEntry}
-                        repoName={repo.name}
-                        revision={revision}
-                        className={styles.files}
-                    />
-                )}
-                {isRoot && (
-                    <ExtraInfoSection
-                        repo={repo}
-                        className={styles.extraInfo}
-                        hasWritePermissions={hasRepoMetaWritePermissions}
-                    />
-                )}
-            </section>
+            {(readmeEntry || isRoot) && (
+                <section className={classNames('container mb-3 px-0', styles.section)}>
+                    {readmeEntry && (
+                        <ReadmePreviewCard
+                            entry={readmeEntry}
+                            repoName={repo.name}
+                            revision={revision}
+                            className={styles.files}
+                        />
+                    )}
+                    {isRoot && (
+                        <ExtraInfoSection
+                            repo={repo}
+                            className={styles.extraInfo}
+                            hasWritePermissions={hasRepoMetaWritePermissions}
+                        />
+                    )}
+                </section>
+            )}
             <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>
                 <FilesCard diffStats={diffStats} entries={tree.entries} className={styles.files} filePath={filePath} />
 
