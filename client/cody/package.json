@@ -211,7 +211,7 @@
 			},
       {
 				"command": "cody.task.open",
-				"title": "Cody: Show this Fixup",
+				"title": "Cody: Go to Fixup",
         "enablement": "cody.nonstop.fixups.enabled",
         "icon": "$(file-code)"
 			},
