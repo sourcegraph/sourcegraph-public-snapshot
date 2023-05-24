@@ -263,7 +263,7 @@ fn perl_locals() -> LocalConfiguration {
     }
 }
 
-pub fn get_tag_configuration(parser: BundledParser) -> Option<&'static TagConfiguration> {
+pub fn get_tag_configuration(parser: &BundledParser) -> Option<&'static TagConfiguration> {
     match parser {
         BundledParser::C => Some(c()),
         BundledParser::Javascript => Some(javascript()),

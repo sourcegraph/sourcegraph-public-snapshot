@@ -79,6 +79,31 @@ impl BundledParser {
         }
     }
 
+    pub fn get_language_name(&self) -> &str {
+        match self {
+            BundledParser::C => "c",
+            BundledParser::Cpp => "cpp",
+            BundledParser::C_Sharp => "c_sharp",
+            BundledParser::Go => "go",
+            BundledParser::Java => "java",
+            BundledParser::Javascript => "javascript",
+            BundledParser::Jsonnet => "jsonnet",
+            BundledParser::Kotlin => "kotlin",
+            BundledParser::Nickel => "nickel",
+            BundledParser::Perl => "perl",
+            BundledParser::Pod => "pod",
+            BundledParser::Python => "python",
+            BundledParser::Ruby => "ruby",
+            BundledParser::Rust => "rust",
+            BundledParser::Scala => "scala",
+            BundledParser::Sql => "sql",
+            BundledParser::Typescript => "typescript",
+            BundledParser::Tsx => "tsx",
+            BundledParser::Xlsg => "xlsg",
+            BundledParser::Zig => "zig",
+        }
+    }
+
     // TODO(SuperAuguste): language detection library
     pub fn get_parser_from_extension(name: &str) -> Option<Self> {
         match name {

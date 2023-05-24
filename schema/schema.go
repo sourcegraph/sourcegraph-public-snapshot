@@ -2549,8 +2549,6 @@ type SiteConfiguration struct {
 	SearchLargeFiles []string `json:"search.largeFiles,omitempty"`
 	// SearchLimits description: Limits that search applies for number of repositories searched and timeouts.
 	SearchLimits *SearchLimits `json:"search.limits,omitempty"`
-	// SymbolsSource description: What source to use for symbols per-language.
-	SymbolsSource map[string]any `json:"symbolsSource,omitempty"`
 	// SyntaxHighlighting description: Syntax highlighting configuration
 	SyntaxHighlighting *SyntaxHighlighting `json:"syntaxHighlighting,omitempty"`
 	// UpdateChannel description: The channel on which to automatically check for Sourcegraph updates.
@@ -2711,7 +2709,6 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "search.index.symbols.enabled")
 	delete(m, "search.largeFiles")
 	delete(m, "search.limits")
-	delete(m, "symbolsSource")
 	delete(m, "syntaxHighlighting")
 	delete(m, "update.channel")
 	delete(m, "webhook.logging")
