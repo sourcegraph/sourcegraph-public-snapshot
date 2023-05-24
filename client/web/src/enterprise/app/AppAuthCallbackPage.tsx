@@ -5,6 +5,7 @@ import { useSearchParams } from 'react-router-dom'
 
 import { Container, ErrorAlert, Text, Link } from '@sourcegraph/wildcard'
 
+import { tauriInvoke } from '../../app/tauriIcpUtils'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { fetchSite, updateSiteConfiguration } from '../../site-admin/backend'
@@ -71,5 +72,8 @@ async function saveAccessToken(accessToken: string, destination: string | null):
 
     await updateSiteConfiguration(id, modifiedContent).toPromise()
 
+    // If the Cody window is open, we need to reload it so it gets the new site config
+    tauriInvoke('reload_cody_window')
+    // Also reload the main window so it gets the new site config, and redirect to the destination
     location.href = destination ?? '/'
 }

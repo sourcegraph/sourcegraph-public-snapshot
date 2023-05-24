@@ -33,6 +33,19 @@ fn app_shell_loaded() -> Option<AppShellReadyPayload> {
     return APP_SHELL_READY_PAYLOAD.read().unwrap().clone();
 }
 
+#[tauri::command]
+fn show_main_window(app_handle: tauri::AppHandle) {
+    show_window(&app_handle, "main");
+}
+
+#[tauri::command]
+fn reload_cody_window(app_handle: tauri::AppHandle) {
+    let win = app_handle.get_window("cody");
+    if win.is_some() {
+        win.unwrap().eval("window.location.reload();").unwrap();
+    }
+}
+
 fn set_launch_path(url: String) {
     *LAUNCH_PATH.write().unwrap() = url;
 }
@@ -137,7 +150,7 @@ fn main() {
         // its name which may suggest that it invokes something, actually only
         // *defines* an invoke() handler and does not invoke anything during
         // setup here.)
-        .invoke_handler(tauri::generate_handler![get_launch_path, app_shell_loaded])
+        .invoke_handler(tauri::generate_handler![get_launch_path, app_shell_loaded, show_main_window, reload_cody_window])
         .run(context)
         .expect("error while running tauri application");
 }
