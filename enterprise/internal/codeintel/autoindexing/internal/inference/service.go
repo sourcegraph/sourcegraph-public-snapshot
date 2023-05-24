@@ -190,11 +190,6 @@ func (s *Service) inferIndexJobOrHints(
 	}
 	defer sandbox.Close()
 
-	recognizers, err := s.setupRecognizers(ctx, sandbox, overrideScript)
-	if err != nil || len(recognizers) == 0 {
-		return nil, err
-	}
-
 	invocationContext := invocationContext{
 		sandbox:                 sandbox,
 		gitService:              s.gitService,
@@ -202,6 +197,12 @@ func (s *Service) inferIndexJobOrHints(
 		commit:                  commit,
 		invocationFunctionTable: invocationContextMethods,
 	}
+
+	recognizers, err := s.setupRecognizers(ctx, invocationContext, overrideScript)
+	if err != nil || len(recognizers) == 0 {
+		return nil, err
+	}
+
 	return s.invokeRecognizers(ctx, invocationContext, recognizers)
 }
 
@@ -232,12 +233,12 @@ func (s *Service) createSandbox(ctx context.Context) (_ *luasandbox.Sandbox, err
 
 // setupRecognizers runs the given default and override scripts in the given sandbox and converts the
 // script return values to a list of recognizer instances.
-func (s *Service) setupRecognizers(ctx context.Context, sandbox *luasandbox.Sandbox, overrideScript string) (_ []*luatypes.Recognizer, err error) {
+func (s *Service) setupRecognizers(ctx context.Context, invocationContext invocationContext, overrideScript string) (_ []*luatypes.Recognizer, err error) {
 	ctx, _, endObservation := s.operations.setupRecognizers.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	opts := luasandbox.RunOptions{}
-	rawRecognizers, err := sandbox.RunScriptNamed(ctx, opts, lua.Scripts, "recognizers.lua")
+	rawRecognizers, err := invocationContext.sandbox.RunScriptNamed(ctx, opts, lua.Scripts, "recognizers.lua")
 	if err != nil {
 		return nil, err
 	}
@@ -248,7 +249,7 @@ func (s *Service) setupRecognizers(ctx context.Context, sandbox *luasandbox.Sand
 	}
 
 	if overrideScript != "" {
-		rawRecognizers, err := sandbox.RunScript(ctx, opts, overrideScript)
+		rawRecognizers, err := invocationContext.sandbox.RunScript(ctx, opts, overrideScript)
 		if err != nil {
 			return nil, err
 		}
