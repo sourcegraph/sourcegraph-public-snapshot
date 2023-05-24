@@ -140,7 +140,7 @@ func (s *Accounts) TracingFields() []attribute.KeyValue {
 // 1. Add the name to the enum
 // 2. Add an entry to the `variantValuesMap` map, containing the appropriate values for `AsType`, `AsKind`, and the other values, if applicable
 // 3. Use that Variant elsewhere in code, using the `AsType` and `AsKind` functions as necessary.
-// Note: do not use the enum value directly, instead use the helper functions `AsType` and `AsKind` as appropriate.
+// Note: do not use the enum value directly, instead use the helper functions `AsType` and `AsKind`.
 type Variant int64
 
 const (
@@ -526,17 +526,24 @@ func WebhookURL(kind string, externalServiceID int64, cfg any, externalURL strin
 	q.Set(IDParam, strconv.FormatInt(externalServiceID, 10))
 
 	if variant == VariantBitbucketCloud {
+		if cfg == nil {
+			return "", errors.Newf("external service with id=%d claims to be a Bitbucket Cloud service, but the configuration is of type %T", externalServiceID, cfg)
+		}
 		// Unlike other external service kinds, Bitbucket Cloud doesn't support
 		// a shared secret defined as part of the webhook. As a result, we need
 		// to include it as an explicit part of the URL that we construct.
-		switch c := cfg.(type) {
-		case *schema.BitbucketCloudConnection:
-			q.Set("secret", url.QueryEscape(c.WebhookSecret))
-		default:
+		if conn, ok := cfg.(*schema.BitbucketCloudConnection); ok {
+			q.Set("secret", conn.WebhookSecret)
+		} else {
 			return "", errors.Newf("external service with id=%d claims to be a Bitbucket Cloud service, but the configuration is of type %T", externalServiceID, cfg)
 		}
 	}
 
+	// `url.Values::Encode` uses `url.QueryEscape` internally,
+	// so be sure to NOT use `url.QueryEscape` when adding parameters,
+	// and then use `Encode` to build the query string,
+	// or you will end up with
+	// `foo bar` ==> `foo+bar` (courtesy of `QueryEscape`) ==> `foo%3Bbar` (courtesy of `Encode`)
 	u.RawQuery = q.Encode()
 
 	// eg. https://example.com/.api/github-webhooks?externalServiceID=1
