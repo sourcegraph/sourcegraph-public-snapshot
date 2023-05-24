@@ -2338,7 +2338,7 @@
           "type": "integer",
           "minimum": 0
         },
-        "incremental":{
+        "incremental": {
           "description": "Experimental: Whether to generate embeddings incrementally. If true, only files that have changed since the last run will be processed.",
           "type": "boolean",
           "default": false
