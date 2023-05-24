@@ -36,7 +36,7 @@ type GitHubAppsStore interface {
 	// WithEncryptionKey sets encryption key on store. Returns a new GitHubAppsStore
 	WithEncryptionKey(key encryption.Key) GitHubAppsStore
 
-	// List lists all GitHub Apps in the store (it can be filtered by domain)
+	// List lists all GitHub Apps in the store and optionally filters by domain
 	List(ctx context.Context, domain *string) ([]*types.GitHubApp, error)
 }
 
