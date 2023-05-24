@@ -5,3 +5,13 @@ contents:
     # Included by existing SG base image
     - tini
     - mailcap
+
+accounts:
+  run-as: sourcegraph
+  groups:
+    - groupname: sourcegraph
+      gid: 101
+  users:
+    - username: sourcegraph
+      uid: 100
+      gid: 101
