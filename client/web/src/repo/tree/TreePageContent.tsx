@@ -322,7 +322,7 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                 )}
                 <ExtraInfoSection
                     repo={repo}
-                    className={classNames(styles.contributors, 'p-3')}
+                    className={styles.extraInfo}
                     hasWritePermissions={hasRepoMetaWritePermissions}
                 />
             </section>
