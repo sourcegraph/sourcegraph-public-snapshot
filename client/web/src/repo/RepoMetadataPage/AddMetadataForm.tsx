@@ -103,7 +103,7 @@ export const AddMetadataForm: FC<{ onDidAdd: () => void; repoID: string }> = ({ 
     return (
         <>
             {!addLoading && !addError && addCalled && (
-                <Alert className="flex-grow-1 m-0 mb-3" variant="success">
+                <Alert className="flex-grow-1 mt-3 mb-3" variant="success">
                     Metadata added
                 </Alert>
             )}

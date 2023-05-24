@@ -75,13 +75,13 @@ const Meta: React.FC<MetaProps> = ({
 
     if (onDelete) {
         return (
-            <Tooltip content="Delete metadata">
+            <Tooltip content="Remove from this repository">
                 <Badge
                     variant="secondary"
                     small={small}
                     as={Button}
                     onClick={() => onDelete(meta)}
-                    aria-label="Delete metadata"
+                    aria-label="Remove from this repository"
                     className={styles.badgeButton}
                 >
                     <Icon svgPath={mdiDelete} aria-hidden={true} className="mr-1" />
