@@ -89,7 +89,7 @@ DEPS = [
     "//cmd/symbols",
     "//cmd/worker",
     "//docker-images/prometheus/cmd/prom-wrapper",
-    "//docker-images/syntax-highlighter:syntect_server",
+    "//docker-images/syntax-highlighter",
 ]
 
 ZOEKT_DEPS = [
