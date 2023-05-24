@@ -2,7 +2,7 @@ import { gql, useQuery } from '@sourcegraph/http-client'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { Button, Link, Select, Text, useLocalStorage } from '@sourcegraph/wildcard'
 
-import { tauriInvoke } from '../app/tauriInvoke'
+import { tauriInvoke } from '../app/tauriIcpUtils'
 import { HeroPage } from '../components/HeroPage'
 import { GetReposForCodyResult, GetReposForCodyVariables } from '../graphql-operations'
 
@@ -43,59 +43,57 @@ export const CodyStandalonePage: React.FunctionComponent<{}> = () => {
 
 type CodyDisabledReason = 'setupNotCompleted' | 'accountNotConnected' | 'emailNotVerified'
 
-const CodyDisabledNotice: React.FunctionComponent<{ reason: CodyDisabledReason }> = ({ reason }) => {
-    const reasonBodies: Record<CodyDisabledReason, React.ReactNode> = {
-        setupNotCompleted: (
-            <>
-                <Text className="mt-3">You need to finish setting up the Sourcegraph app to use Cody.</Text>
-                <Button variant="primary" size="lg" onClick={() => tauriInvoke('show_main_window')}>
-                    Open Setup
-                </Button>
-            </>
-        ),
-        accountNotConnected: (
-            <>
-                <Text className="mt-3">You need to connect your Sourcegraph.com account to use Cody.</Text>
-                <Button
-                    variant="primary"
-                    size="lg"
-                    as={Link}
-                    to="https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=APP&destination="
-                    target="_blank"
-                >
-                    Connect to Sourcegraph.com
-                </Button>
-            </>
-        ),
-        emailNotVerified: (
-            <>
-                <Text className="mt-3">
-                    Your Sourcegraph.com account does not have a verified email address. Please verify your email and
-                    restart the Sourcegraph app.
-                </Text>
-                <Button
-                    variant="primary"
-                    size="lg"
-                    as={Link}
-                    to="https://sourcegraph.com/user/settings/emails"
-                    target="_blank"
-                >
-                    Verify Email
-                </Button>
-            </>
-        ),
-    }
-
-    return (
-        <HeroPage
-            className="mx-3"
-            icon={CodyLogo}
-            iconClassName="pr-1" // Optically center the icon
-            title="Cody is disabled"
-            body={reasonBodies[reason]}
-        />
-    )
+const reasonBodies: Record<CodyDisabledReason, () => React.ReactNode> = {
+    setupNotCompleted: () => (
+        <>
+            <Text className="mt-3">You need to finish setting up the Sourcegraph app to use Cody.</Text>
+            <Button variant="primary" size="lg" onClick={() => tauriInvoke('show_main_window')}>
+                Open Setup
+            </Button>
+        </>
+    ),
+    accountNotConnected: () => (
+        <>
+            <Text className="mt-3">You need to connect your Sourcegraph.com account to use Cody.</Text>
+            <Button
+                variant="primary"
+                size="lg"
+                as={Link}
+                to="https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=APP&destination="
+                target="_blank"
+            >
+                Connect to Sourcegraph.com
+            </Button>
+        </>
+    ),
+    emailNotVerified: () => (
+        <>
+            <Text className="mt-3">
+                Your Sourcegraph.com account does not have a verified email address. Please verify your email and
+                restart the Sourcegraph app.
+            </Text>
+            <Button
+                variant="primary"
+                size="lg"
+                as={Link}
+                to="https://sourcegraph.com/user/settings/emails"
+                target="_blank"
+            >
+                Verify Email
+            </Button>
+        </>
+    ),
 }
+
+const CodyDisabledNotice: React.FunctionComponent<{ reason: CodyDisabledReason }> = ({ reason }) => (
+    <HeroPage
+        className="mx-3"
+        icon={CodyLogo}
+        iconClassName="pr-1" // Optically center the icon
+        title="Cody is disabled"
+        body={reasonBodies[reason]()}
+    />
+)
 
 const CodyChat: React.FunctionComponent<{}> = () => {
     const { data } = useQuery<GetReposForCodyResult, GetReposForCodyVariables>(REPOS_QUERY, {})

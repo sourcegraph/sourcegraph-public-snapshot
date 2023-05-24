@@ -5,7 +5,7 @@ import { useSearchParams } from 'react-router-dom'
 
 import { Container, ErrorAlert, Text, Link } from '@sourcegraph/wildcard'
 
-import { tauriInvoke } from '../../app/tauriInvoke'
+import { tauriInvoke } from '../../app/tauriIcpUtils'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { fetchSite, updateSiteConfiguration } from '../../site-admin/backend'
