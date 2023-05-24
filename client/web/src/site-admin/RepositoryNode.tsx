@@ -220,7 +220,7 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                     className="p-2"
                                 >
                                     <Icon aria-hidden={true} svgPath={mdiVectorPolyline} className="mr-1" />
-                                    Embeddings configuration
+                                    Embeddings
                                 </MenuItem>
 
                                 <MenuItem
