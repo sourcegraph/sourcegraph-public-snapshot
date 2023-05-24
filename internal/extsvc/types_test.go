@@ -22,59 +22,59 @@ func TestVariantConfigPrototypePointers(t *testing.T) {
 		}
 	}
 	// check all of the current prototypes, thanks to Cody generating this code for me!
-	if _, ok := VariantAWSCodeCommit.ConfigPrototype().(schema.AWSCodeCommitConnection); ok {
-		t.Error("wrong type for AWS CodeCommit configuration prototype")
+	if y, ok := VariantAWSCodeCommit.ConfigPrototype().(*schema.AWSCodeCommitConnection); !ok {
+		t.Errorf("wrong type for AWS CodeCommit configuration prototype: %T", y)
 	}
-	if _, ok := VariantAzureDevOps.ConfigPrototype().(schema.AzureDevOpsConnection); ok {
-		t.Error("wrong type for Azure DevOps configuration prototype")
+	if y, ok := VariantAzureDevOps.ConfigPrototype().(*schema.AzureDevOpsConnection); !ok {
+		t.Errorf("wrong type for Azure DevOps configuration prototype: %T", y)
 	}
-	if _, ok := VariantBitbucketCloud.ConfigPrototype().(schema.BitbucketCloudConnection); ok {
-		t.Error("wrong type for Bitbucket Cloud configuration prototype")
+	if y, ok := VariantBitbucketCloud.ConfigPrototype().(*schema.BitbucketCloudConnection); !ok {
+		t.Errorf("wrong type for Bitbucket Cloud configuration prototype: %T", y)
 	}
-	if _, ok := VariantBitbucketServer.ConfigPrototype().(schema.BitbucketServerConnection); ok {
-		t.Error("wrong type for Bitbucket Server configuration prototype")
+	if y, ok := VariantBitbucketServer.ConfigPrototype().(*schema.BitbucketServerConnection); !ok {
+		t.Errorf("wrong type for Bitbucket Server configuration prototype: %T", y)
 	}
-	if _, ok := VariantGerrit.ConfigPrototype().(schema.GerritConnection); ok {
-		t.Error("wrong type for Gerrit configuration prototype")
+	if y, ok := VariantGerrit.ConfigPrototype().(*schema.GerritConnection); !ok {
+		t.Errorf("wrong type for Gerrit configuration prototype: %T", y)
 	}
-	if _, ok := VariantGitHub.ConfigPrototype().(schema.GitHubConnection); ok {
-		t.Error("wrong type for GitHub configuration prototype")
+	if y, ok := VariantGitHub.ConfigPrototype().(*schema.GitHubConnection); !ok {
+		t.Errorf("wrong type for GitHub configuration prototype: %T", y)
 	}
-	if _, ok := VariantGitLab.ConfigPrototype().(schema.GitLabConnection); ok {
-		t.Error("wrong type for GitLab configuration prototype")
+	if y, ok := VariantGitLab.ConfigPrototype().(*schema.GitLabConnection); !ok {
+		t.Errorf("wrong type for GitLab configuration prototype: %T", y)
 	}
-	if _, ok := VariantGitolite.ConfigPrototype().(schema.GitoliteConnection); ok {
-		t.Error("wrong type for Gitolite configuration prototype")
+	if y, ok := VariantGitolite.ConfigPrototype().(*schema.GitoliteConnection); !ok {
+		t.Errorf("wrong type for Gitolite configuration prototype: %T", y)
 	}
-	if _, ok := VariantGoPackages.ConfigPrototype().(schema.GoModulesConnection); ok {
-		t.Error("wrong type for Go Packages configuration prototype")
+	if y, ok := VariantGoPackages.ConfigPrototype().(*schema.GoModulesConnection); !ok {
+		t.Errorf("wrong type for Go Packages configuration prototype: %T", y)
 	}
-	if _, ok := VariantJVMPackages.ConfigPrototype().(schema.JVMPackagesConnection); ok {
-		t.Error("wrong type for JVM Packages configuration prototype")
+	if y, ok := VariantJVMPackages.ConfigPrototype().(*schema.JVMPackagesConnection); !ok {
+		t.Errorf("wrong type for JVM Packages configuration prototype: %T", y)
 	}
-	if _, ok := VariantNpmPackages.ConfigPrototype().(schema.NpmPackagesConnection); ok {
-		t.Error("wrong type for NPM Packages configuration prototype")
+	if y, ok := VariantNpmPackages.ConfigPrototype().(*schema.NpmPackagesConnection); !ok {
+		t.Errorf("wrong type for NPM Packages configuration prototype: %T", y)
 	}
-	if _, ok := VariantOther.ConfigPrototype().(schema.OtherExternalServiceConnection); ok {
-		t.Error("wrong type for Other configuration prototype")
+	if y, ok := VariantOther.ConfigPrototype().(*schema.OtherExternalServiceConnection); !ok {
+		t.Errorf("wrong type for Other configuration prototype: %T", y)
 	}
-	if _, ok := VariantPagure.ConfigPrototype().(schema.PagureConnection); ok {
-		t.Error("wrong type for Pagure configuration prototype")
+	if y, ok := VariantPagure.ConfigPrototype().(*schema.PagureConnection); !ok {
+		t.Errorf("wrong type for Pagure configuration prototype: %T", y)
 	}
-	if _, ok := VariantPerforce.ConfigPrototype().(schema.PerforceConnection); ok {
-		t.Error("wrong type for Perforce configuration prototype")
+	if y, ok := VariantPerforce.ConfigPrototype().(*schema.PerforceConnection); !ok {
+		t.Errorf("wrong type for Perforce configuration prototype: %T", y)
 	}
-	if _, ok := VariantPhabricator.ConfigPrototype().(schema.PhabricatorConnection); ok {
-		t.Error("wrong type for Phabricator configuration prototype")
+	if y, ok := VariantPhabricator.ConfigPrototype().(*schema.PhabricatorConnection); !ok {
+		t.Errorf("wrong type for Phabricator configuration prototype: %T", y)
 	}
-	if _, ok := VariantPythonPackages.ConfigPrototype().(schema.PythonPackagesConnection); ok {
-		t.Error("wrong type for Python Packages configuration prototype")
+	if y, ok := VariantPythonPackages.ConfigPrototype().(*schema.PythonPackagesConnection); !ok {
+		t.Errorf("wrong type for Python Packages configuration prototype: %T", y)
 	}
-	if _, ok := VariantRubyPackages.ConfigPrototype().(schema.RubyPackagesConnection); ok {
-		t.Error("wrong type for Ruby Packages configuration prototype")
+	if y, ok := VariantRubyPackages.ConfigPrototype().(*schema.RubyPackagesConnection); !ok {
+		t.Errorf("wrong type for Ruby Packages configuration prototype: %T", y)
 	}
-	if _, ok := VariantRustPackages.ConfigPrototype().(schema.RustPackagesConnection); ok {
-		t.Error("wrong type for Rust Packages configuration prototype")
+	if y, ok := VariantRustPackages.ConfigPrototype().(*schema.RustPackagesConnection); !ok {
+		t.Errorf("wrong type for Rust Packages configuration prototype: %T", y)
 	}
 }
 
