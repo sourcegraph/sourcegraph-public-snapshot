@@ -243,7 +243,6 @@ func (m *MultiHandler) heartbeat(ctx context.Context, executor types.Executor, i
 	logger := log.Scoped("multiqueue.heartbeat", "Write the heartbeat of multiple queues to the database")
 
 	// Write this heartbeat to the database so that we can populate the UI with recent executor activity.
-	// TODO: update UpsertHeartbeat to write multiple queue names to DB
 	if err = m.executorStore.UpsertHeartbeat(ctx, executor); err != nil {
 		logger.Error("Failed to upsert executor heartbeat", log.Error(err), log.Strings("queues", executor.QueueNames))
 	}
