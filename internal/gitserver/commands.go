@@ -76,8 +76,7 @@ func (c *clientImplementor) Diff(ctx context.Context, checker authz.SubRepoPermi
 		// flags or refer to a file.
 		return nil, errors.Errorf("invalid diff range argument: %q", rangeSpec)
 	}
-
-	rdr, err := c.execReader(ctx, opts.Repo, append([]string{
+	args := append([]string{
 		"diff",
 		"--find-renames",
 		// TODO(eseliger): Enable once we have support for copy detection in go-diff
@@ -89,7 +88,9 @@ func (c *clientImplementor) Diff(ctx context.Context, checker authz.SubRepoPermi
 		"--no-prefix",
 		rangeSpec,
 		"--",
-	}, opts.Paths...))
+	}, opts.Paths...)
+
+	rdr, err := c.gitCommand(opts.Repo, args...).StdoutReader(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "executing git diff")
 	}
@@ -185,20 +186,6 @@ func (c *clientImplementor) ContributorCount(ctx context.Context, repo api.RepoN
 		return nil, errors.Errorf("exec `git shortlog -s -n -e` failed: %v", err)
 	}
 	return parseShortLog(out)
-}
-
-// execReader executes an arbitrary `git` command (`git [args...]`) and returns a
-// reader connected to its stdout.
-//
-// execReader should NOT be exported. We want to limit direct git calls to this
-// package.
-func (c *clientImplementor) execReader(ctx context.Context, repo api.RepoName, args []string) (io.ReadCloser, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: ExecReader") //nolint:staticcheck // OT is deprecated
-	span.SetTag("args", args)
-	defer span.Finish()
-
-	cmd := c.gitCommand(repo, args...)
-	return cmd.StdoutReader(ctx)
 }
 
 // logEntryPattern is the regexp pattern that matches entries in the output of the `git shortlog
@@ -398,7 +385,8 @@ func (c *clientImplementor) DiffPath(ctx context.Context, checker authz.SubRepoP
 	} else if !hasAccess {
 		return nil, os.ErrNotExist
 	}
-	reader, err := c.execReader(ctx, repo, []string{"diff", sourceCommit, targetCommit, "--", path})
+	args := []string{"diff", sourceCommit, targetCommit, "--", path}
+	reader, err := c.gitCommand(repo, args...).StdoutReader(ctx)
 	if err != nil {
 		return nil, err
 	}
