@@ -40,6 +40,7 @@ type indexJobOrHint struct {
 
 type invocationContext struct {
 	sandbox    *luasandbox.Sandbox
+	printSink  io.Writer
 	gitService GitService
 	repo       api.RepoName
 	commit     string
@@ -108,7 +109,7 @@ func (s *Service) InferIndexJobs(ctx context.Context, repo api.RepoName, commit,
 		},
 	}
 
-	jobOrHints, err := s.inferIndexJobOrHints(ctx, repo, commit, overrideScript, functionTable)
+	jobOrHints, _, err := s.inferIndexJobOrHints(ctx, repo, commit, overrideScript, functionTable)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +156,7 @@ func (s *Service) InferIndexJobHints(ctx context.Context, repo api.RepoName, com
 		},
 	}
 
-	jobOrHints, err := s.inferIndexJobOrHints(ctx, repo, commit, overrideScript, functionTable)
+	jobOrHints, _, err := s.inferIndexJobOrHints(ctx, repo, commit, overrideScript, functionTable)
 	if err != nil {
 		return nil, err
 	}
@@ -183,15 +184,19 @@ func (s *Service) inferIndexJobOrHints(
 	commit string,
 	overrideScript string,
 	invocationContextMethods invocationFunctionTable,
-) ([]indexJobOrHint, error) {
+) (_ []indexJobOrHint, logs string, _ error) {
 	sandbox, err := s.createSandbox(ctx)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	defer sandbox.Close()
 
+	var buf bytes.Buffer
+	defer func() { logs = buf.String() }()
+
 	invocationContext := invocationContext{
 		sandbox:                 sandbox,
+		printSink:               &buf,
 		gitService:              s.gitService,
 		repo:                    repo,
 		commit:                  commit,
@@ -200,10 +205,11 @@ func (s *Service) inferIndexJobOrHints(
 
 	recognizers, err := s.setupRecognizers(ctx, invocationContext, overrideScript)
 	if err != nil || len(recognizers) == 0 {
-		return nil, err
+		return nil, logs, err
 	}
 
-	return s.invokeRecognizers(ctx, invocationContext, recognizers)
+	jobsOrHints, err := s.invokeRecognizers(ctx, invocationContext, recognizers)
+	return jobsOrHints, logs, err
 }
 
 // createSandbox creates a Lua sandbox wih the modules loaded for use with auto indexing inference.
