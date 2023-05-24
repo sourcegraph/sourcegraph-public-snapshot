@@ -8,6 +8,9 @@
   "status": "NEW",
   "created": "2023-05-16 20:50:25.000000000",
   "updated": "2023-05-23 23:42:03.000000000",
+  "reviewed": false,
+  "work_in_progress": false,
+  "hashtags": [],
   "owner": {
    "name": "",
    "email": "",
