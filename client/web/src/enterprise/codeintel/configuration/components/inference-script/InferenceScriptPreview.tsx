@@ -84,10 +84,16 @@ export const InferenceScriptPreview: React.FunctionComponent<InferenceScriptPrev
             ) : error ? (
                 <ErrorAlert error={error} />
             ) : data ? (
-                <InferenceForm
-                    initialFormData={autoIndexJobsToFormData({ jobs: data.inferAutoIndexJobsForRepo })}
-                    readOnly={true}
-                />
+                <>
+                    {data.inferAutoIndexJobsForRepo.inferenceOutput && (
+                        <p>{data.inferAutoIndexJobsForRepo.inferenceOutput}</p>
+                    )}
+
+                    <InferenceForm
+                        initialFormData={autoIndexJobsToFormData({ jobs: data.inferAutoIndexJobsForRepo.jobs })}
+                        readOnly={true}
+                    />
+                </>
             ) : (
                 <></>
             )}
