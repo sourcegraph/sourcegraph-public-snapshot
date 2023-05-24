@@ -40,13 +40,13 @@ accounts:
 paths:
   - path: /data/pgdata-12
     type: directory
-    permissions: 0o755
+    permissions: 0o766
   - path: /var/lib/postgresql
     type: directory
-    permissions: 0o755
+    permissions: 0o766
   - path: /var/run/postgresql
     type: directory
-    permissions: 0o755
+    permissions: 0o766
 
 
 
