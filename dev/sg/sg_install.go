@@ -232,6 +232,8 @@ func sgInstallDir(homeDir string) (string, error) {
 		// installation the user doesn't have permission to create/open/write
 		// to /usr/local/bin. We're safe with ~/.sg/sg.
 		return filepath.Join(homeDir, ".sg"), nil
+	case "windows":
+		return filepath.Join(homeDir, "sg"), nil
 	default:
 		return "", errors.Newf("unsupported platform: %s", runtime.GOOS)
 	}

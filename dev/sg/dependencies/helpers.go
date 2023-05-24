@@ -239,6 +239,15 @@ func checkGitVersion(versionConstraint string) func(context.Context) error {
 		}
 
 		trimmed := strings.TrimSpace(elems[2])
+
+		// On Windows, git version returns a string like "git version 2.40.1.windows.1"
+		withoutWindows := strings.Split(trimmed, ".windows.")
+		if len(withoutWindows) != 1 && len(withoutWindows) != 2 {
+			return errors.Newf("unexpected output from git: %s", out)
+		}
+
+		trimmed = withoutWindows[0]
+
 		return check.Version("git", trimmed, versionConstraint)
 	}
 }

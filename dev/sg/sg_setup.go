@@ -34,8 +34,8 @@ var setupCommand = &cli.Command{
 		},
 	},
 	Action: func(cmd *cli.Context) error {
-		if runtime.GOOS != "linux" && runtime.GOOS != "darwin" {
-			std.Out.WriteLine(output.Styled(output.StyleWarning, "'sg setup' currently only supports macOS and Linux"))
+		if runtime.GOOS != "linux" && runtime.GOOS != "darwin" && runtime.GOOS != "windows" {
+			std.Out.WriteLine(output.Styled(output.StyleWarning, "'sg setup' currently only supports macOS, Linux and Windows"))
 			return exit.NewEmptyExitErr(1)
 		}
 

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	"github.com/urfave/cli/v2"
@@ -166,6 +167,10 @@ var sg = &cli.App{
 
 		// Configure global output
 		std.Out = std.NewOutput(cmd.App.Writer, verbose)
+
+		if runtime.GOOS == "windows" {
+			std.Out.WriteWarningf("Windows support is still experimental and under development")
+		}
 
 		// Set up analytics and hooks for each command - do this as the first context
 		// setup
