@@ -91,6 +91,8 @@ const (
 
 type GitHubAppDomain string
 
+func (s GitHubAppDomain) ToGraphQL() string { return strings.ToUpper(string(s)) }
+
 // RepoCommit is a record of a repo and a corresponding commit.
 type RepoCommit struct {
 	ID                   int64

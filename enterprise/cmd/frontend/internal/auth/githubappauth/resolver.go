@@ -78,7 +78,11 @@ func (r *resolver) GitHubApps(ctx context.Context, args *graphqlbackend.GitHubAp
 		return nil, err
 	}
 
-	apps, err := r.db.GitHubApps().List(ctx, args.Domain)
+	domain, err := parseDomain(args.Domain)
+	if err != nil {
+		return nil, err
+	}
+	apps, err := r.db.GitHubApps().List(ctx, domain)
 	if err != nil {
 		return nil, err
 	}
@@ -94,6 +98,22 @@ func (r *resolver) GitHubApps(ctx context.Context, args *graphqlbackend.GitHubAp
 	}
 
 	return gitHubAppConnection, nil
+}
+
+func parseDomain(s *string) (*itypes.GitHubAppDomain, error) {
+	if s == nil {
+		return nil, nil
+	}
+	switch *s {
+	case "REPOS":
+		domain := itypes.ReposDomain
+		return &domain, nil
+	case "BATCHES":
+		domain := itypes.BatchesDomain
+		return &domain, nil
+	default:
+		return nil, errors.Errorf("unknown domain %q", *s)
+	}
 }
 
 func (r *resolver) GitHubApp(ctx context.Context, args *graphqlbackend.GitHubAppArgs) (graphqlbackend.GitHubAppResolver, error) {
@@ -187,8 +207,8 @@ func (r *gitHubAppResolver) Name() string {
 	return r.app.Name
 }
 
-func (r *gitHubAppResolver) Domain() itypes.GitHubAppDomain {
-	return r.app.Domain
+func (r *gitHubAppResolver) Domain() string {
+	return r.app.Domain.ToGraphQL()
 }
 
 func (r *gitHubAppResolver) Slug() string {

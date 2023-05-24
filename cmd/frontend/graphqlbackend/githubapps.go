@@ -36,7 +36,7 @@ type GitHubAppResolver interface {
 	ID() graphql.ID
 	AppID() int32
 	Name() string
-	Domain() types.GitHubAppDomain
+	Domain() string
 	Slug() string
 	BaseURL() string
 	AppURL() string
@@ -54,7 +54,7 @@ type DeleteGitHubAppArgs struct {
 }
 
 type GitHubAppsArgs struct {
-	Domain *types.GitHubAppDomain
+	Domain *string
 }
 
 type GitHubAppArgs struct {
