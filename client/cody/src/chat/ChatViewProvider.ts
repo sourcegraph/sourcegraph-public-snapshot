@@ -369,7 +369,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion'): Promise<void> {
         debug('ChatViewProvider:onHumanMessageSubmitted', '', { verbose: { text, submitType } })
         if (submitType === 'suggestion') {
-            await logEvent('CodyVSCodeExtension:chatPredictions:used')
+            logEvent('CodyVSCodeExtension:chatPredictions:used').then(() => {})
         }
         this.inputHistory.push(text)
         if (this.config.experimentalChatPredictions) {
@@ -461,7 +461,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             }
         }
 
-        await logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
+        logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`).then(() => {})
     }
 
     private async runRecipeForSuggestion(recipeId: RecipeID, humanChatInput: string = ''): Promise<void> {
@@ -486,7 +486,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         const prompt = await transcript.toPrompt(getPreamble(this.codebaseContext.getCodebase()))
 
-        await logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
+        logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`).then(() => {})
 
         let text = ''
         multiplexer.sub(BotResponseMultiplexer.DEFAULT_TOPIC, {
@@ -679,21 +679,21 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         switch (event) {
             case 'feedback':
                 // Only include context for dot com users with connected codebase
-                await logEvent(
+                logEvent(
                     `CodyVSCodeExtension:codyFeedback:${value}`,
                     null,
                     !isPrivateInstance && this.codebaseContext.getCodebase() ? this.transcript.toChat() : null
-                )
+                ).then(() => {})
                 break
             case 'token':
-                await logEvent(`CodyVSCodeExtension:cody${value}AccessToken:clicked`, endpointUri, endpointUri)
+                logEvent(`CodyVSCodeExtension:cody${value}AccessToken:clicked`, endpointUri, endpointUri).then(() => {})
                 break
             case 'auth':
-                await logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri)
+                logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri).then(() => {})
                 break
             // aditya combine this with above statemenet for auth or click
             case 'click':
-                await logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri)
+                logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri).then(() => {})
                 break
         }
     }

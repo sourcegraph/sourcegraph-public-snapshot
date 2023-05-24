@@ -243,7 +243,7 @@ export class InlineController {
         const newRange = new vscode.Range(startLine, 0, startLine + newLineCount, 0)
         await this.setReplacementRange(newRange)
         this.currentTaskId = ''
-        await logEvent('CodyVSCodeExtension:inline-assist:replaced')
+        logEvent('CodyVSCodeExtension:inline-assist:replaced').then(() => {})
         return
     }
     /**
