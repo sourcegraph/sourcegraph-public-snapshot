@@ -628,7 +628,14 @@ export const SITE_UPGRADE_READINESS = gql`
     query SiteUpgradeReadiness {
         site {
             upgradeReadiness {
-                schemaDrift
+                schemaDrift {
+                    name
+                    problem
+                    solution
+                    diff
+                    statements
+                    urlHint
+                }
                 requiredOutOfBandMigrations {
                     id
                     description

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log"
@@ -25,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/drift"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -408,22 +410,82 @@ func (r *upgradeReadinessResolver) init(ctx context.Context) (_ cliutil.Runner, 
 	return r.runner, r.version, r.schemaNames, r.initErr
 }
 
-func (r *upgradeReadinessResolver) SchemaDrift(ctx context.Context) (string, error) {
+type schemaDriftResolver struct {
+	summary drift.Summary
+}
+
+func (r *schemaDriftResolver) Name() string {
+	return r.summary.Name()
+}
+
+func (r *schemaDriftResolver) Problem() string {
+	return r.summary.Problem()
+}
+
+func (r *schemaDriftResolver) Solution() string {
+	return r.summary.Solution()
+}
+
+func (r *schemaDriftResolver) Diff() *string {
+	if a, b, ok := r.summary.Diff(); ok {
+		v := cmp.Diff(a, b)
+		return &v
+	}
+
+	return nil
+}
+
+func (r *schemaDriftResolver) Statements() *[]string {
+	if statements, ok := r.summary.Statements(); ok {
+		return &statements
+	}
+
+	return nil
+}
+
+func (r *schemaDriftResolver) URLHint() *string {
+	if urlHint, ok := r.summary.URLHint(); ok {
+		return &urlHint
+	}
+
+	return nil
+}
+
+func (r *upgradeReadinessResolver) SchemaDrift(ctx context.Context) ([]*schemaDriftResolver, error) {
 	runner, version, schemaNames, err := r.init(ctx)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	r.logger.Debug("schema drift", log.String("version", version))
 
-	var drift bytes.Buffer
-	out := output.NewOutput(&drift, output.OutputOpts{Verbose: true})
-	err = cliutil.CheckDrift(ctx, runner, version, out, true, schemaNames, schemaFactories)
-	if err == cliutil.ErrDatabaseDriftDetected {
-		return drift.String(), nil
-	} else if err != nil {
-		return "", errors.Wrap(err, "check drift")
+	var resolvers []*schemaDriftResolver
+	for _, schemaName := range schemaNames {
+		store, err := runner.Store(ctx, schemaName)
+		if err != nil {
+			return nil, errors.Wrap(err, "get migration store")
+		}
+		schemaDescriptions, err := store.Describe(ctx)
+		if err != nil {
+			return nil, err
+		}
+		schema := schemaDescriptions["public"]
+
+		var buf bytes.Buffer
+		driftOut := output.NewOutput(&buf, output.OutputOpts{})
+
+		expectedSchema, err := cliutil.FetchExpectedSchema(ctx, schemaName, version, driftOut, schemaFactories)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, summary := range drift.CompareSchemaDescriptions(schemaName, version, cliutil.Canonicalize(schema), cliutil.Canonicalize(expectedSchema)) {
+			resolvers = append(resolvers, &schemaDriftResolver{
+				summary: summary,
+			})
+		}
 	}
-	return "", nil
+
+	return resolvers, nil
 }
 
 // isRequiredOutOfBandMigration returns true if a OOB migration is deprecated not
