@@ -11,8 +11,8 @@ export class CompletionsCache {
     // account. We need to add additional information like file path or suffix
     // to make sure the cache does not return undesired results for other files
     // in the same project.
-    public get(prefix: string): Completion[] | undefined {
-        const trimmedPrefix = trimEndAfterLastNewline(prefix)
+    public get(prefix: string, trim: boolean = true): Completion[] | undefined {
+        const trimmedPrefix = trim ? trimEndAfterLastNewline(prefix) : prefix
         const results = this.cache.get(trimmedPrefix)
         if (results) {
             return results.map(result => {
@@ -47,15 +47,25 @@ export class CompletionsCache {
                 maxCharsAppended = completion.content.length
             }
 
+            // We also cache the completion with the exact (= untrimmed) prefix
+            // for the separate lookup mode used for deletions
+            if (trimEndAfterLastNewline(completion.prefix) !== completion.prefix) {
+                this.insertCompletion(completion.prefix, completion)
+            }
+
             for (let i = 0; i <= maxCharsAppended; i++) {
                 const key = trimEndAfterLastNewline(completion.prefix) + completion.content.slice(0, i)
-                if (!this.cache.has(key)) {
-                    this.cache.set(key, [completion])
-                } else {
-                    const existingCompletions = this.cache.get(key)!
-                    existingCompletions.push(completion)
-                }
+                this.insertCompletion(key, completion)
             }
+        }
+    }
+
+    private insertCompletion(key: string, completion: Completion): void {
+        if (!this.cache.has(key)) {
+            this.cache.set(key, [completion])
+        } else {
+            const existingCompletions = this.cache.get(key)!
+            existingCompletions.push(completion)
         }
     }
 }

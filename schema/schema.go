@@ -1362,6 +1362,8 @@ type LlmProxy struct {
 type Log struct {
 	// AuditLog description: EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)
 	AuditLog *AuditLog `json:"auditLog,omitempty"`
+	// SecurityEventLog description: EXPERIMENTAL: Configuration for security event logging
+	SecurityEventLog *SecurityEventLog `json:"securityEventLog,omitempty"`
 	// Sentry description: Configuration for Sentry
 	Sentry *Sentry `json:"sentry,omitempty"`
 }
@@ -1980,6 +1982,12 @@ type SearchScope struct {
 	Value string `json:"value"`
 }
 
+// SecurityEventLog description: EXPERIMENTAL: Configuration for security event logging
+type SecurityEventLog struct {
+	// Location description: Where to output the security event log [none, auditlog, database, all] where auditlog is the default logging to stdout with the specified audit log format
+	Location string `json:"location,omitempty"`
+}
+
 // Sentry description: Configuration for Sentry
 type Sentry struct {
 	// BackendDSN description: Sentry Data Source Name (DSN) for backend errors. Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.
@@ -2340,6 +2348,8 @@ type SiteConfiguration struct {
 	AuthzEnforceForSiteAdmins bool `json:"authz.enforceForSiteAdmins,omitempty"`
 	// AuthzRefreshInterval description: Time interval (in seconds) of how often each component picks up authorization changes in external services.
 	AuthzRefreshInterval int `json:"authz.refreshInterval,omitempty"`
+	// BatchChangesAutoDeleteBranch description: Automatically delete branches created for Batch Changes changesets when the changeset is merged or closed, for supported code hosts. Overrides any setting on the repository on the code host itself.
+	BatchChangesAutoDeleteBranch bool `json:"batchChanges.autoDeleteBranch,omitempty"`
 	// BatchChangesChangesetsRetention description: How long changesets will be retained after they have been detached from a batch change.
 	BatchChangesChangesetsRetention string `json:"batchChanges.changesetsRetention,omitempty"`
 	// BatchChangesDisableWebhooksWarning description: Hides Batch Changes warnings about webhooks not being configured.
@@ -2606,6 +2616,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "auth.userOrgMap")
 	delete(m, "authz.enforceForSiteAdmins")
 	delete(m, "authz.refreshInterval")
+	delete(m, "batchChanges.autoDeleteBranch")
 	delete(m, "batchChanges.changesetsRetention")
 	delete(m, "batchChanges.disableWebhooksWarning")
 	delete(m, "batchChanges.enabled")

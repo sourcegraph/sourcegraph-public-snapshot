@@ -30,9 +30,8 @@ export const useIsCodyEnabled = (): IsCodyEnabled => {
         return notEnabled
     }
     if (window.context.sourcegraphAppMode) {
-        // TODO(app-team): This is temporary to force code always-on; we will make this enabled/disabled
-        // based on the GraphQL API that can detect if you can enable it based on your account (connected
-        // to Sourcegraph.com, email verified, etc.) in the future.
+        // If the user is using the Sourcegraph app, all features are enabled
+        // as long as the user has a connected Sourcegraph.com account.
         allEnabled = true
     }
 

@@ -64,7 +64,6 @@ func (c *RealCommand) Run(ctx context.Context, cmdLogger Logger, spec Spec) (err
 	c.Logger.Info(
 		"Running command",
 		log.String("key", spec.Key),
-		log.Strings("command", spec.Command),
 		log.String("workingDir", spec.Dir),
 	)
 

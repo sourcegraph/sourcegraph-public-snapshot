@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -176,6 +177,17 @@ func (s GitHubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 		return err
 	}
 
+	if conf.Get().BatchChangesAutoDeleteBranch {
+		repo := c.TargetRepo.Metadata.(*github.Repository)
+		owner, repoName, err := github.SplitRepositoryNameWithOwner(repo.NameWithOwner)
+		if err != nil {
+			return errors.Wrap(err, "getting owner and repo name to delete source branch")
+		}
+
+		if err := s.client.DeleteBranch(ctx, owner, repoName, pr.HeadRefName); err != nil {
+			return errors.Wrap(err, "deleting source branch")
+		}
+	}
 	return c.Changeset.SetMetadata(pr)
 }
 
@@ -281,6 +293,17 @@ func (s GitHubSource) MergeChangeset(ctx context.Context, c *Changeset, squash b
 		return err
 	}
 
+	if conf.Get().BatchChangesAutoDeleteBranch {
+		repo := c.TargetRepo.Metadata.(*github.Repository)
+		owner, repoName, err := github.SplitRepositoryNameWithOwner(repo.NameWithOwner)
+		if err != nil {
+			return errors.Wrap(err, "getting owner and repo name to delete source branch")
+		}
+
+		if err := s.client.DeleteBranch(ctx, owner, repoName, pr.HeadRefName); err != nil {
+			return errors.Wrap(err, "deleting source branch")
+		}
+	}
 	return c.Changeset.SetMetadata(pr)
 }
 
