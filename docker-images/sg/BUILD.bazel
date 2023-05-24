@@ -15,6 +15,7 @@ oci_image(
     entrypoint = [
         "/usr/local/bin/sg",
     ],
+    user = "sourcegraph",
 )
 
 oci_tarball(

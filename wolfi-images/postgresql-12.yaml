@@ -11,13 +11,14 @@ contents:
     - postgresql-12-oci-entrypoint
     - su-exec
 
-# TODO: Is this needed?
-entrypoint:
-  command: /var/lib/postgres/initdb/postgresql-entrypoint.sh postgres
-
-# TODO: Is this needed?
+# These are overridden by the Dockerfile, but provide defaults for running in the base image
 environment:
   PGDATA: /data/pgdata-12
   POSTGRES_USER: sg
   POSTGRES_PASSWORD: ''
   POSTGRES_DB: sg
+
+# Ideally, running the base image would start a Postgres server, but the lack of a Postgres user
+# means this won't work. We can't create one as the UID/GID depends on the image.
+# entrypoint:
+#   command: /var/lib/postgres/initdb/postgresql-entrypoint.sh postgres

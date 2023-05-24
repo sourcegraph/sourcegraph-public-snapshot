@@ -35,6 +35,7 @@ oci_image(
     base = "@wolfi_base",
     entrypoint = ["/repo-updater"],
     tars = [":tar_repo-updater"],
+    user = "sourcegraph",
 )
 
 oci_tarball(

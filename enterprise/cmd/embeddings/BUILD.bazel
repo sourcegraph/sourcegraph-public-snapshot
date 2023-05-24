@@ -31,6 +31,8 @@ oci_image(
     base = "@wolfi_base",
     entrypoint = ["/embeddings"],
     tars = [":tar_embeddings"],
+    user = "sourcegraph",
+    workdir = "/",
 )
 
 oci_tarball(
