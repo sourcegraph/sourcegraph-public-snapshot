@@ -10,7 +10,7 @@ extend type Query {
     """
     All configured GitHub Apps.
     """
-    gitHubApps(domain: String): GitHubAppConnection!
+    gitHubApps(domain: DomainType): GitHubAppConnection!
     """
     Looks up a GitHub App by its ID.
     """
@@ -19,6 +19,17 @@ extend type Query {
     Looks up a GitHub App by its AppID and BaseURL.
     """
     gitHubAppByAppID(appID: Int!, baseURL: String!): GitHubApp
+}
+
+enum DomainType {
+    """
+    GitHub Apps that are configured for repositories.
+    """
+    REPOS
+    """
+    GitHub Apps that are configured for batch changes.
+    """
+    BATCHES
 }
 
 """
