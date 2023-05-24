@@ -797,6 +797,14 @@ func (c *V3Client) Fork(ctx context.Context, owner, repo string, org *string, fo
 	return convertRestRepo(restRepo), nil
 }
 
+// DeleteBranch deletes the given branch from the given repository.
+func (c *V3Client) DeleteBranch(ctx context.Context, owner, repo, branch string) error {
+	if _, err := c.delete(ctx, "repos/"+owner+"/"+repo+"/git/refs/heads/"+branch); err != nil {
+		return err
+	}
+	return nil
+}
+
 // GetAppInstallation gets information of a GitHub App installation.
 //
 // API docs: https://docs.github.com/en/rest/reference/apps#get-an-installation-for-the-authenticated-app

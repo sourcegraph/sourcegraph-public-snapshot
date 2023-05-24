@@ -7,6 +7,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -140,9 +141,22 @@ func (s BitbucketServerSource) CreateChangeset(ctx context.Context, c *Changeset
 // CloseChangeset closes the given *Changeset on the code host and updates the
 // Metadata column in the *batches.Changeset to the newly closed pull request.
 func (s BitbucketServerSource) CloseChangeset(ctx context.Context, c *Changeset) error {
+	pr, ok := c.Changeset.Metadata.(*bitbucketserver.PullRequest)
+	if !ok {
+		return errors.New("Changeset is not a Bitbucket Server pull request")
+	}
+
 	declined, err := s.callAndRetryIfOutdated(ctx, c, s.client.DeclinePullRequest)
 	if err != nil {
 		return err
+	}
+
+	if conf.Get().BatchChangesAutoDeleteBranch {
+		if err := s.client.DeleteBranch(ctx, pr.ToRef.Repository.Project.Key, pr.ToRef.Repository.Slug, bitbucketserver.DeleteBranchInput{
+			Name: pr.FromRef.ID,
+		}); err != nil {
+			return errors.Wrap(err, "deleting source branch")
+		}
 	}
 
 	return c.Changeset.SetMetadata(declined)
@@ -269,12 +283,25 @@ func (s BitbucketServerSource) CreateComment(ctx context.Context, c *Changeset, 
 // The squash parameter is ignored, as Bitbucket Server does not support
 // squash merges.
 func (s BitbucketServerSource) MergeChangeset(ctx context.Context, c *Changeset, squash bool) error {
+	pr, ok := c.Changeset.Metadata.(*bitbucketserver.PullRequest)
+	if !ok {
+		return errors.New("Changeset is not a Bitbucket Server pull request")
+	}
+
 	merged, err := s.callAndRetryIfOutdated(ctx, c, s.client.MergePullRequest)
 	if err != nil {
 		if bitbucketserver.IsMergePreconditionFailedException(err) {
 			return &ChangesetNotMergeableError{ErrorMsg: err.Error()}
 		}
 		return err
+	}
+
+	if conf.Get().BatchChangesAutoDeleteBranch {
+		if err := s.client.DeleteBranch(ctx, pr.ToRef.Repository.Project.Key, pr.ToRef.Repository.Slug, bitbucketserver.DeleteBranchInput{
+			Name: pr.FromRef.ID,
+		}); err != nil {
+			return errors.Wrap(err, "deleting source branch")
+		}
 	}
 
 	return c.Changeset.SetMetadata(merged)

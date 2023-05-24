@@ -568,6 +568,12 @@
       "group": "BatchChanges",
       "default": false
     },
+    "batchChanges.autoDeleteBranch": {
+      "description": "Automatically delete branches created for Batch Changes changesets when the changeset is merged or closed, for supported code hosts. Overrides any setting on the repository on the code host itself.",
+      "type": "boolean",
+      "group": "BatchChanges",
+      "default": false
+    },
     "batchChanges.rolloutWindows": {
       "description": "Specifies specific windows, which can have associated rate limits, to be used when reconciling published changesets (creating or updating). All days and times are handled in UTC.",
       "type": "array",

@@ -1579,7 +1579,9 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 		return newHttpResponseState(resp.StatusCode, resp.Header), nil
 	}
 
-	err = json.NewDecoder(resp.Body).Decode(result)
+	if resp.StatusCode != http.StatusNoContent {
+		err = json.NewDecoder(resp.Body).Decode(result)
+	}
 	return newHttpResponseState(resp.StatusCode, resp.Header), err
 }
 

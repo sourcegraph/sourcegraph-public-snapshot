@@ -83,13 +83,14 @@ type Ref struct {
 }
 
 type CreatePullRequestInput struct {
-	SourceRefName string     `json:"sourceRefName"`
-	TargetRefName string     `json:"targetRefName"`
-	Title         string     `json:"title"`
-	Description   string     `json:"description"`
-	Reviewers     []Reviewer `json:"reviewers"`
-	ForkSource    *ForkRef   `json:"forkSource"`
-	IsDraft       bool       `json:"isDraft"`
+	SourceRefName     string                        `json:"sourceRefName"`
+	TargetRefName     string                        `json:"targetRefName"`
+	Title             string                        `json:"title"`
+	Description       string                        `json:"description"`
+	Reviewers         []Reviewer                    `json:"reviewers"`
+	ForkSource        *ForkRef                      `json:"forkSource"`
+	IsDraft           bool                          `json:"isDraft"`
+	CompletionOptions *PullRequestCompletionOptions `json:"completionOptions"`
 }
 
 type ForkRef struct {
@@ -170,13 +171,14 @@ type PullRequestMergeOptions struct {
 }
 
 type PullRequestCompleteInput struct {
-	CommitID      string                    `json:"commitId"`
-	MergeStrategy *PullRequestMergeStrategy `json:"mergeStrategy"`
+	CommitID           string
+	MergeStrategy      *PullRequestMergeStrategy
+	DeleteSourceBranch bool
 }
 
 type PullRequestCompletionOptions struct {
-	MergeStrategy      PullRequestMergeStrategy `json:"mergeStrategy"`
-	DeleteSourceBranch bool                     `json:"deleteSourceBranch"`
+	MergeStrategy      PullRequestMergeStrategy `json:"mergeStrategy,omitempty"`
+	DeleteSourceBranch bool                     `json:"deleteSourceBranch,omitempty"`
 	MergeCommitMessage string                   `json:"mergeCommitMessage"`
 }
 

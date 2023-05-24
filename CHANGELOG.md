@@ -30,6 +30,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Added the ability to block auto-indexing scheduling and inference via the `codeintel_autoindexing_exceptions` Postgres table. [#51578](https://github.com/sourcegraph/sourcegraph/pull/51578)
 - When an admin has configured rollout windows for Batch Changes changesets, the configuration details are now visible to all users on the Batch Changes settings page. [#50479](https://github.com/sourcegraph/sourcegraph/pull/50479)
 - Added support for regular expressions in`exclude` repositories for GitLab code host connections. [#51862](https://github.com/sourcegraph/sourcegraph/pull/51862)
+- Branches created by Batch Changes will now be automatically deleted on the code host upon merging or closing a changeset if the new `batchChanges.autoDeleteBranch` site setting is enabled. [#52055](https://github.com/sourcegraph/sourcegraph/pull/52055)
 
 ### Changed
 

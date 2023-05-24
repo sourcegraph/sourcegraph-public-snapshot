@@ -148,3 +148,27 @@ To enable forks, update the site configuration to include:
   "batchChanges.enforceForks": true
 }
 ```
+
+## Automatically delete branches on merge/close
+
+<span class="badge badge-note">Sourcegraph 5.0.5+</span>
+
+Sourcegraph can be configured to automatically delete branches created for Batch Changes changesets when changesets are merged or closed by enabling the `batchChanges.autoDeleteBranch` site configuration option.
+
+When enabled, Batch Changes will override any setting on the repository on the code host itself and attempt to remove the source branch of the changeset when the changeset is merged or closed. This is useful for keeping repositories clean of stale branches.
+
+Not every code host supports this in the same way; some code host APIs expose a property on the changeset which can be toggled to enable this behavior, while others require a separate API call to delete the branch after the changeset is merged/closed.
+
+For those that support a changeset property, Batch Changes will automatically set the property to match the site config setting. The property will be updated whenever the changeset is updated, so that the settings stay in sync.
+
+For those that require a separate API call, Batch Changes will only be able to delete the branch if the changeset is merged/closed _using Sourcegraph_. If the changeset is merged/closed on the code host itself, Batch Changes will not be able to delete the branch.
+
+Refer to the table below to see the levels with which each code host is supported:
+
+Code Host | Changeset property or separate API call? | Support on merge | Support on close
+--------- | --------- | :-: | :-:
+Azure DevOps | Changeset property | ✓ | ✗
+Bitbucket Cloud | Changeset property | ✓ | ✓
+Bitbucket Server | API call | ✓ | ✓
+GitHub | API call | ✓ | ✓
+GitLab | Changeset property | ✓ | ✓

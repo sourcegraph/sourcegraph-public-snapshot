@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -149,6 +150,10 @@ func (s BitbucketCloudSource) UpdateChangeset(ctx context.Context, cs *Changeset
 	// it'll override it's value to it's empty value. We always want to retain the reviewers assigned to a pull
 	// request when updating a pull request.
 	opts.Reviewers = pr.Reviewers
+
+	if conf.Get().BatchChangesAutoDeleteBranch {
+		opts.CloseSourceBranch = true
+	}
 
 	updated, err := s.client.UpdatePullRequest(ctx, targetRepo, pr.ID, opts)
 	if err != nil {
@@ -318,11 +323,14 @@ func (s BitbucketCloudSource) setChangesetMetadata(ctx context.Context, repo *bi
 
 func (s BitbucketCloudSource) changesetToPullRequestInput(cs *Changeset) bitbucketcloud.PullRequestInput {
 	destBranch := gitdomain.AbbreviateRef(cs.BaseRef)
+	closeSourceBranch := conf.Get().BatchChangesAutoDeleteBranch
+
 	opts := bitbucketcloud.PullRequestInput{
 		Title:             cs.Title,
 		Description:       cs.Body,
 		SourceBranch:      gitdomain.AbbreviateRef(cs.HeadRef),
 		DestinationBranch: &destBranch,
+		CloseSourceBranch: closeSourceBranch,
 	}
 
 	// If we're forking, then we need to set the source repository as well.
