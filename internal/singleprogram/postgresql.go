@@ -75,7 +75,7 @@ func startEmbeddedPostgreSQL(logger log.Logger, pgRootDir string) (*postgresqlEn
 	if runtime.GOOS == "linux" && runtime.GOARCH == "amd64" {
 		ldso := "/lib64/ld-linux-x86-64.so.2"
 		if _, err := os.Stat(ldso); err != nil {
-			return nil, errors.Errorf("could not use embedded-postgres since %q is missing", ldso)
+			return nil, errors.Errorf("could not use embedded-postgres since %q is missing - see https://github.com/sourcegraph/sourcegraph/issues/52360 for more details", ldso)
 		}
 	}
 
