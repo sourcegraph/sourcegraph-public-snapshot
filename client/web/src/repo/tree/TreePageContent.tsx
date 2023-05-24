@@ -210,7 +210,7 @@ const ExtraInfoSection: React.FC<{
     className?: string
     hasWritePermissions?: boolean
 }> = ({ repo, className, hasWritePermissions }) => {
-    const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', false)
+    const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', true)
 
     const metadataItems = useMemo(() => repo.metadata.map(({ key, value }) => ({ key, value })) || [], [repo.metadata])
     const queryState = useNavbarQueryState(state => state.queryState)

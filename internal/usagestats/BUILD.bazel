@@ -61,6 +61,7 @@ go_test(
     name = "usagestats_test",
     srcs = [
         "aggregated_codeintel_test.go",
+        "aggregated_repo_metadata_test.go",
         "aggregated_search_test.go",
         "aggregated_test.go",
         "batches_test.go",

@@ -33,7 +33,7 @@ interface RepoMetadataPageProps extends Pick<BreadcrumbSetters, 'useBreadcrumb'>
  */
 export const RepoMetadataPage: FC<RepoMetadataPageProps> = ({ telemetryService, useBreadcrumb, repo, ...props }) => {
     useBreadcrumb(BREADCRUMB)
-    const [repoMetadataEnabled, status] = useFeatureFlag('repository-metadata')
+    const [repoMetadataEnabled, status] = useFeatureFlag('repository-metadata', true)
 
     useEffect(() => {
         if (repoMetadataEnabled) {
