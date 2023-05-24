@@ -12,6 +12,8 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Changed
 
+- Removed server endpoint from the user settings [pull/51910](https://github.com/sourcegraph/sourcegraph/pull/51910)
+
 ## [0.1.4]
 
 ### Added

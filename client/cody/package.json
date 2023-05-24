@@ -363,20 +363,14 @@
       "type": "object",
       "title": "Cody",
       "properties": {
-        "cody.enabled": {
-          "order": 1,
-          "type": "boolean",
-          "default": true,
-          "description": "Enable Cody"
-        },
         "cody.codebase": {
-          "order": 2,
+          "order": 1,
           "type": "string",
           "markdownDescription": "The name of the embedded repository that Cody will use to gather context for its responses. This is automatically inferred from your Git metadata, but you can use this option if you need to override the default.",
           "example": "github.com/sourcegraph/sourcegraph"
         },
         "cody.useContext": {
-          "order": 3,
+          "order": 2,
           "type": "string",
           "enum": [
             "embeddings",
@@ -388,7 +382,7 @@
           "markdownDescription": "If 'embeddings' is selected, Cody will prefer to use an embeddings-based index when fetching context to generate responses to user requests. If no such index is found, it will fall back to using keyword-based local context fetching. If 'keyword' is selected, Cody will use keyword context. Selecting 'none' will limit Cody to using only the currently open file."
         },
         "cody.customHeaders": {
-          "order": 4,
+          "order": 3,
           "type": "object",
           "markdownDescription": "Adds custom HTTP headers to all network requests to the Sourcegraph endpoint. Defining required headers here ensures requests are properly forwarded through intermediary proxy servers, which may mandate certain custom headers for internal or external communication.",
           "default": {},
@@ -400,25 +394,25 @@
           ]
         },
         "cody.experimental.suggestions": {
-          "order": 5,
+          "order": 4,
           "type": "boolean",
           "markdownDescription": "Enables Cody inline autocompletion in your editor.",
           "default": false
         },
         "cody.experimental.chatPredictions": {
-          "order": 6,
+          "order": 5,
           "type": "boolean",
           "default": false,
           "markdownDescription": "Adds suggestions of possible relevant messages in the chat window."
         },
         "cody.experimental.inline": {
-          "order": 7,
+          "order": 6,
           "type": "boolean",
           "markdownDescription": "Enables Cody Inline Assist, an inline way to explicitly ask questions and propose modifications to code.",
           "default": false
         },
         "cody.experimental.guardrails": {
-          "order": 8,
+          "order": 7,
           "type": "boolean",
           "default": false
         },
