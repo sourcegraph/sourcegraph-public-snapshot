@@ -11,7 +11,6 @@ COPY ${PROJECT_ROOT}/dist .
 COPY ${PROJECT_ROOT}/package .
 
 # Install only production dependencies
-# hadolint ignore=DL3016
 RUN npm install --omit=dev --silent
 
 # The application's default port is picked from the environment
