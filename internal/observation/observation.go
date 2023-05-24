@@ -285,15 +285,13 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 		elapsedMs := since.Milliseconds()
 		defaultFinishFields := []attribute.KeyValue{attribute.Float64("count", count), attribute.Float64("elapsed", elapsed)}
 		finishAttrs := mergeAttrs(defaultFinishFields, finishArgs.Attrs)
-
-		attrs := mergeAttrs(defaultFinishFields, finishAttrs)
 		metricLabels := mergeLabels(op.metricLabels, args.MetricLabelValues, finishArgs.MetricLabelValues)
 
 		if multi := new(ErrCollector); err != nil && errors.As(*err, &multi) {
 			if multi.errs == nil {
 				err = nil
 			}
-			attrs = append(attrs, multi.extraAttrs...)
+			finishAttrs = append(finishAttrs, multi.extraAttrs...)
 		}
 
 		var (
@@ -312,7 +310,7 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 
 		op.emitMetrics(metricsErr, count, elapsed, metricLabels)
 
-		op.finishTrace(traceErr, tr, attrs)
+		op.finishTrace(traceErr, tr, finishAttrs)
 	}
 }
 
