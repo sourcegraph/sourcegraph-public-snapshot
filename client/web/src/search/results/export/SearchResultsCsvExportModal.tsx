@@ -44,7 +44,7 @@ export const SearchResultsCsvExportModal: React.FunctionComponent<SearchResultsC
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<ErrorLike | undefined>()
 
-    const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', false)
+    const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', true)
 
     const downloadResults = useCallback(() => {
         if (!searchCompleted) {

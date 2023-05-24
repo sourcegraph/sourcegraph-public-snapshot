@@ -31,6 +31,8 @@ func (k KeyValuePair) Value() *string {
 	return k.value
 }
 
+var featureDisabledError = errors.New("'repository-metadata' feature flag is not enabled")
+
 type emptyNonNilValueError struct {
 	value string
 }
@@ -59,8 +61,8 @@ func (r *schemaResolver) AddRepoMetadata(ctx context.Context, args struct {
 		return &EmptyResponse{}, err
 	}
 
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
-		return nil, errors.New("'repository-metadata' feature flag is not enabled")
+	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", true) {
+		return nil, featureDisabledError
 	}
 
 	repoID, err := UnmarshalRepositoryID(args.Repo)
@@ -100,8 +102,8 @@ func (r *schemaResolver) UpdateRepoMetadata(ctx context.Context, args struct {
 		return &EmptyResponse{}, err
 	}
 
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
-		return nil, errors.New("'repository-metadata' feature flag is not enabled")
+	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", true) {
+		return nil, featureDisabledError
 	}
 
 	repoID, err := UnmarshalRepositoryID(args.Repo)
@@ -138,8 +140,8 @@ func (r *schemaResolver) DeleteRepoMetadata(ctx context.Context, args struct {
 		return &EmptyResponse{}, err
 	}
 
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
-		return nil, errors.New("'repository-metadata' feature flag is not enabled")
+	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", true) {
+		return nil, featureDisabledError
 	}
 
 	repoID, err := UnmarshalRepositoryID(args.Repo)
@@ -192,8 +194,8 @@ func (r *repoMetaResolver) Keys(ctx context.Context, args *RepoMetadataKeysArgs)
 		return nil, err
 	}
 
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
-		return nil, errors.New("'repository-metadata' feature flag is not enabled")
+	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", true) {
+		return nil, featureDisabledError
 	}
 
 	listOptions := &args.RepoKVPListKeysOptions
@@ -268,8 +270,8 @@ func (r *repoMetaKeyResolver) Values(ctx context.Context, args *RepoMetadataValu
 		return nil, err
 	}
 
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
-		return nil, errors.New("'repository-metadata' feature flag is not enabled")
+	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", true) {
+		return nil, featureDisabledError
 	}
 
 	connectionStore := &repoMetaValuesConnectionStore{
