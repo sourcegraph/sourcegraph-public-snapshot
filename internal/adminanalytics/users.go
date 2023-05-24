@@ -139,6 +139,7 @@ const (
 		TO_CHAR(timestamp, 'YYYY-MM') AS date,
 		COUNT(DISTINCT CASE WHEN user_id = 0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END) AS count
 	FROM event_logs
+	LEFT OUTER JOIN users ON users.id = event_logs.user_id
 	WHERE
 		timestamp BETWEEN %s AND %s
     AND (%s)
