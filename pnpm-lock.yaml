@@ -1661,9 +1661,6 @@ importers:
       '@sourcegraph/extension-api-types':
         specifier: workspace:*
         version: link:../extension-api-types
-      '@types/vscode-webview':
-        specifier: ^1.57.1
-        version: 1.57.1
       vsce:
         specifier: ^2.7.0
         version: 2.7.0
