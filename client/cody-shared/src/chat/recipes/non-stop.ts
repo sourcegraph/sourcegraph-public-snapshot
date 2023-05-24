@@ -5,9 +5,9 @@ import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { Interaction } from '../transcript/interaction'
 
-import { contentSanitizer } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
+// TODO: Disconnect recipe from chat
 export class NonStop implements Recipe {
     public id: RecipeID = 'non-stop'
 
@@ -21,9 +21,8 @@ export class NonStop implements Recipe {
         }
 
         const humanInput =
-            humanChatInput ||
             (await context.editor.showInputBox('Ask Cody to edit your code, or use /chat to ask a question.')) ||
-            ''
+            humanChatInput
 
         const taskID = controllers.task.add(humanInput, selection)
         if ((!humanInput && !selection.selectedText.trim()) || !taskID) {
@@ -53,13 +52,9 @@ export class NonStop implements Recipe {
         context.responseMultiplexer.sub(
             'selection',
             new BufferedBotResponseSubscriber(async content => {
-                if (content) {
-                    await context.editor.replaceSelection(
-                        selection.fileName,
-                        selection.selectedText,
-                        contentSanitizer(content)
-                    )
-                } else {
+                // TODO Handles LLM output
+                // TODO Replace the selected text with the suggested replacement
+                if (!content) {
                     await context.editor.showWarningMessage('Cody did not suggest any replacement.')
                 }
                 // Mark the task as done

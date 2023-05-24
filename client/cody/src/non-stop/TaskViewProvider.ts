@@ -17,15 +17,16 @@ export class TaskViewProvider implements vscode.TreeDataProvider<FixupTaskTreeIt
     private _onDidChangeTreeData = new vscode.EventEmitter<FixupTaskTreeItem | undefined | void>()
     public readonly onDidChangeTreeData = this._onDidChangeTreeData.event
 
-    constructor() {
-        void vscode.commands.executeCommand('setContext', 'cody.task.view.isEmpty', true)
+    constructor(controllerDisposables: vscode.Disposable[]) {
+        this._disposables.push(...controllerDisposables)
+        void vscode.commands.executeCommand('setContext', 'cody.fixup.view.isEmpty', true)
     }
 
     /**
      * Refresh the tree view to get the latest data
      */
     public refresh(): void {
-        void vscode.commands.executeCommand('setContext', 'cody.task.view.isEmpty', this.treeNodes.size === 0)
+        void vscode.commands.executeCommand('setContext', 'cody.fixup.view.isEmpty', this.treeNodes.size === 0)
         this._onDidChangeTreeData.fire()
     }
 
@@ -126,7 +127,7 @@ export class FixupTaskTreeItem extends vscode.TreeItem {
         this.contextValue = 'task'
         this.collapsibleState = vscode.TreeItemCollapsibleState.None
         this.tooltip = new vscode.MarkdownString(`Task #${task.id}: ${task.instruction}`, true)
-        this.command = { command: 'cody.task.open', title: 'Go to File', arguments: [task.id] }
+        this.command = { command: 'cody.fixup.open', title: 'Go to File', arguments: [task.id] }
 
         this.updateIconPath()
     }

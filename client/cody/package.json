@@ -92,7 +92,7 @@
           "visibility": "visible"
         },
         {
-          "id": "cody.tasks.view",
+          "id": "cody.fixup.tree.view",
           "name": "Fixups",
           "when": "cody.nonstop.fixups.enabled && cody.activated",
           "icon": "cody.svg",
@@ -102,7 +102,7 @@
     },
     "viewsWelcome": [
       {
-        "view": "cody.tasks.view",
+        "view": "cody.fixup.tree.view",
         "contents": "No pending Cody fixups",
         "when": "cody.nonstop.fixups.enabled"
       }
@@ -205,38 +205,38 @@
       },
       {
 				"command": "cody.recipe.non-stop",
-				"title": "Cody: Add Fixups with highlighted code",
+				"title": "Cody: Fixup (Experimental)",
         "icon": "resources/cody.png",
         "enablement": "cody.nonstop.fixups.enabled"
 			},
       {
-				"command": "cody.task.open",
+				"command": "cody.fixup.open",
 				"title": "Cody: Go to Fixup",
         "enablement": "cody.nonstop.fixups.enabled",
         "icon": "$(file-code)"
 			},
       {
-				"command": "cody.task.apply",
+				"command": "cody.fixup.apply",
 				"title": "Cody: Apply fixup",
-        "enablement": "!cody.task.view.isEmpty && !cody.task.running",
+        "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(check)"
 			},
       {
-				"command": "cody.task.applyAll",
+				"command": "cody.fixup.apply-all",
 				"title": "Cody: Apply all fixups",
-        "enablement": "!cody.task.view.isEmpty && !cody.task.running",
+        "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(check-all)"
 			},
       {
-				"command": "cody.task.applyDir",
+				"command": "cody.fixup.apply-by-file",
 				"title": "Cody: Apply fixups to selected directory",
-        "enablement": "!cody.task.view.isEmpty && !cody.task.running",
+        "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(check-all)"
 			},
       {
-				"command": "cody.task.diff",
+				"command": "cody.fixup.diff",
 				"title": "Cody: Show diff for fixup",
-        "enablement": "!cody.task.view.isEmpty && !cody.task.running",
+        "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(diff)"
 			}
     ],
@@ -321,19 +321,19 @@
           "when": "false"
         },
         {
-          "command": "cody.task.apply",
+          "command": "cody.fixup.apply",
           "when": "false"
         },
         {
-          "command": "cody.task.applyAll",
+          "command": "cody.fixup.apply-all",
           "when": "false"
         },
         {
-          "command": "cody.task.applyDir",
+          "command": "cody.fixup.apply-by-file",
           "when": "false"
         },
         {
-          "command": "cody.task.diff",
+          "command": "cody.fixup.diff",
           "when": "false"
         }
       ],
@@ -398,8 +398,8 @@
           "group": "navigation@2"
         },
         {
-          "command": "cody.task.applyAll",
-          "when": "cody.nonstop.fixups.enabled && view == cody.tasks.view && cody.activated",
+          "command": "cody.fixup.apply-all",
+          "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated",
           "group": "navigation"
         }
       ],
@@ -437,18 +437,19 @@
       ],
       "view/item/context": [
         {
-          "command": "cody.task.applyDir",
-          "when": "cody.nonstop.fixups.enabled && view == cody.tasks.view && cody.activated && viewItem == fsPath",
+          "command": "cody.fixup.apply-by-file",
+          "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated && viewItem == fsPath",
+          "enable": "cody.fixup.filesWithApplicableFixups",
           "group": "inline"
         },
         {
-          "command": "cody.task.apply",
-          "when": "cody.nonstop.fixups.enabled && view == cody.tasks.view && cody.activated && viewItem == task",
+          "command": "cody.fixup.apply",
+          "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated && viewItem == task",
           "group": "inline@2"
         },
         {
-          "command": "cody.task.diff",
-          "when": "cody.nonstop.fixups.enabled && view == cody.tasks.view && cody.activated && viewItem == task",
+          "command": "cody.fixup.diff",
+          "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated && viewItem == task",
           "group": "inline@1"
         }
       ]

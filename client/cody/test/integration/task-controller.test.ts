@@ -56,7 +56,7 @@ suite('Cody Fixup Task Controller', function () {
         assert.match(selectionText, /^<title>Goodbye Cody<\/title>/)
 
         // Run the apply command should remove all tasks from the task controller
-        await vscode.commands.executeCommand('cody.task.apply')
+        await vscode.commands.executeCommand('cody.fixup.apply')
         assert.strictEqual((await getFixupTasks()).length, 0)
     })
 
@@ -70,7 +70,7 @@ suite('Cody Fixup Task Controller', function () {
         await vscode.workspace.openTextDocument(mainJavaUri)
 
         // Run show command to open fixup file with range selected
-        await vscode.commands.executeCommand('cody.task.open', tasks[0].id)
+        await vscode.commands.executeCommand('cody.fixup.open', tasks[0].id)
 
         const newEditor = vscode.window.activeTextEditor
         assert.strictEqual(newEditor, textEditor)
@@ -81,7 +81,7 @@ suite('Cody Fixup Task Controller', function () {
         assert.strictEqual(tasks.length, 2)
 
         // Run the apply command should remove all tasks from the task controller
-        await vscode.commands.executeCommand('cody.task.applyAll')
+        await vscode.commands.executeCommand('cody.fixup.apply-all')
         assert.strictEqual((await getFixupTasks()).length, 0)
     })
 })

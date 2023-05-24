@@ -16,18 +16,20 @@ export class TaskController {
     private _disposables: vscode.Disposable[] = []
 
     constructor() {
-        this.taskViewProvider = new TaskViewProvider()
-        this._disposables.push(vscode.commands.registerCommand('cody.task.open', id => this.showThisFixup(id)))
+        // Register commands
+        this._disposables.push(vscode.commands.registerCommand('cody.fixup.open', id => this.showThisFixup(id)))
         this._disposables.push(
-            vscode.commands.registerCommand('cody.task.apply', treeItem => this.applyFixup(treeItem))
+            vscode.commands.registerCommand('cody.fixup.apply', treeItem => this.applyFixup(treeItem))
         )
         this._disposables.push(
-            vscode.commands.registerCommand('cody.task.applyDir', treeItem => this.applyDirFixups(treeItem))
+            vscode.commands.registerCommand('cody.fixup.apply-by-file', treeItem => this.applyDirFixups(treeItem))
         )
         this._disposables.push(
-            vscode.commands.registerCommand('cody.task.applyAll', treeItem => this.applyAllFixups(treeItem))
+            vscode.commands.registerCommand('cody.fixup.apply-all', treeItem => this.applyAllFixups(treeItem))
         )
-        this._disposables.push(vscode.commands.registerCommand('cody.task.diff', treeItem => this.showDiff(treeItem)))
+        this._disposables.push(vscode.commands.registerCommand('cody.fixup.diff', treeItem => this.showDiff(treeItem)))
+        // Start the fixup tree view provider
+        this.taskViewProvider = new TaskViewProvider(this._disposables)
     }
 
     // Adds a new task to the list of tasks
@@ -42,7 +44,7 @@ export class TaskController {
         // Create a task and then mark it as start
         const task = new FixupTask(input, selection, editor)
         task.start()
-        void vscode.commands.executeCommand('setContext', 'cody.task.running', true)
+        void vscode.commands.executeCommand('setContext', 'cody.fixup.running', true)
         // Save states of the task
         this.tasks.set(task.id, task)
         this.taskViewProvider.setTreeItem(task)
@@ -60,7 +62,19 @@ export class TaskController {
         // Save states of the task
         this.tasks.set(task.id, task)
         this.taskViewProvider.setTreeItem(task)
-        void vscode.commands.executeCommand('setContext', 'cody.task.running', false)
+        void vscode.commands.executeCommand('setContext', 'cody.fixup.running', false)
+        this.getFilesWithApplicableFixups()
+    }
+
+    private getFilesWithApplicableFixups(): string[] {
+        const filePaths: string[] = []
+        for (const task of this.tasks.values()) {
+            if (task.state === CodyTaskState.done) {
+                filePaths.push(task.documentUri.fsPath)
+            }
+        }
+        void vscode.commands.executeCommand('setContext', 'cody.fixup.filesWithApplicableFixups', filePaths.length > 0)
+        return filePaths
     }
 
     // Open fsPath at the selected line in editor on tree item click
@@ -98,6 +112,8 @@ export class TaskController {
                 }
             }
         }
+
+        this.getFilesWithApplicableFixups()
     }
 
     // TODO: Add support for applying all fixup
@@ -112,6 +128,7 @@ export class TaskController {
             }
         }
         // Clear task view after applying fixups
+        // TODO Catch errors
         this.reset()
     }
 
