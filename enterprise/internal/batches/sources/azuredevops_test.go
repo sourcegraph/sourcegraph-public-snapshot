@@ -3,7 +3,6 @@ package sources
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"strconv"
 	"testing"
 
@@ -979,13 +978,4 @@ func mockAzureDevOpsAnnotatePullRequestError(client *MockAzureDevOpsClient) erro
 // return a valid, empty set of statuses.
 func mockAzureDevOpsAnnotatePullRequestSuccess(client *MockAzureDevOpsClient) {
 	client.GetPullRequestStatusesFunc.SetDefaultReturn([]azuredevops.PullRequestBuildStatus{}, nil)
-}
-
-func mockAzureDevOpsURL() *url.URL {
-	u, err := url.Parse("https://bitbucket.org/")
-	if err != nil {
-		panic(err)
-	}
-
-	return u
 }

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 
 	"github.com/goware/urlx"
 	"github.com/inconshreveable/log15"
@@ -451,7 +452,13 @@ func (c *Changeset) SetMetadata(meta any) error {
 			c.ExternalForkNamespace = ""
 			c.ExternalForkName = ""
 		}
-
+	case *gerrit.Change:
+		c.Metadata = pr
+		c.ExternalID = pr.ID
+		c.ExternalServiceType = extsvc.TypeGerrit
+		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.Branch)
+		// TODO: @varsanojidan fix the time unmarshaling
+		// c.ExternalUpdatedAt = pr.Updated
 	default:
 		return errors.New("unknown changeset type")
 	}

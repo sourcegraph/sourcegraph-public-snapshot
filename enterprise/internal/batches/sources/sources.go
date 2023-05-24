@@ -374,7 +374,7 @@ func setBasicAuth(u *vcs.URL, extSvcType, username, password string) error {
 	switch extSvcType {
 	case extsvc.TypeGitHub, extsvc.TypeGitLab:
 		return errors.New("need token to push commits to " + extSvcType)
-	case extsvc.TypeBitbucketServer, extsvc.TypeBitbucketCloud, extsvc.TypeAzureDevOps:
+	case extsvc.TypeBitbucketServer, extsvc.TypeBitbucketCloud, extsvc.TypeAzureDevOps, extsvc.TypeGerrit:
 		u.User = url.UserPassword(username, password)
 
 	default:

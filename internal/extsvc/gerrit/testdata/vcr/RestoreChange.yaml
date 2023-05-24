@@ -5,34 +5,30 @@ interactions:
     body: ""
     form: {}
     headers: {}
-    url: https://gerrit.sgdev.org/a/changes/I4ae8b9886059252657eef100c74602251b544e82/submit
+    url: https://gerrit.sgdev.org/a/changes/Ida085bb4e62b9adb5991496ab31987e45cfd5d62/restore
     method: POST
   response:
     body: |
       )]}'
       {
-        "id": "src-cli~master~I4ae8b9886059252657eef100c74602251b544e82",
+        "id": "src-cli~master~Ida085bb4e62b9adb5991496ab31987e45cfd5d62",
         "project": "src-cli",
         "branch": "master",
         "hashtags": [],
-        "change_id": "I4ae8b9886059252657eef100c74602251b544e82",
-        "subject": "Revert \"Revert \"newest change\"\"",
+        "change_id": "Ida085bb4e62b9adb5991496ab31987e45cfd5d62",
+        "subject": "Revert \"Revert \"Revert \"newest change\"\"\"",
         "status": "NEW",
-        "created": "2023-05-16 20:50:25.000000000",
-        "updated": "2023-05-23 23:42:03.000000000",
-        "submitted": "2023-05-23 23:42:27.000000000",
-        "submitter": {
-          "_account_id": 1000018
-        },
+        "created": "2023-05-23 23:43:42.000000000",
+        "updated": "2023-05-23 23:45:36.710000000",
         "submit_type": "MERGE_IF_NECESSARY",
         "mergeable": true,
-        "insertions": 2,
-        "deletions": 0,
+        "insertions": 0,
+        "deletions": 2,
         "total_comment_count": 0,
         "unresolved_comment_count": 0,
         "has_review_started": true,
-        "revert_of": 347,
-        "_number": 348,
+        "revert_of": 348,
+        "_number": 349,
         "owner": {
           "_account_id": 1000018
         },
@@ -44,13 +40,13 @@ interactions:
       Cf-Cache-Status:
       - DYNAMIC
       Cf-Ray:
-      - 7cc127caee30a1f3-YYZ
+      - 7cc12c6bbe8b5443-YYZ
       Content-Disposition:
       - attachment
       Content-Type:
       - application/json;charset=utf-8
       Date:
-      - Tue, 23 May 2023 23:42:28 GMT
+      - Tue, 23 May 2023 23:45:36 GMT
       Expires:
       - Mon, 01 Jan 1990 00:00:00 GMT
       Pragma:

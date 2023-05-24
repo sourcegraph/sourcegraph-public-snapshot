@@ -126,6 +126,10 @@
       interfaces:
         - Client
       prefix: AzureDevOps
+    - path: github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit
+      interfaces:
+        - Client
+      prefix: Gerrit
 - filename: enterprise/internal/batches/syncer/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer
   interfaces:
