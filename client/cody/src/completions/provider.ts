@@ -177,16 +177,29 @@ export class MultilineCompletionProvider extends CompletionProvider {
                 messages: prompt,
                 maxTokensToSample: this.responseTokens,
             },
-            n || this.defaultN,
+            // We over-fetch the number of completions to account for potential
+            // empty results
+            (n || this.defaultN) + 2,
             abortSignal
         )
         // Post-process
-        return responses.map(resp => ({
-            prefix,
-            messages: prompt,
-            content: this.postProcess(resp.completion),
-            stopReason: resp.stopReason,
-        }))
+        return responses
+            .flatMap(resp => {
+                const completion = this.postProcess(resp.completion)
+                if (completion.trim() === '') {
+                    return []
+                }
+
+                return [
+                    {
+                        prefix,
+                        messages: prompt,
+                        content: this.postProcess(resp.completion),
+                        stopReason: resp.stopReason,
+                    },
+                ]
+            })
+            .slice(0, 3)
     }
 }
 
