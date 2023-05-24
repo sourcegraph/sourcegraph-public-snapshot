@@ -63,7 +63,7 @@ recent_usage_by_user AS (
       FROM users
 )
 SELECT COUNT(*) FILTER ( WHERE recent_usage_by_user.created_month = DATE_TRUNC('month', $1::timestamp)) AS created_users,
-COUNT(*) FILTER ( WHERE recent_usage_by_user.deleted_month = DATE_TRUNC('month', $1::timestamp)) AS deleted_users,
+       COUNT(*) FILTER ( WHERE recent_usage_by_user.deleted_month = DATE_TRUNC('month', $1::timestamp)) AS deleted_users,
        COUNT(*) FILTER (
                  WHERE current_month = TRUE
                    AND previous_month = FALSE
