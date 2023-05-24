@@ -6,8 +6,16 @@ commandTests:
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
+
   - name: "http-server-stabilizer binary is runnable"
     command: "/usr/local/bin/http-server-stabilizer"
+    exitCode: 2
+    expectedError: ["Usage of http-server-stabilizer"]
 
   - name: "not running as root"
-    command: "id -u | grep -v '0'"
+    command: "bash"
+    args:
+      - -c
+      - |
+        id -u | grep -v '0'
+    exitCode: 0
