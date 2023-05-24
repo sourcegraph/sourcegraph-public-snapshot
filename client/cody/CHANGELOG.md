@@ -12,6 +12,8 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Changed
 
+- Various Cody completions related improvements [pull/52365](https://github.com/sourcegraph/sourcegraph/pull/52365)
+
 ## [0.1.4]
 
 ### Added

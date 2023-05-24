@@ -25,4 +25,18 @@ describe('CompletionsCache', () => {
         expect(cache.get('foo \n')).toEqual([{ prefix: 'foo \n', content: 'bar', messages: [] }])
         expect(cache.get('foo ')).toEqual(undefined)
     })
+
+    it('has a lookup function for untrimmed prefixes', () => {
+        const cache = new CompletionsCache()
+        cache.add([{ prefix: 'foo\n  ', content: 'baz', messages: [] }])
+
+        expect(cache.get('foo\n  ', false)).toEqual([
+            {
+                prefix: 'foo\n  ',
+                content: 'baz',
+                messages: [],
+            },
+        ])
+        expect(cache.get('foo\n ', false)).toEqual(undefined)
+    })
 })
