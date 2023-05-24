@@ -43,23 +43,21 @@ type usersGrowthStatistics struct {
 func getUsersGrowthStatistics(ctx context.Context, db database.DB) (*usersGrowthStatistics, error) {
 	const usersQuery = `
 WITH active_last_month AS (
-	SELECT
-		DISTINCT user_id
-	FROM event_logs
-	WHERE timestamp > (DATE_TRUNC('month', $1::timestamp) - INTERVAL '1 month')
-		AND timestamp < DATE_TRUNC('month', $1::timestamp)
+    SELECT DISTINCT user_id
+    FROM event_logs
+    WHERE timestamp > (DATE_TRUNC('month', $1::timestamp) - INTERVAL '1 month')
+        AND timestamp < DATE_TRUNC('month', $1::timestamp)
 ),
 active_this_month AS (
-	SELECT
-		DISTINCT user_id
-	FROM event_logs
-	WHERE timestamp > DATE_TRUNC('month', $1::timestamp)
-		AND timestamp < (DATE_TRUNC('month', $1::timestamp) + INTERVAL '1 month')
+    SELECT DISTINCT user_id
+    FROM event_logs
+    WHERE timestamp > DATE_TRUNC('month', $1::timestamp)
+        AND timestamp < (DATE_TRUNC('month', $1::timestamp) + INTERVAL '1 month')
 ),
 recent_usage_by_user AS (
     SELECT users.id,
-		   EXISTS(SELECT * FROM active_this_month WHERE user_id = users.id) as current_month,
-		   EXISTS(SELECT * FROM active_last_month WHERE user_id = users.id) as previous_month,
+           EXISTS(SELECT * FROM active_this_month WHERE user_id = users.id) as current_month,
+           EXISTS(SELECT * FROM active_last_month WHERE user_id = users.id) as previous_month,
            DATE_TRUNC('month', DATE(users.created_at)) AS created_month,
            DATE_TRUNC('month', DATE(users.deleted_at)) AS deleted_month
       FROM users
@@ -69,18 +67,18 @@ COUNT(*) FILTER ( WHERE recent_usage_by_user.deleted_month = DATE_TRUNC('month',
        COUNT(*) FILTER (
                  WHERE current_month = TRUE
                    AND previous_month = FALSE
-				   AND created_month < DATE_TRUNC('month', $1::timestamp)
-				   AND (deleted_month < DATE_TRUNC('month', $1::timestamp) OR deleted_month IS NULL)) AS resurrected_users,
+                   AND created_month < DATE_TRUNC('month', $1::timestamp)
+                   AND (deleted_month < DATE_TRUNC('month', $1::timestamp) OR deleted_month IS NULL)) AS resurrected_users,
        COUNT(*) FILTER (
                  WHERE current_month = FALSE
                    AND previous_month = TRUE
-				   AND created_month < DATE_TRUNC('month', $1::timestamp)
-				   AND (deleted_month < DATE_TRUNC('month', $1::timestamp) OR deleted_month IS NULL)) AS churned_users,
+                   AND created_month < DATE_TRUNC('month', $1::timestamp)
+                   AND (deleted_month < DATE_TRUNC('month', $1::timestamp) OR deleted_month IS NULL)) AS churned_users,
        COUNT(*) FILTER (
                  WHERE current_month = TRUE
                    AND previous_month = TRUE
-				   AND created_month < DATE_TRUNC('month', $1::timestamp)
-				   AND (deleted_month < DATE_TRUNC('month', $1::timestamp) OR deleted_month IS NULL)) AS retained_users
+                   AND created_month < DATE_TRUNC('month', $1::timestamp)
+                   AND (deleted_month < DATE_TRUNC('month', $1::timestamp) OR deleted_month IS NULL)) AS retained_users
   FROM recent_usage_by_user
     `
 	const accessRequestsQuery = `
