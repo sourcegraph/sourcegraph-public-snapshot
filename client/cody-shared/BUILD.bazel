@@ -1,10 +1,13 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "npm_package", "ts_project")
+load("//dev:eslint.bzl", "eslint_config")
+
+# gazelle:js_resolve vscode //:node_modules/@vscode
 
 npm_link_all_packages(name = "node_modules")
 
-# gazelle:js_resolve vscode //:node_modules/@vscode
+eslint_config()
 
 ts_config(
     name = "tsconfig",
@@ -44,7 +47,6 @@ ts_project(
         "src/chat/recipes/next-questions.ts",
         "src/chat/recipes/recipe.ts",
         "src/chat/recipes/translate.ts",
-        "src/chat/recipes/vscode-recipes.ts",
         "src/chat/transcript/index.ts",
         "src/chat/transcript/interaction.ts",
         "src/chat/transcript/messages.ts",
@@ -56,6 +58,8 @@ ts_project(
         "src/editor/withPreselectedOptions.ts",
         "src/embeddings/client.ts",
         "src/embeddings/index.ts",
+        "src/guardrails/client.ts",
+        "src/guardrails/index.ts",
         "src/hallucinations-detector/index.ts",
         "src/intent-detector/client.ts",
         "src/intent-detector/index.ts",
@@ -107,6 +111,7 @@ ts_project(
     srcs = [
         "src/chat/bot-response-multiplexer.test.ts",
         "src/chat/transcript/transcript.test.ts",
+        "src/guardrails/index.test.ts",
         "src/hallucinations-detector/index.test.ts",
         "src/sourcegraph-api/utils.test.ts",
         "src/test/mocks.ts",

@@ -143,7 +143,7 @@ fn main() {
 }
 
 #[cfg(dev)]
-fn start_embedded_services(app_handle: tauri::AppHandle) {
+fn start_embedded_services(app_handle: &tauri::AppHandle) {
     let args = get_sourcegraph_args(app_handle);
     println!("embedded Sourcegraph services disabled for local development");
     println!("Sourcegraph would start with args: {:?}", args);

@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI by Sourcegraph",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -57,8 +57,9 @@
     "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
-    "test:integration": "tsc -b ./integration-test && pnpm run --silent build:dev && ts-node out/integration-test/main.js",
+    "test:integration": "tsc -b ./test/integration && pnpm run --silent build:dev && node --inspect -r ts-node/register out/test/integration/main.js",
     "test:unit": "jest",
+    "test:e2e": "npx playwright install && pnpm run --silent build:dev && playwright test test/e2e",
     "vscode:prepublish": "scripts/check-rg.sh",
     "vsce:package": "pnpm --silent build && vsce package --no-dependencies -o dist/cody.vsix",
     "vsce:prerelease": "pnpm --silent build && vsce package patch --pre-release --no-dependencies -o dist/cody.vsix",
@@ -161,15 +162,15 @@
       },
       {
         "command": "cody.interactive.clear",
-        "title": "Cody: Clear & Restart Chat Session",
+        "title": "Cody: Start a New Chat Session",
         "group": "Cody",
-        "icon": "$(clear-all)"
+        "icon": "$(add)"
       },
       {
         "command": "cody.history",
         "title": "Cody: Chat History",
         "group": "Cody",
-        "icon": "$(history)"
+        "icon": "$(list-unordered)"
       },
       {
         "command": "cody.comment.add",
@@ -190,6 +191,11 @@
         "category": "Cody Inline Assist",
         "enablement": "!commentThreadIsEmpty",
         "icon": "$(sync~spin)"
+      },
+      {
+        "command": "cody.guardrails.debug",
+        "title": "Cody: Guardrails Debug Attribution",
+        "enablement": "config.cody.debug && config.cody.experimental.guardrails && editorHasSelection"
       }
     ],
     "keybindings": [
@@ -313,23 +319,27 @@
         {
           "command": "cody.focus",
           "when": "!cody.activated"
+        },
+        {
+          "command": "cody.guardrails.debug",
+          "when": "config.cody.debug && config.cody.experimental.guardrails && editorHasSelection"
         }
       ],
       "view/title": [
         {
           "command": "cody.interactive.clear",
           "when": "view == cody.chat && cody.activated",
-          "group": "navigation"
+          "group": "navigation@1"
         },
         {
           "command": "cody.settings",
           "when": "view == cody.chat && cody.activated",
-          "group": "navigation"
+          "group": "navigation@3"
         },
         {
           "command": "cody.history",
           "when": "view == cody.chat && cody.activated",
-          "group": "navigation"
+          "group": "navigation@2"
         }
       ],
       "comments/commentThread/context": [
@@ -386,26 +396,8 @@
           "default": "embeddings",
           "markdownDescription": "If 'embeddings' is selected, Cody will prefer to use an embeddings-based index when fetching context to generate responses to user requests. If no such index is found, it will fall back to using keyword-based local context fetching. If 'keyword' is selected, Cody will use keyword context. Selecting 'none' will limit Cody to using only the currently open file."
         },
-        "cody.experimental.suggestions": {
-          "order": 4,
-          "type": "boolean",
-          "markdownDescription": "Enables Cody inline autocompletion in your editor.",
-          "default": false
-        },
-        "cody.experimental.chatPredictions": {
-          "order": 5,
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Adds suggestions of possible relevant messages in the chat window."
-        },
-        "cody.experimental.inline": {
-          "order": 6,
-          "type": "boolean",
-          "markdownDescription": "Enables Cody Inline Assist, an inline way to explicitly ask questions and propose modifications to code.",
-          "default": false
-        },
         "cody.customHeaders": {
-          "order": 7,
+          "order": 4,
           "type": "object",
           "markdownDescription": "Adds custom HTTP headers to all network requests to the Sourcegraph endpoint. Defining required headers here ensures requests are properly forwarded through intermediary proxy servers, which may mandate certain custom headers for internal or external communication.",
           "default": {},
@@ -416,10 +408,43 @@
             }
           ]
         },
-        "cody.debug": {
+        "cody.experimental.suggestions": {
+          "order": 5,
+          "type": "boolean",
+          "markdownDescription": "Enables Cody inline autocompletion in your editor.",
+          "default": false
+        },
+        "cody.experimental.chatPredictions": {
+          "order": 6,
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Adds suggestions of possible relevant messages in the chat window."
+        },
+        "cody.experimental.inline": {
+          "order": 7,
+          "type": "boolean",
+          "markdownDescription": "Enables Cody Inline Assist, an inline way to explicitly ask questions and propose modifications to code.",
+          "default": false
+        },
+        "cody.experimental.guardrails": {
+          "order": 8,
+          "type": "boolean",
+          "default": false
+        },
+        "cody.debug.enable": {
           "order": 99,
           "type": "boolean",
-          "markdownDescription": "Adds 'Debug' view to Cody Chat view that allows developers to see and log errors."
+          "markdownDescription": "Turns on debug output (visible in the VS Code Output panel under \"Cody AI by Sourcegraph\")"
+        },
+        "cody.debug.verbose": {
+          "order": 99,
+          "type": "boolean",
+          "markdownDescription": "Enables verbose debug output. Debug messages may contain more details if the invocation includes verbose information."
+        },
+        "cody.debug.filter": {
+          "order": 99,
+          "type": "string",
+          "markdownDescription": "Regular expression to filter debug output. If empty, defaults to '.*', which prints all messages."
         }
       }
     }
@@ -433,5 +458,9 @@
     "wink-eng-lite-web-model": "^1.5.0",
     "wink-nlp": "^1.13.1",
     "wink-nlp-utils": "^2.1.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.33.0",
+    "playwright": "^1.33.0"
   }
 }

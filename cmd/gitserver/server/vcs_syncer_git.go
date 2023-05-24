@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -81,7 +82,7 @@ func (s *GitRepoSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, tm
 }
 
 // Fetch tries to fetch updates of a Git repository.
-func (s *GitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir, revspec string) ([]byte, error) {
+func (s *GitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir common.GitDir, revspec string) ([]byte, error) {
 	cmd, configRemoteOpts := s.fetchCommand(ctx, remoteURL)
 	dir.Set(cmd)
 	if output, err := runWith(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd), configRemoteOpts, nil); err != nil {

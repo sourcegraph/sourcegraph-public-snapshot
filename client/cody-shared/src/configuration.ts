@@ -3,11 +3,14 @@ export type ConfigurationUseContext = 'embeddings' | 'keyword' | 'none' | 'blend
 export interface Configuration {
     serverEndpoint: string
     codebase?: string
-    debug: boolean
+    debugEnable: boolean
+    debugFilter: RegExp | null
+    debugVerbose: boolean
     useContext: ConfigurationUseContext
     experimentalSuggest: boolean
     experimentalChatPredictions: boolean
     experimentalInline: boolean
+    experimentalGuardrails: boolean
     customHeaders: Record<string, string>
 }
 

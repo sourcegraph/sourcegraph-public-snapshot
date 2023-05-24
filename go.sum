@@ -2056,8 +2056,8 @@ github.com/sourcegraph/httpgzip v0.0.0-20211015085752-0bad89b3b4df h1:VaS8k40GiN
 github.com/sourcegraph/httpgzip v0.0.0-20211015085752-0bad89b3b4df/go.mod h1:RqWagzxNGCvucQQC9vX6aps474LCCOgshDpUTTyb+O8=
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf h1:oAdWFqhStsWiiMP/vkkHiMXqFXzl1XfUNOdxKJbd6bI=
 github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf/go.mod h1:ppFaPm6kpcHnZGqQTFhUIAQRIEhdQDWP1PCv4/ON354=
-github.com/sourcegraph/log v0.0.0-20230518041250-1102986b54c0 h1:uM5fgDq5EZ/efHIiWateMAPWL0RwlqGP3Pedv3ZihL4=
-github.com/sourcegraph/log v0.0.0-20230518041250-1102986b54c0/go.mod h1:IDp09QkoqS8Z3CyN2RW6vXjgABkNpDbyjLIHNQwQ8P8=
+github.com/sourcegraph/log v0.0.0-20230523201558-ad2d71b4d2ee h1:xz1lIhx6YvYYhiLio9INCIWHCZFH9MoRVuFye/lz07c=
+github.com/sourcegraph/log v0.0.0-20230523201558-ad2d71b4d2ee/go.mod h1:IDp09QkoqS8Z3CyN2RW6vXjgABkNpDbyjLIHNQwQ8P8=
 github.com/sourcegraph/mountinfo v0.0.0-20230106004439-7026e28cef67 h1:NSYSPQOE7yyyytLbKQHjxSkPnBagaGQblgVMQrQ1je0=
 github.com/sourcegraph/mountinfo v0.0.0-20230106004439-7026e28cef67/go.mod h1:4DAabK408OEbyK2NUEQ5YRApyB/p0XNGJyC1YPBAKq4=
 github.com/sourcegraph/run v0.12.0 h1:3A8w5e8HIYPfafHekvmdmmh42RHKGVhmiTZAPJclg7I=
@@ -2066,8 +2066,8 @@ github.com/sourcegraph/scip v0.2.4-0.20230403145725-e720fb88e6fd h1:nl0JdCmCkQYT
 github.com/sourcegraph/scip v0.2.4-0.20230403145725-e720fb88e6fd/go.mod h1:ymcTuv+6D5OEZB/84TRPQvUpDK7v7zXnWBJl79hb7ns=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
-github.com/sourcegraph/zoekt v0.0.0-20230503105159-f818d968ddad h1:lCxBFbLdzt0m789CNyYWEqPURhta69aRA9ixPyWilvI=
-github.com/sourcegraph/zoekt v0.0.0-20230503105159-f818d968ddad/go.mod h1:G3dj/2qn2M/cjDexzuINNETdXFdqIJyAHd42UAGwuqc=
+github.com/sourcegraph/zoekt v0.0.0-20230523175034-5250e0e52a1b h1:/5s1HW1DdlGpgr9PkOIgLcdFMHR1IHAJibXqT2Op5fk=
+github.com/sourcegraph/zoekt v0.0.0-20230523175034-5250e0e52a1b/go.mod h1:G3dj/2qn2M/cjDexzuINNETdXFdqIJyAHd42UAGwuqc=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spaolacci/murmur3 v1.1.0/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spf13/afero v0.0.0-20170901052352-ee1bd8ee15a1/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=
