@@ -1,6 +1,5 @@
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
 load("//cmd/server:macro.bzl", "container_dependencies", "dependencies_tars")
-load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 DEPS = [
     "@com_github_sourcegraph_zoekt//cmd/zoekt-archive-index",
@@ -24,7 +23,7 @@ oci_image(
         "DATA_DIR": "/data/index",
         "SRC_FRONTEND_INTERNAL": "https://sourcegraph-frontend-internal",
     },
-    tars = dependencies_tars(DEPS)
+    tars = dependencies_tars(DEPS),
     user = "sourcegraph",
     workdir = "/home/sourcegraph",
 )
