@@ -8,27 +8,31 @@ import { LocalStorage } from './services/LocalStorageProvider'
 
 let eventLoggerGQLClient: SourcegraphGraphQLAPIClient
 let eventLogger: EventLogger | null = null
-let anonymousUserID: string | null
+let anonymousUserID: string
 
 export async function updateEventLogger(
     config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>,
     localStorage: LocalStorage
 ): Promise<void> {
-    await localStorage.setAnonymousUserID()
+    let status = await localStorage.setAnonymousUserID()
+    anonymousUserID = localStorage.getAnonymousUserID() || ''
     if (!eventLoggerGQLClient) {
         eventLoggerGQLClient = new SourcegraphGraphQLAPIClient(config)
         eventLogger = EventLogger.create(eventLoggerGQLClient)
-        await logCodyInstalled()
+        if (status == 'installed') {
+            await logEvent('CodyInstalled')
+        } else {
+            await logEvent('CodyVSCodeExtension:CodySavedLogin:executed')
+        }
     } else {
         eventLoggerGQLClient.onConfigurationChange(config)
     }
 }
 
-export function logEvent(eventName: string, eventProperties?: any, publicProperties?: any): void {
-    if (!eventLogger || !anonymousUserID) {
+export async function logEvent(eventName: string, eventProperties?: any, publicProperties?: any): Promise<void> {
+    if (!eventLogger || !getAnonymousUserID()) {
         return
     }
-
     const argument = {
         ...eventProperties,
         version: packageVersion,
@@ -38,7 +42,7 @@ export function logEvent(eventName: string, eventProperties?: any, publicPropert
         ...publicProperties,
         version: packageVersion,
     }
-    void eventLogger.log(eventName, anonymousUserID, argument, publicArgument)
+    await eventLogger.log(eventName, anonymousUserID, argument, publicArgument)
 }
 
 export async function logCodyInstalled(): Promise<void> {
@@ -46,4 +50,11 @@ export async function logCodyInstalled(): Promise<void> {
         return
     }
     await eventLogger.log('CodyInstalled', anonymousUserID)
+}
+
+function getAnonymousUserID(): string {
+    if (!anonymousUserID) {
+        anonymousUserID = localStorage.getAnonymousUserID()
+    }
+    return anonymousUserID
 }

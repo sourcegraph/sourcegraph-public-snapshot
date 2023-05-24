@@ -37,7 +37,6 @@ export class EventLogger {
             serverEndpoint: this.serverEndpoint,
             extensionDetails: this.extensionDetails,
         }
-        console.log('api requqest for anonID: ' + anonymousUserID)
         try {
             await this.gqlAPIClient.logEvent({
                 event: eventName,
