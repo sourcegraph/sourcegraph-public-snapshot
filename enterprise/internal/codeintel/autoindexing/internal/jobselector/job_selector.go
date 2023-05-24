@@ -71,7 +71,6 @@ func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context,
 		return nil, "", nil
 	}
 
-	// FOOBAR1
 	indexes, logs, err := s.inferenceSvc.InferIndexJobs(ctx, repo.Name, commit, script)
 	if err != nil {
 		return nil, "", err
@@ -79,7 +78,7 @@ func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context,
 
 	if !bypassLimit && len(indexes) > MaximumIndexJobsPerInferredConfiguration {
 		s.logger.Info("Too many inferred roots. Scheduling no index jobs for repository.", log.Int("repository_id", repositoryID))
-		return nil, "", nil
+		indexes = nil
 	}
 
 	return indexes, logs, nil
