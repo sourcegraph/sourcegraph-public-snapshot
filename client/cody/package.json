@@ -228,6 +228,12 @@
         "icon": "$(check-all)"
 			},
       {
+				"command": "cody.task.applyDir",
+				"title": "Cody: Apply fixups to selected directory",
+        "enablement": "!cody.task.view.isEmpty && !cody.task.running",
+        "icon": "$(check-all)"
+			},
+      {
 				"command": "cody.task.diff",
 				"title": "Cody: Show diff for fixup",
         "enablement": "!cody.task.view.isEmpty && !cody.task.running",
@@ -320,6 +326,10 @@
         },
         {
           "command": "cody.task.applyAll",
+          "when": "false"
+        },
+        {
+          "command": "cody.task.applyDir",
           "when": "false"
         },
         {
@@ -427,10 +437,16 @@
       ],
       "view/item/context": [
         {
+          "command": "cody.task.applyDir",
+          "when": "cody.nonstop.fixups.enabled && view == cody.tasks.view && cody.activated && viewItem == fsPath",
+          "group": "inline"
+        },
+        {
           "command": "cody.task.apply",
           "when": "cody.nonstop.fixups.enabled && view == cody.tasks.view && cody.activated && viewItem == task",
           "group": "inline@2"
-        }, {
+        },
+        {
           "command": "cody.task.diff",
           "when": "cody.nonstop.fixups.enabled && view == cody.tasks.view && cody.activated && viewItem == task",
           "group": "inline@1"

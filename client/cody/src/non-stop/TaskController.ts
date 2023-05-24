@@ -18,9 +18,16 @@ export class TaskController {
     constructor() {
         this.taskViewProvider = new TaskViewProvider()
         this._disposables.push(vscode.commands.registerCommand('cody.task.open', id => this.showThisFixup(id)))
-        this._disposables.push(vscode.commands.registerCommand('cody.task.apply', id => this.applyFixup(id)))
-        this._disposables.push(vscode.commands.registerCommand('cody.task.applyAll', () => this.applyFixup()))
-        this._disposables.push(vscode.commands.registerCommand('cody.task.diff', id => this.showDiff(id)))
+        this._disposables.push(
+            vscode.commands.registerCommand('cody.task.apply', treeItem => this.applyFixup(treeItem))
+        )
+        this._disposables.push(
+            vscode.commands.registerCommand('cody.task.applyDir', treeItem => this.applyDirFixups(treeItem))
+        )
+        this._disposables.push(
+            vscode.commands.registerCommand('cody.task.applyAll', treeItem => this.applyAllFixups(treeItem))
+        )
+        this._disposables.push(vscode.commands.registerCommand('cody.task.diff', treeItem => this.showDiff(treeItem)))
     }
 
     // Adds a new task to the list of tasks
@@ -71,11 +78,33 @@ export class TaskController {
     // Placeholder function for applying fixup
     private applyFixup(treeItem?: FixupTaskTreeItem): void {
         void vscode.window.showInformationMessage(`Applying fixup for task #${treeItem?.id} is not implemented yet...`)
-        if (treeItem?.id) {
+
+        if (treeItem?.contextValue === 'task' && treeItem?.id) {
             const task = this.tasks.get(treeItem.id)
             task?.apply()
             return
         }
+    }
+
+    // TODO: Add support for applying fixup to all tasks in a directory
+    // Placeholder function for applying fixup to all tasks in a directory
+    private applyDirFixups(treeItem: FixupTaskTreeItem): void {
+        void vscode.window.showInformationMessage('Applying fixups to a directory is not implemented yet...')
+
+        if (treeItem?.contextValue === 'fsPath') {
+            for (const task of this.tasks.values()) {
+                if (task.documentUri.fsPath === treeItem.fsPath && task.state === CodyTaskState.done) {
+                    task.apply()
+                }
+            }
+        }
+    }
+
+    // TODO: Add support for applying all fixup
+    // Placeholder function for applying fixup
+    private applyAllFixups(treeItem?: FixupTaskTreeItem): void {
+        void vscode.window.showInformationMessage('Applying fixup for all tasks is not implemented yet...')
+
         // Apply all fixups
         for (const task of this.tasks.values()) {
             if (task.state === CodyTaskState.done) {

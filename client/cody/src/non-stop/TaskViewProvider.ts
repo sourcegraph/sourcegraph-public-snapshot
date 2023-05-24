@@ -63,6 +63,22 @@ export class TaskViewProvider implements vscode.TreeDataProvider<FixupTaskTreeIt
         return element
     }
 
+    public removeTreeItemByID(taskID: taskID): void {
+        const task = this.treeItems.get(taskID)
+        if (!task) {
+            return
+        }
+        this.treeItems.delete(taskID)
+    }
+
+    public removeTreeItemsByFileName(fileName: fileName): void {
+        const task = this.treeNodes.get(fileName)
+        if (!task) {
+            return
+        }
+        this.treeNodes.delete(fileName)
+    }
+
     /**
      * Empty the tree view
      */
