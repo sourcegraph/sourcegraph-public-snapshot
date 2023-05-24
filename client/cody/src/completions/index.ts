@@ -1,3 +1,4 @@
+import { LRUCache } from 'lru-cache'
 import * as vscode from 'vscode'
 
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
@@ -28,7 +29,9 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
     private maxSuffixTokens: number
     private abortOpenInlineCompletions: () => void = () => {}
     private abortOpenMultilineCompletion: () => void = () => {}
-    private lastContentChanges: Map<string, 'add' | 'del'> = new Map()
+    private lastContentChanges: LRUCache<string, 'add' | 'del'> = new LRUCache<string, 'add' | 'del'>({
+        max: 10,
+    })
 
     constructor(
         private webviewErrorMessager: (error: string) => Promise<void>,
