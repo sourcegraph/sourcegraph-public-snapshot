@@ -474,14 +474,33 @@ commands:
       INTEGRATION_TESTS: true
       NODE_ENV: production
 
-  cody-slack:
-    description: Start Cody-Slack locally server locally
+  cody-slack-dev:
+    description: Start Cody-Slack dev locally
     cmd: pnpm --filter @sourcegraph/cody-slack run start
-    env:
+    env: &cody_slack_env
+      GITHUB_TOKEN: XXX
+      OPENAI_API_KEY: XXX
       SLACK_APP_TOKEN: XXX
       SLACK_SIGNING_SECRET: XXX
       SLACK_BOT_TOKEN: XXX
       SOURCEGRAPH_ACCESS_TOKEN: XXX
+
+  cody-slack-docker:
+    description: Start Cody-Slack locally prod in Docker
+    cmd: |
+      docker run -p 0.0.0.0:${PORT}:${PORT} \
+      -e SRC_FRONTEND_INTERNAL="${SRC_FRONTEND_INTERNAL}" \
+      -e GITHUB_TOKEN="${GITHUB_TOKEN}" \
+      -e OPENAI_API_KEY="${OPENAI_API_KEY}" \
+      -e SLACK_APP_TOKEN="${SLACK_APP_TOKEN}" \
+      -e SLACK_SIGNING_SECRET="${SLACK_SIGNING_SECRET}" \
+      -e SLACK_BOT_TOKEN="${SLACK_BOT_TOKEN}" \
+      -e SOURCEGRAPH_ACCESS_TOKEN="${SOURCEGRAPH_ACCESS_TOKEN}" \
+      ${IMAGE}
+    env:
+      <<: *cody_slack_env
+      PORT: 3000
+      IMAGE: cody-slack:0.0.1
 
   docsite:
     description: Docsite instance serving the docs
@@ -964,13 +983,13 @@ bazelCommands:
     ignoreStderr: true
     env:
       # Environment copied from Dockerfile
-      WORKERS: "1"
-      ROCKET_ENV: "production"
-      ROCKET_LIMITS: "{json=10485760}"
-      ROCKET_SECRET_KEY: "SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA="
-      ROCKET_KEEP_ALIVE: "0"
-      ROCKET_PORT: "9238"
-      QUIET: "true"
+      WORKERS: '1'
+      ROCKET_ENV: 'production'
+      ROCKET_LIMITS: '{json=10485760}'
+      ROCKET_SECRET_KEY: 'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='
+      ROCKET_KEEP_ALIVE: '0'
+      ROCKET_PORT: '9238'
+      QUIET: 'true'
   github-proxy:
     target: //cmd/github-proxy
   frontend:

@@ -67,7 +67,8 @@ var SourcegraphDockerImagesMisc = []string{
 	"jaeger-agent",
 	"jaeger-all-in-one",
 	"llm-proxy",
-	"sg"}
+	"sg",
+	"cody-slack"}
 
 // These are images that use the musl build chain for bazel, and break the cache if built
 // on a system with glibc. They are built on a separate pipeline. They're also the images current e2e/integration
