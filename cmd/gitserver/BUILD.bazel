@@ -35,6 +35,8 @@ oci_image(
     base = "@wolfi_gitserver_base",
     entrypoint = ["/gitserver"],
     tars = [":tar_gitserver"],
+    user = "sourcegraph",
+    workdir = "/",
 )
 
 oci_tarball(

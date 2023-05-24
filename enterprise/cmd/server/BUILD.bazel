@@ -89,6 +89,7 @@ DEPS = [
     "//enterprise/cmd/symbols",
     "//enterprise/cmd/worker",
     "//docker-images/prometheus/cmd/prom-wrapper",
+    "//docker-images/syntax-highlighter:syntect_server",
 ]
 
 ZOEKT_DEPS = [
@@ -115,6 +116,7 @@ oci_image(
         "tar_postgres_exporter_config",
         ":tar_monitoring_config",
     ] + dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS),
+    workdir = "/",
 )
 
 oci_tarball(

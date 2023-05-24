@@ -4,6 +4,7 @@ oci_image(
     name = "image",
     base = "@wolfi_redis_exporter_base",
     entrypoint = ["/usr/local/bin/redis_exporter"],
+    user = "sourcegraph",
 )
 
 oci_tarball(

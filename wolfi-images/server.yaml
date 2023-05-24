@@ -65,3 +65,11 @@ accounts:
     - username: grafana
       uid: 103
       gid: 104
+
+paths:
+  - path: /var/lib/nginx/tmp
+    type: directory
+    permissions: 0o755
+  - path: /var/run
+    type: directory
+    permissions: 0o755

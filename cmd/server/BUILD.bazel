@@ -27,30 +27,6 @@ pkg_tar(
     srcs = [":server"],
 )
 
-genrule(
-    name = "nginx_tmp_folder",
-    outs = [".keep_tmp"],
-    cmd = "echo keep > $@",
-)
-
-genrule(
-    name = "nginx_run_folder",
-    outs = [".keep_run"],
-    cmd = "echo keep > $@",
-)
-
-pkg_tar(
-    name = "static_config_tar",
-    srcs = [
-        ":nginx_run_folder",
-        ":nginx_tmp_folder",
-    ],
-    remap_paths = {
-        "/.keep_tmp": "/var/lib/nginx/tmp/.keep",
-        "/.keep_run": "/var/run/.keep",
-    },
-)
-
 exports_files(["postgres_exporter.yaml"])
 
 pkg_tar(
@@ -89,6 +65,7 @@ DEPS = [
     "//cmd/symbols",
     "//cmd/worker",
     "//docker-images/prometheus/cmd/prom-wrapper",
+    "//docker-images/syntax-highlighter:syntect_server",
 ]
 
 ZOEKT_DEPS = [
@@ -109,12 +86,17 @@ oci_image(
     name = "image",
     base = "@wolfi_server_base",
     entrypoint = ["/server"],
+    env = {
+        "GO111MODULES": "on",
+        "LANG": "en_US.utf8",
+        "PGHOST": "/var/run/postgresql",
+    },
     tars = [
         ":tar_server",
-        ":static_config_tar",
         "tar_postgres_exporter_config",
         ":tar_monitoring_config",
     ] + dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS),
+    workdir = "/",
 )
 
 oci_tarball(

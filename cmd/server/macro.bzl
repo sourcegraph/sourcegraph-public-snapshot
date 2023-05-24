@@ -3,7 +3,12 @@ load("@rules_pkg//:pkg.bzl", "pkg_tar")
 def get_last_segment(path):
     segments = path.split("/")
     last_segment = segments[-1]
-    return last_segment
+
+    s = last_segment.split(":")
+    if len(s) == 1:
+        return last_segment
+    else:
+        return s[-1]
 
 def container_dependencies(targets):
     for target in targets:
