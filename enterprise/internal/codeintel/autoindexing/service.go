@@ -80,7 +80,7 @@ func (s *Service) GetIndexConfigurationByRepositoryID(ctx context.Context, repos
 
 // InferIndexConfiguration looks at the repository contents at the latest commit on the default branch of the given
 // repository and determines an index configuration that is likely to succeed.
-func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) (_ *config.IndexConfiguration, _ []config.IndexJobHint, err error) {
+func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) (_ *config.IndexConfiguration, _ string, err error) {
 	ctx, trace, endObservation := s.operations.inferIndexConfiguration.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", repositoryID),
 	}})
@@ -88,44 +88,36 @@ func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int,
 
 	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))
 	if err != nil {
-		return nil, nil, err
+		return nil, "", err
 	}
 
 	if commit == "" {
 		var ok bool
 		commit, ok, err = s.gitserverClient.Head(ctx, authz.DefaultSubRepoPermsChecker, repo.Name)
 		if err != nil || !ok {
-			return nil, nil, errors.Wrapf(err, "gitserver.Head: error resolving HEAD for %d", repositoryID)
+			return nil, "", errors.Wrapf(err, "gitserver.Head: error resolving HEAD for %d", repositoryID)
 		}
 	} else {
 		exists, err := s.gitserverClient.CommitExists(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, api.CommitID(commit))
 		if err != nil {
-			return nil, nil, errors.Wrapf(err, "gitserver.CommitExists: error checking %s for %d", commit, repositoryID)
+			return nil, "", errors.Wrapf(err, "gitserver.CommitExists: error checking %s for %d", commit, repositoryID)
 		}
 
 		if !exists {
-			return nil, nil, errors.Newf("revision %s not found for %d", commit, repositoryID)
+			return nil, "", errors.Newf("revision %s not found for %d", commit, repositoryID)
 		}
 	}
 	trace.AddEvent("found", attribute.String("commit", commit))
 
+	logs := "" // TODO
 	indexJobs, err := s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, localOverrideScript, bypassLimit)
 	if err != nil {
-		return nil, nil, err
-	}
-
-	indexJobHints, err := s.jobSelector.InferIndexJobHintsFromRepositoryStructure(ctx, repositoryID, repo.Name, commit)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	if len(indexJobs) == 0 {
-		return nil, indexJobHints, nil
+		return nil, "", err
 	}
 
 	return &config.IndexConfiguration{
 		IndexJobs: indexJobs,
-	}, indexJobHints, nil
+	}, logs, nil
 }
 
 func (s *Service) UpdateIndexConfigurationByRepositoryID(ctx context.Context, repositoryID int, data []byte) error {

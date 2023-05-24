@@ -48,8 +48,7 @@ func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *reso
 		localOverrideScript = *args.Script
 	}
 
-	// TODO - expose hints
-	config, _, err := r.autoindexSvc.InferIndexConfiguration(ctx, repositoryID, rev, localOverrideScript, false)
+	config, logs, err := r.autoindexSvc.InferIndexConfiguration(ctx, repositoryID, rev, localOverrideScript, false)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +64,7 @@ func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *reso
 
 	return &inferAutoIndexJobsResultResolver{
 		jobs:            jobResolvers,
-		inferenceOutput: "OOGA BOOGA!", // TODO
+		inferenceOutput: logs,
 	}, nil
 }
 
