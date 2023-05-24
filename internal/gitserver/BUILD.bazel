@@ -43,7 +43,6 @@ go_library(
         "//lib/errors",
         "@com_github_go_git_go_git_v5//plumbing/format/config",
         "@com_github_golang_groupcache//lru",
-        "@com_github_opentracing_opentracing_go//ext",
         "@com_github_opentracing_opentracing_go//log",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
