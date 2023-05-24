@@ -122,7 +122,7 @@ func TestResolver_GitHubApps(t *testing.T) {
 	})
 
 	gitHubAppsStore := store.NewStrictMockGitHubAppsStore()
-	gitHubAppsStore.ListFunc.SetDefaultHook(func(ctx context.Context, domain *string) ([]*ghtypes.GitHubApp, error) {
+	gitHubAppsStore.ListFunc.SetDefaultHook(func(ctx context.Context, domain *types.GitHubAppDomain) ([]*ghtypes.GitHubApp, error) {
 		if domain != nil {
 			return []*ghtypes.GitHubApp{{ID: 2}}, nil
 		}

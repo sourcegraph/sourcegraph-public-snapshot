@@ -187,7 +187,7 @@ func (r *gitHubAppResolver) Name() string {
 	return r.app.Name
 }
 
-func (r *gitHubAppResolver) Domain() string {
+func (r *gitHubAppResolver) Domain() itypes.GitHubAppDomain {
 	return r.app.Domain
 }
 

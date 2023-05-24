@@ -17,7 +17,7 @@ import {
 } from '../FilteredConnection/ui'
 import { PageTitle } from '../PageTitle'
 
-import { GITHUB_APPS_QUERY } from './backend'
+import { GITHUB_APPS_QUERY, GitHubAppDomain } from './backend'
 import { GitHubAppCard } from './GitHubAppCard'
 
 import styles from './GitHubAppsPage.module.scss'
@@ -29,7 +29,7 @@ interface Props {
 export const GitHubAppsPage: React.FC<Props> = ({ batchChangesEnabled }) => {
     const { data, loading, error, refetch } = useQuery<GitHubAppsResult, GitHubAppsVariables>(GITHUB_APPS_QUERY, {
         variables: {
-            domain: 'repos',
+            domain: GitHubAppDomain.REPOS,
         },
     })
     const gitHubApps = useMemo(() => data?.gitHubApps?.nodes ?? [], [data])

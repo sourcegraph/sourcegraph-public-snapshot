@@ -84,6 +84,13 @@ type Repo struct {
 	KeyValuePairs map[string]*string `json:",omitempty"`
 }
 
+const (
+	ReposDomain   GitHubAppDomain = "REPOS"
+	BatchesDomain GitHubAppDomain = "BATCHES"
+)
+
+type GitHubAppDomain string
+
 // RepoCommit is a record of a repo and a corresponding commit.
 type RepoCommit struct {
 	ID                   int64

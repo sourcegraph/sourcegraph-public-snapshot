@@ -9,10 +9,11 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
+	ghtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestCreateGitHubApp(t *testing.T) {
@@ -24,7 +25,7 @@ func TestCreateGitHubApp(t *testing.T) {
 	store := &gitHubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
 	ctx := context.Background()
 
-	app := &types.GitHubApp{
+	app := &ghtypes.GitHubApp{
 		AppID:        1,
 		Name:         "Test App",
 		Domain:       "repos",
@@ -39,7 +40,7 @@ func TestCreateGitHubApp(t *testing.T) {
 	id, err := store.Create(ctx, app)
 	require.NoError(t, err)
 
-	var createdApp types.GitHubApp
+	var createdApp ghtypes.GitHubApp
 	query := sqlf.Sprintf(`SELECT app_id, name, domain, slug, base_url, app_url, client_id, client_secret, private_key, encryption_key_id, logo FROM github_apps WHERE id=%s`, id)
 	err = store.QueryRow(ctx, query).Scan(
 		&createdApp.AppID,
@@ -67,7 +68,7 @@ func TestDeleteGitHubApp(t *testing.T) {
 	store := gitHubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
 	ctx := context.Background()
 
-	app := &types.GitHubApp{
+	app := &ghtypes.GitHubApp{
 		Name:         "Test App",
 		Domain:       "repos",
 		Slug:         "test-app",
@@ -102,7 +103,7 @@ func TestUpdateGitHubApp(t *testing.T) {
 	store := gitHubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
 	ctx := context.Background()
 
-	app := &types.GitHubApp{
+	app := &ghtypes.GitHubApp{
 		AppID:        123,
 		Name:         "Test App",
 		Domain:       "repos",
@@ -120,7 +121,7 @@ func TestUpdateGitHubApp(t *testing.T) {
 	app, err = store.GetByID(ctx, id)
 	require.NoError(t, err)
 
-	updated := &types.GitHubApp{
+	updated := &ghtypes.GitHubApp{
 		AppID:        234,
 		Name:         "Updated Name",
 		Domain:       "repos",
@@ -161,7 +162,7 @@ func TestGetByID(t *testing.T) {
 	store := &gitHubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
 	ctx := context.Background()
 
-	app1 := &types.GitHubApp{
+	app1 := &ghtypes.GitHubApp{
 		AppID:        1234,
 		Name:         "Test App 1",
 		Domain:       "repos",
@@ -174,7 +175,7 @@ func TestGetByID(t *testing.T) {
 		Logo:         "logo.png",
 	}
 
-	app2 := &types.GitHubApp{
+	app2 := &ghtypes.GitHubApp{
 		AppID:        5678,
 		Name:         "Test App 2",
 		Domain:       "repos",
@@ -224,7 +225,7 @@ func TestGetByAppID(t *testing.T) {
 	store := &gitHubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
 	ctx := context.Background()
 
-	app1 := &types.GitHubApp{
+	app1 := &ghtypes.GitHubApp{
 		AppID:        1234,
 		Name:         "Test App 1",
 		Domain:       "repos",
@@ -236,7 +237,7 @@ func TestGetByAppID(t *testing.T) {
 		Logo:         "logo.png",
 	}
 
-	app2 := &types.GitHubApp{
+	app2 := &ghtypes.GitHubApp{
 		AppID:        1234,
 		Name:         "Test App 2",
 		Domain:       "repos",
@@ -286,7 +287,7 @@ func TestGetBySlug(t *testing.T) {
 	store := &gitHubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
 	ctx := context.Background()
 
-	app1 := &types.GitHubApp{
+	app1 := &ghtypes.GitHubApp{
 		AppID:        1234,
 		Name:         "Test App 1",
 		Domain:       "repos",
@@ -299,7 +300,7 @@ func TestGetBySlug(t *testing.T) {
 		Logo:         "logo.png",
 	}
 
-	app2 := &types.GitHubApp{
+	app2 := &ghtypes.GitHubApp{
 		AppID:        5678,
 		Name:         "Test App",
 		Domain:       "repos",
@@ -349,7 +350,7 @@ func TestListGitHubApp(t *testing.T) {
 	store := &gitHubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
 	ctx := context.Background()
 
-	app1 := &types.GitHubApp{
+	app1 := &ghtypes.GitHubApp{
 		AppID:        1234,
 		Name:         "Test App 1",
 		Domain:       "repos",
@@ -362,7 +363,7 @@ func TestListGitHubApp(t *testing.T) {
 		Logo:         "logo.png",
 	}
 
-	app2 := &types.GitHubApp{
+	app2 := &ghtypes.GitHubApp{
 		AppID:        5678,
 		Name:         "Test App 2",
 		Domain:       "batches",
@@ -385,7 +386,7 @@ func TestListGitHubApp(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, fetched, 2)
 
-		apps := []*types.GitHubApp{app1, app2}
+		apps := []*ghtypes.GitHubApp{app1, app2}
 		for index, curr := range fetched {
 			app := apps[index]
 			require.Equal(t, app.AppID, curr.AppID)
@@ -403,7 +404,7 @@ func TestListGitHubApp(t *testing.T) {
 	})
 
 	t.Run("domain-filtered github apps", func(t *testing.T) {
-		domain := "repos"
+		domain := types.ReposDomain
 		fetched, err := store.List(ctx, &domain)
 		require.NoError(t, err)
 		require.Len(t, fetched, 1)
