@@ -6,7 +6,7 @@ import classNames from 'classnames'
 import { useQuery } from '@sourcegraph/http-client'
 import { ButtonLink, ErrorAlert, Icon, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
-import { GitHubAppsResult, GitHubAppsVariables } from '../../graphql-operations'
+import { GitHubAppsResult, GitHubAppsVariables, GitHubAppDomain } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import {
     ConnectionContainer,
@@ -17,7 +17,7 @@ import {
 } from '../FilteredConnection/ui'
 import { PageTitle } from '../PageTitle'
 
-import { GITHUB_APPS_QUERY, GitHubAppDomain } from './backend'
+import { GITHUB_APPS_QUERY } from './backend'
 import { GitHubAppCard } from './GitHubAppCard'
 
 import styles from './GitHubAppsPage.module.scss'

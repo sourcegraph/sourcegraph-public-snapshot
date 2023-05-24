@@ -87,12 +87,16 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
 	if err != nil {
 		return -1, err
 	}
+	domain := app.Domain
+	if domain == "" {
+		domain = types.ReposDomain
+	}
 
 	query := sqlf.Sprintf(`INSERT INTO
 	    github_apps (app_id, name, domain, slug, base_url, app_url, client_id, client_secret, private_key, encryption_key_id, logo)
     	VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		RETURNING id`,
-		app.AppID, app.Name, app.Domain, app.Slug, app.BaseURL, app.AppURL, app.ClientID, clientSecret, privateKey, keyID, app.Logo)
+		app.AppID, app.Name, domain, app.Slug, app.BaseURL, app.AppURL, app.ClientID, clientSecret, privateKey, keyID, app.Logo)
 	id, _, err := basestore.ScanFirstInt(s.Query(ctx, query))
 	return id, err
 }

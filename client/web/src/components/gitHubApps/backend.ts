@@ -5,11 +5,6 @@ import { gql, useQuery } from '@sourcegraph/http-client'
 import { GitHubAppByAppIDResult, GitHubAppByAppIDVariables } from '../../graphql-operations'
 import { ExternalServiceFieldsWithConfig, LIST_EXTERNAL_SERVICE_FRAGMENT } from '../externalServices/backend'
 
-export enum GitHubAppDomain {
-    REPOS = 'REPOS',
-    BATCHES = 'BATCHES',
-}
-
 export const GITHUB_APPS_QUERY = gql`
     query GitHubApps($domain: GitHubAppDomain) {
         gitHubApps(domain: $domain) {

@@ -85,13 +85,13 @@ type Repo struct {
 }
 
 const (
-	ReposDomain   GitHubAppDomain = "REPOS"
-	BatchesDomain GitHubAppDomain = "BATCHES"
+	ReposDomain   GitHubAppDomain = "repos"
+	BatchesDomain GitHubAppDomain = "batches"
 )
 
 type GitHubAppDomain string
 
-func (s GitHubAppDomain) ToGraphQL() string { return strings.ToUpper(string(s)) }
+func (s GitHubAppDomain) ToGraphQL() string { return strings.ToLower(string(s)) }
 
 // RepoCommit is a record of a repo and a corresponding commit.
 type RepoCommit struct {
