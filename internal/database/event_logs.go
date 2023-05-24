@@ -1460,18 +1460,20 @@ func buildAggregatedRepoMetadataEventsQuery(period PeriodType) (string, error) {
 			WHERE name IN ('SearchSubmitted')
 			AND (
 				argument->>'query' ILIKE '%%repo:has(%%'
-				OR argument->>'query' ILIKE '%%repo:has.key(%%')
-				OR argument->>'query' ILIKE '%%repo:has.tag(%%')
-				OR argument->>'query' ILIKE '%%repo:has.meta(%%')
-			) AS searches_count,
+				OR argument->>'query' ILIKE '%%repo:has.key(%%'
+				OR argument->>'query' ILIKE '%%repo:has.tag(%%'
+				OR argument->>'query' ILIKE '%%repo:has.meta(%%'
+			)
+		) AS searches_count,
 		COUNT(DISTINCT user_id) FILTER (
 			WHERE name IN ('SearchSubmitted')
 			AND (
 				argument->>'query' ILIKE '%%repo:has(%%'
-				OR argument->>'query' ILIKE '%%repo:has.key(%%')
-				OR argument->>'query' ILIKE '%%repo:has.tag(%%')
-				OR argument->>'query' ILIKE '%%repo:has.meta(%%')
-			) AS searches_unique_count
+				OR argument->>'query' ILIKE '%%repo:has.key(%%'
+				OR argument->>'query' ILIKE '%%repo:has.tag(%%'
+				OR argument->>'query' ILIKE '%%repo:has.meta(%%'
+			)
+		) AS searches_unique_count
 	FROM events;
 	`, nil
 }
