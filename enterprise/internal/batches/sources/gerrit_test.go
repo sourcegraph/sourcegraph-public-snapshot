@@ -2,6 +2,7 @@ package sources
 
 import (
 	"context"
+	"net/url"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -124,6 +125,7 @@ func TestGerritSource_LoadChangeset(t *testing.T) {
 		s, client := mockGerritSource()
 
 		change := mockGerritChange(&testProject)
+		client.GetURLFunc.SetDefaultReturn(&url.URL{})
 		client.GetChangeFunc.SetDefaultHook(func(ctx context.Context, changeID string) (*gerrit.Change, error) {
 			assert.Equal(t, changeID, testGerritChangeID)
 			return change, nil
@@ -157,6 +159,7 @@ func TestGerritSource_CloseChangeset(t *testing.T) {
 		s, client := mockGerritSource()
 
 		pr := mockGerritChange(&testProject)
+		client.GetURLFunc.SetDefaultReturn(&url.URL{})
 		client.AbandonChangeFunc.SetDefaultHook(func(ctx context.Context, changeID string) (*gerrit.Change, error) {
 			assert.Equal(t, changeID, testGerritChangeID)
 			return pr, nil
@@ -240,6 +243,7 @@ func TestGerritSource_MergeChangeset(t *testing.T) {
 		s, client := mockGerritSource()
 
 		pr := mockGerritChange(&testProject)
+		client.GetURLFunc.SetDefaultReturn(&url.URL{})
 		client.SubmitChangeFunc.SetDefaultHook(func(ctx context.Context, changeID string) (*gerrit.Change, error) {
 			assert.Equal(t, testGerritChangeID, changeID)
 			return pr, nil
@@ -256,6 +260,7 @@ func TestGerritSource_MergeChangeset(t *testing.T) {
 		s, client := mockGerritSource()
 
 		pr := mockGerritChange(&testProject)
+		client.GetURLFunc.SetDefaultReturn(&url.URL{})
 		client.SubmitChangeFunc.SetDefaultHook(func(ctx context.Context, changeID string) (*gerrit.Change, error) {
 			assert.Equal(t, testGerritChangeID, changeID)
 			return pr, nil
