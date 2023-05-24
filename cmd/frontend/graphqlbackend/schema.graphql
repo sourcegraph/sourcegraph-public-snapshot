@@ -7069,31 +7069,31 @@ type UpgradeReadiness {
 }
 
 """
-TODO
+A summary of a schema drift.
 """
 type SchemaDriftSummary {
     """
-    TODO
+    Name of the table that contains the drift
     """
     name: String!
     """
-    TODO
+    The problem that was found
     """
     problem: String!
     """
-    TODO
+    The suggested solution to the problem
     """
     solution: String!
     """
-    TODO
+    The diff of the schema drift
     """
     diff: String
     """
-    TODO
+    The SQL to fix the schema drift
     """
     statements: [String!]
     """
-    TODO
+    The Sourcegraph URL that contains the potential fix
     """
     urlHint: String
 }
