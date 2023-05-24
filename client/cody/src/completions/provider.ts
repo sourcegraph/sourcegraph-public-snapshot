@@ -342,7 +342,6 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
                 line = currentLinePrefix + line
             }
             if (line.trim() !== '' && nextLine.trim() !== '') {
-                console.log({ line, nextLine })
                 // We need a trimRight here because the machine likes to add trailing whitespace.
                 //
                 // TODO: Fix this earlier in the post process run but this needs to be careful not
@@ -352,7 +351,6 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
             return false
         })
         if (matchedLineIndex !== -1) {
-            console.log({ matchedLineIndex })
             completion = lines.slice(0, matchedLineIndex).join('\n')
         }
 
