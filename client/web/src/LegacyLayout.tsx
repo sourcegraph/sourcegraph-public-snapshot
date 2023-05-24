@@ -184,7 +184,8 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
         !wasAppSetupFinished &&
         !isAppSetupPage &&
         !isAppAuthCallbackPage &&
-        !isCodyStandalonePage
+        !isCodyStandalonePage &&
+        !isAuthTokenCallbackPage
     ) {
         return <Navigate to={EnterprisePageRoutes.AppSetup} replace={true} />
     }
