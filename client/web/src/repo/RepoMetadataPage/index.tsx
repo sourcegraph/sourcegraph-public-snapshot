@@ -59,7 +59,11 @@ export const RepoMetadataPage: FC<RepoMetadataPageProps> = ({ telemetryService, 
 
     const onDelete = useCallback(
         (meta: RepoMetadataItem): void => {
-            if (!window.confirm(`Delete metadata "${meta.key}${meta.value ? `:${meta.value}` : ''}"?`)) {
+            if (
+                !window.confirm(
+                    `Remove metadata "${meta.key}${meta.value ? `:${meta.value}` : ''}" from this repository?`
+                )
+            ) {
                 return
             }
             deleteRepoMetadata({
@@ -125,7 +129,7 @@ export const RepoMetadataPage: FC<RepoMetadataPageProps> = ({ telemetryService, 
                             <RepoMetadata items={filteredMetadata} onDelete={onDelete} />
                         ) : (
                             searchQuery.length > 0 && (
-                                <Text className="text-muted">No metadata containing "{searchQuery}"</Text>
+                                <Text className="text-muted m-0">No metadata containing "{searchQuery}"</Text>
                             )
                         )}
                     </>
