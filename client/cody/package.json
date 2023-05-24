@@ -140,7 +140,7 @@
       },
       {
         "command": "cody.manual-completions",
-        "title": "Cody: Generate completions"
+        "title": "Cody: Open Completions Panel"
       },
       {
         "command": "cody.settings",
@@ -263,6 +263,10 @@
         {
           "command": "cody.comment.load",
           "when": "false"
+        },
+        {
+          "command": "cody.manual-completions",
+          "when": "config.cody.experimental.suggestions"
         }
       ],
       "editor/context": [
