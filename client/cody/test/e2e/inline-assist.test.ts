@@ -31,21 +31,18 @@ test('start a fixup job from inline assist with valid auth', async ({ page, side
     await page.click('.monaco-text-button')
 
     // TODO: Capture processing state. It is currently to quick to capture the processing elements
+    // Wait for the code lens to show up to ensure that the fixup has been applied
     // await expect(page.getByText('Processing')).toBeVisible()
 
-    // Wait for the code lens to show up to ensure that the fixup has been applied
+    // Ensures Code Lens is added
     await expect(page.getByText('Edited by Cody')).toBeVisible()
     await expect(page.getByText('<title>Goodbye Cody</title>')).toBeVisible()
 
-    // Bring the cody sidebar to the foreground
-    await page.click('[aria-label="Sourcegraph Cody"]')
-    // Ensure that we remove the hover from the activity icon
-    await page.getByRole('heading', { name: 'Sourcegraph Cody: Chat' }).hover()
+    // Ensures Cody's fixup is displayed in comment thread
+    await expect(page.getByText('Check your document for updates from Cody.')).toBeVisible()
 
-    // Logout
-    await page.click('[aria-label="Cody: Settings"]')
-    await sidebar.getByRole('button', { name: 'Logout' }).click()
-
-    await expect(sidebar.getByRole('button', { name: 'Sign In' })).toBeVisible()
-    await expect(sidebar.getByText('Invalid credentials')).not.toBeVisible()
+    // Ensures Decorations is displayed by checking hover text
+    await page.getByText('>Goodbye Cody<').hover()
+    // The decoration text on hover should start with 'Cody Fixup #' and end with random number
+    await expect(page.locator('.hover-contents').first()).toHaveText(/Cody Fixup #\d+/)
 })
