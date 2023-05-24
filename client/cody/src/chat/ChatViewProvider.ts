@@ -302,10 +302,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 if (lastInteraction) {
                     const displayText = reformatBotMessage(text, responsePrefix)
                     let { text: highlightedDisplayText } = await highlightTokens(displayText || '', filesExist)
-                    if (this.config.experimentalGuardrails) {
-                        // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
-                        highlightedDisplayText = await annotateAttribution(this.guardrails, highlightedDisplayText)
-                    }
+                    // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
+                    highlightedDisplayText = await this.guardrailsAnnotateAttributions(highlightedDisplayText)
                     this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
                     this.editor.controller.reply(highlightedDisplayText)
                 }
@@ -519,6 +517,25 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 console.error(error, statusCode)
             },
         })
+    }
+
+    private async guardrailsAnnotateAttributions(text: string): Promise<string> {
+        if (!this.config.experimentalGuardrails) {
+            return text
+        }
+
+        const result = await annotateAttribution(this.guardrails, text)
+
+        // Only log telemetry if we did work (ie had to annotate something).
+        if (result.codeBlocks > 0) {
+            const event = {
+                codeBlocks: result.codeBlocks,
+                duration: result.duration,
+            }
+            logEvent('CodyVSCodeExtension:guardrails:annotate', event, event)
+        }
+
+        return result.text
     }
 
     private showTab(tab: string): void {
