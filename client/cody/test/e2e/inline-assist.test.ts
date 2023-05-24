@@ -14,8 +14,8 @@ test('start a fixup job from inline assist with valid auth', async ({ page, side
 
     // Open the Explorer view in the sidebar that would match on Mac and Linux
     await page.getByRole('tab', { name: /Explorer.*/ }).click()
-    // Select the second element from the tree view, which is the index.html file
-    await page.locator('.monaco-highlighted-label').nth(1).click()
+    // Select the second files from the tree view, which is the index.html file
+    await page.locator('.monaco-highlighted-label').nth(2).click()
 
     // Click on line number 6 to open the comment thread
     await page.locator('.comment-diff-added').nth(5).hover()
