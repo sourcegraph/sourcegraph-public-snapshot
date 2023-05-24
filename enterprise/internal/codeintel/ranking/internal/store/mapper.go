@@ -302,7 +302,6 @@ unprocessed_path_counts AS (
 		END AS document_paths
 	FROM codeintel_initial_path_ranks ipr
 	JOIN exported_uploads eu ON eu.id = ipr.exported_upload_id
-	JOIN progress p ON TRUE
 	WHERE
 		-- Ensure the record isn't already processed
 		NOT EXISTS (
