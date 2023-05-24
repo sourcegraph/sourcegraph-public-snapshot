@@ -282,7 +282,7 @@ func VariantValueOf(input string) (Variant, error) {
 // DO NOT ADD MORE VARIABLES TO THE TYPE AND KIND VARIABLES
 // instead, follow the instructions above for adding and using Variant variables
 
-// Deprecated: use Variant with its `AsKind()` function instead
+// TODO: Deprecated: use Variant with its `AsKind()` function instead
 var (
 	// The constants below represent the different kinds of external service we support and should be used
 	// in preference to the Type values below.
@@ -308,7 +308,7 @@ var (
 	KindOther           = VariantOther.AsKind()
 )
 
-// Deprecated: use Variant with its `AsType()` function instead
+// TODO: Deprecated: use Variant with its `AsType()` function instead
 var (
 	// The constants below represent the values used for the external_service_type column of the repo table.
 
