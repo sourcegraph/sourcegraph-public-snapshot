@@ -697,6 +697,33 @@ func (c *Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error {
 	return err
 }
 
+type DeleteBranchInput struct {
+	// Don't actually delete the ref name, just do a dry run
+	DryRun bool `json:"dryRun,omitempty"`
+	// Commit ID that the provided ref name is expected to point to. Should the ref point
+	// to a different commit ID, a 400 response will be returned with appropriate error
+	// details.
+	EndPoint *string `json:"endPoint,omitempty"`
+	// Name of the ref to be deleted
+	Name string `json:"name,omitempty"`
+}
+
+// DeleteBranch deletes a branch on the given repo.
+func (c *Client) DeleteBranch(ctx context.Context, projectKey, repoSlug string, input DeleteBranchInput) error {
+	path := fmt.Sprintf(
+		"rest/branch-utils/latest/projects/%s/repos/%s/branches",
+		projectKey,
+		repoSlug,
+	)
+
+	resp, err := c.send(ctx, "DELETE", path, nil, input, nil)
+	if resp != nil && resp.StatusCode != http.StatusNoContent {
+		return errors.Newf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	return err
+}
+
 // LoadPullRequestActivities loads the given PullRequest's timeline of activities,
 // returning an error in case of failure.
 func (c *Client) LoadPullRequestActivities(ctx context.Context, pr *PullRequest) (err error) {

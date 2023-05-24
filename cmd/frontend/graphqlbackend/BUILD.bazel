@@ -251,6 +251,7 @@ go_library(
         "//internal/conf/reposource",
         "//internal/database",
         "//internal/database/migration/cliutil",
+        "//internal/database/migration/drift",
         "//internal/database/migration/schemas",
         "//internal/deviceid",
         "//internal/encryption",
