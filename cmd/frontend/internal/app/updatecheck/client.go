@@ -729,15 +729,19 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		return nil, err
 	}
 
-	err = db.EventLogs().Insert(ctx, &database.Event{
-		UserID:          0,
-		Name:            "ping",
-		URL:             "",
-		AnonymousUserID: "backend",
-		Source:          "BACKEND",
-		Argument:        contents,
-		Timestamp:       time.Now().UTC(),
-	})
+	err = db.EventLogs().Insert(
+		// We always want to insert this event, even when the context is expired when
+		// we get here.
+		context.Background(),
+		&database.Event{
+			UserID:          0,
+			Name:            "ping",
+			URL:             "",
+			AnonymousUserID: "backend",
+			Source:          "BACKEND",
+			Argument:        contents,
+			Timestamp:       time.Now().UTC(),
+		})
 
 	return bytes.NewReader(contents), err
 }
@@ -782,9 +786,6 @@ var telemetryHTTPProxy = env.Get("TELEMETRY_HTTP_PROXY", "", "if set, HTTP proxy
 
 // check performs an update check and updates the global state.
 func check(logger log.Logger, db database.DB) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
-	defer cancel()
-
 	updateBodyFunc := updateBody
 	// In Sourcegraph App mode, use limited pings.
 	if deploy.IsApp() {
@@ -793,15 +794,21 @@ func check(logger log.Logger, db database.DB) {
 	endpoint := updateCheckURL(logger)
 
 	doCheck := func() (updateVersion string, err error) {
+		// Try to collect events data for at most 30 minutes.
+		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Minute)
 		body, err := updateBodyFunc(ctx, logger, db)
-
+		cancel()
 		if err != nil {
-			return "", err
+			return "", errors.Wrap(err, "failed to compile payload")
 		}
+
+		// Try to talk to Sourcegraph for at most 10 minutes.
+		ctx, cancel = context.WithTimeout(context.Background(), 10*time.Minute)
+		defer cancel()
 
 		req, err := http.NewRequest("POST", endpoint, body)
 		if err != nil {
-			return "", err
+			return "", errors.Wrap(err, "creating request")
 		}
 		req.Header.Set("Content-Type", "application/json")
 		req = req.WithContext(ctx)
@@ -821,7 +828,7 @@ func check(logger log.Logger, db database.DB) {
 
 		resp, err := doer.Do(req)
 		if err != nil {
-			return "", err
+			return "", errors.Wrap(err, "doing request")
 		}
 		defer resp.Body.Close()
 		if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusNoContent {
