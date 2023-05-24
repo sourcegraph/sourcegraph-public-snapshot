@@ -1,11 +1,7 @@
--- Perform migration here.
---
--- See /migrations/README.md. Highlights:
---  * Make migrations idempotent (use IF EXISTS)
---  * Make migrations backwards-compatible (old readers/writers must continue to work)
---  * If you are using CREATE INDEX CONCURRENTLY, then make sure that only one statement
---    is defined per file, and that each such statement is NOT wrapped in a transaction.
---    Each such migration must also declare "createIndexConcurrently: true" in their
---    associated metadata.yaml file.
---  * If you are modifying Postgres extensions, you must also declare "privileged: true"
---    in the associated metadata.yaml file.
+ALTER TABLE executor_heartbeats ALTER COLUMN queue_name DROP NOT NULL;
+ALTER TABLE executor_heartbeats ADD COLUMN IF NOT EXISTS queue_names TEXT[];
+ALTER TABLE executor_heartbeats ADD CONSTRAINT queue_not_null CHECK (
+    (queue_name IS NOT NULL AND queue_names IS NULL)
+    OR
+    (queue_names IS NOT NULL AND queue_name IS NULL)
+)
