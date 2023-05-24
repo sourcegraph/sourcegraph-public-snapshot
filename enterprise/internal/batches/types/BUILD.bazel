@@ -78,6 +78,7 @@ go_test(
         "//internal/extsvc/azuredevops",
         "//internal/extsvc/bitbucketcloud",
         "//internal/extsvc/bitbucketserver",
+        "//internal/extsvc/gerrit",
         "//internal/extsvc/github",
         "//internal/extsvc/gitlab",
         "//internal/timeutil",

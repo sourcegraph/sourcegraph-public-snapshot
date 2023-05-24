@@ -6,6 +6,14 @@ import (
 	"net/url"
 )
 
+var (
+	ChangeStatusNew       ChangeStatus = "NEW"
+	ChangeStatusAbandoned ChangeStatus = "ABANDONED"
+	ChangeStatusMerged    ChangeStatus = "MERGED"
+)
+
+type ChangeStatus string
+
 // ListProjectsArgs defines options to be set on ListProjects method calls.
 type ListProjectsArgs struct {
 	Cursor *Pagination
@@ -17,22 +25,26 @@ type ListProjectsArgs struct {
 type ListProjectsResponse map[string]*Project
 
 type Change struct {
-	ID       string `json:"id"`
-	Project  string `json:"project"`
-	Branch   string `json:"branch"`
-	ChangeID string `json:"change_id"`
-	Topic    string `json:"topic"`
-	Subject  string `json:"subject"`
-	Status   string `json:"status"`
-	Created  string `json:"created"`
-	Updated  string `json:"updated"`
-	Owner    struct {
+	ID             string       `json:"id"`
+	Project        string       `json:"project"`
+	Branch         string       `json:"branch"`
+	ChangeID       string       `json:"change_id"`
+	Topic          string       `json:"topic"`
+	Subject        string       `json:"subject"`
+	Status         ChangeStatus `json:"status"`
+	Created        string       `json:"created"`
+	Updated        string       `json:"updated"`
+	Reviewed       bool         `json:"reviewed"`
+	WorkInProgress bool         `json:"work_in_progress"`
+	Hashtags       []string     `json:"hashtags"`
+	Owner          struct {
 		Name     string `json:"name"`
 		Email    string `json:"email"`
 		Username string `json:"username"`
 	} `json:"owner"`
-	// Add more fields as needed
 }
+
+const GerritTimeFormat = "2023-05-23 23:43:42.000000000"
 
 type ChangeReviewComment struct {
 	Message       string            `json:"message"`

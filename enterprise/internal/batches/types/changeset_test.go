@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -177,7 +178,7 @@ func TestChangeset_SetMetadata(t *testing.T) {
 				ExternalUpdatedAt:   time.Unix(10, 0),
 			},
 		},
-		"azuredevops with fork": {
+		"Azure DevOps with fork": {
 			meta: &adobatches.AnnotatedPullRequest{
 				PullRequest: &azuredevops.PullRequest{
 					ID:            12345,
@@ -203,7 +204,7 @@ func TestChangeset_SetMetadata(t *testing.T) {
 				ExternalUpdatedAt:     time.Unix(10, 0),
 			},
 		},
-		"azuredevops without fork": {
+		"Azure DevOps without fork": {
 			meta: &adobatches.AnnotatedPullRequest{
 				PullRequest: &azuredevops.PullRequest{
 					ID:            12345,
@@ -219,6 +220,20 @@ func TestChangeset_SetMetadata(t *testing.T) {
 				ExternalForkNamespace: "",
 				ExternalForkName:      "",
 				ExternalUpdatedAt:     time.Unix(10, 0),
+			},
+		},
+		"Gerrit without fork": {
+			meta: &gerrit.Change{
+				ID:      "I5de272baea22ef34dfbd00d6e96c45b25019697f",
+				Branch:  "branch",
+				Created: "2023-05-24 19:04:01.000000000",
+			},
+			want: &Changeset{
+				ExternalID:            "I5de272baea22ef34dfbd00d6e96c45b25019697f",
+				ExternalServiceType:   extsvc.TypeGerrit,
+				ExternalBranch:        "refs/heads/branch",
+				ExternalForkNamespace: "",
+				ExternalForkName:      "",
 			},
 		},
 	} {
@@ -248,6 +263,9 @@ func TestChangeset_Title(t *testing.T) {
 		},
 		"bitbucketserver": &bitbucketserver.PullRequest{
 			Title: want,
+		},
+		"Gerrit": &gerrit.Change{
+			Subject: want,
 		},
 		"GitHub": &github.PullRequest{
 			Title: want,
@@ -330,6 +348,9 @@ func TestChangeset_Body(t *testing.T) {
 		"bitbucketserver": &bitbucketserver.PullRequest{
 			Description: want,
 		},
+		"Gerrit": &gerrit.Change{
+			Subject: want,
+		},
 		"GitHub": &github.PullRequest{
 			Body: want,
 		},
@@ -403,6 +424,11 @@ func TestChangeset_URL(t *testing.T) {
 			},
 			want: want,
 		},
+		"Gerrit": {
+			// Currently just an empty string until fixed
+			pr:   &gerrit.Change{},
+			want: "",
+		},
 		"GitHub": {
 			pr: &github.PullRequest{
 				URL: want,
@@ -457,6 +483,10 @@ func TestChangeset_HeadRefOid(t *testing.T) {
 		},
 		"bitbucketserver": {
 			meta: &bitbucketserver.PullRequest{},
+			want: "",
+		},
+		"Gerrit": {
+			meta: &gerrit.Change{},
 			want: "",
 		},
 		"GitHub": {
@@ -519,6 +549,11 @@ func TestChangeset_HeadRef(t *testing.T) {
 			},
 			want: "foo",
 		},
+		"Gerrit": {
+			// Gerrit does not return the head ref
+			meta: &gerrit.Change{},
+			want: "",
+		},
 		"GitHub": {
 			meta: &github.PullRequest{HeadRefName: "foo"},
 			want: "refs/heads/foo",
@@ -573,6 +608,10 @@ func TestChangeset_BaseRefOid(t *testing.T) {
 		},
 		"bitbucketserver": {
 			meta: &bitbucketserver.PullRequest{},
+			want: "",
+		},
+		"Gerrit": {
+			meta: &gerrit.Change{},
 			want: "",
 		},
 		"GitHub": {
@@ -633,6 +672,12 @@ func TestChangeset_BaseRef(t *testing.T) {
 			},
 			want: "foo",
 		},
+		"Gerrit": {
+			meta: &gerrit.Change{
+				Branch: "foo",
+			},
+			want: "refs/heads/foo",
+		},
 		"GitHub": {
 			meta: &github.PullRequest{BaseRefName: "foo"},
 			want: "refs/heads/foo",
@@ -680,6 +725,15 @@ func TestChangeset_Labels(t *testing.T) {
 		"bitbucketserver": {
 			meta: &bitbucketserver.PullRequest{},
 			want: []ChangesetLabel{},
+		},
+		"Gerrit": {
+			meta: &gerrit.Change{
+				Hashtags: []string{"black", "green"},
+			},
+			want: []ChangesetLabel{
+				{Name: "black", Color: "000000"},
+				{Name: "green", Color: "000000"},
+			},
 		},
 		"GitHub": {
 			meta: &github.PullRequest{

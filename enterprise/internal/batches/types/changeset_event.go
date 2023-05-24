@@ -104,7 +104,6 @@ const (
 	ChangesetEventKindBitbucketCloudRepoCommitStatusCreated          ChangesetEventKind = "bitbucketcloud:repo:commit_status_created"          // RepoCommitStatusCreatedEvent
 	ChangesetEventKindBitbucketCloudRepoCommitStatusUpdated          ChangesetEventKind = "bitbucketcloud:repo:commit_status_updated"          // RepoCommitStatusUpdatedEvent
 
-	ChangesetEventKindAzureDevOpsPullRequestCreated                 ChangesetEventKind = "azuredevops:pullrequest:created"
 	ChangesetEventKindAzureDevOpsPullRequestMerged                  ChangesetEventKind = "azuredevops:pullrequest:merged"
 	ChangesetEventKindAzureDevOpsPullRequestUpdated                 ChangesetEventKind = "azuredevops:pullrequest:updated"
 	ChangesetEventKindAzureDevOpsPullRequestApproved                ChangesetEventKind = "azuredevops:pullrequest:approved"

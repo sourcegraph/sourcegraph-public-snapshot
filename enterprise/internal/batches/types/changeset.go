@@ -488,6 +488,8 @@ func (c *Changeset) Title() (string, error) {
 		return m.Title, nil
 	case *adobatches.AnnotatedPullRequest:
 		return m.Title, nil
+	case *gerrit.Change:
+		return m.Subject, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -511,6 +513,8 @@ func (c *Changeset) AuthorName() (string, error) {
 		return m.Author.Username, nil
 	case *adobatches.AnnotatedPullRequest:
 		return m.CreatedBy.UniqueName, nil
+	case *gerrit.Change:
+		return m.Owner.Name, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -542,6 +546,8 @@ func (c *Changeset) AuthorEmail() (string, error) {
 		return "", nil
 	case *adobatches.AnnotatedPullRequest:
 		return m.CreatedBy.UniqueName, nil
+	case *gerrit.Change:
+		return m.Owner.Email, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -562,6 +568,9 @@ func (c *Changeset) ExternalCreatedAt() time.Time {
 		return m.CreatedOn
 	case *adobatches.AnnotatedPullRequest:
 		return m.CreationDate
+	case *gerrit.Change:
+		// TODO: @varsanojidan replace this once the time conversion is complete
+		return time.Time{}
 	default:
 		return time.Time{}
 	}
@@ -580,6 +589,9 @@ func (c *Changeset) Body() (string, error) {
 		return m.Rendered.Description.Raw, nil
 	case *adobatches.AnnotatedPullRequest:
 		return m.Description, nil
+	case *gerrit.Change:
+		// Gerrit doesn't really differentiate between title/description.
+		return m.Subject, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -644,6 +656,9 @@ func (c *Changeset) URL() (s string, err error) {
 		}
 
 		return returnURL.String(), nil
+	case *gerrit.Change:
+		// TODO: @varsanojidan URL is not included in Gerrit response, need to create it from DB
+		return "", nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -846,6 +861,8 @@ func (c *Changeset) Events() (events []*ChangesetEvent, err error) {
 				Metadata:    status,
 			})
 		}
+	case *gerrit.Change:
+		// TODO: @varsanojidan implement once reviews are implemented
 	}
 	return events, nil
 }
@@ -864,6 +881,8 @@ func (c *Changeset) HeadRefOid() (string, error) {
 	case *bbcs.AnnotatedPullRequest:
 		return m.Source.Commit.Hash, nil
 	case *adobatches.AnnotatedPullRequest:
+		return "", nil
+	case *gerrit.Change:
 		return "", nil
 	default:
 		return "", errors.New("unknown changeset type")
@@ -884,6 +903,8 @@ func (c *Changeset) HeadRef() (string, error) {
 		return "refs/heads/" + m.Source.Branch.Name, nil
 	case *adobatches.AnnotatedPullRequest:
 		return m.SourceRefName, nil
+	case *gerrit.Change:
+		return "", nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -904,6 +925,8 @@ func (c *Changeset) BaseRefOid() (string, error) {
 		return m.Destination.Commit.Hash, nil
 	case *adobatches.AnnotatedPullRequest:
 		return "", nil
+	case *gerrit.Change:
+		return "", nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -923,6 +946,8 @@ func (c *Changeset) BaseRef() (string, error) {
 		return "refs/heads/" + m.Destination.Branch.Name, nil
 	case *adobatches.AnnotatedPullRequest:
 		return m.TargetRefName, nil
+	case *gerrit.Change:
+		return "refs/heads/" + m.Branch, nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
@@ -1030,6 +1055,12 @@ func (c *Changeset) Labels() []ChangesetLabel {
 		// richer label data.
 		labels := make([]ChangesetLabel, len(m.Labels))
 		for i, l := range m.Labels {
+			labels[i] = ChangesetLabel{Name: l, Color: "000000"}
+		}
+		return labels
+	case *gerrit.Change:
+		labels := make([]ChangesetLabel, len(m.Hashtags))
+		for i, l := range m.Hashtags {
 			labels[i] = ChangesetLabel{Name: l, Color: "000000"}
 		}
 		return labels
@@ -1247,7 +1278,6 @@ func ChangesetEventKindFor(e any) (ChangesetEventKind, error) {
 		return ChangesetEventKindBitbucketCloudRepoCommitStatusCreated, nil
 	case *bitbucketcloud.RepoCommitStatusUpdatedEvent:
 		return ChangesetEventKindBitbucketCloudRepoCommitStatusUpdated, nil
-
 	case *azuredevops.PullRequestMergedEvent:
 		return ChangesetEventKindAzureDevOpsPullRequestMerged, nil
 	case *azuredevops.PullRequestApprovedEvent:
@@ -1273,7 +1303,6 @@ func ChangesetEventKindFor(e any) (ChangesetEventKind, error) {
 		case -10:
 			return ChangesetEventKindAzureDevOpsPullRequestRejected, nil
 		}
-
 	case *azuredevops.PullRequestBuildStatus:
 		switch e.State {
 		case azuredevops.PullRequestBuildStatusStateSucceeded:
@@ -1285,6 +1314,7 @@ func ChangesetEventKindFor(e any) (ChangesetEventKind, error) {
 		default:
 			return ChangesetEventKindAzureDevOpsPullRequestBuildPending, nil
 		}
+		// TODO: @varsanojidan return to this if events are happening
 	}
 	return ChangesetEventKindInvalid, errors.Errorf("unknown changeset event kind for %T", e)
 }
@@ -1421,6 +1451,7 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (any, error) {
 		default:
 			return new(azuredevops.PullRequestUpdatedEvent), nil
 		}
+		// TODO: @varsanojidan come back to this for events
 	}
 	return nil, errors.Errorf("unknown changeset event kind %q", k)
 }
