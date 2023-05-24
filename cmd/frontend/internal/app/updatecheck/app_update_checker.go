@@ -21,7 +21,7 @@ import (
 const RouteAppUpdateCheck = "app.update.check"
 
 // ManifestBucket the name of the bucket where the Sourcegraph App update manifest is stored
-const ManifestBucket = "sourcegraph_app"
+const ManifestBucket = "sourcegraph-app"
 
 // ManifestName is the name of the manifest object that is in the ManifestBucket
 const ManifestName = "app.update.prod.manifest.json"
@@ -34,7 +34,7 @@ type AppVersion struct {
 
 type AppUpdateResponse struct {
 	Version   string    `json:"version"`
-	Notes     string    `json:"notes"`
+	Notes     string    `json:"notes,omitempty"`
 	PubDate   time.Time `json:"pub_date"`
 	Signature string    `json:"signature"`
 	URL       string    `json:"url"`
@@ -184,10 +184,15 @@ func (checker *AppUpdateChecker) Handler() http.HandlerFunc {
 
 		checker.logger.Debug("found client platform in App Update Manifest", log.Object("platform", log.String("signature", platformLoc.Signature), log.String("url", platformLoc.URL)))
 
+		var notes = "A new Sourcegraph version is available! For more information see https://github.com/sourcegraph/sourcegraph/releases"
+		if len(manifest.Notes) > 0 {
+			notes = manifest.Notes
+		}
+
 		updateResp := AppUpdateResponse{
 			Version:   manifest.Version,
 			PubDate:   manifest.PubDate,
-			Notes:     manifest.Notes,
+			Notes:     notes,
 			Signature: platformLoc.Signature,
 			URL:       platformLoc.URL,
 		}
