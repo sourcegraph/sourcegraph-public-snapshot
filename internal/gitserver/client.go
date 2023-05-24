@@ -461,6 +461,18 @@ type ArchiveOptions struct {
 	Pathspecs []gitdomain.Pathspec // if nonempty, only include these pathspecs.
 }
 
+func (a *ArchiveOptions) Attrs() []attribute.KeyValue {
+	specs := make([]string, len(a.Pathspecs))
+	for i, pathspec := range a.Pathspecs {
+		specs[i] = string(pathspec)
+	}
+	return []attribute.KeyValue{
+		attribute.String("treeish", a.Treeish),
+		attribute.String("format", string(a.Format)),
+		attribute.StringSlice("pathspecs", specs),
+	}
+}
+
 func (o *ArchiveOptions) FromProto(x *proto.ArchiveRequest) {
 	protoPathSpecs := x.GetPathspecs()
 	pathSpecs := make([]gitdomain.Pathspec, 0, len(protoPathSpecs))
