@@ -109,8 +109,7 @@ func (s *Service) InferIndexConfiguration(ctx context.Context, repositoryID int,
 	}
 	trace.AddEvent("found", attribute.String("commit", commit))
 
-	logs := "" // TODO
-	indexJobs, err := s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, localOverrideScript, bypassLimit)
+	indexJobs, logs, err := s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, localOverrideScript, bypassLimit)
 	if err != nil {
 		return nil, "", err
 	}
@@ -144,7 +143,7 @@ func (s *Service) QueueIndexesForPackage(ctx context.Context, pkg dependencies.M
 	return s.indexEnqueuer.QueueIndexesForPackage(ctx, pkg, assumeSynced)
 }
 
-func (s *Service) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) ([]config.IndexJob, error) {
+func (s *Service) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) (_ []config.IndexJob, logs string, _ error) {
 	return s.jobSelector.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, localOverrideScript, bypassLimit)
 }
 

@@ -143,7 +143,7 @@ func testGenerator(t *testing.T, testCase generatorTestCase) {
 	t.Run(testCase.description, func(t *testing.T) {
 		service := testService(t, testCase.repositoryContents)
 
-		jobs, err := service.InferIndexJobs(
+		jobs, _, err := service.InferIndexJobs(
 			context.Background(),
 			"github.com/test/test",
 			"HEAD",

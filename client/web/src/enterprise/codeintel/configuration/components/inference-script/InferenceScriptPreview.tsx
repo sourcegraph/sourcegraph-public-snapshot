@@ -85,8 +85,10 @@ export const InferenceScriptPreview: React.FunctionComponent<InferenceScriptPrev
                 <ErrorAlert error={error} />
             ) : data ? (
                 <>
-                    {data.inferAutoIndexJobsForRepo.inferenceOutput && (
+                    {data.inferAutoIndexJobsForRepo.inferenceOutput ? (
                         <p>{data.inferAutoIndexJobsForRepo.inferenceOutput}</p>
+                    ) : (
+                        <>nothing?</>
                     )}
 
                     <InferenceForm

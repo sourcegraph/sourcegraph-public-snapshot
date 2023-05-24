@@ -47,15 +47,15 @@ var (
 )
 
 // InferIndexJobsFromRepositoryStructure collects the result of InferIndexJobs over all registered recognizers.
-func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) ([]config.IndexJob, error) {
+func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) (_ []config.IndexJob, logs string, _ error) {
 	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	script, err := s.store.GetInferenceScript(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to fetch inference script from database")
+		return nil, "", errors.Wrap(err, "failed to fetch inference script from database")
 	}
 	if script == "" {
 		script = overrideScript
@@ -65,23 +65,24 @@ func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context,
 	}
 
 	if _, canInfer, err := s.store.RepositoryExceptions(ctx, repositoryID); err != nil {
-		return nil, err
+		return nil, "", err
 	} else if !canInfer {
 		s.logger.Warn("Auto-indexing job inference for this repo is disabled", log.Int("repositoryID", repositoryID), log.String("repoName", string(repo.Name)))
-		return nil, nil
+		return nil, "", nil
 	}
 
-	indexes, err := s.inferenceSvc.InferIndexJobs(ctx, repo.Name, commit, script)
+	// FOOBAR1
+	indexes, logs, err := s.inferenceSvc.InferIndexJobs(ctx, repo.Name, commit, script)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	if !bypassLimit && len(indexes) > MaximumIndexJobsPerInferredConfiguration {
 		s.logger.Info("Too many inferred roots. Scheduling no index jobs for repository.", log.Int("repository_id", repositoryID))
-		return nil, nil
+		return nil, "", nil
 	}
 
-	return indexes, nil
+	return indexes, logs, nil
 }
 
 // inferIndexJobsFromRepositoryStructure collects the result of  InferIndexJobHints over all registered recognizers.
@@ -216,7 +217,7 @@ func (s *JobSelector) getIndexRecordsFromConfigurationInRepository(ctx context.C
 // determines a set of index jobs that are likely to succeed. If no jobs could be inferred then a
 // false valued flag is returned.
 func (s *JobSelector) inferIndexRecordsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]uploadsshared.Index, bool, error) {
-	indexJobs, err := s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, "", bypassLimit)
+	indexJobs, _, err := s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, "", bypassLimit)
 	if err != nil || len(indexJobs) == 0 {
 		return nil, false, err
 	}

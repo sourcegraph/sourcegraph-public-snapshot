@@ -50,7 +50,7 @@ func NewSummaryBuilder(
 
 				if autoIndexingEnabled() {
 					commit := "HEAD"
-					indexJobs, err := jobSelector.InferIndexJobsFromRepositoryStructure(ctx, repositoryWithCount.RepositoryID, commit, "", false)
+					indexJobs, _, err := jobSelector.InferIndexJobsFromRepositoryStructure(ctx, repositoryWithCount.RepositoryID, commit, "", false)
 					if err != nil {
 						if errors.As(err, &inference.LimitError{}) {
 							continue

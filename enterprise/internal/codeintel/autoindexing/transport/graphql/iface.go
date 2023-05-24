@@ -20,5 +20,5 @@ type AutoIndexingService interface {
 	// Inference
 	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force bool, bypassLimit bool) ([]uploadsshared.Index, error)
 	InferIndexConfiguration(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) (_ *config.IndexConfiguration, logs string, _ error)
-	InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) ([]config.IndexJob, error)
+	InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) (_ []config.IndexJob, logs string, _ error)
 }
