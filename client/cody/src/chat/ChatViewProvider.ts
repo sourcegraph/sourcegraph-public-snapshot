@@ -234,13 +234,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 if (isLoggedIn(authStatus)) {
                     await updateConfiguration('serverEndpoint', message.serverEndpoint)
                     await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
-                    this.sendEvent('auth', 'login')
+                    await this.sendEvent('auth', 'login')
                 }
                 void this.webview?.postMessage({ type: 'login', authStatus })
                 break
             }
             case 'event':
-                this.sendEvent(message.event, message.value)
+                await this.sendEvent(message.event, message.value)
                 break
             case 'removeToken':
                 await this.logout()
@@ -369,7 +369,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion'): Promise<void> {
         debug('ChatViewProvider:onHumanMessageSubmitted', '', { verbose: { text, submitType } })
         if (submitType === 'suggestion') {
-            logEvent('CodyVSCodeExtension:chatPredictions:used')
+            await logEvent('CodyVSCodeExtension:chatPredictions:used')
         }
         this.inputHistory.push(text)
         if (this.config.experimentalChatPredictions) {
@@ -461,7 +461,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             }
         }
 
-        logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
+        await logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
     }
 
     private async runRecipeForSuggestion(recipeId: RecipeID, humanChatInput: string = ''): Promise<void> {
@@ -486,7 +486,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         const prompt = await transcript.toPrompt(getPreamble(this.codebaseContext.getCodebase()))
 
-        logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
+        await logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
 
         let text = ''
         multiplexer.sub(BotResponseMultiplexer.DEFAULT_TOPIC, {
@@ -567,10 +567,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      * Save Login state to webview
      */
     public async sendLogin(authStatus: AuthStatus): Promise<void> {
-        this.sendEvent('token', 'Set')
+        await this.sendEvent('token', 'Set')
         await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
         if (isLoggedIn(authStatus)) {
-            this.sendEvent('auth', 'login')
+            await this.sendEvent('auth', 'login')
         }
         void this.webview?.postMessage({
             type: 'login',
@@ -585,8 +585,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     public async logout(): Promise<void> {
         await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
         await vscode.commands.executeCommand('setContext', 'cody.activated', false)
-        this.sendEvent('token', 'Delete')
-        this.sendEvent('auth', 'logout')
+        await this.sendEvent('token', 'Delete')
+        await this.sendEvent('auth', 'logout')
         this.setWebviewView('login')
     }
 
@@ -673,27 +673,27 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     /**
      * Log Events
      */
-    public sendEvent(event: string, value: string): void {
+    public async sendEvent(event: string, value: string): Promise<void> {
         const isPrivateInstance = new URL(this.config.serverEndpoint).href !== DOTCOM_URL.href
         const endpointUri = { serverEndpoint: this.config.serverEndpoint }
         switch (event) {
             case 'feedback':
                 // Only include context for dot com users with connected codebase
-                logEvent(
+                await logEvent(
                     `CodyVSCodeExtension:codyFeedback:${value}`,
                     null,
                     !isPrivateInstance && this.codebaseContext.getCodebase() ? this.transcript.toChat() : null
                 )
                 break
             case 'token':
-                logEvent(`CodyVSCodeExtension:cody${value}AccessToken:clicked`, endpointUri, endpointUri)
+                await logEvent(`CodyVSCodeExtension:cody${value}AccessToken:clicked`, endpointUri, endpointUri)
                 break
             case 'auth':
-                logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri)
+                await logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri)
                 break
             // aditya combine this with above statemenet for auth or click
             case 'click':
-                logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri)
+                await logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri)
                 break
         }
     }

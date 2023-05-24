@@ -221,13 +221,13 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return []
         }
 
-        logEvent('CodyVSCodeExtension:completion:started', LOG_INLINE, LOG_INLINE)
+        await logEvent('CodyVSCodeExtension:completion:started', LOG_INLINE, LOG_INLINE)
 
         const results = (await Promise.all(completers.map(c => c.generateCompletions(abortController.signal)))).flat()
 
         inlineCompletionsCache.add(results)
 
-        logEvent('CodyVSCodeExtension:completion:suggested', LOG_INLINE, LOG_INLINE)
+        await logEvent('CodyVSCodeExtension:completion:suggested', LOG_INLINE, LOG_INLINE)
 
         return results.map(toInlineCompletionItem)
     }
@@ -300,14 +300,14 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         )
 
         try {
-            logEvent('CodyVSCodeExtension:completion:started', LOG_MULTILINE, LOG_MULTILINE)
+            await logEvent('CodyVSCodeExtension:completion:started', LOG_MULTILINE, LOG_MULTILINE)
             const completions = await completer.generateCompletions(abortController.signal, 3)
             this.documentProvider.addCompletions(completionsUri, ext, completions, {
                 suffix: '',
                 elapsedMillis: 0,
                 llmOptions: null,
             })
-            logEvent('CodyVSCodeExtension:completion:suggested', LOG_MULTILINE, LOG_MULTILINE)
+            await logEvent('CodyVSCodeExtension:completion:suggested', LOG_MULTILINE, LOG_MULTILINE)
         } catch (error) {
             if (error.message === 'aborted') {
                 return
