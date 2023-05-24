@@ -7,6 +7,7 @@ import {
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { Grid, H3 } from '@sourcegraph/wildcard'
 
+import { updateJSContextBatchChangesLicense } from '../../src/enterprise/batches/list/testData'
 import { HistoryStack } from '../app/useHistoryStack'
 import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
@@ -58,15 +59,19 @@ const allAuthenticatedNavItemsProps: Partial<GlobalNavbarProps> = {
     } as AuthenticatedUser,
 }
 
-const decorator: DecoratorFn = Story => (
-    <WebStory>
-        {() => (
-            <div className="mt-3">
-                <Story args={defaultProps} />
-            </div>
-        )}
-    </WebStory>
-)
+const decorator: DecoratorFn = Story => {
+    updateJSContextBatchChangesLicense('full')
+
+    return (
+        <WebStory>
+            {() => (
+                <div className="mt-3">
+                    <Story args={defaultProps} />
+                </div>
+            )}
+        </WebStory>
+    )
+}
 
 const config: Meta = {
     title: 'web/nav/GlobalNav',

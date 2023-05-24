@@ -193,3 +193,33 @@ export const getLicenseAndUsageInfoResult = (
     allBatchChanges: { totalCount: hasBatchChanges ? Object.values(nodes).length : 0 },
     maxUnlicensedChangesets,
 })
+
+interface BatchChangesLincenseInfo {
+    maxNumChangesets: number
+    unrestricted: boolean
+}
+
+const BATCH_CHANGES_LIMITED_LICENSE: BatchChangesLincenseInfo = {
+    maxNumChangesets: 10,
+    unrestricted: false,
+}
+
+const BATCH_CHANGES_FULL_LICENSE: BatchChangesLincenseInfo = {
+    maxNumChangesets: -1,
+    unrestricted: true,
+}
+
+export const updateJSContextBatchChangesLicense = (type: 'none' | 'limited' | 'full'): void => {
+    const license =
+        type === 'full' ? BATCH_CHANGES_FULL_LICENSE : type === 'limited' ? BATCH_CHANGES_LIMITED_LICENSE : undefined
+
+    window.context.licenseInfo = window.context.licenseInfo
+        ? {
+              ...window.context.licenseInfo,
+              batchChanges: license,
+          }
+        : {
+              currentPlan: 'team-0',
+              batchChanges: license,
+          }
+}

@@ -18,8 +18,9 @@ import { BatchChangeListPage } from './BatchChangeListPage'
 import {
     BATCH_CHANGES_BY_NAMESPACE_RESULT,
     BATCH_CHANGES_RESULT,
-    getLicenseAndUsageInfoResult,
     NO_BATCH_CHANGES_RESULT,
+    getLicenseAndUsageInfoResult,
+    updateJSContextBatchChangesLicense,
 } from './testData'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
@@ -89,23 +90,27 @@ interface Args {
     isApp: boolean
 }
 
-export const ListOfBatchChanges: Story<Args> = args => (
-    <WebStory>
-        {props => (
-            <MockedTestProvider link={buildMocks()}>
-                <BatchChangeListPage
-                    {...props}
-                    headingElement="h1"
-                    canCreate={args.canCreate || "You don't have permission to create batch changes"}
-                    settingsCascade={EMPTY_SETTINGS_CASCADE}
-                    isSourcegraphDotCom={args.isDotCom}
-                    isSourcegraphApp={args.isApp}
-                    authenticatedUser={null}
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
-)
+export const ListOfBatchChanges: Story<Args> = args => {
+    updateJSContextBatchChangesLicense('full')
+
+    return (
+        <WebStory>
+            {props => (
+                <MockedTestProvider link={buildMocks()}>
+                    <BatchChangeListPage
+                        {...props}
+                        headingElement="h1"
+                        canCreate={args.canCreate || "You don't have permission to create batch changes"}
+                        settingsCascade={EMPTY_SETTINGS_CASCADE}
+                        isSourcegraphDotCom={args.isDotCom}
+                        isSourcegraphApp={args.isApp}
+                        authenticatedUser={null}
+                    />
+                </MockedTestProvider>
+            )}
+        </WebStory>
+    )
+}
 ListOfBatchChanges.argTypes = {
     canCreate: {
         name: 'can create batch changes',
@@ -126,111 +131,129 @@ ListOfBatchChanges.argTypes = {
 
 ListOfBatchChanges.storyName = 'List of batch changes'
 
-export const ListOfBatchChangesSpecificNamespace: Story = () => (
-    <WebStory>
-        {props => (
-            <MockedTestProvider link={MOCKS_FOR_NAMESPACE}>
-                <BatchChangeListPage
-                    {...props}
-                    headingElement="h1"
-                    canCreate={true}
-                    namespaceID="test-12345"
-                    settingsCascade={EMPTY_SETTINGS_CASCADE}
-                    isSourcegraphDotCom={false}
-                    isSourcegraphApp={false}
-                    authenticatedUser={null}
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
-)
+export const ListOfBatchChangesSpecificNamespace: Story = () => {
+    updateJSContextBatchChangesLicense('full')
+
+    return (
+        <WebStory>
+            {props => (
+                <MockedTestProvider link={MOCKS_FOR_NAMESPACE}>
+                    <BatchChangeListPage
+                        {...props}
+                        headingElement="h1"
+                        canCreate={true}
+                        namespaceID="test-12345"
+                        settingsCascade={EMPTY_SETTINGS_CASCADE}
+                        isSourcegraphDotCom={false}
+                        isSourcegraphApp={false}
+                        authenticatedUser={null}
+                    />
+                </MockedTestProvider>
+            )}
+        </WebStory>
+    )
+}
 
 ListOfBatchChangesSpecificNamespace.storyName = 'List of batch changes, for a specific namespace'
 
-export const ListOfBatchChangesServerSideExecutionEnabled: Story = () => (
-    <WebStory>
-        {props => (
-            <MockedTestProvider link={buildMocks()}>
-                <BatchChangeListPage
-                    {...props}
-                    headingElement="h1"
-                    canCreate={true}
-                    settingsCascade={{
-                        ...EMPTY_SETTINGS_CASCADE,
-                        final: {
-                            experimentalFeatures: { batchChangesExecution: true },
-                        },
-                    }}
-                    isSourcegraphDotCom={false}
-                    isSourcegraphApp={false}
-                    authenticatedUser={null}
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
-)
+export const ListOfBatchChangesServerSideExecutionEnabled: Story = () => {
+    updateJSContextBatchChangesLicense('full')
+
+    return (
+        <WebStory>
+            {props => (
+                <MockedTestProvider link={buildMocks()}>
+                    <BatchChangeListPage
+                        {...props}
+                        headingElement="h1"
+                        canCreate={true}
+                        settingsCascade={{
+                            ...EMPTY_SETTINGS_CASCADE,
+                            final: {
+                                experimentalFeatures: { batchChangesExecution: true },
+                            },
+                        }}
+                        isSourcegraphDotCom={false}
+                        isSourcegraphApp={false}
+                        authenticatedUser={null}
+                    />
+                </MockedTestProvider>
+            )}
+        </WebStory>
+    )
+}
 
 ListOfBatchChangesServerSideExecutionEnabled.storyName = 'List of batch changes, server-side execution enabled'
 
-window.context.licenseInfo.batchChanges = undefined
+export const LicensingNotEnforced: Story = () => {
+    updateJSContextBatchChangesLicense('limited')
 
-export const LicensingNotEnforced: Story = () => (
-    <WebStory>
-        {props => (
-            <MockedTestProvider link={buildMocks(false)}>
-                <BatchChangeListPage
-                    {...props}
-                    headingElement="h1"
-                    canCreate={true}
-                    settingsCascade={EMPTY_SETTINGS_CASCADE}
-                    isSourcegraphDotCom={false}
-                    isSourcegraphApp={false}
-                    authenticatedUser={null}
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
-)
+    return (
+        <WebStory>
+            {props => (
+                <MockedTestProvider link={buildMocks(false)}>
+                    <BatchChangeListPage
+                        {...props}
+                        headingElement="h1"
+                        canCreate={true}
+                        settingsCascade={EMPTY_SETTINGS_CASCADE}
+                        isSourcegraphDotCom={false}
+                        isSourcegraphApp={false}
+                        authenticatedUser={null}
+                    />
+                </MockedTestProvider>
+            )}
+        </WebStory>
+    )
+}
 
 LicensingNotEnforced.storyName = 'Licensing not enforced'
 
-export const NoBatchChanges: Story = () => (
-    <WebStory>
-        {props => (
-            <MockedTestProvider link={buildMocks(true, false)}>
-                <BatchChangeListPage
-                    {...props}
-                    headingElement="h1"
-                    canCreate={true}
-                    settingsCascade={EMPTY_SETTINGS_CASCADE}
-                    isSourcegraphDotCom={false}
-                    isSourcegraphApp={false}
-                    authenticatedUser={null}
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
-)
+export const NoBatchChanges: Story = () => {
+    updateJSContextBatchChangesLicense('full')
+
+    return (
+        <WebStory>
+            {props => (
+                <MockedTestProvider link={buildMocks(true, false)}>
+                    <BatchChangeListPage
+                        {...props}
+                        headingElement="h1"
+                        canCreate={true}
+                        settingsCascade={EMPTY_SETTINGS_CASCADE}
+                        isSourcegraphDotCom={false}
+                        isSourcegraphApp={false}
+                        authenticatedUser={null}
+                    />
+                </MockedTestProvider>
+            )}
+        </WebStory>
+    )
+}
 
 NoBatchChanges.storyName = 'No batch changes'
 
-export const AllBatchChangesTabEmpty: Story = () => (
-    <WebStory>
-        {props => (
-            <MockedTestProvider link={buildMocks(true, true, false)}>
-                <BatchChangeListPage
-                    {...props}
-                    headingElement="h1"
-                    canCreate={true}
-                    openTab="batchChanges"
-                    settingsCascade={EMPTY_SETTINGS_CASCADE}
-                    isSourcegraphDotCom={false}
-                    isSourcegraphApp={false}
-                    authenticatedUser={null}
-                />
-            </MockedTestProvider>
-        )}
-    </WebStory>
-)
+export const AllBatchChangesTabEmpty: Story = () => {
+    updateJSContextBatchChangesLicense('none')
+
+    return (
+        <WebStory>
+            {props => (
+                <MockedTestProvider link={buildMocks(true, true, false)}>
+                    <BatchChangeListPage
+                        {...props}
+                        headingElement="h1"
+                        canCreate={true}
+                        openTab="batchChanges"
+                        settingsCascade={EMPTY_SETTINGS_CASCADE}
+                        isSourcegraphDotCom={false}
+                        isSourcegraphApp={false}
+                        authenticatedUser={null}
+                    />
+                </MockedTestProvider>
+            )}
+        </WebStory>
+    )
+}
 
 AllBatchChangesTabEmpty.storyName = 'All batch changes tab empty'
