@@ -34,6 +34,9 @@ oci_image(
     name = "image",
     base = "@wolfi_symbols_base",
     entrypoint = ["/symbols"],
+    env = {
+        "CACHE_DIR": "/mnt/cache/symbols",
+    },
     tars = [":tar_symbols"],
 )
 

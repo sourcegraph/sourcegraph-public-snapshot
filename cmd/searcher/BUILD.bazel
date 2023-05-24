@@ -34,6 +34,9 @@ oci_image(
     name = "image",
     base = "@wolfi_base",
     entrypoint = ["/searcher"],
+    env = {
+        "CACHE_DIR": "/mnt/cache/searcher",
+    },
     tars = [":tar_searcher"],
 )
 
