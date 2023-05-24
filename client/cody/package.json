@@ -53,21 +53,23 @@
   "scripts": {
     "build": "pnpm esbuild --minify && vite build --mode production",
     "build:dev": "concurrently \"pnpm esbuild --sourcemap\" \"vite build --mode development\"",
+    "build:nightly": "pnpm esbuild --minify && vite build --mode production",
     "download-rg": "scripts/download-rg.sh",
     "esbuild": "esbuild ./src/extension.ts --bundle --outfile=dist/extension.js --external:vscode --format=cjs --platform=node",
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
+    "release": "ts-node ./scripts/release.ts",
+    "release:nightly": "CODY_RELEASE_TYPE=nightly ts-node ./scripts/release.ts",
+    "storybook": "STORIES_GLOB='client/cody/webviews/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start",
+    "test:e2e": "npx playwright install && pnpm run --silent build:dev && playwright test test/e2e",
     "test:integration": "tsc -b ./test/integration && pnpm run --silent build:dev && node --inspect -r ts-node/register out/test/integration/main.js",
     "test:unit": "jest",
-    "test:e2e": "npx playwright install && pnpm run --silent build:dev && playwright test test/e2e",
     "vscode:prepublish": "scripts/check-rg.sh",
     "vsce:package": "pnpm --silent build && vsce package --no-dependencies -o dist/cody.vsix",
     "vsce:prerelease": "pnpm --silent build && vsce package patch --pre-release --no-dependencies -o dist/cody.vsix",
-    "release": "ts-node ./scripts/release.ts",
     "watch": "concurrently \"pnpm watch:esbuild\" \"pnpm watch:webview\"",
     "watch:esbuild": "pnpm esbuild --sourcemap --watch",
-    "watch:webview": "vite build --mode development --watch",
-    "storybook": "STORIES_GLOB='client/cody/webviews/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start"
+    "watch:webview": "vite build --mode development --watch"
   },
   "main": "./dist/extension.js",
   "activationEvents": [
