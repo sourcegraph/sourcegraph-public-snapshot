@@ -2377,7 +2377,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	}
 
 	// best-effort update the output of the clone
-	go s.setLastOutput(bgCtx, repo, string(output))
+	go s.setLastOutput(bgCtx, repo, newURLRedactor(remoteURL).redact(string(output)))
 
 	logger.Info("repo cloned")
 	repoClonedCounter.Inc()
