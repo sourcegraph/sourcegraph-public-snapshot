@@ -32,6 +32,7 @@ public class GraphQlLogger {
         }
     }
 
+    // TODO: Use this
     public static void logSearchDuration(@NotNull Project project, long duration) {
         String anonymousUserId = ConfigUtil.getAnonymousUserId();
         if (anonymousUserId != null) {
