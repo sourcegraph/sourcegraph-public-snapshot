@@ -11,3 +11,10 @@ contents:
     - jansson
     - libstdc++                  # TODO: For tree-sitter. Not an apk dependency
     - ctags@sourcegraph
+
+paths:
+  - path: /mnt/cache/symbols
+    type: directory
+    uid: 100
+    gid: 101
+    permissions: 0o755
