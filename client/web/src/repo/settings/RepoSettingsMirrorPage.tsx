@@ -344,20 +344,7 @@ export const RepoSettingsMirrorPage: FC<RepoSettingsMirrorPageProps> = props => 
                             <Icon aria-hidden={true} svgPath={mdiLock} /> Only visible to site admins
                         </small>
                     </Label>
-                    <Input
-                        value={repo.mirrorInfo.remoteURL || '(unknown)'}
-                        readOnly={true}
-                        className="mb-0"
-                        // label={
-                        //     <>
-                        //         {' '}
-                        //         Remote repository URL{' '}
-                        //         <small className="text-info">
-                        //             <Icon aria-hidden={true} svgPath={mdiLock} /> Only visible to site admins
-                        //         </small>
-                        //     </>
-                        // }
-                    />
+                    <Input value={repo.mirrorInfo.remoteURL || '(unknown)'} readOnly={true} className="mb-0" />
                     {repo.viewerCanAdminister && (
                         <small className="form-text text-muted">
                             Configure repository mirroring in{' '}
