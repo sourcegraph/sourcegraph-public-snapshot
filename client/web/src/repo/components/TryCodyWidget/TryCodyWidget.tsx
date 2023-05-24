@@ -5,10 +5,11 @@ import classNames from 'classnames'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Button, H4, Icon, Text } from '@sourcegraph/wildcard'
 
-import { MarketingBlock } from '../../components/MarketingBlock'
-import { EventName } from '../../util/constants'
+import { MarketingBlock } from '../../../components/MarketingBlock'
+import { EventName } from '../../../util/constants'
 
 import styles from './TryCodyWidget.module.scss'
 
@@ -107,11 +108,12 @@ function useTryCodyWidget(telemetryService: TelemetryProps['telemetryService']):
     return { isDismissed, onDismiss }
 }
 
-export const TryCodyWidget: React.FC<TelemetryProps & { className?: string; type?: 'blob' | 'repo' }> = ({
+export const TryCodyWidget: React.FC<TelemetryProps & { className?: string; type: 'blob' | 'repo' }> = ({
     className,
     telemetryService,
-    type = 'blob',
+    type,
 }) => {
+    const isLightTheme = useIsLightTheme()
     const { isDismissed, onDismiss } = useTryCodyWidget(telemetryService)
     const assetsRoot = window.context?.assetsRoot || ''
     useEffect(() => {
@@ -126,25 +128,25 @@ export const TryCodyWidget: React.FC<TelemetryProps & { className?: string; type
         return null
     }
 
-    const meta = {
-        blob: {
-            title: 'Try Cody on public code',
-            useCases: ['Select code in the file below', 'Select an action with Cody widget'],
-            image: `${assetsRoot}/img/cody-marketing-blob.png`,
-        },
-        repo: {
-            title: 'Try Cody AI assist on this repo',
-            useCases: [
-                'Click the Ask Cody button above and to the right of this banner',
-                'Ask Cody a question like “Explain the structure of this repository”',
-            ],
-            image: `${assetsRoot}/img/cody-marketing-repo.png`,
-        },
-    }
+    const { title, useCases, image } =
+        type === 'blob'
+            ? {
+                  title: 'Try Cody on public code',
+                  useCases: ['Select code in the file below', 'Select an action with Cody widget'],
+                  image: `${assetsRoot}/img/cody-marketing-blob-${isLightTheme ? 'light' : 'dark'}.png`,
+              }
+            : {
+                  title: 'Try Cody AI assist on this repo',
+                  useCases: [
+                      'Click the Ask Cody button above and to the right of this banner',
+                      'Ask Cody a question like “Explain the structure of this repository”',
+                  ],
+                  image: `${assetsRoot}/img/cody-marketing-repo-${isLightTheme ? 'light' : 'dark'}.png`,
+              }
 
     return (
         <MarketingBlock
-            wrapperClassName={className}
+            wrapperClassName={classNames(className, type === 'blob' ? styles.blobCardWrapper : styles.repoCardWrapper)}
             contentClassName={classNames(
                 'd-flex position-relative pb-0 overflow-auto justify-content-between',
                 styles.card
@@ -156,9 +158,9 @@ export const TryCodyWidget: React.FC<TelemetryProps & { className?: string; type
                     <GlowingCodySVG />
                 </div>
                 <div className="d-flex flex-column flex-grow-1 justify-content-center">
-                    <H4 className={styles.cardTitle}>{meta[type].title}</H4>
+                    <H4 className={styles.cardTitle}>{title}</H4>
                     <ol className={classNames('m-0 pl-4 fs-6', styles.cardList)}>
-                        {meta[type].useCases.map(useCase => (
+                        {useCases.map(useCase => (
                             <Text key={useCase} as="li">
                                 {useCase}
                             </Text>
@@ -167,7 +169,7 @@ export const TryCodyWidget: React.FC<TelemetryProps & { className?: string; type
                 </div>
             </div>
             <div className={classNames('d-flex justify-content-center', styles.cardImages)}>
-                <img src={meta[type].image} alt="Cody" />
+                <img src={image} alt="Cody" />
             </div>
             <Button className={classNames(styles.closeButton, 'position-absolute mt-2')} onClick={onDismiss}>
                 <Icon svgPath={mdiClose} aria-label="Close try Cody widget" />
