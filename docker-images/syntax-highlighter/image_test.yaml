@@ -10,12 +10,11 @@ commandTests:
   - name: "http-server-stabilizer binary is runnable"
     command: "/usr/local/bin/http-server-stabilizer"
     exitCode: 2
-    expectedError: ["Usage of http-server-stabilizer"]
+    expectedError: ["Usage of /usr/local/bin/http-server-stabilizer:"]
 
   - name: "not running as root"
-    command: "bash"
+    command: "/usr/bin/id"
     args:
-      - -c
-      - |
-        id -u | grep -v '0'
+      - -u
+    excludedOutput: ["^0$"]
     exitCode: 0
