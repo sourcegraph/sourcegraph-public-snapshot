@@ -2710,10 +2710,12 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	// when the cleanup happens, just that it does.
 	defer s.cleanTmpFiles(dir)
 
+	redactor := newURLRedactor(remoteURL)
+
 	output, err := syncer.Fetch(ctx, remoteURL, dir, revspec)
 	if err != nil {
 		if output != nil {
-			return errors.Wrapf(err, "failed to fetch repo %q with output %q", repo, newURLRedactor(remoteURL).redact(string(output)))
+			return errors.Wrapf(err, "failed to fetch repo %q with output %q", repo, redactor.redact(string(output)))
 		} else {
 			return errors.Wrapf(err, "failed to fetch repo %q", repo)
 		}
@@ -2744,6 +2746,9 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	if err := s.setRepoSize(ctx, repo); err != nil {
 		logger.Warn("failed to set repo size", log.Error(err))
 	}
+
+	// best-effort update the output of the fetch
+	go s.setLastOutput(context.Background(), repo, redactor.redact(string(output)))
 
 	return nil
 }
