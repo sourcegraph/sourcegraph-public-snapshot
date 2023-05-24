@@ -20,9 +20,9 @@ export async function updateEventLogger(
         eventLoggerGQLClient = new SourcegraphGraphQLAPIClient(config)
         eventLogger = EventLogger.create(eventLoggerGQLClient)
         if (status === 'installed') {
-            await logEvent('CodyInstalled')
+            logEvent('CodyInstalled').then(() => {})
         } else {
-            await logEvent('CodyVSCodeExtension:CodySavedLogin:executed')
+            logEvent('CodyVSCodeExtension:CodySavedLogin:executed').then(() => {})
         }
     } else {
         eventLoggerGQLClient.onConfigurationChange(config)
@@ -42,14 +42,14 @@ export async function logEvent(eventName: string, eventProperties?: any, publicP
         ...publicProperties,
         version: packageVersion,
     }
-    await eventLogger.log(eventName, anonymousUserID, argument, publicArgument)
+    eventLogger.log(eventName, anonymousUserID, argument, publicArgument).then(() => {})
 }
 
 export async function logCodyInstalled(): Promise<void> {
     if (!eventLogger || !anonymousUserID) {
         return
     }
-    await eventLogger.log('CodyInstalled', anonymousUserID)
+    eventLogger.log('CodyInstalled', anonymousUserID).then(() => {})
 }
 
 function getAnonymousUserID(): string {
