@@ -84,7 +84,6 @@ func startEmbeddedPostgreSQL(logger log.Logger, pgRootDir string) (*postgresqlEn
 	if err != nil {
 		return nil, errors.Wrap(err, "user.Current")
 	}
-
 	unixSocketDir := filepath.Join(current.HomeDir, ".sourcegraph-psql")
 	err = os.RemoveAll(unixSocketDir)
 	if err != nil {
