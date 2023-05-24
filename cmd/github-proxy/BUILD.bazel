@@ -38,6 +38,7 @@ oci_image(
         "LOG_REQUEST": "true",
     },
     tars = [":tar_github-proxy"],
+    user = "sourcegraph",
 )
 
 oci_tarball(

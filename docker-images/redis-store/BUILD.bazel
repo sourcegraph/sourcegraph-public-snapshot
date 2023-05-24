@@ -22,6 +22,7 @@ oci_image(
         "/etc/redis/redis.conf",
     ],
     tars = [":redis_tarball"],
+    user = "redis",
 )
 
 oci_tarball(

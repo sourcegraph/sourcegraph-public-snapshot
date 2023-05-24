@@ -11,6 +11,7 @@ oci_image(
         # Default configuration file for setting sampling strategies, we override the command in docker-compose
         "SAMPLING_STRATEGIES_FILE": "/etc/jaeger/sampling_strategies.json",
     },
+    user = "jaeger",
 )
 
 oci_tarball(

@@ -56,6 +56,7 @@ oci_image(
         "PUBLIC_REPO_REDIRECTS": "true",
     },
     tars = [":tar_frontend"],
+    user = "sourcegraph",
 )
 
 oci_tarball(

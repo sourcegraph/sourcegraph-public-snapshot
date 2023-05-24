@@ -38,6 +38,7 @@ oci_image(
         "CACHE_DIR": "/mnt/cache/searcher",
     },
     tars = [":tar_searcher"],
+    user = "sourcegraph",
 )
 
 oci_tarball(

@@ -39,6 +39,7 @@ oci_image(
     base = "@wolfi_base",
     entrypoint = ["/migrator"],
     tars = [":tar_migrator"],
+    user = "sourcegraph",
 )
 
 oci_tarball(
