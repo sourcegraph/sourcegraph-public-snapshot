@@ -44,7 +44,7 @@ const (
         FROM event_logs
         WHERE
             DATE(timestamp) %s
-            AND %s
+            AND (%s)
         GROUP BY 1
     ),
     days_used_frequency AS (
@@ -87,7 +87,7 @@ func (f *Users) Frequencies(ctx context.Context) ([]*UsersFrequencyNode, error) 
 		return nil, err
 	}
 
-	query := sqlf.Sprintf(frequencyQuery, dateRangeCond, sqlf.Join(getDefaultConds(), " AND "))
+	query := sqlf.Sprintf(frequencyQuery, dateRangeCond, sqlf.Join(getDefaultConds(), ") AND ("))
 
 	rows, err := f.DB.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 
@@ -139,7 +139,7 @@ const (
 	FROM event_logs
 	WHERE
 		timestamp BETWEEN %s AND %s
-    AND %s
+    AND (%s)
 	GROUP BY 1
 	ORDER BY 1 ASC
 	`
@@ -158,7 +158,7 @@ func (f *Users) MonthlyActiveUsers(ctx context.Context) ([]*MonthlyActiveUsersRo
 	prevMonth := now.AddDate(0, -2, 0) // going back 2 months
 	from := time.Date(prevMonth.Year(), prevMonth.Month(), 1, 0, 0, 0, 0, now.Location()).Format(time.RFC3339)
 
-	query := sqlf.Sprintf(mauQuery, from, to, sqlf.Join(getDefaultConds(), " AND "))
+	query := sqlf.Sprintf(mauQuery, from, to, sqlf.Join(getDefaultConds(), ") AND ("))
 
 	rows, err := f.DB.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
