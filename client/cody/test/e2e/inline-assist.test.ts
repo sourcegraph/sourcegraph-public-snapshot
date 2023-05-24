@@ -32,7 +32,7 @@ test('start a fixup job from inline assist with valid auth', async ({ page, side
 
     // TODO: Capture processing state. It is currently to quick to capture the processing elements
     // Wait for the code lens to show up to ensure that the fixup has been applied
-    // await expect(page.getByText('Processing')).toBeVisible()
+    // await expect(page.getByText('Processing by Cody')).toBeVisible()
 
     // Ensures Code Lens is added
     await expect(page.getByText('Edited by Cody')).toBeVisible()

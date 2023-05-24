@@ -1,4 +1,4 @@
-import { mkdtempSync, rmdirSync } from 'fs'
+import { mkdtempSync, rmdirSync, writeFile } from 'fs'
 import { tmpdir } from 'os'
 import * as path from 'path'
 
@@ -23,6 +23,8 @@ export const test = base
             const videoDirectory = path.join(codyRoot, '..', '..', 'playwright', escapeToPath(testInfo.title))
 
             const workspaceDirectory = path.join(codyRoot, 'test', 'fixtures', 'workspace')
+
+            await buildWorkSpaceSettings(workspaceDirectory)
 
             // See: https://github.com/microsoft/vscode-test/blob/main/lib/runTest.ts
             const app = await electron.launch({
@@ -126,4 +128,33 @@ async function waitUntil(predicate: () => boolean | Promise<boolean>): Promise<v
 
 function escapeToPath(text: string): string {
     return text.replace(/\W/g, '_')
+}
+
+async function buildWorkSpaceSettings(workspaceDirectory: string): Promise<void> {
+    // create a temporary directory with settings.json and add to the workspaceDirectory
+    const settingsDirectory = mkdtempSync(path.join(tmpdir(), 'cody-vsce'))
+    const settingsPath = path.join(settingsDirectory, 'settings.json')
+    const settings = {
+        'cody.experimental.inline': true,
+    }
+    await new Promise<void>((resolve, reject) => {
+        writeFile(settingsPath, JSON.stringify(settings), error => {
+            if (error) {
+                reject(error)
+            } else {
+                resolve()
+            }
+        })
+    })
+
+    const workspaceSettingsPath = path.join(workspaceDirectory, '.vscode', 'settings.json')
+    await new Promise<void>((resolve, reject) => {
+        writeFile(workspaceSettingsPath, JSON.stringify(settings), error => {
+            if (error) {
+                reject(error)
+            } else {
+                resolve()
+            }
+        })
+    })
 }
