@@ -230,8 +230,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             )
         }
 
-        // TODO(beyang): trigger on context quality (better context means longer completion)
-
         await new Promise<void>(resolve => setTimeout(resolve, timeout))
 
         // We don't need to make a request at all if the signal is already aborted after the

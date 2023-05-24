@@ -268,7 +268,7 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
         const nextLine = this.suffix.slice(firstNlInSuffix, this.suffix.indexOf('\n', firstNlInSuffix))
 
         // Sometimes Claude emits an extra space
-        let oddIndentation = false
+        let hasOddIndentation = false
         if (
             completion.length > 0 &&
             completion.startsWith(' ') &&
@@ -276,7 +276,7 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
             this.prefix.endsWith(' ')
         ) {
             completion = completion.slice(1)
-            oddIndentation = true
+            hasOddIndentation = true
         }
         // Insert the injected prefix back in
         if (this.injectPrefix.length > 0) {
@@ -304,7 +304,7 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
             // we fix it for the whole multiline block first.
             //
             // We can skip the first line as it was already corrected above
-            if (oddIndentation) {
+            if (hasOddIndentation) {
                 for (let i = 1; i < lines.length; i++) {
                     if (indentation(lines[i]) >= startIndent) {
                         lines[i] = lines[i].replace(/^\ /, '')
