@@ -3,6 +3,7 @@ package luasandbox
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -207,7 +208,8 @@ func makeScopedPrint(state *lua.LState, w io.Writer) *lua.LFunction {
 			return nil
 		}
 
-		_, err := io.Copy(w, strings.NewReader(message))
+		formattedMessage := fmt.Sprintf("[%s] %s\n", time.Now().UTC().Format(time.RFC3339), message)
+		_, err := io.Copy(w, strings.NewReader(formattedMessage))
 		return err
 	}))
 }
