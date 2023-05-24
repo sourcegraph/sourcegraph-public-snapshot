@@ -14,7 +14,7 @@ import (
 func TestVariantConfigPrototypePointers(t *testing.T) {
 	// every call to `Variant::ConfigPrototype` should return a new instance of the prototype type
 	// or nil if there is no prototype defined for that variant
-	for variant, _ := range variantValuesMap {
+	for variant := range variantValuesMap {
 		x := variant.ConfigPrototype()
 		y := variant.ConfigPrototype()
 		if x != nil && x == y {
