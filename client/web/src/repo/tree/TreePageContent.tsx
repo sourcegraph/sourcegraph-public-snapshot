@@ -280,6 +280,8 @@ interface TreePageContentProps extends ExtensionsControllerProps, TelemetryProps
 export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<TreePageContentProps>> = props => {
     const { filePath, tree, repo, revision, isPackage } = props
 
+    const isRoot = filePath === ''
+
     const readmeEntry = useMemo(() => {
         for (const entry of tree.entries) {
             const name = entry.name.toLocaleLowerCase()
@@ -320,11 +322,13 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
                         className={styles.files}
                     />
                 )}
-                <ExtraInfoSection
-                    repo={repo}
-                    className={styles.extraInfo}
-                    hasWritePermissions={hasRepoMetaWritePermissions}
-                />
+                {isRoot && (
+                    <ExtraInfoSection
+                        repo={repo}
+                        className={styles.extraInfo}
+                        hasWritePermissions={hasRepoMetaWritePermissions}
+                    />
+                )}
             </section>
             <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>
                 <FilesCard diffStats={diffStats} entries={tree.entries} className={styles.files} filePath={filePath} />
