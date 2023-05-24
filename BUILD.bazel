@@ -1,3 +1,4 @@
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "nogo")
 load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
@@ -276,20 +277,33 @@ js_library(
 # For nogo to be able to run a linter, it needs to have `var Analyzer analysis.Analyzer` defined in the main package.
 # some of the linters do not have that, so we need to define that ourselves. The linters where we have defined can
 # be found at dev/linters. Finally, the nogo configuration can be found at the root of the repository in `nogo_config.json`
+bool_flag(
+    name = "disable_nogo",
+    build_setting_default = False,
+)
+
+config_setting(
+    name = "nogo_disabled",
+    flag_values = {":disable_nogo": "true"},
+)
+
 nogo(
     name = "sg_nogo",
     config = ":nogo_config.json",
     vet = True,
     visibility = ["//visibility:public"],  # must have public visibility
-    deps = [
-        "//dev/linters/bodyclose",
-        "//dev/linters/depguard",
-        "//dev/linters/exportloopref",
-        "//dev/linters/forbidigo",
-        "//dev/linters/gocritic",
-        "//dev/linters/ineffassign",
-        "//dev/linters/unparam",
-    ] + STATIC_CHECK_ANALYZERS,
+    deps = select({
+        "//:nogo_disabled": [],
+        "//conditions:default": [
+            "//dev/linters/bodyclose",
+            "//dev/linters/depguard",
+            "//dev/linters/exportloopref",
+            "//dev/linters/forbidigo",
+            "//dev/linters/gocritic",
+            "//dev/linters/ineffassign",
+            "//dev/linters/unparam",
+        ] + STATIC_CHECK_ANALYZERS,
+    }),
 )
 
 exports_files([
