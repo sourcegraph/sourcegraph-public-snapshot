@@ -13,6 +13,7 @@ import {
     Label,
 } from '@sourcegraph/wildcard'
 
+import { LogOutput } from '../../../../../components/LogOutput'
 import {
     GetRepoIdResult,
     GetRepoIdVariables,
@@ -85,10 +86,8 @@ export const InferenceScriptPreview: React.FunctionComponent<InferenceScriptPrev
                 <ErrorAlert error={error} />
             ) : data ? (
                 <>
-                    {data.inferAutoIndexJobsForRepo.inferenceOutput ? (
-                        <p>{data.inferAutoIndexJobsForRepo.inferenceOutput}</p>
-                    ) : (
-                        <>nothing?</>
+                    {data.inferAutoIndexJobsForRepo.inferenceOutput && (
+                        <LogOutput text={data.inferAutoIndexJobsForRepo.inferenceOutput} />
                     )}
 
                     <InferenceForm
