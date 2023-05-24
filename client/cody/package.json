@@ -399,7 +399,6 @@
             }
           ]
         },
-        "cody.debug": {
         "cody.experimental.suggestions": {
           "order": 5,
           "type": "boolean",
