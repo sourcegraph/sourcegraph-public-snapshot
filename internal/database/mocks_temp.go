@@ -11835,6 +11835,10 @@ type MockEventLogStore struct {
 	// AggregatedCodyEventsFunc is an instance of a mock function object
 	// controlling the behavior of the method AggregatedCodyEvents.
 	AggregatedCodyEventsFunc *EventLogStoreAggregatedCodyEventsFunc
+	// AggregatedRepoMetadataEventsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// AggregatedRepoMetadataEvents.
+	AggregatedRepoMetadataEventsFunc *EventLogStoreAggregatedRepoMetadataEventsFunc
 	// AggregatedSearchEventsFunc is an instance of a mock function object
 	// controlling the behavior of the method AggregatedSearchEvents.
 	AggregatedSearchEventsFunc *EventLogStoreAggregatedSearchEventsFunc
@@ -11973,6 +11977,11 @@ func NewMockEventLogStore() *MockEventLogStore {
 		},
 		AggregatedCodyEventsFunc: &EventLogStoreAggregatedCodyEventsFunc{
 			defaultHook: func(context.Context, time.Time) (r0 []types.CodyAggregatedEvent, r1 error) {
+				return
+			},
+		},
+		AggregatedRepoMetadataEventsFunc: &EventLogStoreAggregatedRepoMetadataEventsFunc{
+			defaultHook: func(context.Context, time.Time, PeriodType) (r0 *types.RepoMetadataAggregatedEvents, r1 error) {
 				return
 			},
 		},
@@ -12173,6 +12182,11 @@ func NewStrictMockEventLogStore() *MockEventLogStore {
 				panic("unexpected invocation of MockEventLogStore.AggregatedCodyEvents")
 			},
 		},
+		AggregatedRepoMetadataEventsFunc: &EventLogStoreAggregatedRepoMetadataEventsFunc{
+			defaultHook: func(context.Context, time.Time, PeriodType) (*types.RepoMetadataAggregatedEvents, error) {
+				panic("unexpected invocation of MockEventLogStore.AggregatedRepoMetadataEvents")
+			},
+		},
 		AggregatedSearchEventsFunc: &EventLogStoreAggregatedSearchEventsFunc{
 			defaultHook: func(context.Context, time.Time) ([]types.SearchAggregatedEvent, error) {
 				panic("unexpected invocation of MockEventLogStore.AggregatedSearchEvents")
@@ -12364,6 +12378,9 @@ func NewMockEventLogStoreFrom(i EventLogStore) *MockEventLogStore {
 		},
 		AggregatedCodyEventsFunc: &EventLogStoreAggregatedCodyEventsFunc{
 			defaultHook: i.AggregatedCodyEvents,
+		},
+		AggregatedRepoMetadataEventsFunc: &EventLogStoreAggregatedRepoMetadataEventsFunc{
+			defaultHook: i.AggregatedRepoMetadataEvents,
 		},
 		AggregatedSearchEventsFunc: &EventLogStoreAggregatedSearchEventsFunc{
 			defaultHook: i.AggregatedSearchEvents,
@@ -12801,6 +12818,121 @@ func (c EventLogStoreAggregatedCodyEventsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EventLogStoreAggregatedCodyEventsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// EventLogStoreAggregatedRepoMetadataEventsFunc describes the behavior when
+// the AggregatedRepoMetadataEvents method of the parent MockEventLogStore
+// instance is invoked.
+type EventLogStoreAggregatedRepoMetadataEventsFunc struct {
+	defaultHook func(context.Context, time.Time, PeriodType) (*types.RepoMetadataAggregatedEvents, error)
+	hooks       []func(context.Context, time.Time, PeriodType) (*types.RepoMetadataAggregatedEvents, error)
+	history     []EventLogStoreAggregatedRepoMetadataEventsFuncCall
+	mutex       sync.Mutex
+}
+
+// AggregatedRepoMetadataEvents delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockEventLogStore) AggregatedRepoMetadataEvents(v0 context.Context, v1 time.Time, v2 PeriodType) (*types.RepoMetadataAggregatedEvents, error) {
+	r0, r1 := m.AggregatedRepoMetadataEventsFunc.nextHook()(v0, v1, v2)
+	m.AggregatedRepoMetadataEventsFunc.appendCall(EventLogStoreAggregatedRepoMetadataEventsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// AggregatedRepoMetadataEvents method of the parent MockEventLogStore
+// instance is invoked and the hook queue is empty.
+func (f *EventLogStoreAggregatedRepoMetadataEventsFunc) SetDefaultHook(hook func(context.Context, time.Time, PeriodType) (*types.RepoMetadataAggregatedEvents, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AggregatedRepoMetadataEvents method of the parent MockEventLogStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *EventLogStoreAggregatedRepoMetadataEventsFunc) PushHook(hook func(context.Context, time.Time, PeriodType) (*types.RepoMetadataAggregatedEvents, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EventLogStoreAggregatedRepoMetadataEventsFunc) SetDefaultReturn(r0 *types.RepoMetadataAggregatedEvents, r1 error) {
+	f.SetDefaultHook(func(context.Context, time.Time, PeriodType) (*types.RepoMetadataAggregatedEvents, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EventLogStoreAggregatedRepoMetadataEventsFunc) PushReturn(r0 *types.RepoMetadataAggregatedEvents, r1 error) {
+	f.PushHook(func(context.Context, time.Time, PeriodType) (*types.RepoMetadataAggregatedEvents, error) {
+		return r0, r1
+	})
+}
+
+func (f *EventLogStoreAggregatedRepoMetadataEventsFunc) nextHook() func(context.Context, time.Time, PeriodType) (*types.RepoMetadataAggregatedEvents, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EventLogStoreAggregatedRepoMetadataEventsFunc) appendCall(r0 EventLogStoreAggregatedRepoMetadataEventsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// EventLogStoreAggregatedRepoMetadataEventsFuncCall objects describing the
+// invocations of this function.
+func (f *EventLogStoreAggregatedRepoMetadataEventsFunc) History() []EventLogStoreAggregatedRepoMetadataEventsFuncCall {
+	f.mutex.Lock()
+	history := make([]EventLogStoreAggregatedRepoMetadataEventsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EventLogStoreAggregatedRepoMetadataEventsFuncCall is an object that
+// describes an invocation of method AggregatedRepoMetadataEvents on an
+// instance of MockEventLogStore.
+type EventLogStoreAggregatedRepoMetadataEventsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Time
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 PeriodType
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.RepoMetadataAggregatedEvents
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EventLogStoreAggregatedRepoMetadataEventsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EventLogStoreAggregatedRepoMetadataEventsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

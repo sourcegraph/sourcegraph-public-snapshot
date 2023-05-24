@@ -247,6 +247,7 @@ type pingRequest struct {
 	ActiveToday                   bool            `json:"activeToday,omitempty"` // Only used in Sourcegraph App
 	HasCodyEnabled                bool            `json:"hasCodyEnabled,omitempty"`
 	CodyUsage                     json.RawMessage `json:"codyUsage,omitempty"`
+	RepoMetadataUsage             json.RawMessage `json:"repoMetadataUsage,omitempty"`
 }
 
 type dependencyVersions struct {
@@ -373,6 +374,7 @@ type pingPayload struct {
 	Timestamp                     string          `json:"timestamp"`
 	HasCodyEnabled                string          `json:"has_cody_enabled"`
 	CodyUsage                     json.RawMessage `json:"cody_usage"`
+	RepoMetadataUsage             json.RawMessage `json:"repo_metadata_usage"`
 }
 
 func logPing(logger log.Logger, r *http.Request, pr *pingRequest, hasUpdate bool) {
@@ -475,6 +477,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		Timestamp:                     now.UTC().Format(time.RFC3339),
 		HasCodyEnabled:                strconv.FormatBool(codyFeatureFlag()),
 		CodyUsage:                     codyUsage,
+		RepoMetadataUsage:             pr.RepoMetadataUsage,
 	})
 }
 

@@ -207,6 +207,7 @@ func TestSerializeBasic(t *testing.T) {
 	compareJSON(t, payload, `{
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
+		"repo_metadata_usage": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "mylicense",
 		"has_update": "true",
@@ -282,6 +283,7 @@ func TestSerializeLimited(t *testing.T) {
 	compareJSON(t, payload, `{
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "2023.03.23+205275.dd37e7",
+		"repo_metadata_usage": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "",
 		"has_update": "true",
@@ -359,6 +361,7 @@ func TestSerializeFromQuery(t *testing.T) {
 	compareJSON(t, payload, `{
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
+		"repo_metadata_usage": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "",
 		"has_update": "true",
@@ -419,6 +422,7 @@ func TestSerializeBatchChangesUsage(t *testing.T) {
 	compareJSON(t, payload, `{
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
+		"repo_metadata_usage": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "mylicense",
 		"has_update": "true",
@@ -479,6 +483,7 @@ func TestSerializeGrowthStatistics(t *testing.T) {
 	compareJSON(t, payload, `{
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
+		"repo_metadata_usage": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "mylicense",
 		"has_update": "true",
@@ -505,7 +510,7 @@ func TestSerializeGrowthStatistics(t *testing.T) {
 		"search_onboarding": null,
 		"homepage_panels": null,
 		"repositories": null,
-"repository_size_histogram": null,
+		"repository_size_histogram": null,
 		"retention_statistics": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
@@ -640,6 +645,7 @@ func TestSerializeCodeIntelUsage(t *testing.T) {
 	compareJSON(t, payload, `{
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
+		"repo_metadata_usage": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "mylicense",
 		"has_update": "true",
@@ -822,6 +828,7 @@ func TestSerializeOldCodeIntelUsage(t *testing.T) {
 	compareJSON(t, payload, `{
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
+		"repo_metadata_usage": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "mylicense",
 		"has_update": "true",
@@ -952,6 +959,7 @@ func TestSerializeCodeHostVersions(t *testing.T) {
 	compareJSON(t, payload, `{
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
+		"repo_metadata_usage": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "mylicense",
 		"has_update": "true",
@@ -1048,6 +1056,7 @@ func TestSerializeOwn(t *testing.T) {
 		"access_request_enabled": "false",
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
+		"repo_metadata_usage": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "",
 		"has_update": "true",
@@ -1095,7 +1104,109 @@ func TestSerializeOwn(t *testing.T) {
 		"homepage_panels": null,
 		"search_onboarding": null,
 		"repositories": null,
-"repository_size_histogram": null,
+		"repository_size_histogram": null,
+		"retention_statistics": null,
+		"installer_email": "test@sourcegraph.com",
+		"auth_providers": "foo,bar",
+		"ext_services": "GITHUB,GITLAB",
+		"code_host_versions": null,
+		"builtin_signup_allowed": "true",
+		"deploy_type": "server",
+		"total_user_accounts": "234",
+		"has_external_url": "false",
+		"has_repos": "true",
+		"ever_searched": "false",
+		"ever_find_refs": "true",
+		"total_repos": "0",
+		"active_today": "false",
+		"os": "",
+		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
+	}`)
+}
+
+func TestSerializeRepoMetadataUsage(t *testing.T) {
+	pr := &pingRequest{
+		ClientSiteID:         "0101-0101",
+		DeployType:           "server",
+		ClientVersionString:  "3.12.6",
+		AuthProviders:        []string{"foo", "bar"},
+		ExternalServices:     []string{extsvc.KindGitHub, extsvc.KindGitLab},
+		BuiltinSignupAllowed: true,
+		HasExtURL:            false,
+		UniqueUsers:          123,
+		InitialAdminEmail:    "test@sourcegraph.com",
+		TotalUsers:           234,
+		HasRepos:             true,
+		EverSearched:         false,
+		EverFindRefs:         true,
+		RepoMetadataUsage: json.RawMessage(`{
+			"summary": {
+				"is_enabled": true,
+				"repos_with_metadata_count": 10,
+				"repo_metadata_count": 100
+			},
+			"daily": {
+				"start_time": "2020-01-01T00:00:00Z",
+				"create_repo_metadata": {
+					"events_count": 10,
+					"users_count": 5
+				}
+			}
+		}`),
+	}
+
+	now := time.Now()
+	payload, err := marshalPing(pr, true, "127.0.0.1", now)
+	if err != nil {
+		t.Fatalf("unexpected error %s", err)
+	}
+
+	compareJSON(t, payload, `{
+		"access_request_enabled": "false",
+		"remote_ip": "127.0.0.1",
+		"remote_site_version": "3.12.6",
+		"repo_metadata_usage": null,
+		"remote_site_id": "0101-0101",
+		"license_key": "",
+		"has_update": "true",
+		"unique_users_today": "123",
+		"site_activity": null,
+		"batch_changes_usage": null,
+		"code_intel_usage": null,
+		"new_code_intel_usage": null,
+		"dependency_versions": null,
+		"extensions_usage": null,
+		"code_insights_usage": null,
+		"code_insights_critical_telemetry": null,
+		"code_monitoring_usage": null,
+		"cody_usage": null,
+		"notebooks_usage": null,
+		"code_host_integration_usage": null,
+		"ide_extensions_usage": null,
+		"migrated_extensions_usage": null,
+		"own_usage": null,
+		"repo_metadata_usage": {
+			"summary": {
+				"is_enabled": true,
+				"repos_with_metadata_count": 10,
+				"repo_metadata_count": 100
+			},
+			"daily": {
+				"start_time": "2020-01-01T00:00:00Z",
+				"create_repo_metadata": {
+					"events_count": 10,
+					"users_count": 5
+				}
+			}
+		},
+		"search_usage": null,
+		"growth_statistics": null,
+		"has_cody_enabled": "false",
+		"saved_searches": null,
+		"homepage_panels": null,
+		"search_onboarding": null,
+		"repositories": null,
+		"repository_size_histogram": null,
 		"retention_statistics": null,
 		"installer_email": "test@sourcegraph.com",
 		"auth_providers": "foo,bar",
