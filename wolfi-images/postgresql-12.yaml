@@ -36,19 +36,20 @@ paths:
     permissions: 0o755
   - path: /var/run/postgresql
     type: directory
-    uid: 999
-    gid: 999
     permissions: 0o755
 
 accounts:
   groups:
-    - groupname: ping
-      gid: 99
-    - groupname: postgres
-      gid: 999
+  - groupname: postgres
+    gid: 999
+  - groupname: ping
+    gid: 99
   users:
     - username: postgres
       uid: 999
       gid: 999
+    - username: ping
+      uid: 99
+      gid: 99
 
 # MANUAL REBUILD:
