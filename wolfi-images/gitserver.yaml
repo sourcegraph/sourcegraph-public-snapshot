@@ -25,5 +25,3 @@ paths:
     uid: 100
     gid: 101
     permissions: 0o755
-
-work-dir: /

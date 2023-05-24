@@ -31,6 +31,7 @@ oci_image(
     base = "@wolfi_base",
     entrypoint = ["/embeddings"],
     tars = [":tar_embeddings"],
+    workdir = "/",
 )
 
 oci_tarball(
