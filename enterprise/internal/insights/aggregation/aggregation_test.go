@@ -9,14 +9,21 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	dTypes "github.com/sourcegraph/sourcegraph/internal/types"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func newTestSearchResultsAggregator(ctx context.Context, tabulator AggregationTabulator, countFunc AggregationCountFunc) SearchResultsAggregator {
+func newTestSearchResultsAggregator(ctx context.Context, tabulator AggregationTabulator, countFunc AggregationCountFunc, mode types.SearchAggregationMode, db database.DB) SearchResultsAggregator {
+	if db == nil {
+		db = database.NewMockDB()
+	}
 	return &searchAggregationResults{
+		db:        db,
+		mode:      mode,
 		ctx:       ctx,
 		tabulator: tabulator,
 		countFunc: countFunc,
@@ -253,7 +260,7 @@ func TestRepoAggregation(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			aggregator := testAggregator{results: make(map[string]int)}
 			countFunc, _ := GetCountFuncForMode("", "", tc.mode)
-			sra := newTestSearchResultsAggregator(context.Background(), aggregator.AddResult, countFunc)
+			sra := newTestSearchResultsAggregator(context.Background(), aggregator.AddResult, countFunc, tc.mode, nil)
 			sra.Send(tc.searchEvent)
 			tc.want.Equal(t, aggregator.results)
 		})
@@ -323,7 +330,7 @@ func TestAuthorAggregation(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			aggregator := testAggregator{results: make(map[string]int)}
 			countFunc, _ := GetCountFuncForMode("", "", tc.mode)
-			sra := newTestSearchResultsAggregator(context.Background(), aggregator.AddResult, countFunc)
+			sra := newTestSearchResultsAggregator(context.Background(), aggregator.AddResult, countFunc, tc.mode, nil)
 			sra.Send(tc.searchEvent)
 			tc.want.Equal(t, aggregator.results)
 		})
@@ -431,7 +438,7 @@ func TestPathAggregation(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			aggregator := testAggregator{results: make(map[string]int)}
 			countFunc, _ := GetCountFuncForMode("", "", tc.mode)
-			sra := newTestSearchResultsAggregator(context.Background(), aggregator.AddResult, countFunc)
+			sra := newTestSearchResultsAggregator(context.Background(), aggregator.AddResult, countFunc, tc.mode, nil)
 			sra.Send(tc.searchEvent)
 			tc.want.Equal(t, aggregator.results)
 		})
@@ -646,7 +653,57 @@ func TestCaptureGroupAggregation(t *testing.T) {
 				t.Errorf("expected test not to error, got %v", err)
 				t.FailNow()
 			}
-			sra := newTestSearchResultsAggregator(context.Background(), aggregator.AddResult, countFunc)
+			sra := newTestSearchResultsAggregator(context.Background(), aggregator.AddResult, countFunc, tc.mode, nil)
+			sra.Send(tc.searchEvent)
+			tc.want.Equal(t, aggregator.results)
+		})
+	}
+}
+
+func TestRepoMetadataAggregation(t *testing.T) {
+	testCases := []struct {
+		name        string
+		mode        types.SearchAggregationMode
+		searchEvent streaming.SearchEvent
+		want        autogold.Value
+	}{
+		{
+			"No results",
+			types.REPO_METADATA_AGGREGATION_MODE,
+			streaming.SearchEvent{Results: []result.Match{}},
+			autogold.Expect(map[string]int{}),
+		},
+		{
+			"Single repo match no metadata",
+			types.REPO_METADATA_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{repoMatch("myRepo2", 1)},
+			},
+			autogold.Expect(map[string]int{"No metadata": 1}),
+		},
+		{
+			"Single repo match multiple metadata",
+			types.REPO_METADATA_AGGREGATION_MODE,
+			streaming.SearchEvent{
+				Results: []result.Match{repoMatch("myRepo", 1), repoMatch("myRepo2", 2), repoMatch("myRepo3", 3)},
+			},
+			autogold.Expect(map[string]int{"open-source": 1, "No metadata": 1, "team:sourcegraph": 1}),
+		},
+	}
+	db := database.NewMockDB()
+	repos := database.NewMockRepoStore()
+	sgString := "sourcegraph"
+	repos.ListFunc.SetDefaultReturn([]*dTypes.Repo{
+		{Name: "myRepo", ID: 1},
+		{Name: "myRepo2", ID: 2, KeyValuePairs: map[string]*string{"open-source": nil}},
+		{Name: "myRepo3", ID: 3, KeyValuePairs: map[string]*string{"team": &sgString}},
+	}, nil)
+	db.ReposFunc.SetDefaultReturn(repos)
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			aggregator := testAggregator{results: make(map[string]int)}
+			countFunc, _ := GetCountFuncForMode("", "", tc.mode)
+			sra := newTestSearchResultsAggregator(context.Background(), aggregator.AddResult, countFunc, tc.mode, db)
 			sra.Send(tc.searchEvent)
 			tc.want.Equal(t, aggregator.results)
 		})
@@ -684,7 +741,7 @@ func TestAggregationCancelation(t *testing.T) {
 				t.FailNow()
 			}
 			ctx, cancel := context.WithCancel(context.Background())
-			sra := newTestSearchResultsAggregator(ctx, aggregator.AddResult, countFunc)
+			sra := newTestSearchResultsAggregator(ctx, aggregator.AddResult, countFunc, tc.mode, nil)
 			sra.Send(tc.searchEvent)
 			cancel()
 			sra.Send(tc.searchEvent)

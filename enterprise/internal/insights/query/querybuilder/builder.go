@@ -7,6 +7,7 @@ import (
 
 	"github.com/grafana/regexp"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -393,6 +394,37 @@ func AddRepoFilter(query BasicQuery, repo string) (BasicQuery, error) {
 
 func AddFileFilter(query BasicQuery, file string) (BasicQuery, error) {
 	return addFilterSimple(query, searchquery.FieldFile, file)
+}
+
+func AddRepoMetadataFilter(query BasicQuery, repoMeta string) (BasicQuery, error) {
+	if repoMeta == types.NO_REPO_METADATA_TEXT {
+		return query, errors.New("Can't search for no metadata key")
+	}
+	plan, err := searchquery.Pipeline(searchquery.Init(string(query), searchquery.SearchTypeLiteral))
+	if err != nil {
+		return "", err
+	}
+
+	mutatedQuery := searchquery.MapPlan(plan, func(basic searchquery.Basic) searchquery.Basic {
+		modified := make([]searchquery.Parameter, 0, len(basic.Parameters)+1)
+		modified = append(modified, basic.Parameters...)
+		fValue := fmt.Sprint("has.meta(", repoMeta, ")")
+		meta := strings.Split(repoMeta, ":")
+		if len(meta) == 2 {
+			key := meta[0]
+			value := meta[1]
+			fValue = fmt.Sprint("has.meta(", key, ":", value, ")")
+		}
+		modified = append(modified, searchquery.Parameter{
+			Field:      searchquery.FieldRepo,
+			Value:      fValue,
+			Negated:    false,
+			Annotation: searchquery.Annotation{},
+		})
+		return basic.MapParameters(modified)
+	})
+
+	return BasicQuery(searchquery.StringHuman(mutatedQuery.ToQ())), nil
 }
 
 func buildFilterText(raw string) string {

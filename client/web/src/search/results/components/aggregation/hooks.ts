@@ -64,7 +64,7 @@ function useSyncedWithURLState<State, SerializedState>(
     return [queryParameter, setNextState]
 }
 
-type SerializedAggregationMode = 'repo' | 'path' | 'author' | 'group' | ''
+type SerializedAggregationMode = 'repo' | 'path' | 'author' | 'group' | 'repo-metadata' | ''
 
 const aggregationModeSerializer = (mode: SearchAggregationMode | null): SerializedAggregationMode => {
     switch (mode) {
@@ -76,7 +76,8 @@ const aggregationModeSerializer = (mode: SearchAggregationMode | null): Serializ
             return 'author'
         case SearchAggregationMode.CAPTURE_GROUP:
             return 'group'
-
+        case SearchAggregationMode.REPO_METADATA:
+            return 'repo-metadata'
         default:
             return ''
     }
@@ -94,6 +95,8 @@ const aggregationModeDeserializer = (
             return SearchAggregationMode.AUTHOR
         case 'group':
             return SearchAggregationMode.CAPTURE_GROUP
+        case 'repo-metadata':
+            return SearchAggregationMode.REPO_METADATA
 
         default:
             return null
