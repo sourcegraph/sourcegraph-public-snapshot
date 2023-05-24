@@ -2,10 +2,10 @@ package server
 
 import (
 	"os/exec"
-	"syscall"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/ricochet2200/go-disk-usage/du"
 
 	"github.com/sourcegraph/log"
 
@@ -60,9 +60,8 @@ func (s *Server) RegisterMetrics(observationCtx *observation.Context, db dbutil.
 		Name: "src_gitserver_disk_space_available",
 		Help: "Amount of free space disk space on the repos mount.",
 	}, func() float64 {
-		var stat syscall.Statfs_t
-		_ = syscall.Statfs(s.ReposDir, &stat)
-		return float64(stat.Bavail * uint64(stat.Bsize))
+		usage := du.NewDiskUsage(s.ReposDir)
+		return float64(usage.Available())
 	})
 	prometheus.MustRegister(c)
 
@@ -70,9 +69,8 @@ func (s *Server) RegisterMetrics(observationCtx *observation.Context, db dbutil.
 		Name: "src_gitserver_disk_space_total",
 		Help: "Amount of total disk space in the repos directory.",
 	}, func() float64 {
-		var stat syscall.Statfs_t
-		_ = syscall.Statfs(s.ReposDir, &stat)
-		return float64(stat.Blocks * uint64(stat.Bsize))
+		usage := du.NewDiskUsage(s.ReposDir)
+		return float64(usage.Size())
 	})
 	prometheus.MustRegister(c)
 

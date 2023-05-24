@@ -20,6 +20,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/ricochet2200/go-disk-usage/du"
 
 	"github.com/sourcegraph/log"
 
@@ -632,21 +633,13 @@ func (s *Server) howManyBytesToFree(logger log.Logger) (int64, error) {
 type StatDiskSizer struct{}
 
 func (s *StatDiskSizer) BytesFreeOnDisk(mountPoint string) (uint64, error) {
-	var statFS syscall.Statfs_t
-	if err := syscall.Statfs(mountPoint, &statFS); err != nil {
-		return 0, errors.Wrap(err, "statting")
-	}
-	free := statFS.Bavail * uint64(statFS.Bsize)
-	return free, nil
+	usage := du.NewDiskUsage(mountPoint)
+	return usage.Available(), nil
 }
 
 func (s *StatDiskSizer) DiskSizeBytes(mountPoint string) (uint64, error) {
-	var statFS syscall.Statfs_t
-	if err := syscall.Statfs(mountPoint, &statFS); err != nil {
-		return 0, errors.Wrap(err, "statting")
-	}
-	free := statFS.Blocks * uint64(statFS.Bsize)
-	return free, nil
+	usage := du.NewDiskUsage(mountPoint)
+	return usage.Size(), nil
 }
 
 // freeUpSpace removes git directories under ReposDir, in order from least
