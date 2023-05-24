@@ -19,7 +19,6 @@ import (
 	stesting "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/testing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -3342,7 +3341,7 @@ func testBatchSpec(user int32) *btypes.BatchSpec {
 	}
 }
 
-func testOrgBatchSpec(user, org int32) *types.BatchSpec {
+func testOrgBatchSpec(user, org int32) *btypes.BatchSpec {
 	return &btypes.BatchSpec{
 		Spec:           &batcheslib.BatchSpec{},
 		UserID:         user,
