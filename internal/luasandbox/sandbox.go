@@ -85,7 +85,7 @@ func (s *Sandbox) RunScriptNamed(ctx context.Context, opts RunOptions, fs FS, na
 }
 
 // makeScopedLoadfile creates a Lua function that will read the file relative to the given
-// filesystem indiciated by the invocation parameter and return the resulting function.
+// filesystem indicated by the invocation parameter and return the resulting function.
 func makeScopedLoadfile(state *lua.LState, fs FS) *lua.LFunction {
 	return state.NewFunction(util.WrapLuaFunction(func(state *lua.LState) error {
 		filename := state.CheckString(1)
