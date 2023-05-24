@@ -85,6 +85,10 @@ func startEmbeddedPostgreSQL(logger log.Logger, pgRootDir string) (*postgresqlEn
 		return nil, errors.Wrap(err, "user.Current")
 	}
 	unixSocketDir := filepath.Join(current.HomeDir, ".sourcegraph-psql")
+	err = os.RemoveAll(unixSocketDir)
+	if err != nil {
+		logger.Warn("unable to remove previous connection", log.Error(err))
+	}
 	err = os.MkdirAll(unixSocketDir, os.ModePerm)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating unix socket dir")
