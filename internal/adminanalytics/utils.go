@@ -1,7 +1,6 @@
 package adminanalytics
 
 import (
-	"context"
 	"fmt"
 	"time"
 
@@ -83,7 +82,7 @@ func getDefaultConds() []*sqlf.Query {
 	}, []*sqlf.Query{})
 }
 
-func makeEventLogsQueries(ctx context.Context, db database.DB, cache bool, dateRange string, grouping string, events []string, conditions ...*sqlf.Query) (*sqlf.Query, *sqlf.Query, error) {
+func makeEventLogsQueries(dateRange string, grouping string, events []string, conditions ...*sqlf.Query) (*sqlf.Query, *sqlf.Query, error) {
 	dateTruncExp, dateBetweenCond, err := makeDateParameters(dateRange, grouping, "timestamp")
 	if err != nil {
 		return nil, nil, err

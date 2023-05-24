@@ -127,7 +127,11 @@ enum OwnershipReasonType {
 """
 A union of all the different ownership reasons.
 """
-union OwnershipReason = CodeownersFileEntry | RecentContributorOwnershipSignal | RecentViewOwnershipSignal | AssignedOwner
+union OwnershipReason =
+      CodeownersFileEntry
+    | RecentContributorOwnershipSignal
+    | RecentViewOwnershipSignal
+    | AssignedOwner
 
 """
 A signal derived from recent code contributors.
