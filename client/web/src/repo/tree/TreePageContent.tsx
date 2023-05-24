@@ -218,7 +218,7 @@ const ExtraInfoSection: React.FC<{
     return (
         <Card className={className}>
             <ExtraInfoSectionItem>
-                <ExtraInfoSectionItemHeader title="Description" tooltip="Synced from the code host." />
+                <ExtraInfoSectionItemHeader title="Description" tooltip="Synchronized from the code host" />
                 {repo.description && <Text>{repo.description}</Text>}
             </ExtraInfoSectionItem>
             {enableRepositoryMetadata && (
