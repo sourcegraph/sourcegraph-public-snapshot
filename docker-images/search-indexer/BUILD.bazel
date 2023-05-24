@@ -12,20 +12,6 @@ DEPS = [
 
 container_dependencies(DEPS)
 
-genrule(
-    name = "data_folder",
-    outs = [".data_keep"],
-    cmd = "echo data > $@",
-)
-
-pkg_tar(
-    name = "data_tar",
-    srcs = [":data_folder"],
-    remap_paths = {
-        "/.data_keep": "/data/index/.empty",
-    },
-)
-
 oci_image(
     name = "image",
     base = "@wolfi_base",
@@ -38,7 +24,7 @@ oci_image(
         "DATA_DIR": "/data/index",
         "SRC_FRONTEND_INTERNAL": "https://sourcegraph-frontend-internal",
     },
-    tars = dependencies_tars(DEPS) + [":data_tar"],
+    tars = dependencies_tars(DEPS)
     user = "sourcegraph",
     workdir = "/home/sourcegraph",
 )
