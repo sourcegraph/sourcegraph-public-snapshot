@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+// TODO: Use this class to get context
 public class ContextGetter {
     private final @NotNull String codebase;
 

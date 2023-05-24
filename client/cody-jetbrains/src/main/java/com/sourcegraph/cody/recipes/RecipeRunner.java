@@ -1,9 +1,12 @@
-package com.sourcegraph.cody;
+package com.sourcegraph.cody.recipes;
 
 import com.intellij.openapi.project.Project;
+import com.sourcegraph.cody.TruncationUtils;
+import com.sourcegraph.cody.UpdatableChat;
 import com.sourcegraph.cody.chat.ChatMessage;
 import com.sourcegraph.cody.editor.EditorContext;
 import com.sourcegraph.cody.editor.EditorContextGetter;
+import com.sourcegraph.cody.prompts.LanguageUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;

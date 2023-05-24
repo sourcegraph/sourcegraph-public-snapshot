@@ -12,8 +12,8 @@ import com.sourcegraph.cody.chat.ChatMessage;
 import com.sourcegraph.cody.completions.Speaker;
 import com.sourcegraph.cody.config.ConfigUtil;
 import com.sourcegraph.cody.config.SettingsComponent;
-import com.sourcegraph.cody.editor.EditorContext;
 import com.sourcegraph.cody.editor.EditorContextGetter;
+import com.sourcegraph.cody.recipes.RecipeRunner;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
@@ -30,6 +30,7 @@ class CodyToolWindowContent implements UpdatableChat {
     private boolean needScrollingDown = true;
 
     public CodyToolWindowContent(@NotNull Project project) {
+        // Tabs
         tabbedPane.insertTab("Chat", null, contentPanel, null, 0);
         tabbedPane.insertTab("Recipes", null, recipesPanel, null, 1);
 
@@ -87,7 +88,7 @@ class CodyToolWindowContent implements UpdatableChat {
         controlsPanel.setLayout(new BoxLayout(controlsPanel, BoxLayout.X_AXIS));
         messageField = new JTextField();
         controlsPanel.add(messageField);
-        messageField.addActionListener(e -> sendMessage(project)); // TODO: Also disable the button while sending, then re-enable it
+        messageField.addActionListener(e -> sendMessage(project)); // TODO: Disable the button while sending, then re-enable it
         JButton sendButton = new JButton("Send");
         sendButton.addActionListener(e -> sendMessage(project));
         controlsPanel.add(sendButton);

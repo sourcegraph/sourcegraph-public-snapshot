@@ -13,6 +13,13 @@ func setUserinfoBestEffort(rawurl, username, password string) string {
 		return rawurl
 	}
 
+	if password == "" {
+		u.User = url.User(username)
+	} else {
+		u.User = url.UserPassword(username, password)
+	}
+
+	return u.String()
 	// Fallback to get username and password from URL if not specified already
 	if username == "" && u.User != nil && u.User.Username() != "" {
 		username = u.User.Username()
@@ -33,4 +40,8 @@ func setUserinfoBestEffort(rawurl, username, password string) string {
 	}
 
 	return u.String()
+}
+
+func test() string {
+
 }

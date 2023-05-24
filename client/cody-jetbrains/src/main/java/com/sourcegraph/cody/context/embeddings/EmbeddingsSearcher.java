@@ -6,7 +6,7 @@ import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSyntaxException;
 import com.sourcegraph.api.GraphQlClient;
 import com.sourcegraph.api.GraphQlResponse;
-import com.sourcegraph.cody.Prompter;
+import com.sourcegraph.cody.prompts.Prompter;
 import com.sourcegraph.cody.context.ContextMessage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

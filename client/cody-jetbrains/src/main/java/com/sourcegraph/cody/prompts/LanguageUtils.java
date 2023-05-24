@@ -1,4 +1,4 @@
-package com.sourcegraph.cody;
+package com.sourcegraph.cody.prompts;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
