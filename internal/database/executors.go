@@ -215,7 +215,7 @@ func (s *executorStore) upsertHeartbeat(ctx context.Context, executor types.Exec
 		executorStoreUpsertHeartbeatQuery,
 
 		executor.Hostname,
-		executor.QueueName,
+		sql.NullString{String: executor.QueueName, Valid: len(executor.QueueName) > 0},
 		pq.Array(executor.QueueNames),
 		executor.OS,
 		executor.Architecture,
