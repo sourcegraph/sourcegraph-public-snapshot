@@ -75,7 +75,7 @@ func startEmbeddedPostgreSQL(logger log.Logger, pgRootDir string) (*postgresqlEn
 	if runtime.GOOS == "linux" && runtime.GOARCH == "amd64" {
 		ldso := "/lib64/ld-linux-x86-64.so.2"
 		if _, err := os.Stat(ldso); err != nil {
-			return nil, errors.Errorf("could not use embedded-postgres since %q is missing", ldso)
+			return nil, errors.Errorf("could not use embedded-postgres since %q is missing - see https://github.com/sourcegraph/sourcegraph/issues/52360 for more details", ldso)
 		}
 	}
 
@@ -85,6 +85,10 @@ func startEmbeddedPostgreSQL(logger log.Logger, pgRootDir string) (*postgresqlEn
 		return nil, errors.Wrap(err, "user.Current")
 	}
 	unixSocketDir := filepath.Join(current.HomeDir, ".sourcegraph-psql")
+	err = os.RemoveAll(unixSocketDir)
+	if err != nil {
+		logger.Warn("unable to remove previous connection", log.Error(err))
+	}
 	err = os.MkdirAll(unixSocketDir, os.ModePerm)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating unix socket dir")
