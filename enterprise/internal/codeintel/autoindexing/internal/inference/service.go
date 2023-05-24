@@ -243,7 +243,9 @@ func (s *Service) setupRecognizers(ctx context.Context, invocationContext invoca
 	ctx, _, endObservation := s.operations.setupRecognizers.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	opts := luasandbox.RunOptions{}
+	opts := luasandbox.RunOptions{
+		PrintSink: invocationContext.printSink,
+	}
 	rawRecognizers, err := invocationContext.sandbox.RunScriptNamed(ctx, opts, lua.Scripts, "recognizers.lua")
 	if err != nil {
 		return nil, err
@@ -540,7 +542,9 @@ func (s *Service) invokeLinearizedRecognizer(
 		return nil, nil
 	}
 
-	opts := luasandbox.RunOptions{}
+	opts := luasandbox.RunOptions{
+		PrintSink: invocationContext.printSink,
+	}
 	args := []any{registrationAPI, callPaths, callContentsByPath}
 	value, err := invocationContext.sandbox.Call(ctx, opts, invocationContext.callback(recognizer), args...)
 	if err != nil {
