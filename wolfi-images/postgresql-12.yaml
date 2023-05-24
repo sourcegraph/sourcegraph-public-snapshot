@@ -34,6 +34,7 @@ paths:
     type: directory
     permissions: 0o755
 
+<<<<<<< HEAD
 users:
   - username: postgres
     uid: 999
@@ -41,5 +42,20 @@ users:
   - username: ping
     uid: 99
     gid: 99
+=======
+accounts:
+  groups:
+  - groupname: postgres
+    gid: 999
+  - groupname: ping
+    gid: 99
+  users:
+    - username: postgres
+      uid: 999
+      gid: 999
+    - username: ping
+      uid: 99
+      gid: 99
+>>>>>>> jh/bzl-rules_oci
 
 # MANUAL REBUILD:
