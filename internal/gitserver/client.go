@@ -1236,8 +1236,8 @@ func (c *clientImplementor) ReposStats(ctx context.Context) (map[string]*protoco
 	stats := map[string]*protocol.ReposStats{}
 	var allErr error
 
-	for _, addr := range c.clientSource.Addresses() {
-		if internalgrpc.IsGRPCEnabled(ctx) {
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		for _, addr := range c.clientSource.Addresses() {
 			client, err := addr.GRPCClient()
 			if err != nil {
 				return nil, err
@@ -1251,16 +1251,19 @@ func (c *clientImplementor) ReposStats(ctx context.Context) (map[string]*protoco
 				rs.FromProto(resp)
 				stats[addr.Address()] = rs
 			}
-			continue
 		}
+	} else {
 
-		stat, err := c.doReposStats(ctx, addr.Address())
-		if err != nil {
-			allErr = errors.Append(allErr, err)
-		} else {
-			stats[addr.Address()] = stat
+		for _, addr := range c.Addrs() {
+			stat, err := c.doReposStats(ctx, addr)
+			if err != nil {
+				allErr = errors.Append(allErr, err)
+			} else {
+				stats[addr] = stat
+			}
 		}
 	}
+
 	return stats, allErr
 }
 

@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
@@ -811,38 +810,12 @@ func TestClient_ReposStatsGRPC(t *testing.T) {
 		GitDirBytes: 1337,
 	}
 
-	// create a temp file with the stats
-	f, err := ioutil.TempFile("", "repos-stats.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.Remove(f.Name())
-
-	encoded, _ := json.Marshal(wantStats)
-	if _, err := f.Write(encoded); err != nil {
-		t.Fatal(err)
-	}
-	if err := f.Close(); err != nil {
-		t.Fatal(err)
-	}
-
 	called := false
 	source := gitserver.NewTestClientSource([]string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
 		o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 			mockRepoStats := func(ctx context.Context, in *proto.ReposStatsRequest, opts ...grpc.CallOption) (*proto.ReposStatsResponse, error) {
 				called = true
-				//read from temp file
-				encoded, err := ioutil.ReadFile(f.Name())
-				if err != nil {
-					return nil, err
-				}
-
-				var rs protocol.ReposStats
-				err = json.Unmarshal(encoded, &rs)
-				if err != nil {
-					return nil, err
-				}
-				return rs.ToProto(), nil
+				return wantStats.ToProto(), nil
 			}
 			return &mockClient{mockRepoStats: mockRepoStats}
 		}
