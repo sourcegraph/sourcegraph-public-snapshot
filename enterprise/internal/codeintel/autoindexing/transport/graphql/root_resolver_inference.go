@@ -54,7 +54,10 @@ func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *reso
 	}
 
 	if config == nil {
-		return nil, nil
+		return &inferAutoIndexJobsResultResolver{
+			jobs:            nil,
+			inferenceOutput: logs,
+		}, nil
 	}
 
 	jobResolvers, err := newDescriptionResolvers(r.siteAdminChecker, config)
