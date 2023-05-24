@@ -1,13 +1,21 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "ts_project")
-
-npm_link_all_packages(name = "node_modules")
+load("//dev:eslint.bzl", "eslint_config")
 
 # gazelle:js_resolve vscode //:node_modules/@vscode
 # gazelle:js_files src/**/*.{ts,tsx}
 # gazelle:js_files webviews/**/*.{ts,tsx}
 # gazelle:js_ignore_imports **/*.css
+
+npm_link_all_packages(name = "node_modules")
+
+eslint_config(
+    deps = [
+        "//client/cody/scripts:tsconfig",
+        "//client/cody/test/integration:tsconfig",
+    ],
+)
 
 ts_config(
     name = "tsconfig",
@@ -26,6 +34,8 @@ ts_project(
         "package.json",
         "src/chat/ChatViewProvider.ts",
         "src/chat/protocol.ts",
+        "src/chat/recipes.ts",
+        "src/chat/utils.ts",
         "src/completions/cache.ts",
         "src/completions/context.ts",
         "src/completions/docprovider.ts",
@@ -46,6 +56,7 @@ ts_project(
         "src/rg.ts",
         "src/services/CodeLensProvider.ts",
         "src/services/DecorationProvider.ts",
+        "src/services/GuardrailsProvider.ts",
         "src/services/InlineController.ts",
         "src/services/LocalStorageProvider.ts",
         "src/services/SecretStorageProvider.ts",
@@ -102,16 +113,19 @@ ts_project(
     name = "cody_tests",
     testonly = True,
     srcs = [
-        "src/chat/ChatViewProvider.test.ts",
+        "src/chat/utils.test.ts",
         "src/completions/cache.test.ts",
         "src/completions/context.test.ts",
         "src/completions/provider.test.ts",
         "src/configuration.test.ts",
         "src/keyword-context/local-keyword-context-fetcher.test.ts",
+        "test/fixtures/mock-server.ts",
     ],
     tsconfig = ":tsconfig",
     deps = [
         ":cody",
+        "//:node_modules/@types/express",
         "//:node_modules/@types/node",
+        "//:node_modules/express",
     ],
 )

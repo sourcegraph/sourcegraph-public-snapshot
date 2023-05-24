@@ -1,4 +1,3 @@
-import { spawnSync } from 'child_process'
 import path from 'path'
 
 import * as vscode from 'vscode'
@@ -7,14 +6,12 @@ import { BotResponseMultiplexer } from '@sourcegraph/cody-shared/src/chat/bot-re
 import { ChatClient } from '@sourcegraph/cody-shared/src/chat/chat'
 import { getPreamble } from '@sourcegraph/cody-shared/src/chat/preamble'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
-import { getRecipe } from '@sourcegraph/cody-shared/src/chat/recipes/vscode-recipes'
 import { Transcript } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { ChatMessage, ChatHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { reformatBotMessage } from '@sourcegraph/cody-shared/src/chat/viewHelpers'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
-import { Editor } from '@sourcegraph/cody-shared/src/editor'
-import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
+import { Guardrails, annotateAttribution } from '@sourcegraph/cody-shared/src/guardrails'
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
@@ -25,8 +22,8 @@ import { View } from '../../webviews/NavBar'
 import { getFullConfig, updateConfiguration } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { logEvent } from '../event-logger'
-import { LocalKeywordContextFetcher } from '../keyword-context/local-keyword-context-fetcher'
 import { LocalAppDetector } from '../local-app-detector'
+import { debug } from '../log'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../services/SecretStorageProvider'
 import { TestSupport } from '../test-support'
@@ -40,6 +37,8 @@ import {
     isLocalApp,
     isLoggedIn,
 } from './protocol'
+import { getRecipe } from './recipes'
+import { filesExist, getCodebaseContext } from './utils'
 
 export async function getAuthStatus(
     config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
@@ -74,15 +73,18 @@ export async function getAuthStatus(
     }
 }
 
-type Config = Pick<
+export type Config = Pick<
     ConfigurationWithAccessToken,
     | 'codebase'
     | 'serverEndpoint'
-    | 'debug'
+    | 'debugEnable'
+    | 'debugFilter'
+    | 'debugVerbose'
     | 'customHeaders'
     | 'accessToken'
     | 'useContext'
     | 'experimentalChatPredictions'
+    | 'experimentalGuardrails'
 >
 
 export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable {
@@ -116,6 +118,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         private chat: ChatClient,
         private intentDetector: IntentDetector,
         private codebaseContext: CodebaseContext,
+        private guardrails: Guardrails,
         private editor: VSCodeEditor,
         private secretStorage: SecretStorage,
         private localStorage: LocalStorage,
@@ -203,6 +206,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
             case 'initialized':
+                debug('ChatViewProvider:onDidReceiveMessage:initialized', '')
                 this.loadChatHistory()
                 this.publishContextStatus()
                 this.publishConfig()
@@ -297,7 +301,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 const lastInteraction = this.transcript.getLastInteraction()
                 if (lastInteraction) {
                     const displayText = reformatBotMessage(text, responsePrefix)
-                    const { text: highlightedDisplayText } = await highlightTokens(displayText || '', filesExist)
+                    let { text: highlightedDisplayText } = await highlightTokens(displayText || '', filesExist)
+                    if (this.config.experimentalGuardrails) {
+                        // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
+                        highlightedDisplayText = await annotateAttribution(this.guardrails, highlightedDisplayText)
+                    }
                     this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
                     this.editor.controller.reply(highlightedDisplayText)
                 }
@@ -359,6 +367,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion'): Promise<void> {
+        debug('ChatViewProvider:onHumanMessageSubmitted', '', { verbose: { text, submitType } })
         if (submitType === 'suggestion') {
             logEvent('CodyVSCodeExtension:chatPredictions:used')
         }
@@ -407,6 +416,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     public async executeRecipe(recipeId: RecipeID, humanChatInput: string = '', showTab = true): Promise<void> {
+        debug('ChatViewProvider:executeRecipe', recipeId, { verbose: humanChatInput })
         if (this.isMessageInProgress) {
             this.sendErrorToWebview('Cannot execute multiple recipes. Please wait for the current recipe to finish.')
             return
@@ -649,7 +659,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             }
 
             const configForWebview: ConfigurationSubsetForWebview = {
-                debug: this.config.debug,
+                debugEnable: this.config.debugEnable,
                 serverEndpoint: this.config.serverEndpoint,
             }
             void vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
@@ -770,106 +780,4 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
         this.disposables = []
     }
-}
-
-function filePathContains(container: string, contained: string): boolean {
-    let trimmedContained = contained
-    if (trimmedContained.endsWith(path.sep)) {
-        trimmedContained = trimmedContained.slice(0, -path.sep.length)
-    }
-    if (trimmedContained.startsWith(path.sep)) {
-        trimmedContained = trimmedContained.slice(path.sep.length)
-    }
-    if (trimmedContained.startsWith('.' + path.sep)) {
-        trimmedContained = trimmedContained.slice(1 + path.sep.length)
-    }
-    return (
-        container.includes(path.sep + trimmedContained + path.sep) || // mid-level directory
-        container.endsWith(path.sep + trimmedContained) // child
-    )
-}
-
-async function filesExist(filePaths: string[]): Promise<{ [filePath: string]: boolean }> {
-    const searchPath = `{${filePaths.join(',')}}`
-    const realFiles = await vscode.workspace.findFiles(searchPath, null, filePaths.length * 5)
-    const ret: { [filePath: string]: boolean } = {}
-    for (const filePath of filePaths) {
-        let pathExists = false
-        for (const realFile of realFiles) {
-            if (filePathContains(realFile.fsPath, filePath)) {
-                pathExists = true
-                break
-            }
-        }
-        ret[filePath] = pathExists
-    }
-    return ret
-}
-
-// Converts a git clone URL to the codebase name that includes the slash-separated code host, owner, and repository name
-// This should captures:
-// - "github:sourcegraph/sourcegraph" a common SSH host alias
-// - "https://github.com/sourcegraph/deploy-sourcegraph-k8s.git"
-// - "git@github.com:sourcegraph/sourcegraph.git"
-export function convertGitCloneURLToCodebaseName(cloneURL: string): string | null {
-    if (!cloneURL) {
-        console.error(`Unable to determine the git clone URL for this workspace.\ngit output: ${cloneURL}`)
-        return null
-    }
-    try {
-        const uri = new URL(cloneURL.replace('git@', ''))
-        // Handle common Git SSH URL format
-        const match = cloneURL.match(/git@([^:]+):([\w-]+)\/([\w-]+)(\.git)?/)
-        if (cloneURL.startsWith('git@') && match) {
-            const host = match[1]
-            const owner = match[2]
-            const repo = match[3]
-            return `${host}/${owner}/${repo}`
-        }
-        // Handle GitHub URLs
-        if (uri.protocol.startsWith('github') || uri.href.startsWith('github')) {
-            return `github.com/${uri.pathname.replace('.git', '')}`
-        }
-        // Handle GitLab URLs
-        if (uri.protocol.startsWith('gitlab') || uri.href.startsWith('gitlab')) {
-            return `gitlab.com/${uri.pathname.replace('.git', '')}`
-        }
-        // Handle HTTPS URLs
-        if (uri.protocol.startsWith('http') && uri.hostname && uri.pathname) {
-            return `${uri.hostname}${uri.pathname.replace('.git', '')}`
-        }
-        // Generic URL
-        if (uri.hostname && uri.pathname) {
-            return `${uri.hostname}${uri.pathname.replace('.git', '')}`
-        }
-        return null
-    } catch (error) {
-        console.error(`Cody could not extract repo name from clone URL ${cloneURL}:`, error)
-        return null
-    }
-}
-
-async function getCodebaseContext(config: Config, rgPath: string, editor: Editor): Promise<CodebaseContext | null> {
-    const client = new SourcegraphGraphQLAPIClient(config)
-    const workspaceRoot = editor.getWorkspaceRootPath()
-    if (!workspaceRoot) {
-        return null
-    }
-    const gitCommand = spawnSync('git', ['remote', 'get-url', 'origin'], { cwd: workspaceRoot })
-    const gitOutput = gitCommand.stdout.toString().trim()
-    // Get codebase from config or fallback to getting repository name from git clone URL
-    const codebase = config.codebase || convertGitCloneURLToCodebaseName(gitOutput)
-    if (!codebase) {
-        return null
-    }
-    // Check if repo is embedded in endpoint
-    const repoId = await client.getRepoIdIfEmbeddingExists(codebase)
-    if (isError(repoId)) {
-        const infoMessage = `Cody could not find embeddings for '${codebase}' on your Sourcegraph instance.\n`
-        console.info(infoMessage)
-        return null
-    }
-
-    const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
-    return new CodebaseContext(config, codebase, embeddingsSearch, new LocalKeywordContextFetcher(rgPath, editor))
 }

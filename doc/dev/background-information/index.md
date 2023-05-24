@@ -83,6 +83,10 @@
 - [Honeycomb](honeycomb.md)
 - [Using PostgreSQL](postgresql.md)
 
+## Wolfi
+
+- [Wolfi Overview](wolfi/index.md)
+
 ## Other
 
 - [Telemetry](telemetry.md)

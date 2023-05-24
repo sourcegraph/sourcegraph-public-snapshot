@@ -3,6 +3,8 @@ import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
+import { Guardrails } from '@sourcegraph/cody-shared/src/guardrails'
+import { SourcegraphGuardrailsClient } from '@sourcegraph/cody-shared/src/guardrails/client'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { SourcegraphIntentDetectorClient } from '@sourcegraph/cody-shared/src/intent-detector/client'
 import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
@@ -18,6 +20,7 @@ interface ExternalServices {
     codebaseContext: CodebaseContext
     chatClient: ChatClient
     completionsClient: SourcegraphCompletionsClient
+    guardrails: Guardrails
 
     /** Update configuration for all of the services in this interface. */
     onConfigurationChange: (newConfig: ExternalServicesConfiguration) => void
@@ -25,7 +28,7 @@ interface ExternalServices {
 
 type ExternalServicesConfiguration = Pick<
     ConfigurationWithAccessToken,
-    'serverEndpoint' | 'codebase' | 'useContext' | 'customHeaders' | 'accessToken' | 'debug'
+    'serverEndpoint' | 'codebase' | 'useContext' | 'customHeaders' | 'accessToken' | 'debugEnable'
 >
 
 export async function configureExternalServices(
@@ -43,8 +46,7 @@ export async function configureExternalServices(
             'Please check that the repository exists and is entered correctly in the cody.codebase setting.'
         console.info(infoMessage)
     }
-    const embeddingsSearch =
-        repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId, false) : null
+    const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
 
     const codebaseContext = new CodebaseContext(
         initialConfig,
@@ -53,11 +55,14 @@ export async function configureExternalServices(
         new LocalKeywordContextFetcher(rgPath, editor)
     )
 
+    const guardrails = new SourcegraphGuardrailsClient(client)
+
     return {
         intentDetector: new SourcegraphIntentDetectorClient(client),
         codebaseContext,
         chatClient: new ChatClient(completions),
         completionsClient: completions,
+        guardrails,
         onConfigurationChange: newConfig => {
             client.onConfigurationChange(newConfig)
             completions.onConfigurationChange(newConfig)
