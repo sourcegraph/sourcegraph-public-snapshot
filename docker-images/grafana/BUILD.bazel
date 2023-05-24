@@ -3,19 +3,20 @@ load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 filegroup(
     name = "config_files",
-    srcs = glob(["config/*"]) + ["entry-alpine.sh"],
+    srcs = glob(["config/*"]) + ["entry-bazel.sh"],
 )
 
 pkg_tar(
     name = "config_tar",
     srcs = [
+        ":config_files",
         "//docker-images/grafana/config",
         "//monitoring:generate_config_zip",
     ],
     remap_paths = {
         "docker-images/grafana/config": "/sg_config_grafana",
         "monitoring/outputs/grafana": "/sg_config_grafana/provisioning/dashboards/sourcegraph",
-        "entry-alpine.sh": "/entry.sh",
+        "/entry-bazel.sh": "/entry.sh",
     },
 )
 
