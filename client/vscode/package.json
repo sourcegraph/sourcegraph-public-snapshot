@@ -286,8 +286,7 @@
   "devDependencies": {
     "vsce": "^2.7.0",
     "@sourcegraph/build-config": "workspace:*",
-    "@sourcegraph/extension-api-types": "workspace:*",
-    "@types/vscode-webview": "^1.57.1"
+    "@sourcegraph/extension-api-types": "workspace:*"
   },
   "dependencies": {
     "@sourcegraph/branded": "workspace:*",
