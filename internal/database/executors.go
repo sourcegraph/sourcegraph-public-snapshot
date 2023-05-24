@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -215,6 +216,7 @@ func (s *executorStore) upsertHeartbeat(ctx context.Context, executor types.Exec
 
 		executor.Hostname,
 		executor.QueueName,
+		pq.Array(executor.QueueNames),
 		executor.OS,
 		executor.Architecture,
 		executor.DockerVersion,
@@ -231,6 +233,7 @@ const executorStoreUpsertHeartbeatQuery = `
 INSERT INTO executor_heartbeats (
 	hostname,
 	queue_name,
+	queue_names,
 	os,
 	architecture,
 	docker_version,
@@ -241,10 +244,11 @@ INSERT INTO executor_heartbeats (
 	first_seen_at,
 	last_seen_at
 )
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 ON CONFLICT (hostname) DO UPDATE
 SET
 	queue_name = EXCLUDED.queue_name,
+	queue_names = EXCLUDED.queue_names,
 	os = EXCLUDED.os,
 	architecture = EXCLUDED.architecture,
 	docker_version = EXCLUDED.docker_version,
