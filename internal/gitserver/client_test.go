@@ -110,7 +110,7 @@ func TestClient_Remove(t *testing.T) {
 	addrs := []string{"172.16.8.1:8080", "172.16.8.2:8080"}
 
 	expected := "http://172.16.8.1:8080"
-	source := gitserver.NewTestClientSource(addrs)
+	source := gitserver.NewTestClientSource(t, addrs)
 
 	cli := gitserver.NewTestClient(
 		httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
@@ -307,7 +307,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 
 				t.Helper()
 
-				source := gitserver.NewTestClientSource(addrs, func(o *gitserver.TestClientSourceOptions) {
+				source := gitserver.NewTestClientSource(t, addrs, func(o *gitserver.TestClientSourceOptions) {
 					o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 						spy.base = proto.NewGitserverServiceClient(cc)
 
@@ -344,7 +344,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 
 				spy := &spyGitserverServiceClient{}
 
-				source := gitserver.NewTestClientSource(addrs, func(o *gitserver.TestClientSourceOptions) {
+				source := gitserver.NewTestClientSource(t, addrs, func(o *gitserver.TestClientSourceOptions) {
 					o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 						spy.base = proto.NewGitserverServiceClient(cc)
 
@@ -525,7 +525,7 @@ func TestClient_P4Exec(t *testing.T) {
 
 			u, _ := url.Parse(testServer.URL)
 			addrs := []string{u.Host}
-			source := gitserver.NewTestClientSource(addrs)
+			source := gitserver.NewTestClientSource(t, addrs)
 
 			cli := gitserver.NewTestClient(&http.Client{}, source)
 
@@ -609,7 +609,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 
 	u, _ := url.Parse(srv.URL)
 	addrs := []string{u.Host}
-	source := gitserver.NewTestClientSource(addrs)
+	source := gitserver.NewTestClientSource(t, addrs)
 
 	cli := gitserver.NewTestClient(&http.Client{}, source)
 
@@ -633,7 +633,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 
 func TestClient_BatchLog(t *testing.T) {
 	addrs := []string{"172.16.8.1:8080", "172.16.8.2:8080", "172.16.8.3:8080"}
-	source := gitserver.NewTestClientSource(addrs)
+	source := gitserver.NewTestClientSource(t, addrs)
 
 	cli := gitserver.NewTestClient(
 		httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
@@ -769,7 +769,7 @@ func TestClient_ReposStats(t *testing.T) {
 		GitDirBytes: 1337,
 	}
 
-	source := gitserver.NewTestClientSource(addrs)
+	source := gitserver.NewTestClientSource(t, addrs)
 	cli := gitserver.NewTestClient(
 		httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
 			switch r.URL.String() {
@@ -811,7 +811,7 @@ func TestClient_ReposStatsGRPC(t *testing.T) {
 	}
 
 	called := false
-	source := gitserver.NewTestClientSource([]string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
+	source := gitserver.NewTestClientSource(t, []string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
 		o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 			mockRepoStats := func(ctx context.Context, in *proto.ReposStatsRequest, opts ...grpc.CallOption) (*proto.ReposStatsResponse, error) {
 				called = true
