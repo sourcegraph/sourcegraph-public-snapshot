@@ -10352,7 +10352,7 @@
           "Name": "queue_name",
           "Index": 3,
           "TypeName": "text",
-          "IsNullable": false,
+          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -10360,6 +10360,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "The queue name that the executor polls for work."
+        },
+        {
+          "Name": "queue_names",
+          "Index": 13,
+          "TypeName": "text[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "The list of queue names that the executor polls for work."
         },
         {
           "Name": "src_cli_version",
@@ -10397,7 +10410,15 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         }
       ],
-      "Constraints": null,
+      "Constraints": [
+        {
+          "Name": "queue_not_null",
+          "ConstraintType": "c",
+          "RefTableName": "",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "CHECK (queue_name IS NOT NULL AND queue_names IS NULL OR queue_names IS NOT NULL AND queue_name IS NULL)"
+        }
+      ],
       "Triggers": []
     },
     {

@@ -117,6 +117,7 @@ Available commands in `sg.config.yaml`:
 * llm-proxy
 * loki
 * monitoring-generator
+* multiqueue-executor
 * oss-frontend
 * oss-gitserver-0
 * oss-gitserver-1

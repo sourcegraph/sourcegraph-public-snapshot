@@ -4,4 +4,6 @@ ALTER TABLE executor_heartbeats ADD CONSTRAINT queue_not_null CHECK (
     (queue_name IS NOT NULL AND queue_names IS NULL)
     OR
     (queue_names IS NOT NULL AND queue_name IS NULL)
-)
+);
+
+COMMENT ON COLUMN executor_heartbeats.queue_names IS 'The list of queue names that the executor polls for work.';
