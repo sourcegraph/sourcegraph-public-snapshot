@@ -72,3 +72,9 @@ def oci_deps():
         digest = "sha256:7e5aef3d0b3e043761f83def2c1f761143659eca5738b4ba0ef1313e4a9b5bbd",
         image = "us.gcr.io/sourcegraph-dev/wolfi-syntax-highlighter-base",
     )
+
+    oci_pull(
+        name = "wolfi_search_indexer_base",
+        digest = "sha256:d3af56ce7dcaff85c2c48d3fcd2f2059365fb50beb8e545e08b8519ccc0e67e3",
+        image = "us.gcr.io/sourcegraph-dev/wolfi-search-indexer-base",
+    )
