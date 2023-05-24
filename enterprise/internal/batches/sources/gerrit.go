@@ -177,21 +177,16 @@ func (s GerritSource) GetFork(_ context.Context, _ *types.Repo, _, _ *string) (*
 }
 
 func (s GerritSource) setChangesetMetadata(change *gerrit.Change, cs *Changeset) error {
-	apr, err := s.annotatePullRequest(change)
-	if err != nil {
-		return errors.Wrap(err, "annotating pull request")
-	}
-
+	apr := s.annotatePullRequest(change)
 	if err := cs.SetMetadata(apr); err != nil {
 		return errors.Wrap(err, "setting changeset metadata")
 	}
-
 	return nil
 }
 
-func (s GerritSource) annotatePullRequest(change *gerrit.Change) (*gerritbatches.AnnotatedChange, error) {
+func (s GerritSource) annotatePullRequest(change *gerrit.Change) *gerritbatches.AnnotatedChange {
 	return &gerritbatches.AnnotatedChange{
 		Change: change,
 		URL:    s.client.GetURL(),
-	}, nil
+	}
 }
