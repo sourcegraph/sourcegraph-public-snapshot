@@ -70,18 +70,21 @@ func (r *UserResolver) hasVerifiedEmailOnDotcom(ctx context.Context) (bool, erro
 	// Send GraphQL request to sourcegraph.com to check if email is verified
 	req, err := http.NewRequestWithContext(ctx, "POST", url, payload)
 	if err != nil {
-		return false, err
+		r.logger.Warn("failed creating email verification request ", log.Error(err))
+		return false, nil
 	}
 	req.Header.Add("Authorization", fmt.Sprintf("token %s", appConfig.DotcomAuthToken))
 
 	resp, err := cli.Do(req)
 	if err != nil {
-		return false, err
+		r.logger.Warn("email verification request failed", log.Error(err))
+		return false, nil
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return false, errors.Errorf("api failed with status: %d", resp.StatusCode)
+		r.logger.Warn("email verification failed", log.Int("status", resp.StatusCode))
+		return false, nil
 	}
 
 	// Get the response
@@ -93,10 +96,12 @@ func (r *UserResolver) hasVerifiedEmailOnDotcom(ctx context.Context) (bool, erro
 	var result Response
 	b, err := io.ReadAll(io.LimitReader(resp.Body, 1024))
 	if err != nil {
-		return false, errors.Wrap(err, "unable to read response")
+		r.logger.Warn("unable to read verified email response", log.Error(err))
+		return false, nil
 	}
 	if err := json.Unmarshal(b, &result); err != nil {
-		return false, errors.Wrap(err, "unable to unmarshal response")
+		r.logger.Warn("unable to unmarshal verified email response", log.Error(err))
+		return false, nil
 	}
 
 	return result.Data.CurrentUser.HasVerifiedEmail, nil
