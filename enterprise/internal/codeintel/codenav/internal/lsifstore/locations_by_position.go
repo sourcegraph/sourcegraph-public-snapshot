@@ -2,6 +2,7 @@ package lsifstore
 
 import (
 	"context"
+	"encoding/base64"
 	"fmt"
 	"strconv"
 	"strings"
@@ -13,6 +14,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -51,15 +53,30 @@ func (s *store) GetBulkMonikerLocations(ctx context.Context, tableName string, u
 		return nil, 0, nil
 	}
 
+	explodedSymbols := []string{}
 	symbolNames := make([]string, 0, len(monikers))
 	for _, arg := range monikers {
 		symbolNames = append(symbolNames, arg.Identifier)
+
+		s := symbols.NewExplodedSymbol(arg.Identifier)
+		explodedSymbols = append(
+			explodedSymbols,
+			fmt.Sprintf(
+				"%s$%s$%s$%s$%s",
+				base64.StdEncoding.EncodeToString([]byte(s.Scheme)),
+				base64.StdEncoding.EncodeToString([]byte(s.PackageManager)),
+				base64.StdEncoding.EncodeToString([]byte(s.PackageName)),
+				base64.StdEncoding.EncodeToString([]byte(s.PackageVersion)),
+				base64.StdEncoding.EncodeToString([]byte(s.Descriptor)),
+			),
+		)
 	}
 
 	query := sqlf.Sprintf(
 		bulkMonikerResultsQuery,
 		pq.Array(symbolNames),
 		pq.Array(uploadIDs),
+		pq.Array(explodedSymbols),
 		sqlf.Sprintf(fmt.Sprintf("%s_ranges", strings.TrimSuffix(tableName, "s"))),
 	)
 
