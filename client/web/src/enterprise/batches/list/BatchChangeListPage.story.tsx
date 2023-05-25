@@ -22,6 +22,8 @@ import {
     NO_BATCH_CHANGES_RESULT,
 } from './testData'
 
+window.context.licenseInfo.batchChanges = undefined
+
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
