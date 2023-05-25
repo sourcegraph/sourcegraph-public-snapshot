@@ -1,5 +1,6 @@
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
+import { BatchChangesLicenseInfo } from '@sourcegraph/shared/src/testing/batches'
 
 import { TemporarySettingsResult } from './graphql-operations'
 
@@ -252,7 +253,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
         codeScaleLimit?: string
         codeScaleCloseToLimit?: boolean
         codeScaleExceededLimit?: boolean
-        batchChanges?: BatchChangesLincenseInfo
+        batchChanges?: BatchChangesLicenseInfo
         knownLicenseTags?: string[]
     }
 
@@ -263,11 +264,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** Whether the feedback survey is enabled. */
     disableFeedbackSurvey?: boolean
-}
-
-interface BatchChangesLincenseInfo {
-    unrestricted: boolean
-    maxNumChangesets: number
 }
 
 export interface BrandAssets {

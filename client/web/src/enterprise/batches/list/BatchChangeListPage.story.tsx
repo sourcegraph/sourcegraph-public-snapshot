@@ -4,6 +4,7 @@ import { WildcardMockLink, MATCH_ANY_PARAMETERS } from 'wildcard-mock-link'
 import { getDocumentNode } from '@sourcegraph/http-client'
 import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/settings'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+import { updateJSContextBatchChangesLicense } from '@sourcegraph/shared/src/testing/batches'
 
 import { WebStory } from '../../../components/WebStory'
 import { GlobalChangesetsStatsResult } from '../../../graphql-operations'
@@ -20,7 +21,6 @@ import {
     BATCH_CHANGES_RESULT,
     NO_BATCH_CHANGES_RESULT,
     getLicenseAndUsageInfoResult,
-    updateJSContextBatchChangesLicense,
 } from './testData'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
@@ -234,7 +234,7 @@ export const NoBatchChanges: Story = () => {
 NoBatchChanges.storyName = 'No batch changes'
 
 export const AllBatchChangesTabEmpty: Story = () => {
-    updateJSContextBatchChangesLicense('none')
+    updateJSContextBatchChangesLicense('full')
 
     return (
         <WebStory>

@@ -1,13 +1,13 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { updateJSContextBatchChangesLicense } from '@sourcegraph/shared/src/testing/batches'
 import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { Grid, H3 } from '@sourcegraph/wildcard'
 
-import { updateJSContextBatchChangesLicense } from '../../src/enterprise/batches/list/testData'
 import { HistoryStack } from '../app/useHistoryStack'
 import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
