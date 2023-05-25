@@ -37,7 +37,7 @@ out=$(
     //enterprise/cmd/symbols \
     --stamp \
     --workspace_status_command=./dev/bazel_stamp_vars.sh \
-    --config incompat-zig-linux-amd64
+    --config incompat-zig-linux-amd64 \
     --output=files
 )
 cp "$out" "$OUTPUT"

@@ -24,7 +24,7 @@ if [[ ${CI:-""} == "true" ]]; then
 fi
 
 
-bazel ${bazelrc[@]} \
+bazel "${bazelrc[@]}" \
   build \
   //cmd/symbols \
   --stamp \
@@ -32,7 +32,7 @@ bazel ${bazelrc[@]} \
   --config incompat-zig-linux-amd64
 
 out=$(
-  bazel ${bazelrc[@]} \
+  bazel "${bazelrc[@]}" \
     cquery //cmd/symbols \
     --stamp \
     --workspace_status_command=./dev/bazel_stamp_vars.sh \

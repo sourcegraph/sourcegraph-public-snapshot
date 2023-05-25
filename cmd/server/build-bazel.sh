@@ -87,7 +87,7 @@ for MUSL_TARGET in "${MUSL_TARGETS[@]}"; do
     "$MUSL_TARGET" \
     --stamp \
     --workspace_status_command=./dev/bazel_stamp_vars.sh \
-    --config incompat-zig-linux-amd64
+    --config incompat-zig-linux-amd64 \
     --output=files)
   cp "$out" "$BINDIR"
   echo "copying $MUSL_TARGET"
