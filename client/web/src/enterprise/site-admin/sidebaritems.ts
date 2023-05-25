@@ -149,6 +149,7 @@ export const codyGroup: SiteAdminSideBarGroup = {
         {
             label: 'Embeddings',
             to: '/site-admin/embeddings',
+            exact: true,
         },
         {
             label: 'Configuration',
