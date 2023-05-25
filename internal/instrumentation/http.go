@@ -14,35 +14,33 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
 
-// newDefaultOTELHTTPOptions is a set of options shared between instrumetned HTTP middleware
+// defaultOTELHTTPOptions is a set of options shared between instrumetned HTTP middleware
 // and HTTP clients for consistent Sourcegraph-preferred behaviour.
-func newDefaultOTELHTTPOptions(incoming bool) []otelhttp.Option {
-	return []otelhttp.Option{
-		// Trace policy management
-		otelhttp.WithTracerProvider(&samplingRetainTracerProvider{}),
-		otelhttp.WithFilter(func(r *http.Request) bool {
-			return policy.ShouldTrace(r.Context())
-		}),
-		// Uniform span names
-		otelhttp.WithSpanNameFormatter(func(operation string, r *http.Request) string {
-			// If incoming, just include the path since our own host is not
-			// very interesting. If outgoing, include the host as well.
-			target := r.URL.Path
-			if !incoming {
-				target = r.Host + target
-			}
-			if operation != "" {
-				return fmt.Sprintf("%s.%s %s", operation, r.Method, target)
-			}
-			return fmt.Sprintf("%s %s", r.Method, target)
-		}),
-		// Disable OTEL metrics which can be quite high-cardinality
-		otelhttp.WithMeterProvider(metric.NewNoopMeterProvider()),
-		// Make sure we use the global propagator, which should be set up on
-		// service initialization to support all our commonly used propagation
-		// formats (OpenTelemetry, W3c, Jaeger, etc)
-		otelhttp.WithPropagators(otel.GetTextMapPropagator()),
-	}
+var defaultOTELHTTPOptions = []otelhttp.Option{
+	// Trace policy management
+	otelhttp.WithTracerProvider(&samplingRetainTracerProvider{}),
+	otelhttp.WithFilter(func(r *http.Request) bool {
+		return policy.ShouldTrace(r.Context())
+	}),
+	// Uniform span names
+	otelhttp.WithSpanNameFormatter(func(operation string, r *http.Request) string {
+		// If incoming, just include the path since our own host is not
+		// very interesting. If outgoing, include the host as well.
+		target := r.URL.Path
+		if r.RemoteAddr == "" { // no RemoteAddr indicates this is an outgoing request
+			target = r.Host + target
+		}
+		if operation != "" {
+			return fmt.Sprintf("%s.%s %s", operation, r.Method, target)
+		}
+		return fmt.Sprintf("%s %s", r.Method, target)
+	}),
+	// Disable OTEL metrics which can be quite high-cardinality
+	otelhttp.WithMeterProvider(metric.NewNoopMeterProvider()),
+	// Make sure we use the global propagator, which should be set up on
+	// service initialization to support all our commonly used propagation
+	// formats (OpenTelemetry, W3c, Jaeger, etc)
+	otelhttp.WithPropagators(otel.GetTextMapPropagator()),
 }
 
 // HTTPMiddleware wraps the handler with the following:
@@ -56,10 +54,7 @@ func newDefaultOTELHTTPOptions(incoming bool) []otelhttp.Option {
 // The provided operation name is used to add details to spans.
 func HTTPMiddleware(operation string, h http.Handler, opts ...otelhttp.Option) http.Handler {
 	instrumentedHandler := otelhttp.NewHandler(h, operation,
-		append(
-			newDefaultOTELHTTPOptions(true),
-			opts...,
-		)...)
+		append(defaultOTELHTTPOptions, opts...)...)
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var shouldTrace bool
@@ -111,5 +106,5 @@ func (t *samplingRetainTracer) Start(ctx context.Context, spanName string, opts 
 // NewHTTPTransport creates an http.RoundTripper that instruments all requests using
 // OpenTelemetry and a default set of OpenTelemetry options.
 func NewHTTPTransport(base http.RoundTripper, opts ...otelhttp.Option) *otelhttp.Transport {
-	return otelhttp.NewTransport(base, append(newDefaultOTELHTTPOptions(false), opts...)...)
+	return otelhttp.NewTransport(base, append(defaultOTELHTTPOptions, opts...)...)
 }
