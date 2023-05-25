@@ -21,12 +21,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/rbac"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -644,114 +642,6 @@ func makePhabClientForOrigin(ctx context.Context, logger log.Logger, db database
 	}
 
 	return nil, errors.Errorf("no phabricator was configured for: %s", origin)
-}
-
-type KeyValuePair struct {
-	key   string
-	value *string
-}
-
-func (k KeyValuePair) Key() string {
-	return k.key
-}
-
-func (k KeyValuePair) Value() *string {
-	return k.value
-}
-
-// Deprecated: Use AddRepoMetadata instead.
-func (r *schemaResolver) AddRepoKeyValuePair(ctx context.Context, args struct {
-	Repo  graphql.ID
-	Key   string
-	Value *string
-},
-) (*EmptyResponse, error) {
-	return r.AddRepoMetadata(ctx, args)
-}
-
-func (r *schemaResolver) AddRepoMetadata(ctx context.Context, args struct {
-	Repo  graphql.ID
-	Key   string
-	Value *string
-},
-) (*EmptyResponse, error) {
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
-		return &EmptyResponse{}, err
-	}
-
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
-		return nil, errors.New("'repository-metadata' feature flag is not enabled")
-	}
-
-	repoID, err := UnmarshalRepositoryID(args.Repo)
-	if err != nil {
-		return &EmptyResponse{}, err
-	}
-
-	return &EmptyResponse{}, r.db.RepoKVPs().Create(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
-}
-
-// Deprecated: Use UpdateRepoMetadata instead.
-func (r *schemaResolver) UpdateRepoKeyValuePair(ctx context.Context, args struct {
-	Repo  graphql.ID
-	Key   string
-	Value *string
-},
-) (*EmptyResponse, error) {
-	return r.UpdateRepoMetadata(ctx, args)
-}
-
-func (r *schemaResolver) UpdateRepoMetadata(ctx context.Context, args struct {
-	Repo  graphql.ID
-	Key   string
-	Value *string
-},
-) (*EmptyResponse, error) {
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
-		return &EmptyResponse{}, err
-	}
-
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
-		return nil, errors.New("'repository-metadata' feature flag is not enabled")
-	}
-
-	repoID, err := UnmarshalRepositoryID(args.Repo)
-	if err != nil {
-		return &EmptyResponse{}, err
-	}
-
-	_, err = r.db.RepoKVPs().Update(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
-	return &EmptyResponse{}, err
-}
-
-// Deprecated: Use DeleteRepoMetadata instead.
-func (r *schemaResolver) DeleteRepoKeyValuePair(ctx context.Context, args struct {
-	Repo graphql.ID
-	Key  string
-},
-) (*EmptyResponse, error) {
-	return r.DeleteRepoMetadata(ctx, args)
-}
-
-func (r *schemaResolver) DeleteRepoMetadata(ctx context.Context, args struct {
-	Repo graphql.ID
-	Key  string
-},
-) (*EmptyResponse, error) {
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
-		return &EmptyResponse{}, err
-	}
-
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
-		return nil, errors.New("'repository-metadata' feature flag is not enabled")
-	}
-
-	repoID, err := UnmarshalRepositoryID(args.Repo)
-	if err != nil {
-		return &EmptyResponse{}, err
-	}
-
-	return &EmptyResponse{}, r.db.RepoKVPs().Delete(ctx, repoID, args.Key)
 }
 
 func (r *RepositoryResolver) IngestedCodeowners(ctx context.Context) (CodeownersIngestedFileResolver, error) {

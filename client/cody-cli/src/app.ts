@@ -75,7 +75,7 @@ async function startCLI() {
     const completionsClient = new SourcegraphNodeCompletionsClient({
         serverEndpoint: endpoint,
         accessToken: ENVIRONMENT_CONFIG.SRC_ACCESS_TOKEN,
-        debug: DEFAULTS.debug === 'development',
+        debugEnable: DEFAULTS.debug === 'development',
         customHeaders: {},
     })
 

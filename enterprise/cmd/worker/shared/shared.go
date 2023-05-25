@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/own"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -67,6 +68,7 @@ var additionalJobs = map[string]job.Job{
 
 	"repo-embedding-janitor":              repoembeddings.NewRepoEmbeddingJanitorJob(),
 	"repo-embedding-job":                  repoembeddings.NewRepoEmbeddingJob(),
+	"repo-embedding-scheduler":            repoembeddings.NewRepoEmbeddingSchedulerJob(),
 	"context-detection-embedding-janitor": contextdetectionembeddings.NewContextDetectionEmbeddingJanitorJob(),
 	"context-detection-embedding-job":     contextdetectionembeddings.NewContextDetectionEmbeddingJob(),
 

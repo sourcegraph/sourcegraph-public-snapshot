@@ -343,12 +343,12 @@ func CheckDrift(ctx context.Context, r Runner, version string, out *output.Outpu
 		var buf bytes.Buffer
 		driftOut := output.NewOutput(&buf, output.OutputOpts{})
 
-		expectedSchema, err := fetchExpectedSchema(ctx, schemaName, version, driftOut, expectedSchemaFactories)
+		expectedSchema, err := FetchExpectedSchema(ctx, schemaName, version, driftOut, expectedSchemaFactories)
 		if err != nil {
 			return err
 		}
 
-		if err := displayDriftSummaries(driftOut, drift.CompareSchemaDescriptions(schemaName, version, canonicalize(schema), canonicalize(expectedSchema))); err != nil {
+		if err := displayDriftSummaries(driftOut, drift.CompareSchemaDescriptions(schemaName, version, Canonicalize(schema), Canonicalize(expectedSchema))); err != nil {
 			schemasWithDrift = append(schemasWithDrift,
 				&schemaWithDrift{
 					name:  schemaName,

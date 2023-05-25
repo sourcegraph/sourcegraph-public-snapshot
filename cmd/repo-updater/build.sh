@@ -12,8 +12,9 @@ cleanup() {
 
 trap cleanup EXIT
 if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
-  ./dev/ci/bazel.sh build //cmd/repo-updater
-  out=$(./dev/ci/bazel.sh cquery //cmd/repo-updater --output=files)
+  package=${1:-//cmd/repo-updater}
+  ./dev/ci/bazel.sh build "$package"
+  out=$(./dev/ci/bazel.sh cquery "$package" --output=files)
   cp "$out" "$OUTPUT"
 
   docker build -f cmd/repo-updater/Dockerfile -t "$IMAGE" "$OUTPUT" \

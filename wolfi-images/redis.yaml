@@ -7,7 +7,7 @@ contents:
     - mailcap
 
     # redis packages
-    - redis
+    - redis-6.2
 
 accounts:
   groups:

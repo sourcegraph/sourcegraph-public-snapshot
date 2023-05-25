@@ -38,6 +38,7 @@
   interfaces:
     - AccessRequestStore
     - AccessTokenStore
+    - AssignedOwnersStore
     - AuthzStore
     - BitbucketProjectPermissionsStore
     - ConfStore

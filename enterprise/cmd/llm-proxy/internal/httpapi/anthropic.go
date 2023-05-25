@@ -18,6 +18,7 @@ func newAnthropicHandler(logger log.Logger, eventLogger events.Logger, accessTok
 	return makeUpstreamHandler(
 		logger,
 		eventLogger,
+		"Anthropic",
 		anthropicAPIURL,
 		allowedModels,
 		func(body *anthropicRequest) {
