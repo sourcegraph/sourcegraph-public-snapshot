@@ -377,7 +377,7 @@ func TestWorkerDequeueHeartbeat(t *testing.T) {
 	}
 
 	heartbeats := make(chan struct{})
-	store.HeartbeatFunc.SetDefaultHook(func(c context.Context, i []int) ([]int, []int, error) {
+	store.HeartbeatFunc.SetDefaultHook(func(c context.Context, i []string) ([]string, []string, error) {
 		heartbeats <- struct{}{}
 		return i, nil, nil
 	})
@@ -529,7 +529,7 @@ func TestWorkerCancelJobs(t *testing.T) {
 	}
 
 	canceledJobsCalled := make(chan struct{})
-	store.HeartbeatFunc.SetDefaultHook(func(c context.Context, i []int) ([]int, []int, error) {
+	store.HeartbeatFunc.SetDefaultHook(func(c context.Context, i []string) ([]string, []string, error) {
 		close(canceledJobsCalled)
 		// Cancel all jobs.
 		return i, i, nil
@@ -608,7 +608,7 @@ func TestWorkerDeadline(t *testing.T) {
 	}
 
 	heartbeats := make(chan struct{})
-	store.HeartbeatFunc.SetDefaultHook(func(c context.Context, i []int) ([]int, []int, error) {
+	store.HeartbeatFunc.SetDefaultHook(func(c context.Context, i []string) ([]string, []string, error) {
 		heartbeats <- struct{}{}
 		return i, nil, nil
 	})
