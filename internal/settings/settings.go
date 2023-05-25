@@ -6,6 +6,8 @@ import (
 	"sort"
 
 	"github.com/sourcegraph/conc/iter"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -22,6 +24,8 @@ func defaultSettings() *schema.Settings {
 
 var MockCurrentUserFinal *schema.Settings
 
+// CurrentUserFinal returns the merged settings for the current user.
+// If there is no active user, it returns the site settings.
 func CurrentUserFinal(ctx context.Context, db database.DB) (*schema.Settings, error) {
 	if MockCurrentUserFinal != nil {
 		return MockCurrentUserFinal, nil
@@ -29,11 +33,14 @@ func CurrentUserFinal(ctx context.Context, db database.DB) (*schema.Settings, er
 
 	currentUser := actor.FromContext(ctx)
 	if !currentUser.IsAuthenticated() {
+		// An unauthenticated user has no user-specific or org-specific
+		// settings, so its relevant settings subject is the site subject.
 		return Final(ctx, db, api.SettingsSubject{Site: true})
 	}
 	return Final(ctx, db, api.SettingsSubject{User: &currentUser.UID})
 }
 
+// Final returns the merged settings for the given subject.
 func Final(ctx context.Context, db database.DB, subject api.SettingsSubject) (_ *schema.Settings, err error) {
 	tr, ctx := trace.New(ctx, "settings", "Final")
 	defer func() {
@@ -53,6 +60,9 @@ func Final(ctx context.Context, db database.DB, subject api.SettingsSubject) (_ 
 	return mergeSettings(allSettings...), nil
 }
 
+// Latest gets the latest settings specific to a given subject. Most consumers
+// of this package will want to use Final or CurrentUserFinal instead because
+// those properly merge all settings relevant to a subject.
 func Latest(ctx context.Context, db database.DB, subject api.SettingsSubject) (*schema.Settings, error) {
 	// The store does not handle the default settings subject
 	if subject.Default {
@@ -71,6 +81,9 @@ func Latest(ctx context.Context, db database.DB, subject api.SettingsSubject) (*
 	return &unmarshalled, nil
 }
 
+// RelevantSubjects returns a list of subjects whose settings are applicable to the given subject.
+// These are returned in priority order, with the lowest priority first.
+// The order of priority is default < site < org < user.
 func RelevantSubjects(ctx context.Context, db database.DB, subject api.SettingsSubject) ([]api.SettingsSubject, error) {
 	switch {
 	case subject.Default:
@@ -111,7 +124,7 @@ func RelevantSubjects(ctx context.Context, db database.DB, subject api.SettingsS
 		subjects = append(subjects, subject)
 		return subjects, nil
 	default:
-		panic("a subject must have one field set")
+		return nil, errors.New("subject must have exactly one field set")
 	}
 }
 
