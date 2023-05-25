@@ -161,6 +161,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return []
         }
 
+        let multilineMode: null | 'block' = null
+
         // TODO(philipp-spiess): Add a better detection for start-of-block and don't require C like
         // languages.
         const multilineEnabledLanguage =
@@ -173,6 +175,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             prefix.trim().at(prefix.trim().length - 1) === '{'
         ) {
             timeout = 500
+            multilineMode = 'block'
             completers.push(
                 new EndOfLineCompletionProvider(
                     this.completionsClient,
@@ -183,7 +186,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     suffix,
                     '',
                     3,
-                    'block' // multiline
+                    multilineMode
                 )
             )
         } else if (precedingLine.trim() === '') {
@@ -241,7 +244,12 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return []
         }
 
-        logEvent('CodyVSCodeExtension:completion:started', LOG_INLINE, LOG_INLINE)
+        const logParams = {
+            type: 'inline',
+            multilineMode,
+        }
+
+        logEvent('CodyVSCodeExtension:completion:started', logParams, logParams)
         const start = Date.now()
 
         const results = rankCompletions(
@@ -249,8 +257,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         )
 
         if (hasVisibleCompletions(results)) {
-            const params = { ...LOG_INLINE, latency: Date.now() - start, timeout }
-            logEvent('CodyVSCodeExtension:completion:suggested', params, params)
+            const logParamsWithTimings = { ...logParams, latency: Date.now() - start, timeout }
+            logEvent('CodyVSCodeExtension:completion:suggested', logParamsWithTimings, logParamsWithTimings)
             inlineCompletionsCache.add(results)
             return results.map(toInlineCompletionItem)
         }
