@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage } from '../../codebase-context/messages'
+import { updateRange } from '../../non-stop/tracked-range'
 import { MAX_CURRENT_FILE_TOKENS } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
@@ -9,7 +10,6 @@ import { Interaction } from '../transcript/interaction'
 
 import { computeDiff } from './concurrent-editing'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
-import { updateRange } from './tracked-range'
 
 type TrackedDecoration = vscode.DecorationOptions
 
@@ -20,6 +20,21 @@ interface BatchState {
 }
 
 const DEBUG = true
+
+class FUCAP implements vscode.CodeActionProvider {
+    public static readonly providedCodeActionKinds = [vscode.CodeActionKind.QuickFix]
+
+    public provideCodeActions(
+        document: vscode.TextDocument,
+        range: vscode.Range | vscode.Selection,
+        context: vscode.CodeActionContext,
+        token: vscode.CancellationToken
+    ): vscode.ProviderResult<(vscode.CodeAction | vscode.Command)[]> {
+        console.log(context.triggerKind, context.only, range)
+        console.log(context.diagnostics)
+        return []
+    }
+}
 
 // TODO(dpc): This is similar to Cody: Fixup so if it works well, integrate them.
 export class NonStopCody implements Recipe {
@@ -37,7 +52,16 @@ export class NonStopCody implements Recipe {
     private fadeAnimation = 0
     private fadeTimer: NodeJS.Timeout | undefined = undefined
 
+    private diags: vscode.DiagnosticCollection
+    private doc: vscode.TextDocument | undefined = undefined
+
     constructor() {
+        this.diags = vscode.languages.createDiagnosticCollection('cody-fixup-edits')
+
+        vscode.languages.registerCodeActionsProvider({ pattern: '**/*' }, new FUCAP(), {
+            providedCodeActionKinds: FUCAP.providedCodeActionKinds,
+        })
+
         // TODO: Dispose the subscription. Array of disposables?
         const subscription = vscode.workspace.onDidChangeTextDocument(this.textDocumentChanged.bind(this))
 
@@ -97,6 +121,17 @@ export class NonStopCody implements Recipe {
     }
 
     private textDocumentChanged(event: vscode.TextDocumentChangeEvent): void {
+        console.log(this.doc)
+
+        this.diags.forEach((uri, diagnostics, collection) => {
+            if (uri !== event.document.uri) {
+                return
+            }
+            for (const diagnostic of diagnostics) {
+                console.log(diagnostic)
+            }
+        })
+
         // TODO: Experiment with a cooldown timer which commits changes when the user is idle.
 
         // TODO: Generalize this to tracking multiple ranges
@@ -140,15 +175,14 @@ export class NonStopCody implements Recipe {
     private updateDebugDecorations(): void {
         if (DEBUG) {
             // TODO: Generalize to multiple editors.
-            vscode.window.activeTextEditor?.setDecorations(
-                this.debugDecoration,
-                this.batch?.range ? [this.batch.range] : []
-            )
+            const debugDecorations = this.batch?.range ? [this.batch.range] : []
+            vscode.window.activeTextEditor?.setDecorations(this.debugDecoration, debugDecorations)
         }
     }
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const editor = vscode.window.activeTextEditor
+        this.doc = vscode.window.activeTextEditor?.document
 
         if (!editor) {
             await vscode.window.showErrorMessage('Open a text editor to use Cody: Fixup')
@@ -234,6 +268,15 @@ export class NonStopCody implements Recipe {
             range: new vscode.Range(providedCodeStart, providedCodeEnd),
         }
         this.updateDebugDecorations()
+
+        // TODO: Experiment with diagnostics
+        this.diags.set(editor.document.uri, [
+            new vscode.Diagnostic(
+                new vscode.Range(providedCodeStart, providedCodeEnd),
+                'Submitted to Cody',
+                vscode.DiagnosticSeverity.Information
+            ),
+        ])
 
         const handleResult = this.handleResult.bind(this)
         context.responseMultiplexer.sub(

@@ -1,4 +1,4 @@
-// Restates vscode.Range
+// See vscode.Range
 interface TrackedRange<
     Self extends TrackedRange<Self, PositionType>,
     PositionType extends TrackedPosition<PositionType>
@@ -8,7 +8,7 @@ interface TrackedRange<
     with(start: PositionType, end: PositionType): Self
 }
 
-// Restates vscode.Position
+// See vscode.Position
 interface TrackedPosition<Self extends TrackedPosition<Self>> {
     character: number
     line: number
@@ -20,7 +20,7 @@ interface TrackedPosition<Self extends TrackedPosition<Self>> {
     translate(lineDelta?: number, characterDelta?: number): Self
 }
 
-// Restates vscode.TextDocumentContentChangeEvent
+// See vscode.TextDocumentContentChangeEvent
 interface TextChange<
     RangeType extends TrackedRange<RangeType, PositionType>,
     PositionType extends TrackedPosition<PositionType>
@@ -29,6 +29,9 @@ interface TextChange<
     text: string
 }
 
+// Given a range and an edit, updates the range for the edit. Edits at the
+// start or end of the range shrink the range. If the range is deleted, returns
+// null.
 export function updateRange<
     RangeType extends TrackedRange<RangeType, PositionType>,
     PositionType extends TrackedPosition<PositionType>
@@ -40,13 +43,12 @@ export function updateRange<
     }
     const insertedLineBreaks = lines.length - 1
 
-    // Handle character deletions
+    // Handle edits
     // ...after
     if (change.range.start.isAfterOrEqual(range.end)) {
         return range
     }
     // ...before
-    // TODO: Insertion *at* the start, including a newline, eats the line by change.range.start.character
     if (change.range.end.isBeforeOrEqual(range.start)) {
         range = range.with(
             range.start.translate(
