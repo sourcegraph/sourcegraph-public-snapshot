@@ -48,26 +48,19 @@ func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *reso
 		localOverrideScript = *args.Script
 	}
 
-	config, logs, err := r.autoindexSvc.InferIndexConfiguration(ctx, repositoryID, rev, localOverrideScript, false)
+	result, err := r.autoindexSvc.InferIndexConfiguration(ctx, repositoryID, rev, localOverrideScript, false)
 	if err != nil {
 		return nil, err
 	}
 
-	if config == nil {
-		return &inferAutoIndexJobsResultResolver{
-			jobs:            nil,
-			inferenceOutput: logs,
-		}, nil
-	}
-
-	jobResolvers, err := newDescriptionResolvers(r.siteAdminChecker, config)
+	jobResolvers, err := newDescriptionResolvers(r.siteAdminChecker, &config.IndexConfiguration{IndexJobs: result.IndexJobs})
 	if err != nil {
 		return nil, err
 	}
 
 	return &inferAutoIndexJobsResultResolver{
 		jobs:            jobResolvers,
-		inferenceOutput: logs,
+		inferenceOutput: result.InferenceOutput,
 	}, nil
 }
 

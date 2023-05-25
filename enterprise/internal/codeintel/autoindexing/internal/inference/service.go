@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference/lua"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference/luatypes"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -83,7 +84,7 @@ func newService(
 // is assumed to be a table of recognizer instances. Keys conflicting with the default recognizers
 // will overwrite them (to disable or change default behavior). Each recognizer's generate function
 // is invoked and the resulting index jobs are combined into a flattened list.
-func (s *Service) InferIndexJobs(ctx context.Context, repo api.RepoName, commit, overrideScript string) (_ []config.IndexJob, logs string, err error) {
+func (s *Service) InferIndexJobs(ctx context.Context, repo api.RepoName, commit, overrideScript string) (_ *shared.InferenceResult, err error) {
 	ctx, _, endObservation := s.operations.inferIndexJobs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("repo", string(repo)),
 		attribute.String("commit", commit),
@@ -111,19 +112,22 @@ func (s *Service) InferIndexJobs(ctx context.Context, repo api.RepoName, commit,
 
 	jobOrHints, logs, err := s.inferIndexJobOrHints(ctx, repo, commit, overrideScript, functionTable)
 	if err != nil {
-		return nil, "", err
+		return nil, err
 	}
 
 	jobs := make([]config.IndexJob, 0, len(jobOrHints))
 	for _, jobOrHint := range jobOrHints {
 		if jobOrHint.indexJob == nil {
-			return nil, "", errors.New("unexpected nil index job")
+			return nil, errors.New("unexpected nil index job")
 		}
 
 		jobs = append(jobs, *jobOrHint.indexJob)
 	}
 
-	return jobs, logs, nil
+	return &shared.InferenceResult{
+		IndexJobs:       jobs,
+		InferenceOutput: logs,
+	}, nil
 }
 
 // InferIndexJobHints invokes the given script in a fresh Lua sandbox. The return value of this script
