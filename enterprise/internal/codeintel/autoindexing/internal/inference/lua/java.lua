@@ -63,7 +63,7 @@ return recognizer.new_path_recognizer {
           new_rooted_extension(project_root, "kt"),
         },
 
-        generate = function(_, paths)
+        generate = function(_, _)
           if roots[project_root] == nil then
             roots[project_root] = true
             return {
@@ -79,6 +79,8 @@ return recognizer.new_path_recognizer {
         end
       })
     end
+
+    return {}
   end,
 
   hints = function(_, paths)
@@ -92,7 +94,7 @@ return recognizer.new_path_recognizer {
       if visited[dir] == nil and is_project_structure_supported(base) then
         table.insert(hints, {
           root = dir,
-          indexer = indexer,
+          indexer = java_indexer,
           confidence = "PROJECT_STRUCTURE_SUPPORTED",
         })
 
@@ -107,7 +109,7 @@ return recognizer.new_path_recognizer {
       if visited[dir] == nil and not is_project_structure_supported(base) then
         table.insert(hints, {
           root = dir,
-          indexer = indexer,
+          indexer = java_indexer,
           confidence = "LANGUAGE_SUPPORTED",
         })
 

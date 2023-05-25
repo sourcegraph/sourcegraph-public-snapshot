@@ -10,30 +10,87 @@ import (
 func TestJavaGenerator(t *testing.T) {
 	expectedIndexerImage, _ := libs.DefaultIndexerForLang("java")
 
+	autoJob := config.IndexJob{
+		Steps:       nil,
+		LocalSteps:  nil,
+		Root:        "",
+		Indexer:     expectedIndexerImage,
+		IndexerArgs: []string{"scip-java", "index", "--build-tool=auto"},
+		Outfile:     "index.scip",
+	}
+
+	singleAutoJob := []config.IndexJob{autoJob}
+
 	testGenerators(t,
 		generatorTestCase{
-			description: "java project with lsif-java.json",
+			description: "JVM project with lsif-java.json",
 			repositoryContents: map[string]string{
 				"lsif-java.json": "",
 				"src/java/com/sourcegraph/codeintel/dumb.java": "",
 				"src/java/com/sourcegraph/codeintel/fun.scala": "",
 			},
-			expected: []config.IndexJob{
-				{
-					Steps:       nil,
-					LocalSteps:  nil,
-					Root:        "",
-					Indexer:     expectedIndexerImage,
-					IndexerArgs: []string{"scip-java", "index", "--build-tool=scip"},
-					Outfile:     "index.scip",
-				},
-			},
+			expected: singleAutoJob,
 		},
 		generatorTestCase{
-			description: "java project without lsif-java.json (no match)",
+			description: "JVM project with Gradle",
+			repositoryContents: map[string]string{
+				"build.gradle": "",
+				"src/java/com/sourcegraph/codeintel/dumb.java": "",
+				"src/java/com/sourcegraph/codeintel/fun.scala": "",
+			},
+			expected: singleAutoJob,
+		},
+		generatorTestCase{
+			description: "JVM project with SBT",
+			repositoryContents: map[string]string{
+				"build.sbt": "",
+				"src/java/com/sourcegraph/codeintel/dumb.java": "",
+				"src/java/com/sourcegraph/codeintel/fun.scala": "",
+			},
+			expected: singleAutoJob,
+		},
+		generatorTestCase{
+			description: "JVM project with Maven",
+			repositoryContents: map[string]string{
+				"pom.xml": "",
+				"src/java/com/sourcegraph/codeintel/dumb.java": "",
+				"src/java/com/sourcegraph/codeintel/fun.scala": "",
+			},
+			expected: singleAutoJob,
+		},
+		generatorTestCase{
+			description: "JVM project without build file",
 			repositoryContents: map[string]string{
 				"src/java/com/sourcegraph/codeintel/dumb.java": "",
 				"src/java/com/sourcegraph/codeintel/fun.scala": "",
+			},
+			expected: []config.IndexJob{},
+		},
+		generatorTestCase{
+			description: "JVM project with Maven build file but no sources",
+			repositoryContents: map[string]string{
+				"pom.xml": "",
+			},
+			expected: []config.IndexJob{},
+		},
+		generatorTestCase{
+			description: "JVM project with Gradle build file but no sources",
+			repositoryContents: map[string]string{
+				"build.gradle": "",
+			},
+			expected: []config.IndexJob{},
+		},
+		generatorTestCase{
+			description: "JVM project with SBT build file but no sources",
+			repositoryContents: map[string]string{
+				"build.sbt": "",
+			},
+			expected: []config.IndexJob{},
+		},
+		generatorTestCase{
+			description: "JVM project with Mill build file but no sources",
+			repositoryContents: map[string]string{
+				"build.sc": "",
 			},
 			expected: []config.IndexJob{},
 		},
@@ -47,12 +104,10 @@ func TestJavaHinter(t *testing.T) {
 		hinterTestCase{
 			description: "basic hints",
 			repositoryContents: map[string]string{
-				"build.gradle":               "",
-				"kt/build.gradle.kts":        "",
-				"maven/pom.xml":              "",
-				"subdir/src/java/App.java":   "",
-				"subdir/src/kotlin/App.kt":   "",
-				"subdir/src/scala/App.scala": "",
+				"build.gradle":        "",
+				"kt/build.gradle.kts": "",
+				"maven/pom.xml":       "",
+				"scala/build.sbt":     "",
 			},
 			expected: []config.IndexJobHint{
 				{
@@ -71,19 +126,9 @@ func TestJavaHinter(t *testing.T) {
 					HintConfidence: config.HintConfidenceProjectStructureSupported,
 				},
 				{
-					Root:           "subdir/src/java",
+					Root:           "scala",
 					Indexer:        expectedIndexerImage,
-					HintConfidence: config.HintConfidenceLanguageSupport,
-				},
-				{
-					Root:           "subdir/src/kotlin",
-					Indexer:        expectedIndexerImage,
-					HintConfidence: config.HintConfidenceLanguageSupport,
-				},
-				{
-					Root:           "subdir/src/scala",
-					Indexer:        expectedIndexerImage,
-					HintConfidence: config.HintConfidenceLanguageSupport,
+					HintConfidence: config.HintConfidenceProjectStructureSupported,
 				},
 			},
 		},
