@@ -36,12 +36,8 @@ func (e *ExecutorResolver) QueueName() *string {
 	}
 	return &queueName
 }
-func (e *ExecutorResolver) QueueNames() *[]string {
-	queueNames := e.executor.QueueNames
-	if len(queueNames) > 0 {
-		return &queueNames
-	}
-	return nil
+func (e *ExecutorResolver) QueueNames() []string {
+	return e.executor.QueueNames
 }
 func (e *ExecutorResolver) Active() bool {
 	// TODO: Read the value of the executor worker heartbeat interval in here.
