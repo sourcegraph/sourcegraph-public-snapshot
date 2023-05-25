@@ -95,6 +95,10 @@ func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text ...string) (
 		references:    map[refKey]*refContext{},
 	}
 	for _, t := range text {
+		// Empty text does not resolve at all.
+		if t == "" {
+			continue
+		}
 		if _, err := mail.ParseAddress(t); err == nil {
 			b.add(refKey{email: t})
 		} else {
@@ -386,9 +390,7 @@ func (refs userReferences) textReferences() []string {
 	for _, h := range refs.codeHostHandles {
 		rs = append(rs, fmt.Sprintf("@%s", h))
 	}
-	for _, e := range refs.verifiedEmails {
-		rs = append(rs, e)
-	}
+	rs = append(rs, refs.verifiedEmails...)
 	return rs
 }
 
