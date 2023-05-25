@@ -56,7 +56,6 @@ return recognizer.new_path_recognizer {
     local roots = {}
 
     for project_root in pairs(unique_paths) do
-
       api:register(recognizer.new_path_recognizer {
         patterns = {
           new_rooted_extension(project_root, "java"),
