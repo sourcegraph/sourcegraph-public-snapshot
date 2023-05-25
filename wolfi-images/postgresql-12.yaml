@@ -26,12 +26,18 @@ environment:
 paths:
   - path: /data/pgdata-12
     type: directory
+    uid: 999
+    gid: 999
     permissions: 0o755
   - path: /var/lib/postgresql
     type: directory
+    uid: 999
+    gid: 999
     permissions: 0o755
   - path: /var/run/postgresql
     type: directory
+    uid: 999
+    gid: 999
     permissions: 0o755
 
 accounts:
