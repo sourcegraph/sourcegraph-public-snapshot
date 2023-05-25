@@ -2,7 +2,9 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"io"
+	"path/filepath"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -167,4 +169,18 @@ func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 			LimitHit: limitHit,
 		},
 	})
+}
+
+func (gs *GRPCServer) ReposStats(ctx context.Context, req *proto.ReposStatsRequest) (*proto.ReposStatsResponse, error) {
+	b, err := gs.Server.readReposStatsFile(filepath.Join(gs.Server.ReposDir, reposStatsName))
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to read %s: %s", reposStatsName, err.Error())
+	}
+
+	var stats *protocol.ReposStats
+	if err := json.Unmarshal(b, &stats); err != nil {
+		return nil, status.Errorf(codes.Internal, "failed to unmarshal %s: %s", reposStatsName, err.Error())
+	}
+
+	return stats.ToProto(), nil
 }

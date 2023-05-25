@@ -1,0 +1,119 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/automation-testing/pull-requests/168/decline?version=1
+    method: POST
+  response:
+    body: '{"errors":[{"context":null,"message":"You are attempting to modify a pull
+      request based on out-of-date information.","exceptionName":"com.atlassian.bitbucket.pull.PullRequestOutOfDateException","currentVersion":0,"expectedVersion":1,"pullRequest":{"id":168,"version":0,"title":"PR
+      to be deleted","state":"OPEN","open":true,"closed":false,"createdDate":1684292333177,"updatedDate":1684292333177,"fromRef":{"id":"refs/heads/delete-me","displayId":"delete-me","latestCommit":"82a998a3e58c042bc7926f073356aa96c9f96c50","type":"BRANCH","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","hierarchyId":"1c17e4711a8a022d0a9a","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"archived":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"},{"href":"ssh://git@bitbucket.sgdev.org:7999/sour/automation-testing.git","name":"ssh"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"toRef":{"id":"refs/heads/master","displayId":"master","latestCommit":"2046f48cd2633f58f1a4c2aa7b5b1b613e34a24c","type":"BRANCH","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","hierarchyId":"1c17e4711a8a022d0a9a","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"archived":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"},{"href":"ssh://git@bitbucket.sgdev.org:7999/sour/automation-testing.git","name":"ssh"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"locked":false,"author":{"user":{"name":"milton","emailAddress":"dev@sourcegraph.com","active":true,"displayName":"milton","id":1,"slug":"milton","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/milton"}]}},"role":"AUTHOR","approved":false,"status":"UNAPPROVED"},"reviewers":[],"participants":[],"links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/168"}]}}}]}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Wed, 17 May 2023 02:59:42 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - x-ausername,x-auserid,cookie,accept-encoding
+      X-Arequestid:
+      - '@1W6FCFYx179x2963536x0'
+      X-Asessionid:
+      - flcnww
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - milton
+      X-Content-Type-Options:
+      - nosniff
+    status: 409 Conflict
+    code: 409
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/api/1.0/projects/SOUR/repos/automation-testing/pull-requests/168/decline?version=0
+    method: POST
+  response:
+    body: '{"id":168,"version":1,"title":"PR to be deleted","state":"DECLINED","open":false,"closed":true,"createdDate":1684292333177,"updatedDate":1684292383182,"closedDate":1684292383182,"fromRef":{"id":"refs/heads/delete-me","displayId":"delete-me","latestCommit":"82a998a3e58c042bc7926f073356aa96c9f96c50","type":"BRANCH","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","hierarchyId":"1c17e4711a8a022d0a9a","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"archived":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"},{"href":"ssh://git@bitbucket.sgdev.org:7999/sour/automation-testing.git","name":"ssh"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"toRef":{"id":"refs/heads/master","displayId":"master","latestCommit":"2046f48cd2633f58f1a4c2aa7b5b1b613e34a24c","type":"BRANCH","repository":{"slug":"automation-testing","id":10070,"name":"automation-testing","hierarchyId":"1c17e4711a8a022d0a9a","scmId":"git","state":"AVAILABLE","statusMessage":"Available","forkable":true,"project":{"key":"SOUR","id":1,"name":"sourcegraph","public":false,"type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR"}]}},"public":false,"archived":false,"links":{"clone":[{"href":"https://bitbucket.sgdev.org/scm/sour/automation-testing.git","name":"http"},{"href":"ssh://git@bitbucket.sgdev.org:7999/sour/automation-testing.git","name":"ssh"}],"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/browse"}]}}},"locked":false,"author":{"user":{"name":"milton","emailAddress":"dev@sourcegraph.com","active":true,"displayName":"milton","id":1,"slug":"milton","type":"NORMAL","links":{"self":[{"href":"https://bitbucket.sgdev.org/users/milton"}]}},"role":"AUTHOR","approved":false,"status":"UNAPPROVED"},"reviewers":[],"participants":[],"links":{"self":[{"href":"https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/168"}]}}'
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Wed, 17 May 2023 02:59:42 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - x-ausername,x-auserid,cookie,accept-encoding
+      X-Arequestid:
+      - '@1W6FCFYx179x2963537x0'
+      X-Asessionid:
+      - 41294z
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - milton
+      X-Content-Type-Options:
+      - nosniff
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: |
+      {"name":"refs/heads/delete-me"}
+    form: {}
+    headers:
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://bitbucket.sgdev.org/rest/branch-utils/latest/projects/SOUR/repos/automation-testing/branches
+    method: DELETE
+  response:
+    body: ""
+    headers:
+      Cache-Control:
+      - private, no-cache
+      - no-cache, no-transform
+      Content-Type:
+      - application/json;charset=UTF-8
+      Date:
+      - Wed, 17 May 2023 02:59:42 GMT
+      Pragma:
+      - no-cache
+      Server:
+      - Caddy
+      Vary:
+      - X-AUSERNAME
+      - X-AUSERID
+      - Cookie
+      X-Arequestid:
+      - '@1W6FCFYx179x2963538x0'
+      X-Asessionid:
+      - 894vxq
+      X-Auserid:
+      - "1"
+      X-Ausername:
+      - milton
+      X-Content-Type-Options:
+      - nosniff
+    status: 204 No Content
+    code: 204
+    duration: ""

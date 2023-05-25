@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { CodyTaskState, getIconPath, singleLineRange } from './InlineController'
+import { CodyTaskState, getIconPath, getSingleLineRange } from './InlineAssist'
 
 const initDecorationType = vscode.window.createTextEditorDecorationType({})
 
@@ -48,7 +48,7 @@ export class DecorationProvider {
         if (this.status === CodyTaskState.done) {
             this.decorationTypePending.dispose()
             this.decorations.push({ range, hoverMessage: 'Cody Task#' + this.id })
-            this.decorationsForIcon.push({ range: singleLineRange(range.start.line) })
+            this.decorationsForIcon.push({ range: getSingleLineRange(range.start.line) })
             vscode.window.activeTextEditor?.setDecorations(this.decorationTypeIcon, this.decorationsForIcon)
             vscode.window.activeTextEditor?.setDecorations(this.decorationTypeDiff, this.decorations)
             return

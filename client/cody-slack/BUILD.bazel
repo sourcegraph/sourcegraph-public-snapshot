@@ -1,8 +1,9 @@
-load("@aspect_rules_js//npm:defs.bzl", "npm_package")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_to_bin")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "ts_project")
 load("//dev:eslint.bzl", "eslint_config")
+load("@aspect_rules_esbuild//esbuild:defs.bzl", "esbuild")
 
 npm_link_all_packages(name = "node_modules")
 
@@ -51,10 +52,23 @@ ts_project(
     ],
 )
 
-npm_package(
-    name = "cody-slack_pkg",
-    srcs = [
-        "package.json",
-        ":cody-slack",
+copy_to_bin(
+    name = "package_json_prod",
+    srcs = ["package/package.json"],
+    visibility = ["//visibility:public"],
+)
+
+esbuild(
+    name = "bundle",
+    entry_point = "src/app.ts",
+    external = [
+        "jsonc-parser",  # UMD module
+        "hnswlib-node",
     ],
+    format = "cjs",
+    output = "app.js",
+    platform = "node",
+    sourcemap = "linked",
+    target = "node16",
+    deps = [":cody-slack"],
 )

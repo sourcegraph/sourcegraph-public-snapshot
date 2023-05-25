@@ -66,7 +66,7 @@ func TestGetCommits(t *testing.T) {
 			nil,
 			nil,
 		}
-		source := gitserver.NewTestClientSource(inttests.GitserverAddresses)
+		source := gitserver.NewTestClientSource(t, inttests.GitserverAddresses)
 
 		commits, err := gitserver.NewTestClient(http.DefaultClient, source).GetCommits(ctx, getTestSubRepoPermsChecker("file1", "file3"), repoCommits, true)
 		if err != nil {
@@ -117,7 +117,7 @@ func mustParseDate(s string, t *testing.T) *time.Time {
 
 func TestHead(t *testing.T) {
 	inttests.InitGitserver()
-	source := gitserver.NewTestClientSource(inttests.GitserverAddresses)
+	source := gitserver.NewTestClientSource(t, inttests.GitserverAddresses)
 	client := gitserver.NewTestClient(http.DefaultClient, source)
 
 	t.Run("with sub-repo permissions", func(t *testing.T) {
