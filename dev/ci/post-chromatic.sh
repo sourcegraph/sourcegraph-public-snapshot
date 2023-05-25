@@ -10,7 +10,15 @@ set -eu -o pipefail
 # - BUILDKITE_PULL_REQUEST
 # - RENDER_PREVIEW_GITHUB_TOKEN
 
+exit_status=$?
 chromatic_publish_output=$(</dev/stdin)
+
+if [ $exit_status -eq 0 ]; then
+  echo "$chromatic_publish_output"
+else
+  echo "$chromatic_publish_output"
+  exit 1
+fi
 
 echo "$chromatic_publish_output"
 
