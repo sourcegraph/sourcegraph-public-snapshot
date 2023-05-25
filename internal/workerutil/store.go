@@ -8,6 +8,8 @@ import (
 type Record interface {
 	// RecordID returns the integer primary key of the record.
 	RecordID() int
+	// RecordUID returns a UID of the record, of which the format is defined by the concrete type.
+	RecordUID() string
 }
 
 // Store is the persistence layer for the workerutil package that handles worker-side operations.
