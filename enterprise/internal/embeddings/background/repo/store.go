@@ -19,11 +19,12 @@ import (
 )
 
 type RepoEmbeddingJobNotFoundErr struct {
-	repoID api.RepoID
+	repoID   api.RepoID
+	revision api.CommitID
 }
 
 func (r *RepoEmbeddingJobNotFoundErr) Error() string {
-	return fmt.Sprintf("repo embedding job not found: repoID=%d", r.repoID)
+	return fmt.Sprintf("repo embedding job not found: repoID=%d, revision=%s", r.repoID, r.revision.Short())
 }
 
 func (r *RepoEmbeddingJobNotFoundErr) NotFound() bool {
@@ -289,8 +290,19 @@ func (s *repoEmbeddingJobsStore) ListRepoEmbeddingJobs(ctx context.Context, pagi
 func (s *repoEmbeddingJobsStore) CancelRepoEmbeddingJob(ctx context.Context, repoID api.RepoID, commitID api.CommitID) error {
 	now := time.Now()
 	q := sqlf.Sprintf(cancelRepoEmbeddingJobQueryFmtstr, now, repoID, commitID)
-	// We don't verify that some rows are affected, because it's fine to cancel a job twice
-	return s.Exec(ctx, q)
+
+	res, err := s.ExecResult(ctx, q)
+	if err != nil {
+		return err
+	}
+	nrows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if nrows == 0 {
+		return &RepoEmbeddingJobNotFoundErr{repoID: repoID, revision: commitID}
+	}
+	return nil
 }
 
 const cancelRepoEmbeddingJobQueryFmtstr = `
@@ -308,6 +320,4 @@ WHERE
 	revision = %s
 	AND
 	state IN ('queued', 'processing')
-	AND
-	cancel IS FALSE
 `

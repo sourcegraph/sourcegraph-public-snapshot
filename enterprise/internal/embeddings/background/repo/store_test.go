@@ -31,7 +31,7 @@ func TestRepoEmbeddingJobsStore(t *testing.T) {
 
 	ctx := context.Background()
 
-	createdRepo := &types.Repo{Name: "github.com/soucegraph/sourcegraph", URI: "github.com/soucegraph/sourcegraph", ExternalRepo: api.ExternalRepoSpec{}}
+	createdRepo := &types.Repo{Name: "github.com/sourcegraph/sourcegraph", URI: "github.com/sourcegraph/sourcegraph", ExternalRepo: api.ExternalRepoSpec{}}
 	err := repoStore.Create(ctx, createdRepo)
 	require.NoError(t, err)
 
@@ -95,7 +95,7 @@ func TestCancelRepoEmbeddingJob(t *testing.T) {
 
 	ctx := context.Background()
 
-	createdRepo := &types.Repo{Name: "github.com/soucegraph/sourcegraph", URI: "github.com/soucegraph/sourcegraph", ExternalRepo: api.ExternalRepoSpec{}}
+	createdRepo := &types.Repo{Name: "github.com/sourcegraph/sourcegraph", URI: "github.com/sourcegraph/sourcegraph", ExternalRepo: api.ExternalRepoSpec{}}
 	err := repoStore.Create(ctx, createdRepo)
 	require.NoError(t, err)
 
@@ -129,4 +129,8 @@ func TestCancelRepoEmbeddingJob(t *testing.T) {
 	require.Equal(t, id2, jobs[1].ID)
 	require.Equal(t, false, jobs[1].Cancel)
 	require.Equal(t, "completed", jobs[1].State)
+
+	// Attempting to cancel a non-existent job should fail
+	err = store.CancelRepoEmbeddingJob(ctx, createdRepo.ID, "nonexistent")
+	require.Equal(t, err, &RepoEmbeddingJobNotFoundErr{repoID: createdRepo.ID, revision: "nonexistent"})
 }
