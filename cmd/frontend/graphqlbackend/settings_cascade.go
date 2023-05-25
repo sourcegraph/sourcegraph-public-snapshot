@@ -29,13 +29,7 @@ type settingsCascade struct {
 	subject              *settingsSubject
 }
 
-var mockSettingsCascadeSubjects func() ([]*settingsSubject, error)
-
 func (r *settingsCascade) Subjects(ctx context.Context) ([]*settingsSubject, error) {
-	if mockSettingsCascadeSubjects != nil {
-		return mockSettingsCascadeSubjects()
-	}
-
 	subjects := []*settingsSubject{{defaultSettings: &defaultSettingsResolver{db: r.db, gqlID: singletonDefaultSettingsGQLID}}, {site: &siteResolver{db: r.db, gqlID: singletonSiteGQLID}}}
 
 	if r.unauthenticatedActor {

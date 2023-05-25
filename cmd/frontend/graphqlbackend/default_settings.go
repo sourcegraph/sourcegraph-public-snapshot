@@ -24,7 +24,10 @@ func marshalDefaultSettingsGQLID(defaultSettingsID string) graphql.ID {
 func (r *defaultSettingsResolver) ID() graphql.ID { return marshalDefaultSettingsGQLID(r.gqlID) }
 
 func (r *defaultSettingsResolver) LatestSettings(_ context.Context) (*settingsResolver, error) {
-	settings := &api.Settings{Subject: api.SettingsSubject{Default: true}, Contents: `{"experimentalFeatures": {}}`}
+	settings := &api.Settings{
+		Subject:  api.SettingsSubject{Default: true},
+		Contents: `{"experimentalFeatures": {}}`,
+	}
 	return &settingsResolver{r.db, &settingsSubject{defaultSettings: r}, settings, nil}, nil
 }
 
