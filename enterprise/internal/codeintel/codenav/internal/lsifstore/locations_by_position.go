@@ -77,6 +77,7 @@ func (s *store) GetBulkMonikerLocations(ctx context.Context, tableName string, u
 		pq.Array(symbolNames),
 		pq.Array(uploadIDs),
 		pq.Array(explodedSymbols),
+		pq.Array(uploadIDs),
 		sqlf.Sprintf(fmt.Sprintf("%s_ranges", strings.TrimSuffix(tableName, "s"))),
 	)
 
@@ -175,9 +176,21 @@ func (s *store) getLocations(
 		}
 
 		if occurrence.Symbol != "" && !scip.IsLocalSymbol(occurrence.Symbol) {
+			ex := symbols.NewExplodedSymbol(occurrence.Symbol)
+			explodedSymbols := fmt.Sprintf(
+				"%s$%s$%s$%s$%s",
+				base64.StdEncoding.EncodeToString([]byte(ex.Scheme)),
+				base64.StdEncoding.EncodeToString([]byte(ex.PackageManager)),
+				base64.StdEncoding.EncodeToString([]byte(ex.PackageName)),
+				base64.StdEncoding.EncodeToString([]byte(ex.PackageVersion)),
+				base64.StdEncoding.EncodeToString([]byte(ex.Descriptor)),
+			)
+
 			monikerLocations, err := s.scanQualifiedMonikerLocations(s.db.Query(ctx, sqlf.Sprintf(
 				locationsSymbolSearchQuery,
 				pq.Array([]string{occurrence.Symbol}),
+				pq.Array([]int{bundleID}),
+				pq.Array([]string{explodedSymbols}),
 				pq.Array([]int{bundleID}),
 				sqlf.Sprintf(scipFieldName),
 				bundleID,

@@ -2,6 +2,8 @@ package lsifstore
 
 import (
 	"context"
+	"encoding/base64"
+	"fmt"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
@@ -11,6 +13,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -55,6 +58,7 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 
 	symbolNames := make([]string, 0, len(occurrences))
 	rangeBySymbol := make(map[string]shared.Range, len(occurrences))
+	explodedSymbols := make([]string, 0, len(occurrences))
 
 	for _, occurrence := range occurrences {
 		if occurrence.Symbol == "" || scip.IsLocalSymbol(occurrence.Symbol) {
@@ -64,6 +68,20 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 		if _, ok := rangeBySymbol[occurrence.Symbol]; !ok {
 			symbolNames = append(symbolNames, occurrence.Symbol)
 			rangeBySymbol[occurrence.Symbol] = translateRange(scip.NewRange(occurrence.Range))
+
+			s := symbols.NewExplodedSymbol(occurrence.Symbol)
+			explodedSymbols = append(
+				explodedSymbols,
+				fmt.Sprintf(
+					"%s$%s$%s$%s$%s",
+					base64.StdEncoding.EncodeToString([]byte(s.Scheme)),
+					base64.StdEncoding.EncodeToString([]byte(s.PackageManager)),
+					base64.StdEncoding.EncodeToString([]byte(s.PackageName)),
+					base64.StdEncoding.EncodeToString([]byte(s.PackageVersion)),
+					base64.StdEncoding.EncodeToString([]byte(s.Descriptor)),
+				),
+			)
+
 		}
 	}
 
@@ -74,6 +92,8 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 	documents, err := s.scanDocumentData(s.db.Query(ctx, sqlf.Sprintf(
 		hoverSymbolsQuery,
 		pq.Array(symbolNames),
+		pq.Array([]int{bundleID}),
+		pq.Array(explodedSymbols),
 		pq.Array([]int{bundleID}),
 		bundleID,
 	)))
