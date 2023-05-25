@@ -10,9 +10,11 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/events"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/response"
 	llmproxy "github.com/sourcegraph/sourcegraph/enterprise/internal/llm-proxy"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -28,6 +30,7 @@ type responseParser[T any] func(T, io.Reader) (completionCharacterCount int)
 func makeUpstreamHandler[ReqT any](
 	baseLogger log.Logger,
 	eventLogger events.Logger,
+	rs limiter.RedisStore,
 	upstreamName, upstreamAPIURL string,
 	allowedModels []string,
 	bodyTrans bodyTransformer[ReqT],
@@ -35,11 +38,22 @@ func makeUpstreamHandler[ReqT any](
 	reqTrans requestTransformer,
 	respParser responseParser[ReqT],
 ) http.Handler {
-	baseLogger = baseLogger.Scoped(strings.ToLower(upstreamName), fmt.Sprintf("%s upstream handler", upstreamName))
+	logger := baseLogger.Scoped(strings.ToLower(upstreamName), fmt.Sprintf("%s upstream handler", upstreamName))
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return rateLimit(baseLogger, eventLogger, limiter.NewPrefixRedisStore("rate_limit:", rs), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		act := actor.FromContext(r.Context())
-		logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))
+		logger := act.Logger(sgtrace.Logger(r.Context(), logger))
+
+		feature, err := extractFeature(r)
+		if err != nil {
+			response.JSONError(logger, w, http.StatusBadRequest, err)
+			return
+		}
+
+		// This will never be nil as the rate limiter middleware checks this before.
+		// TODO: Should we read the rate limit from context, and store it in the rate
+		// limiter to make this less dependent on these two logics to remain the same?
+		rateLimit := act.RateLimits[feature]
 
 		// Parse the request body.
 		var body ReqT
@@ -70,7 +84,7 @@ func makeUpstreamHandler[ReqT any](
 
 		promptCharacterCount, model, am := rmr(body)
 
-		if !isAllowedModel(allowedModels, model) {
+		if !isAllowedModel(intersection(allowedModels, rateLimit.AllowedModels), model) {
 			response.JSONError(logger, w, http.StatusBadRequest, errors.Newf("model %q is not allowed", model))
 			return
 		}
@@ -82,6 +96,7 @@ func makeUpstreamHandler[ReqT any](
 			}
 			metadata["prompt_character_count"] = promptCharacterCount
 			metadata["model"] = model
+			metadata[llmproxy.CompletionsEventFeatureMetadataField] = feature
 			err = eventLogger.LogEvent(
 				r.Context(),
 				events.Event{
@@ -109,9 +124,10 @@ func makeUpstreamHandler[ReqT any](
 					Source:     act.Source.Name(),
 					Identifier: act.ID,
 					Metadata: map[string]any{
-						"upstream_request_duration_ms": time.Since(upstreamStarted).Milliseconds(),
-						"upstream_status_code":         upstreamStatusCode,
-						"completion_character_count":   completionCharacterCount,
+						llmproxy.CompletionsEventFeatureMetadataField: feature,
+						"upstream_request_duration_ms":                time.Since(upstreamStarted).Milliseconds(),
+						"upstream_status_code":                        upstreamStatusCode,
+						"completion_character_count":                  completionCharacterCount,
 					},
 				},
 			)
@@ -154,7 +170,7 @@ func makeUpstreamHandler[ReqT any](
 				log.String("url", upstreamAPIURL),
 				log.Int("status_code", upstreamStatusCode))
 		}
-	})
+	}))
 }
 
 func isAllowedModel(allowedModels []string, model string) bool {
@@ -164,4 +180,13 @@ func isAllowedModel(allowedModels []string, model string) bool {
 		}
 	}
 	return false
+}
+
+func intersection(a, b []string) (c []string) {
+	for _, val := range a {
+		if slices.Contains(b, val) {
+			c = append(c, val)
+		}
+	}
+	return c
 }

@@ -16,6 +16,9 @@ const (
 	InternalTag = "internal"
 	// DevTag denotes licenses used in development environments
 	DevTag = "dev"
+	// GPTLLMAccessTag is the license tag that indicates that the licensed instance
+	// should be allowed by default to use GPT models in LLM Proxy.
+	GPTLLMAccessTag = "gpt"
 )
 
 // ProductNameWithBrand returns the product name with brand (e.g., "Sourcegraph Enterprise") based
@@ -84,4 +87,5 @@ var MiscTags = []string{
 	DevTag,
 	"starter",
 	"mau",
+	GPTLLMAccessTag,
 }
