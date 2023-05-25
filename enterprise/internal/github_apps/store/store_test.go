@@ -386,7 +386,7 @@ func TestListGitHubApp(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, fetched, 2)
 
-		apps := []*ghtypes.GitHubApp{app1, app2}
+		apps := []*ghtypes.GitHubApp{repoApp, batchesApp}
 		for index, curr := range fetched {
 			app := apps[index]
 			require.Equal(t, app.AppID, curr.AppID)
