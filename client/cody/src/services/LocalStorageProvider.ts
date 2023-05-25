@@ -83,16 +83,19 @@ export class LocalStorage {
         return anonUserID
     }
 
-    public async setAnonymousUserID(): Promise<void> {
+    public async setAnonymousUserID(): Promise<string | null> {
+        let status: string | null = null
         let anonUserID = this.storage.get(this.ANONYMOUS_USER_ID_KEY)
         if (!anonUserID) {
             anonUserID = uuid.v4()
+            status = 'installed'
         }
         try {
             await this.storage.update(this.ANONYMOUS_USER_ID_KEY, anonUserID)
         } catch (error) {
             console.error(error)
         }
+        return status
     }
 
     public get(key: string): string | null {
