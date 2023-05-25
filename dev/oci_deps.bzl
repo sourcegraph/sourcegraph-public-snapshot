@@ -45,14 +45,14 @@ def oci_deps():
 
     oci_pull(
         name = "wolfi_jaeger_all_in_one_base",
-        digest = "sha256:ae7394b38d185569fa082bec69b4393d23eff70a8fb93590a9d07e4f17bd4106",
+        digest = "sha256:41089f3e2b3779681b585080e4748a3c7d5a5e086e19317ce4b943dacc2d9502",
         image = "us.gcr.io/sourcegraph-dev/wolfi-jaeger-all-in-one-base",
     )
 
     oci_pull(
-        name = "wolfi_jaeger_base",
-        digest = "sha256:6e2200f85c7a7cf6a831f2f51082756b6ba9107c261ad00a9b7d2ed65e4868c3",
-        image = "us.gcr.io/sourcegraph-dev/wolfi-jaeger-base",
+        name = "wolfi_jaeger_agent_base",
+        digest = "sha256:e1d1cc439c12be48549a0ce4ea7a4fa3abb08c18ee94f73f60814d29c36e8e21",
+        image = "us.gcr.io/sourcegraph-dev/wolfi-jaeger-agent-base",
     )
 
     oci_pull(
