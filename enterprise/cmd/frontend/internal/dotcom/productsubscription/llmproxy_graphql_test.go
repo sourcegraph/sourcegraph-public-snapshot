@@ -46,7 +46,7 @@ func TestLLMProxyAccessResolverRateLimit(t *testing.T) {
 		require.NoError(t, err)
 
 		r := llmProxyAccessResolver{sub: &productSubscription{v: sub, db: db}}
-		wantRateLimit := licensing.NewLLMProxyChatRateLimit(licensing.PlanEnterprise1, pointify(1), []string{})
+		wantRateLimit := licensing.NewLLMProxyChatRateLimit(licensing.PlanEnterprise1, pointify(int(info.UserCount)), []string{})
 		rateLimit, err := r.ChatCompletionsRateLimit(ctx)
 		require.NoError(t, err)
 
@@ -70,7 +70,7 @@ func TestLLMProxyAccessResolverRateLimit(t *testing.T) {
 		rateLimit, err := r.ChatCompletionsRateLimit(ctx)
 		require.NoError(t, err)
 
-		assert.Equal(t, int32(100), rateLimit.Limit())
+		assert.Equal(t, int32(10), rateLimit.Limit())
 		assert.Equal(t, defaultRateLimit.IntervalSeconds, rateLimit.IntervalSeconds())
 	})
 }
