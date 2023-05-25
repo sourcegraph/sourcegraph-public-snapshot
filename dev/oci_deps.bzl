@@ -87,7 +87,7 @@ def oci_deps():
 
     oci_pull(
         name = "wolfi_postgresql-12_base",
-        digest = "sha256:7e92e19c1bcbe69dee326119a1879abec11c566350153fa83425107fb3303abc",
+        digest = "sha256:7c8bfb96038fb6b3980fb6b12f692a54ff8f1d1cebbd72d9706578be8d278cae",
         image = "us.gcr.io/sourcegraph-dev/wolfi-postgresql-12-base",
     )
 

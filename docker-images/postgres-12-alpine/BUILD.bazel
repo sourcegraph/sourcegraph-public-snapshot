@@ -23,7 +23,7 @@ pkg_tar(
 oci_image(
     name = "image",
     base = "@wolfi_postgresql-12_base",
-    entrypoint = ["/postgres.sh"],
+    entrypoint = ["/postgres-wolfi.sh"],
     env = {
         "POSTGRES_PASSWORD": "",
         "POSTGRES_USER": "sg",

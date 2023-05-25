@@ -129,7 +129,7 @@ if [ ! -s "$PGDATA/PG_VERSION" ]; then
   # does not listen on external TCP/IP and waits until start finishes
   PGUSER="${PGUSER:-$POSTGRES_USER}" \
     pg_ctl -D "$PGDATA" \
-    -o "-c listen_addresses=''" \
+    -o "-c listen_addresses='' -c unix_socket_directories=/var/run/postgresql" \
     -w start
 
   file_env 'POSTGRES_DB' "$POSTGRES_USER"
@@ -148,29 +148,29 @@ if [ ! -s "$PGDATA/PG_VERSION" ]; then
   echo
   for f in /docker-entrypoint-initdb.d/*; do
     case "$f" in
-      *.sh)
-        # https://github.com/docker-library/postgres/issues/450#issuecomment-393167936
-        # https://github.com/docker-library/postgres/pull/452
-        if [ -x "$f" ]; then
-          echo "$0: running $f"
-          "$f"
-        else
-          echo "$0: sourcing $f"
-          # shellcheck source=/dev/null
-          . "$f"
-        fi
-        ;;
-      *.sql)
+    *.sh)
+      # https://github.com/docker-library/postgres/issues/450#issuecomment-393167936
+      # https://github.com/docker-library/postgres/pull/452
+      if [ -x "$f" ]; then
         echo "$0: running $f"
-        "${psql[@]}" -f "$f"
-        echo
-        ;;
-      *.sql.gz)
-        echo "$0: running $f"
-        gunzip -c "$f" | "${psql[@]}"
-        echo
-        ;;
-      *) echo "$0: ignoring $f" ;;
+        "$f"
+      else
+        echo "$0: sourcing $f"
+        # shellcheck source=/dev/null
+        . "$f"
+      fi
+      ;;
+    *.sql)
+      echo "$0: running $f"
+      "${psql[@]}" -f "$f"
+      echo
+      ;;
+    *.sql.gz)
+      echo "$0: running $f"
+      gunzip -c "$f" | "${psql[@]}"
+      echo
+      ;;
+    *) echo "$0: ignoring $f" ;;
     esac
     echo
   done
