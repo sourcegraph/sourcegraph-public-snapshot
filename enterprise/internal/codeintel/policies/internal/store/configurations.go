@@ -19,15 +19,23 @@ import (
 // If a repository identifier is supplied (is non-zero), then only the configuration policies that apply
 // to repository are returned. If repository is not supplied, then all policies may be returned.
 func (s *store) GetConfigurationPolicies(ctx context.Context, opts shared.GetConfigurationPoliciesOptions) (_ []shared.ConfigurationPolicy, totalCount int, err error) {
-	ctx, trace, endObservation := s.operations.getConfigurationPolicies.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+	attrs := []attribute.KeyValue{
 		attribute.Int("repositoryID", opts.RepositoryID),
 		attribute.String("term", opts.Term),
-		// attribute.Bool("forDataRetention", opts.ForDataRetention),
-		// attribute.Bool("forIndexing", opts.ForIndexing),
-		// attribute.Bool("forEmbeddings", opts.ForEmbeddings),
 		attribute.Int("limit", opts.Limit),
 		attribute.Int("offset", opts.Offset),
-	}})
+	}
+	if opts.ForDataRetention != nil {
+		attrs = append(attrs, attribute.Bool("forDataRetention", *opts.ForDataRetention))
+	}
+	if opts.ForIndexing != nil {
+		attrs = append(attrs, attribute.Bool("forIndexing", *opts.ForIndexing))
+	}
+	if opts.ForEmbeddings != nil {
+		attrs = append(attrs, attribute.Bool("forEmbeddings", *opts.ForEmbeddings))
+	}
+
+	ctx, trace, endObservation := s.operations.getConfigurationPolicies.With(ctx, &err, observation.Args{Attrs: attrs})
 	defer endObservation(1, observation.Args{})
 
 	makeConfigurationPolicySearchCondition := func(term string) *sqlf.Query {
