@@ -23,12 +23,26 @@ environment:
 # entrypoint:
 #   command: /var/lib/postgres/initdb/postgresql-entrypoint.sh postgres
 
+accounts:
+  groups:
+    - groupname: postgres
+      gid: 999
+    - groupname: ping
+      gid: 99
+  users:
+    - username: postgres
+      uid: 999
+      gid: 999
+    - username: ping
+      uid: 99
+      gid: 99
+
 paths:
   - path: /data/pgdata-12
     type: directory
     uid: 999
     gid: 999
-    permissions: 0o755
+    permissions: 0o750
   - path: /var/lib/postgresql
     type: directory
     uid: 999
@@ -37,19 +51,8 @@ paths:
   - path: /var/run/postgresql
     type: directory
     permissions: 0o755
-
-accounts:
-  groups:
-  - groupname: postgres
+    uid: 999
     gid: 999
-  - groupname: ping
-    gid: 99
-  users:
-    - username: postgres
-      uid: 999
-      gid: 999
-    - username: ping
-      uid: 99
-      gid: 99
+
 
 # MANUAL REBUILD:
