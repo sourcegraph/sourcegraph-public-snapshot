@@ -25,6 +25,7 @@ func BazelOperations() []operations.Operation {
 		"@sourcegraph_back_compat//enterprise/internal/...",
 	))
 	// ops = append(ops, bazelBuild(`$$(bazel query 'kind("oci_tarball rule", //...)')`))
+	ops = append(ops, bazelPushImagesCmd())
 	return ops
 }
 
@@ -42,6 +43,8 @@ func bazelCmd(args ...string) string {
 func bazelPushImagesCmd() func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":bazel::docker: Push",
+			bk.DependsOn("bazel-tests"),
+			bk.Key("bazel-push-images"),
 			bk.Cmd(bazelStampedCmd(`build $$(bazel query 'kind("oci_push rule", //...)')`)),
 			bk.Cmd("./enterprise/dev/ci/push_all.sh"),
 		)
