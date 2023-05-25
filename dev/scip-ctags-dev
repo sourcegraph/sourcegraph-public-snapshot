@@ -10,4 +10,13 @@
 root="$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 TARGET=$("$root/dev/scip-ctags-install.sh" which)
 
-${TARGET} "$@"
+if [ ! -f "${TARGET}" ]; then 
+  exec docker run --rm -i \
+    -a stdin -a stdout -a stderr \
+    --user guest \
+    --name=scip-ctags-$$ \
+    --entrypoint /usr/local/bin/scip-ctags \
+    scip-ctags "$@"
+else 
+  ${TARGET} "$@"
+fi
