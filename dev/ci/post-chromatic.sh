@@ -14,6 +14,11 @@ chromatic_publish_output=$(</dev/stdin)
 
 echo "$chromatic_publish_output"
 
+if echo "$chromatic_publish_output" | grep -q "Failed to extract stories from your Storybook"; then
+  echo "Storybook failed to build"
+  exit 1
+fi
+
 # Chromatic preview url from Chromatic publish output (`-m 1` for getting first match)
 chromatic_storybook_url=$(echo "$chromatic_publish_output" | grep -oh -m 1 "https:\/\/[[:alnum:]]*\-[[:alnum:]]*\.chromatic\.com")
 
