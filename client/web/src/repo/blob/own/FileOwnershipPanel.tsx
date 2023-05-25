@@ -70,28 +70,87 @@ export const FileOwnershipPanel: React.FunctionComponent<
         return (
             <div className={styles.contents}>
                 <OwnExplanation owners={nodes.map(ownership => ownership.owner)} />
-                {data.node.commit.blob.ownership.totalOwners === 0 && (
-                    <Alert variant="info">No ownership data for this file.</Alert>
-                )}
                 <table className={styles.table}>
-                    <thead className="sr-only">
+                    <thead>
                         <tr>
+                            <th colSpan={3}>
+                                {data.node.commit.blob.ownership.totalOwners === 0 ? (
+                                    <Alert variant="info">No ownership data for this file.</Alert>
+                                ) : (
+                                    <H4 className="mb-4">Owners</H4>
+                                )}
+                            </th>
+                        </tr>
+                        <tr className="sr-only">
                             <th>Contact</th>
                             <th>Owner</th>
                             <th>Reason</th>
                         </tr>
                     </thead>
                     <tbody>
-                        {nodes.map((ownership, index) => (
-                            <FileOwnershipEntry
-                                // This list is not expected to change, so it's safe to use the index as a key.
-                                // eslint-disable-next-line react/no-array-index-key
-                                key={index}
-                                owner={ownership.owner}
-                                reasons={ownership.reasons}
-                            />
-                        ))}
+                        {nodes
+                            .filter(ownership =>
+                                ownership.reasons.some(
+                                    r => r.__typename === 'CodeownersFileEntry' || r.__typename === 'AssignedOwner'
+                                )
+                            )
+                            .map((ownership, index) => (
+                                <>
+                                    {index > 0 && <tr className={styles.bordered}></tr>}
+                                    <FileOwnershipEntry
+                                        // This list is not expected to change, so it's safe to use the index as a key.
+                                        // eslint-disable-next-line react/no-array-index-key
+                                        key={index}
+                                        owner={ownership.owner}
+                                        reasons={ownership.reasons}
+                                    />
+                                </>
+                            ))}
                     </tbody>
+                    {data.node.commit.blob.ownership.nodes.length > data.node.commit.blob.ownership.totalOwners && (
+                        <>
+                            <thead>
+                                <tr>
+                                    <th colSpan={3}>
+                                        <H4 className="mt-3 mb-2">Inference signals</H4>
+                                        <p className={styles.ownInferenceExplanation}>
+                                            These users have viewed or contributed to the file but are not registered
+                                            owners of the file.
+                                        </p>
+                                    </th>
+                                </tr>
+                                <tr className="sr-only">
+                                    <th>Contact</th>
+                                    <th>Owner</th>
+                                    <th>Reason</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {nodes
+                                    .filter(
+                                        ownership =>
+                                            !ownership.reasons.some(
+                                                r =>
+                                                    r.__typename === 'CodeownersFileEntry' ||
+                                                    r.__typename === 'AssignedOwner'
+                                            )
+                                    )
+                                    .map((ownership, index) => (
+                                        <>
+                                            {index > 0 && <tr className={styles.bordered}></tr>}
+                                            <FileOwnershipEntry
+                                                // This list is not expected to change, so it's safe to use the index as a key.
+                                                // eslint-disable-next-line react/no-array-index-key
+                                                key={index}
+                                                owner={ownership.owner}
+                                                reasons={ownership.reasons}
+                                            />
+                                        </>
+                                    ))}
+                            </tbody>
+                        </>
+                    )}
                 </table>
             </div>
         )

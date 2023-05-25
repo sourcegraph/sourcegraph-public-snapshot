@@ -14,18 +14,27 @@
 
     td {
         padding-bottom: 0.5rem;
-    }
-
-    td:nth-child(3) {
-        white-space: nowrap;
+        padding-top: 0.5rem;
+        overflow: hidden;
         text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
-    td:nth-child(1),
-    td:nth-child(2),
-    td:nth-child(3) {
-        width: 0; // This shrinks the cells to fit the content
+    td.fitting {
+        width: min-content;
     }
+
+    td.more-space {
+        padding-right: 40px;
+    }
+
+    td.expanding {
+        width: 100%;
+    }
+}
+
+.bordered {
+    border-bottom: 1px solid var(--border-color-2);
 }
 
 .own-explanation {
@@ -42,4 +51,8 @@
     &-content {
         font-size: 0.75rem;
     }
+}
+
+.own-inference-explanation {
+    font-weight: 400;
 }

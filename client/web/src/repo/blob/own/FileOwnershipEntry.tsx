@@ -16,6 +16,7 @@ import {
 import { PersonLink } from '../../../person/PersonLink'
 
 import styles from './FileOwnershipEntry.module.scss'
+import containerStyles from './FileOwnershipPanel.module.scss'
 
 interface Props {
     owner: OwnerFields
@@ -29,6 +30,7 @@ type OwnershipReason =
     | AssignedOwnerFields
 
 export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reasons }) => {
+    // TODO remove callback and state
     const [isExpanded, setIsExpanded] = useState<boolean>(false)
     const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(() => {
         setIsExpanded(!isExpanded)
@@ -48,7 +50,7 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reas
 
     return (
         <tr>
-            <td>
+            <td className={containerStyles.fitting}>
                 <div className="d-flex">
                     <Tooltip content={email ? `Email ${email}` : 'No email address'} placement="top">
                         {email ? (
@@ -63,7 +65,7 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reas
                     </Tooltip>
                 </div>
             </td>
-            <td>
+            <td className={`${containerStyles.fitting} ${containerStyles.moreSpace}`}>
                 <div className="d-flex align-items-center mr-2">
                     {owner.__typename === 'Person' && (
                         <>
@@ -83,7 +85,7 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reas
                     )}
                 </div>
             </td>
-            <td>
+            <td className={containerStyles.expanding}>
                 {reasons.map(reason => {
                     // For CODEOWNERS, the Badge links to the codeowners rule
                     let link: string | null = null
