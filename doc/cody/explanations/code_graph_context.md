@@ -99,3 +99,24 @@ If you would like to allow your Sourcegraph instance to control the creation and
 ### Environment variables for the `embeddings` service
 
 - `EMBEDDINGS_REPO_INDEX_CACHE_SIZE`: Number of repository embedding indexes to cache in memory (the default cache size is 5). Increasing the cache size will improve the search performance but require more memory resources.
+
+### Incremental embeddings
+
+<span class="badge badge-experimental">Experimental</span>
+
+Incremental embeddings allow you to update the embeddings for a repository without having to re-embed the entire
+repository. With incremental embeddings, outdated embeddings of deleted and modified files are removed and new
+embeddings of the modified and added files are added to the repository's embeddings. This speeds up updates, reduces the
+data sent to the embedding provider and saves costs.
+
+Incremental embeddings are disabled by default.
+
+```json
+{
+  // [...]
+  "embeddings": {
+    // [...]
+    "incremental": true
+  }
+}
+```

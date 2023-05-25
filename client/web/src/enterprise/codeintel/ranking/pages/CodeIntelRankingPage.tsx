@@ -131,8 +131,8 @@ const Progress: FunctionComponent<ProgressProps> = ({ title, progress, className
             <div className={styles.row}>
                 <div>Queued records</div>
                 <div>
-                    {progress.processed === 0 ? (
-                        <>Process finished</>
+                    {progress.total === 0 ? (
+                        <>No records to process</>
                     ) : (
                         <>
                             {progress.processed} of {progress.total} records processed

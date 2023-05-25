@@ -2,8 +2,6 @@ import * as vscode from 'vscode'
 
 import { updateRangeOnDocChange } from './InlineAssist'
 
-jest.unmock('./InlineAssist')
-
 jest.mock('vscode', () => {
     class Position {
         public line: number

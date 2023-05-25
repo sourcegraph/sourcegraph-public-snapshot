@@ -17,19 +17,27 @@ import (
 )
 
 func (s *Server) handleReposStats(w http.ResponseWriter, r *http.Request) {
-	b, err := os.ReadFile(filepath.Join(s.ReposDir, reposStatsName))
-	if errors.Is(err, os.ErrNotExist) {
-		// When a gitserver is new this file might not have been computed
-		// yet. Clients are expected to handle this case by noticing UpdatedAt
-		// is not set.
-		b = []byte("{}")
-	} else if err != nil {
+	b, err := s.readReposStatsFile(filepath.Join(s.ReposDir, reposStatsName))
+	if err != nil {
 		http.Error(w, fmt.Sprintf("failed to read %s: %v", reposStatsName, err.Error()), http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	_, _ = w.Write(b)
+}
+
+func (s *Server) readReposStatsFile(filePath string) ([]byte, error) {
+	b, err := os.ReadFile(filePath)
+	if errors.Is(err, os.ErrNotExist) {
+		// When a gitserver is new this file might not have been computed
+		// yet. Clients are expected to handle this case by noticing UpdatedAt
+		// is not set.
+		b = []byte("{}")
+	} else if err != nil {
+		return nil, err
+	}
+	return b, nil
 }
 
 func (s *Server) repoCloneProgress(repo api.RepoName) *protocol.RepoCloneProgress {
