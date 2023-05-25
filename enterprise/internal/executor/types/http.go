@@ -65,12 +65,12 @@ const (
 )
 
 type HeartbeatResponse struct {
-	KnownIDs  []int `json:"knownIds"`
-	CancelIDs []int `json:"cancelIds"`
+	KnownIDs  []string `json:"knownIds"`
+	CancelIDs []string `json:"cancelIds"`
 }
 
 // TODO: Deprecated. Can be removed in Sourcegraph 4.4.
 type CanceledJobsRequest struct {
-	KnownJobIDs  []int  `json:"knownJobIds"`
-	ExecutorName string `json:"executorName"`
+	KnownJobIDs  []string `json:"knownJobIds"`
+	ExecutorName string   `json:"executorName"`
 }
