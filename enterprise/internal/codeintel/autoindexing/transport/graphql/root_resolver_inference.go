@@ -18,7 +18,7 @@ import (
 )
 
 // 🚨 SECURITY: Only site admins may infer auto-index jobs
-func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.InferAutoIndexJobsForRepoArgs) (_ []resolverstubs.AutoIndexJobDescriptionResolver, err error) {
+func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.InferAutoIndexJobsForRepoArgs) (_ resolverstubs.InferAutoIndexJobsResultResolver, err error) {
 	ctx, _, endObservation := r.operations.inferAutoIndexJobsForRepo.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("repository", string(args.Repository)),
 		attribute.String("rev", resolverstubs.Deref(args.Rev, "")),
@@ -48,17 +48,20 @@ func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *reso
 		localOverrideScript = *args.Script
 	}
 
-	// TODO - expose hints
-	config, _, err := r.autoindexSvc.InferIndexConfiguration(ctx, repositoryID, rev, localOverrideScript, false)
+	result, err := r.autoindexSvc.InferIndexConfiguration(ctx, repositoryID, rev, localOverrideScript, false)
 	if err != nil {
 		return nil, err
 	}
 
-	if config == nil {
-		return nil, nil
+	jobResolvers, err := newDescriptionResolvers(r.siteAdminChecker, &config.IndexConfiguration{IndexJobs: result.IndexJobs})
+	if err != nil {
+		return nil, err
 	}
 
-	return newDescriptionResolvers(r.siteAdminChecker, config)
+	return &inferAutoIndexJobsResultResolver{
+		jobs:            jobResolvers,
+		inferenceOutput: result.InferenceOutput,
+	}, nil
 }
 
 // 🚨 SECURITY: Only site admins may queue auto-index jobs
@@ -119,6 +122,22 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 	}
 
 	return resolvers, nil
+}
+
+//
+//
+
+type inferAutoIndexJobsResultResolver struct {
+	jobs            []resolverstubs.AutoIndexJobDescriptionResolver
+	inferenceOutput string
+}
+
+func (r *inferAutoIndexJobsResultResolver) Jobs() []resolverstubs.AutoIndexJobDescriptionResolver {
+	return r.jobs
+}
+
+func (r *inferAutoIndexJobsResultResolver) InferenceOutput() string {
+	return r.inferenceOutput
 }
 
 //

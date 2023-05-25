@@ -82,7 +82,7 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID)
 	if autoIndexingEnabled() {
 		commit := "HEAD"
 
-		indexJobs, err := r.autoindexSvc.InferIndexJobsFromRepositoryStructure(ctx, id, commit, "", false)
+		result, err := r.autoindexSvc.InferIndexJobsFromRepositoryStructure(ctx, id, commit, "", false)
 		if err != nil {
 			if !autoindexing.IsLimitError(err) {
 				return nil, err
@@ -99,7 +99,7 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID)
 		// 	limitErr = errors.Append(limitErr, err)
 		// }
 
-		inferredAvailableIndexers = uploadsShared.PopulateInferredAvailableIndexers(indexJobs, blocklist, inferredAvailableIndexers)
+		inferredAvailableIndexers = uploadsShared.PopulateInferredAvailableIndexers(result.IndexJobs, blocklist, inferredAvailableIndexers)
 		// inferredAvailableIndexers = uploadsShared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
 	}
 

@@ -2343,6 +2343,11 @@
           "description": "The maximum number of embeddings for text files to generate per repo",
           "type": "integer",
           "minimum": 0
+        },
+        "incremental": {
+          "description": "Experimental: Whether to generate embeddings incrementally. If true, only files that have changed since the last run will be processed.",
+          "type": "boolean",
+          "default": false
         }
       },
       "examples": [
