@@ -273,7 +273,7 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
             completion.length > 0 &&
             completion.startsWith(' ') &&
             this.prefix.length > 0 &&
-            this.prefix.endsWith(' ')
+            (this.prefix.endsWith(' ') || this.prefix.endsWith('\t'))
         ) {
             completion = completion.slice(1)
             hasOddIndentation = true
