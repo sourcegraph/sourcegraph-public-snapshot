@@ -1,19 +1,15 @@
 import { expect } from '@playwright/test'
 
-import { SERVER_URL, VALID_TOKEN } from '../fixtures/mock-server'
-
+import { sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
 
 test('start a fixup job from inline assist with valid auth', async ({ page, sidebar }) => {
     // Sign into Cody
-    await sidebar.getByRole('textbox', { name: 'Sourcegraph Instance URL' }).fill(SERVER_URL)
-    await sidebar.getByRole('textbox', { name: 'Access Token (docs)' }).fill(VALID_TOKEN)
-    await sidebar.getByRole('button', { name: 'Sign In' }).click()
+    await sidebarSignin(sidebar)
 
-    await expect(sidebar.getByText("Hello! I'm Cody.")).toBeVisible()
+    // Open the Explorer view from the sidebar
+    await sidebarExplorer(page).click()
 
-    // Open the Explorer view in the sidebar that would match on Mac and Linux
-    await page.getByRole('tab', { name: /Explorer.*/ }).click()
     // Select the second files from the tree view, which is the index.html file
     await page.locator('.monaco-highlighted-label').nth(2).click()
 

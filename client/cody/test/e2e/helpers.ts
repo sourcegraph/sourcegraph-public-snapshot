@@ -1,4 +1,4 @@
-import { mkdtempSync, rmdirSync, writeFile } from 'fs'
+import { mkdir, mkdtempSync, rmdirSync, writeFile } from 'fs'
 import { tmpdir } from 'os'
 import * as path from 'path'
 
@@ -115,7 +115,7 @@ export async function getCodySidebar(page: Page): Promise<Frame> {
         return null
     }
     await waitUntil(async () => (await findCodySidebarFrame()) !== null)
-    return (await findCodySidebarFrame())!
+    return (await findCodySidebarFrame()) || page.mainFrame()
 }
 
 async function waitUntil(predicate: () => boolean | Promise<boolean>): Promise<void> {
@@ -130,24 +130,15 @@ function escapeToPath(text: string): string {
     return text.replace(/\W/g, '_')
 }
 
-async function buildWorkSpaceSettings(workspaceDirectory: string): Promise<void> {
-    // create a temporary directory with settings.json and add to the workspaceDirectory
-    const settingsDirectory = mkdtempSync(path.join(tmpdir(), 'cody-vsce'))
-    const settingsPath = path.join(settingsDirectory, 'settings.json')
+// Build a workspace settings file that enables the experimental inline mode
+export async function buildWorkSpaceSettings(workspaceDirectory: string): Promise<void> {
     const settings = {
         'cody.experimental.inline': true,
     }
-    await new Promise<void>((resolve, reject) => {
-        writeFile(settingsPath, JSON.stringify(settings), error => {
-            if (error) {
-                reject(error)
-            } else {
-                resolve()
-            }
-        })
-    })
-
+    // create a temporary directory with settings.json and add to the workspaceDirectory
     const workspaceSettingsPath = path.join(workspaceDirectory, '.vscode', 'settings.json')
+    const workspaceSettingsDirectory = path.join(workspaceDirectory, '.vscode')
+    mkdir(workspaceSettingsDirectory, { recursive: true }, () => {})
     await new Promise<void>((resolve, reject) => {
         writeFile(workspaceSettingsPath, JSON.stringify(settings), error => {
             if (error) {
