@@ -40,7 +40,7 @@ export async function updateEventLogger(
  * @param eventProperties The additional argument information.
  * @param publicProperties Public argument information.
  */
-export function logEvent(eventName: string, eventProperties?: any, publicProperties?: any): void {
+export async function logEvent(eventName: string, eventProperties?: any, publicProperties?: any): Promise<void> {
     if (!eventLogger || !anonymousUserID) {
         return
     }
@@ -53,19 +53,10 @@ export function logEvent(eventName: string, eventProperties?: any, publicPropert
         ...publicProperties,
         version: packageVersion,
     }
-    eventLogger.log(eventName, anonymousUserID, argument, publicArgument).then(() => {})
-}
-
-export async function logCodyInstalled(): Promise<void> {
-    if (!eventLogger || !anonymousUserID) {
-        return
+    try {
+        await eventLogger.log(eventName, anonymousUserID, argument, publicArgument)
+    } catch (error) {
+        console.error(error)
     }
-    eventLogger.log('CodyInstalled', anonymousUserID).then(() => {})
-}
-
-function getAnonymousUserID(): string {
-    if (!anonymousUserID) {
-        anonymousUserID = localStorage.getAnonymousUserID()
-    }
-    return anonymousUserID
+    return Promise.resolve()
 }

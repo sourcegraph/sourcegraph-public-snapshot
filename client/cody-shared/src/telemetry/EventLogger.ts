@@ -48,7 +48,7 @@ export class EventLogger {
             extensionDetails: this.extensionDetails,
         }
         try {
-            await this.gqlAPIClient.logEvent({
+            this.gqlAPIClient.logEvent({
                 event: eventName,
                 userCookieID: anonymousUserID,
                 source: 'IDEEXTENSION',
