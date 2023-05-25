@@ -13,22 +13,6 @@ use serde::{Deserialize, Serialize};
 
 use crate::{get_globals, globals::Scope};
 
-#[derive(Debug)]
-pub enum TagKind {
-    Function,
-    Class,
-}
-
-#[derive(Debug)]
-pub struct TagEntry {
-    pub descriptors: Vec<Descriptor>,
-    pub kind: TagKind,
-    pub parent: Option<Box<TagEntry>>,
-
-    pub line: usize,
-    // pub column: usize,
-}
-
 #[derive(Serialize, Deserialize, Debug)]
 #[serde(tag = "command", rename_all = "kebab-case")]
 pub enum Request {
