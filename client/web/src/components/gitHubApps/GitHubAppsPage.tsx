@@ -20,8 +20,13 @@ import { PageTitle } from '../PageTitle'
 import { GITHUB_APPS_QUERY } from './backend'
 import { GitHubAppCard } from './GitHubAppCard'
 
-export const GitHubAppsPage: React.FC = () => {
 import styles from './GitHubAppsPage.module.scss'
+
+interface Props {
+    batchChangesEnabled: boolean
+}
+
+export const GitHubAppsPage: React.FC<Props> = ({ batchChangesEnabled }) => {
     const { data, loading, error, refetch } = useQuery<GitHubAppsResult, GitHubAppsVariables>(GITHUB_APPS_QUERY, {})
     const gitHubApps = useMemo(() => data?.gitHubApps?.nodes ?? [], [data])
 
@@ -50,6 +55,14 @@ import styles from './GitHubAppsPage.module.scss'
                         <Link to="/help/admin/external_service/github#using-a-github-app">
                             See how GitHub App configuration works.
                         </Link>
+                        {batchChangesEnabled && (
+                            <>
+                                {' '}
+                                To create a GitHub App to sign Batch Changes commits, visit{' '}
+                                <Link to="/site-admin/batch-changes">Batch Changes settings</Link>.
+                            </>
+                        )}
+                    </>
                 }
                 actions={
                     <ButtonLink
