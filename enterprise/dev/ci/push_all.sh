@@ -60,7 +60,7 @@ function tag_and_push_image() {
     -- \
     $tags_args $repositories_args
 
-  bazel run "$target" --platforms @zig_sdk//platform:linux_amd64 --extra_toolchains @zig_sdk//toolchain:linux_amd64_gnu.2.31 --workspace_status_command=./dev/bazel_stamp_vars.sh --stamp -- $tags_args $repositories_args
+  bazel run "$target" --workspace_status_command=./dev/bazel_stamp_vars.sh --stamp -- $tags_args $repositories_args
   echo "--- "
 }
 
