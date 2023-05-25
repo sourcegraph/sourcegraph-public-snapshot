@@ -1,6 +1,7 @@
 package repo
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -28,4 +29,8 @@ type RepoEmbeddingJob struct {
 
 func (j *RepoEmbeddingJob) RecordID() int {
 	return j.ID
+}
+
+func (j *RepoEmbeddingJob) RecordUID() string {
+	return strconv.Itoa(j.ID)
 }
