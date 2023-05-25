@@ -107,13 +107,18 @@ func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text ...string) (
 	return b, nil
 }
 
-// TODO: Add repoContext too
+// add inserts given reference key (one of: user ID, email, handle)
+// to the bag, so that it can be resolved later in batch.
 func (b *bag) add(k refKey) {
 	if _, ok := b.references[k]; !ok {
 		b.references[k] = &refContext{}
 	}
 }
 
+// resolve takes all references that were added but not resolved
+// before and queries the database to find users, that these references
+// may point to. Fetched users are augmented with all the other
+// references that can point to them.
 func (b *bag) resolve(ctx context.Context, db edb.EnterpriseDB) error {
 	for k, refCtx := range b.references {
 		if !refCtx.resolutionDone {
@@ -132,11 +137,49 @@ func (b *bag) resolve(ctx context.Context, db edb.EnterpriseDB) error {
 				if err := userRefs.augment(ctx, db); err != nil {
 					return err
 				}
+				b.linkBack(userRefs)
 				b.resolvedUsers[userRefs.id] = userRefs
 			}
 		}
 	}
 	return nil
+}
+
+// linkBack adds all the extra references that were fetched for a user
+// from the database, but perhaps were not queried for.
+//
+// For example: bag{refKey{email: alice@example.com}} is resolved.
+// User with id=42 is fetched, that has second verified email: alice2@example.com,
+// and a github handle aliceCodes. In that case calling linkBack on userReferences
+// like above will result in bag with the following refKeys:
+// {email:alice@example.com} -> 42
+// {email:alice2@example.com} -> 42
+// {handle:aliceCodes} -> 42
+//
+// TODO: For now the first handle or email assigned points to a user.
+// This needs to be refined so that the same handle text can be considered
+// in different contexts properly.
+func (b *bag) linkBack(userRefs *userReferences) {
+	ks := []refKey{{userID: userRefs.id}}
+	if u := userRefs.user; u != nil {
+		ks = append(ks, refKey{handle: u.Username})
+	}
+	for _, e := range userRefs.verifiedEmails {
+		if _, ok := b.references[refKey{email: e}]; !ok {
+			ks = append(ks, refKey{email: e})
+		}
+	}
+	for _, h := range userRefs.codeHostHandles {
+		if _, ok := b.references[refKey{handle: h}]; !ok {
+			ks = append(ks, refKey{handle: h})
+		}
+	}
+	for _, k := range ks {
+		b.references[k] = &refContext{
+			resolvedUserID: userRefs.id,
+			resolutionDone: true,
+		}
+	}
 }
 
 func findUserByUsername(ctx context.Context, db edb.EnterpriseDB, handle string) (*types.User, error) {
@@ -244,6 +287,19 @@ type refKey struct {
 	email  string
 }
 
+func (k refKey) String() string {
+	if id := k.userID; id != 0 {
+		return fmt.Sprintf("#%d", id)
+	}
+	if h := k.handle; h != "" {
+		return fmt.Sprintf("@%s", h)
+	}
+	if e := k.email; e != "" {
+		return e
+	}
+	return "<empty refKey>"
+}
+
 func (k refKey) fetch(ctx context.Context, db edb.EnterpriseDB) (*userReferences, error) {
 	if k.userID != 0 {
 		return &userReferences{id: k.userID}, nil
@@ -253,12 +309,18 @@ func (k refKey) fetch(ctx context.Context, db edb.EnterpriseDB) (*userReferences
 		if err != nil {
 			return nil, err
 		}
+		if u == nil {
+			return nil, nil
+		}
 		return &userReferences{id: u.ID, user: u}, nil
 	}
 	if k.email != "" {
 		id, err := findUserIDByEmail(ctx, db, k.email)
 		if err != nil {
 			return nil, err
+		}
+		if id == 0 {
+			return nil, nil
 		}
 		return &userReferences{id: id}, nil
 	}
@@ -336,7 +398,7 @@ func (b bag) Contains(ref Reference) bool {
 		ks = append(ks, refKey{userID: id})
 	}
 	if h := ref.Handle; h != "" {
-		ks = append(ks, refKey{handle: h})
+		ks = append(ks, refKey{handle: strings.TrimPrefix(h, "@")})
 	}
 	if e := ref.Email; e != "" {
 		ks = append(ks, refKey{email: e})
@@ -351,10 +413,8 @@ func (b bag) Contains(ref Reference) bool {
 
 func (b bag) String() string {
 	var mapping []string
-	for id, userRef := range b.resolvedUsers {
-		for _, textRef := range userRef.textReferences() {
-			mapping = append(mapping, fmt.Sprintf("%d->%s", id, textRef))
-		}
+	for k, refCtx := range b.references {
+		mapping = append(mapping, fmt.Sprintf("%s->%d", k, refCtx.resolvedUserID))
 	}
 	// TODO add unresolved references to the bag
 	return fmt.Sprintf("[%s]", strings.Join(mapping, ", "))
