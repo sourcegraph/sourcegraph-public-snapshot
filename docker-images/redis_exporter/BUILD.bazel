@@ -1,4 +1,5 @@
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+load("//dev:oci_defs.bzl", "image_repository")
 
 oci_image(
     name = "image",
@@ -11,4 +12,11 @@ oci_tarball(
     name = "image_tarball",
     image = ":image",
     repo_tags = ["redis-exporter:candidate"],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    remote_tags = "//:tags",
+    repository = image_repository("redis_exporter"),
 )

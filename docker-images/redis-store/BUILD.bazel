@@ -1,5 +1,6 @@
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("//dev:oci_defs.bzl", "image_repository")
 
 filegroup(
     name = "redis_conf",
@@ -29,4 +30,11 @@ oci_tarball(
     name = "image_tarball",
     image = ":image",
     repo_tags = ["redis-store:candidate"],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    remote_tags = "//:tags",
+    repository = image_repository("redis-store"),
 )
