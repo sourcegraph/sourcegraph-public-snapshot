@@ -9,6 +9,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
@@ -32,7 +33,7 @@ func initPostgreSQL(logger log.Logger, embeddedPostgreSQLRootDir string) error {
 		var err error
 		vars, err = startEmbeddedPostgreSQL(logger, embeddedPostgreSQLRootDir)
 		if err != nil {
-			return errors.Wrap(err, "Failed to download or start embedded postgresql. Please start your own postgres instance then configure the PG* environment variables to connect to it as well as setting USE_EMBEDDED_POSTGRESQL=0")
+			return errors.Wrap(err, "Failed to download or start embedded postgresql")
 		}
 		os.Setenv("PGPORT", vars.PGPORT)
 		os.Setenv("PGHOST", vars.PGHOST)
@@ -108,7 +109,7 @@ func startEmbeddedPostgreSQL(logger log.Logger, pgRootDir string) (*postgresqlEn
 			RuntimePath(filepath.Join(pgRootDir, "runtime")).
 			Username(vars.PGUSER).
 			Database(vars.PGDATABASE).
-			UseUnixSocket(unixSocketDir).
+			UseUnixSocket(strings.ReplaceAll(unixSocketDir, "\\", "/")).
 			StartTimeout(120 * time.Second).
 			Logger(debugLogLinesWriter(logger, "postgres output line")),
 	)
