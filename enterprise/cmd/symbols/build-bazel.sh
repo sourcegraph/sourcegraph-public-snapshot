@@ -3,7 +3,7 @@
 # This script builds the symbols docker image.
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../../.."
-set -eu
+set -eux
 
 OUTPUT=$(mktemp -d -t sgdockerbuild_XXXXXXX)
 cleanup() {
@@ -11,33 +11,28 @@ cleanup() {
 }
 trap cleanup EXIT
 
-bazelrc=(
-  --bazelrc=.bazelrc
-)
-if [[ ${CI:-""} == "true" ]]; then
-  bazelrc+=(
-    --bazelrc=.aspect/bazelrc/ci.bazelrc
-    --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc
-  )
-fi
-
 echo "--- bazel build"
 bazel \
-  "${bazelrc[@]}" \
+  --bazelrc=.bazelrc \
+  --bazelrc=.aspect/bazelrc/ci.bazelrc \
+  --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
   build \
   //enterprise/cmd/symbols \
   --stamp \
   --workspace_status_command=./dev/bazel_stamp_vars.sh \
-  --config incompat-zig-linux-amd64
+  --platforms @zig_sdk//platform:linux_amd64 \
+  --extra_toolchains @zig_sdk//toolchain:linux_amd64_musl
 
 out=$(
-  bazel \
-    "${bazelrc[@]}" \
+  bazel --bazelrc=.bazelrc \
+    --bazelrc=.aspect/bazelrc/ci.bazelrc \
+    --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
     cquery \
     //enterprise/cmd/symbols \
     --stamp \
     --workspace_status_command=./dev/bazel_stamp_vars.sh \
-    --config incompat-zig-linux-amd64 \
+    --platforms @zig_sdk//platform:linux_amd64 \
+    --extra_toolchains @zig_sdk//toolchain:linux_amd64_musl \
     --output=files
 )
 cp "$out" "$OUTPUT"
