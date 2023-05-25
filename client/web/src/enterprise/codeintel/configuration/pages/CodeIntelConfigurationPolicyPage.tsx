@@ -212,7 +212,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                             code graph data.
                         </>
                     ) : (
-                        <>Rules that control embeddings re-indexing.</>
+                        <>Rules that control keeping embeddings up-to-date.</>
                     )
                 }
                 className="mb-3"
