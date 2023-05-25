@@ -27,7 +27,7 @@ fi
 echo "--- :docker: tags"
 for tag in "${tags[@]}"; do
   for registry in "${registries[@]}"; do
-    echo "\t ${registry}/\$IMAGE:${tag}"
+    echo -e "\t ${registry}/\$IMAGE:${tag}"
   done
 done
 echo "--- "

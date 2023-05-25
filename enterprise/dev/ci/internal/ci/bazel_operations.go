@@ -43,6 +43,7 @@ func bazelCmd(args ...string) string {
 func bazelPushImagesCmd() func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":bazel::docker: Push",
+			bk.Agent("queue", "bazel"),
 			bk.DependsOn("bazel-tests"),
 			bk.Key("bazel-push-images"),
 			bk.Cmd(bazelStampedCmd(`build $$(bazel query 'kind("oci_push rule", //...)')`)),
