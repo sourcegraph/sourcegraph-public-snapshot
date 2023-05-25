@@ -2192,7 +2192,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	if err != nil {
 		return "", errors.Wrap(err, "get VCS syncer")
 	}
-
+	fmt.Println("syncer", syncer)
 	var remoteURL *vcs.URL
 	if opts != nil && opts.CloneFromShard != "" {
 		// are we cloning from the same gitserver instance?
@@ -2212,7 +2212,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 			return "", err
 		}
 	}
-
+	fmt.Println("remoteURL", remoteURL)
 	// isCloneable causes a network request, so we limit the number that can
 	// run at one time. We use a separate semaphore to cloning since these
 	// checks being blocked by a few slow clones will lead to poor feedback to
@@ -2228,10 +2228,14 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		return "", err
 	}
 
+	fmt.Println("syncer", syncer)
+
 	if err := syncer.IsCloneable(ctx, remoteURL); err != nil {
 		redactedErr := newURLRedactor(remoteURL).redact(err.Error())
 		return "", errors.Errorf("error cloning repo: repo %s not cloneable: %s", repo, redactedErr)
 	}
+
+	fmt.Println("IsCloneable")
 
 	// Mark this repo as currently being cloned. We have to check again if someone else isn't already
 	// cloning since we released the lock. We released the lock since isCloneable is a potentially
@@ -2264,6 +2268,8 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		return "", err
 	}
 
+	fmt.Println("doClone")
+	fmt.Println("push", s.CloneQueue)
 	// We push the cloneJob to a queue and let the producer-consumer pipeline take over from this
 	// point. See definitions of cloneJobProducer and cloneJobConsumer to understand how these jobs
 	// are processed.
@@ -2275,6 +2281,8 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		remoteURL: remoteURL,
 		options:   opts,
 	})
+
+	fmt.Println("push", s.CloneQueue)
 
 	return "", nil
 }

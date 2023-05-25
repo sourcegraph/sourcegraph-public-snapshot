@@ -1078,56 +1078,54 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 // RequestRepoClone requests that the gitserver does an asynchronous clone of the repository.
 func (c *clientImplementor) RequestRepoClone(ctx context.Context, repo api.RepoName) (*protocol.RepoCloneResponse, error) {
 	if internalgrpc.IsGRPCEnabled(ctx) {
+		fmt.Println("grpc")
 		client, err := c.ClientForRepo(repo)
 		if err != nil {
 			return nil, err
 		}
-		ctx, cancel := context.WithCancel(ctx)
-		stream, err := client.RepoClone(ctx, &proto.RepoCloneRequest{
-			Repo: string(repo),
-		})
 
+		req := proto.RepoCloneRequest{
+			Repo: string(repo),
+		}
+		fmt.Println(
+			"client.RepoClone", &req)
+		resp, err := client.RepoClone(ctx, &req)
 		if err != nil {
-			cancel()
 			return nil, err
 		}
-		for {
-			msg, err := stream.Recv()
-			if err != nil {
-				cancel()
-				return nil, err
-			}
 
-			if msg.Error != "" {
-				cancel()
-				return &protocol.RepoCloneResponse{
-					Error: msg.Error,
-				}, nil
-			}
-
+		if resp == nil {
+			return nil, nil
 		}
 
-	}
+		fmt.Printf("client.RepoClone resp: %+v\n", resp)
 
-	req := &protocol.RepoCloneRequest{
-		Repo: repo,
-	}
-	resp, err := c.httpPost(ctx, repo, "repo-clone", req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, &url.Error{
-			URL: resp.Request.URL.String(),
-			Op:  "RepoInfo",
-			Err: errors.Errorf("RepoInfo: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+		var info protocol.RepoCloneResponse
+		info.FromProto(resp)
+		return &info, nil
+
+	} else {
+
+		req := &protocol.RepoCloneRequest{
+			Repo: repo,
 		}
-	}
+		resp, err := c.httpPost(ctx, repo, "repo-clone", req)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			return nil, &url.Error{
+				URL: resp.Request.URL.String(),
+				Op:  "RepoInfo",
+				Err: errors.Errorf("RepoInfo: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+			}
+		}
 
-	var info *protocol.RepoCloneResponse
-	err = json.NewDecoder(resp.Body).Decode(&info)
-	return info, err
+		var info *protocol.RepoCloneResponse
+		err = json.NewDecoder(resp.Body).Decode(&info)
+		return info, err
+	}
 }
 
 // MockIsRepoCloneable mocks (*Client).IsRepoCloneable for tests.
@@ -1293,14 +1291,12 @@ func (c *clientImplementor) ReposStats(ctx context.Context) (map[string]*protoco
 	stats := map[string]*protocol.ReposStats{}
 	var allErr error
 
-
 	if internalgrpc.IsGRPCEnabled(ctx) {
 		for _, addr := range c.clientSource.Addresses() {
 			client, err := addr.GRPCClient()
 			if err != nil {
 				return nil, err
 			}
-
 
 			resp, err := client.ReposStats(ctx, &proto.ReposStatsRequest{})
 			if err != nil {

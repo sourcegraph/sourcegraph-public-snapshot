@@ -11,7 +11,7 @@ service GitserverService {
   rpc IsRepoCloneable(IsRepoCloneableRequest) returns (IsRepoCloneableResponse) {}
   rpc Search(SearchRequest) returns (stream SearchResponse) {}
   rpc Archive(ArchiveRequest) returns (stream ArchiveResponse) {}
-  rpc RepoClone(RepoCloneRequest) returns (stream RepoCloneResponse) {}
+  rpc RepoClone(RepoCloneRequest) returns ( RepoCloneResponse) {}
   rpc ReposStats(ReposStatsRequest) returns (ReposStatsResponse) {}
 }
 

@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"path/filepath"
 
@@ -173,16 +174,17 @@ func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 	})
 }
 
-func (gs *GRPCServer) RepoClone(req *proto.RepoCloneRequest, ss proto.GitserverService_RepoCloneServer) error {
-	_, err := gs.Server.cloneRepo(ss.Context(), api.RepoName(req.Repo), &cloneOptions{Block: false})
-	if err != nil {
-		return ss.Send(&proto.RepoCloneResponse{
-			Error: err.Error(),
-		})
+func (gs *GRPCServer) RepoClone(ctx context.Context, in *proto.RepoCloneRequest) (*proto.RepoCloneResponse, error) {
+
+	repo := protocol.NormalizeRepo(api.RepoName(in.GetRepo()))
+	fmt.Println("server", repo)
+	if _, err := gs.Server.cloneRepo(ctx, repo, &cloneOptions{Block: false}); err != nil {
+		fmt.Println("server", repo, "error", err)
+		return &proto.RepoCloneResponse{Error: err.Error()}, nil
 	}
-	return ss.Send(&proto.RepoCloneResponse{
-		Error: "",
-	})
+	fmt.Println("server", repo, "done")
+
+	return &proto.RepoCloneResponse{Error: ""}, nil
 }
 
 func (gs *GRPCServer) ReposStats(ctx context.Context, req *proto.ReposStatsRequest) (*proto.ReposStatsResponse, error) {
@@ -238,4 +240,3 @@ func (gs *GRPCServer) IsRepoCloneable(ctx context.Context, req *proto.IsRepoClon
 
 	return resp, nil
 }
-
