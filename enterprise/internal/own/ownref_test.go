@@ -8,11 +8,12 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -123,7 +124,7 @@ func TestSearchFilteringExample(t *testing.T) {
 			require.NoError(t, err)
 			for name, r := range ownerReferences {
 				t.Run(name, func(t *testing.T) {
-					assert.True(t, bag.Contains(r), fmt.Sprintf("bag.Contains(%s), want true, got false", r))
+					assert.True(t, bag.Contains(r), fmt.Sprintf("%s.Contains(%s), want true, got false", bag, r))
 				})
 			}
 		})
