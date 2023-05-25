@@ -32,3 +32,17 @@ rust_test(
         normal_dev = True,
     ),
 )
+
+rust_binary(
+    name = "scip-ctags",
+    srcs = ["src/bin/scip-ctags.rs"],
+    aliases = aliases(),
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ),
+    deps = all_crate_deps(
+        normal = True,
+    ) + [
+        "//docker-images/syntax-highlighter/crates/scip-syntax:scip-syntax",
+    ],
+)
