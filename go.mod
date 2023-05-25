@@ -264,6 +264,7 @@ require (
 )
 
 require (
+	github.com/edsrzf/mmap-go v1.1.0
 	github.com/go-redsync/redsync/v4 v4.8.1
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
 	github.com/ricochet2200/go-disk-usage/du v0.0.0-20210707232629-ac9918953285
@@ -287,7 +288,6 @@ require (
 	github.com/dennwc/varint v1.0.0 // indirect
 	github.com/dghubble/sling v1.4.1 // indirect
 	github.com/di-wu/parser v0.2.2 // indirect
-	github.com/edsrzf/mmap-go v1.1.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.8.0 // indirect
 	github.com/fullstorydev/grpcurl v1.8.6 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect

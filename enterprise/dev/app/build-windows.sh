@@ -1,6 +1,6 @@
 echo "--- :chrome: Building web"
-pnpm install
-NODE_ENV=production ENTERPRISE=1 SOURCEGRAPH_APP=1 pnpm run build-web
+#pnpm install
+#NODE_ENV=production ENTERPRISE=1 SOURCEGRAPH_APP=1 pnpm run build-web
 
 platform="x86_64-pc-windows-msvc" # This is the name Tauri expects for the Windows executable
 version="$(./enterprise/dev/app/app_version.sh)"
