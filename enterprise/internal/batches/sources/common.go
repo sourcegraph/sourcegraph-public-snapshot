@@ -96,6 +96,12 @@ type ChangesetSource interface {
 	// merge. If the changeset cannot be merged, because it is in an unmergeable
 	// state, ChangesetNotMergeableError must be returned.
 	MergeChangeset(ctx context.Context, ch *Changeset, squash bool) error
+
+	//  IsCommitSigningEnabled returns whether commit signing is enabled for the code host.
+	// Commit signing is enabled if:
+	// - The repository is on GitHub and a GitHub app for commit signing has been created.
+	// For other code hosts, this will return false.
+	IsCommitSigningEnabled(ctx context.Context) (bool, error)
 }
 
 // ChangesetNotMergeableError is returned by MergeChangeset if the changeset

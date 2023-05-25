@@ -47,6 +47,7 @@ type SourcerStore interface {
 	Repos() database.RepoStore
 	ExternalServices() database.ExternalServiceStore
 	UserCredentials() database.UserCredentialsStore
+	// GitHubAppsStore() ghastore.GitHubAppsStore
 }
 
 // Sourcer exposes methods to get a ChangesetSource based on a changeset, repo or

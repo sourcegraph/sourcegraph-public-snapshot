@@ -409,3 +409,7 @@ func (s BitbucketServerSource) checkAndCopy(targetRepo *types.Repo, fork *bitbuc
 
 	return forkRepo, nil
 }
+
+func (BitbucketServerSource) IsCommitSigningEnabled(ctx context.Context) (bool, error) {
+	return false, nil
+}

@@ -318,3 +318,7 @@ func (s *FakeChangesetSource) IsArchivedPushError(output string) bool {
 	s.IsArchivedPushErrorCalled = true
 	return s.IsArchivedPushErrorTrue
 }
+
+func (*FakeChangesetSource) IsCommitSigningEnabled(ctx context.Context) (bool, error) {
+	return false, nil
+}

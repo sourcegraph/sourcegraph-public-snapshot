@@ -340,3 +340,7 @@ func (s BitbucketCloudSource) changesetToPullRequestInput(cs *Changeset) bitbuck
 
 	return opts
 }
+
+func (BitbucketCloudSource) IsCommitSigningEnabled(ctx context.Context) (bool, error) {
+	return false, nil
+}

@@ -39,6 +39,9 @@ type MockChangesetSource struct {
 	// GitserverPushConfigFunc is an instance of a mock function object
 	// controlling the behavior of the method GitserverPushConfig.
 	GitserverPushConfigFunc *ChangesetSourceGitserverPushConfigFunc
+	// IsCommitSigningEnabledFunc is an instance of a mock function object
+	// controlling the behavior of the method IsCommitSigningEnabled.
+	IsCommitSigningEnabledFunc *ChangesetSourceIsCommitSigningEnabledFunc
 	// LoadChangesetFunc is an instance of a mock function object
 	// controlling the behavior of the method LoadChangeset.
 	LoadChangesetFunc *ChangesetSourceLoadChangesetFunc
@@ -81,6 +84,11 @@ func NewMockChangesetSource() *MockChangesetSource {
 		},
 		GitserverPushConfigFunc: &ChangesetSourceGitserverPushConfigFunc{
 			defaultHook: func(*types.Repo) (r0 *protocol.PushConfig, r1 error) {
+				return
+			},
+		},
+		IsCommitSigningEnabledFunc: &ChangesetSourceIsCommitSigningEnabledFunc{
+			defaultHook: func(context.Context) (r0 bool, r1 error) {
 				return
 			},
 		},
@@ -141,6 +149,11 @@ func NewStrictMockChangesetSource() *MockChangesetSource {
 				panic("unexpected invocation of MockChangesetSource.GitserverPushConfig")
 			},
 		},
+		IsCommitSigningEnabledFunc: &ChangesetSourceIsCommitSigningEnabledFunc{
+			defaultHook: func(context.Context) (bool, error) {
+				panic("unexpected invocation of MockChangesetSource.IsCommitSigningEnabled")
+			},
+		},
 		LoadChangesetFunc: &ChangesetSourceLoadChangesetFunc{
 			defaultHook: func(context.Context, *Changeset) error {
 				panic("unexpected invocation of MockChangesetSource.LoadChangeset")
@@ -190,6 +203,9 @@ func NewMockChangesetSourceFrom(i ChangesetSource) *MockChangesetSource {
 		},
 		GitserverPushConfigFunc: &ChangesetSourceGitserverPushConfigFunc{
 			defaultHook: i.GitserverPushConfig,
+		},
+		IsCommitSigningEnabledFunc: &ChangesetSourceIsCommitSigningEnabledFunc{
+			defaultHook: i.IsCommitSigningEnabled,
 		},
 		LoadChangesetFunc: &ChangesetSourceLoadChangesetFunc{
 			defaultHook: i.LoadChangeset,
@@ -643,6 +659,115 @@ func (c ChangesetSourceGitserverPushConfigFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ChangesetSourceGitserverPushConfigFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ChangesetSourceIsCommitSigningEnabledFunc describes the behavior when the
+// IsCommitSigningEnabled method of the parent MockChangesetSource instance
+// is invoked.
+type ChangesetSourceIsCommitSigningEnabledFunc struct {
+	defaultHook func(context.Context) (bool, error)
+	hooks       []func(context.Context) (bool, error)
+	history     []ChangesetSourceIsCommitSigningEnabledFuncCall
+	mutex       sync.Mutex
+}
+
+// IsCommitSigningEnabled delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockChangesetSource) IsCommitSigningEnabled(v0 context.Context) (bool, error) {
+	r0, r1 := m.IsCommitSigningEnabledFunc.nextHook()(v0)
+	m.IsCommitSigningEnabledFunc.appendCall(ChangesetSourceIsCommitSigningEnabledFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// IsCommitSigningEnabled method of the parent MockChangesetSource instance
+// is invoked and the hook queue is empty.
+func (f *ChangesetSourceIsCommitSigningEnabledFunc) SetDefaultHook(hook func(context.Context) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// IsCommitSigningEnabled method of the parent MockChangesetSource instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ChangesetSourceIsCommitSigningEnabledFunc) PushHook(hook func(context.Context) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ChangesetSourceIsCommitSigningEnabledFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ChangesetSourceIsCommitSigningEnabledFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *ChangesetSourceIsCommitSigningEnabledFunc) nextHook() func(context.Context) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ChangesetSourceIsCommitSigningEnabledFunc) appendCall(r0 ChangesetSourceIsCommitSigningEnabledFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ChangesetSourceIsCommitSigningEnabledFuncCall objects describing the
+// invocations of this function.
+func (f *ChangesetSourceIsCommitSigningEnabledFunc) History() []ChangesetSourceIsCommitSigningEnabledFuncCall {
+	f.mutex.Lock()
+	history := make([]ChangesetSourceIsCommitSigningEnabledFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ChangesetSourceIsCommitSigningEnabledFuncCall is an object that describes
+// an invocation of method IsCommitSigningEnabled on an instance of
+// MockChangesetSource.
+type ChangesetSourceIsCommitSigningEnabledFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ChangesetSourceIsCommitSigningEnabledFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ChangesetSourceIsCommitSigningEnabledFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -1310,6 +1435,9 @@ type MockForkableChangesetSource struct {
 	// GitserverPushConfigFunc is an instance of a mock function object
 	// controlling the behavior of the method GitserverPushConfig.
 	GitserverPushConfigFunc *ForkableChangesetSourceGitserverPushConfigFunc
+	// IsCommitSigningEnabledFunc is an instance of a mock function object
+	// controlling the behavior of the method IsCommitSigningEnabled.
+	IsCommitSigningEnabledFunc *ForkableChangesetSourceIsCommitSigningEnabledFunc
 	// LoadChangesetFunc is an instance of a mock function object
 	// controlling the behavior of the method LoadChangeset.
 	LoadChangesetFunc *ForkableChangesetSourceLoadChangesetFunc
@@ -1357,6 +1485,11 @@ func NewMockForkableChangesetSource() *MockForkableChangesetSource {
 		},
 		GitserverPushConfigFunc: &ForkableChangesetSourceGitserverPushConfigFunc{
 			defaultHook: func(*types.Repo) (r0 *protocol.PushConfig, r1 error) {
+				return
+			},
+		},
+		IsCommitSigningEnabledFunc: &ForkableChangesetSourceIsCommitSigningEnabledFunc{
+			defaultHook: func(context.Context) (r0 bool, r1 error) {
 				return
 			},
 		},
@@ -1423,6 +1556,11 @@ func NewStrictMockForkableChangesetSource() *MockForkableChangesetSource {
 				panic("unexpected invocation of MockForkableChangesetSource.GitserverPushConfig")
 			},
 		},
+		IsCommitSigningEnabledFunc: &ForkableChangesetSourceIsCommitSigningEnabledFunc{
+			defaultHook: func(context.Context) (bool, error) {
+				panic("unexpected invocation of MockForkableChangesetSource.IsCommitSigningEnabled")
+			},
+		},
 		LoadChangesetFunc: &ForkableChangesetSourceLoadChangesetFunc{
 			defaultHook: func(context.Context, *Changeset) error {
 				panic("unexpected invocation of MockForkableChangesetSource.LoadChangeset")
@@ -1475,6 +1613,9 @@ func NewMockForkableChangesetSourceFrom(i ForkableChangesetSource) *MockForkable
 		},
 		GitserverPushConfigFunc: &ForkableChangesetSourceGitserverPushConfigFunc{
 			defaultHook: i.GitserverPushConfig,
+		},
+		IsCommitSigningEnabledFunc: &ForkableChangesetSourceIsCommitSigningEnabledFunc{
+			defaultHook: i.IsCommitSigningEnabled,
 		},
 		LoadChangesetFunc: &ForkableChangesetSourceLoadChangesetFunc{
 			defaultHook: i.LoadChangeset,
@@ -2052,6 +2193,115 @@ func (c ForkableChangesetSourceGitserverPushConfigFuncCall) Args() []interface{}
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ForkableChangesetSourceGitserverPushConfigFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ForkableChangesetSourceIsCommitSigningEnabledFunc describes the behavior
+// when the IsCommitSigningEnabled method of the parent
+// MockForkableChangesetSource instance is invoked.
+type ForkableChangesetSourceIsCommitSigningEnabledFunc struct {
+	defaultHook func(context.Context) (bool, error)
+	hooks       []func(context.Context) (bool, error)
+	history     []ForkableChangesetSourceIsCommitSigningEnabledFuncCall
+	mutex       sync.Mutex
+}
+
+// IsCommitSigningEnabled delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockForkableChangesetSource) IsCommitSigningEnabled(v0 context.Context) (bool, error) {
+	r0, r1 := m.IsCommitSigningEnabledFunc.nextHook()(v0)
+	m.IsCommitSigningEnabledFunc.appendCall(ForkableChangesetSourceIsCommitSigningEnabledFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// IsCommitSigningEnabled method of the parent MockForkableChangesetSource
+// instance is invoked and the hook queue is empty.
+func (f *ForkableChangesetSourceIsCommitSigningEnabledFunc) SetDefaultHook(hook func(context.Context) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// IsCommitSigningEnabled method of the parent MockForkableChangesetSource
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *ForkableChangesetSourceIsCommitSigningEnabledFunc) PushHook(hook func(context.Context) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ForkableChangesetSourceIsCommitSigningEnabledFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ForkableChangesetSourceIsCommitSigningEnabledFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *ForkableChangesetSourceIsCommitSigningEnabledFunc) nextHook() func(context.Context) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ForkableChangesetSourceIsCommitSigningEnabledFunc) appendCall(r0 ForkableChangesetSourceIsCommitSigningEnabledFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ForkableChangesetSourceIsCommitSigningEnabledFuncCall objects describing
+// the invocations of this function.
+func (f *ForkableChangesetSourceIsCommitSigningEnabledFunc) History() []ForkableChangesetSourceIsCommitSigningEnabledFuncCall {
+	f.mutex.Lock()
+	history := make([]ForkableChangesetSourceIsCommitSigningEnabledFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ForkableChangesetSourceIsCommitSigningEnabledFuncCall is an object that
+// describes an invocation of method IsCommitSigningEnabled on an instance
+// of MockForkableChangesetSource.
+type ForkableChangesetSourceIsCommitSigningEnabledFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ForkableChangesetSourceIsCommitSigningEnabledFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ForkableChangesetSourceIsCommitSigningEnabledFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

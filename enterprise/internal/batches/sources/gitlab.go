@@ -570,6 +570,10 @@ func (s GitLabSource) GetFork(ctx context.Context, targetRepo *types.Repo, names
 	return getGitLabForkInternal(ctx, targetRepo, s.client, namespace, n)
 }
 
+func (GitLabSource) IsCommitSigningEnabled(ctx context.Context) (bool, error) {
+	return false, nil
+}
+
 type gitlabClientFork interface {
 	ForkProject(ctx context.Context, project *gitlab.Project, namespace *string, name string) (*gitlab.Project, error)
 }

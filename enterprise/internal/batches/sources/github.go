@@ -315,6 +315,10 @@ func (s GitHubSource) GetFork(ctx context.Context, targetRepo *types.Repo, names
 	return getGitHubForkInternal(ctx, targetRepo, s.client, namespace, n)
 }
 
+func (s GitHubSource) IsCommitSigningEnabled(ctx context.Context) (bool, error) {
+	return false, nil
+}
+
 type githubClientFork interface {
 	Fork(context.Context, string, string, *string, string) (*github.Repository, error)
 	GetRepo(context.Context, string, string) (*github.Repository, error)

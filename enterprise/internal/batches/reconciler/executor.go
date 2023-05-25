@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/webhooks"
+	ghtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -201,6 +202,8 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 	if err != nil {
 		return afterDone, err
 	}
+
+	css.IsCommitSigningEnabled(ctx)
 	opts := buildCommitOpts(e.targetRepo, e.spec, pushConf)
 
 	err = e.pushCommit(ctx, opts)
@@ -670,7 +673,18 @@ func (e *executor) enqueueWebhook(ctx context.Context, store *store.Store, event
 	webhooks.EnqueueChangeset(ctx, e.logger, store, eventType, bgql.MarshalChangesetID(e.ch.ID))
 }
 
+func getExternalServiceGithubApp(repo *types.Repo) *ghtypes.GitHubApp {
+	// this maps to the `base_url` in the `github_apps` table, we just need to strip the trailing "/"
+	baseUrl := strings.TrimSuffix(repo.ExternalRepo.ServiceID, "/")
+	return nil
+}
+
 func buildCommitOpts(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+	// the baseURL for
+
+	fmt.Println(repo.ExternalRepo.ServiceID, "<=== id")
+	fmt.Println(repo.ExternalRepo.ServiceType, "<=== type")
+
 	// IMPORTANT: We add a trailing newline here, otherwise `git apply`
 	// will fail with "corrupt patch at line <N>" where N is the last line.
 	patch := append([]byte{}, spec.Diff...)

@@ -476,6 +476,10 @@ func (s AzureDevOpsSource) createCommonPullRequestArgs(repo azuredevops.Reposito
 	}, nil
 }
 
+func (AzureDevOpsSource) IsCommitSigningEnabled(ctx context.Context) (bool, error) {
+	return false, nil
+}
+
 func copyAzureDevOpsRepoAsFork(repo *types.Repo, fork *azuredevops.Repository, forkNamespace, forkName string) (*types.Repo, error) {
 	if repo.Sources == nil || len(repo.Sources) == 0 {
 		return nil, errors.New("repo has no sources")
