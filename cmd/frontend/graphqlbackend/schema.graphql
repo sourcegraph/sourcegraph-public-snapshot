@@ -7061,11 +7061,41 @@ type UpgradeReadiness {
     """
     The schema drift details.
     """
-    schemaDrift: String!
+    schemaDrift: [SchemaDriftSummary!]!
     """
     The list of deprecated-but-unfinished out-of-band migrations.
     """
     requiredOutOfBandMigrations: [OutOfBandMigration!]!
+}
+
+"""
+A summary of a schema drift.
+"""
+type SchemaDriftSummary {
+    """
+    Name of the table that contains the drift
+    """
+    name: String!
+    """
+    The problem that was found
+    """
+    problem: String!
+    """
+    The suggested solution to the problem
+    """
+    solution: String!
+    """
+    The diff of the schema drift
+    """
+    diff: String
+    """
+    The SQL to fix the schema drift
+    """
+    statements: [String!]
+    """
+    The Sourcegraph URL that contains the potential fix
+    """
+    urlHint: String
 }
 
 """
@@ -9634,6 +9664,75 @@ extend type Query {
         after: String
         before: String
     ): AccessRequestConnection!
+}
+
+"""
+Repo metadata key or value connection result`
+"""
+type RepoMetadataKeyOrValueConnection {
+    """
+    Total count of repo key-value pair metadata
+    """
+    totalCount: Int!
+    """
+    A list of repo key-value pair metadata
+    """
+    nodes: [String!]!
+
+    """
+    Pagination information.
+    """
+    pageInfo: BidirectionalPageInfo!
+}
+
+"""
+Repo metadata key result
+"""
+type RepoMetadataKeyResult {
+    """
+    Returns paginated list of repo metadata distinct values matching a query
+    """
+    values(
+        query: String
+        """
+        Pagination paramters
+        """
+        first: Int
+        last: Int
+        after: String
+        before: String
+    ): RepoMetadataKeyOrValueConnection!
+}
+
+"""
+Repo key-value pair metadata
+"""
+type RepoMetadata {
+    """
+    Returns paginated list of repo metadata distinct keys matching a query
+    """
+    keys(
+        query: String
+        """
+        Pagination paramters
+        """
+        first: Int
+        last: Int
+        after: String
+        before: String
+    ): RepoMetadataKeyOrValueConnection!
+
+    """
+    Repo metadata key
+    """
+    key(key: String!): RepoMetadataKeyResult
+}
+
+extend type Query {
+    """
+    Repository key-value pair metadata
+    """
+    repoMeta: RepoMetadata
 }
 
 extend type Mutation {

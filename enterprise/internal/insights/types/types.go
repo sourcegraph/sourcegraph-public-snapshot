@@ -213,9 +213,10 @@ const (
 	PATH_AGGREGATION_MODE          SearchAggregationMode = "PATH"
 	AUTHOR_AGGREGATION_MODE        SearchAggregationMode = "AUTHOR"
 	CAPTURE_GROUP_AGGREGATION_MODE SearchAggregationMode = "CAPTURE_GROUP"
+	REPO_METADATA_AGGREGATION_MODE SearchAggregationMode = "REPO_METADATA"
 )
 
-var SearchAggregationModes = []SearchAggregationMode{REPO_AGGREGATION_MODE, PATH_AGGREGATION_MODE, AUTHOR_AGGREGATION_MODE, CAPTURE_GROUP_AGGREGATION_MODE}
+var SearchAggregationModes = []SearchAggregationMode{REPO_AGGREGATION_MODE, PATH_AGGREGATION_MODE, AUTHOR_AGGREGATION_MODE, CAPTURE_GROUP_AGGREGATION_MODE, REPO_METADATA_AGGREGATION_MODE}
 
 type AggregationNotAvailableReasonType string
 
@@ -225,4 +226,8 @@ const (
 	TIMEOUT_EXTENSION_AVAILABLE        AggregationNotAvailableReasonType = "TIMEOUT_EXTENSION_AVAILABLE"
 	TIMEOUT_NO_EXTENSION_AVAILABLE     AggregationNotAvailableReasonType = "TIMEOUT_NO_EXTENSION_AVAILABLE"
 	ERROR_OCCURRED                     AggregationNotAvailableReasonType = "ERROR_OCCURRED"
+)
+
+const (
+	NO_REPO_METADATA_TEXT = "No metadata"
 )

@@ -1588,6 +1588,7 @@ func (x *IsRepoCloneableResponse) GetReason() string {
 	return ""
 }
 
+
 // ReposStatsRequest is a empty request for the ReposStats RPC.
 type ReposStatsRequest struct {
 	state         protoimpl.MessageState
@@ -1598,7 +1599,7 @@ type ReposStatsRequest struct {
 func (x *ReposStatsRequest) Reset() {
 	*x = ReposStatsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[22]
+		mi := &file_gitserver_proto_msgTypes[20]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1611,7 +1612,7 @@ func (x *ReposStatsRequest) String() string {
 func (*ReposStatsRequest) ProtoMessage() {}
 
 func (x *ReposStatsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[22]
+	mi := &file_gitserver_proto_msgTypes[20]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1624,7 +1625,7 @@ func (x *ReposStatsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReposStatsRequest.ProtoReflect.Descriptor instead.
 func (*ReposStatsRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{22}
+	return file_gitserver_proto_rawDescGZIP(), []int{20}
 }
 
 // ReposStats is an aggregation of statistics from a gitserver.
@@ -1644,7 +1645,7 @@ type ReposStatsResponse struct {
 func (x *ReposStatsResponse) Reset() {
 	*x = ReposStatsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[23]
+		mi := &file_gitserver_proto_msgTypes[21]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1657,7 +1658,7 @@ func (x *ReposStatsResponse) String() string {
 func (*ReposStatsResponse) ProtoMessage() {}
 
 func (x *ReposStatsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[23]
+	mi := &file_gitserver_proto_msgTypes[21]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1670,7 +1671,8 @@ func (x *ReposStatsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReposStatsResponse.ProtoReflect.Descriptor instead.
 func (*ReposStatsResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{23}
+	return file_gitserver_proto_rawDescGZIP(), []int{21}
+
 }
 
 func (x *ReposStatsResponse) GetGitDirBytes() uint64 {
@@ -1700,7 +1702,7 @@ type CommitMatch_Signature struct {
 func (x *CommitMatch_Signature) Reset() {
 	*x = CommitMatch_Signature{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[24]
+		mi := &file_gitserver_proto_msgTypes[22]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1713,7 +1715,7 @@ func (x *CommitMatch_Signature) String() string {
 func (*CommitMatch_Signature) ProtoMessage() {}
 
 func (x *CommitMatch_Signature) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[24]
+	mi := &file_gitserver_proto_msgTypes[22]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1762,7 +1764,9 @@ type CommitMatch_MatchedString struct {
 func (x *CommitMatch_MatchedString) Reset() {
 	*x = CommitMatch_MatchedString{}
 	if protoimpl.UnsafeEnabled {
+
 		mi := &file_gitserver_proto_msgTypes[25]
+
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1775,7 +1779,9 @@ func (x *CommitMatch_MatchedString) String() string {
 func (*CommitMatch_MatchedString) ProtoMessage() {}
 
 func (x *CommitMatch_MatchedString) ProtoReflect() protoreflect.Message {
+
 	mi := &file_gitserver_proto_msgTypes[25]
+
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1818,7 +1824,7 @@ type CommitMatch_Range struct {
 func (x *CommitMatch_Range) Reset() {
 	*x = CommitMatch_Range{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[26]
+		mi := &file_gitserver_proto_msgTypes[24]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1831,7 +1837,7 @@ func (x *CommitMatch_Range) String() string {
 func (*CommitMatch_Range) ProtoMessage() {}
 
 func (x *CommitMatch_Range) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[26]
+	mi := &file_gitserver_proto_msgTypes[24]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1874,7 +1880,7 @@ type CommitMatch_Location struct {
 func (x *CommitMatch_Location) Reset() {
 	*x = CommitMatch_Location{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[27]
+		mi := &file_gitserver_proto_msgTypes[25]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1887,7 +1893,7 @@ func (x *CommitMatch_Location) String() string {
 func (*CommitMatch_Location) ProtoMessage() {}
 
 func (x *CommitMatch_Location) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[27]
+	mi := &file_gitserver_proto_msgTypes[25]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2201,7 +2207,7 @@ func file_gitserver_proto_rawDescGZIP() []byte {
 }
 
 var file_gitserver_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_gitserver_proto_msgTypes = make([]protoimpl.MessageInfo, 28)
+var file_gitserver_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
 var file_gitserver_proto_goTypes = []interface{}{
 	(OperatorKind)(0),                 // 0: gitserver.v1.OperatorKind
 	(*ExecRequest)(nil),               // 1: gitserver.v1.ExecRequest
@@ -2524,7 +2530,9 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[20].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IsRepoCloneableRequest); i {
+
+			switch v := v.(*ReposStatsRequest); i {
+
 			case 0:
 				return &v.state
 			case 1:
@@ -2536,7 +2544,8 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[21].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*IsRepoCloneableResponse); i {
+			switch v := v.(*ReposStatsResponse); i {
+
 			case 0:
 				return &v.state
 			case 1:
@@ -2549,7 +2558,7 @@ func file_gitserver_proto_init() {
 		}
 		file_gitserver_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ReposStatsRequest); i {
-			case 0:
+
 				return &v.state
 			case 1:
 				return &v.sizeCache
@@ -2560,6 +2569,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
+
 			switch v := v.(*ReposStatsResponse); i {
 			case 0:
 				return &v.state
@@ -2584,6 +2594,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
+
 			switch v := v.(*CommitMatch_MatchedString); i {
 			case 0:
 				return &v.state
@@ -2596,6 +2607,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[26].Exporter = func(v interface{}, i int) interface{} {
+
 			switch v := v.(*CommitMatch_Range); i {
 			case 0:
 				return &v.state
@@ -2608,6 +2620,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[27].Exporter = func(v interface{}, i int) interface{} {
+
 			switch v := v.(*CommitMatch_Location); i {
 			case 0:
 				return &v.state
@@ -2641,7 +2654,9 @@ func file_gitserver_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_gitserver_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   28,
+
+			NumMessages:   26,
+
 			NumExtensions: 0,
 			NumServices:   1,
 		},

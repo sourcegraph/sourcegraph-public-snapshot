@@ -131,7 +131,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 			}
 		}
 
-		expectedSchema, err := fetchExpectedSchema(ctx, schemaName, version, out, expectedSchemaFactories)
+		expectedSchema, err := FetchExpectedSchema(ctx, schemaName, version, out, expectedSchemaFactories)
 		if err != nil {
 			return err
 		}
@@ -141,12 +141,11 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 			return err
 		}
 		schema := schemas["public"]
-
-		summaries := drift.CompareSchemaDescriptions(schemaName, version, canonicalize(schema), canonicalize(expectedSchema))
+		summaries := drift.CompareSchemaDescriptions(schemaName, version, Canonicalize(schema), Canonicalize(expectedSchema))
 
 		if autofixFlag.Get(cmd) {
 			summaries, err = attemptAutofix(ctx, out, store, summaries, func(schema descriptions.SchemaDescription) []drift.Summary {
-				return drift.CompareSchemaDescriptions(schemaName, version, canonicalize(schema), canonicalize(expectedSchema))
+				return drift.CompareSchemaDescriptions(schemaName, version, Canonicalize(schema), Canonicalize(expectedSchema))
 			})
 			if err != nil {
 				return err
@@ -176,7 +175,7 @@ func Drift(commandName string, factory RunnerFactory, outFactory OutputFactory, 
 	}
 }
 
-func fetchExpectedSchema(
+func FetchExpectedSchema(
 	ctx context.Context,
 	schemaName string,
 	version string,
@@ -274,7 +273,7 @@ func fetchExpectedSchema(
 	return descriptions.SchemaDescription{}, errors.New("failed to locate target schema description")
 }
 
-func canonicalize(schemaDescription descriptions.SchemaDescription) descriptions.SchemaDescription {
+func Canonicalize(schemaDescription descriptions.SchemaDescription) descriptions.SchemaDescription {
 	descriptions.Canonicalize(schemaDescription)
 
 	filtered := schemaDescription.Tables[:0]

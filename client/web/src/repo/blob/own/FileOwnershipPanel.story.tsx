@@ -16,6 +16,7 @@ const response: FetchOwnershipResult = {
         commit: {
             blob: {
                 ownership: {
+                    totalOwners: 4,
                     nodes: [
                         {
                             __typename: 'Ownership',

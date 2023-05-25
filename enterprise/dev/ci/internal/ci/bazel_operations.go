@@ -224,6 +224,9 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 					bk.Cmd("ls -lah "+buildScriptPath),
 					bk.Cmd(buildScriptPath),
 				)
+			} else if _, err := os.Stat(filepath.Join("client", app)); err == nil {
+				// Building Docker image located under $REPO_ROOT/client/
+				cmds = append(cmds, bk.AnnotatedCmd("client/"+app+"/build.sh", buildAnnotationOptions))
 			} else {
 				// Building Docker images located under $REPO_ROOT/cmd/
 				cmdDir := func() string {
@@ -324,6 +327,9 @@ func bazelBuildCandidateDockerImage(app string, version string, tag string, rt r
 				bk.Cmd("ls -lah "+buildScriptPath),
 				bk.Cmd(buildScriptPath),
 			)
+		} else if _, err := os.Stat(filepath.Join("client", app)); err == nil {
+			// Building Docker image located under $REPO_ROOT/client/
+			cmds = append(cmds, bk.AnnotatedCmd("client/"+app+"/build.sh", buildAnnotationOptions))
 		} else {
 			// Building Docker images located under $REPO_ROOT/cmd/
 			cmdDir := func() string {

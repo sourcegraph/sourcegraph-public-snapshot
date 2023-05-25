@@ -393,7 +393,7 @@ func (s *permsStore) setUserRepoPermissions(ctx context.Context, p []authz.Permi
 		}
 	}
 
-	deleted := []int{}
+	deleted := []int64{}
 	if replacePerms {
 		// Now delete rows that were updated before. This will delete all rows, that were not updated on the last update
 		// which was tried above.
@@ -472,7 +472,7 @@ RETURNING (created_at = updated_at) AS is_new_row;
 
 // deleteOldUserRepoPermissions deletes multiple rows of permissions. It also updates the updated_at and source
 // columns for all the rows that match the permissions input parameter
-func (s *permsStore) deleteOldUserRepoPermissions(ctx context.Context, entity authz.PermissionEntity, currentTime time.Time, source authz.PermsSource) ([]int, error) {
+func (s *permsStore) deleteOldUserRepoPermissions(ctx context.Context, entity authz.PermissionEntity, currentTime time.Time, source authz.PermsSource) ([]int64, error) {
 	const format = `
 DELETE FROM user_repo_permissions
 WHERE
@@ -500,7 +500,7 @@ WHERE
 	}
 
 	q := sqlf.Sprintf(format, where, currentTime, whereSource)
-	return basestore.ScanInts(s.Query(ctx, q))
+	return basestore.ScanInt64s(s.Query(ctx, q))
 }
 
 // upsertUserPermissionsBatchQuery composes a SQL query that does both addition (for `addedUserIDs`) and deletion (

@@ -229,6 +229,7 @@ message IsRepoCloneableResponse {
   string reason = 3;
 }
 
+
 // ReposStatsRequest is a empty request for the ReposStats RPC.
 message ReposStatsRequest {}
 

@@ -55,6 +55,8 @@ var (
 	_ graphqlbackend.SimpleOwnReasonResolver                  = &recentContributorOwnershipSignal{}
 	_ graphqlbackend.RecentViewOwnershipSignalResolver        = &recentViewOwnershipSignal{}
 	_ graphqlbackend.SimpleOwnReasonResolver                  = &recentViewOwnershipSignal{}
+	_ graphqlbackend.AssignedOwnerResolver                    = &assignedOwner{}
+	_ graphqlbackend.SimpleOwnReasonResolver                  = &assignedOwner{}
 	_ graphqlbackend.SimpleOwnReasonResolver                  = &codeownersFileEntryResolver{}
 )
 
@@ -96,9 +98,15 @@ func (o *ownershipReasonResolver) ToRecentViewOwnershipSignal() (res graphqlback
 	return
 }
 
+func (o *ownershipReasonResolver) ToAssignedOwner() (res graphqlbackend.AssignedOwnerResolver, ok bool) {
+	res, ok = o.resolver.(*assignedOwner)
+	return
+}
+
 func (o *ownershipReasonResolver) makesAnOwner() bool {
-	_, ok := o.resolver.(*codeownersFileEntryResolver)
-	return ok
+	_, makesAnOwner := o.resolver.(*codeownersFileEntryResolver)
+	_, makesAnAssignedOwner := o.resolver.(*assignedOwner)
+	return makesAnOwner || makesAnAssignedOwner
 }
 
 func (r *ownResolver) GitBlobOwnership(
@@ -130,6 +138,13 @@ func (r *ownResolver) GitBlobOwnership(
 		return nil, err
 	}
 	ownerships = append(ownerships, viewerResolvers...)
+
+	// Retrieve assigned owners.
+	assignedOwners, err := r.computeAssignedOwners(ctx, r.logger, r.db, blob, repoID)
+	if err != nil {
+		return nil, err
+	}
+	ownerships = append(ownerships, assignedOwners...)
 
 	return r.ownershipConnection(args, ownerships)
 }
@@ -601,6 +616,71 @@ func computeRecentViewSignals(ctx context.Context, logger log.Logger, db edb.Ent
 	return results, nil
 }
 
+type assignedOwner struct {
+	total int32
+}
+
+func (a *assignedOwner) Title() (string, error) {
+	return "assigned owner", nil
+}
+
+func (a *assignedOwner) Description() (string, error) {
+	return "Owner is manually assigned.", nil
+}
+
+func (r *ownResolver) computeAssignedOwners(ctx context.Context, logger log.Logger, db edb.EnterpriseDB, blob *graphqlbackend.GitTreeEntryResolver, repoID api.RepoID) (results []*ownershipResolver, err error) {
+	assignedOwnership, err := r.ownService().AssignedOwnership(ctx, repoID, api.CommitID(blob.Commit().OID()))
+	if err != nil {
+		return nil, errors.Wrap(err, "computing assigned ownership")
+	}
+	assignedOwnerSummaries := assignedOwnership.Match(blob.Path())
+
+	fetchedUsers := make(map[int32]*types.User)
+	userEmails := make(map[int32]string)
+
+	for _, summary := range assignedOwnerSummaries {
+		var user *types.User
+		var email string
+		userID := summary.OwnerUserID
+		if fetchedUser, found := fetchedUsers[userID]; found {
+			user = fetchedUser
+			email = userEmails[userID]
+		} else {
+			userFromDB, err := db.Users().GetByID(ctx, userID)
+			if err != nil {
+				return nil, errors.Wrap(err, "getting user")
+			}
+			primaryEmail, _, err := db.UserEmails().GetPrimaryEmail(ctx, userID)
+			if err != nil {
+				if errcode.IsNotFound(err) {
+					logger.Warn("Cannot find a primary email", log.Int32("userID", userID))
+				} else {
+					return nil, errors.Wrap(err, "getting user primary email")
+				}
+			}
+			user = userFromDB
+			email = primaryEmail
+			fetchedUsers[userID] = userFromDB
+			userEmails[userID] = primaryEmail
+		}
+		res := ownershipResolver{
+			db: db,
+			resolvedOwner: &codeowners.Person{
+				User:         user,
+				PrimaryEmail: &email,
+				Handle:       user.Username,
+			},
+			reasons: []*ownershipReasonResolver{
+				{
+					&assignedOwner{},
+				},
+			},
+		}
+		results = append(results, &res)
+	}
+	return results, nil
+}
+
 func (r *ownResolver) OwnSignalConfigurations(ctx context.Context) ([]graphqlbackend.SignalConfigurationResolver, error) {
 	err := auth.CheckCurrentActorIsSiteAdmin(actor.FromContext(ctx), r.db)
 	if err != nil {
@@ -673,7 +753,7 @@ func postgresifyPatterns(patterns []string) (results []string) {
 	return results
 }
 
-// postgresifyPatterns will convert postgres patterns to glob-ish patterns. For example github.com/% -> github.com/*.
+// userifyPatterns will convert postgres patterns to glob-ish patterns. For example github.com/% -> github.com/*.
 func userifyPatterns(patterns []string) (results []string) {
 	for _, pattern := range patterns {
 		results = append(results, strings.ReplaceAll(pattern, "%", "*"))

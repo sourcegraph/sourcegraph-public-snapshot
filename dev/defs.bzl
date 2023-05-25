@@ -5,16 +5,20 @@ load("@bazel_skylib//rules:expand_template.bzl", "expand_template")
 load("@aspect_rules_js//npm:defs.bzl", _npm_package = "npm_package")
 load("@aspect_rules_ts//ts:defs.bzl", _ts_project = "ts_project")
 load("@aspect_rules_jest//jest:defs.bzl", _jest_test = "jest_test")
+load("//dev:eslint.bzl", "eslint_test_with_types", "get_client_package_path")
 load(":sass.bzl", _sass = "sass")
 load(":babel.bzl", _babel = "babel")
 
 sass = _sass
 
-def ts_project(name, deps = [], use_preset_env = True, **kwargs):
+# TODO move this to `ts_project.bzl`
+def ts_project(name, srcs = [], deps = [], use_preset_env = True, **kwargs):
     """A wrapper around ts_project
 
     Args:
         name: A unique name for this target
+
+        srcs: A list of source files
 
         deps: A list of dependencies
 
@@ -22,6 +26,17 @@ def ts_project(name, deps = [], use_preset_env = True, **kwargs):
 
         **kwargs: Additional arguments to pass to ts_project
     """
+
+    # Add the ESLint test target which lints all srcs of the `ts_project`.
+    eslint_test_with_types(
+        name = "%s_eslint" % name,
+        srcs = srcs,
+        deps = deps,
+        testonly = True,
+        binary = "//:eslint",
+        config = "//{}:eslint_config".format(get_client_package_path()),
+    )
+
     deps = deps + [
         "//:node_modules/tslib",
     ]
@@ -39,6 +54,7 @@ def ts_project(name, deps = [], use_preset_env = True, **kwargs):
     # Default arguments for ts_project.
     _ts_project(
         name = name,
+        srcs = srcs,
         deps = deps,
 
         # tsconfig options, default to the root
@@ -78,7 +94,7 @@ def npm_package(name, srcs = [], **kwargs):
     """
     replace_prefixes = kwargs.pop("replace_prefixes", {})
 
-    package_type = kwargs.pop("type", "module")
+    package_type = kwargs.pop("type", "commonjs")
 
     # Modifications to package.json
     # TODO(bazel): remove when package.json can be updated in source
@@ -94,7 +110,7 @@ def npm_package(name, srcs = [], **kwargs):
             out = updated_pkg_json,
             substitutions = {
                 "src/index.ts": "src/index.js",
-                "\"name\"": "\"type\": \"%s\",\n  \"name\"" % package_type,
+                # "\"name\"": "\"type\": \"%s\",\n  \"name\"" % package_type,
             },
         )
 
