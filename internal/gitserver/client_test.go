@@ -70,7 +70,7 @@ func TestProtoRoundTrip(t *testing.T) {
 		t.Errorf("ArchiveOptions proto roundtrip failed (-want +got):\n%s", diff)
 	}
 
-  c := func(original protocol.IsRepoCloneableResponse) bool {
+	c := func(original protocol.IsRepoCloneableResponse) bool {
 		var converted protocol.IsRepoCloneableResponse
 		converted.FromProto(original.ToProto())
 
@@ -824,7 +824,7 @@ func TestClient_ReposStatsGRPC(t *testing.T) {
 		UpdatedAt:   now,
 		GitDirBytes: 1337,
 	}
-  	called := false
+	called := false
 	source := gitserver.NewTestClientSource(t, []string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
 		o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 			mockRepoStats := func(ctx context.Context, in *proto.ReposStatsRequest, opts ...grpc.CallOption) (*proto.ReposStatsResponse, error) {
@@ -919,7 +919,7 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 		for _, tc := range testCases {
 
 			called := false
-			source := gitserver.NewTestClientSource([]string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
+			source := gitserver.NewTestClientSource(t, []string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
 				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 					mockIsRepoCloneable := func(ctx context.Context, in *proto.IsRepoCloneableRequest, opts ...grpc.CallOption) (*proto.IsRepoCloneableResponse, error) {
 						called = true
@@ -954,7 +954,7 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 		for _, tc := range testCases {
 
 			called := false
-			source := gitserver.NewTestClientSource([]string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
+			source := gitserver.NewTestClientSource(t, []string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
 				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 					mockIsRepoCloneable := func(ctx context.Context, in *proto.IsRepoCloneableRequest, opts ...grpc.CallOption) (*proto.IsRepoCloneableResponse, error) {
 						called = true

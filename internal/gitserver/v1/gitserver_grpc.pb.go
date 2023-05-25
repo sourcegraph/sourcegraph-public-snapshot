@@ -19,13 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-
 	GitserverService_Exec_FullMethodName            = "/gitserver.v1.GitserverService/Exec"
 	GitserverService_IsRepoCloneable_FullMethodName = "/gitserver.v1.GitserverService/IsRepoCloneable"
 	GitserverService_Search_FullMethodName          = "/gitserver.v1.GitserverService/Search"
 	GitserverService_Archive_FullMethodName         = "/gitserver.v1.GitserverService/Archive"
 	GitserverService_ReposStats_FullMethodName      = "/gitserver.v1.GitserverService/ReposStats"
-
 )
 
 // GitserverServiceClient is the client API for GitserverService service.
@@ -312,11 +310,10 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*GitserverServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-
 			MethodName: "IsRepoCloneable",
 			Handler:    _GitserverService_IsRepoCloneable_Handler,
 		},
-
+		{
 			MethodName: "ReposStats",
 			Handler:    _GitserverService_ReposStats_Handler,
 		},
