@@ -12,14 +12,12 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -188,41 +186,10 @@ func (gs *GRPCServer) ReposStats(ctx context.Context, req *proto.ReposStatsReque
 }
 
 func (gs *GRPCServer) IsRepoCloneable(ctx context.Context, req *proto.IsRepoCloneableRequest) (*proto.IsRepoCloneableResponse, error) {
-	if req.Repo == "" {
-		return nil, errors.New("no Repo given")
-	}
-
-	repo := api.RepoName(req.Repo)
-
-	var syncer VCSSyncer
-	// We use an internal actor here as the repo may be private. It is safe since all
-	// we return is a bool indicating whether the repo is cloneable or not. Perhaps
-	// the only things that could leak here is whether a private repo exists although
-	// the endpoint is only available internally so it's low risk.
-	remoteURL, err := gs.Server.getRemoteURL(actor.WithInternalActor(ctx), repo)
+	repo := api.RepoName(req.GetRepo())
+	resp, err := gs.Server.IsRepoCloneable(ctx, repo)
 	if err != nil {
-		// We use this endpoint to verify if a repo exists without consuming
-		// API rate limit, since many users visit private or bogus repos,
-		// so we deduce the unauthenticated clone URL from the repo name.
-		remoteURL, _ = vcs.ParseURL("https://" + string(req.Repo) + ".git")
-
-		// At this point we are assuming it's a git repo
-		syncer = &GitRepoSyncer{}
-	} else {
-		syncer, err = gs.Server.GetVCSSyncer(ctx, repo)
-		if err != nil {
-			return nil, err
-		}
+		return nil, err
 	}
-
-	resp := &proto.IsRepoCloneableResponse{
-		Cloned: repoCloned(gs.Server.dir(repo)),
-	}
-	if err := syncer.IsCloneable(ctx, remoteURL); err == nil {
-		resp.Cloneable = true
-	} else {
-		resp.Reason = err.Error()
-	}
-
-	return resp, nil
+	return resp.ToProto(), nil
 }
