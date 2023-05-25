@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -1094,6 +1095,10 @@ type testRecord struct {
 }
 
 func (r testRecord) RecordID() int { return r.id }
+
+func (r testRecord) RecordUID() string {
+	return strconv.Itoa(r.id)
+}
 
 func newIntPtr(i int) *int {
 	return &i
