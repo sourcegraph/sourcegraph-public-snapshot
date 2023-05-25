@@ -5,13 +5,20 @@ const SERVER_PORT = 49300
 export const SERVER_URL = 'http://localhost:49300'
 export const VALID_TOKEN = 'abcdefgh1234'
 
+const responses = {
+    chat: 'hello from the assistant',
+    fixup: '<selection><title>Goodbye Cody</title></selection>',
+}
+
 // Runs a stub Cody service for testing.
 export async function run<T>(around: () => Promise<T>): Promise<T> {
     const app = express()
     app.use(express.json())
 
     app.post('/.api/completions/stream', (req, res) => {
-        res.send('event: completion\ndata: {"completion": "hello from the assistant"}\n\nevent: done\ndata: {}\n\n')
+        // TODO: Filter streaming response
+        const response = req.body.messages[2].text.includes('<selection>') ? responses.fixup : responses.chat
+        res.send(`event: completion\ndata: {"completion": ${JSON.stringify(response)}}\n\nevent: done\ndata: {}\n\n`)
     })
 
     app.post('/.api/graphql', (req, res) => {

@@ -12,6 +12,8 @@ import { SecretStorage, getAccessToken } from './services/SecretStorageProvider'
  * All configuration values, with some sanitization performed.
  */
 export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'get'>): Configuration {
+    const isTesting = process.env.CODY_TESTING === 'true'
+
     let debugRegex: RegExp | null = null
     try {
         const debugPattern: string | null = config.get<string | null>('cody.debug.filter', null)
@@ -30,15 +32,15 @@ export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'ge
     return {
         serverEndpoint: sanitizeServerEndpoint(config.get('cody.serverEndpoint', '')),
         codebase: sanitizeCodebase(config.get('cody.codebase')),
+        customHeaders: config.get<object>('cody.customHeaders', {}) as Record<string, string>,
+        useContext: config.get<ConfigurationUseContext>('cody.useContext') || 'embeddings',
         debugEnable: config.get<boolean>('cody.debug.enable', false),
         debugVerbose: config.get<boolean>('cody.debug.verbose', false),
         debugFilter: debugRegex,
-        useContext: config.get<ConfigurationUseContext>('cody.useContext') || 'embeddings',
-        experimentalSuggest: config.get('cody.experimental.suggestions', false),
-        experimentalChatPredictions: config.get('cody.experimental.chatPredictions', false),
-        experimentalInline: config.get('cody.experimental.inline', false),
-        experimentalGuardrails: config.get('cody.experimental.guardrails', false),
-        customHeaders: config.get<object>('cody.customHeaders', {}) as Record<string, string>,
+        experimentalSuggest: config.get('cody.experimental.suggestions', isTesting),
+        experimentalChatPredictions: config.get('cody.experimental.chatPredictions', isTesting),
+        experimentalInline: config.get('cody.experimental.inline', isTesting),
+        experimentalGuardrails: config.get('cody.experimental.guardrails', isTesting),
     }
 }
 

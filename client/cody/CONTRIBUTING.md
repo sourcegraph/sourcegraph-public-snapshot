@@ -32,15 +32,40 @@
 1. Unit tests:
 
    ```shell
-   $ cd client/cody
-   $ pnpm test:unit
+   cd client/cody
+   pnpm test:unit
    ```
 
 2. Integration tests:
 
    ```shell
-   $ cd client/cody
-   $ pnpm test:integration
+   cd client/cody
+   pnpm test:integration
+   ```
+
+3. E2E tests:
+
+   To run all the tests inside the `client/cody/test/e2e` directory:
+
+   ```shell
+   cd client/cody
+   pnpm test:e2e
+   ```
+
+   To run test individually, pass in the name of the test by replacing $TEST_NAME below.
+
+   ```sh
+   pnpm test:e2e $TEST_NAME
+   # Example: Run the inline-assist test only
+   pnpm test:e2e inline-assist
+   ```
+
+   Example: Run the inline-assist test only
+
+   ```sh
+   pnpm test:e2e --debug
+   # Example: Run the inline-assist test in debug mode
+   pnpm test:e2e inline-assist --debug
    ```
 
 ## Release Process

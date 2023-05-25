@@ -59,7 +59,7 @@
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
     "test:integration": "tsc -b ./test/integration && pnpm run --silent build:dev && node --inspect -r ts-node/register out/test/integration/main.js",
     "test:unit": "jest",
-    "test:e2e": "npx playwright install && pnpm run --silent build:dev && playwright test test/e2e",
+    "test:e2e": "npx playwright install && pnpm run --silent build:dev && playwright test",
     "vscode:prepublish": "scripts/check-rg.sh",
     "vsce:package": "pnpm --silent build && vsce package --no-dependencies -o dist/cody.vsix",
     "vsce:prerelease": "pnpm --silent build && vsce package patch --pre-release --no-dependencies -o dist/cody.vsix",
