@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (r *schemaResolver) SettingsSubject(ctx context.Context, args *struct{ ID graphql.ID }) (*settingsSubject, error) {
+func (r *schemaResolver) SettingsSubject(ctx context.Context, args *struct{ ID graphql.ID }) (*settingsSubjectResolver, error) {
 	n, err := r.nodeByID(ctx, args.ID)
 	if err != nil {
 		return nil, err
@@ -23,7 +23,7 @@ func (r *schemaResolver) SettingsSubject(ctx context.Context, args *struct{ ID g
 
 var errUnknownSettingsSubject = errors.New("unknown settings subject")
 
-type settingsSubject struct {
+type settingsSubjectResolver struct {
 	// Exactly 1 of these fields must be set.
 	defaultSettings *defaultSettingsResolver
 	site            *siteResolver
@@ -33,10 +33,10 @@ type settingsSubject struct {
 
 // settingsSubjectForNode fetches the settings subject for the given Node. If
 // the node is not a valid settings subject, an error is returned.
-func settingsSubjectForNode(ctx context.Context, n Node) (*settingsSubject, error) {
+func settingsSubjectForNode(ctx context.Context, n Node) (*settingsSubjectResolver, error) {
 	switch s := n.(type) {
 	case *siteResolver:
-		return &settingsSubject{site: s}, nil
+		return &settingsSubjectResolver{site: s}, nil
 
 	case *UserResolver:
 		// 🚨 SECURITY: Only the authenticated user can view their settings on
@@ -51,33 +51,33 @@ func settingsSubjectForNode(ctx context.Context, n Node) (*settingsSubject, erro
 				return nil, err
 			}
 		}
-		return &settingsSubject{user: s}, nil
+		return &settingsSubjectResolver{user: s}, nil
 
 	case *OrgResolver:
 		// 🚨 SECURITY: Check that the current user is a member of the org.
 		if err := auth.CheckOrgAccessOrSiteAdmin(ctx, s.db, s.org.ID); err != nil {
 			return nil, err
 		}
-		return &settingsSubject{org: s}, nil
+		return &settingsSubjectResolver{org: s}, nil
 
 	default:
 		return nil, errUnknownSettingsSubject
 	}
 }
 
-func (s *settingsSubject) ToDefaultSettings() (*defaultSettingsResolver, bool) {
+func (s *settingsSubjectResolver) ToDefaultSettings() (*defaultSettingsResolver, bool) {
 	return s.defaultSettings, s.defaultSettings != nil
 }
 
-func (s *settingsSubject) ToSite() (*siteResolver, bool) {
+func (s *settingsSubjectResolver) ToSite() (*siteResolver, bool) {
 	return s.site, s.site != nil
 }
 
-func (s *settingsSubject) ToOrg() (*OrgResolver, bool) { return s.org, s.org != nil }
+func (s *settingsSubjectResolver) ToOrg() (*OrgResolver, bool) { return s.org, s.org != nil }
 
-func (s *settingsSubject) ToUser() (*UserResolver, bool) { return s.user, s.user != nil }
+func (s *settingsSubjectResolver) ToUser() (*UserResolver, bool) { return s.user, s.user != nil }
 
-func (s *settingsSubject) toSubject() api.SettingsSubject {
+func (s *settingsSubjectResolver) toSubject() api.SettingsSubject {
 	switch {
 	case s.site != nil:
 		return api.SettingsSubject{Site: true}
@@ -90,7 +90,7 @@ func (s *settingsSubject) toSubject() api.SettingsSubject {
 	}
 }
 
-func (s *settingsSubject) ID() (graphql.ID, error) {
+func (s *settingsSubjectResolver) ID() (graphql.ID, error) {
 	switch {
 	case s.defaultSettings != nil:
 		return s.defaultSettings.ID(), nil
@@ -105,7 +105,7 @@ func (s *settingsSubject) ID() (graphql.ID, error) {
 	}
 }
 
-func (s *settingsSubject) LatestSettings(ctx context.Context) (*settingsResolver, error) {
+func (s *settingsSubjectResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
 	switch {
 	case s.defaultSettings != nil:
 		return s.defaultSettings.LatestSettings(ctx)
@@ -120,7 +120,7 @@ func (s *settingsSubject) LatestSettings(ctx context.Context) (*settingsResolver
 	}
 }
 
-func (s *settingsSubject) SettingsURL() (*string, error) {
+func (s *settingsSubjectResolver) SettingsURL() (*string, error) {
 	switch {
 	case s.defaultSettings != nil:
 		return s.defaultSettings.SettingsURL(), nil
@@ -135,7 +135,7 @@ func (s *settingsSubject) SettingsURL() (*string, error) {
 	}
 }
 
-func (s *settingsSubject) ViewerCanAdminister(ctx context.Context) (bool, error) {
+func (s *settingsSubjectResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	switch {
 	case s.defaultSettings != nil:
 		return s.defaultSettings.ViewerCanAdminister(ctx)
@@ -150,7 +150,7 @@ func (s *settingsSubject) ViewerCanAdminister(ctx context.Context) (bool, error)
 	}
 }
 
-func (s *settingsSubject) SettingsCascade() (*settingsCascade, error) {
+func (s *settingsSubjectResolver) SettingsCascade() (*settingsCascade, error) {
 	switch {
 	case s.defaultSettings != nil:
 		return s.defaultSettings.SettingsCascade(), nil
@@ -165,12 +165,12 @@ func (s *settingsSubject) SettingsCascade() (*settingsCascade, error) {
 	}
 }
 
-func (s *settingsSubject) ConfigurationCascade() (*settingsCascade, error) {
+func (s *settingsSubjectResolver) ConfigurationCascade() (*settingsCascade, error) {
 	return s.SettingsCascade()
 }
 
 // readSettings unmarshals s's latest settings into v.
-func (s *settingsSubject) readSettings(ctx context.Context, v any) error {
+func (s *settingsSubjectResolver) readSettings(ctx context.Context, v any) error {
 	settings, err := s.LatestSettings(ctx)
 	if err != nil {
 		return err

@@ -28,7 +28,7 @@ func (r *defaultSettingsResolver) LatestSettings(_ context.Context) (*settingsRe
 		Subject:  api.SettingsSubject{Default: true},
 		Contents: `{"experimentalFeatures": {}}`,
 	}
-	return &settingsResolver{r.db, &settingsSubject{defaultSettings: r}, settings, nil}, nil
+	return &settingsResolver{r.db, &settingsSubjectResolver{defaultSettings: r}, settings, nil}, nil
 }
 
 func (r *defaultSettingsResolver) SettingsURL() *string { return nil }
@@ -38,7 +38,7 @@ func (r *defaultSettingsResolver) ViewerCanAdminister(_ context.Context) (bool, 
 }
 
 func (r *defaultSettingsResolver) SettingsCascade() *settingsCascade {
-	return &settingsCascade{db: r.db, subject: &settingsSubject{defaultSettings: r}}
+	return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{defaultSettings: r}}
 }
 
 func (r *defaultSettingsResolver) ConfigurationCascade() *settingsCascade { return r.SettingsCascade() }

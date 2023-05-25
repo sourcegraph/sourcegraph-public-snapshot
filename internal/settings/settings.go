@@ -6,9 +6,11 @@ import (
 	"sort"
 
 	"github.com/sourcegraph/conc/iter"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -18,7 +20,21 @@ func defaultSettings() *schema.Settings {
 	}
 }
 
-func Final(ctx context.Context, db database.DB, subject api.SettingsSubject) (*schema.Settings, error) {
+func CurrentUserFinal(ctx context.Context, db database.DB) (*schema.Settings, error) {
+	currentUser := actor.FromContext(ctx)
+	if !currentUser.IsAuthenticated() {
+		return Final(ctx, db, api.SettingsSubject{Site: true})
+	}
+	return Final(ctx, db, api.SettingsSubject{User: &currentUser.UID})
+}
+
+func Final(ctx context.Context, db database.DB, subject api.SettingsSubject) (_ *schema.Settings, err error) {
+	tr, ctx := trace.New(ctx, "settings", "Final")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	subjects, err := RelevantSubjects(ctx, db, subject)
 	if err != nil {
 		return nil, err
