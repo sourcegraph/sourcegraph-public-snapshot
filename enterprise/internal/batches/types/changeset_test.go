@@ -444,7 +444,7 @@ func TestChangeset_URL(t *testing.T) {
 					ChangeNumber: 1,
 					Project:      "foo",
 				},
-				URL: &url.URL{Scheme: "https", Host: "gerrit.sgdev.org"},
+				CodeHostURL: &url.URL{Scheme: "https", Host: "gerrit.sgdev.org"},
 			},
 			want: "https://gerrit.sgdev.org/c/foo/+/1",
 		},

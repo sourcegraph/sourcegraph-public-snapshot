@@ -12,5 +12,5 @@ import (
 // changesets.
 type AnnotatedChange struct {
 	*gerrit.Change
-	URL *url.URL
+	CodeHostURL *url.URL
 }

@@ -654,7 +654,7 @@ func (c *Changeset) URL() (s string, err error) {
 
 		return returnURL.String(), nil
 	case *gerritbatches.AnnotatedChange:
-		return m.URL.JoinPath("c", url.PathEscape(m.Project), "+", url.PathEscape(strconv.Itoa(m.ChangeNumber))).String(), nil
+		return m.CodeHostURL.JoinPath("c", url.PathEscape(m.Project), "+", url.PathEscape(strconv.Itoa(m.ChangeNumber))).String(), nil
 	default:
 		return "", errors.New("unknown changeset type")
 	}
