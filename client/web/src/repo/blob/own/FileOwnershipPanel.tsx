@@ -146,11 +146,14 @@ export const FileOwnershipPanel: React.FunctionComponent<
                                     )
                                     .map((ownership, index) => (
                                         <>
-                                            {index > 0 && <tr className={styles.bordered}></tr>}
-                                            <FileOwnershipEntry
+                                            {
                                                 // This list is not expected to change, so it's safe to use the index as a key.
                                                 // eslint-disable-next-line react/no-array-index-key
-                                                key={index}
+                                                index > 0 && <tr key={2 * index} className={styles.bordered}></tr>
+                                            }
+                                            <FileOwnershipEntry
+                                                // eslint-disable-next-line react/no-array-index-key
+                                                key={2 * index + 1}
                                                 owner={ownership.owner}
                                                 reasons={ownership.reasons}
                                             />
