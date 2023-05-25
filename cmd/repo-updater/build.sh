@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-path_to_package=${1:-github.com/sourcegraph/sourcegraph/cmd/repo-updater}
 # We want to build multiple go binaries, so we use a custom build step on CI.
 cd "$(dirname "${BASH_SOURCE[0]}")"/../..
 set -ex
@@ -31,6 +30,7 @@ export GOARCH=amd64
 export GOOS=linux
 export CGO_ENABLED=0
 
+path_to_package=${1:-github.com/sourcegraph/sourcegraph/cmd/repo-updater}
 for pkg in $path_to_package; do
   go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION  -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$OUTPUT/$(basename "$pkg")" "$pkg"
 done
