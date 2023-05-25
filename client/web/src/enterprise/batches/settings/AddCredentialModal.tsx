@@ -59,8 +59,15 @@ const scopeRequirements: Record<ExternalServiceKind, JSX.Element> = {
             permissions.
         </span>
     ),
+    [ExternalServiceKind.GERRIT]: (
+        // TODO: @varsanojidan change this after spike
+        <span>
+            with <Code>Organization:All accessible organizations</Code>, <Code>Code:Full</Code>,{' '}
+            <Code>Code:Status</Code>, <Code>Pull Request Threads:Read & Write</Code>, and <Code>User Profile:Read</Code>{' '}
+            permissions.
+        </span>
+    ),
     // These are just for type completeness and serve as placeholders for a bright future.
-    [ExternalServiceKind.GERRIT]: <span>Unsupported</span>,
     [ExternalServiceKind.GITOLITE]: <span>Unsupported</span>,
     [ExternalServiceKind.GOMODULES]: <span>Unsupported</span>,
     [ExternalServiceKind.PYTHONPACKAGES]: <span>Unsupported</span>,

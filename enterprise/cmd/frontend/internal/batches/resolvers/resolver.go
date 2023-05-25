@@ -1256,6 +1256,13 @@ func (r *Resolver) generateAuthenticatorForCredential(ctx context.Context, exter
 			PublicKey:  keypair.PublicKey,
 			Passphrase: keypair.Passphrase,
 		}
+	} else if externalServiceType == extsvc.TypeGerrit {
+		a = &extsvcauth.BasicAuthWithSSH{
+			BasicAuth:  extsvcauth.BasicAuth{Username: *username, Password: credential},
+			PrivateKey: keypair.PrivateKey,
+			PublicKey:  keypair.PublicKey,
+			Passphrase: keypair.Passphrase,
+		}
 	} else {
 		a = &extsvcauth.OAuthBearerTokenWithSSH{
 			OAuthBearerToken: extsvcauth.OAuthBearerToken{Token: credential},
