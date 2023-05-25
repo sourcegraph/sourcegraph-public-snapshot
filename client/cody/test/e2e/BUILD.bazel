@@ -9,6 +9,7 @@ ts_project(
     testonly = True,
     srcs = [
         "auth.test.ts",
+        "common.ts"
         "helpers.ts",
         "inline-assist.test.ts",
     ],

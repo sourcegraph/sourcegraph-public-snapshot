@@ -40,5 +40,5 @@ test('start a fixup job from inline assist with valid auth', async ({ page, side
     // Ensures Decorations is displayed by checking hover text
     await page.getByText('>Goodbye Cody<').hover()
     // The decoration text on hover should start with 'Cody Fixup #' and end with random number
-    await page.getByRole('tooltip', { name: /Cody Fixup.*/ }).click()
+    await page.getByRole('tooltip', { name: /Cody Assist.*/ }).click()
 })
