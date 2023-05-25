@@ -224,7 +224,7 @@ const register = async (
             vscode.commands.registerCommand('cody.experimental.suggest', async () => {
                 await completionsProvider.fetchAndShowCompletions()
             }),
-            vscode.commands.registerCommand('cody.completions.inline.accepted', async () => {
+            vscode.commands.registerCommand('cody.completions.inline.accepted', () => {
                 const params = { type: 'inline' }
                 logEvent('CodyVSCodeExtension:completion:accepted', params, params)
             }),
