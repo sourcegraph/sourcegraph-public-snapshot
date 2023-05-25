@@ -5,4 +5,5 @@ go_library(
     srcs = ["types.go"],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared",
     visibility = ["//enterprise:__subpackages__"],
+    deps = ["//lib/codeintel/autoindex/config"],
 )
