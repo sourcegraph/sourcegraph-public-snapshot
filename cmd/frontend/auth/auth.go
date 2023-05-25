@@ -35,11 +35,11 @@ func AuthMiddleware() *Middleware {
 	m := make([]*Middleware, 0, 1+len(extraAuthMiddlewares))
 	m = append(m, RequireAuthMiddleware)
 	m = append(m, extraAuthMiddlewares...)
-	return ComposeMiddleware(m...)
+	return composeMiddleware(m...)
 }
 
-// ComposeMiddleware returns a new Middleware that composes the middlewares together.
-func ComposeMiddleware(middlewares ...*Middleware) *Middleware {
+// composeMiddleware returns a new Middleware that composes the middlewares together.
+func composeMiddleware(middlewares ...*Middleware) *Middleware {
 	return &Middleware{
 		API: func(h http.Handler) http.Handler {
 			for _, m := range middlewares {

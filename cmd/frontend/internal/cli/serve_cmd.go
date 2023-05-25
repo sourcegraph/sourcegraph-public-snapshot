@@ -16,7 +16,6 @@ import (
 	"github.com/throttled/throttled/v2/store/memstore"
 	"github.com/throttled/throttled/v2/store/redigostore"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -86,7 +85,7 @@ func InitDB(logger sglog.Logger) (*sql.DB, error) {
 type SetupFunc func(database.DB, conftypes.UnifiedWatchable) enterprise.Services
 
 // Main is the main entrypoint for the frontend server program.
-func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, enterpriseSetupHook SetupFunc, authMiddleware *auth.Middleware) error {
+func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, enterpriseSetupHook SetupFunc) error {
 	logger := observationCtx.Logger
 
 	sqlDB, err := InitDB(logger)
@@ -227,7 +226,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return err
 	}
 
-	server, err := makeExternalAPI(db, logger, schema, enterpriseServices, rateLimitWatcher, authMiddleware)
+	server, err := makeExternalAPI(db, logger, schema, enterpriseServices, rateLimitWatcher)
 	if err != nil {
 		return err
 	}
@@ -257,7 +256,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	return nil
 }
 
-func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher, authMiddleware *auth.Middleware) (goroutine.BackgroundRoutine, error) {
+func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher) (goroutine.BackgroundRoutine, error) {
 	listener, err := httpserver.NewListener(httpAddr)
 	if err != nil {
 		return nil, err
@@ -292,7 +291,6 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 		},
 		enterprise.NewExecutorProxyHandler,
 		enterprise.NewGitHubAppSetupHandler,
-		authMiddleware,
 	)
 	httpServer := &http.Server{
 		Handler:      externalHandler,

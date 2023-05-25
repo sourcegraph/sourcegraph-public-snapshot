@@ -100,10 +100,9 @@ func matchedRouteName(req *http.Request, router *mux.Router) string {
 	return m.Route.GetName()
 }
 
-// checks if the request is allowed to be anonymous
-// based on `auth.public` site configuration
+// checks the `auth.public` site configuration
 // and `AllowAnonymousRequestContextKey` context key value
-func checkAllowAnonymousRequest(req *http.Request) bool {
+func isAllowAnonymousUsageEnabled(req *http.Request) bool {
 	if !conf.Get().AuthPublic {
 		return false
 	}
@@ -124,7 +123,7 @@ func AllowAnonymousRequest(req *http.Request) bool {
 		return true
 	}
 
-	if checkAllowAnonymousRequest(req) {
+	if isAllowAnonymousUsageEnabled(req) {
 		return true
 	}
 
