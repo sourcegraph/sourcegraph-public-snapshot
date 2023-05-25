@@ -12,7 +12,8 @@ func removePunctuation(input string) string {
 }
 
 func stemTerm(input string) string {
-	// Attempt to stem words, but only use the stem if it's a prefix of the original term.
+	// Attempt to stem words, but only use the stem if it's a prefix of the original term. This
+	// avoids cases where the stem is noisy and no longer matches the original term.
 	stemmed, err := snowball.Stem(input, "english", false)
 	if err != nil || !strings.HasPrefix(input, stemmed) {
 		return input
