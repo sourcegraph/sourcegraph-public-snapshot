@@ -156,7 +156,7 @@ func (b *bag) resolve(ctx context.Context, db edb.EnterpriseDB) error {
 // {email:alice2@example.com} -> 42
 // {handle:aliceCodes} -> 42
 //
-// TODO: For now the first handle or email assigned points to a user.
+// TODO(#52441): For now the first handle or email assigned points to a user.
 // This needs to be refined so that the same handle text can be considered
 // in different contexts properly.
 func (b *bag) linkBack(userRefs *userReferences) {
@@ -190,7 +190,7 @@ func findUserByUsername(ctx context.Context, db edb.EnterpriseDB, handle string)
 	return user, nil
 }
 
-// TODO: GetVerifiedEmails accepts var-args, can batch
+// TODO(#52246): GetVerifiedEmails accepts var-args, can batch
 func findUserIDByEmail(ctx context.Context, db edb.EnterpriseDB, email string) (int32, error) {
 	// Checking that provided email is verified.
 	verifiedEmails, err := db.UserEmails().GetVerifiedEmails(ctx, email)
