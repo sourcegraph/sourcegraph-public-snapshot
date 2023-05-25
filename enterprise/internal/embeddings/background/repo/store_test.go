@@ -23,9 +23,6 @@ func completeJob(t *testing.T, ctx context.Context, store RepoEmbeddingJobsStore
 }
 
 func TestRepoEmbeddingJobsStore(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
@@ -90,9 +87,6 @@ func TestRepoEmbeddingJobsStore(t *testing.T) {
 }
 
 func TestCancelRepoEmbeddingJob(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
 	t.Parallel()
 
 	logger := logtest.Scoped(t)

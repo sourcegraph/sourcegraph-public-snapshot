@@ -91,38 +91,6 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 
 }
 
-func TestCancelRepoEmbeddingsJob(t *testing.T) {
-	logger := logtest.Scoped(t)
-
-	mockDB := database.NewMockDB()
-	mockUsers := database.NewMockUserStore()
-	mockUsers.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
-	mockDB.UsersFunc.SetDefaultReturn(mockUsers)
-
-	mockRepos := database.NewMockRepoStore()
-	mockRepos.GetByNameFunc.SetDefaultReturn(&types.Repo{ID: 1, Name: "repo1"}, nil)
-	mockDB.ReposFunc.SetDefaultReturn(mockRepos)
-
-	jobStore := repo.NewMockRepoEmbeddingJobsStore()
-	jobStore.CancelRepoEmbeddingJobFunc.SetDefaultReturn(nil)
-
-	resolver := NewResolver(
-		mockDB,
-		logger,
-		gitserver.NewMockClient(),
-		embeddings.NewMockClient(),
-		repo.NewMockRepoEmbeddingJobsStore(),
-		contextdetection.NewMockContextDetectionEmbeddingJobsStore(),
-	)
-
-	ctx := actor.WithActor(context.Background(), actor.FromMockUser(1))
-	_, err := resolver.CancelRepoEmbeddingJob(ctx, graphqlbackend.CancelRepoEmbeddingJobArgs{
-		RepoName: "repo1",
-		Revision: "some-revision",
-	})
-	require.NoError(t, err)
-}
-
 func Test_extractLineRange(t *testing.T) {
 	cases := []struct {
 		input      []byte
