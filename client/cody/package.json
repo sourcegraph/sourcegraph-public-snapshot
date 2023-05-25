@@ -139,8 +139,8 @@
         "title": "Cody: Sign out"
       },
       {
-        "command": "cody.experimental.suggest",
-        "title": "Cody: View Suggestions"
+        "command": "cody.manual-completions",
+        "title": "Cody: Open Completions Panel"
       },
       {
         "command": "cody.settings",
@@ -263,6 +263,10 @@
         {
           "command": "cody.comment.load",
           "when": "false"
+        },
+        {
+          "command": "cody.manual-completions",
+          "when": "config.cody.experimental.suggestions"
         }
       ],
       "editor/context": [
@@ -395,7 +399,7 @@
         "cody.experimental.suggestions": {
           "order": 5,
           "type": "boolean",
-          "markdownDescription": "Enables Cody inline autocompletion in your editor.",
+          "markdownDescription": "Enables experimental Cody completions in your editor.",
           "default": false
         },
         "cody.experimental.chatPredictions": {
