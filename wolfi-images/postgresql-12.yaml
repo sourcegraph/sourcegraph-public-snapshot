@@ -38,6 +38,11 @@ accounts:
       gid: 99
 
 paths:
+  - path: /data
+    type: directory
+    uid: 999
+    gid: 999
+    permissions: 0o750
   - path: /data/pgdata-12
     type: directory
     uid: 999
