@@ -197,7 +197,12 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
             {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && !disableFeedbackSurvey && (
                 <SurveyToast authenticatedUser={props.authenticatedUser} />
             )}
-            {!isSiteInit && !props.isSourcegraphDotCom && <CodySurveyToast />}
+            {!isSiteInit && props.isSourcegraphDotCom && props.authenticatedUser && (
+                <CodySurveyToast
+                    telemetryService={props.telemetryService}
+                    authenticatedUser={props.authenticatedUser}
+                />
+            )}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}

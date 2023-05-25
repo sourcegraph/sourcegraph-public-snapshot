@@ -5,6 +5,7 @@ import { mdiEmail } from '@mdi/js'
 import { asError, ErrorLike } from '@sourcegraph/common'
 import { gql, useMutation } from '@sourcegraph/http-client'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Checkbox, Form, H3, Modal, Text, Button, Icon, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -22,7 +23,10 @@ const SUBMIT_CODY_SURVEY = gql`
     }
 `
 
-const CodySurveyToastInner: React.FC<{ onSubmitEnd: () => void }> = ({ onSubmitEnd }) => {
+const CodySurveyToastInner: React.FC<{ onSubmitEnd: () => void } & TelemetryProps> = ({
+    onSubmitEnd,
+    telemetryService,
+}) => {
     const [isCodyForWork, setIsCodyForWork] = useState(false)
     const [isCodyForPersonalStuff, setIsCodyForPersonalStuff] = useState(false)
 
@@ -45,12 +49,18 @@ const CodySurveyToastInner: React.FC<{ onSubmitEnd: () => void }> = ({ onSubmitE
 
     const handleSubmit = useCallback(
         (event: React.FormEvent<HTMLFormElement>) => {
+            const eventParams = { isCodyForPersonalStuff, isCodyForWork }
+            telemetryService.log('CodyUsageToastSubmitted', eventParams, eventParams)
             event.preventDefault()
             // eslint-disable-next-line no-console
             submitCodySurvey().catch(console.error).finally(onSubmitEnd)
         },
-        [onSubmitEnd, submitCodySurvey]
+        [isCodyForPersonalStuff, isCodyForWork, onSubmitEnd, submitCodySurvey, telemetryService]
     )
+
+    useEffect(() => {
+        telemetryService.log('CodySurveyToastViewed')
+    }, [telemetryService])
 
     return (
         <Modal position="center" aria-label="Welcome message">
@@ -84,9 +94,10 @@ const CodySurveyToastInner: React.FC<{ onSubmitEnd: () => void }> = ({ onSubmitE
     )
 }
 
-const CodyVerifyEmailToast: React.FC<{ onNext: () => void; authenticatedUser: AuthenticatedUser }> = ({
+const CodyVerifyEmailToast: React.FC<{ onNext: () => void; authenticatedUser: AuthenticatedUser } & TelemetryProps> = ({
     onNext,
     authenticatedUser,
+    telemetryService,
 }) => {
     const [sending, setSending] = useState(false)
     const [resentEmailTo, setResentEmailTo] = useState<string | null>(null)
@@ -109,6 +120,10 @@ const CodyVerifyEmailToast: React.FC<{ onNext: () => void; authenticatedUser: Au
             })
         }
     }, [authenticatedUser])
+
+    useEffect(() => {
+        telemetryService.log('VerifyEmailToastViewed')
+    }, [telemetryService])
 
     return (
         <Modal position="center" aria-label="Welcome message">
@@ -174,21 +189,32 @@ export const useCodySurveyToast = (): {
     }
 }
 
-export const CodySurveyToast: React.FC<{
-    authenticatedUser?: AuthenticatedUser
-}> = ({ authenticatedUser }) => {
+export const CodySurveyToast: React.FC<
+    {
+        authenticatedUser?: AuthenticatedUser
+    } & TelemetryProps
+> = ({ authenticatedUser, telemetryService }) => {
     const { show, dismiss } = useCodySurveyToast()
     const codyEnabled = useIsCodyEnabled()
     const [showVerifyEmail, setShowVerifyEmail] = useState(show && codyEnabled.needsEmailVerification)
-    const dismissVerifyEmail = useCallback(() => setShowVerifyEmail(false), [setShowVerifyEmail])
+    const dismissVerifyEmail = useCallback(() => {
+        telemetryService.log('VerifyEmailToastDismissed')
+        setShowVerifyEmail(false)
+    }, [telemetryService])
 
     if (!show) {
         return null
     }
 
     if (showVerifyEmail && authenticatedUser) {
-        return <CodyVerifyEmailToast onNext={dismissVerifyEmail} authenticatedUser={authenticatedUser} />
+        return (
+            <CodyVerifyEmailToast
+                onNext={dismissVerifyEmail}
+                authenticatedUser={authenticatedUser}
+                telemetryService={telemetryService}
+            />
+        )
     }
 
-    return <CodySurveyToastInner onSubmitEnd={dismiss} />
+    return <CodySurveyToastInner onSubmitEnd={dismiss} telemetryService={telemetryService} />
 }
