@@ -47,12 +47,17 @@ func newExternalHTTPHandler(
 	handlers *internalhttpapi.Handlers,
 	newExecutorProxyHandler enterprise.NewExecutorProxyHandler,
 	newGitHubAppSetupHandler enterprise.NewGitHubAppSetupHandler,
+	extraAuthMiddleware *auth.Middleware,
 ) http.Handler {
 	logger := log.Scoped("external", "external http handlers")
 
 	// Each auth middleware determines on a per-request basis whether it should be enabled (if not, it
 	// immediately delegates the request to the next middleware in the chain).
 	authMiddlewares := auth.AuthMiddleware()
+
+	if extraAuthMiddleware != nil {
+		authMiddlewares = auth.ComposeMiddleware(authMiddlewares, extraAuthMiddleware)
+	}
 
 	// HTTP API handler, the call order of middleware is LIFO.
 	r := router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter())

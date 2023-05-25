@@ -27,7 +27,7 @@ func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready
 	ossSetupHook := func(_ database.DB, _ conftypes.UnifiedWatchable) enterprise.Services {
 		return enterprise.DefaultServices()
 	}
-	return CLIMain(ctx, observationCtx, ready, ossSetupHook)
+	return CLIMain(ctx, observationCtx, ready, ossSetupHook, nil)
 }
 
 var Service service.Service = svc{}

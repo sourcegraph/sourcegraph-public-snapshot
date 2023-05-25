@@ -43,6 +43,7 @@ func TestAllowAnonymousRequest(t *testing.T) {
 		{req: req("POST", "/doesntexist"), want: false},
 		{req: req("GET", "/doesnt/exist"), want: false},
 		{req: req("POST", "/doesnt/exist"), want: false},
+		// todo: add additional tests
 	}
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("%s %s", test.req.Method, test.req.URL), func(t *testing.T) {
