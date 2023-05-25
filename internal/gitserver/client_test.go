@@ -996,8 +996,6 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 
 func TestGitserverClient_RepoClone(t *testing.T) {
 	root := gitserver.CreateRepoDir(t)
-	remote := createRepoWithDotGitDir(t, root)
-	fmt.Println("remote:", remote)
 
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
