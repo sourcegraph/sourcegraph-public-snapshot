@@ -60,6 +60,10 @@ export const FileOwnershipPanel: React.FunctionComponent<
         )
     }
 
+    // TODO(#52452): There is filtering logic in the following rendering
+    // of owners and inference signals. Preferably we'd use filtering
+    // on the GraphQL call and fetch owners and signals separately.
+    // Then re-use a component to render both parts.
     if (
         data?.node &&
         data.node.__typename === 'Repository' &&
@@ -91,12 +95,14 @@ export const FileOwnershipPanel: React.FunctionComponent<
                         {nodes
                             .filter(ownership =>
                                 ownership.reasons.some(
-                                    r => r.__typename === 'CodeownersFileEntry' || r.__typename === 'AssignedOwner'
+                                    reason =>
+                                        reason.__typename === 'CodeownersFileEntry' ||
+                                        reason.__typename === 'AssignedOwner'
                                 )
                             )
                             .map((ownership, index) => (
                                 <>
-                                    {index > 0 && <tr className={styles.bordered}></tr>}
+                                    {index > 0 && <tr className={styles.bordered} />}
                                     <FileOwnershipEntry
                                         // This list is not expected to change, so it's safe to use the index as a key.
                                         // eslint-disable-next-line react/no-array-index-key
@@ -112,7 +118,7 @@ export const FileOwnershipPanel: React.FunctionComponent<
                              */
                             data.node.commit.blob.ownership.totalOwners > 0 &&
                                 data.node.commit.blob.ownership.nodes.length >
-                                    data.node.commit.blob.ownership.totalOwners && <tr className={styles.bordered}></tr>
+                                    data.node.commit.blob.ownership.totalOwners && <tr className={styles.bordered} />
                         }
                     </tbody>
                     {data.node.commit.blob.ownership.nodes.length > data.node.commit.blob.ownership.totalOwners && (
@@ -121,10 +127,10 @@ export const FileOwnershipPanel: React.FunctionComponent<
                                 <tr>
                                     <th colSpan={3}>
                                         <H4 className="mt-3 mb-2">Inference signals</H4>
-                                        <p className={styles.ownInferenceExplanation}>
+                                        <Text className={styles.ownInferenceExplanation}>
                                             These users have viewed or contributed to the file but are not registered
                                             owners of the file.
-                                        </p>
+                                        </Text>
                                     </th>
                                 </tr>
                                 <tr className="sr-only">
@@ -139,9 +145,9 @@ export const FileOwnershipPanel: React.FunctionComponent<
                                     .filter(
                                         ownership =>
                                             !ownership.reasons.some(
-                                                r =>
-                                                    r.__typename === 'CodeownersFileEntry' ||
-                                                    r.__typename === 'AssignedOwner'
+                                                reason =>
+                                                    reason.__typename === 'CodeownersFileEntry' ||
+                                                    reason.__typename === 'AssignedOwner'
                                             )
                                     )
                                     .map((ownership, index) => (
@@ -149,7 +155,7 @@ export const FileOwnershipPanel: React.FunctionComponent<
                                             {
                                                 // This list is not expected to change, so it's safe to use the index as a key.
                                                 // eslint-disable-next-line react/no-array-index-key
-                                                index > 0 && <tr key={2 * index} className={styles.bordered}></tr>
+                                                index > 0 && <tr key={2 * index} className={styles.bordered} />
                                             }
                                             <FileOwnershipEntry
                                                 // eslint-disable-next-line react/no-array-index-key
