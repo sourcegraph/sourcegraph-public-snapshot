@@ -14,7 +14,7 @@ services:
     ports:
       - '5433:5432'
     healthcheck:
-      test: 'cat /data/pgdata-12/3.31-reindex.completed && /liveness.sh'
+      test: 'cat /data/pgdata-12/5.1-reindex.completed && /liveness.sh'
       timeout: 1s
       interval: 10s
       retries: 10
