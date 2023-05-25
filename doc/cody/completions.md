@@ -10,7 +10,7 @@
 
 ## What are Cody completions
 
- Cody Completions provide suggestions for how to continue your code at the current cursor position while you're coding.
+Cody Completions provide suggestions for how to continue your code at the current cursor position while you're coding.
 
 ## Enabling Cody completions
 
