@@ -2,7 +2,6 @@ import * as React from 'react'
 import { useEffect } from 'react'
 
 import { mdiClose } from '@mdi/js'
-import { Accordion } from '@reach/accordion'
 import classNames from 'classnames'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
@@ -74,31 +73,26 @@ export const FileOwnershipPanel: React.FunctionComponent<
                 {data.node.commit.blob.ownership.totalOwners === 0 && (
                     <Alert variant="info">No ownership data for this file.</Alert>
                 )}
-                <Accordion
-                    as="table"
-                    collapsible={true}
-                    multiple={true}
-                    className={styles.table}
-                    onChange={() => telemetryService.log('filePage:ownershipPanel:viewOwnerDetail:clicked')}
-                >
+                <table className={styles.table}>
                     <thead className="sr-only">
                         <tr>
-                            <th>Show details</th>
                             <th>Contact</th>
                             <th>Owner</th>
                             <th>Reason</th>
                         </tr>
                     </thead>
-                    {nodes.map((ownership, index) => (
-                        <FileOwnershipEntry
-                            // This list is not expected to change, so it's safe to use the index as a key.
-                            // eslint-disable-next-line react/no-array-index-key
-                            key={index}
-                            owner={ownership.owner}
-                            reasons={ownership.reasons}
-                        />
-                    ))}
-                </Accordion>
+                    <tbody>
+                        {nodes.map((ownership, index) => (
+                            <FileOwnershipEntry
+                                // This list is not expected to change, so it's safe to use the index as a key.
+                                // eslint-disable-next-line react/no-array-index-key
+                                key={index}
+                                owner={ownership.owner}
+                                reasons={ownership.reasons}
+                            />
+                        ))}
+                    </tbody>
+                </table>
             </div>
         )
     }
