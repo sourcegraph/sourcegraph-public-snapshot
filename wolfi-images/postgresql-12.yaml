@@ -34,12 +34,15 @@ paths:
     type: directory
     permissions: 0o755
 
-users:
-  - username: postgres
-    uid: 999
-    gid: 999
-  - username: ping
-    uid: 99
-    gid: 99
+accounts:
+  groups:
+    - groupname: ping
+      gid: 99
+    - groupname: postgres
+      gid: 999
+  users:
+    - username: postgres
+      uid: 999
+      gid: 999
 
 # MANUAL REBUILD:

@@ -1,0 +1,12 @@
+include: ./postgresql-12.yaml
+
+accounts:
+  groups:
+    - groupname: ping
+      gid: 700
+    - groupname: postgres
+      gid: 70
+  users:
+    - username: postgres
+      uid: 70
+      gid: 70
