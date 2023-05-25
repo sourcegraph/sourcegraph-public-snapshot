@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.chat;
+package com.sourcegraph.cody.prompts;
 
 import com.sourcegraph.cody.completions.Message;
 import com.sourcegraph.cody.completions.Speaker;
