@@ -33,7 +33,3 @@ A bad repository is simiply a repository that Sourcegraph cannot handle. For exa
    - For example, if you've created a repo repository GitHub and did not click the "initialize the repository for me" button, the repository would then become an empty repository as it has no commits at all.
 3. A corrupted repository
    - The repository could be corrupted on the code host, or corrupted on disk.
-
-### Looks like Sourcegraph is trying to clone the same bad repository over and over again, what should I do?
-
-Please upgrade your instance to [3.27.0](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/CHANGELOG.md#3-27-0) where the bug has been addressed.
