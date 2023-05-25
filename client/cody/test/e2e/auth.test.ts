@@ -22,4 +22,7 @@ test('requires a valid auth token and allows logouts', async ({ page, sidebar })
 
     await expect(sidebar.getByRole('button', { name: 'Sign In' })).toBeVisible()
     await expect(sidebar.getByText('Invalid credentials')).not.toBeVisible()
+
+    await page.click('[aria-label="Cody: Start a New Chat Session"]')
+    await expect(sidebar.getByText("Hello! I'm Cody. I can write code and answer questions for you.")).toBeVisible()
 })
