@@ -1261,14 +1261,12 @@ func (c *clientImplementor) ReposStats(ctx context.Context) (map[string]*protoco
 	stats := map[string]*protocol.ReposStats{}
 	var allErr error
 
-
 	if internalgrpc.IsGRPCEnabled(ctx) {
 		for _, addr := range c.clientSource.Addresses() {
 			client, err := addr.GRPCClient()
 			if err != nil {
 				return nil, err
 			}
-
 
 			resp, err := client.ReposStats(ctx, &proto.ReposStatsRequest{})
 			if err != nil {

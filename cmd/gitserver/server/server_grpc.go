@@ -226,4 +226,3 @@ func (gs *GRPCServer) IsRepoCloneable(ctx context.Context, req *proto.IsRepoClon
 
 	return resp, nil
 }
-
