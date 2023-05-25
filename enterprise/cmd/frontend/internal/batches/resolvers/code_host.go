@@ -38,7 +38,7 @@ func (c *batchChangesCodeHostResolver) RequiresUsername() bool {
 	return false
 }
 
-func (c *batchChangesCodeHostResolver) HasCommitSigning() bool {
+func (c *batchChangesCodeHostResolver) SupportsCommitSigning() bool {
 	return c.codeHost.ExternalServiceType == extsvc.TypeGitHub
 }
 
