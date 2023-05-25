@@ -88,3 +88,51 @@ func TestRepoEmbeddingJobsStore(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, exists, true)
 }
+
+func TestCancelRepoEmbeddingJob(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	repoStore := db.Repos()
+
+	ctx := context.Background()
+
+	createdRepo := &types.Repo{Name: "github.com/soucegraph/sourcegraph", URI: "github.com/soucegraph/sourcegraph", ExternalRepo: api.ExternalRepoSpec{}}
+	err := repoStore.Create(ctx, createdRepo)
+	require.NoError(t, err)
+
+	store := NewRepoEmbeddingJobsStore(db)
+
+	// Create two repo embedding jobs.
+	id1, err := store.CreateRepoEmbeddingJob(ctx, createdRepo.ID, "deadbeef")
+	require.NoError(t, err)
+
+	id2, err := store.CreateRepoEmbeddingJob(ctx, createdRepo.ID, "coffee")
+	require.NoError(t, err)
+
+	// Cancel the first one.
+	err = store.CancelRepoEmbeddingJob(ctx, createdRepo.ID, "deadbeef")
+	require.NoError(t, err)
+
+	// Complete the second job and check if we get it back when calling GetLastCompletedRepoEmbeddingJob.
+	completeJob(t, ctx, store, id2)
+	lastCompletedJob, err := store.GetLastCompletedRepoEmbeddingJob(ctx, createdRepo.ID)
+	require.NoError(t, err)
+	require.Equal(t, id2, lastCompletedJob.ID)
+
+	first := 10
+	jobs, err := store.ListRepoEmbeddingJobs(ctx, &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true})
+	require.NoError(t, err)
+
+	// Expect to get the two repo embedding jobs in the list.
+	require.Equal(t, 2, len(jobs))
+	require.Equal(t, id1, jobs[0].ID)
+	require.Equal(t, true, jobs[0].Cancel)
+	require.Equal(t, id2, jobs[1].ID)
+	require.Equal(t, false, jobs[1].Cancel)
+	require.Equal(t, "completed", jobs[1].State)
+}

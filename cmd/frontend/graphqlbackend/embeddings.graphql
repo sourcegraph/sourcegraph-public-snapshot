@@ -90,6 +90,10 @@ extend type Mutation {
     Experimental: Schedules a job to create an embedding index used for context detection. The index is used to determine wheter a query requires additional context.
     """
     scheduleContextDetectionForEmbedding: EmptyResponse!
+    """
+    Experimental: Cancels embedding jobs for the given repositories.
+    """
+    cancelRepoEmbeddingJob(repoName: String!, revision: String!): EmptyResponse!
 }
 
 """

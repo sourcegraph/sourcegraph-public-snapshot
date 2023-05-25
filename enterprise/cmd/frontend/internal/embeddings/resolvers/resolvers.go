@@ -184,6 +184,25 @@ func (r *Resolver) ScheduleContextDetectionForEmbedding(ctx context.Context) (*g
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
+func (r *Resolver) CancelRepoEmbeddingJob(ctx context.Context, args graphqlbackend.CancelRepoEmbeddingJobArgs) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: check whether user is site-admin
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	repoStore := r.db.Repos()
+	repo, err := repoStore.GetByName(ctx, api.RepoName(args.RepoName))
+	if err != nil {
+		return nil, err
+	}
+
+	commitID := api.CommitID(args.Revision)
+	if err := r.repoEmbeddingJobsStore.CancelRepoEmbeddingJob(ctx, repo.ID, commitID); err != nil {
+		return nil, err
+	}
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
 type embeddingsSearchResultsResolver struct {
 	results   *embeddings.EmbeddingCombinedSearchResults
 	gitserver gitserver.Client

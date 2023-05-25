@@ -7,6 +7,8 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/contextdetection"
@@ -20,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/stretchr/testify/require"
 )
 
 func TestEmbeddingSearchResolver(t *testing.T) {
@@ -88,6 +89,38 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 	require.Len(t, codeResults, 1)
 	require.Equal(t, "test\nfirst\nfour\nlines", codeResults[0].Content(ctx))
 
+}
+
+func TestCancelRepoEmbeddingsJob(t *testing.T) {
+	logger := logtest.Scoped(t)
+
+	mockDB := database.NewMockDB()
+	mockUsers := database.NewMockUserStore()
+	mockUsers.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+	mockDB.UsersFunc.SetDefaultReturn(mockUsers)
+
+	mockRepos := database.NewMockRepoStore()
+	mockRepos.GetByNameFunc.SetDefaultReturn(&types.Repo{ID: 1, Name: "repo1"}, nil)
+	mockDB.ReposFunc.SetDefaultReturn(mockRepos)
+
+	jobStore := repo.NewMockRepoEmbeddingJobsStore()
+	jobStore.CancelRepoEmbeddingJobFunc.SetDefaultReturn(nil)
+
+	resolver := NewResolver(
+		mockDB,
+		logger,
+		gitserver.NewMockClient(),
+		embeddings.NewMockClient(),
+		repo.NewMockRepoEmbeddingJobsStore(),
+		contextdetection.NewMockContextDetectionEmbeddingJobsStore(),
+	)
+
+	ctx := actor.WithActor(context.Background(), actor.FromMockUser(1))
+	_, err := resolver.CancelRepoEmbeddingJob(ctx, graphqlbackend.CancelRepoEmbeddingJobArgs{
+		RepoName: "repo1",
+		Revision: "some-revision",
+	})
+	require.NoError(t, err)
 }
 
 func Test_extractLineRange(t *testing.T) {

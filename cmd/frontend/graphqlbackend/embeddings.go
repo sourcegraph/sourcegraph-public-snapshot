@@ -17,6 +17,7 @@ type EmbeddingsResolver interface {
 
 	ScheduleRepositoriesForEmbedding(ctx context.Context, args ScheduleRepositoriesForEmbeddingArgs) (*EmptyResponse, error)
 	ScheduleContextDetectionForEmbedding(ctx context.Context) (*EmptyResponse, error)
+	CancelRepoEmbeddingJob(ctx context.Context, args CancelRepoEmbeddingJobArgs) (*EmptyResponse, error)
 }
 
 type ScheduleRepositoriesForEmbeddingArgs struct {
@@ -57,6 +58,11 @@ type EmbeddingsSearchResultResolver interface {
 
 type ListRepoEmbeddingJobsArgs struct {
 	graphqlutil.ConnectionResolverArgs
+}
+
+type CancelRepoEmbeddingJobArgs struct {
+	RepoName string
+	Revision string
 }
 
 type RepoEmbeddingJobResolver interface {

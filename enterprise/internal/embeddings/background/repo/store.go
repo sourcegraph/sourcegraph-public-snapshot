@@ -101,6 +101,7 @@ type RepoEmbeddingJobsStore interface {
 	ListRepoEmbeddingJobs(ctx context.Context, args *database.PaginationArgs) ([]*RepoEmbeddingJob, error)
 	CountRepoEmbeddingJobs(ctx context.Context) (int, error)
 	GetEmbeddableRepos(ctx context.Context) ([]EmbeddableRepo, error)
+	CancelRepoEmbeddingJob(ctx context.Context, repoID api.RepoID, revision api.CommitID) error
 }
 
 var _ basestore.ShareableStore = &repoEmbeddingJobsStore{}
@@ -284,3 +285,30 @@ func (s *repoEmbeddingJobsStore) ListRepoEmbeddingJobs(ctx context.Context, pagi
 	}
 	return jobs, nil
 }
+
+func (s *repoEmbeddingJobsStore) CancelRepoEmbeddingJob(ctx context.Context, repoID api.RepoID, commitID api.CommitID) error {
+	now := time.Now()
+	q := sqlf.Sprintf(cancelRepoEmbeddingJobQueryFmtstr, now, repoID, commitID)
+	// We don't verify that some rows are affected, because it's fine to cancel a job twice
+	return s.Exec(ctx, q)
+}
+
+const cancelRepoEmbeddingJobQueryFmtstr = `
+UPDATE
+	repo_embedding_jobs
+SET
+    cancel = TRUE,
+    -- If the embeddings job is still queued, we directly abort, otherwise we keep the
+    -- state, so the worker can do teardown and later mark it failed.
+    state = CASE WHEN repo_embedding_jobs.state = 'processing' THEN repo_embedding_jobs.state ELSE 'canceled' END,
+    finished_at = CASE WHEN repo_embedding_jobs.state = 'processing' THEN repo_embedding_jobs.finished_at ELSE %s END
+WHERE
+	repo_id = %d
+	AND
+	revision = %s
+	AND
+	state IN ('queued', 'processing')
+	AND
+	cancel IS FALSE
+`
+
