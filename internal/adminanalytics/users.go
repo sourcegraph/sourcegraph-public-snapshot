@@ -136,7 +136,7 @@ func (n *UsersFrequencyNode) Percentage() float64 { return n.Data.Percentage }
 const (
 	mauQuery = `
 	SELECT
-		TO_CHAR(timestamp, 'YYYY-MM') AS date,
+		TO_CHAR(TIMEZONE('UTC', timestamp), 'YYYY-MM') AS date,
 		COUNT(DISTINCT CASE WHEN user_id = 0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END) AS count
 	FROM event_logs
 	LEFT OUTER JOIN users ON users.id = event_logs.user_id
