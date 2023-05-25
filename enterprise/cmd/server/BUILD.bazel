@@ -135,14 +135,9 @@ container_structure_test(
     tags = ["requires-network"],
 )
 
-stamp_tags(
-    name = "tags",
-    remote_tags = ["""($stamp.STABLE_VERSION // "0.0.0")"""],
-)
-
 oci_push(
     name = "candidate_push",
     image = ":image",
-    remote_tags = ":tags",
-    repository = "us.gcr.io/sourcegraph-dev/server",
+    remote_tags = "//:tags",
+    repository = image_repository("server"),
 )
