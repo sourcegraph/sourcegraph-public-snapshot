@@ -64,7 +64,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 	// job for this repo. If we can find one, we'll attempt a delta index, otherwise
 	// we fall back to a full index.
 	var lastSuccessfulJobRevision api.CommitID
-	if featureflag.FromContext(ctx).GetBoolOr("sh-delta-embeddings", false) {
+	if conf.Get().Embeddings.Incremental {
 		lastSuccessfulJob, err := h.repoEmbeddingJobsStore.GetLastCompletedRepoEmbeddingJob(ctx, record.RepoID)
 		if err != nil {
 			logger.Info("no previous successful embeddings job found. Falling back to full index")
