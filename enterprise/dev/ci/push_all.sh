@@ -4,10 +4,12 @@ set -eu
 
 registries=(
   # "index.docker.io/sourcegraph"
-  # "us.gcr.io/sourcegraph-dev"
+  "us.gcr.io/sourcegraph-dev"
 )
 
 date_fragment="$(date +%y-%m-%d)"
+
+qa_suffix="-bazel-qa"
 
 tags=(
   "${BUILDKITE_COMMIT:0:12}"
@@ -34,7 +36,7 @@ echo "--- "
 
 tags_args=""
 for t in "${tags[@]}"; do
-  tags_args="$tags_args --tag $t"
+  tags_args="$tags_args --tag ${t}-${qa_suffix}"
 done
 
 function tag_and_push_image() {
