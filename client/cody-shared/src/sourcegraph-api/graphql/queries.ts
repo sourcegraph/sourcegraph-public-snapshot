@@ -72,6 +72,7 @@ export const SEARCH_TYPE_REPO_QUERY = `
 query SearchTypeRepo($query: String!) {
 	search(query: $query, version: V3) {
         results {
+            limitHit
             results {
                 ... on Repository {
                     name

@@ -964,6 +964,7 @@ Foreign-key constraints:
 Indexes:
     "codeintel_ranking_exports_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_exports_graph_key_upload_id" UNIQUE, btree (graph_key, upload_id)
+    "codeintel_ranking_exports_graph_key_deleted_at_id" btree (graph_key, deleted_at DESC, id)
     "codeintel_ranking_exports_graph_key_last_scanned_at" btree (graph_key, last_scanned_at NULLS FIRST, id)
 Foreign-key constraints:
     "codeintel_ranking_exports_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL
@@ -1008,9 +1009,7 @@ Indexes:
  num_path_records_processed      | integer                  |           |          | 
  num_reference_records_processed | integer                  |           |          | 
  num_count_records_processed     | integer                  |           |          | 
- max_definition_id               | bigint                   |           | not null | 
- max_reference_id                | bigint                   |           | not null | 
- max_path_id                     | bigint                   |           | not null | 
+ max_export_id                   | bigint                   |           | not null | 
 Indexes:
     "codeintel_ranking_progress_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_progress_graph_key_key" UNIQUE CONSTRAINT, btree (graph_key)
@@ -3887,7 +3886,7 @@ Foreign-key constraints:
 ```
           Column          |           Type           | Collation | Nullable |                      Default                      
 --------------------------+--------------------------+-----------+----------+---------------------------------------------------
- id                       | integer                  |           | not null | nextval('user_repo_permissions_id_seq'::regclass)
+ id                       | bigint                   |           | not null | nextval('user_repo_permissions_id_seq'::regclass)
  user_id                  | integer                  |           |          | 
  repo_id                  | integer                  |           | not null | 
  user_external_account_id | integer                  |           |          | 

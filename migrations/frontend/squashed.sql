@@ -1822,9 +1822,7 @@ CREATE TABLE codeintel_ranking_progress (
     num_path_records_processed integer,
     num_reference_records_processed integer,
     num_count_records_processed integer,
-    max_definition_id bigint NOT NULL,
-    max_reference_id bigint NOT NULL,
-    max_path_id bigint NOT NULL
+    max_export_id bigint NOT NULL
 );
 
 CREATE SEQUENCE codeintel_ranking_progress_id_seq
@@ -4505,7 +4503,7 @@ CREATE TABLE user_public_repos (
 );
 
 CREATE TABLE user_repo_permissions (
-    id integer NOT NULL,
+    id bigint NOT NULL,
     user_id integer,
     repo_id integer NOT NULL,
     user_external_account_id integer,
@@ -4515,7 +4513,6 @@ CREATE TABLE user_repo_permissions (
 );
 
 CREATE SEQUENCE user_repo_permissions_id_seq
-    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -5555,6 +5552,8 @@ CREATE INDEX codeintel_path_ranks_repository_id_updated_at_id ON codeintel_path_
 CREATE INDEX codeintel_ranking_definitions_exported_upload_id ON codeintel_ranking_definitions USING btree (exported_upload_id);
 
 CREATE INDEX codeintel_ranking_definitions_graph_key_symbol_search ON codeintel_ranking_definitions USING btree (graph_key, symbol_name, exported_upload_id, document_path);
+
+CREATE INDEX codeintel_ranking_exports_graph_key_deleted_at_id ON codeintel_ranking_exports USING btree (graph_key, deleted_at DESC, id);
 
 CREATE INDEX codeintel_ranking_exports_graph_key_last_scanned_at ON codeintel_ranking_exports USING btree (graph_key, last_scanned_at NULLS FIRST, id);
 

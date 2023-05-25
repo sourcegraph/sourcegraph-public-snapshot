@@ -10,12 +10,41 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func TestAccessTokens(t *testing.T) {
+	// perform test setup and teardown
+	prevConfg := conf.Get()
+	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+		Log: &schema.Log{
+			SecurityEventLog: &schema.SecurityEventLog{Location: "database"},
+		},
+	}})
+	t.Cleanup(func() {
+		conf.Mock(prevConfg)
+	})
+
+	t.Run("TestAccessTokens_parallel", func(t *testing.T) {
+		t.Run("testAccessTokens_Create", testAccessTokens_Create)
+		t.Run("testAccessTokens_Delete", testAccessTokens_Delete)
+		t.Run("testAccessTokens_Create", testAccessTokens_CreateInternal_DoesNotCaptureSecurityEvent)
+		t.Run("testAccessTokens_List", testAccessTokens_List)
+		t.Run("testAccessTokens_Lookup", testAccessTokens_Lookup)
+		t.Run("testAccessToken_Lookup_deletedUser", testAccessTokens_Lookup_deletedUser)
+		t.Run("testAccessTokens_tokenSHA256Hash", testAccessTokens_tokenSHA256Hash)
+	})
+
+}
 
 // 🚨 SECURITY: This tests the routine that creates access tokens and returns the token secret value
 // to the user.
-func TestAccessTokens_Create(t *testing.T) {
+//
+// testAccessTokens_Create requires the site_config to be mocked to enable security event logging to the database.
+// This test is run in TestAccessTokens
+func testAccessTokens_Create(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
@@ -95,11 +124,12 @@ func TestAccessTokens_Create(t *testing.T) {
 	}
 }
 
-func TestAccessTokens_Delete(t *testing.T) {
+// testAccessTokens_Delete requires the site_config to be mocked to enable security event logging to the database
+// This test is run in TestAccessTokens
+func testAccessTokens_Delete(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-
 	ctx := context.Background()
 
 	subject, err := db.Users().Create(ctx, NewUser{
@@ -170,7 +200,8 @@ func assertSecurityEventCount(t *testing.T, db DB, event SecurityEventName, expe
 	assert.Equal(t, expectedCount, count)
 }
 
-func TestAccessTokens_CreateInternal_DoesNotCaptureSecurityEvent(t *testing.T) {
+// This test is run in TestAccessTokens
+func testAccessTokens_CreateInternal_DoesNotCaptureSecurityEvent(t *testing.T) {
 	t.Parallel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
@@ -205,7 +236,8 @@ func TestAccessTokens_CreateInternal_DoesNotCaptureSecurityEvent(t *testing.T) {
 
 }
 
-func TestAccessTokens_List(t *testing.T) {
+// This test is run in TestAccessTokens
+func testAccessTokens_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -285,7 +317,8 @@ func TestAccessTokens_List(t *testing.T) {
 
 // 🚨 SECURITY: This tests the routine that verifies access tokens, which the security of the entire
 // system depends on.
-func TestAccessTokens_Lookup(t *testing.T) {
+// This test is run in TestAccessTokens
+func testAccessTokens_Lookup(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -355,7 +388,8 @@ func TestAccessTokens_Lookup(t *testing.T) {
 
 // 🚨 SECURITY: This tests that deleting the subject or creator user of an access token invalidates
 // the token, and that no new access tokens may be created for deleted users.
-func TestAccessTokens_Lookup_deletedUser(t *testing.T) {
+// This test is run in TestAccessTokens
+func testAccessTokens_Lookup_deletedUser(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -437,7 +471,8 @@ func TestAccessTokens_Lookup_deletedUser(t *testing.T) {
 	})
 }
 
-func TestAccessTokens_tokenSHA256Hash(t *testing.T) {
+// This test is run in TestAccessTokens
+func testAccessTokens_tokenSHA256Hash(t *testing.T) {
 	testCases := []struct {
 		name      string
 		token     string

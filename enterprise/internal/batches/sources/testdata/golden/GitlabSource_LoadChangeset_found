@@ -19,6 +19,7 @@
   "web_url": "https://gitlab.com/sourcegraph/sourcegraph/-/merge_requests/2",
   "work_in_progress": false,
   "draft": false,
+  "force_remove_source_branch": false,
   "author": {
    "id": 3294801,
    "name": "Ryan Blunden",

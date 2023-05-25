@@ -37,6 +37,9 @@ type EventLogStore interface {
 	// AggregatedCodyEvents calculates CodyAggregatedEvent for each every unique event type related to Cody.
 	AggregatedCodyEvents(ctx context.Context, now time.Time) ([]types.CodyAggregatedEvent, error)
 
+	// AggregatedRepoMetadataEvents calculates RepoMetadataAggregatedEvent for each every unique event type related to RepoMetadata.
+	AggregatedRepoMetadataEvents(ctx context.Context, now time.Time, period PeriodType) (*types.RepoMetadataAggregatedEvents, error)
+
 	// AggregatedSearchEvents calculates SearchAggregatedEvent for each every unique event type related to search.
 	AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error)
 
@@ -1416,6 +1419,97 @@ func (l *eventLogStore) aggregatedCodyEvents(ctx context.Context, queryString st
 	}
 
 	return events, nil
+}
+
+func buildAggregatedRepoMetadataEventsQuery(period PeriodType) (string, error) {
+	unit := ""
+	switch period {
+	case Daily:
+		unit = "day"
+	case Weekly:
+		unit = "week"
+	case Monthly:
+		unit = "month"
+	default:
+		return "", ErrInvalidPeriodType
+	}
+	return `
+	WITH events AS (
+		SELECT
+			name,
+			` + aggregatedUserIDQueryFragment + ` AS user_id,
+			argument
+		FROM event_logs
+		WHERE
+			timestamp >= ` + makeDateTruncExpression(unit, "%s::timestamp") + `
+			AND name IN ('RepoMetadataAdded', 'RepoMetadataUpdated', 'RepoMetadataDeleted', 'SearchSubmitted')
+	)
+	SELECT
+		` + makeDateTruncExpression(unit, "%s::timestamp") + ` as start_time,
+
+		COUNT(*) FILTER (WHERE name IN ('RepoMetadataAdded')) AS added_count,
+		COUNT(DISTINCT user_id) FILTER (WHERE name IN ('RepoMetadataAdded')) AS added_unique_count,
+
+		COUNT(*) FILTER (WHERE name IN ('RepoMetadataUpdated')) AS updated_count,
+		COUNT(DISTINCT user_id) FILTER (WHERE name IN ('RepoMetadataUpdated')) AS updated_unique_count,
+
+		COUNT(*) FILTER (WHERE name IN ('RepoMetadataDeleted')) AS deleted_count,
+		COUNT(DISTINCT user_id) FILTER (WHERE name IN ('RepoMetadataDeleted')) AS deleted_unique_count,
+
+		COUNT(*) FILTER (
+			WHERE name IN ('SearchSubmitted')
+			AND (
+				argument->>'query' ILIKE '%%repo:has(%%'
+				OR argument->>'query' ILIKE '%%repo:has.key(%%'
+				OR argument->>'query' ILIKE '%%repo:has.tag(%%'
+				OR argument->>'query' ILIKE '%%repo:has.meta(%%'
+			)
+		) AS searches_count,
+		COUNT(DISTINCT user_id) FILTER (
+			WHERE name IN ('SearchSubmitted')
+			AND (
+				argument->>'query' ILIKE '%%repo:has(%%'
+				OR argument->>'query' ILIKE '%%repo:has.key(%%'
+				OR argument->>'query' ILIKE '%%repo:has.tag(%%'
+				OR argument->>'query' ILIKE '%%repo:has.meta(%%'
+			)
+		) AS searches_unique_count
+	FROM events;
+	`, nil
+}
+
+func (l *eventLogStore) AggregatedRepoMetadataEvents(ctx context.Context, now time.Time, period PeriodType) (*types.RepoMetadataAggregatedEvents, error) {
+	query, err := buildAggregatedRepoMetadataEventsQuery(period)
+	if err != nil {
+		return nil, err
+	}
+	row := l.QueryRow(ctx, sqlf.Sprintf(query, now, now))
+	var startTime time.Time
+	var createEvent types.EventStats
+	var updateEvent types.EventStats
+	var deleteEvent types.EventStats
+	var searchEvent types.EventStats
+	if err := row.Scan(
+		&startTime,
+		&createEvent.EventsCount,
+		&createEvent.UsersCount,
+		&updateEvent.EventsCount,
+		&updateEvent.UsersCount,
+		&deleteEvent.EventsCount,
+		&deleteEvent.UsersCount,
+		&searchEvent.EventsCount,
+		&searchEvent.UsersCount,
+	); err != nil {
+		return nil, err
+	}
+
+	return &types.RepoMetadataAggregatedEvents{
+		StartTime:          startTime,
+		CreateRepoMetadata: &createEvent,
+		UpdateRepoMetadata: &updateEvent,
+		DeleteRepoMetadata: &deleteEvent,
+		SearchFilterUsage:  &searchEvent,
+	}, nil
 }
 
 func (l *eventLogStore) AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error) {

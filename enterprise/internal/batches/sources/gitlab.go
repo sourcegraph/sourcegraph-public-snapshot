@@ -8,6 +8,7 @@ import (
 
 	"github.com/Masterminds/semver"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -116,6 +117,7 @@ func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool,
 	if c.RemoteRepo != c.TargetRepo {
 		targetProjectID = c.TargetRepo.Metadata.(*gitlab.Project).ID
 	}
+	removeSource := conf.Get().BatchChangesAutoDeleteBranch
 
 	// We have to create the merge request against the remote project, not the
 	// target project, because that's how GitLab's API works: you provide the
@@ -124,11 +126,12 @@ func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool,
 	// Of course, we then have to use the targetProject for everything else,
 	// because that's what the merge request actually belongs to.
 	mr, err := s.client.CreateMergeRequest(ctx, remoteProject, gitlab.CreateMergeRequestOpts{
-		SourceBranch:    source,
-		TargetBranch:    target,
-		TargetProjectID: targetProjectID,
-		Title:           c.Title,
-		Description:     c.Body,
+		SourceBranch:       source,
+		TargetBranch:       target,
+		TargetProjectID:    targetProjectID,
+		Title:              c.Title,
+		Description:        c.Body,
+		RemoveSourceBranch: removeSource,
 	})
 	if err != nil {
 		if err == gitlab.ErrMergeRequestAlreadyExists {
@@ -193,12 +196,15 @@ func (s *GitLabSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 		return errors.New("Changeset is not a GitLab merge request")
 	}
 
+	removeSource := conf.Get().BatchChangesAutoDeleteBranch
+
 	// Title and TargetBranch are required, even though we're not actually
 	// changing them.
 	updated, err := s.client.UpdateMergeRequest(ctx, project, mr, gitlab.UpdateMergeRequestOpts{
-		Title:        mr.Title,
-		TargetBranch: mr.TargetBranch,
-		StateEvent:   gitlab.UpdateMergeRequestStateEventClose,
+		Title:              mr.Title,
+		TargetBranch:       mr.TargetBranch,
+		StateEvent:         gitlab.UpdateMergeRequestStateEventClose,
+		RemoveSourceBranch: removeSource,
 	})
 	if err != nil {
 		return errors.Wrap(err, "updating GitLab merge request")
@@ -252,12 +258,15 @@ func (s *GitLabSource) ReopenChangeset(ctx context.Context, c *Changeset) error 
 		return errors.New("Changeset is not a GitLab merge request")
 	}
 
+	removeSource := conf.Get().BatchChangesAutoDeleteBranch
+
 	// Title and TargetBranch are required, even though we're not actually
 	// changing them.
 	updated, err := s.client.UpdateMergeRequest(ctx, project, mr, gitlab.UpdateMergeRequestOpts{
-		Title:        mr.Title,
-		TargetBranch: mr.TargetBranch,
-		StateEvent:   gitlab.UpdateMergeRequestStateEventReopen,
+		Title:              mr.Title,
+		TargetBranch:       mr.TargetBranch,
+		StateEvent:         gitlab.UpdateMergeRequestStateEventReopen,
+		RemoveSourceBranch: removeSource,
 	})
 	if err != nil {
 		return errors.Wrap(err, "reopening GitLab merge request")
@@ -476,10 +485,13 @@ func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error 
 		title = gitlab.SetWIPOrDraft(c.Title, v)
 	}
 
+	removeSource := conf.Get().BatchChangesAutoDeleteBranch
+
 	updated, err := s.client.UpdateMergeRequest(ctx, project, mr, gitlab.UpdateMergeRequestOpts{
-		Title:        title,
-		Description:  c.Body,
-		TargetBranch: gitdomain.AbbreviateRef(c.BaseRef),
+		Title:              title,
+		Description:        c.Body,
+		TargetBranch:       gitdomain.AbbreviateRef(c.BaseRef),
+		RemoveSourceBranch: removeSource,
 	})
 	if err != nil {
 		return errors.Wrap(err, "updating GitLab merge request")
