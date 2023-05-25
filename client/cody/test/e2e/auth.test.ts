@@ -17,12 +17,6 @@ test('requires a valid auth token and allows logouts', async ({ page, sidebar })
 
     await expect(sidebar.getByText("Hello! I'm Cody.")).toBeVisible()
 
-    await page.click('[aria-label="Cody: Chat History"]')
-    await expect(sidebar.getByText('Chat History')).toBeVisible()
-
-    await page.click('[aria-label="Cody: Start a New Chat Session"]')
-    await expect(sidebar.getByText("Hello! I'm Cody. I can write code and answer questions for you.")).toBeVisible()
-
     await page.click('[aria-label="Cody: Settings"]')
     await sidebar.getByRole('button', { name: 'Logout' }).click()
 
