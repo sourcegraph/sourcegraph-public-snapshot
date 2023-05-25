@@ -133,4 +133,8 @@ func TestCancelRepoEmbeddingJob(t *testing.T) {
 	// Attempting to cancel a non-existent job should fail
 	err = store.CancelRepoEmbeddingJob(ctx, createdRepo.ID, "nonexistent")
 	require.Equal(t, err, &RepoEmbeddingJobNotFoundErr{repoID: createdRepo.ID, revision: "nonexistent"})
+
+	// Attempting to cancel a completed job should fail
+	err = store.CancelRepoEmbeddingJob(ctx, createdRepo.ID, "coffee")
+	require.Equal(t, err, &RepoEmbeddingJobNotFoundErr{repoID: createdRepo.ID, revision: "coffee"})
 }
