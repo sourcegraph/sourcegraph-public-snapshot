@@ -27,7 +27,7 @@ export class OptimizeCode implements Recipe {
         const displayText = `Optimize the time and space consumption of the following code:\n\`\`\`\n${selection.selectedText}\n\`\`\``
 
         const languageName = getNormalizedLanguageName(selection.fileName)
-        const promptMessage = `Optimize the memory and time consumption of this code in  ${languageName}.\
+        const promptMessage = `Optimize the memory and time consumption of this code in ${languageName}.\
 You first tell if the code can/cannot be optimized, then\
 if the code is optimizable, suggest a numbered list of possible optimizations in less than 50 words each,\
 then provide Big O time/space comparison for old and new code and finally return updated code.\

@@ -95,10 +95,6 @@
     },
     "commands": [
       {
-        "command": "cody.toggle-enabled",
-        "title": "Cody: Toggle Enabled/Disabled"
-      },
-      {
         "command": "cody.recipe.optimize-code",
         "title": "Ask Cody: Optimize Code"
       },
