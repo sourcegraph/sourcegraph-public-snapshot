@@ -159,7 +159,9 @@ func (s *sourcesSyncHandler) Handle(ctx context.Context) (err error) {
 		if err := s.rmux.LockContext(ctx); errors.HasType(err, &redsync.ErrTaken{}) {
 			msg := fmt.Sprintf("did not acquire lock, another worker is likely active: %s", err.Error())
 			handleLogger.Debug(msg)
-			trace.SpanFromContext(ctx).AddEvent(msg)
+			trace.SpanFromContext(ctx).SetAttributes(
+				attribute.Bool("skipped", true),
+				attribute.String("reason", msg))
 
 			return nil // ignore lock contention errors
 		} else if err != nil {
@@ -170,6 +172,9 @@ func (s *sourcesSyncHandler) Handle(ctx context.Context) (err error) {
 		// Otherwise, extend our lock so that we can keep working.
 		_, _ = s.rmux.ExtendContext(ctx)
 	}
+
+	// Annotate span to indicate we're actually doing work today!
+	trace.SpanFromContext(ctx).SetAttributes(attribute.Bool("skipped", false))
 
 	p := pool.New().WithErrors().WithContext(ctx)
 	for _, src := range s.sources {
