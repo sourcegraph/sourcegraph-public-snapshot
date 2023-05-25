@@ -242,6 +242,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         }
 
         logEvent('CodyVSCodeExtension:completion:started', LOG_INLINE, LOG_INLINE)
+            .then(() => {})
+            .catch(() => {})
         const start = Date.now()
 
         const results = rankCompletions(
@@ -251,6 +253,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         if (hasVisibleCompletions(results)) {
             const params = { ...LOG_INLINE, latency: Date.now() - start, timeout }
             logEvent('CodyVSCodeExtension:completion:suggested', params, params)
+                .then(() => {})
+                .catch(() => {})
             inlineCompletionsCache.add(results)
             return results.map(toInlineCompletionItem)
         }
@@ -325,14 +329,18 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         )
 
         try {
-            logEvent('CodyVSCodeExtension:completion:started', LOG_MULTILINE, LOG_MULTILINE).then(() => {})
+            logEvent('CodyVSCodeExtension:completion:started', LOG_MULTILINE, LOG_MULTILINE)
+                .then(() => {})
+                .catch(() => {})
             const completions = await completer.generateCompletions(abortController.signal, 3)
             this.documentProvider.addCompletions(completionsUri, ext, completions, {
                 suffix: '',
                 elapsedMillis: 0,
                 llmOptions: null,
             })
-            logEvent('CodyVSCodeExtension:completion:suggested', LOG_MULTILINE, LOG_MULTILINE).then(() => {})
+            logEvent('CodyVSCodeExtension:completion:suggested', LOG_MULTILINE, LOG_MULTILINE)
+                .then(() => {})
+                .catch(() => {})
         } catch (error) {
             if (error.message === 'aborted') {
                 return

@@ -367,7 +367,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion'): Promise<void> {
         debug('ChatViewProvider:onHumanMessageSubmitted', '', { verbose: { text, submitType } })
         if (submitType === 'suggestion') {
-            logEvent('CodyVSCodeExtension:chatPredictions:used').then(() => {})
+            logEvent('CodyVSCodeExtension:chatPredictions:used')
+                .then(() => {})
+                .catch(() => {})
         }
         this.inputHistory.push(text)
         if (this.config.experimentalChatPredictions) {
@@ -459,7 +461,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             }
         }
 
-        logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`).then(() => {})
+        logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
+            .then(() => {})
+            .catch(() => {})
     }
 
     private async runRecipeForSuggestion(recipeId: RecipeID, humanChatInput: string = ''): Promise<void> {
@@ -484,7 +488,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         const prompt = await transcript.toPrompt(getPreamble(this.codebaseContext.getCodebase()))
 
-        logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`).then(() => {})
+        logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
+            .then(() => {})
+            .catch(() => {})
 
         let text = ''
         multiplexer.sub(BotResponseMultiplexer.DEFAULT_TOPIC, {
@@ -533,6 +539,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 duration: result.duration,
             }
             logEvent('CodyVSCodeExtension:guardrails:annotate', event, event)
+                .then(() => {})
+                .catch(() => {})
         }
 
         return result.text
@@ -700,17 +708,25 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     `CodyVSCodeExtension:codyFeedback:${value}`,
                     null,
                     !isPrivateInstance && this.codebaseContext.getCodebase() ? this.transcript.toChat() : null
-                ).then(() => {})
+                )
+                    .then(() => {})
+                    .catch(() => {})
                 break
             case 'token':
-                logEvent(`CodyVSCodeExtension:cody${value}AccessToken:clicked`, endpointUri, endpointUri).then(() => {})
+                logEvent(`CodyVSCodeExtension:cody${value}AccessToken:clicked`, endpointUri, endpointUri)
+                    .then(() => {})
+                    .catch(() => {})
                 break
             case 'auth':
-                logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri).then(() => {})
+                logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri)
+                    .then(() => {})
+                    .catch(() => {})
                 break
             // aditya combine this with above statemenet for auth or click
             case 'click':
-                logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri).then(() => {})
+                logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri)
+                    .then(() => {})
+                    .catch(() => {})
                 break
         }
     }

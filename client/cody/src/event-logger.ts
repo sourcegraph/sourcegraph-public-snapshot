@@ -20,9 +20,13 @@ export async function updateEventLogger(
         eventLoggerGQLClient = new SourcegraphGraphQLAPIClient(config)
         eventLogger = EventLogger.create(eventLoggerGQLClient)
         if (status === 'installed') {
-            logEvent('CodyInstalled').then(() => {})
+            logEvent('CodyInstalled')
+                .then(() => {})
+                .catch(() => {})
         } else {
-            logEvent('CodyVSCodeExtension:CodySavedLogin:executed').then(() => {})
+            logEvent('CodyVSCodeExtension:CodySavedLogin:executed')
+                .then(() => {})
+                .catch(() => {})
         }
     } else {
         eventLoggerGQLClient.onConfigurationChange(config)

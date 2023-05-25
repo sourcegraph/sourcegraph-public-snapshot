@@ -145,7 +145,9 @@ const register = async (
             const isFixMode = /^\/f(ix)?\s/i.test(comment.text.trimStart())
             await commentController.chat(comment, isFixMode)
             await chatProvider.executeRecipe(isFixMode ? 'fixup' : 'inline-chat', comment.text, false)
-            logEvent(`CodyVSCodeExtension:inline-assist:${isFixMode ? 'fixup' : 'chat'}`).then(() => {})
+            logEvent(`CodyVSCodeExtension:inline-assist:${isFixMode ? 'fixup' : 'chat'}`)
+                .then(() => {})
+                .catch(() => {})
         }),
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             commentController.delete(thread)
@@ -226,7 +228,9 @@ const register = async (
             }),
             vscode.commands.registerCommand('cody.completions.inline.accepted', async () => {
                 const params = { type: 'inline' }
-                logEvent('CodyVSCodeExtension:completion:accepted', params, params).then(() => {})
+                logEvent('CodyVSCodeExtension:completion:accepted', params, params)
+                    .then(() => {})
+                    .catch(() => {})
             }),
             vscode.languages.registerInlineCompletionItemProvider({ scheme: 'file' }, completionsProvider)
         )
