@@ -1,8 +1,6 @@
 # NOTE: This layer of the docker image is also used in local development as a wrapper around universal-ctags
 FROM sourcegraph/alpine-3.14:213466_2023-04-17_5.0-bdda34a71619@sha256:6354a4ff578b685e36c8fbde81f62125ae0011b047fb2cc22d1b0de616b3c59a AS ctags
 # hadolint ignore=DL3002
-USER root
-
 COPY cmd/symbols/ctags-install-alpine.sh /ctags-install-alpine.sh
 RUN /ctags-install-alpine.sh
 
@@ -21,7 +19,6 @@ COPY cmd/symbols/cargo-config.sh /cargo-config.sh
 RUN /cargo-config.sh
 
 RUN cargo rustc --release --bin scip-ctags
-RUN ls ./target
 
 RUN cp ./target/release/scip-ctags /usr/local/bin/scip-ctags
 
