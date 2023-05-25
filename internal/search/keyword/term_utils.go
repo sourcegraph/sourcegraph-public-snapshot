@@ -8,18 +8,7 @@ import (
 )
 
 func removePunctuation(input string) string {
-	lowerCase := strings.ToLower(input)
-	runes := []rune(lowerCase)
-
-	// Remove leading and trailing punctuation
-	start := 0
-	for ; start < len(runes) && unicode.IsPunct(runes[start]); start++ {
-	}
-	end := len(runes)
-	for ; end > start && unicode.IsPunct(runes[end-1]); end-- {
-	}
-
-	return string(runes[start:end])
+	return strings.TrimFunc(input, unicode.IsPunct)
 }
 
 func stemTerm(input string) string {

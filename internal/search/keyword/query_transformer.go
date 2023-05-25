@@ -1,6 +1,8 @@
 package keyword
 
 import (
+	"strings"
+
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
@@ -84,6 +86,7 @@ func transformPatterns(patterns []string) []string {
 	}
 
 	for _, pattern := range patterns {
+		pattern = strings.ToLower(pattern)
 		pattern = removePunctuation(pattern)
 		if len(pattern) < 3 || isCommonTerm(pattern) {
 			continue
