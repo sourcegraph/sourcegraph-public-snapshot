@@ -61,7 +61,7 @@ const externalServices: Record<ExternalServiceKind, JSONSchema> = {
     PERFORCE: perforceSchemaJSON,
     PHABRICATOR: phabricatorSchemaJSON,
     PAGURE: pagureSchemaJSON,
-    LOCAL: localGitSchemaJSON,
+    LOCALGIT: localGitSchemaJSON,
 }
 
 const allConfigSchema = {

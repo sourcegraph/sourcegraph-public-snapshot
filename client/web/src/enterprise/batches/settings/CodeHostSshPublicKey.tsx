@@ -23,7 +23,7 @@ const configInstructionLinks: Record<ExternalServiceKind, string> = {
     [ExternalServiceKind.JVMPACKAGES]: 'unsupported',
     [ExternalServiceKind.NPMPACKAGES]: 'unsupported',
     [ExternalServiceKind.OTHER]: 'unsupported',
-    [ExternalServiceKind.LOCAL]: 'unsupported',
+    [ExternalServiceKind.LOCALGIT]: 'unsupported',
     [ExternalServiceKind.PERFORCE]: 'unsupported',
     [ExternalServiceKind.PAGURE]: 'unsupported',
     [ExternalServiceKind.PHABRICATOR]: 'unsupported',
