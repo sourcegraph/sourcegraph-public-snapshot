@@ -144,6 +144,7 @@ func (s *expirer) handleRepository(ctx context.Context, repositoryID int, cfg *C
 // repository and build a map from commits to the policies that apply to them.
 func (s *expirer) buildCommitMap(ctx context.Context, repositoryID int, cfg *Config, now time.Time) (map[string][]policies.PolicyMatch, error) {
 	var (
+		t        = true
 		offset   int
 		policies []policiesshared.ConfigurationPolicy
 	)
@@ -158,7 +159,7 @@ func (s *expirer) buildCommitMap(ctx context.Context, repositoryID int, cfg *Con
 		// Retrieve the complete set of configuration policies that affect data retention for this repository
 		policyBatch, totalCount, err := s.policySvc.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
 			RepositoryID:     repositoryID,
-			ForDataRetention: true,
+			ForDataRetention: &t,
 			Limit:            cfg.PolicyBatchSize,
 			Offset:           offset,
 		})

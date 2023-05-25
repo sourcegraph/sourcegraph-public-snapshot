@@ -17,14 +17,22 @@ extend type Query {
         query: String
 
         """
-        If set to true, then only configuration policies with data retention enabled are returned.
+        If set to true, then only configuration policies with SCIP data retention enabled are returned.
+        If set to false, then configuration policies with SCIP data retention enabled are filtered out.
         """
         forDataRetention: Boolean
 
         """
         If set to true, then only configuration policies with indexing enabled are returned.
+        If set to false, then configuration policies with indexing enabled are filtered out.
         """
         forIndexing: Boolean
+
+        """
+        If set to true, then only configuration policies with embeddings enabled are returned.
+        If set to false, then configuration policies with embeddings enabled are filtered out.
+        """
+        forEmbeddings: Boolean
 
         """
         If set to true, then only protected configuration policies are returned.
@@ -94,6 +102,7 @@ extend type Mutation {
         indexingEnabled: Boolean!
         indexCommitMaxAgeHours: Int
         indexIntermediateCommits: Boolean!
+        embeddingsEnabled: Boolean!
     ): CodeIntelligenceConfigurationPolicy!
 
     """
@@ -111,6 +120,7 @@ extend type Mutation {
         indexingEnabled: Boolean!
         indexCommitMaxAgeHours: Int
         indexIntermediateCommits: Boolean!
+        embeddingsEnabled: Boolean!
     ): EmptyResponse
 
     """
@@ -244,6 +254,11 @@ type CodeIntelligenceConfigurationPolicy implements Node {
     only consider the tip of the branch.
     """
     indexIntermediateCommits: Boolean!
+
+    """
+    Whether or not this configuration policy affects embeddings.
+    """
+    embeddingsEnabled: Boolean!
 }
 
 """

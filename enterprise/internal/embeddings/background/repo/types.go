@@ -29,3 +29,7 @@ type RepoEmbeddingJob struct {
 func (j *RepoEmbeddingJob) RecordID() int {
 	return j.ID
 }
+
+func (j *RepoEmbeddingJob) IsRepoEmbeddingJobScheduledOrCompleted() bool {
+	return j != nil && (j.State == "completed" || j.State == "processing" || j.State == "queued")
+}

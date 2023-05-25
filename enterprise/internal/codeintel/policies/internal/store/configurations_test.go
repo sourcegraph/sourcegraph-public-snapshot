@@ -35,17 +35,19 @@ func TestGetConfigurationPolicies(t *testing.T) {
 			indexing_enabled,
 			index_commit_max_age_hours,
 			index_intermediate_commits,
+			embeddings_enabled,
 			protected
 		) VALUES
-			(101, 42,   'policy  1 abc', 'GIT_TREE', '', null,              false, 0, false, true,  0, false, true),
-			(102, 42,   'policy  2 def', 'GIT_TREE', '', null,              true , 0, false, false, 0, false, true),
-			(103, 43,   'policy  3 bcd', 'GIT_TREE', '', null,              false, 0, false, true,  0, false, true),
-			(104, NULL, 'policy  4 abc', 'GIT_TREE', '', null,              true , 0, false, false, 0, false, false),
-			(105, NULL, 'policy  5 bcd', 'GIT_TREE', '', null,              false, 0, false, true,  0, false, false),
-			(106, NULL, 'policy  6 bcd', 'GIT_TREE', '', '{gitlab.com/*}',  true , 0, false, false, 0, false, false),
-			(107, NULL, 'policy  7 def', 'GIT_TREE', '', '{gitlab.com/*1}', false, 0, false, true,  0, false, false),
-			(108, NULL, 'policy  8 abc', 'GIT_TREE', '', '{gitlab.com/*2}', true , 0, false, false, 0, false, false),
-			(109, NULL, 'policy  9 def', 'GIT_TREE', '', '{github.com/*}',  false, 0, false, true,  0, false, false)
+			(101, 42,   'policy  1 abc', 'GIT_TREE', '', null,              false, 0, false, true,  0, false, false, true),
+			(102, 42,   'policy  2 def', 'GIT_TREE', '', null,              true , 0, false, false, 0, false, false, true),
+			(103, 43,   'policy  3 bcd', 'GIT_TREE', '', null,              false, 0, false, true,  0, false, false, true),
+			(104, NULL, 'policy  4 abc', 'GIT_TREE', '', null,              true , 0, false, false, 0, false, false, false),
+			(105, NULL, 'policy  5 bcd', 'GIT_TREE', '', null,              false, 0, false, true,  0, false, false, false),
+			(106, NULL, 'policy  6 bcd', 'GIT_TREE', '', '{gitlab.com/*}',  true , 0, false, false, 0, false, false, false),
+			(107, NULL, 'policy  7 def', 'GIT_TREE', '', '{gitlab.com/*1}', false, 0, false, true,  0, false, false, false),
+			(108, NULL, 'policy  8 abc', 'GIT_TREE', '', '{gitlab.com/*2}', true , 0, false, false, 0, false, false, false),
+			(109, NULL, 'policy  9 def', 'GIT_TREE', '', '{github.com/*}',  false, 0, false, true,  0, false, false, false),
+			(110, NULL, 'policy 10 def', 'GIT_TREE', '', '{github.com/*}',  false, 0, false, false, 0, false, true,  false)
 	`
 	if _, err := db.ExecContext(ctx, query); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
@@ -61,52 +63,60 @@ func TestGetConfigurationPolicies(t *testing.T) {
 		107: {"gitlab.com/*1"},
 		108: {"gitlab.com/*2"},
 		109: {"github.com/*"},
+		110: {"github.com/*"},
 	} {
 		if err := store.UpdateReposMatchingPatterns(ctx, patterns, policyID, nil); err != nil {
 			t.Fatalf("unexpected error while updating repositories matching patterns: %s", err)
 		}
 	}
 
+	var (
+		vt = true
+		vf = false
+	)
+
 	type testCase struct {
 		repositoryID     int
 		term             string
-		forDataRetention bool
-		forIndexing      bool
+		forDataRetention *bool
+		forIndexing      *bool
+		forEmbeddings    *bool
 		protected        *bool
 		expectedIDs      []int
 	}
 	testCases := []testCase{
-		{expectedIDs: []int{101, 102, 103, 104, 105, 106, 107, 108, 109}},             // Any flags; all policies
-		{protected: boolPtr(true), expectedIDs: []int{101, 102, 103}},                 // Only protected
-		{protected: boolPtr(false), expectedIDs: []int{104, 105, 106, 107, 108, 109}}, // Only un-protected
+		{forEmbeddings: &vf, expectedIDs: []int{101, 102, 103, 104, 105, 106, 107, 108, 109}},  // Any flags; all policies
+		{forEmbeddings: &vf, protected: &vt, expectedIDs: []int{101, 102, 103}},                // Only protected
+		{forEmbeddings: &vf, protected: &vf, expectedIDs: []int{104, 105, 106, 107, 108, 109}}, // Only un-protected
 
-		{repositoryID: 41, expectedIDs: []int{104, 105, 106, 107}},               // Any flags; matches repo by patterns
-		{repositoryID: 42, expectedIDs: []int{101, 102, 104, 105, 109}},          // Any flags; matches repo by assignment and pattern
-		{repositoryID: 43, expectedIDs: []int{103, 104, 105}},                    // Any flags; matches repo by assignment
-		{repositoryID: 44, expectedIDs: []int{104, 105}},                         // Any flags; no matches by repo
-		{forDataRetention: true, expectedIDs: []int{102, 104, 106, 108}},         // For data retention; all policies
-		{forDataRetention: true, repositoryID: 41, expectedIDs: []int{104, 106}}, // For data retention; matches repo by patterns
-		{forDataRetention: true, repositoryID: 42, expectedIDs: []int{102, 104}}, // For data retention; matches repo by assignment and pattern
-		{forDataRetention: true, repositoryID: 43, expectedIDs: []int{104}},      // For data retention; matches repo by assignment
-		{forDataRetention: true, repositoryID: 44, expectedIDs: []int{104}},      // For data retention; no matches by repo
-		{forIndexing: true, expectedIDs: []int{101, 103, 105, 107, 109}},         // For indexing; all policies
-		{forIndexing: true, repositoryID: 41, expectedIDs: []int{105, 107}},      // For indexing; matches repo by patterns
-		{forIndexing: true, repositoryID: 42, expectedIDs: []int{101, 105, 109}}, // For indexing; matches repo by assignment and pattern
-		{forIndexing: true, repositoryID: 43, expectedIDs: []int{103, 105}},      // For indexing; matches repo by assignment
-		{forIndexing: true, repositoryID: 44, expectedIDs: []int{105}},           // For indexing; no matches by repo
+		{forEmbeddings: &vf, repositoryID: 41, expectedIDs: []int{104, 105, 106, 107}},              // Any flags; matches repo by patterns
+		{forEmbeddings: &vf, repositoryID: 42, expectedIDs: []int{101, 102, 104, 105, 109}},         // Any flags; matches repo by assignment and pattern
+		{forEmbeddings: &vf, repositoryID: 43, expectedIDs: []int{103, 104, 105}},                   // Any flags; matches repo by assignment
+		{forEmbeddings: &vf, repositoryID: 44, expectedIDs: []int{104, 105}},                        // Any flags; no matches by repo
+		{forEmbeddings: &vf, forDataRetention: &vt, expectedIDs: []int{102, 104, 106, 108}},         // For data retention; all policies
+		{forEmbeddings: &vf, forDataRetention: &vt, repositoryID: 41, expectedIDs: []int{104, 106}}, // For data retention; matches repo by patterns
+		{forEmbeddings: &vf, forDataRetention: &vt, repositoryID: 42, expectedIDs: []int{102, 104}}, // For data retention; matches repo by assignment and pattern
+		{forEmbeddings: &vf, forDataRetention: &vt, repositoryID: 43, expectedIDs: []int{104}},      // For data retention; matches repo by assignment
+		{forEmbeddings: &vf, forDataRetention: &vt, repositoryID: 44, expectedIDs: []int{104}},      // For data retention; no matches by repo
+		{forEmbeddings: &vf, forIndexing: &vt, expectedIDs: []int{101, 103, 105, 107, 109}},         // For indexing; all policies
+		{forEmbeddings: &vf, forIndexing: &vt, repositoryID: 41, expectedIDs: []int{105, 107}},      // For indexing; matches repo by patterns
+		{forEmbeddings: &vf, forIndexing: &vt, repositoryID: 42, expectedIDs: []int{101, 105, 109}}, // For indexing; matches repo by assignment and pattern
+		{forEmbeddings: &vf, forIndexing: &vt, repositoryID: 43, expectedIDs: []int{103, 105}},      // For indexing; matches repo by assignment
+		{forEmbeddings: &vf, forIndexing: &vt, repositoryID: 44, expectedIDs: []int{105}},           // For indexing; no matches by repo
+		{forDataRetention: &vf, forIndexing: &vf, forEmbeddings: &vt, expectedIDs: []int{110}},      // For embeddings
 
 		{term: "bc", expectedIDs: []int{101, 103, 104, 105, 106, 108}}, // Searches by name (multiple substring matches)
 		{term: "abcd", expectedIDs: []int{}},                           // Searches by name (no matches)
-
 	}
 
 	runTest := func(testCase testCase, lo, hi int) (errors int) {
 		name := fmt.Sprintf(
-			"repositoryID=%d term=%q forDataRetention=%v forIndexing=%v offset=%d",
+			"repositoryID=%d term=%q forDataRetention=%v forIndexing=%v forEmbeddings=%v offset=%d",
 			testCase.repositoryID,
 			testCase.term,
 			testCase.forDataRetention,
 			testCase.forIndexing,
+			testCase.forEmbeddings,
 			lo,
 		)
 
@@ -116,6 +126,7 @@ func TestGetConfigurationPolicies(t *testing.T) {
 				Term:             testCase.term,
 				ForDataRetention: testCase.forDataRetention,
 				ForIndexing:      testCase.forIndexing,
+				ForEmbeddings:    testCase.forEmbeddings,
 				Protected:        testCase.protected,
 				Limit:            3,
 				Offset:           lo,
