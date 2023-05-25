@@ -102,11 +102,14 @@ If you would like to allow your Sourcegraph instance to control the creation and
 
 ### Incremental embeddings
 
-> NOTE: This is an experimental feature which is disabled by default.
+<span class="badge badge-experimental">Experimental</span>
 
 Incremental embeddings allow you to update the embeddings for a repository without having to re-embed the entire
-repository. This is useful for repositories that are large and/or frequently changing. Incremental embeddings are
-disabled by default.
+repository. With incremental embeddings, outdated embeddings of deleted and modified files are removed and new
+embeddings of the modified and added files are added to the repository's embeddings. This speeds up updates, reduces the
+data sent to the embedding provider and saves costs.
+
+Incremental embeddings are disabled by default.
 
 ```json
 {
