@@ -108,5 +108,6 @@ export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
                 defaultKeywordContextFetcher
             ),
         responseMultiplexer: args.responseMultiplexer || new BotResponseMultiplexer(),
+        firstInteraction: args.firstInteraction ?? false,
     }
 }

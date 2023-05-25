@@ -18,8 +18,10 @@ go_library(
     deps = [
         "//enterprise/internal/batches/sources/azuredevops",
         "//enterprise/internal/batches/sources/bitbucketcloud",
+        "//enterprise/internal/batches/sources/gerrit",
         "//enterprise/internal/batches/store",
         "//enterprise/internal/batches/types",
+        "//internal/conf",
         "//internal/database",
         "//internal/errcode",
         "//internal/extsvc",
@@ -67,6 +69,7 @@ go_test(
         "//enterprise/internal/batches/store",
         "//enterprise/internal/batches/types",
         "//internal/api",
+        "//internal/conf",
         "//internal/database",
         "//internal/errcode",
         "//internal/extsvc",

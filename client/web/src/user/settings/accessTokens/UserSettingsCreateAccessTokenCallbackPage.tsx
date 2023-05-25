@@ -77,7 +77,7 @@ const REQUESTERS: Record<string, TokenRequester> = {
 }
 
 export function isAccessTokenCallbackPage(): boolean {
-    return location.pathname.startsWith('/users/') && location.pathname.endsWith('/settings/tokens/new/callback')
+    return location.pathname.endsWith('/settings/tokens/new/callback')
 }
 
 /**

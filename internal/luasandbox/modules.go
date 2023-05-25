@@ -31,12 +31,7 @@ func LuaModulesFromFS(fs embed.FS, dir, prefix string) (map[string]string, error
 
 	modules := make(map[string]string, len(files))
 	for _, file := range files {
-		f, err := fs.Open(file)
-		if err != nil {
-			return nil, err
-		}
-
-		contents, err := io.ReadAll(f)
+		contents, err := readFile(fs, file)
 		if err != nil {
 			return nil, err
 		}
@@ -48,7 +43,7 @@ func LuaModulesFromFS(fs embed.FS, dir, prefix string) (map[string]string, error
 			name = prefix + "." + name
 		}
 
-		modules[name] = string(contents)
+		modules[name] = contents
 	}
 
 	return modules, nil
@@ -88,4 +83,15 @@ func splitPathList(path string) []string {
 		return []string{}
 	}
 	return strings.Split(path, ":")
+}
+
+func readFile(fs embed.FS, filepath string) (string, error) {
+	f, err := fs.Open(filepath)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	contents, err := io.ReadAll(f)
+	return string(contents), err
 }
