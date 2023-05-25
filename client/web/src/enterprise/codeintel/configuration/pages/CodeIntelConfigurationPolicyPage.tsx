@@ -184,7 +184,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                 title={
                     repo
                         ? (domain === 'scip' ? 'Code graph' : 'Embeddings') + ' configuration policy for repository'
-                        : `Global ${domain === 'scip' ? 'code graph' : 'embeddings'} data configuration policy`
+                        : `Global ${domain === 'scip' ? 'code graph data' : 'embeddings'} configuration policy`
                 }
             />
             <PageHeader
