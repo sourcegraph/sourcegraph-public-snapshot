@@ -93,10 +93,11 @@ type Options struct {
 func (o *Options) ToSearch(ctx context.Context, logger log.Logger) *zoekt.SearchOptions {
 	shouldTrace, spanContext := getSpanContext(ctx, logger)
 	searchOpts := &zoekt.SearchOptions{
-		Trace:        shouldTrace,
-		SpanContext:  spanContext,
-		MaxWallTime:  defaultTimeout,
-		ChunkMatches: true,
+		Trace:             shouldTrace,
+		SpanContext:       spanContext,
+		MaxWallTime:       defaultTimeout,
+		ChunkMatches:      true,
+		UseKeywordScoring: o.Features.KeywordScoring,
 	}
 
 	// These are reasonable default amounts of work to do per shard and
