@@ -3,8 +3,8 @@
 set -eu
 
 registries=(
-  "index.docker.io/sourcegraph"
-  "us.gcr.io/sourcegraph-dev"
+  # "index.docker.io/sourcegraph"
+  # "us.gcr.io/sourcegraph-dev"
 )
 
 date_fragment="$(date +%y-%m-%d)"
