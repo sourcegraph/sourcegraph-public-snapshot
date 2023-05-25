@@ -76,7 +76,7 @@ func NewChangesetSpecFromSpec(spec *batcheslib.ChangesetSpec) (*ChangesetSpec, e
 		c.CommitAuthorEmail = authorEmail
 	}
 
-	c.computeForkNamespace()
+	c.computeForkNamespace(spec.Fork)
 	return c, c.computeDiffStat()
 }
 
@@ -157,11 +157,17 @@ func (cs *ChangesetSpec) computeDiffStat() error {
 
 // computeForkNamespace calculates the namespace that the changeset spec will be
 // forked into, if any.
-func (cs *ChangesetSpec) computeForkNamespace() {
+func (cs *ChangesetSpec) computeForkNamespace(forkFromSpec *bool) {
 	// Right now, we only look at the global enforceForks setting, but we will
 	// likely base this off the description eventually as well.
-	if conf.Get().BatchChangesEnforceForks {
-		cs.setForkToUser()
+	if forkFromSpec == nil {
+		if conf.Get().BatchChangesEnforceForks {
+			cs.setForkToUser()
+		}
+	} else {
+		if *forkFromSpec {
+			cs.setForkToUser()
+		}
 	}
 }
 
