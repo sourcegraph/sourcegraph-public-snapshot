@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/ranges"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/trie"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
@@ -336,35 +335,7 @@ func (s *scipWriter) flush(ctx context.Context) error {
 	}
 	sort.Strings(symbolNames)
 
-	var symbolNameTrie trie.Trie
-	symbolNameTrie, s.nextID = trie.NewTrie(symbolNames, s.nextID)
-
-	symbolNameByIDs := map[int]string{}
-	idsBySymbolName := map[string]int{}
-
-	if err := symbolNameTrie.Traverse(func(id int, parentID *int, prefix string) error {
-		name := prefix
-		if parentID != nil {
-			parentPrefix, ok := symbolNameByIDs[*parentID]
-			if !ok {
-				return errors.Newf("malformed trie - expected prefix with id=%d to exist", *parentID)
-			}
-
-			name = parentPrefix + prefix
-		}
-		symbolNameByIDs[id] = name
-		idsBySymbolName[name] = id
-
-		if err := s.symbolNameInserter.Insert(ctx, id, prefix, parentID); err != nil {
-			return err
-		}
-
-		return nil
-	}); err != nil {
-		return err
-	}
-
-	currentID := 1
+	currentID := 2
 	schemes := make(map[string]int)
 	managers := make(map[string]int)
 	packageNames := make(map[string]int)
@@ -412,34 +383,20 @@ func (s *scipWriter) flush(ctx context.Context) error {
 
 	}
 
-	for scheme, schemeID := range schemes {
-		if err := s.symbolLookupInserter.Insert(ctx, schemeID, s.uploadID, scheme, "SCHEME"); err != nil {
-			return err
-		}
+	maps := map[string]map[string]int{
+		"SCHEME":               schemes,
+		"PACKAGE_MANAGER":      managers,
+		"PACKAGE_NAME":         packageNames,
+		"PACKAGE_VERSION":      packageVersions,
+		"DESCRIPTOR":           descriptors,
+		"DESCRIPTOR_NO_SUFFIX": descriptorsNoSuffix,
 	}
-	for manager, managerID := range managers {
-		if err := s.symbolLookupInserter.Insert(ctx, managerID, s.uploadID, manager, "PACKAGE_MANAGER"); err != nil {
-			return err
-		}
-	}
-	for packageName, packageNameID := range packageNames {
-		if err := s.symbolLookupInserter.Insert(ctx, packageNameID, s.uploadID, packageName, "PACKAGE_NAME"); err != nil {
-			return err
-		}
-	}
-	for packageVersion, packageVersionID := range packageVersions {
-		if err := s.symbolLookupInserter.Insert(ctx, packageVersionID, s.uploadID, packageVersion, "PACKAGE_VERSION"); err != nil {
-			return err
-		}
-	}
-	for descriptor, descriptorID := range descriptors {
-		if err := s.symbolLookupInserter.Insert(ctx, descriptorID, s.uploadID, descriptor, "DESCRIPTOR"); err != nil {
-			return err
-		}
-	}
-	for descriptorNoSuffix, descriptorNoSuffixID := range descriptorsNoSuffix {
-		if err := s.symbolLookupInserter.Insert(ctx, descriptorNoSuffixID, s.uploadID, descriptorNoSuffix, "DESCRIPTOR_NO_SUFFIX"); err != nil {
-			return err
+
+	for nameType, m := range maps {
+		for symbolName, symbolID := range m {
+			if err := s.symbolLookupInserter.Insert(ctx, symbolID, s.uploadID, symbolName, nameType); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -474,15 +431,11 @@ func (s *scipWriter) flush(ctx context.Context) error {
 			descriptorID := descriptors[scip.DescriptorOnlyFormatter.FormatSymbol(p)]
 			descriptorNoDisambiguatorID := descriptors[scip.SyntacticDescriptorOnlyFormatter.FormatSymbol(p)]
 
-			symbolID, ok := idsBySymbolName[index.SymbolName]
-			if !ok {
-				return errors.Newf("malformed trie - expected %q to be a member", index.SymbolName)
-			}
-
+			s.nextID++
 			if err := s.symbolInserter.Insert(
 				ctx,
 				documentLookupIDs[i],
-				symbolID,
+				s.nextID,
 				definitionRanges,
 				referenceRanges,
 				implementationRanges,
