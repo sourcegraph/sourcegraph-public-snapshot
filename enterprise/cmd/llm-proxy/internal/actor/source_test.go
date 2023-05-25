@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/conc"
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -60,7 +61,7 @@ func TestSourcesWorkers(t *testing.T) {
 	s1 := &mockSourceSyncer{}
 	stop1 := make(chan struct{})
 	g.Go(func() {
-		w := (Sources{s1}).Worker(logger, sourceWorkerMutex1, time.Millisecond)
+		w := (Sources{s1}).Worker(observation.NewContext(logger), sourceWorkerMutex1, time.Millisecond)
 		go func() {
 			<-stop1
 			w.Stop()
@@ -75,7 +76,7 @@ func TestSourcesWorkers(t *testing.T) {
 		sourceWorkerMutex := rs.NewMutex(lockName,
 			// Competing worker should only try once to avoid getting stuck
 			redsync.WithTries(1))
-		w := (Sources{s2}).Worker(logger, sourceWorkerMutex, time.Millisecond)
+		w := (Sources{s2}).Worker(observation.NewContext(logger), sourceWorkerMutex, time.Millisecond)
 		go func() {
 			<-stop2
 			w.Stop()
