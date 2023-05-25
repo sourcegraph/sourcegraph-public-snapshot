@@ -25,10 +25,7 @@ go_library(
 go_test(
     name = "keyword_test",
     timeout = "short",
-    srcs = [
-        "query_transformer_test.go",
-        "term_utils_test.go",
-    ],
+    srcs = ["query_transformer_test.go"],
     embed = [":keyword"],
     deps = [
         "//internal/search/query",
