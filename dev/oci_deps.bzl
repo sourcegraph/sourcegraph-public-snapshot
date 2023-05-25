@@ -78,3 +78,21 @@ def oci_deps():
         digest = "sha256:d3af56ce7dcaff85c2c48d3fcd2f2059365fb50beb8e545e08b8519ccc0e67e3",
         image = "us.gcr.io/sourcegraph-dev/wolfi-search-indexer-base",
     )
+
+    oci_pull(
+        name = "wolfi_prometheus_base",
+        digest = "sha256:11a84d7ae6a7f3a8954306f224391a2301e5518fbe2d6e8dfee4abe12ca91180",
+        image = "us.gcr.io/sourcegraph-dev/wolfi-prometheus-base",
+    )
+
+    oci_pull(
+        name = "wolfi_postgresql-12_base",
+        digest = "sha256:b1e08b459ca4cf7529ced3a611361834859014ab508ba0b53914f14c9fc269dc",
+        image = "us.gcr.io/sourcegraph-dev/wolfi-postgresql-12-base",
+    )
+
+    oci_pull(
+        name = "wolfi_postgresql-12-codeinsights_base",
+        digest = "sha256:c9342cdec5a5889343e816f9ffd0707a50cbfba084339d0649bbfaefc1ab546f",
+        image = "us.gcr.io/sourcegraph-dev/wolfi-postgresql-12-codeinsights-base",
+    )
