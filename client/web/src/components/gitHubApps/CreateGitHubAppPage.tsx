@@ -95,7 +95,9 @@ export const CreateGitHubAppPage: FC<AddGitHubPageProps> = () => {
     const createState = useCallback(async () => {
         setError(null)
         try {
-            const response = await fetch(`/.auth/githubapp/new-app-state?appName=${name}&webhookURN=${url}`)
+            const response = await fetch(
+                `/.auth/githubapp/new-app-state?appName=${name}&webhookURN=${url}&domain=repos`
+            )
             const state: stateResponse = await response.json()
             const webhookURL = new URL(`/.api/webhooks/${state.webhookUUID}`, baseUrl).href
             submitForm(state.state, webhookURL, name)
