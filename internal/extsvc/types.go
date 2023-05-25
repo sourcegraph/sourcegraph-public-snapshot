@@ -242,7 +242,7 @@ var variantValuesMap = map[Variant]variantValues{
 	VariantRubyPackages:    {AsKind: "RUBYPACKAGES", AsType: "rubyPackages", ConfigPrototype: func() any { return &schema.RubyPackagesConnection{} }},
 	VariantRustPackages:    {AsKind: "RUSTPACKAGES", AsType: "rustPackages", ConfigPrototype: func() any { return &schema.RustPackagesConnection{} }},
 	VariantSCIM:            {AsKind: "SCIM", AsType: "scim"},
-    VariantLocalGit:            {AsKind: "LOCALGIT", AsType: "localgit", ConfigPrototype: func() any {return &schema.LocalExternalService{}}},
+	VariantLocalGit:        {AsKind: "LOCALGIT", AsType: "localgit", ConfigPrototype: func() any { return &schema.LocalGitExternalService{} }},
 }
 
 func (v Variant) AsKind() string {

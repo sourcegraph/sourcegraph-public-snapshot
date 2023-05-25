@@ -54,7 +54,7 @@ func (c *Config) Load() {
 	if err != nil {
 		return
 	}
-	config, err := extsvc.ParseConfig(extsvc.KindLocalGit, string(configJSON))
+	config, err := extsvc.ParseConfig(extsvc.VariantLocalGit.AsKind(), string(configJSON))
 	if err != nil {
 		return
 	}
