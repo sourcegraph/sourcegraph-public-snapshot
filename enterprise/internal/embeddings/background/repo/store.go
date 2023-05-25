@@ -311,4 +311,3 @@ WHERE
 	AND
 	cancel IS FALSE
 `
-
