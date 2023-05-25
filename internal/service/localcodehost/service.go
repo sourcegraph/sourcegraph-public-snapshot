@@ -52,10 +52,15 @@ func (c *Config) Load() {
 
 	configJSON, err := os.ReadFile(configFilePath)
 	if err != nil {
+		if !os.IsNotExist(err) {
+			// Only report a fatal error if the file actually exists but can't be opened
+			c.AddError(errors.Wrap(err, "failed to read SRC_LOCAL_REPOS_CONFIG_FILE file"))
+		}
 		return
 	}
 	config, err := extsvc.ParseConfig(extsvc.VariantLocalGit.AsKind(), string(configJSON))
 	if err != nil {
+		c.AddError(errors.Wrap(err, "failed to parse SRC_LOCAL_REPOS_CONFIG_FILE file"))
 		return
 	}
 	c.Repos = config.(*schema.LocalGitExternalService).Repos
