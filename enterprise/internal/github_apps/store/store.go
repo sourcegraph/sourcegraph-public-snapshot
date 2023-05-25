@@ -76,7 +76,7 @@ var scanIDAndTimes = basestore.NewFirstScanner(func(s dbutil.Scanner) (*ghtypes.
 	return &app, err
 })
 
-// Create inserts a new GitHub App into the database.
+// Create inserts a new GitHub App into the database. The default domain for the App is "repos".
 func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (int, error) {
 	key := s.getEncryptionKey()
 	clientSecret, _, err := encryption.MaybeEncrypt(ctx, key, app.ClientSecret)
