@@ -52,6 +52,7 @@ function tag_and_push_image() {
     --bazelrc=.aspect/bazelrc/ci.bazelrc \
     --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
     run \
+    "$target" \
     --stamp \
     --workspace_status_command=./dev/bazel_stamp_vars.sh \
     -- \
