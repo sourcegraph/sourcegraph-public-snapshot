@@ -7,6 +7,7 @@ type CodeHost struct {
 	ExternalServiceType string
 	ExternalServiceID   string
 	RequiresSSH         bool
+	HasCommitSigning    bool
 	HasWebhooks         bool
 }
 

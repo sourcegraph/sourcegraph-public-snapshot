@@ -38,6 +38,14 @@ func (c *batchChangesCodeHostResolver) RequiresUsername() bool {
 	return false
 }
 
+func (c *batchChangesCodeHostResolver) HasCommitSigning() bool {
+	if c.codeHost.ExternalServiceType == extsvc.TypeGitHub {
+		return true
+	}
+
+	return false
+}
+
 func (c *batchChangesCodeHostResolver) HasWebhooks() bool {
 	return c.codeHost.HasWebhooks
 }

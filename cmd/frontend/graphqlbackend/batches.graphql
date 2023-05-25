@@ -3458,6 +3458,11 @@ type BatchChangesCodeHost {
     requiresUsername: Boolean!
 
     """
+    If true, this code host can setup commit signing.
+    """
+    hasCommitSigning: Boolean!
+
+    """
     If true, the code host has webhooks configured.
     """
     hasWebhooks: Boolean!

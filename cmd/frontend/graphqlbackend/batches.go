@@ -554,6 +554,7 @@ type BatchChangesCodeHostResolver interface {
 	ExternalServiceURL() string
 	RequiresSSH() bool
 	RequiresUsername() bool
+	HasCommitSigning() bool
 	HasWebhooks() bool
 	Credential() BatchChangesCredentialResolver
 }

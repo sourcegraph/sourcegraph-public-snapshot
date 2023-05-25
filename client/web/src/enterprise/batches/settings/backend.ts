@@ -84,6 +84,7 @@ const CODE_HOST_FIELDS_FRAGMENT = gql`
         externalServiceURL
         requiresSSH
         requiresUsername
+        hasCommitSigning
         credential {
             ...BatchChangesCredentialFields
         }
