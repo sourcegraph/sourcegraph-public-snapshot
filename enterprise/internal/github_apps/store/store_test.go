@@ -353,7 +353,7 @@ func TestListGitHubApp(t *testing.T) {
 	app1 := &ghtypes.GitHubApp{
 		AppID:        1234,
 		Name:         "Test App 1",
-		Domain:       "repos",
+		Domain:       types.ReposDomain,
 		Slug:         "test-app-1",
 		BaseURL:      "https://github.com",
 		AppURL:       "https://github.com/apps/testapp",
@@ -366,7 +366,7 @@ func TestListGitHubApp(t *testing.T) {
 	app2 := &ghtypes.GitHubApp{
 		AppID:        5678,
 		Name:         "Test App 2",
-		Domain:       "batches",
+		Domain:       types.BatchesDomain,
 		Slug:         "test-app-2",
 		BaseURL:      "https://enterprise.github.com",
 		AppURL:       "https://enterprise.github.com/apps/testapp",

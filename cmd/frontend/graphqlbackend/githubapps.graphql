@@ -8,7 +8,7 @@ extend type Mutation {
 
 extend type Query {
     """
-    All configured GitHub Apps.
+    All configured GitHub Apps, optionally filtered by the domain in which they are used.
     """
     gitHubApps(domain: GitHubAppDomain): GitHubAppConnection!
     """
@@ -23,11 +23,11 @@ extend type Query {
 
 enum GitHubAppDomain {
     """
-    GitHub Apps that are configured for repositories.
+    GitHub Apps that are configured for repository syncing.
     """
     REPOS
     """
-    GitHub Apps that are configured for batch changes.
+    GitHub Apps that are configured for batch changes commit signing.
     """
     BATCHES
 }

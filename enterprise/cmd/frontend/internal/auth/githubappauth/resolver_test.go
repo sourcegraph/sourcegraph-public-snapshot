@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
@@ -165,13 +166,16 @@ func TestResolver_GitHubApps(t *testing.T) {
 			Schema:  schema,
 			Context: adminCtx,
 			Query: `
-				query GitHubApps() {
-					gitHubApps(domain: "repos") {
+				query GitHubApps($domain: GitHubAppDomain) {
+					gitHubApps(domain: $domain) {
 						nodes {
 							id
 						}
 					}
 				}`,
+			Variables: map[string]any{
+				"domain": strings.ToUpper(string(types.ReposDomain)),
+			},
 			ExpectedResult: fmt.Sprintf(`{
 				"gitHubApps": {
 					"nodes": [
