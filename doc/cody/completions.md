@@ -26,7 +26,7 @@ While in experimental state, Cody completions need to be enabled manually. To do
 
 Please follow the steps in [Enabling Cody on Sourcegraph Enterprise](.explanations/enabling_cody_enterprise#enabling-cody-on-sourcegraph-enterprise) to enable Cody on Sourcegraph enterprise.
 
-You can configure the model used for Cody completions via the `completionModel` option inside the `completions` site config.
+You have to configure the model used for Cody completions via the `completionModel` option inside the `completions` site config.
 
 > NOTE: Self-hosted customers need to update to a minimum of version 5.0.4 to use completions.
 
