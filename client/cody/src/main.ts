@@ -224,7 +224,7 @@ const register = async (
             vscode.commands.registerCommand('cody.manual-completions', async () => {
                 await completionsProvider.fetchAndShowManualCompletions()
             }),
-            vscode.commands.registerCommand('cody.completions.inline.accepted', asdf => {
+            vscode.commands.registerCommand('cody.completions.inline.accepted', () => {
                 const params = { type: 'inline' }
                 logEvent('CodyVSCodeExtension:completion:accepted', params, params)
             }),

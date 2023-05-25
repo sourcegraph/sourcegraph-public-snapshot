@@ -13,7 +13,6 @@ import { CompletionsDocumentProvider } from './docprovider'
 import { History } from './history'
 import { CompletionProvider, InlineCompletionProvider, ManualCompletionProvider } from './provider'
 
-const LOG_INLINE = { type: 'inline' }
 const LOG_MANUAL = { type: 'manual' }
 
 function lastNLines(text: string, n: number): string {
