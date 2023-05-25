@@ -376,9 +376,9 @@ func TestListGitHubApp(t *testing.T) {
 		Logo:         "logo.png",
 	}
 
-	_, err := store.Create(ctx, app1)
+	_, err := store.Create(ctx, repoApp)
 	require.NoError(t, err)
-	_, err = store.Create(ctx, app2)
+	_, err = store.Create(ctx, batchesApp)
 	require.NoError(t, err)
 
 	t.Run("all github apps", func(t *testing.T) {
