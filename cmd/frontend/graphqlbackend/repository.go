@@ -102,6 +102,18 @@ func UnmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 	return
 }
 
+func UnmarshalRepositoryIDs(ids []graphql.ID) ([]api.RepoID, error) {
+	repoIDs := make([]api.RepoID, len(ids))
+	for i, id := range ids {
+		repoID, err := UnmarshalRepositoryID(id)
+		if err != nil {
+			return nil, err
+		}
+		repoIDs[i] = repoID
+	}
+	return repoIDs, nil
+}
+
 // repo makes sure the repo is hydrated before returning it.
 func (r *RepositoryResolver) repo(ctx context.Context) (*types.Repo, error) {
 	err := r.hydrate(ctx)

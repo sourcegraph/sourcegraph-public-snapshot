@@ -159,7 +159,7 @@ func isEmbeddableFileContent(content []byte) (embeddable bool, reason SkipReason
 	return true, SkipReasonNone
 }
 
-func isValidTextFile(fileName string) bool {
+func IsValidTextFile(fileName string) bool {
 	ext := strings.TrimPrefix(filepath.Ext(fileName), ".")
 	_, ok := textFileExtensions[strings.ToLower(ext)]
 	if ok {

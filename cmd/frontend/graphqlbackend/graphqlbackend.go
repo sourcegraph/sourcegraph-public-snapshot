@@ -560,6 +560,12 @@ func NewSchema(
 		schemas = append(schemas, embeddingsSchema)
 	}
 
+	if contextResolver := optional.ContextResolver; contextResolver != nil {
+		EnterpriseResolvers.contextResolver = contextResolver
+		resolver.ContextResolver = contextResolver
+		schemas = append(schemas, contextSchema)
+	}
+
 	if rbacResolver := optional.RBACResolver; rbacResolver != nil {
 		EnterpriseResolvers.rbacResolver = rbacResolver
 		resolver.RBACResolver = rbacResolver
@@ -632,6 +638,7 @@ type OptionalResolver struct {
 	CodeMonitorsResolver
 	CompletionsResolver
 	ComputeResolver
+	ContextResolver
 	DotcomRootResolver
 	EmbeddingsResolver
 	GitHubAppsResolver
@@ -742,9 +749,11 @@ var EnterpriseResolvers = struct {
 	codeMonitorsResolver        CodeMonitorsResolver
 	completionsResolver         CompletionsResolver
 	computeResolver             ComputeResolver
+	contextResolver             ContextResolver
 	dotcomResolver              DotcomRootResolver
 	embeddingsResolver          EmbeddingsResolver
 	gitHubAppsResolver          GitHubAppsResolver
+	insightsAggregationResolver InsightsAggregationResolver
 	insightsResolver            InsightsResolver
 	licenseResolver             LicenseResolver
 	notebooksResolver           NotebooksResolver
@@ -752,7 +761,6 @@ var EnterpriseResolvers = struct {
 	rbacResolver                RBACResolver
 	searchContextsResolver      SearchContextsResolver
 	webhooksResolver            WebhooksResolver
-	insightsAggregationResolver InsightsAggregationResolver
 }{}
 
 // Root returns a new schemaResolver.

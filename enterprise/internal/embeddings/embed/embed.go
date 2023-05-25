@@ -62,7 +62,7 @@ func EmbedRepo(
 
 	var codeFileNames, textFileNames []FileEntry
 	for _, file := range toIndex {
-		if isValidTextFile(file.Name) {
+		if IsValidTextFile(file.Name) {
 			textFileNames = append(textFileNames, file)
 		} else {
 			codeFileNames = append(codeFileNames, file)

@@ -75,6 +75,11 @@ var outboundWebhooksSchema string
 //go:embed embeddings.graphql
 var embeddingsSchema string
 
+// contextSchema is the Context raw graqhql schema.
+//
+//go:embed context.graphql
+var contextSchema string
+
 // rbacSchema is the RBAC raw graphql schema.
 //
 //go:embed rbac.graphql

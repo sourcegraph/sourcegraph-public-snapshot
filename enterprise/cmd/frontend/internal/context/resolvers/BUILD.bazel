@@ -1,0 +1,16 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "resolvers",
+    srcs = ["context.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/context/resolvers",
+    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/graphqlbackend",
+        "//enterprise/internal/context",
+        "//internal/authz",
+        "//internal/database",
+        "//internal/gitserver",
+        "//internal/types",
+    ],
+)

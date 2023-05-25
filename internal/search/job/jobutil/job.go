@@ -46,6 +46,7 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan, enterpriseJobs Enterpris
 	if inputs.SearchMode == search.SmartSearch || inputs.PatternType == query.SearchTypeLucky {
 		jobTree = smartsearch.NewSmartSearchJob(jobTree, newJob, plan)
 	} else if inputs.PatternType == query.SearchTypeKeyword && len(plan) == 1 {
+		// TODO(camdencheek): we should almost definitely not be doing plan[0] here
 		newJobTree, err := keyword.NewKeywordSearchJob(plan[0], newJob)
 		if err != nil {
 			return nil, err

@@ -66,8 +66,8 @@ func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryCo
 
 		if filter == nil || filter(entry) {
 			opts := GitTreeEntryResolverOpts{
-				commit: r.Commit(),
-				stat:   entry,
+				Commit: r.Commit(),
+				Stat:   entry,
 			}
 			l = append(l, NewGitTreeEntryResolver(r.db, r.gitserverClient, opts))
 		}
