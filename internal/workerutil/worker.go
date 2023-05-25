@@ -3,6 +3,7 @@ package workerutil
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -48,6 +49,10 @@ type Worker[T Record] struct {
 type dummyType struct{}
 
 func (d dummyType) RecordID() int { return 0 }
+
+func (d dummyType) RecordUID() string {
+	return strconv.Itoa(0)
+}
 
 var _ recorder.Recordable = &Worker[dummyType]{}
 
