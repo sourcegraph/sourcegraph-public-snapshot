@@ -168,7 +168,7 @@ referenced_definitions AS (
 		-- Restrict search to definitions of _referenced_ symbols above
 		rd.symbol_name = ANY(SELECT symbol_name FROM referenced_symbols) AND
 
-		rd.graph_key = %s AND
+		cre.graph_key = %s AND
 		-- Ensure that the record is within the bounds where it would be visible
 		-- to the current "snapshot" defined by the ranking computation state row.
 		cre.id <= p.max_export_id AND
