@@ -10,8 +10,7 @@
 
 ## What are Cody completions
 
- Cody Completions provide suggestions for how to continue your code at the current cursor position.
-
+ Cody Completions provide suggestions for how to continue your code at the current cursor position while you're coding.
 
 ## Enabling Cody completions
 
@@ -23,4 +22,12 @@ While in experimental state, Cody completions need to be enabled manually. To do
    - Click to check the box for: `Cody > Experimental Suggestions`
 1. Finally, restart VS Code and test it out!
 
+### Configuring on Sourcegraph Enterprise
+
+Please follow the steps in [Enabling Cody on Sourcegraph Enterprise](.explanations/enabling_cody_enterprise#enabling-cody-on-sourcegraph-enterprise) to enable Cody on Sourcegraph enterprise.
+
+You can configure the model used for Cody completions via the `completionModel` option inside the `completions` site config.
+
 > NOTE: Self-hosted customers need to update to a minimum of version 5.0.4 to use completions.
+
+> NOTE: Cody completions currently only work with Claude Instant or our LLMProxy configured with Claude Instant. Support for other models will be coming later.
