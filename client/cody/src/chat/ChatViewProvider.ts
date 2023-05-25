@@ -433,6 +433,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             intentDetector: this.intentDetector,
             codebaseContext: this.codebaseContext,
             responseMultiplexer: this.multiplexer,
+            firstInteraction: this.transcript.isEmpty,
         })
         if (!interaction) {
             return
@@ -476,6 +477,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             intentDetector: this.intentDetector,
             codebaseContext: this.codebaseContext,
             responseMultiplexer: multiplexer,
+            firstInteraction: this.transcript.isEmpty,
         })
         if (!interaction) {
             return

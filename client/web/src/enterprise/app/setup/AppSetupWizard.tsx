@@ -29,7 +29,7 @@ const APP_SETUP_STEPS: StepConfiguration[] = [
         path: 'install-extensions',
         component: InstallExtensionsSetupPage,
         nextURL: '/',
-        onNext: () => {
+        onView: () => {
             localStorage.setItem('app.setup.finished', 'true')
         },
     },
@@ -44,12 +44,7 @@ export const AppSetupWizard: FC<TelemetryProps> = ({ telemetryService }) => {
 
     const handleStepChange = useCallback(
         (nextStep: StepConfiguration): void => {
-            const currentStepIndex = APP_SETUP_STEPS.findIndex(step => step.id === nextStep.id)
-            const isLastStep = currentStepIndex === APP_SETUP_STEPS.length - 1
-
-            // Reset the last visited step if you're on the last step in the
-            // setup pipeline
-            setStepId(!isLastStep ? nextStep.id : '')
+            setStepId(nextStep.id)
         },
         [setStepId]
     )
