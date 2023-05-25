@@ -77,7 +77,7 @@ export const FileOwnershipPanel: React.FunctionComponent<
                                 {data.node.commit.blob.ownership.totalOwners === 0 ? (
                                     <Alert variant="info">No ownership data for this file.</Alert>
                                 ) : (
-                                    <H4 className="mb-4">Owners</H4>
+                                    <H4 className="mb-3">Owners</H4>
                                 )}
                             </th>
                         </tr>
@@ -106,6 +106,14 @@ export const FileOwnershipPanel: React.FunctionComponent<
                                     />
                                 </>
                             ))}
+                        {
+                            /* Visually separate two sets with a horizontal rule (like subsequent owners are)
+                             * if there is data in both owners and signals.
+                             */
+                            data.node.commit.blob.ownership.totalOwners > 0 &&
+                                data.node.commit.blob.ownership.nodes.length >
+                                    data.node.commit.blob.ownership.totalOwners && <tr className={styles.bordered}></tr>
+                        }
                     </tbody>
                     {data.node.commit.blob.ownership.nodes.length > data.node.commit.blob.ownership.totalOwners && (
                         <>

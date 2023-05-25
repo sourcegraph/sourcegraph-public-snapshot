@@ -20,16 +20,19 @@
         white-space: nowrap;
     }
 
+    // Email icon, and the user are tightly fitting the width.
     td.fitting {
         width: min-content;
     }
 
-    td.more-space {
-        padding-right: 40px;
-    }
-
+    // While the badges column on the right-hand-side is expanding.
     td.expanding {
         width: 100%;
+    }
+
+    // Give a little bit more space to the owner display.
+    td.more-space {
+        padding-right: 40px;
     }
 }
 
