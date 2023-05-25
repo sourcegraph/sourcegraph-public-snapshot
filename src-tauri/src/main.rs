@@ -150,7 +150,12 @@ fn main() {
         // its name which may suggest that it invokes something, actually only
         // *defines* an invoke() handler and does not invoke anything during
         // setup here.)
-        .invoke_handler(tauri::generate_handler![get_launch_path, app_shell_loaded, show_main_window, reload_cody_window])
+        .invoke_handler(tauri::generate_handler![
+            get_launch_path,
+            app_shell_loaded,
+            show_main_window,
+            reload_cody_window
+        ])
         .run(context)
         .expect("error while running tauri application");
 }
@@ -202,10 +207,32 @@ fn start_embedded_services(handle: &tauri::AppHandle) {
                     }
                     log::error!("{}", line);
                 }
+                CommandEvent::Error(err) => {
+                    app.get_window("main")
+                        .unwrap()
+                        .emit("app-shell-error", "")
+                        .unwrap();
+                    log::error!("Command Error: {:#?}", err)
+                }
+                CommandEvent::Terminated(payload) => {
+                    emit_app_shell_error(
+                        &app,
+                        format!("The process crashed with exit code {:?}", payload.code).as_str(),
+                    );
+                    log::error!("Command Terminated: {:#?}", payload)
+                }
                 _ => continue,
             };
         }
     });
+}
+
+fn emit_app_shell_error(app_handle: &tauri::AppHandle, message: &str) {
+    app_handle
+        .get_window("main")
+        .unwrap()
+        .emit("app-shell-error", message)
+        .unwrap();
 }
 
 fn get_sourcegraph_args(app_handle: &tauri::AppHandle) -> Vec<String> {
