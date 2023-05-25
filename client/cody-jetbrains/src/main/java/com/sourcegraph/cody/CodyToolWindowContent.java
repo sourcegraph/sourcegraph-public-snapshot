@@ -23,6 +23,10 @@ import java.util.ArrayList;
 
 class CodyToolWindowContent implements UpdatableChat {
     private final @NotNull JBTabbedPane tabbedPane = new JBTabbedPane();
+
+
+
+
     private final @NotNull JPanel contentPanel = new JPanel();
     private final @NotNull JPanel recipesPanel = new JPanel();
     private final @NotNull JPanel messagesPanel = new JPanel();
