@@ -157,41 +157,47 @@ referenced_symbols AS (
 ),
 referenced_definitions AS (
 	SELECT
-		s.repository_id,
-		s.document_path,
+		u.repository_id,
+		rd.document_path,
 		COUNT(*) AS count
-	FROM (
-		SELECT
-			u.repository_id,
-			rd.document_path,
+	FROM codeintel_ranking_definitions rd
+	JOIN codeintel_ranking_exports cre ON cre.id = rd.exported_upload_id
+	JOIN lsif_uploads u ON u.id = cre.upload_id
+	JOIN progress p ON TRUE
+	WHERE
+		-- Restrict search to definitions of _referenced_ symbols above
+		rd.symbol_name = ANY(SELECT symbol_name FROM referenced_symbols) AND
 
-			-- Group by repository/root/indexer and order by descending ids. We
-			-- will only count the rows with rank = 1 in the outer query in order
-			-- to break ties when shadowed definitions are present.
-			RANK() OVER (
-				PARTITION BY u.repository_id, u.root, u.indexer
-				ORDER BY u.id DESC
-			) AS rank
-		FROM codeintel_ranking_definitions rd
-		JOIN referenced_symbols rs ON rs.symbol_name = rd.symbol_name
-		JOIN codeintel_ranking_exports cre ON cre.id = rd.exported_upload_id
-		JOIN lsif_uploads u ON u.id = cre.upload_id
-		JOIN progress p ON TRUE
-		WHERE
-			rd.graph_key = %s AND
-			-- Ensure that the record is within the bounds where it would be visible
-			-- to the current "snapshot" defined by the ranking computation state row.
-			cre.id <= p.max_export_id AND
-			(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at)
-	) s
+		rd.graph_key = %s AND
+		-- Ensure that the record is within the bounds where it would be visible
+		-- to the current "snapshot" defined by the ranking computation state row.
+		cre.id <= p.max_export_id AND
+		(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at) AND
 
-	-- For multiple uploads in the same repository/root/indexer, only consider
-	-- definition records attached to the one with the highest id. This should
-	-- prevent over-counting definitions when there are multiple uploads in the
-	-- exported set, but the shadowed (newly non-visible) uploads have not yet
-	-- been removed by the janitor processes.
-	WHERE s.rank = 1
-	GROUP BY s.repository_id, s.document_path
+		-- For multiple uploads in the same repository/root/indexer, only consider
+		-- definition records attached to the one with the highest id. This should
+		-- prevent over-counting definitions when there are multiple uploads in the
+		-- exported set, but the shadowed (newly non-visible) uploads have not yet
+		-- been removed by the janitor processes.
+		NOT EXISTS (
+			SELECT 1
+			FROM lsif_uploads u2
+			JOIN codeintel_ranking_exports cre2 ON cre2.upload_id = u2.id
+			JOIN progress p ON TRUE
+			WHERE
+				cre2.graph_key = rd.graph_key AND
+				-- Ensure that the candidate records are also within the bounds
+				-- where they would be visible to the current "snapshot".
+				cre2.id <= p.max_export_id AND
+				(cre2.deleted_at IS NULL OR cre2.deleted_at > p.started_at) AND
+
+				u.repository_id = u2.repository_id AND
+				u.root = u2.root AND
+				u.indexer = u2.indexer AND
+				u.id < u2.id
+		)
+
+	GROUP BY u.repository_id, rd.document_path
 ),
 ins AS (
 	INSERT INTO codeintel_ranking_path_counts_inputs (repository_id, document_path, count, graph_key)
