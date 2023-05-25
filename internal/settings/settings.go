@@ -74,6 +74,11 @@ func Latest(ctx context.Context, db database.DB, subject api.SettingsSubject) (*
 		return nil, err
 	}
 
+	if settings == nil {
+		// No settings have been defined for this subject
+		return nil, nil
+	}
+
 	var unmarshalled schema.Settings
 	if err := jsonc.Unmarshal(settings.Contents, &unmarshalled); err != nil {
 		return nil, err
