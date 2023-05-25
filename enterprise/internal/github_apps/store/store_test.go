@@ -350,7 +350,7 @@ func TestListGitHubApp(t *testing.T) {
 	store := &gitHubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
 	ctx := context.Background()
 
-	app1 := &ghtypes.GitHubApp{
+	repoApp := &ghtypes.GitHubApp{
 		AppID:        1234,
 		Name:         "Test App 1",
 		Domain:       types.ReposDomain,
