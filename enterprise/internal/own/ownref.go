@@ -111,6 +111,56 @@ func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text ...string) (
 	return b, nil
 }
 
+// bag is implemented as a map of resolved users and map of references.
+type bag struct {
+	// resolvedUsers map from user id to `userReferences` which contain
+	// all the references found in the database for a given user.
+	// These references are linked back to the `references` via `resolve`
+	// call.
+	resolvedUsers map[int32]*userReferences
+	// references map a user reference to a refContext which can be either:
+	// - resolved to a user, in which case it has non-0 `resolvedUserID`,
+	//   and an entry with that user id exists in `resolvedUsers`.
+	// - unresolved which means that either resolution was not attempted,
+	//   so `resolve` was not called after adding given reference,
+	//   or no user was able to be resolved (indicated by `resolutionDone` being `true`).
+	references map[refKey]*refContext
+}
+
+// Contains returns true if given reference can be found in the bag,
+// irrespective of whether the reference was resolved or not.
+// This means that any reference that was added or passed
+// to the `ByTextReference` should be in the bag. Moreover,
+// for every user that was resolved by added reference,
+// all references for that user are also in the bag.
+func (b bag) Contains(ref Reference) bool {
+	var ks []refKey
+	if id := ref.UserID; id != 0 {
+		ks = append(ks, refKey{userID: id})
+	}
+	if h := ref.Handle; h != "" {
+		ks = append(ks, refKey{handle: strings.TrimPrefix(h, "@")})
+	}
+	if e := ref.Email; e != "" {
+		ks = append(ks, refKey{email: e})
+	}
+	for _, k := range ks {
+		if _, ok := b.references[k]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+func (b bag) String() string {
+	var mapping []string
+	for k, refCtx := range b.references {
+		mapping = append(mapping, fmt.Sprintf("%s->%d", k, refCtx.resolvedUserID))
+	}
+	// TODO add unresolved references to the bag
+	return fmt.Sprintf("[%s]", strings.Join(mapping, ", "))
+}
+
 // add inserts given reference key (one of: user ID, email, handle)
 // to the bag, so that it can be resolved later in batch.
 func (b *bag) add(k refKey) {
@@ -120,9 +170,10 @@ func (b *bag) add(k refKey) {
 }
 
 // resolve takes all references that were added but not resolved
-// before and queries the database to find users, that these references
-// may point to. Fetched users are augmented with all the other
-// references that can point to them.
+// before and queries the database to find corresponding users.
+// Fetched users are augmented with all the other references that
+// can point to them (also from the database), and the newly fetched
+// references are then linked back to the bag.
 func (b *bag) resolve(ctx context.Context, db edb.EnterpriseDB) error {
 	for k, refCtx := range b.references {
 		if !refCtx.resolutionDone {
@@ -150,7 +201,8 @@ func (b *bag) resolve(ctx context.Context, db edb.EnterpriseDB) error {
 }
 
 // linkBack adds all the extra references that were fetched for a user
-// from the database, but perhaps were not queried for.
+// from the database (via `augment`) so that `Contains` can be valid
+// for all known references to a user that is in the bag.
 //
 // For example: bag{refKey{email: alice@example.com}} is resolved.
 // User with id=42 is fetched, that has second verified email: alice2@example.com,
@@ -186,29 +238,20 @@ func (b *bag) linkBack(userRefs *userReferences) {
 	}
 }
 
-func findUserByUsername(ctx context.Context, db edb.EnterpriseDB, handle string) (*types.User, error) {
-	user, err := db.Users().GetByUsername(ctx, handle)
-	if err != nil && !errcode.IsNotFound(err) {
-		return nil, errors.Wrap(err, "Users.GetByUsername")
-	}
-	return user, nil
-}
-
-// TODO(#52246): GetVerifiedEmails accepts var-args, can batch
-func findUserIDByEmail(ctx context.Context, db edb.EnterpriseDB, email string) (int32, error) {
-	// Checking that provided email is verified.
-	verifiedEmails, err := db.UserEmails().GetVerifiedEmails(ctx, email)
-	if err != nil {
-		return 0, errors.Wrap(err, "findUserIDByEmail")
-	}
-	if len(verifiedEmails) == 0 {
-		return 0, nil
-	}
-	return verifiedEmails[0].UserID, nil
+// userReferences represents all the references found for a given user in the database.
+// Every valid `userReferences` object has an `id`
+type userReferences struct {
+	// id must point at the ID of an actual user for userReferences to be valid.
+	id   int32
+	user *types.User
+	// codeHostHandles are handles on the code-host that are linked with the user
+	codeHostHandles []string
+	verifiedEmails  []string
 }
 
 // augment fetches all the references for this user that are missing.
 // These can then be linked back into the bag using `linkBack`.
+// In order to call augment, `id`
 func (r *userReferences) augment(ctx context.Context, db edb.EnterpriseDB) error {
 	if r.id == 0 {
 		return errors.New("userReferences needs id set for augmenting")
@@ -269,23 +312,6 @@ func fetchCodeHostHandles(ctx context.Context, db edb.EnterpriseDB, userID int32
 	return codeHostHandles, nil
 }
 
-// bag is implemented as a slice of references for different users.
-type bag struct {
-	resolvedUsers map[int32]*userReferences
-	references    map[refKey]*refContext
-}
-
-type userReferences struct {
-	id   int32
-	user *types.User
-	// handle text input used to search that reference,
-	// it is present if user was not found in the database.
-	handle string // TODO only keep resolved handles
-	// codeHostHandles are user handles of connected code hosts of a resolved user.
-	codeHostHandles []string
-	verifiedEmails  []string
-}
-
 // refKey is how the bag keys the references. Only one of the fields is filled.
 type refKey struct {
 	userID int32
@@ -335,93 +361,32 @@ func (k refKey) fetch(ctx context.Context, db edb.EnterpriseDB) (*userReferences
 	return nil, errors.New("empty refKey is not valid")
 }
 
+func findUserByUsername(ctx context.Context, db edb.EnterpriseDB, handle string) (*types.User, error) {
+	user, err := db.Users().GetByUsername(ctx, handle)
+	if err != nil && !errcode.IsNotFound(err) {
+		return nil, errors.Wrap(err, "Users.GetByUsername")
+	}
+	return user, nil
+}
+
+// TODO(#52246): GetVerifiedEmails accepts var-args, can batch
+func findUserIDByEmail(ctx context.Context, db edb.EnterpriseDB, email string) (int32, error) {
+	// Checking that provided email is verified.
+	verifiedEmails, err := db.UserEmails().GetVerifiedEmails(ctx, email)
+	if err != nil {
+		return 0, errors.Wrap(err, "findUserIDByEmail")
+	}
+	if len(verifiedEmails) == 0 {
+		return 0, nil
+	}
+	return verifiedEmails[0].UserID, nil
+}
+
+// refContext contains information about resolving a reference to a user.
 type refContext struct {
-	// repos keeps the various contexts of a repo that given reference was found in.
-	repos []RepoContext
 	// resolvedUserID is not 0 if this reference has been recognized as a user.
 	resolvedUserID int32
 	// resolutionDone is set to true after the reference pointing at this refContext
 	// has been attempted to be resolved.
 	resolutionDone bool
-}
-
-func (refs userReferences) containsEmail(email string) bool {
-	for _, vEmail := range refs.verifiedEmails {
-		if vEmail == email {
-			return true
-		}
-	}
-	return false
-}
-
-func (refs userReferences) containsHandle(handle string) bool {
-	handle = strings.TrimPrefix(handle, "@")
-	if u := refs.user; u != nil && u.Username == handle {
-		return true
-	}
-	if refs.handle != "" && refs.handle == handle {
-		return true
-	}
-	for _, codeHostHandle := range refs.codeHostHandles {
-		if handle == codeHostHandle {
-			return true
-		}
-	}
-	return false
-}
-
-func (refs userReferences) containsUserID(userID int32) bool {
-	return refs.id != 0 && refs.id == userID
-}
-
-func (refs userReferences) String() string {
-	rs := refs.textReferences()
-	return fmt.Sprintf("{%s}", strings.Join(rs, ", "))
-}
-
-func (refs userReferences) textReferences() []string {
-	var rs []string
-	if id := refs.id; id != 0 {
-		rs = append(rs, fmt.Sprintf("#%d", id))
-	}
-	if u := refs.user; u != nil {
-		rs = append(rs, u.Username)
-	}
-	for _, h := range refs.codeHostHandles {
-		rs = append(rs, fmt.Sprintf("@%s", h))
-	}
-	rs = append(rs, refs.verifiedEmails...)
-	return rs
-}
-
-// Contains at this point returns true
-//   - if email reference matches any user's verified email,
-//   - if handle reference matches the user handle,
-//   - if user ID matches the ID if the user in the bag,
-func (b bag) Contains(ref Reference) bool {
-	var ks []refKey
-	if id := ref.UserID; id != 0 {
-		ks = append(ks, refKey{userID: id})
-	}
-	if h := ref.Handle; h != "" {
-		ks = append(ks, refKey{handle: strings.TrimPrefix(h, "@")})
-	}
-	if e := ref.Email; e != "" {
-		ks = append(ks, refKey{email: e})
-	}
-	for _, k := range ks {
-		if _, ok := b.references[k]; ok {
-			return true
-		}
-	}
-	return false
-}
-
-func (b bag) String() string {
-	var mapping []string
-	for k, refCtx := range b.references {
-		mapping = append(mapping, fmt.Sprintf("%s->%d", k, refCtx.resolvedUserID))
-	}
-	// TODO add unresolved references to the bag
-	return fmt.Sprintf("[%s]", strings.Join(mapping, ", "))
 }
