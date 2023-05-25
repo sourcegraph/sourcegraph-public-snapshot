@@ -20,7 +20,13 @@ func defaultSettings() *schema.Settings {
 	}
 }
 
+var MockCurrentUserFinal *schema.Settings
+
 func CurrentUserFinal(ctx context.Context, db database.DB) (*schema.Settings, error) {
+	if MockCurrentUserFinal != nil {
+		return MockCurrentUserFinal, nil
+	}
+
 	currentUser := actor.FromContext(ctx)
 	if !currentUser.IsAuthenticated() {
 		return Final(ctx, db, api.SettingsSubject{Site: true})

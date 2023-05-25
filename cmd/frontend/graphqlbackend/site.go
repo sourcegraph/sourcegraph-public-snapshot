@@ -63,14 +63,10 @@ func unmarshalSiteGQLID(id graphql.ID) (siteID string, err error) {
 }
 
 func (r *schemaResolver) Site() *siteResolver {
-	return newSiteResolver(r.logger, r.db)
+	return NewSiteResolver(r.logger, r.db)
 }
 
 func NewSiteResolver(logger log.Logger, db database.DB) *siteResolver {
-	return newSiteResolver(logger, db)
-}
-
-func newSiteResolver(logger log.Logger, db database.DB) *siteResolver {
 	return &siteResolver{
 		logger: logger,
 		db:     db,

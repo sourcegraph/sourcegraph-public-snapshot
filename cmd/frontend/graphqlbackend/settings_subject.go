@@ -5,9 +5,11 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -29,6 +31,40 @@ type settingsSubjectResolver struct {
 	site            *siteResolver
 	org             *OrgResolver
 	user            *UserResolver
+}
+
+func resolverForSubject(ctx context.Context, logger log.Logger, db database.DB, subject api.SettingsSubject) (*settingsSubjectResolver, error) {
+	switch {
+	case subject.Default:
+		return &settingsSubjectResolver{defaultSettings: newDefaultSettingsResolver(db)}, nil
+	case subject.Site:
+		return &settingsSubjectResolver{site: NewSiteResolver(logger, db)}, nil
+	case subject.Org != nil:
+		org, err := OrgByIDInt32(ctx, db, *subject.Org)
+		if err != nil {
+			return nil, err
+		}
+		return &settingsSubjectResolver{org: org}, nil
+	case subject.User != nil:
+		user, err := UserByIDInt32(ctx, db, *subject.User)
+		if err != nil {
+			return nil, err
+		}
+		return &settingsSubjectResolver{user: user}, nil
+	default:
+		return nil, errors.New("subject must have exactly one field set")
+	}
+}
+
+func resolversForSubjects(ctx context.Context, logger log.Logger, db database.DB, subjects []api.SettingsSubject) (_ []*settingsSubjectResolver, err error) {
+	res := make([]*settingsSubjectResolver, len(subjects))
+	for i, subject := range subjects {
+		res[i], err = resolverForSubject(ctx, logger, db, subject)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 // settingsSubjectForNode fetches the settings subject for the given Node. If

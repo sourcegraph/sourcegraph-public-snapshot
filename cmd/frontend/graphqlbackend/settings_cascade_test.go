@@ -127,7 +127,7 @@ func TestMergeSettings(t *testing.T) {
 
 func TestSubjects(t *testing.T) {
 	t.Run("Default settings are included", func(t *testing.T) {
-		cascade := &settingsCascade{db: database.NewMockDB(), unauthenticatedActor: true}
+		cascade := &settingsCascade{db: database.NewMockDB()}
 		subjects, err := cascade.Subjects(context.Background())
 		if err != nil {
 			t.Fatal(err)

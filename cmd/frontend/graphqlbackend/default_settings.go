@@ -12,6 +12,13 @@ import (
 
 const singletonDefaultSettingsGQLID = "DefaultSettings"
 
+func newDefaultSettingsResolver(db database.DB) *defaultSettingsResolver {
+	return &defaultSettingsResolver{
+		db:    db,
+		gqlID: singletonDefaultSettingsGQLID,
+	}
+}
+
 type defaultSettingsResolver struct {
 	db    database.DB
 	gqlID string
