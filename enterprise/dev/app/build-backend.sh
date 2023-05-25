@@ -65,7 +65,6 @@ bazel_build() {
   # for more info see the BUILD.bazel file in enterprise/cmd/sourcegraph
   if [[ ${CROSS_COMPILE_X86_64_MACOS:-0} == 1 ]]; then
     bazel_target="//enterprise/cmd/sourcegraph:sourcegraph_x86_64_darwin"
-    # we don't use the incompat-zig-linux-amd64 bazel config here, since we need bazel to pick up the host cc
     bazel_opts="${bazel_opts} --platforms @zig_sdk//platform:darwin_amd64 --extra_toolchains @zig_sdk//toolchain:darwin_amd64"
   fi
 
