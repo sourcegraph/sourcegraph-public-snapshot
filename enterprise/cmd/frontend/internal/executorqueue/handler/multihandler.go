@@ -192,6 +192,7 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 	return job, true, nil
 }
 
+// HandleHeartbeat processes a heartbeat from a multi-queue executor.
 func (m *MultiHandler) HandleHeartbeat(w http.ResponseWriter, r *http.Request) {
 	var payload executortypes.HeartbeatRequest
 
