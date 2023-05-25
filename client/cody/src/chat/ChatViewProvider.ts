@@ -234,13 +234,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 if (isLoggedIn(authStatus)) {
                     await updateConfiguration('serverEndpoint', message.serverEndpoint)
                     await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
-                    await this.sendEvent('auth', 'login')
+                    this.sendEvent('auth', 'login')
                 }
                 void this.webview?.postMessage({ type: 'login', authStatus })
                 break
             }
             case 'event':
-                await this.sendEvent(message.event, message.value)
+                this.sendEvent(message.event, message.value)
                 break
             case 'removeToken':
                 await this.logout()
@@ -584,10 +584,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      * Save Login state to webview
      */
     public async sendLogin(authStatus: AuthStatus): Promise<void> {
-        await this.sendEvent('token', 'Set')
+        this.sendEvent('token', 'Set')
         await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
         if (isLoggedIn(authStatus)) {
-            await this.sendEvent('auth', 'login')
+            this.sendEvent('auth', 'login')
         }
         void this.webview?.postMessage({
             type: 'login',
@@ -602,8 +602,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     public async logout(): Promise<void> {
         await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
         await vscode.commands.executeCommand('setContext', 'cody.activated', false)
-        await this.sendEvent('token', 'Delete')
-        await this.sendEvent('auth', 'logout')
+        this.sendEvent('token', 'Delete')
+        this.sendEvent('auth', 'logout')
         this.setWebviewView('login')
     }
 
@@ -690,7 +690,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     /**
      * Log Events
      */
-    public async sendEvent(event: string, value: string): Promise<void> {
+    public sendEvent(event: string, value: string): void {
         const isPrivateInstance = new URL(this.config.serverEndpoint).href !== DOTCOM_URL.href
         const endpointUri = { serverEndpoint: this.config.serverEndpoint }
         switch (event) {
