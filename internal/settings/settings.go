@@ -62,7 +62,8 @@ func Final(ctx context.Context, db database.DB, subject api.SettingsSubject) (_ 
 
 // Latest gets the latest settings specific to a given subject. Most consumers
 // of this package will want to use Final or CurrentUserFinal instead because
-// those properly merge all settings relevant to a subject.
+// those properly merge all settings relevant to a subject. If no settings
+// have been defined for a subject, Latest will return nil.
 func Latest(ctx context.Context, db database.DB, subject api.SettingsSubject) (*schema.Settings, error) {
 	// The store does not handle the default settings subject
 	if subject.Default {
