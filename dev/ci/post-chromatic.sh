@@ -10,14 +10,17 @@ set -eu -o pipefail
 # - BUILDKITE_PULL_REQUEST
 # - RENDER_PREVIEW_GITHUB_TOKEN
 
+exit_status=$?
 chromatic_publish_output=$(</dev/stdin)
 
-echo "$chromatic_publish_output"
-
-if echo "$chromatic_publish_output" | grep -q "Failed to extract stories from your Storybook"; then
-  echo "Storybook failed to build"
+if [ $exit_status -eq 0 ]; then
+  echo "$chromatic_publish_output"
+else
+  echo "$chromatic_publish_output"
   exit 1
 fi
+
+echo "$chromatic_publish_output"
 
 # Chromatic preview url from Chromatic publish output (`-m 1` for getting first match)
 chromatic_storybook_url=$(echo "$chromatic_publish_output" | grep -oh -m 1 "https:\/\/[[:alnum:]]*\-[[:alnum:]]*\.chromatic\.com")
