@@ -2,6 +2,7 @@ package com.sourcegraph.cody.chat;
 
 import com.sourcegraph.cody.UpdatableChat;
 import com.sourcegraph.cody.completions.*;
+import com.sourcegraph.cody.prompts.Preamble;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

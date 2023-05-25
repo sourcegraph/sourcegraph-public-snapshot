@@ -16,7 +16,7 @@ import java.util.function.Consumer;
 public class GraphQlLogger {
     private static final Logger logger = Logger.getInstance(GraphQlLogger.class);
 
-    public static void logInstallEvent(Project project, Consumer<Boolean> callback) {
+    public static void logInstallEvent(@NotNull Project project, @NotNull Consumer<Boolean> callback) {
         String anonymousUserId = ConfigUtil.getAnonymousUserId();
         if (anonymousUserId != null) {
             Event event = new Event("CodyInstalled", anonymousUserId, ConfigUtil.getSourcegraphUrl(project), null, null);
@@ -24,7 +24,7 @@ public class GraphQlLogger {
         }
     }
 
-    public static void logUninstallEvent(Project project) {
+    public static void logUninstallEvent(@NotNull Project project) {
         String anonymousUserId = ConfigUtil.getAnonymousUserId();
         if (anonymousUserId != null) {
             Event event = new Event("CodyUninstalled", anonymousUserId, ConfigUtil.getSourcegraphUrl(project), null, null);
@@ -32,8 +32,20 @@ public class GraphQlLogger {
         }
     }
 
+    // TODO: Use this
+    public static void logSearchDuration(@NotNull Project project, long duration) {
+        String anonymousUserId = ConfigUtil.getAnonymousUserId();
+        if (anonymousUserId != null) {
+            JsonObject durationObject = new JsonObject();
+            durationObject.addProperty("duration", duration);
+            Event event = new Event("CodyJetBrainsExtension:keywordContext:searchDuration",
+                anonymousUserId, ConfigUtil.getSourcegraphUrl(project), durationObject, durationObject);
+            logEvent(project, event, null);
+        }
+    }
+
     // This could be exposed later (as public), but currently, we don't use it externally.
-    private static void logEvent(Project project, @NotNull Event event, @Nullable Consumer<Integer> callback) {
+    private static void logEvent(@NotNull Project project, @NotNull Event event, @Nullable Consumer<Integer> callback) {
         String instanceUrl = ConfigUtil.getSourcegraphUrl(project);
         String accessToken = ConfigUtil.getInstanceType(project) == SettingsComponent.InstanceType.ENTERPRISE
             ? ConfigUtil.getEnterpriseAccessToken(project) : ConfigUtil.getDotcomAccessToken(project);
