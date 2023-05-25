@@ -34,6 +34,9 @@ oci_image(
     },
     tars = [":config_tar"],
     user = "postgres",
+    visibility = [
+        "//docker-images/codeintel-db:__pkg__",
+    ],
 )
 
 oci_tarball(
