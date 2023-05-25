@@ -39,6 +39,7 @@ ts_project(
         "apollo/createGraphQLClientGetter.ts",
         "apollo/index.ts",
         "apollo/mockedTestProvider.tsx",
+        "batches.ts",
         "config.ts",
         "console.ts",
         "coverage.ts",
