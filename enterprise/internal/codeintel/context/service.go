@@ -5,21 +5,21 @@ import (
 
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context/internal/store"
+	scipstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context/internal/scipstore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type Service struct {
-	store      store.Store
+	scipstore  scipstore.ScipStore
 	operations *operations
 }
 
 func newService(
 	observationCtx *observation.Context,
-	store store.Store,
+	scipstore scipstore.ScipStore,
 ) *Service {
 	return &Service{
-		store:      store,
+		scipstore:  scipstore,
 		operations: newOperations(observationCtx),
 	}
 }

@@ -205,6 +205,7 @@ go_library(
         "codeintel.graphql",
         "completions.graphql",
         "githubapps.graphql",
+        "codeintel.context.graphql",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend",
     deps = [

@@ -1,0 +1,53 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "store",
+    srcs = [
+        "observability.go",
+        "store.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context/internal/store",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/metrics",
+        "//internal/observation",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "store_test",
+    srcs = ["store_test.go"],
+    embed = [":store"],
+)
+
+go_library(
+    name = "scipstore",
+    srcs = [
+        "observability.go",
+        "store.go",
+        "store_documents.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context/internal/scipstore",
+    visibility = ["//enterprise:__subpackages__"],
+    deps = [
+        "//enterprise/internal/codeintel/shared",
+        "//enterprise/internal/codeintel/uploads/shared",
+        "//internal/database/basestore",
+        "//internal/metrics",
+        "//internal/observation",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_opentracing_opentracing_go//log",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_scip//bindings/go/scip",
+        "@org_golang_google_protobuf//proto",
+    ],
+)
+
+go_test(
+    name = "scipstore_test",
+    srcs = ["store_test.go"],
+    embed = [":scipstore"],
+)

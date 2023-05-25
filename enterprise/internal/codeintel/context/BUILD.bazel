@@ -12,8 +12,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/internal/codeintel/context/internal/store",
-        "//internal/database",
+        "//enterprise/internal/codeintel/context/internal/scipstore",
+        "//enterprise/internal/codeintel/shared",
+        "//internal/codeintel/resolvers",
         "//internal/env",
         "//internal/metrics",
         "//internal/observation",

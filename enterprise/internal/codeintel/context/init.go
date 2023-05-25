@@ -1,20 +1,20 @@
 package context
 
 import (
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	scipstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context/internal/scipstore"
+	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func NewService(
 	observationCtx *observation.Context,
-	db database.DB,
+	codeIntelDB codeintelshared.CodeIntelDB,
 ) *Service {
-	store := store.New(scopedContext("store", observationCtx), db)
+	scipStore := scipstore.New(scopedContext("store", observationCtx), codeIntelDB)
 
 	return newService(
 		observationCtx,
-		store,
+		scipStore,
 	)
 }
 

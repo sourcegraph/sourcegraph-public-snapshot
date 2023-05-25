@@ -45,7 +45,7 @@ func NewServices(deps ServiceDependencies) (Services, error) {
 	codenavSvc := codenav.NewService(deps.ObservationCtx, db, codeIntelDB, uploadsSvc, gitserverClient)
 	rankingSvc := ranking.NewService(deps.ObservationCtx, db, codeIntelDB)
 	sentinelService := sentinel.NewService(deps.ObservationCtx, db)
-	contextService := context.NewService(deps.ObservationCtx, db)
+	contextService := context.NewService(deps.ObservationCtx, codeIntelDB)
 
 	return Services{
 		AutoIndexingService: autoIndexingSvc,
