@@ -203,6 +203,8 @@ func findUserIDByEmail(ctx context.Context, db edb.EnterpriseDB, email string) (
 	return verifiedEmails[0].UserID, nil
 }
 
+// augment fetches all the references for this user that are missing.
+// These can then be linked back into the bag using `linkBack`.
 func (r *userReferences) augment(ctx context.Context, db edb.EnterpriseDB) error {
 	if r.id == 0 {
 		return errors.New("userReferences needs id set for augmenting")
@@ -300,6 +302,8 @@ func (k refKey) String() string {
 	return "<empty refKey>"
 }
 
+// fetch pulls userReferences for given key from the database.
+// It queries by email, userID or username based on what information is available.
 func (k refKey) fetch(ctx context.Context, db edb.EnterpriseDB) (*userReferences, error) {
 	if k.userID != 0 {
 		return &userReferences{id: k.userID}, nil
