@@ -40,7 +40,7 @@ const (
 	WITH user_days_used AS (
         SELECT
             CASE WHEN user_id = 0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END AS user_id,
-            COUNT(DISTINCT DATE(timestamp)) AS days_used
+            COUNT(DISTINCT DATE(TIMEZONE('UTC', timestamp))) AS days_used
         FROM event_logs
 		LEFT OUTER JOIN users ON users.id = event_logs.user_id
         WHERE
