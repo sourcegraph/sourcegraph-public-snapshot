@@ -495,17 +495,15 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 	}
 }
 
-type heartbeatTestCase struct {
-	name                 string
-	body                 string
-	mockFunc             func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob])
-	expectedStatusCode   int
-	expectedResponseBody string
-	assertionFunc        func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob])
-}
-
 func TestMultiHandler_HandleHeartbeat(t *testing.T) {
-	tests := []heartbeatTestCase{
+	tests := []struct {
+		name                 string
+		body                 string
+		mockFunc             func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob])
+		expectedStatusCode   int
+		expectedResponseBody string
+		assertionFunc        func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob])
+	}{
 		{
 			name: "Heartbeat for multiple queues",
 			body: `{"executorName": "test-executor", "jobIdsByQueue": [{"queueName": "codeintel", "jobIds": [42, 7]}, {"queueName": "batches", "jobIds": [43, 8]}], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
