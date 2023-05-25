@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Added
+- Add `extensionDetails` to `public_argument` on logger [#51321](https://github.com/sourcegraph/sourcegraph/pull/51321)
 
 ### Changed
 
@@ -11,6 +12,7 @@
 ### Removed
 
 ### Fixed
+- Handle case when remote for local branch != sourcegraph remote [#52172](https://github.com/sourcegraph/sourcegraph/pull/52172)
 
 ### Security
 
