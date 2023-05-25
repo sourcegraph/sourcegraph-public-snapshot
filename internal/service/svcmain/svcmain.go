@@ -88,7 +88,13 @@ func Main(services []sgservice.Service, config Config, args []string) {
 	}
 	app.Action = func(_ *cli.Context) error {
 		logger := log.Scoped("sourcegraph", "Sourcegraph")
-		singleprogram.Init(logger)
+		cleanup := singleprogram.Init(logger)
+		defer func() {
+			err := cleanup()
+			if err != nil {
+				logger.Error("cleaning up", log.Error(err))
+			}
+		}()
 		run(liblog, logger, services, config, nil)
 		return nil
 	}
@@ -226,6 +232,7 @@ func run(
 	// Start the debug server. The ready boolean state it publishes will become true when *all*
 	// services report ready.
 	var allReadyWG sync.WaitGroup
+	var allDoneWG sync.WaitGroup
 	go debugserver.NewServerRoutine(allReady, allDebugserverEndpoints...).Start()
 
 	// Start the services.
@@ -233,6 +240,7 @@ func run(
 		service := services[i]
 		serviceConfig := serviceConfigs[i]
 		allReadyWG.Add(1)
+		allDoneWG.Add(1)
 		go func() {
 			// TODO(sqs): TODO(single-binary): Consider using the goroutine package and/or the errgroup package to report
 			// errors and listen to signals to initiate cleanup in a consistent way across all
@@ -244,6 +252,7 @@ func run(
 			defer ready()
 
 			err := service.Start(ctx, obctx, ready, serviceConfig)
+			allDoneWG.Done()
 			if err != nil {
 				// Special case in App: continue without executor if it fails to start.
 				if deploy.IsApp() && service.Name() == "executor" {
@@ -261,5 +270,7 @@ func run(
 		close(allReady)
 	}()
 
-	select {}
+	// wait for all services to stop
+	allDoneWG.Wait()
+
 }

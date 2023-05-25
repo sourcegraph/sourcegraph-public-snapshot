@@ -22,7 +22,9 @@ import (
 
 const appDirectory = "sourcegraph"
 
-func Init(logger log.Logger) {
+type CleanupFunc func() error
+
+func Init(logger log.Logger) CleanupFunc {
 	if deploy.IsApp() {
 		fmt.Fprintln(os.Stderr, "✱ Sourcegraph App version:", version.Version())
 	}
@@ -86,7 +88,8 @@ func Init(logger log.Logger) {
 	}
 
 	embeddedPostgreSQLRootDir := filepath.Join(configDir, "postgresql")
-	if err := initPostgreSQL(logger, embeddedPostgreSQLRootDir); err != nil {
+	postgresCleanup, err := initPostgreSQL(logger, embeddedPostgreSQLRootDir)
+	if err != nil {
 		fmt.Fprintln(os.Stderr, "unable to set up PostgreSQL:", err)
 		os.Exit(1)
 	}
@@ -170,6 +173,9 @@ func Init(logger log.Logger) {
 			writeFile(ctagsPath, []byte(universalCtagsDevScript), 0700)
 			setDefaultEnv(logger, "CTAGS_COMMAND", ctagsPath)
 		}
+	}
+	return func() error {
+		return postgresCleanup()
 	}
 }
 
