@@ -50,7 +50,7 @@ export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNod
                                     {node.queueName}
                                 </Badge>
                             }
-                            {(node.queueNames as string[])?.map(queue =>
+                            {(node.queueNames ||[])?.map(queue =>
                                     <Badge
                                         key={queue}
                                         variant="secondary"
