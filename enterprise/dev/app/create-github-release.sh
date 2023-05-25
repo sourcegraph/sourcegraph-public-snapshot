@@ -18,14 +18,12 @@ else
   exit 1
 fi
 
-echo "--- :aws: fetching GitHub Token"
-token=$(aws secretsmanager get-secret-value --secret-id sourcegraph/mac/github-token | jq '.SecretString |  fromjson | .token')
-export GITHUB_TOKEN=${token}
-
 VERSION=$(./enterprise/dev/app/app_version.sh)
 echo "--- :github: Creating GitHub release for Sourcegraph App (${VERSION})"
 echo "Release will have to following assets:"
 ls -al ./dist
+
+# On CI it is assumed this command runs in a stateless agent, where the GITHUB_TOKEN is injected
 gh release create "app-v${VERSION}" \
   --prerelease \
   --draft \

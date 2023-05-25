@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
@@ -71,6 +70,21 @@ func TestProtoRoundTrip(t *testing.T) {
 		t.Errorf("ArchiveOptions proto roundtrip failed (-want +got):\n%s", diff)
 	}
 
+	c := func(original protocol.IsRepoCloneableResponse) bool {
+		var converted protocol.IsRepoCloneableResponse
+		converted.FromProto(original.ToProto())
+
+		if diff = cmp.Diff(original, converted); diff != "" {
+			return false
+		}
+
+		return true
+	}
+
+	if err := quick.Check(c, nil); err != nil {
+		t.Errorf("IsRepoCloneableResponse proto roundtrip failed (-want +got):\n%s", diff)
+	}
+
 	rs := func(updatedAt time.Time, gitDirBytes int64) bool {
 		original := protocol.ReposStats{
 			UpdatedAt:   updatedAt,
@@ -85,21 +99,6 @@ func TestProtoRoundTrip(t *testing.T) {
 		}
 
 		return true
-	}
-
-	c := func(original protocol.IsRepoCloneableResponse) bool {
-		var converted protocol.IsRepoCloneableResponse
-		converted.FromProto(original.ToProto())
-
-		if diff = cmp.Diff(original, converted); diff != "" {
-			return false
-		}
-
-		return true
-	}
-
-	if err := quick.Check(c, nil); err != nil {
-		t.Errorf("IsRepoCloneableResponse proto roundtrip failed (-want +got):\n%s", diff)
 	}
 
 	// Define the generator for time.Time values
@@ -126,7 +125,7 @@ func TestClient_Remove(t *testing.T) {
 	addrs := []string{"172.16.8.1:8080", "172.16.8.2:8080"}
 
 	expected := "http://172.16.8.1:8080"
-	source := gitserver.NewTestClientSource(addrs)
+	source := gitserver.NewTestClientSource(t, addrs)
 
 	cli := gitserver.NewTestClient(
 		httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
@@ -307,7 +306,13 @@ func TestClient_ArchiveReader(t *testing.T) {
 	}
 
 	t.Run("grpc", func(t *testing.T) {
-		t.Setenv("SG_FEATURE_FLAG_GRPC", "true")
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{
+					EnableGRPC: true,
+				},
+			},
+		})
 		for _, test := range tests {
 			repoName := api.RepoName(test.name)
 
@@ -317,7 +322,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 
 				t.Helper()
 
-				source := gitserver.NewTestClientSource(addrs, func(o *gitserver.TestClientSourceOptions) {
+				source := gitserver.NewTestClientSource(t, addrs, func(o *gitserver.TestClientSourceOptions) {
 					o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 						spy.base = proto.NewGitserverServiceClient(cc)
 
@@ -337,7 +342,14 @@ func TestClient_ArchiveReader(t *testing.T) {
 	})
 
 	t.Run("http", func(t *testing.T) {
-		t.Setenv("SG_FEATURE_FLAG_GRPC", "false")
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{
+					EnableGRPC: false,
+				},
+			},
+		})
+
 		for _, test := range tests {
 			repoName := api.RepoName(test.name)
 
@@ -347,7 +359,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 
 				spy := &spyGitserverServiceClient{}
 
-				source := gitserver.NewTestClientSource(addrs, func(o *gitserver.TestClientSourceOptions) {
+				source := gitserver.NewTestClientSource(t, addrs, func(o *gitserver.TestClientSourceOptions) {
 					o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 						spy.base = proto.NewGitserverServiceClient(cc)
 
@@ -528,7 +540,7 @@ func TestClient_P4Exec(t *testing.T) {
 
 			u, _ := url.Parse(testServer.URL)
 			addrs := []string{u.Host}
-			source := gitserver.NewTestClientSource(addrs)
+			source := gitserver.NewTestClientSource(t, addrs)
 
 			cli := gitserver.NewTestClient(&http.Client{}, source)
 
@@ -612,7 +624,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 
 	u, _ := url.Parse(srv.URL)
 	addrs := []string{u.Host}
-	source := gitserver.NewTestClientSource(addrs)
+	source := gitserver.NewTestClientSource(t, addrs)
 
 	cli := gitserver.NewTestClient(&http.Client{}, source)
 
@@ -636,7 +648,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 
 func TestClient_BatchLog(t *testing.T) {
 	addrs := []string{"172.16.8.1:8080", "172.16.8.2:8080", "172.16.8.3:8080"}
-	source := gitserver.NewTestClientSource(addrs)
+	source := gitserver.NewTestClientSource(t, addrs)
 
 	cli := gitserver.NewTestClient(
 		httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
@@ -753,7 +765,14 @@ func TestLocalGitCommand(t *testing.T) {
 }
 
 func TestClient_ReposStats(t *testing.T) {
-	t.Setenv("SG_FEATURE_FLAG_GRPC", "false")
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				EnableGRPC: false,
+			},
+		},
+	})
+	defer conf.Mock(nil)
 
 	const gitserverAddr = "172.16.8.1:8080"
 	now := time.Now().UTC()
@@ -765,7 +784,7 @@ func TestClient_ReposStats(t *testing.T) {
 		GitDirBytes: 1337,
 	}
 
-	source := gitserver.NewTestClientSource(addrs)
+	source := gitserver.NewTestClientSource(t, addrs)
 	cli := gitserver.NewTestClient(
 		httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
 			switch r.URL.String() {
@@ -791,7 +810,13 @@ func TestClient_ReposStats(t *testing.T) {
 	assert.Equal(t, wantStats, *gotStatsMap[gitserverAddr])
 }
 func TestClient_ReposStatsGRPC(t *testing.T) {
-	t.Setenv("SG_FEATURE_FLAG_GRPC", "true")
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				EnableGRPC: true,
+			},
+		},
+	})
 
 	const gitserverAddr = "172.16.8.1:8080"
 	now := time.Now().UTC()
@@ -799,39 +824,12 @@ func TestClient_ReposStatsGRPC(t *testing.T) {
 		UpdatedAt:   now,
 		GitDirBytes: 1337,
 	}
-
-	// create a temp file with the stats
-	f, err := ioutil.TempFile("", "repos-stats.json")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer os.Remove(f.Name())
-
-	encoded, _ := json.Marshal(wantStats)
-	if _, err := f.Write(encoded); err != nil {
-		t.Fatal(err)
-	}
-	if err := f.Close(); err != nil {
-		t.Fatal(err)
-	}
-
 	called := false
-	source := gitserver.NewTestClientSource([]string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
+	source := gitserver.NewTestClientSource(t, []string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
 		o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 			mockRepoStats := func(ctx context.Context, in *proto.ReposStatsRequest, opts ...grpc.CallOption) (*proto.ReposStatsResponse, error) {
 				called = true
-				//read from temp file
-				encoded, err := ioutil.ReadFile(f.Name())
-				if err != nil {
-					return nil, err
-				}
-
-				var rs protocol.ReposStats
-				err = json.Unmarshal(encoded, &rs)
-				if err != nil {
-					return nil, err
-				}
-				return rs.ToProto(), nil
+				return wantStats.ToProto(), nil
 			}
 			return &mockClient{mockRepoStats: mockRepoStats}
 		}
@@ -921,7 +919,7 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 		for _, tc := range testCases {
 
 			called := false
-			source := gitserver.NewTestClientSource([]string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
+			source := gitserver.NewTestClientSource(t, []string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
 				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 					mockIsRepoCloneable := func(ctx context.Context, in *proto.IsRepoCloneableRequest, opts ...grpc.CallOption) (*proto.IsRepoCloneableResponse, error) {
 						called = true
@@ -956,7 +954,7 @@ func TestClient_IsRepoCloneableGRPC(t *testing.T) {
 		for _, tc := range testCases {
 
 			called := false
-			source := gitserver.NewTestClientSource([]string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
+			source := gitserver.NewTestClientSource(t, []string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
 				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 					mockIsRepoCloneable := func(ctx context.Context, in *proto.IsRepoCloneableRequest, opts ...grpc.CallOption) (*proto.IsRepoCloneableResponse, error) {
 						called = true

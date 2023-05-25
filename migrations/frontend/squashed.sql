@@ -1822,9 +1822,7 @@ CREATE TABLE codeintel_ranking_progress (
     num_path_records_processed integer,
     num_reference_records_processed integer,
     num_count_records_processed integer,
-    max_definition_id bigint NOT NULL,
-    max_reference_id bigint NOT NULL,
-    max_path_id bigint NOT NULL
+    max_export_id bigint NOT NULL
 );
 
 CREATE SEQUENCE codeintel_ranking_progress_id_seq
@@ -4024,6 +4022,24 @@ CREATE SEQUENCE registry_extensions_id_seq
 
 ALTER SEQUENCE registry_extensions_id_seq OWNED BY registry_extensions.id;
 
+CREATE TABLE repo_commits_changelists (
+    id integer NOT NULL,
+    repo_id integer NOT NULL,
+    commit_sha bytea NOT NULL,
+    perforce_changelist_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE repo_commits_changelists_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE repo_commits_changelists_id_seq OWNED BY repo_commits_changelists.id;
+
 CREATE TABLE repo_embedding_jobs (
     id integer NOT NULL,
     state text DEFAULT 'queued'::text,
@@ -4487,7 +4503,7 @@ CREATE TABLE user_public_repos (
 );
 
 CREATE TABLE user_repo_permissions (
-    id integer NOT NULL,
+    id bigint NOT NULL,
     user_id integer,
     repo_id integer NOT NULL,
     user_external_account_id integer,
@@ -4497,7 +4513,6 @@ CREATE TABLE user_repo_permissions (
 );
 
 CREATE SEQUENCE user_repo_permissions_id_seq
-    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -4867,6 +4882,8 @@ ALTER TABLE ONLY registry_extension_releases ALTER COLUMN id SET DEFAULT nextval
 ALTER TABLE ONLY registry_extensions ALTER COLUMN id SET DEFAULT nextval('registry_extensions_id_seq'::regclass);
 
 ALTER TABLE ONLY repo ALTER COLUMN id SET DEFAULT nextval('repo_id_seq'::regclass);
+
+ALTER TABLE ONLY repo_commits_changelists ALTER COLUMN id SET DEFAULT nextval('repo_commits_changelists_id_seq'::regclass);
 
 ALTER TABLE ONLY repo_embedding_jobs ALTER COLUMN id SET DEFAULT nextval('repo_embedding_jobs_id_seq'::regclass);
 
@@ -5300,6 +5317,9 @@ ALTER TABLE ONLY registry_extension_releases
 ALTER TABLE ONLY registry_extensions
     ADD CONSTRAINT registry_extensions_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY repo_commits_changelists
+    ADD CONSTRAINT repo_commits_changelists_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY repo_embedding_jobs
     ADD CONSTRAINT repo_embedding_jobs_pkey PRIMARY KEY (id);
 
@@ -5532,6 +5552,8 @@ CREATE INDEX codeintel_path_ranks_repository_id_updated_at_id ON codeintel_path_
 CREATE INDEX codeintel_ranking_definitions_exported_upload_id ON codeintel_ranking_definitions USING btree (exported_upload_id);
 
 CREATE INDEX codeintel_ranking_definitions_graph_key_symbol_search ON codeintel_ranking_definitions USING btree (graph_key, symbol_name, exported_upload_id, document_path);
+
+CREATE INDEX codeintel_ranking_exports_graph_key_deleted_at_id ON codeintel_ranking_exports USING btree (graph_key, deleted_at DESC, id);
 
 CREATE INDEX codeintel_ranking_exports_graph_key_last_scanned_at ON codeintel_ranking_exports USING btree (graph_key, last_scanned_at NULLS FIRST, id);
 
@@ -5812,6 +5834,8 @@ CREATE UNIQUE INDEX repo_external_unique_idx ON repo USING btree (external_servi
 CREATE INDEX repo_fork ON repo USING btree (fork);
 
 CREATE INDEX repo_hashed_name_idx ON repo USING btree (sha256((lower((name)::text))::bytea)) WHERE (deleted_at IS NULL);
+
+CREATE UNIQUE INDEX repo_id_perforce_changelist_id_unique ON repo_commits_changelists USING btree (repo_id, perforce_changelist_id);
 
 CREATE INDEX repo_is_not_blocked_idx ON repo USING btree (((blocked IS NULL)));
 
@@ -6395,6 +6419,9 @@ ALTER TABLE ONLY registry_extensions
 
 ALTER TABLE ONLY registry_extensions
     ADD CONSTRAINT registry_extensions_publisher_user_id_fkey FOREIGN KEY (publisher_user_id) REFERENCES users(id);
+
+ALTER TABLE ONLY repo_commits_changelists
+    ADD CONSTRAINT repo_commits_changelists_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY repo_kvps
     ADD CONSTRAINT repo_kvps_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;

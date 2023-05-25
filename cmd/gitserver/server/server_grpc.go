@@ -188,12 +188,12 @@ func (gs *GRPCServer) RepoClone(req *proto.RepoCloneRequest, ss proto.GitserverS
 func (gs *GRPCServer) ReposStats(ctx context.Context, req *proto.ReposStatsRequest) (*proto.ReposStatsResponse, error) {
 	b, err := gs.Server.readReposStatsFile(filepath.Join(gs.Server.ReposDir, reposStatsName))
 	if err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to read %s: %v", reposStatsName, err.Error())
+		return nil, status.Errorf(codes.Internal, "failed to read %s: %s", reposStatsName, err.Error())
 	}
 
 	var stats *protocol.ReposStats
 	if err := json.Unmarshal(b, &stats); err != nil {
-		return nil, status.Errorf(codes.Internal, "failed to unmarshal %s: %v", reposStatsName, err.Error())
+		return nil, status.Errorf(codes.Internal, "failed to unmarshal %s: %s", reposStatsName, err.Error())
 	}
 
 	return stats.ToProto(), nil
@@ -238,3 +238,4 @@ func (gs *GRPCServer) IsRepoCloneable(ctx context.Context, req *proto.IsRepoClon
 
 	return resp, nil
 }
+

@@ -28,7 +28,7 @@ interface ExternalServices {
 
 type ExternalServicesConfiguration = Pick<
     ConfigurationWithAccessToken,
-    'serverEndpoint' | 'codebase' | 'useContext' | 'customHeaders' | 'accessToken' | 'debug'
+    'serverEndpoint' | 'codebase' | 'useContext' | 'customHeaders' | 'accessToken' | 'debugEnable'
 >
 
 export async function configureExternalServices(
@@ -46,8 +46,7 @@ export async function configureExternalServices(
             'Please check that the repository exists and is entered correctly in the cody.codebase setting.'
         console.info(infoMessage)
     }
-    const embeddingsSearch =
-        repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId, false) : null
+    const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
 
     const codebaseContext = new CodebaseContext(
         initialConfig,

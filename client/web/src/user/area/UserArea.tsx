@@ -17,6 +17,7 @@ import { Page } from '../../components/Page'
 import { UserAreaUserFields, UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../../graphql-operations'
 import { NamespaceProps } from '../../namespaces'
 import { RouteV6Descriptor } from '../../util/contributions'
+import { isAccessTokenCallbackPage } from '../settings/accessTokens/UserSettingsCreateAccessTokenCallbackPage'
 import { UserSettingsAreaRoute } from '../settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from '../settings/UserSettingsSidebar'
 
@@ -177,6 +178,11 @@ export const UserArea: FC<UserAreaProps> = ({
         return <NotFoundPage pageType="user" />
     }
 
+    // Since the access token callback page is rendered in a nested route, we can't use the
+    // `fullPage` route prop to determine whether to render the header. Instead, we check
+    // whether the current page is the access token callback page.
+    const isFullscreenPage = isAccessTokenCallbackPage()
+
     const context: UserAreaRouteContext = {
         ...props,
         url: userAreaMainUrl,
@@ -202,7 +208,7 @@ export const UserArea: FC<UserAreaProps> = ({
                             <Route
                                 errorElement={<RouteError />}
                                 element={
-                                    fullPage ? (
+                                    fullPage || isFullscreenPage ? (
                                         render(context)
                                     ) : (
                                         <Page>

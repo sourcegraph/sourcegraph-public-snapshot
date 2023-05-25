@@ -84,6 +84,31 @@ func (c *client) SubmitChange(ctx context.Context, changeID string) (*Change, er
 	return &change, nil
 }
 
+// RestoreChange restores a closed Gerrit change.
+func (c *client) RestoreChange(ctx context.Context, changeID string) (*Change, error) {
+	pathStr, err := url.JoinPath("a/changes", url.PathEscape(changeID), "restore")
+	if err != nil {
+		return nil, err
+	}
+	reqURL := url.URL{Path: pathStr}
+	req, err := http.NewRequest("POST", reqURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var change Change
+	resp, err := c.do(ctx, req, &change)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode >= http.StatusBadRequest {
+		return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	return &change, nil
+}
+
 // WriteReviewComment writes a review comment on a Gerrit change.
 func (c *client) WriteReviewComment(ctx context.Context, changeID string, comment ChangeReviewComment) error {
 	pathStr, err := url.JoinPath("a/changes", url.PathEscape(changeID), "revisions/current/review")

@@ -7,6 +7,7 @@ import (
 	"net/mail"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -87,15 +88,27 @@ type Bag interface {
 // This can be used in search to find relevant owners by different identifiers
 // that the database reveals.
 // TODO(#52141): Search by code host handle.
-func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text string) (Bag, error) {
-	text = strings.TrimPrefix(text, "@")
-	if _, err := mail.ParseAddress(text); err == nil {
-		return ByEmailReference(ctx, db, text)
+// TODO(#52246): ByTextReference uses fewer queries.
+func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text ...string) (Bag, error) {
+	var multiBag bag
+	for _, t := range text {
+		if _, err := mail.ParseAddress(t); err == nil {
+			b, err := ByEmailReference(ctx, db, t)
+			if err != nil {
+				return nil, err
+			}
+			multiBag = append(multiBag, b...)
+		}
+		b, err := ByUserHandleReference(ctx, db, strings.TrimPrefix(t, "@"))
+		if err != nil {
+			return nil, err
+		}
+		multiBag = append(multiBag, b...)
 	}
-	return ByUserHandleReference(ctx, db, text)
+	return multiBag, nil
 }
 
-func ByUserHandleReference(ctx context.Context, db edb.EnterpriseDB, handle string) (Bag, error) {
+func ByUserHandleReference(ctx context.Context, db edb.EnterpriseDB, handle string) (bag, error) {
 	var b bag
 	// Try to find a user by username.
 	user, err := db.Users().GetByUsername(ctx, handle)
@@ -107,6 +120,10 @@ func ByUserHandleReference(ctx context.Context, db edb.EnterpriseDB, handle stri
 			id:   user.ID,
 			user: user,
 		})
+		b, err = hydrateWithCodeHostHandles(ctx, user.ID, db, b)
+		if err != nil {
+			return nil, err
+		}
 	} else {
 		b = append(b, &userReferences{
 			handle: handle,
@@ -115,24 +132,7 @@ func ByUserHandleReference(ctx context.Context, db edb.EnterpriseDB, handle stri
 	return hydrateWithVerifiedEmails(ctx, db, b)
 }
 
-func hydrateWithVerifiedEmails(ctx context.Context, db edb.EnterpriseDB, b bag) (Bag, error) {
-	for _, userRefs := range b {
-		if userRefs.id == 0 {
-			continue
-		}
-		// Getting verified emails of this user.
-		verifiedEmails, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{UserID: userRefs.id, OnlyVerified: true})
-		if err != nil {
-			return nil, errors.Wrap(err, "UserEmails.ListByUser")
-		}
-		for _, email := range verifiedEmails {
-			userRefs.verifiedEmails = append(userRefs.verifiedEmails, email.Email)
-		}
-	}
-	return b, nil
-}
-
-func ByEmailReference(ctx context.Context, db edb.EnterpriseDB, email string) (Bag, error) {
+func ByEmailReference(ctx context.Context, db edb.EnterpriseDB, email string) (bag, error) {
 	var b bag
 	// Checking that provided email is verified.
 	verifiedEmails, err := db.UserEmails().GetVerifiedEmails(ctx, email)
@@ -157,6 +157,10 @@ func ByEmailReference(ctx context.Context, db edb.EnterpriseDB, email string) (B
 			id:   user.ID,
 			user: user,
 		})
+		b, err = hydrateWithCodeHostHandles(ctx, user.ID, db, b)
+		if err != nil {
+			return b, err
+		}
 	} else {
 		// In fact, user emails are deleted as soon as a user is soft/hard deleted, we
 		// shouldn't be here, but in some weird race condition, we still populate the ID
@@ -169,6 +173,52 @@ func ByEmailReference(ctx context.Context, db edb.EnterpriseDB, email string) (B
 	return hydrateWithVerifiedEmails(ctx, db, b)
 }
 
+func hydrateWithVerifiedEmails(ctx context.Context, db edb.EnterpriseDB, b bag) (bag, error) {
+	for _, userRefs := range b {
+		if userRefs.id == 0 {
+			continue
+		}
+		// Getting verified emails of this user.
+		verifiedEmails, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{UserID: userRefs.id, OnlyVerified: true})
+		if err != nil {
+			return nil, errors.Wrap(err, "UserEmails.ListByUser")
+		}
+		for _, email := range verifiedEmails {
+			userRefs.verifiedEmails = append(userRefs.verifiedEmails, email.Email)
+		}
+	}
+	return b, nil
+}
+
+func hydrateWithCodeHostHandles(ctx context.Context, userID int32, db edb.EnterpriseDB, b bag) (bag, error) {
+	accounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{UserID: userID})
+	if err != nil {
+		return nil, errors.Wrap(err, "UserExternalAccounts.List")
+	}
+	codeHostHandles := make([]string, 0, len(accounts))
+	for _, account := range accounts {
+		p := providers.GetProviderbyServiceType(account.ServiceType)
+		if p == nil {
+			return nil, errors.Errorf("cannot find authorization provider for the external account, service type: %s", account.ServiceType)
+		}
+		data, err := p.ExternalAccountInfo(ctx, *account)
+		if err != nil || data == nil {
+			return nil, errors.Wrap(err, "ExternalAccountInfo")
+		}
+		if data.Login != nil && len(*data.Login) > 0 {
+			codeHostHandles = append(codeHostHandles, *data.Login)
+		}
+	}
+	// Finding the user reference with given userID and adding code host handles to that.
+	for _, bg := range b {
+		if bg.id == userID {
+			bg.codeHostHandles = codeHostHandles
+			break
+		}
+	}
+	return b, nil
+}
+
 // bag is implemented as a slice of references for different users.
 type bag []*userReferences
 
@@ -177,8 +227,10 @@ type userReferences struct {
 	user *types.User
 	// handle text input used to search that reference,
 	// it is present if user was not found in the database.
-	handle         string
-	verifiedEmails []string
+	handle string
+	// codeHostHandles are user handles of connected code hosts of a resolved user.
+	codeHostHandles []string
+	verifiedEmails  []string
 }
 
 func (refs userReferences) containsEmail(email string) bool {
@@ -190,7 +242,6 @@ func (refs userReferences) containsEmail(email string) bool {
 	return false
 }
 
-// TODO(#52142): Introduce matching on linked code host handles.
 func (refs userReferences) containsHandle(handle string) bool {
 	handle = strings.TrimPrefix(handle, "@")
 	if u := refs.user; u != nil && u.Username == handle {
@@ -199,11 +250,46 @@ func (refs userReferences) containsHandle(handle string) bool {
 	if refs.handle != "" && refs.handle == handle {
 		return true
 	}
+	for _, codeHostHandle := range refs.codeHostHandles {
+		if handle == codeHostHandle {
+			return true
+		}
+	}
 	return false
 }
 
 func (refs userReferences) containsUserID(userID int32) bool {
 	return refs.id != 0 && refs.id == userID
+}
+
+func (refs userReferences) String() string {
+	var buf bytes.Buffer
+	fmt.Fprint(&buf, "{")
+	var needsComma bool
+	comma := func() {
+		if needsComma {
+			fmt.Fprint(&buf, ", ")
+		}
+		needsComma = true
+	}
+	if refs.id != 0 {
+		comma()
+		fmt.Fprintf(&buf, "#%d", refs.id)
+	}
+	if refs.user != nil {
+		comma()
+		fmt.Fprint(&buf, refs.user.Username)
+	}
+	if refs.handle != "" {
+		comma()
+		fmt.Fprintf(&buf, "@%s", refs.handle)
+	}
+	for _, e := range refs.verifiedEmails {
+		comma()
+		fmt.Fprint(&buf, e)
+	}
+	fmt.Fprint(&buf, "}")
+	return buf.String()
 }
 
 // Contains at this point returns true
@@ -223,4 +309,22 @@ func (b bag) Contains(ref Reference) bool {
 		}
 	}
 	return false
+}
+
+func (b bag) String() string {
+	var buf bytes.Buffer
+	fmt.Fprint(&buf, "[")
+	var needsComma bool
+	comma := func() {
+		if needsComma {
+			fmt.Fprint(&buf, ", ")
+		}
+		needsComma = true
+	}
+	for _, r := range b {
+		comma()
+		fmt.Fprint(&buf, r.String())
+	}
+	fmt.Fprint(&buf, "]")
+	return buf.String()
 }

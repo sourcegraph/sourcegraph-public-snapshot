@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"sync"
 	"sync/atomic"
+	"testing"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -12,6 +13,7 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -51,14 +53,15 @@ type TestClientSourceOptions struct {
 	Logger log.Logger
 }
 
-func NewTestClientSource(addrs []string, options ...func(o *TestClientSourceOptions)) ClientSource {
-	logger := log.Scoped("gitserver", "test client source")
+
+func NewTestClientSource(t *testing.T, addrs []string, options ...func(o *TestClientSourceOptions)) ClientSource {
+	logger := logtest.Scoped(t)
 	opts := TestClientSourceOptions{
 		ClientFunc: func(conn *grpc.ClientConn) proto.GitserverServiceClient {
 			return proto.NewGitserverServiceClient(conn)
 		},
 
-		Logger: log.Scoped("test gitserver client source", ""),
+		Logger: logger,
 	}
 
 	for _, o := range options {

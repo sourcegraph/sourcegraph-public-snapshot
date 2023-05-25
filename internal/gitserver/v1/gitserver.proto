@@ -230,6 +230,7 @@ message IsRepoCloneableResponse {
   string reason = 3;
 }
 
+
 // RepoCloneRequest is a request to clone a repository.
 message RepoCloneRequest {
   // repo is the name of the repo to clone.
@@ -240,6 +241,7 @@ message RepoCloneResponse {
   // error is the error that occurred during cloning.
   string error = 1;
 }
+
 
 // ReposStatsRequest is a empty request for the ReposStats RPC.
 message ReposStatsRequest {}
