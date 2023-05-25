@@ -136,6 +136,57 @@ func TestGerritSource_LoadChangeset(t *testing.T) {
 	})
 }
 
+func TestGerritSource_CreateChangeset(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("error getting pull request", func(t *testing.T) {
+		cs, _ := mockGerritChangeset()
+		s, client := mockGerritSource()
+		want := errors.New("error")
+		client.GetChangeFunc.SetDefaultHook(func(ctx context.Context, changeID string) (*gerrit.Change, error) {
+			assert.Equal(t, changeID, testGerritChangeID)
+			return &gerrit.Change{}, want
+		})
+
+		b, err := s.CreateChangeset(ctx, cs)
+		assert.NotNil(t, err)
+		assert.ErrorIs(t, err, want)
+		assert.False(t, b)
+	})
+
+	t.Run("pull request not found", func(t *testing.T) {
+		cs, _ := mockGerritChangeset()
+		s, client := mockGerritSource()
+		client.GetChangeFunc.SetDefaultHook(func(ctx context.Context, changeID string) (*gerrit.Change, error) {
+			assert.Equal(t, changeID, testGerritChangeID)
+			return &gerrit.Change{}, &notFoundError{}
+		})
+
+		b, err := s.CreateChangeset(ctx, cs)
+		assert.NotNil(t, err)
+		target := ChangesetNotFoundError{}
+		assert.ErrorAs(t, err, &target)
+		assert.Same(t, target.Changeset, cs)
+		assert.False(t, b)
+	})
+
+	t.Run("success", func(t *testing.T) {
+		cs, _ := mockGerritChangeset()
+		s, client := mockGerritSource()
+
+		change := mockGerritChange(&testProject)
+		client.GetURLFunc.SetDefaultReturn(&url.URL{})
+		client.GetChangeFunc.SetDefaultHook(func(ctx context.Context, changeID string) (*gerrit.Change, error) {
+			assert.Equal(t, changeID, testGerritChangeID)
+			return change, nil
+		})
+
+		b, err := s.CreateChangeset(ctx, cs)
+		assert.Nil(t, err)
+		assert.True(t, b)
+	})
+}
+
 func TestGerritSource_CloseChangeset(t *testing.T) {
 	ctx := context.Background()
 

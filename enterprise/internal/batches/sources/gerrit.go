@@ -20,8 +20,6 @@ type GerritSource struct {
 	client gerrit.Client
 }
 
-var _ ForkableChangesetSource = GerritSource{}
-
 func NewGerritSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*GerritSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
@@ -43,7 +41,7 @@ func NewGerritSource(ctx context.Context, svc *types.ExternalService, cf *httpcl
 
 	gerritURL, err := url.Parse(c.Url)
 	if err != nil {
-		return nil, errors.Wrap(err, "parsing Gerrit URL")
+		return nil, errors.Wrap(err, "parsing Gerrit CodeHostURL")
 	}
 
 	client, err := gerrit.NewClient(svc.URN(), gerritURL, &gerrit.AccountCredentials{Username: c.Username, Password: c.Password}, cli)
@@ -88,7 +86,7 @@ func (s GerritSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 		if errcode.IsNotFound(err) {
 			return ChangesetNotFoundError{Changeset: cs}
 		}
-		return errors.Wrap(err, "getting pull request")
+		return errors.Wrap(err, "getting change")
 	}
 
 	return errors.Wrap(s.setChangesetMetadata(pr, cs), "setting Gerrit changeset metadata")
@@ -96,13 +94,18 @@ func (s GerritSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 
 // CreateChangeset will create the Changeset on the source. If it already
 // exists, *Changeset will be populated and the return value will be true.
-// noop, Gerrit creates changes through commits directly
-func (s GerritSource) CreateChangeset(_ context.Context, _ *Changeset) (bool, error) {
+func (s GerritSource) CreateChangeset(ctx context.Context, cs *Changeset) (bool, error) {
+	// For Gerrit, the Change is created at `git push` time, so we just load it here to verify it
+	// was created successfully.
+	err := s.LoadChangeset(ctx, cs)
+	if err != nil {
+		return false, err
+	}
 	return true, nil
 }
 
 // CreateDraftChangeset creates the given changeset on the code host in draft mode.
-// no-op, Gerrit creates changes through commits directly
+// Noop, Gerrit creates changes through commits directly
 func (s GerritSource) CreateDraftChangeset(context.Context, *Changeset) (bool, error) {
 	return true, nil
 }
@@ -119,7 +122,7 @@ func (s GerritSource) UndraftChangeset(context.Context, *Changeset) error {
 func (s GerritSource) CloseChangeset(ctx context.Context, cs *Changeset) error {
 	updated, err := s.client.AbandonChange(ctx, cs.ExternalID)
 	if err != nil {
-		return errors.Wrap(err, "abandoning pull request")
+		return errors.Wrap(err, "abandoning change")
 	}
 
 	return errors.Wrap(s.setChangesetMetadata(updated, cs), "setting Gerrit changeset metadata")
@@ -136,7 +139,7 @@ func (s GerritSource) UpdateChangeset(context.Context, *Changeset) error {
 func (s GerritSource) ReopenChangeset(ctx context.Context, cs *Changeset) error {
 	updated, err := s.client.RestoreChange(ctx, cs.ExternalID)
 	if err != nil {
-		return errors.Wrap(err, "updating pull request")
+		return errors.Wrap(err, "restoring change")
 	}
 
 	return errors.Wrap(s.setChangesetMetadata(updated, cs), "setting Gerrit changeset metadata")
@@ -159,21 +162,12 @@ func (s GerritSource) MergeChangeset(ctx context.Context, cs *Changeset, _ bool)
 	updated, err := s.client.SubmitChange(ctx, cs.ExternalID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
-			return errors.Wrap(err, "merging pull request")
+			return errors.Wrap(err, "submitting change")
 		}
 		return ChangesetNotMergeableError{ErrorMsg: err.Error()}
 	}
 
 	return errors.Wrap(s.setChangesetMetadata(updated, cs), "setting Gerrit changeset metadata")
-}
-
-// GetFork returns a repo pointing to a fork of the target repo, ensuring that the fork
-// exists and creating it if it doesn't. If namespace is not provided, the original namespace is used.
-// If name is not provided, the fork will be named with the default Sourcegraph convention:
-// "${original-namespace}-${original-name}"
-// Noop, Gerrit does not support Changes from forks.
-func (s GerritSource) GetFork(_ context.Context, _ *types.Repo, _, _ *string) (*types.Repo, error) {
-	return nil, nil
 }
 
 func (s GerritSource) setChangesetMetadata(change *gerrit.Change, cs *Changeset) error {
@@ -186,7 +180,7 @@ func (s GerritSource) setChangesetMetadata(change *gerrit.Change, cs *Changeset)
 
 func (s GerritSource) annotatePullRequest(change *gerrit.Change) *gerritbatches.AnnotatedChange {
 	return &gerritbatches.AnnotatedChange{
-		Change: change,
-		URL:    s.client.GetURL(),
+		Change:      change,
+		CodeHostURL: s.client.GetURL(),
 	}
 }
