@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 
 import { logger } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
-import { Button, Modal, Input, H3, Text, ErrorAlert, Form, Badge } from '@sourcegraph/wildcard'
+import { Button, Modal, Input, H3, Text, ErrorAlert, Form } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../components/LoaderButton'
 import {
@@ -78,7 +78,7 @@ export const LLMProxyRateLimitModal: React.FunctionComponent<React.PropsWithChil
                 logger.error(error)
             }
         },
-        [updateLLMProxyConfig, productSubscriptionID, limit, limitInterval, afterSave, allowedModels]
+        [updateLLMProxyConfig, productSubscriptionID, limit, limitInterval, afterSave, allowedModels, mode]
     )
 
     return (

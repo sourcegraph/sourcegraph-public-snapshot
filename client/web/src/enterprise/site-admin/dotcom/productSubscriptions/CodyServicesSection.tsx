@@ -76,7 +76,7 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
                         llmProxyAccess: { enabled: value },
                     },
                 })
-                refetchSubscription()
+                await refetchSubscription()
             } catch (error) {
                 logger.error(error)
             }
@@ -245,11 +245,11 @@ const RateLimitRow: React.FunctionComponent<RateLimitRowProps> = ({
                               },
                 },
             })
-            refetchSubscription()
+            await refetchSubscription()
         } catch (error) {
             logger.error(error)
         }
-    }, [productSubscriptionID, refetchSubscription, updateLLMProxyConfig])
+    }, [productSubscriptionID, refetchSubscription, updateLLMProxyConfig, mode])
 
     const afterSaveRateLimit = useCallback(async () => {
         try {

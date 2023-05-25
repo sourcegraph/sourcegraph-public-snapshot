@@ -2,17 +2,15 @@ import React from 'react'
 
 import { Badge } from '@sourcegraph/wildcard'
 
-export const ModelBadges: React.FunctionComponent<{ models: string[] }> = ({ models }) => {
-    return (
-        <>
-            {models.map(model => (
-                <Badge variant={modelBadgeVariant(model)} className="mr-1" key={model}>
-                    {model}
-                </Badge>
-            ))}
-        </>
-    )
-}
+export const ModelBadges: React.FunctionComponent<{ models: string[] }> = ({ models }) => (
+    <>
+        {models.map(model => (
+            <Badge variant={modelBadgeVariant(model)} className="mr-1" key={model}>
+                {model}
+            </Badge>
+        ))}
+    </>
+)
 
 function modelBadgeVariant(model: string): 'secondary' | 'danger' {
     switch (model) {
