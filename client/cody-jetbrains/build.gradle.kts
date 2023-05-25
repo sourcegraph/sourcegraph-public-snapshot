@@ -9,6 +9,7 @@ plugins {
     id("org.jetbrains.kotlin.jvm") version "1.7.0"
     id("org.jetbrains.intellij") version "1.13.3"
     id("org.jetbrains.changelog") version "1.3.1"
+    id("com.diffplug.spotless") version "6.19.0"
 }
 
 group = properties("pluginGroup")
@@ -35,6 +36,16 @@ dependencies {
     implementation(project(":jetbrains-shared"))
     testImplementation(platform("org.junit:junit-bom:5.7.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
+}
+
+spotless {
+    ratchetFrom("origin/main")
+    java {
+        target("src/*/java/**/*.java")
+        importOrder()
+        removeUnusedImports()
+        googleJavaFormat()
+    }
 }
 
 tasks {
