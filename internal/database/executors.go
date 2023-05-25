@@ -9,6 +9,7 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -217,7 +218,7 @@ func (s *executorStore) upsertHeartbeat(ctx context.Context, executor types.Exec
 		executorStoreUpsertHeartbeatQuery,
 
 		executor.Hostname,
-		sql.NullString{String: executor.QueueName, Valid: len(executor.QueueName) > 0},
+		dbutil.NullStringColumn(executor.QueueName),
 		pq.Array(executor.QueueNames),
 		executor.OS,
 		executor.Architecture,
