@@ -48,6 +48,7 @@ go_library(
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_go_diff//diff",
         "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_log//logtest",
         "@io_opentelemetry_go_otel//attribute",
         "@org_golang_google_grpc//:go_default_library",
         "@org_golang_google_grpc//codes",

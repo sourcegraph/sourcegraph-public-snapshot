@@ -72,8 +72,8 @@ type ClientSource interface {
 	ClientForRepo(userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error)
 	// AddrForRepo returns the address of the gitserver for the given repo.
 	AddrForRepo(userAgent string, repo api.RepoName) string
-	// Addresses returns the current list of gitserver addresses.
-	Addresses() []string
+	// Address the current list of gitserver addresses.
+	Addresses() []AddressWithClient
 }
 
 // NewClient returns a new gitserver.Client.
@@ -443,7 +443,12 @@ type Client interface {
 }
 
 func (c *clientImplementor) Addrs() []string {
-	return c.clientSource.Addresses()
+	address := c.clientSource.Addresses()
+	addrs := make([]string, 0, len(address))
+	for _, addr := range address {
+		addrs = append(addrs, addr.Address())
+	}
+	return addrs
 }
 
 func (c *clientImplementor) AddrForRepo(repo api.RepoName) string {
@@ -1229,14 +1234,35 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 func (c *clientImplementor) ReposStats(ctx context.Context) (map[string]*protocol.ReposStats, error) {
 	stats := map[string]*protocol.ReposStats{}
 	var allErr error
-	for _, addr := range c.Addrs() {
-		stat, err := c.doReposStats(ctx, addr)
-		if err != nil {
-			allErr = errors.Append(allErr, err)
-		} else {
-			stats[addr] = stat
+
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		for _, addr := range c.clientSource.Addresses() {
+			client, err := addr.GRPCClient()
+			if err != nil {
+				return nil, err
+			}
+
+			resp, err := client.ReposStats(ctx, &proto.ReposStatsRequest{})
+			if err != nil {
+				allErr = errors.Append(allErr, err)
+			} else {
+				rs := &protocol.ReposStats{}
+				rs.FromProto(resp)
+				stats[addr.Address()] = rs
+			}
+		}
+	} else {
+
+		for _, addr := range c.Addrs() {
+			stat, err := c.doReposStats(ctx, addr)
+			if err != nil {
+				allErr = errors.Append(allErr, err)
+			} else {
+				stats[addr] = stat
+			}
 		}
 	}
+
 	return stats, allErr
 }
 

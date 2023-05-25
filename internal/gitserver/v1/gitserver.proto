@@ -10,6 +10,7 @@ service GitserverService {
   rpc Exec(ExecRequest) returns (stream ExecResponse) {}
   rpc Search(SearchRequest) returns (stream SearchResponse) {}
   rpc Archive(ArchiveRequest) returns (stream ArchiveResponse) {}
+  rpc ReposStats(ReposStatsRequest) returns (ReposStatsResponse) {}
 }
 
 message ExecRequest {
@@ -209,4 +210,17 @@ message ArchiveRequest {
 // ArchiveResponse is the response from the Archive RPC that returns a chunk of the archive.
 message ArchiveResponse {
   bytes data = 1;
+}
+
+// ReposStatsRequest is a empty request for the ReposStats RPC.
+message ReposStatsRequest {}
+
+// ReposStats is an aggregation of statistics from a gitserver.
+message ReposStatsResponse {
+  // git_dir_bytes is the amount of bytes stored in .git directories.
+  uint64 git_dir_bytes = 1;
+  // updated_at is the time these statistics were computed. If updated_at is
+  // zero, the statistics have not yet been computed. This can happen on a
+  // new gitserver.
+  google.protobuf.Timestamp updated_at = 2;
 }
