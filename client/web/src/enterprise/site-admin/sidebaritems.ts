@@ -190,11 +190,11 @@ export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [
     configurationGroup,
     repositoriesGroup,
     codeIntelGroup,
+    codyGroup,
     usersGroup,
     executorsGroup,
     maintenanceGroup,
     batchChangesGroup,
     businessGroup,
-    codyGroup,
     apiConsoleGroup,
 ].filter(Boolean) as SiteAdminSideBarGroups
