@@ -34,3 +34,7 @@ func (j *RepoEmbeddingJob) RecordID() int {
 func (j *RepoEmbeddingJob) RecordUID() string {
 	return strconv.Itoa(j.ID)
 }
+
+func (j *RepoEmbeddingJob) IsRepoEmbeddingJobScheduledOrCompleted() bool {
+	return j != nil && (j.State == "completed" || j.State == "processing" || j.State == "queued")
+}
