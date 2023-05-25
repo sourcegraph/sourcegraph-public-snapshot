@@ -50,7 +50,7 @@ import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { RepositoryFields } from '../../graphql-operations'
 import { OwnConfigProps } from '../../own/OwnConfigProps'
-import { TryCodyWidget } from '../components/TryCodyWidget'
+import { TryCodyWidget } from '../components/TryCodyWidget/TryCodyWidget'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { isPackageServiceType } from '../packages/isPackageServiceType'
 

@@ -97,7 +97,6 @@ describe('TreePage', () => {
 
         it('Should displays cody CTA', () => {
             const repo = repoDefaults()
-            repo.isFork = true
             const props = treePagePropsDefaults(repo)
 
             const mockUser = {
