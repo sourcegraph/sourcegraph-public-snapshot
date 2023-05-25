@@ -130,6 +130,7 @@ func TestGerritSource_LoadChangeset(t *testing.T) {
 			assert.Equal(t, changeID, testGerritChangeID)
 			return change, nil
 		})
+		client.GetChangeReviewsFunc.SetDefaultReturn(&[]gerrit.Reviewer{}, nil)
 
 		err := s.LoadChangeset(ctx, cs)
 		assert.Nil(t, err)
@@ -154,7 +155,7 @@ func TestGerritSource_CreateChangeset(t *testing.T) {
 		assert.False(t, b)
 	})
 
-	t.Run("pull request not found", func(t *testing.T) {
+	t.Run("change not found", func(t *testing.T) {
 		cs, _ := mockGerritChangeset()
 		s, client := mockGerritSource()
 		client.GetChangeFunc.SetDefaultHook(func(ctx context.Context, changeID string) (*gerrit.Change, error) {
@@ -180,6 +181,7 @@ func TestGerritSource_CreateChangeset(t *testing.T) {
 			assert.Equal(t, changeID, testGerritChangeID)
 			return change, nil
 		})
+		client.GetChangeReviewsFunc.SetDefaultReturn(&[]gerrit.Reviewer{}, nil)
 
 		b, err := s.CreateChangeset(ctx, cs)
 		assert.Nil(t, err)
@@ -215,6 +217,7 @@ func TestGerritSource_CloseChangeset(t *testing.T) {
 			assert.Equal(t, changeID, testGerritChangeID)
 			return pr, nil
 		})
+		client.GetChangeReviewsFunc.SetDefaultReturn(&[]gerrit.Reviewer{}, nil)
 
 		err := s.CloseChangeset(ctx, cs)
 		assert.Nil(t, err)
@@ -274,7 +277,7 @@ func TestGerritSource_MergeChangeset(t *testing.T) {
 		assert.Equal(t, want.Error(), target.ErrorMsg)
 	})
 
-	t.Run("pull request not found", func(t *testing.T) {
+	t.Run("change not found", func(t *testing.T) {
 		cs, _ := mockGerritChangeset()
 		s, client := mockGerritSource()
 
@@ -299,6 +302,7 @@ func TestGerritSource_MergeChangeset(t *testing.T) {
 			assert.Equal(t, testGerritChangeID, changeID)
 			return pr, nil
 		})
+		client.GetChangeReviewsFunc.SetDefaultReturn(&[]gerrit.Reviewer{}, nil)
 
 		err := s.MergeChangeset(ctx, cs, true)
 		assert.Nil(t, err)
@@ -316,6 +320,7 @@ func TestGerritSource_MergeChangeset(t *testing.T) {
 			assert.Equal(t, testGerritChangeID, changeID)
 			return pr, nil
 		})
+		client.GetChangeReviewsFunc.SetDefaultReturn(&[]gerrit.Reviewer{}, nil)
 
 		err := s.MergeChangeset(ctx, cs, false)
 		assert.Nil(t, err)

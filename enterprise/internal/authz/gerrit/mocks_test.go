@@ -32,6 +32,9 @@ type MockGerritClient struct {
 	// GetChangeFunc is an instance of a mock function object controlling
 	// the behavior of the method GetChange.
 	GetChangeFunc *GerritClientGetChangeFunc
+	// GetChangeReviewsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetChangeReviews.
+	GetChangeReviewsFunc *GerritClientGetChangeReviewsFunc
 	// GetGroupFunc is an instance of a mock function object controlling the
 	// behavior of the method GetGroup.
 	GetGroupFunc *GerritClientGetGroupFunc
@@ -76,6 +79,11 @@ func NewMockGerritClient() *MockGerritClient {
 		},
 		GetChangeFunc: &GerritClientGetChangeFunc{
 			defaultHook: func(context.Context, string) (r0 *gerrit.Change, r1 error) {
+				return
+			},
+		},
+		GetChangeReviewsFunc: &GerritClientGetChangeReviewsFunc{
+			defaultHook: func(context.Context, string) (r0 *[]gerrit.Reviewer, r1 error) {
 				return
 			},
 		},
@@ -141,6 +149,11 @@ func NewStrictMockGerritClient() *MockGerritClient {
 				panic("unexpected invocation of MockGerritClient.GetChange")
 			},
 		},
+		GetChangeReviewsFunc: &GerritClientGetChangeReviewsFunc{
+			defaultHook: func(context.Context, string) (*[]gerrit.Reviewer, error) {
+				panic("unexpected invocation of MockGerritClient.GetChangeReviews")
+			},
+		},
 		GetGroupFunc: &GerritClientGetGroupFunc{
 			defaultHook: func(context.Context, string) (gerrit.Group, error) {
 				panic("unexpected invocation of MockGerritClient.GetGroup")
@@ -195,6 +208,9 @@ func NewMockGerritClientFrom(i gerrit.Client) *MockGerritClient {
 		},
 		GetChangeFunc: &GerritClientGetChangeFunc{
 			defaultHook: i.GetChange,
+		},
+		GetChangeReviewsFunc: &GerritClientGetChangeReviewsFunc{
+			defaultHook: i.GetChangeReviews,
 		},
 		GetGroupFunc: &GerritClientGetGroupFunc{
 			defaultHook: i.GetGroup,
@@ -641,6 +657,115 @@ func (c GerritClientGetChangeFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GerritClientGetChangeFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GerritClientGetChangeReviewsFunc describes the behavior when the
+// GetChangeReviews method of the parent MockGerritClient instance is
+// invoked.
+type GerritClientGetChangeReviewsFunc struct {
+	defaultHook func(context.Context, string) (*[]gerrit.Reviewer, error)
+	hooks       []func(context.Context, string) (*[]gerrit.Reviewer, error)
+	history     []GerritClientGetChangeReviewsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetChangeReviews delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGerritClient) GetChangeReviews(v0 context.Context, v1 string) (*[]gerrit.Reviewer, error) {
+	r0, r1 := m.GetChangeReviewsFunc.nextHook()(v0, v1)
+	m.GetChangeReviewsFunc.appendCall(GerritClientGetChangeReviewsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetChangeReviews
+// method of the parent MockGerritClient instance is invoked and the hook
+// queue is empty.
+func (f *GerritClientGetChangeReviewsFunc) SetDefaultHook(hook func(context.Context, string) (*[]gerrit.Reviewer, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetChangeReviews method of the parent MockGerritClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *GerritClientGetChangeReviewsFunc) PushHook(hook func(context.Context, string) (*[]gerrit.Reviewer, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GerritClientGetChangeReviewsFunc) SetDefaultReturn(r0 *[]gerrit.Reviewer, r1 error) {
+	f.SetDefaultHook(func(context.Context, string) (*[]gerrit.Reviewer, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GerritClientGetChangeReviewsFunc) PushReturn(r0 *[]gerrit.Reviewer, r1 error) {
+	f.PushHook(func(context.Context, string) (*[]gerrit.Reviewer, error) {
+		return r0, r1
+	})
+}
+
+func (f *GerritClientGetChangeReviewsFunc) nextHook() func(context.Context, string) (*[]gerrit.Reviewer, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GerritClientGetChangeReviewsFunc) appendCall(r0 GerritClientGetChangeReviewsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GerritClientGetChangeReviewsFuncCall
+// objects describing the invocations of this function.
+func (f *GerritClientGetChangeReviewsFunc) History() []GerritClientGetChangeReviewsFuncCall {
+	f.mutex.Lock()
+	history := make([]GerritClientGetChangeReviewsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GerritClientGetChangeReviewsFuncCall is an object that describes an
+// invocation of method GetChangeReviews on an instance of MockGerritClient.
+type GerritClientGetChangeReviewsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *[]gerrit.Reviewer
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GerritClientGetChangeReviewsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GerritClientGetChangeReviewsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

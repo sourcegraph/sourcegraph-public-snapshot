@@ -672,8 +672,32 @@ func computeSingleChangesetReviewState(c *btypes.Changeset) (s btypes.ChangesetR
 			}
 		}
 	case gerritbatches.AnnotatedChange:
-		// TODO: @varsanojidan tackling reviews in a separate PR
-		states[btypes.ChangesetReviewStatePending] = true
+		if m.Reviewers == nil {
+			states[btypes.ChangesetReviewStatePending] = true
+			break
+		}
+		for _, reviewer := range *m.Reviewers {
+			// Score represents the status of a review on Gerrit. Here are possible values for Vote:
+			//
+			//  +2 : approved, can be merged
+			//  +1 : approved, but needs additional reviews
+			//   0 : no score
+			//  -1 : needs changes
+			//  -2 : rejected
+			switch reviewer.Approvals.CodeReview {
+			case "+2", "+1":
+				states[btypes.ChangesetReviewStateApproved] = true
+			case " 0": // This isn't a typo, there is actually a space in the string.
+				states[btypes.ChangesetReviewStatePending] = true
+			case "-1":
+				states[btypes.ChangesetReviewStateChangesRequested] = true
+			case "-2":
+				states[btypes.ChangesetReviewStateDismissed] = true
+			default:
+				states[btypes.ChangesetReviewStatePending] = true
+			}
+		}
+
 	default:
 		return "", errors.New("unknown changeset type")
 	}

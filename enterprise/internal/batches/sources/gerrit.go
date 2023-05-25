@@ -89,7 +89,7 @@ func (s GerritSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 		return errors.Wrap(err, "getting change")
 	}
 
-	return errors.Wrap(s.setChangesetMetadata(pr, cs), "setting Gerrit changeset metadata")
+	return errors.Wrap(s.setChangesetMetadata(ctx, pr, cs), "setting Gerrit changeset metadata")
 }
 
 // CreateChangeset will create the Changeset on the source. If it already
@@ -125,7 +125,7 @@ func (s GerritSource) CloseChangeset(ctx context.Context, cs *Changeset) error {
 		return errors.Wrap(err, "abandoning change")
 	}
 
-	return errors.Wrap(s.setChangesetMetadata(updated, cs), "setting Gerrit changeset metadata")
+	return errors.Wrap(s.setChangesetMetadata(ctx, updated, cs), "setting Gerrit changeset metadata")
 }
 
 // UpdateChangeset can update Changesets.
@@ -142,7 +142,7 @@ func (s GerritSource) ReopenChangeset(ctx context.Context, cs *Changeset) error 
 		return errors.Wrap(err, "restoring change")
 	}
 
-	return errors.Wrap(s.setChangesetMetadata(updated, cs), "setting Gerrit changeset metadata")
+	return errors.Wrap(s.setChangesetMetadata(ctx, updated, cs), "setting Gerrit changeset metadata")
 }
 
 // CreateComment posts a comment on the Changeset.
@@ -166,21 +166,28 @@ func (s GerritSource) MergeChangeset(ctx context.Context, cs *Changeset, _ bool)
 		}
 		return ChangesetNotMergeableError{ErrorMsg: err.Error()}
 	}
-
-	return errors.Wrap(s.setChangesetMetadata(updated, cs), "setting Gerrit changeset metadata")
+	return errors.Wrap(s.setChangesetMetadata(ctx, updated, cs), "setting Gerrit changeset metadata")
 }
 
-func (s GerritSource) setChangesetMetadata(change *gerrit.Change, cs *Changeset) error {
-	apr := s.annotatePullRequest(change)
-	if err := cs.SetMetadata(apr); err != nil {
+func (s GerritSource) setChangesetMetadata(ctx context.Context, change *gerrit.Change, cs *Changeset) error {
+	apr, err := s.annotateChange(ctx, change)
+	if err != nil {
+		return errors.Wrap(err, "annotating Change")
+	}
+	if err = cs.SetMetadata(apr); err != nil {
 		return errors.Wrap(err, "setting changeset metadata")
 	}
 	return nil
 }
 
-func (s GerritSource) annotatePullRequest(change *gerrit.Change) *gerritbatches.AnnotatedChange {
+func (s GerritSource) annotateChange(ctx context.Context, change *gerrit.Change) (*gerritbatches.AnnotatedChange, error) {
+	reviewers, err := s.client.GetChangeReviews(ctx, change.ChangeID)
+	if err != nil {
+		return nil, err
+	}
 	return &gerritbatches.AnnotatedChange{
 		Change:      change,
+		Reviewers:   reviewers,
 		CodeHostURL: s.client.GetURL(),
-	}
+	}, nil
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 	gerritbatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 
 	adobatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
@@ -858,7 +859,24 @@ func (c *Changeset) Events() (events []*ChangesetEvent, err error) {
 			})
 		}
 	case *gerritbatches.AnnotatedChange:
-		// TODO: @varsanojidan implement once reviews are implemented
+		// There is one type of event that we create from an annotated pull
+		// request: review events, based on the reviewers within the change.
+		var kind ChangesetEventKind
+		if m.Reviewers == nil {
+			break
+		}
+
+		for _, reviewer := range *m.Reviewers {
+			if kind, err = ChangesetEventKindFor(&reviewer); err != nil {
+				return
+			}
+			appendEvent(&ChangesetEvent{
+				ChangesetID: c.ID,
+				Key:         strconv.Itoa(reviewer.AccountID),
+				Kind:        kind,
+				Metadata:    reviewer,
+			})
+		}
 	}
 	return events, nil
 }
@@ -1293,7 +1311,7 @@ func ChangesetEventKindFor(e any) (ChangesetEventKind, error) {
 		case 5:
 			return ChangesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions, nil
 		case 0:
-			return ChangesetEventKindAzureDevOpsPullRequesReviewed, nil
+			return ChangesetEventKindAzureDevOpsPullRequestReviewed, nil
 		case -5:
 			return ChangesetEventKindAzureDevOpsPullRequestWaitingForAuthor, nil
 		case -10:
@@ -1310,7 +1328,19 @@ func ChangesetEventKindFor(e any) (ChangesetEventKind, error) {
 		default:
 			return ChangesetEventKindAzureDevOpsPullRequestBuildPending, nil
 		}
-		// TODO: @varsanojidan return to this if events are happening
+	case *gerrit.Reviewer:
+		switch e.Approvals.CodeReview {
+		case "+2":
+			return ChangesetEventKindGerritChangeApproved, nil
+		case "+1":
+			return ChangesetEventKindGerritChangeApprovedWithSuggestions, nil
+		case " 0": // Not a typo, this is how Gerrit displays a no score.
+			return ChangesetEventKindGerritChangeReviewed, nil
+		case "-1":
+			return ChangesetEventKindGerritChangeNeedsChanges, nil
+		case "-2":
+			return ChangesetEventKindGerritChangeRejected, nil
+		}
 	}
 	return ChangesetEventKindInvalid, errors.Errorf("unknown changeset event kind for %T", e)
 }
@@ -1447,7 +1477,7 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (any, error) {
 		default:
 			return new(azuredevops.PullRequestUpdatedEvent), nil
 		}
-		// TODO: @varsanojidan come back to this for events
+		// TODO: @varsanojidan revisit if webhooks are in scope
 	}
 	return nil, errors.Errorf("unknown changeset event kind %q", k)
 }

@@ -4,6 +4,25 @@
       interfaces:
         - Client
       prefix: Gerrit
+- filename: enterprise/internal/batches/sources/mocks_test.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources
+      interfaces:
+        - ChangesetSource
+        - ForkableChangesetSource
+        - SourcerStore
+    - path: github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud
+      interfaces:
+        - Client
+      prefix: BitbucketCloud
+    - path: github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops
+      interfaces:
+        - Client
+      prefix: AzureDevOps
+    - path: github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit
+      interfaces:
+        - Client
+      prefix: Gerrit
 - filename: cmd/frontend/internal/httpapi/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/httpcli
   interfaces:
@@ -111,25 +130,6 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue
   interfaces:
     - GitserverClient
-- filename: enterprise/internal/batches/sources/mocks_test.go
-  sources:
-    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources
-      interfaces:
-        - ChangesetSource
-        - ForkableChangesetSource
-        - SourcerStore
-    - path: github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud
-      interfaces:
-        - Client
-      prefix: BitbucketCloud
-    - path: github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops
-      interfaces:
-        - Client
-      prefix: AzureDevOps
-    - path: github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit
-      interfaces:
-        - Client
-      prefix: Gerrit
 - filename: enterprise/internal/batches/syncer/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer
   interfaces:
