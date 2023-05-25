@@ -21,6 +21,9 @@ extend type Query {
     gitHubAppByAppID(appID: Int!, baseURL: String!): GitHubApp
 }
 
+"""
+GitHubAppDomain enumerates the domains in which GitHub Apps can be used.
+"""
 enum GitHubAppDomain {
     """
     GitHub Apps that are configured for repository syncing.
