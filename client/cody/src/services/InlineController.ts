@@ -237,8 +237,6 @@ export class InlineController {
         await this.setReplacementRange(newRange)
         this.currentTaskId = ''
         logEvent('CodyVSCodeExtension:inline-assist:replaced')
-            .then(() => {})
-            .catch(() => {})
         return
     }
     /**

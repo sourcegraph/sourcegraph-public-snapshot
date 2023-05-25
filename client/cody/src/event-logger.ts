@@ -21,12 +21,8 @@ export async function updateEventLogger(
         eventLogger = EventLogger.create(eventLoggerGQLClient)
         if (status === 'installed') {
             logEvent('CodyInstalled')
-                .then(() => {})
-                .catch(() => {})
         } else {
             logEvent('CodyVSCodeExtension:CodySavedLogin:executed')
-                .then(() => {})
-                .catch(() => {})
         }
     } else {
         eventLoggerGQLClient.onConfigurationChange(config)
@@ -44,7 +40,7 @@ export async function updateEventLogger(
  * @param eventProperties The additional argument information.
  * @param publicProperties Public argument information.
  */
-export async function logEvent(eventName: string, eventProperties?: any, publicProperties?: any): Promise<void> {
+export function logEvent(eventName: string, eventProperties?: any, publicProperties?: any): void {
     if (!eventLogger || !anonymousUserID) {
         return
     }
@@ -58,9 +54,8 @@ export async function logEvent(eventName: string, eventProperties?: any, publicP
         version: packageVersion,
     }
     try {
-        await eventLogger.log(eventName, anonymousUserID, argument, publicArgument)
+        eventLogger.log(eventName, anonymousUserID, argument, publicArgument)
     } catch (error) {
         console.error(error)
     }
-    return Promise.resolve()
 }
