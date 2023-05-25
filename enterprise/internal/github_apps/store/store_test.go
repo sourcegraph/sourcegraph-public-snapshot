@@ -363,7 +363,7 @@ func TestListGitHubApp(t *testing.T) {
 		Logo:         "logo.png",
 	}
 
-	app2 := &ghtypes.GitHubApp{
+	batchesApp := &ghtypes.GitHubApp{
 		AppID:        5678,
 		Name:         "Test App 2",
 		Domain:       types.BatchesDomain,
