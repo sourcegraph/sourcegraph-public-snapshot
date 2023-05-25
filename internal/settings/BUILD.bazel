@@ -1,0 +1,27 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "settings",
+    srcs = ["settings.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/settings",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/api",
+        "//internal/database",
+        "//internal/jsonc",
+        "//internal/trace",
+        "//schema",
+        "@com_github_sourcegraph_conc//iter",
+    ],
+)
+
+go_test(
+    name = "settings_test",
+    srcs = ["settings_test.go"],
+    embed = [":settings"],
+    deps = [
+        "//schema",
+        "@com_github_stretchr_testify//require",
+    ],
+)
