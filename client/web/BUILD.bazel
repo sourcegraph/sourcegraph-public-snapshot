@@ -1685,7 +1685,6 @@ ts_project(
         "//:node_modules/@opentelemetry/resources",
         "//:node_modules/@opentelemetry/sdk-trace-base",
         "//:node_modules/@opentelemetry/semantic-conventions",
-        "//:node_modules/@reach/accordion",
         "//:node_modules/@reach/combobox",
         "//:node_modules/@reach/tabs",  #keep
         "//:node_modules/@reach/visually-hidden",
