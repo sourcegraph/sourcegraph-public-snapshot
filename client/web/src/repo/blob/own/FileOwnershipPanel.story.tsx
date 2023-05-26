@@ -69,27 +69,11 @@ const response: FetchOwnershipResult = {
                                     },
                                     ruleLineMatch: 10,
                                 },
-                            ],
-                        },
-                        {
-                            __typename: 'Ownership',
-                            owner: {
-                                __typename: 'Person',
-                                email: '',
-                                avatarURL: null,
-                                displayName: 'charlie',
-                                user: null,
-                            },
-                            reasons: [
                                 {
-                                    __typename: 'CodeownersFileEntry',
-                                    title: 'CodeOwner',
-                                    description: 'This person is listed in the CODEOWNERS file',
-                                    codeownersFile: {
-                                        __typename: 'VirtualFile',
-                                        url: '/own',
-                                    },
-                                    ruleLineMatch: 10,
+                                    __typename: 'RecentContributorOwnershipSignal',
+                                    title: 'Recent Contributor',
+                                    description:
+                                        'Owner is associated because they have contributed to this file in the last 90 days',
                                 },
                             ],
                         },
@@ -112,6 +96,48 @@ const response: FetchOwnershipResult = {
                                         url: '/own',
                                     },
                                     ruleLineMatch: 10,
+                                },
+                            ],
+                        },
+                        {
+                            __typename: 'Ownership',
+                            owner: {
+                                __typename: 'Person',
+                                email: '',
+                                avatarURL: null,
+                                displayName: 'charlie',
+                                user: null,
+                            },
+                            reasons: [
+                                {
+                                    __typename: 'RecentContributorOwnershipSignal',
+                                    title: 'Recent Contributor',
+                                    description:
+                                        'Owner is associated because they have contributed to this file in the last 90 days',
+                                },
+                                {
+                                    __typename: 'RecentViewOwnershipSignal',
+                                    title: 'Recent View',
+                                    description:
+                                        'Owner is associated because they have viewed this file in the last 90 days.',
+                                },
+                            ],
+                        },
+                        {
+                            __typename: 'Ownership',
+                            owner: {
+                                __typename: 'Person',
+                                email: '',
+                                avatarURL: null,
+                                displayName: 'alice',
+                                user: null,
+                            },
+                            reasons: [
+                                {
+                                    __typename: 'RecentViewOwnershipSignal',
+                                    title: 'Recent View',
+                                    description:
+                                        'Owner is associated because they have viewed this file in the last 90 days.',
                                 },
                             ],
                         },
