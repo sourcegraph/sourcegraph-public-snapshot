@@ -121,8 +121,7 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 		bk.DependsOn("bazel-configure"),
 		bk.Agent("queue", "bazel"),
 		bk.Key("bazel-tests"),
-		bk.ArtifactPaths("./bazel-testlogs/enterprise/cmd/embeddings/shared/shared_test/*.log"),
-		bk.ArtifactPaths("./command.profile.gz"),
+		bk.ArtifactPaths("./bazel-testlogs/enterprise/cmd/embeddings/shared/shared_test/*.log", "./command.profile.gz"),
 		bk.AutomaticRetry(1), // TODO @jhchabran flaky stuff are breaking builds
 	}
 
