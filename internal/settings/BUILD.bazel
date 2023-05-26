@@ -21,6 +21,10 @@ go_test(
     name = "settings_test",
     srcs = ["settings_test.go"],
     embed = [":settings"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/api",
         "//internal/database",
