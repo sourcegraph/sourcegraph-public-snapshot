@@ -8,7 +8,7 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Fixed
 
-- Cody completions: Fixed interop between spaces and tabs. []()
+- Cody completions: Fixed interop between spaces and tabs. [pull/52497](https://github.com/sourcegraph/sourcegraph/pull/52497)
 
 ### Changed
 
