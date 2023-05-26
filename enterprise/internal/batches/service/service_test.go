@@ -314,7 +314,7 @@ func TestService(t *testing.T) {
 	svc := New(s)
 	svc.sourcer = sourcer
 
-	t.Run("CanAdministerInNamespace", func(t *testing.T) {
+	t.Run("CheckViewerCanAdminister", func(t *testing.T) {
 		org := bt.CreateTestOrg(t, db, "test-org-1", user.ID, user2.ID)
 
 		spec := testBatchSpec(user.ID)
@@ -581,7 +581,7 @@ func TestService(t *testing.T) {
 		bt.ReloadAndAssertChangeset(t, ctx, s, changeset, bt.ChangesetAssertions{
 			Repo:          rs[0].ID,
 			ExternalState: btypes.ChangesetExternalStateOpen,
-			ExternalID:    "ext-id-5",
+			ExternalID:    "ext-id-7",
 			AttachedTo:    []int64{batchChange.ID},
 
 			// The important fields:
