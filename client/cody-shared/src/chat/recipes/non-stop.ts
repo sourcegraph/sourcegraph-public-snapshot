@@ -54,11 +54,11 @@ export class NonStop implements Recipe {
             new BufferedBotResponseSubscriber(async content => {
                 // TODO Handles LLM output
                 // TODO Replace the selected text with the suggested replacement
+                // Mark the task as done
+                controllers.task.stop(taskID)
                 if (!content) {
                     await context.editor.showWarningMessage('Cody did not suggest any replacement.')
                 }
-                // Mark the task as done
-                controllers.task.stop(taskID)
             })
         )
 

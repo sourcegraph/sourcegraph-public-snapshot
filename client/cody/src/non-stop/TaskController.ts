@@ -29,7 +29,7 @@ export class TaskController {
         )
         this._disposables.push(vscode.commands.registerCommand('cody.fixup.diff', treeItem => this.showDiff(treeItem)))
         // Start the fixup tree view provider
-        this.taskViewProvider = new TaskViewProvider(this._disposables)
+        this.taskViewProvider = new TaskViewProvider()
     }
 
     // Adds a new task to the list of tasks
@@ -156,5 +156,16 @@ export class TaskController {
     private reset(): void {
         this.tasks = new Map<taskID, FixupTask>()
         this.taskViewProvider.reset()
+    }
+
+    /**
+     * Dispose the disposables
+     */
+    public dispose(): void {
+        this.taskViewProvider.dispose()
+        for (const disposable of this._disposables) {
+            disposable.dispose()
+        }
+        this._disposables = []
     }
 }

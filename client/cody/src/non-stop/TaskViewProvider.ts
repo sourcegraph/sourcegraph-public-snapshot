@@ -17,8 +17,7 @@ export class TaskViewProvider implements vscode.TreeDataProvider<FixupTaskTreeIt
     private _onDidChangeTreeData = new vscode.EventEmitter<FixupTaskTreeItem | undefined | void>()
     public readonly onDidChangeTreeData = this._onDidChangeTreeData.event
 
-    constructor(controllerDisposables: vscode.Disposable[]) {
-        this._disposables.push(...controllerDisposables)
+    constructor() {
         void vscode.commands.executeCommand('setContext', 'cody.fixup.view.isEmpty', true)
     }
 
@@ -142,17 +141,23 @@ export class FixupTaskTreeItem extends vscode.TreeItem {
     }
 
     private makeNodeDescription(state: CodyTaskState): string {
-        let text = `${this.tasks.size} fixups`
-        let ready = this.tasks.size - this.failed.size
-        if (state === CodyTaskState.pending) {
-            text += ', 1 running'
-            ready--
-        } else if (state === CodyTaskState.applying) {
-            text += ', 1 applying'
-            ready--
+        const tasksSize = this.tasks.size
+        const failedSize = this.failed.size
+        let text = `${tasksSize} ${tasksSize > 1 ? 'fixups' : 'fixup'}`
+        let ready = tasksSize - failedSize
+
+        switch (state) {
+            case CodyTaskState.pending:
+                text += ', 1 running'
+                ready--
+                break
+            case CodyTaskState.applying:
+                text += ', 1 applying'
+                ready--
+                break
         }
-        if (this.failed.size > 0) {
-            text += `, ${this.failed.size} failed`
+        if (failedSize > 0) {
+            text += `, ${failedSize} failed`
         }
         if (ready > 0) {
             text += `, ${ready} ready`
