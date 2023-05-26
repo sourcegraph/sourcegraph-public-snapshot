@@ -45,9 +45,9 @@
 
 ## Release Process
 
-Starting from 0.2.0, Cody is using `major.EVEN_NUMBER.patch` for release versions and `major.ODD_NUMBER.patch` for pre-release versions.
+Starting from 1.0.0, Cody is using `major.EVEN_NUMBER.patch` for release versions and `major.ODD_NUMBER.patch` for pre-release versions.
 
-- For example: 0.2._ for release and 0.3._ for pre-release.
+- For example: 1.2._ for release and 1.3._ for pre-release.
 
 Follow the steps below to package and publish the VS Code extension.
 

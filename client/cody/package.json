@@ -59,6 +59,7 @@
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
     "release": "ts-node ./scripts/release.ts",
+    "release:test": "CODY_RELEASE_TYPE=test ts-node ./scripts/release.ts",
     "release:nightly": "CODY_RELEASE_TYPE=nightly ts-node ./scripts/release.ts",
     "storybook": "STORIES_GLOB='client/cody/webviews/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start",
     "test:e2e": "npx playwright install && pnpm run --silent build:dev && playwright test test/e2e",

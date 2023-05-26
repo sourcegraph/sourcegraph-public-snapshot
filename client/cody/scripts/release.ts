@@ -3,11 +3,10 @@ import childProcess from 'child_process'
 
 import * as semver from 'semver'
 
-import { version } from '../package.json'
-
 /**
- * This script is used by the CI to publish the extension to the VS Code Marketplace. It is
- * triggered when a commit has been made to the `cody/release` branch
+ * This script is used by the CI to publish the extension to the VS Code Marketplace.
+ * Stable release is triggered when a commit has been made to the `cody/release` branch
+ * Nightly release is triggered by CI nightly and is build on top of the main version
  *
  * Refer to our CONTRIBUTION docs to learn more about our release process.
  */
@@ -35,19 +34,9 @@ export const commands = {
     // Pre-release: minor bump the current version - pre-release should always be the next minor version
     vscode_pre_release: 'vsce publish minor --pre-release --packagePath dist/cody.vsix --pat $VSCODE_MARKETPLACE_TOKEN',
     // Nightly release: patch the pre-release version
-    vscode_nightly: 'vsce publish patch --pre-release --packagePath dist/cody.vsix --pat $VSCODE_MARKETPLACE_TOKEN',
+    vscode_nightly: 'vsce publish {nightly} --pre-release --packagePath dist/cody.vsix --pat $VSCODE_MARKETPLACE_TOKEN',
     // To publish to the open-vsx registry
     openvsx_publish: 'npx ovsx publish dist/cody.vsix --pat $VSCODE_OPENVSX_TOKEN',
-}
-
-const latestVersion = getPublishedVersion()
-
-if (version === latestVersion || !semver.valid(latestVersion) || !semver.valid(version)) {
-    throw new Error(
-        version === latestVersion
-            ? 'Cannot release extension with the same version number.'
-            : `Invalid version number: ${latestVersion} & ${version}`
-    )
 }
 
 if (!hasTokens) {
@@ -67,10 +56,16 @@ switch (releaseType) {
         // Bump the minor version number of the current number in package.json
         childProcess.execSync(commands.vscode_pre_release, { stdio: 'inherit' })
         break
-    case 'nightly':
-        // Bump the patch version number of the pre-release version
-        childProcess.execSync(commands.vscode_nightly, { stdio: 'inherit' })
+    case 'nightly': {
+        // Update the number from the latest pre-released version by 1 patch version manually
+        const nextNightlyVersion = verifyNightly()
+        if (!nextNightlyVersion) {
+            throw new Error('Failed to publish nightly.')
+        }
+        const nightlyCommand = commands.vscode_nightly.replace('{nightly}', nextNightlyVersion)
+        childProcess.execSync(nightlyCommand, { stdio: 'inherit' })
         break
+    }
     default:
         // Publish to VS Code Marketplace as the version number listed in package.json
         // Publish to Open VSX Marketplace
@@ -96,4 +91,17 @@ function getPublishedVersion(): string {
     const trimmedResponse = response.slice(Math.max(0, response.indexOf('{')))
     const latestVersion = JSON.parse(trimmedResponse).versions[0].version as string
     return latestVersion
+}
+
+// Check if the last release version number has a minor version number that is odd
+// A pre-release version has odd minor number
+function verifyNightly(): string {
+    const marketplaceVersion = getPublishedVersion()
+    const isLastPublishedVersionPreRelease = semver.minor(marketplaceVersion) % 2 !== 0
+    const nextNightlyVersion = semver.inc(marketplaceVersion, 'patch') || '0.0.0'
+    const isNextNightlyVersionPreRelease = semver.minor(nextNightlyVersion) % 2 !== 0
+    if (!isLastPublishedVersionPreRelease || isNextNightlyVersionPreRelease) {
+        throw new Error('Nightly build should only build on top of pre-released version.')
+    }
+    return nextNightlyVersion
 }
