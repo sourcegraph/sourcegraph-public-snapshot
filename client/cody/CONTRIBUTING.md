@@ -84,7 +84,7 @@ This will trigger the build pipeline for publishing the extension using the `pnp
 - Publish release to [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
 - Publish release to [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai)
 - Publish a pre-release version to [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
-  - Creating a [pre-release version with minor version bump](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#prerelease-extensions) allow the Nightly build to patch the pre-release version at the correct version number through the [vsce api Auto-incrementing the extension version](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#autoincrementing-the-extension-version)
+  - Create a [pre-release version with minor version bump](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#prerelease-extensions) allow the Nightly build to patch the pre-release version at the correct version number through the [auto-incrementing the extension version feature from the VSCE API](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#autoincrementing-the-extension-version)
 
 * Visit the [buildkite page for the vsce/release pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=cody%2Frelease) to watch the build process
 

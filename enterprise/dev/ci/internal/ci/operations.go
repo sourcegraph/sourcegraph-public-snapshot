@@ -581,11 +581,7 @@ func addVsceReleaseSteps(pipeline *bk.Pipeline) {
 }
 
 // Release the Cody extension.
-func addCodyReleaseSteps(c Config, nightly bool) operations.Operation {
-	releaseType := "stable"
-	if nightly {
-		releaseType = "nightly"
-	}
+func addCodyReleaseSteps(c Config, releaseType string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":vscode::robot_face: Cody release",
 			withPnpmCache(),
