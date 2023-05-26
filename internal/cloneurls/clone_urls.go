@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -104,11 +103,11 @@ func RepoSourceCloneURLToRepoName(ctx context.Context, db database.DB, cloneURL 
 	return rs.CloneURLToRepoName(cloneURL)
 }
 
-func getRepoNameFromService(ctx context.Context, cloneURL string, svc *types.ExternalService) (api.RepoName, error) {
-	span, _ := ot.StartSpanFromContext(ctx, "getRepoNameFromService") //nolint:staticcheck // OT is deprecated
-	defer span.Finish()
-	span.SetTag("ExternalService.ID", svc.ID)
-	span.SetTag("ExternalService.Kind", svc.Kind)
+func getRepoNameFromService(ctx context.Context, cloneURL string, svc *types.ExternalService) (_ api.RepoName, err error) {
+	tr, ctx := trace.New(ctx, "cloneurls", "getRepoNameFromService",
+		attribute.Int64("externalService.ID", svc.ID),
+		attribute.String("externalService.Kind", svc.Kind))
+	defer tr.FinishWithErr(&err)
 
 	cfg, err := extsvc.ParseEncryptableConfig(ctx, svc.Kind, svc.Config)
 	if err != nil {
