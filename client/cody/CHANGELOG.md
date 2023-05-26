@@ -6,6 +6,8 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Added
 
+- Display embeddings search, and connection error to the webview panel. [pull/52491](https://github.com/sourcegraph/sourcegraph/pull/52491)
+
 ### Fixed
 
 ### Changed
