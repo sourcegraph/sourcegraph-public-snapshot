@@ -30,6 +30,7 @@ import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temp
 import { WildcardThemeContext, WildcardTheme } from '@sourcegraph/wildcard'
 
 import { authenticatedUser as authenticatedUserSubject, AuthenticatedUser, authenticatedUserValue } from './auth'
+import { CodySidebarStoreProvider } from './cody/sidebar/Provider'
 import { ComponentsComposer } from './components/ComponentsComposer'
 import { ErrorBoundary, RouteError } from './components/ErrorBoundary'
 import { FeatureFlagsLocalOverrideAgent } from './featureFlags/FeatureFlagsProvider'
@@ -296,6 +297,7 @@ export const SourcegraphWebApp: FC<SourcegraphWebAppProps> = props => {
                         ...props,
                     }}
                 />,
+                <CodySidebarStoreProvider />,
                 /* eslint-enable react/no-children-prop, react/jsx-key */
             ]}
         >
