@@ -364,6 +364,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         void this.saveTranscriptToChatHistory()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', false)
         if (!this.codebaseContext.checkEmbeddingsConnection()) {
+            this.publishEmbeddingsError()
             this.sendErrorToWebview(
                 'Error while establishing embeddings server connection. Please try after sometime! If the issue still persists contact support'
             )
@@ -666,7 +667,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      */
     private publishEmbeddingsError(): void {
         const searchErrors = this.codebaseContext.getEmbeddingSearchErrors()
-        if (searchErrors && searchErrors.length > 0) {
+        if (searchErrors.length) {
             this.sendErrorToWebview(searchErrors)
             return
         }
