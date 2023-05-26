@@ -22,7 +22,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
@@ -139,6 +141,9 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	// Run enterprise setup hook
 	enterpriseServices := enterpriseSetupHook(db, conf.DefaultClient())
+
+	highlight.Init()
+	userpasswd.Init()
 
 	if err != nil {
 		return errors.Wrap(err, "Failed to create sub-repo client")
