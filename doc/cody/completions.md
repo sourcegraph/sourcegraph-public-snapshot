@@ -16,17 +16,29 @@ Cody provides real-time code completions as you're typing. As you start coding, 
 
 While in experimental state, Cody completions need to be enabled manually. To do that:
 
-1. Make sure your Cody AI by Sourcegraph extension is on the latest version
+1. Make sure your [Cody AI by Sourcegraph](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) extension is on the latest version
    - <kbd>shift</kbd>+<kbd>cmd</kbd>+<kbd>x</kbd> to see all extensions, select Cody, confirm the version
 1. Go to the Cody Extension Settings and enable completions
    - Click to check the box for: `Cody > Experimental Suggestions`
-1. Finally, restart VS Code and test it out!
+1. Finally, restart or reload VS Code and test it out!
 
 ### Configuring on Sourcegraph Enterprise
 
 Please follow the steps in [Enabling Cody on Sourcegraph Enterprise](.explanations/enabling_cody_enterprise#enabling-cody-on-sourcegraph-enterprise) to enable Cody on Sourcegraph Enterprise.
 
 You have to configure the model used for Cody completions via the `completionModel` option inside the `completions` site config.
+
+```json
+{
+  // [...]
+  "completions": {
+    "enabled": true,
+    "provider": "anthropic",
+    "completionModel": "claude-instant-v1.0",
+    "accessToken": "<key>"
+  }
+}
+```
 
 > NOTE: Self-hosted customers need to update to a minimum of version 5.0.4 to use completions.
 
