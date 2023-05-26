@@ -81,7 +81,7 @@ echo "--- :bazel::docker: Pushing images..."
 log_file=$(mktemp)
 # shellcheck disable=SC2064
 trap "rm -rf $log_file" EXIT
-parallel --jobs=8 --line-buffer --joblog "$log_file" -v < "$job_file"
+parallel --jobs=16 --line-buffer --joblog "$log_file" -v < "$job_file"
 echo "--- :bazel::docker: summary"
 cat "$log_file"
 echo "--- "
