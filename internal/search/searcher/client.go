@@ -48,10 +48,7 @@ func Search(
 	}
 
 	tr, ctx := trace.New(ctx, "searcher.client", fmt.Sprintf("%s@%s", repo, commit))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	defer tr.FinishWithErr(&err)
 
 	r := protocol.Request{
 		Repo:   repo,
