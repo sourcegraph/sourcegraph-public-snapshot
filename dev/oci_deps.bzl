@@ -108,3 +108,9 @@ def oci_deps():
         digest = "sha256:d5d55fb77056422eea328b709795a38cf599e42f2a90787c9dd32c2f1a3654f3",
         image = "us.gcr.io/sourcegraph-dev/wolfi-opentelemetry-collector-base",
     )
+
+    oci_pull(
+        name = "wolfi_searcher_base",
+        digest = "sha256:7ae7d14bc055f5dbcdc727261025e9527558513a61093e956cb39dae7dbc0dcf",
+        image = "us.gcr.io/sourcegraph-dev/wolfi-searcher-base",
+    )
