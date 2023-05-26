@@ -120,7 +120,11 @@ extend type Mutation {
         indexingEnabled: Boolean!
         indexCommitMaxAgeHours: Int
         indexIntermediateCommits: Boolean!
-        embeddingsEnabled: Boolean!
+
+        """
+        embeddingsEnabled, if not provided, currently defaults to false.
+        """
+        embeddingsEnabled: Boolean
     ): EmptyResponse
 
     """
