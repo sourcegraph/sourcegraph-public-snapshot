@@ -224,11 +224,11 @@ func TestInsertInitialPathCounts(t *testing.T) {
 		t.Fatalf("failed to insert metadata: %s", err)
 	}
 
-	mockPathNames := make(chan string, 3)
-	mockPathNames <- "foo.go"
-	mockPathNames <- "bar.go"
-	mockPathNames <- "baz.go"
-	close(mockPathNames)
+	mockPathNames := []string{
+		"foo.go",
+		"bar.go",
+		"baz.go",
+	}
 	if err := store.InsertInitialPathRanks(ctx, 104, mockPathNames, 2, mockRankingGraphKey); err != nil {
 		t.Fatalf("unexpected error inserting initial path counts: %s", err)
 	}
@@ -313,8 +313,8 @@ func TestVacuumStaleGraphs(t *testing.T) {
 			t.Fatalf("failed to insert ranking references processed: %s", err)
 		}
 		if _, err := db.ExecContext(ctx, `
-			INSERT INTO codeintel_ranking_path_counts_inputs (repository_id, document_path, count, graph_key)
-			SELECT 50, '', 100, $1 FROM generate_series(1, 30)
+			INSERT INTO codeintel_ranking_path_counts_inputs (definition_id, count, graph_key)
+			SELECT 0, 100, $1 FROM generate_series(1, 30)
 		`, graphKey); err != nil {
 			t.Fatalf("failed to insert ranking path count inputs: %s", err)
 		}
@@ -361,10 +361,13 @@ func getPathCountsInputs(
 ) (_ []pathCountsInput, err error) {
 	query := sqlf.Sprintf(`
 		SELECT repository_id, document_path, SUM(count)
-		FROM codeintel_ranking_path_counts_inputs
-		WHERE graph_key LIKE %s || '%%'
-		GROUP BY repository_id, document_path
-		ORDER BY repository_id, document_path
+		FROM codeintel_ranking_path_counts_inputs pci
+		JOIN codeintel_ranking_definitions rd ON rd.id = pci.definition_id
+		JOIN codeintel_ranking_exports eu ON eu.id = rd.exported_upload_id
+		JOIN lsif_uploads u ON u.id = eu.upload_id
+		WHERE pci.graph_key LIKE %s || '%%'
+		GROUP BY u.repository_id, rd.document_path
+		ORDER BY u.repository_id, rd.document_path
 	`, graphKey)
 	rows, err := db.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	if err != nil {
