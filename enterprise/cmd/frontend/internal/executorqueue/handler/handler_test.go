@@ -838,7 +838,7 @@ func TestHandler_HandleHeartbeat(t *testing.T) {
 				mockStore.HeartbeatFunc.PushReturn([]string{"42", "7"}, nil, nil)
 			},
 			expectedStatusCode:   http.StatusOK,
-			expectedResponseBody: `{"knownIds":["42","7"]}`,
+			expectedResponseBody: `{"knownIds":["42","7"],"cancelIds":null}`,
 			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
 				require.Len(t, mockStore.HeartbeatFunc.History(), 1)
@@ -862,7 +862,7 @@ func TestHandler_HandleHeartbeat(t *testing.T) {
 				mockStore.HeartbeatFunc.PushReturn([]string{"42", "7"}, nil, nil)
 			},
 			expectedStatusCode:   http.StatusOK,
-			expectedResponseBody: `{"knownIds":["42","7"]}`,
+			expectedResponseBody: `{"knownIds":["42","7"],"cancelIds":null}`,
 			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
 				require.Len(t, mockStore.HeartbeatFunc.History(), 1)
@@ -890,7 +890,7 @@ func TestHandler_HandleHeartbeat(t *testing.T) {
 				mockStore.HeartbeatFunc.PushReturn(nil, []string{"42", "7"}, nil)
 			},
 			expectedStatusCode:   http.StatusOK,
-			expectedResponseBody: `{"cancelIds":["42","7"]}`,
+			expectedResponseBody: `{"knownIds":null,"cancelIds":["42","7"]}`,
 			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
 				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
 				require.Len(t, mockStore.HeartbeatFunc.History(), 1)

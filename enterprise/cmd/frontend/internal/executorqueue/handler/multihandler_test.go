@@ -513,7 +513,7 @@ func TestMultiHandler_HandleHeartbeat(t *testing.T) {
 				batchesMockStore.HeartbeatFunc.PushReturn([]string{"43", "8"}, nil, nil)
 			},
 			expectedStatusCode:   http.StatusOK,
-			expectedResponseBody: `{"knownIdsByQueue": [{"queueName": "codeintel", "jobIds": ["42","7"]}, {"queueName": "batches", "jobIds": ["43","8"]}]}`,
+			expectedResponseBody: `{"knownIds":["42-codeintel", "7-codeintel", "43-batches", "8-batches"],"cancelIds":null}`,
 			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
 				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
 
