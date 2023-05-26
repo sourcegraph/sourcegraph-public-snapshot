@@ -8,6 +8,8 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Fixed
 
+- Cody completions: Fixed interop between spaces and tabs. []()
+
 ### Changed
 
 ## [0.1.5]
