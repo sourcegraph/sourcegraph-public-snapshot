@@ -38,7 +38,7 @@ pkg_tar(
 # TODO other images
 oci_image(
     name = "image",
-    base = "@wolfi_base",
+    base = "@wolfi_executor_base",
     entrypoint = ["/executor"],
     tars = [":tar_executor"],
     user = "sourcegraph",

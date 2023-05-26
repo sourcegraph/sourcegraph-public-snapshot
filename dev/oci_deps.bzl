@@ -84,3 +84,21 @@ def oci_deps():
         digest = "sha256:74e478195b750c5547d6d240bc5d9e94b10d470d6bf2ef855dcd912f83550cdf",
         image = "us.gcr.io/sourcegraph-dev/wolfi-repo-updater-base",
     )
+
+    oci_pull(
+        name = "wolfi_searcher_base",
+        digest = "sha256:fba8f4cce1306463b03c0388eb830bac63f02f4b8941c4df8f9fde99390da32e",
+        image = "us.gcr.io/sourcegraph-dev/wolfi-searcher-base",
+    )
+
+    oci_pull(
+        name = "wolfi_executor_base",
+        digest = "sha256:0ab096b0ffae9054fa18fa8121b105acfda767c5f74fd8530f72f8fe87ef20c2",
+        image = "us.gcr.io/sourcegraph-dev/wolfi-executor-base",
+    )
+
+    oci_pull(
+        name = "wolfi_batcheshelper_base",
+        digest = "sha256:2abe940a2d9e13a998d07e4faf072c7ba6e17243a0b9c56a3adf9878d9332f6a",
+        image = "us.gcr.io/sourcegraph-dev/wolfi-batcheshelper-base",
+    )
