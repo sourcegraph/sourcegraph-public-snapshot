@@ -47,8 +47,8 @@ if (!hasTokens) {
 }
 
 // Build and bundle the extension
-// childProcess.execSync('pnpm run download-rg', { stdio: 'inherit' })
-// childProcess.execSync('pnpm run vsce:package', { stdio: 'inherit' })
+childProcess.execSync('pnpm run download-rg', { stdio: 'inherit' })
+childProcess.execSync('pnpm run vsce:package', { stdio: 'inherit' })
 
 // Run the publish commands based on the release type
 switch (releaseType) {
