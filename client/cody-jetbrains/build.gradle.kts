@@ -47,6 +47,15 @@ spotless {
     }
 }
 
+java {
+    toolchain {
+        // Always compile the codebase with Java 11 regardless of what Java
+        // version is installed on the computer. Gradle will download Java 11
+        // even if you already have it installed on your computer.
+        languageVersion.set(JavaLanguageVersion.of(11))
+    }
+}
+
 tasks {
     // Set the JVM compatibility versions
     properties("javaVersion").let {
