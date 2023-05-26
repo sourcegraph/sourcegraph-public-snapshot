@@ -3,9 +3,11 @@ contents:
   keyring:
     - https://packages.wolfi.dev/os/wolfi-signing.rsa.pub
     - https://storage.googleapis.com/package-repository/packages/melange.rsa.pub
+    - https://storage.googleapis.com/package-repository/chainguard/chainguard-enterprise.rsa.pub
   repositories:
     - https://packages.wolfi.dev/os
     - '@sourcegraph https://storage.googleapis.com/package-repository/packages/main'
+    - '@chainguard https://storage.googleapis.com/package-repository/chainguard'
   packages:
     ## Base set of packages
     - wolfi-baselayout
