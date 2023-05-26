@@ -251,6 +251,8 @@ func run(
 			ready := syncx.OnceFunc(allReadyWG.Done)
 			defer ready()
 
+			// TODO: It's not clear or enforced but all the service.Start calls block until the service is completed
+			// This should be made explicit or refactored to accept to done channel or function in addition to ready.
 			err := service.Start(ctx, obctx, ready, serviceConfig)
 			allDoneWG.Done()
 			if err != nil {
