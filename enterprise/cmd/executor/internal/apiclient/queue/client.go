@@ -70,7 +70,7 @@ func (c *Client) Dequeue(ctx context.Context, workerHostname string, extraArgume
 	}
 
 	if len(c.options.QueueNames) > 0 {
-		queueAttr = attribute.String("queueNames", strings.Join(c.options.QueueNames, ","))
+		queueAttr = attribute.StringSlice("queueNames", c.options.QueueNames)
 		endpoint = "/dequeue"
 		dequeueRequest.Queues = c.options.QueueNames
 	} else {
@@ -167,26 +167,16 @@ func (c *Client) MarkFailed(ctx context.Context, job types.Job, failureMessage s
 }
 
 func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, cancelIDs []string, err error) {
-	if len(c.options.QueueNames) > 0 {
-		// TODO: multi-queue heartbeats are not implemented yet, so simply return the job ids immediately
-		// to allow jobs to terminate while testing
-		return jobIDs, nil, nil
-	}
-	ctx, _, endObservation := c.operations.heartbeat.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("queueName", c.options.QueueName),
-		attribute.StringSlice("jobIDs", jobIDs),
-	}})
-	defer endObservation(1, observation.Args{})
-
 	metrics, err := gatherMetrics(c.logger, c.metricsGatherer)
 	if err != nil {
 		c.logger.Error("Failed to collect prometheus metrics for heartbeat", log.Error(err))
 		// Continue, no metric errors should prevent heartbeats.
 	}
 
-	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", c.options.QueueName), types.HeartbeatRequest{
+	var queueAttr attribute.KeyValue
+	var endpoint string
+	heartbeatRequest := types.HeartbeatRequest{
 		ExecutorName: c.options.ExecutorName,
-		JobIDs:       jobIDs,
 
 		OS:              c.options.TelemetryOptions.OS,
 		Architecture:    c.options.TelemetryOptions.Architecture,
@@ -197,7 +187,27 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, canc
 		SrcCliVersion:   c.options.TelemetryOptions.SrcCliVersion,
 
 		PrometheusMetrics: metrics,
-	})
+	}
+	if len(c.options.QueueNames) > 0 {
+		queueAttr = attribute.StringSlice("queueNames", c.options.QueueNames)
+		endpoint = "/heartbeat"
+		queueJobIDs, err := parseJobIDs(jobIDs)
+		if err != nil {
+			return nil, nil, err
+		}
+		heartbeatRequest.JobIDsByQueue = queueJobIDs
+	} else {
+		queueAttr = attribute.String("queueName", c.options.QueueName)
+		endpoint = fmt.Sprintf("%s/heartbeat", c.options.QueueName)
+		heartbeatRequest.JobIDs = jobIDs
+	}
+	ctx, _, endObservation := c.operations.heartbeat.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		queueAttr,
+		attribute.StringSlice("jobIDs", jobIDs),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	req, err := c.client.NewJSONRequest(http.MethodPost, endpoint, heartbeatRequest)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -223,6 +233,33 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, canc
 		return respV2.KnownIDs, respV2.CancelIDs, nil
 	}
 	return nil, nil, err
+}
+
+func parseJobIDs(jobIDs []string) ([]types.QueueJobIDs, error) {
+	var queueJobIDs []types.QueueJobIDs
+	for _, stringID := range jobIDs {
+		parts := strings.Split(stringID, "-")
+		if len(parts) != 2 {
+			return nil, errors.Newf("Unexpected job ID format: %s", stringID)
+		}
+
+		id, queueName := parts[0], parts[1]
+
+		var queue *types.QueueJobIDs
+		for i, q := range queueJobIDs {
+			if q.QueueName == queueName {
+				queue = &queueJobIDs[i]
+				break
+			}
+		}
+
+		if queue == nil {
+			queue = &types.QueueJobIDs{QueueName: queueName}
+			queueJobIDs = append(queueJobIDs, *queue)
+		}
+		queue.JobIDs = append(queue.JobIDs, id)
+	}
+	return queueJobIDs, nil
 }
 
 func gatherMetrics(logger log.Logger, gatherer prometheus.Gatherer) (string, error) {
@@ -256,7 +293,6 @@ func (c *Client) Ping(ctx context.Context) (err error) {
 		for _, queueName := range c.options.QueueNames {
 			jobIDsByQueue = append(jobIDsByQueue, types.QueueJobIDs{
 				QueueName: queueName,
-				JobIDs:    nil,
 			})
 		}
 		req, err = c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("/heartbeat"), types.HeartbeatRequest{

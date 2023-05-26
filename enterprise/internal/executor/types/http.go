@@ -46,7 +46,7 @@ type QueueJobIDs struct {
 type HeartbeatRequest struct {
 	ExecutorName string `json:"executorName"`
 
-	JobIDs []string `json:"jobIds"`
+	JobIDs []string `json:"jobIds,omitempty"`
 	// Used by multi-queue executors. One of JobIDsByQueue or JobIDs must be set.
 	JobIDsByQueue []QueueJobIDs `json:"jobIdsByQueue,omitempty"`
 
