@@ -1,6 +1,5 @@
 import { listen, Event } from '@tauri-apps/api/event'
 import { invoke } from '@tauri-apps/api/tauri'
-import { createRoot } from 'react-dom/client'
 
 import { logger } from '@sourcegraph/common'
 
