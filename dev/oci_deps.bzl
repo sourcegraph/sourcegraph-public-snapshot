@@ -101,6 +101,12 @@ def oci_deps():
     )
 
     oci_pull(
+        name = "wolfi_searcher_base",
+        digest = "sha256:fba8f4cce1306463b03c0388eb830bac63f02f4b8941c4df8f9fde99390da32e",
+        image = "us.gcr.io/sourcegraph-dev/wolfi-searcher-base",
+    )
+
+    oci_pull(
         name = "wolfi_executor_base",
         digest = "sha256:0ab096b0ffae9054fa18fa8121b105acfda767c5f74fd8530f72f8fe87ef20c2",
         image = "us.gcr.io/sourcegraph-dev/wolfi-executor-base",
