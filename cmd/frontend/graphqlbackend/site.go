@@ -50,7 +50,7 @@ func (r *schemaResolver) siteByGQLID(_ context.Context, id graphql.ID) (Node, er
 	if siteGQLID != singletonSiteGQLID {
 		return nil, errors.Errorf("site not found: %q", siteGQLID)
 	}
-	return newSiteResolver(r.logger, r.db), nil
+	return NewSiteResolver(r.logger, r.db), nil
 }
 
 func marshalSiteGQLID(siteID string) graphql.ID { return relay.MarshalID("Site", siteID) }
@@ -65,14 +65,10 @@ func unmarshalSiteGQLID(id graphql.ID) (siteID string, err error) {
 }
 
 func (r *schemaResolver) Site() *siteResolver {
-	return newSiteResolver(r.logger, r.db)
+	return NewSiteResolver(r.logger, r.db)
 }
 
 func NewSiteResolver(logger log.Logger, db database.DB) *siteResolver {
-	return newSiteResolver(logger, db)
-}
-
-func newSiteResolver(logger log.Logger, db database.DB) *siteResolver {
 	return &siteResolver{
 		logger: logger,
 		db:     db,
@@ -120,11 +116,11 @@ func (r *siteResolver) LatestSettings(ctx context.Context) (*settingsResolver, e
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{r.db, &settingsSubject{site: r}, settings, nil}, nil
+	return &settingsResolver{r.db, &settingsSubjectResolver{site: r}, settings, nil}, nil
 }
 
 func (r *siteResolver) SettingsCascade() *settingsCascade {
-	return &settingsCascade{db: r.db, subject: &settingsSubject{site: r}}
+	return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{site: r}}
 }
 
 func (r *siteResolver) ConfigurationCascade() *settingsCascade { return r.SettingsCascade() }

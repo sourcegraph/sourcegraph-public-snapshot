@@ -199,11 +199,11 @@ func (r *UserResolver) LatestSettings(ctx context.Context) (*settingsResolver, e
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{r.db, &settingsSubject{user: r}, settings, nil}, nil
+	return &settingsResolver{r.db, &settingsSubjectResolver{user: r}, settings, nil}, nil
 }
 
 func (r *UserResolver) SettingsCascade() *settingsCascade {
-	return &settingsCascade{db: r.db, subject: &settingsSubject{user: r}}
+	return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{user: r}}
 }
 
 func (r *UserResolver) ConfigurationCascade() *settingsCascade { return r.SettingsCascade() }

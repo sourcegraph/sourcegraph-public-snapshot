@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/settings"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -204,7 +205,7 @@ func min(x, y int) int {
 func getExtendedTimeout(ctx context.Context, db database.DB) int {
 	searchLimit := limits.SearchLimits(conf.Get()).MaxTimeoutSeconds
 
-	settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, db)
+	settings, err := settings.CurrentUserFinal(ctx, db)
 	if err != nil || settings == nil {
 		return extendedSearchTimeLimitSecondsDefault
 	}

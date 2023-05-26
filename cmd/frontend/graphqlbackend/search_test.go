@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/settings"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -97,8 +98,8 @@ func TestSearch(t *testing.T) {
 			defer conf.Mock(nil)
 			vars := map[string]any{"query": tc.searchQuery, "version": tc.searchVersion}
 
-			MockDecodedViewerFinalSettings = &schema.Settings{}
-			defer func() { MockDecodedViewerFinalSettings = nil }()
+			settings.MockCurrentUserFinal = &schema.Settings{}
+			defer func() { settings.MockCurrentUserFinal = nil }()
 
 			repos := database.NewMockRepoStore()
 			repos.ListFunc.SetDefaultHook(tc.reposListMock)
