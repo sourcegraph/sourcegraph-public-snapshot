@@ -129,7 +129,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		InsertInitialPathRanksFunc: &StoreInsertInitialPathRanksFunc{
-			defaultHook: func(context.Context, int, chan string, int, string) (r0 error) {
+			defaultHook: func(context.Context, int, []string, int, string) (r0 error) {
 				return
 			},
 		},
@@ -231,7 +231,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		InsertInitialPathRanksFunc: &StoreInsertInitialPathRanksFunc{
-			defaultHook: func(context.Context, int, chan string, int, string) error {
+			defaultHook: func(context.Context, int, []string, int, string) error {
 				panic("unexpected invocation of MockStore.InsertInitialPathRanks")
 			},
 		},
@@ -1131,15 +1131,15 @@ func (c StoreInsertInitialPathCountsFuncCall) Results() []interface{} {
 // InsertInitialPathRanks method of the parent MockStore instance is
 // invoked.
 type StoreInsertInitialPathRanksFunc struct {
-	defaultHook func(context.Context, int, chan string, int, string) error
-	hooks       []func(context.Context, int, chan string, int, string) error
+	defaultHook func(context.Context, int, []string, int, string) error
+	hooks       []func(context.Context, int, []string, int, string) error
 	history     []StoreInsertInitialPathRanksFuncCall
 	mutex       sync.Mutex
 }
 
 // InsertInitialPathRanks delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockStore) InsertInitialPathRanks(v0 context.Context, v1 int, v2 chan string, v3 int, v4 string) error {
+func (m *MockStore) InsertInitialPathRanks(v0 context.Context, v1 int, v2 []string, v3 int, v4 string) error {
 	r0 := m.InsertInitialPathRanksFunc.nextHook()(v0, v1, v2, v3, v4)
 	m.InsertInitialPathRanksFunc.appendCall(StoreInsertInitialPathRanksFuncCall{v0, v1, v2, v3, v4, r0})
 	return r0
@@ -1148,7 +1148,7 @@ func (m *MockStore) InsertInitialPathRanks(v0 context.Context, v1 int, v2 chan s
 // SetDefaultHook sets function that is called when the
 // InsertInitialPathRanks method of the parent MockStore instance is invoked
 // and the hook queue is empty.
-func (f *StoreInsertInitialPathRanksFunc) SetDefaultHook(hook func(context.Context, int, chan string, int, string) error) {
+func (f *StoreInsertInitialPathRanksFunc) SetDefaultHook(hook func(context.Context, int, []string, int, string) error) {
 	f.defaultHook = hook
 }
 
@@ -1156,7 +1156,7 @@ func (f *StoreInsertInitialPathRanksFunc) SetDefaultHook(hook func(context.Conte
 // InsertInitialPathRanks method of the parent MockStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *StoreInsertInitialPathRanksFunc) PushHook(hook func(context.Context, int, chan string, int, string) error) {
+func (f *StoreInsertInitialPathRanksFunc) PushHook(hook func(context.Context, int, []string, int, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1165,19 +1165,19 @@ func (f *StoreInsertInitialPathRanksFunc) PushHook(hook func(context.Context, in
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *StoreInsertInitialPathRanksFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, chan string, int, string) error {
+	f.SetDefaultHook(func(context.Context, int, []string, int, string) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *StoreInsertInitialPathRanksFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, chan string, int, string) error {
+	f.PushHook(func(context.Context, int, []string, int, string) error {
 		return r0
 	})
 }
 
-func (f *StoreInsertInitialPathRanksFunc) nextHook() func(context.Context, int, chan string, int, string) error {
+func (f *StoreInsertInitialPathRanksFunc) nextHook() func(context.Context, int, []string, int, string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1218,7 +1218,7 @@ type StoreInsertInitialPathRanksFuncCall struct {
 	Arg1 int
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 chan string
+	Arg2 []string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
 	Arg3 int

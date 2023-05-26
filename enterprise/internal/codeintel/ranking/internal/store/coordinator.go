@@ -108,16 +108,15 @@ WITH
 processable_counts AS (
 	SELECT pci.id
 	FROM codeintel_ranking_path_counts_inputs pci
+	JOIN codeintel_ranking_definitions rd ON rd.id = pci.definition_id
+	JOIN codeintel_ranking_exports eu ON eu.id = rd.exported_upload_id
+	JOIN lsif_uploads u ON u.id = eu.upload_id
+	JOIN repo r ON r.id = u.repository_id
 	WHERE
 		pci.graph_key = %s AND
 		NOT pci.processed AND
-		EXISTS (
-			SELECT 1 FROM repo r
-			WHERE
-				r.id = pci.repository_id AND
-				r.deleted_at IS NULL AND
-				r.blocked IS NULL
-		)
+		r.deleted_at IS NULL AND
+		r.blocked IS NULL
 )
 UPDATE codeintel_ranking_progress
 SET

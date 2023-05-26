@@ -1851,7 +1851,8 @@ CREATE TABLE codeintel_ranking_exports (
     locked_at timestamp with time zone DEFAULT now() NOT NULL,
     id integer NOT NULL,
     last_scanned_at timestamp with time zone,
-    deleted_at timestamp with time zone
+    deleted_at timestamp with time zone,
+    upload_key text
 );
 
 CREATE SEQUENCE codeintel_ranking_exports_id_seq
@@ -1866,11 +1867,10 @@ ALTER SEQUENCE codeintel_ranking_exports_id_seq OWNED BY codeintel_ranking_expor
 
 CREATE TABLE codeintel_ranking_path_counts_inputs (
     id bigint NOT NULL,
-    document_path text NOT NULL,
     count integer NOT NULL,
     graph_key text NOT NULL,
     processed boolean DEFAULT false NOT NULL,
-    repository_id integer NOT NULL
+    definition_id bigint
 );
 
 CREATE SEQUENCE codeintel_ranking_path_counts_inputs_id_seq
@@ -5580,9 +5580,9 @@ CREATE INDEX codeintel_ranking_exports_graph_key_last_scanned_at ON codeintel_ra
 
 CREATE UNIQUE INDEX codeintel_ranking_exports_graph_key_upload_id ON codeintel_ranking_exports USING btree (graph_key, upload_id);
 
-CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, id);
+CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_definition_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, definition_id, id) WHERE (NOT processed);
 
-CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_repository_id_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository_id, id) WHERE (NOT processed);
+CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, id);
 
 CREATE INDEX codeintel_ranking_references_exported_upload_id ON codeintel_ranking_references USING btree (exported_upload_id);
 

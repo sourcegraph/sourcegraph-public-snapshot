@@ -961,6 +961,7 @@ Foreign-key constraints:
  id              | integer                  |           | not null | nextval('codeintel_ranking_exports_id_seq'::regclass)
  last_scanned_at | timestamp with time zone |           |          | 
  deleted_at      | timestamp with time zone |           |          | 
+ upload_key      | text                     |           |          | 
 Indexes:
     "codeintel_ranking_exports_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_exports_graph_key_upload_id" UNIQUE, btree (graph_key, upload_id)
@@ -980,15 +981,14 @@ Referenced by:
     Column     |  Type   | Collation | Nullable |                             Default                              
 ---------------+---------+-----------+----------+------------------------------------------------------------------
  id            | bigint  |           | not null | nextval('codeintel_ranking_path_counts_inputs_id_seq'::regclass)
- document_path | text    |           | not null | 
  count         | integer |           | not null | 
  graph_key     | text    |           | not null | 
  processed     | boolean |           | not null | false
- repository_id | integer |           | not null | 
+ definition_id | bigint  |           |          | 
 Indexes:
     "codeintel_ranking_path_counts_inputs_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_path_counts_inputs_graph_key_definition_id" btree (graph_key, definition_id, id) WHERE NOT processed
     "codeintel_ranking_path_counts_inputs_graph_key_id" btree (graph_key, id)
-    "codeintel_ranking_path_counts_inputs_graph_key_repository_id_id" btree (graph_key, repository_id, id) WHERE NOT processed
 
 ```
 

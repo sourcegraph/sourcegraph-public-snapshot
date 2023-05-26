@@ -32,7 +32,8 @@ WITH candidates AS (
 		u.id AS upload_id,
 		u.repository_id,
 		r.name AS repository_name,
-		u.root
+		u.root,
+		md5(u.repository_id || ':' || u.root || ':' || u.indexer) AS upload_key
 	FROM lsif_uploads u
 	JOIN repo r ON r.id = u.repository_id
 	WHERE
@@ -56,8 +57,8 @@ WITH candidates AS (
 	FOR UPDATE SKIP LOCKED
 ),
 inserted AS (
-	INSERT INTO codeintel_ranking_exports (graph_key, upload_id)
-	SELECT %s, upload_id FROM candidates
+	INSERT INTO codeintel_ranking_exports (graph_key, upload_id, upload_key)
+	SELECT %s, upload_id, upload_key FROM candidates
 	ON CONFLICT (graph_key, upload_id) DO NOTHING
 	RETURNING id, upload_id
 )

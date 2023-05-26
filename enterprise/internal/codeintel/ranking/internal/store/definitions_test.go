@@ -27,8 +27,8 @@ func TestInsertDefinition(t *testing.T) {
 
 	// Insert exported uploads
 	if _, err := db.ExecContext(ctx, `
-		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key)
-		VALUES (104, 4, $1)
+		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key, upload_key)
+		VALUES (104, 4, $1, md5('key-4'))
 	`,
 		mockRankingGraphKey,
 	); err != nil {

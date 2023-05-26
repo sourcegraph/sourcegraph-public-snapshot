@@ -65,22 +65,21 @@ progress AS (
 input_ranks AS (
 	SELECT
 		pci.id,
-		pci.repository_id,
-		pci.document_path AS path,
+		u.repository_id,
+		rd.document_path AS path,
 		pci.count
 	FROM codeintel_ranking_path_counts_inputs pci
+	JOIN codeintel_ranking_definitions rd ON rd.id = pci.definition_id
+	JOIN codeintel_ranking_exports eu ON eu.id = rd.exported_upload_id
+	JOIN lsif_uploads u ON u.id = eu.upload_id
+	JOIN repo r ON r.id = u.repository_id
 	JOIN progress p ON TRUE
 	WHERE
 		pci.graph_key = %s AND
 		NOT pci.processed AND
-		EXISTS (
-			SELECT 1 FROM repo r
-			WHERE
-				r.id = pci.repository_id AND
-				r.deleted_at IS NULL AND
-				r.blocked IS NULL
-		)
-	ORDER BY pci.graph_key, pci.repository_id, pci.id
+		r.deleted_at IS NULL AND
+		r.blocked IS NULL
+	ORDER BY pci.graph_key, pci.definition_id, pci.id
 	LIMIT %s
 	FOR UPDATE SKIP LOCKED
 ),

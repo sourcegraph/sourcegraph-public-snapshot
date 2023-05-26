@@ -34,8 +34,8 @@ func TestInsertPathRanks(t *testing.T) {
 	// Insert and export upload
 	insertUploads(t, db, uploadsshared.Upload{ID: 4})
 	if _, err := db.ExecContext(ctx, `
-		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key)
-		VALUES (104, 4, $1)
+		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key, upload_key)
+		VALUES (104, 4, $1, md5('key-4'))
 	`,
 		mockRankingGraphKey,
 	); err != nil {
@@ -103,17 +103,33 @@ func TestInsertPathRanks(t *testing.T) {
 	}
 
 	// Finally! Test InsertPathRanks
-	numPathRanksInserted, numInputsProcessed, err := store.InsertPathRanks(ctx, key, 10)
-	if err != nil {
+	if _, numInputsProcessed, err := store.InsertPathRanks(ctx, key, 10); err != nil {
 		t.Fatalf("unexpected error inserting path ranks: %s", err)
-	}
-
-	if numPathRanksInserted != 2 {
-		t.Errorf("unexpected number of path ranks inserted. want=%d have=%d", 2, numPathRanksInserted)
-	}
-
-	if numInputsProcessed != 1 {
+	} else if numInputsProcessed != 1 {
 		t.Errorf("unexpected number of inputs processed. want=%d have=%d", 1, numInputsProcessed)
+	}
+
+	// Need to run this again prior to checking document ranks as we have to close out
+	// the progress record by processing *no* records after the last batch.
+
+	if _, numInputsProcessed, err := store.InsertPathRanks(ctx, key, 10); err != nil {
+		t.Fatalf("unexpected error inserting path ranks: %s", err)
+	} else if numInputsProcessed != 0 {
+		t.Fatalf("expected no more work to be available")
+	}
+
+	// Check actual ranks
+	ranks, _, err := store.GetDocumentRanks(ctx, api.RepoName("n-50"))
+	if err != nil {
+		t.Fatalf("unexpected error getting document ranks")
+	}
+
+	expectedRanks := map[string]float64{
+		"foo.go": 2,
+		"bar.go": 1,
+	}
+	if diff := cmp.Diff(expectedRanks, ranks); diff != "" {
+		t.Errorf("unexpected ranks (-want +got):\n%s", diff)
 	}
 }
 
