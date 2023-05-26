@@ -410,6 +410,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
 
         this.codebaseContext = codebaseContext
+        this.publishEmbeddingsError()
         this.publishContextStatus()
     }
 
@@ -650,10 +651,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 },
             })
         }
-
         this.disposables.push(vscode.window.onDidChangeTextEditorSelection(() => send()))
         send()
-        this.publishEmbeddingsError()
     }
 
     /**
