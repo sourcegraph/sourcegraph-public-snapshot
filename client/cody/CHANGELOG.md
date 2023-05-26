@@ -7,8 +7,11 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 ### Added
 
 - Display embeddings search, and connection error to the webview panel. [pull/52491](https://github.com/sourcegraph/sourcegraph/pull/52491)
+- New recipe: `Optimize Code`. Optimize the time and space consumption of code. [pull/51974](https://github.com/sourcegraph/sourcegraph/pull/51974)
 
 ### Fixed
+
+- Fixes an issue where new conversations did not bring the chat into the foreground. [pull/52363](https://github.com/sourcegraph/sourcegraph/pull/52363)
 
 ### Changed
 

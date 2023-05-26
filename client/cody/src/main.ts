@@ -165,6 +165,7 @@ const register = async (
         vscode.commands.registerCommand('cody.history', () => chatProvider.setWebviewView('history')),
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
             await chatProvider.clearAndRestartSession()
+            chatProvider.setWebviewView('chat')
         }),
         vscode.commands.registerCommand('cody.recipe.explain-code', () => executeRecipe('explain-code-detailed')),
         vscode.commands.registerCommand('cody.recipe.explain-code-high-level', () =>
@@ -182,6 +183,7 @@ const register = async (
         ),
         vscode.commands.registerCommand('cody.recipe.find-code-smells', () => executeRecipe('find-code-smells')),
         vscode.commands.registerCommand('cody.recipe.context-search', () => executeRecipe('context-search')),
+        vscode.commands.registerCommand('cody.recipe.optimize-code', () => executeRecipe('optimize-code')),
         // Register URI Handler for resolving token sending back from sourcegraph.com
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {

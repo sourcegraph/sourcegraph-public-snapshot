@@ -71,7 +71,8 @@ progress AS (
 exported_uploads AS (
 	SELECT
 		cre.id,
-		cre.upload_id
+		cre.upload_id,
+		cre.upload_key
 	FROM codeintel_ranking_exports cre
 	JOIN progress p ON TRUE
 	WHERE
@@ -92,6 +93,7 @@ refs AS (
 	SELECT
 		rr.id,
 		eu.upload_id,
+		eu.upload_key,
 		rr.symbol_names
 	FROM codeintel_ranking_references rr
 	JOIN exported_uploads eu ON eu.id = rr.exported_upload_id
@@ -117,23 +119,19 @@ processable_symbols AS (
 	SELECT r.symbol_names
 	FROM locked_refs lr
 	JOIN refs r ON r.id = lr.codeintel_ranking_reference_id
-	JOIN lsif_uploads u ON u.id = r.upload_id
 	WHERE
 		-- Do not re-process references for repository/root/indexers that have already been
 		-- processed. We'll still insert a processed reference so that we know we've done the
 		-- "work", but we'll simply no-op the counts for this input.
 		NOT EXISTS (
 			SELECT 1
-			FROM lsif_uploads u2
-			JOIN codeintel_ranking_exports cre2 ON cre2.upload_id = u2.id
+			FROM codeintel_ranking_exports cre2
 			JOIN codeintel_ranking_references rr2 ON rr2.exported_upload_id = cre2.id
 			JOIN codeintel_ranking_references_processed rrp2 ON rrp2.codeintel_ranking_reference_id = rr2.id
 			WHERE
 				rrp2.graph_key = %s AND
-				u.repository_id = u2.repository_id AND
-				u.root = u2.root AND
-				u.indexer = u2.indexer AND
-				u.id != u2.id
+				cre2.upload_key = r.upload_key AND
+				r.upload_id != cre2.upload_id
 		) AND
 
 		-- For multiple references for the same repository/root/indexer in THIS batch, we want to
@@ -143,12 +141,9 @@ processable_symbols AS (
 			SELECT 1
 			FROM locked_refs lr2
 			JOIN refs r2 ON r2.id = lr2.codeintel_ranking_reference_id
-			JOIN lsif_uploads u2 ON u2.id = r2.upload_id
 			WHERE
-				u.repository_id = u2.repository_id AND
-				u.root = u2.root AND
-				u.indexer = u2.indexer AND
-				u.finished_at < u2.finished_at
+				r2.upload_key = r.upload_key AND
+				r2.upload_id > r.upload_id
 		)
 ),
 referenced_symbols AS (
@@ -157,21 +152,16 @@ referenced_symbols AS (
 ),
 referenced_definitions AS (
 	SELECT
-		s.repository_id,
-		s.document_path,
+		s.definition_id,
 		COUNT(*) AS count
 	FROM (
 		SELECT
-			u.repository_id,
-			rd.document_path,
+			rd.id AS definition_id,
 
 			-- Group by repository/root/indexer and order by descending ids. We
 			-- will only count the rows with rank = 1 in the outer query in order
 			-- to break ties when shadowed definitions are present.
-			RANK() OVER (
-				PARTITION BY u.repository_id, u.root, u.indexer
-				ORDER BY u.id DESC
-			) AS rank
+			RANK() OVER (PARTITION BY cre.upload_key ORDER BY u.id DESC) AS rank
 		FROM codeintel_ranking_definitions rd
 		JOIN referenced_symbols rs ON rs.symbol_name = rd.symbol_name
 		JOIN codeintel_ranking_exports cre ON cre.id = rd.exported_upload_id
@@ -191,13 +181,12 @@ referenced_definitions AS (
 	-- exported set, but the shadowed (newly non-visible) uploads have not yet
 	-- been removed by the janitor processes.
 	WHERE s.rank = 1
-	GROUP BY s.repository_id, s.document_path
+	GROUP BY s.definition_id
 ),
 ins AS (
-	INSERT INTO codeintel_ranking_path_counts_inputs (repository_id, document_path, count, graph_key)
+	INSERT INTO codeintel_ranking_path_counts_inputs (definition_id, count, graph_key)
 	SELECT
-		rx.repository_id,
-		rx.document_path,
+		rx.definition_id,
 		rx.count,
 		%s
 	FROM referenced_definitions rx
@@ -240,6 +229,7 @@ func (s *store) InsertInitialPathCounts(
 		batchSize,
 		derivativeGraphKey,
 		derivativeGraphKey,
+		graphKey,
 	))
 	if err != nil {
 		return 0, 0, err
@@ -294,6 +284,7 @@ unprocessed_path_counts AS (
 	SELECT
 		ipr.id,
 		eu.upload_id,
+		eu.id AS exported_upload_id,
 		ipr.graph_key,
 		CASE
 			WHEN ipr.document_path != '' THEN array_append('{}'::text[], ipr.document_path)
@@ -326,20 +317,25 @@ expanded_unprocessed_path_counts AS (
 	SELECT
 		upc.id,
 		upc.upload_id,
+		upc.exported_upload_id,
 		upc.graph_key,
 		unnest(upc.document_paths) AS document_path
 	FROM unprocessed_path_counts upc
 ),
 ins AS (
-	INSERT INTO codeintel_ranking_path_counts_inputs (repository_id, document_path, count, graph_key)
+	INSERT INTO codeintel_ranking_path_counts_inputs (definition_id, count, graph_key)
 	SELECT
-		u.repository_id,
-		eupc.document_path,
+		rd.id,
 		0,
 		%s
 	FROM locked_path_counts lpc
-	JOIN expanded_unprocessed_path_counts eupc on eupc.id = lpc.codeintel_initial_path_ranks_id
-	JOIN lsif_uploads u ON u.id = eupc.upload_id
+	JOIN expanded_unprocessed_path_counts eupc ON eupc.id = lpc.codeintel_initial_path_ranks_id
+	JOIN codeintel_ranking_definitions rd ON
+		rd.exported_upload_id = eupc.exported_upload_id AND
+		rd.document_path = eupc.document_path
+	WHERE
+		rd.graph_key = %s AND
+		rd.symbol_name = '$'
 	RETURNING 1
 ),
 set_progress AS (
