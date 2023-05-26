@@ -63,7 +63,7 @@ func (c *llmProxyClient) clientForParams(feature types.CompletionsFeature, reque
 
 	if strings.HasPrefix(model, openAIModelPrefix) {
 		requestParams.Model = strings.TrimPrefix(model, openAIModelPrefix)
-		return openai.NewClient(llmProxyDoer(c.upstream, feature, c.llmProxyURL, c.accessToken, "/v1/completions/openai"), ""), nil
+		return openai.NewClient(llmProxyDoer(c.upstream, feature, c.llmProxyURL, c.accessToken, "/v1/completions/openai"), "", ""), nil
 	}
 	if strings.HasPrefix(model, anthropicModelPrefix) {
 		requestParams.Model = strings.TrimPrefix(model, anthropicModelPrefix)
