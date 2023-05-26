@@ -268,17 +268,17 @@ describe('Cody completions', () => {
 
     it('completes a single-line at the end of a sentence', async () => {
         const { completions } = await complete('foo = |', [
-            createCompletionResponse('"bar"'),
-            createCompletionResponse('"baz"'),
+            createCompletionResponse("'bar'"),
+            createCompletionResponse("'baz'"),
         ])
 
         expect(completions).toMatchInlineSnapshot(`
             Array [
               InlineCompletionItem {
-                "content": "\\"bar\\"",
+                "content": "'bar'",
               },
               InlineCompletionItem {
-                "content": "\\"baz\\"",
+                "content": "'baz'",
               },
             ]
         `)
