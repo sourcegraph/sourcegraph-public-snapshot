@@ -85,7 +85,16 @@ export const codeIntelAreaRoutes: readonly AdminCodeIntelAreaRoute[] = (
         },
         {
             path: '/configuration/:id',
-            render: props => <CodeIntelConfigurationPolicyPage {...props} />,
+            render: props => (
+                <CodeIntelConfigurationPolicyPage
+                    {...props}
+                    name="code graph"
+                    description={`Rules that control${
+                        window.context?.codeIntelAutoIndexingEnabled && ' auto-indexing and'
+                    } data retention behavior of
+                            code graph data.`}
+                />
+            ),
         },
         {
             path: '/inference-configuration',

@@ -151,7 +151,7 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
                     noun="configuration policy"
                     pluralNoun="configuration policies"
                     nodeComponent={PoliciesNode}
-                    nodeComponentProps={{ isDeleting, onDelete, indexingEnabled }}
+                    nodeComponentProps={{ isDeleting, onDelete, indexingEnabled, urlSegment: 'code-graph' }}
                     queryConnection={queryCustomPoliciesCallback}
                     cursorPaging={true}
                     filters={[
@@ -198,7 +198,7 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
                     noun="configuration policy"
                     pluralNoun="configuration policies"
                     nodeComponent={PoliciesNode}
-                    nodeComponentProps={{ indexingEnabled }}
+                    nodeComponentProps={{ indexingEnabled, urlSegment: 'code-graph' }}
                     queryConnection={queryDefaultPoliciesCallback}
                     emptyElement={<EmptyPoliciesList repo={repo} />}
                     hideSearch={true}
@@ -213,7 +213,9 @@ export const CodeIntelConfigurationPage: FunctionComponent<CodeIntelConfiguratio
 interface ProtectedPoliciesNodeProps {
     node: CodeIntelligenceConfigurationPolicyFields
     indexingEnabled?: boolean
-    domain?: 'scip' | 'embeddings'
+
+    // used to construct urls such as `/site-admin/${urlSegment}/configuration/${policy.id}`
+    urlSegment: string
 }
 
 export interface UnprotectedPoliciesNodeProps {
@@ -221,7 +223,9 @@ export interface UnprotectedPoliciesNodeProps {
     isDeleting: boolean
     onDelete: (id: string, name: string) => Promise<void>
     indexingEnabled?: boolean
-    domain?: 'scip' | 'embeddings'
+
+    // used to construct urls such as `/site-admin/${urlSegment}/configuration/${policy.id}`
+    urlSegment: string
 }
 
 type PoliciesNodeProps = ProtectedPoliciesNodeProps | UnprotectedPoliciesNodeProps
@@ -229,14 +233,14 @@ type PoliciesNodeProps = ProtectedPoliciesNodeProps | UnprotectedPoliciesNodePro
 export const PoliciesNode: FunctionComponent<React.PropsWithChildren<PoliciesNodeProps>> = ({
     node: policy,
     indexingEnabled = false,
-    domain = 'scip',
+    urlSegment,
     ...props
 }) => (
     <>
         <span className={styles.separator} />
 
         <div className={classNames(styles.name, 'd-flex flex-column')}>
-            <PolicyDescription policy={policy} indexingEnabled={indexingEnabled} domain={domain} />
+            <PolicyDescription policy={policy} indexingEnabled={indexingEnabled} urlSegment={urlSegment} />
             <RepositoryAndGitObjectDescription policy={policy} />
             {policy.indexingEnabled && indexingEnabled && <AutoIndexingDescription policy={policy} />}
             {policy.retentionEnabled && <RetentionDescription policy={policy} />}
@@ -247,10 +251,8 @@ export const PoliciesNode: FunctionComponent<React.PropsWithChildren<PoliciesNod
             <Link
                 to={
                     policy.repository === null
-                        ? `/site-admin/${domain === 'scip' ? 'code-graph' : 'embeddings'}/configuration/${policy.id}`
-                        : `/${policy.repository.name}/-/${
-                              domain === 'scip' ? 'code-graph' : 'embeddings'
-                          }/configuration/${policy.id}`
+                        ? `/site-admin/${urlSegment}/configuration/${policy.id}`
+                        : `/${policy.repository.name}/-/${urlSegment}/configuration/${policy.id}`
                 }
             >
                 <Tooltip content="Edit this policy">
@@ -290,23 +292,23 @@ interface PolicyDescriptionProps {
     policy: CodeIntelligenceConfigurationPolicyFields
     indexingEnabled?: boolean
     allowGlobalPolicies?: boolean
-    domain?: 'scip' | 'embeddings'
+
+    // used to construct urls such as `/site-admin/${urlSegment}/configuration/${policy.id}`
+    urlSegment: string
 }
 
 const PolicyDescription: FunctionComponent<PolicyDescriptionProps> = ({
     policy,
     indexingEnabled = false,
     allowGlobalPolicies = window.context?.codeIntelAutoIndexingAllowGlobalPolicies,
-    domain = 'scip',
+    urlSegment,
 }) => (
     <div className={styles.policyDescription}>
         <Link
             to={
                 policy.repository === null
-                    ? `/site-admin/${domain === 'scip' ? 'code-graph' : 'embeddings'}/configuration/${policy.id}`
-                    : `/${policy.repository.name}/-/${domain === 'scip' ? 'code-graph' : 'embeddings'}/configuration/${
-                          policy.id
-                      }`
+                    ? `/site-admin/${urlSegment}/configuration/${policy.id}`
+                    : `/${policy.repository.name}/-/${urlSegment}/configuration/${policy.id}`
             }
         >
             <Text weight="bold" className="mb-0">

@@ -62,7 +62,11 @@ export interface CodeIntelConfigurationPolicyPageProps extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
     indexingEnabled?: boolean
     allowGlobalPolicies?: boolean
-    domain?: 'scip' | 'embeddings'
+
+    name: string
+    description: string
+    // used to construct urls such as `/site-admin/${urlSegment}/configuration/${policy.id}`
+    urlSegment: string
 }
 
 type PolicyUpdater = <K extends keyof CodeIntelligenceConfigurationPolicyFields>(updates: {
@@ -75,6 +79,9 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
     indexingEnabled = window.context?.codeIntelAutoIndexingEnabled,
     allowGlobalPolicies = window.context?.codeIntelAutoIndexingAllowGlobalPolicies,
     domain = 'scip',
+    name,
+    description,
+    urlSegment,
     telemetryService,
 }) => {
     const navigate = useNavigate()
@@ -178,13 +185,13 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
         return <ErrorAlert prefix="Error fetching configuration policy" error={policyConfigError} />
     }
 
+    const title = (s: string): string => (s === '' ? '' : s[0].toUpperCase() + s.slice(1))
+
     return (
         <>
             <PageTitle
                 title={
-                    repo
-                        ? (domain === 'scip' ? 'Code graph' : 'Embeddings') + ' configuration policy for repository'
-                        : `Global ${domain === 'scip' ? 'code graph data' : 'embeddings'} configuration policy`
+                    repo ? title(name) + ' configuration policy for repository' : `Global ${name} configuration policy`
                 }
             />
             <PageHeader
@@ -193,31 +200,22 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
                     {
                         text: repo ? (
                             <>
-                                {policy?.id === '' ? 'Create a new' : 'Update a'}{' '}
-                                {domain === 'scip' ? 'code graph' : 'embeddings'} configuration policy for{' '}
+                                {policy?.id === '' ? 'Create a new' : 'Update a'} {name} configuration policy for{' '}
                                 <RepoLink repoName={repo.name} to={null} />
                             </>
                         ) : (
                             <>
-                                {policy?.id === '' ? 'Create a new' : 'Update a'} global{' '}
-                                {domain === 'scip' ? 'code graph' : 'embeddings'} configuration policy
+                                {policy?.id === '' ? 'Create a new' : 'Update a'} global {name} configuration policy
                             </>
                         ),
                     },
                 ]}
-                description={
-                    domain === 'scip' ? (
-                        <>
-                            Rules that control{indexingEnabled && <> auto-indexing and</>} data retention behavior of
-                            code graph data.
-                        </>
-                    ) : (
-                        <>Rules that control keeping embeddings up-to-date.</>
-                    )
-                }
+                description={description}
                 className="mb-3"
             />
-            {!policy.id && authenticatedUser?.siteAdmin && <NavigationCTA repo={repo} domain={domain} />}
+            {!policy.id && authenticatedUser?.siteAdmin && (
+                <NavigationCTA repo={repo} name={name} urlSegment={urlSegment} />
+            )}
 
             {savingError && <ErrorAlert prefix="Error saving configuration policy" error={savingError} />}
             {deleteError && <ErrorAlert prefix="Error deleting configuration policy" error={deleteError} />}
@@ -230,7 +228,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
             )}
 
             <Container className="container form">
-                <NameSettingsSection policy={policy} updatePolicy={updatePolicy} domain={domain} repo={repo} />
+                <NameSettingsSection policy={policy} updatePolicy={updatePolicy} repo={repo} />
                 {domain === 'scip' && <GitConfiguration policy={policy} updatePolicy={updatePolicy} repo={repo} />}
                 {!policy.repository && <RepositorySettingsSection policy={policy} updatePolicy={updatePolicy} />}
                 {domain === 'scip' ? (
@@ -321,36 +319,33 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<CodeIntelConfig
 
 interface NavigationCTAProps {
     repo?: { id: string; name: string }
-    domain?: 'scip' | 'embeddings'
+
+    name: string
+    // used to construct urls such as `/site-admin/${urlSegment}/configuration/${policy.id}`
+    urlSegment: string
 }
 
-const NavigationCTA: FunctionComponent<NavigationCTAProps> = ({ repo, domain = 'scip' }) => (
+const NavigationCTA: FunctionComponent<NavigationCTAProps> = ({ repo, name, urlSegment }) => (
     <Container className="mb-2">
         {repo ? (
             <>
                 Alternatively,{' '}
-                <Link to={`/site-admin/${domain === 'scip' ? 'code-graph' : 'embeddings'}/configuration/new`}>
-                    create global configuration policy
-                </Link>{' '}
-                that applies to more than this repository.
+                <Link to={`/site-admin/${urlSegment}/configuration/new`}>create global configuration policy</Link> that
+                applies to more than this repository.
             </>
         ) : (
-            <>
-                To create a policy that applies to a particular repository, visit that repository's{' '}
-                {domain === 'scip' ? 'code graph' : 'embeddings'} settings.
-            </>
+            <>To create a policy that applies to a particular repository, visit that repository's {name} settings.</>
         )}
     </Container>
 )
 
 interface NameSettingsSectionProps {
-    domain: 'scip' | 'embeddings'
     policy: CodeIntelligenceConfigurationPolicyFields
     updatePolicy: PolicyUpdater
     repo?: { id: string; name: string }
 }
 
-const NameSettingsSection: FunctionComponent<NameSettingsSectionProps> = ({ domain, repo, policy, updatePolicy }) => (
+const NameSettingsSection: FunctionComponent<NameSettingsSectionProps> = ({ repo, policy, updatePolicy }) => (
     <div className="form-group">
         <div className="input-group">
             <Input
@@ -363,12 +358,10 @@ const NameSettingsSection: FunctionComponent<NameSettingsSectionProps> = ({ doma
                 required={true}
                 error={policy.name === '' ? 'Please supply a value' : undefined}
                 placeholder={`Custom ${!repo ? 'global ' : ''}${
-                    domain === 'scip'
-                        ? policy.indexingEnabled
-                            ? 'indexing '
-                            : policy.retentionEnabled
-                            ? 'retention '
-                            : ''
+                    policy.indexingEnabled
+                        ? 'indexing '
+                        : policy.retentionEnabled
+                        ? 'retention '
                         : policy.embeddingsEnabled
                         ? 'embeddings '
                         : ''

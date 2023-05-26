@@ -208,7 +208,14 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
         },
         {
             path: '/embeddings/configuration/:id',
-            render: props => <CodeIntelConfigurationPolicyPage {...props} domain="embeddings" />,
+            render: props => (
+                <CodeIntelConfigurationPolicyPage
+                    {...props}
+                    name="embeddings"
+                    description="Rules that control keeping embeddings up-to-date."
+                    domain="embeddings"
+                />
+            ),
             condition: () => Boolean(window.context?.embeddingsEnabled),
         },
 
