@@ -80,6 +80,9 @@ extend type Mutation {
     """
     Creates a new configuration policy with the given attributes.
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     createCodeIntelligenceConfigurationPolicy(
         """
         If supplied, the repository to which this configuration policy applies. If not supplied,
@@ -102,12 +105,19 @@ extend type Mutation {
         indexingEnabled: Boolean!
         indexCommitMaxAgeHours: Int
         indexIntermediateCommits: Boolean!
-        embeddingsEnabled: Boolean!
+
+        """
+        embeddingsEnabled, if not provided, currently defaults to false.
+        """
+        embeddingsEnabled: Boolean
     ): CodeIntelligenceConfigurationPolicy!
 
     """
     Updates the attributes configuration policy with the given identifier.
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     updateCodeIntelligenceConfigurationPolicy(
         id: ID!
         repositoryPatterns: [String!]
@@ -120,7 +130,11 @@ extend type Mutation {
         indexingEnabled: Boolean!
         indexCommitMaxAgeHours: Int
         indexIntermediateCommits: Boolean!
-        embeddingsEnabled: Boolean!
+
+        """
+        embeddingsEnabled, if not provided, currently defaults to false.
+        """
+        embeddingsEnabled: Boolean
     ): EmptyResponse
 
     """
