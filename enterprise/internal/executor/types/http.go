@@ -39,14 +39,10 @@ type MarkErroredRequest struct {
 }
 
 type HeartbeatRequest struct {
-	// TODO: This field is set to become unneccesary in Sourcegraph 4.4.
-	Version ExecutorAPIVersion `json:"version"`
-
-	ExecutorName string `json:"executorName"`
-	JobIDs       []int  `json:"jobIds"`
+	ExecutorName string   `json:"executorName"`
+	JobIDs       []string `json:"jobIds"`
 
 	// Telemetry data.
-
 	OS              string `json:"os"`
 	Architecture    string `json:"architecture"`
 	DockerVersion   string `json:"dockerVersion"`
