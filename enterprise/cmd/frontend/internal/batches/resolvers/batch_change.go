@@ -114,7 +114,7 @@ func (r *batchChangeResolver) LastAppliedAt() *gqlutil.DateTime {
 func (r *batchChangeResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
 	r.canAdministerOnce.Do(func() {
 		svc := service.New(r.store)
-		r.canAdminister, r.canAdministerErr = svc.CanAdministerInNamespace(ctx, r.batchChange.NamespaceUserID, r.batchChange.NamespaceOrgID)
+		r.canAdminister, r.canAdministerErr = svc.CheckViewerCanAdminister(ctx, r.batchChange.NamespaceUserID, r.batchChange.NamespaceOrgID)
 	})
 	return r.canAdminister, r.canAdministerErr
 }

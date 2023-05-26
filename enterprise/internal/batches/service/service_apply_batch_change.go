@@ -10,7 +10,6 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -66,7 +65,9 @@ func (s *Service) ApplyBatchChange(
 	}
 
 	// 🚨 SECURITY: Only site-admins or the creator of batchSpec can apply it.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, s.store.DatabaseDB(), batchSpec.UserID); err != nil {
+	// If the batch change belongs to an org namespace, org members will be able to access it if
+	// the `orgs.allMembersBatchChangesAdmin` setting is true.
+	if err := s.checkViewerCanAdminister(ctx, batchSpec.NamespaceOrgID, batchSpec.UserID, false); err != nil {
 		return nil, err
 	}
 

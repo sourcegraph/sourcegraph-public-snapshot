@@ -622,7 +622,7 @@ func (r *batchSpecResolver) computeState(ctx context.Context) (btypes.BatchSpecS
 func (r *batchSpecResolver) computeCanAdminister(ctx context.Context) (bool, error) {
 	r.canAdministerOnce.Do(func() {
 		svc := service.New(r.store)
-		r.canAdminister, r.canAdministerErr = svc.CanAdministerInNamespace(ctx, r.batchSpec.NamespaceUserID, r.batchSpec.NamespaceOrgID)
+		r.canAdminister, r.canAdministerErr = svc.CheckViewerCanAdminister(ctx, r.batchSpec.NamespaceUserID, r.batchSpec.NamespaceOrgID)
 	})
 	return r.canAdminister, r.canAdministerErr
 }
