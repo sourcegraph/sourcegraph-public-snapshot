@@ -462,8 +462,8 @@ See the [migration docs for Kustomize](kustomize/migrate.md) for more informatio
 
 ## Upgrade
 
-- See the [Updating Sourcegraph docs](update.md) on how to upgrade.<br/>
-- See the [Updating a Kubernetes Sourcegraph instance docs](../../updates/kubernetes.md) for details on changes in each version to determine if manual migration steps are necessary.
+- See the [Updating Sourcegraph docs](../../updates/index.md) on how to upgrade.<br/>
+- See the [Updating a Kubernetes Sourcegraph instance docs](../kubernetes/upgrade.md) for details on changes in each version to determine if manual migration steps are necessary.
 
 ## Troubleshoot
 

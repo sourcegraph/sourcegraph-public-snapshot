@@ -1268,6 +1268,7 @@ ts_project(
         "src/repo/blob/own/FileOwnershipEntry.tsx",
         "src/repo/blob/own/FileOwnershipPanel.tsx",
         "src/repo/blob/own/HistoryAndOwnBar.tsx",
+        "src/repo/blob/own/OwnershipBadge.tsx",
         "src/repo/blob/own/grapqlQueries.ts",
         "src/repo/blob/panel/BlobPanel.tsx",
         "src/repo/blob/use-blob-store.ts",
@@ -1689,7 +1690,6 @@ ts_project(
         "//:node_modules/@opentelemetry/resources",
         "//:node_modules/@opentelemetry/sdk-trace-base",
         "//:node_modules/@opentelemetry/semantic-conventions",
-        "//:node_modules/@reach/accordion",
         "//:node_modules/@reach/combobox",
         "//:node_modules/@reach/tabs",  #keep
         "//:node_modules/@reach/visually-hidden",
