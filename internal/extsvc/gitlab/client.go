@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/log"
@@ -25,7 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -54,7 +55,7 @@ func init() {
 	}()
 }
 
-func trace(msg string, ctx ...any) {
+func logTrace(msg string, ctx ...any) {
 	if atomic.LoadInt32(&traceEnabled) == 1 {
 		log15.Info(fmt.Sprintf("TRACE %s", msg), ctx...)
 	}
@@ -277,17 +278,15 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (respons
 func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	var resp *http.Response
 
-	span, ctx := ot.StartSpanFromContext(ctx, "GitLab") //nolint:staticcheck // OT is deprecated
-	span.SetTag("URL", req.URL.String())
+	tr, ctx := trace.New(ctx, "GitLab", "",
+		attribute.Stringer("url", req.URL))
 	defer func() {
-		if err != nil {
-			span.SetTag("error", err.Error())
-		}
 		if resp != nil {
-			span.SetTag("status", resp.Status)
+			tr.SetAttributes(attribute.String("status", resp.Status))
 		}
-		span.Finish()
+		tr.FinishWithErr(&err)
 	}()
+	req = req.WithContext(ctx)
 
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	// Prevent the CachedTransportOpt from caching client side, but still use ETags
@@ -299,7 +298,7 @@ func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result an
 		c.externalRateLimiter.Update(resp.Header)
 	}
 	if err != nil {
-		trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
+		logTrace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
 		return nil, 0, errors.Wrap(err, "request failed")
 	}
 
