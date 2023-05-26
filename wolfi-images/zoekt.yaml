@@ -1,5 +1,7 @@
 include: ./sourcegraph-base.yaml
 
+# Used by both indexed-searcher and search-indexer
+
 contents:
   packages:
     # Included by existing SG base image
@@ -11,6 +13,7 @@ contents:
     - jansson
     - ctags@sourcegraph
 
+# Paths for both indexed-searcher and search-indexer
 paths:
   - path: /data
     type: directory
@@ -23,4 +26,4 @@ paths:
     gid: 101
     permissions: 0o755
 
-# MANUAL REBUILD: 
+# MANUAL REBUILD:

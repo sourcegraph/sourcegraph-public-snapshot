@@ -14,7 +14,7 @@ container_dependencies(DEPS)
 
 oci_image(
     name = "image",
-    base = "@wolfi_search_indexer_base",
+    base = "@wolfi_zoekt_base",
     cmd = [
         "/sbin/tini",
         "--",

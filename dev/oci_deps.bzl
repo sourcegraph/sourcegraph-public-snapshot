@@ -74,9 +74,9 @@ def oci_deps():
     )
 
     oci_pull(
-        name = "wolfi_search_indexer_base",
+        name = "wolfi_zoekt_base",
         digest = "sha256:d3af56ce7dcaff85c2c48d3fcd2f2059365fb50beb8e545e08b8519ccc0e67e3",
-        image = "us.gcr.io/sourcegraph-dev/wolfi-search-indexer-base",
+        image = "us.gcr.io/sourcegraph-dev/wolfi-zoekt-base",
     )
 
     oci_pull(

@@ -24,17 +24,5 @@ paths:
     uid: 100
     gid: 101
     permissions: 0o755
-  # Used by indexed-searcher
-  - path: /data
-    type: directory
-    uid: 100
-    gid: 101
-    permissions: 0o755
-  # Used by indexed-searcher
-  - path: /data/index
-    type: directory
-    uid: 100
-    gid: 101
-    permissions: 0o755
 
-# MANUAL REBUILD: 
+# MANUAL REBUILD:
