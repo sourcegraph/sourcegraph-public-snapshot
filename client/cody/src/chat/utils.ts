@@ -151,17 +151,18 @@ export class CodebaseCandidate {
         // context.
         return (
             !!other &&
-            ((this.configCodebase && this.configCodebase === other.configCodebase) ||
-                (this.closestGit === other.closestGit && this.workspaceRoot === other.workspaceRoot))
+            this.closestGit === other.closestGit &&
+            this.workspaceRoot === other.workspaceRoot &&
+            this.configCodebase === other.configCodebase
         )
     }
 
     // Gets the codebase to attempt to use for this candidate.
     public get codebase(): string | undefined {
         return (
-            this.configCodebase ||
             (this.closestGit && maybeGetCodebaseFromDirectory(this.closestGit)) ||
-            (this.workspaceRoot && maybeGetCodebaseFromDirectory(this.workspaceRoot))
+            (this.workspaceRoot && maybeGetCodebaseFromDirectory(this.workspaceRoot)) ||
+            this.configCodebase
         )
     }
 }
