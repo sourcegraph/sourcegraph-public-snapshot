@@ -52,3 +52,10 @@ container_structure_test(
     image = ":image",
     tags = ["requires-network"],
 )
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    remote_tags = "//:tags",
+    repository = image_repository("loadtest"),
+)
