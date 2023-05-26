@@ -39,8 +39,8 @@ type MarkErroredRequest struct {
 }
 
 type QueueJobIDs struct {
-	QueueName string `json:"queueName"`
-	JobIDs    []int  `json:"jobIds"`
+	QueueName string   `json:"queueName"`
+	JobIDs    []string `json:"jobIds"`
 }
 
 type HeartbeatRequest struct {
@@ -63,8 +63,8 @@ type HeartbeatRequest struct {
 }
 
 type HeartbeatResponse struct {
-	KnownIDs  []string `json:"knownIds"`
-	CancelIDs []string `json:"cancelIds"`
+	KnownIDs  []string `json:"knownIds,omitempty"`
+	CancelIDs []string `json:"cancelIds,omitempty"`
 
 	// Used by multi-queue executors.
 	// One of KnownIDsByQueue or KnownIDs must be set.
