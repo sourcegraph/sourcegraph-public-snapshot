@@ -267,7 +267,7 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatche
 	if rg.re != nil {
 		tr.SetAttributes(attribute.Stringer("re", rg.re))
 	}
-	tr.SetAttributes(attribute.Stringer("re", rg.matchPath))
+	tr.SetAttributes(attribute.Stringer("path", rg.matchPath))
 
 	if !patternMatchesContent && !patternMatchesPaths {
 		patternMatchesContent = true
