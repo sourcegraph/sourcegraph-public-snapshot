@@ -8,4 +8,4 @@ export {
     SetupStepsContext,
 } from './SetupSteps'
 
-export type { StepConfiguration } from './SetupSteps'
+export type { StepConfiguration, StepComponentProps } from './SetupSteps'

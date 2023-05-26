@@ -10,7 +10,7 @@ export {
     SetupStepsContext,
 } from './setup-steps'
 
-export type { StepConfiguration } from './setup-steps'
+export type { StepConfiguration, StepComponentProps } from './setup-steps'
 
 export {
     LocalRepositoriesStep,
