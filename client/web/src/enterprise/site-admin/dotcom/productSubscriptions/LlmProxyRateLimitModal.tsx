@@ -65,6 +65,7 @@ export const LLMProxyRateLimitModal: React.FunctionComponent<React.PropsWithChil
                             chatCompletionsRateLimit: mode === 'chat' ? limit : undefined,
                             chatCompletionsRateLimitIntervalSeconds: mode === 'chat' ? limitInterval : undefined,
                             chatCompletionsAllowedModels: mode === 'chat' ? splitModels(allowedModels) : undefined,
+
                             codeCompletionsRateLimit: mode === 'code' ? limit : undefined,
                             codeCompletionsRateLimitIntervalSeconds: mode === 'code' ? limitInterval : undefined,
                             codeCompletionsAllowedModels: mode === 'code' ? splitModels(allowedModels) : undefined,

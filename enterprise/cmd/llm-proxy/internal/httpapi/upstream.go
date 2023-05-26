@@ -38,11 +38,11 @@ func makeUpstreamHandler[ReqT any](
 	reqTrans requestTransformer,
 	respParser responseParser[ReqT],
 ) http.Handler {
-	logger := baseLogger.Scoped(strings.ToLower(upstreamName), fmt.Sprintf("%s upstream handler", upstreamName))
+	baseLogger = baseLogger.Scoped(strings.ToLower(upstreamName), fmt.Sprintf("%s upstream handler", upstreamName))
 
 	return rateLimit(baseLogger, eventLogger, limiter.NewPrefixRedisStore("rate_limit:", rs), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		act := actor.FromContext(r.Context())
-		logger := act.Logger(sgtrace.Logger(r.Context(), logger))
+		logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))
 
 		feature, err := extractFeature(r)
 		if err != nil {
@@ -53,7 +53,11 @@ func makeUpstreamHandler[ReqT any](
 		// This will never be nil as the rate limiter middleware checks this before.
 		// TODO: Should we read the rate limit from context, and store it in the rate
 		// limiter to make this less dependent on these two logics to remain the same?
-		rateLimit := act.RateLimits[feature]
+		rateLimit, ok := act.RateLimits[feature]
+		if !ok {
+			response.JSONError(logger, w, http.StatusInternalServerError, errors.Wrapf(err, "rate limit for %q not found", string(feature)))
+			return
+		}
 
 		// Parse the request body.
 		var body ReqT

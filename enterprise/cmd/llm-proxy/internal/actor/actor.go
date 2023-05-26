@@ -95,7 +95,8 @@ func WithActor(ctx context.Context, a *Actor) context.Context {
 
 func (a *Actor) Limiter(redis limiter.RedisStore, feature types.CompletionsFeature) (limiter.Limiter, bool) {
 	if a == nil {
-		return &limiter.StaticLimiter{}, true
+		// Not logged in, no limit applicable.
+		return nil, false
 	}
 	limit, ok := a.RateLimits[feature]
 	if !ok {

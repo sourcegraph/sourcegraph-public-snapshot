@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/events"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/response"
 	llmproxy "github.com/sourcegraph/sourcegraph/enterprise/internal/llm-proxy"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -20,15 +21,16 @@ type Authenticator struct {
 
 func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logger := trace.Logger(r.Context(), a.Logger)
 		token, err := ExtractBearer(r.Header)
 		if err != nil {
-			response.JSONError(a.Logger, w, http.StatusBadRequest, err)
+			response.JSONError(logger, w, http.StatusBadRequest, err)
 			return
 		}
 
 		act, err := a.Sources.Get(r.Context(), token)
 		if err != nil {
-			response.JSONError(a.Logger, w, http.StatusUnauthorized, err)
+			response.JSONError(logger, w, http.StatusUnauthorized, err)
 
 			err := a.EventLogger.LogEvent(
 				r.Context(),
@@ -39,14 +41,14 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 				},
 			)
 			if err != nil {
-				a.Logger.Error("failed to log event", log.Error(err))
+				logger.Error("failed to log event", log.Error(err))
 			}
 			return
 		}
 
 		if !act.AccessEnabled {
 			response.JSONError(
-				a.Logger,
+				logger,
 				w,
 				http.StatusForbidden,
 				errors.New("LLM proxy access not enabled"),
@@ -61,7 +63,7 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 				},
 			)
 			if err != nil {
-				a.Logger.Error("failed to log event", log.Error(err))
+				logger.Error("failed to log event", log.Error(err))
 			}
 			return
 		}
