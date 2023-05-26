@@ -76,6 +76,13 @@ export const FileOwnershipPanel: React.FunctionComponent<
                 <OwnExplanation owners={nodes.map(ownership => ownership.owner)} />
                 <table className={styles.table}>
                     <thead>
+                        <tr className="sr-only">
+                            <th>Contact</th>
+                            <th>Owner</th>
+                            <th>Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody>
                         <tr>
                             <th colSpan={3}>
                                 {data.node.commit.blob.ownership.totalOwners === 0 ? (
@@ -85,13 +92,6 @@ export const FileOwnershipPanel: React.FunctionComponent<
                                 )}
                             </th>
                         </tr>
-                        <tr className="sr-only">
-                            <th>Contact</th>
-                            <th>Owner</th>
-                            <th>Reason</th>
-                        </tr>
-                    </thead>
-                    <tbody>
                         {nodes
                             .filter(ownership =>
                                 ownership.reasons.some(
@@ -120,54 +120,42 @@ export const FileOwnershipPanel: React.FunctionComponent<
                                 data.node.commit.blob.ownership.nodes.length >
                                     data.node.commit.blob.ownership.totalOwners && <tr className={styles.bordered} />
                         }
-                    </tbody>
-                    {data.node.commit.blob.ownership.nodes.length > data.node.commit.blob.ownership.totalOwners && (
-                        <>
-                            <thead>
-                                <tr>
-                                    <th colSpan={3}>
-                                        <H4 className="mt-3 mb-2">Inference signals</H4>
-                                        <Text className={styles.ownInferenceExplanation}>
-                                            These users have viewed or contributed to the file but are not registered
-                                            owners of the file.
-                                        </Text>
-                                    </th>
-                                </tr>
-                                <tr className="sr-only">
-                                    <th>Contact</th>
-                                    <th>Owner</th>
-                                    <th>Reason</th>
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                {nodes
-                                    .filter(
-                                        ownership =>
-                                            !ownership.reasons.some(
-                                                reason =>
-                                                    reason.__typename === 'CodeownersFileEntry' ||
-                                                    reason.__typename === 'AssignedOwner'
-                                            )
+                        {data.node.commit.blob.ownership.nodes.length > data.node.commit.blob.ownership.totalOwners && (
+                            <tr>
+                                <th colSpan={3}>
+                                    <H4 className="mt-3 mb-2">Inference signals</H4>
+                                    <Text className={styles.ownInferenceExplanation}>
+                                        These users have viewed or contributed to the file but are not registered owners
+                                        of the file.
+                                    </Text>
+                                </th>
+                            </tr>
+                        )}
+                        {nodes
+                            .filter(
+                                ownership =>
+                                    !ownership.reasons.some(
+                                        reason =>
+                                            reason.__typename === 'CodeownersFileEntry' ||
+                                            reason.__typename === 'AssignedOwner'
                                     )
-                                    .map((ownership, index) => (
-                                        <>
-                                            {
-                                                // This list is not expected to change, so it's safe to use the index as a key.
-                                                // eslint-disable-next-line react/no-array-index-key
-                                                index > 0 && <tr key={2 * index} className={styles.bordered} />
-                                            }
-                                            <FileOwnershipEntry
-                                                // eslint-disable-next-line react/no-array-index-key
-                                                key={2 * index + 1}
-                                                owner={ownership.owner}
-                                                reasons={ownership.reasons}
-                                            />
-                                        </>
-                                    ))}
-                            </tbody>
-                        </>
-                    )}
+                            )
+                            .map((ownership, index) => (
+                                <>
+                                    {
+                                        // This list is not expected to change, so it's safe to use the index as a key.
+                                        // eslint-disable-next-line react/no-array-index-key
+                                        index > 0 && <tr key={2 * index} className={styles.bordered} />
+                                    }
+                                    <FileOwnershipEntry
+                                        // eslint-disable-next-line react/no-array-index-key
+                                        key={2 * index + 1}
+                                        owner={ownership.owner}
+                                        reasons={ownership.reasons}
+                                    />
+                                </>
+                            ))}
+                    </tbody>
                 </table>
             </div>
         )
