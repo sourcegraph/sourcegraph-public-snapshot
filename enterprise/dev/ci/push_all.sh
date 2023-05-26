@@ -49,18 +49,16 @@ function create_push_command() {
     repositories_args="$repositories_args --repository ${registry}/${repository}"
   done
 
-  file=$(bazel \
+  cmd="bazel \
     --bazelrc=.bazelrc \
     --bazelrc=.aspect/bazelrc/ci.bazelrc \
     --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
-    cquery \
+    run \
     "$target" \
     --stamp \
-    --workspace_status_command=./dev/bazel_stamp_vars.sh \
-    --output=files
-  )
+    --workspace_status_command=./dev/bazel_stamp_vars.sh"
 
-  echo "$file $tags_args $repositories_args"
+  echo "$cmd -- $tags_args $repositories_args"
 }
 
 images=$(bazel query 'kind("oci_push rule", //...)')
