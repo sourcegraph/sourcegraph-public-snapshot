@@ -41,8 +41,8 @@ func TestInsertPathCountInputs(t *testing.T) {
 	)
 	if _, err := db.ExecContext(ctx, `
 		WITH v AS (SELECT unnest('{42, 43, 90, 91, 92, 93, 94}'::integer[]))
-		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key)
-		SELECT id + 100, id, $1 FROM v AS v(id)
+		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key, upload_key)
+		SELECT id + 100, id, $1, (SELECT md5(u.repository_id::text || ':' || u.root) FROM lsif_uploads u WHERE u.id = v.id) FROM v AS v(id)
 	`,
 		mockRankingGraphKey,
 	); err != nil {
@@ -206,8 +206,8 @@ func TestInsertInitialPathCounts(t *testing.T) {
 	// N.B. This creates repository 50 implicitly
 	insertUploads(t, db, uploadsshared.Upload{ID: 4})
 	if _, err := db.ExecContext(ctx, `
-		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key)
-		VALUES (104, 4, $1)
+		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key, upload_key)
+		VALUES (104, 4, $1, md5('key-4'))
 	`,
 		mockRankingGraphKey,
 	); err != nil {
@@ -268,8 +268,8 @@ func TestVacuumStaleGraphs(t *testing.T) {
 	)
 	if _, err := db.ExecContext(ctx, `
 		WITH v AS (SELECT unnest('{1, 2, 3}'::integer[]))
-		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key)
-		SELECT id + 100, id, $1 FROM v AS v(id)
+		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key, upload_key)
+		SELECT id + 100, id, $1, md5('key-' || id::text) FROM v AS v(id)
 	`,
 		mockRankingGraphKey,
 	); err != nil {
