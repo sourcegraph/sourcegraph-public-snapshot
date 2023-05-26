@@ -197,7 +197,6 @@ func (m *MultiHandler) HandleHeartbeat(w http.ResponseWriter, r *http.Request) {
 	var payload executortypes.HeartbeatRequest
 
 	wrapHandler(w, r, &payload, m.logger, func() (int, any, error) {
-		m.logger.Info("HandleHeartbeat", log.Int("length job ids by queue", len(payload.JobIDsByQueue)))
 		e := types.Executor{
 			Hostname:        payload.ExecutorName,
 			QueueNames:      payload.QueueNames,
@@ -228,11 +227,11 @@ func (m *MultiHandler) HandleHeartbeat(w http.ResponseWriter, r *http.Request) {
 
 		knownIDs, cancelIDs, err := m.heartbeat(r.Context(), e, payload.JobIDsByQueue)
 
-		return http.StatusOK, executortypes.HeartbeatResponse{KnownIDsByQueue: knownIDs, CancelIDsByQueue: cancelIDs}, err
+		return http.StatusOK, executortypes.HeartbeatResponse{KnownIDs: knownIDs, CancelIDs: cancelIDs}, err
 	})
 }
 
-func (m *MultiHandler) heartbeat(ctx context.Context, executor types.Executor, idsByQueue []executortypes.QueueJobIDs) (knownIDs, cancelIDs []executortypes.QueueJobIDs, err error) {
+func (m *MultiHandler) heartbeat(ctx context.Context, executor types.Executor, idsByQueue []executortypes.QueueJobIDs) (knownIDs, cancelIDs []string, err error) {
 	if err = validateWorkerHostname(executor.Hostname); err != nil {
 		return nil, nil, err
 	}
@@ -259,18 +258,19 @@ func (m *MultiHandler) heartbeat(ctx context.Context, executor types.Executor, i
 		case m.CodeIntelQueueHandler.Name:
 			known, cancel, err = m.CodeIntelQueueHandler.Store.Heartbeat(ctx, queue.JobIDs, heartbeatOptions)
 		}
-		if len(known) > 0 {
-			knownIDs = append(knownIDs, executortypes.QueueJobIDs{
-				QueueName: queue.QueueName,
-				JobIDs:    known,
-			})
+
+		// TODO: this could move into the executor client's Heartbeat impl, but considering this is
+		// multi-queue specific code, it's a bit ambiguous where it should live. Having it here allows
+		// types.HeartbeatResponse to be simpler and enables the client to pass the ID sets back to the worker
+		// without further single/multi queue logic
+		for i, knownID := range known {
+			known[i] = knownID + "-" + queue.QueueName
 		}
-		if len(cancel) > 0 {
-			cancelIDs = append(cancelIDs, executortypes.QueueJobIDs{
-				QueueName: queue.QueueName,
-				JobIDs:    cancel,
-			})
+		for i, cancelID := range cancel {
+			cancel[i] = cancelID + "-" + queue.QueueName
 		}
+		knownIDs = append(knownIDs, known...)
+		cancelIDs = append(cancelIDs, cancel...)
 	}
 
 	return knownIDs, cancelIDs, errors.Wrap(err, "multiqueue.UpsertHeartbeat")

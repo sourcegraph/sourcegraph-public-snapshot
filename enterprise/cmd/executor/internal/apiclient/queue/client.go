@@ -193,6 +193,7 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, canc
 		endpoint = "/heartbeat"
 		queueJobIDs, err := parseJobIDs(jobIDs)
 		if err != nil {
+			c.logger.Error("failed to parse job IDs", log.Error(err))
 			return nil, nil, err
 		}
 		heartbeatRequest.JobIDsByQueue = queueJobIDs
@@ -238,6 +239,7 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, canc
 
 func parseJobIDs(jobIDs []string) ([]types.QueueJobIDs, error) {
 	var queueJobIDs []types.QueueJobIDs
+	queueIds := map[string][]string{}
 	for _, stringID := range jobIDs {
 		parts := strings.Split(stringID, "-")
 		if len(parts) != 2 {
@@ -246,19 +248,14 @@ func parseJobIDs(jobIDs []string) ([]types.QueueJobIDs, error) {
 
 		id, queueName := parts[0], parts[1]
 
-		var queue *types.QueueJobIDs
-		for i, q := range queueJobIDs {
-			if q.QueueName == queueName {
-				queue = &queueJobIDs[i]
-				break
-			}
+		if _, ok := queueIds[queueName]; ok {
+			queueIds[queueName] = append(queueIds[queueName], id)
+		} else {
+			queueIds[queueName] = []string{id}
 		}
-
-		if queue == nil {
-			queue = &types.QueueJobIDs{QueueName: queueName}
-			queueJobIDs = append(queueJobIDs, *queue)
-		}
-		queue.JobIDs = append(queue.JobIDs, id)
+	}
+	for q, ids := range queueIds {
+		queueJobIDs = append(queueJobIDs, types.QueueJobIDs{QueueName: q, JobIDs: ids})
 	}
 	return queueJobIDs, nil
 }
@@ -290,15 +287,9 @@ func gatherMetrics(logger log.Logger, gatherer prometheus.Gatherer) (string, err
 func (c *Client) Ping(ctx context.Context) (err error) {
 	var req *http.Request
 	if len(c.options.QueueNames) > 0 {
-		var jobIDsByQueue []types.QueueJobIDs
-		for _, queueName := range c.options.QueueNames {
-			jobIDsByQueue = append(jobIDsByQueue, types.QueueJobIDs{
-				QueueName: queueName,
-			})
-		}
 		req, err = c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("/heartbeat"), types.HeartbeatRequest{
-			ExecutorName:  c.options.ExecutorName,
-			JobIDsByQueue: jobIDsByQueue,
+			ExecutorName: c.options.ExecutorName,
+			QueueNames:   c.options.QueueNames,
 		})
 	} else {
 		req, err = c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", c.options.QueueName), types.HeartbeatRequest{

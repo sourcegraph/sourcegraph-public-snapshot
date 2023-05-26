@@ -64,12 +64,6 @@ type HeartbeatRequest struct {
 }
 
 type HeartbeatResponse struct {
-	KnownIDs  []string `json:"knownIds,omitempty"`
-	CancelIDs []string `json:"cancelIds,omitempty"`
-
-	// Used by multi-queue executors.
-	// One of KnownIDsByQueue or KnownIDs must be set.
-	// One of CancelIDsByQueue or CancelIDs must be set.
-	KnownIDsByQueue  []QueueJobIDs `json:"knownIdsByQueue,omitempty"`
-	CancelIDsByQueue []QueueJobIDs `json:"cancelIdsByQueue,omitempty"`
+	KnownIDs  []string `json:"knownIds"`
+	CancelIDs []string `json:"cancelIds"`
 }
