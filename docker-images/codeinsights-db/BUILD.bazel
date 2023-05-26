@@ -28,7 +28,7 @@ oci_image(
         "POSTGRES_PASSWORD": "",
         "POSTGRES_USER": "sg",
         "POSTGRES_DB": "sg",
-        "PGDATA": "/data/pgdata-12",
+        "PGDATA": "/var/lib/postgresql/data",
         "LANG": "en_US.utf8",
         "PGHOST": "/var/run/postgresql",
     },
