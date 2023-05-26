@@ -35,9 +35,6 @@ func init() {
 			c := conf.Get()
 
 			configuration := c.SiteConfig().SyntaxHighlighting
-			if configuration == nil {
-				return
-			}
 
 			// Set the defaults
 			parserConfig.Engine = make(map[string]ctags_config.ParserType)
@@ -45,9 +42,11 @@ func init() {
 				parserConfig.Engine[lang] = engine
 			}
 
-			for lang, engine := range configuration.Symbols.Engine {
-				if engine, err := ctags_config.ParserNameToParserType(engine); err != nil {
-					parserConfig.Engine[lang] = engine
+			if configuration != nil {
+				for lang, engine := range configuration.Symbols.Engine {
+					if engine, err := ctags_config.ParserNameToParserType(engine); err != nil {
+						parserConfig.Engine[lang] = engine
+					}
 				}
 			}
 		})
