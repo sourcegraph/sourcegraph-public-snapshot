@@ -191,7 +191,7 @@
       },
       {
         "command": "cody.recipe.file-flow",
-        "title": "Ask Cody: Generate New File"
+        "title": "Cody: File Flow"
       }
     ],
     "keybindings": [

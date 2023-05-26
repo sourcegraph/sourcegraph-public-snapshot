@@ -6,6 +6,8 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Added
 
+- Inline Assist Recipe: File Flow. It automates file creation with tailored content based on the selected code. [pull/52511](https://github.com/sourcegraph/sourcegraph/pull/52511)
+
 ### Fixed
 
 ### Changed
