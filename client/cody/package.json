@@ -95,6 +95,10 @@
     },
     "commands": [
       {
+        "command": "cody.recipe.optimize-code",
+        "title": "Ask Cody: Optimize Code"
+      },
+      {
         "command": "cody.recipe.explain-code",
         "title": "Ask Cody: Explain Code in Detail"
       },
@@ -220,6 +224,10 @@
           "when": "cody.activated"
         },
         {
+          "command": "cody.recipe.optimize-code",
+          "when": "cody.activated"
+        },
+        {
           "command": "cody.recipe.explain-code-high-level",
           "when": "cody.activated"
         },
@@ -278,6 +286,10 @@
       "cody.submenu": [
         {
           "command": "cody.recipe.explain-code",
+          "when": "cody.activated"
+        },
+        {
+          "command": "cody.recipe.optimize-code",
           "when": "cody.activated"
         },
         {
