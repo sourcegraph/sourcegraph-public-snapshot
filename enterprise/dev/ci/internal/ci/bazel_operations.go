@@ -129,7 +129,7 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 	// Test commands
 	bazelTestCmds := []bk.StepOpt{}
 	for _, target := range targets {
-		cmd := bazelCmd(fmt.Sprintf("test %s --generate_json_trace_profile", target))
+		cmd := bazelCmd(fmt.Sprintf("--generate_json_trace_profile --profile=command.profile.gz --experimental_announce_profile_path test %s", target))
 		bazelTestCmds = append(bazelTestCmds,
 			bazelAnnouncef("bazel test %s", target),
 			bk.Cmd(cmd))
