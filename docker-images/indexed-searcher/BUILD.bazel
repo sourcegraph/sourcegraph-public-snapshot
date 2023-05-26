@@ -19,7 +19,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = "@wolfi_search_indexer_base",
+    base = "@wolfi_base",
     entrypoint = [
         "/entry.sh",
     ],
