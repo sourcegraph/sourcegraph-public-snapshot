@@ -58,7 +58,7 @@ function create_push_command() {
     --stamp \
     --workspace_status_command=./dev/bazel_stamp_vars.sh"
 
-  echo "$cmd -- $tags_args $repositories_args"
+  echo "echo \"--- :bazel:docker: pushing $repository\" && $cmd -- $tags_args $repositories_args && echo \"--- \""
 }
 
 images=$(bazel query 'kind("oci_push rule", //...)')
