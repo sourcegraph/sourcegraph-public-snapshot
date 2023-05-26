@@ -130,7 +130,7 @@ func TestCancelRepoEmbeddingJob(t *testing.T) {
 	require.Equal(t, true, jobs[1].Cancel)
 
 	// Attempting to cancel a non-existent job should fail
-	err = store.CancelRepoEmbeddingJob(ctx, id1 + 42)
+	err = store.CancelRepoEmbeddingJob(ctx, id1+42)
 	require.Error(t, err)
 
 	// Attempting to cancel a completed job should fail

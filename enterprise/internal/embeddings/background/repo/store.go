@@ -20,7 +20,7 @@ import (
 )
 
 type RepoEmbeddingJobNotFoundErr struct {
-	repoID   api.RepoID
+	repoID api.RepoID
 }
 
 func (r *RepoEmbeddingJobNotFoundErr) Error() string {
