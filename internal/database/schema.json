@@ -1205,10 +1205,10 @@
     },
     {
       "Name": "user_repo_permissions_id_seq",
-      "TypeName": "integer",
+      "TypeName": "bigint",
       "StartValue": 1,
       "MinimumValue": 1,
-      "MaximumValue": 2147483647,
+      "MaximumValue": 9223372036854775807,
       "Increment": 1,
       "CycleOption": "NO"
     },
@@ -7917,6 +7917,16 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
+          "Name": "codeintel_ranking_exports_graph_key_deleted_at_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_ranking_exports_graph_key_deleted_at_id ON codeintel_ranking_exports USING btree (graph_key, deleted_at DESC, id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "codeintel_ranking_exports_graph_key_last_scanned_at",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -8113,34 +8123,8 @@
           "Comment": ""
         },
         {
-          "Name": "max_definition_id",
-          "Index": 17,
-          "TypeName": "bigint",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "max_path_id",
-          "Index": 19,
-          "TypeName": "bigint",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "max_reference_id",
-          "Index": 18,
+          "Name": "max_export_id",
+          "Index": 20,
           "TypeName": "bigint",
           "IsNullable": false,
           "Default": "",
@@ -25289,7 +25273,7 @@
         {
           "Name": "id",
           "Index": 1,
-          "TypeName": "integer",
+          "TypeName": "bigint",
           "IsNullable": false,
           "Default": "nextval('user_repo_permissions_id_seq'::regclass)",
           "CharacterMaximumLength": 0,

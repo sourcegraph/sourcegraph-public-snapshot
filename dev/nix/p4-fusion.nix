@@ -9,11 +9,9 @@ let
     , fetchFromGitHub
     , cmake
     , http-parser
-    , libcxx
-    , libcxxabi
     , libiconv
     , libssh2
-    , openssl_1_1
+    , openssl
     , patchelf
     , pcre
     , pkg-config
@@ -35,7 +33,7 @@ let
         '';
       }));
       libiconv-static = makeStatic libiconv;
-      openssl-static = (openssl_1_1.override { static = true; }).dev;
+      openssl-static = (openssl.override { static = true; }).dev;
       pcre-static = (makeStatic pcre).dev;
     in
     pkgs.gccStdenv.mkDerivation rec {
@@ -56,21 +54,21 @@ let
               fetchzip
                 {
                   name = "helix-core-api";
-                  url = "https://cdist2.perforce.com/perforce/r22.2/bin.macosx12arm64/p4api-openssl1.1.1.tgz";
-                  hash = "sha256-YO7p24PuedTn2pVq/roF2u5zqS6byaG9N2gCbGVrpv0=";
+                  url = "https://cdist2.perforce.com/perforce/r22.2/bin.macosx12arm64/p4api-openssl3.tgz";
+                  hash = "sha256-gKSBdSZru+91a55sw9JvZkU0Q3U5kdkQ252wJgDlclg=";
                 }
             else
               fetchzip {
                 name = "helix-core-api";
-                url = "https://cdist2.perforce.com/perforce/r22.2/bin.macosx12x86_64/p4api-openssl1.1.1.tgz";
-                hash = "sha256-gaYvQOX8nvMIMHENHB0+uklyLcmeXT5gjGGcVC9TTtE=";
+                url = "https://cdist2.perforce.com/perforce/r22.2/bin.macosx12x86_64/p4api-openssl3.tgz";
+                hash = "sha256-E5oK/uvRRNuEC5b8h5zQVdfZOieUgV2T8aPISEWgSY8=";
               }
           else if targetPlatform.isLinux then
             fetchzip
               {
                 name = "helix-core-api";
-                url = "https://cdist2.perforce.com/perforce/r22.2/bin.linux26x86_64/p4api-glibc2.3-openssl1.1.1.tgz";
-                hash = "sha256-JkWG4ImrTzN0UuSMelG8zsH7YRlL1mXs9lpB5GptUb4=";
+                url = "https://cdist2.perforce.com/perforce/r22.2/bin.linux26x86_64/p4api-glibc2.3-openssl3.tgz";
+                hash = "sha256-wovk38lk4cjrC6pTa9dSwmYM1RN1nzmzdl8VIwf2BLY=";
               }
           else throw "unsupported platform ${stdenv.targetPlatform.parsed.kernel.name}"
         )
