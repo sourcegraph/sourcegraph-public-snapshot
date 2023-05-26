@@ -55,7 +55,7 @@ func MaybeDecrypt(ctx context.Context, key Key, data, keyIdent string) (string, 
 	tr.FinishWithErr(&err)
 	if err != nil {
 		tr, innerCtx = trace.New(ctx, "key", "Version")
-		version, versionErr := key.Version(ctx)
+		version, versionErr := key.Version(innerCtx)
 		tr.FinishWithErr(&versionErr)
 		if versionErr == nil && keyIdent != version.JSON() {
 			return "", errors.New("key mismatch: value is encrypted with an encryption key distinct from the one available in site-config")
