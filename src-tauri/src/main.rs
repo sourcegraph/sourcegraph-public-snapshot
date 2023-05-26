@@ -14,6 +14,8 @@ use std::sync::RwLock;
 use tauri::Manager;
 use tauri_utils::config::RemoteDomainAccessScope;
 
+struct BackendProcessId(u32);
+
 #[cfg(not(target_os = "macos"))]
 use common::is_scheme_url;
 
@@ -150,7 +152,12 @@ fn main() {
         // its name which may suggest that it invokes something, actually only
         // *defines* an invoke() handler and does not invoke anything during
         // setup here.)
-        .invoke_handler(tauri::generate_handler![get_launch_path, app_shell_loaded, show_main_window, reload_cody_window])
+        .invoke_handler(tauri::generate_handler![
+            get_launch_path,
+            app_shell_loaded,
+            show_main_window,
+            reload_cody_window
+        ])
         .run(context)
         .expect("error while running tauri application");
 }
@@ -176,11 +183,13 @@ fn start_embedded_services(handle: &tauri::AppHandle) {
     let sidecar = "sourcegraph-backend";
     let args = get_sourcegraph_args(&app);
     println!("Sourcegraph starting with args: {:?}", args);
-    let (mut rx, _child) = Command::new_sidecar(sidecar)
+    let (mut rx, child) = Command::new_sidecar(sidecar)
         .expect(format!("failed to create `{sidecar}` binary command").as_str())
         .args(args)
         .spawn()
         .expect(format!("failed to spawn {sidecar} sidecar").as_str());
+
+    app.manage(BackendProcessId(child.pid()));
 
     tauri::async_runtime::spawn(async move {
         while let Some(event) = rx.recv().await {
