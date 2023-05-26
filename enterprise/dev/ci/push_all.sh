@@ -53,7 +53,7 @@ function create_push_command() {
     --bazelrc=.bazelrc \
     --bazelrc=.aspect/bazelrc/ci.bazelrc \
     --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
-    query \
+    cquery \
     "$target" \
     --stamp \
     --workspace_status_command=./dev/bazel_stamp_vars.sh \
