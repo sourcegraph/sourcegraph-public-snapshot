@@ -110,6 +110,7 @@ def oci_deps():
         name = "wolfi_batcheshelper_base",
         digest = "sha256:2abe940a2d9e13a998d07e4faf072c7ba6e17243a0b9c56a3adf9878d9332f6a",
         image = "us.gcr.io/sourcegraph-dev/wolfi-batcheshelper-base",
+    )
 
     oci_pull(
         name = "wolfi_prometheus_base",
@@ -140,4 +141,5 @@ def oci_deps():
         digest = "sha256:d5d55fb77056422eea328b709795a38cf599e42f2a90787c9dd32c2f1a3654f3",
         image = "us.gcr.io/sourcegraph-dev/wolfi-opentelemetry-collector-base",
     )
+
 
