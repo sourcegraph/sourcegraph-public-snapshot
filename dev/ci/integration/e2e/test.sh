@@ -3,7 +3,7 @@
 cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
 set -e
 
-URL="${1:-"http://localhost:7080"}"
+# URL="${1:-"http://localhost:7080"}"
 
 echo "--- bazel test e2e"
 bazel \

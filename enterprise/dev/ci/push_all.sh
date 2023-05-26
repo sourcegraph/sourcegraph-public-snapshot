@@ -26,7 +26,7 @@ if [[ "$BUILDKITE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   tags+=("${BUILDKITE_TAG:1}")
 fi
 
-echo "--- :docker: tags"
+echo "--- :docker: Previewing tags"
 for tag in "${tags[@]}"; do
   for registry in "${registries[@]}"; do
     echo -e "\t ${registry}/\$IMAGE:${tag}"
@@ -42,7 +42,6 @@ done
 function create_push_command() {
   repository="$1"
   target="$2"
-  # echo "--- :bazel::docker: Pushing $repository"
 
   repositories_args=""
   for registry in "${registries[@]}"; do
@@ -54,7 +53,7 @@ function create_push_command() {
     --bazelrc=.aspect/bazelrc/ci.bazelrc \
     --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
     run \
-    "$target" \
+    $target \
     --stamp \
     --workspace_status_command=./dev/bazel_stamp_vars.sh"
 
@@ -62,16 +61,15 @@ function create_push_command() {
 }
 
 images=$(bazel query 'kind("oci_push rule", //...)')
-commands=()
 
 job_file=$(mktemp)
 # shellcheck disable=SC2064
 trap "rm -rf $job_file" EXIT
 
-for target in ${images[@]}; do
+for target in "${images[@]}"; do
   [[ "$target" =~ ([A-Za-z0-9_-]+): ]]
   name="${BASH_REMATCH[1]}"
-  echo $(create_push_command "$name" "$target") >> "$job_file"
+  create_push_command "$name" "$target" >> "$job_file"
 done
 
 echo "-- jobfile"
