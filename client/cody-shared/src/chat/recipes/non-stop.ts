@@ -20,9 +20,11 @@ export class NonStop implements Recipe {
             return null
         }
 
+        // TODO: Remove dependency on human input and use input box only
         const humanInput =
+            humanChatInput ||
             (await context.editor.showInputBox('Ask Cody to edit your code, or use /chat to ask a question.')) ||
-            humanChatInput
+            ''
 
         const taskID = controllers.task.add(humanInput, selection)
         if ((!humanInput && !selection.selectedText.trim()) || !taskID) {
