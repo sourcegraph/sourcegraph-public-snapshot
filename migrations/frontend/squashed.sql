@@ -1851,7 +1851,8 @@ CREATE TABLE codeintel_ranking_exports (
     locked_at timestamp with time zone DEFAULT now() NOT NULL,
     id integer NOT NULL,
     last_scanned_at timestamp with time zone,
-    deleted_at timestamp with time zone
+    deleted_at timestamp with time zone,
+    upload_key text
 );
 
 CREATE SEQUENCE codeintel_ranking_exports_id_seq

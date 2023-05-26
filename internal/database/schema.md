@@ -961,6 +961,7 @@ Foreign-key constraints:
  id              | integer                  |           | not null | nextval('codeintel_ranking_exports_id_seq'::regclass)
  last_scanned_at | timestamp with time zone |           |          | 
  deleted_at      | timestamp with time zone |           |          | 
+ upload_key      | text                     |           |          | 
 Indexes:
     "codeintel_ranking_exports_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_exports_graph_key_upload_id" UNIQUE, btree (graph_key, upload_id)
