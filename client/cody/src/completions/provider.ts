@@ -101,7 +101,7 @@ export abstract class CompletionProvider {
     public abstract generateCompletions(abortSignal: AbortSignal, n?: number): Promise<Completion[]>
 }
 
-export class MultilineCompletionProvider extends CompletionProvider {
+export class ManualCompletionProvider extends CompletionProvider {
     protected createPromptPrefix(): Message[] {
         // TODO(beyang): escape 'Human:' and 'Assistant:'
         const prefix = this.prefix.trim()
@@ -203,7 +203,7 @@ export class MultilineCompletionProvider extends CompletionProvider {
     }
 }
 
-export class EndOfLineCompletionProvider extends CompletionProvider {
+export class InlineCompletionProvider extends CompletionProvider {
     constructor(
         completionsClient: SourcegraphNodeCompletionsClient,
         promptChars: number,

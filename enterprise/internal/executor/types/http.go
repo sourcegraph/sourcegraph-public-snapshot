@@ -44,12 +44,9 @@ type QueueJobIDs struct {
 }
 
 type HeartbeatRequest struct {
-	// TODO: This field is set to become unneccesary in Sourcegraph 4.4.
-	Version ExecutorAPIVersion `json:"version"`
-
 	ExecutorName string `json:"executorName"`
-	JobIDs       []int  `json:"jobIds,omitempty"`
 
+	JobIDs []string `json:"jobIds"`
 	// Used by multi-queue executors. One of JobIDsByQueue or JobIDs must be set.
 	JobIDsByQueue []QueueJobIDs `json:"jobIdsByQueue,omitempty"`
 
@@ -65,25 +62,13 @@ type HeartbeatRequest struct {
 	PrometheusMetrics string `json:"prometheusMetrics"`
 }
 
-type ExecutorAPIVersion string
-
-const (
-	ExecutorAPIVersion2 ExecutorAPIVersion = "V2"
-)
-
 type HeartbeatResponse struct {
-	KnownIDs  []int `json:"knownIds,omitempty"`
-	CancelIDs []int `json:"cancelIds,omitempty"`
+	KnownIDs  []string `json:"knownIds"`
+	CancelIDs []string `json:"cancelIds"`
 
 	// Used by multi-queue executors.
 	// One of KnownIDsByQueue or KnownIDs must be set.
 	// One of CancelIDsByQueue or CancelIDs must be set.
 	KnownIDsByQueue  []QueueJobIDs `json:"knownIdsByQueue,omitempty"`
 	CancelIDsByQueue []QueueJobIDs `json:"cancelIdsByQueue,omitempty"`
-}
-
-// TODO: Deprecated. Can be removed in Sourcegraph 4.4.
-type CanceledJobsRequest struct {
-	KnownJobIDs  []int  `json:"knownJobIds"`
-	ExecutorName string `json:"executorName"`
 }

@@ -358,6 +358,9 @@ Available testsuites in `sg.config.yaml`:
 * bext-e2e
 * bext-integration
 * client
+* cody-e2e
+* cody-integration
+* cody-unit
 * docsite
 * web-e2e
 * web-integration

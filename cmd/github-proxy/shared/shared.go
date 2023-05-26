@@ -103,7 +103,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		}
 		cancel()
 
-		os.Exit(0)
 	}()
 
 	if err := s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
