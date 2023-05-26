@@ -9,9 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	opentracing "github.com/opentracing/opentracing-go"
+	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -94,9 +95,6 @@ type Query struct {
 	// time if the user's request ends up being a problematic one.
 	StabilizeTimeout time.Duration `json:"-"`
 
-	// Tracer, if not nil, will be used to record opentracing spans associated with the query.
-	Tracer opentracing.Tracer
-
 	// Which highlighting engine to use
 	Engine string `json:"engine"`
 }
@@ -146,9 +144,8 @@ type response struct {
 // Client represents a client connection to a syntect_server.
 type Client struct {
 	syntectServer string
+	httpClient    *http.Client
 }
-
-var client = &http.Client{Transport: &nethttp.Transport{}}
 
 func normalizeFiletype(filetype string) string {
 	normalized := strings.ToLower(filetype)
@@ -165,9 +162,15 @@ func IsTreesitterSupported(filetype string) bool {
 }
 
 // Highlight performs a query to highlight some code.
-func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightResponseType) (*Response, error) {
+func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightResponseType) (_ *Response, err error) {
 	// Normalize filetype
 	q.Filetype = normalizeFiletype(q.Filetype)
+
+	tr, ctx := trace.New(ctx, "gosyntect", "Highlight",
+		attribute.String("filepath", q.Filepath),
+		attribute.String("theme", q.Theme),
+		attribute.Bool("css", q.CSS))
+	defer tr.FinishWithErr(&err)
 
 	if isTreesitterBased(q.Engine) && !IsTreesitterSupported(q.Filetype) {
 		return nil, errors.New("Not a valid treesitter filetype")
@@ -190,7 +193,7 @@ func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightRespon
 		url = "/"
 	}
 
-	req, err := http.NewRequest("POST", c.url(url), bytes.NewReader(jsonQuery))
+	req, err := http.NewRequestWithContext(ctx, "POST", c.url(url), bytes.NewReader(jsonQuery))
 	if err != nil {
 		return nil, errors.Wrap(err, "building request")
 	}
@@ -199,19 +202,8 @@ func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightRespon
 		req.Header.Set("X-Stabilize-Timeout", q.StabilizeTimeout.String())
 	}
 
-	// Add tracing to the request.
-	tracer := q.Tracer
-	if tracer == nil {
-		tracer = opentracing.NoopTracer{}
-	}
-	req = req.WithContext(ctx)
-	req, ht := nethttp.TraceRequest(tracer, req,
-		nethttp.OperationName("Highlight"),
-		nethttp.ClientTrace(false))
-	defer ht.Finish()
-
 	// Perform the request.
-	resp, err := client.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("making request to %s", c.url("/")))
 	}
@@ -220,11 +212,6 @@ func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightRespon
 	if resp.StatusCode == http.StatusBadRequest {
 		return nil, ErrRequestTooLarge
 	}
-
-	// Can only call ht.Span() after the request has been executed, so add our span tags in now.
-	ht.Span().SetTag("Filepath", q.Filepath)
-	ht.Span().SetTag("Theme", q.Theme)
-	ht.Span().SetTag("CSS", q.CSS)
 
 	// Decode the response.
 	var r response
@@ -270,5 +257,6 @@ func (c *Client) url(path string) string {
 func New(syntectServer string) *Client {
 	return &Client{
 		syntectServer: strings.TrimSuffix(syntectServer, "/"),
+		httpClient:    httpcli.InternalClient,
 	}
 }
