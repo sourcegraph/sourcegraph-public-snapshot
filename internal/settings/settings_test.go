@@ -1,12 +1,106 @@
 package settings
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+func TestRelevantSettings(t *testing.T) {
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	org1, err := db.Orgs().Create(ctx, "org1", nil)
+	require.NoError(t, err)
+
+	org2, err := db.Orgs().Create(ctx, "org2", nil)
+	require.NoError(t, err)
+
+	user1, err := db.Users().Create(ctx, database.NewUser{Username: "user1", Email: "user1", EmailIsVerified: true})
+	require.NoError(t, err)
+
+	_, err = db.OrgMembers().Create(ctx, org1.ID, user1.ID)
+	require.NoError(t, err)
+
+	user2, err := db.Users().Create(ctx, database.NewUser{Username: "user2", Email: "user2", EmailIsVerified: true})
+	require.NoError(t, err)
+
+	_, err = db.OrgMembers().Create(ctx, org2.ID, user2.ID)
+	require.NoError(t, err)
+
+	user3, err := db.Users().Create(ctx, database.NewUser{Username: "user3", Email: "user3", EmailIsVerified: true})
+	require.NoError(t, err)
+
+	_, err = db.OrgMembers().Create(ctx, org1.ID, user3.ID)
+	require.NoError(t, err)
+
+	_, err = db.OrgMembers().Create(ctx, org2.ID, user3.ID)
+	require.NoError(t, err)
+
+	// Org1 contains user1 and user 3
+	// Org2 contains user2 and user 3
+
+	cases := []struct {
+		subject  api.SettingsSubject
+		expected []api.SettingsSubject
+	}{{
+		subject:  api.SettingsSubject{Default: true},
+		expected: []api.SettingsSubject{{Default: true}},
+	}, {
+		subject: api.SettingsSubject{Site: true},
+		expected: []api.SettingsSubject{
+			{Default: true},
+			{Site: true},
+		},
+	}, {
+		subject: api.SettingsSubject{Org: &org1.ID},
+		expected: []api.SettingsSubject{
+			{Default: true},
+			{Site: true},
+			{Org: &org1.ID},
+		},
+	}, {
+		subject: api.SettingsSubject{User: &user1.ID},
+		expected: []api.SettingsSubject{
+			{Default: true},
+			{Site: true},
+			{Org: &org1.ID},
+			{User: &user1.ID},
+		},
+	}, {
+		subject: api.SettingsSubject{User: &user2.ID},
+		expected: []api.SettingsSubject{
+			{Default: true},
+			{Site: true},
+			{Org: &org2.ID},
+			{User: &user2.ID},
+		},
+	}, {
+		subject: api.SettingsSubject{User: &user3.ID},
+		expected: []api.SettingsSubject{
+			{Default: true}, {Site: true},
+			{Org: &org1.ID},
+			{Org: &org2.ID},
+			{User: &user3.ID},
+		},
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.subject.String(), func(t *testing.T) {
+			got, err := RelevantSubjects(ctx, db, tc.subject)
+			require.NoError(t, err)
+			require.Equal(t, tc.expected, got)
+		})
+	}
+}
 
 func TestMergeSettings(t *testing.T) {
 	boolPtr := func(b bool) *bool {
