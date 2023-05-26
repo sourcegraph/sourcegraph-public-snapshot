@@ -50,7 +50,8 @@ type CodeIntelConfigurationPolicy struct {
 	IndexingEnabled           bool
 	IndexCommitMaxAgeHours    *int32
 	IndexIntermediateCommits  bool
-	EmbeddingsEnabled         bool
+	// EmbeddingsEnabled, if nil, should currently default to false.
+	EmbeddingsEnabled *bool
 }
 
 type UpdateCodeIntelligenceConfigurationPolicyArgs struct {
