@@ -5,17 +5,18 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
+	"go.opentelemetry.io/otel/attribute"
+	"google.golang.org/protobuf/proto"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"google.golang.org/protobuf/proto"
 )
 
 func (s *store) GetSCIPDocumentsByFuzzySelector(ctx context.Context, selector, scipNameType string) (documents []*scip.Document, err error) {
-	ctx, _, endObservation := s.operations.getSCIPDocumentsByFuzzySelector.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("selector", selector),
+	ctx, _, endObservation := s.operations.getSCIPDocumentsByFuzzySelector.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("selector", selector),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -60,13 +61,13 @@ WHERE
 `
 
 func (s *store) GetSCIPDocumentsByPreciseSelector(ctx context.Context, uploadID int, schemeID, packageManagerID, packageManagerName, packageVersionID, descriptorID int) (documents []*scip.Document, err error) {
-	ctx, _, endObservation := s.operations.getSCIPDocumentsByPreciseSelector.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("uploadID", uploadID),
-		log.Int("schemeID", schemeID),
-		log.Int("packageManagerID", packageManagerID),
-		log.Int("packageManagerName", packageManagerName),
-		log.Int("packageVersionID", packageVersionID),
-		log.Int("descriptorID", descriptorID),
+	ctx, _, endObservation := s.operations.getSCIPDocumentsByPreciseSelector.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("uploadID", uploadID),
+		attribute.Int("schemeID", schemeID),
+		attribute.Int("packageManagerID", packageManagerID),
+		attribute.Int("packageManagerName", packageManagerName),
+		attribute.Int("packageVersionID", packageVersionID),
+		attribute.Int("descriptorID", descriptorID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -96,7 +97,6 @@ func (s *store) GetSCIPDocumentsByPreciseSelector(ctx context.Context, uploadID 
 	}
 
 	return documents, nil
-
 }
 
 const getSCIPDocumentsByPreciseSelectorQuery = `
