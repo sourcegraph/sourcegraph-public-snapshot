@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -163,23 +162,9 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, canc
 		// Continue, no metric errors should prevent heartbeats.
 	}
 
-	// Convert the string IDs to ints. In the multi-queue implementation, the additional context in the string representation
-	// (the queue name) will be parsed here.
-	var intIds []int
-	for _, id := range jobIDs {
-		intId, err := strconv.Atoi(id)
-		if err != nil {
-			return nil, nil, errors.Wrapf(err, "failed to convert ID %s from string to int", id)
-		}
-		intIds = append(intIds, intId)
-	}
-
 	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", c.options.QueueName), types.HeartbeatRequest{
-		// Request the new-fashioned payload.
-		Version: types.ExecutorAPIVersion2,
-
 		ExecutorName: c.options.ExecutorName,
-		JobIDs:       intIds,
+		JobIDs:       jobIDs,
 
 		OS:              c.options.TelemetryOptions.OS,
 		Architecture:    c.options.TelemetryOptions.Architecture,

@@ -301,27 +301,6 @@ func TestClient_MarkFailed(t *testing.T) {
 	}
 }
 
-// TODO: removed V1 code, will remove this after confirmation
-//func TestCanceledJobs(t *testing.T) {
-//	spec := routeSpec{
-//		expectedMethod:   "POST",
-//		expectedPath:     "/.executors/queue/test_queue/canceledJobs",
-//		expectedUsername: "test",
-//		expectedToken:    "hunter2",
-//		expectedPayload:  `{"executorName": "deadbeef","knownJobIds":[1]}`,
-//		responseStatus:   http.StatusOK,
-//		responsePayload:  `[1]`,
-//	}
-//
-//	testRoute(t, spec, func(client *queue.Client) {
-//		if ids, err := client.CanceledJobs(context.Background(), []int{1}); err != nil {
-//			t.Fatalf("unexpected error completing job: %s", err)
-//		} else if diff := cmp.Diff(ids, []int{1}); diff != "" {
-//			t.Fatalf("unexpected set of IDs returned: %s", diff)
-//		}
-//	})
-//}
-
 func TestHeartbeat(t *testing.T) {
 	spec := routeSpec{
 		expectedMethod:   "POST",
@@ -330,8 +309,7 @@ func TestHeartbeat(t *testing.T) {
 		expectedToken:    "hunter2",
 		expectedPayload: `{
 			"executorName": "deadbeef",
-			"jobIds": [1,2,3],
-			"version": "V2",
+			"jobIds": ["1","2","3"],
 
 			"os": "test-os",
 			"architecture": "test-architecture",
@@ -371,8 +349,7 @@ func TestHeartbeatBadResponse(t *testing.T) {
 		expectedToken:    "hunter2",
 		expectedPayload: `{
 			"executorName": "deadbeef",
-			"jobIds": [1,2,3],
-			"version": "V2",
+			"jobIds": ["1","2","3"],
 
 			"os": "test-os",
 			"architecture": "test-architecture",
