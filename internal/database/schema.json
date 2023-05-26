@@ -13667,6 +13667,19 @@
       "Comment": "",
       "Columns": [
         {
+          "Name": "embeddings_enabled",
+          "Index": 16,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "id",
           "Index": 1,
           "TypeName": "integer",
@@ -13730,19 +13743,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
-        },
-        {
-          "Name": "lockfile_indexing_enabled",
-          "Index": 15,
-          "TypeName": "boolean",
-          "IsNullable": false,
-          "Default": "false",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": "Whether to index the lockfiles in the repositories matched by this policy"
         },
         {
           "Name": "name",
@@ -26995,6 +26995,14 @@
     {
       "Name": "branch_changeset_specs_and_changesets",
       "Definition": " SELECT changeset_specs.id AS changeset_spec_id,\n    COALESCE(changesets.id, (0)::bigint) AS changeset_id,\n    changeset_specs.repo_id,\n    changeset_specs.batch_spec_id,\n    changesets.owned_by_batch_change_id AS owner_batch_change_id,\n    repo.name AS repo_name,\n    changeset_specs.title AS changeset_name,\n    changesets.external_state,\n    changesets.publication_state,\n    changesets.reconciler_state,\n    changesets.computed_state\n   FROM ((changeset_specs\n     LEFT JOIN changesets ON (((changesets.repo_id = changeset_specs.repo_id) AND (changesets.current_spec_id IS NOT NULL) AND (EXISTS ( SELECT 1\n           FROM changeset_specs changeset_specs_1\n          WHERE ((changeset_specs_1.id = changesets.current_spec_id) AND (changeset_specs_1.head_ref = changeset_specs.head_ref)))))))\n     JOIN repo ON ((changeset_specs.repo_id = repo.id)))\n  WHERE ((changeset_specs.external_id IS NULL) AND (repo.deleted_at IS NULL));"
+    },
+    {
+      "Name": "codeintel_configuration_policies",
+      "Definition": " SELECT lsif_configuration_policies.id,\n    lsif_configuration_policies.repository_id,\n    lsif_configuration_policies.name,\n    lsif_configuration_policies.type,\n    lsif_configuration_policies.pattern,\n    lsif_configuration_policies.retention_enabled,\n    lsif_configuration_policies.retention_duration_hours,\n    lsif_configuration_policies.retain_intermediate_commits,\n    lsif_configuration_policies.indexing_enabled,\n    lsif_configuration_policies.index_commit_max_age_hours,\n    lsif_configuration_policies.index_intermediate_commits,\n    lsif_configuration_policies.protected,\n    lsif_configuration_policies.repository_patterns,\n    lsif_configuration_policies.last_resolved_at,\n    lsif_configuration_policies.embeddings_enabled\n   FROM lsif_configuration_policies;"
+    },
+    {
+      "Name": "codeintel_configuration_policies_repository_pattern_lookup",
+      "Definition": " SELECT lsif_configuration_policies_repository_pattern_lookup.policy_id,\n    lsif_configuration_policies_repository_pattern_lookup.repo_id\n   FROM lsif_configuration_policies_repository_pattern_lookup;"
     },
     {
       "Name": "external_service_sync_jobs_with_next_sync_at",

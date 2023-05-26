@@ -139,10 +139,6 @@ func (r *Resolver) RepoEmbeddingJobs(ctx context.Context, args graphqlbackend.Li
 	return NewRepoEmbeddingJobsResolver(r.db, r.gitserverClient, r.repoEmbeddingJobsStore, args)
 }
 
-func isRepoEmbeddingJobScheduledOrCompleted(job *repobg.RepoEmbeddingJob) bool {
-	return job != nil && (job.State == "completed" || job.State == "processing" || job.State == "queued")
-}
-
 func (r *Resolver) ScheduleRepositoriesForEmbedding(ctx context.Context, args graphqlbackend.ScheduleRepositoriesForEmbeddingArgs) (_ *graphqlbackend.EmptyResponse, err error) {
 	if !conf.EmbeddingsEnabled() {
 		return nil, errors.New("embeddings are not configured or disabled")
@@ -153,43 +149,22 @@ func (r *Resolver) ScheduleRepositoriesForEmbedding(ctx context.Context, args gr
 		return nil, err
 	}
 
-	tx, err := r.repoEmbeddingJobsStore.Transact(ctx)
+	var repoNames []api.RepoName
+	for _, repo := range args.RepoNames {
+		repoNames = append(repoNames, api.RepoName(repo))
+	}
+
+	err = embeddings.ScheduleRepositoriesForEmbedding(
+		ctx,
+		repoNames,
+		r.db,
+		r.repoEmbeddingJobsStore,
+		r.gitserverClient,
+	)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = tx.Done(err) }()
 
-	repoStore := r.db.Repos()
-	for _, repoName := range args.RepoNames {
-		// Scope the iteration to an anonymous function so we can capture all errors and properly rollback tx in defer above.
-		err = func() error {
-			repo, err := repoStore.GetByName(ctx, api.RepoName(repoName))
-			if err != nil {
-				return err
-			}
-
-			refName, latestRevision, err := r.gitserverClient.GetDefaultBranch(ctx, repo.Name, false)
-			if err != nil {
-				return err
-			}
-			if refName == "" {
-				return errors.Newf("could not get latest commit for repo %s", repo.Name)
-			}
-
-			job, _ := tx.GetLastRepoEmbeddingJobForRevision(ctx, repo.ID, latestRevision)
-			// Skip creating a repo embedding job for a repo at revision, if there already exists
-			// an identical job that has been completed or is scheduled to run (processing or queued).
-			if isRepoEmbeddingJobScheduledOrCompleted(job) {
-				return nil
-			}
-
-			_, err = tx.CreateRepoEmbeddingJob(ctx, repo.ID, latestRevision)
-			return err
-		}()
-		if err != nil {
-			return nil, err
-		}
-	}
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 

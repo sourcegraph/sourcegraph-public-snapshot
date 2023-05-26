@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "confauth",
+    srcs = ["middleware.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/confauth",
+    visibility = ["//enterprise/cmd/frontend:__subpackages__"],
+    deps = [
+        "//cmd/frontend/auth",
+        "//enterprise/internal/licensing",
+    ],
+)
+
+go_test(
+    name = "confauth_test",
+    srcs = ["middleware_test.go"],
+    embed = [":confauth"],
+    deps = [
+        "//cmd/frontend/auth",
+        "//cmd/frontend/external/session",
+        "//enterprise/internal/license",
+        "//enterprise/internal/licensing",
+        "@com_github_stretchr_testify//require",
+    ],
+)

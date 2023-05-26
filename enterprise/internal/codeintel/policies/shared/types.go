@@ -16,6 +16,7 @@ type ConfigurationPolicy struct {
 	IndexingEnabled           bool
 	IndexCommitMaxAge         *time.Duration
 	IndexIntermediateCommits  bool
+	EmbeddingEnabled          bool
 }
 
 type GitObjectType string
@@ -44,13 +45,17 @@ type GetConfigurationPoliciesOptions struct {
 	// If supplied, filter the policies by their protected flag.
 	Protected *bool
 
-	// ForIndexing indicates that only configuration policies with data retention enabled
-	// should be returned.
-	ForDataRetention bool
+	// ForIndexing indicates that configuration policies with data retention enabled
+	// should be returned (or filtered).
+	ForDataRetention *bool
 
-	// ForIndexing indicates that only configuration policies with indexing enabled should
-	// be returned.
-	ForIndexing bool
+	// ForIndexing indicates that configuration policies with indexing enabled should
+	// be returned (or filtered).
+	ForIndexing *bool
+
+	// ForEmbeddings indicates that configuration policies with embeddings enabled
+	// should be returned (or filtered).
+	ForEmbeddings *bool
 
 	// Limit indicates the number of results to take from the result set.
 	Limit int

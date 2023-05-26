@@ -221,8 +221,8 @@ const register = async (
             history
         )
         disposables.push(
-            vscode.commands.registerCommand('cody.experimental.suggest', async () => {
-                await completionsProvider.fetchAndShowCompletions()
+            vscode.commands.registerCommand('cody.manual-completions', async () => {
+                await completionsProvider.fetchAndShowManualCompletions()
             }),
             vscode.commands.registerCommand('cody.completions.inline.accepted', () => {
                 const params = { type: 'inline' }

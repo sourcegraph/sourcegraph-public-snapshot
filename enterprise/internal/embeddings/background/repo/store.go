@@ -100,12 +100,79 @@ type RepoEmbeddingJobsStore interface {
 	GetLastRepoEmbeddingJobForRevision(ctx context.Context, repoID api.RepoID, revision api.CommitID) (*RepoEmbeddingJob, error)
 	ListRepoEmbeddingJobs(ctx context.Context, args *database.PaginationArgs) ([]*RepoEmbeddingJob, error)
 	CountRepoEmbeddingJobs(ctx context.Context) (int, error)
+	GetEmbeddableRepos(ctx context.Context) ([]EmbeddableRepo, error)
 }
 
 var _ basestore.ShareableStore = &repoEmbeddingJobsStore{}
 
 type repoEmbeddingJobsStore struct {
 	*basestore.Store
+}
+
+type EmbeddableRepo struct {
+	ID          api.RepoID
+	lastChanged time.Time
+}
+
+var scanEmbeddableRepos = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (r EmbeddableRepo, _ error) {
+	err := scanner.Scan(&r.ID, &r.lastChanged)
+	return r, err
+})
+
+const getEmbeddableReposFmtStr = `
+WITH
+global_policy_descriptor AS MATERIALIZED (
+	SELECT 1
+	FROM codeintel_configuration_policies p
+	WHERE
+		p.embeddings_enabled AND
+		p.repository_id IS NULL AND
+		p.repository_patterns IS NULL
+	LIMIT 1
+),
+repositories_matching_policy AS (
+    (
+        SELECT r.id, gr.last_changed
+        FROM repo r
+        JOIN gitserver_repos gr ON gr.repo_id = r.id
+        JOIN global_policy_descriptor gpd ON TRUE
+        WHERE
+            r.deleted_at IS NULL AND
+            r.blocked IS NULL AND
+            gr.clone_status = 'cloned'
+        ORDER BY stars DESC NULLS LAST, id
+        LIMIT 5000 -- Some repository match limit to stop you from returning all of dotcom
+    ) UNION ALL (
+        SELECT r.id, gr.last_changed
+        FROM repo r
+        JOIN gitserver_repos gr ON gr.repo_id = r.id
+        JOIN codeintel_configuration_policies p ON p.repository_id = r.id
+        WHERE
+            r.deleted_at IS NULL AND
+            r.blocked IS NULL AND
+            p.embeddings_enabled AND
+            gr.clone_status = 'cloned'
+    ) UNION ALL (
+        SELECT r.id, gr.last_changed
+        FROM repo r
+        JOIN gitserver_repos gr ON gr.repo_id = r.id
+        JOIN codeintel_configuration_policies_repository_pattern_lookup rpl ON rpl.repo_id = r.id
+        JOIN codeintel_configuration_policies p ON p.id = rpl.policy_id
+        WHERE
+            r.deleted_at IS NULL AND
+            r.blocked IS NULL AND
+            p.embeddings_enabled AND
+            gr.clone_status = 'cloned'
+    )
+)
+
+--
+SELECT DISTINCT ON (id) * FROM repositories_matching_policy;
+`
+
+func (s *repoEmbeddingJobsStore) GetEmbeddableRepos(ctx context.Context) ([]EmbeddableRepo, error) {
+	q := sqlf.Sprintf(getEmbeddableReposFmtStr)
+	return scanEmbeddableRepos(s.Query(ctx, q))
 }
 
 func NewRepoEmbeddingJobsStore(other basestore.ShareableStore) RepoEmbeddingJobsStore {
