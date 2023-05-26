@@ -39,34 +39,50 @@ for t in "${tags[@]}"; do
   tags_args="$tags_args --tag ${t}-${qa_suffix}"
 done
 
-function tag_and_push_image() {
+function create_push_command() {
   repository="$1"
   target="$2"
-  echo "--- :bazel::docker: Pushing $repository"
+  # echo "--- :bazel::docker: Pushing $repository"
 
   repositories_args=""
   for registry in "${registries[@]}"; do
     repositories_args="$repositories_args --repository ${registry}/${repository}"
   done
 
-  bazel \
+  file=$(bazel \
     --bazelrc=.bazelrc \
     --bazelrc=.aspect/bazelrc/ci.bazelrc \
     --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
-    run \
+    query \
     "$target" \
     --stamp \
     --workspace_status_command=./dev/bazel_stamp_vars.sh \
-    -- \
-    $tags_args $repositories_args
+    --output=files
+  )
 
-  bazel run "$target" --workspace_status_command=./dev/bazel_stamp_vars.sh --stamp -- $tags_args $repositories_args
-  echo "--- "
+  echo "$file $tags_args $repositories_args"
 }
 
 images=$(bazel query 'kind("oci_push rule", //...)')
+commands=()
+
+job_file=$(mktemp)
+# shellcheck disable=SC2064
+trap "rm -rf $job_file" EXIT
+
 for target in ${images[@]}; do
   [[ "$target" =~ ([A-Za-z0-9_-]+): ]]
   name="${BASH_REMATCH[1]}"
-  tag_and_push_image "$name" "$target"
+  echo $(create_push_command "$name" "$target") >> "$job_file"
 done
+
+echo "-- jobfile"
+cat "$job_file"
+echo "--- "
+
+echo "--- :bazel::docker: Pushing images..."
+log_file=$(mktemp)
+# shellcheck disable=SC2064
+trap "rm -rf $log_file" EXIT
+parallel --jobs=8 --line-buffer --joblog "$log_file" -v < "$job_file"
+echo "--- "
