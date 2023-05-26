@@ -39,7 +39,6 @@ dependencies {
 }
 
 spotless {
-    ratchetFrom("origin/main")
     java {
         target("src/*/java/**/*.java")
         importOrder()
