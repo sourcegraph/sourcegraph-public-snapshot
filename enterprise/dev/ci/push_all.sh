@@ -3,11 +3,13 @@
 set -eu
 
 registries=(
-  "index.docker.io/sourcegraph"
+  # "index.docker.io/sourcegraph"
   "us.gcr.io/sourcegraph-dev"
 )
 
 date_fragment="$(date +%y-%m-%d)"
+
+qa_prefix="bazel"
 
 tags=(
   "${BUILDKITE_COMMIT:0:12}"
@@ -24,45 +26,62 @@ if [[ "$BUILDKITE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   tags+=("${BUILDKITE_TAG:1}")
 fi
 
-echo "--- :docker: tags"
+echo "--- :docker: Previewing tags"
 for tag in "${tags[@]}"; do
   for registry in "${registries[@]}"; do
-    echo "\t ${registry}/\$IMAGE:${tag}"
+    echo -e "\t ${registry}/\$IMAGE:${tag}"
   done
 done
 echo "--- "
 
 tags_args=""
 for t in "${tags[@]}"; do
-  tags_args="$tags_args --tag $t"
+  tags_args="$tags_args --tag ${qa_prefix}-${t}"
 done
 
-function tag_and_push_image() {
+function create_push_command() {
   repository="$1"
   target="$2"
-  echo "--- :bazel::docker: Pushing $repository"
 
   repositories_args=""
   for registry in "${registries[@]}"; do
     repositories_args="$repositories_args --repository ${registry}/${repository}"
   done
 
-  bazel \
+  cmd="bazel \
     --bazelrc=.bazelrc \
     --bazelrc=.aspect/bazelrc/ci.bazelrc \
     --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
+    run \
+    $target \
     --stamp \
-    --workspace_status_command=./dev/bazel_stamp_vars.sh \
-    run
-    -- "$tags_args" "$repositories_args"
+    --workspace_status_command=./dev/bazel_stamp_vars.sh"
 
-  bazel run "$target" --platforms @zig_sdk//platform:linux_amd64 --extra_toolchains @zig_sdk//toolchain:linux_amd64_gnu.2.31 --workspace_status_command=./dev/bazel_stamp_vars.sh --stamp -- $tags_args $repositories_args
-  echo "--- "
+  echo "$cmd -- $tags_args $repositories_args"
 }
 
 images=$(bazel query 'kind("oci_push rule", //...)')
+
+job_file=$(mktemp)
+# shellcheck disable=SC2064
+trap "rm -rf $job_file" EXIT
+
+# shellcheck disable=SC2068
 for target in ${images[@]}; do
   [[ "$target" =~ ([A-Za-z0-9_-]+): ]]
   name="${BASH_REMATCH[1]}"
-  tag_and_push_image "$name" "$target"
+  create_push_command "$name" "$target" >> "$job_file"
 done
+
+echo "-- jobfile"
+cat "$job_file"
+echo "--- "
+
+echo "--- :bazel::docker: Pushing images..."
+log_file=$(mktemp)
+# shellcheck disable=SC2064
+trap "rm -rf $log_file" EXIT
+parallel --jobs=8 --line-buffer --joblog "$log_file" -v < "$job_file"
+echo "--- :bazel::docker: summary"
+cat "$log_file"
+echo "--- "

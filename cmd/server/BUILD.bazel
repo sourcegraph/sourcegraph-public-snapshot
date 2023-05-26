@@ -65,7 +65,6 @@ DEPS = [
     "//cmd/symbols",
     "//cmd/worker",
     "//docker-images/prometheus/cmd/prom-wrapper",
-    "//docker-images/syntax-highlighter:syntect_server",
 ]
 
 ZOEKT_DEPS = [
@@ -80,6 +79,14 @@ container_dependencies(DEPS)
 
 container_dependencies(ZOEKT_DEPS)
 
+# This one is a special case because inside server images, the procfile expects to find it
+# under syntax-highlighter instead of syntect_server.
+pkg_tar(
+    name = "tar_syntax-highlighter",
+    srcs = ["//docker-images/syntax-highlighter:syntect_server"],
+    remap_paths = {"/syntect_server": "/usr/local/bin/syntax_highlighter"},
+)
+
 # Tip: to view exactly what gets built here, you can run:
 #   bazel cquery '//cmd/server:image' --output build
 oci_image(
@@ -93,8 +100,9 @@ oci_image(
     },
     tars = [
         ":tar_server",
-        "tar_postgres_exporter_config",
+        ":tar_postgres_exporter_config",
         ":tar_monitoring_config",
+        ":tar_syntax-highlighter",
     ] + dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS),
     workdir = "/",
 )

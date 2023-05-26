@@ -142,7 +142,7 @@ function wait_until_container_ready() {
   while [ ! $? -eq 0 ]; do
     sleep 5
     t=$(( t + 5 ))
-    if [ "$t" -gt $timeout ]; then
+    if [ "$t" -gt "$timeout" ]; then
       echo "$url was not accessible within $timeout."
       docker inspect "$name"
       exit 1

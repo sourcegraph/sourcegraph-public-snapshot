@@ -16,7 +16,7 @@ import (
 func BazelOperations() []operations.Operation {
 	ops := []operations.Operation{}
 	ops = append(ops, bazelConfigure())
-	ops = append(ops, bazelTest("//...", "//client/web:test"))
+	ops = append(ops, bazelTest("//...")) //, "//client/web:test"))
 	ops = append(ops, bazelBackCompatTest(
 		"@sourcegraph_back_compat//cmd/...",
 		"@sourcegraph_back_compat//lib/...",
@@ -25,6 +25,7 @@ func BazelOperations() []operations.Operation {
 		"@sourcegraph_back_compat//enterprise/internal/...",
 	))
 	// ops = append(ops, bazelBuild(`$$(bazel query 'kind("oci_tarball rule", //...)')`))
+	ops = append(ops, bazelPushImagesCmd())
 	return ops
 }
 
@@ -42,6 +43,9 @@ func bazelCmd(args ...string) string {
 func bazelPushImagesCmd() func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":bazel::docker: Push",
+			bk.Agent("queue", "bazel"),
+			bk.DependsOn("bazel-tests"),
+			bk.Key("bazel-push-images"),
 			bk.Cmd(bazelStampedCmd(`build $$(bazel query 'kind("oci_push rule", //...)')`)),
 			bk.Cmd("./enterprise/dev/ci/push_all.sh"),
 		)
@@ -117,14 +121,14 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 		bk.DependsOn("bazel-configure"),
 		bk.Agent("queue", "bazel"),
 		bk.Key("bazel-tests"),
-		bk.ArtifactPaths("./bazel-testlogs/enterprise/cmd/embeddings/shared/shared_test/*.log"),
+		bk.ArtifactPaths("./bazel-testlogs/enterprise/cmd/embeddings/shared/shared_test/*.log", "./command.profile.gz"),
 		bk.AutomaticRetry(1), // TODO @jhchabran flaky stuff are breaking builds
 	}
 
 	// Test commands
 	bazelTestCmds := []bk.StepOpt{}
 	for _, target := range targets {
-		cmd := bazelCmd(fmt.Sprintf("test %s", target))
+		cmd := bazelCmd(fmt.Sprintf("test --generate_json_trace_profile --profile=command.profile.gz --experimental_announce_profile_path %s", target))
 		bazelTestCmds = append(bazelTestCmds,
 			bazelAnnouncef("bazel test %s", target),
 			bk.Cmd(cmd))
