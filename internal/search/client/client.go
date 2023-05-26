@@ -81,10 +81,7 @@ func (s *searchClient) Plan(
 	sourcegraphDotComMode bool,
 ) (_ *search.Inputs, err error) {
 	tr, ctx := trace.New(ctx, "NewSearchInputs", searchQuery)
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	defer tr.FinishWithErr(&err)
 
 	searchType, err := detectSearchType(version, patternType)
 	if err != nil {
@@ -144,10 +141,7 @@ func (s *searchClient) Execute(
 	inputs *search.Inputs,
 ) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "Execute", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	defer tr.FinishWithErr(&err)
 
 	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan, s.enterpriseJobs)
 	if err != nil {
