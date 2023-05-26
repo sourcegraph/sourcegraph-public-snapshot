@@ -11,6 +11,7 @@
   "include": [
     "src",
     "test/fixtures",
+    "playwright.config.ts",
     "test/e2e",
     "webviews",
     "vite.config.ts",

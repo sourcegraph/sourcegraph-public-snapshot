@@ -30,7 +30,6 @@ func (c *client) GetChange(ctx context.Context, changeID string) (*Change, error
 	if resp.StatusCode >= http.StatusBadRequest {
 		return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
-
 	return &change, nil
 }
 
@@ -62,6 +61,31 @@ func (c *client) AbandonChange(ctx context.Context, changeID string) (*Change, e
 // SubmitChange submits a Gerrit change.
 func (c *client) SubmitChange(ctx context.Context, changeID string) (*Change, error) {
 	pathStr, err := url.JoinPath("a/changes", url.PathEscape(changeID), "submit")
+	if err != nil {
+		return nil, err
+	}
+	reqURL := url.URL{Path: pathStr}
+	req, err := http.NewRequest("POST", reqURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var change Change
+	resp, err := c.do(ctx, req, &change)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode >= http.StatusBadRequest {
+		return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	return &change, nil
+}
+
+// RestoreChange restores a closed Gerrit change.
+func (c *client) RestoreChange(ctx context.Context, changeID string) (*Change, error) {
+	pathStr, err := url.JoinPath("a/changes", url.PathEscape(changeID), "restore")
 	if err != nil {
 		return nil, err
 	}

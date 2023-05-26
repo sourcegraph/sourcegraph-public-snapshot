@@ -15,8 +15,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel/attribute"
@@ -40,7 +38,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -75,8 +72,8 @@ type ClientSource interface {
 	ClientForRepo(userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error)
 	// AddrForRepo returns the address of the gitserver for the given repo.
 	AddrForRepo(userAgent string, repo api.RepoName) string
-	// Addresses returns the current list of gitserver addresses.
-	Addresses() []string
+	// Address the current list of gitserver addresses.
+	Addresses() []AddressWithClient
 }
 
 // NewClient returns a new gitserver.Client.
@@ -446,7 +443,12 @@ type Client interface {
 }
 
 func (c *clientImplementor) Addrs() []string {
-	return c.clientSource.Addresses()
+	address := c.clientSource.Addresses()
+	addrs := make([]string, 0, len(address))
+	for _, addr := range address {
+		addrs = append(addrs, addr.Address())
+	}
+	return addrs
 }
 
 func (c *clientImplementor) AddrForRepo(repo api.RepoName) string {
@@ -462,6 +464,18 @@ type ArchiveOptions struct {
 	Treeish   string               // the tree or commit to produce an archive for
 	Format    ArchiveFormat        // format of the resulting archive (usually "tar" or "zip")
 	Pathspecs []gitdomain.Pathspec // if nonempty, only include these pathspecs.
+}
+
+func (a *ArchiveOptions) Attrs() []attribute.KeyValue {
+	specs := make([]string, len(a.Pathspecs))
+	for i, pathspec := range a.Pathspecs {
+		specs[i] = string(pathspec)
+	}
+	return []attribute.KeyValue{
+		attribute.String("treeish", a.Treeish),
+		attribute.String("format", string(a.Format)),
+		attribute.StringSlice("pathspecs", specs),
+	}
 }
 
 func (o *ArchiveOptions) FromProto(x *proto.ArchiveRequest) {
@@ -554,20 +568,23 @@ type badRequestError struct{ error }
 
 func (e badRequestError) BadRequest() bool { return true }
 
-func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRes error) {
-	repoName := protocol.NormalizeRepo(c.repo)
-
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.sendExec") //nolint:staticcheck // OT is deprecated
+func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err error) {
+	ctx, cancel := context.WithCancel(ctx)
+	ctx, _, endObservation := c.execOp.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repo", string(c.repo)),
+		attribute.StringSlice("args", c.args[1:]),
+	}})
+	done := func() {
+		cancel()
+		endObservation(1, observation.Args{})
+	}
 	defer func() {
-		if errRes != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", errRes.Error())
+		if err != nil {
+			done()
 		}
-		span.Finish()
 	}()
-	span.SetTag("request", "Exec")
-	span.SetTag("repo", c.repo)
-	span.SetTag("args", c.args[1:])
+
+	repoName := protocol.NormalizeRepo(c.repo)
 
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
@@ -589,11 +606,8 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 			NoTimeout:      c.noTimeout,
 		}
 
-		ctx, cancel := context.WithCancel(ctx)
-
 		stream, err := client.Exec(ctx, req)
 		if err != nil {
-			cancel()
 			return nil, err
 		}
 		r := streamio.NewReader(func() ([]byte, error) {
@@ -606,7 +620,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 			return msg.GetData(), nil
 		})
 
-		return &readCloseWrapper{r: r, closeFn: cancel}, err
+		return &readCloseWrapper{r: r, closeFn: done}, nil
 
 	} else {
 		req := &protocol.ExecRequest{
@@ -623,7 +637,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, errRe
 
 		switch resp.StatusCode {
 		case http.StatusOK:
-			return &cmdReader{rc: resp.Body, trailer: resp.Trailer}, nil
+			return &cmdReader{rc: &readCloseWrapper{r: resp.Body, closeFn: done}, trailer: resp.Trailer}, nil
 
 		case http.StatusNotFound:
 			var payload protocol.NotFoundPayload
@@ -721,18 +735,13 @@ func isRevisionNotFound(err string) bool {
 }
 
 func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "GitserverClient.Search") //nolint:staticcheck // OT is deprecated
-	span.SetTag("repo", string(args.Repo))
-	span.SetTag("query", args.Query.String())
-	span.SetTag("diff", args.IncludeDiff)
-	span.SetTag("limit", args.Limit)
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
-	}()
+	ctx, _, endObservation := c.operations.search.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repo", string(args.Repo)),
+		attribute.Stringer("query", args.Query),
+		attribute.Bool("diff", args.IncludeDiff),
+		attribute.Int("limit", args.Limit),
+	}})
+	defer endObservation(1, observation.Args{})
 
 	repoName := protocol.NormalizeRepo(args.Repo)
 
@@ -839,18 +848,12 @@ func convertGitserverError(err error) error {
 	return err
 }
 
-func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password string, args ...string) (_ io.ReadCloser, _ http.Header, errRes error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.P4Exec") //nolint:staticcheck // OT is deprecated
-	defer func() {
-		if errRes != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", errRes.Error())
-		}
-		span.Finish()
-	}()
-	span.SetTag("request", "P4Exec")
-	span.SetTag("host", host)
-	span.SetTag("args", args)
+func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password string, args ...string) (_ io.ReadCloser, _ http.Header, err error) {
+	ctx, _, endObservation := c.operations.p4Exec.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("host", host),
+		attribute.StringSlice("args", args),
+	}})
+	defer endObservation(1, observation.Args{})
 
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
@@ -1044,6 +1047,7 @@ func (c *clientImplementor) gitCommand(repo api.RepoName, arg ...string) GitComm
 		repo:   repo,
 		execer: c,
 		args:   append([]string{git}, arg...),
+		execOp: c.operations.exec,
 	}
 }
 
@@ -1230,14 +1234,35 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 func (c *clientImplementor) ReposStats(ctx context.Context) (map[string]*protocol.ReposStats, error) {
 	stats := map[string]*protocol.ReposStats{}
 	var allErr error
-	for _, addr := range c.Addrs() {
-		stat, err := c.doReposStats(ctx, addr)
-		if err != nil {
-			allErr = errors.Append(allErr, err)
-		} else {
-			stats[addr] = stat
+
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		for _, addr := range c.clientSource.Addresses() {
+			client, err := addr.GRPCClient()
+			if err != nil {
+				return nil, err
+			}
+
+			resp, err := client.ReposStats(ctx, &proto.ReposStatsRequest{})
+			if err != nil {
+				allErr = errors.Append(allErr, err)
+			} else {
+				rs := &protocol.ReposStats{}
+				rs.FromProto(resp)
+				stats[addr.Address()] = rs
+			}
+		}
+	} else {
+
+		for _, addr := range c.Addrs() {
+			stat, err := c.doReposStats(ctx, addr)
+			if err != nil {
+				allErr = errors.Append(allErr, err)
+			} else {
+				stats[addr] = stat
+			}
 		}
 	}
+
 	return stats, allErr
 }
 
@@ -1313,22 +1338,14 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 		return nil, errors.Wrap(err, "do")
 	}
 
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.do") //nolint:staticcheck // OT is deprecated
-	defer func() {
-		if repo != "" {
-			span.LogKV("repo", string(repo), "method", method, "path", parsedURL.Path)
-		} else {
-			span.LogKV("method", method, "path", parsedURL.Path)
-		}
-		span.LogKV("repo", string(repo), "method", method, "path", parsedURL.Path)
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
-	}()
+	ctx, trLogger, endObservation := c.operations.do.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repo", string(repo)),
+		attribute.String("method", method),
+		attribute.String("path", parsedURL.Path),
+	}})
+	defer endObservation(1, observation.Args{})
 
-	req, err := http.NewRequest(method, uri, bytes.NewReader(payload))
+	req, err := http.NewRequestWithContext(ctx, method, uri, bytes.NewReader(payload))
 	if err != nil {
 		return nil, err
 	}
@@ -1339,16 +1356,10 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 	// Set header so that the server knows the request is from us.
 	req.Header.Set("X-Requested-With", "Sourcegraph")
 
-	req = req.WithContext(ctx)
-
 	c.HTTPLimiter.Acquire()
 	defer c.HTTPLimiter.Release()
-	span.LogKV("event", "Acquired HTTP limiter")
 
-	req, ht := nethttp.TraceRequest(span.Tracer(), req,
-		nethttp.OperationName("Gitserver Client"),
-		nethttp.ClientTrace(false))
-	defer ht.Finish()
+	trLogger.AddEvent("Acquired HTTP limiter")
 
 	return c.httpClient.Do(req)
 }
