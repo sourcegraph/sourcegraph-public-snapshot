@@ -3,11 +3,10 @@ package keyword
 import (
 	"strings"
 
-	"github.com/go-enry/go-enry/v2"
-	"github.com/kljensen/snowball"
-
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
+
+const maxTransformedPatterns = 10
 
 type keywordQuery struct {
 	query    query.Basic
@@ -44,7 +43,6 @@ func nodeToPatternsAndParameters(rootNode query.Node) ([]string, []query.Paramet
 		// Only search file content
 		{Field: query.FieldType, Value: "file"},
 	}
-	seenLangParameter := false
 
 	switch operator.Kind {
 	case query.And:
@@ -58,31 +56,12 @@ func nodeToPatternsAndParameters(rootNode query.Node) ([]string, []query.Paramet
 				if op.Field != query.FieldCount && op.Field != query.FieldCase && op.Field != query.FieldType {
 					parameters = append(parameters, op)
 				}
-				if op.Field == query.FieldLang {
-					seenLangParameter = true
-				}
 			case query.Pattern:
 				patterns = append(patterns, op.Value)
 			}
 		}
 	case query.Concat:
 		patterns = concatNodeToPatterns(operator)
-	}
-
-	// Check if any of the patterns can be substituted as a lang: filter
-	if !seenLangParameter {
-		langPatternIdx := -1
-		for idx, pattern := range patterns {
-			langAlias, ok := enry.GetLanguageByAlias(pattern)
-			if ok {
-				parameters = append(parameters, query.Parameter{Field: query.FieldLang, Value: langAlias})
-				langPatternIdx = idx
-				break
-			}
-		}
-		if langPatternIdx >= 0 {
-			patterns = removeStringAtIndex(patterns, langPatternIdx)
-		}
 	}
 
 	return patterns, parameters
@@ -107,18 +86,19 @@ func transformPatterns(patterns []string) []string {
 	}
 
 	for _, pattern := range patterns {
-		patternLowerCase := strings.ToLower(pattern)
-
-		if stopWords.Has(patternLowerCase) {
+		pattern = strings.ToLower(pattern)
+		pattern = removePunctuation(pattern)
+		if len(pattern) < 3 || isCommonTerm(pattern) {
 			continue
 		}
-		add(patternLowerCase)
 
-		stemmed, err := snowball.Stem(patternLowerCase, "english", false)
-		if err != nil {
-			continue
-		}
-		add(stemmed)
+		pattern = stemTerm(pattern)
+		add(pattern)
+	}
+
+	// To maintain decent latency, limit the number of patterns we search.
+	if len(transformedPatterns) > maxTransformedPatterns {
+		transformedPatterns = transformedPatterns[:maxTransformedPatterns]
 	}
 
 	return transformedPatterns

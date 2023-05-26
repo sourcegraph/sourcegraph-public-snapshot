@@ -15,13 +15,16 @@ contents:
     - libstdc++ # TODO: Is this still required?
     - nginx
     - openjdk-11
+    - openjdk-11-default-jvm
     - openssh-client
     - pcre
     - postgresql-12
     - postgresql-12-contrib
     - prometheus-postgres-exporter=0.12.0-r1 # IMPORTANT: Pinned version for managed updates
+    - prometheus
+    - prometheus-alertmanager
     - python3 # TODO: Missing python2; required?
-    - redis # TODO: 7.0.10; test upgrade from 5.0
+    - redis-6.2
     - sqlite-libs
     - su-exec
 
@@ -34,6 +37,8 @@ contents:
     - coursier@sourcegraph
     - p4cli@sourcegraph
     - p4-fusion@sourcegraph
+    - s3proxy@sourcegraph
+    - grafana@chainguard
 
 accounts:
   groups:

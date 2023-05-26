@@ -2,7 +2,6 @@ import * as React from 'react'
 import { useEffect } from 'react'
 
 import { mdiClose } from '@mdi/js'
-import { Accordion } from '@reach/accordion'
 import classNames from 'classnames'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/branded'
@@ -61,6 +60,10 @@ export const FileOwnershipPanel: React.FunctionComponent<
         )
     }
 
+    // TODO(#52452): There is filtering logic in the following rendering
+    // of owners and inference signals. Preferably we'd use filtering
+    // on the GraphQL call and fetch owners and signals separately.
+    // Then re-use a component to render both parts.
     if (
         data?.node &&
         data.node.__typename === 'Repository' &&
@@ -71,34 +74,78 @@ export const FileOwnershipPanel: React.FunctionComponent<
         return (
             <div className={styles.contents}>
                 <OwnExplanation owners={nodes.map(ownership => ownership.owner)} />
-                {data.node.commit.blob.ownership.totalOwners === 0 && (
-                    <Alert variant="info">No ownership data for this file.</Alert>
-                )}
-                <Accordion
-                    as="table"
-                    collapsible={true}
-                    multiple={true}
-                    className={styles.table}
-                    onChange={() => telemetryService.log('filePage:ownershipPanel:viewOwnerDetail:clicked')}
-                >
-                    <thead className="sr-only">
-                        <tr>
-                            <th>Show details</th>
+                <table className={styles.table}>
+                    <thead>
+                        <tr className="sr-only">
                             <th>Contact</th>
                             <th>Owner</th>
                             <th>Reason</th>
                         </tr>
                     </thead>
-                    {nodes.map((ownership, index) => (
-                        <FileOwnershipEntry
-                            // This list is not expected to change, so it's safe to use the index as a key.
-                            // eslint-disable-next-line react/no-array-index-key
-                            key={index}
-                            owner={ownership.owner}
-                            reasons={ownership.reasons}
-                        />
-                    ))}
-                </Accordion>
+                    <tbody>
+                        <tr>
+                            <th colSpan={3}>
+                                {data.node.commit.blob.ownership.totalOwners === 0 ? (
+                                    <Alert variant="info">No ownership data for this file.</Alert>
+                                ) : (
+                                    <H4 className="mb-3">Owners</H4>
+                                )}
+                            </th>
+                        </tr>
+                        {nodes
+                            .filter(ownership =>
+                                ownership.reasons.some(
+                                    reason =>
+                                        reason.__typename === 'CodeownersFileEntry' ||
+                                        reason.__typename === 'AssignedOwner'
+                                )
+                            )
+                            .map((ownership, index) => (
+                                // This list is not expected to change, so it's safe to use the index as a key.
+                                // eslint-disable-next-line react/no-array-index-key
+                                <React.Fragment key={index}>
+                                    {index > 0 && <tr className={styles.bordered} />}
+                                    <FileOwnershipEntry owner={ownership.owner} reasons={ownership.reasons} />
+                                </React.Fragment>
+                            ))}
+                        {
+                            /* Visually separate two sets with a horizontal rule (like subsequent owners are)
+                             * if there is data in both owners and signals.
+                             */
+                            data.node.commit.blob.ownership.totalOwners > 0 &&
+                                data.node.commit.blob.ownership.nodes.length >
+                                    data.node.commit.blob.ownership.totalOwners && <tr className={styles.bordered} />
+                        }
+                        {data.node.commit.blob.ownership.nodes.length > data.node.commit.blob.ownership.totalOwners && (
+                            <tr>
+                                <th colSpan={3}>
+                                    <H4 className="mt-3 mb-2">Inference signals</H4>
+                                    <Text className={styles.ownInferenceExplanation}>
+                                        These users have viewed or contributed to the file but are not registered owners
+                                        of the file.
+                                    </Text>
+                                </th>
+                            </tr>
+                        )}
+                        {nodes
+                            .filter(
+                                ownership =>
+                                    !ownership.reasons.some(
+                                        reason =>
+                                            reason.__typename === 'CodeownersFileEntry' ||
+                                            reason.__typename === 'AssignedOwner'
+                                    )
+                            )
+                            .map((ownership, index) => (
+                                // This list is not expected to change, so it's safe to use the index as a key.
+                                // eslint-disable-next-line react/no-array-index-key
+                                <React.Fragment key={index}>
+                                    {index > 0 && <tr className={styles.bordered} />}
+                                    <FileOwnershipEntry owner={ownership.owner} reasons={ownership.reasons} />
+                                </React.Fragment>
+                            ))}
+                    </tbody>
+                </table>
             </div>
         )
     }

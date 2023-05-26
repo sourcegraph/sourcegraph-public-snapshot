@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI by Sourcegraph",
-  "version": "0.1.3",
+  "version": "0.1.5",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -59,7 +59,7 @@
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
     "test:integration": "tsc -b ./test/integration && pnpm run --silent build:dev && node --inspect -r ts-node/register out/test/integration/main.js",
     "test:unit": "jest",
-    "test:e2e": "npx playwright install && pnpm run --silent build:dev && playwright test test/e2e",
+    "test:e2e": "npx playwright install && pnpm run --silent build:dev && playwright test",
     "vscode:prepublish": "scripts/check-rg.sh",
     "vsce:package": "pnpm --silent build && vsce package --no-dependencies -o dist/cody.vsix",
     "vsce:prerelease": "pnpm --silent build && vsce package patch --pre-release --no-dependencies -o dist/cody.vsix",
@@ -109,6 +109,10 @@
     ],
     "commands": [
       {
+        "command": "cody.recipe.optimize-code",
+        "title": "Ask Cody: Optimize Code"
+      },
+      {
         "command": "cody.recipe.explain-code",
         "title": "Ask Cody: Explain Code in Detail"
       },
@@ -153,8 +157,8 @@
         "title": "Cody: Sign out"
       },
       {
-        "command": "cody.experimental.suggest",
-        "title": "Cody: View Suggestions"
+        "command": "cody.manual-completions",
+        "title": "Cody: Open Completions Panel"
       },
       {
         "command": "cody.settings",
@@ -276,6 +280,10 @@
           "when": "cody.activated"
         },
         {
+          "command": "cody.recipe.optimize-code",
+          "when": "cody.activated"
+        },
+        {
           "command": "cody.recipe.explain-code-high-level",
           "when": "cody.activated"
         },
@@ -335,6 +343,10 @@
         {
           "command": "cody.fixup.diff",
           "when": "false"
+        },
+        {
+          "command": "cody.manual-completions",
+          "when": "config.cody.experimental.suggestions"
         }
       ],
       "editor/context": [
@@ -346,6 +358,10 @@
       "cody.submenu": [
         {
           "command": "cody.recipe.explain-code",
+          "when": "cody.activated"
+        },
+        {
+          "command": "cody.recipe.optimize-code",
           "when": "cody.activated"
         },
         {
@@ -498,7 +514,7 @@
         "cody.experimental.suggestions": {
           "order": 5,
           "type": "boolean",
-          "markdownDescription": "Enables Cody inline autocompletion in your editor.",
+          "markdownDescription": "Enables experimental Cody completions in your editor.",
           "default": false
         },
         "cody.experimental.chatPredictions": {

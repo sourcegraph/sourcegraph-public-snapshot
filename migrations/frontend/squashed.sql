@@ -1680,6 +1680,80 @@ COMMENT ON COLUMN codeintel_commit_dates.commit_bytea IS 'Identifies the 40-char
 
 COMMENT ON COLUMN codeintel_commit_dates.committed_at IS 'The commit date (may be -infinity if unresolvable).';
 
+CREATE TABLE lsif_configuration_policies (
+    id integer NOT NULL,
+    repository_id integer,
+    name text,
+    type text NOT NULL,
+    pattern text NOT NULL,
+    retention_enabled boolean NOT NULL,
+    retention_duration_hours integer,
+    retain_intermediate_commits boolean NOT NULL,
+    indexing_enabled boolean NOT NULL,
+    index_commit_max_age_hours integer,
+    index_intermediate_commits boolean NOT NULL,
+    protected boolean DEFAULT false NOT NULL,
+    repository_patterns text[],
+    last_resolved_at timestamp with time zone,
+    embeddings_enabled boolean DEFAULT false NOT NULL
+);
+
+COMMENT ON COLUMN lsif_configuration_policies.repository_id IS 'The identifier of the repository to which this configuration policy applies. If absent, this policy is applied globally.';
+
+COMMENT ON COLUMN lsif_configuration_policies.type IS 'The type of Git object (e.g., COMMIT, BRANCH, TAG).';
+
+COMMENT ON COLUMN lsif_configuration_policies.pattern IS 'A pattern used to match` names of the associated Git object type.';
+
+COMMENT ON COLUMN lsif_configuration_policies.retention_enabled IS 'Whether or not this configuration policy affects data retention rules.';
+
+COMMENT ON COLUMN lsif_configuration_policies.retention_duration_hours IS 'The max age of data retained by this configuration policy. If null, the age is unbounded.';
+
+COMMENT ON COLUMN lsif_configuration_policies.retain_intermediate_commits IS 'If the matching Git object is a branch, setting this value to true will also retain all data used to resolve queries for any commit on the matching branches. Setting this value to false will only consider the tip of the branch.';
+
+COMMENT ON COLUMN lsif_configuration_policies.indexing_enabled IS 'Whether or not this configuration policy affects auto-indexing schedules.';
+
+COMMENT ON COLUMN lsif_configuration_policies.index_commit_max_age_hours IS 'The max age of commits indexed by this configuration policy. If null, the age is unbounded.';
+
+COMMENT ON COLUMN lsif_configuration_policies.index_intermediate_commits IS 'If the matching Git object is a branch, setting this value to true will also index all commits on the matching branches. Setting this value to false will only consider the tip of the branch.';
+
+COMMENT ON COLUMN lsif_configuration_policies.protected IS 'Whether or not this configuration policy is protected from modification of its data retention behavior (except for duration).';
+
+COMMENT ON COLUMN lsif_configuration_policies.repository_patterns IS 'The name pattern matching repositories to which this configuration policy applies. If absent, all repositories are matched.';
+
+CREATE VIEW codeintel_configuration_policies AS
+ SELECT lsif_configuration_policies.id,
+    lsif_configuration_policies.repository_id,
+    lsif_configuration_policies.name,
+    lsif_configuration_policies.type,
+    lsif_configuration_policies.pattern,
+    lsif_configuration_policies.retention_enabled,
+    lsif_configuration_policies.retention_duration_hours,
+    lsif_configuration_policies.retain_intermediate_commits,
+    lsif_configuration_policies.indexing_enabled,
+    lsif_configuration_policies.index_commit_max_age_hours,
+    lsif_configuration_policies.index_intermediate_commits,
+    lsif_configuration_policies.protected,
+    lsif_configuration_policies.repository_patterns,
+    lsif_configuration_policies.last_resolved_at,
+    lsif_configuration_policies.embeddings_enabled
+   FROM lsif_configuration_policies;
+
+CREATE TABLE lsif_configuration_policies_repository_pattern_lookup (
+    policy_id integer NOT NULL,
+    repo_id integer NOT NULL
+);
+
+COMMENT ON TABLE lsif_configuration_policies_repository_pattern_lookup IS 'A lookup table to get all the repository patterns by repository id that apply to a configuration policy.';
+
+COMMENT ON COLUMN lsif_configuration_policies_repository_pattern_lookup.policy_id IS 'The policy identifier associated with the repository.';
+
+COMMENT ON COLUMN lsif_configuration_policies_repository_pattern_lookup.repo_id IS 'The repository identifier associated with the policy.';
+
+CREATE VIEW codeintel_configuration_policies_repository_pattern_lookup AS
+ SELECT lsif_configuration_policies_repository_pattern_lookup.policy_id,
+    lsif_configuration_policies_repository_pattern_lookup.repo_id
+   FROM lsif_configuration_policies_repository_pattern_lookup;
+
 CREATE TABLE codeintel_inference_scripts (
     insert_timestamp timestamp with time zone DEFAULT now() NOT NULL,
     script text NOT NULL
@@ -1777,7 +1851,8 @@ CREATE TABLE codeintel_ranking_exports (
     locked_at timestamp with time zone DEFAULT now() NOT NULL,
     id integer NOT NULL,
     last_scanned_at timestamp with time zone,
-    deleted_at timestamp with time zone
+    deleted_at timestamp with time zone,
+    upload_key text
 );
 
 CREATE SEQUENCE codeintel_ranking_exports_id_seq
@@ -1792,11 +1867,10 @@ ALTER SEQUENCE codeintel_ranking_exports_id_seq OWNED BY codeintel_ranking_expor
 
 CREATE TABLE codeintel_ranking_path_counts_inputs (
     id bigint NOT NULL,
-    document_path text NOT NULL,
     count integer NOT NULL,
     graph_key text NOT NULL,
     processed boolean DEFAULT false NOT NULL,
-    repository_id integer NOT NULL
+    definition_id bigint
 );
 
 CREATE SEQUENCE codeintel_ranking_path_counts_inputs_id_seq
@@ -2634,48 +2708,6 @@ CREATE SEQUENCE insights_settings_migration_jobs_id_seq
 
 ALTER SEQUENCE insights_settings_migration_jobs_id_seq OWNED BY insights_settings_migration_jobs.id;
 
-CREATE TABLE lsif_configuration_policies (
-    id integer NOT NULL,
-    repository_id integer,
-    name text,
-    type text NOT NULL,
-    pattern text NOT NULL,
-    retention_enabled boolean NOT NULL,
-    retention_duration_hours integer,
-    retain_intermediate_commits boolean NOT NULL,
-    indexing_enabled boolean NOT NULL,
-    index_commit_max_age_hours integer,
-    index_intermediate_commits boolean NOT NULL,
-    protected boolean DEFAULT false NOT NULL,
-    repository_patterns text[],
-    last_resolved_at timestamp with time zone,
-    lockfile_indexing_enabled boolean DEFAULT false NOT NULL
-);
-
-COMMENT ON COLUMN lsif_configuration_policies.repository_id IS 'The identifier of the repository to which this configuration policy applies. If absent, this policy is applied globally.';
-
-COMMENT ON COLUMN lsif_configuration_policies.type IS 'The type of Git object (e.g., COMMIT, BRANCH, TAG).';
-
-COMMENT ON COLUMN lsif_configuration_policies.pattern IS 'A pattern used to match` names of the associated Git object type.';
-
-COMMENT ON COLUMN lsif_configuration_policies.retention_enabled IS 'Whether or not this configuration policy affects data retention rules.';
-
-COMMENT ON COLUMN lsif_configuration_policies.retention_duration_hours IS 'The max age of data retained by this configuration policy. If null, the age is unbounded.';
-
-COMMENT ON COLUMN lsif_configuration_policies.retain_intermediate_commits IS 'If the matching Git object is a branch, setting this value to true will also retain all data used to resolve queries for any commit on the matching branches. Setting this value to false will only consider the tip of the branch.';
-
-COMMENT ON COLUMN lsif_configuration_policies.indexing_enabled IS 'Whether or not this configuration policy affects auto-indexing schedules.';
-
-COMMENT ON COLUMN lsif_configuration_policies.index_commit_max_age_hours IS 'The max age of commits indexed by this configuration policy. If null, the age is unbounded.';
-
-COMMENT ON COLUMN lsif_configuration_policies.index_intermediate_commits IS 'If the matching Git object is a branch, setting this value to true will also index all commits on the matching branches. Setting this value to false will only consider the tip of the branch.';
-
-COMMENT ON COLUMN lsif_configuration_policies.protected IS 'Whether or not this configuration policy is protected from modification of its data retention behavior (except for duration).';
-
-COMMENT ON COLUMN lsif_configuration_policies.repository_patterns IS 'The name pattern matching repositories to which this configuration policy applies. If absent, all repositories are matched.';
-
-COMMENT ON COLUMN lsif_configuration_policies.lockfile_indexing_enabled IS 'Whether to index the lockfiles in the repositories matched by this policy';
-
 CREATE SEQUENCE lsif_configuration_policies_id_seq
     AS integer
     START WITH 1
@@ -2685,17 +2717,6 @@ CREATE SEQUENCE lsif_configuration_policies_id_seq
     CACHE 1;
 
 ALTER SEQUENCE lsif_configuration_policies_id_seq OWNED BY lsif_configuration_policies.id;
-
-CREATE TABLE lsif_configuration_policies_repository_pattern_lookup (
-    policy_id integer NOT NULL,
-    repo_id integer NOT NULL
-);
-
-COMMENT ON TABLE lsif_configuration_policies_repository_pattern_lookup IS 'A lookup table to get all the repository patterns by repository id that apply to a configuration policy.';
-
-COMMENT ON COLUMN lsif_configuration_policies_repository_pattern_lookup.policy_id IS 'The policy identifier associated with the repository.';
-
-COMMENT ON COLUMN lsif_configuration_policies_repository_pattern_lookup.repo_id IS 'The repository identifier associated with the policy.';
 
 CREATE TABLE lsif_dependency_indexing_jobs (
     id integer NOT NULL,
@@ -3875,15 +3896,19 @@ CREATE TABLE product_subscriptions (
     archived_at timestamp with time zone,
     account_number text,
     llm_proxy_enabled boolean DEFAULT false NOT NULL,
-    llm_proxy_rate_limit integer,
-    llm_proxy_rate_interval_seconds integer
+    llm_proxy_chat_rate_limit integer,
+    llm_proxy_chat_rate_interval_seconds integer,
+    llm_proxy_chat_rate_limit_allowed_models text[],
+    llm_proxy_code_rate_limit integer,
+    llm_proxy_code_rate_interval_seconds integer,
+    llm_proxy_code_rate_limit_allowed_models text[]
 );
 
 COMMENT ON COLUMN product_subscriptions.llm_proxy_enabled IS 'Whether or not this subscription has access to LLM-proxy';
 
-COMMENT ON COLUMN product_subscriptions.llm_proxy_rate_limit IS 'Custom requests per time interval allowed for LLM-proxy';
+COMMENT ON COLUMN product_subscriptions.llm_proxy_chat_rate_limit IS 'Custom requests per time interval allowed for LLM-proxy';
 
-COMMENT ON COLUMN product_subscriptions.llm_proxy_rate_interval_seconds IS 'Custom time interval over which the for LLM-proxy rate limit is applied';
+COMMENT ON COLUMN product_subscriptions.llm_proxy_chat_rate_interval_seconds IS 'Custom time interval over which the for LLM-proxy rate limit is applied';
 
 CREATE TABLE query_runner_state (
     query text,
@@ -4503,7 +4528,7 @@ CREATE TABLE user_public_repos (
 );
 
 CREATE TABLE user_repo_permissions (
-    id integer NOT NULL,
+    id bigint NOT NULL,
     user_id integer,
     repo_id integer NOT NULL,
     user_external_account_id integer,
@@ -4513,7 +4538,6 @@ CREATE TABLE user_repo_permissions (
 );
 
 CREATE SEQUENCE user_repo_permissions_id_seq
-    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -5554,13 +5578,15 @@ CREATE INDEX codeintel_ranking_definitions_exported_upload_id ON codeintel_ranki
 
 CREATE INDEX codeintel_ranking_definitions_graph_key_symbol_search ON codeintel_ranking_definitions USING btree (graph_key, symbol_name, exported_upload_id, document_path);
 
+CREATE INDEX codeintel_ranking_exports_graph_key_deleted_at_id ON codeintel_ranking_exports USING btree (graph_key, deleted_at DESC, id);
+
 CREATE INDEX codeintel_ranking_exports_graph_key_last_scanned_at ON codeintel_ranking_exports USING btree (graph_key, last_scanned_at NULLS FIRST, id);
 
 CREATE UNIQUE INDEX codeintel_ranking_exports_graph_key_upload_id ON codeintel_ranking_exports USING btree (graph_key, upload_id);
 
-CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, id);
+CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_definition_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, definition_id, id) WHERE (NOT processed);
 
-CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_repository_id_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository_id, id) WHERE (NOT processed);
+CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, id);
 
 CREATE INDEX codeintel_ranking_references_exported_upload_id ON codeintel_ranking_references USING btree (exported_upload_id);
 

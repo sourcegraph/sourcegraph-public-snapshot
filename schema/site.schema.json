@@ -183,7 +183,8 @@
               "type": "boolean",
               "default": false
             }
-          }
+          },
+          "deprecationMessage": "Deprecated in favor of internal debug logging."
         },
         "structuralSearch": {
           "description": "Enables structural search.",
@@ -565,6 +566,12 @@
       "!go": {
         "pointer": true
       },
+      "group": "BatchChanges",
+      "default": false
+    },
+    "batchChanges.autoDeleteBranch": {
+      "description": "Automatically delete branches created for Batch Changes changesets when the changeset is merged or closed, for supported code hosts. Overrides any setting on the repository on the code host itself.",
+      "type": "boolean",
       "group": "BatchChanges",
       "default": false
     },
@@ -1435,6 +1442,24 @@
               "graphQL": false,
               "gitserverAccess": false,
               "severityLevel": "INFO"
+            }
+          ]
+        },
+        "securityEventLog": {
+          "description": "EXPERIMENTAL: Configuration for security event logging",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "location": {
+              "description": "Where to output the security event log [none, auditlog, database, all] where auditlog is the default logging to stdout with the specified audit log format",
+              "type": "string",
+              "enum": ["none", "auditlog", "database", "all"],
+              "default": "auditlog"
+            }
+          },
+          "examples": [
+            {
+              "location": "auditlog"
             }
           ]
         }
@@ -2319,6 +2344,11 @@
           "description": "The maximum number of embeddings for text files to generate per repo",
           "type": "integer",
           "minimum": 0
+        },
+        "incremental": {
+          "description": "Experimental: Whether to generate embeddings incrementally. If true, only files that have changed since the last run will be processed.",
+          "type": "boolean",
+          "default": false
         }
       },
       "examples": [

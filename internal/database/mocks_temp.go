@@ -2811,6 +2811,425 @@ func (c AccessTokenStoreWithTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// MockAssignedOwnersStore is a mock implementation of the
+// AssignedOwnersStore interface (from the package
+// github.com/sourcegraph/sourcegraph/internal/database) used for unit
+// testing.
+type MockAssignedOwnersStore struct {
+	// DeleteOwnerFunc is an instance of a mock function object controlling
+	// the behavior of the method DeleteOwner.
+	DeleteOwnerFunc *AssignedOwnersStoreDeleteOwnerFunc
+	// InsertFunc is an instance of a mock function object controlling the
+	// behavior of the method Insert.
+	InsertFunc *AssignedOwnersStoreInsertFunc
+	// ListAssignedOwnersForRepoFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// ListAssignedOwnersForRepo.
+	ListAssignedOwnersForRepoFunc *AssignedOwnersStoreListAssignedOwnersForRepoFunc
+}
+
+// NewMockAssignedOwnersStore creates a new mock of the AssignedOwnersStore
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockAssignedOwnersStore() *MockAssignedOwnersStore {
+	return &MockAssignedOwnersStore{
+		DeleteOwnerFunc: &AssignedOwnersStoreDeleteOwnerFunc{
+			defaultHook: func(context.Context, int32, api.RepoID, string) (r0 error) {
+				return
+			},
+		},
+		InsertFunc: &AssignedOwnersStoreInsertFunc{
+			defaultHook: func(context.Context, int32, api.RepoID, string, int32) (r0 error) {
+				return
+			},
+		},
+		ListAssignedOwnersForRepoFunc: &AssignedOwnersStoreListAssignedOwnersForRepoFunc{
+			defaultHook: func(context.Context, api.RepoID) (r0 []*AssignedOwnerSummary, r1 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockAssignedOwnersStore creates a new mock of the
+// AssignedOwnersStore interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockAssignedOwnersStore() *MockAssignedOwnersStore {
+	return &MockAssignedOwnersStore{
+		DeleteOwnerFunc: &AssignedOwnersStoreDeleteOwnerFunc{
+			defaultHook: func(context.Context, int32, api.RepoID, string) error {
+				panic("unexpected invocation of MockAssignedOwnersStore.DeleteOwner")
+			},
+		},
+		InsertFunc: &AssignedOwnersStoreInsertFunc{
+			defaultHook: func(context.Context, int32, api.RepoID, string, int32) error {
+				panic("unexpected invocation of MockAssignedOwnersStore.Insert")
+			},
+		},
+		ListAssignedOwnersForRepoFunc: &AssignedOwnersStoreListAssignedOwnersForRepoFunc{
+			defaultHook: func(context.Context, api.RepoID) ([]*AssignedOwnerSummary, error) {
+				panic("unexpected invocation of MockAssignedOwnersStore.ListAssignedOwnersForRepo")
+			},
+		},
+	}
+}
+
+// NewMockAssignedOwnersStoreFrom creates a new mock of the
+// MockAssignedOwnersStore interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockAssignedOwnersStoreFrom(i AssignedOwnersStore) *MockAssignedOwnersStore {
+	return &MockAssignedOwnersStore{
+		DeleteOwnerFunc: &AssignedOwnersStoreDeleteOwnerFunc{
+			defaultHook: i.DeleteOwner,
+		},
+		InsertFunc: &AssignedOwnersStoreInsertFunc{
+			defaultHook: i.Insert,
+		},
+		ListAssignedOwnersForRepoFunc: &AssignedOwnersStoreListAssignedOwnersForRepoFunc{
+			defaultHook: i.ListAssignedOwnersForRepo,
+		},
+	}
+}
+
+// AssignedOwnersStoreDeleteOwnerFunc describes the behavior when the
+// DeleteOwner method of the parent MockAssignedOwnersStore instance is
+// invoked.
+type AssignedOwnersStoreDeleteOwnerFunc struct {
+	defaultHook func(context.Context, int32, api.RepoID, string) error
+	hooks       []func(context.Context, int32, api.RepoID, string) error
+	history     []AssignedOwnersStoreDeleteOwnerFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteOwner delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockAssignedOwnersStore) DeleteOwner(v0 context.Context, v1 int32, v2 api.RepoID, v3 string) error {
+	r0 := m.DeleteOwnerFunc.nextHook()(v0, v1, v2, v3)
+	m.DeleteOwnerFunc.appendCall(AssignedOwnersStoreDeleteOwnerFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the DeleteOwner method
+// of the parent MockAssignedOwnersStore instance is invoked and the hook
+// queue is empty.
+func (f *AssignedOwnersStoreDeleteOwnerFunc) SetDefaultHook(hook func(context.Context, int32, api.RepoID, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteOwner method of the parent MockAssignedOwnersStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *AssignedOwnersStoreDeleteOwnerFunc) PushHook(hook func(context.Context, int32, api.RepoID, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AssignedOwnersStoreDeleteOwnerFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32, api.RepoID, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AssignedOwnersStoreDeleteOwnerFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32, api.RepoID, string) error {
+		return r0
+	})
+}
+
+func (f *AssignedOwnersStoreDeleteOwnerFunc) nextHook() func(context.Context, int32, api.RepoID, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AssignedOwnersStoreDeleteOwnerFunc) appendCall(r0 AssignedOwnersStoreDeleteOwnerFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of AssignedOwnersStoreDeleteOwnerFuncCall
+// objects describing the invocations of this function.
+func (f *AssignedOwnersStoreDeleteOwnerFunc) History() []AssignedOwnersStoreDeleteOwnerFuncCall {
+	f.mutex.Lock()
+	history := make([]AssignedOwnersStoreDeleteOwnerFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AssignedOwnersStoreDeleteOwnerFuncCall is an object that describes an
+// invocation of method DeleteOwner on an instance of
+// MockAssignedOwnersStore.
+type AssignedOwnersStoreDeleteOwnerFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 api.RepoID
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AssignedOwnersStoreDeleteOwnerFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AssignedOwnersStoreDeleteOwnerFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// AssignedOwnersStoreInsertFunc describes the behavior when the Insert
+// method of the parent MockAssignedOwnersStore instance is invoked.
+type AssignedOwnersStoreInsertFunc struct {
+	defaultHook func(context.Context, int32, api.RepoID, string, int32) error
+	hooks       []func(context.Context, int32, api.RepoID, string, int32) error
+	history     []AssignedOwnersStoreInsertFuncCall
+	mutex       sync.Mutex
+}
+
+// Insert delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockAssignedOwnersStore) Insert(v0 context.Context, v1 int32, v2 api.RepoID, v3 string, v4 int32) error {
+	r0 := m.InsertFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.InsertFunc.appendCall(AssignedOwnersStoreInsertFuncCall{v0, v1, v2, v3, v4, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Insert method of the
+// parent MockAssignedOwnersStore instance is invoked and the hook queue is
+// empty.
+func (f *AssignedOwnersStoreInsertFunc) SetDefaultHook(hook func(context.Context, int32, api.RepoID, string, int32) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Insert method of the parent MockAssignedOwnersStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *AssignedOwnersStoreInsertFunc) PushHook(hook func(context.Context, int32, api.RepoID, string, int32) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AssignedOwnersStoreInsertFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32, api.RepoID, string, int32) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AssignedOwnersStoreInsertFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32, api.RepoID, string, int32) error {
+		return r0
+	})
+}
+
+func (f *AssignedOwnersStoreInsertFunc) nextHook() func(context.Context, int32, api.RepoID, string, int32) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AssignedOwnersStoreInsertFunc) appendCall(r0 AssignedOwnersStoreInsertFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of AssignedOwnersStoreInsertFuncCall objects
+// describing the invocations of this function.
+func (f *AssignedOwnersStoreInsertFunc) History() []AssignedOwnersStoreInsertFuncCall {
+	f.mutex.Lock()
+	history := make([]AssignedOwnersStoreInsertFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AssignedOwnersStoreInsertFuncCall is an object that describes an
+// invocation of method Insert on an instance of MockAssignedOwnersStore.
+type AssignedOwnersStoreInsertFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 api.RepoID
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AssignedOwnersStoreInsertFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AssignedOwnersStoreInsertFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// AssignedOwnersStoreListAssignedOwnersForRepoFunc describes the behavior
+// when the ListAssignedOwnersForRepo method of the parent
+// MockAssignedOwnersStore instance is invoked.
+type AssignedOwnersStoreListAssignedOwnersForRepoFunc struct {
+	defaultHook func(context.Context, api.RepoID) ([]*AssignedOwnerSummary, error)
+	hooks       []func(context.Context, api.RepoID) ([]*AssignedOwnerSummary, error)
+	history     []AssignedOwnersStoreListAssignedOwnersForRepoFuncCall
+	mutex       sync.Mutex
+}
+
+// ListAssignedOwnersForRepo delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockAssignedOwnersStore) ListAssignedOwnersForRepo(v0 context.Context, v1 api.RepoID) ([]*AssignedOwnerSummary, error) {
+	r0, r1 := m.ListAssignedOwnersForRepoFunc.nextHook()(v0, v1)
+	m.ListAssignedOwnersForRepoFunc.appendCall(AssignedOwnersStoreListAssignedOwnersForRepoFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// ListAssignedOwnersForRepo method of the parent MockAssignedOwnersStore
+// instance is invoked and the hook queue is empty.
+func (f *AssignedOwnersStoreListAssignedOwnersForRepoFunc) SetDefaultHook(hook func(context.Context, api.RepoID) ([]*AssignedOwnerSummary, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListAssignedOwnersForRepo method of the parent MockAssignedOwnersStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *AssignedOwnersStoreListAssignedOwnersForRepoFunc) PushHook(hook func(context.Context, api.RepoID) ([]*AssignedOwnerSummary, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *AssignedOwnersStoreListAssignedOwnersForRepoFunc) SetDefaultReturn(r0 []*AssignedOwnerSummary, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoID) ([]*AssignedOwnerSummary, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *AssignedOwnersStoreListAssignedOwnersForRepoFunc) PushReturn(r0 []*AssignedOwnerSummary, r1 error) {
+	f.PushHook(func(context.Context, api.RepoID) ([]*AssignedOwnerSummary, error) {
+		return r0, r1
+	})
+}
+
+func (f *AssignedOwnersStoreListAssignedOwnersForRepoFunc) nextHook() func(context.Context, api.RepoID) ([]*AssignedOwnerSummary, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *AssignedOwnersStoreListAssignedOwnersForRepoFunc) appendCall(r0 AssignedOwnersStoreListAssignedOwnersForRepoFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// AssignedOwnersStoreListAssignedOwnersForRepoFuncCall objects describing
+// the invocations of this function.
+func (f *AssignedOwnersStoreListAssignedOwnersForRepoFunc) History() []AssignedOwnersStoreListAssignedOwnersForRepoFuncCall {
+	f.mutex.Lock()
+	history := make([]AssignedOwnersStoreListAssignedOwnersForRepoFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// AssignedOwnersStoreListAssignedOwnersForRepoFuncCall is an object that
+// describes an invocation of method ListAssignedOwnersForRepo on an
+// instance of MockAssignedOwnersStore.
+type AssignedOwnersStoreListAssignedOwnersForRepoFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoID
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*AssignedOwnerSummary
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c AssignedOwnersStoreListAssignedOwnersForRepoFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c AssignedOwnersStoreListAssignedOwnersForRepoFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // MockAuthzStore is a mock implementation of the AuthzStore interface (from
 // the package github.com/sourcegraph/sourcegraph/internal/database) used
 // for unit testing.
@@ -11416,6 +11835,10 @@ type MockEventLogStore struct {
 	// AggregatedCodyEventsFunc is an instance of a mock function object
 	// controlling the behavior of the method AggregatedCodyEvents.
 	AggregatedCodyEventsFunc *EventLogStoreAggregatedCodyEventsFunc
+	// AggregatedRepoMetadataEventsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// AggregatedRepoMetadataEvents.
+	AggregatedRepoMetadataEventsFunc *EventLogStoreAggregatedRepoMetadataEventsFunc
 	// AggregatedSearchEventsFunc is an instance of a mock function object
 	// controlling the behavior of the method AggregatedSearchEvents.
 	AggregatedSearchEventsFunc *EventLogStoreAggregatedSearchEventsFunc
@@ -11554,6 +11977,11 @@ func NewMockEventLogStore() *MockEventLogStore {
 		},
 		AggregatedCodyEventsFunc: &EventLogStoreAggregatedCodyEventsFunc{
 			defaultHook: func(context.Context, time.Time) (r0 []types.CodyAggregatedEvent, r1 error) {
+				return
+			},
+		},
+		AggregatedRepoMetadataEventsFunc: &EventLogStoreAggregatedRepoMetadataEventsFunc{
+			defaultHook: func(context.Context, time.Time, PeriodType) (r0 *types.RepoMetadataAggregatedEvents, r1 error) {
 				return
 			},
 		},
@@ -11754,6 +12182,11 @@ func NewStrictMockEventLogStore() *MockEventLogStore {
 				panic("unexpected invocation of MockEventLogStore.AggregatedCodyEvents")
 			},
 		},
+		AggregatedRepoMetadataEventsFunc: &EventLogStoreAggregatedRepoMetadataEventsFunc{
+			defaultHook: func(context.Context, time.Time, PeriodType) (*types.RepoMetadataAggregatedEvents, error) {
+				panic("unexpected invocation of MockEventLogStore.AggregatedRepoMetadataEvents")
+			},
+		},
 		AggregatedSearchEventsFunc: &EventLogStoreAggregatedSearchEventsFunc{
 			defaultHook: func(context.Context, time.Time) ([]types.SearchAggregatedEvent, error) {
 				panic("unexpected invocation of MockEventLogStore.AggregatedSearchEvents")
@@ -11945,6 +12378,9 @@ func NewMockEventLogStoreFrom(i EventLogStore) *MockEventLogStore {
 		},
 		AggregatedCodyEventsFunc: &EventLogStoreAggregatedCodyEventsFunc{
 			defaultHook: i.AggregatedCodyEvents,
+		},
+		AggregatedRepoMetadataEventsFunc: &EventLogStoreAggregatedRepoMetadataEventsFunc{
+			defaultHook: i.AggregatedRepoMetadataEvents,
 		},
 		AggregatedSearchEventsFunc: &EventLogStoreAggregatedSearchEventsFunc{
 			defaultHook: i.AggregatedSearchEvents,
@@ -12382,6 +12818,121 @@ func (c EventLogStoreAggregatedCodyEventsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EventLogStoreAggregatedCodyEventsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// EventLogStoreAggregatedRepoMetadataEventsFunc describes the behavior when
+// the AggregatedRepoMetadataEvents method of the parent MockEventLogStore
+// instance is invoked.
+type EventLogStoreAggregatedRepoMetadataEventsFunc struct {
+	defaultHook func(context.Context, time.Time, PeriodType) (*types.RepoMetadataAggregatedEvents, error)
+	hooks       []func(context.Context, time.Time, PeriodType) (*types.RepoMetadataAggregatedEvents, error)
+	history     []EventLogStoreAggregatedRepoMetadataEventsFuncCall
+	mutex       sync.Mutex
+}
+
+// AggregatedRepoMetadataEvents delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockEventLogStore) AggregatedRepoMetadataEvents(v0 context.Context, v1 time.Time, v2 PeriodType) (*types.RepoMetadataAggregatedEvents, error) {
+	r0, r1 := m.AggregatedRepoMetadataEventsFunc.nextHook()(v0, v1, v2)
+	m.AggregatedRepoMetadataEventsFunc.appendCall(EventLogStoreAggregatedRepoMetadataEventsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// AggregatedRepoMetadataEvents method of the parent MockEventLogStore
+// instance is invoked and the hook queue is empty.
+func (f *EventLogStoreAggregatedRepoMetadataEventsFunc) SetDefaultHook(hook func(context.Context, time.Time, PeriodType) (*types.RepoMetadataAggregatedEvents, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AggregatedRepoMetadataEvents method of the parent MockEventLogStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *EventLogStoreAggregatedRepoMetadataEventsFunc) PushHook(hook func(context.Context, time.Time, PeriodType) (*types.RepoMetadataAggregatedEvents, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EventLogStoreAggregatedRepoMetadataEventsFunc) SetDefaultReturn(r0 *types.RepoMetadataAggregatedEvents, r1 error) {
+	f.SetDefaultHook(func(context.Context, time.Time, PeriodType) (*types.RepoMetadataAggregatedEvents, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EventLogStoreAggregatedRepoMetadataEventsFunc) PushReturn(r0 *types.RepoMetadataAggregatedEvents, r1 error) {
+	f.PushHook(func(context.Context, time.Time, PeriodType) (*types.RepoMetadataAggregatedEvents, error) {
+		return r0, r1
+	})
+}
+
+func (f *EventLogStoreAggregatedRepoMetadataEventsFunc) nextHook() func(context.Context, time.Time, PeriodType) (*types.RepoMetadataAggregatedEvents, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EventLogStoreAggregatedRepoMetadataEventsFunc) appendCall(r0 EventLogStoreAggregatedRepoMetadataEventsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// EventLogStoreAggregatedRepoMetadataEventsFuncCall objects describing the
+// invocations of this function.
+func (f *EventLogStoreAggregatedRepoMetadataEventsFunc) History() []EventLogStoreAggregatedRepoMetadataEventsFuncCall {
+	f.mutex.Lock()
+	history := make([]EventLogStoreAggregatedRepoMetadataEventsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EventLogStoreAggregatedRepoMetadataEventsFuncCall is an object that
+// describes an invocation of method AggregatedRepoMetadataEvents on an
+// instance of MockEventLogStore.
+type EventLogStoreAggregatedRepoMetadataEventsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Time
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 PeriodType
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.RepoMetadataAggregatedEvents
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EventLogStoreAggregatedRepoMetadataEventsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EventLogStoreAggregatedRepoMetadataEventsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -65070,12 +65621,12 @@ type MockUserStore struct {
 	// GetByVerifiedEmailFunc is an instance of a mock function object
 	// controlling the behavior of the method GetByVerifiedEmail.
 	GetByVerifiedEmailFunc *UserStoreGetByVerifiedEmailFunc
+	// GetChatCompletionsQuotaFunc is an instance of a mock function object
+	// controlling the behavior of the method GetChatCompletionsQuota.
+	GetChatCompletionsQuotaFunc *UserStoreGetChatCompletionsQuotaFunc
 	// GetCodeCompletionsQuotaFunc is an instance of a mock function object
 	// controlling the behavior of the method GetCodeCompletionsQuota.
 	GetCodeCompletionsQuotaFunc *UserStoreGetCodeCompletionsQuotaFunc
-	// GetCompletionsQuotaFunc is an instance of a mock function object
-	// controlling the behavior of the method GetCompletionsQuota.
-	GetCompletionsQuotaFunc *UserStoreGetCompletionsQuotaFunc
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *UserStoreHandleFunc
@@ -65116,12 +65667,12 @@ type MockUserStore struct {
 	// RenewPasswordResetCodeFunc is an instance of a mock function object
 	// controlling the behavior of the method RenewPasswordResetCode.
 	RenewPasswordResetCodeFunc *UserStoreRenewPasswordResetCodeFunc
+	// SetChatCompletionsQuotaFunc is an instance of a mock function object
+	// controlling the behavior of the method SetChatCompletionsQuota.
+	SetChatCompletionsQuotaFunc *UserStoreSetChatCompletionsQuotaFunc
 	// SetCodeCompletionsQuotaFunc is an instance of a mock function object
 	// controlling the behavior of the method SetCodeCompletionsQuota.
 	SetCodeCompletionsQuotaFunc *UserStoreSetCodeCompletionsQuotaFunc
-	// SetCompletionsQuotaFunc is an instance of a mock function object
-	// controlling the behavior of the method SetCompletionsQuota.
-	SetCompletionsQuotaFunc *UserStoreSetCompletionsQuotaFunc
 	// SetIsSiteAdminFunc is an instance of a mock function object
 	// controlling the behavior of the method SetIsSiteAdmin.
 	SetIsSiteAdminFunc *UserStoreSetIsSiteAdminFunc
@@ -65231,12 +65782,12 @@ func NewMockUserStore() *MockUserStore {
 				return
 			},
 		},
-		GetCodeCompletionsQuotaFunc: &UserStoreGetCodeCompletionsQuotaFunc{
+		GetChatCompletionsQuotaFunc: &UserStoreGetChatCompletionsQuotaFunc{
 			defaultHook: func(context.Context, int32) (r0 *int, r1 error) {
 				return
 			},
 		},
-		GetCompletionsQuotaFunc: &UserStoreGetCompletionsQuotaFunc{
+		GetCodeCompletionsQuotaFunc: &UserStoreGetCodeCompletionsQuotaFunc{
 			defaultHook: func(context.Context, int32) (r0 *int, r1 error) {
 				return
 			},
@@ -65306,12 +65857,12 @@ func NewMockUserStore() *MockUserStore {
 				return
 			},
 		},
-		SetCodeCompletionsQuotaFunc: &UserStoreSetCodeCompletionsQuotaFunc{
+		SetChatCompletionsQuotaFunc: &UserStoreSetChatCompletionsQuotaFunc{
 			defaultHook: func(context.Context, int32, *int) (r0 error) {
 				return
 			},
 		},
-		SetCompletionsQuotaFunc: &UserStoreSetCompletionsQuotaFunc{
+		SetCodeCompletionsQuotaFunc: &UserStoreSetCodeCompletionsQuotaFunc{
 			defaultHook: func(context.Context, int32, *int) (r0 error) {
 				return
 			},
@@ -65438,14 +65989,14 @@ func NewStrictMockUserStore() *MockUserStore {
 				panic("unexpected invocation of MockUserStore.GetByVerifiedEmail")
 			},
 		},
+		GetChatCompletionsQuotaFunc: &UserStoreGetChatCompletionsQuotaFunc{
+			defaultHook: func(context.Context, int32) (*int, error) {
+				panic("unexpected invocation of MockUserStore.GetChatCompletionsQuota")
+			},
+		},
 		GetCodeCompletionsQuotaFunc: &UserStoreGetCodeCompletionsQuotaFunc{
 			defaultHook: func(context.Context, int32) (*int, error) {
 				panic("unexpected invocation of MockUserStore.GetCodeCompletionsQuota")
-			},
-		},
-		GetCompletionsQuotaFunc: &UserStoreGetCompletionsQuotaFunc{
-			defaultHook: func(context.Context, int32) (*int, error) {
-				panic("unexpected invocation of MockUserStore.GetCompletionsQuota")
 			},
 		},
 		HandleFunc: &UserStoreHandleFunc{
@@ -65513,14 +66064,14 @@ func NewStrictMockUserStore() *MockUserStore {
 				panic("unexpected invocation of MockUserStore.RenewPasswordResetCode")
 			},
 		},
+		SetChatCompletionsQuotaFunc: &UserStoreSetChatCompletionsQuotaFunc{
+			defaultHook: func(context.Context, int32, *int) error {
+				panic("unexpected invocation of MockUserStore.SetChatCompletionsQuota")
+			},
+		},
 		SetCodeCompletionsQuotaFunc: &UserStoreSetCodeCompletionsQuotaFunc{
 			defaultHook: func(context.Context, int32, *int) error {
 				panic("unexpected invocation of MockUserStore.SetCodeCompletionsQuota")
-			},
-		},
-		SetCompletionsQuotaFunc: &UserStoreSetCompletionsQuotaFunc{
-			defaultHook: func(context.Context, int32, *int) error {
-				panic("unexpected invocation of MockUserStore.SetCompletionsQuota")
 			},
 		},
 		SetIsSiteAdminFunc: &UserStoreSetIsSiteAdminFunc{
@@ -65611,11 +66162,11 @@ func NewMockUserStoreFrom(i UserStore) *MockUserStore {
 		GetByVerifiedEmailFunc: &UserStoreGetByVerifiedEmailFunc{
 			defaultHook: i.GetByVerifiedEmail,
 		},
+		GetChatCompletionsQuotaFunc: &UserStoreGetChatCompletionsQuotaFunc{
+			defaultHook: i.GetChatCompletionsQuota,
+		},
 		GetCodeCompletionsQuotaFunc: &UserStoreGetCodeCompletionsQuotaFunc{
 			defaultHook: i.GetCodeCompletionsQuota,
-		},
-		GetCompletionsQuotaFunc: &UserStoreGetCompletionsQuotaFunc{
-			defaultHook: i.GetCompletionsQuota,
 		},
 		HandleFunc: &UserStoreHandleFunc{
 			defaultHook: i.Handle,
@@ -65656,11 +66207,11 @@ func NewMockUserStoreFrom(i UserStore) *MockUserStore {
 		RenewPasswordResetCodeFunc: &UserStoreRenewPasswordResetCodeFunc{
 			defaultHook: i.RenewPasswordResetCode,
 		},
+		SetChatCompletionsQuotaFunc: &UserStoreSetChatCompletionsQuotaFunc{
+			defaultHook: i.SetChatCompletionsQuota,
+		},
 		SetCodeCompletionsQuotaFunc: &UserStoreSetCodeCompletionsQuotaFunc{
 			defaultHook: i.SetCodeCompletionsQuota,
-		},
-		SetCompletionsQuotaFunc: &UserStoreSetCompletionsQuotaFunc{
-			defaultHook: i.SetCompletionsQuota,
 		},
 		SetIsSiteAdminFunc: &UserStoreSetIsSiteAdminFunc{
 			defaultHook: i.SetIsSiteAdmin,
@@ -67511,6 +68062,117 @@ func (c UserStoreGetByVerifiedEmailFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// UserStoreGetChatCompletionsQuotaFunc describes the behavior when the
+// GetChatCompletionsQuota method of the parent MockUserStore instance is
+// invoked.
+type UserStoreGetChatCompletionsQuotaFunc struct {
+	defaultHook func(context.Context, int32) (*int, error)
+	hooks       []func(context.Context, int32) (*int, error)
+	history     []UserStoreGetChatCompletionsQuotaFuncCall
+	mutex       sync.Mutex
+}
+
+// GetChatCompletionsQuota delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockUserStore) GetChatCompletionsQuota(v0 context.Context, v1 int32) (*int, error) {
+	r0, r1 := m.GetChatCompletionsQuotaFunc.nextHook()(v0, v1)
+	m.GetChatCompletionsQuotaFunc.appendCall(UserStoreGetChatCompletionsQuotaFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetChatCompletionsQuota method of the parent MockUserStore instance is
+// invoked and the hook queue is empty.
+func (f *UserStoreGetChatCompletionsQuotaFunc) SetDefaultHook(hook func(context.Context, int32) (*int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetChatCompletionsQuota method of the parent MockUserStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UserStoreGetChatCompletionsQuotaFunc) PushHook(hook func(context.Context, int32) (*int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserStoreGetChatCompletionsQuotaFunc) SetDefaultReturn(r0 *int, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32) (*int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserStoreGetChatCompletionsQuotaFunc) PushReturn(r0 *int, r1 error) {
+	f.PushHook(func(context.Context, int32) (*int, error) {
+		return r0, r1
+	})
+}
+
+func (f *UserStoreGetChatCompletionsQuotaFunc) nextHook() func(context.Context, int32) (*int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserStoreGetChatCompletionsQuotaFunc) appendCall(r0 UserStoreGetChatCompletionsQuotaFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserStoreGetChatCompletionsQuotaFuncCall
+// objects describing the invocations of this function.
+func (f *UserStoreGetChatCompletionsQuotaFunc) History() []UserStoreGetChatCompletionsQuotaFuncCall {
+	f.mutex.Lock()
+	history := make([]UserStoreGetChatCompletionsQuotaFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserStoreGetChatCompletionsQuotaFuncCall is an object that describes an
+// invocation of method GetChatCompletionsQuota on an instance of
+// MockUserStore.
+type UserStoreGetChatCompletionsQuotaFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserStoreGetChatCompletionsQuotaFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserStoreGetChatCompletionsQuotaFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // UserStoreGetCodeCompletionsQuotaFunc describes the behavior when the
 // GetCodeCompletionsQuota method of the parent MockUserStore instance is
 // invoked.
@@ -67619,115 +68281,6 @@ func (c UserStoreGetCodeCompletionsQuotaFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UserStoreGetCodeCompletionsQuotaFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// UserStoreGetCompletionsQuotaFunc describes the behavior when the
-// GetCompletionsQuota method of the parent MockUserStore instance is
-// invoked.
-type UserStoreGetCompletionsQuotaFunc struct {
-	defaultHook func(context.Context, int32) (*int, error)
-	hooks       []func(context.Context, int32) (*int, error)
-	history     []UserStoreGetCompletionsQuotaFuncCall
-	mutex       sync.Mutex
-}
-
-// GetCompletionsQuota delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockUserStore) GetCompletionsQuota(v0 context.Context, v1 int32) (*int, error) {
-	r0, r1 := m.GetCompletionsQuotaFunc.nextHook()(v0, v1)
-	m.GetCompletionsQuotaFunc.appendCall(UserStoreGetCompletionsQuotaFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the GetCompletionsQuota
-// method of the parent MockUserStore instance is invoked and the hook queue
-// is empty.
-func (f *UserStoreGetCompletionsQuotaFunc) SetDefaultHook(hook func(context.Context, int32) (*int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetCompletionsQuota method of the parent MockUserStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *UserStoreGetCompletionsQuotaFunc) PushHook(hook func(context.Context, int32) (*int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *UserStoreGetCompletionsQuotaFunc) SetDefaultReturn(r0 *int, r1 error) {
-	f.SetDefaultHook(func(context.Context, int32) (*int, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *UserStoreGetCompletionsQuotaFunc) PushReturn(r0 *int, r1 error) {
-	f.PushHook(func(context.Context, int32) (*int, error) {
-		return r0, r1
-	})
-}
-
-func (f *UserStoreGetCompletionsQuotaFunc) nextHook() func(context.Context, int32) (*int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *UserStoreGetCompletionsQuotaFunc) appendCall(r0 UserStoreGetCompletionsQuotaFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of UserStoreGetCompletionsQuotaFuncCall
-// objects describing the invocations of this function.
-func (f *UserStoreGetCompletionsQuotaFunc) History() []UserStoreGetCompletionsQuotaFuncCall {
-	f.mutex.Lock()
-	history := make([]UserStoreGetCompletionsQuotaFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// UserStoreGetCompletionsQuotaFuncCall is an object that describes an
-// invocation of method GetCompletionsQuota on an instance of MockUserStore.
-type UserStoreGetCompletionsQuotaFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int32
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c UserStoreGetCompletionsQuotaFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c UserStoreGetCompletionsQuotaFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -69126,6 +69679,117 @@ func (c UserStoreRenewPasswordResetCodeFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// UserStoreSetChatCompletionsQuotaFunc describes the behavior when the
+// SetChatCompletionsQuota method of the parent MockUserStore instance is
+// invoked.
+type UserStoreSetChatCompletionsQuotaFunc struct {
+	defaultHook func(context.Context, int32, *int) error
+	hooks       []func(context.Context, int32, *int) error
+	history     []UserStoreSetChatCompletionsQuotaFuncCall
+	mutex       sync.Mutex
+}
+
+// SetChatCompletionsQuota delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockUserStore) SetChatCompletionsQuota(v0 context.Context, v1 int32, v2 *int) error {
+	r0 := m.SetChatCompletionsQuotaFunc.nextHook()(v0, v1, v2)
+	m.SetChatCompletionsQuotaFunc.appendCall(UserStoreSetChatCompletionsQuotaFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// SetChatCompletionsQuota method of the parent MockUserStore instance is
+// invoked and the hook queue is empty.
+func (f *UserStoreSetChatCompletionsQuotaFunc) SetDefaultHook(hook func(context.Context, int32, *int) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetChatCompletionsQuota method of the parent MockUserStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UserStoreSetChatCompletionsQuotaFunc) PushHook(hook func(context.Context, int32, *int) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserStoreSetChatCompletionsQuotaFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32, *int) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserStoreSetChatCompletionsQuotaFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32, *int) error {
+		return r0
+	})
+}
+
+func (f *UserStoreSetChatCompletionsQuotaFunc) nextHook() func(context.Context, int32, *int) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserStoreSetChatCompletionsQuotaFunc) appendCall(r0 UserStoreSetChatCompletionsQuotaFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UserStoreSetChatCompletionsQuotaFuncCall
+// objects describing the invocations of this function.
+func (f *UserStoreSetChatCompletionsQuotaFunc) History() []UserStoreSetChatCompletionsQuotaFuncCall {
+	f.mutex.Lock()
+	history := make([]UserStoreSetChatCompletionsQuotaFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserStoreSetChatCompletionsQuotaFuncCall is an object that describes an
+// invocation of method SetChatCompletionsQuota on an instance of
+// MockUserStore.
+type UserStoreSetChatCompletionsQuotaFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserStoreSetChatCompletionsQuotaFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserStoreSetChatCompletionsQuotaFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // UserStoreSetCodeCompletionsQuotaFunc describes the behavior when the
 // SetCodeCompletionsQuota method of the parent MockUserStore instance is
 // invoked.
@@ -69234,115 +69898,6 @@ func (c UserStoreSetCodeCompletionsQuotaFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UserStoreSetCodeCompletionsQuotaFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// UserStoreSetCompletionsQuotaFunc describes the behavior when the
-// SetCompletionsQuota method of the parent MockUserStore instance is
-// invoked.
-type UserStoreSetCompletionsQuotaFunc struct {
-	defaultHook func(context.Context, int32, *int) error
-	hooks       []func(context.Context, int32, *int) error
-	history     []UserStoreSetCompletionsQuotaFuncCall
-	mutex       sync.Mutex
-}
-
-// SetCompletionsQuota delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockUserStore) SetCompletionsQuota(v0 context.Context, v1 int32, v2 *int) error {
-	r0 := m.SetCompletionsQuotaFunc.nextHook()(v0, v1, v2)
-	m.SetCompletionsQuotaFunc.appendCall(UserStoreSetCompletionsQuotaFuncCall{v0, v1, v2, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the SetCompletionsQuota
-// method of the parent MockUserStore instance is invoked and the hook queue
-// is empty.
-func (f *UserStoreSetCompletionsQuotaFunc) SetDefaultHook(hook func(context.Context, int32, *int) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// SetCompletionsQuota method of the parent MockUserStore instance invokes
-// the hook at the front of the queue and discards it. After the queue is
-// empty, the default hook function is invoked for any future action.
-func (f *UserStoreSetCompletionsQuotaFunc) PushHook(hook func(context.Context, int32, *int) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *UserStoreSetCompletionsQuotaFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int32, *int) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *UserStoreSetCompletionsQuotaFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int32, *int) error {
-		return r0
-	})
-}
-
-func (f *UserStoreSetCompletionsQuotaFunc) nextHook() func(context.Context, int32, *int) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *UserStoreSetCompletionsQuotaFunc) appendCall(r0 UserStoreSetCompletionsQuotaFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of UserStoreSetCompletionsQuotaFuncCall
-// objects describing the invocations of this function.
-func (f *UserStoreSetCompletionsQuotaFunc) History() []UserStoreSetCompletionsQuotaFuncCall {
-	f.mutex.Lock()
-	history := make([]UserStoreSetCompletionsQuotaFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// UserStoreSetCompletionsQuotaFuncCall is an object that describes an
-// invocation of method SetCompletionsQuota on an instance of MockUserStore.
-type UserStoreSetCompletionsQuotaFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int32
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 *int
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c UserStoreSetCompletionsQuotaFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c UserStoreSetCompletionsQuotaFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

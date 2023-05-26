@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 )
 
 type Source struct {
@@ -28,9 +29,18 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 		ID:            "anonymous", // TODO: Make this IP-based?
 		Key:           token,
 		AccessEnabled: s.allowAnonymous,
-		RateLimit: actor.RateLimit{
-			Limit:    50,
-			Interval: 60 * time.Minute,
+		// Some basic defaults for chat and code completions.
+		RateLimits: map[types.CompletionsFeature]actor.RateLimit{
+			types.CompletionsFeatureChat: {
+				AllowedModels: []string{"claude-v1"},
+				Limit:         50,
+				Interval:      24 * time.Hour,
+			},
+			types.CompletionsFeatureCode: {
+				AllowedModels: []string{"claude-instant-v1"},
+				Limit:         500,
+				Interval:      24 * time.Hour,
+			},
 		},
 		Source: s,
 	}, nil

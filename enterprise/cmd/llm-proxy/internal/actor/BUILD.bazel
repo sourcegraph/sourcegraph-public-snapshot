@@ -10,7 +10,9 @@ go_library(
     visibility = ["//enterprise/cmd/llm-proxy:__subpackages__"],
     deps = [
         "//enterprise/cmd/llm-proxy/internal/limiter",
+        "//enterprise/internal/completions/types",
         "//internal/goroutine",
+        "//internal/observation",
         "//internal/trace",
         "//lib/errors",
         "@com_github_go_redsync_redsync_v4//:redsync",
@@ -32,6 +34,7 @@ go_test(
         "requires-network",
     ],
     deps = [
+        "//internal/observation",
         "//internal/redispool",
         "//lib/errors",
         "@com_github_go_redsync_redsync_v4//:redsync",

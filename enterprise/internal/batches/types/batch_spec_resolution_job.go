@@ -1,6 +1,7 @@
 package types
 
 import (
+	"strconv"
 	"strings"
 	"time"
 
@@ -64,4 +65,8 @@ type BatchSpecResolutionJob struct {
 
 func (j *BatchSpecResolutionJob) RecordID() int {
 	return int(j.ID)
+}
+
+func (j *BatchSpecResolutionJob) RecordUID() string {
+	return strconv.FormatInt(j.ID, 10)
 }

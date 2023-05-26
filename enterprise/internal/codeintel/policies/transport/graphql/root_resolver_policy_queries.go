@@ -45,15 +45,10 @@ func (r *rootResolver) CodeIntelligenceConfigurationPolicies(ctx context.Context
 	if args.Query != nil {
 		opts.Term = *args.Query
 	}
-	if args.ForDataRetention != nil {
-		opts.ForDataRetention = *args.ForDataRetention
-	}
-	if args.ForIndexing != nil {
-		opts.ForIndexing = *args.ForIndexing
-	}
-	if args.Protected != nil {
-		opts.Protected = args.Protected
-	}
+	opts.Protected = args.Protected
+	opts.ForDataRetention = args.ForDataRetention
+	opts.ForIndexing = args.ForIndexing
+	opts.ForEmbeddings = args.ForEmbeddings
 
 	configPolicies, totalCount, err := r.policySvc.GetConfigurationPolicies(ctx, opts)
 	if err != nil {
