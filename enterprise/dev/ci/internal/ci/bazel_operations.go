@@ -16,7 +16,7 @@ import (
 func BazelOperations() []operations.Operation {
 	ops := []operations.Operation{}
 	ops = append(ops, bazelConfigure())
-	ops = append(ops, bazelTest("//...", "//client/web:test"))
+	ops = append(ops, bazelTest("//...")) //, "//client/web:test"))
 	ops = append(ops, bazelBackCompatTest(
 		"@sourcegraph_back_compat//cmd/...",
 		"@sourcegraph_back_compat//lib/...",
@@ -122,6 +122,7 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 		bk.Agent("queue", "bazel"),
 		bk.Key("bazel-tests"),
 		bk.ArtifactPaths("./bazel-testlogs/enterprise/cmd/embeddings/shared/shared_test/*.log"),
+		bk.ArtifactPaths("./command.profile.gz"),
 		bk.AutomaticRetry(1), // TODO @jhchabran flaky stuff are breaking builds
 	}
 
@@ -130,7 +131,7 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 	for _, target := range targets {
 		cmd := bazelCmd(fmt.Sprintf("test %s", target))
 		bazelTestCmds = append(bazelTestCmds,
-			bazelAnnouncef("bazel test %s", target),
+			bazelAnnouncef("bazel test %s --generate_json_trace_profile", target),
 			bk.Cmd(cmd))
 	}
 	cmds = append(cmds, bazelTestCmds...)
