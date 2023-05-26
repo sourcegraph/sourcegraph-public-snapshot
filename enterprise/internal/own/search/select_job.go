@@ -2,7 +2,6 @@ package search
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"go.opentelemetry.io/otel/attribute"
@@ -74,9 +73,18 @@ func (s *selectOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, s
 		}()
 		var results result.Matches
 		for _, m := range matches {
+		nextReference:
 			for _, r := range m.references {
-				ro := bag.Get(r)
-				fmt.Printf("owner %s resolves to %s\n", r, ro)
+				ro, found := bag.FindResolved(r)
+				if !found {
+					guess := r.ResolutionGuess()
+					// No text references found to make a guess, something is wrong.
+					if guess == nil {
+						// TODO: Handle error condition
+						continue nextReference
+					}
+					ro = guess
+				}
 				if ro != nil {
 					om := &result.OwnerMatch{
 						ResolvedOwner: ownerToResult(ro),

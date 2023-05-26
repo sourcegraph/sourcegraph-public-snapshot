@@ -45,6 +45,16 @@ type Reference struct {
 	Email string
 }
 
+func (r Reference) ResolutionGuess() *codeowners.Person {
+	if r.Handle == "" && r.Email == "" {
+		return nil
+	}
+	return &codeowners.Person{
+		Handle: r.Handle,
+		Email:  r.Email,
+	}
+}
+
 func (r Reference) String() string {
 	var b bytes.Buffer
 	fmt.Fprint(&b, "{")
@@ -75,18 +85,31 @@ func (r Reference) String() string {
 	return b.String()
 }
 
-// Bag is a collection of platonic forms or identities of owners (teams, people
-// or otherwise). It is pre-seeded with database information based on the search
-// query using `ByTextReference`, and used to match found owner references.
+// Bag is a collection of platonic forms or identities of owners (currently supports
+// only users - teams coming). The purpose of this object is to group references
+// that refer to the same user, so that the user can be found by each of the references.
+//
+// It can either be created from test references using `ByTextReference`,
+// or `EmptyBag` if no initial references are know for the unification use case.
 type Bag interface {
-	// Contains answers true if given bag contains an owner form
-	// that the given reference points at in some way.
+	// Contains answers true if given bag contains any of the references
+	// in given References object. This includes references that are in the bag
+	// (via `Add` or `ByTextReference`) and were not resolved to a user.
 	Contains(Reference) bool
 
-	Get(Reference) codeowners.ResolvedOwner
+	// FindResolved returns the owner that was resolved from a reference
+	// that was added through Add or the ByTextReference constructor (and true flag).
+	// In case the reference was not resolved to any user, the result
+	// is nil, and false boolean is returned.
+	FindResolved(Reference) (codeowners.ResolvedOwner, bool)
 
+	// Add puts a Reference in the Bag so that later a user associated
+	// with that Reference can be pulled from the database by calling Resolve.
 	Add(Reference)
 
+	// Resolve retrieves all users it can find that are associated
+	// with references that are in the Bag by means of Add or ByTextReference
+	// constructor.
 	Resolve(context.Context, edb.EnterpriseDB) error
 }
 
@@ -163,7 +186,7 @@ func (b bag) Contains(ref Reference) bool {
 	return false
 }
 
-func (b bag) Get(ref Reference) codeowners.ResolvedOwner {
+func (b bag) FindResolved(ref Reference) (codeowners.ResolvedOwner, bool) {
 	var ks []refKey
 	if id := ref.UserID; id != 0 {
 		ks = append(ks, refKey{userID: id})
@@ -191,16 +214,13 @@ func (b bag) Get(ref Reference) codeowners.ResolvedOwner {
 					PrimaryEmail: email,
 					Handle:       userRefs.user.Username,
 					// TODO: How to set email?
-				}
+				}, true
 			}
 		}
 	}
 	// Best effort, return the default asssumed person based
 	// on the input:
-	return &codeowners.Person{
-		Handle: ref.Handle,
-		Email:  ref.Email,
-	}
+	return nil, false
 }
 
 func (b bag) String() string {
