@@ -91,9 +91,9 @@ extend type Mutation {
     """
     scheduleContextDetectionForEmbedding: EmptyResponse!
     """
-    Experimental: Cancels an embedding job matching the repository and revision. The job must exist and be in either 'processing' or 'queued' state.
+    Experimental: Cancels the embedding job with the given ID. The job must exist and be in either 'processing' or 'queued' state.
     """
-    cancelRepoEmbeddingJob(repoName: String!, revision: String!): EmptyResponse!
+    cancelRepoEmbeddingJob(job: ID!): EmptyResponse!
 }
 
 """

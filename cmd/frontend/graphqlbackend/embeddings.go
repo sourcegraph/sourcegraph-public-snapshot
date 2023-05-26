@@ -61,8 +61,7 @@ type ListRepoEmbeddingJobsArgs struct {
 }
 
 type CancelRepoEmbeddingJobArgs struct {
-	RepoName string
-	Revision string
+	Job graphql.ID
 }
 
 type RepoEmbeddingJobResolver interface {

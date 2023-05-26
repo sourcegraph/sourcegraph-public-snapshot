@@ -14,9 +14,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func completeJob(t *testing.T, ctx context.Context, store RepoEmbeddingJobsStore, jobID int) {
+func setJobState(t *testing.T, ctx context.Context, store RepoEmbeddingJobsStore, jobID int, state string) {
 	t.Helper()
-	err := store.Exec(ctx, sqlf.Sprintf("UPDATE repo_embedding_jobs SET state = %s WHERE id = %s", "completed", jobID))
+	err := store.Exec(ctx, sqlf.Sprintf("UPDATE repo_embedding_jobs SET state = %s WHERE id = %s", state, jobID))
 	if err != nil {
 		t.Fatalf("failed to set repo embedding job state: %s", err)
 	}
@@ -74,7 +74,7 @@ func TestRepoEmbeddingJobsStore(t *testing.T) {
 	require.Equal(t, id1, lastEmbeddingJobForRevision.ID)
 
 	// Complete the second job and check if we get it back when calling GetLastCompletedRepoEmbeddingJob.
-	completeJob(t, ctx, store, id2)
+	setJobState(t, ctx, store, id2, "completed")
 	lastCompletedJob, err := store.GetLastCompletedRepoEmbeddingJob(ctx, createdRepo.ID)
 	require.NoError(t, err)
 
@@ -109,14 +109,13 @@ func TestCancelRepoEmbeddingJob(t *testing.T) {
 	require.NoError(t, err)
 
 	// Cancel the first one.
-	err = store.CancelRepoEmbeddingJob(ctx, createdRepo.ID, "deadbeef")
+	err = store.CancelRepoEmbeddingJob(ctx, id1)
 	require.NoError(t, err)
 
-	// Complete the second job and check if we get it back when calling GetLastCompletedRepoEmbeddingJob.
-	completeJob(t, ctx, store, id2)
-	lastCompletedJob, err := store.GetLastCompletedRepoEmbeddingJob(ctx, createdRepo.ID)
+	// Move the second job to 'processing' state and cancel it too
+	setJobState(t, ctx, store, id2, "processing")
+	err = store.CancelRepoEmbeddingJob(ctx, id2)
 	require.NoError(t, err)
-	require.Equal(t, id2, lastCompletedJob.ID)
 
 	first := 10
 	jobs, err := store.ListRepoEmbeddingJobs(ctx, &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true})
@@ -126,15 +125,19 @@ func TestCancelRepoEmbeddingJob(t *testing.T) {
 	require.Equal(t, 2, len(jobs))
 	require.Equal(t, id1, jobs[0].ID)
 	require.Equal(t, true, jobs[0].Cancel)
+	require.Equal(t, "canceled", jobs[0].State)
 	require.Equal(t, id2, jobs[1].ID)
-	require.Equal(t, false, jobs[1].Cancel)
-	require.Equal(t, "completed", jobs[1].State)
+	require.Equal(t, true, jobs[1].Cancel)
 
 	// Attempting to cancel a non-existent job should fail
-	err = store.CancelRepoEmbeddingJob(ctx, createdRepo.ID, "nonexistent")
-	require.Equal(t, err, &RepoEmbeddingJobNotFoundErr{repoID: createdRepo.ID, revision: "nonexistent"})
+	err = store.CancelRepoEmbeddingJob(ctx, id1 + 42)
+	require.Error(t, err)
 
 	// Attempting to cancel a completed job should fail
-	err = store.CancelRepoEmbeddingJob(ctx, createdRepo.ID, "coffee")
-	require.Equal(t, err, &RepoEmbeddingJobNotFoundErr{repoID: createdRepo.ID, revision: "coffee"})
+	id3, err := store.CreateRepoEmbeddingJob(ctx, createdRepo.ID, "avocado")
+	require.NoError(t, err)
+
+	setJobState(t, ctx, store, id3, "completed")
+	err = store.CancelRepoEmbeddingJob(ctx, id3)
+	require.Error(t, err)
 }

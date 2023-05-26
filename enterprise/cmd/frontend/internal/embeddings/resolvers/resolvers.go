@@ -190,14 +190,12 @@ func (r *Resolver) CancelRepoEmbeddingJob(ctx context.Context, args graphqlbacke
 		return nil, err
 	}
 
-	repoStore := r.db.Repos()
-	repo, err := repoStore.GetByName(ctx, api.RepoName(args.RepoName))
+	jobID, err := unmarshalRepoEmbeddingJobID(args.Job)
 	if err != nil {
 		return nil, err
 	}
 
-	commitID := api.CommitID(args.Revision)
-	if err := r.repoEmbeddingJobsStore.CancelRepoEmbeddingJob(ctx, repo.ID, commitID); err != nil {
+	if err := r.repoEmbeddingJobsStore.CancelRepoEmbeddingJob(ctx, jobID); err != nil {
 		return nil, err
 	}
 	return &graphqlbackend.EmptyResponse{}, nil
