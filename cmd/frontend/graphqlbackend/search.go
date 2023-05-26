@@ -11,9 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/settings"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type SearchArgs struct {
@@ -74,14 +72,4 @@ type searchResolver struct {
 	SearchInputs   *search.Inputs
 	db             database.DB
 	enterpriseJobs jobutil.EnterpriseJobs
-}
-
-// DecodedViewerFinalSettings returns the final (merged) settings for the viewer
-func DecodedViewerFinalSettings(ctx context.Context, db database.DB) (_ *schema.Settings, err error) {
-	tr, ctx := trace.New(ctx, "decodedViewerFinalSettings", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
-	return nil, nil
 }
