@@ -4,4 +4,4 @@ UPDATE codeintel_ranking_exports SET upload_key = (
     SELECT md5(u.repository_id || ':' || u.root || ':' || u.indexer)
     FROM lsif_uploads u
     WHERE u.id = upload_id
-);
+) WHERE upload_key IS NULL;
