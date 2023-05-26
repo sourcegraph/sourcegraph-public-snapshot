@@ -56,7 +56,7 @@ export const Badges = () => (
         <Text>For more advanced functionality, badges can also function as links.</Text>
         {BADGE_VARIANTS.map(variant => (
             <Badge as={Link} to="https://example.com" key={variant} variant={variant} className="mr-2">
-                I am a link
+                link/{variant}
             </Badge>
         ))}
     </>
