@@ -1,0 +1,14 @@
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+
+oci_image(
+    name = "image",
+    base = "@wolfi_node_exporter_base",
+    entrypoint = ["/usr/bin/node_exporter"],
+    user = "nobody",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["node-exporter:candidate"],
+)

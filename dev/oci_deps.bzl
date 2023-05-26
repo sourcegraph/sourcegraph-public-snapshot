@@ -96,3 +96,9 @@ def oci_deps():
         digest = "sha256:8a81ff942cb9d07c2402d24a2c31a8a33c55b59deb80576c6a448dd1ade764a7",
         image = "us.gcr.io/sourcegraph-dev/wolfi-postgresql-12-codeinsights-base",
     )
+
+    oci_pull(
+        name = "wolfi_node_exporter_base",
+        digest = "sha256:0a42810eafc6c81f95cb3295003de966d3a857d37dd79ef45a3be54c3b4c8e7c",
+        image = "us.gcr.io/sourcegraph-dev/wolfi-node-exporter-base",
+    )
