@@ -139,7 +139,7 @@ func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) categ
 				Check: func(ctx context.Context, _ *std.Output, _ CheckArgs) error {
 					return check.Combine(
 						check.InPath("python"),
-						check.CommandExitCode("python -v", 0),
+						check.CommandExitCode("python -V", 0),
 					)(ctx)
 				},
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
