@@ -9,7 +9,7 @@ registries=(
 
 date_fragment="$(date +%y-%m-%d)"
 
-qa_suffix="-bazel-qa"
+qa_prefix="bazel"
 
 tags=(
   "${BUILDKITE_COMMIT:0:12}"
@@ -36,7 +36,7 @@ echo "--- "
 
 tags_args=""
 for t in "${tags[@]}"; do
-  tags_args="$tags_args --tag ${t}-${qa_suffix}"
+  tags_args="$tags_args --tag ${qa_prefix}-${t}"
 done
 
 function create_push_command() {
@@ -58,7 +58,7 @@ function create_push_command() {
     --stamp \
     --workspace_status_command=./dev/bazel_stamp_vars.sh"
 
-  echo "echo \"--- :bazel:docker: pushing $repository\" && $cmd -- $tags_args $repositories_args && echo \"--- \""
+  echo "echo \"--- :bazel::docker: pushing $repository\" && $cmd -- $tags_args $repositories_args && echo \"--- \""
 }
 
 images=$(bazel query 'kind("oci_push rule", //...)')
