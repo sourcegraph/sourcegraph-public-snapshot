@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
@@ -30,16 +29,13 @@ func TestInsertPathCountInputs(t *testing.T) {
 
 	key := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123)
 
-	t1 := time.Now().Add(-time.Minute * 10)
-	t2 := time.Now().Add(-time.Minute * 20)
-
 	// Insert and export uploads
 	insertUploads(t, db,
 		uploadsshared.Upload{ID: 42, RepositoryID: 50},
 		uploadsshared.Upload{ID: 43, RepositoryID: 51},
 		uploadsshared.Upload{ID: 90, RepositoryID: 52},
-		uploadsshared.Upload{ID: 91, RepositoryID: 53, FinishedAt: &t1}, // younger
-		uploadsshared.Upload{ID: 92, RepositoryID: 53, FinishedAt: &t2}, // older
+		uploadsshared.Upload{ID: 91, RepositoryID: 53}, // older   (by ID order)
+		uploadsshared.Upload{ID: 92, RepositoryID: 53}, // younger (by ID order)
 		uploadsshared.Upload{ID: 93, RepositoryID: 54, Root: "lib/", Indexer: "test"},
 		uploadsshared.Upload{ID: 94, RepositoryID: 54, Root: "lib/", Indexer: "test"},
 	)
@@ -117,18 +113,18 @@ func TestInsertPathCountInputs(t *testing.T) {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
-	mockReferences = make(chan string, 1)
+	// Duplicate of 92 (below) - should not be processed as it's older
+	mockReferences = make(chan string, 4)
+	mockReferences <- "foo"
+	mockReferences <- "bar"
+	mockReferences <- "baz"
 	mockReferences <- "bonk"
 	close(mockReferences)
 	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 191, mockReferences); err != nil {
 		t.Fatalf("unexpected error inserting references: %s", err)
 	}
 
-	// duplicate of 91 (should not be processed as it's older)
-	mockReferences = make(chan string, 4)
-	mockReferences <- "foo"
-	mockReferences <- "bar"
-	mockReferences <- "baz"
+	mockReferences = make(chan string, 1)
 	mockReferences <- "bonk"
 	close(mockReferences)
 	if err := store.InsertReferencesForRanking(ctx, mockRankingGraphKey, mockRankingBatchSize, 192, mockReferences); err != nil {

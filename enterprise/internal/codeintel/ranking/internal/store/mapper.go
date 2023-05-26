@@ -148,7 +148,7 @@ processable_symbols AS (
 				u.repository_id = u2.repository_id AND
 				u.root = u2.root AND
 				u.indexer = u2.indexer AND
-				u.finished_at < u2.finished_at
+				u.id < u2.id
 		)
 ),
 referenced_symbols AS (
