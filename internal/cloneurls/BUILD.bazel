@@ -11,10 +11,11 @@ go_library(
         "//internal/conf/reposource",
         "//internal/database",
         "//internal/extsvc",
-        "//internal/trace/ot",
+        "//internal/trace",
         "//internal/types",
         "//lib/errors",
         "//schema",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 

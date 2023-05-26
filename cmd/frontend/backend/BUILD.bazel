@@ -57,7 +57,6 @@ go_library(
         "//internal/search/result",
         "//internal/symbols",
         "//internal/trace",
-        "//internal/trace/ot",
         "//internal/txemail",
         "//internal/txemail/txtypes",
         "//internal/types",
@@ -69,6 +68,7 @@ go_library(
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 

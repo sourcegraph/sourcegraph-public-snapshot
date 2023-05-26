@@ -52,7 +52,6 @@ go_library(
         "//internal/search/result",
         "//internal/search/symbol",
         "//internal/trace",
-        "//internal/trace/ot",
         "//internal/types",
         "//internal/version",
         "//lib/errors",

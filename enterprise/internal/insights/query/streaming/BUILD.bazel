@@ -24,9 +24,9 @@ go_library(
         "//internal/search/streaming/api",
         "//internal/search/streaming/http",
         "//internal/settings",
+        "//internal/trace",
         "//internal/types",
-        "@com_github_opentracing_opentracing_go//:opentracing-go",
-        "@com_github_opentracing_opentracing_go//log",
         "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )

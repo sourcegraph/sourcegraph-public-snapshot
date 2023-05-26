@@ -16,9 +16,9 @@ go_library(
         "//internal/extsvc",
         "//internal/gitserver",
         "//internal/repoupdater/protocol",
-        "//internal/trace/ot",
+        "//internal/trace",
         "//internal/types",
-        "@com_github_opentracing_opentracing_go//ext",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 

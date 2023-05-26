@@ -11,9 +11,9 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//internal/httpcli",
-        "//internal/trace/ot",
+        "//internal/trace",
         "//lib/errors",
         "@com_github_google_uuid//:uuid",
-        "@com_github_opentracing_opentracing_go//ext",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
