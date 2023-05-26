@@ -21,7 +21,7 @@ public class ApiAuthenticator {
       @NotNull Consumer<ConnectionStatus> callback) {
     new Thread(
             () -> {
-              String query = "query {" + "    currentUser {" + "        id" + "    }" + "}";
+              String query = "query { currentUser { id } }";
 
               try {
                 GraphQlResponse response =
