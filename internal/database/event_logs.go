@@ -977,7 +977,7 @@ FROM (
     ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
   FROM event_logs
   LEFT OUTER JOIN users ON users.id = event_logs.user_id
-  WHERE (timestamp >= ` + makeDateTruncExpression("rolling_month", "%s::timestamp") + `) AND (%s) AND anonymous_user_id != 'backend'
+  WHERE (timestamp >= ` + makeDateTruncExpression("rolling_month", "%s::timestamp - interval '1 day'") + `) AND (%s) AND anonymous_user_id != 'backend'
 ) events
 
 GROUP BY current_rolling_month, rolling_month, current_month, current_week, current_day
@@ -1661,7 +1661,7 @@ WITH events AS (
     ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
   FROM event_logs
   WHERE
-    timestamp >= ` + makeDateTruncExpression("rolling_month", "%s::timestamp") + `
+    timestamp >= ` + makeDateTruncExpression("rolling_month", "%s::timestamp - interval '1 day'") + `
     AND name IN (` + strings.Join(searchLatencyEventNames, ", ") + `)
 )
 SELECT
@@ -1696,7 +1696,7 @@ WITH events AS (
   FROM event_logs
   CROSS JOIN LATERAL jsonb_each(argument->'code_search'->'query_data'->'query') json
   WHERE
-    timestamp >= ` + makeDateTruncExpression("rolling_month", "%s::timestamp") + `
+    timestamp >= ` + makeDateTruncExpression("rolling_month", "%s::timestamp - interval '1 day'") + `
     AND name = 'SearchResultsQueried'
 )
 SELECT
