@@ -228,8 +228,6 @@ pub fn ctags_runner<R: Read, W: Write>(
         let mut line = String::new();
         input.read_line(&mut line)?;
 
-        eprintln!("Request {}", line);
-
         if line.is_empty() {
             break;
         }
@@ -246,7 +244,6 @@ pub fn ctags_runner<R: Read, W: Write>(
         match request {
             Request::GenerateTags { filename, size } => {
                 let mut file_data = vec![0; size];
-                eprintln!("File data {:?}", std::str::from_utf8(&file_data));
                 input
                     .read_exact(&mut file_data)
                     .expect("Could not fill file data exactly");
