@@ -1,5 +1,6 @@
 import { listen, Event } from '@tauri-apps/api/event'
 import { invoke } from '@tauri-apps/api/tauri'
+import { createRoot } from 'react-dom/client'
 
 import { logger } from '@sourcegraph/common'
 
@@ -50,11 +51,3 @@ listen('app-shell-ready', (event: Event<AppShellReadyPayload>) => appShellReady(
 await invoke('app_shell_loaded')
     .then(payload => appShellReady(payload as AppShellReadyPayload))
     .catch(error => logger.error(`failed to inform Tauri app_shell_loaded: ${error}`))
-
-listen('app-shell-error', (event: Event<string>) => {
-    showErrorPage(event.payload)
-})
-
-function showErrorPage(error: string): void {
-    document.body.innerHTML = `<h1>Oops, something went wrong</h1><p>${error}</p>`
-}

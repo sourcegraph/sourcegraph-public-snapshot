@@ -46,6 +46,16 @@ fn reload_cody_window(app_handle: tauri::AppHandle) {
     }
 }
 
+#[tauri::command]
+fn show_logs(app_handle: tauri::AppHandle) {
+    common::show_logs(&app_handle);
+}
+
+#[tauri::command]
+fn restart_app(app_handle: tauri::AppHandle) {
+    app_handle.restart();
+}
+
 fn set_launch_path(url: String) {
     *LAUNCH_PATH.write().unwrap() = url;
 }
@@ -154,7 +164,9 @@ fn main() {
             get_launch_path,
             app_shell_loaded,
             show_main_window,
-            reload_cody_window
+            reload_cody_window,
+            show_logs,
+            restart_app
         ])
         .run(context)
         .expect("error while running tauri application");
@@ -208,17 +220,11 @@ fn start_embedded_services(handle: &tauri::AppHandle) {
                     log::error!("{}", line);
                 }
                 CommandEvent::Error(err) => {
-                    app.get_window("main")
-                        .unwrap()
-                        .emit("app-shell-error", "")
-                        .unwrap();
+                    show_error_screen(&app);
                     log::error!("Command Error: {:#?}", err)
                 }
                 CommandEvent::Terminated(payload) => {
-                    emit_app_shell_error(
-                        &app,
-                        format!("The process crashed with exit code {:?}", payload.code).as_str(),
-                    );
+                    show_error_screen(&app);
                     log::error!("Command Terminated: {:#?}", payload)
                 }
                 _ => continue,
@@ -227,12 +233,14 @@ fn start_embedded_services(handle: &tauri::AppHandle) {
     });
 }
 
-fn emit_app_shell_error(app_handle: &tauri::AppHandle, message: &str) {
+/// Show the error page in the main window
+fn show_error_screen(app_handle: &tauri::AppHandle) {
     app_handle
         .get_window("main")
         .unwrap()
-        .emit("app-shell-error", message)
+        .eval("window.location.href = 'tauri://localhost/error.html';")
         .unwrap();
+    show_window(app_handle, "main");
 }
 
 fn get_sourcegraph_args(app_handle: &tauri::AppHandle) -> Vec<String> {
