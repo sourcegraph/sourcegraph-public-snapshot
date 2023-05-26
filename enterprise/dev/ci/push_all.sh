@@ -66,7 +66,8 @@ job_file=$(mktemp)
 # shellcheck disable=SC2064
 trap "rm -rf $job_file" EXIT
 
-for target in "${images[@]}"; do
+# shellcheck disable=SC2068
+for target in ${images[@]}; do
   [[ "$target" =~ ([A-Za-z0-9_-]+): ]]
   name="${BASH_REMATCH[1]}"
   create_push_command "$name" "$target" >> "$job_file"
