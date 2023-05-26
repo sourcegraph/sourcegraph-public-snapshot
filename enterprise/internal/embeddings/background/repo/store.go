@@ -8,8 +8,10 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -101,7 +103,7 @@ type RepoEmbeddingJobsStore interface {
 	GetLastRepoEmbeddingJobForRevision(ctx context.Context, repoID api.RepoID, revision api.CommitID) (*RepoEmbeddingJob, error)
 	ListRepoEmbeddingJobs(ctx context.Context, args *database.PaginationArgs) ([]*RepoEmbeddingJob, error)
 	CountRepoEmbeddingJobs(ctx context.Context) (int, error)
-	GetEmbeddableRepos(ctx context.Context) ([]EmbeddableRepo, error)
+	GetEmbeddableRepos(ctx context.Context, opts EmbeddableRepoOpts)
 	CancelRepoEmbeddingJob(ctx context.Context, job int) error
 }
 
@@ -131,6 +133,14 @@ global_policy_descriptor AS MATERIALIZED (
 		p.repository_id IS NULL AND
 		p.repository_patterns IS NULL
 	LIMIT 1
+),
+last_successful_jobs AS (
+	SELECT DISTINCT ON (repo_id) repo_id, finished_at
+	FROM repo_embedding_jobs
+	WHERE
+		state = 'completed' AND
+		failure_message IS NULL
+	ORDER BY repo_id, finished_at DESC
 ),
 repositories_matching_policy AS (
     (
@@ -167,13 +177,38 @@ repositories_matching_policy AS (
             gr.clone_status = 'cloned'
     )
 )
-
 --
-SELECT DISTINCT ON (id) * FROM repositories_matching_policy;
+SELECT DISTINCT ON (rmp.id) rmp.id, rmp.last_changed
+FROM repositories_matching_policy rmp
+LEFT JOIN last_successful_jobs lsj ON lsj.repo_id = rmp.id
+WHERE lsj.finished_at IS NULL OR lsj.finished_at < current_timestamp - (%s * '1 second'::interval);
 `
 
-func (s *repoEmbeddingJobsStore) GetEmbeddableRepos(ctx context.Context) ([]EmbeddableRepo, error) {
-	q := sqlf.Sprintf(getEmbeddableReposFmtStr)
+type EmbeddableRepoOpts struct {
+	// CoolDown is the minimum amount of time that must have passed since the last
+	// successful embedding job.
+	CoolDown time.Duration
+}
+
+func GetEmbeddableRepoOpts(logger sglog.Logger) EmbeddableRepoOpts {
+	coolDownString := conf.Get().Embeddings.CoolDown
+	d, err := time.ParseDuration(coolDownString)
+	if err != nil {
+		d = 24 * time.Hour // default
+		if coolDownString != "" {
+			logger.Warn(
+				"Could not parse site-config value for embeddings.coolDown. Using default value instead.",
+				sglog.Duration("default", d),
+				sglog.Error(err),
+			)
+		}
+	}
+
+	return EmbeddableRepoOpts{CoolDown: d}
+}
+
+func (s *repoEmbeddingJobsStore) GetEmbeddableRepos(ctx context.Context, opts EmbeddableRepoOpts) ([]EmbeddableRepo, error) {
+	q := sqlf.Sprintf(getEmbeddableReposFmtStr, opts.CoolDown.Seconds())
 	return scanEmbeddableRepos(s.Query(ctx, q))
 }
 

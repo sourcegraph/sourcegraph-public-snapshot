@@ -608,6 +608,8 @@ type EmailTemplates struct {
 type Embeddings struct {
 	// AccessToken description: The access token used to authenticate with the external embedding API service.
 	AccessToken string `json:"accessToken"`
+	// CoolDown description: The time to wait between runs. Valid time units are "s", "m", "h". Example values: "30s", "5m", "1h".
+	CoolDown string `json:"coolDown,omitempty"`
 	// Dimensions description: The dimensionality of the embedding vectors.
 	Dimensions int `json:"dimensions"`
 	// Enabled description: Toggles whether embedding service is enabled.
