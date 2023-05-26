@@ -38,7 +38,7 @@ import {
     isLoggedIn,
 } from './protocol'
 import { getRecipe } from './recipes'
-import { filesExist, getCodebaseContext } from './utils'
+import { CodebaseCandidate, filesExist, getCodebaseCandidate, getCodebaseContext } from './utils'
 
 export async function getAuthStatus(
     config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
@@ -108,7 +108,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private disposables: vscode.Disposable[] = []
 
     // Codebase-context-related state
-    private currentWorkspaceRoot: string
+    private codebaseCandidate: CodebaseCandidate | undefined
 
     private localAppDetector: LocalAppDetector
 
@@ -133,14 +133,20 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.disposables.push(this.configurationChangeEvent)
 
         // listen for vscode active editor change event
-        this.currentWorkspaceRoot = ''
+        this.codebaseCandidate = undefined
         this.disposables.push(
             vscode.window.onDidChangeActiveTextEditor(async () => {
                 await this.updateCodebaseContext()
             }),
             vscode.workspace.onDidChangeConfiguration(async () => {
                 this.config = await getFullConfig(this.secretStorage)
-                const newCodebaseContext = await getCodebaseContext(this.config, this.rgPath, this.editor)
+                this.codebaseCandidate = getCodebaseCandidate(config, editor)
+                const newCodebaseContext = await getCodebaseContext(
+                    this.config,
+                    this.rgPath,
+                    this.editor,
+                    this.codebaseCandidate?.codebase
+                )
                 if (newCodebaseContext) {
                     this.codebaseContext = newCodebaseContext
                     await this.setAnonymousUserID()
@@ -394,18 +400,23 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             // these are ephemeral
             return
         }
-        const workspaceRoot = this.editor.getWorkspaceRootPath()
-        if (!workspaceRoot || workspaceRoot === '' || workspaceRoot === this.currentWorkspaceRoot) {
+        const codebaseCandidate = getCodebaseCandidate(this.config, this.editor)
+        if (!codebaseCandidate || codebaseCandidate.isEquivalent(this.codebaseCandidate)) {
             return
         }
-        this.currentWorkspaceRoot = workspaceRoot
+        this.codebaseCandidate = codebaseCandidate
 
-        const codebaseContext = await getCodebaseContext(this.config, this.rgPath, this.editor)
+        const codebaseContext = await getCodebaseContext(
+            this.config,
+            this.rgPath,
+            this.editor,
+            codebaseCandidate.codebase
+        )
         if (!codebaseContext) {
             return
         }
         // after await, check we're still hitting the same workspace root
-        if (this.currentWorkspaceRoot !== workspaceRoot) {
+        if (this.codebaseCandidate !== codebaseCandidate) {
             return
         }
 

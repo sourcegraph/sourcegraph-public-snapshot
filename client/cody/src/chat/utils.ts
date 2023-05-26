@@ -1,4 +1,5 @@
 import { spawnSync } from 'child_process'
+import fs from 'fs'
 import path from 'path'
 
 import * as vscode from 'vscode'
@@ -96,31 +97,94 @@ export function convertGitCloneURLToCodebaseName(cloneURL: string): string | nul
     }
 }
 
+// Walks parent directories from filePath looking for a .git folder.
+// If found, returns the folder, otherwise null.
+function nearestGitFolder(filePath: string): string | null {
+    const components = filePath.split(path.sep)
+    components.push()
+    do {
+        components[components.length - 1] = '.git'
+        const pathToCheck = components.join(path.sep)
+        const stat = fs.statSync(pathToCheck)
+        if (stat.isDirectory()) {
+            return pathToCheck
+        }
+        components.pop()
+    } while (components)
+    return null
+}
+
+// Given a directory, consults git to get the origin URL and converts it to a
+// codebase name. Returns undefined if there is none.
+function maybeGetCodebaseFromDirectory(dirPath: string): string | undefined {
+    const gitCommand = spawnSync('git', ['remote', 'get-url', 'origin'], { cwd: dirPath })
+    const gitOutput = gitCommand.stdout.toString().trim()
+    return convertGitCloneURLToCodebaseName(gitOutput) || undefined
+}
+
+// Given a configuration and editor, returns an object which can produce the
+// codebase to attempt to use for embeddings.
+export function getCodebaseCandidate(config: Config, editor: Editor): CodebaseCandidate | undefined {
+    const editorFilePath = editor.getActiveTextEditor()?.filePath
+    const workspaceRoot = editor.getWorkspaceRootPath()
+    return new CodebaseCandidate(
+        config.codebase,
+        (editorFilePath && nearestGitFolder(editorFilePath)) || undefined,
+        workspaceRoot || undefined
+    )
+}
+
+export class CodebaseCandidate {
+    constructor(
+        private configCodebase: string | undefined,
+        private closestGit: string | undefined,
+        private workspaceRoot: string | undefined
+    ) {}
+
+    // Gets whether this codebase candidate is equivalent to other, given the
+    // fallback logic for which codebase to use.
+    public isEquivalent(other: CodebaseCandidate | undefined): boolean {
+        // This condition must be kept in sync with the codebase getter below so
+        // the following condition holds:
+        // a.isEquivalent(b) implies a.codebase === b.codebase.
+        // This check provides a (relatively) fast path to avoid changing
+        // context.
+        return (
+            !!other &&
+            ((this.configCodebase && this.configCodebase === other.configCodebase) ||
+                (this.closestGit === other.closestGit && this.workspaceRoot === other.workspaceRoot))
+        )
+    }
+
+    // Gets the codebase to attempt to use for this candidate.
+    public get codebase(): string | undefined {
+        return (
+            this.configCodebase ||
+            (this.closestGit && maybeGetCodebaseFromDirectory(this.closestGit)) ||
+            (this.workspaceRoot && maybeGetCodebaseFromDirectory(this.workspaceRoot))
+        )
+    }
+}
+
+// Given a config, ripgrep path and codebase, create the CodebaseContext for it.
+// See getCodebaseCandidate(...).codebase to determine the codebase.
 export async function getCodebaseContext(
     config: Config,
     rgPath: string,
-    editor: Editor
+    editor: Editor,
+    codebase: string | undefined
 ): Promise<CodebaseContext | null> {
-    const client = new SourcegraphGraphQLAPIClient(config)
-    const workspaceRoot = editor.getWorkspaceRootPath()
-    if (!workspaceRoot) {
-        return null
+    let embeddingsSearch = null
+    if (codebase) {
+        const client = new SourcegraphGraphQLAPIClient(config)
+        // Check if repo is embedded in endpoint
+        const repoId = await client.getRepoIdIfEmbeddingExists(codebase)
+        if (isError(repoId)) {
+            const infoMessage = `Cody could not find embeddings for '${codebase}' on your Sourcegraph instance.\n`
+            console.info(infoMessage)
+            return null
+        }
+        embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
     }
-    const gitCommand = spawnSync('git', ['remote', 'get-url', 'origin'], { cwd: workspaceRoot })
-    const gitOutput = gitCommand.stdout.toString().trim()
-    // Get codebase from config or fallback to getting repository name from git clone URL
-    const codebase = config.codebase || convertGitCloneURLToCodebaseName(gitOutput)
-    if (!codebase) {
-        return null
-    }
-    // Check if repo is embedded in endpoint
-    const repoId = await client.getRepoIdIfEmbeddingExists(codebase)
-    if (isError(repoId)) {
-        const infoMessage = `Cody could not find embeddings for '${codebase}' on your Sourcegraph instance.\n`
-        console.info(infoMessage)
-        return null
-    }
-
-    const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
     return new CodebaseContext(config, codebase, embeddingsSearch, new LocalKeywordContextFetcher(rgPath, editor))
 }
