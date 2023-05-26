@@ -86,10 +86,12 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
     useEffect(() => telemetryService.logViewEvent('BatchChangesListPage'), [telemetryService])
 
     const isExecutionEnabled = isBatchChangesExecutionEnabled(settingsCascade)
+    const isBatchChangesLicensed = !!window.context.licenseInfo?.batchChanges?.unrestricted
+    const canUseBatchChanges = !!window.context.licenseInfo?.batchChanges
 
     const { selectedFilters, setSelectedFilters, availableFilters } = useBatchChangeListFilters({ isExecutionEnabled })
     const [selectedTab, setSelectedTab] = useState<SelectedTab>(
-        openTab ?? (isSourcegraphDotCom ? 'gettingStarted' : 'batchChanges')
+        openTab ?? (isSourcegraphDotCom || !canUseBatchChanges ? 'gettingStarted' : 'batchChanges')
     )
 
     // We keep state to track to the last total count of batch changes in the connection
@@ -196,8 +198,8 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                     </strong>
                 </LimitedAccessBanner>
             )}
-            <BatchChangesListIntro isLicensed={licenseAndUsageInfo?.batchChanges || licenseAndUsageInfo?.campaigns} />
-            {!isSourcegraphDotCom && (
+            <BatchChangesListIntro isLicensed={isBatchChangesLicensed} />
+            {!isSourcegraphDotCom && canUseBatchChanges && (
                 <BatchChangeListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
             )}
             {selectedTab === 'gettingStarted' && (

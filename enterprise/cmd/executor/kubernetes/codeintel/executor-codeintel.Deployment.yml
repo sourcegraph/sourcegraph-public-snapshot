@@ -31,9 +31,9 @@ spec:
                   key: EXECUTOR_FRONTEND_PASSWORD
             - name: EXECUTOR_QUEUE_NAME
               value: codeintel
-            # Each job will consume 1Gi of memory. Need to make sure not to consume the whole node's memory.
+            # Each job will consume 5Gi of memory. Need to make sure not to consume the whole node's memory.
             - name: EXECUTOR_MAXIMUM_NUM_JOBS
-              value: "5"
+              value: "1"
             - name: SRC_LOG_LEVEL
               value: info
             - name: SRC_LOG_FORMAT
@@ -41,7 +41,7 @@ spec:
             - name: SRC_TRACE_LOG
               value: "false"
             - name: EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY
-              value: 1Gi
+              value: 5Gi
             # Match the name of the volume in executor-batches.PersistentVolumeClaim.yml.
             - name: EXECUTOR_KUBERNETES_PERSISTENCE_VOLUME_NAME
               value: sg-executor-codeintel-pvc

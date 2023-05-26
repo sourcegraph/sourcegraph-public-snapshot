@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/log"
 	"google.golang.org/api/option"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -21,10 +22,13 @@ import (
 const RouteAppUpdateCheck = "app.update.check"
 
 // ManifestBucket the name of the bucket where the Sourcegraph App update manifest is stored
-const ManifestBucket = "sourcegraph_app"
+const ManifestBucket = "sourcegraph-app"
+
+// ManifestBucketDev the name of the bucket where the Sourcegraph App update manifest is stored for dev instances
+const ManifestBucketDev = "sourcegraph-app-dev"
 
 // ManifestName is the name of the manifest object that is in the ManifestBucket
-const ManifestName = "update.test.manifest.json"
+const ManifestName = "app.update.prod.manifest.json"
 
 type AppVersion struct {
 	Target  string
@@ -34,7 +38,7 @@ type AppVersion struct {
 
 type AppUpdateResponse struct {
 	Version   string    `json:"version"`
-	Notes     string    `json:"notes"`
+	Notes     string    `json:"notes,omitempty"`
 	PubDate   time.Time `json:"pub_date"`
 	Signature string    `json:"signature"`
 	URL       string    `json:"url"`
@@ -119,7 +123,7 @@ func (r *StaticManifestResolver) Resolve(_ context.Context) (*AppUpdateManifest,
 
 func NewAppUpdateChecker(logger log.Logger, resolver UpdateManifestResolver) *AppUpdateChecker {
 	return &AppUpdateChecker{
-		logger:           logger,
+		logger:           logger.Scoped("app.update.checker", "Handler that handles sourcegraph app requests that check for updates"),
 		manifestResolver: resolver,
 	}
 }
@@ -184,10 +188,15 @@ func (checker *AppUpdateChecker) Handler() http.HandlerFunc {
 
 		checker.logger.Debug("found client platform in App Update Manifest", log.Object("platform", log.String("signature", platformLoc.Signature), log.String("url", platformLoc.URL)))
 
+		var notes = "A new Sourcegraph version is available! For more information see https://github.com/sourcegraph/sourcegraph/releases"
+		if len(manifest.Notes) > 0 {
+			notes = manifest.Notes
+		}
+
 		updateResp := AppUpdateResponse{
 			Version:   manifest.Version,
 			PubDate:   manifest.PubDate,
-			Notes:     manifest.Notes,
+			Notes:     notes,
 			Signature: platformLoc.Signature,
 			URL:       platformLoc.URL,
 		}
@@ -247,8 +256,12 @@ func (checker *AppNoopUpdateChecker) Handler() http.HandlerFunc {
 }
 
 func AppUpdateHandler(logger log.Logger) http.HandlerFunc {
-	// We store the Sourcegraph App manifest in a GCS bucket
-	resolver, err := NewGCSManifestResolver(context.Background(), ManifestBucket, ManifestName)
+	// We store the Sourcegraph App manifest in a different GCS bucket, since buckets are globally unique we use different names
+	var bucket = ManifestBucket
+	if deploy.IsDev(deploy.Type()) {
+		bucket = ManifestBucketDev
+	}
+	resolver, err := NewGCSManifestResolver(context.Background(), bucket, ManifestName)
 	if err != nil {
 		logger.Error("failed to initialize GCS Manifest resolver. Using NoopUpdateChecker which will tell all clients that there are no updates", log.Error(err))
 		return (&AppNoopUpdateChecker{}).Handler()
