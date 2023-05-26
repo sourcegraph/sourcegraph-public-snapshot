@@ -183,7 +183,8 @@
               "type": "boolean",
               "default": false
             }
-          }
+          },
+          "deprecationMessage": "Deprecated in favor of internal debug logging."
         },
         "structuralSearch": {
           "description": "Enables structural search.",
