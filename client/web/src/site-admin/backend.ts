@@ -628,7 +628,14 @@ export const SITE_UPGRADE_READINESS = gql`
     query SiteUpgradeReadiness {
         site {
             upgradeReadiness {
-                schemaDrift
+                schemaDrift {
+                    name
+                    problem
+                    solution
+                    diff
+                    statements
+                    urlHint
+                }
                 requiredOutOfBandMigrations {
                     id
                     description
@@ -694,6 +701,8 @@ export function fetchFeatureFlags(): Observable<FeatureFlagFields[]> {
                     overrides {
                         ...OverrideFields
                     }
+                    createdAt
+                    updatedAt
                 }
                 ... on FeatureFlagRollout {
                     name
@@ -701,6 +710,8 @@ export function fetchFeatureFlags(): Observable<FeatureFlagFields[]> {
                     overrides {
                         ...OverrideFields
                     }
+                    createdAt
+                    updatedAt
                 }
             }
 

@@ -1,0 +1,3 @@
+# From https://github.com/aspect-build/aspect-cli-plugin-template/blob/main/.github/workflows/ci.bazelrc
+build --announce_rc
+build --disk_cache=~/.cache/bazel

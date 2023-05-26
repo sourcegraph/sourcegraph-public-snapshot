@@ -84,14 +84,39 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 	}
 	r.jobNames = append(r.jobNames, job.Name)
 
-	if err := r.cmd.WaitForJobToComplete(ctx, r.options.Namespace, job.Name, r.options.Retry); err != nil {
-		return errors.Wrap(err, "waiting for job to complete")
-	}
+	if err := r.cmd.WaitForJobToComplete(ctx, r.options.Namespace, job.Name); err != nil {
+		if errors.Is(err, command.ErrKubernetesJobFailed) {
+			pod, findPodErr := r.cmd.FindPod(ctx, r.options.Namespace, job.Name)
+			if findPodErr != nil {
+				return err
+			}
 
+			var errMessage string
+			if pod.Status.Message != "" {
+				errMessage = fmt.Sprintf("job %s failed: %s", job.Name, pod.Status.Message)
+			} else {
+				errMessage = fmt.Sprintf("job %s failed", job.Name)
+			}
+			readLogErr := r.cmd.ReadLogs(
+				ctx,
+				r.options.Namespace,
+				pod,
+				command.KubernetesJobContainerName,
+				r.commandLogger,
+				spec.CommandSpec.Key,
+				spec.CommandSpec.Command,
+			)
+			if err != nil {
+				return errors.Wrap(readLogErr, errMessage)
+			}
+			return errors.New(errMessage)
+		}
+		return errors.Wrapf(err, "waiting for job %s to complete", job.Name)
+	}
 	pod, err := r.cmd.FindPod(ctx, r.options.Namespace, job.Name)
 	if err != nil {
-		return errors.Wrap(err, "finding pod")
+		return err
 	}
 
-	return r.cmd.ReadLogs(ctx, r.options.Namespace, pod.Name, r.commandLogger, spec.CommandSpec.Key, spec.CommandSpec.Command)
+	return r.cmd.ReadLogs(ctx, r.options.Namespace, pod, command.KubernetesJobContainerName, r.commandLogger, spec.CommandSpec.Key, spec.CommandSpec.Command)
 }

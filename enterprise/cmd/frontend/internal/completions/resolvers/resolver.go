@@ -4,8 +4,11 @@ import (
 	"context"
 	"strings"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/streaming"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/httpapi"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -17,12 +20,14 @@ var _ graphqlbackend.CompletionsResolver = &completionsResolver{}
 
 // completionsResolver provides chat completions
 type completionsResolver struct {
-	rl streaming.RateLimiter
+	rl     httpapi.RateLimiter
+	db     database.DB
+	logger log.Logger
 }
 
-func NewCompletionsResolver(db database.DB) graphqlbackend.CompletionsResolver {
-	rl := streaming.NewRateLimiter(db, redispool.Store, streaming.RateLimitScopeCompletion)
-	return &completionsResolver{rl: rl}
+func NewCompletionsResolver(db database.DB, logger log.Logger) graphqlbackend.CompletionsResolver {
+	rl := httpapi.NewRateLimiter(db, redispool.Store, httpapi.RateLimitScopeCompletion)
+	return &completionsResolver{rl: rl, db: db, logger: logger}
 }
 
 func (c *completionsResolver) Completions(ctx context.Context, args graphqlbackend.CompletionsArgs) (_ string, err error) {
@@ -30,17 +35,26 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 		return "", errors.New("cody experimental feature flag is not enabled for current user")
 	}
 
-	completionsConfig := streaming.GetCompletionsConfig()
+	if err := cody.CheckVerifiedEmailRequirement(ctx, c.db, c.logger); err != nil {
+		return "", err
+	}
+
+	completionsConfig := client.GetCompletionsConfig()
 	if completionsConfig == nil || !completionsConfig.Enabled {
 		return "", errors.New("completions are not configured or disabled")
 	}
 
-	ctx, done := streaming.Trace(ctx, "resolver", completionsConfig.Model).
+	ctx, done := httpapi.Trace(ctx, "resolver", completionsConfig.ChatModel).
 		WithErrorP(&err).
 		Build()
 	defer done()
 
-	client, err := streaming.GetCompletionClient(completionsConfig.Provider, completionsConfig.AccessToken, completionsConfig.Model)
+	client, err := client.Get(
+		completionsConfig.Endpoint,
+		completionsConfig.Provider,
+		completionsConfig.AccessToken,
+		completionsConfig.ChatModel,
+	)
 	if err != nil {
 		return "", errors.Wrap(err, "GetCompletionStreamClient")
 	}
@@ -51,7 +65,7 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 	}
 
 	var last string
-	if err := client.Stream(ctx, convertParams(args), func(event types.ChatCompletionEvent) error {
+	if err := client.Stream(ctx, convertParams(args), func(event types.CompletionResponse) error {
 		// each completion is just a partial of the final result, since we're in a sync request anyway
 		// we will just wait for the final completion event
 		last = event.Completion
@@ -62,8 +76,8 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 	return last, nil
 }
 
-func convertParams(args graphqlbackend.CompletionsArgs) types.ChatCompletionRequestParameters {
-	return types.ChatCompletionRequestParameters{
+func convertParams(args graphqlbackend.CompletionsArgs) types.CompletionRequestParameters {
+	return types.CompletionRequestParameters{
 		Messages:          convertMessages(args.Input.Messages),
 		Temperature:       float32(args.Input.Temperature),
 		MaxTokensToSample: int(args.Input.MaxTokensToSample),

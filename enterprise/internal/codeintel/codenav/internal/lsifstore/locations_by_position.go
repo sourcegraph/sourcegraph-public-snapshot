@@ -4,12 +4,10 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -34,18 +32,23 @@ func (s *store) GetImplementationLocations(ctx context.Context, bundleID int, pa
 	return s.getLocations(ctx, "implementation_ranges", extractImplementationRanges, s.operations.getImplementationLocations, bundleID, path, line, character, limit, offset)
 }
 
+// GetPrototypeLocations returns the set of locations that are the prototypes of the symbol at the given position.
+func (s *store) GetPrototypeLocations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []shared.Location, _ int, err error) {
+	return s.getLocations(ctx, "implementation_ranges", extractPrototypesRanges, s.operations.getPrototypesLocations, bundleID, path, line, character, limit, offset)
+}
+
 // GetBulkMonikerLocations returns the locations (within one of the given uploads) with an attached moniker
 // whose scheme+identifier matches one of the given monikers. This method also returns the size of the
 // complete result set to aid in pagination.
 func (s *store) GetBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error) {
-	ctx, trace, endObservation := s.operations.getBulkMonikerLocations.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("tableName", tableName),
-		log.Int("numUploadIDs", len(uploadIDs)),
-		log.String("uploadIDs", intsToString(uploadIDs)),
-		log.Int("numMonikers", len(monikers)),
-		log.String("monikers", monikersToString(monikers)),
-		log.Int("limit", limit),
-		log.Int("offset", offset),
+	ctx, trace, endObservation := s.operations.getBulkMonikerLocations.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("tableName", tableName),
+		attribute.Int("numUploadIDs", len(uploadIDs)),
+		attribute.IntSlice("uploadIDs", uploadIDs),
+		attribute.Int("numMonikers", len(monikers)),
+		attribute.String("monikers", monikersToString(monikers)),
+		attribute.Int("limit", limit),
+		attribute.Int("offset", offset),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -148,11 +151,11 @@ func (s *store) getLocations(
 	path string,
 	line, character, limit, offset int,
 ) (_ []shared.Location, _ int, err error) {
-	ctx, trace, endObservation := operation.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("bundleID", bundleID),
-		log.String("path", path),
-		log.Int("line", line),
-		log.Int("character", character),
+	ctx, trace, endObservation := operation.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("bundleID", bundleID),
+		attribute.String("path", path),
+		attribute.Int("line", line),
+		attribute.Int("character", character),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -266,6 +269,7 @@ type extractedOccurrenceData struct {
 	definitions     []*scip.Range
 	references      []*scip.Range
 	implementations []*scip.Range
+	prototypes      []*scip.Range
 	hoverText       []string
 }
 
@@ -274,11 +278,15 @@ func extractDefinitionRanges(document *scip.Document, occurrence *scip.Occurrenc
 }
 
 func extractReferenceRanges(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range {
-	return append(extractOccurrenceData(document, occurrence).definitions, extractOccurrenceData(document, occurrence).references...)
+	return extractOccurrenceData(document, occurrence).references
 }
 
 func extractImplementationRanges(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range {
 	return extractOccurrenceData(document, occurrence).implementations
+}
+
+func extractPrototypesRanges(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range {
+	return extractOccurrenceData(document, occurrence).prototypes
 }
 
 func extractHoverData(document *scip.Document, occurrence *scip.Occurrence) []string {
@@ -297,6 +305,7 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 		definitionSymbol        = occurrence.Symbol
 		referencesBySymbol      = map[string]struct{}{}
 		implementationsBySymbol = map[string]struct{}{}
+		prototypeBySymbol       = map[string]struct{}{}
 	)
 
 	// Extract hover text and relationship data from the symbol information that
@@ -314,7 +323,17 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 				referencesBySymbol[rel.Symbol] = struct{}{}
 			}
 			if rel.IsImplementation {
-				implementationsBySymbol[rel.Symbol] = struct{}{}
+				prototypeBySymbol[rel.Symbol] = struct{}{}
+			}
+		}
+	}
+
+	for _, sym := range document.Symbols {
+		for _, rel := range sym.Relationships {
+			if rel.IsImplementation {
+				if rel.Symbol == occurrence.Symbol {
+					implementationsBySymbol[occurrence.Symbol] = struct{}{}
+				}
 			}
 		}
 	}
@@ -322,6 +341,7 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 	definitions := []*scip.Range{}
 	references := []*scip.Range{}
 	implementations := []*scip.Range{}
+	prototypes := []*scip.Range{}
 
 	// Include original symbol names for reference search below
 	referencesBySymbol[occurrence.Symbol] = struct{}{}
@@ -343,8 +363,13 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 		}
 
 		// This occurrence is a definition of a symbol with an implementation relationship
-		if _, ok := implementationsBySymbol[occ.Symbol]; ok && isDefinition {
+		if _, ok := implementationsBySymbol[occ.Symbol]; ok && isDefinition && definitionSymbol != occ.Symbol {
 			implementations = append(implementations, scip.NewRange(occ.Range))
+		}
+
+		// This occurrence is a definition of a symbol with a prototype relationship
+		if _, ok := prototypeBySymbol[occ.Symbol]; ok && isDefinition {
+			prototypes = append(prototypes, scip.NewRange(occ.Range))
 		}
 	}
 
@@ -358,16 +383,8 @@ func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence)
 		references:      references,
 		implementations: implementations,
 		hoverText:       hoverText,
+		prototypes:      prototypes,
 	}
-}
-
-func intsToString(vs []int) string {
-	strs := make([]string, 0, len(vs))
-	for _, v := range vs {
-		strs = append(strs, strconv.Itoa(v))
-	}
-
-	return strings.Join(strs, ", ")
 }
 
 func monikersToString(vs []precise.MonikerData) string {

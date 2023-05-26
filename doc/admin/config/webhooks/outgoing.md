@@ -10,7 +10,7 @@
 
 Outgoing webhooks can be configured on a Sourcegraph instance in order to send Sourcegraph events to external tools and services. This allows for deeper integrations between Sourcegraph and other applications.
 
-Currently, webhooks are only implemented for events related to [Batch Changes](../../batch_changes/index.md). They also cannot yet be scoped to specific entities, meaning that they will be triggered for all events of the specified type across Sourcegraph. Expanded support for more event types and scoped events is planned for the future. Please [let us know](mailto:feedback@sourcegraph.com) what types of events you would like to see implemented next, or if you have any other feedback!
+Currently, webhooks are only implemented for events related to [Batch Changes](../../../batch_changes/index.md). They also cannot yet be scoped to specific entities, meaning that they will be triggered for all events of the specified type across Sourcegraph. Expanded support for more event types and scoped events is planned for the future. Please [let us know](mailto:feedback@sourcegraph.com) what types of events you would like to see implemented next, or if you have any other feedback!
 
 > WARNING: Outgoing webhooks have the potential to send sensitive information about your repositories and code to other untrusted services. When configuring outgoing webhooks, be sure to only send events to trusted service URLs and to use the shared secret to verify any requests received.
 
@@ -22,7 +22,7 @@ Currently, webhooks are only implemented for events related to [Batch Changes](.
    ![Adding an outgoing webhook](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/webhooks/adding-outgoing-webhook.png)
 1. Fill out the form:
    1. **URL**: URL endpoint of the external service that Sourcegraph should send webhook events to.
-   1. **Secret**: An arbitrary shared secret between Sourcegraph and the code host. A default value is provided, but you are free to change it.
+   1. **Secret**: An arbitrary secret to share between Sourcegraph and the external service. A default value is provided, but you are free to change it.
    1. **Event types**: The types of [events](#supported-event-types) that will trigger a webhook event. Currently, only events related to Batch Changes are supported.
 1. Click **Create**
 

@@ -27,3 +27,7 @@ func newService(
 func (s *Service) FindMostRelevantSCIPSymbols(ctx context.Context, args *resolverstubs.FindMostRelevantSCIPSymbolsArgs) (string, error) {
 	return "", nil
 }
+
+func (s *Service) SplitIntoEmbeddableChunks(ctx context.Context, text string, fileName string, splitOptions SplitOptions) ([]EmbeddableChunk, error) {
+	return SplitIntoEmbeddableChunks(text, fileName, splitOptions), nil
+}

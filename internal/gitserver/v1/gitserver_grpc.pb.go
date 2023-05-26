@@ -19,8 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	GitserverService_Exec_FullMethodName   = "/gitserver.v1.GitserverService/Exec"
-	GitserverService_Search_FullMethodName = "/gitserver.v1.GitserverService/Search"
+	GitserverService_Exec_FullMethodName       = "/gitserver.v1.GitserverService/Exec"
+	GitserverService_Search_FullMethodName     = "/gitserver.v1.GitserverService/Search"
+	GitserverService_Archive_FullMethodName    = "/gitserver.v1.GitserverService/Archive"
+	GitserverService_ReposStats_FullMethodName = "/gitserver.v1.GitserverService/ReposStats"
 )
 
 // GitserverServiceClient is the client API for GitserverService service.
@@ -29,6 +31,8 @@ const (
 type GitserverServiceClient interface {
 	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error)
 	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (GitserverService_SearchClient, error)
+	Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (GitserverService_ArchiveClient, error)
+	ReposStats(ctx context.Context, in *ReposStatsRequest, opts ...grpc.CallOption) (*ReposStatsResponse, error)
 }
 
 type gitserverServiceClient struct {
@@ -103,12 +107,55 @@ func (x *gitserverServiceSearchClient) Recv() (*SearchResponse, error) {
 	return m, nil
 }
 
+func (c *gitserverServiceClient) Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (GitserverService_ArchiveClient, error) {
+	stream, err := c.cc.NewStream(ctx, &GitserverService_ServiceDesc.Streams[2], GitserverService_Archive_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &gitserverServiceArchiveClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type GitserverService_ArchiveClient interface {
+	Recv() (*ArchiveResponse, error)
+	grpc.ClientStream
+}
+
+type gitserverServiceArchiveClient struct {
+	grpc.ClientStream
+}
+
+func (x *gitserverServiceArchiveClient) Recv() (*ArchiveResponse, error) {
+	m := new(ArchiveResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *gitserverServiceClient) ReposStats(ctx context.Context, in *ReposStatsRequest, opts ...grpc.CallOption) (*ReposStatsResponse, error) {
+	out := new(ReposStatsResponse)
+	err := c.cc.Invoke(ctx, GitserverService_ReposStats_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GitserverServiceServer is the server API for GitserverService service.
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
 type GitserverServiceServer interface {
 	Exec(*ExecRequest, GitserverService_ExecServer) error
 	Search(*SearchRequest, GitserverService_SearchServer) error
+	Archive(*ArchiveRequest, GitserverService_ArchiveServer) error
+	ReposStats(context.Context, *ReposStatsRequest) (*ReposStatsResponse, error)
 	mustEmbedUnimplementedGitserverServiceServer()
 }
 
@@ -121,6 +168,12 @@ func (UnimplementedGitserverServiceServer) Exec(*ExecRequest, GitserverService_E
 }
 func (UnimplementedGitserverServiceServer) Search(*SearchRequest, GitserverService_SearchServer) error {
 	return status.Errorf(codes.Unimplemented, "method Search not implemented")
+}
+func (UnimplementedGitserverServiceServer) Archive(*ArchiveRequest, GitserverService_ArchiveServer) error {
+	return status.Errorf(codes.Unimplemented, "method Archive not implemented")
+}
+func (UnimplementedGitserverServiceServer) ReposStats(context.Context, *ReposStatsRequest) (*ReposStatsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ReposStats not implemented")
 }
 func (UnimplementedGitserverServiceServer) mustEmbedUnimplementedGitserverServiceServer() {}
 
@@ -177,13 +230,57 @@ func (x *gitserverServiceSearchServer) Send(m *SearchResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _GitserverService_Archive_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(ArchiveRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(GitserverServiceServer).Archive(m, &gitserverServiceArchiveServer{stream})
+}
+
+type GitserverService_ArchiveServer interface {
+	Send(*ArchiveResponse) error
+	grpc.ServerStream
+}
+
+type gitserverServiceArchiveServer struct {
+	grpc.ServerStream
+}
+
+func (x *gitserverServiceArchiveServer) Send(m *ArchiveResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _GitserverService_ReposStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReposStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).ReposStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_ReposStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).ReposStats(ctx, req.(*ReposStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // GitserverService_ServiceDesc is the grpc.ServiceDesc for GitserverService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var GitserverService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "gitserver.v1.GitserverService",
 	HandlerType: (*GitserverServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ReposStats",
+			Handler:    _GitserverService_ReposStats_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "Exec",
@@ -193,6 +290,11 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "Search",
 			Handler:       _GitserverService_Search_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "Archive",
+			Handler:       _GitserverService_Archive_Handler,
 			ServerStreams: true,
 		},
 	},

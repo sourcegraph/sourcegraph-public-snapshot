@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
@@ -25,7 +25,7 @@ import (
 )
 
 func (r *rootResolver) CodeIntelSummary(ctx context.Context) (_ resolverstubs.CodeIntelSummaryResolver, err error) {
-	ctx, _, endObservation := r.operations.codeIntelSummary.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, _, endObservation := r.operations.codeIntelSummary.WithErrors(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	return newSummaryResolver(r.uploadSvc, r.autoindexSvc, r.locationResolverFactory.Create()), nil
@@ -35,8 +35,8 @@ func (r *rootResolver) CodeIntelSummary(ctx context.Context) (_ resolverstubs.Co
 var autoIndexingEnabled = conf.CodeIntelAutoIndexingEnabled
 
 func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID) (_ resolverstubs.CodeIntelRepositorySummaryResolver, err error) {
-	ctx, errTracer, endObservation := r.operations.repositorySummary.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repoID", string(repoID)),
+	ctx, errTracer, endObservation := r.operations.repositorySummary.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repoID", string(repoID)),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -82,7 +82,7 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID)
 	if autoIndexingEnabled() {
 		commit := "HEAD"
 
-		indexJobs, err := r.autoindexSvc.InferIndexJobsFromRepositoryStructure(ctx, id, commit, "", false)
+		result, err := r.autoindexSvc.InferIndexJobsFromRepositoryStructure(ctx, id, commit, "", false)
 		if err != nil {
 			if !autoindexing.IsLimitError(err) {
 				return nil, err
@@ -99,7 +99,7 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID)
 		// 	limitErr = errors.Append(limitErr, err)
 		// }
 
-		inferredAvailableIndexers = uploadsShared.PopulateInferredAvailableIndexers(indexJobs, blocklist, inferredAvailableIndexers)
+		inferredAvailableIndexers = uploadsShared.PopulateInferredAvailableIndexers(result.IndexJobs, blocklist, inferredAvailableIndexers)
 		// inferredAvailableIndexers = uploadsShared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
 	}
 

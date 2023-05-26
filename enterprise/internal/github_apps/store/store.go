@@ -24,9 +24,6 @@ type GitHubAppsStore interface {
 	// Update updates a GitHub App in the database and returns the updated struct.
 	Update(ctx context.Context, id int, app *types.GitHubApp) (*types.GitHubApp, error)
 
-	// Install creates a new GitHub App installation in the database.
-	Install(ctx context.Context, id, installationID int) error
-
 	// GetByID retrieves a GitHub App from the database by ID.
 	GetByID(ctx context.Context, id int) (*types.GitHubApp, error)
 
@@ -117,6 +114,7 @@ func scanGitHubApp(s dbutil.Scanner) (*types.GitHubApp, error) {
 		&app.AppURL,
 		&app.ClientID,
 		&app.ClientSecret,
+		&app.WebhookID,
 		&app.PrivateKey,
 		&app.EncryptionKey,
 		&app.Logo,
@@ -162,10 +160,10 @@ func (s *gitHubAppsStore) Update(ctx context.Context, id int, app *types.GitHubA
 	}
 
 	query := sqlf.Sprintf(`UPDATE github_apps
-             SET app_id = %s, name = %s, slug = %s, base_url = %s, app_url = %s, client_id = %s, client_secret = %s, private_key = %s, encryption_key_id = %s, logo = %s, updated_at = NOW()
+             SET app_id = %s, name = %s, slug = %s, base_url = %s, app_url = %s, client_id = %s, client_secret = %s, webhook_id = %d, private_key = %s, encryption_key_id = %s, logo = %s, updated_at = NOW()
              WHERE id = %s
-			 RETURNING id, app_id, name, slug, base_url, app_url, client_id, client_secret, private_key, encryption_key_id, logo, created_at, updated_at`,
-		app.AppID, app.Name, app.Slug, app.BaseURL, app.AppURL, app.ClientID, clientSecret, privateKey, keyID, app.Logo, id)
+			 RETURNING id, app_id, name, slug, base_url, app_url, client_id, client_secret, webhook_id, private_key, encryption_key_id, logo, created_at, updated_at`,
+		app.AppID, app.Name, app.Slug, app.BaseURL, app.AppURL, app.ClientID, clientSecret, app.WebhookID, privateKey, keyID, app.Logo, id)
 	app, ok, err := scanFirstGitHubApp(s.Query(ctx, query))
 	if err != nil {
 		return nil, err
@@ -180,17 +178,6 @@ func (s *gitHubAppsStore) Update(ctx context.Context, id int, app *types.GitHubA
 	return apps[0], nil
 }
 
-// Install creates a new GitHub App installation in the database.
-func (s *gitHubAppsStore) Install(ctx context.Context, id, installationID int) error {
-	query := sqlf.Sprintf(`
-		INSERT INTO github_app_installs (app_id, installation_id)
-    	VALUES (%s, %s)
-		ON CONFLICT DO NOTHING
-		RETURNING id`,
-		id, installationID)
-	return s.Exec(ctx, query)
-}
-
 func (s *gitHubAppsStore) get(ctx context.Context, where *sqlf.Query) (*types.GitHubApp, error) {
 	selectQuery := `SELECT
 		id,
@@ -201,6 +188,7 @@ func (s *gitHubAppsStore) get(ctx context.Context, where *sqlf.Query) (*types.Gi
 		app_url,
 		client_id,
 		client_secret,
+		webhook_id,
 		private_key,
 		encryption_key_id,
 		logo,
@@ -235,6 +223,7 @@ func (s *gitHubAppsStore) list(ctx context.Context, where *sqlf.Query) ([]*types
 		app_url,
 		client_id,
 		client_secret,
+		webhook_id,
 		private_key,
 		encryption_key_id,
 		logo,

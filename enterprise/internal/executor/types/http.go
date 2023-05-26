@@ -5,11 +5,12 @@ import (
 )
 
 type DequeueRequest struct {
-	ExecutorName string `json:"executorName"`
-	Version      string `json:"version"`
-	NumCPUs      int    `json:"numCPUs,omitempty"`
-	Memory       string `json:"memory,omitempty"`
-	DiskSpace    string `json:"diskSpace,omitempty"`
+	Queues       []string `json:"queues,omitempty"`
+	ExecutorName string   `json:"executorName"`
+	Version      string   `json:"version"`
+	NumCPUs      int      `json:"numCPUs,omitempty"`
+	Memory       string   `json:"memory,omitempty"`
+	DiskSpace    string   `json:"diskSpace,omitempty"`
 }
 
 type JobOperationRequest struct {
@@ -38,14 +39,10 @@ type MarkErroredRequest struct {
 }
 
 type HeartbeatRequest struct {
-	// TODO: This field is set to become unneccesary in Sourcegraph 4.4.
-	Version ExecutorAPIVersion `json:"version"`
-
-	ExecutorName string `json:"executorName"`
-	JobIDs       []int  `json:"jobIds"`
+	ExecutorName string   `json:"executorName"`
+	JobIDs       []string `json:"jobIds"`
 
 	// Telemetry data.
-
 	OS              string `json:"os"`
 	Architecture    string `json:"architecture"`
 	DockerVersion   string `json:"dockerVersion"`
@@ -64,12 +61,12 @@ const (
 )
 
 type HeartbeatResponse struct {
-	KnownIDs  []int `json:"knownIds"`
-	CancelIDs []int `json:"cancelIds"`
+	KnownIDs  []string `json:"knownIds"`
+	CancelIDs []string `json:"cancelIds"`
 }
 
 // TODO: Deprecated. Can be removed in Sourcegraph 4.4.
 type CanceledJobsRequest struct {
-	KnownJobIDs  []int  `json:"knownJobIds"`
-	ExecutorName string `json:"executorName"`
+	KnownJobIDs  []string `json:"knownJobIds"`
+	ExecutorName string   `json:"executorName"`
 }

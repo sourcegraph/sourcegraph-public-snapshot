@@ -4,7 +4,6 @@ import { VSCodeButton, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { escapeCodyMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import {
     Chat as ChatUI,
@@ -52,7 +51,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 }) => {
     const onSubmit = useCallback(
         (text: string, submitType: 'user' | 'suggestion') => {
-            vscodeAPI.postMessage({ command: 'submit', text: escapeCodyMarkdown(text), submitType })
+            vscodeAPI.postMessage({ command: 'submit', text, submitType })
         },
         [vscodeAPI]
     )
@@ -126,7 +125,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     // Focus the textarea when the webview gains focus (unless there is text selected). This makes
     // it so that the user can immediately start typing to Cody after invoking `Cody: Focus on Chat
     // View` with the keyboard.
-    const inputRef = useRef<HTMLElement>(null)
+    const inputRef = useRef<HTMLTextAreaElement>(null)
     useEffect(() => {
         const handleFocus = (): void => {
             if (document.getSelection()?.isCollapsed) {
@@ -146,6 +145,12 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
         }
     }, [autoFocus])
 
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>): void => {
+        if (onKeyDown) {
+            onKeyDown(event, (inputRef.current as any)?.control.selectionStart)
+        }
+    }
+
     return (
         <VSCodeTextArea
             className={classNames(styles.chatInput, className)}
@@ -160,7 +165,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
             autofocus={autoFocus}
             required={required}
             onInput={e => onInput(e as React.FormEvent<HTMLTextAreaElement>)}
-            onKeyDown={onKeyDown}
+            onKeyDown={handleKeyDown}
         />
     )
 }
@@ -194,7 +199,7 @@ const EditButton: React.FunctionComponent<EditButtonProps> = ({
     <div className={className}>
         <VSCodeButton
             className={classNames(styles.editButton)}
-            appearance="secondary"
+            appearance="icon"
             type="button"
             onClick={() => setMessageBeingEdited(!messageBeingEdited)}
         >

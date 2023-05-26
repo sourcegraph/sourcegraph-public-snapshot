@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -87,9 +87,7 @@ func (s *selectOwnersJob) Name() string {
 	return "SelectOwnersSearchJob"
 }
 
-func (s *selectOwnersJob) Fields(_ job.Verbosity) (res []otlog.Field) {
-	return res
-}
+func (s *selectOwnersJob) Attributes(_ job.Verbosity) []attribute.KeyValue { return nil }
 
 func (s *selectOwnersJob) Children() []job.Describer {
 	return []job.Describer{s.child}
@@ -117,7 +115,7 @@ func getCodeOwnersFromMatches(
 		if !ok {
 			continue
 		}
-		rs, err := rules.GetFromCacheOrFetch(ctx, mm.Repo.Name, mm.Repo.ID, mm.CommitID)
+		rs, err := rules.Codeowners(ctx, mm.Repo.Name, mm.Repo.ID, mm.CommitID)
 		if err != nil {
 			errs = errors.Append(errs, err)
 			continue

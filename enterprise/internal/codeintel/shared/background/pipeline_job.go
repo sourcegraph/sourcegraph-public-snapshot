@@ -8,6 +8,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -32,11 +33,7 @@ type PipelineMetrics struct {
 	numRecordsAltered   *prometheus.CounterVec
 }
 
-func NewPipelineMetrics(
-	observationCtx *observation.Context,
-	name string,
-	recordTypeName string,
-) *PipelineMetrics {
+func NewPipelineMetrics(observationCtx *observation.Context, name string) *PipelineMetrics {
 	replacer := strings.NewReplacer(
 		".", "_",
 		"-", "_",
@@ -80,12 +77,12 @@ func NewPipelineMetrics(
 
 	numRecordsProcessed := counter(
 		fmt.Sprintf("src_%s_records_processed_total", metricName),
-		fmt.Sprintf("The number of %s records processed by %s.", recordTypeName, name),
+		fmt.Sprintf("The number of records processed by %s.", name),
 	)
 
 	numRecordsAltered := counterVec(
 		fmt.Sprintf("src_%s_records_altered_total", metricName),
-		fmt.Sprintf("The number of %s records written/modified by %s.", recordTypeName, name),
+		fmt.Sprintf("The number of records written/modified by %s.", name),
 	)
 
 	return &PipelineMetrics{
@@ -99,7 +96,7 @@ func NewPipelineJob(ctx context.Context, opts PipelineOptions) goroutine.Backgro
 	pipeline := &pipeline{opts: opts}
 
 	return goroutine.NewPeriodicGoroutineWithMetricsAndDynamicInterval(
-		ctx,
+		actor.WithInternalActor(ctx),
 		opts.Name,
 		opts.Description,
 		pipeline.interval,

@@ -27,12 +27,13 @@ log = "0.4.17"
 serde = { version = "1.0", features = ["derive"] }
 tauri-plugin-log = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "dev" }
 tauri-plugin-deep-link = { git = "https://github.com/FabianLars/tauri-plugin-deep-link", branch = "main" }
+tauri-plugin-positioner = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "dev", features = ["system-tray"] }
 tauri-utils = { git = "https://github.com/tauri-apps/tauri", branch = "dev" }
 
 [dependencies.tauri]
 git = "https://github.com/tauri-apps/tauri"
 branch = "dev"
-features = ["devtools", "process-command-api", "shell-open", "shell-sidecar", "system-tray", "window-start-dragging"]
+features = [ "updater", "dialog-open","devtools", "process-command-api", "shell-open", "shell-sidecar", "system-tray", "window-start-dragging"]
 
 [patch.crates-io]
 tauri = { git = "https://github.com/tauri-apps/tauri", branch = "dev" }

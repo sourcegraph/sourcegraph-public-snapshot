@@ -8,6 +8,7 @@ go_library(
         "context.go",
         "git.go",
         "policies.go",
+        "ranking.go",
         "root_resolver.go",
         "sentinel.go",
         "uploads.go",

@@ -53,7 +53,7 @@ func TestKubernetesRuntime_NewRunnerSpecs(t *testing.T) {
 			expected: []runner.Spec{{
 				CommandSpec: command.Spec{
 					Key:       "step.kubernetes.key-1",
-					Command:   []string{"/bin/sh", "-c", "/data/.sourcegraph-executor/script.sh"},
+					Command:   []string{"/bin/sh", "-c", "/job/.sourcegraph-executor/script.sh"},
 					Dir:       ".",
 					Env:       []string{"FOO=bar"},
 					Operation: operations.Exec,
@@ -89,7 +89,7 @@ func TestKubernetesRuntime_NewRunnerSpecs(t *testing.T) {
 				{
 					CommandSpec: command.Spec{
 						Key:       "step.kubernetes.key-1",
-						Command:   []string{"/bin/sh", "-c", "/data/.sourcegraph-executor/script1.sh"},
+						Command:   []string{"/bin/sh", "-c", "/job/.sourcegraph-executor/script1.sh"},
 						Dir:       ".",
 						Env:       []string{"FOO=bar"},
 						Operation: operations.Exec,
@@ -99,7 +99,7 @@ func TestKubernetesRuntime_NewRunnerSpecs(t *testing.T) {
 				{
 					CommandSpec: command.Spec{
 						Key:       "step.kubernetes.key-2",
-						Command:   []string{"/bin/sh", "-c", "/data/.sourcegraph-executor/script2.sh"},
+						Command:   []string{"/bin/sh", "-c", "/job/.sourcegraph-executor/script2.sh"},
 						Dir:       ".",
 						Env:       []string{"FOO=bar"},
 						Operation: operations.Exec,
@@ -127,7 +127,7 @@ func TestKubernetesRuntime_NewRunnerSpecs(t *testing.T) {
 			expected: []runner.Spec{{
 				CommandSpec: command.Spec{
 					Key:       "step.kubernetes.0",
-					Command:   []string{"/bin/sh", "-c", "/data/.sourcegraph-executor/script.sh"},
+					Command:   []string{"/bin/sh", "-c", "/job/.sourcegraph-executor/script.sh"},
 					Dir:       ".",
 					Env:       []string{"FOO=bar"},
 					Operation: operations.Exec,

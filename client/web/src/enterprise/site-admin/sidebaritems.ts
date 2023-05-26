@@ -9,7 +9,7 @@ import {
     analyticsGroup,
     configurationGroup as ossConfigurationGroup,
     maintenanceGroup as ossMaintenanceGroup,
-    repositoriesGroup,
+    repositoriesGroup as ossRepositoriesGroup,
     usersGroup as ossUsersGroup,
 } from '../../site-admin/sidebaritems'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '../../site-admin/SiteAdminSidebar'
@@ -131,6 +131,15 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
             label: 'Inference',
             condition: () => window.context?.codeIntelAutoIndexingEnabled,
         },
+        {
+            to: '/site-admin/code-graph/ranking',
+            label: 'Ranking',
+        },
+        {
+            label: 'Ownership signals',
+            to: '/site-admin/own-signal-page',
+            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+        },
     ],
 }
 
@@ -138,8 +147,13 @@ export const codyGroup: SiteAdminSideBarGroup = {
     header: { label: 'Cody', icon: RobotOutlineIcon },
     items: [
         {
-            label: 'Cody',
-            to: '/site-admin/cody',
+            label: 'Embeddings',
+            to: '/site-admin/embeddings',
+            exact: true,
+        },
+        {
+            label: 'Configuration',
+            to: '/site-admin/embeddings/configuration',
         },
     ],
     condition: () => window.context?.embeddingsEnabled,
@@ -160,16 +174,27 @@ const usersGroup: SiteAdminSideBarGroup = {
     ],
 }
 
+const repositoriesGroup: SiteAdminSideBarGroup = {
+    ...ossRepositoriesGroup,
+    items: [
+        {
+            label: 'GitHub Apps',
+            to: '/site-admin/github-apps',
+        },
+        ...ossRepositoriesGroup.items,
+    ],
+}
+
 export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [
     analyticsGroup,
     configurationGroup,
     repositoriesGroup,
     codeIntelGroup,
+    codyGroup,
     usersGroup,
     executorsGroup,
     maintenanceGroup,
     batchChangesGroup,
     businessGroup,
-    codyGroup,
     apiConsoleGroup,
 ].filter(Boolean) as SiteAdminSideBarGroups

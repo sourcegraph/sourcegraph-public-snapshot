@@ -9,6 +9,16 @@
     }
 }
 
+.cody-illustration {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.cody-illustration svg {
+    margin-bottom: 1rem;
+}
+
 .card {
     background-color: var(--color-bg-1);
 }
@@ -17,13 +27,10 @@
     color: var(--primary);
 }
 
-.try-cookbook-link {
+.try-cody-link {
     font-size: 1rem;
-    font-weight: bolder;
-    &,
-    &:hover {
-        color: var(--merged);
-    }
+    font-weight: 600;
+    letter-spacing: 0.015625em;
 }
 
 .close-button {

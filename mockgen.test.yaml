@@ -1,3 +1,9 @@
+- filename: enterprise/internal/authz/gerrit/mocks_test.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit
+      interfaces:
+        - Client
+      prefix: Gerrit
 - filename: cmd/frontend/internal/httpapi/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/httpcli
   interfaces:
@@ -6,6 +12,10 @@
   path: github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/releasecache
   interfaces:
     - ReleaseCache
+- filename: cmd/gitserver/server/vcs_syncer_mock_test.go
+  path: github.com/sourcegraph/sourcegraph/cmd/gitserver/server
+  interfaces:
+    - VCSSyncer
 - filename: cmd/symbols/fetcher/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver
   interfaces:
@@ -116,6 +126,10 @@
       interfaces:
         - Client
       prefix: AzureDevOps
+    - path: github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit
+      interfaces:
+        - Client
+      prefix: Gerrit
 - filename: enterprise/internal/batches/syncer/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer
   interfaces:
@@ -345,3 +359,7 @@
     - path: github.com/Khan/genqlient/graphql
       interfaces:
         - Client
+- filename: enterprise/internal/embeddings/embed/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed
+  interfaces:
+    - ContextService

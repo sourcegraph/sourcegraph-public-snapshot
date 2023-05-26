@@ -363,6 +363,17 @@ func getAndMarshalCodyUsageJSON(ctx context.Context, db database.DB) (_ json.Raw
 	return json.Marshal(codyUsage)
 }
 
+func getAndMarshalRepoMetadataUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalRepoMetadataUsageJSON")(&err)
+
+	repoMetadataUsage, err := usagestats.GetAggregatedRepoMetadataStats(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(repoMetadataUsage)
+}
+
 func getDependencyVersions(ctx context.Context, db database.DB, logger log.Logger) (json.RawMessage, error) {
 	logFunc := logFuncFrom(logger.Scoped("getDependencyVersions", "gets the version of various dependency services"))
 	var (
@@ -519,6 +530,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		IDEExtensionsUsage:            []byte("{}"),
 		MigratedExtensionsUsage:       []byte("{}"),
 		CodyUsage:                     []byte("{}"),
+		RepoMetadataUsage:             []byte("{}"),
 	}
 
 	totalUsers, err := getTotalUsersCount(ctx, db)
@@ -668,6 +680,11 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 		logFunc("codyUsage failed", log.Error(err))
 	}
 
+	r.RepoMetadataUsage, err = getAndMarshalRepoMetadataUsageJSON(ctx, db)
+	if err != nil {
+		logFunc("repoMetadataUsage failed", log.Error(err))
+	}
+
 	r.HasExtURL = conf.UsingExternalURL()
 	r.BuiltinSignupAllowed = conf.IsBuiltinSignupAllowed()
 	r.AccessRequestEnabled = conf.IsAccessRequestEnabled()
@@ -765,7 +782,7 @@ var telemetryHTTPProxy = env.Get("TELEMETRY_HTTP_PROXY", "", "if set, HTTP proxy
 
 // check performs an update check and updates the global state.
 func check(logger log.Logger, db database.DB) {
-	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
 	updateBodyFunc := updateBody

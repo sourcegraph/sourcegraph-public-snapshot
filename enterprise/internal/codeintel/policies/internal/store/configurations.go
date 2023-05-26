@@ -5,7 +5,6 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
@@ -20,14 +19,23 @@ import (
 // If a repository identifier is supplied (is non-zero), then only the configuration policies that apply
 // to repository are returned. If repository is not supplied, then all policies may be returned.
 func (s *store) GetConfigurationPolicies(ctx context.Context, opts shared.GetConfigurationPoliciesOptions) (_ []shared.ConfigurationPolicy, totalCount int, err error) {
-	ctx, trace, endObservation := s.operations.getConfigurationPolicies.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Int("repositoryID", opts.RepositoryID),
-		otlog.String("term", opts.Term),
-		otlog.Bool("forDataRetention", opts.ForDataRetention),
-		otlog.Bool("forIndexing", opts.ForIndexing),
-		otlog.Int("limit", opts.Limit),
-		otlog.Int("offset", opts.Offset),
-	}})
+	attrs := []attribute.KeyValue{
+		attribute.Int("repositoryID", opts.RepositoryID),
+		attribute.String("term", opts.Term),
+		attribute.Int("limit", opts.Limit),
+		attribute.Int("offset", opts.Offset),
+	}
+	if opts.ForDataRetention != nil {
+		attrs = append(attrs, attribute.Bool("forDataRetention", *opts.ForDataRetention))
+	}
+	if opts.ForIndexing != nil {
+		attrs = append(attrs, attribute.Bool("forIndexing", *opts.ForIndexing))
+	}
+	if opts.ForEmbeddings != nil {
+		attrs = append(attrs, attribute.Bool("forEmbeddings", *opts.ForEmbeddings))
+	}
+
+	ctx, trace, endObservation := s.operations.getConfigurationPolicies.With(ctx, &err, observation.Args{Attrs: attrs})
 	defer endObservation(1, observation.Args{})
 
 	makeConfigurationPolicySearchCondition := func(term string) *sqlf.Query {
@@ -57,17 +65,32 @@ func (s *store) GetConfigurationPolicies(ctx context.Context, opts shared.GetCon
 	if opts.Term != "" {
 		conds = append(conds, makeConfigurationPolicySearchCondition(opts.Term))
 	}
-	if opts.ForDataRetention {
-		conds = append(conds, sqlf.Sprintf("p.retention_enabled"))
-	}
-	if opts.ForIndexing {
-		conds = append(conds, sqlf.Sprintf("p.indexing_enabled"))
-	}
 	if opts.Protected != nil {
 		if *opts.Protected {
 			conds = append(conds, sqlf.Sprintf("p.protected"))
 		} else {
 			conds = append(conds, sqlf.Sprintf("NOT p.protected"))
+		}
+	}
+	if opts.ForDataRetention != nil {
+		if *opts.ForDataRetention {
+			conds = append(conds, sqlf.Sprintf("p.retention_enabled"))
+		} else {
+			conds = append(conds, sqlf.Sprintf("NOT p.retention_enabled"))
+		}
+	}
+	if opts.ForIndexing != nil {
+		if *opts.ForIndexing {
+			conds = append(conds, sqlf.Sprintf("p.indexing_enabled"))
+		} else {
+			conds = append(conds, sqlf.Sprintf("NOT p.indexing_enabled"))
+		}
+	}
+	if opts.ForEmbeddings != nil {
+		if *opts.ForEmbeddings {
+			conds = append(conds, sqlf.Sprintf("p.embeddings_enabled"))
+		} else {
+			conds = append(conds, sqlf.Sprintf("NOT p.embeddings_enabled"))
 		}
 	}
 	if len(conds) == 0 {
@@ -126,7 +149,8 @@ SELECT
 	p.retain_intermediate_commits,
 	p.indexing_enabled,
 	p.index_commit_max_age_hours,
-	p.index_intermediate_commits
+	p.index_intermediate_commits,
+	p.embeddings_enabled
 FROM lsif_configuration_policies p
 LEFT JOIN repo ON repo.id = p.repository_id
 WHERE %s
@@ -136,8 +160,8 @@ OFFSET %s
 `
 
 func (s *store) GetConfigurationPolicyByID(ctx context.Context, id int) (_ shared.ConfigurationPolicy, _ bool, err error) {
-	ctx, _, endObservation := s.operations.getConfigurationPolicyByID.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Int("id", id),
+	ctx, _, endObservation := s.operations.getConfigurationPolicyByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -167,7 +191,8 @@ SELECT
 	p.retain_intermediate_commits,
 	p.indexing_enabled,
 	p.index_commit_max_age_hours,
-	p.index_intermediate_commits
+	p.index_intermediate_commits,
+	p.embeddings_enabled
 FROM lsif_configuration_policies p
 LEFT JOIN repo ON repo.id = p.repository_id
 WHERE
@@ -198,6 +223,7 @@ func (s *store) CreateConfigurationPolicy(ctx context.Context, configurationPoli
 		configurationPolicy.IndexingEnabled,
 		indexingCommitMaxAgeHours,
 		configurationPolicy.IndexIntermediateCommits,
+		configurationPolicy.EmbeddingEnabled,
 	)))
 	if err != nil {
 		return shared.ConfigurationPolicy{}, err
@@ -218,8 +244,9 @@ INSERT INTO lsif_configuration_policies (
 	retain_intermediate_commits,
 	indexing_enabled,
 	index_commit_max_age_hours,
-	index_intermediate_commits
-) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+	index_intermediate_commits,
+	embeddings_enabled
+) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING
 	id,
 	repository_id,
@@ -233,7 +260,8 @@ RETURNING
 	retain_intermediate_commits,
 	indexing_enabled,
 	index_commit_max_age_hours,
-	index_intermediate_commits
+	index_intermediate_commits,
+	embeddings_enabled
 `
 
 var (
@@ -243,8 +271,8 @@ var (
 )
 
 func (s *store) UpdateConfigurationPolicy(ctx context.Context, policy shared.ConfigurationPolicy) (err error) {
-	ctx, _, endObservation := s.operations.updateConfigurationPolicy.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Int("id", policy.ID),
+	ctx, _, endObservation := s.operations.updateConfigurationPolicy.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("id", policy.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -281,6 +309,7 @@ func (s *store) UpdateConfigurationPolicy(ctx context.Context, policy shared.Con
 			policy.IndexingEnabled,
 			indexCommitMaxAge,
 			policy.IndexIntermediateCommits,
+			policy.EmbeddingEnabled,
 			policy.ID,
 		))
 	})
@@ -300,7 +329,8 @@ SELECT
 	retain_intermediate_commits,
 	indexing_enabled,
 	index_commit_max_age_hours,
-	index_intermediate_commits
+	index_intermediate_commits,
+	embeddings_enabled
 FROM lsif_configuration_policies
 WHERE id = %s
 FOR UPDATE
@@ -317,13 +347,14 @@ UPDATE lsif_configuration_policies SET
 	retain_intermediate_commits = %s,
 	indexing_enabled = %s,
 	index_commit_max_age_hours = %s,
-	index_intermediate_commits = %s
+	index_intermediate_commits = %s,
+	embeddings_enabled = %s
 WHERE id = %s
 `
 
 func (s *store) DeleteConfigurationPolicyByID(ctx context.Context, id int) (err error) {
-	ctx, _, endObservation := s.operations.deleteConfigurationPolicyByID.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Int("id", id),
+	ctx, _, endObservation := s.operations.deleteConfigurationPolicyByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -376,6 +407,7 @@ func scanConfigurationPolicy(s dbutil.Scanner) (configurationPolicy shared.Confi
 		&configurationPolicy.IndexingEnabled,
 		&indexCommitMaxAgeHours,
 		&configurationPolicy.IndexIntermediateCommits,
+		&configurationPolicy.EmbeddingEnabled,
 	); err != nil {
 		return configurationPolicy, err
 	}

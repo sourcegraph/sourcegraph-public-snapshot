@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -105,7 +106,7 @@ func TestCreateRole(t *testing.T) {
 	require.NoError(t, err)
 
 	perm, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
-		Namespace: types.BatchChangesNamespace,
+		Namespace: rtypes.BatchChangesNamespace,
 		Action:    "READ",
 	})
 	require.NoError(t, err)
@@ -471,15 +472,15 @@ func createPermissions(ctx context.Context, t *testing.T, db database.DB) []*typ
 
 	ps, err := db.Permissions().BulkCreate(ctx, []database.CreatePermissionOpts{
 		{
-			Namespace: types.BatchChangesNamespace,
+			Namespace: rtypes.BatchChangesNamespace,
 			Action:    "READ",
 		},
 		{
-			Namespace: types.BatchChangesNamespace,
+			Namespace: rtypes.BatchChangesNamespace,
 			Action:    "WRITE",
 		},
 		{
-			Namespace: types.BatchChangesNamespace,
+			Namespace: rtypes.BatchChangesNamespace,
 			Action:    "EXECUTE",
 		},
 	})

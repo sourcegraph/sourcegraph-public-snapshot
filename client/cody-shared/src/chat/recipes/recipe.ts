@@ -10,9 +10,26 @@ export interface RecipeContext {
     intentDetector: IntentDetector
     codebaseContext: CodebaseContext
     responseMultiplexer: BotResponseMultiplexer
+    firstInteraction: boolean
 }
 
+export type RecipeID =
+    | 'chat-question'
+    | 'explain-code-detailed'
+    | 'explain-code-high-level'
+    | 'generate-unit-test'
+    | 'generate-docstring'
+    | 'improve-variable-names'
+    | 'translate-to-language'
+    | 'git-history'
+    | 'find-code-smells'
+    | 'fixup'
+    | 'context-search'
+    | 'release-notes'
+    | 'inline-chat'
+    | 'next-questions'
+
 export interface Recipe {
-    id: string
+    id: RecipeID
     getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null>
 }

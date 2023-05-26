@@ -1,0 +1,50 @@
+extend type Query {
+    """
+    Gets the progress of the current and historic precise ranking jobs.
+    """
+    rankingSummary: [RankingSummary!]!
+}
+
+"""
+Summary of one precise ranking job.
+"""
+type RankingSummary {
+    """
+    Identifier of the current ranking job. Corresponds to values in the site configuration.
+    """
+    graphKey: String!
+    """
+    Progress of the path mapping stage.
+    """
+    pathMapperProgress: RankingSummaryProgress!
+    """
+    Progress of the reference mapping stage.
+    """
+    referenceMapperProgress: RankingSummaryProgress!
+    """
+    Progress of the reducer stage.
+    """
+    reducerProgress: RankingSummaryProgress
+}
+
+"""
+Progress of one stage of a precise ranking job.
+"""
+type RankingSummaryProgress {
+    """
+    When the job started.
+    """
+    startedAt: DateTime!
+    """
+    When the job completed (if finished).
+    """
+    completedAt: DateTime
+    """
+    How many records have been processed.
+    """
+    processed: Int!
+    """
+    How many total items will be processed.
+    """
+    total: Int!
+}

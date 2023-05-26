@@ -1,11 +1,14 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "npm_package", "ts_project")
+load("//dev:eslint.bzl", "eslint_config")
 
 # TODO(bazel): currently handled with #keep
 # gazelle:js_resolve **/esbuild/* //client/build-config/src/esbuild
 
 npm_link_all_packages(name = "node_modules")
+
+eslint_config()
 
 ts_config(
     name = "tsconfig",
@@ -39,6 +42,9 @@ ts_project(
         ":node_modules/style-loader",  #keep
         ":node_modules/terser-webpack-plugin",
         ":node_modules/webpack",
+
+        # TODO: figure out why is this needed for integration tests even though it's defined in babel_config
+        "//:node_modules/@babel/runtime",  #keep
         "//:node_modules/@types/node",
         "//:node_modules/monaco-editor",  #keep
         "//:node_modules/monaco-yaml",  #keep

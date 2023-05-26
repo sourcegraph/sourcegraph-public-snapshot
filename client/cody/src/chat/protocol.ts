@@ -1,4 +1,5 @@
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
+import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
@@ -13,7 +14,7 @@ export type WebviewMessage =
       }
     | { command: 'event'; event: string; value: string }
     | { command: 'submit'; text: string; submitType: 'user' | 'suggestion' }
-    | { command: 'executeRecipe'; recipe: string }
+    | { command: 'executeRecipe'; recipe: RecipeID }
     | { command: 'settings'; serverEndpoint: string; accessToken: string }
     | { command: 'removeToken' }
     | { command: 'removeHistory' }
@@ -27,8 +28,8 @@ export type WebviewMessage =
  */
 export type ExtensionMessage =
     | { type: 'showTab'; tab: string }
-    | { type: 'config'; config: ConfigurationSubsetForWebview }
-    | { type: 'login'; isValid: boolean }
+    | { type: 'config'; config: ConfigurationSubsetForWebview; authStatus: AuthStatus }
+    | { type: 'login'; authStatus: AuthStatus }
     | { type: 'history'; messages: UserLocalHistory | null }
     | { type: 'transcript'; messages: ChatMessage[]; isMessageInProgress: boolean }
     | { type: 'debug'; message: string }
@@ -36,12 +37,31 @@ export type ExtensionMessage =
     | { type: 'view'; messages: View }
     | { type: 'errors'; errors: string }
     | { type: 'suggestions'; suggestions: string[] }
+    | { type: 'app-state'; isInstalled: boolean }
 
 /**
  * The subset of configuration that is visible to the webview.
  */
-export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debug' | 'serverEndpoint'> {
-    hasAccessToken: boolean
-}
+export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debugEnable' | 'serverEndpoint'> {}
 
 export const DOTCOM_URL = new URL('https://sourcegraph.com')
+export const LOCAL_APP_URL = new URL('http://localhost:3080')
+
+/**
+ * The status of a users authentication, whether they're authenticated and have a
+ * verified email.
+ */
+export interface AuthStatus {
+    showInvalidAccessTokenError: boolean
+    authenticated: boolean
+    hasVerifiedEmail: boolean
+    requiresVerifiedEmail: boolean
+}
+
+export function isLoggedIn(authStatus: AuthStatus): boolean {
+    return authStatus.authenticated && (authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true)
+}
+
+export function isLocalApp(url: string): boolean {
+    return new URL(url).origin === LOCAL_APP_URL.origin
+}

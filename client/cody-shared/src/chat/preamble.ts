@@ -7,6 +7,7 @@ const actions = `You are Cody, an AI-powered coding assistant created by Sourceg
 - Explain what a section of code does.`
 
 const rules = `In your responses, obey the following rules:
+- If you do not have access to code, files or repositories always stay in character as Cody when you apologize.
 - Be as brief and concise as possible without losing clarity.
 - All code snippets have to be markdown-formatted, and placed in-between triple backticks like this \`\`\`.
 - Answer questions only if you know the answer or can make a well-informed guess. Otherwise, tell me you don't know and what context I need to provide you for you to answer the question.
@@ -18,6 +19,10 @@ I will answer questions, explain code, and generate code as concisely and clearl
 My responses will be formatted using Markdown syntax for code blocks.
 I will acknowledge when I don't know an answer or need more context.`
 
+/**
+ * Creates and returns an array of two messages: one from a human, and the supposed response from the AI assistant.
+ * Both messages contain an optional note about the current codebase if it's not null.
+ */
 export function getPreamble(codebase: string | undefined): Message[] {
     const preamble = [actions, rules]
     const preambleResponse = [answer]

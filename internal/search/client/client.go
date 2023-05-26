@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
@@ -49,22 +50,24 @@ type SearchClient interface {
 	JobClients() job.RuntimeClients
 }
 
-func NewSearchClient(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map, enterpriseJobs jobutil.EnterpriseJobs) SearchClient {
+func NewSearchClient(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map, searcherGRPCConnectionCache *defaults.ConnectionCache, enterpriseJobs jobutil.EnterpriseJobs) SearchClient {
 	return &searchClient{
-		logger:         logger,
-		db:             db,
-		zoekt:          zoektStreamer,
-		searcherURLs:   searcherURLs,
-		enterpriseJobs: enterpriseJobs,
+		logger:                      logger,
+		db:                          db,
+		zoekt:                       zoektStreamer,
+		searcherURLs:                searcherURLs,
+		searcherGRPCConnectionCache: searcherGRPCConnectionCache,
+		enterpriseJobs:              enterpriseJobs,
 	}
 }
 
 type searchClient struct {
-	logger         log.Logger
-	db             database.DB
-	zoekt          zoekt.Streamer
-	searcherURLs   *endpoint.Map
-	enterpriseJobs jobutil.EnterpriseJobs
+	logger                      log.Logger
+	db                          database.DB
+	zoekt                       zoekt.Streamer
+	searcherURLs                *endpoint.Map
+	searcherGRPCConnectionCache *defaults.ConnectionCache
+	enterpriseJobs              jobutil.EnterpriseJobs
 }
 
 func (s *searchClient) Plan(
@@ -114,6 +117,9 @@ func (s *searchClient) Plan(
 	}
 	tr.LazyPrintf("parsing done")
 
+	features := ToFeatures(featureflag.FromContext(ctx), s.logger)
+	features.KeywordScoring = searchType == query.SearchTypeKeyword
+
 	inputs := &search.Inputs{
 		Plan:                   plan,
 		Query:                  plan.ToQ(),
@@ -121,7 +127,7 @@ func (s *searchClient) Plan(
 		SearchMode:             searchMode,
 		UserSettings:           settings,
 		OnSourcegraphDotCom:    sourcegraphDotComMode,
-		Features:               ToFeatures(featureflag.FromContext(ctx), s.logger),
+		Features:               features,
 		PatternType:            searchType,
 		Protocol:               protocol,
 		SanitizeSearchPatterns: sanitizeSearchPatterns(ctx, s.db, s.logger), // Experimental: check site config to see if search sanitization is enabled
@@ -153,11 +159,12 @@ func (s *searchClient) Execute(
 
 func (s *searchClient) JobClients() job.RuntimeClients {
 	return job.RuntimeClients{
-		Logger:       s.logger,
-		DB:           s.db,
-		Zoekt:        s.zoekt,
-		SearcherURLs: s.searcherURLs,
-		Gitserver:    gitserver.NewClient(),
+		Logger:                      s.logger,
+		DB:                          s.db,
+		Zoekt:                       s.zoekt,
+		SearcherURLs:                s.searcherURLs,
+		SearcherGRPCConnectionCache: s.searcherGRPCConnectionCache,
+		Gitserver:                   gitserver.NewClient(),
 	}
 }
 

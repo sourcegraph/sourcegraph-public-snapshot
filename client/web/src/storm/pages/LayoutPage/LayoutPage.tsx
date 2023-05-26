@@ -22,7 +22,7 @@ import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { GlobalAlerts } from '../../../global/GlobalAlerts'
 import { useHandleSubmitFeedback } from '../../../hooks'
 import { LegacyLayoutRouteContext } from '../../../LegacyRouteContext'
-import { SurveyToast } from '../../../marketing/toast'
+import { CodySurveyToast, SurveyToast } from '../../../marketing/toast'
 import { GlobalNavbar } from '../../../nav/GlobalNavbar'
 import { EnterprisePageRoutes, PageRoutes } from '../../../routes.constants'
 import { parseSearchURLQuery } from '../../../search'
@@ -31,7 +31,7 @@ import { SearchQueryStateObserver } from '../../../SearchQueryStateObserver'
 
 import styles from './LayoutPage.module.scss'
 
-const LazySetupWizard = lazyComponent(() => import('../../../setup-wizard'), 'SetupWizard')
+const LazySetupWizard = lazyComponent(() => import('../../../setup-wizard/SetupWizard'), 'SetupWizard')
 
 export interface LegacyLayoutProps extends LegacyLayoutRouteContext {
     children?: never
@@ -193,9 +193,15 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                 />
             )}
 
-            <GlobalAlerts authenticatedUser={props.authenticatedUser} isSourcegraphDotCom={props.isSourcegraphDotCom} />
+            <GlobalAlerts authenticatedUser={props.authenticatedUser} isSourcegraphApp={props.isSourcegraphApp} />
             {!isSiteInit && !isSignInOrUp && !props.isSourcegraphDotCom && !disableFeedbackSurvey && (
                 <SurveyToast authenticatedUser={props.authenticatedUser} />
+            )}
+            {!isSiteInit && props.isSourcegraphDotCom && props.authenticatedUser && (
+                <CodySurveyToast
+                    telemetryService={props.telemetryService}
+                    authenticatedUser={props.authenticatedUser}
+                />
             )}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
