@@ -185,7 +185,7 @@ symbol_parts AS (
 		decode(split_part(t.payload, '$', 2), 'base64') AS package_manager,
 		decode(split_part(t.payload, '$', 3), 'base64') AS package_name,
 		decode(split_part(t.payload, '$', 4), 'base64') AS package_version,
-		decode(split_part(t.payload, '$', 5), 'base64') AS descriptor,
+		decode(split_part(t.payload, '$', 5), 'base64') AS descriptor
 	FROM unnest(%s::text[]) AS t(payload)
 )
 -- Consume from the worktable results defined above. This will throw out any rows
