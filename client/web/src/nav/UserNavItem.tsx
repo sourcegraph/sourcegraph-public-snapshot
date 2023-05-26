@@ -205,6 +205,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     </div>
                                 </div>
                             )}
+
                             {organizations.length > 0 && (
                                 <>
                                     <MenuDivider className={styles.dropdownDivider} />
@@ -231,6 +232,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                 {isSourcegraphApp ? 'Documentation' : 'Help'}{' '}
                                 <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                             </MenuLink>
+
                             {isSourcegraphApp ? (
                                 <MenuLink as={AnchorLink} to="/user/settings/product-research">
                                     Feedback
@@ -238,7 +240,9 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                             ) : (
                                 <MenuItem onSelect={showFeedbackModal}>Feedback</MenuItem>
                             )}
+
                             <MenuItem onSelect={showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
+
                             {authenticatedUser.session?.canSignOut && !isSourcegraphApp && (
                                 <MenuLink as={AnchorLink} to="/-/sign-out">
                                     Sign out
