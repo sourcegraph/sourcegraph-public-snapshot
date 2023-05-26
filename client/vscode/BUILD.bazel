@@ -219,6 +219,7 @@ ts_project(
         "//:node_modules/@types/react-dom",
         "//:node_modules/@types/uuid",
         "//:node_modules/@types/vscode",
+        "//:node_modules/@types/vscode-webview",  #keep
         "//:node_modules/@vscode/webview-ui-toolkit",
         "//:node_modules/agent-base",  #keep
         "//:node_modules/classnames",
