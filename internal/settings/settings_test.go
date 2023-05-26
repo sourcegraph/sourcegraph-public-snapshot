@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -18,35 +19,34 @@ func TestRelevantSettings(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	org1, err := db.Orgs().Create(ctx, "org1", nil)
-	require.NoError(t, err)
+	createOrg := func(name string) *types.Org {
+		org, err := db.Orgs().Create(ctx, name, nil)
+		require.NoError(t, err)
+		return org
 
-	org2, err := db.Orgs().Create(ctx, "org2", nil)
-	require.NoError(t, err)
+	}
 
-	user1, err := db.Users().Create(ctx, database.NewUser{Username: "user1", Email: "user1", EmailIsVerified: true})
-	require.NoError(t, err)
+	createUser := func(name string, orgs ...int32) *types.User {
+		user, err := db.Users().Create(ctx, database.NewUser{Username: name, Email: name, EmailIsVerified: true})
+		require.NoError(t, err)
 
-	_, err = db.OrgMembers().Create(ctx, org1.ID, user1.ID)
-	require.NoError(t, err)
+		for _, org := range orgs {
+			_, err = db.OrgMembers().Create(ctx, org, user.ID)
+			require.NoError(t, err)
+		}
 
-	user2, err := db.Users().Create(ctx, database.NewUser{Username: "user2", Email: "user2", EmailIsVerified: true})
-	require.NoError(t, err)
+		return user
+	}
 
-	_, err = db.OrgMembers().Create(ctx, org2.ID, user2.ID)
-	require.NoError(t, err)
+	org1 := createOrg("org1")
+	org2 := createOrg("org2")
 
-	user3, err := db.Users().Create(ctx, database.NewUser{Username: "user3", Email: "user3", EmailIsVerified: true})
-	require.NoError(t, err)
+	user1 := createUser("user1", org1.ID)
+	user2 := createUser("user2", org2.ID)
+	user3 := createUser("user3", org1.ID, org2.ID)
 
-	_, err = db.OrgMembers().Create(ctx, org1.ID, user3.ID)
-	require.NoError(t, err)
-
-	_, err = db.OrgMembers().Create(ctx, org2.ID, user3.ID)
-	require.NoError(t, err)
-
-	// Org1 contains user1 and user 3
-	// Org2 contains user2 and user 3
+	// Org1 contains user1 and user3
+	// Org2 contains user2 and user3
 
 	cases := []struct {
 		subject  api.SettingsSubject
