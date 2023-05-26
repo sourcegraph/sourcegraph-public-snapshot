@@ -9,6 +9,9 @@ filegroup(
 pkg_tar(
     name = "config_tar",
     srcs = [":config_files"],
+    remap_paths = {
+        "/": "/config/",
+    },
 )
 
 oci_image(
