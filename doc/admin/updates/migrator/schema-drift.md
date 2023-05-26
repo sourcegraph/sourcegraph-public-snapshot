@@ -12,7 +12,7 @@ During an upgrade you may run into the following message.
 
 This error indicates that `migrator` has detected some difference between the state of the schema in your database and the expected schema for the database in the `-from` or current version of your Sourcegraph instance.
 
-When the schema [drift](./manual_database_migrations.md#drift) command is run you'll see a set of diffs representing the areas where your instance schema has diverged from the expected state as well as the SQL operations to fix these examples of drift. For example:
+When the schema [drift](./migrator-operations.md#drift) command is run you'll see a set of diffs representing the areas where your instance schema has diverged from the expected state as well as the SQL operations to fix these examples of drift. For example:
 
 ```
 ❌ Missing index "external_service_repos"."external_service_repos_repo_id_external_service_id_unique"
