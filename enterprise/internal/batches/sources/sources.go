@@ -50,7 +50,7 @@ func (e ErrNoPushCredentials) Error() string {
 var ErrNoSSHCredential = errors.New("authenticator doesn't support SSH")
 
 // AuthenticationStrategy defines the possible types of authentication strategy that can
-// be used to authenticate a ChangesetSource.
+// be used to authenticate a ChangesetSource for a changeset.
 type AuthenticationStrategy string
 
 const (
@@ -77,9 +77,9 @@ type Sourcer interface {
 	// It authenticates the given ChangesetSource with a credential appropriate to sync or
 	// reconcile the given changeset based on the AuthenticationStrategy. Under most
 	// conditions, the AuthenticationStrategy should be
-	// AuthenticationStrategyUserCredential. When this strategy is used, ifchangeset was
-	// created by a batch change, then authentication will be based on the first available
-	// option of:
+	// AuthenticationStrategyUserCredential. When this strategy is used, if the changeset
+	// was created by a batch change, then authentication will be based on the first
+	// available option of:
 	//
 	// 1. The last applying user's credentials.
 	// 2. Any available site credential matching the changesets repo.
