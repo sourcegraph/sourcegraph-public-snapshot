@@ -34,6 +34,7 @@ contents:
     - coursier@sourcegraph
     - p4cli@sourcegraph
     - p4-fusion@sourcegraph
+    - s3proxy@sourcegraph
 
 accounts:
   groups:
