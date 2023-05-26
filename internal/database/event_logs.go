@@ -544,7 +544,7 @@ func jsonSettingFragment(setting string, value any) string {
 func buildCountUniqueUserConds(opt *CountUniqueUsersOptions) []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
-		conds = buildCommonUsageConds(&opt.CommonUsageOptions, conds)
+		conds = BuildCommonUsageConds(&opt.CommonUsageOptions, conds)
 
 		if opt.EventFilters != nil {
 			if opt.EventFilters.ByEventNamePrefix != "" {
@@ -568,7 +568,7 @@ func buildCountUniqueUserConds(opt *CountUniqueUsersOptions) []*sqlf.Query {
 	return conds
 }
 
-func buildCommonUsageConds(opt *CommonUsageOptions, conds []*sqlf.Query) []*sqlf.Query {
+func BuildCommonUsageConds(opt *CommonUsageOptions, conds []*sqlf.Query) []*sqlf.Query {
 	if opt != nil {
 		if opt.ExcludeSystemUsers {
 			conds = append(conds, sqlf.Sprintf("event_logs.user_id > 0 OR event_logs.anonymous_user_id <> 'backend'"))
@@ -900,7 +900,7 @@ func (l *eventLogStore) SiteUsageCurrentPeriods(ctx context.Context) (types.Site
 func (l *eventLogStore) siteUsageCurrentPeriods(ctx context.Context, now time.Time, opt *SiteUsageOptions) (summary types.SiteUsageSummary, err error) {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
-		conds = buildCommonUsageConds(&opt.CommonUsageOptions, conds)
+		conds = BuildCommonUsageConds(&opt.CommonUsageOptions, conds)
 	}
 
 	query := sqlf.Sprintf(siteUsageCurrentPeriodsQuery, now, now, now, now, now, now, sqlf.Join(conds, ") AND ("))
