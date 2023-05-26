@@ -132,7 +132,7 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 			"BEXT_NIGHTLY":    os.Getenv("BEXT_NIGHTLY"),
 			"RELEASE_NIGHTLY": os.Getenv("RELEASE_NIGHTLY"),
 			"VSCE_NIGHTLY":    os.Getenv("VSCE_NIGHTLY"),
-			"CODY_NIGHTLY":    os.Getenv("CODY_NIGHTLY")
+			"CODY_NIGHTLY":    os.Getenv("CODY_NIGHTLY"),
 		})
 	)
 
