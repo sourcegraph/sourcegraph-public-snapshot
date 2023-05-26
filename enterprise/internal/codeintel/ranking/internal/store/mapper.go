@@ -152,13 +152,11 @@ referenced_symbols AS (
 ),
 referenced_definitions AS (
 	SELECT
-		s.repository_id,
-		s.document_path,
+		s.definition_id,
 		COUNT(*) AS count
 	FROM (
 		SELECT
-			u.repository_id,
-			rd.document_path,
+			rd.id AS definition_id,
 
 			-- Group by repository/root/indexer and order by descending ids. We
 			-- will only count the rows with rank = 1 in the outer query in order
@@ -183,13 +181,12 @@ referenced_definitions AS (
 	-- exported set, but the shadowed (newly non-visible) uploads have not yet
 	-- been removed by the janitor processes.
 	WHERE s.rank = 1
-	GROUP BY s.repository_id, s.document_path
+	GROUP BY s.definition_id
 ),
 ins AS (
-	INSERT INTO codeintel_ranking_path_counts_inputs (repository_id, document_path, count, graph_key)
+	INSERT INTO codeintel_ranking_path_counts_inputs (definition_id, count, graph_key)
 	SELECT
-		rx.repository_id,
-		rx.document_path,
+		rx.definition_id,
 		rx.count,
 		%s
 	FROM referenced_definitions rx
@@ -232,6 +229,7 @@ func (s *store) InsertInitialPathCounts(
 		batchSize,
 		derivativeGraphKey,
 		derivativeGraphKey,
+		graphKey,
 	))
 	if err != nil {
 		return 0, 0, err
@@ -286,6 +284,7 @@ unprocessed_path_counts AS (
 	SELECT
 		ipr.id,
 		eu.upload_id,
+		eu.id AS exported_upload_id,
 		ipr.graph_key,
 		CASE
 			WHEN ipr.document_path != '' THEN array_append('{}'::text[], ipr.document_path)
@@ -318,20 +317,25 @@ expanded_unprocessed_path_counts AS (
 	SELECT
 		upc.id,
 		upc.upload_id,
+		upc.exported_upload_id,
 		upc.graph_key,
 		unnest(upc.document_paths) AS document_path
 	FROM unprocessed_path_counts upc
 ),
 ins AS (
-	INSERT INTO codeintel_ranking_path_counts_inputs (repository_id, document_path, count, graph_key)
+	INSERT INTO codeintel_ranking_path_counts_inputs (definition_id, count, graph_key)
 	SELECT
-		u.repository_id,
-		eupc.document_path,
+		rd.id,
 		0,
 		%s
 	FROM locked_path_counts lpc
-	JOIN expanded_unprocessed_path_counts eupc on eupc.id = lpc.codeintel_initial_path_ranks_id
-	JOIN lsif_uploads u ON u.id = eupc.upload_id
+	JOIN expanded_unprocessed_path_counts eupc ON eupc.id = lpc.codeintel_initial_path_ranks_id
+	JOIN codeintel_ranking_definitions rd ON
+		rd.exported_upload_id = eupc.exported_upload_id AND
+		rd.document_path = eupc.document_path
+	WHERE
+		rd.graph_key = %s AND
+		rd.symbol_name = '$'
 	RETURNING 1
 ),
 set_progress AS (
