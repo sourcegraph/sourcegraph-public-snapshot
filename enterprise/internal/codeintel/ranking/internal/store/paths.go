@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func (s *store) InsertInitialPathRanks(ctx context.Context, exportedUploadID int, documentPaths chan string, batchSize int, graphKey string) (err error) {
+func (s *store) InsertInitialPathRanks(ctx context.Context, exportedUploadID int, documentPaths []string, batchSize int, graphKey string) (err error) {
 	ctx, _, endObservation := s.operations.insertInitialPathRanks.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("graphKey", graphKey),
 	}})
@@ -19,7 +19,7 @@ func (s *store) InsertInitialPathRanks(ctx context.Context, exportedUploadID int
 
 	return s.withTransaction(ctx, func(tx *store) error {
 		inserter := func(inserter *batch.Inserter) error {
-			for paths := range batchChannel(documentPaths, batchSize) {
+			for _, paths := range batchSlice(documentPaths, batchSize) {
 				if err := inserter.Insert(ctx, pq.Array(paths)); err != nil {
 					return err
 				}
