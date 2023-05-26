@@ -102,8 +102,8 @@ func (a *Actor) Limiter(redis limiter.RedisStore, feature types.CompletionsFeatu
 	if !ok {
 		return nil, false
 	}
-	// The redis store has to use a prefix for the given feature to distinguish
-	// between the features used.
+	// The redis store has to use a prefix for the given feature because we need
+	// to rate limit by feature.
 	rs := limiter.NewPrefixRedisStore(fmt.Sprintf("%s:", string(feature)), redis)
 	return updateOnFailureLimiter{Redis: rs, RateLimit: limit, Actor: a}, true
 }
