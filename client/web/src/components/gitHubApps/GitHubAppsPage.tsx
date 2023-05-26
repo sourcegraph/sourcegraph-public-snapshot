@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react'
 
 import { mdiPlus } from '@mdi/js'
+import classNames from 'classnames'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { ButtonLink, ErrorAlert, Icon, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
@@ -19,7 +20,13 @@ import { PageTitle } from '../PageTitle'
 import { GITHUB_APPS_QUERY } from './backend'
 import { GitHubAppCard } from './GitHubAppCard'
 
-export const GitHubAppsPage: React.FC = () => {
+import styles from './GitHubAppsPage.module.scss'
+
+interface Props {
+    batchChangesEnabled: boolean
+}
+
+export const GitHubAppsPage: React.FC<Props> = ({ batchChangesEnabled }) => {
     const { data, loading, error, refetch } = useQuery<GitHubAppsResult, GitHubAppsVariables>(GITHUB_APPS_QUERY, {})
     const gitHubApps = useMemo(() => data?.gitHubApps?.nodes ?? [], [data])
 
@@ -38,23 +45,36 @@ export const GitHubAppsPage: React.FC = () => {
     return (
         <>
             <PageTitle title="GitHub Apps" />
-            <PageHeader path={[{ text: 'GitHub Apps' }]} className="mb-1" />
-            <div className="d-flex align-items-center">
-                <span>
-                    Create and connect a GitHub App to better manage GitHub code host connections.
-                    <Link to="/help/admin/external_service/github#using-a-github-app" className="ml-1">
-                        See how GitHub App configuration works.
-                    </Link>
-                </span>
-                <ButtonLink
-                    to="/site-admin/github-apps/new"
-                    className="ml-auto text-nowrap"
-                    variant="primary"
-                    as={Link}
-                >
-                    <Icon aria-hidden={true} svgPath={mdiPlus} /> Create GitHub App
-                </ButtonLink>
-            </div>
+            <PageHeader
+                headingElement="h2"
+                path={[{ text: 'GitHub Apps' }]}
+                className={classNames(styles.pageHeader, 'mb-3')}
+                description={
+                    <>
+                        Create and connect a GitHub App to better manage GitHub code host connections.{' '}
+                        <Link to="/help/admin/external_service/github#using-a-github-app">
+                            See how GitHub App configuration works.
+                        </Link>
+                        {batchChangesEnabled && (
+                            <>
+                                {' '}
+                                To create a GitHub App to sign Batch Changes commits, visit{' '}
+                                <Link to="/site-admin/batch-changes">Batch Changes settings</Link>.
+                            </>
+                        )}
+                    </>
+                }
+                actions={
+                    <ButtonLink
+                        to="/site-admin/github-apps/new"
+                        className="ml-auto text-nowrap"
+                        variant="primary"
+                        as={Link}
+                    >
+                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Create GitHub App
+                    </ButtonLink>
+                }
+            />
             {error && <ErrorAlert className="mt-4 mb-0 text-left" error={error} />}
             <ConnectionContainer>
                 {error && <ErrorAlert error={error} />}

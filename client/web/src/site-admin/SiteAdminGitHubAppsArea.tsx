@@ -22,6 +22,7 @@ const GitHubAppsPage = lazyComponent(() => import('../components/gitHubApps/GitH
 interface Props extends TelemetryProps, PlatformContextProps {
     authenticatedUser: AuthenticatedUser
     isSourcegraphApp: boolean
+    batchChangesEnabled: boolean
 }
 
 export const SiteAdminGitHubAppsArea: FC<Props> = props => {
@@ -44,7 +45,7 @@ export const SiteAdminGitHubAppsArea: FC<Props> = props => {
 
     return (
         <Routes>
-            <Route index={true} element={<GitHubAppsPage />} />
+            <Route index={true} element={<GitHubAppsPage batchChangesEnabled={props.batchChangesEnabled} />} />
 
             <Route path="new" element={<CreateGitHubAppPage {...props} />} />
             <Route
