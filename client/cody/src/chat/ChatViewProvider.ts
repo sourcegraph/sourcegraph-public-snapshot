@@ -308,6 +308,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     this.editor.controller.reply(highlightedDisplayText)
                 }
                 void this.onCompletionEnd()
+                this.publishEmbeddingsError()
             },
         })
 
@@ -362,6 +363,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.sendTranscript()
         void this.saveTranscriptToChatHistory()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', false)
+        if (!this.codebaseContext.checkEmbeddingsConnection()) {
+            this.sendErrorToWebview(
+                'Error while establishing embeddings server connection. Please try after sometime! If the issue still persists contact support'
+            )
+            return
+        }
     }
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion'): Promise<void> {
@@ -410,7 +417,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
 
         this.codebaseContext = codebaseContext
-        this.publishEmbeddingsError()
         this.publishContextStatus()
     }
 
@@ -659,12 +665,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      * Publish embedding connections or results error to webview
      */
     private publishEmbeddingsError(): void {
-        if (!this.codebaseContext.checkEmbeddingsConnection()) {
-            this.sendErrorToWebview(
-                'Error while establishing embeddings server connection. Please try after sometime! If the issue still persists contact support'
-            )
-            return
-        }
         const searchErrors = this.codebaseContext.getEmbeddingSearchErrors()
         if (searchErrors && searchErrors.length > 0) {
             this.sendErrorToWebview(searchErrors)
