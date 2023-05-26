@@ -47,8 +47,9 @@ type HeartbeatRequest struct {
 	ExecutorName string `json:"executorName"`
 
 	JobIDs []string `json:"jobIds,omitempty"`
-	// Used by multi-queue executors. One of JobIDsByQueue or JobIDs must be set.
+	// Used by multi-queue executors. One of (JobIDsByQueue and QueueNames) or JobIDs must be set.
 	JobIDsByQueue []QueueJobIDs `json:"jobIdsByQueue,omitempty"`
+	QueueNames    []string      `json:"queueNames,omitempty"`
 
 	// Telemetry data.
 	OS              string `json:"os"`

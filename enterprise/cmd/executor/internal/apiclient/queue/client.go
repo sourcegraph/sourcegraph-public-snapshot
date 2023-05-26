@@ -196,6 +196,7 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, canc
 			return nil, nil, err
 		}
 		heartbeatRequest.JobIDsByQueue = queueJobIDs
+		heartbeatRequest.QueueNames = c.options.QueueNames
 	} else {
 		queueAttr = attribute.String("queueName", c.options.QueueName)
 		endpoint = fmt.Sprintf("%s/heartbeat", c.options.QueueName)

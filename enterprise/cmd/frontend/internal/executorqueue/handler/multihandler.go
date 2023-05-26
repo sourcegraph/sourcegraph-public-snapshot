@@ -197,14 +197,10 @@ func (m *MultiHandler) HandleHeartbeat(w http.ResponseWriter, r *http.Request) {
 	var payload executortypes.HeartbeatRequest
 
 	wrapHandler(w, r, &payload, m.logger, func() (int, any, error) {
-		var queueNames []string
-		for _, queue := range payload.JobIDsByQueue {
-			queueNames = append(queueNames, queue.QueueName)
-		}
-
+		m.logger.Info("HandleHeartbeat", log.Int("length job ids by queue", len(payload.JobIDsByQueue)))
 		e := types.Executor{
 			Hostname:        payload.ExecutorName,
-			QueueNames:      queueNames,
+			QueueNames:      payload.QueueNames,
 			OS:              payload.OS,
 			Architecture:    payload.Architecture,
 			DockerVersion:   payload.DockerVersion,
