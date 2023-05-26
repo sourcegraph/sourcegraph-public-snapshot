@@ -22,7 +22,12 @@ go_test(
     srcs = ["settings_test.go"],
     embed = [":settings"],
     deps = [
+        "//internal/api",
+        "//internal/database",
+        "//internal/database/dbtest",
+        "//internal/types",
         "//schema",
+        "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//require",
     ],
 )
