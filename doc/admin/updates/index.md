@@ -106,8 +106,8 @@ If your instance has schema drift or unfinished oob migrations you may need to a
     - [Multiversion Upgrade Operations](../deploy/kubernetes/helm.md#multi-version-upgrades)
   - [Upgrade Notes](kubernetes.md)
 - **Single-container Sourcegraph with Docker**
-  - [Standard Upgrade Operations](../deploy/docker-single-container#standard-upgrades)
-  - [Multiversion Upgrade Operations](../deploy/docker-single-container#multi-version-upgrades)
+  - [Standard Upgrade Operations](../deploy/docker-single-container/index.md#standard-upgrades)
+  - [Multiversion Upgrade Operations](../deploy/docker-single-container/index.md#multi-version-upgrades)
   - [Upgrade Notes](server.md)
 - [**Pure-docker custom deployments**](pure_docker.md)
 

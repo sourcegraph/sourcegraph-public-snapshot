@@ -4,10 +4,6 @@ This document covers problems that may come up during an upgrade and ways to deb
 
 **If you encounter trouble during an upgrade please reach out to us at [support@sourcegraph.com](emailto:support@sourcegraph.com)**
 
-### Failures during a multiversion upgrade
-
-TODO
-
 ### Reporting drift errors
 
 If you have conducted an upgrade and see drift in your `Site admin -> Updates` page please report it to us. This is generally not a major cause of concern but may indicate problems in our `migrator` schema migration *squashing* logic.
@@ -28,7 +24,3 @@ Error from server (BadRequest): container "frontend" in pod "sourcegraph-fronten
 ```
 
 Once a failing migration error message can be found, follow the guide on [how to troubleshoot a dirty database](../../how-to/dirty_database.md).
-
-### Forcing an out of band migration
-
-TODO
