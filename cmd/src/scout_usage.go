@@ -29,6 +29,9 @@ func init() {
         Check usage for specific pod
         $ src scout usage --pod <podname>
 
+        Check usage for specific container (docker only)
+        $ src scout usage --container <containername>
+
         Add namespace if using namespace in a Kubernetes cluster
         $ src scout usage --namespace <namespace>
         
@@ -47,6 +50,7 @@ func init() {
 		kubeConfig *string
 		namespace  = flagSet.String("namespace", "", "(optional) specify the kubernetes namespace to use")
 		pod        = flagSet.String("pod", "", "(optional) specify a single pod")
+		container  = flagSet.String("container", "", "(optional) specify a single container")
 		docker     = flagSet.Bool("docker", false, "(optional) using docker deployment")
 		spy        = flagSet.Bool("spy", false, "(optional) see resource usage in real time")
 	)
@@ -92,14 +96,17 @@ func init() {
 		if *pod != "" {
 			options = append(options, usage.WithPod(*pod))
 		}
+		if *container != "" || *docker {
+			if *container != "" {
+				options = append(options, usage.WithContainer(*container))
+			}
 
-		if *docker {
 			dockerClient, err := client.NewClientWithOpts(client.FromEnv)
 			if err != nil {
 				return errors.Wrap(err, "error creating docker client: ")
 			}
 
-			return usage.Docker(context.Background(), *dockerClient)
+			return usage.Docker(context.Background(), *dockerClient, options...)
 		}
 
 		return usage.K8s(
