@@ -4,8 +4,6 @@ import (
 	"context"
 	"io"
 
-	"github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute/client"
@@ -61,13 +59,8 @@ func Search(ctx context.Context, query string, patternType *string, decoder stre
 }
 
 func genericComputeStream(ctx context.Context, handler func(io.Reader) error, query, operation string) (err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, operation)
-	defer func() {
-		span.LogFields(
-			log.Error(err),
-		)
-		span.Finish()
-	}()
+	tr, ctx := trace.New(ctx, operation, "")
+	defer tr.FinishWithErr(&err)
 
 	req, err := client.NewComputeStreamRequest(internalapi.Client.URL+"/.internal", query)
 	if err != nil {
@@ -75,14 +68,6 @@ func genericComputeStream(ctx context.Context, handler func(io.Reader) error, qu
 	}
 	req = req.WithContext(ctx)
 	req.Header.Set("User-Agent", "code-insights-backend")
-
-	if span != nil {
-		carrier := opentracing.HTTPHeadersCarrier(req.Header)
-		span.Tracer().Inject(
-			span.Context(),
-			opentracing.HTTPHeaders,
-			carrier)
-	}
 
 	resp, err := httpcli.InternalClient.Do(req)
 	if err != nil {
