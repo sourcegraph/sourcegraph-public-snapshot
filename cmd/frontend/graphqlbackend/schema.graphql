@@ -177,6 +177,9 @@ type Mutation {
 
     Only site admins may perform this mutation.
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     createUser(
         """
         The new user's username.
@@ -198,6 +201,9 @@ type Mutation {
 
     Only site admins may perform this mutation.
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     randomizeUserPassword(user: ID!): RandomizeUserPasswordResult!
     """
     Adds an email address to the user's account. The email address will be marked as unverified until the user
@@ -286,6 +292,9 @@ type Mutation {
 
     Only the user or site admins may perform this mutation.
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     createAccessToken(user: ID!, scopes: [String!]!, note: String!): CreateAccessTokenResult!
     """
     Deletes and immediately revokes the specified access token, specified by either its ID or by the token
@@ -293,6 +302,9 @@ type Mutation {
 
     Only site admins or the user who owns the token may perform this mutation.
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     deleteAccessToken(byID: ID, byToken: String): EmptyResponse!
     """
     Deletes the association between an external account and its Sourcegraph user. It does NOT delete the external
@@ -306,6 +318,9 @@ type Mutation {
     must correspond to a valid auth provider on the site. The account details must be a stringified
     JSON object that contains valid credentials for the provided service type.
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     addExternalAccount(serviceType: String!, serviceID: String!, accountDetails: String!): EmptyResponse!
     """
     Sends an invitation to join Sourcegraph to the given email address.
@@ -543,6 +558,9 @@ type Mutation {
 
     Only site admins may perform this mutation.
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     updateSiteConfiguration(
         """
         The last ID of the site configuration that is known by the client, to
@@ -561,10 +579,13 @@ type Mutation {
 
     Only site admins may perform this mutation.
     """
-    # SECURITY: Only trusted users should be given site admin permissions.
+    # 🚨 SECURITY: Only trusted users should be given site admin permissions.
     # Site admins have full access to the site configuration and other
     # sensitive data, and they can perform destructive actions such as
     # restarting the site.
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     setUserIsSiteAdmin(userID: ID!, siteAdmin: Boolean!): EmptyResponse
     """
     Invalidates all sessions belonging to a user.
@@ -648,6 +669,9 @@ type Mutation {
     """
     (experimental) Create a new feature flag
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     createFeatureFlag(
         """
         The name of the feature flag
@@ -671,6 +695,9 @@ type Mutation {
     """
     (experimental) Delete a feature flag
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     deleteFeatureFlag(
         """
         The name of the feature flag
@@ -681,6 +708,9 @@ type Mutation {
     """
     (experimental) Update a feature flag
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     updateFeatureFlag(
         """
         The name of the feature flag
@@ -774,6 +804,9 @@ type Mutation {
 
     Only administrators can use this API.
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     sendTestEmail(to: String!): String!
 
     """
@@ -1052,6 +1085,9 @@ Input for Mutation.settingsMutation, which contains fields that all settings (gl
 settings) mutations need.
 """
 input SettingsMutationGroupInput {
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     """
     The subject whose settings to mutate (organization, user, etc.).
     """
