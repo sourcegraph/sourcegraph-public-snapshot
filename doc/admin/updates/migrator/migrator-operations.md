@@ -4,15 +4,15 @@ This document provides a list of the `migrator` commands available to admins for
 
 > NOTE: Admins should always use the latest `migrator` image release, even against older Sourcegraph instances. This is especially true for commands such as `downgrade`, `drift`, `run-out-of-band-migrations`, and `upgrade`.
 > 
-> The exception to this rule is the `migrator` command `up`. `up` should always be run using the `migrator` image version corresponding with the Sourcegraph version being deployed.
+> The exception to this rule is the default `migrator` command `up`. `up` should always be run using the `migrator` image version corresponding with the Sourcegraph version being deployed. In most deployments this is the default migrator command used on Sourcegraph startup.
 
 ## Environment specific operations
 
 To run a `migrator` command, follow the guide for your Sourcegraph distribution type:
 
 - Kubernetes
-  - [Helm](#kubernetes-helm)
   - [Kustomize](#kubernetes-kustomize)
+  - [Helm](#kubernetes-helm)
 - [Docker-compose](#docker-compose)
 - [Docker Single-node](#single-node)
 - [Local development](#local-development)
@@ -82,8 +82,8 @@ upgrade \
 
 **Required arguments**:
 
-- `-from`: The current Sourcegraph release version (*without the patch*; e.g., `v3.36`)
-- `-to`: The target Sorucegraph release version (*without the patch*; e.g., `v4.0`)
+- `--from`: The current Sourcegraph release version (*without the patch*; e.g., `v3.36`)
+- `--to`: The target Sorucegraph release version (*without the patch*; e.g., `v4.0`)
 
 **Optional arguments**:
 
@@ -225,50 +225,6 @@ up \
 
 - If `DISABLE_CODE_INSIGHTS` is not set and the `codeinsights-db` is not available, then this command will fail with the default value for the `--db` flag. To resolve, supply `--db=frontend,codeintel` instead.
 
-### upto
-
-The `upto` command ensures a given migration has been applied, and may apply dependency migrations.
-
-```
-upto \
-    --db=<schema> \
-    --target=<target>,<target>,... \
-    [--ignore-single-dirty-log=false] [--ignore-single-pending-log=false] \
-    [--unprivileged-only=false] [--noop-privileged=false] [--privileged-hash=<hash>]
-```
-
-**Required arguments**:
-
-- `--db`: The target schema to modify.
-- `--target`: The migration identifier(s) to target (these and unapplied descendants will be applied). Comma-separated values are accepted.
-
-**Optional arguments**:
-
-- `--ignore-single-dirty-log` and `--ignore-single-pending-log`: Re-attempt to apply the **next** migration that was marked as errored or as incomplete (respectively). See [how to troubleshoot a dirty database](dirty_database.md#0-attempt-re-application).
-- `--unprivileged-only` and `--noop-privileged`: Controls behavior of schema migrations the presence of [privileged definitions](../../how-to/privileged_migrations.md).
-
-### downto
-
-The `downto` command revert any applied migrations that are children of the given targets—this effectively "resets" the schema to the target version.
-
-```
-downto \
-    --db=<schema> \
-    --target=<target>,<target>,... \
-    [--ignore-single-dirty-log=false] [--ignore-single-pending-log=false] \
-    [--unprivileged-only=false] [--noop-privileged=false] [--privileged-hash=<hash>]
-```
-
-**Required arguments**:
-
-- `--db`: The target schema to modify.
-- `--target`: The migration identifier(s) to target (proper ancestors will be reverted). Comma-separated values are accepted.
-
-**Optional arguments**:
-
-- `--ignore-single-dirty-log` and `--ignore-single-pending-log`: Re-attempt to apply the **next** migration that was marked as errored or as incomplete (respectively). See [how to troubleshoot a dirty database](../../how-to/dirty_database.md#0-attempt-re-application).
-- `--unprivileged-only` and `--noop-privileged`: Controls behavior of schema migrations the presence of [privileged definitions](../../how-to/privileged_migrations.md).
-
 ### run-out-of-band-migrations
 
 The `run-out-of-band-migrations` command runs out-of-band migrations within the `migrator`. This command may be performed by a site-administrator as part of [repairing an unfinished migration](../../how-to/unfinished_migration.md).
@@ -369,7 +325,7 @@ Generally the migrator is run via the `helm upgrade`, for example:
 helm upgrade --install -n sourcegraph --set "migrator.args={drift,--db=frontend,--version=v3.39.1}" sourcegraph-migrator sourcegraph/sourcegraph-migrator --version 4.4.2
 ```
 
-In the example above the `drift` operation is run with flags `-db` and `-version`. The migrator is run using image version `v4.4.2`.
+In the example above the `drift` operation is run with flags `--db` and `--version`. The migrator is run using image version `v4.4.2`.
 
 Arguments are set with the `--set "migrator.args={operation-arg,flag-arg-1,flag-arg-2}` portion of the command. Just like you would run commands in terminal, these are the args you are telling the migrator to run on initialization.
 

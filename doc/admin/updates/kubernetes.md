@@ -2,9 +2,9 @@
 
 This page lists the changes that are relevant for upgrading Sourcegraph on **Kubernetes with Kustomize and Helm**. 
 
-Other helpful docs:
-- [Kubernetes Kustomize Upgrade Operations](../deploy/kubernetes/upgrade.md)
-- [Kubernetes Helm Upgrade Operations](../deploy/kubernetes/helm.md#upgrading-sourcegraph)
+For upgrade procedures or general info about sourcegraph versioning see the links below:
+- [Kubernetes Kustomize Upgrade Procedures](../deploy/kubernetes/upgrade.md)
+- [Kubernetes Helm Upgrade Procedures](../deploy/kubernetes/helm.md#upgrading-sourcegraph)
 - [General Upgrade Info](./index.md)
 - [Product changelog](../../../CHANGELOG.md)
 

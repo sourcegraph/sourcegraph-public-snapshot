@@ -2,8 +2,8 @@
 
 This page lists the changes that are relevant for upgrading Sourcegraph on a **single-node Sourcegraph instance**.
 
-Other helpful docs:
-- [Single Container Upgrade Operations](../deploy/docker-single-container/index.md#upgrade)
+For upgrade procedures or general info about sourcegraph versioning see the links below:
+- [Single Container Upgrade Procedures](../deploy/docker-single-container/index.md#upgrade)
 - [General Upgrade Info](./index.md)
 - [Product changelog](../../../CHANGELOG.md)
 

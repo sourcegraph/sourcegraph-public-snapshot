@@ -2,8 +2,8 @@
 
 This page lists the changes that are relevant for upgrading Sourcegraph on **Docker Compose**. 
 
-Other helpful docs:
-- [Docker Compose Upgrade Operations](../deploy/docker-compose/upgrade.md)
+For upgrade procedures or general info about sourcegraph versioning see the links below:
+- [Docker Compose Upgrade Procedures](../deploy/docker-compose/upgrade.md)
 - [General Upgrade Info](./index.md)
 - [Product changelog](../../../CHANGELOG.md)
 

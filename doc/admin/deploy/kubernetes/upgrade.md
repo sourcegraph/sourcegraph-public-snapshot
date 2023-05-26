@@ -1,6 +1,6 @@
 # Updating Sourcegraph with Kubernetes
 
-This document describes the process to update a **Kubernetes Kustomize** or **Kubernetes Legacy** Sourcegraph instance. If you are unfamiliar with sourcegraph versioning or releases see our [general concepts documentation](../../updates/index.md).
+This document describes the process to update a **Kubernetes Kustomize** or **Kubernetes Legacy** Sourcegraph instance. If you are unfamiliar with Sourcegraph versioning or releases see our [general concepts documentation](../../updates/index.md).
 
 This guide is **not for use with Helm**. Please refer to the [Upgrading Sourcegraph with Helm docs](helm.md#upgrading-sourcegraph) for Helm deployments.
 
@@ -224,7 +224,40 @@ Admins upgrading a Sourcegraph instance older than `v4.5.0` and migrating from o
 
 ## Rollback
 
+## Rollback
 
+You can rollback by resetting your `release` branch to the old state before redeploying the instance.
+
+If you are rolling back more than a single version, then you must also [rollback your database](../../how-to/rollback_database.md), as database migrations (which may have run at some point during the upgrade) are guaranteed to be compatible with one previous minor version.
+
+### Rollback with Kustomize
+
+**For Sourcegraph version 4.5.0 and above, which have [migrated](../kubernetes/kustomize/migrate.md) to [deploy-sourcegraph-k8s](www.github.com/sourcegraph/deploy-sourcegraph-k8s.com).**
+
+For instances deployed using the [deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s) repository:
+
+  ```bash
+  # Re-generate manifests
+  $ kubectl kustomize instances/$YOUR_INSTANCE -o cluster-rollback.yaml
+  # Review manifests
+  $ less cluster-rollback.yaml
+  # Re-deploy
+  $ kubectl apply --prune -l deploy=sourcegraph -f cluster-rollback.yaml
+  ```
+
+### Rollback without Kustomize
+
+**For Sourcegraph version prior to 4.5.0 using our legacy [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) manifests.**
+
+For instances deployed using the old [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository:
+
+  ```bash
+  $ ./kubectl-apply-all.sh
+  ```
+
+### Rollback with `migrator downgrade`
+
+For rolling back a multiversion upgrade use the `migrator` [downgrade](../../updates/migrator/migrator-operations.md#downgrade) command. Learn mor in our [downgrade docs](../../updates/migrator/downgrading.md).
 
 ---
 

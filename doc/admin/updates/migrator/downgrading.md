@@ -6,7 +6,7 @@ This document covers the risks and methods of downgrading a Sourcegraph instance
 
 Sourcegraph guarantees database backward compatibility to the most recent minor version. According to this policy database schemas should be compatible with application code from the previous release. This means that in principle rolling back a Sourcegraph instance after an upgrade only requires reverting changes made by the last standard upgrade and reapplying manifests.
 
-In practice downgrading a Sourcegraph instance should always be a last option. Some versions of Sourcegraph apply out of band migrations which are irreversible and data loss may result. **We highly creating a database backup before proceeding with an upgrade**.
+In practice downgrading a Sourcegraph instance should always be a last option. Some versions of Sourcegraph apply out of band migrations which are irreversible and data loss may result. **We highly recommend creating a database backup before proceeding with an upgrade**.
 
 > Note: As a percaution its advised that after any downgrade the databases are checked with the `migrator` [`drift` command](./migrator-operations.md#drift) to identify any problems reversing migrations.
 

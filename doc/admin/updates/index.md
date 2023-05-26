@@ -30,7 +30,7 @@ Sourcegraph has two upgrade types. **Standard** upgrades and **Multiversion** up
 
 **Standard** 
 - Moves Sourcegraph one version forward (`v5.0.0` to `v5.1.0`), *this is usually one minor version unless the next version released is a major version*.
-- Requires no downtime
+- Requires minor downtime in deployments except kubernetes where rolling updates are possible.
 
 **Multiversion**
 - Moves Sourcegraph multiple versions forward (`v5.0.0` to `v5.2.0`).
