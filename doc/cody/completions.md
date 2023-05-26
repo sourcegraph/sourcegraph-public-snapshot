@@ -10,7 +10,7 @@
 
 ## What are Cody completions?
 
-Cody provides real-time code completions as you're typing. As you start coding, or after you type a comment, Cody will look at the context around your open files and file history to predict what you're trying to implement and provide completions.
+Cody provides real-time code completions as you're typing. As you start coding, or after you type a comment, Cody will look at the context around your open files and file history to predict what you're trying to implement and provide completions. It's autocomplete powered by Cody!
 
 ## Enabling Cody completions
 
