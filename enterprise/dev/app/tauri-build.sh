@@ -177,6 +177,9 @@ build() {
     bundles="$bundles,updater"
   fi
 
+  echo "--- :tauri: Installing packages"
+  pnpm install
+
   echo "--- :tauri: Building Application (${version}) with bundles '${bundles}' for platform: ${platform}"
   NODE_ENV=production pnpm run build-app-shell
   pnpm tauri build --bundles ${bundles} --target "${platform}"
