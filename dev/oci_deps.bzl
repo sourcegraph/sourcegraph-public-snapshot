@@ -78,3 +78,9 @@ def oci_deps():
         digest = "sha256:d3af56ce7dcaff85c2c48d3fcd2f2059365fb50beb8e545e08b8519ccc0e67e3",
         image = "us.gcr.io/sourcegraph-dev/wolfi-search-indexer-base",
     )
+
+    oci_pull(
+        name = "wolfi_repo_updater_base",
+        digest = "sha256:74e478195b750c5547d6d240bc5d9e94b10d470d6bf2ef855dcd912f83550cdf",
+        image = "us.gcr.io/sourcegraph-dev/wolfi-repo-updater-base",
+    )

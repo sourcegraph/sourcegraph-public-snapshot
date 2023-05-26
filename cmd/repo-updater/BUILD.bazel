@@ -33,7 +33,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = "@wolfi_base",
+    base = "@wolfi_repo_updater_base",
     entrypoint = ["/repo-updater"],
     tars = [":tar_repo-updater"],
     user = "sourcegraph",
