@@ -1,4 +1,4 @@
-.code-block-container {
+.container {
     position: relative;
     overflow: visible;
 }
@@ -29,10 +29,10 @@
     visibility: none;
 }
 
-.code-block-container:hover .copy-button {
+.container:hover .copy-button {
     visibility: visible;
 }
 
-.code-block-container:hover .insert-button {
+.container:hover .insert-button {
     visibility: visible;
 }
