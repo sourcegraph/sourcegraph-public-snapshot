@@ -232,7 +232,7 @@ If you are rolling back more than a single version, then you must also [rollback
 
 ### Rollback with Kustomize
 
-**For Sourcegraph version 4.5.0 and above, which have [migrated](../kubernetes/kustomize/migrate.md) to [deploy-sourcegraph-k8s](www.github.com/sourcegraph/deploy-sourcegraph-k8s.com).**
+**For Sourcegraph version 4.5.0 and above, which have [migrated](../kubernetes/kustomize/migrate.md) to [deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s).**
 
 For instances deployed using the [deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s) repository:
 
