@@ -49,11 +49,11 @@ function createCopyButtonWithContainer(
     return container
 }
 
-export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = ({
+export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(function CodeBlocksContent({
     displayText,
     copyButtonClassName,
     CopyButtonProps,
-}) => {
+}) {
     useEffect(() => {
         const preElements = document.querySelectorAll('pre')
         for (const preElement of preElements) {
@@ -75,4 +75,4 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = ({
     }, [copyButtonClassName, displayText, CopyButtonProps])
 
     return useMemo(() => <div dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(displayText) }} />, [displayText])
-}
+})
