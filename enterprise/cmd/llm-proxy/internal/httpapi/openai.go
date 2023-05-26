@@ -9,15 +9,17 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/events"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/openai"
 )
 
 const openAIURL = "https://api.openai.com/v1/chat/completions"
 
-func newOpenAIHandler(logger log.Logger, eventLogger events.Logger, accessToken string, orgID string, allowedModels []string) http.Handler {
+func newOpenAIHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisStore, accessToken string, orgID string, allowedModels []string) http.Handler {
 	return makeUpstreamHandler(
 		logger,
 		eventLogger,
+		rs,
 		"OpenAI",
 		openAIURL,
 		allowedModels,
