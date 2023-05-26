@@ -101,16 +101,12 @@ export const FileOwnershipPanel: React.FunctionComponent<
                                 )
                             )
                             .map((ownership, index) => (
-                                <>
+                                // This list is not expected to change, so it's safe to use the index as a key.
+                                // eslint-disable-next-line react/no-array-index-key
+                                <React.Fragment key={index}>
                                     {index > 0 && <tr className={styles.bordered} />}
-                                    <FileOwnershipEntry
-                                        // This list is not expected to change, so it's safe to use the index as a key.
-                                        // eslint-disable-next-line react/no-array-index-key
-                                        key={index}
-                                        owner={ownership.owner}
-                                        reasons={ownership.reasons}
-                                    />
-                                </>
+                                    <FileOwnershipEntry owner={ownership.owner} reasons={ownership.reasons} />
+                                </React.Fragment>
                             ))}
                         {
                             /* Visually separate two sets with a horizontal rule (like subsequent owners are)
@@ -141,19 +137,12 @@ export const FileOwnershipPanel: React.FunctionComponent<
                                     )
                             )
                             .map((ownership, index) => (
-                                <>
-                                    {
-                                        // This list is not expected to change, so it's safe to use the index as a key.
-                                        // eslint-disable-next-line react/no-array-index-key
-                                        index > 0 && <tr key={2 * index} className={styles.bordered} />
-                                    }
-                                    <FileOwnershipEntry
-                                        // eslint-disable-next-line react/no-array-index-key
-                                        key={2 * index + 1}
-                                        owner={ownership.owner}
-                                        reasons={ownership.reasons}
-                                    />
-                                </>
+                                // This list is not expected to change, so it's safe to use the index as a key.
+                                // eslint-disable-next-line react/no-array-index-key
+                                <React.Fragment key={index}>
+                                    {index > 0 && <tr className={styles.bordered} />}
+                                    <FileOwnershipEntry owner={ownership.owner} reasons={ownership.reasons} />
+                                </React.Fragment>
                             ))}
                     </tbody>
                 </table>
