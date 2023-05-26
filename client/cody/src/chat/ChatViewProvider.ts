@@ -653,6 +653,24 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         this.disposables.push(vscode.window.onDidChangeTextEditorSelection(() => send()))
         send()
+        this.publishEmbeddingsError()
+    }
+
+    /**
+     * Publish embedding connections or results error to webview
+     */
+    private publishEmbeddingsError(): void {
+        if (!this.codebaseContext.checkEmbeddingsConnection()) {
+            this.sendErrorToWebview(
+                'Error while establishing embeddings server connection. Please try after sometime! If the issue still persists contact support'
+            )
+            return
+        }
+        const searchErrors = this.codebaseContext.getEmbeddingSearchErrors()
+        if (searchErrors && searchErrors.length > 0) {
+            this.sendErrorToWebview(searchErrors)
+            return
+        }
     }
 
     /**
