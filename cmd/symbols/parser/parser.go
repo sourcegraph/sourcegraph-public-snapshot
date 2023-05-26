@@ -136,7 +136,12 @@ func min(a, b int) int {
 	return b
 }
 
-func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- SymbolOrError, parseRequest fetcher.ParseRequest, totalSymbols *uint32) (err error) {
+func (p *parser) handleParseRequest(
+	ctx context.Context,
+	symbolOrErrors chan<- SymbolOrError,
+	parseRequest fetcher.ParseRequest,
+	totalSymbols *uint32,
+) (err error) {
 	ctx, trace, endObservation := p.operations.handleParseRequest.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("path", parseRequest.Path),
 		attribute.Int("fileSize", len(parseRequest.Data)),
@@ -145,7 +150,7 @@ func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- S
 
 	language, found := languages.GetLanguage(parseRequest.Path, string(parseRequest.Data))
 	if !found {
-		return errors.Errorf("no language found for %s", parseRequest.Path)
+		return nil
 	}
 
 	source := GetParserType(language)
