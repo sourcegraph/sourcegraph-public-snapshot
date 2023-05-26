@@ -58,7 +58,7 @@ function create_push_command() {
     --stamp \
     --workspace_status_command=./dev/bazel_stamp_vars.sh"
 
-  echo "echo \"--- :bazel::docker: pushing $repository\" && $cmd -- $tags_args $repositories_args && echo \"--- \""
+  echo "$cmd -- $tags_args $repositories_args"
 }
 
 images=$(bazel query 'kind("oci_push rule", //...)')
@@ -83,4 +83,5 @@ log_file=$(mktemp)
 # shellcheck disable=SC2064
 trap "rm -rf $log_file" EXIT
 parallel --jobs=8 --line-buffer --joblog "$log_file" -v < "$job_file"
+cat "$log_file"
 echo "--- "
