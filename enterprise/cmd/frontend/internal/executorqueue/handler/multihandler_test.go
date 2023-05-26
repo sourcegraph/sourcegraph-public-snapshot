@@ -506,14 +506,14 @@ func TestMultiHandler_HandleHeartbeat(t *testing.T) {
 	}{
 		{
 			name: "Heartbeat for multiple queues",
-			body: `{"executorName": "test-executor", "jobIdsByQueue": [{"queueName": "codeintel", "jobIds": [42, 7]}, {"queueName": "batches", "jobIds": [43, 8]}], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			body: `{"executorName": "test-executor", "jobIdsByQueue": [{"queueName": "codeintel", "jobIds": ["42", "7"]}, {"queueName": "batches", "jobIds": ["43", "8"]}], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
 			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
 				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
-				codeintelMockStore.HeartbeatFunc.PushReturn([]int{42, 7}, nil, nil)
-				batchesMockStore.HeartbeatFunc.PushReturn([]int{43, 8}, nil, nil)
+				codeintelMockStore.HeartbeatFunc.PushReturn([]string{"42", "7"}, nil, nil)
+				batchesMockStore.HeartbeatFunc.PushReturn([]string{"43", "8"}, nil, nil)
 			},
 			expectedStatusCode:   http.StatusOK,
-			expectedResponseBody: `{"knownIdsByQueue": [{"queueName": "codeintel", "jobIds": [42,7]}, {"queueName": "batches", "jobIds": [43,8]}]}`,
+			expectedResponseBody: `{"knownIdsByQueue": [{"queueName": "codeintel", "jobIds": ["42","7"]}, {"queueName": "batches", "jobIds": ["43","8"]}]}`,
 			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
 				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
 
@@ -533,11 +533,11 @@ func TestMultiHandler_HandleHeartbeat(t *testing.T) {
 					executorStore.UpsertHeartbeatFunc.History()[0].Arg1,
 				)
 				require.Len(t, codeintelMockStore.HeartbeatFunc.History(), 1)
-				assert.Equal(t, []int{42, 7}, codeintelMockStore.HeartbeatFunc.History()[0].Arg1)
+				assert.Equal(t, []string{"42", "7"}, codeintelMockStore.HeartbeatFunc.History()[0].Arg1)
 				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, codeintelMockStore.HeartbeatFunc.History()[0].Arg2)
 
 				require.Len(t, batchesMockStore.HeartbeatFunc.History(), 1)
-				assert.Equal(t, []int{43, 8}, batchesMockStore.HeartbeatFunc.History()[0].Arg1)
+				assert.Equal(t, []string{"43", "8"}, batchesMockStore.HeartbeatFunc.History()[0].Arg1)
 				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, batchesMockStore.HeartbeatFunc.History()[0].Arg2)
 			},
 		},

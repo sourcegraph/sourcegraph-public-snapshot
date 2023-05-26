@@ -112,3 +112,24 @@ bazel test //:rawr_event_test
 ```
 
 An example of a js binary being executed as a bazel test target is `graphql-schema-linter`, whose definition can be found in [`cmd/frontend/graphqlbackend/BUILD.bazel`](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@71616027c3f461d6022f3fa2fa24c0e085ee545f/-/blob/cmd/frontend/graphqlbackend/BUILD.bazel).
+
+### How do I build/test Bazel targets of a specific type for all client packages?
+
+Using Bazel, you can build or test specific targets across all client packages. This can be done by leveraging Bazel's `query` and `test` commands.
+The `test` command is used to build and run all test targets. However, with the help of `query`, we can filter out the specific targets we want to build and test.
+
+For example, to check all Typescript types across all client packages locally, use:
+
+```sh
+bazel test `bazel query 'attr("name", ".*_typecheck_test", //...)'`
+```
+
+1. `bazel test`: Commands Bazel to build and run specified test targets.
+2. `bazel query 'attr("name", ".*_typecheck_test", //...)'`: Sub-command that specifies the targets for test. It queries for all targets whose name ends with `_typecheck_test` in all packages (`//...`).
+
+If you want to run tests for a specific package, replace `//...` with the package path like `//client/vscode...`.
+
+```sh
+bazel test `bazel query 'attr("name", ".*_typecheck_test", //client/vscode...)'`
+```
+

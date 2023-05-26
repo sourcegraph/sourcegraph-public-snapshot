@@ -21,6 +21,7 @@ go_library(
         "//enterprise/internal/llm-proxy",
         "//internal/httpcli",
         "//internal/redispool",
+        "//internal/trace",
         "//internal/version",
         "//lib/errors",
         "@com_github_gorilla_mux//:mux",

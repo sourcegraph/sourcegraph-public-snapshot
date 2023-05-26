@@ -254,8 +254,8 @@ func (m *MultiHandler) heartbeat(ctx context.Context, executor types.Executor, i
 			WorkerHostname: executor.Hostname,
 		}
 
-		var known []int
-		var cancel []int
+		var known []string
+		var cancel []string
 
 		switch queue.QueueName {
 		case m.BatchesQueueHandler.Name:

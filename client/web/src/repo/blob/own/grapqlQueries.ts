@@ -41,10 +41,18 @@ export const RECENT_VIEW_FIELDS = gql`
     }
 `
 
+export const ASSIGNED_OWNER_FIELDS = gql`
+    fragment AssignedOwnerFields on AssignedOwner {
+        title
+        description
+    }
+`
+
 export const FETCH_OWNERS = gql`
     ${OWNER_FIELDS}
     ${RECENT_CONTRIBUTOR_FIELDS}
     ${RECENT_VIEW_FIELDS}
+    ${ASSIGNED_OWNER_FIELDS}
 
     fragment CodeownersFileEntryFields on CodeownersFileEntry {
         title
@@ -70,6 +78,7 @@ export const FETCH_OWNERS = gql`
                                     ...CodeownersFileEntryFields
                                     ...RecentContributorOwnershipSignalFields
                                     ...RecentViewOwnershipSignalFields
+                                    ...AssignedOwnerFields
                                 }
                             }
                         }

@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
+	autoindexingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
 type UploadsService interface {
@@ -38,7 +38,7 @@ type UploadsService interface {
 
 type AutoIndexingService interface {
 	RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) (_ []uploadshared.RepositoryWithAvailableIndexers, totalCount int, err error)
-	InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) ([]config.IndexJob, error)
+	InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) (*autoindexingshared.InferenceResult, error)
 	GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
 }
 

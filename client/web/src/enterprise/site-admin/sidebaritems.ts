@@ -147,8 +147,13 @@ export const codyGroup: SiteAdminSideBarGroup = {
     header: { label: 'Cody', icon: RobotOutlineIcon },
     items: [
         {
-            label: 'Cody',
-            to: '/site-admin/cody',
+            label: 'Embeddings',
+            to: '/site-admin/embeddings',
+            exact: true,
+        },
+        {
+            label: 'Configuration',
+            to: '/site-admin/embeddings/configuration',
         },
     ],
     condition: () => window.context?.embeddingsEnabled,
@@ -185,11 +190,11 @@ export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [
     configurationGroup,
     repositoriesGroup,
     codeIntelGroup,
+    codyGroup,
     usersGroup,
     executorsGroup,
     maintenanceGroup,
     batchChangesGroup,
     businessGroup,
-    codyGroup,
     apiConsoleGroup,
 ].filter(Boolean) as SiteAdminSideBarGroups
