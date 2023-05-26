@@ -5,8 +5,7 @@ filegroup(
     name = "config",
     srcs = glob(
         ["rootfs/*"],
-        ["config/*"],
-    ),
+    ) + ["config/postgresql.conf.sample"],
 )
 
 pkg_tar(
@@ -16,7 +15,7 @@ pkg_tar(
     ],
     remap_paths = {
         "/rootfs": "/",
-        "/config": "/usr/share/postgresql",
+        "/postgresql.conf.sample": "/usr/share/postgresql/postgresql.conf.sample",
     },
 )
 

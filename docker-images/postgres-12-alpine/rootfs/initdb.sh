@@ -129,7 +129,7 @@ if [ ! -s "$PGDATA/PG_VERSION" ]; then
   # does not listen on external TCP/IP and waits until start finishes
   PGUSER="${PGUSER:-$POSTGRES_USER}" \
     pg_ctl -D "$PGDATA" \
-    -o "-c listen_addresses='' -c unix_socket_directories=/var/run/postgresql" \
+    -o "-c listen_addresses=''" \
     -w start
 
   file_env 'POSTGRES_DB' "$POSTGRES_USER"
