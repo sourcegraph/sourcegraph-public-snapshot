@@ -50,6 +50,7 @@ func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		IndexingEnabled:           args.IndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
+		EmbeddingEnabled:          args.EmbeddingsEnabled,
 	}
 	configurationPolicy, err := r.policySvc.CreateConfigurationPolicy(ctx, opts)
 	if err != nil {
@@ -91,6 +92,7 @@ func (r *rootResolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		IndexingEnabled:           args.IndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
+		EmbeddingEnabled:          args.EmbeddingsEnabled,
 	}
 	if err := r.policySvc.UpdateConfigurationPolicy(ctx, opts); err != nil {
 		return nil, err
@@ -147,11 +149,22 @@ func validateConfigurationPolicy(policy resolverstubs.CodeIntelConfigurationPoli
 	if shared.GitObjectType(policy.Type) == shared.GitObjectTypeCommit && policy.Pattern != "HEAD" {
 		return errors.Errorf("pattern must be HEAD for policy type 'GIT_COMMIT'")
 	}
-	if policy.RetentionDurationHours != nil && (*policy.RetentionDurationHours < 0 || *policy.RetentionDurationHours > maxDurationHours) {
+
+	if policy.RetentionEnabled && policy.RetentionDurationHours != nil && (*policy.RetentionDurationHours < 0 || *policy.RetentionDurationHours > maxDurationHours) {
 		return errors.Errorf("illegal retention duration '%d'", *policy.RetentionDurationHours)
 	}
 	if policy.IndexingEnabled && policy.IndexCommitMaxAgeHours != nil && (*policy.IndexCommitMaxAgeHours < 0 || *policy.IndexCommitMaxAgeHours > maxDurationHours) {
 		return errors.Errorf("illegal index commit max age '%d'", *policy.IndexCommitMaxAgeHours)
+	}
+
+	if policy.EmbeddingsEnabled {
+		if policy.RetentionEnabled || policy.IndexingEnabled {
+			return errors.Errorf("configuration policies can apply to SCIP indexes or embeddings, but not both")
+		}
+
+		if shared.GitObjectType(policy.Type) != shared.GitObjectTypeCommit {
+			return errors.Errorf("embeddings policies must have type 'GIT_COMMIT'")
+		}
 	}
 
 	return nil

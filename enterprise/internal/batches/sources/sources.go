@@ -291,7 +291,8 @@ func loadExternalService(ctx context.Context, s database.ExternalServiceStore, o
 			*schema.BitbucketServerConnection,
 			*schema.GitLabConnection,
 			*schema.BitbucketCloudConnection,
-			*schema.AzureDevOpsConnection:
+			*schema.AzureDevOpsConnection,
+			*schema.GerritConnection:
 			return e, nil
 		}
 	}
@@ -313,6 +314,8 @@ func buildChangesetSource(ctx context.Context, cf *httpcli.Factory, externalServ
 		return NewBitbucketCloudSource(ctx, externalService, cf)
 	case extsvc.KindAzureDevOps:
 		return NewAzureDevOpsSource(ctx, externalService, cf)
+	case extsvc.KindGerrit:
+		return NewGerritSource(ctx, externalService, cf)
 	default:
 		return nil, errors.Errorf("unsupported external service type %q", extsvc.KindToType(externalService.Kind))
 	}
