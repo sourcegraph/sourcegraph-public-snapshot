@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/dotcom"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	llmproxy "github.com/sourcegraph/sourcegraph/enterprise/internal/llm-proxy"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
@@ -160,28 +161,38 @@ func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor,
 
 // NewActor creates an actor from Sourcegraph.com product subscription state.
 func NewActor(source *Source, token string, s dotcom.ProductSubscriptionState, internalMode bool) *actor.Actor {
-	var rateLimit actor.RateLimit
-	if s.LlmProxyAccess.RateLimit != nil {
-		rateLimit = actor.RateLimit{
-			Limit:    s.LlmProxyAccess.RateLimit.Limit,
-			Interval: time.Duration(s.LlmProxyAccess.RateLimit.IntervalSeconds) * time.Second,
-		}
-	}
-
 	// In internal mode, only allow dev and internal licenses.
 	disallowedLicense := internalMode &&
 		(s.ActiveLicense == nil || s.ActiveLicense.Info == nil ||
 			!containsOneOf(s.ActiveLicense.Info.Tags, licensing.DevTag, licensing.InternalTag))
 
 	now := time.Now()
-	return &actor.Actor{
+	a := &actor.Actor{
 		Key:           token,
 		ID:            s.Uuid,
-		AccessEnabled: !disallowedLicense && !s.IsArchived && s.LlmProxyAccess.Enabled && rateLimit.IsValid(),
-		RateLimit:     rateLimit,
+		AccessEnabled: !disallowedLicense && !s.IsArchived && s.LlmProxyAccess.Enabled,
+		RateLimits:    map[types.CompletionsFeature]actor.RateLimit{},
 		LastUpdated:   &now,
 		Source:        source,
 	}
+
+	if s.LlmProxyAccess.ChatCompletionsRateLimit != nil {
+		a.RateLimits[types.CompletionsFeatureChat] = actor.RateLimit{
+			AllowedModels: s.LlmProxyAccess.ChatCompletionsRateLimit.AllowedModels,
+			Limit:         s.LlmProxyAccess.ChatCompletionsRateLimit.Limit,
+			Interval:      time.Duration(s.LlmProxyAccess.ChatCompletionsRateLimit.IntervalSeconds) * time.Second,
+		}
+	}
+
+	if s.LlmProxyAccess.CodeCompletionsRateLimit != nil {
+		a.RateLimits[types.CompletionsFeatureCode] = actor.RateLimit{
+			AllowedModels: s.LlmProxyAccess.CodeCompletionsRateLimit.AllowedModels,
+			Limit:         s.LlmProxyAccess.CodeCompletionsRateLimit.Limit,
+			Interval:      time.Duration(s.LlmProxyAccess.CodeCompletionsRateLimit.IntervalSeconds) * time.Second,
+		}
+	}
+
+	return a
 }
 
 func containsOneOf(s []string, needles ...string) bool {

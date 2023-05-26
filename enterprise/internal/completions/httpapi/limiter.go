@@ -7,6 +7,7 @@ import (
 
 	"github.com/gomodule/redigo/redis"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -16,19 +17,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type RateLimitScope string
-
-const (
-	RateLimitScopeCompletion     RateLimitScope = "completion"
-	RateLimitScopeCodeCompletion RateLimitScope = "code_completion"
-)
-
 type RateLimiter interface {
 	TryAcquire(ctx context.Context) error
 }
 
 type RateLimitExceededError struct {
-	Scope      RateLimitScope
+	Scope      types.CompletionsFeature
 	Limit      int
 	Used       int
 	RetryAfter time.Time
@@ -38,12 +32,12 @@ func (e RateLimitExceededError) Error() string {
 	return fmt.Sprintf("you exceeded the rate limit for %s, only %d requests are allowed per day at the moment to ensure the service stays functional. Current usage: %d. Retry after %s", e.Scope, e.Limit, e.Used, e.RetryAfter.Truncate(time.Second))
 }
 
-func NewRateLimiter(db database.DB, rstore redispool.KeyValue, scope RateLimitScope) RateLimiter {
+func NewRateLimiter(db database.DB, rstore redispool.KeyValue, scope types.CompletionsFeature) RateLimiter {
 	return &rateLimiter{db: db, rstore: rstore, scope: scope}
 }
 
 type rateLimiter struct {
-	scope  RateLimitScope
+	scope  types.CompletionsFeature
 	rstore redispool.KeyValue
 	db     database.DB
 }
@@ -152,15 +146,15 @@ func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
 	return nil
 }
 
-func userKey(userID int32, scope RateLimitScope) string {
+func userKey(userID int32, scope types.CompletionsFeature) string {
 	return fmt.Sprintf("user:%d:%s_requests", userID, scope)
 }
 
-func anonymousKey(ip string, scope RateLimitScope) string {
+func anonymousKey(ip string, scope types.CompletionsFeature) string {
 	return fmt.Sprintf("anon:%s:%s_requests", ip, scope)
 }
 
-func getConfiguredLimit(ctx context.Context, db database.DB, scope RateLimitScope) (int, error) {
+func getConfiguredLimit(ctx context.Context, db database.DB, scope types.CompletionsFeature) (int, error) {
 	a := actor.FromContext(ctx)
 	if a.IsAuthenticated() && !a.IsInternal() {
 		var limit *int
@@ -168,10 +162,10 @@ func getConfiguredLimit(ctx context.Context, db database.DB, scope RateLimitScop
 
 		// If an authenticated user exists, check if an override exists.
 		switch scope {
-		case RateLimitScopeCompletion:
-			limit, err = db.Users().GetCompletionsQuota(ctx, a.UID)
-		case RateLimitScopeCodeCompletion:
-			limit, err = db.Users().GetCompletionsQuota(ctx, a.UID)
+		case types.CompletionsFeatureChat:
+			limit, err = db.Users().GetChatCompletionsQuota(ctx, a.UID)
+		case types.CompletionsFeatureCode:
+			limit, err = db.Users().GetCodeCompletionsQuota(ctx, a.UID)
 		default:
 			return 0, errors.Newf("unknown scope: %s", scope)
 		}
@@ -186,11 +180,11 @@ func getConfiguredLimit(ctx context.Context, db database.DB, scope RateLimitScop
 	// Otherwise, fall back to the global limit.
 	cfg := conf.Get()
 	switch scope {
-	case RateLimitScopeCompletion:
+	case types.CompletionsFeatureChat:
 		if cfg.Completions != nil && cfg.Completions.PerUserDailyLimit > 0 {
 			return cfg.Completions.PerUserDailyLimit, nil
 		}
-	case RateLimitScopeCodeCompletion:
+	case types.CompletionsFeatureCode:
 		if cfg.Completions != nil && cfg.Completions.PerUserCodeCompletionsDailyLimit > 0 {
 			return cfg.Completions.PerUserCodeCompletionsDailyLimit, nil
 		}

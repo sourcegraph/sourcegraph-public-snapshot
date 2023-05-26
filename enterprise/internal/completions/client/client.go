@@ -13,16 +13,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func Get(endpoint, provider, accessToken, model string) (types.CompletionsClient, error) {
+func Get(endpoint, provider, accessToken string) (types.CompletionsClient, error) {
 	switch provider {
 	case anthropic.ProviderName:
-		return anthropic.NewClient(httpcli.ExternalDoer, accessToken, model, endpoint), nil
+		return anthropic.NewClient(httpcli.ExternalDoer, accessToken, endpoint), nil
 	case openai.ProviderName:
-		return openai.NewClient(httpcli.ExternalDoer, accessToken, model), nil
+		return openai.NewClient(httpcli.ExternalDoer, accessToken), nil
 	case dotcom.ProviderName:
-		return dotcom.NewClient(httpcli.ExternalDoer, accessToken, model), nil
+		return dotcom.NewClient(httpcli.ExternalDoer, accessToken), nil
 	case llmproxy.ProviderName:
-		return llmproxy.NewClient(httpcli.ExternalDoer, endpoint, accessToken, model)
+		return llmproxy.NewClient(httpcli.ExternalDoer, endpoint, accessToken)
 	default:
 		return nil, errors.Newf("unknown completion stream provider: %s", provider)
 	}
@@ -34,14 +34,22 @@ func GetCompletionsConfig() *schema.Completions {
 	// When the Completions is present always use it
 	if completionsConfig != nil {
 		if completionsConfig.ChatModel == "" {
+			// If no model for chat is configured, nothing we can do.
+			if completionsConfig.Model == "" {
+				return nil
+			}
 			completionsConfig.ChatModel = completionsConfig.Model
 		}
 
 		// TODO: Temporary workaround to fix instances where no completion model is set.
 		if completionsConfig.CompletionModel == "" {
+			if completionsConfig.Provider == llmproxy.ProviderName {
+				completionsConfig.CompletionModel = "anthropic/claude-instant-v1.0"
+			}
 			completionsConfig.CompletionModel = "claude-instant-v1.0"
 		}
 
+		// Set a default for the llmproxy provider, so users don't have to specify it.
 		if completionsConfig.Provider == llmproxy.ProviderName && completionsConfig.Endpoint == "" {
 			completionsConfig.Endpoint = llmproxy.DefaultEndpoint
 		}
@@ -61,6 +69,10 @@ func GetCompletionsConfig() *schema.Completions {
 			AccessToken: appConfig.DotcomAuthToken,
 			Enabled:     len(appConfig.DotcomAuthToken) > 0,
 			Provider:    dotcom.ProviderName,
+			// TODO: These are not required right now as upstream overwrites this,
+			// but should we switch to LLM Proxy they will be.
+			ChatModel:       "claude-v1",
+			CompletionModel: "claude-instant-v1",
 		}
 	}
 	return nil

@@ -138,43 +138,187 @@ func (v *CheckAccessTokenResponse) GetDotcom() CheckAccessTokenDotcomDotcomQuery
 type LLMProxyAccessFields struct {
 	// Whether or not a subscription has LLM-proxy access.
 	Enabled bool `json:"enabled"`
-	// Rate limits for LLM-proxy access, or null if not enabled.
-	RateLimit *LLMProxyAccessFieldsRateLimitLLMProxyRateLimit `json:"rateLimit"`
+	// Rate limit for chat completions access, or null if not enabled.
+	ChatCompletionsRateLimit *LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit `json:"chatCompletionsRateLimit"`
+	// Rate limit for code completions access, or null if not enabled.
+	CodeCompletionsRateLimit *LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit `json:"codeCompletionsRateLimit"`
 }
 
 // GetEnabled returns LLMProxyAccessFields.Enabled, and is useful for accessing the field via an interface.
 func (v *LLMProxyAccessFields) GetEnabled() bool { return v.Enabled }
 
-// GetRateLimit returns LLMProxyAccessFields.RateLimit, and is useful for accessing the field via an interface.
-func (v *LLMProxyAccessFields) GetRateLimit() *LLMProxyAccessFieldsRateLimitLLMProxyRateLimit {
-	return v.RateLimit
+// GetChatCompletionsRateLimit returns LLMProxyAccessFields.ChatCompletionsRateLimit, and is useful for accessing the field via an interface.
+func (v *LLMProxyAccessFields) GetChatCompletionsRateLimit() *LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit {
+	return v.ChatCompletionsRateLimit
 }
 
-// LLMProxyAccessFieldsRateLimitLLMProxyRateLimit includes the requested fields of the GraphQL type LLMProxyRateLimit.
+// GetCodeCompletionsRateLimit returns LLMProxyAccessFields.CodeCompletionsRateLimit, and is useful for accessing the field via an interface.
+func (v *LLMProxyAccessFields) GetCodeCompletionsRateLimit() *LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit {
+	return v.CodeCompletionsRateLimit
+}
+
+// LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit includes the requested fields of the GraphQL type LLMProxyRateLimit.
 // The GraphQL type's documentation follows.
 //
 // LLM-proxy access rate limits for a subscription.
 // FOR INTERNAL USE ONLY.
-type LLMProxyAccessFieldsRateLimitLLMProxyRateLimit struct {
-	// The source of the rate limit configuration.
+type LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit struct {
+	RateLimitFields `json:"-"`
+}
+
+// GetAllowedModels returns LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit.AllowedModels, and is useful for accessing the field via an interface.
+func (v *LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit) GetAllowedModels() []string {
+	return v.RateLimitFields.AllowedModels
+}
+
+// GetSource returns LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit.Source, and is useful for accessing the field via an interface.
+func (v *LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit) GetSource() LLMProxyRateLimitSource {
+	return v.RateLimitFields.Source
+}
+
+// GetLimit returns LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit.Limit, and is useful for accessing the field via an interface.
+func (v *LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit) GetLimit() int {
+	return v.RateLimitFields.Limit
+}
+
+// GetIntervalSeconds returns LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit.IntervalSeconds, and is useful for accessing the field via an interface.
+func (v *LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit) GetIntervalSeconds() int {
+	return v.RateLimitFields.IntervalSeconds
+}
+
+func (v *LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.RateLimitFields)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalLLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit struct {
+	AllowedModels []string `json:"allowedModels"`
+
 	Source LLMProxyRateLimitSource `json:"source"`
-	// Requests per time interval.
+
 	Limit int `json:"limit"`
-	// Interval for rate limiting.
+
 	IntervalSeconds int `json:"intervalSeconds"`
 }
 
-// GetSource returns LLMProxyAccessFieldsRateLimitLLMProxyRateLimit.Source, and is useful for accessing the field via an interface.
-func (v *LLMProxyAccessFieldsRateLimitLLMProxyRateLimit) GetSource() LLMProxyRateLimitSource {
-	return v.Source
+func (v *LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
 }
 
-// GetLimit returns LLMProxyAccessFieldsRateLimitLLMProxyRateLimit.Limit, and is useful for accessing the field via an interface.
-func (v *LLMProxyAccessFieldsRateLimitLLMProxyRateLimit) GetLimit() int { return v.Limit }
+func (v *LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit) __premarshalJSON() (*__premarshalLLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit, error) {
+	var retval __premarshalLLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit
 
-// GetIntervalSeconds returns LLMProxyAccessFieldsRateLimitLLMProxyRateLimit.IntervalSeconds, and is useful for accessing the field via an interface.
-func (v *LLMProxyAccessFieldsRateLimitLLMProxyRateLimit) GetIntervalSeconds() int {
-	return v.IntervalSeconds
+	retval.AllowedModels = v.RateLimitFields.AllowedModels
+	retval.Source = v.RateLimitFields.Source
+	retval.Limit = v.RateLimitFields.Limit
+	retval.IntervalSeconds = v.RateLimitFields.IntervalSeconds
+	return &retval, nil
+}
+
+// LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit includes the requested fields of the GraphQL type LLMProxyRateLimit.
+// The GraphQL type's documentation follows.
+//
+// LLM-proxy access rate limits for a subscription.
+// FOR INTERNAL USE ONLY.
+type LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit struct {
+	RateLimitFields `json:"-"`
+}
+
+// GetAllowedModels returns LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit.AllowedModels, and is useful for accessing the field via an interface.
+func (v *LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit) GetAllowedModels() []string {
+	return v.RateLimitFields.AllowedModels
+}
+
+// GetSource returns LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit.Source, and is useful for accessing the field via an interface.
+func (v *LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit) GetSource() LLMProxyRateLimitSource {
+	return v.RateLimitFields.Source
+}
+
+// GetLimit returns LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit.Limit, and is useful for accessing the field via an interface.
+func (v *LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit) GetLimit() int {
+	return v.RateLimitFields.Limit
+}
+
+// GetIntervalSeconds returns LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit.IntervalSeconds, and is useful for accessing the field via an interface.
+func (v *LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit) GetIntervalSeconds() int {
+	return v.RateLimitFields.IntervalSeconds
+}
+
+func (v *LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.RateLimitFields)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalLLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit struct {
+	AllowedModels []string `json:"allowedModels"`
+
+	Source LLMProxyRateLimitSource `json:"source"`
+
+	Limit int `json:"limit"`
+
+	IntervalSeconds int `json:"intervalSeconds"`
+}
+
+func (v *LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit) __premarshalJSON() (*__premarshalLLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit, error) {
+	var retval __premarshalLLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit
+
+	retval.AllowedModels = v.RateLimitFields.AllowedModels
+	retval.Source = v.RateLimitFields.Source
+	retval.Limit = v.RateLimitFields.Limit
+	retval.IntervalSeconds = v.RateLimitFields.IntervalSeconds
+	return &retval, nil
 }
 
 // The source of the rate limit returned.
@@ -542,9 +686,14 @@ func (v *ProductSubscriptionStateLlmProxyAccessLLMProxyAccess) GetEnabled() bool
 	return v.LLMProxyAccessFields.Enabled
 }
 
-// GetRateLimit returns ProductSubscriptionStateLlmProxyAccessLLMProxyAccess.RateLimit, and is useful for accessing the field via an interface.
-func (v *ProductSubscriptionStateLlmProxyAccessLLMProxyAccess) GetRateLimit() *LLMProxyAccessFieldsRateLimitLLMProxyRateLimit {
-	return v.LLMProxyAccessFields.RateLimit
+// GetChatCompletionsRateLimit returns ProductSubscriptionStateLlmProxyAccessLLMProxyAccess.ChatCompletionsRateLimit, and is useful for accessing the field via an interface.
+func (v *ProductSubscriptionStateLlmProxyAccessLLMProxyAccess) GetChatCompletionsRateLimit() *LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit {
+	return v.LLMProxyAccessFields.ChatCompletionsRateLimit
+}
+
+// GetCodeCompletionsRateLimit returns ProductSubscriptionStateLlmProxyAccessLLMProxyAccess.CodeCompletionsRateLimit, and is useful for accessing the field via an interface.
+func (v *ProductSubscriptionStateLlmProxyAccessLLMProxyAccess) GetCodeCompletionsRateLimit() *LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit {
+	return v.LLMProxyAccessFields.CodeCompletionsRateLimit
 }
 
 func (v *ProductSubscriptionStateLlmProxyAccessLLMProxyAccess) UnmarshalJSON(b []byte) error {
@@ -575,7 +724,9 @@ func (v *ProductSubscriptionStateLlmProxyAccessLLMProxyAccess) UnmarshalJSON(b [
 type __premarshalProductSubscriptionStateLlmProxyAccessLLMProxyAccess struct {
 	Enabled bool `json:"enabled"`
 
-	RateLimit *LLMProxyAccessFieldsRateLimitLLMProxyRateLimit `json:"rateLimit"`
+	ChatCompletionsRateLimit *LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit `json:"chatCompletionsRateLimit"`
+
+	CodeCompletionsRateLimit *LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit `json:"codeCompletionsRateLimit"`
 }
 
 func (v *ProductSubscriptionStateLlmProxyAccessLLMProxyAccess) MarshalJSON() ([]byte, error) {
@@ -590,9 +741,41 @@ func (v *ProductSubscriptionStateLlmProxyAccessLLMProxyAccess) __premarshalJSON(
 	var retval __premarshalProductSubscriptionStateLlmProxyAccessLLMProxyAccess
 
 	retval.Enabled = v.LLMProxyAccessFields.Enabled
-	retval.RateLimit = v.LLMProxyAccessFields.RateLimit
+	retval.ChatCompletionsRateLimit = v.LLMProxyAccessFields.ChatCompletionsRateLimit
+	retval.CodeCompletionsRateLimit = v.LLMProxyAccessFields.CodeCompletionsRateLimit
 	return &retval, nil
 }
+
+// RateLimitFields includes the GraphQL fields of LLMProxyRateLimit requested by the fragment RateLimitFields.
+// The GraphQL type's documentation follows.
+//
+// LLM-proxy access rate limits for a subscription.
+// FOR INTERNAL USE ONLY.
+type RateLimitFields struct {
+	// The models that are allowed for this rate limit bucket.
+	// Usually, customers will have two separate rate limits, one
+	// for chat completions and one for code completions. A usual
+	// config could include [{claude-v1, claude-v1.3},{claude-instant-v1}].
+	AllowedModels []string `json:"allowedModels"`
+	// The source of the rate limit configuration.
+	Source LLMProxyRateLimitSource `json:"source"`
+	// Requests per time interval.
+	Limit int `json:"limit"`
+	// Interval for rate limiting.
+	IntervalSeconds int `json:"intervalSeconds"`
+}
+
+// GetAllowedModels returns RateLimitFields.AllowedModels, and is useful for accessing the field via an interface.
+func (v *RateLimitFields) GetAllowedModels() []string { return v.AllowedModels }
+
+// GetSource returns RateLimitFields.Source, and is useful for accessing the field via an interface.
+func (v *RateLimitFields) GetSource() LLMProxyRateLimitSource { return v.Source }
+
+// GetLimit returns RateLimitFields.Limit, and is useful for accessing the field via an interface.
+func (v *RateLimitFields) GetLimit() int { return v.Limit }
+
+// GetIntervalSeconds returns RateLimitFields.IntervalSeconds, and is useful for accessing the field via an interface.
+func (v *RateLimitFields) GetIntervalSeconds() int { return v.IntervalSeconds }
 
 // __CheckAccessTokenInput is used internally by genqlient
 type __CheckAccessTokenInput struct {
@@ -634,11 +817,18 @@ fragment ProductSubscriptionState on ProductSubscription {
 }
 fragment LLMProxyAccessFields on LLMProxyAccess {
 	enabled
-	rateLimit {
-		source
-		limit
-		intervalSeconds
+	chatCompletionsRateLimit {
+		... RateLimitFields
 	}
+	codeCompletionsRateLimit {
+		... RateLimitFields
+	}
+}
+fragment RateLimitFields on LLMProxyRateLimit {
+	allowedModels
+	source
+	limit
+	intervalSeconds
 }
 `,
 		Variables: &__CheckAccessTokenInput{
@@ -699,11 +889,18 @@ fragment ProductSubscriptionState on ProductSubscription {
 }
 fragment LLMProxyAccessFields on LLMProxyAccess {
 	enabled
-	rateLimit {
-		source
-		limit
-		intervalSeconds
+	chatCompletionsRateLimit {
+		... RateLimitFields
 	}
+	codeCompletionsRateLimit {
+		... RateLimitFields
+	}
+}
+fragment RateLimitFields on LLMProxyRateLimit {
+	allowedModels
+	source
+	limit
+	intervalSeconds
 }
 `,
 	}

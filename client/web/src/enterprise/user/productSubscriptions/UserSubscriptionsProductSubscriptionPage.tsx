@@ -115,6 +115,7 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<R
                     accessTokenError={errorForPath(error, accessTokenPath)}
                     llmProxyAccess={productSubscription.llmProxyAccess}
                     productSubscriptionID={productSubscription.id}
+                    productSubscriptionUUID={subscriptionUUID}
                     refetchSubscription={refetch}
                 />
             )}

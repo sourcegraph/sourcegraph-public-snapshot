@@ -1,4 +1,4 @@
-package shared
+package auth
 
 import (
 	"context"
@@ -16,38 +16,35 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor/anonymous"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor/productsubscription"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/events"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 )
 
 // TODO(@bobheadxi): Try to rewrite this as a table-driven test for less copy-pasta.
-func TestAuthenticateEndToEnd(t *testing.T) {
+func TestAuthenticatorMiddleware(t *testing.T) {
 	logger := logtest.Scoped(t)
 	next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
 
 	t.Run("unauthenticated and allow anonymous", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
-		(&auth.Authenticator{
+		(&Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
 			Sources:     actor.Sources{anonymous.NewSource(true)},
-			Next:        next,
-		}).ServeHTTP(w, r)
+		}).Middleware(next).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
 
 	t.Run("unauthenticated but disallow anonymous", func(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
-		(&auth.Authenticator{
+		(&Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
 			Sources:     actor.Sources{anonymous.NewSource(false)},
-			Next:        next,
-		}).ServeHTTP(w, r)
+		}).Middleware(next).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusForbidden, w.Code)
 	})
 
@@ -64,9 +61,17 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 						LlmProxyAccess: dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccess{
 							LLMProxyAccessFields: dotcom.LLMProxyAccessFields{
 								Enabled: true,
-								RateLimit: &dotcom.LLMProxyAccessFieldsRateLimitLLMProxyRateLimit{
-									Limit:           10,
-									IntervalSeconds: 10,
+								ChatCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit{
+									RateLimitFields: dotcom.RateLimitFields{
+										Limit:           10,
+										IntervalSeconds: 10,
+									},
+								},
+								CodeCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit{
+									RateLimitFields: dotcom.RateLimitFields{
+										Limit:           10,
+										IntervalSeconds: 10,
+									},
 								},
 							},
 						},
@@ -83,12 +88,11 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
 		r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
-		(&auth.Authenticator{
+		(&Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
 			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client, false)},
-			Next:        next,
-		}).ServeHTTP(w, r)
+		}).Middleware(next).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
 		mockrequire.Called(t, client.MakeRequestFunc)
 	})
@@ -108,12 +112,11 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
 		r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
-		(&auth.Authenticator{
+		(&Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
 			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client, false)},
-			Next:        next,
-		}).ServeHTTP(w, r)
+		}).Middleware(next).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
 		mockrequire.NotCalled(t, client.MakeRequestFunc)
 	})
@@ -129,12 +132,11 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
 		r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
-		(&auth.Authenticator{
+		(&Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
 			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client, false)},
-			Next:        next,
-		}).ServeHTTP(w, r)
+		}).Middleware(next).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusForbidden, w.Code)
 	})
 
@@ -151,9 +153,17 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 						LlmProxyAccess: dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccess{
 							LLMProxyAccessFields: dotcom.LLMProxyAccessFields{
 								Enabled: true,
-								RateLimit: &dotcom.LLMProxyAccessFieldsRateLimitLLMProxyRateLimit{
-									Limit:           10,
-									IntervalSeconds: 10,
+								ChatCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit{
+									RateLimitFields: dotcom.RateLimitFields{
+										Limit:           10,
+										IntervalSeconds: 10,
+									},
+								},
+								CodeCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit{
+									RateLimitFields: dotcom.RateLimitFields{
+										Limit:           10,
+										IntervalSeconds: 10,
+									},
 								},
 							},
 						},
@@ -171,12 +181,11 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
 		r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
-		(&auth.Authenticator{
+		(&Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
 			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client, true)},
-			Next:        next,
-		}).ServeHTTP(w, r)
+		}).Middleware(next).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusForbidden, w.Code)
 	})
 
@@ -193,9 +202,17 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 						LlmProxyAccess: dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccess{
 							LLMProxyAccessFields: dotcom.LLMProxyAccessFields{
 								Enabled: true,
-								RateLimit: &dotcom.LLMProxyAccessFieldsRateLimitLLMProxyRateLimit{
-									Limit:           10,
-									IntervalSeconds: 10,
+								ChatCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit{
+									RateLimitFields: dotcom.RateLimitFields{
+										Limit:           10,
+										IntervalSeconds: 10,
+									},
+								},
+								CodeCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit{
+									RateLimitFields: dotcom.RateLimitFields{
+										Limit:           10,
+										IntervalSeconds: 10,
+									},
 								},
 							},
 						},
@@ -213,12 +230,11 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
 		r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
-		(&auth.Authenticator{
+		(&Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
 			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client, true)},
-			Next:        next,
-		}).ServeHTTP(w, r)
+		}).Middleware(next).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
 
@@ -235,9 +251,17 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 						LlmProxyAccess: dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccess{
 							LLMProxyAccessFields: dotcom.LLMProxyAccessFields{
 								Enabled: true,
-								RateLimit: &dotcom.LLMProxyAccessFieldsRateLimitLLMProxyRateLimit{
-									Limit:           10,
-									IntervalSeconds: 10,
+								ChatCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit{
+									RateLimitFields: dotcom.RateLimitFields{
+										Limit:           10,
+										IntervalSeconds: 10,
+									},
+								},
+								CodeCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit{
+									RateLimitFields: dotcom.RateLimitFields{
+										Limit:           10,
+										IntervalSeconds: 10,
+									},
 								},
 							},
 						},
@@ -255,12 +279,11 @@ func TestAuthenticateEndToEnd(t *testing.T) {
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
 		r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
-		(&auth.Authenticator{
+		(&Authenticator{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
 			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client, true)},
-			Next:        next,
-		}).ServeHTTP(w, r)
+		}).Middleware(next).ServeHTTP(w, r)
 		assert.Equal(t, http.StatusOK, w.Code)
 	})
 }

@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "error.go",
         "limiter.go",
+        "prefix.go",
         "store.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/limiter",

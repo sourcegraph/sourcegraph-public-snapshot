@@ -49,6 +49,63 @@ const siteAdminProductSubscriptionFragment = gql`
     }
 `
 
+export const LLM_PROXY_ACCESS_FIELDS_FRAGMENT = gql`
+    fragment LLMProxyAccessFields on LLMProxyAccess {
+        enabled
+        codeCompletionsRateLimit {
+            ...LLMProxyRateLimitFields
+        }
+        chatCompletionsRateLimit {
+            ...LLMProxyRateLimitFields
+        }
+    }
+
+    fragment LLMProxyRateLimitFields on LLMProxyRateLimit {
+        allowedModels
+        source
+        limit
+        intervalSeconds
+    }
+`
+
+export const LLM_PROXY_ACCESS_USAGE_FIELDS_FRAGMENT = gql`
+    fragment LLMProxyAccessUsageFields on LLMProxyAccess {
+        codeCompletionsRateLimit {
+            ...LLMProxyRateLimitUsageFields
+        }
+        chatCompletionsRateLimit {
+            ...LLMProxyRateLimitUsageFields
+        }
+    }
+
+    fragment LLMProxyRateLimitUsageFields on LLMProxyRateLimit {
+        usage {
+            ...LLMProxyRateLimitUsageDatapoint
+        }
+    }
+
+    fragment LLMProxyRateLimitUsageDatapoint on LLMProxyUsageDatapoint {
+        date
+        count
+        model
+    }
+`
+
+export const DOTCOM_PRODUCT_SUBSCRIPTION_LLM_USAGE = gql`
+    query DotComProductSubscriptionLLMUsage($uuid: String!) {
+        dotcom {
+            productSubscription(uuid: $uuid) {
+                id
+                llmProxyAccess {
+                    ...LLMProxyAccessUsageFields
+                }
+            }
+        }
+    }
+
+    ${LLM_PROXY_ACCESS_USAGE_FIELDS_FRAGMENT}
+`
+
 export const DOTCOM_PRODUCT_SUBSCRIPTION = gql`
     query DotComProductSubscription($uuid: String!) {
         dotcom {
@@ -95,22 +152,7 @@ export const DOTCOM_PRODUCT_SUBSCRIPTION = gql`
             }
         }
     }
-    fragment LLMProxyAccessFields on LLMProxyAccess {
-        enabled
-        rateLimit {
-            ...LLMProxyRateLimitFields
-        }
-        usage {
-            date
-            count
-        }
-    }
 
-    fragment LLMProxyRateLimitFields on LLMProxyRateLimit {
-        source
-        limit
-        intervalSeconds
-    }
     fragment DotComProductSubscriptionEmailFields on User {
         id
         username
@@ -120,6 +162,8 @@ export const DOTCOM_PRODUCT_SUBSCRIPTION = gql`
             verified
         }
     }
+
+    ${LLM_PROXY_ACCESS_FIELDS_FRAGMENT}
 `
 
 export const ARCHIVE_PRODUCT_SUBSCRIPTION = gql`

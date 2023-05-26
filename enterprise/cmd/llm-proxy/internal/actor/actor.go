@@ -2,21 +2,24 @@ package actor
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/limiter"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type RateLimit struct {
-	Limit    int
-	Interval time.Duration
+	AllowedModels []string      `json:"allowedModels"`
+	Limit         int           `json:"limit"`
+	Interval      time.Duration `json:"interval"`
 }
 
 func (r *RateLimit) IsValid() bool {
-	return r != nil && r.Interval > 0 && r.Limit > 0
+	return r != nil && r.Interval > 0 && r.Limit > 0 && len(r.AllowedModels) > 0
 }
 
 type Actor struct {
@@ -37,8 +40,8 @@ type Actor struct {
 	// For example, for product subscriptions it is based on whether the subscription is
 	// archived, if access is enabled, and if any rate limits are set.
 	AccessEnabled bool `json:"accessEnabled"`
-	// RateLimit is the rate limit for LLM-proxy access for this actor.
-	RateLimit RateLimit `json:"rateLimit"`
+	// RateLimits holds the rate limits for LLM-proxy access for this actor.
+	RateLimits map[types.CompletionsFeature]RateLimit `json:"rateLimits"`
 	// LastUpdated indicates when this actor's state was last updated.
 	LastUpdated *time.Time `json:"lastUpdated"`
 	// Source is a reference to the source of this actor's state.
@@ -90,15 +93,24 @@ func WithActor(ctx context.Context, a *Actor) context.Context {
 	return context.WithValue(ctx, actorKey, a)
 }
 
-func (a *Actor) Limiter(redis limiter.RedisStore) limiter.Limiter {
+func (a *Actor) Limiter(redis limiter.RedisStore, feature types.CompletionsFeature) (limiter.Limiter, bool) {
 	if a == nil {
-		return &limiter.StaticLimiter{}
+		// Not logged in, no limit applicable.
+		return nil, false
 	}
-	return updateOnFailureLimiter{Redis: redis, Actor: a}
+	limit, ok := a.RateLimits[feature]
+	if !ok {
+		return nil, false
+	}
+	// The redis store has to use a prefix for the given feature because we need
+	// to rate limit by feature.
+	rs := limiter.NewPrefixRedisStore(fmt.Sprintf("%s:", string(feature)), redis)
+	return updateOnFailureLimiter{Redis: rs, RateLimit: limit, Actor: a}, true
 }
 
 type updateOnFailureLimiter struct {
-	Redis limiter.RedisStore
+	Redis     limiter.RedisStore
+	RateLimit RateLimit
 	*Actor
 }
 

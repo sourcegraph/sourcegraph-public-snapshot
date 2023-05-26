@@ -1128,7 +1128,7 @@ func TestUsers_SetIsSiteAdmin(t *testing.T) {
 	})
 }
 
-func TestUsers_GetSetCompletionsQuota(t *testing.T) {
+func TestUsers_GetSetChatCompletionsQuota(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -1149,7 +1149,7 @@ func TestUsers_GetSetCompletionsQuota(t *testing.T) {
 
 	// Initially, no quota should be set and nil should be returned.
 	{
-		quota, err := db.Users().GetCompletionsQuota(ctx, user.ID)
+		quota, err := db.Users().GetChatCompletionsQuota(ctx, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1159,12 +1159,12 @@ func TestUsers_GetSetCompletionsQuota(t *testing.T) {
 	// Set a quota. Expect it to be returned correctly.
 	{
 		wantQuota := 10
-		err := db.Users().SetCompletionsQuota(ctx, user.ID, &wantQuota)
+		err := db.Users().SetChatCompletionsQuota(ctx, user.ID, &wantQuota)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		quota, err := db.Users().GetCompletionsQuota(ctx, user.ID)
+		quota, err := db.Users().GetChatCompletionsQuota(ctx, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1174,12 +1174,12 @@ func TestUsers_GetSetCompletionsQuota(t *testing.T) {
 
 	// Now unset the quota.
 	{
-		err := db.Users().SetCompletionsQuota(ctx, user.ID, nil)
+		err := db.Users().SetChatCompletionsQuota(ctx, user.ID, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		quota, err := db.Users().GetCompletionsQuota(ctx, user.ID)
+		quota, err := db.Users().GetChatCompletionsQuota(ctx, user.ID)
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -14,14 +14,13 @@ import (
 
 const ProviderName = "anthropic"
 
-func NewClient(cli httpcli.Doer, accessToken, model, apiURL string) types.CompletionsClient {
+func NewClient(cli httpcli.Doer, accessToken, apiURL string) types.CompletionsClient {
 	if apiURL == "" {
 		apiURL = defaultAPIURL
 	}
 	return &anthropicClient{
 		cli:         cli,
 		accessToken: accessToken,
-		model:       model,
 		apiURL:      apiURL,
 	}
 }
@@ -34,12 +33,12 @@ const (
 type anthropicClient struct {
 	cli         httpcli.Doer
 	accessToken string
-	model       string
 	apiURL      string
 }
 
 func (a *anthropicClient) Complete(
 	ctx context.Context,
+	feature types.CompletionsFeature,
 	requestParams types.CompletionRequestParameters,
 ) (*types.CompletionResponse, error) {
 	resp, err := a.makeRequest(ctx, requestParams, false)
@@ -60,6 +59,7 @@ func (a *anthropicClient) Complete(
 
 func (a *anthropicClient) Stream(
 	ctx context.Context,
+	feature types.CompletionsFeature,
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
 ) error {
@@ -117,7 +117,7 @@ func (a *anthropicClient) makeRequest(ctx context.Context, requestParams types.C
 	payload := anthropicCompletionsRequestParameters{
 		Stream:            stream,
 		StopSequences:     requestParams.StopSequences,
-		Model:             a.model,
+		Model:             requestParams.Model,
 		Temperature:       requestParams.Temperature,
 		MaxTokensToSample: requestParams.MaxTokensToSample,
 		TopP:              requestParams.TopP,

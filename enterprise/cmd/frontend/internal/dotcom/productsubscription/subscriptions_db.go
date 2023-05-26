@@ -3,11 +3,13 @@ package productsubscription
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -15,10 +17,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type dbLLMProxyAccess struct {
-	Enabled             bool
+type dbRateLimit struct {
+	AllowedModels       []string
 	RateLimit           *int32
 	RateIntervalSeconds *int32
+}
+
+type dbLLMProxyAccess struct {
+	Enabled       bool
+	ChatRateLimit dbRateLimit
+	CodeRateLimit dbRateLimit
 }
 
 // dbSubscription describes an product subscription row in the product_subscriptions DB
@@ -135,8 +143,12 @@ SELECT
 	product_subscriptions.archived_at,
 	product_subscriptions.account_number,
 	product_subscriptions.llm_proxy_enabled,
-	product_subscriptions.llm_proxy_rate_limit,
-	product_subscriptions.llm_proxy_rate_interval_seconds
+	product_subscriptions.llm_proxy_chat_rate_limit,
+	product_subscriptions.llm_proxy_chat_rate_interval_seconds,
+	llm_proxy_chat_rate_limit_allowed_models,
+	product_subscriptions.llm_proxy_code_rate_limit,
+	product_subscriptions.llm_proxy_code_rate_interval_seconds,
+	llm_proxy_code_rate_limit_allowed_models
 FROM product_subscriptions
 LEFT OUTER JOIN users ON product_subscriptions.user_id = users.id
 LEFT OUTER JOIN primary_emails ON users.id = primary_emails.user_id
@@ -165,8 +177,12 @@ ORDER BY archived_at DESC NULLS FIRST, created_at DESC
 			&v.ArchivedAt,
 			&v.AccountNumber,
 			&v.LLMProxyAccess.Enabled,
-			&v.LLMProxyAccess.RateLimit,
-			&v.LLMProxyAccess.RateIntervalSeconds,
+			&v.LLMProxyAccess.ChatRateLimit.RateLimit,
+			&v.LLMProxyAccess.ChatRateLimit.RateIntervalSeconds,
+			pq.Array(&v.LLMProxyAccess.ChatRateLimit.AllowedModels),
+			&v.LLMProxyAccess.CodeRateLimit.RateLimit,
+			&v.LLMProxyAccess.CodeRateLimit.RateIntervalSeconds,
+			pq.Array(&v.LLMProxyAccess.CodeRateLimit.AllowedModels),
 		); err != nil {
 			return nil, err
 		}
@@ -211,11 +227,23 @@ func (s dbSubscriptions) Update(ctx context.Context, id string, update dbSubscri
 		if v := access.Enabled; v != nil {
 			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("llm_proxy_enabled=%s", *v))
 		}
-		if v := access.RateLimit; v != nil {
-			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("llm_proxy_rate_limit=%s", dbutil.NewNullInt32(*v)))
+		if v := access.ChatCompletionsRateLimit; v != nil {
+			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("llm_proxy_chat_rate_limit=%s", dbutil.NewNullInt32(*v)))
 		}
-		if v := access.RateLimitIntervalSeconds; v != nil {
-			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("llm_proxy_rate_interval_seconds=%s", dbutil.NewNullInt32(*v)))
+		if v := access.ChatCompletionsRateLimitIntervalSeconds; v != nil {
+			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("llm_proxy_chat_rate_interval_seconds=%s", dbutil.NewNullInt32(*v)))
+		}
+		if v := access.ChatCompletionsAllowedModels; v != nil {
+			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("llm_proxy_chat_rate_limit_allowed_models=%s", nullStringSlice(*v)))
+		}
+		if v := access.CodeCompletionsRateLimit; v != nil {
+			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("llm_proxy_code_rate_limit=%s", dbutil.NewNullInt32(*v)))
+		}
+		if v := access.CodeCompletionsRateLimitIntervalSeconds; v != nil {
+			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("llm_proxy_code_rate_interval_seconds=%s", dbutil.NewNullInt32(*v)))
+		}
+		if v := access.CodeCompletionsAllowedModels; v != nil {
+			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("llm_proxy_code_rate_limit_allowed_models=%s", nullStringSlice(*v)))
 		}
 	}
 
@@ -262,4 +290,11 @@ type mockSubscriptions struct {
 	GetByID func(id string) (*dbSubscription, error)
 	Archive func(id string) error
 	List    func(ctx context.Context, opt dbSubscriptionsListOptions) ([]*dbSubscription, error)
+}
+
+func nullStringSlice(s []string) driver.Value {
+	if len(s) == 0 {
+		return nil
+	}
+	return pq.Array(s)
 }

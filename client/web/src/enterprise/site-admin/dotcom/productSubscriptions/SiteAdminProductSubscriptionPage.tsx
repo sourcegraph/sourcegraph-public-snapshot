@@ -98,7 +98,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
     // Feature flag only used as this is under development - will be enabled by default
     const [llmProxyManagementUI] = useFeatureFlag('llm-proxy-management-ui')
 
-    if (loading) {
+    if (loading && !data) {
         return <LoadingSpinner />
     }
 
@@ -180,6 +180,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                         accessTokenError={errorForPath(error, accessTokenPath)}
                         llmProxyAccess={productSubscription.llmProxyAccess}
                         productSubscriptionID={productSubscription.id}
+                        productSubscriptionUUID={subscriptionUUID}
                         refetchSubscription={refetch}
                     />
                 )}

@@ -16,6 +16,9 @@ const (
 	InternalTag = "internal"
 	// DevTag denotes licenses used in development environments
 	DevTag = "dev"
+	// GPTLLMAccessTag is the license tag that indicates that the licensed instance
+	// should be allowed by default to use GPT models in LLM Proxy.
+	GPTLLMAccessTag = "gpt"
 	// AllowAnonymousUsageTag denotes licenses that allow anonymous usage, a.k.a public access to the instance
 	// Warning: This should be used with care and only at special, probably trial/poc stages with customers
 	AllowAnonymousUsageTag = "allow-anonymous-usage"
@@ -88,4 +91,5 @@ var MiscTags = []string{
 	AllowAnonymousUsageTag,
 	"starter",
 	"mau",
+	GPTLLMAccessTag,
 }

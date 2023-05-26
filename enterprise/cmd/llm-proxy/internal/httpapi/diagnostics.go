@@ -35,7 +35,7 @@ func NewDiagnosticsHandler(baseLogger log.Logger, next http.Handler, secret stri
 
 				if token != secret {
 					w.WriteHeader(http.StatusUnauthorized)
-					w.Write([]byte("healthz: unauthorized"))
+					_, _ = w.Write([]byte("healthz: unauthorized"))
 					return
 				}
 			}

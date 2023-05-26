@@ -13,6 +13,7 @@ import {
 } from '../../../../graphql-operations'
 
 import { UPDATE_LLM_PROXY_CONFIG } from './backend'
+import { ModelBadges } from './ModelBadges'
 import { prettyInterval } from './utils'
 
 export interface LLMProxyRateLimitModalProps {
@@ -20,6 +21,7 @@ export interface LLMProxyRateLimitModalProps {
     afterSave: () => void
     productSubscriptionID: Scalars['ID']
     current: LLMProxyRateLimitFields | null
+    mode: 'chat' | 'code'
 }
 
 export const LLMProxyRateLimitModal: React.FunctionComponent<React.PropsWithChildren<LLMProxyRateLimitModalProps>> = ({
@@ -27,6 +29,7 @@ export const LLMProxyRateLimitModal: React.FunctionComponent<React.PropsWithChil
     afterSave,
     productSubscriptionID,
     current,
+    mode,
 }) => {
     const labelId = 'llmProxyRateLimit'
 
@@ -38,6 +41,11 @@ export const LLMProxyRateLimitModal: React.FunctionComponent<React.PropsWithChil
     const [limitInterval, setLimitInterval] = useState<number>(current?.intervalSeconds ?? 60 * 60)
     const onChangeLimitInterval = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setLimitInterval(parseInt(event.target.value, 10))
+    }, [])
+
+    const [allowedModels, setAllowedModels] = useState<string>(current?.allowedModels?.join(',') ?? '')
+    const onChangeAllowedModels = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
+        setAllowedModels(event.target.value)
     }, [])
 
     const [updateLLMProxyConfig, { loading, error }] = useMutation<
@@ -54,8 +62,13 @@ export const LLMProxyRateLimitModal: React.FunctionComponent<React.PropsWithChil
                     variables: {
                         productSubscriptionID,
                         llmProxyAccess: {
-                            rateLimit: limit,
-                            rateLimitIntervalSeconds: limitInterval,
+                            chatCompletionsRateLimit: mode === 'chat' ? limit : undefined,
+                            chatCompletionsRateLimitIntervalSeconds: mode === 'chat' ? limitInterval : undefined,
+                            chatCompletionsAllowedModels: mode === 'chat' ? splitModels(allowedModels) : undefined,
+
+                            codeCompletionsRateLimit: mode === 'code' ? limit : undefined,
+                            codeCompletionsRateLimitIntervalSeconds: mode === 'code' ? limitInterval : undefined,
+                            codeCompletionsAllowedModels: mode === 'code' ? splitModels(allowedModels) : undefined,
                         },
                     },
                 })
@@ -66,12 +79,14 @@ export const LLMProxyRateLimitModal: React.FunctionComponent<React.PropsWithChil
                 logger.error(error)
             }
         },
-        [updateLLMProxyConfig, productSubscriptionID, limit, limitInterval, afterSave]
+        [updateLLMProxyConfig, productSubscriptionID, limit, limitInterval, afterSave, allowedModels, mode]
     )
 
     return (
         <Modal onDismiss={onCancel} aria-labelledby={labelId}>
-            <H3 id={labelId}>Configure rate limit for LLM proxy</H3>
+            <H3 id={labelId}>
+                Configure {mode === 'chat' ? 'chat request' : 'code completion request'} rate limit for LLM proxy
+            </H3>
             <Text>
                 LLM proxy is a Sourcegraph managed service that allows customer instances to talk to upstream LLMs under
                 our negotiated terms in a safe manner.
@@ -118,6 +133,23 @@ export const LLMProxyRateLimitModal: React.FunctionComponent<React.PropsWithChil
                         }
                     />
                 </div>
+                <div className="form-group">
+                    <Input
+                        id="allowedModels"
+                        name="allowedModels"
+                        type="text"
+                        autoComplete="off"
+                        spellCheck="false"
+                        required={true}
+                        disabled={loading}
+                        min={1}
+                        label="Allowed models"
+                        description="Comma separated list of the models the subscription can use. This normally doesn't need to be changed."
+                        value={allowedModels}
+                        onChange={onChangeAllowedModels}
+                        message={<ModelBadges models={splitModels(allowedModels)} />}
+                    />
+                </div>
                 <div className="d-flex justify-content-end">
                     <Button disabled={loading} className="mr-2" onClick={onCancel} outline={true} variant="secondary">
                         Cancel
@@ -134,4 +166,11 @@ export const LLMProxyRateLimitModal: React.FunctionComponent<React.PropsWithChil
             </Form>
         </Modal>
     )
+}
+
+function splitModels(allowedModels: string): string[] {
+    if (allowedModels === '') {
+        return []
+    }
+    return allowedModels.split(',').map(model => model.trim())
 }

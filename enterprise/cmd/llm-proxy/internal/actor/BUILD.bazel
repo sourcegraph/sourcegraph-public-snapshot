@@ -10,6 +10,7 @@ go_library(
     visibility = ["//enterprise/cmd/llm-proxy:__subpackages__"],
     deps = [
         "//enterprise/cmd/llm-proxy/internal/limiter",
+        "//enterprise/internal/completions/types",
         "//internal/goroutine",
         "//internal/observation",
         "//internal/trace",

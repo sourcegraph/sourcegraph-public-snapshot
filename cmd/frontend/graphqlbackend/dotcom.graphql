@@ -310,6 +310,10 @@ type LLMProxyUsageDatapoint {
     The number of requests made.
     """
     count: Int!
+    """
+    The model that was used.
+    """
+    model: String!
 }
 
 """
@@ -322,13 +326,13 @@ type LLMProxyAccess {
     """
     enabled: Boolean!
     """
-    Rate limits for LLM-proxy access, or null if not enabled.
+    Rate limit for chat completions access, or null if not enabled.
     """
-    rateLimit: LLMProxyRateLimit
+    chatCompletionsRateLimit: LLMProxyRateLimit
     """
-    Recent usage data of LLM proxy for the subscription.
+    Rate limit for code completions access, or null if not enabled.
     """
-    usage: [LLMProxyUsageDatapoint!]!
+    codeCompletionsRateLimit: LLMProxyRateLimit
 }
 
 """
@@ -357,6 +361,13 @@ type LLMProxyRateLimit {
     """
     source: LLMProxyRateLimitSource!
     """
+    The models that are allowed for this rate limit bucket.
+    Usually, customers will have two separate rate limits, one
+    for chat completions and one for code completions. A usual
+    config could include [{claude-v1, claude-v1.3},{claude-instant-v1}].
+    """
+    allowedModels: [String!]!
+    """
     Requests per time interval.
     """
     limit: Int!
@@ -364,6 +375,10 @@ type LLMProxyRateLimit {
     Interval for rate limiting.
     """
     intervalSeconds: Int!
+    """
+    Recent usage data of LLM proxy for the subscription.
+    """
+    usage: [LLMProxyUsageDatapoint!]!
 }
 
 """
@@ -389,11 +404,33 @@ input UpdateLLMProxyAccessInput {
 
     Set to 0 to remove the override.
     """
-    rateLimit: Int
+    chatCompletionsRateLimit: Int
     """
     Override default interval for rate limiting.
 
     Set to 0 to remove the override.
     """
-    rateLimitIntervalSeconds: Int
+    chatCompletionsRateLimitIntervalSeconds: Int
+    """
+    Override the set of allowed models for chat completions
+    for this subscription.
+    """
+    chatCompletionsAllowedModels: [String!]
+    """
+    Override default requests per time interval.
+
+    Set to 0 to remove the override.
+    """
+    codeCompletionsRateLimit: Int
+    """
+    Override default interval for rate limiting.
+
+    Set to 0 to remove the override.
+    """
+    codeCompletionsRateLimitIntervalSeconds: Int
+    """
+    Override the set of allowed models for chat completions
+    for this subscription.
+    """
+    codeCompletionsAllowedModels: [String!]
 }

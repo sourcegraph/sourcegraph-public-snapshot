@@ -4,7 +4,7 @@
 // this repository. To add additional mocks to this or another package, add a new entry
 // to the mockgen.yaml file in the root of this repository.
 
-package shared
+package auth
 
 import (
 	"context"
