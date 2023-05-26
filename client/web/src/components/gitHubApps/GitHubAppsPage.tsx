@@ -6,7 +6,7 @@ import classNames from 'classnames'
 import { useQuery } from '@sourcegraph/http-client'
 import { ButtonLink, ErrorAlert, Icon, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
-import { GitHubAppsResult, GitHubAppsVariables } from '../../graphql-operations'
+import { GitHubAppsResult, GitHubAppsVariables, GitHubAppDomain } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import {
     ConnectionContainer,
@@ -27,7 +27,11 @@ interface Props {
 }
 
 export const GitHubAppsPage: React.FC<Props> = ({ batchChangesEnabled }) => {
-    const { data, loading, error, refetch } = useQuery<GitHubAppsResult, GitHubAppsVariables>(GITHUB_APPS_QUERY, {})
+    const { data, loading, error, refetch } = useQuery<GitHubAppsResult, GitHubAppsVariables>(GITHUB_APPS_QUERY, {
+        variables: {
+            domain: GitHubAppDomain.REPOS,
+        },
+    })
     const gitHubApps = useMemo(() => data?.gitHubApps?.nodes ?? [], [data])
 
     useEffect(() => {

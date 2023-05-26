@@ -5,4 +5,5 @@ go_library(
     srcs = ["types.go"],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types",
     visibility = ["//enterprise:__subpackages__"],
+    deps = ["//internal/types"],
 )

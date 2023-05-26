@@ -20,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
+	ghtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	authcheck "github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -227,16 +228,23 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 
 		webhookUUID, err := uuid.Parse(stateDeets.WebhookUUID)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Bad request, could not parse webhook UUID: %s", err.Error()), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("Bad request, could not parse webhook UUID: %v", err), http.StatusBadRequest)
 			return
 		}
 
 		u, err := getAPIUrl(req, code)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Unexpected error when creating github API url: %s", err.Error()), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("Unexpected error when creating github API url: %v", err), http.StatusInternalServerError)
 			return
 		}
-		app, err := createGitHubApp(u, stateDeets.Domain)
+
+		domain, err := parseDomain(&stateDeets.Domain)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("unable to parse domain: %v", err), http.StatusBadRequest)
+			return
+		}
+
+		app, err := createGitHubApp(u, *domain)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Unexpected error while converting github app: %s", err.Error()), http.StatusInternalServerError)
 			return
@@ -343,7 +351,7 @@ func getAPIUrl(req *http.Request, code string) (string, error) {
 	return u, nil
 }
 
-func createGitHubApp(conversionURL, domain string) (*types.GitHubApp, error) {
+func createGitHubApp(conversionURL string, domain types.GitHubAppDomain) (*ghtypes.GitHubApp, error) {
 	r, err := http.NewRequest("POST", conversionURL, http.NoBody)
 	if err != nil {
 		return nil, err
@@ -368,7 +376,7 @@ func createGitHubApp(conversionURL, domain string) (*types.GitHubApp, error) {
 		return nil, err
 	}
 
-	return &types.GitHubApp{
+	return &ghtypes.GitHubApp{
 		AppID:         response.AppID,
 		Name:          response.Name,
 		Slug:          response.Slug,

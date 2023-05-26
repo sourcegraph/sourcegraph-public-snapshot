@@ -3,6 +3,7 @@ package githubapp
 import (
 	"context"
 	"net/url"
+	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -72,13 +73,17 @@ func (r *resolver) DeleteGitHubApp(ctx context.Context, args *graphqlbackend.Del
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
-func (r *resolver) GitHubApps(ctx context.Context) (graphqlbackend.GitHubAppConnectionResolver, error) {
+func (r *resolver) GitHubApps(ctx context.Context, args *graphqlbackend.GitHubAppsArgs) (graphqlbackend.GitHubAppConnectionResolver, error) {
 	// 🚨 SECURITY: Check whether user is site-admin
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	apps, err := r.db.GitHubApps().List(ctx)
+	domain, err := parseDomain(args.Domain)
+	if err != nil {
+		return nil, err
+	}
+	apps, err := r.db.GitHubApps().List(ctx, domain)
 	if err != nil {
 		return nil, err
 	}
@@ -94,6 +99,22 @@ func (r *resolver) GitHubApps(ctx context.Context) (graphqlbackend.GitHubAppConn
 	}
 
 	return gitHubAppConnection, nil
+}
+
+func parseDomain(s *string) (*itypes.GitHubAppDomain, error) {
+	if s == nil {
+		return nil, nil
+	}
+	switch strings.ToUpper(*s) {
+	case "REPOS":
+		domain := itypes.ReposDomain
+		return &domain, nil
+	case "BATCHES":
+		domain := itypes.BatchesDomain
+		return &domain, nil
+	default:
+		return nil, errors.Errorf("unknown domain %q", *s)
+	}
 }
 
 func (r *resolver) GitHubApp(ctx context.Context, args *graphqlbackend.GitHubAppArgs) (graphqlbackend.GitHubAppResolver, error) {
@@ -188,7 +209,7 @@ func (r *gitHubAppResolver) Name() string {
 }
 
 func (r *gitHubAppResolver) Domain() string {
-	return r.app.Domain
+	return r.app.Domain.ToGraphQL()
 }
 
 func (r *gitHubAppResolver) Slug() string {
