@@ -49,6 +49,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed an issue where a Code Insights query with structural search type received 0 search results for the latest commit of any matching repo. [#51076](https://github.com/sourcegraph/sourcegraph/pull/51076)
 - GitLab code host connections will disable repo-centric repository permission syncs when the authentication provider is set as "oauth". This prevents repo-centric permission sync from getting incorrect data. [#51452](https://github.com/sourcegraph/sourcegraph/pull/51452)
 - Code intelligence background jobs did not correctly use an internal context, causing SCIP data to sometimes be prematurely deleted. [#51591](https://github.com/sourcegraph/sourcegraph/pull/51591)
+- `id` column of `user_repo_permissions` table was switched to `bigint` to avoid `int` overflow. #[52299](https://github.com/sourcegraph/sourcegraph/pull/52299)
 
 ### Removed
 
