@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/openai"
@@ -79,6 +81,22 @@ func llmProxyDoer(upstream httpcli.Doer, feature types.CompletionsFeature, llmPr
 		req.URL.Path = path
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
 		req.Header.Set(llmproxy.LLMProxyFeatureHeaderName, string(feature))
-		return upstream.Do(req)
+		resp, err := upstream.Do(req)
+		if err != nil {
+			return resp, err
+		}
+		if resp.StatusCode == 429 {
+			limit, _ := strconv.Atoi(resp.Header.Get("x-ratelimit-limit"))
+			limitRemaining, _ := strconv.Atoi(resp.Header.Get("x-ratelimit-remaining"))
+			retryAfter, _ := time.Parse(resp.Header.Get("Retry-After"), time.RFC1123)
+			err := types.RateLimitExceededError{
+				Feature:    feature,
+				Limit:      limit,
+				Used:       limit - limitRemaining,
+				RetryAfter: retryAfter,
+			}
+			return resp, err
+		}
+		return resp, err
 	})
 }

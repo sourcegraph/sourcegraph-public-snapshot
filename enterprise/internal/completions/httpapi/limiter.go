@@ -21,17 +21,6 @@ type RateLimiter interface {
 	TryAcquire(ctx context.Context) error
 }
 
-type RateLimitExceededError struct {
-	Scope      types.CompletionsFeature
-	Limit      int
-	Used       int
-	RetryAfter time.Time
-}
-
-func (e RateLimitExceededError) Error() string {
-	return fmt.Sprintf("you exceeded the rate limit for %s, only %d requests are allowed per day at the moment to ensure the service stays functional. Current usage: %d. Retry after %s", e.Scope, e.Limit, e.Used, e.RetryAfter.Truncate(time.Second))
-}
-
 func NewRateLimiter(db database.DB, rstore redispool.KeyValue, scope types.CompletionsFeature) RateLimiter {
 	return &rateLimiter{db: db, rstore: rstore, scope: scope}
 }
@@ -96,9 +85,9 @@ func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
 		if err != nil {
 			return errors.Wrap(err, "failed to get TTL for rate limit counter")
 		}
-		return RateLimitExceededError{
-			Scope: r.scope,
-			Limit: limit,
+		return types.RateLimitExceededError{
+			Feature: r.scope,
+			Limit:   limit,
 			// Return the minimum value of currentUsage and limit to not return
 			// confusing values when the limit was exceeded. This method increases
 			// on every check, even if the limit was reached.

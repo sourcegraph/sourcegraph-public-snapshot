@@ -3,6 +3,9 @@ package types
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -77,4 +80,29 @@ func (b CompletionsFeature) IsValid() bool {
 type CompletionsClient interface {
 	Stream(context.Context, CompletionsFeature, CompletionRequestParameters, SendCompletionEvent) error
 	Complete(context.Context, CompletionsFeature, CompletionRequestParameters) (*CompletionResponse, error)
+}
+
+type RateLimitExceededError struct {
+	Feature    CompletionsFeature
+	Limit      int
+	Used       int
+	RetryAfter time.Time
+}
+
+func (e RateLimitExceededError) Error() string {
+	return fmt.Sprintf("you exceeded the rate limit for %s, only %d requests are allowed per day at the moment to ensure the service stays functional. Current usage: %d. Retry after %s", e.Feature, e.Limit, e.Used, e.RetryAfter.Truncate(time.Second))
+}
+
+func (e RateLimitExceededError) WriteHTTPResponse(w http.ResponseWriter) {
+	w.Header().Set("x-ratelimit-limit", strconv.Itoa(e.Limit))
+	w.Header().Set("x-ratelimit-remaining", strconv.Itoa(max(e.Limit-e.Used, 0)))
+	w.Header().Set("retry-after", e.RetryAfter.Format(time.RFC1123))
+	http.Error(w, e.Error(), http.StatusTooManyRequests)
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }

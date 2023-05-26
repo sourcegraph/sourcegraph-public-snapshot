@@ -28,12 +28,22 @@ func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Han
 		}
 
 		// Always send a final done event so clients know the stream is shutting down.
+		dontSendFinalEvent := false
 		defer func() {
+			if dontSendFinalEvent {
+				return
+			}
 			_ = eventWriter.Event("done", map[string]any{})
 		}()
 
 		err = cc.Stream(ctx, types.CompletionsFeatureChat, requestParams, func(event types.CompletionResponse) error { return eventWriter.Event("completion", event) })
 		if err != nil {
+			if unwrap, ok := err.(types.RateLimitExceededError); ok {
+				dontSendFinalEvent = true
+				unwrap.WriteHTTPResponse(w)
+				return
+			}
+
 			trace.Logger(ctx, logger).Error("error while streaming completions", log.Error(err))
 			_ = eventWriter.Event("error", map[string]string{"error": err.Error()})
 			return

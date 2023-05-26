@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client"
@@ -68,8 +67,8 @@ func newCompletionsHandler(rl RateLimiter, traceFamily string, getModel func(typ
 		// Check rate limit.
 		err = rl.TryAcquire(ctx)
 		if err != nil {
-			if unwrap, ok := err.(RateLimitExceededError); ok {
-				respondRateLimited(w, unwrap)
+			if unwrap, ok := err.(types.RateLimitExceededError); ok {
+				unwrap.WriteHTTPResponse(w)
 				return
 			}
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -78,19 +77,4 @@ func newCompletionsHandler(rl RateLimiter, traceFamily string, getModel func(typ
 
 		handle(ctx, requestParams, completionClient, w)
 	})
-}
-
-func respondRateLimited(w http.ResponseWriter, err RateLimitExceededError) {
-	// Rate limit exceeded, write well known headers and return correct status code.
-	w.Header().Set("x-ratelimit-limit", strconv.Itoa(err.Limit))
-	w.Header().Set("x-ratelimit-remaining", strconv.Itoa(max(err.Limit-err.Used, 0)))
-	w.Header().Set("retry-after", err.RetryAfter.Format(time.RFC1123))
-	http.Error(w, err.Error(), http.StatusTooManyRequests)
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
 }

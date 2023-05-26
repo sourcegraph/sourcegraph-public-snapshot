@@ -23,6 +23,11 @@ func NewCodeCompletionsHandler(_ log.Logger, db database.DB) http.Handler {
 	}, func(ctx context.Context, requestParams types.CompletionRequestParameters, cc types.CompletionsClient, w http.ResponseWriter) {
 		completion, err := cc.Complete(ctx, types.CompletionsFeatureCode, requestParams)
 		if err != nil {
+			if unwrap, ok := err.(types.RateLimitExceededError); ok {
+				unwrap.WriteHTTPResponse(w)
+				return
+			}
+
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
