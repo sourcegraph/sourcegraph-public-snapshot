@@ -51,17 +51,7 @@ WHERE
 		return "", errors.New("invalid token")
 	}
 	if !found {
-		return "", &productSubscriptionNotFoundError{}
+		return "", errors.New("no product subscription found with the token")
 	}
 	return subID, nil
-}
-
-type productSubscriptionNotFoundError struct{}
-
-func (e productSubscriptionNotFoundError) Error() string {
-	return "product subscription not found"
-}
-
-func (e productSubscriptionNotFoundError) NotFound() bool {
-	return true
 }
