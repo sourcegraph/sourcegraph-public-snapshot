@@ -440,7 +440,12 @@ func assignedOwnerSetup(path string, user *types.User) func(*edb.MockEnterpriseD
 			},
 		}
 		usersStore := database.NewMockUserStore()
-		usersStore.GetByUsernameFunc.SetDefaultReturn(user, nil)
+		usersStore.GetByUsernameFunc.SetDefaultHook(func(_ context.Context, name string) (*types.User, error) {
+			if name == user.Username {
+				return user, nil
+			}
+			return nil, database.NewUserNotFoundErr()
+		})
 		usersStore.GetByVerifiedEmailFunc.SetDefaultReturn(nil, nil)
 		db.UsersFunc.SetDefaultReturn(usersStore)
 		assignedOwnersStore := database.NewMockAssignedOwnersStore()
