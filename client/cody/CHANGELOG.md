@@ -6,6 +6,8 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 
 ### Added
 
+- New recipe: `Optimize Code`. Optimize the time and space consumption of code. [pull/51974](https://github.com/sourcegraph/sourcegraph/pull/51974)
+
 ### Fixed
 
 - Inline Assist broken decorations for Inline-Fixup tasks [pull/52322](https://github.com/sourcegraph/sourcegraph/pull/52322)
