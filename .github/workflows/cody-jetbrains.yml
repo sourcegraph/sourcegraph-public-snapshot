@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: client/jetbrains
+        working-directory: client/cody-jetbrains
     steps:
       - uses: actions/checkout@v3
       - name: Gradle Wrapper Validation
