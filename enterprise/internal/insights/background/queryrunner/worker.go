@@ -3,6 +3,7 @@ package queryrunner
 import (
 	"context"
 	"database/sql"
+	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -461,6 +462,10 @@ type Job struct {
 // once executing (see work_handler.go:Handle).
 func (j *Job) RecordID() int {
 	return j.ID
+}
+
+func (j *Job) RecordUID() string {
+	return strconv.Itoa(j.ID)
 }
 
 func scanJobs(rows *sql.Rows, err error) ([]*Job, error) {

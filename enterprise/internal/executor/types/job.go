@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	"strconv"
 	"time"
 )
 
@@ -252,6 +253,15 @@ type v1VirtualMachineFile struct {
 
 func (j Job) RecordID() int {
 	return j.ID
+}
+
+func (j Job) RecordUID() string {
+	uid := strconv.Itoa(j.ID)
+	// outside of multi-queue executors, jobs aren't guaranteed to have a queue specified
+	if j.Queue != "" {
+		uid += "-" + j.Queue
+	}
+	return uid
 }
 
 type DockerStep struct {

@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/lib/pq"
@@ -47,6 +48,10 @@ type BaseJob struct {
 
 func (b *BaseJob) RecordID() int {
 	return b.ID
+}
+
+func (b *BaseJob) RecordUID() string {
+	return strconv.Itoa(b.ID)
 }
 
 var baseJobColumns = []*sqlf.Query{

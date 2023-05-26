@@ -9907,7 +9907,7 @@ func NewMockWorkerStore[T workerutil.Record]() *MockWorkerStore[T] {
 			},
 		},
 		HeartbeatFunc: &WorkerStoreHeartbeatFunc[T]{
-			defaultHook: func(context.Context, []int, store1.HeartbeatOptions) (r0 []int, r1 []int, r2 error) {
+			defaultHook: func(context.Context, []string, store1.HeartbeatOptions) (r0 []string, r1 []string, r2 error) {
 				return
 			},
 		},
@@ -9979,7 +9979,7 @@ func NewStrictMockWorkerStore[T workerutil.Record]() *MockWorkerStore[T] {
 			},
 		},
 		HeartbeatFunc: &WorkerStoreHeartbeatFunc[T]{
-			defaultHook: func(context.Context, []int, store1.HeartbeatOptions) ([]int, []int, error) {
+			defaultHook: func(context.Context, []string, store1.HeartbeatOptions) ([]string, []string, error) {
 				panic("unexpected invocation of MockWorkerStore.Heartbeat")
 			},
 		},
@@ -10410,15 +10410,15 @@ func (c WorkerStoreHandleFuncCall[T]) Results() []interface{} {
 // WorkerStoreHeartbeatFunc describes the behavior when the Heartbeat method
 // of the parent MockWorkerStore instance is invoked.
 type WorkerStoreHeartbeatFunc[T workerutil.Record] struct {
-	defaultHook func(context.Context, []int, store1.HeartbeatOptions) ([]int, []int, error)
-	hooks       []func(context.Context, []int, store1.HeartbeatOptions) ([]int, []int, error)
+	defaultHook func(context.Context, []string, store1.HeartbeatOptions) ([]string, []string, error)
+	hooks       []func(context.Context, []string, store1.HeartbeatOptions) ([]string, []string, error)
 	history     []WorkerStoreHeartbeatFuncCall[T]
 	mutex       sync.Mutex
 }
 
 // Heartbeat delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockWorkerStore[T]) Heartbeat(v0 context.Context, v1 []int, v2 store1.HeartbeatOptions) ([]int, []int, error) {
+func (m *MockWorkerStore[T]) Heartbeat(v0 context.Context, v1 []string, v2 store1.HeartbeatOptions) ([]string, []string, error) {
 	r0, r1, r2 := m.HeartbeatFunc.nextHook()(v0, v1, v2)
 	m.HeartbeatFunc.appendCall(WorkerStoreHeartbeatFuncCall[T]{v0, v1, v2, r0, r1, r2})
 	return r0, r1, r2
@@ -10427,7 +10427,7 @@ func (m *MockWorkerStore[T]) Heartbeat(v0 context.Context, v1 []int, v2 store1.H
 // SetDefaultHook sets function that is called when the Heartbeat method of
 // the parent MockWorkerStore instance is invoked and the hook queue is
 // empty.
-func (f *WorkerStoreHeartbeatFunc[T]) SetDefaultHook(hook func(context.Context, []int, store1.HeartbeatOptions) ([]int, []int, error)) {
+func (f *WorkerStoreHeartbeatFunc[T]) SetDefaultHook(hook func(context.Context, []string, store1.HeartbeatOptions) ([]string, []string, error)) {
 	f.defaultHook = hook
 }
 
@@ -10435,7 +10435,7 @@ func (f *WorkerStoreHeartbeatFunc[T]) SetDefaultHook(hook func(context.Context, 
 // Heartbeat method of the parent MockWorkerStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *WorkerStoreHeartbeatFunc[T]) PushHook(hook func(context.Context, []int, store1.HeartbeatOptions) ([]int, []int, error)) {
+func (f *WorkerStoreHeartbeatFunc[T]) PushHook(hook func(context.Context, []string, store1.HeartbeatOptions) ([]string, []string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -10443,20 +10443,20 @@ func (f *WorkerStoreHeartbeatFunc[T]) PushHook(hook func(context.Context, []int,
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *WorkerStoreHeartbeatFunc[T]) SetDefaultReturn(r0 []int, r1 []int, r2 error) {
-	f.SetDefaultHook(func(context.Context, []int, store1.HeartbeatOptions) ([]int, []int, error) {
+func (f *WorkerStoreHeartbeatFunc[T]) SetDefaultReturn(r0 []string, r1 []string, r2 error) {
+	f.SetDefaultHook(func(context.Context, []string, store1.HeartbeatOptions) ([]string, []string, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *WorkerStoreHeartbeatFunc[T]) PushReturn(r0 []int, r1 []int, r2 error) {
-	f.PushHook(func(context.Context, []int, store1.HeartbeatOptions) ([]int, []int, error) {
+func (f *WorkerStoreHeartbeatFunc[T]) PushReturn(r0 []string, r1 []string, r2 error) {
+	f.PushHook(func(context.Context, []string, store1.HeartbeatOptions) ([]string, []string, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *WorkerStoreHeartbeatFunc[T]) nextHook() func(context.Context, []int, store1.HeartbeatOptions) ([]int, []int, error) {
+func (f *WorkerStoreHeartbeatFunc[T]) nextHook() func(context.Context, []string, store1.HeartbeatOptions) ([]string, []string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -10494,16 +10494,16 @@ type WorkerStoreHeartbeatFuncCall[T workerutil.Record] struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 []int
+	Arg1 []string
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 store1.HeartbeatOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []int
+	Result0 []string
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 []int
+	Result1 []string
 	// Result2 is the value of the 3rd result returned from this method
 	// invocation.
 	Result2 error

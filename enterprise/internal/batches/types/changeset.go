@@ -311,6 +311,10 @@ type Changeset struct {
 // RecordID is needed to implement the workerutil.Record interface.
 func (c *Changeset) RecordID() int { return int(c.ID) }
 
+func (c *Changeset) RecordUID() string {
+	return strconv.FormatInt(c.ID, 10)
+}
+
 // Clone returns a clone of a Changeset.
 func (c *Changeset) Clone() *Changeset {
 	tt := *c

@@ -301,26 +301,6 @@ func TestClient_MarkFailed(t *testing.T) {
 	}
 }
 
-func TestCanceledJobs(t *testing.T) {
-	spec := routeSpec{
-		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/test_queue/canceledJobs",
-		expectedUsername: "test",
-		expectedToken:    "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef","knownJobIds":[1]}`,
-		responseStatus:   http.StatusOK,
-		responsePayload:  `[1]`,
-	}
-
-	testRoute(t, spec, func(client *queue.Client) {
-		if ids, err := client.CanceledJobs(context.Background(), []int{1}); err != nil {
-			t.Fatalf("unexpected error completing job: %s", err)
-		} else if diff := cmp.Diff(ids, []int{1}); diff != "" {
-			t.Fatalf("unexpected set of IDs returned: %s", diff)
-		}
-	})
-}
-
 func TestHeartbeat(t *testing.T) {
 	spec := routeSpec{
 		expectedMethod:   "POST",
@@ -329,8 +309,7 @@ func TestHeartbeat(t *testing.T) {
 		expectedToken:    "hunter2",
 		expectedPayload: `{
 			"executorName": "deadbeef",
-			"jobIds": [1,2,3],
-			"version": "V2",
+			"jobIds": ["1","2","3"],
 
 			"os": "test-os",
 			"architecture": "test-architecture",
@@ -343,20 +322,20 @@ func TestHeartbeat(t *testing.T) {
 			"prometheusMetrics": ""
 		}`,
 		responseStatus:  http.StatusOK,
-		responsePayload: `{"knownIDs": [1], "cancelIDs": [1]}`,
+		responsePayload: `{"knownIDs": ["1"], "cancelIDs": ["1"]}`,
 	}
 
 	testRoute(t, spec, func(client *queue.Client) {
-		unknownIDs, cancelIDs, err := client.Heartbeat(context.Background(), []int{1, 2, 3})
+		unknownIDs, cancelIDs, err := client.Heartbeat(context.Background(), []string{"1", "2", "3"})
 		if err != nil {
 			t.Fatalf("unexpected error performing heartbeat: %s", err)
 		}
 
-		if diff := cmp.Diff([]int{1}, unknownIDs); diff != "" {
+		if diff := cmp.Diff([]string{"1"}, unknownIDs); diff != "" {
 			t.Errorf("unexpected unknown ids (-want +got):\n%s", diff)
 		}
 
-		if diff := cmp.Diff([]int{1}, cancelIDs); diff != "" {
+		if diff := cmp.Diff([]string{"1"}, cancelIDs); diff != "" {
 			t.Errorf("unexpected unknown cancel ids (-want +got):\n%s", diff)
 		}
 	})
@@ -370,8 +349,7 @@ func TestHeartbeatBadResponse(t *testing.T) {
 		expectedToken:    "hunter2",
 		expectedPayload: `{
 			"executorName": "deadbeef",
-			"jobIds": [1,2,3],
-			"version": "V2",
+			"jobIds": ["1","2","3"],
 
 			"os": "test-os",
 			"architecture": "test-architecture",
@@ -388,7 +366,7 @@ func TestHeartbeatBadResponse(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *queue.Client) {
-		if _, _, err := client.Heartbeat(context.Background(), []int{1, 2, 3}); err == nil {
+		if _, _, err := client.Heartbeat(context.Background(), []string{"1", "2", "3"}); err == nil {
 			t.Fatalf("expected an error")
 		}
 	})

@@ -1,6 +1,9 @@
 package shared
 
-import "time"
+import (
+	"strconv"
+	"time"
+)
 
 type Vulnerability struct {
 	ID               int    // internal ID
@@ -24,6 +27,10 @@ type Vulnerability struct {
 
 func (v Vulnerability) RecordID() int {
 	return v.ID
+}
+
+func (v Vulnerability) RecordUID() string {
+	return strconv.Itoa(v.ID)
 }
 
 // Data that varies across instances of a vulnerability

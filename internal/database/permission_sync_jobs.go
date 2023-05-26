@@ -777,6 +777,10 @@ type PermissionSyncJob struct {
 
 func (j *PermissionSyncJob) RecordID() int { return j.ID }
 
+func (j *PermissionSyncJob) RecordUID() string {
+	return strconv.Itoa(j.ID)
+}
+
 var PermissionSyncJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("permission_sync_jobs.id"),
 	sqlf.Sprintf("permission_sync_jobs.state"),

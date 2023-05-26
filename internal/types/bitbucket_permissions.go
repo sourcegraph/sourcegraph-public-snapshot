@@ -2,6 +2,7 @@ package types
 
 import (
 	"database/sql/driver"
+	"strconv"
 	"time"
 )
 
@@ -39,6 +40,10 @@ type BitbucketProjectPermissionJob struct {
 // RecordID implements workerutil.Record.
 func (g *BitbucketProjectPermissionJob) RecordID() int {
 	return g.ID
+}
+
+func (g *BitbucketProjectPermissionJob) RecordUID() string {
+	return strconv.Itoa(g.ID)
 }
 
 type UserPermission struct {
