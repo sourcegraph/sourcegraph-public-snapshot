@@ -203,7 +203,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 	}
 	opts := buildCommitOpts(e.targetRepo, e.spec, pushConf)
 
-	err = e.pushCommit(ctx, opts)
+	rev, err := e.pushCommit(ctx, opts)
 	var pce pushCommitError
 	if errors.As(err, &pce) {
 		if acss, ok := css.(sources.ArchivableChangesetSource); ok {
@@ -213,6 +213,36 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 				}
 				return afterDone, errCannotPushToArchivedRepo
 			}
+		}
+	}
+	// If we're pushing to a GitHub code host, we should check if a GitHub App is
+	// configured for use in Batch Changes to sign the commit.
+	if _, ok := css.(*sources.GitHubSource); ok {
+		// Attempt to get a ChangesetSource authenticated with a GitHub App.
+		css, err = e.sourcer.ForChangeset(ctx, e.tx, e.ch, sources.AuthenticationStrategyGitHubApp)
+		if err != nil {
+			switch err {
+			case sources.ErrNoGitHubAppConfigured:
+				// If we didn't find any GitHub Apps configured for this code host, it's a
+				// noop; commit signing has not been set up by the admin.
+				break
+			default:
+				// We shouldn't block on this error, but we should still log it.
+				log15.Error("Failed to get GitHub App authenticated ChangesetSource", "err", err)
+				break
+			}
+		} else {
+			// We found a GitHub App configured for signing commits on this code host, so
+			// we should try to use it to sign the commit.
+			gcss, ok := css.(*sources.GitHubSource)
+			if !ok {
+				return afterDone, errors.Wrap(err, "got non-GitHubSource for ChangesetSource when using GitHub App authentication strategy")
+			}
+			// We use the existing commit as the basis for the new commit, duplicating it
+			// and deleting the original commit.
+			// TODO: Remove logging
+			fmt.Printf("WOULD DUPLICATE COMMIT HERE. REV: %s\n", rev)
+			gcss.DuplicateCommit(ctx, opts, remoteRepo, rev)
 		}
 	}
 
@@ -579,7 +609,7 @@ func (e *executor) decorateChangesetBody(ctx context.Context) (string, error) {
 }
 
 func loadChangesetSource(ctx context.Context, s *store.Store, sourcer sources.Sourcer, ch *btypes.Changeset, repo *types.Repo) (sources.ChangesetSource, error) {
-	css, err := sourcer.ForChangeset(ctx, s, ch)
+	css, err := sourcer.ForChangeset(ctx, s, ch, sources.AuthenticationStrategyUserCredential)
 	if err != nil {
 		switch err {
 		case sources.ErrMissingCredentials:
@@ -612,22 +642,22 @@ func (e pushCommitError) Error() string {
 		e.RepositoryName, e.InternalError, e.Command, strings.TrimSpace(e.CombinedOutput))
 }
 
-func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) error {
-	_, err := e.client.CreateCommitFromPatch(ctx, opts)
+func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) (rev string, err error) {
+	rev, err = e.client.CreateCommitFromPatch(ctx, opts)
 	if err != nil {
 		var e *protocol.CreateCommitFromPatchError
 		if errors.As(err, &e) {
 			// Make "patch does not apply" errors a fatal error. Retrying the changeset
 			// rollout won't help here and just causes noise.
 			if strings.Contains(e.CombinedOutput, "patch does not apply") {
-				return errcode.MakeNonRetryable(pushCommitError{e})
+				return "", errcode.MakeNonRetryable(pushCommitError{e})
 			}
-			return pushCommitError{e}
+			return "", pushCommitError{e}
 		}
-		return err
+		return "", err
 	}
 
-	return nil
+	return rev, nil
 }
 
 // handleArchivedRepo updates the changeset and repo once it has been

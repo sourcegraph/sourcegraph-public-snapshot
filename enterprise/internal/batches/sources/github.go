@@ -2,6 +2,7 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -90,6 +91,46 @@ func (s GitHubSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, 
 func (s GitHubSource) ValidateAuthenticator(ctx context.Context) error {
 	_, err := s.client.GetAuthenticatedUser(ctx)
 	return err
+}
+
+// DuplicateCommit creates a new commit on the code host using the details of an existing
+// one at the given revision ref, for the purposes of creating a signed version of an
+// unsigned commit. Signing commits is only possible over the GitHub web APIs, when using
+// a GitHub App to authenticate. Thus, this method only makes sense to invoke in the
+// context of a `ChangesetSource` authenticated via a GitHub App.
+//
+// Due to limitations and feature-incompleteness of both the REST and GraphQL APIs today
+// (2023-05-26), we still take advantage of gitserver to push an initial commit based on
+// the changeset patch, then we look up the commit on the code host and duplicate it using
+// a REST endpoint in order to create a signed version of it. We then delete the original
+// unsigned commit.
+//
+// Using the REST API is necessary because the GraphQL API does not expose any mutations
+// for creating commits other than one which requires sending the entire file contents for
+// any files changed by the commit, which is not feasible for large commits. The REST API
+// allows us to create a commit based on a tree SHA, which we can get from the existing
+// commit. If GitHub ever achieves parity between the REST and GraphQL APIs for creating
+// commits, we should update this method and use the GraphQL API instead, because it would
+// allow us to sign commits with the user access token instead of the GitHub App
+// installation access token.
+func (s GitHubSource) DuplicateCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest, repo *types.Repo, rev string) error {
+	message := opts.CommitInfo.Message
+	repoMetadata := repo.Metadata.(*github.Repository)
+	owner, repoName, err := github.SplitRepositoryNameWithOwner(repoMetadata.NameWithOwner)
+	if err != nil {
+		return errors.Wrap(err, "getting owner and repo name to duplicate commit")
+	}
+
+	fmt.Printf("Would get ref: owner=%s, repo=%s, rev=%s\n", owner, repoName, rev)
+	fmt.Printf("Would create commit with message: %s\n", message)
+
+	// TODO: Implement me!!
+	// commitSHA, err := s.client.GetRef(ctx, owner, repoName, rev)
+	// commit, err := s.client.GetCommit(ctx, owner, repoName, commitSHA)
+	// s.client.CreateCommit(ctx, owner, repoName, message, commit.Tree, commit.Parents)
+	// s.client.DeleteRef(ctx, owner, repoName, commitSHA)
+
+	return nil
 }
 
 // CreateChangeset creates the given changeset on the code host.

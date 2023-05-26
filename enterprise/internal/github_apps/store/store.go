@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	encryption "github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -34,6 +34,9 @@ type GitHubAppsStore interface {
 	// GetByAppID retrieves a GitHub App from the database by appID and base url
 	GetByAppID(ctx context.Context, appID int, baseURL string) (*ghtypes.GitHubApp, error)
 
+	// GetByDomain retrieves a GitHub App from the database by domain and base url
+	GetByDomain(ctx context.Context, domain itypes.GitHubAppDomain, baseURL string) (*ghtypes.GitHubApp, error)
+
 	// GetBySlug retrieves a GitHub App from the database by slug and base url
 	GetBySlug(ctx context.Context, slug string, baseURL string) (*ghtypes.GitHubApp, error)
 
@@ -41,7 +44,7 @@ type GitHubAppsStore interface {
 	WithEncryptionKey(key encryption.Key) GitHubAppsStore
 
 	// Lists all GitHub Apps in the store and optionally filters by domain
-	List(ctx context.Context, domain *types.GitHubAppDomain) ([]*ghtypes.GitHubApp, error)
+	List(ctx context.Context, domain *itypes.GitHubAppDomain) ([]*ghtypes.GitHubApp, error)
 }
 
 // gitHubAppStore handles storing and retrieving GitHub Apps from the database.
@@ -92,7 +95,7 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
 	}
 	domain := app.Domain
 	if domain == "" {
-		domain = types.ReposDomain
+		domain = itypes.ReposDomain
 	}
 
 	query := sqlf.Sprintf(`INSERT INTO
@@ -273,13 +276,18 @@ func (s *gitHubAppsStore) GetByAppID(ctx context.Context, appID int, baseURL str
 	return s.get(ctx, sqlf.Sprintf(`app_id = %s AND base_url = %s`, appID, baseURL))
 }
 
+// GetByDomain retrieves a GitHub App from the database by domain and base url
+func (s *gitHubAppsStore) GetByDomain(ctx context.Context, domain itypes.GitHubAppDomain, baseURL string) (*itypes.GitHubApp, error) {
+	return s.get(ctx, sqlf.Sprintf(`domain = %s AND base_url = %s`, domain, baseURL))
+}
+
 // GetBySlug retrieves a GitHub App from the database by slug and base url
 func (s *gitHubAppsStore) GetBySlug(ctx context.Context, slug string, baseURL string) (*ghtypes.GitHubApp, error) {
 	return s.get(ctx, sqlf.Sprintf(`slug = %s AND base_url = %s`, slug, baseURL))
 }
 
 // List lists all GitHub Apps in the store
-func (s *gitHubAppsStore) List(ctx context.Context, domain *types.GitHubAppDomain) ([]*ghtypes.GitHubApp, error) {
+func (s *gitHubAppsStore) List(ctx context.Context, domain *itypes.GitHubAppDomain) ([]*ghtypes.GitHubApp, error) {
 	where := sqlf.Sprintf(`true`)
 	if domain != nil {
 		where = sqlf.Sprintf("domain = %s", *domain)
