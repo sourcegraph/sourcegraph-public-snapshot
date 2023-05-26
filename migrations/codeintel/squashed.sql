@@ -250,7 +250,13 @@ CREATE TABLE codeintel_scip_symbols (
     reference_ranges bytea,
     implementation_ranges bytea,
     type_definition_ranges bytea,
-    symbol_id integer NOT NULL
+    symbol_id integer NOT NULL,
+    scheme_id integer,
+    package_manager_id integer,
+    package_name_id integer,
+    package_version_id integer,
+    descriptor_id integer,
+    descriptor_no_suffix_id integer
 );
 
 COMMENT ON TABLE codeintel_scip_symbols IS 'A mapping from SCIP [Symbol names](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Symbol&patternType=standard) to path and ranges where that symbol occurs within a particular SCIP index.';
@@ -270,6 +276,13 @@ COMMENT ON COLUMN codeintel_scip_symbols.implementation_ranges IS 'An encoded se
 COMMENT ON COLUMN codeintel_scip_symbols.type_definition_ranges IS 'An encoded set of ranges within the associated document that have a **type definition** relationship to the associated symbol.';
 
 COMMENT ON COLUMN codeintel_scip_symbols.symbol_id IS 'The identifier of the segment that terminates the name of this symbol. See the table [`codeintel_scip_symbol_names`](#table-publiccodeintel_scip_symbol_names) on how to reconstruct the full symbol name.';
+
+CREATE TABLE codeintel_scip_symbols_lookup (
+    id bigint NOT NULL,
+    upload_id integer NOT NULL,
+    name text NOT NULL,
+    scip_name_type text NOT NULL
+);
 
 CREATE TABLE codeintel_scip_symbols_schema_versions (
     upload_id integer NOT NULL,
@@ -414,6 +427,14 @@ CREATE INDEX codeintel_scip_metadata_upload_id ON codeintel_scip_metadata USING 
 CREATE INDEX codeintel_scip_symbol_names_upload_id_roots ON codeintel_scip_symbol_names USING btree (upload_id) WHERE (prefix_id IS NULL);
 
 CREATE INDEX codeintel_scip_symbols_document_lookup_id ON codeintel_scip_symbols USING btree (document_lookup_id);
+
+CREATE INDEX codeintel_scip_symbols_fuzzy_selector ON codeintel_scip_symbols USING btree (upload_id, descriptor_no_suffix_id);
+
+CREATE UNIQUE INDEX codeintel_scip_symbols_lookup_unique_fuzzy ON codeintel_scip_symbols_lookup USING btree (upload_id, scip_name_type, name);
+
+CREATE UNIQUE INDEX codeintel_scip_symbols_lookup_unique_precise ON codeintel_scip_symbols_lookup USING btree (upload_id, id);
+
+CREATE INDEX codeintel_scip_symbols_precise_selector ON codeintel_scip_symbols USING btree (scheme_id, package_manager_id, package_name_id, package_version_id, descriptor_id);
 
 CREATE INDEX codeisdntel_scip_symbol_names_upload_id_children ON codeintel_scip_symbol_names USING btree (upload_id, prefix_id) WHERE (prefix_id IS NOT NULL);
 

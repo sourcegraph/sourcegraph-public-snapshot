@@ -189,19 +189,27 @@ Stores a prefix tree of symbol names within a particular upload.
 
 # Table "public.codeintel_scip_symbols"
 ```
-         Column         |  Type   | Collation | Nullable | Default 
-------------------------+---------+-----------+----------+---------
- upload_id              | integer |           | not null | 
- document_lookup_id     | bigint  |           | not null | 
- schema_version         | integer |           | not null | 
- definition_ranges      | bytea   |           |          | 
- reference_ranges       | bytea   |           |          | 
- implementation_ranges  | bytea   |           |          | 
- type_definition_ranges | bytea   |           |          | 
- symbol_id              | integer |           | not null | 
+         Column          |  Type   | Collation | Nullable | Default 
+-------------------------+---------+-----------+----------+---------
+ upload_id               | integer |           | not null | 
+ document_lookup_id      | bigint  |           | not null | 
+ schema_version          | integer |           | not null | 
+ definition_ranges       | bytea   |           |          | 
+ reference_ranges        | bytea   |           |          | 
+ implementation_ranges   | bytea   |           |          | 
+ type_definition_ranges  | bytea   |           |          | 
+ symbol_id               | integer |           | not null | 
+ scheme_id               | integer |           |          | 
+ package_manager_id      | integer |           |          | 
+ package_name_id         | integer |           |          | 
+ package_version_id      | integer |           |          | 
+ descriptor_id           | integer |           |          | 
+ descriptor_no_suffix_id | integer |           |          | 
 Indexes:
     "codeintel_scip_symbols_pkey" PRIMARY KEY, btree (upload_id, symbol_id, document_lookup_id)
     "codeintel_scip_symbols_document_lookup_id" btree (document_lookup_id)
+    "codeintel_scip_symbols_fuzzy_selector" btree (upload_id, descriptor_no_suffix_id)
+    "codeintel_scip_symbols_precise_selector" btree (scheme_id, package_manager_id, package_name_id, package_version_id, descriptor_id)
 Foreign-key constraints:
     "codeintel_scip_symbols_document_lookup_id_fk" FOREIGN KEY (document_lookup_id) REFERENCES codeintel_scip_document_lookup(id) ON DELETE CASCADE
 Triggers:
@@ -226,6 +234,20 @@ A mapping from SCIP [Symbol names](https://sourcegraph.com/search?q=context:%40s
 **type_definition_ranges**: An encoded set of ranges within the associated document that have a **type definition** relationship to the associated symbol.
 
 **upload_id**: The identifier of the upload that provided this SCIP index.
+
+# Table "public.codeintel_scip_symbols_lookup"
+```
+     Column     |  Type   | Collation | Nullable | Default 
+----------------+---------+-----------+----------+---------
+ id             | bigint  |           | not null | 
+ upload_id      | integer |           | not null | 
+ name           | text    |           | not null | 
+ scip_name_type | text    |           | not null | 
+Indexes:
+    "codeintel_scip_symbols_lookup_unique_fuzzy" UNIQUE, btree (upload_id, scip_name_type, name)
+    "codeintel_scip_symbols_lookup_unique_precise" UNIQUE, btree (upload_id, id)
+
+```
 
 # Table "public.codeintel_scip_symbols_schema_versions"
 ```
