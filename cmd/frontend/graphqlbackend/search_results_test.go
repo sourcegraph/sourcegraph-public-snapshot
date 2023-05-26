@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/settings"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -84,8 +85,8 @@ func TestSearchResults(t *testing.T) {
 	searchVersions := []string{"V1", "V2"}
 
 	t.Run("repo: only", func(t *testing.T) {
-		MockDecodedViewerFinalSettings = &schema.Settings{}
-		defer func() { MockDecodedViewerFinalSettings = nil }()
+		settings.MockCurrentUserFinal = &schema.Settings{}
+		defer func() { settings.MockCurrentUserFinal = nil }()
 
 		repos := database.NewMockRepoStore()
 		repos.ListMinimalReposFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]types.MinimalRepo, error) {
@@ -234,8 +235,8 @@ func TestSearchResolver_DynamicFilters(t *testing.T) {
 		},
 	}
 
-	MockDecodedViewerFinalSettings = &schema.Settings{}
-	defer func() { MockDecodedViewerFinalSettings = nil }()
+	settings.MockCurrentUserFinal = &schema.Settings{}
+	defer func() { settings.MockCurrentUserFinal = nil }()
 
 	var expectedDynamicFilterStrs map[string]int
 	for _, test := range tests {
