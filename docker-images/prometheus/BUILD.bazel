@@ -1,3 +1,6 @@
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+
 filegroup(
     name = "startup_scripts",
     srcs = [
@@ -5,4 +8,36 @@ filegroup(
         "prometheus.sh",
     ],
     visibility = ["//visibility:public"],
+)
+
+pkg_tar(
+    name = "config_tar",
+    srcs = [
+        ":startup_scripts",
+        "//dev/prometheus:prometheus_targets_linux",
+        "//docker-images/prometheus/cmd/prom-wrapper",
+        "//docker-images/prometheus/config:base_config",
+        "//monitoring:generate_config",
+    ],
+    remap_paths = {
+        "/cmd/prom-wrapper/prom-wrapper_/prom-wrapper": "/bin/prom-wrapper",
+        "monitoring/outputs/prometheus": "/sg_config_prometheus",
+        "/dev/prometheus/linux": "/sg_prometheus_add_ons",
+        "/config": "/sg_config_prometheus",
+    },
+    strip_prefix = ".",
+)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_prometheus_base",
+    entrypoint = ["/bin/prom-wrapper"],
+    tars = [":config_tar"],
+    user = "sourcegraph",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["prometheus:candidate"],
 )

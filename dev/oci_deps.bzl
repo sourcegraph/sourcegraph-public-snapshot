@@ -101,12 +101,6 @@ def oci_deps():
     )
 
     oci_pull(
-        name = "wolfi_searcher_base",
-        digest = "sha256:fba8f4cce1306463b03c0388eb830bac63f02f4b8941c4df8f9fde99390da32e",
-        image = "us.gcr.io/sourcegraph-dev/wolfi-searcher-base",
-    )
-
-    oci_pull(
         name = "wolfi_executor_base",
         digest = "sha256:0ab096b0ffae9054fa18fa8121b105acfda767c5f74fd8530f72f8fe87ef20c2",
         image = "us.gcr.io/sourcegraph-dev/wolfi-executor-base",
@@ -116,4 +110,34 @@ def oci_deps():
         name = "wolfi_batcheshelper_base",
         digest = "sha256:2abe940a2d9e13a998d07e4faf072c7ba6e17243a0b9c56a3adf9878d9332f6a",
         image = "us.gcr.io/sourcegraph-dev/wolfi-batcheshelper-base",
+
+    oci_pull(
+        name = "wolfi_prometheus_base",
+        digest = "sha256:11a84d7ae6a7f3a8954306f224391a2301e5518fbe2d6e8dfee4abe12ca91180",
+        image = "us.gcr.io/sourcegraph-dev/wolfi-prometheus-base",
     )
+
+    oci_pull(
+        name = "wolfi_postgresql-12_base",
+        digest = "sha256:7c8bfb96038fb6b3980fb6b12f692a54ff8f1d1cebbd72d9706578be8d278cae",
+        image = "us.gcr.io/sourcegraph-dev/wolfi-postgresql-12-base",
+    )
+
+    oci_pull(
+        name = "wolfi_postgresql-12-codeinsights_base",
+        digest = "sha256:8a81ff942cb9d07c2402d24a2c31a8a33c55b59deb80576c6a448dd1ade764a7",
+        image = "us.gcr.io/sourcegraph-dev/wolfi-postgresql-12-codeinsights-base",
+    )
+
+    oci_pull(
+        name = "wolfi_node_exporter_base",
+        digest = "sha256:0a42810eafc6c81f95cb3295003de966d3a857d37dd79ef45a3be54c3b4c8e7c",
+        image = "us.gcr.io/sourcegraph-dev/wolfi-node-exporter-base",
+    )
+
+    oci_pull(
+        name = "wolfi_opentelemetry_collector_base",
+        digest = "sha256:d5d55fb77056422eea328b709795a38cf599e42f2a90787c9dd32c2f1a3654f3",
+        image = "us.gcr.io/sourcegraph-dev/wolfi-opentelemetry-collector-base",
+    )
+

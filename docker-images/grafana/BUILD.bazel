@@ -25,9 +25,6 @@ oci_image(
     name = "image",
     base = "@wolfi_grafana_base",
     entrypoint = ["/entry.sh"],
-    env = {
-        "PG_EXPORTER_EXTEND_QUERY_PATH": "/config.queries.yaml",
-    },
     tars = [":config_tar"],
     user = "grafana",
 )
