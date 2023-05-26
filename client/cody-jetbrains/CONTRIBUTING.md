@@ -21,6 +21,10 @@ New issues and feature requests can be filed through our [issue tracker](https:/
 - Clone `https://github.com/sourcegraph/sourcegraph` (on Windows, you'll need to use WSL2)
 - Go to `client/cody-jetbrains/` and run the plugin in a sandboxed IDE by running `./gradlew :runIde`. This will start the platform with the versions defined in `gradle.properties`, [here](https://github.com/sourcegraph/sourcegraph/blob/main/client/cody-jetbrains/gradle.properties#L14-L16).
 - Build a deployable plugin artifact by running `./gradlew buildPlugin`. The output file is `build/distributions/Cody.zip`.
+- Reformat the codebase with `./gradlew spotlessApply`.
+- Install the google-java-format plugin
+  https://plugins.jetbrains.com/plugin/8527-google-java-format and configure
+  IntelliJ's file save actions to format.
 
 ## Publishing a new version
 

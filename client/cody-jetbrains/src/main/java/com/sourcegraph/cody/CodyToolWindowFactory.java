@@ -9,16 +9,18 @@ import com.intellij.ui.content.ContentFactory;
 import org.jetbrains.annotations.NotNull;
 
 public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
-    @Override
-    public boolean isApplicable(@NotNull Project project) {
-        return ToolWindowFactory.super.isApplicable(project);
-    }
+  @Override
+  public boolean isApplicable(@NotNull Project project) {
+    return ToolWindowFactory.super.isApplicable(project);
+  }
 
-    @Override
-    public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-        CodyToolWindowContent toolWindowContent = new CodyToolWindowContent(project);
-        Content content = ContentFactory.SERVICE.getInstance().createContent(toolWindowContent.getContentPanel(), "", false);
-        toolWindow.getContentManager().addContent(content);
-    }
-
+  @Override
+  public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
+    CodyToolWindowContent toolWindowContent = new CodyToolWindowContent(project);
+    Content content =
+        ContentFactory.SERVICE
+            .getInstance()
+            .createContent(toolWindowContent.getContentPanel(), "", false);
+    toolWindow.getContentManager().addContent(content);
+  }
 }
