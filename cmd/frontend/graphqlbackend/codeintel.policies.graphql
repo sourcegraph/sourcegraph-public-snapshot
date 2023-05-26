@@ -102,7 +102,7 @@ extend type Mutation {
         indexingEnabled: Boolean!
         indexCommitMaxAgeHours: Int
         indexIntermediateCommits: Boolean!
-        embeddingsEnabled: Boolean!
+        embeddingsEnabled: Boolean
     ): CodeIntelligenceConfigurationPolicy!
 
     """
