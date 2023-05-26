@@ -412,7 +412,7 @@ func TestService(t *testing.T) {
 						t.Fatal(err)
 					}
 				}
-				canAdminister, _ := svc.CanAdministerInNamespace(ctx, tc.batchChange.NamespaceUserID, tc.batchChange.NamespaceOrgID)
+				canAdminister, _ := svc.CheckViewerCanAdminister(ctx, tc.batchChange.NamespaceUserID, tc.batchChange.NamespaceOrgID)
 
 				if canAdminister != tc.canAdminister {
 					t.Fatalf("expected canAdminister to be %t, got %t", tc.canAdminister, canAdminister)

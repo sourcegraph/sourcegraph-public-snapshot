@@ -67,7 +67,7 @@ func (s *Service) ApplyBatchChange(
 	// 🚨 SECURITY: Only site-admins or the creator of batchSpec can apply it.
 	// If the batch change belongs to an org namespace, org members will be able to access it if
 	// the `orgs.allMembersBatchChangesAdmin` setting is true.
-	if err := s.checkBatchChangeAdmin(ctx, batchSpec.NamespaceOrgID, batchSpec.UserID, false); err != nil {
+	if err := s.checkViewerCanAdminister(ctx, batchSpec.NamespaceOrgID, batchSpec.UserID, false); err != nil {
 		return nil, err
 	}
 
