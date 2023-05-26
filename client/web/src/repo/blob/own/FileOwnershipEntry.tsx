@@ -1,10 +1,10 @@
-import React, { useCallback, useState } from 'react'
+import React from 'react'
 
 import { mdiEmail } from '@mdi/js'
 
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
-import { Badge, Button, ButtonLink, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import {
     AssignedOwnerFields,
@@ -15,7 +15,8 @@ import {
 } from '../../../graphql-operations'
 import { PersonLink } from '../../../person/PersonLink'
 
-import styles from './FileOwnershipEntry.module.scss'
+import { OwnershipBadge } from './OwnershipBadge'
+
 import containerStyles from './FileOwnershipPanel.module.scss'
 
 interface Props {
@@ -30,12 +31,6 @@ type OwnershipReason =
     | AssignedOwnerFields
 
 export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reasons }) => {
-    // TODO remove callback and state
-    const [isExpanded, setIsExpanded] = useState<boolean>(false)
-    const toggleIsExpanded = useCallback<React.MouseEventHandler<HTMLButtonElement>>(() => {
-        setIsExpanded(!isExpanded)
-    }, [isExpanded])
-
     const findEmail = (): string | undefined => {
         if (owner.__typename !== 'Person') {
             return undefined
@@ -86,28 +81,9 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reas
                 </div>
             </td>
             <td className={containerStyles.expanding}>
-                {reasons.map(reason => {
-                    // For CODEOWNERS, the Badge links to the codeowners rule
-                    let link: string | null = null
-                    if (reason.__typename === 'CodeownersFileEntry') {
-                        link = `${reason.codeownersFile.url}?L${reason.ruleLineMatch}`
-                    }
-                    return link !== null ? (
-                        <Badge
-                            key={reason.title}
-                            tooltip={reason.description}
-                            className={styles.badge}
-                            as={Link}
-                            to={link}
-                        >
-                            {reason.title}
-                        </Badge>
-                    ) : (
-                        <Badge key={reason.title} tooltip={reason.description} className={styles.badge}>
-                            {reason.title}
-                        </Badge>
-                    )
-                })}
+                {reasons.map(reason => (
+                    <OwnershipBadge key={reason.title} reason={reason} />
+                ))}
             </td>
         </tr>
     )
