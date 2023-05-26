@@ -130,7 +130,7 @@ func (d fileOwnershipData) NonEmpty() bool {
 	return false
 }
 
-func (d fileOwnershipData) Contains(bag own.Bag) bool {
+func (d fileOwnershipData) IsWithin(bag own.Bag) bool {
 	for _, o := range d.rule.GetOwner() {
 		if bag.Contains(own.Reference{
 			Handle: o.Handle,
