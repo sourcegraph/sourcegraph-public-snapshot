@@ -140,6 +140,9 @@ extend type Mutation {
     """
     Deletes the configuration policy with the given identifier.
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     deleteCodeIntelligenceConfigurationPolicy(policy: ID!): EmptyResponse
 }
 
