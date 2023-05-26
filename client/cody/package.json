@@ -188,6 +188,10 @@
         "command": "cody.guardrails.debug",
         "title": "Cody: Guardrails Debug Attribution",
         "enablement": "config.cody.debug && config.cody.experimental.guardrails && editorHasSelection"
+      },
+      {
+        "command": "cody.recipe.file-flow",
+        "title": "Ask Cody: Generate New File"
       }
     ],
     "keybindings": [
@@ -221,6 +225,10 @@
         },
         {
           "command": "cody.recipe.explain-code-high-level",
+          "when": "cody.activated"
+        },
+        {
+          "command": "cody.recipe.file-flow",
           "when": "cody.activated"
         },
         {
@@ -282,6 +290,10 @@
         },
         {
           "command": "cody.recipe.explain-code-high-level",
+          "when": "cody.activated"
+        },
+        {
+          "command": "cody.recipe.file-flow",
           "when": "cody.activated"
         },
         {
