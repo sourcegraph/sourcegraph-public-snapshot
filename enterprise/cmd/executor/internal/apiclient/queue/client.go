@@ -59,6 +59,7 @@ func (c *Client) QueuedCount(ctx context.Context) (int, error) {
 }
 
 func (c *Client) Dequeue(ctx context.Context, workerHostname string, extraArguments any) (job types.Job, _ bool, err error) {
+	var queueAttr attribute.KeyValue
 	var endpoint string
 	dequeueRequest := types.DequeueRequest{
 		Version:      version.Version(),
@@ -67,17 +68,18 @@ func (c *Client) Dequeue(ctx context.Context, workerHostname string, extraArgume
 		Memory:       c.options.ResourceOptions.Memory,
 		DiskSpace:    c.options.ResourceOptions.DiskSpace,
 	}
-	var observationField attribute.KeyValue
+
 	if len(c.options.QueueNames) > 0 {
-		observationField = attribute.String("queueNames", strings.Join(c.options.QueueNames, ", "))
+		queueAttr = attribute.String("queueNames", strings.Join(c.options.QueueNames, ","))
 		endpoint = "/dequeue"
 		dequeueRequest.Queues = c.options.QueueNames
 	} else {
-		observationField = attribute.String("queueName", c.options.QueueName)
+		queueAttr = attribute.String("queueName", c.options.QueueName)
 		endpoint = fmt.Sprintf("%s/dequeue", c.options.QueueName)
 	}
+
 	ctx, _, endObservation := c.operations.dequeue.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		observationField,
+		queueAttr,
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -93,7 +95,7 @@ func (c *Client) Dequeue(ctx context.Context, workerHostname string, extraArgume
 func (c *Client) MarkComplete(ctx context.Context, job types.Job) (_ bool, err error) {
 	queue := c.inferQueueName(job)
 	ctx, _, endObservation := c.operations.markComplete.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("queueName", c.options.QueueName),
+		attribute.String("queueName", queue),
 		attribute.Int("jobID", job.ID),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -115,13 +117,14 @@ func (c *Client) MarkComplete(ctx context.Context, job types.Job) (_ bool, err e
 }
 
 func (c *Client) MarkErrored(ctx context.Context, job types.Job, failureMessage string) (_ bool, err error) {
+	queue := c.inferQueueName(job)
 	ctx, _, endObservation := c.operations.markErrored.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("queueName", c.options.QueueName),
+		attribute.String("queueName", queue),
 		attribute.Int("jobID", job.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/markErrored", c.options.QueueName), job.Token, types.MarkErroredRequest{
+	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/markErrored", queue), job.Token, types.MarkErroredRequest{
 		JobOperationRequest: types.JobOperationRequest{
 			ExecutorName: c.options.ExecutorName,
 			JobID:        job.ID,
@@ -139,13 +142,14 @@ func (c *Client) MarkErrored(ctx context.Context, job types.Job, failureMessage 
 }
 
 func (c *Client) MarkFailed(ctx context.Context, job types.Job, failureMessage string) (_ bool, err error) {
+	queue := c.inferQueueName(job)
 	ctx, _, endObservation := c.operations.markFailed.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("queueName", c.options.QueueName),
+		attribute.String("queueName", queue),
 		attribute.Int("jobID", job.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/markFailed", c.options.QueueName), job.Token, types.MarkErroredRequest{
+	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/markFailed", queue), job.Token, types.MarkErroredRequest{
 		JobOperationRequest: types.JobOperationRequest{
 			ExecutorName: c.options.ExecutorName,
 			JobID:        job.ID,
@@ -306,6 +310,18 @@ func (c *Client) Ping(ctx context.Context) (err error) {
 	}
 
 	return c.client.DoAndDrop(ctx, req)
+}
+
+func (c *Client) getFirstQueueName() string {
+	// TODO: temp solution to allow multi-queue executor to start up before heartbeats are implemented.
+	// Simply pick the first queue name when multiple are configured
+	var queue string
+	if len(c.options.QueueNames) > 0 {
+		queue = c.options.QueueNames[0]
+	} else {
+		queue = c.options.QueueName
+	}
+	return queue
 }
 
 func (c *Client) AddExecutionLogEntry(ctx context.Context, job types.Job, entry internalexecutor.ExecutionLogEntry) (entryID int, err error) {
