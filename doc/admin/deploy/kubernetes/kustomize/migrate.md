@@ -36,11 +36,11 @@ The goal of this migration process is to create a new overlay that will generate
 
 ## Step 1: Upgrade current instance with the old repository
 
-Upgrade your current instance to the latest version of Sourcegraph (must be 4.5.0 or above) following the [standard upgrade process](../update.md#standard-upgrades) for the repository ([deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph)) your instance was deployed with.
+Upgrade your current instance to the latest version of Sourcegraph (must be 4.5.0 or above) following the [standard upgrade process](../upgrade.md#standard-upgrades) for the repository ([deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph)) your instance was deployed with.
 
 ### From Privileged to Non-privileged
 
-Sourcegraph's deployment mode changed from privileged (containers run as root) to non-privileged (containers run as non-root) as the default in the new Kustomize setup. If your instance is currently running in privileged mode and you want to upgrade to `non-privileged` mode, use the [migrate-to-nonprivileged overlay](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays/migrate-to-nonprivileged) from the Sourcegraph [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository when following the [standard upgrade process](../update.md#standard-upgrades) to perform your upgrade.
+Sourcegraph's deployment mode changed from privileged (containers run as root) to non-privileged (containers run as non-root) as the default in the new Kustomize setup. If your instance is currently running in privileged mode and you want to upgrade to `non-privileged` mode, use the [migrate-to-nonprivileged overlay](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays/migrate-to-nonprivileged) from the Sourcegraph [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository when following the [standard upgrade process](../upgrade.md#standard-upgrades) to perform your upgrade.
    
 >NOTE: Applying the [migrate-to-nonprivileged overlay](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays/migrate-to-nonprivileged) will convert your deployment to run in non-privileged mode
 
