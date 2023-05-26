@@ -10,6 +10,7 @@ go_library(
         "scip_compressor.go",
         "scip_migrator.go",
         "serializer.go",
+        "symbol_lookup.go",
         "types.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/codeintel",
