@@ -1,11 +1,16 @@
 include: ./postgresql-12.yaml
 
 paths:
+  - path: /data
+    type: directory
+    uid: 70
+    gid: 70
+    permissions: 0o750
   - path: /data/pgdata-12
     type: directory
     uid: 70
     gid: 70
-    permissions: 0o755
+    permissions: 0o750
   - path: /var/lib/postgresql
     type: directory
     uid: 70
