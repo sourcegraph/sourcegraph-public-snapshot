@@ -52,6 +52,13 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     border: none;
 }
 
+.code-blocks-insert-button {
+    color: var(--vscode-button-secondaryForeground);
+    background-color: var(--vscode-button-secondaryBackground);
+    border: none;
+    border-right: 1px solid var(--vscode-button-secondaryForeground);
+}
+
 .input-row {
     border-top: solid 1px var(--vscode-sideBarSectionHeader-border);
 }

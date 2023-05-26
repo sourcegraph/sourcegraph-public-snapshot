@@ -1,16 +1,38 @@
-.container {
+.code-block-container {
     position: relative;
+    overflow: visible;
 }
 
 .copy-button {
     position: absolute;
-    top: 0;
+    bottom: 0;
     right: 0;
+    width: 50%;
     visibility: hidden;
     cursor: pointer;
-    padding: 0.5rem;
+    padding: 0.2rem;
+    opacity: 0.8;
 }
 
-.container:hover .copy-button {
+.insert-button {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 50%;
+    visibility: hidden;
+    cursor: pointer;
+    padding: 0.2rem;
+    opacity: 0.8;
+}
+
+.none {
+    visibility: none;
+}
+
+.code-block-container:hover .copy-button {
+    visibility: visible;
+}
+
+.code-block-container:hover .insert-button {
     visibility: visible;
 }

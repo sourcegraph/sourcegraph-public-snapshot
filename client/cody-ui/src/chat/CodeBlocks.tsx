@@ -12,6 +12,7 @@ interface CodeBlocksProps {
     displayText: string
 
     copyButtonClassName?: string
+    insertButtonClassName?: string
 
     CopyButtonProps?: CopyButtonProps['copyButtonOnSubmit']
 }
@@ -27,7 +28,8 @@ function wrapElement(element: HTMLElement, wrapperElement: HTMLElement): void {
 function createCopyButtonWithContainer(
     text: string,
     className: string,
-    copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
+    copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit'],
+    insertButtonClassName?: string
 ): HTMLElement {
     const copyButton = document.createElement('button')
     copyButton.textContent = 'Copy'
@@ -40,26 +42,50 @@ function createCopyButtonWithContainer(
             copyButtonOnSubmit('copyButton')
         }
     })
+    // The insert button is for IDE integrations. It allows the user to insert the code into the editor.
+    const insertButton = createInsertButton(text, insertButtonClassName, copyButtonOnSubmit)
 
     // The container will contain the copy button and the <pre> element with the code.
     // This allows us to position the copy button independent of the code.
     const container = document.createElement('div')
     container.className = styles.container
-    container.append(copyButton)
+    container.append(copyButton, insertButton)
     return container
+}
+
+function createInsertButton(
+    text: string,
+    insertButtonClassName?: string,
+    copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
+): HTMLElement {
+    if (!insertButtonClassName || !copyButtonOnSubmit) {
+        return document.createElement('span')
+    }
+    const insertButton = document.createElement('button')
+    insertButton.textContent = 'Insert'
+    insertButton.title = 'Insert code into current cursor position in editor'
+    insertButton.className = classNames(styles.insertButton, insertButtonClassName)
+    insertButton.addEventListener('click', () => {
+        copyButtonOnSubmit(text, true)
+        insertButton.textContent = 'Inserted!'
+        setTimeout(() => (insertButton.textContent = 'Insert'), 3000)
+    })
+    return insertButton
 }
 
 export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = ({
     displayText,
     copyButtonClassName,
     CopyButtonProps,
+    insertButtonClassName,
 }) => {
     useEffect(() => {
         const preElements = document.querySelectorAll('pre')
         for (const preElement of preElements) {
             const preText = preElement.textContent
+            // check if preElement has button element
             const hasCopyButton = preElement.querySelector(`.${styles.container}`)
-            if (!hasCopyButton && preText && preText.trim().length > 0) {
+            if (!hasCopyButton && preText?.trim()) {
                 // We have to wrap the `<pre>` tag in the copy button container, otherwise
                 // the Copy button scrolls along with the code.
                 wrapElement(
@@ -67,12 +93,13 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = ({
                     createCopyButtonWithContainer(
                         preText,
                         classNames(styles.copyButton, copyButtonClassName),
-                        CopyButtonProps
+                        CopyButtonProps,
+                        classNames(styles.insertButton, insertButtonClassName)
                     )
                 )
             }
         }
-    }, [copyButtonClassName, displayText, CopyButtonProps])
+    }, [CopyButtonProps, copyButtonClassName, displayText, insertButtonClassName])
 
     return useMemo(() => <div dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(displayText) }} />, [displayText])
 }
