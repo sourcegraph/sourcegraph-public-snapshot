@@ -468,7 +468,7 @@ func (r *UserResolver) CompletionsQuotaOverride(ctx context.Context) (*int32, er
 		return nil, err
 	}
 
-	v, err := r.db.Users().GetCompletionsQuota(ctx, r.user.ID)
+	v, err := r.db.Users().GetChatCompletionsQuota(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -621,7 +621,7 @@ func (r *schemaResolver) SetUserCompletionsQuota(ctx context.Context, args SetUs
 		i := int(*args.Quota)
 		quota = &i
 	}
-	if err := r.db.Users().SetCompletionsQuota(ctx, user.ID, quota); err != nil {
+	if err := r.db.Users().SetChatCompletionsQuota(ctx, user.ID, quota); err != nil {
 		return nil, err
 	}
 
