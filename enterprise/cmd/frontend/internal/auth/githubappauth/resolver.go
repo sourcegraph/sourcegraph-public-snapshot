@@ -3,6 +3,7 @@ package githubapp
 import (
 	"context"
 	"net/url"
+	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -104,7 +105,7 @@ func parseDomain(s *string) (*itypes.GitHubAppDomain, error) {
 	if s == nil {
 		return nil, nil
 	}
-	switch *s {
+	switch strings.ToUpper(*s) {
 	case "REPOS":
 		domain := itypes.ReposDomain
 		return &domain, nil
