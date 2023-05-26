@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -80,7 +81,20 @@ func (r Reference) String() string {
 type Bag interface {
 	// Contains answers true if given bag contains an owner form
 	// that the given reference points at in some way.
-	Contains(ref Reference) bool
+	Contains(Reference) bool
+
+	Get(Reference) codeowners.ResolvedOwner
+
+	Add(Reference)
+
+	Resolve(context.Context, edb.EnterpriseDB) error
+}
+
+func EmptyBag() *bag {
+	return &bag{
+		resolvedUsers: map[int32]*userReferences{},
+		references:    map[refKey]*refContext{},
+	}
 }
 
 // ByTextReference returns a Bag of all the forms (users, persons, teams)
@@ -90,10 +104,7 @@ type Bag interface {
 // TODO(#52141): Search by code host handle.
 // TODO(#52246): ByTextReference uses fewer queries.
 func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text ...string) (Bag, error) {
-	b := &bag{
-		resolvedUsers: map[int32]*userReferences{},
-		references:    map[refKey]*refContext{},
-	}
+	b := EmptyBag()
 	for _, t := range text {
 		// Empty text does not resolve at all.
 		if t == "" {
@@ -105,7 +116,7 @@ func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text ...string) (
 			b.add(refKey{handle: strings.TrimPrefix(t, "@")})
 		}
 	}
-	if err := b.resolve(ctx, db); err != nil {
+	if err := b.Resolve(ctx, db); err != nil {
 		return nil, err
 	}
 	return b, nil
@@ -152,6 +163,46 @@ func (b bag) Contains(ref Reference) bool {
 	return false
 }
 
+func (b bag) Get(ref Reference) codeowners.ResolvedOwner {
+	var ks []refKey
+	if id := ref.UserID; id != 0 {
+		ks = append(ks, refKey{userID: id})
+	}
+	if h := ref.Handle; h != "" {
+		ks = append(ks, refKey{handle: strings.TrimPrefix(h, "@")})
+	}
+	if e := ref.Email; e != "" {
+		ks = append(ks, refKey{email: e})
+	}
+	// Attempt to find user by any reference:
+	for _, k := range ks {
+		if refCtx, ok := b.references[k]; ok {
+			if id := refCtx.resolvedUserID; id != 0 {
+				userRefs := b.resolvedUsers[id]
+				// TODO: Email resolution here is best effort,
+				// we do not know if this is primary email.
+				var email *string
+				if len(userRefs.verifiedEmails) > 0 {
+					e := userRefs.verifiedEmails[0]
+					email = &e
+				}
+				return &codeowners.Person{
+					User:         userRefs.user,
+					PrimaryEmail: email,
+					Handle:       userRefs.user.Username,
+					// TODO: How to set email?
+				}
+			}
+		}
+	}
+	// Best effort, return the default asssumed person based
+	// on the input:
+	return &codeowners.Person{
+		Handle: ref.Handle,
+		Email:  ref.Email,
+	}
+}
+
 func (b bag) String() string {
 	var mapping []string
 	for k, refCtx := range b.references {
@@ -159,6 +210,21 @@ func (b bag) String() string {
 	}
 	// TODO add unresolved references to the bag
 	return fmt.Sprintf("[%s]", strings.Join(mapping, ", "))
+}
+
+// Add inserts all given references individually to the Bag.
+// Next time Resolve is called, Bag will attempt to evaluate these
+// against the database.
+func (b *bag) Add(ref Reference) {
+	if e := ref.Email; e != "" {
+		b.add(refKey{email: e})
+	}
+	if h := ref.Handle; h != "" {
+		b.add(refKey{handle: h})
+	}
+	if id := ref.UserID; id != 0 {
+		b.add(refKey{userID: id})
+	}
 }
 
 // add inserts given reference key (one of: user ID, email, handle)
@@ -169,12 +235,12 @@ func (b *bag) add(k refKey) {
 	}
 }
 
-// resolve takes all references that were added but not resolved
+// Resolve takes all references that were added but not resolved
 // before and queries the database to find corresponding users.
 // Fetched users are augmented with all the other references that
 // can point to them (also from the database), and the newly fetched
 // references are then linked back to the bag.
-func (b *bag) resolve(ctx context.Context, db edb.EnterpriseDB) error {
+func (b *bag) Resolve(ctx context.Context, db edb.EnterpriseDB) error {
 	for k, refCtx := range b.references {
 		if !refCtx.resolutionDone {
 			userRefs, err := k.fetch(ctx, db)
