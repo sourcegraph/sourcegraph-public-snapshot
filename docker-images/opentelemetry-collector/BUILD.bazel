@@ -24,3 +24,10 @@ oci_tarball(
     image = ":image",
     repo_tags = ["opentelemetry-collector:candidate"],
 )
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    remote_tags = "//:tags",
+    repository = image_repository("opentelemetry-collector"),
+)

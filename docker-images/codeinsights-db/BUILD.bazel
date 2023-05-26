@@ -41,3 +41,10 @@ oci_tarball(
     image = ":image",
     repo_tags = ["codeinsights-db:candidate"],
 )
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    remote_tags = "//:tags",
+    repository = image_repository("codeinsights-db"),
+)
