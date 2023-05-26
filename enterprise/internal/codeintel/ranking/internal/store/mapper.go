@@ -161,11 +161,10 @@ referenced_definitions AS (
 			-- Group by repository/root/indexer and order by descending ids. We
 			-- will only count the rows with rank = 1 in the outer query in order
 			-- to break ties when shadowed definitions are present.
-			RANK() OVER (PARTITION BY cre.upload_key ORDER BY u.id DESC) AS rank
+			RANK() OVER (PARTITION BY cre.upload_key ORDER BY cre.upload_id DESC) AS rank
 		FROM codeintel_ranking_definitions rd
 		JOIN referenced_symbols rs ON rs.symbol_name = rd.symbol_name
 		JOIN codeintel_ranking_exports cre ON cre.id = rd.exported_upload_id
-		JOIN lsif_uploads u ON u.id = cre.upload_id
 		JOIN progress p ON TRUE
 		WHERE
 			rd.graph_key = %s AND
