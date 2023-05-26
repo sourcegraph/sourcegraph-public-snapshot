@@ -23,10 +23,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -468,7 +468,7 @@ func TracedTransportOpt(cli *http.Client) error {
 
 	// Collect and propagate OpenTelemetry trace (among other formats initialized
 	// in internal/tracer)
-	cli.Transport = otelhttp.NewTransport(cli.Transport)
+	cli.Transport = instrumentation.NewHTTPTransport(cli.Transport)
 
 	return nil
 }
