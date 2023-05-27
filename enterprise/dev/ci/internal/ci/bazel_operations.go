@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
 )
 
+// Trigger CI
 func BazelOperations() []operations.Operation {
 	ops := []operations.Operation{}
 	// ops = append(ops, bazelConfigure())
