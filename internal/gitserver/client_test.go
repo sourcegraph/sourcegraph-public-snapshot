@@ -1006,6 +1006,8 @@ func TestGitserverClient_RepoClone(t *testing.T) {
 		},
 	})
 
+	defer conf.Mock(nil)
+
 	db := newMockDB()
 	s := server.Server{
 		Logger:   logtest.Scoped(t),
@@ -1071,6 +1073,7 @@ type spyGitserverServiceClient struct {
 
 // RepoCloneProgress implements v1.GitserverServiceClient
 func (s *spyGitserverServiceClient) RepoCloneProgress(ctx context.Context, in *proto.RepoCloneProgressRequest, opts ...grpc.CallOption) (*proto.RepoCloneProgressResponse, error) {
+	s.repoCloneProgress = true
 	return s.base.RepoCloneProgress(ctx, in, opts...)
 }
 
