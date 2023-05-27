@@ -24,6 +24,7 @@ import { VSCodeEditor } from '../editor/vscode-editor'
 import { logEvent } from '../event-logger'
 import { LocalAppDetector } from '../local-app-detector'
 import { debug } from '../log'
+import { FixupTask } from '../non-stop/FixupTask'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../services/SecretStorageProvider'
 import { TestSupport } from '../test-support'
@@ -305,7 +306,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
                     highlightedDisplayText = await this.guardrailsAnnotateAttributions(highlightedDisplayText)
                     this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
-                    this.editor.controller.reply(highlightedDisplayText)
+                    this.editor.controllers.inline.reply(highlightedDisplayText)
                 }
                 void this.onCompletionEnd()
             },
@@ -791,6 +792,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             return []
         }
         return this.transcript.toChat()
+    }
+
+    public fixupTasksForTesting(testing: TestSupport): FixupTask[] {
+        if (!testing) {
+            console.error('used ForTesting method without test support object')
+            return []
+        }
+        return this.editor.controllers.task.getTasks()
     }
 
     public dispose(): void {

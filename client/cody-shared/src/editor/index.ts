@@ -21,12 +21,22 @@ export interface ActiveTextEditorVisibleContent {
     revision?: string
 }
 
-export interface InlineController {
+interface VsCodeInlineController {
     selection: ActiveTextEditorSelection | null
 }
 
+interface VsCodeTaskContoller {
+    add(input: string, selection: ActiveTextEditorSelection): string | null
+    stop(taskID: string): void
+}
+
+export interface ActiveTextEditorViewControllers {
+    inline: VsCodeInlineController
+    task: VsCodeTaskContoller
+}
+
 export interface Editor {
-    controller?: InlineController
+    controllers?: ActiveTextEditorViewControllers
     getWorkspaceRootPath(): string | null
     getActiveTextEditor(): ActiveTextEditor | null
     getActiveTextEditorSelection(): ActiveTextEditorSelection | null

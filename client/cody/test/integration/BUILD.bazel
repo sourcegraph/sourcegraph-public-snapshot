@@ -28,6 +28,7 @@ ts_project(
         "index.ts",
         "main.ts",
         "recipes.test.ts",
+        "task-controller.test.ts",
     ],
     tsconfig = ":tsconfig",
     deps = [
