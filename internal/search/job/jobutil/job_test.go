@@ -1476,13 +1476,17 @@ func RunRepoSubsetTextSearch(
 			return nil, streaming.Stats{}, err
 		}
 
-		zoektJob := &zoektutil.RepoSubsetTextSearchJob{
-			Repos:          indexed,
-			Query:          zoektQuery,
-			Typ:            search.TextRequest,
+		zoektParams := &search.ZoektParameters{
 			FileMatchLimit: patternInfo.FileMatchLimit,
 			Select:         patternInfo.Select,
-			Since:          nil,
+		}
+
+		zoektJob := &zoektutil.RepoSubsetTextSearchJob{
+			Repos:       indexed,
+			Query:       zoektQuery,
+			Typ:         search.TextRequest,
+			ZoektParams: zoektParams,
+			Since:       nil,
 		}
 
 		// Run literal and regexp searches on indexed repositories.

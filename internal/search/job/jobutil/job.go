@@ -768,7 +768,7 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 	includePrivate := b.repoOptions.Visibility == query.Private || b.repoOptions.Visibility == query.Any
 	globalZoektQuery := zoekt.NewGlobalZoektQuery(zoektQuery, defaultScope, includePrivate)
 
-	zoektArgs := &search.ZoektParameters{
+	zoektParams := &search.ZoektParameters{
 		// TODO(rvantonder): the Query value is set when the global zoekt query is
 		// enriched with private repository data in the search job's Run method, and
 		// is therefore set to `nil` below.
@@ -785,13 +785,13 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 	case search.SymbolRequest:
 		return &zoekt.GlobalSymbolSearchJob{
 			GlobalZoektQuery: globalZoektQuery,
-			ZoektArgs:        zoektArgs,
+			ZoektParams:      zoektParams,
 			RepoOpts:         b.repoOptions,
 		}, nil
 	case search.TextRequest:
 		return &zoekt.GlobalTextSearchJob{
 			GlobalZoektQuery:        globalZoektQuery,
-			ZoektArgs:               zoektArgs,
+			ZoektParams:             zoektParams,
 			RepoOpts:                b.repoOptions,
 			GlobalZoektQueryRegexps: zoektQueryPatternsAsRegexps(globalZoektQuery.Query),
 		}, nil
@@ -805,22 +805,24 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 		return nil, err
 	}
 
+	zoektParams := &search.ZoektParameters{
+		FileMatchLimit: b.fileMatchLimit,
+		Select:         b.selector,
+		Features:       *b.features,
+	}
+
 	switch typ {
 	case search.SymbolRequest:
 		return &zoekt.SymbolSearchJob{
-			Query:          zoektQuery,
-			FileMatchLimit: b.fileMatchLimit,
-			Select:         b.selector,
-			Features:       *b.features,
+			Query:       zoektQuery,
+			ZoektParams: zoektParams,
 		}, nil
 	case search.TextRequest:
 		return &zoekt.RepoSubsetTextSearchJob{
 			Query:             zoektQuery,
 			ZoektQueryRegexps: zoektQueryPatternsAsRegexps(zoektQuery),
 			Typ:               typ,
-			FileMatchLimit:    b.fileMatchLimit,
-			Select:            b.selector,
-			Features:          *b.features,
+			ZoektParams:       zoektParams,
 		}, nil
 	}
 	return nil, errors.Errorf("attempt to create unrecognized zoekt search with value %v", typ)

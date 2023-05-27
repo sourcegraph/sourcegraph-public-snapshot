@@ -310,13 +310,17 @@ func TestIndexedSearch(t *testing.T) {
 				t.Errorf("unindexed mismatch (-want +got):\n%s", diff)
 			}
 
-			zoektJob := &RepoSubsetTextSearchJob{
-				Repos:          indexed,
-				Query:          zoektQuery,
-				Typ:            search.TextRequest,
+			zoektParams := &search.ZoektParameters{
 				FileMatchLimit: tt.args.fileMatchLimit,
 				Select:         tt.args.selectPath,
-				Since:          tt.args.since,
+			}
+
+			zoektJob := &RepoSubsetTextSearchJob{
+				Repos:       indexed,
+				Query:       zoektQuery,
+				Typ:         search.TextRequest,
+				ZoektParams: zoektParams,
+				Since:       tt.args.since,
 			}
 
 			_, err = zoektJob.Run(tt.args.ctx, job.RuntimeClients{Zoekt: fakeZoekt}, agg)
