@@ -87,7 +87,7 @@ func bazelAnnouncef(format string, args ...any) bk.StepOpt {
 
 func bazelTest(targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
-		bk.DependsOn("bazel-configure"),
+		// bk.DependsOn("bazel-configure"),
 		bk.Agent("queue", "bazel"),
 		bk.Key("bazel-tests"),
 		bk.ArtifactPaths("./bazel-testlogs/enterprise/cmd/embeddings/shared/shared_test/*.log"),
