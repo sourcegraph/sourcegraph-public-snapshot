@@ -12,6 +12,7 @@ import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
+import { TaskController } from './non-stop/TaskController'
 import { getRgPath } from './rg'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { InlineController } from './services/InlineController'
@@ -79,7 +80,10 @@ const register = async (
     const commentController = new InlineController(context.extensionPath)
     disposables.push(commentController.get())
 
-    const editor = new VSCodeEditor(commentController)
+    const taskController = new TaskController()
+    const controllers = { inline: commentController, task: taskController }
+
+    const editor = new VSCodeEditor(controllers)
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
 
@@ -251,6 +255,16 @@ const register = async (
                 await guardrailsProvider.debugEditorSelection()
             })
         )
+    }
+    // Register task view and non-stop cody command when feature flag is on
+    if (initialConfig.experimentalNonStop || process.env.CODY_TESTING === 'true') {
+        disposables.push(vscode.window.registerTreeDataProvider('cody.fixup.tree.view', taskController.getTaskView()))
+        disposables.push(
+            vscode.commands.registerCommand('cody.recipe.non-stop', async () => {
+                await chatProvider.executeRecipe('non-stop', '', false)
+            })
+        )
+        await vscode.commands.executeCommand('setContext', 'cody.nonstop.fixups.enabled', true)
     }
 
     return {

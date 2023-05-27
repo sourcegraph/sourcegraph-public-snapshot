@@ -5,19 +5,35 @@ import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { Interaction } from '../transcript/interaction'
 
-import { contentSanitizer } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
-export class Fixup implements Recipe {
-    public id: RecipeID = 'fixup'
+// TODO: Disconnect recipe from chat
+export class NonStop implements Recipe {
+    public id: RecipeID = 'non-stop'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        // TODO: Prompt the user for additional direction.
-        const selection = context.editor.getActiveTextEditorSelection() || context.editor.controllers?.inline.selection
-        if (!selection) {
-            await context.editor.showWarningMessage('Select some code to fixup.')
+        const controllers = context.editor.controllers
+        const selection = context.editor.getActiveTextEditorSelection()
+
+        if (!controllers || !selection) {
+            await context.editor.showWarningMessage('Cody Fixups: Failed to start.')
             return null
         }
+
+        // TODO: Remove dependency on human input and use input box only
+        const humanInput =
+            humanChatInput ||
+            (await context.editor.showInputBox('Ask Cody to edit your code, or use /chat to ask a question.')) ||
+            ''
+
+        const taskID = controllers.task.add(humanInput, selection)
+        if ((!humanInput && !selection.selectedText.trim()) || !taskID) {
+            await context.editor.showWarningMessage(
+                'Cody Fixups: Failed to start due to missing instruction with empty selection.'
+            )
+            return null
+        }
+
         const quarterFileContext = Math.floor(MAX_CURRENT_FILE_TOKENS / 4)
         if (truncateText(selection.selectedText, quarterFileContext * 2) !== selection.selectedText) {
             const msg = "The amount of text selected exceeds Cody's current capacity."
@@ -27,9 +43,8 @@ export class Fixup implements Recipe {
 
         // Reconstruct Cody's prompt using user's context
         // Replace placeholders in reverse order to avoid collisions if a placeholder occurs in the input
-        // TODO: Move prompt suffix from recipe to chat view. It has other subscribers.
-        const promptText = Fixup.prompt
-            .replace('{humanInput}', truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS))
+        const promptText = NonStop.prompt
+            .replace('{humanInput}', truncateText(humanInput, MAX_HUMAN_INPUT_TOKENS))
             .replace('{responseMultiplexerPrompt}', context.responseMultiplexer.prompt())
             .replace('{truncateFollowingText}', truncateText(selection.followingText, quarterFileContext))
             .replace('{selectedText}', selection.selectedText)
@@ -39,17 +54,13 @@ export class Fixup implements Recipe {
         context.responseMultiplexer.sub(
             'selection',
             new BufferedBotResponseSubscriber(async content => {
+                // TODO Handles LLM output
+                // TODO Replace the selected text with the suggested replacement
+                // Mark the task as done
+                controllers.task.stop(taskID)
                 if (!content) {
-                    await context.editor.showWarningMessage(
-                        'Cody did not suggest any replacement.\nTry starting a new conversation with Cody.'
-                    )
-                    return
+                    await context.editor.showWarningMessage('Cody did not suggest any replacement.')
                 }
-                await context.editor.replaceSelection(
-                    selection.fileName,
-                    selection.selectedText,
-                    contentSanitizer(content)
-                )
             })
         )
 
@@ -58,11 +69,11 @@ export class Fixup implements Recipe {
                 {
                     speaker: 'human',
                     text: promptText,
-                    displayText: 'Fixup request ' + humanChatInput,
+                    displayText: 'Cody Fixups: ' + humanInput,
                 },
                 {
                     speaker: 'assistant',
-                    prefix: 'Check your document for updates from Cody.\n',
+                    prefix: 'Check your document for updates from Cody.',
                 },
                 this.getContextMessages(selection.selectedText, context.codebaseContext)
             )
@@ -80,22 +91,22 @@ export class Fixup implements Recipe {
 
     // Prompt Templates
     public static readonly prompt = `
-    This is part of the file {fileName}. The part of the file I have selected is highlighted with <selection> tags. You are helping me to work on that part as my coding assistant.
-    Follow the instructions in the selected part plus the additional instructions to produce a rewritten replacement for only the selected part.
+    This is part of the file {fileName}. The part of the file I have selected is enclosed with the <selection> tags. You are helping me to work on that part as my coding assistant.
+    Follow the instructions in the selected part along with the additional instruction provide below to produce a rewritten replacement for only the selected part.
     Put the rewritten replacement inside <selection> tags. I only want to see the code within <selection>.
     Do not move code from outside the selection into the selection in your reply.
     Do not remove code inside the <selection> tags that might be being used by the code outside the <selection> tags.
-    It is OK to provide some commentary within the replacement <selection>.
-    It is not acceptable to enclose the rewritten replacement with markdowns.
-    Only provide me with the replacement <selection> and nothing else.
-    If it doesn't make sense, you do not need to provide <selection>. Instead, tell me how I can help you to understand my request.
+    Do not enclose replacement code with tags other than the <selection> tags.
+    Do not enclose your answer with any markdown.
+    Only return provide me the replacement <selection> and nothing else.
+    If it doesn't make sense, you do not need to provide <selection>.
 
     \`\`\`
     {truncateTextStart}<selection>{selectedText}</selection>{truncateFollowingText}
     \`\`\`
 
     Additional Instruction:
-    - {responseMultiplexerPrompt}
     - {humanInput}
+    - {responseMultiplexerPrompt}
 `
 }
