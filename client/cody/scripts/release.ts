@@ -3,7 +3,8 @@ import childProcess from 'child_process'
 
 import * as semver from 'semver'
 
-import { version } from '../package.json'
+// eslint-disable-next-line  @typescript-eslint/no-require-imports, @typescript-eslint/no-var-requires
+const { version } = require('../package.json')
 
 /**
  * This script is used by the CI to publish the extension to the VS Code Marketplace.
@@ -34,7 +35,12 @@ const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
 // Set the version number for today's nightly build.
 // The patch number should be today's date while major and minor should reminds the same as package.json version.
 // Example: 1.0.0 in package.json -> 1.0.today's date -> 1.0.20210101
-const tonightVersion = version.replace(/\.\d+$/, `.${today}`)
+const currentVersion = semver.valid(version)
+const tonightVersion = currentVersion?.replace(/\.\d+$/, `.${today}`)
+
+if (!tonightVersion || !currentVersion) {
+    throw new Error("Could not get the version number for tonight's build.")
+}
 
 export const commands = {
     // Get the latest release version number of the last release from VS Code Marketplace
@@ -51,9 +57,11 @@ if (!hasTokens) {
     throw new Error('Cannot publish extension without tokens.')
 }
 
-// Build and bundle the extension
-childProcess.execSync('pnpm run download-rg', { stdio: 'inherit' })
-childProcess.execSync('pnpm run vsce:package', { stdio: 'inherit' })
+if (releaseType !== 'dry-run') {
+    // Build and bundle the extension
+    childProcess.execSync('pnpm run download-rg', { stdio: 'inherit' })
+    childProcess.execSync('pnpm run vsce:package', { stdio: 'inherit' })
+}
 
 // Run the publish commands based on the release type
 switch (releaseType) {
@@ -61,7 +69,7 @@ switch (releaseType) {
         console.log(
             !semver.valid(tonightVersion)
                 ? 'Not a valid version number: ' + tonightVersion
-                : 'Pre-release number for tonights build is ' + tonightVersion
+                : `Current version is ${currentVersion} and the pre-release number for tonight's build is ${tonightVersion}`
         )
         break
     }
@@ -70,7 +78,7 @@ switch (releaseType) {
         break
     case 'nightly':
         // check if tonightVersion is a valid semv version number
-        if (!tonightVersion || !semver.valid(tonightVersion) || semver.valid(tonightVersion) === version) {
+        if (!tonightVersion || !semver.valid(tonightVersion) || semver.valid(tonightVersion) === currentVersion) {
             throw new Error('Cannot publish nightly build with an invalid version number: ' + tonightVersion)
         }
         // Publish to VS Code Marketplace with today's date as patch number
