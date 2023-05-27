@@ -268,9 +268,9 @@ message RepoCloneProgressResponse {
 
 // RepoDeleteRequest is a request to delete a repository.
 message RepoDeleteRequest {
-    // repo is the name of the repo to delete.
-    string repo = 1;
-  }
+  // repo is the name of the repo to delete.
+  string repo = 1;
+}
 
 // RepoDeleteResponse is the response from the RepoDelete RPC.
 message RepoDeleteResponse {}
