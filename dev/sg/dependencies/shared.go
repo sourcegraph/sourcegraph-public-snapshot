@@ -135,13 +135,8 @@ func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) categ
 				},
 			},
 			{
-				Name: "python",
-				Check: func(ctx context.Context, _ *std.Output, _ CheckArgs) error {
-					return check.Combine(
-						check.InPath("python"),
-						check.CommandOutputContains("python -V", "Python 3.11.3"),
-					)(ctx)
-				},
+				Name:  "python",
+				Check: checkPythonVersion,
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
 					if err := forceASDFPluginAdd(ctx, "python", ""); err != nil {
 						return err
@@ -187,7 +182,7 @@ func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) categ
 					// If any of these fail with ErrNotInPath, we may need to regenerate
 					// all our asdf shims.
 					for _, c := range []check.CheckAction[CheckArgs]{
-						checkGoVersion, checkPnpmVersion, checkNodeVersion, checkRustVersion,
+						checkGoVersion, checkPnpmVersion, checkNodeVersion, checkRustVersion, checkPythonVersion,
 					} {
 						if err := c(ctx, out, args); err != nil {
 							return errors.Wrap(err, "we may need to regenerate asdf shims")

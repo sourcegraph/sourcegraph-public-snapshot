@@ -327,6 +327,24 @@ func getPackageManagerConstraint(tool string) (string, error) {
 	return fmt.Sprintf("~> %s", version), nil
 }
 
+func checkPythonVersion(ctx context.Context, out *std.Output, args CheckArgs) error {
+	if err := check.InPath("python")(ctx); err != nil {
+		return err
+	}
+
+	cmd := "python -V"
+	data, err := usershell.Command(ctx, cmd).StdOut().Run().String()
+	if err != nil {
+		return errors.Wrapf(err, "failed to run %q", cmd)
+	}
+	parts := strings.Split(strings.TrimSpace(data), " ")
+	if len(parts) == 0 {
+		return errors.Newf("no output from %q", cmd)
+	}
+
+	return check.Version("python", parts[1], "~3")
+}
+
 func checkGoVersion(ctx context.Context, out *std.Output, args CheckArgs) error {
 	if err := check.InPath("go")(ctx); err != nil {
 		return err
