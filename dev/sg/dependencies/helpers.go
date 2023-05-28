@@ -341,6 +341,9 @@ func checkPythonVersion(ctx context.Context, out *std.Output, args CheckArgs) er
 	if len(parts) == 0 {
 		return errors.Newf("no output from %q", cmd)
 	}
+	if len(parts) < 2 {
+		return errors.Newf("unexpected output from %q: %q", cmd, data)
+	}
 
 	return check.Version("python", parts[1], "~3")
 }
