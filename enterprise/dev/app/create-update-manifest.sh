@@ -17,7 +17,7 @@ filename_from() {
   os=$(echo "$1" | cut -d '-' -f3)
   # this is kind of annoying but tauri uses `x86_64` as a target platform but generates
   # bundles using `amd64` on linux
-  if [[ ${arch} == "x86_64" && ${os} == "linux"]]; then
+  if [[ ${arch} == "x86_64" && ${os} == "linux" ]]; then
     arch="amd64"
   fi
 
