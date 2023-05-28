@@ -73,7 +73,7 @@ fi
 
 echo "--- bazel build musl"
 bazel \
-  "${bazelrc[@]}"
+  "${bazelrc[@]}" \
   build \
   "${MUSL_TARGETS[@]}" \
   --stamp \
@@ -82,7 +82,7 @@ bazel \
 
 for MUSL_TARGET in "${MUSL_TARGETS[@]}"; do
   out=$(bazel
-    "${bazelrc[@]}"
+    "${bazelrc[@]}" \
     cquery \
     "$MUSL_TARGET" \
     --stamp \
