@@ -50,20 +50,24 @@ upload_dist() {
 
 create_app_archive() {
   local version
+  local platform
   local path
   local app_path
   local arch
   local target
 
   version=$1
+  platform=$2
   path="$(bundle_path)"
   app_path=$(find "${path}" -type d -name "Sourcegraph.app")
   app_tar_gz=$(find "${path}" -type f -name "Sourcegraph.app.tar.gz")
 
-  arch="$(uname -m)"
-  if [[ "${arch}" == "arm64" ]]; then
-    arch="aarch64"
+  # we extract the arch from the platform
+  arch=$(echo "${platform}" | cut -d '-' -f1)
+  if [[ -z ${arch} ]]; then
+    arch=$(uname -m)
   fi
+
 
   target="Sourcegraph.${version}.${arch}.app.tar.gz"
   # # we have to handle Sourcegraph.App differently since it is a dir
@@ -127,7 +131,7 @@ pre_codesign() {
   security import ./cert.p12 -k my_temporary_keychain.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
   security set-key-partition-list -S apple-tool:,apple:, -s -k my_temporary_keychain_password -D "$APPLE_SIGNING_IDENTITY" -t private my_temporary_keychain.keychain
 
-  echo "--- :mac::pencil2: binary: ${binary_path}"
+  echo "--- :mac::spiral_note_pad::lower_left_fountain_pen: binary: ${binary_path}"
   codesign --force -s "$APPLE_SIGNING_IDENTITY" --keychain my_temporary_keychain.keychain --deep "${binary_path}"
 
   security delete-keychain my_temporary_keychain.keychain
@@ -188,6 +192,7 @@ fi
 
 VERSION=$(./enterprise/dev/app/app-version.sh)
 set_version "${VERSION}"
+PLATFORM="$(./enterprise/dev/app/detect-platform.sh)"
 
 
 if [[ ${CODESIGNING:-"0"} == 1 && $(uname -s) == "Darwin" ]]; then
@@ -200,7 +205,7 @@ if [[ ${CODESIGNING:-"0"} == 1 && $(uname -s) == "Darwin" ]]; then
   export PATH="/usr/bin/:$PATH"
 
   echo "--- :tauri::mac: Performing code signing"
-  binaries=$(find ${BIN_DIR} -type f -name "*apple*")
+  binaries=$(find ${BIN_DIR} -type f -name "*${PLATFORM}*")
   # if the paths contain spaces this for loop will fail, but we're pretty sure the binaries in bin don't contain spaces
   for binary in ${binaries}; do
     pre_codesign "${binary}"
@@ -209,7 +214,6 @@ fi
 
 CI="${CI:-"false"}"
 # note that this script respects the OVERRIDE_PLATFORM env variable
-PLATFORM="$(./enterprise/dev/app/detect-platform.sh)"
 SRC_APP_UPDATER_BUILD="${SRC_APP_UPDATER_BUILD:-"0"}"
 build "${PLATFORM}" "${VERSION}" "${SRC_APP_UPDATER_BUILD:-"0"}"
 
