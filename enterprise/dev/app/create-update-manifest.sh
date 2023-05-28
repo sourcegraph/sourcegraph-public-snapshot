@@ -4,6 +4,8 @@ set -eu
 
 cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. || exit 1
 
+SUPPORTED_PLATFORMS=("aarch64-apple-darwin" "x86_64-apple-darwin" "x86_64-unknown-linux-gnu")
+
 # deterimes the Sourcegraph App filename based on the platform string given
 # args:
 # - 1: platform string
@@ -133,7 +135,7 @@ EOF
 
   # we loop through our supported platforms. If we do have platform json for the particular platform, we append to our base manifest
   local json
-  for platform in "aarch64-apple-darwin" "x86_64-unknown-linux-gnu"; do
+  for platform in ${SUPPORTED_PLATFORMS}; do
     json="$(platform_json_for ${platform})"
 
     if [[ -n ${json} ]]; then
@@ -156,6 +158,7 @@ if [[ -z "${RELEASE_JSON}" ]]; then
 fi
 
 echo "--- generating app update manifest for version: ${version}"
+echo "supported platforms in manifest are: ${SUPPORTED_PLATFORMS}"
 manifest=$(generate_manifest "${version}" )
 
 if [[ ${CI:-""} == "true" ]]; then
