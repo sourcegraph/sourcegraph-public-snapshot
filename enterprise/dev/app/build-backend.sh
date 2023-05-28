@@ -91,7 +91,7 @@ upload_artifacts() {
 PLATFORM=${PLATFORM:-"$(./enterprise/dev/app/detect-platform.sh)"}
 export PLATFORM
 
-VERSION="$(./enterprise/dev/app/app_version.sh)"
+VERSION="$(./enterprise/dev/app/app-version.sh)"
 export VERSION
 
 if [[ ${CROSS_COMPILE_X86_64_MACOS:-0} == 1 ]]; then
