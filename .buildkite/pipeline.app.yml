@@ -1,5 +1,5 @@
 steps:
-  - group: "Sourcegraph App"
+  - group: ":bazel::go:Build backend for different platforms"
     steps:
       - label: ':bazel::linux: Build for Linux'
         key: 'build-sourcegraph-app-linux'
@@ -27,6 +27,8 @@ steps:
           - './enterprise/dev/app/build-backend.sh'
       - label: 'Wait for builds to complete'
         wait: ~
+  - group: ":tauri: Bundle and sign using Tauri"
+    steps:
       - label: ':linux::tauri: Bundle with Tauri'
         key: 'linux-build-tauri-sourcegraph-app'
         agents: { queue: stateless }
@@ -73,6 +75,8 @@ steps:
           - './enterprise/dev/app/tauri-build.sh'
       - label: "wait for bundles to complete"
         wait: ~
+  - group: ":github: Create release and update manifest"
+    steps:
       - label: ':github: Create GitHub release'
         agents: { queue: stateless }
         key: create-github-release
