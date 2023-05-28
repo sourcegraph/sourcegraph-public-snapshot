@@ -81,8 +81,7 @@ bazel \
   --config incompat-zig-linux-amd64
 
 for MUSL_TARGET in "${MUSL_TARGETS[@]}"; do
-  out=$(bazel
-    "${bazelrc[@]}" \
+  out=$(bazel "${bazelrc[@]}" \
     cquery \
     "$MUSL_TARGET" \
     --stamp \

@@ -22,8 +22,7 @@ if [[ ${CI:-""} == "true" ]]; then
 fi
 
 echo "--- bazel build"
-bazel \
-  "${bazelrc[@]}" \
+bazel "${bazelrc[@]}" \
   build \
   //enterprise/cmd/symbols \
   --stamp \
