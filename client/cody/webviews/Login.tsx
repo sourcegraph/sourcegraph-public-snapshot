@@ -9,7 +9,7 @@ import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
 import { AuthStatus } from '../src/chat/protocol'
 
 import { ConnectApp } from './ConnectApp'
-import { VSCodeWrapper } from './utils/VSCodeApi'
+import { VSCodeWrapper, getVSCodeAPI } from './utils/VSCodeApi'
 
 import styles from './Login.module.css'
 
@@ -40,9 +40,25 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
         },
         [endpoint, onLogin, token]
     )
+    const handleReload = (): void => {
+        getVSCodeAPI().postMessage({ command: 'reload' })
+    }
 
     return (
         <div className={styles.container}>
+            {authStatus?.isNetworkError && (
+                <>
+                    <div className={styles.error}>
+                        <p>
+                            Due to network-related problems, Cody cannot be reached. Try again after checking it! Once
+                            your connection is restored, attempt a reload.
+                        </p>
+                        <VSCodeButton className={styles.button} type="button" onClick={handleReload}>
+                            Reload
+                        </VSCodeButton>
+                    </div>
+                </>
+            )}
             {authStatus?.showInvalidAccessTokenError && (
                 <p className={styles.error}>
                     Invalid credentials. Please check the Sourcegraph instance URL and access token.

@@ -18,6 +18,7 @@ export type WebviewMessage =
     | { command: 'settings'; serverEndpoint: string; accessToken: string }
     | { command: 'removeToken' }
     | { command: 'removeHistory' }
+    | { command: 'reload' }
     | { command: 'restoreHistory'; chatID: string }
     | { command: 'links'; value: string }
     | { command: 'openFile'; filePath: string }
@@ -56,6 +57,7 @@ export interface AuthStatus {
     authenticated: boolean
     hasVerifiedEmail: boolean
     requiresVerifiedEmail: boolean
+    isNetworkError?: boolean
 }
 
 export function isLoggedIn(authStatus: AuthStatus): boolean {

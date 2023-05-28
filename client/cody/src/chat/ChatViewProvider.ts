@@ -41,6 +41,25 @@ import {
 import { getRecipe } from './recipes'
 import { filesExist, getCodebaseContext } from './utils'
 
+export function isNetworkError(error: string): boolean {
+    return (
+        error.includes('ENOTFOUND') ||
+        error.includes('ECONNREFUSED') ||
+        error.includes('ECONNRESET') ||
+        error.includes('EHOSTUNREACH')
+    )
+}
+
+export function handleNetworkError(): AuthStatus {
+    return {
+        showInvalidAccessTokenError: false,
+        isNetworkError: true,
+        authenticated: false,
+        hasVerifiedEmail: false,
+        requiresVerifiedEmail: false,
+    }
+}
+
 export async function getAuthStatus(
     config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
 ): Promise<AuthStatus> {
@@ -56,6 +75,14 @@ export async function getAuthStatus(
     const client = new SourcegraphGraphQLAPIClient(config)
     if (client.isDotCom() || isLocalApp(config.serverEndpoint)) {
         const data = await client.getCurrentUserIdAndVerifiedEmail()
+
+        // check first if the error is due to network related issues
+        if (isError(data)) {
+            if (isNetworkError(data.message)) {
+                const authStatus = handleNetworkError()
+                return authStatus
+            }
+        }
         return {
             showInvalidAccessTokenError: isError(data),
             authenticated: !isError(data),
@@ -66,6 +93,12 @@ export async function getAuthStatus(
     }
 
     const currentUserID = await client.getCurrentUserId()
+    if (isError(currentUserID)) {
+        if (isNetworkError(currentUserID.message)) {
+            const authStatus = handleNetworkError()
+            return authStatus
+        }
+    }
     return {
         showInvalidAccessTokenError: isError(currentUserID),
         authenticated: !isError(currentUserID),
@@ -276,9 +309,25 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 }
                 break
             }
+            case 'reload': {
+                const auth = await this.reloadExtension()
+                void this.sendLogin(auth)
+                break
+            }
             default:
                 this.sendErrorToWebview('Invalid request type from Webview')
         }
+    }
+
+    private async reloadExtension(): Promise<AuthStatus> {
+        const authStatus = await getAuthStatus({
+            serverEndpoint: this.config.serverEndpoint,
+            customHeaders: this.config.customHeaders,
+            accessToken: this.config.accessToken,
+        })
+        // handle case while in middle of executing recipes
+        await this.clearAndRestartSession()
+        return authStatus
     }
 
     private createNewChatID(): void {
