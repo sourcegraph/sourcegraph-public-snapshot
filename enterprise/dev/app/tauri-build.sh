@@ -26,7 +26,7 @@ set_version() {
 
 bundle_path() {
   local platform
-  platform="$(./enterprise/dev/app/detect_platform.sh)"
+  platform="$(./enterprise/dev/app/detect-platform.sh)"
   echo  "./src-tauri/target/${platform}/release/bundle"
 }
 
@@ -186,7 +186,7 @@ if [[ ${CI:-""} == "true" ]]; then
   download_artifacts
 fi
 
-VERSION=$(./enterprise/dev/app/app_version.sh)
+VERSION=$(./enterprise/dev/app/app-version.sh)
 set_version "${VERSION}"
 
 
@@ -208,7 +208,8 @@ if [[ ${CODESIGNING:-"0"} == 1 && $(uname -s) == "Darwin" ]]; then
 fi
 
 CI="${CI:-"false"}"
-PLATFORM="$(./enterprise/dev/app/detect_platform.sh)"
+# note that this script respects the OVERRIDE_PLATFORM env variable
+PLATFORM="$(./enterprise/dev/app/detect-platform.sh)"
 SRC_APP_UPDATER_BUILD="${SRC_APP_UPDATER_BUILD:-"0"}"
 build "${PLATFORM}" "${VERSION}" "${SRC_APP_UPDATER_BUILD:-"0"}"
 

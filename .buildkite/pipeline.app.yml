@@ -52,10 +52,20 @@ steps:
               profile: buildkite
               region: us-central1
             tarball: {}
-      - label: ':macos::tauri: Bundle and sign with Tauri'
-        key: 'mac-build-tauri-sourcegraph-app'
+      - label: ':macos::tauri: (arm64) Bundle and sign with Tauri'
+        key: 'mac-build-arm64-tauri-sourcegraph-app'
         agents: { queue: macos }
         env:
+          CODESIGNING: 1
+          SRC_APP_UPDATER_BUILD: 1
+        command:
+          - './dev/ci/pnpm-install-with-retry.sh'
+          - './enterprise/dev/app/tauri-build.sh'
+      - label: ':macos::tauri: (intel x86_64) Bundle and sign with Tauri'
+        key: 'mac-build-x86_64-tauri-sourcegraph-app'
+        agents: { queue: macos }
+        env:
+          PLATFORM_OVERRIDE: "x86_64-apple-darwin"
           CODESIGNING: 1
           SRC_APP_UPDATER_BUILD: 1
         command:

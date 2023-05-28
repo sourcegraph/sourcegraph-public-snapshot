@@ -144,7 +144,7 @@ EOF
   echo "${manifest}"
 }
 
-version=$(./enterprise/dev/app/app_version.sh)
+version=$(./enterprise/dev/app/app-version.sh)
 release_tag="app-v${version}"
 
 echo "--- :github: fetching release information for tag: ${release_tag}"
