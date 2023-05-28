@@ -9,8 +9,16 @@ import { getRgPath } from '../../src/rg'
 import { afterIntegrationTest, beforeIntegrationTest } from './helpers'
 
 suite('Local search', function () {
-    this.beforeEach(() => beforeIntegrationTest())
-    this.afterEach(() => afterIntegrationTest())
+    let mockRgPath: string | undefined
+    this.beforeEach(() => {
+        mockRgPath = process.env.MOCK_RG_PATH
+        process.env.MOCK_RG_PATH = ''
+        void beforeIntegrationTest()
+    })
+    this.afterEach(() => {
+        void afterIntegrationTest()
+        process.env.MOCK_RG_PATH = mockRgPath
+    })
 
     test('fast file finder', async () => {
         const workspaceFolders = vscode.workspace.workspaceFolders
