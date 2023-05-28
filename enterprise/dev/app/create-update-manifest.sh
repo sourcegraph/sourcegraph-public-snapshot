@@ -6,7 +6,7 @@ cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. || exit 1
 
 SUPPORTED_PLATFORMS=("aarch64-apple-darwin" "x86_64-apple-darwin" "x86_64-unknown-linux-gnu")
 
-# deterimes the Sourcegraph App filename based on the platform string given
+# deterines the Sourcegraph App filename based on the platform string given
 # args:
 # - 1: platform string
 filename_from() {
@@ -16,8 +16,8 @@ filename_from() {
   arch=$(echo "$1" | cut -d '-' -f1)
   os=$(echo "$1" | cut -d '-' -f3)
   # this is kind of annoying but tauri uses `x86_64` as a target platform but generates
-  # bundles using `amd64`
-  if [[ ${arch} == "x86_64" ]]; then
+  # bundles using `amd64` on linux
+  if [[ ${arch} == "x86_64" && ${os} == "linux"]]; then
     arch="amd64"
   fi
 
