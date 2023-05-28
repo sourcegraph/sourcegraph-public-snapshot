@@ -206,7 +206,7 @@ func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) categ
 					)(ctx)
 				},
 				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					err := root.Run(usershell.Command(ctx, "curl -L https://github.com/pre-commit/pre-commit/releases/download/v3.3.2/pre-commit-3.3.2.pyz --output .bin/pre-commit-3.3.2.pyz --silent")).StreamLines(cio.Verbose)
+					err := root.Run(usershell.Command(ctx, "curl -L --retry 3 --retry-max-time 120 https://github.com/pre-commit/pre-commit/releases/download/v3.3.2/pre-commit-3.3.2.pyz --output .bin/pre-commit-3.3.2.pyz --silent")).StreamLines(cio.Verbose)
 					if err != nil {
 						return errors.Wrap(err, "failed to download pre-commit release")
 					}
