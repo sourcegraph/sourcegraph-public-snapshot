@@ -26,8 +26,6 @@ steps:
         command:
           - './dev/ci/pnpm-install-with-retry.sh'
           - './enterprise/dev/app/build-backend.sh'
-      - label: 'Wait for builds to complete'
-        wait: ~
   - group: ":tauri: Bundle and sign using Tauri"
     key: "tauri-bundles"
     depends_on: "backend-builds"
@@ -67,6 +65,7 @@ steps:
           - './dev/ci/pnpm-install-with-retry.sh'
           - './enterprise/dev/app/tauri-build.sh'
       - label: ':macos::tauri: (intel x86_64) Bundle and sign with Tauri'
+        depends_on: 'mac-build-arm64-tauri-sourcegraph-app'
         key: 'mac-build-x86_64-tauri-sourcegraph-app'
         agents: { queue: macos }
         env:
@@ -76,8 +75,6 @@ steps:
         command:
           - './dev/ci/pnpm-install-with-retry.sh'
           - './enterprise/dev/app/tauri-build.sh'
-      - label: "wait for bundles to complete"
-        wait: ~
   - group: ":github: Create release and update manifest"
     depends_on: "tauri-bundles"
     steps:
