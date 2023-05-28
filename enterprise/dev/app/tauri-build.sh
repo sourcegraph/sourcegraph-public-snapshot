@@ -217,7 +217,7 @@ CI="${CI:-"false"}"
 SRC_APP_UPDATER_BUILD="${SRC_APP_UPDATER_BUILD:-"0"}"
 build "${PLATFORM}" "${VERSION}" "${SRC_APP_UPDATER_BUILD:-"0"}"
 
-create_app_archive "${VERSION}"
+create_app_archive "${VERSION}" "${PLATFORM}"
 
 if [[ ${CI:-""} == "true" ]]; then
   upload_dist
