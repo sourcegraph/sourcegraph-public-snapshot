@@ -136,7 +136,7 @@ EOF
   # we loop through our supported platforms. If we do have platform json for the particular platform, we append to our base manifest
   local json
   for platform in "${SUPPORTED_PLATFORMS[@]}"; do
-    json="$(platform_json_for ${platform})"
+    json="$(platform_json_for "${platform}")"
 
     if [[ -n ${json} ]]; then
       manifest=$(echo "${manifest}" | jq --argjson platform_json "${json}" '.platforms += $platform_json')
@@ -158,7 +158,7 @@ if [[ -z "${RELEASE_JSON}" ]]; then
 fi
 
 echo "--- generating app update manifest for version: ${version}"
-echo "supported platforms in manifest are: ${SUPPORTED_PLATFORMS[@]}"
+echo "supported platforms in manifest are: ${SUPPORTED_PLATFORMS[*]}"
 manifest=$(generate_manifest "${version}" )
 
 if [[ ${CI:-""} == "true" ]]; then
