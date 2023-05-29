@@ -122,6 +122,21 @@ type fileOwnershipData struct {
 	assignedOwners []database.AssignedOwnerSummary
 }
 
+func (d fileOwnershipData) References() []own.Reference {
+	var rs []own.Reference
+	for _, o := range d.rule.GetOwner() {
+		rs = append(rs, own.Reference{Handle: o.Handle, Email: o.Email})
+	}
+	for _, o := range d.assignedOwners {
+		rs = append(rs, own.Reference{UserID: o.OwnerUserID})
+	}
+	return rs
+}
+
+func (d fileOwnershipData) Empty() bool {
+	return !d.NonEmpty()
+}
+
 func (d fileOwnershipData) NonEmpty() bool {
 	if d.rule != nil && len(d.rule.Owner) > 0 {
 		return true

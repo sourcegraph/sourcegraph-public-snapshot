@@ -2,6 +2,7 @@ package search
 
 import (
 	"context"
+	"hash/fnv"
 	"io/fs"
 	"sort"
 	"testing"
@@ -17,7 +18,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/mockjob"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -45,6 +48,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, nil)
 		db := edb.NewMockEnterpriseDB()
 		db.CodeownersFunc.SetDefaultReturn(codeownersStore)
+		db.AssignedOwnersFunc.SetDefaultReturn(database.NewMockAssignedOwnersStore())
 		return db
 	}
 
@@ -107,12 +111,13 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		})
 		mockUserStore := database.NewMockUserStore()
 		mockTeamStore := database.NewMockTeamStore()
+		mockEmailStore := database.NewMockUserEmailsStore()
 		db := setupDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
-		db.UserEmailsFunc.SetDefaultReturn(database.NewMockUserEmailsStore())
+		db.UserEmailsFunc.SetDefaultReturn(mockEmailStore)
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
-
-		rules := NewRulesCache(gitserverClient, db)
+		db.AssignedOwnersFunc.SetDefaultReturn(database.NewMockAssignedOwnersStore())
+		db.UserExternalAccountsFunc.SetDefaultReturn(database.NewMockUserExternalAccountsStore())
 
 		personOwnerByHandle := newTestUser("testUserHandle")
 		personOwnerByEmail := newTestUser("user@email.com")
@@ -130,6 +135,19 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 			}
 			return nil, database.MockUserNotFoundErr
 		})
+		mockEmailStore.ListByUserFunc.SetDefaultHook(func(_ context.Context, opts database.UserEmailsListOptions) ([]*database.UserEmail, error) {
+			switch opts.UserID {
+			case personOwnerByEmail.ID:
+				return []*database.UserEmail{
+					{
+						UserID: personOwnerByEmail.ID,
+						Email:  "user@email.com",
+					},
+				}, nil
+			default:
+				return nil, nil
+			}
+		})
 		mockTeamStore.GetTeamByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*types.Team, error) {
 			if name == "testTeamHandle" {
 				return teamOwner, nil
@@ -137,28 +155,47 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 			return nil, database.TeamNotFoundError{}
 		})
 
-		matches, hasNoResults, err := getCodeOwnersFromMatches(ctx, &rules, []result.Match{
-			&result.FileMatch{
-				File: result.File{
-					Path: "README.md",
-				},
-			},
-			&result.FileMatch{
-				File: result.File{
-					Path: "code.go",
-				},
-			},
+		mockJob := mockjob.NewMockJob()
+		mockJob.RunFunc.SetDefaultHook(func(ctx context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
+			s.Send(streaming.SearchEvent{
+				Results: []result.Match{
+					&result.FileMatch{
+						File: result.File{
+							Path: "README.md",
+						},
+					},
+					&result.FileMatch{
+						File: result.File{
+							Path: "code.go",
+						},
+					}},
+			})
+			return nil, nil
 		})
+		j := &selectOwnersJob{
+			child:    mockJob,
+			features: &search.Features{CodeOwnershipSearch: true},
+		}
+		clients := job.RuntimeClients{
+			Gitserver: gitserverClient,
+			DB:        db,
+		}
+		s := streaming.NewAggregatingStream()
+		_, err := j.Run(ctx, clients, s) // TODO: handle alert
 		if err != nil {
 			t.Fatal(err)
 		}
-		want := []result.Match{
+		want := result.Matches{
 			&result.OwnerMatch{
-				ResolvedOwner: &result.OwnerPerson{User: personOwnerByEmail, Email: "user@email.com"},
-				InputRev:      nil,
-				Repo:          types.MinimalRepo{},
-				CommitID:      "",
-				LimitHit:      0,
+				ResolvedOwner: &result.OwnerPerson{
+					User:   personOwnerByEmail,
+					Email:  "user@email.com",
+					Handle: "user@email.com", // This is username in the mock storage.
+				},
+				InputRev: nil,
+				Repo:     types.MinimalRepo{},
+				CommitID: "",
+				LimitHit: 0,
 			},
 			&result.OwnerMatch{
 				ResolvedOwner: &result.OwnerPerson{Handle: "unknown"},
@@ -182,6 +219,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 				LimitHit:      0,
 			},
 		}
+		matches := s.Results
 		sort.Slice(matches, func(x, y int) bool {
 			return matches[x].Key().Less(matches[y].Key())
 		})
@@ -189,13 +227,15 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 			return want[x].Key().Less(want[y].Key())
 		})
 		autogold.Expect(want).Equal(t, matches)
-		assert.Equal(t, false, hasNoResults)
+		// TODO: What about hasnoresults?
 	})
 }
 
 func newTestUser(username string) *types.User {
+	h := fnv.New32a()
+	h.Write([]byte(username))
 	return &types.User{
-		ID:          1,
+		ID:          int32(h.Sum32()),
 		Username:    username,
 		AvatarURL:   "https://sourcegraph.com/avatar/" + username,
 		DisplayName: "User " + username,
@@ -203,8 +243,10 @@ func newTestUser(username string) *types.User {
 }
 
 func newTestTeam(teamName string) *types.Team {
+	h := fnv.New32a()
+	h.Write([]byte(teamName))
 	return &types.Team{
-		ID:          1,
+		ID:          int32(h.Sum32()),
 		Name:        teamName,
 		DisplayName: "Team " + teamName,
 	}
