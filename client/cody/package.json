@@ -74,6 +74,70 @@
     "onStartupFinished"
   ],
   "contributes": {
+    "walkthroughs": [
+      {
+        "id": "cody",
+        "title": "Welcome do Cody",
+        "description": "Discover how Cody can help you",
+        "steps": [
+          {
+            "id": "setupCody",
+            "title": "Setup Cody",
+            "description": "Getting started with Cody is easy and only takes a few clicks",
+            "media": {
+              "markdown": "guides/setup.md"
+            },
+            "completionEvents": [
+              "//SEND EVENT"
+            ]
+          },
+          {
+            "id": "chatInterface",
+            "title": "Asking Cody",
+            "description": "Chat with Cody to know more about your codebase",
+            "media": {
+              "markdown": "guides/chat.md"
+            },
+            "completionEvents": [
+              "//SEND EVENT"
+            ]
+          },
+          {
+            "id": "usingRecipes",
+            "title": "Using recipes",
+            "description": "What is possible with recipes?",
+            "media": {
+              "markdown": "guides/recipes.md"
+            },
+            "completionEvents": [
+              "//SEND EVENT"
+            ]
+          },
+          {
+            "id": "completions",
+            "title": "Auto completions",
+            "description": "Cody is able to suggest the next few lines for you \n [Activate Autocomplete](command:getting-started-sample.changeSetting) ",
+            "media": {
+              "markdown": "guides/completions.md"
+            },
+            "completionEvents": [
+              "//SEND EVENT"
+            ]
+          },
+          {
+            "id": "fixup",
+            "title": "Using fixup",
+            "description": "What is and how to use fixup",
+            "media": {
+              "markdown": "guides/fixup.md"
+            },
+            "completionEvents": [
+              "//SEND EVENT"
+            ]
+          }
+        ]
+      }
+    ],
     "viewsContainers": {
       "activitybar": [
         {
@@ -208,41 +272,41 @@
         "enablement": "config.cody.debug && config.cody.experimental.guardrails && editorHasSelection"
       },
       {
-				"command": "cody.recipe.non-stop",
-				"title": "Cody: Fixup (Experimental)",
+        "command": "cody.recipe.non-stop",
+        "title": "Cody: Fixup (Experimental)",
         "icon": "resources/cody.png",
         "enablement": "cody.nonstop.fixups.enabled"
-			},
+      },
       {
-				"command": "cody.fixup.open",
-				"title": "Cody: Go to Fixup",
+        "command": "cody.fixup.open",
+        "title": "Cody: Go to Fixup",
         "enablement": "cody.nonstop.fixups.enabled",
         "icon": "$(file-code)"
-			},
+      },
       {
-				"command": "cody.fixup.apply",
-				"title": "Cody: Apply fixup",
+        "command": "cody.fixup.apply",
+        "title": "Cody: Apply fixup",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(check)"
-			},
+      },
       {
-				"command": "cody.fixup.apply-all",
-				"title": "Cody: Apply all fixups",
+        "command": "cody.fixup.apply-all",
+        "title": "Cody: Apply all fixups",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(check-all)"
-			},
+      },
       {
-				"command": "cody.fixup.apply-by-file",
-				"title": "Cody: Apply fixups to selected directory",
+        "command": "cody.fixup.apply-by-file",
+        "title": "Cody: Apply fixups to selected directory",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(check-all)"
-			},
+      },
       {
-				"command": "cody.fixup.diff",
-				"title": "Cody: Show diff for fixup",
+        "command": "cody.fixup.diff",
+        "title": "Cody: Show diff for fixup",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(diff)"
-			}
+      }
     ],
     "keybindings": [
       {
