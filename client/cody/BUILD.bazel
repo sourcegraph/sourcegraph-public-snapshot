@@ -120,6 +120,7 @@ ts_project(
     srcs = [
         "src/chat/utils.test.ts",
         "src/completions/cache.test.ts",
+        "src/completions/completion.test.ts",
         "src/completions/context.test.ts",
         "src/completions/provider.test.ts",
         "src/configuration.test.ts",
