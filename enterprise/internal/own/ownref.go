@@ -85,6 +85,14 @@ func (r Reference) String() string {
 	return b.String()
 }
 
+// ReferenceOrder is to allow sorting references in tests for comparison.
+// It is not meant to be used in production or to be efficient.
+type ReferenceOrder []Reference
+
+func (o *ReferenceOrder) Len() int           { return len(*o) }
+func (o *ReferenceOrder) Less(i, j int) bool { return (*o)[i].String() < (*o)[j].String() }
+func (o *ReferenceOrder) Swap(i, j int)      { (*o)[i], (*o)[j] = (*o)[j], (*o)[i] }
+
 // Bag is a collection of platonic forms or identities of owners (currently supports
 // only users - teams coming). The purpose of this object is to group references
 // that refer to the same user, so that the user can be found by each of the references.

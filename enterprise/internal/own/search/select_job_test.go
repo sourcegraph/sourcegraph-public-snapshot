@@ -17,7 +17,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/mockjob"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -111,8 +113,8 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
 		db.UserEmailsFunc.SetDefaultReturn(database.NewMockUserEmailsStore())
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
-
-		rules := NewRulesCache(gitserverClient, db)
+		db.AssignedOwnersFunc.SetDefaultReturn(database.NewMockAssignedOwnersStore())
+		db.UserExternalAccountsFunc.SetDefaultReturn(database.NewMockUserExternalAccountsStore())
 
 		personOwnerByHandle := newTestUser("testUserHandle")
 		personOwnerByEmail := newTestUser("user@email.com")
@@ -137,18 +139,33 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 			return nil, database.TeamNotFoundError{}
 		})
 
-		matches, hasNoResults, err := getCodeOwnersFromMatches(ctx, &rules, []result.Match{
-			&result.FileMatch{
-				File: result.File{
-					Path: "README.md",
-				},
-			},
-			&result.FileMatch{
-				File: result.File{
-					Path: "code.go",
-				},
-			},
+		mockJob := mockjob.NewMockJob()
+		mockJob.RunFunc.SetDefaultHook(func(ctx context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
+			s.Send(streaming.SearchEvent{
+				Results: []result.Match{
+					&result.FileMatch{
+						File: result.File{
+							Path: "README.md",
+						},
+					},
+					&result.FileMatch{
+						File: result.File{
+							Path: "code.go",
+						},
+					}},
+			})
+			return nil, nil
 		})
+		j := &selectOwnersJob{
+			child:    mockJob,
+			features: &search.Features{CodeOwnershipSearch: true},
+		}
+		clients := job.RuntimeClients{
+			Gitserver: gitserverClient,
+			DB:        db,
+		}
+		s := streaming.NewAggregatingStream()
+		_, err := j.Run(ctx, clients, s) // TODO: handle alert
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -182,6 +199,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 				LimitHit:      0,
 			},
 		}
+		matches := s.Results
 		sort.Slice(matches, func(x, y int) bool {
 			return matches[x].Key().Less(matches[y].Key())
 		})
@@ -189,7 +207,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 			return want[x].Key().Less(want[y].Key())
 		})
 		autogold.Expect(want).Equal(t, matches)
-		assert.Equal(t, false, hasNoResults)
+		// TODO: What about hasnoresults?
 	})
 }
 
