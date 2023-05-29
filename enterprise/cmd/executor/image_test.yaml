@@ -6,6 +6,17 @@ commandTests:
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
+  - name: "docker is runnable"
+    command: "docker"
+  - name: "git is runnable"
+    command: "git"
+    args:
+      - version
+  # TODO: Test currently fails
+  # - name: "src is runnable"
+  #   command: "src"
+  #   args:
+  #     - version
 
   - name: "not running as root"
     command: "/usr/bin/id"

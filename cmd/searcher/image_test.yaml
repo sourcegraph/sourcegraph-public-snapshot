@@ -6,6 +6,10 @@ commandTests:
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
+  - name: "pcre is runnable"
+    command: "pcregrep"
+    args:
+      - --help
 
   - name: "not running as root"
     command: "/usr/bin/id"

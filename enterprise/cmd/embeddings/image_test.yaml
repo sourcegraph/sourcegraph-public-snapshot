@@ -6,6 +6,11 @@ commandTests:
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
+  # TODO: Test currently fails
+  # - name: "bash is runnable"
+  #   command: "bash"
+  #   args:
+  #     - --version
 
   - name: "not running as root"
     command: "/usr/bin/id"

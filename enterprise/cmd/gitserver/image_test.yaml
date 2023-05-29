@@ -6,6 +6,39 @@ commandTests:
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
+  - name: "git is runnable"
+    command: "git"
+    args:
+      - version
+  - name: "git-lfs is runnable"
+    command: "git-lfs"
+    args:
+      - version
+  - name: "git p4 is runnable"
+    command: "git"
+    args:
+      - p4
+    expectedOutput: ["valid commands: submit"]
+    exitCode: 2
+  - name: "ssh is runnable"
+    command: "ssh"
+    exitCode: 255
+  - name: "python3 is runnable"
+    command: "python3"
+    args:
+      - --version
+  - name: "bash is runnable"
+    command: "bash"
+    args:
+      - --version
+  - name: "p4 is runnable"
+    command: "p4"
+    args:
+      - -h
+  - name: "coursier is runnable"
+    command: "coursier"
+
+# TODO: Missing new p4-fusion-wrapper-detect-kill.sh and process-stats-watcher.sh scripts
 
   - name: "not running as root"
     command: "/usr/bin/id"
@@ -13,3 +46,10 @@ commandTests:
       - -u
     excludedOutput: ["^0"]
     exitCode: 0
+
+fileExistenceTests:
+- name: '/data/repos'
+  path: '/data/repos'
+  shouldExist: true
+  uid: 100
+  gid: 101
