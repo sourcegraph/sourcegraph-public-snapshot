@@ -79,6 +79,8 @@ function createCompletionResponse(completion: string): CompletionResponse {
     }
 }
 
+const CURSOR_MARKER = '<cursor>'
+
 /**
  * A test helper to trigger a completion request. The code example must include
  * a pipe character to denote the current cursor position.
@@ -86,7 +88,7 @@ function createCompletionResponse(completion: string): CompletionResponse {
  * @example
  *   complete(`
  * async function foo() {
- *   |
+ *   ${CURSOR_MARKER}
  * }`)
  */
 async function complete(
@@ -129,12 +131,12 @@ async function complete(
         true // disable timeouts
     )
 
-    if (!code.includes('|')) {
+    if (!code.includes(CURSOR_MARKER)) {
         throw new Error('The test code must include a | to denote the cursor position')
     }
 
-    const prefix = code.slice(0, code.indexOf('|'))
-    const suffix = code.slice(code.indexOf('|') + 1)
+    const prefix = code.slice(0, code.indexOf(CURSOR_MARKER))
+    const suffix = code.slice(code.indexOf(CURSOR_MARKER) + CURSOR_MARKER.length)
 
     const codeWithoutCursor = prefix + suffix
 
@@ -203,7 +205,7 @@ describe('Cody completions', () => {
     beforeEach(() => inlineCompletionsCache.clear())
 
     it('uses a simple prompt for small files', async () => {
-        const { requests } = await complete('foo |')
+        const { requests } = await complete(`foo ${CURSOR_MARKER}`)
 
         expect(requests).toHaveLength(3)
         expect(requests[0]!.messages).toMatchInlineSnapshot(`
@@ -234,7 +236,7 @@ describe('Cody completions', () => {
                 public end: Position
 
                 constructor(startLine: number, startCharacter: number, endLine: number, endCharacter: number) {
-                    this.startLine = |
+                    this.startLine = ${CURSOR_MARKER}
                     this.startCharacter = startCharacter
                     this.endLine = endLine
                     this.endCharacter = endCharacter
@@ -262,12 +264,12 @@ describe('Cody completions', () => {
     })
 
     it('does not make a request when in the middle of a word', async () => {
-        const { requests } = await complete('foo|')
+        const { requests } = await complete(`foo${CURSOR_MARKER}`)
         expect(requests).toHaveLength(0)
     })
 
     it('completes a single-line at the end of a sentence', async () => {
-        const { completions } = await complete('foo = |', [
+        const { completions } = await complete(`foo = ${CURSOR_MARKER}`, [
             createCompletionResponse("'bar'"),
             createCompletionResponse("'baz'"),
         ])
@@ -285,7 +287,7 @@ describe('Cody completions', () => {
     })
 
     it('completes a single-line at the middle of a sentence', async () => {
-        const { completions } = await complete('function bubbleSort(|)', [
+        const { completions } = await complete(`function bubbleSort(${CURSOR_MARKER})`, [
             createCompletionResponse('array) {'),
             createCompletionResponse('items) {'),
         ])
@@ -303,7 +305,7 @@ describe('Cody completions', () => {
     })
 
     it('does not make a request when context has a selectedCompletionInfo', async () => {
-        const { requests } = await complete('foo = |', undefined, undefined, {
+        const { requests } = await complete(`foo = ${CURSOR_MARKER}`, undefined, undefined, {
             selectedCompletionInfo: {
                 range: {} as any,
                 text: 'something',
@@ -315,7 +317,7 @@ describe('Cody completions', () => {
     })
 
     it('filters out completions that start with whitespace', async () => {
-        const { completions } = await complete('function bubbleSort(|)', [
+        const { completions } = await complete(`function bubbleSort(${CURSOR_MARKER})`, [
             createCompletionResponse('\t\t\tarray) {'),
             createCompletionResponse('items) {'),
         ])
@@ -331,7 +333,7 @@ describe('Cody completions', () => {
 
     describe('odd indentation', () => {
         it('filters our odd indentation in single-line completions', async () => {
-            const { completions } = await complete('const foo = |', [createCompletionResponse(' 1')])
+            const { completions } = await complete(`const foo = ${CURSOR_MARKER}`, [createCompletionResponse(' 1')])
 
             expect(completions).toMatchInlineSnapshot(`
                 Array [
@@ -351,7 +353,7 @@ describe('Cody completions', () => {
 
     describe('multi-line completions', () => {
         it('triggers a multi-line completion at the start of a block', async () => {
-            const { requests } = await complete('function bubbleSort() {\n  |')
+            const { requests } = await complete(`function bubbleSort() {\n  ${CURSOR_MARKER}`)
 
             expect(requests).toHaveLength(3)
             expect(requests[0]!.stopSequences).not.toContain('\n')
@@ -362,7 +364,7 @@ describe('Cody completions', () => {
                 `
                 class Foo {
                     constructor() {
-                        |
+                        ${CURSOR_MARKER}
                     }
                 }`,
                 [
@@ -407,7 +409,7 @@ describe('Cody completions', () => {
                 `
                 class Foo {
                     constructor() {
-                        |
+                        ${CURSOR_MARKER}
                     }
                 }`,
                 [
@@ -435,7 +437,7 @@ describe('Cody completions', () => {
             const { completions } = await complete(
                 `
                 if (check) {
-                    |
+                    ${CURSOR_MARKER}
                 }`,
                 [
                     createCompletionResponse(`
@@ -459,7 +461,7 @@ describe('Cody completions', () => {
             const { completions } = await complete(
                 `
                 if (check) {
-                    |
+                    ${CURSOR_MARKER}
                 `,
                 [
                     createCompletionResponse(`
@@ -480,7 +482,7 @@ describe('Cody completions', () => {
             const { completions } = await complete(
                 `
                 function myFunction() {
-                    |
+                    ${CURSOR_MARKER}
                     console.log('three')
                 }
                 `,
@@ -506,7 +508,7 @@ describe('Cody completions', () => {
             const { completions } = await complete(
                 `
                 function test() {
-                    |`,
+                    ${CURSOR_MARKER}`,
                 [
                     createCompletionResponse(`
                     console.log('foo')
