@@ -398,6 +398,7 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 			userExternalAccountsStore := database.NewMockUserExternalAccountsStore()
 			userExternalAccountsStore.ListFunc.SetDefaultReturn(nil, nil)
 			db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccountsStore)
+			db.TeamsFunc.SetDefaultReturn(database.NewMockTeamStore())
 			if tt.setup != nil {
 				tt.setup(db)
 			}
