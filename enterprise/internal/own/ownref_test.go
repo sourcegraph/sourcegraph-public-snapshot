@@ -309,6 +309,24 @@ func TestBagUnverifiedEmailOnlyMatchesWithItself(t *testing.T) {
 	}
 }
 
+func TestBagRetrievesTeamsByName(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	ctx := context.Background()
+	err := db.Teams().CreateTeam(ctx, &types.Team{Name: "team-name"})
+	require.NoError(t, err)
+	team, err := db.Teams().GetTeamByName(ctx, "team-name")
+	require.NoError(t, err)
+	bag, err := ByTextReference(ctx, db, "team-name")
+	require.NoError(t, err)
+	fmt.Printf("%s contains\n", bag)
+	assert.True(t, bag.Contains(Reference{TeamID: team.ID}))
+}
+
 func TestBagManyUsers(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
