@@ -63,7 +63,6 @@ cp cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
 echo ":docker: context directory contains the following:"
 ls -lah "$OUTPUT"
 echo "--- :docker: docker build for symbols"
-cat cmd/symbols/Dockerfile.bazel
 docker build -f cmd/symbols/Dockerfile.bazel -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --build-arg COMMIT_SHA \
