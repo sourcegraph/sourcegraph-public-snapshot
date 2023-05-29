@@ -172,6 +172,7 @@ const STATUS_MESSAGES_POLL_INTERVAL = 10000
 
 interface Props {
     disablePolling?: boolean
+    isSourcegraphApp?: boolean
 }
 /**
  * Displays a status icon in the navbar reflecting the completion of backend
@@ -272,7 +273,9 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                                 key="no-repositories"
                                 title="No repositories"
                                 message="Connect a code host to connect repositories to Sourcegraph."
-                                linkTo="/setup"
+                                linkTo={
+                                    props.isSourcegraphApp ? '/users/admin/app-settings/local-repositories' : '/setup'
+                                }
                                 linkText="Setup code hosts"
                                 linkOnClick={toggleIsOpen}
                                 entryType="info"
