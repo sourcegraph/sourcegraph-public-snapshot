@@ -24,10 +24,10 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce",
     visibility = ["//visibility:public"],
     deps = [
-        "//cmd/gitserver/server",
+        "//cmd/gitserver/server/common",
         "//internal/api",
+        "//internal/database",
         "//internal/extsvc",
-        "//internal/gitserver/protocol",
         "//internal/perforce",
         "//internal/types",
         "//internal/wrexec",
