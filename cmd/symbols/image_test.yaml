@@ -7,7 +7,7 @@ commandTests:
       - key: "SANITY_CHECK"
         value: "true"
   - name: "ctags is runnable"
-    command: "ctags"
+    command: "universal-ctags"
     args:
       - --help
 
