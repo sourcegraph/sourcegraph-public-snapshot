@@ -6,6 +6,13 @@ commandTests:
     args:
       - --version
 
+  - name: "not running as root"
+    command: "/usr/bin/id"
+    args:
+      - -u
+    excludedOutput: ["^0"]
+    exitCode: 0
+
 fileExistenceTests:
 - name: '/data/pgdata-12'
   path: '/data/pgdata-12'
