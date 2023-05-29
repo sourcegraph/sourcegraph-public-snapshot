@@ -41,7 +41,7 @@ func (s *selectOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, s
 		mu                    sync.Mutex
 		hasResultWithNoOwners bool
 		errs                  error
-		bagMu                 sync.Mutex
+		bagMu                 sync.Mutex // TODO(#52553): Make bag thread-safe
 	)
 
 	dedup := result.NewDeduper()

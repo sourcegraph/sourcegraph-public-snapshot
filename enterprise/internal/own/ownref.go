@@ -87,14 +87,6 @@ func (r Reference) String() string {
 	return b.String()
 }
 
-// ReferenceOrder is to allow sorting references in tests for comparison.
-// It is not meant to be used in production or to be efficient.
-type ReferenceOrder []Reference
-
-func (o *ReferenceOrder) Len() int           { return len(*o) }
-func (o *ReferenceOrder) Less(i, j int) bool { return (*o)[i].String() < (*o)[j].String() }
-func (o *ReferenceOrder) Swap(i, j int)      { (*o)[i], (*o)[j] = (*o)[j], (*o)[i] }
-
 // Bag is a collection of platonic forms or identities of owners (currently supports
 // only users - teams coming). The purpose of this object is to group references
 // that refer to the same user, so that the user can be found by each of the references.
@@ -237,13 +229,11 @@ func (b bag) FindResolved(ref Reference) (codeowners.ResolvedOwner, bool) {
 				teamRefs := b.resolvedTeams[id]
 				return &codeowners.Team{
 					Team:   teamRefs.team,
-					Handle: teamRefs.name,
+					Handle: teamRefs.team.Name,
 				}, true
 			}
 		}
 	}
-	// Best effort, return the default asssumed person based
-	// on the input:
 	return nil, false
 }
 
@@ -267,6 +257,9 @@ func (b *bag) Add(ref Reference) {
 	}
 	if id := ref.UserID; id != 0 {
 		b.add(refKey{userID: id})
+	}
+	if id := ref.TeamID; id != 0 {
+		b.add(refKey{teamID: id})
 	}
 }
 
@@ -304,9 +297,10 @@ func (b *bag) Resolve(ctx context.Context, db edb.EnterpriseDB) error {
 			}
 			// Team resolved
 			if teamRefs != nil {
-				refCtx.resolvedTeamID = teamRefs.id
-				if _, ok := b.resolvedTeams[teamRefs.id]; !ok {
-					b.resolvedTeams[teamRefs.id] = teamRefs
+				id := teamRefs.team.ID
+				refCtx.resolvedTeamID = id
+				if _, ok := b.resolvedTeams[id]; !ok {
+					b.resolvedTeams[id] = teamRefs
 				}
 				// Team was referred to either by ID or by name, need to link back.
 				teamRefs.linkBack(b)
@@ -436,15 +430,12 @@ func (r *userReferences) linkBack(b *bag) {
 	}
 }
 
-// TODO: Should we just store *types.Team?
 type teamReferences struct {
-	id   int32
 	team *types.Team
-	name string
 }
 
 func (r *teamReferences) linkBack(b *bag) {
-	for _, k := range []refKey{{teamID: r.id}, {handle: r.name}} {
+	for _, k := range []refKey{{teamID: r.team.ID}, {handle: r.team.Name}} {
 		// Reference already present.
 		// TODO(#52441): Keeping context can improve conflict resolution.
 		// For instance teams and users under the same name can be discerned
@@ -454,7 +445,7 @@ func (r *teamReferences) linkBack(b *bag) {
 			continue
 		}
 		b.references[k] = &refContext{
-			resolvedTeamID: r.id,
+			resolvedTeamID: r.team.ID,
 			resolutionDone: true,
 		}
 	}
@@ -499,11 +490,7 @@ func (k refKey) fetch(ctx context.Context, db edb.EnterpriseDB) (*userReferences
 		}
 		// TODO(#52547): Weird situation if team is not found by ID.
 		if t != nil {
-			return nil, &teamReferences{
-				id:   t.ID,
-				team: t,
-				name: t.Name,
-			}, nil
+			return nil, &teamReferences{t}, nil
 		}
 	}
 	if k.handle != "" {
@@ -519,11 +506,7 @@ func (k refKey) fetch(ctx context.Context, db edb.EnterpriseDB) (*userReferences
 			return nil, nil, err
 		}
 		if t != nil {
-			return nil, &teamReferences{
-				id:   t.ID,
-				team: t,
-				name: t.Name,
-			}, nil
+			return nil, &teamReferences{t}, nil
 		}
 	}
 	if k.email != "" {
