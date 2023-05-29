@@ -211,7 +211,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
                             ? `${repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
                             : undefined
                     }
-                    className={classNames(styles.titleInner, styles.mutedRepoFileLink)}
+                    className={styles.titleInner}
                 />
                 <CopyPathAction
                     className={styles.copyButton}

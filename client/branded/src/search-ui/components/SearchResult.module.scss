@@ -88,18 +88,6 @@
     padding: 0.25rem;
 }
 
-.muted-repo-file-link {
-    color: var(--text-muted);
-
-    a {
-        color: var(--text-muted);
-
-        &:hover {
-            color: var(--text-muted);
-        }
-    }
-}
-
 .header-description {
     line-height: (14/11);
 }

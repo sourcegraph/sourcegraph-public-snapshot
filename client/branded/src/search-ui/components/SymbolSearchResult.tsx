@@ -63,7 +63,7 @@ export const SymbolSearchResult: React.FunctionComponent<SymbolSearchResultProps
                         ? `${repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
                         : undefined
                 }
-                className={classNames(searchResultStyles.titleInner, searchResultStyles.mutedRepoFileLink)}
+                className={searchResultStyles.titleInner}
             />
             <CopyPathAction
                 filePath={result.path}
