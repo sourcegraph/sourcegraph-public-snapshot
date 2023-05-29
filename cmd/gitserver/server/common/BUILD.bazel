@@ -26,6 +26,6 @@ go_test(
         "//internal/conf",
         "//schema",
         "@com_github_google_go_cmp//cmp",
-        "@tools_gotest//assert",
+        "@com_github_stretchr_testify//assert",
     ],
 )

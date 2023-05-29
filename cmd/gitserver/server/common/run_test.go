@@ -9,7 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"gotest.tools/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 // head will return the first n lines of data.
