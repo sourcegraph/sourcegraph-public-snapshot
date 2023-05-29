@@ -306,7 +306,6 @@ func readGitLogOutput(ctx context.Context, logger log.Logger, reader io.Reader, 
 
 		select {
 		case logLineResults <- line:
-			// return errors.New("early exit")
 		case <-ctx.Done():
 			return ctx.Err()
 		}
