@@ -4,7 +4,9 @@ set -eu
 
 cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. || exit 1
 
-# deterimes the Sourcegraph App filename based on the platform string given
+SUPPORTED_PLATFORMS=("aarch64-apple-darwin" "x86_64-apple-darwin" "x86_64-unknown-linux-gnu")
+
+# deterines the Sourcegraph App filename based on the platform string given
 # args:
 # - 1: platform string
 filename_from() {
@@ -14,8 +16,8 @@ filename_from() {
   arch=$(echo "$1" | cut -d '-' -f1)
   os=$(echo "$1" | cut -d '-' -f3)
   # this is kind of annoying but tauri uses `x86_64` as a target platform but generates
-  # bundles using `amd64`
-  if [[ ${arch} == "x86_64" ]]; then
+  # bundles using `amd64` on linux
+  if [[ ${arch} == "x86_64" && ${os} == "linux" ]]; then
     arch="amd64"
   fi
 
@@ -133,8 +135,8 @@ EOF
 
   # we loop through our supported platforms. If we do have platform json for the particular platform, we append to our base manifest
   local json
-  for platform in "aarch64-apple-darwin" "x86_64-unknown-linux-gnu"; do
-    json="$(platform_json_for ${platform})"
+  for platform in "${SUPPORTED_PLATFORMS[@]}"; do
+    json="$(platform_json_for "${platform}")"
 
     if [[ -n ${json} ]]; then
       manifest=$(echo "${manifest}" | jq --argjson platform_json "${json}" '.platforms += $platform_json')
@@ -144,7 +146,7 @@ EOF
   echo "${manifest}"
 }
 
-version=$(./enterprise/dev/app/app_version.sh)
+version=$(./enterprise/dev/app/app-version.sh)
 release_tag="app-v${version}"
 
 echo "--- :github: fetching release information for tag: ${release_tag}"
@@ -156,6 +158,7 @@ if [[ -z "${RELEASE_JSON}" ]]; then
 fi
 
 echo "--- generating app update manifest for version: ${version}"
+echo "supported platforms in manifest are: ${SUPPORTED_PLATFORMS[*]}"
 manifest=$(generate_manifest "${version}" )
 
 if [[ ${CI:-""} == "true" ]]; then
