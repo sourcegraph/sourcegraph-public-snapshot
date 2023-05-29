@@ -9,8 +9,7 @@ import { mockVSCodeExports } from '../testSetup/vscode'
 
 import { CodyCompletionItemProvider, inlineCompletionsCache } from '.'
 
-jest.mock('vscode', () => {
-    return {
+jest.mock('vscode', () => ({
         ...mockVSCodeExports(),
         InlineCompletionTriggerKind: {
             Invoke: 0,
@@ -33,8 +32,7 @@ jest.mock('vscode', () => {
                 return null
             },
         },
-    }
-})
+    }))
 
 function createCompletionResponse(completion: string): CompletionResponse {
     return {
