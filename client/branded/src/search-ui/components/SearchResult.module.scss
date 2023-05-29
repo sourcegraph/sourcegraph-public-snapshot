@@ -9,10 +9,6 @@
     padding: 0.25rem 0;
     position: relative;
 
-    &-clickable {
-        cursor: pointer;
-    }
-
     &:hover {
         text-decoration: none;
     }
@@ -46,10 +42,6 @@
     }
 }
 
-.icon {
-    margin-right: 0.25rem;
-}
-
 .match-type {
     white-space: nowrap;
 }
@@ -64,10 +56,6 @@
     border-right: 1px solid var(--border-color-2);
     height: 1rem;
     margin: 0 0.5rem;
-}
-
-.spacer {
-    flex: 1;
 }
 
 .title {
@@ -111,20 +99,6 @@
 
     &-text {
         margin-left: 0.125rem;
-    }
-}
-
-.collapsible-results {
-    // The LastSyncedIcon is absolutely-positions inside the search results.
-    // This causes it to show over the sticky header when scrolling unless
-    // we isolate the search result contents.
-    isolation: isolate;
-
-    border-radius: var(--border-radius);
-    border: 1px solid var(--border-color);
-
-    &:hover {
-        border-color: var(--border-color-2);
     }
 }
 

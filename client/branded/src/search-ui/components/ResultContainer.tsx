@@ -1,9 +1,10 @@
 import React from 'react'
 
+import { mdiArchive, mdiLock, mdiSourceFork } from '@mdi/js'
 import classNames from 'classnames'
 
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
-import { ForwardReferenceExoticComponent } from '@sourcegraph/wildcard'
+import { ForwardReferenceExoticComponent, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { formatRepositoryStarCount } from '../util/stars'
 
@@ -25,6 +26,9 @@ export interface ResultContainerProps {
     className?: string
     rankingDebug?: string
     onResultClicked?: () => void
+    isFork?: boolean
+    isArchived?: boolean
+    isPrivate?: boolean
 }
 
 const accessibleResultType: Record<SearchMatch['type'], string> = {
@@ -58,6 +62,9 @@ export const ResultContainer: ForwardReferenceExoticComponent<
         as: Component = 'div',
         onResultClicked,
         repoLastFetched,
+        isFork,
+        isArchived,
+        isPrivate,
     } = props
 
     const formattedRepositoryStarCount = formatRepositoryStarCount(repoStars)
@@ -90,10 +97,37 @@ export const ResultContainer: ForwardReferenceExoticComponent<
                             <span aria-hidden={true}>{formattedRepositoryStarCount}</span>
                         </span>
                     )}
+                    {isFork && (
+                        <Tooltip content="Forked repository">
+                            <Icon
+                                aria-label="Forked repository"
+                                className="flex-shrink-0 text-muted ml-2"
+                                svgPath={mdiSourceFork}
+                            />
+                        </Tooltip>
+                    )}
+                    {isArchived && (
+                        <Tooltip content="Archived repository">
+                            <Icon
+                                aria-label="Archived repository"
+                                className="flex-shrink-0 text-muted ml-2"
+                                svgPath={mdiArchive}
+                            />
+                        </Tooltip>
+                    )}
+                    {isPrivate && (
+                        <Tooltip content="Private repository">
+                            <Icon
+                                aria-label="Private repository"
+                                className="flex-shrink-0 text-muted ml-2"
+                                svgPath={mdiLock}
+                            />
+                        </Tooltip>
+                    )}
                     {repoLastFetched && <LastSyncedIcon lastSyncedTime={repoLastFetched} className="ml-2" />}
                 </div>
                 {rankingDebug && <div>{rankingDebug}</div>}
-                <div className={classNames(styles.result, resultClassName)}>{children}</div>
+                {children && <div className={classNames(styles.result, resultClassName)}>{children}</div>}
             </article>
         </Component>
     )

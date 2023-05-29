@@ -1,13 +1,12 @@
 import React, { useEffect, useRef } from 'react'
 
-import { mdiSourceFork, mdiArchive, mdiLock } from '@mdi/js'
 import classNames from 'classnames'
 
 import { highlightNode } from '@sourcegraph/common'
 import { codeHostSubstrLength, displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { BuildSearchQueryURLParameters, QueryState } from '@sourcegraph/shared/src/search'
 import { getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
-import { Icon, Link } from '@sourcegraph/wildcard'
+import { Link } from '@sourcegraph/wildcard'
 
 import { RepoMetadata } from './RepoMetadata'
 import { ResultContainer } from './ResultContainer'
@@ -49,20 +48,21 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
             </span>
         </div>
     )
+    const { description, metadata, repository: repoName, descriptionMatches, repositoryMatches } = result
 
     useEffect((): void => {
-        if (repoNameElement.current && result.repository && result.repositoryMatches) {
-            for (const range of result.repositoryMatches) {
+        if (repoNameElement.current && repoName && repositoryMatches) {
+            for (const range of repositoryMatches) {
                 highlightNode(
                     repoNameElement.current as HTMLElement,
-                    range.start.column - codeHostSubstrLength(result.repository),
+                    range.start.column - codeHostSubstrLength(repoName),
                     range.end.column - range.start.column
                 )
             }
         }
 
-        if (repoDescriptionElement.current && result.descriptionMatches) {
-            for (const range of result.descriptionMatches) {
+        if (repoDescriptionElement.current && descriptionMatches) {
+            for (const range of descriptionMatches) {
                 highlightNode(
                     repoDescriptionElement.current as HTMLElement,
                     range.start.column,
@@ -70,14 +70,9 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                 )
             }
         }
-    }, [
-        result,
-        result.repositoryMatches,
-        repoNameElement,
-        result.description,
-        result.descriptionMatches,
-        repoDescriptionElement,
-    ])
+    }, [result, repositoryMatches, repoNameElement, description, descriptionMatches, repoDescriptionElement, repoName])
+
+    const showRepoMetadata = enableRepositoryMetadata && !!metadata
 
     return (
         <ResultContainer
@@ -85,88 +80,38 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
             title={title}
             resultType={result.type}
             onResultClicked={onSelect}
-            repoName={result.repository}
+            repoName={repoName}
             repoStars={result.repoStars}
             className={containerClassName}
-            as={as}
             repoLastFetched={result.repoLastFetched}
+            isFork={result.fork}
+            isArchived={result.archived}
+            isPrivate={result.private}
+            as={as}
         >
-            <div data-testid="search-repo-result">
-                <div className={classNames(styles.searchResultMatch, 'p-2 flex-column')}>
-                    <div className="d-flex align-items-center flex-row">
-                        <div className={styles.matchType}>
-                            <small>Repository match</small>
-                        </div>
-                        {result.fork && (
-                            <>
-                                <div className={styles.divider} />
-                                <div>
-                                    <Icon
-                                        aria-label="Forked repository"
-                                        className={classNames('flex-shrink-0 text-muted', styles.icon)}
-                                        svgPath={mdiSourceFork}
-                                    />
-                                </div>
-                                <div>
-                                    <small>Fork</small>
-                                </div>
-                            </>
+            {(description || showRepoMetadata) && (
+                <div data-testid="search-repo-result">
+                    <div className={classNames(styles.searchResultMatch, 'p-2 flex-column')}>
+                        {description && (
+                            <small>
+                                <em ref={repoDescriptionElement}>
+                                    {description.length > REPO_DESCRIPTION_CHAR_LIMIT
+                                        ? description.slice(0, REPO_DESCRIPTION_CHAR_LIMIT) + ' ...'
+                                        : description}
+                                </em>
+                            </small>
                         )}
-                        {result.archived && (
-                            <>
-                                <div className={styles.divider} />
-                                <div>
-                                    <Icon
-                                        aria-label="Archived repository"
-                                        className={classNames('flex-shrink-0 text-muted', styles.icon)}
-                                        svgPath={mdiArchive}
-                                    />
-                                </div>
-                                <div>
-                                    <small>Archived</small>
-                                </div>
-                            </>
-                        )}
-                        {result.private && (
-                            <>
-                                <div className={styles.divider} />
-                                <div>
-                                    <Icon
-                                        aria-label="Private repository"
-                                        className={classNames('flex-shrink-0 text-muted', styles.icon)}
-                                        svgPath={mdiLock}
-                                    />
-                                </div>
-                                <div>
-                                    <small>Private</small>
-                                </div>
-                            </>
+                        {showRepoMetadata && (
+                            <RepoMetadata
+                                className="mt-2"
+                                queryState={queryState}
+                                buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
+                                items={Object.entries(metadata).map(([key, value]) => ({ key, value }))}
+                            />
                         )}
                     </div>
-                    {enableRepositoryMetadata && !!result.metadata && (
-                        <RepoMetadata
-                            className="mt-1"
-                            queryState={queryState}
-                            buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
-                            items={Object.entries(result.metadata).map(([key, value]) => ({ key, value }))}
-                        />
-                    )}
-                    {result.description && (
-                        <>
-                            <div className={styles.dividerVertical} />
-                            <div>
-                                <small>
-                                    <em ref={repoDescriptionElement}>
-                                        {result.description.length > REPO_DESCRIPTION_CHAR_LIMIT
-                                            ? result.description.slice(0, REPO_DESCRIPTION_CHAR_LIMIT) + ' ...'
-                                            : result.description}
-                                    </em>
-                                </small>
-                            </div>
-                        </>
-                    )}
                 </div>
-            </div>
+            )}
         </ResultContainer>
     )
 }
