@@ -1959,9 +1959,7 @@ func ParseCommitLogOutput(data []byte, nameOnly bool) ([]*wrappedCommit, error) 
 }
 
 func parseCommitLogOutput(data []byte, nameOnly bool) ([]*wrappedCommit, error) {
-	logger := log.Scoped("parseCommitLogOutput", "")
 	allParts := bytes.Split(data, []byte{'\x00'})
-	logger.Warn("allParts breakdown", log.Int("length", len(allParts)))
 	partsPerCommit := partsPerCommitBasic
 	if nameOnly {
 		partsPerCommit = partsPerCommitWithFileNames
