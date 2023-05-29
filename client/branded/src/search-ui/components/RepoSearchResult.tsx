@@ -6,7 +6,7 @@ import { highlightNode } from '@sourcegraph/common'
 import { codeHostSubstrLength, displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { BuildSearchQueryURLParameters, QueryState } from '@sourcegraph/shared/src/search'
 import { getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
-import { Link } from '@sourcegraph/wildcard'
+import { Link, Text } from '@sourcegraph/wildcard'
 
 import { RepoMetadata } from './RepoMetadata'
 import { ResultContainer } from './ResultContainer'
@@ -90,26 +90,24 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
             as={as}
         >
             {(description || showRepoMetadata) && (
-                <div data-testid="search-repo-result">
-                    <div className={classNames(styles.searchResultMatch, 'p-2 flex-column')}>
-                        {description && (
-                            <small>
-                                <em ref={repoDescriptionElement}>
-                                    {description.length > REPO_DESCRIPTION_CHAR_LIMIT
-                                        ? description.slice(0, REPO_DESCRIPTION_CHAR_LIMIT) + ' ...'
-                                        : description}
-                                </em>
-                            </small>
-                        )}
-                        {showRepoMetadata && (
-                            <RepoMetadata
-                                className="mt-2"
-                                queryState={queryState}
-                                buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
-                                items={Object.entries(metadata).map(([key, value]) => ({ key, value }))}
-                            />
-                        )}
-                    </div>
+                <div
+                    data-testid="search-repo-result"
+                    className={classNames(styles.searchResultMatch, styles.gap1, 'p-2 flex-column')}
+                >
+                    {description && (
+                        <Text as="em" ref={repoDescriptionElement}>
+                            {description.length > REPO_DESCRIPTION_CHAR_LIMIT
+                                ? description.slice(0, REPO_DESCRIPTION_CHAR_LIMIT) + ' ...'
+                                : description}
+                        </Text>
+                    )}
+                    {showRepoMetadata && (
+                        <RepoMetadata
+                            queryState={queryState}
+                            buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
+                            items={Object.entries(metadata).map(([key, value]) => ({ key, value }))}
+                        />
+                    )}
                 </div>
             )}
         </ResultContainer>
