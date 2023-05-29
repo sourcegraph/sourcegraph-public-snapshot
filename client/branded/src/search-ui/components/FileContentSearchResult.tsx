@@ -257,6 +257,7 @@ export const FileContentSearchResult: React.FunctionComponent<React.PropsWithChi
             resultClassName={resultContainerStyles.highlightResult}
             rankingDebug={result.debug}
             ref={rootRef}
+            repoLastFetched={result.repoLastFetched}
         >
             <div data-testid="file-search-result" data-expanded={expanded}>
                 <FileMatchChildren

@@ -9,7 +9,6 @@ import { BuildSearchQueryURLParameters, QueryState } from '@sourcegraph/shared/s
 import { getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
 import { Icon, Link } from '@sourcegraph/wildcard'
 
-import { LastSyncedIcon } from './LastSyncedIcon'
 import { RepoMetadata } from './RepoMetadata'
 import { ResultContainer } from './ResultContainer'
 
@@ -90,10 +89,10 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
             repoStars={result.repoStars}
             className={containerClassName}
             as={as}
+            repoLastFetched={result.repoLastFetched}
         >
             <div data-testid="search-repo-result">
                 <div className={classNames(styles.searchResultMatch, 'p-2 flex-column')}>
-                    {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
                     <div className="d-flex align-items-center flex-row">
                         <div className={styles.matchType}>
                             <small>Repository match</small>

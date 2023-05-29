@@ -8,6 +8,7 @@ import { ForwardReferenceExoticComponent } from '@sourcegraph/wildcard'
 import { formatRepositoryStarCount } from '../util/stars'
 
 import { CodeHostIcon } from './CodeHostIcon'
+import { LastSyncedIcon } from './LastSyncedIcon'
 import { SearchResultStar } from './SearchResultStar'
 
 import styles from './ResultContainer.module.scss'
@@ -18,6 +19,7 @@ export interface ResultContainerProps {
     titleClassName?: string
     resultClassName?: string
     repoStars?: number
+    repoLastFetched?: string
     resultType?: SearchMatch['type']
     repoName?: string
     className?: string
@@ -55,6 +57,7 @@ export const ResultContainer: ForwardReferenceExoticComponent<
         rankingDebug,
         as: Component = 'div',
         onResultClicked,
+        repoLastFetched,
     } = props
 
     const formattedRepositoryStarCount = formatRepositoryStarCount(repoStars)
@@ -87,6 +90,7 @@ export const ResultContainer: ForwardReferenceExoticComponent<
                             <span aria-hidden={true}>{formattedRepositoryStarCount}</span>
                         </span>
                     )}
+                    {repoLastFetched && <LastSyncedIcon lastSyncedTime={repoLastFetched} className="ml-2" />}
                 </div>
                 {rankingDebug && <div>{rankingDebug}</div>}
                 <div className={classNames(styles.result, resultClassName)}>{children}</div>
