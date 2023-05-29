@@ -344,7 +344,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                 })}
             </>
         )
-    }, [data])
+    }, [data, props.isSourcegraphApp])
 
     return (
         <Popover isOpen={isOpen} onOpenChange={event => setIsOpen(event.isOpen)}>
