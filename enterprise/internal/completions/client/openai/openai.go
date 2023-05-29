@@ -15,11 +15,10 @@ import (
 
 const ProviderName = "openai"
 
-func NewClient(cli httpcli.Doer, accessToken string, model string) types.CompletionsClient {
+func NewClient(cli httpcli.Doer, accessToken string) types.CompletionsClient {
 	return &openAIChatCompletionStreamClient{
 		cli:         cli,
 		accessToken: accessToken,
-		model:       model,
 	}
 }
 
@@ -28,10 +27,13 @@ const apiURL = "https://api.openai.com/v1/chat/completions"
 type openAIChatCompletionStreamClient struct {
 	cli         httpcli.Doer
 	accessToken string
-	model       string
 }
 
-func (c *openAIChatCompletionStreamClient) Complete(ctx context.Context, requestParams types.CompletionRequestParameters) (*types.CompletionResponse, error) {
+func (c *openAIChatCompletionStreamClient) Complete(
+	ctx context.Context,
+	feature types.CompletionsFeature,
+	requestParams types.CompletionRequestParameters,
+) (*types.CompletionResponse, error) {
 	resp, err := c.makeRequest(ctx, requestParams, false)
 	if err != nil {
 		return nil, err
@@ -56,6 +58,7 @@ func (c *openAIChatCompletionStreamClient) Complete(ctx context.Context, request
 
 func (c *openAIChatCompletionStreamClient) Stream(
 	ctx context.Context,
+	feature types.CompletionsFeature,
 	requestParams types.CompletionRequestParameters,
 	sendEvent types.SendCompletionEvent,
 ) error {
@@ -109,7 +112,7 @@ func (c *openAIChatCompletionStreamClient) makeRequest(ctx context.Context, requ
 
 	// TODO(sqs): make CompletionRequestParameters non-anthropic-specific
 	payload := openAIChatCompletionsRequestParameters{
-		Model:       c.model,
+		Model:       requestParams.Model,
 		Temperature: requestParams.Temperature,
 		TopP:        requestParams.TopP,
 		// TODO(sqs): map requestParams.TopK to openai

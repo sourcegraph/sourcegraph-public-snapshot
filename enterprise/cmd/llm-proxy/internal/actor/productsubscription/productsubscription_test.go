@@ -25,9 +25,17 @@ func TestNewActor(t *testing.T) {
 					LlmProxyAccess: dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccess{
 						LLMProxyAccessFields: dotcom.LLMProxyAccessFields{
 							Enabled: true,
-							RateLimit: &dotcom.LLMProxyAccessFieldsRateLimitLLMProxyRateLimit{
-								Limit:           10,
-								IntervalSeconds: 10,
+							ChatCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit{
+								RateLimitFields: dotcom.RateLimitFields{
+									Limit:           10,
+									IntervalSeconds: 10,
+								},
+							},
+							CodeCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit{
+								RateLimitFields: dotcom.RateLimitFields{
+									Limit:           10,
+									IntervalSeconds: 10,
+								},
 							},
 						},
 					},
@@ -43,9 +51,17 @@ func TestNewActor(t *testing.T) {
 					LlmProxyAccess: dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccess{
 						LLMProxyAccessFields: dotcom.LLMProxyAccessFields{
 							Enabled: true,
-							RateLimit: &dotcom.LLMProxyAccessFieldsRateLimitLLMProxyRateLimit{
-								Limit:           10,
-								IntervalSeconds: 10,
+							ChatCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit{
+								RateLimitFields: dotcom.RateLimitFields{
+									Limit:           10,
+									IntervalSeconds: 10,
+								},
+							},
+							CodeCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit{
+								RateLimitFields: dotcom.RateLimitFields{
+									Limit:           10,
+									IntervalSeconds: 10,
+								},
 							},
 						},
 					},
@@ -61,9 +77,17 @@ func TestNewActor(t *testing.T) {
 					LlmProxyAccess: dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccess{
 						LLMProxyAccessFields: dotcom.LLMProxyAccessFields{
 							Enabled: true,
-							RateLimit: &dotcom.LLMProxyAccessFieldsRateLimitLLMProxyRateLimit{
-								Limit:           10,
-								IntervalSeconds: 10,
+							ChatCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit{
+								RateLimitFields: dotcom.RateLimitFields{
+									Limit:           10,
+									IntervalSeconds: 10,
+								},
+							},
+							CodeCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit{
+								RateLimitFields: dotcom.RateLimitFields{
+									Limit:           10,
+									IntervalSeconds: 10,
+								},
 							},
 						},
 					},

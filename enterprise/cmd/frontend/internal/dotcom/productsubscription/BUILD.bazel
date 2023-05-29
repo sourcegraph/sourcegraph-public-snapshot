@@ -22,6 +22,7 @@ go_library(
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",
+        "//enterprise/internal/completions/types",
         "//enterprise/internal/license",
         "//enterprise/internal/licensing",
         "//enterprise/internal/llm-proxy",

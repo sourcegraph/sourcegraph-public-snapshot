@@ -150,10 +150,7 @@ func (o *settingsStore) GetLatestSchemaSettings(ctx context.Context, subject api
 // responsible for ensuring this or that the response never makes it to a user.
 func (o *settingsStore) ListAll(ctx context.Context, impreciseSubstring string) (_ []*api.Settings, err error) {
 	tr, ctx := trace.New(ctx, "database.Settings.ListAll", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	defer tr.FinishWithErr(&err)
 
 	q := sqlf.Sprintf(`
 		WITH q AS (

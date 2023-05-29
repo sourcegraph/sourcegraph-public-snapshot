@@ -130,19 +130,24 @@ type UpdateProductSubscriptionInput struct {
 }
 
 type UpdateLLMProxyAccessInput struct {
-	Enabled                  *bool
-	RateLimit                *int32
-	RateLimitIntervalSeconds *int32
+	Enabled                                 *bool
+	ChatCompletionsRateLimit                *int32
+	ChatCompletionsRateLimitIntervalSeconds *int32
+	ChatCompletionsAllowedModels            *[]string
+	CodeCompletionsRateLimit                *int32
+	CodeCompletionsRateLimitIntervalSeconds *int32
+	CodeCompletionsAllowedModels            *[]string
 }
 
 type LLMProxyAccess interface {
 	Enabled() bool
-	RateLimit(context.Context) (LLMProxyRateLimit, error)
-	Usage(context.Context) ([]LLMProxyUsageDatapoint, error)
+	ChatCompletionsRateLimit(context.Context) (LLMProxyRateLimit, error)
+	CodeCompletionsRateLimit(context.Context) (LLMProxyRateLimit, error)
 }
 
 type LLMProxyUsageDatapoint interface {
 	Date() gqlutil.DateTime
+	Model() string
 	Count() int32
 }
 
@@ -155,6 +160,8 @@ const (
 
 type LLMProxyRateLimit interface {
 	Source() LLMProxyRateLimitSource
+	AllowedModels() []string
 	Limit() int32
 	IntervalSeconds() int32
+	Usage(context.Context) ([]LLMProxyUsageDatapoint, error)
 }
