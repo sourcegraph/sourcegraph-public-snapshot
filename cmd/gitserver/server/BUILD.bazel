@@ -37,6 +37,7 @@ go_library(
     deps = [
         "//cmd/gitserver/server/accesslog",
         "//cmd/gitserver/server/common",
+        "//cmd/gitserver/server/perforce",
         "//internal/actor",
         "//internal/api",
         "//internal/codeintel/dependencies",
