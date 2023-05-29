@@ -10,12 +10,11 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/stretchr/testify/require"
 )
@@ -23,7 +22,7 @@ import (
 // setupTestRepo will setup a git repo with 5 commits using p4-fusion as the format in the commit
 // messages and returns the directory where the repo is created and a list of (commits, changelist
 // IDs) ordered latest to oldest.
-func setupTestRepo(t *testing.T) (server.GitDir, []types.PerforceChangelist) {
+func setupTestRepo(t *testing.T) (common.GitDir, []types.PerforceChangelist) {
 	commitMessage := `%d - test change
 
 [p4-fusion: depot-paths = "//test-perms/": change = %d]`
@@ -67,7 +66,7 @@ func setupTestRepo(t *testing.T) (server.GitDir, []types.PerforceChangelist) {
 		cid -= 1
 	}
 
-	return GitDir(path.Join(dir, ".git")), allCommitMaps
+	return common.GitDir(path.Join(dir, ".git")), allCommitMaps
 }
 
 func TestGetCommitsToInsert(t *testing.T) {
@@ -79,10 +78,9 @@ func TestGetCommitsToInsert(t *testing.T) {
 	repoCommitsStore := database.NewMockRepoCommitsChangelistsStore()
 	db.RepoCommitsChangelistsFunc.SetDefaultReturn(repoCommitsStore)
 
-	s := &Server{
-		Logger:         logger,
-		DB:             db,
-		ObservationCtx: observation.TestContextTB(t),
+	s := &Service{
+		Logger: logger,
+		DB:     db,
 	}
 
 	t.Run("new repo, never mapped", func(t *testing.T) {
@@ -205,8 +203,8 @@ func TestReadGitLogOutput(t *testing.T) {
 
 		go func() {
 			err := readGitLogOutput(ctx, logger, reader, logLineResults)
-			if err != nil {
-				panic(fmt.Sprintf("unexpected error from readGitLogOutput: %q", err.Error()))
+			if err == nil {
+				panic("no error from readGitLogOutput, but should have received context cancelled")
 			}
 		}()
 
@@ -214,7 +212,7 @@ func TestReadGitLogOutput(t *testing.T) {
 		// goroutine to exit early and return the error.
 		cancel()
 
-		require.NoError(t, ctx.Err(), "no error in context")
+		require.Error(t, ctx.Err(), "no error in context")
 	})
 }
 
