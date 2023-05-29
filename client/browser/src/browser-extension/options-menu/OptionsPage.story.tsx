@@ -26,21 +26,30 @@ const config: Meta = {
 
 export default config
 
-const OptionsPageWrapper: React.FunctionComponent<React.PropsWithChildren<Partial<OptionsPageProps>>> = props => (
-    <OptionsPage
-        isFullPage={false}
-        isActivated={true}
-        onToggleActivated={action('onToggleActivated')}
-        optionFlags={[{ key: 'allowErrorReporting', label: 'Allow error reporting', value: false }]}
-        onChangeOptionFlag={action('onChangeOptionFlag')}
-        version=""
-        sourcegraphUrl=""
-        validateSourcegraphUrl={validateSourcegraphUrl}
-        onChangeSourcegraphUrl={action('onChangeSourcegraphUrl')}
-        suggestedSourcegraphUrls={['https://k8s.sgdev.org', 'https://sourcegraph.com']}
-        {...props}
-    />
-)
+const OptionsPageWrapper: React.FunctionComponent<React.PropsWithChildren<Partial<OptionsPageProps>>> = props => {
+    const [urls, setUrls] = useState([
+        'https://sourcegraph.com',
+        'https://k8s.sgdev.org',
+        'https://sourcegraph.sourcegraph.com',
+    ])
+
+    return (
+        <OptionsPage
+            isFullPage={false}
+            isActivated={true}
+            onToggleActivated={action('onToggleActivated')}
+            optionFlags={[{ key: 'allowErrorReporting', label: 'Allow error reporting', value: false }]}
+            onChangeOptionFlag={action('onChangeOptionFlag')}
+            version=""
+            sourcegraphUrl=""
+            validateSourcegraphUrl={validateSourcegraphUrl}
+            onChangeSourcegraphUrl={action('onChangeSourcegraphUrl')}
+            suggestedSourcegraphUrls={urls}
+            onSuggestedSourcegraphUrlDelete={url => setUrls(urls.filter(item => item !== url))}
+            {...props}
+        />
+    )
+}
 
 const Interactive: Story = args => {
     const [isActivated, setIsActivated] = useState(false)

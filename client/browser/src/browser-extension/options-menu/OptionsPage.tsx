@@ -1,6 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { mdiEarth, mdiBookOpenPageVariant, mdiCheckCircleOutline, mdiLock, mdiBlockHelper, mdiOpenInNew } from '@mdi/js'
+import {
+    mdiEarth,
+    mdiBookOpenPageVariant,
+    mdiCheckCircleOutline,
+    mdiLock,
+    mdiBlockHelper,
+    mdiOpenInNew,
+    mdiClose,
+} from '@mdi/js'
 import { Combobox, ComboboxInput, ComboboxOption, ComboboxPopover, ComboboxList } from '@reach/combobox'
 import classNames from 'classnames'
 import { Observable } from 'rxjs'
@@ -9,7 +17,7 @@ import { SourcegraphLogo } from '@sourcegraph/branded/src/components/Sourcegraph
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
 import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Button, Link, Icon, Label, H4, Text, LoaderInput } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Label, H4, Text, LoaderInput, Tooltip } from '@sourcegraph/wildcard'
 
 import { CurrentUserResult } from '../../graphql-operations'
 import { getPlatformName, isDefaultSourcegraphUrl } from '../../shared/util/context'
@@ -31,6 +39,7 @@ export interface OptionsPageProps {
 
     // Suggested Sourcegraph URLs
     suggestedSourcegraphUrls: string[]
+    onSuggestedSourcegraphUrlDelete: (url: string) => void
 
     // Option flags
     optionFlags: { key: string; label: string; value: boolean }[]
@@ -75,6 +84,7 @@ export const OptionsPage: React.FunctionComponent<React.PropsWithChildren<Option
     suggestedSourcegraphUrls,
     hasRepoSyncError,
     currentUser,
+    onSuggestedSourcegraphUrlDelete,
 }) => {
     const [showAdvancedSettings, setShowAdvancedSettings] = useState(initialShowAdvancedSettings)
 
@@ -110,6 +120,7 @@ export const OptionsPage: React.FunctionComponent<React.PropsWithChildren<Option
                 <SourcegraphURLForm
                     value={sourcegraphUrl}
                     suggestions={suggestedSourcegraphUrls}
+                    onSuggestionDelete={onSuggestedSourcegraphUrlDelete}
                     onChange={onChangeSourcegraphUrl}
                     validate={validateSourcegraphUrl}
                 />
@@ -276,13 +287,15 @@ interface SourcegraphURLFormProps {
     value: OptionsPageProps['sourcegraphUrl']
     validate: OptionsPageProps['validateSourcegraphUrl']
     onChange: OptionsPageProps['onChangeSourcegraphUrl']
-    suggestions: OptionsPageProps['sourcegraphUrl'][]
+    suggestions: OptionsPageProps['suggestedSourcegraphUrls']
+    onSuggestionDelete: OptionsPageProps['onSuggestedSourcegraphUrlDelete']
 }
 
 export const SourcegraphURLForm: React.FunctionComponent<React.PropsWithChildren<SourcegraphURLFormProps>> = ({
     value,
     validate,
     suggestions,
+    onSuggestionDelete,
     onChange,
 }) => {
     const urlInputReference = useRef<HTMLInputElement | null>(null)
@@ -354,7 +367,33 @@ export const SourcegraphURLForm: React.FunctionComponent<React.PropsWithChildren
                     <ComboboxPopover className={styles.popover}>
                         <ComboboxList>
                             {suggestions.map(suggestion => (
-                                <ComboboxOption key={suggestion} value={suggestion} />
+                                <ComboboxOption
+                                    key={suggestion}
+                                    value={suggestion}
+                                    className="d-flex justify-content-between"
+                                >
+                                    {suggestion}
+                                    <Tooltip content="Remove suggestion">
+                                        <Button
+                                            className={classNames('my-0 py-0', styles.suggestionRemoveButton)}
+                                            size="sm"
+                                            onClick={event => {
+                                                // prevent click from becoming option selection
+                                                event.preventDefault()
+                                                event.stopPropagation()
+                                                if (
+                                                    confirm(
+                                                        `Are you sure you want to remove ${suggestion} from auto suggestion list?`
+                                                    )
+                                                ) {
+                                                    onSuggestionDelete(suggestion)
+                                                }
+                                            }}
+                                        >
+                                            <Icon svgPath={mdiClose} aria-label="Remove suggestion" size="sm" />
+                                        </Button>
+                                    </Tooltip>
+                                </ComboboxOption>
                             ))}
                         </ComboboxList>
                     </ComboboxPopover>

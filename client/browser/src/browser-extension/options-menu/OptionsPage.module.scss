@@ -74,7 +74,13 @@
 
         &:hover,
         &[aria-selected='true'] {
-            background: var(--color-bg-3);
+            background: var(--color-bg-2);
         }
+    }
+}
+
+.suggestion-remove-button {
+    &:hover {
+        background: var(--danger-2);
     }
 }
