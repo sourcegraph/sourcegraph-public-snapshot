@@ -38,6 +38,10 @@ out=$(
 cp "$out" "$OUTPUT"
 cp cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
 
+echo "--- DEBUG"
+shasum cmd/symbols/Dockerfile.bazel
+git checkout cmd/symbols/Dockerfile.bazel
+echo "--- BUILD"
 docker build -f cmd/symbols/Dockerfile.bazel -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --build-arg COMMIT_SHA \
