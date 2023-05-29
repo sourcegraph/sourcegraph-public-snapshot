@@ -1,6 +1,7 @@
 package common
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -29,4 +30,20 @@ func (dir GitDir) Set(cmd *exec.Cmd) {
 		cmd.Env = os.Environ()
 	}
 	cmd.Env = append(cmd.Env, "GIT_DIR="+string(dir))
+}
+
+// GitCommandError is an error of a failed Git command.
+type GitCommandError struct {
+	// Err is the original error produced by the git command that failed.
+	Err error
+	// Output is the std error output of the command that failed.
+	Output string
+}
+
+func (e *GitCommandError) Error() string {
+	return fmt.Sprintf("%s - output: %q", e.Err, e.Output)
+}
+
+func (e *GitCommandError) Unwrap() error {
+	return e.Err
 }

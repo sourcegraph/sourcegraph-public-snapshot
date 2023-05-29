@@ -73,9 +73,6 @@ const tempDirName = ".tmp"
 // and where it will store cache data.
 const P4HomeName = ".p4home"
 
-// UnsetExitStatus is a sentinel value for an unknown/unset exit status.
-const UnsetExitStatus = -10810
-
 // traceLogs is controlled via the env SRC_GITSERVER_TRACE. If true we trace
 // logs to stderr
 var traceLogs bool
@@ -103,37 +100,6 @@ func init() {
 	traceLogs, _ = strconv.ParseBool(env.Get("SRC_GITSERVER_TRACE", "false", "Toggles trace logging to stderr"))
 }
 
-// runCommandMock is set by tests. When non-nil it is run instead of
-// runCommand
-var runCommandMock func(context.Context, *exec.Cmd) (int, error)
-
-// runCommand runs the command and returns the exit status. All clients of this function should set the context
-// in cmd themselves, but we have to pass the context separately here for the sake of tracing.
-func runCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error) {
-	if runCommandMock != nil {
-		return runCommandMock(ctx, cmd.Unwrap())
-	}
-	span, _ := ot.StartSpanFromContext(ctx, "runCommand") //nolint:staticcheck // OT is deprecated
-	span.SetTag("path", cmd.Unwrap().Path)
-	span.SetTag("args", cmd.Unwrap().Args)
-	span.SetTag("dir", cmd.Unwrap().Dir)
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-			span.SetTag("exitCode", exitCode)
-		}
-		span.Finish()
-	}()
-
-	err = cmd.Run()
-	exitStatus := UnsetExitStatus
-	if cmd.Unwrap().ProcessState != nil { // is nil if process failed to start
-		exitStatus = cmd.Unwrap().ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
-	}
-	return exitStatus, err
-}
-
 // runCommandGraceful runs the command and returns the exit status. If the
 // supplied context is cancelled we attempt to send SIGINT to the command to
 // allow it to gracefully shutdown. All clients of this function should pass in a
@@ -153,7 +119,7 @@ func runCommandGraceful(ctx context.Context, logger log.Logger, cmd wrexec.Cmder
 		span.Finish()
 	}()
 
-	exitCode = UnsetExitStatus
+	exitCode = common.UnsetExitStatus
 	err = cmd.Start()
 	if err != nil {
 		return exitCode, err
@@ -926,6 +892,12 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitserverAddresses, batc
 	return nil
 }
 
+// repoCloned checks if dir or `${dir}/.git` is a valid GIT_DIR.
+var repoCloned = func(dir common.GitDir) bool {
+	_, err := os.Stat(dir.Path("HEAD"))
+	return !os.IsNotExist(err)
+}
+
 // Stop cancels the running background jobs and returns when done.
 func (s *Server) Stop() {
 	// idempotent so we can just always set and cancel
@@ -1522,7 +1494,7 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 		dir.Set(cmd.Unwrap())
 		cmd.Unwrap().Stdout = &buf
 
-		if _, err := runCommand(ctx, cmd); err != nil {
+		if _, err := common.RunCommand(ctx, cmd); err != nil {
 			return "", true, err
 		}
 
@@ -1697,7 +1669,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 
 	start := time.Now()
 	var cmdStart time.Time // set once we have ensured commit
-	exitStatus := UnsetExitStatus
+	exitStatus := common.UnsetExitStatus
 	var stdoutN, stderrN int64
 	var status string
 	var execErr error
@@ -1839,7 +1811,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	cmd.Unwrap().Stderr = stderrW
 	cmd.Unwrap().Stdin = bytes.NewReader(req.Stdin)
 
-	exitStatus, execErr = runCommand(ctx, cmd)
+	exitStatus, execErr = common.RunCommand(ctx, cmd)
 
 	status = strconv.Itoa(exitStatus)
 	stdoutN = stdoutW.n
@@ -1958,7 +1930,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 
 	start := time.Now()
 	var cmdStart time.Time // set once we have ensured commit
-	exitStatus := UnsetExitStatus
+	exitStatus := common.UnsetExitStatus
 	var stdoutN, stderrN int64
 	var status string
 	var execErr error
@@ -2053,7 +2025,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 	cmd.Stdout = stdoutW
 	cmd.Stderr = stderrW
 
-	exitStatus, execErr = runCommand(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd))
+	exitStatus, execErr = common.RunCommand(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd))
 
 	status = strconv.Itoa(exitStatus)
 	stdoutN = stdoutW.n
@@ -2343,7 +2315,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 
 	go readCloneProgress(bgCtx, s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
 
-	if output, err := runWith(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, pw); err != nil {
+	if output, err := common.RunWith(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, pw); err != nil {
 		return errors.Wrapf(err, "clone failed. Output: %s", string(output))
 	}
 
@@ -2659,7 +2631,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 				}
 
 				// The repo update might have failed due to the repo being corrupt
-				var gitErr *GitCommandError
+				var gitErr *common.GitCommandError
 				if errors.As(err, &gitErr) {
 					s.logIfCorrupt(ctx, repo, s.dir(repo), gitErr.Output)
 				}
@@ -2826,7 +2798,7 @@ func setHEAD(ctx context.Context, logger log.Logger, rf *wrexec.RecordingCommand
 		return errors.Wrap(err, "get remote show command")
 	}
 	dir.Set(cmd)
-	output, err := runWith(ctx, rf.Wrap(ctx, logger, cmd), true, nil)
+	output, err := common.RunWith(ctx, rf.Wrap(ctx, logger, cmd), true, nil)
 	if err != nil {
 		logger.Error("Failed to fetch remote info", log.Error(err), log.String("output", string(output)))
 		return errors.Wrap(err, "failed to fetch remote info")
