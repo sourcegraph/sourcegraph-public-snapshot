@@ -198,8 +198,12 @@ func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) categ
 			{
 				Name: "pre-commit.com is installed",
 				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
+					repoRoot, err := root.RepositoryRoot()
+					if err != nil {
+						return err
+					}
 					return check.Combine(
-						check.FileExists(".bin/pre-commit-3.3.2.pyz"),
+						check.FileExists(filepath.Join(repoRoot, ".bin/pre-commit-3.3.2.pyz")),
 						func(context.Context) error {
 							return root.Run(usershell.Command(ctx, "cat .git/hooks/pre-commit | grep https://pre-commit.com")).Wait()
 						},
