@@ -81,7 +81,8 @@ func (p *permissionSyncJobCleaner) Routines(_ context.Context, observationCtx *o
 				},
 			),
 			operation,
-		)}, nil
+		),
+	}, nil
 }
 
 func NewPermissionSyncJobCleaner() job.Job {

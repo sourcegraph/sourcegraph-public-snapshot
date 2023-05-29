@@ -7,13 +7,13 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/permissions"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -27,7 +27,9 @@ import (
 var _ job.Job = (*permissionSyncJobScheduler)(nil)
 
 // permissionSyncJobScheduler is a worker responsible for scheduling permissions sync jobs.
-type permissionSyncJobScheduler struct{}
+type permissionSyncJobScheduler struct {
+	backoff auth.Backoff
+}
 
 func (p *permissionSyncJobScheduler) Description() string {
 	return "Schedule permission sync jobs for users and repositories."
@@ -87,23 +89,24 @@ func (p *permissionSyncJobScheduler) Routines(_ context.Context, observationCtx 
 					}
 
 					start := time.Now()
-					count, err := scheduleJobs(ctx, db, logger)
+					count, err := scheduleJobs(ctx, db, logger, p.backoff)
 					m.Observe(time.Since(start).Seconds(), float64(count), &err)
 					return err
 				},
 			),
 			operation,
-		)}, nil
+		),
+	}, nil
 }
 
 func NewPermissionSyncJobScheduler() job.Job {
 	return &permissionSyncJobScheduler{}
 }
 
-func scheduleJobs(ctx context.Context, db database.DB, logger log.Logger) (int, error) {
+func scheduleJobs(ctx context.Context, db database.DB, logger log.Logger, backoff auth.Backoff) (int, error) {
 	store := db.PermissionSyncJobs()
 	permsStore := edb.Perms(logger, db, timeutil.Now)
-	schedule, err := getSchedule(ctx, permsStore)
+	schedule, err := getSchedule(ctx, permsStore, backoff)
 	if err != nil {
 		return 0, err
 	}
@@ -156,7 +159,7 @@ type scheduledRepo struct {
 //  2. Private repositories with no permissions, because those can't be viewed by anyone except site admins.
 //  3. Rolling updating user permissions over time from the oldest ones.
 //  4. Rolling updating repository permissions over time from the oldest ones.
-func getSchedule(ctx context.Context, store edb.PermsStore) (*schedule, error) {
+func getSchedule(ctx context.Context, store edb.PermsStore, b auth.Backoff) (*schedule, error) {
 	schedule := new(schedule)
 
 	usersWithNoPerms, err := scheduleUsersWithNoPerms(ctx, store)
@@ -174,7 +177,7 @@ func getSchedule(ctx context.Context, store edb.PermsStore) (*schedule, error) {
 	userLimit, repoLimit := oldestUserPermissionsBatchSize(), oldestRepoPermissionsBatchSize()
 
 	if userLimit > 0 {
-		usersWithOldestPerms, err := scheduleUsersWithOldestPerms(ctx, store, userLimit, permissions.SyncUserBackoff())
+		usersWithOldestPerms, err := scheduleUsersWithOldestPerms(ctx, store, userLimit, b.SyncUserBackoff())
 		if err != nil {
 			return nil, errors.Wrap(err, "load users with oldest permissions")
 		}
@@ -182,7 +185,7 @@ func getSchedule(ctx context.Context, store edb.PermsStore) (*schedule, error) {
 	}
 
 	if repoLimit > 0 {
-		reposWithOldestPerms, err := scheduleReposWithOldestPerms(ctx, store, repoLimit, permissions.SyncRepoBackoff())
+		reposWithOldestPerms, err := scheduleReposWithOldestPerms(ctx, store, repoLimit, b.SyncRepoBackoff())
 		if err != nil {
 			return nil, errors.Wrap(err, "scan repositories with oldest permissions")
 		}

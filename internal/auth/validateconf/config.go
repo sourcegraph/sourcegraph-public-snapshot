@@ -5,6 +5,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
+// TODO: explicit validateconf.Init call instead of implicit
 func init() {
 	conf.ContributeValidator(validateConfig)
 }

@@ -10,10 +10,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/permissions"
 	"github.com/stretchr/testify/require"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -38,10 +38,8 @@ func TestPermsSyncerScheduler_scheduleJobs(t *testing.T) {
 		t.Skip()
 	}
 
-	permissions.ZeroBackoffDuringTest = true
 	t.Cleanup(func() {
 		conf.Mock(nil)
-		permissions.ZeroBackoffDuringTest = false
 	})
 
 	ctx := context.Background()
@@ -208,7 +206,7 @@ type testJob struct {
 }
 
 func runJobsTest(t *testing.T, ctx context.Context, logger log.Logger, db database.DB, store database.PermissionSyncJobStore, wantJobs []testJob) {
-	count, err := scheduleJobs(ctx, db, logger)
+	count, err := scheduleJobs(ctx, db, logger, auth.ZeroBackoff)
 	require.NoError(t, err)
 	require.Equal(t, len(wantJobs), count)
 

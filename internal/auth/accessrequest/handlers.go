@@ -2,13 +2,12 @@ package accessrequest
 
 import (
 	"encoding/json"
+	"net/http"
 
 	"github.com/sourcegraph/log"
 
-	"net/http"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 

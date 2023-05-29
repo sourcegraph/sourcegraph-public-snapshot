@@ -1,4 +1,4 @@
-package permissions
+package auth
 
 import (
 	"time"
@@ -6,10 +6,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 )
 
-var ZeroBackoffDuringTest = false
+type Backoff int
 
-func SyncUserBackoff() time.Duration {
-	if ZeroBackoffDuringTest {
+const (
+	// so the zero value means "from conf"
+	ConfBackoff Backoff = 0
+	ZeroBackoff Backoff = 1
+)
+
+func (b Backoff) SyncUserBackoff() time.Duration {
+	if b == ZeroBackoff {
 		return time.Duration(0)
 	}
 
@@ -20,8 +26,8 @@ func SyncUserBackoff() time.Duration {
 	return time.Duration(seconds) * time.Second
 }
 
-func SyncRepoBackoff() time.Duration {
-	if ZeroBackoffDuringTest {
+func (b Backoff) SyncRepoBackoff() time.Duration {
+	if b == ZeroBackoff {
 		return time.Duration(0)
 	}
 

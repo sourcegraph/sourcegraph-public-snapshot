@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -16,7 +15,7 @@ type accountDetailsBody struct {
 	ClientID  string `json:"clientID"`
 	AccountID string `json:"accountID"`
 
-	sourcegraphoperator.ExternalAccountData
+	ExternalAccountData
 }
 
 // addSourcegraphOperatorExternalAccount links the given user with a Sourcegraph Operator
@@ -76,7 +75,7 @@ func addSourcegraphOperatorExternalAccount(ctx context.Context, db database.DB, 
 		}
 
 		// Create an association
-		accountData, err := sourcegraphoperator.MarshalAccountData(details.ExternalAccountData)
+		accountData, err := MarshalAccountData(details.ExternalAccountData)
 		if err != nil {
 			return errors.Wrap(err, "failed to marshal account data")
 		}
@@ -91,4 +90,26 @@ func addSourcegraphOperatorExternalAccount(ctx context.Context, db database.DB, 
 		}
 		return nil
 	})
+}
+
+type addSourcegraphOperatorExternalAccountFunc func(ctx context.Context, db database.DB, userID int32, serviceID string, accountDetails string) error
+
+var addSourcegraphOperatorExternalAccountHandler addSourcegraphOperatorExternalAccountFunc
+
+// RegisterAddSourcegraphOperatorExternalAccountHandler is used by
+// enterprise/cmd/frontend/internal/auth/sourcegraphoperator to register an
+// enterprise handler for AddSourcegraphOperatorExternalAccount.
+func RegisterAddSourcegraphOperatorExternalAccountHandler(handler addSourcegraphOperatorExternalAccountFunc) {
+	addSourcegraphOperatorExternalAccountHandler = handler
+}
+
+// AddSourcegraphOperatorExternalAccount is implemented in
+// enterprise/cmd/frontend/internal/auth/sourcegraphoperator.AddSourcegraphOperatorExternalAccount
+//
+// Outside of Sourcegraph Enterprise, this will no-op and return an error.
+func AddSourcegraphOperatorExternalAccount(ctx context.Context, db database.DB, userID int32, serviceID string, accountDetails string) error {
+	if addSourcegraphOperatorExternalAccountHandler == nil {
+		return errors.New("AddSourcegraphOperatorExternalAccount unimplemented in Sourcegraph OSS")
+	}
+	return addSourcegraphOperatorExternalAccountHandler(ctx, db, userID, serviceID, accountDetails)
 }

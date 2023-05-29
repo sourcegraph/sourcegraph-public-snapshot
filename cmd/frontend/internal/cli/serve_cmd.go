@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
 	"github.com/sourcegraph/sourcegraph/internal/adminanalytics"
+	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -109,6 +110,8 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			return errors.Wrap(err, "failed to validate out of band migrations")
 		}
 	}
+
+	userpasswd.Init()
 
 	// After our DB, redis is our next most important datastore
 	if err := redispoolRegisterDB(db); err != nil {
