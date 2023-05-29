@@ -2409,7 +2409,7 @@
           "description": "The external completions provider.",
           "default": "anthropic",
           "enum": ["anthropic", "openai"]
-        },
+        }
       },
       "examples": [
         {
