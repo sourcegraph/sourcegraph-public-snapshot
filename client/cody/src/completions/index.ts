@@ -41,7 +41,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         private charsPerToken = 4,
         private responseTokens = 200,
         private prefixPercentage = 0.6,
-        private suffixPercentage = 0.1
+        private suffixPercentage = 0.1,
+        private disableTimeouts = false
     ) {
         this.promptTokens = this.contextWindowTokens - this.responseTokens
         this.maxPrefixTokens = Math.floor(this.promptTokens * this.prefixPercentage)
@@ -233,6 +234,10 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     1 // tries
                 )
             )
+        }
+
+        if (!this.disableTimeouts) {
+            await new Promise<void>(resolve => setTimeout(resolve, timeout))
         }
 
         // We don't need to make a request at all if the signal is already aborted after the
