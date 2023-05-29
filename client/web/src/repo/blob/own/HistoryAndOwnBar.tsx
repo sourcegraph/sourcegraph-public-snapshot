@@ -68,7 +68,7 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
     const ownership = data.node.commit?.blob?.ownership
     const contributors = data.node.commit?.blob?.contributors
     // +1 contributor (singular), but +3 contributors (plural)
-    const contributorText = contributors?.totalCount == 1 ? 'contributor' : 'contributors'
+    const contributorText = contributors?.totalCount === 1 ? 'contributor' : 'contributors'
 
     return (
         <div className={styles.wrapper}>
