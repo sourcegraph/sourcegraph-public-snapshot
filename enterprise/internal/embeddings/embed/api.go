@@ -42,10 +42,8 @@ type embeddingsClient struct {
 	config *schema.Embeddings
 }
 
-// isDisabled checks the current state of the site config to see if embeddings are
-// enabled. This gives an "escape hatch" for cancelling a long-running embeddings job.
 func (c *embeddingsClient) isDisabled() bool {
-	return !conf.EmbeddingsEnabled()
+	return c.config == nil || !c.config.Enabled
 }
 
 func (c *embeddingsClient) GetDimensions() (int, error) {
@@ -82,11 +80,19 @@ func (c *embeddingsClient) GetEmbeddingsWithRetries(ctx context.Context, texts [
 	return nil, err
 }
 
+var MODELS_WITHOUT_NEWLINES = map[string]struct{}{
+	"text-embedding-ada-002": {},
+}
+
 func GetEmbeddings(ctx context.Context, texts []string, config *schema.Embeddings) ([]float32, error) {
-	// Replace newlines, which can negatively affect performance.
-	augmentedTexts := make([]string, len(texts))
-	for idx, text := range texts {
-		augmentedTexts[idx] = strings.ReplaceAll(text, "\n", " ")
+	_, replaceNewlines := MODELS_WITHOUT_NEWLINES[config.Model]
+	augmentedTexts := texts
+	if replaceNewlines {
+		augmentedTexts = make([]string, len(texts))
+		// Replace newlines for certain (OpenAI) models, because they can negatively affect performance.
+		for idx, text := range texts {
+			augmentedTexts[idx] = strings.ReplaceAll(text, "\n", " ")
+		}
 	}
 
 	request := EmbeddingAPIRequest{Model: config.Model, Input: augmentedTexts}

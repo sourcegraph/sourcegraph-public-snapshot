@@ -32,6 +32,7 @@ go_library(
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/httpcli",
+        "//internal/jsonc",
         "//internal/metrics",
         "//internal/observation",
         "//internal/repoupdater",
@@ -43,12 +44,13 @@ go_library(
         "//lib/batches/on",
         "//lib/batches/template",
         "//lib/errors",
+        "//schema",
         "@com_github_gobwas_glob//:glob",
         "@com_github_grafana_regexp//:regexp",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
-        "@com_github_opentracing_opentracing_go//log",
         "@com_github_sourcegraph_log//:log",
         "@in_gopkg_yaml_v2//:yaml_v2",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 

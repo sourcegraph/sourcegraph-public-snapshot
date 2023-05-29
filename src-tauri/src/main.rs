@@ -6,8 +6,8 @@
 #[cfg(not(dev))]
 use {tauri::api::process::Command, tauri::api::process::CommandEvent};
 
-mod common;
 mod cody;
+mod common;
 mod tray;
 use common::{extract_path_from_scheme_url, show_window};
 use std::sync::RwLock;
@@ -29,8 +29,21 @@ fn get_launch_path(window: tauri::Window) -> String {
 }
 
 #[tauri::command]
-fn hide_window(app: tauri::AppHandle, window: tauri::Window) {
-    window.hide().unwrap();
+fn app_shell_loaded() -> Option<AppShellReadyPayload> {
+    return APP_SHELL_READY_PAYLOAD.read().unwrap().clone();
+}
+
+#[tauri::command]
+fn show_main_window(app_handle: tauri::AppHandle) {
+    show_window(&app_handle, "main");
+}
+
+#[tauri::command]
+fn reload_cody_window(app_handle: tauri::AppHandle) {
+    let win = app_handle.get_window("cody");
+    if win.is_some() {
+        win.unwrap().eval("window.location.reload();").unwrap();
+    }
 }
 
 fn set_launch_path(url: String) {
@@ -39,7 +52,7 @@ fn set_launch_path(url: String) {
 
 // Url scheme for sourcegraph:// urls.
 const SCHEME: &str = "sourcegraph";
-const BUNDLE_IDENTIFIER: &str = "com.sourcegraph.app";
+const BUNDLE_IDENTIFIER: &str = "com.sourcegraph.cody";
 
 fn main() {
     // Prepare handler for sourcegraph:// scheme urls.
@@ -95,10 +108,8 @@ fn main() {
         )
         .plugin(tauri_plugin_positioner::init())
         .setup(|app| {
-            start_embedded_services();
-
             let handle = app.handle();
-
+            start_embedded_services(&handle);
             // Register handler for sourcegraph:// scheme urls.
             tauri_plugin_deep_link::register(SCHEME, move |request| {
                 let path: &str = extract_path_from_scheme_url(&request, SCHEME);
@@ -139,24 +150,35 @@ fn main() {
         // its name which may suggest that it invokes something, actually only
         // *defines* an invoke() handler and does not invoke anything during
         // setup here.)
-        .invoke_handler(tauri::generate_handler![
-            get_launch_path,
-            hide_window,
-        ])
+        .invoke_handler(tauri::generate_handler![get_launch_path, app_shell_loaded, show_main_window, reload_cody_window])
         .run(context)
         .expect("error while running tauri application");
 }
 
 #[cfg(dev)]
-fn start_embedded_services() {
+fn start_embedded_services(app_handle: &tauri::AppHandle) {
+    let args = get_sourcegraph_args(app_handle);
     println!("embedded Sourcegraph services disabled for local development");
+    println!("Sourcegraph would start with args: {:?}", args);
 }
 
+#[derive(Clone, serde::Serialize)]
+struct AppShellReadyPayload {
+    sign_in_url: String,
+}
+
+// The URL to open the frontend on, if launched with a scheme url.
+static APP_SHELL_READY_PAYLOAD: RwLock<Option<AppShellReadyPayload>> = RwLock::new(None);
+
 #[cfg(not(dev))]
-fn start_embedded_services() {
+fn start_embedded_services(handle: &tauri::AppHandle) {
+    let app = handle.clone();
     let sidecar = "sourcegraph-backend";
+    let args = get_sourcegraph_args(&app);
+    println!("Sourcegraph starting with args: {:?}", args);
     let (mut rx, _child) = Command::new_sidecar(sidecar)
         .expect(format!("failed to create `{sidecar}` binary command").as_str())
+        .args(args)
         .spawn()
         .expect(format!("failed to spawn {sidecar} sidecar").as_str());
 
@@ -164,9 +186,43 @@ fn start_embedded_services() {
         while let Some(event) = rx.recv().await {
             match event {
                 CommandEvent::Stdout(line) => log::info!("{}", line),
-                CommandEvent::Stderr(line) => log::error!("{}", line),
+                CommandEvent::Stderr(line) => {
+                    if line.contains("tauri:sign-in-url: ") {
+                        let url = line.splitn(2, ' ').last().unwrap();
+                        *APP_SHELL_READY_PAYLOAD.write().unwrap() = Some(AppShellReadyPayload {
+                            sign_in_url: url.to_string(),
+                        });
+                        app.get_window("main")
+                            .unwrap()
+                            .emit(
+                                "app-shell-ready",
+                                APP_SHELL_READY_PAYLOAD.read().unwrap().clone(),
+                            )
+                            .unwrap();
+                    }
+                    log::error!("{}", line);
+                }
                 _ => continue,
             };
         }
     });
+}
+
+fn get_sourcegraph_args(app_handle: &tauri::AppHandle) -> Vec<String> {
+    let data_dir = app_handle.path_resolver().app_data_dir();
+    let cache_dir = app_handle.path_resolver().app_cache_dir();
+    let mut args = Vec::new();
+
+    // cache_dir is where the cache goes
+    if let Some(cache_dir) = cache_dir {
+        args.push("--cacheDir".to_string());
+        args.push(cache_dir.to_string_lossy().to_string())
+    }
+
+    // configDir is where the database goes
+    if let Some(data_dir) = data_dir {
+        args.push("--configDir".to_string());
+        args.push(data_dir.to_string_lossy().to_string())
+    }
+    return args;
 }

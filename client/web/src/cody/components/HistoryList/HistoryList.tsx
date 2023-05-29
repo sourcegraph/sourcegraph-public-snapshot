@@ -92,9 +92,7 @@ const HistoryListItem: React.FunctionComponent<{
         [deleteHistoryItem, id]
     )
 
-    if (!lastMessage?.text) {
-        return null
-    }
+    const text = lastMessage?.text || 'Write your first message.'
 
     return (
         <button
@@ -131,8 +129,8 @@ const HistoryListItem: React.FunctionComponent<{
                 </Tooltip>
             </div>
             <Text className="mb-0 truncate text-body">
-                {lastMessage.text.slice(0, truncateMessageLength)}
-                {lastMessage.text.length > truncateMessageLength ? '...' : ''}
+                {text.slice(0, truncateMessageLength)}
+                {text.length > truncateMessageLength ? '...' : ''}
             </Text>
         </button>
     )

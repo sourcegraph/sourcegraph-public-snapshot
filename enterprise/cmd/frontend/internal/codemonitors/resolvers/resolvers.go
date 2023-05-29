@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
+	"github.com/sourcegraph/sourcegraph/internal/settings"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -150,7 +151,7 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 		}
 
 		if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
-			settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, tx.db)
+			settings, err := settings.CurrentUserFinal(ctx, tx.db)
 			if err != nil {
 				return err
 			}
@@ -550,7 +551,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		// When the query is changed, take a new snapshot of the commits that currently
 		// exist so we know where to start.
 		if currentTrigger.QueryString != args.Trigger.Update.Query {
-			settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, r.db)
+			settings, err := settings.CurrentUserFinal(ctx, r.db)
 			if err != nil {
 				return nil, err
 			}

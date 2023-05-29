@@ -5,7 +5,6 @@ use tauri::{
     AppHandle, CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu,
     SystemTrayMenuItem,
 };
-use tauri_plugin_positioner::{Position, WindowExt};
 
 pub fn create_system_tray() -> SystemTray {
     SystemTray::new().with_menu(create_system_tray_menu())
@@ -15,7 +14,7 @@ fn create_system_tray_menu() -> SystemTrayMenu {
     SystemTrayMenu::new()
         .add_item(CustomMenuItem::new(
             "open".to_string(),
-            "Open Sourcegraph App",
+            "Open Sourcegraph",
         ))
         .add_item(CustomMenuItem::new("cody".to_string(), "Show Cody"))
         .add_native_item(SystemTrayMenuItem::Separator)

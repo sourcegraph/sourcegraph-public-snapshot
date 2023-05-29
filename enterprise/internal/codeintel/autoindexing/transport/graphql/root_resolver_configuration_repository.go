@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
@@ -19,8 +18,8 @@ import (
 
 // 🚨 SECURITY: Only entrypoint is within the repository resolver so the user is already authenticated
 func (r *rootResolver) IndexConfiguration(ctx context.Context, repoID graphql.ID) (_ resolverstubs.IndexConfigurationResolver, err error) {
-	_, traceErrs, endObservation := r.operations.indexConfiguration.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repoID", string(repoID)),
+	_, traceErrs, endObservation := r.operations.indexConfiguration.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repoID", string(repoID)),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -38,9 +37,9 @@ func (r *rootResolver) IndexConfiguration(ctx context.Context, repoID graphql.ID
 
 // 🚨 SECURITY: Only site admins may modify code intelligence indexing configuration
 func (r *rootResolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args *resolverstubs.UpdateRepositoryIndexConfigurationArgs) (_ *resolverstubs.EmptyResponse, err error) {
-	ctx, _, endObservation := r.operations.updateRepositoryIndexConfiguration.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repository", string(args.Repository)),
-		log.String("configuration", args.Configuration),
+	ctx, _, endObservation := r.operations.updateRepositoryIndexConfiguration.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repository", string(args.Repository)),
+		attribute.String("configuration", args.Configuration),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -105,7 +104,7 @@ func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) 
 	defer r.errTracer.Collect(&err, attribute.String("indexConfigResolver.field", "inferredConfiguration"))
 
 	var limitErr error
-	configuration, _, err := r.autoindexSvc.InferIndexConfiguration(ctx, r.repositoryID, "", "", true)
+	result, err := r.autoindexSvc.InferIndexConfiguration(ctx, r.repositoryID, "", "", true)
 	if err != nil {
 		if errors.As(err, &inference.LimitError{}) {
 			limitErr = err
@@ -113,11 +112,8 @@ func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) 
 			return nil, err
 		}
 	}
-	if configuration == nil {
-		return nil, nil
-	}
 
-	marshaled, err := config.MarshalJSON(*configuration)
+	marshaled, err := config.MarshalJSON(config.IndexConfiguration{IndexJobs: result.IndexJobs})
 	if err != nil {
 		return nil, err
 	}

@@ -1,5 +1,7 @@
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
+import { canWriteRepoMetadata } from '../util/rbac'
+
 import { RepoRevisionWrapper } from './components/RepoRevision'
 import { RepoContainerRoute } from './RepoContainer'
 
@@ -17,6 +19,8 @@ const RepositoryCompareArea = lazyComponent(() => import('./compare/RepositoryCo
 const RepositoryStatsArea = lazyComponent(() => import('./stats/RepositoryStatsArea'), 'RepositoryStatsArea')
 
 export const compareSpecPath = '/-/compare/*'
+
+const RepositoryMetadataPage = lazyComponent(() => import('./RepoMetadataPage'), 'RepoMetadataPage')
 
 export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
@@ -50,5 +54,10 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
         path: '/-/stats/contributors',
         render: context => <RepositoryStatsArea {...context} />,
+    },
+    {
+        path: '/-/metadata',
+        condition: ({ authenticatedUser }) => canWriteRepoMetadata(authenticatedUser),
+        render: context => <RepositoryMetadataPage {...context} />,
     },
 ]

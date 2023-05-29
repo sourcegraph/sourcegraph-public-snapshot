@@ -7,10 +7,13 @@ import (
 
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/redigo"
+	"github.com/gomodule/redigo/redis"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/events"
-	llmproxy "github.com/sourcegraph/sourcegraph/enterprise/internal/llm-proxy"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
@@ -19,16 +22,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/service"
+	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor/anonymous"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor/productsubscription"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/httpapi"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/response"
 )
 
 func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFunc, config *Config) error {
@@ -59,27 +60,39 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			obctx.Logger,
 			rcache.New("product-subscriptions"),
 			dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken),
-			config.Dotcom.DevLicensesOnly),
+			config.Dotcom.InternalMode),
 	}
 
-	// Set up our handler chain, which is run from the bottom up. Application handlers
-	// come last.
-	handler := httpapi.NewHandler(obctx.Logger, eventLogger, &httpapi.Config{
-		AnthropicAccessToken: config.Anthropic.AccessToken,
-	})
-
-	// Authentication and rate-limting layers
-	handler = rateLimit(obctx.Logger, eventLogger, newPrefixRedisStore("rate_limit:", redispool.Cache), handler)
-	handler = &auth.Authenticator{
+	authr := &auth.Authenticator{
 		Logger:      obctx.Logger.Scoped("auth", "authentication middleware"),
 		EventLogger: eventLogger,
 		Sources:     sources,
-		Next:        handler,
 	}
 
+	rs := newRedisStore(redispool.Cache)
+
+	// Set up our handler chain, which is run from the bottom up. Application handlers
+	// come last.
+	handler := httpapi.NewHandler(obctx.Logger, eventLogger, rs, authr, &httpapi.Config{
+		AnthropicAccessToken:   config.Anthropic.AccessToken,
+		AnthropicAllowedModels: config.Anthropic.AllowedModels,
+		OpenAIAccessToken:      config.OpenAI.AccessToken,
+		OpenAIOrgID:            config.OpenAI.OrgID,
+		OpenAIAllowedModels:    config.OpenAI.AllowedModels,
+	})
+
+	// Diagnostic layers
+	handler = httpapi.NewDiagnosticsHandler(obctx.Logger, handler, config.DiagnosticsSecret)
+
 	// Instrumentation layers
-	handler = httpLogger(obctx.Logger.Scoped("httpAPI", ""), handler)
-	handler = instrumentation.HTTPMiddleware("llm-proxy", handler)
+	handler = requestLogger(obctx.Logger.Scoped("requests", "HTTP requests"), handler)
+	var otelhttpOpts []otelhttp.Option
+	if !config.InsecureDev {
+		// Outside of dev, we're probably running as a standalone service, so treat
+		// incoming spans as links
+		otelhttpOpts = append(otelhttpOpts, otelhttp.WithPublicEndpoint())
+	}
+	handler = instrumentation.HTTPMiddleware("llm-proxy", handler, otelhttpOpts...)
 
 	// Collect request client for downstream handlers. Outside of dev, we always set up
 	// Cloudflare in from of LLM-proxy. This comes first.
@@ -115,84 +128,53 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	// Block until done
 	goroutine.MonitorBackgroundRoutines(ctx,
 		server,
-		sources.Worker(obctx.Logger, sourceWorkerMutex, config.SourcesSyncInterval),
+		sources.Worker(obctx, sourceWorkerMutex, config.SourcesSyncInterval),
 	)
 
 	return nil
 }
 
-func rateLimit(logger log.Logger, eventLogger events.Logger, cache limiter.RedisStore, next http.Handler) http.Handler {
+func requestLogger(logger log.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		act := actor.FromContext(r.Context())
-		l := act.Limiter(cache)
-
-		err := l.TryAcquire(r.Context())
-		if err != nil {
-			loggerErr := eventLogger.LogEvent(
-				events.Event{
-					Name:       llmproxy.EventNameRateLimited,
-					Source:     act.Source.Name(),
-					Identifier: act.ID,
-					Metadata: map[string]any{
-						"error": err.Error(),
-					},
-				},
-			)
-			if loggerErr != nil {
-				logger.Error("failed to log event", log.Error(loggerErr))
-			}
-
-			var rateLimitExceeded limiter.RateLimitExceededError
-			if errors.As(err, &rateLimitExceeded) {
-				rateLimitExceeded.WriteResponse(w)
-				return
-			}
-
-			if errors.Is(err, limiter.NoAccessError{}) {
-				response.JSONError(logger, w, http.StatusForbidden, err)
-				return
-			}
-
-			response.JSONError(logger, w, http.StatusInternalServerError, err)
-			return
-		}
-
-		next.ServeHTTP(w, r)
-	})
-}
-
-func httpLogger(logger log.Logger, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Only requestclient is available at the point, actor middleware is later
 		rc := requestclient.FromContext(r.Context())
-		logger.Debug("Request",
+
+		sgtrace.Logger(r.Context(), logger).Debug("Request",
 			log.String("method", r.Method),
 			log.String("path", r.URL.Path),
 			log.String("requestclient.ip", rc.IP),
 			log.String("requestclient.forwardedFor", rc.ForwardedFor))
+
 		next.ServeHTTP(w, r)
 	})
 }
 
-func newPrefixRedisStore(prefix string, store redispool.KeyValue) limiter.RedisStore {
-	return &prefixRedisStore{
-		prefix: prefix,
-		store:  store,
+func newRedisStore(store redispool.KeyValue) limiter.RedisStore {
+	return &redisStore{
+		store: store,
 	}
 }
 
-type prefixRedisStore struct {
-	prefix string
-	store  redispool.KeyValue
+type redisStore struct {
+	store redispool.KeyValue
 }
 
-func (s *prefixRedisStore) Incr(key string) (int, error) {
-	return s.store.Incr(s.prefix + key)
+func (s *redisStore) Incr(key string) (int, error) {
+	return s.store.Incr(key)
 }
 
-func (s *prefixRedisStore) TTL(key string) (int, error) {
-	return s.store.TTL(s.prefix + key)
+func (s *redisStore) GetInt(key string) (int, error) {
+	i, err := s.store.Get(key).Int()
+	if err != nil && err != redis.ErrNil {
+		return 0, err
+	}
+	return i, nil
 }
 
-func (s *prefixRedisStore) Expire(key string, ttlSeconds int) error {
-	return s.store.Expire(s.prefix+key, ttlSeconds)
+func (s *redisStore) TTL(key string) (int, error) {
+	return s.store.TTL(key)
+}
+
+func (s *redisStore) Expire(key string, ttlSeconds int) error {
+	return s.store.Expire(key, ttlSeconds)
 }

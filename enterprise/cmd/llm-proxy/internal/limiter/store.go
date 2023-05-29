@@ -8,6 +8,8 @@ import (
 type RedisStore interface {
 	// Incr increments a key's value, or initializes it to 1 if it does not exist
 	Incr(key string) (int, error)
+	// Get retrieves a key's value
+	GetInt(key string) (int, error)
 	// TTL provides seconds TTL on an existing key
 	TTL(key string) (int, error)
 	// Expire configures an existing key's TTL
@@ -30,6 +32,14 @@ func (m mockStore) Incr(key string) (int, error) {
 	}
 	entry.value++
 	m[key] = entry
+	return entry.value, nil
+}
+
+func (m mockStore) GetInt(key string) (int, error) {
+	entry, ok := m[key]
+	if !ok {
+		return 0, nil
+	}
 	return entry.value, nil
 }
 

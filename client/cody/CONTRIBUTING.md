@@ -18,7 +18,8 @@
 - `webviews`: source code of the extension UI (webviews),
   build with Vite and rollup.js using the `vite.config.ts` file at directory
   root
-- `integration-test`: code for integration tests
+- `test/integration`: code for integration tests
+- `test/e2e`: code for playwright UI tests
 - `dist`: build outputs from both webpack and vite
 - `resources`: everything in this directory will be move to
   the ./dist directory automatically during build time for easy packaging
@@ -31,15 +32,40 @@
 1. Unit tests:
 
    ```shell
-   $ cd client/cody
-   $ pnpm test:unit
+   cd client/cody
+   pnpm test:unit
    ```
 
 2. Integration tests:
 
    ```shell
-   $ cd client/cody
-   $ pnpm test:integration
+   cd client/cody
+   pnpm test:integration
+   ```
+
+3. E2E tests:
+
+   To run all the tests inside the `client/cody/test/e2e` directory:
+
+   ```shell
+   cd client/cody
+   pnpm test:e2e
+   ```
+
+   To run test individually, pass in the name of the test by replacing $TEST_NAME below.
+
+   ```sh
+   pnpm test:e2e $TEST_NAME
+   # Example: Run the inline-assist test only
+   pnpm test:e2e inline-assist
+   ```
+
+   Example: Run the inline-assist test only
+
+   ```sh
+   pnpm test:e2e --debug
+   # Example: Run the inline-assist test in debug mode
+   pnpm test:e2e inline-assist --debug
    ```
 
 ## Release Process

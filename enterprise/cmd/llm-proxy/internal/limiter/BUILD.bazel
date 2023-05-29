@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "error.go",
         "limiter.go",
+        "prefix.go",
         "store.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/limiter",
@@ -18,6 +19,7 @@ go_test(
     embed = [":limiter"],
     deps = [
         "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],
 )

@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	otlog "github.com/opentracing/opentracing-go/log"
 
 	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -33,7 +32,8 @@ WITH candidates AS (
 		u.id AS upload_id,
 		u.repository_id,
 		r.name AS repository_name,
-		u.root
+		u.root,
+		md5(u.repository_id || ':' || u.root || ':' || u.indexer) AS upload_key
 	FROM lsif_uploads u
 	JOIN repo r ON r.id = u.repository_id
 	WHERE
@@ -57,8 +57,8 @@ WITH candidates AS (
 	FOR UPDATE SKIP LOCKED
 ),
 inserted AS (
-	INSERT INTO codeintel_ranking_exports (graph_key, upload_id)
-	SELECT %s, upload_id FROM candidates
+	INSERT INTO codeintel_ranking_exports (graph_key, upload_id, upload_key)
+	SELECT %s, upload_id, upload_key FROM candidates
 	ON CONFLICT (graph_key, upload_id) DO NOTHING
 	RETURNING id, upload_id
 )
@@ -109,7 +109,7 @@ func (s *store) SoftDeleteStaleExportedUploads(ctx context.Context, graphKey str
 	numStaleExportedUploadRecordsDeleted int,
 	err error,
 ) {
-	ctx, _, endObservation := s.operations.softDeleteStaleExportedUploads.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	ctx, _, endObservation := s.operations.softDeleteStaleExportedUploads.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	rows, err := s.db.Query(ctx, sqlf.Sprintf(
@@ -176,7 +176,7 @@ func (s *store) VacuumDeletedExportedUploads(ctx context.Context, derivativeGrap
 	numExportedUploadRecordsDeleted int,
 	err error,
 ) {
-	ctx, _, endObservation := s.operations.vacuumDeletedExportedUploads.With(ctx, &err, observation.Args{LogFields: []otlog.Field{}})
+	ctx, _, endObservation := s.operations.vacuumDeletedExportedUploads.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	graphKey, ok := rankingshared.GraphKeyFromDerivativeGraphKey(derivativeGraphKey)
@@ -206,7 +206,7 @@ locked_exported_uploads AS (
 			FROM codeintel_ranking_progress crp
 			WHERE
 				crp.graph_key = %s AND
-				crp.mapper_completed_at IS NULL
+				crp.reducer_completed_at IS NULL
 		)
 	ORDER BY cre.id
 	FOR UPDATE SKIP LOCKED

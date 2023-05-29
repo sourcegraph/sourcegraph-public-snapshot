@@ -10,6 +10,7 @@ export interface RecipeContext {
     intentDetector: IntentDetector
     codebaseContext: CodebaseContext
     responseMultiplexer: BotResponseMultiplexer
+    firstInteraction: boolean
 }
 
 export type RecipeID =
@@ -27,6 +28,8 @@ export type RecipeID =
     | 'release-notes'
     | 'inline-chat'
     | 'next-questions'
+    | 'non-stop'
+    | 'optimize-code'
 
 export interface Recipe {
     id: RecipeID

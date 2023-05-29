@@ -115,7 +115,7 @@ func getCodeOwnersFromMatches(
 		if !ok {
 			continue
 		}
-		rs, err := rules.GetFromCacheOrFetch(ctx, mm.Repo.Name, mm.Repo.ID, mm.CommitID)
+		rs, err := rules.Codeowners(ctx, mm.Repo.Name, mm.Repo.ID, mm.CommitID)
 		if err != nil {
 			errs = errors.Append(errs, err)
 			continue

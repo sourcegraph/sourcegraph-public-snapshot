@@ -18,6 +18,7 @@ go_library(
         "//enterprise/internal/codeintel/ranking/internal/background/reducer",
         "//enterprise/internal/codeintel/ranking/internal/lsifstore",
         "//enterprise/internal/codeintel/ranking/internal/store",
+        "//enterprise/internal/codeintel/ranking/shared",
         "//enterprise/internal/codeintel/shared",
         "//internal/api",
         "//internal/codeintel/types",

@@ -26,7 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// ExecutorHandler handles the HTTP requests of an executor.
+// ExecutorHandler handles the HTTP requests of an executor for a single queue. See MultiHandler for multi-queue implementation.
 type ExecutorHandler interface {
 	// Name is the name of the queue the handler processes.
 	Name() string
@@ -44,8 +44,6 @@ type ExecutorHandler interface {
 	HandleMarkFailed(w http.ResponseWriter, r *http.Request)
 	// HandleHeartbeat handles the heartbeat of an executor.
 	HandleHeartbeat(w http.ResponseWriter, r *http.Request)
-	// HandleCanceledJobs cancels the specified executor.Jobs.
-	HandleCanceledJobs(w http.ResponseWriter, r *http.Request)
 }
 
 var _ ExecutorHandler = &handler[workerutil.Record]{}
@@ -98,7 +96,7 @@ func (h *handler[T]) Name() string {
 func (h *handler[T]) HandleDequeue(w http.ResponseWriter, r *http.Request) {
 	var payload executortypes.DequeueRequest
 
-	h.wrapHandler(w, r, &payload, func() (int, any, error) {
+	wrapHandler(w, r, &payload, h.logger, func() (int, any, error) {
 		job, dequeued, err := h.dequeue(r.Context(), mux.Vars(r)["queueName"], executorMetadata{
 			name:    payload.ExecutorName,
 			version: payload.Version,
@@ -193,7 +191,7 @@ type ResourceMetadata struct {
 func (h *handler[T]) HandleAddExecutionLogEntry(w http.ResponseWriter, r *http.Request) {
 	var payload executortypes.AddExecutionLogEntryRequest
 
-	h.wrapHandler(w, r, &payload, func() (int, any, error) {
+	wrapHandler(w, r, &payload, h.logger, func() (int, any, error) {
 		id, err := h.addExecutionLogEntry(r.Context(), payload.ExecutorName, payload.JobID, payload.ExecutionLogEntry)
 		return http.StatusOK, id, err
 	})
@@ -217,7 +215,7 @@ func (h *handler[T]) addExecutionLogEntry(ctx context.Context, executorName stri
 func (h *handler[T]) HandleUpdateExecutionLogEntry(w http.ResponseWriter, r *http.Request) {
 	var payload executortypes.UpdateExecutionLogEntryRequest
 
-	h.wrapHandler(w, r, &payload, func() (int, any, error) {
+	wrapHandler(w, r, &payload, h.logger, func() (int, any, error) {
 		err := h.updateExecutionLogEntry(r.Context(), payload.ExecutorName, payload.JobID, payload.EntryID, payload.ExecutionLogEntry)
 		return http.StatusNoContent, nil, err
 	})
@@ -241,7 +239,7 @@ func (h *handler[T]) updateExecutionLogEntry(ctx context.Context, executorName s
 func (h *handler[T]) HandleMarkComplete(w http.ResponseWriter, r *http.Request) {
 	var payload executortypes.MarkCompleteRequest
 
-	h.wrapHandler(w, r, &payload, func() (int, any, error) {
+	wrapHandler(w, r, &payload, h.logger, func() (int, any, error) {
 		err := h.markComplete(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName, payload.JobID)
 		if err == ErrUnknownJob {
 			return http.StatusNotFound, nil, nil
@@ -275,7 +273,7 @@ func (h *handler[T]) markComplete(ctx context.Context, queueName string, executo
 func (h *handler[T]) HandleMarkErrored(w http.ResponseWriter, r *http.Request) {
 	var payload executortypes.MarkErroredRequest
 
-	h.wrapHandler(w, r, &payload, func() (int, any, error) {
+	wrapHandler(w, r, &payload, h.logger, func() (int, any, error) {
 		err := h.markErrored(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName, payload.JobID, payload.ErrorMessage)
 		if err == ErrUnknownJob {
 			return http.StatusNotFound, nil, nil
@@ -309,7 +307,7 @@ func (h *handler[T]) markErrored(ctx context.Context, queueName string, executor
 func (h *handler[T]) HandleMarkFailed(w http.ResponseWriter, r *http.Request) {
 	var payload executortypes.MarkErroredRequest
 
-	h.wrapHandler(w, r, &payload, func() (int, any, error) {
+	wrapHandler(w, r, &payload, h.logger, func() (int, any, error) {
 		err := h.markFailed(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName, payload.JobID, payload.ErrorMessage)
 		if err == ErrUnknownJob {
 			return http.StatusNotFound, nil, nil
@@ -346,7 +344,7 @@ func (h *handler[T]) markFailed(ctx context.Context, queueName string, executorN
 func (h *handler[T]) HandleHeartbeat(w http.ResponseWriter, r *http.Request) {
 	var payload executortypes.HeartbeatRequest
 
-	h.wrapHandler(w, r, &payload, func() (int, any, error) {
+	wrapHandler(w, r, &payload, h.logger, func() (int, any, error) {
 		e := types.Executor{
 			Hostname:        payload.ExecutorName,
 			QueueName:       mux.Vars(r)["queueName"],
@@ -377,16 +375,11 @@ func (h *handler[T]) HandleHeartbeat(w http.ResponseWriter, r *http.Request) {
 
 		knownIDs, cancelIDs, err := h.heartbeat(r.Context(), e, payload.JobIDs)
 
-		if payload.Version == executortypes.ExecutorAPIVersion2 {
-			return http.StatusOK, executortypes.HeartbeatResponse{KnownIDs: knownIDs, CancelIDs: cancelIDs}, err
-		}
-
-		// TODO: Remove in Sourcegraph 4.4.
-		return http.StatusOK, knownIDs, err
+		return http.StatusOK, executortypes.HeartbeatResponse{KnownIDs: knownIDs, CancelIDs: cancelIDs}, err
 	})
 }
 
-func (h *handler[T]) heartbeat(ctx context.Context, executor types.Executor, ids []int) ([]int, []int, error) {
+func (h *handler[T]) heartbeat(ctx context.Context, executor types.Executor, ids []string) ([]string, []string, error) {
 	if err := validateWorkerHostname(executor.Hostname); err != nil {
 		return nil, nil, err
 	}
@@ -407,31 +400,22 @@ func (h *handler[T]) heartbeat(ctx context.Context, executor types.Executor, ids
 	return knownIDs, cancelIDs, errors.Wrap(err, "dbworkerstore.UpsertHeartbeat")
 }
 
-// TODO: This handler can be removed in Sourcegraph 4.4.
-func (h *handler[T]) HandleCanceledJobs(w http.ResponseWriter, r *http.Request) {
-	var payload executortypes.CanceledJobsRequest
-
-	h.wrapHandler(w, r, &payload, func() (int, any, error) {
-		canceledIDs, err := h.cancelJobs(r.Context(), payload.ExecutorName, payload.KnownJobIDs)
-		return http.StatusOK, canceledIDs, err
-	})
-}
-
 // wrapHandler decodes the request body into the given payload pointer, then calls the given
 // handler function. If the body cannot be decoded, a 400 BadRequest is returned and the handler
 // function is not called. If the handler function returns an error, a 500 Internal Server Error
 // is returned. Otherwise, the response status will match the status code value returned from the
 // handler, and the payload value returned from the handler is encoded and written to the
 // response body.
-func (h *handler[T]) wrapHandler(w http.ResponseWriter, r *http.Request, payload any, handler func() (int, any, error)) {
+func wrapHandler(w http.ResponseWriter, r *http.Request, payload any, logger log.Logger, handler func() (int, any, error)) {
 	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
+		logger.Error("Failed to unmarshal payload", log.Error(err))
 		http.Error(w, fmt.Sprintf("Failed to unmarshal payload: %s", err.Error()), http.StatusBadRequest)
 		return
 	}
 
 	status, payload, err := handler()
 	if err != nil {
-		h.logger.Error("Handler returned an error", log.Error(err))
+		logger.Error("Handler returned an error", log.Error(err))
 
 		status = http.StatusInternalServerError
 		payload = errorResponse{Error: err.Error()}
@@ -439,7 +423,7 @@ func (h *handler[T]) wrapHandler(w http.ResponseWriter, r *http.Request, payload
 
 	data, err := json.Marshal(payload)
 	if err != nil {
-		h.logger.Error("Failed to serialize payload", log.Error(err))
+		logger.Error("Failed to serialize payload", log.Error(err))
 		http.Error(w, fmt.Sprintf("Failed to serialize payload: %s", err), http.StatusInternalServerError)
 		return
 	}
@@ -502,23 +486,6 @@ func decodeAndLabelMetrics(encodedMetrics, instanceName string) ([]*dto.MetricFa
 
 type errorResponse struct {
 	Error string `json:"error"`
-}
-
-// cancelJobs reaches to the queueHandlers.FetchCanceled to determine jobs that need to be canceled.
-// This endpoint is deprecated and should be removed in Sourcegraph 4.4.
-func (h *handler[T]) cancelJobs(ctx context.Context, executorName string, knownIDs []int) ([]int, error) {
-	if err := validateWorkerHostname(executorName); err != nil {
-		return nil, err
-	}
-	// The Heartbeat method now handles both heartbeats and cancellation. For backcompat,
-	// we fall back to this method.
-	_, canceledIDs, err := h.queueHandler.Store.Heartbeat(ctx, knownIDs, store.HeartbeatOptions{
-		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
-		// the previous executor didn't report heartbeats anymore, but is still alive and reporting state,
-		// both executors that ever got the job would be writing to the same record. This prevents it.
-		WorkerHostname: executorName,
-	})
-	return canceledIDs, errors.Wrap(err, "dbworkerstore.CanceledJobs")
 }
 
 // validateWorkerHostname validates the WorkerHostname field sent for all the endpoints.

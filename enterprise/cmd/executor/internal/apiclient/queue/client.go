@@ -7,13 +7,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strconv"
-	"strings"
 	"time"
 
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/expfmt"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
 
@@ -60,8 +58,8 @@ func (c *Client) QueuedCount(ctx context.Context) (int, error) {
 }
 
 func (c *Client) Dequeue(ctx context.Context, workerHostname string, extraArguments any) (job types.Job, _ bool, err error) {
-	ctx, _, endObservation := c.operations.dequeue.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("queueName", c.options.QueueName),
+	ctx, _, endObservation := c.operations.dequeue.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("queueName", c.options.QueueName),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -81,9 +79,9 @@ func (c *Client) Dequeue(ctx context.Context, workerHostname string, extraArgume
 }
 
 func (c *Client) MarkComplete(ctx context.Context, job types.Job) (_ bool, err error) {
-	ctx, _, endObservation := c.operations.markComplete.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("queueName", c.options.QueueName),
-		otlog.Int("jobID", job.ID),
+	ctx, _, endObservation := c.operations.markComplete.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("queueName", c.options.QueueName),
+		attribute.Int("jobID", job.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -104,9 +102,9 @@ func (c *Client) MarkComplete(ctx context.Context, job types.Job) (_ bool, err e
 }
 
 func (c *Client) MarkErrored(ctx context.Context, job types.Job, failureMessage string) (_ bool, err error) {
-	ctx, _, endObservation := c.operations.markErrored.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("queueName", c.options.QueueName),
-		otlog.Int("jobID", job.ID),
+	ctx, _, endObservation := c.operations.markErrored.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("queueName", c.options.QueueName),
+		attribute.Int("jobID", job.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -128,9 +126,9 @@ func (c *Client) MarkErrored(ctx context.Context, job types.Job, failureMessage 
 }
 
 func (c *Client) MarkFailed(ctx context.Context, job types.Job, failureMessage string) (_ bool, err error) {
-	ctx, _, endObservation := c.operations.markFailed.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("queueName", c.options.QueueName),
-		otlog.Int("jobID", job.ID),
+	ctx, _, endObservation := c.operations.markFailed.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("queueName", c.options.QueueName),
+		attribute.Int("jobID", job.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -151,10 +149,10 @@ func (c *Client) MarkFailed(ctx context.Context, job types.Job, failureMessage s
 	return true, nil
 }
 
-func (c *Client) Heartbeat(ctx context.Context, jobIDs []int) (knownIDs, cancelIDs []int, err error) {
-	ctx, _, endObservation := c.operations.heartbeat.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("queueName", c.options.QueueName),
-		otlog.String("jobIDs", intsToString(jobIDs)),
+func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, cancelIDs []string, err error) {
+	ctx, _, endObservation := c.operations.heartbeat.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("queueName", c.options.QueueName),
+		attribute.StringSlice("jobIDs", jobIDs),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -165,9 +163,6 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []int) (knownIDs, cancelI
 	}
 
 	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", c.options.QueueName), types.HeartbeatRequest{
-		// Request the new-fashioned payload.
-		Version: types.ExecutorAPIVersion2,
-
 		ExecutorName: c.options.ExecutorName,
 		JobIDs:       jobIDs,
 
@@ -205,32 +200,7 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []int) (knownIDs, cancelI
 		// If that works, we can return the data.
 		return respV2.KnownIDs, respV2.CancelIDs, nil
 	}
-
-	// If unmarshalling fails, try to parse it as a V1 payload.
-	var respV1 []int
-	if err := json.Unmarshal(bodyBytes, &respV1); err != nil {
-		return nil, nil, err
-	}
-
-	// If that works, we also have to fetch canceled jobs separately, as we
-	// are talking to a pre-4.3 Sourcegraph API and that doesn't return canceled
-	// jobs as part of heartbeats.
-
-	cancelIDs, err = c.CanceledJobs(ctx, jobIDs)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return respV1, cancelIDs, nil
-}
-
-func intsToString(ints []int) string {
-	segments := make([]string, 0, len(ints))
-	for _, id := range ints {
-		segments = append(segments, strconv.Itoa(id))
-	}
-
-	return strings.Join(segments, ", ")
+	return nil, nil, err
 }
 
 func gatherMetrics(logger log.Logger, gatherer prometheus.Gatherer) (string, error) {
@@ -257,23 +227,6 @@ func gatherMetrics(logger log.Logger, gatherer prometheus.Gatherer) (string, err
 	return buf.String(), nil
 }
 
-// TODO: Remove this in Sourcegraph 4.4.
-func (c *Client) CanceledJobs(ctx context.Context, knownIDs []int) (canceledIDs []int, err error) {
-	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/canceledJobs", c.options.QueueName), types.CanceledJobsRequest{
-		KnownJobIDs:  knownIDs,
-		ExecutorName: c.options.ExecutorName,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	if _, err := c.client.DoAndDecode(ctx, req, &canceledIDs); err != nil {
-		return nil, err
-	}
-
-	return canceledIDs, nil
-}
-
 func (c *Client) Ping(ctx context.Context) (err error) {
 	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", c.options.QueueName), types.HeartbeatRequest{
 		ExecutorName: c.options.ExecutorName,
@@ -286,9 +239,9 @@ func (c *Client) Ping(ctx context.Context) (err error) {
 }
 
 func (c *Client) AddExecutionLogEntry(ctx context.Context, job types.Job, entry internalexecutor.ExecutionLogEntry) (entryID int, err error) {
-	ctx, _, endObservation := c.operations.addExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("queueName", c.options.QueueName),
-		otlog.Int("jobID", job.ID),
+	ctx, _, endObservation := c.operations.addExecutionLogEntry.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("queueName", c.options.QueueName),
+		attribute.Int("jobID", job.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -308,10 +261,10 @@ func (c *Client) AddExecutionLogEntry(ctx context.Context, job types.Job, entry 
 }
 
 func (c *Client) UpdateExecutionLogEntry(ctx context.Context, job types.Job, entryID int, entry internalexecutor.ExecutionLogEntry) (err error) {
-	ctx, _, endObservation := c.operations.updateExecutionLogEntry.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("queueName", c.options.QueueName),
-		otlog.Int("jobID", job.ID),
-		otlog.Int("entryID", entryID),
+	ctx, _, endObservation := c.operations.updateExecutionLogEntry.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("queueName", c.options.QueueName),
+		attribute.Int("jobID", job.ID),
+		attribute.Int("entryID", entryID),
 	}})
 	defer endObservation(1, observation.Args{})
 

@@ -11,6 +11,7 @@ import {
     mdiSourceFork,
     mdiSourceRepository,
     mdiTag,
+    mdiVectorPolyline,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { Navigate } from 'react-router-dom'
@@ -41,6 +42,7 @@ import {
     useObservable,
 } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
 import { RepoBatchChangesButton } from '../../batches/RepoBatchChangesButton'
 import { CodeIntelligenceProps } from '../../codeintel'
@@ -74,6 +76,7 @@ export interface Props
     revision: string
     isSourcegraphDotCom: boolean
     className?: string
+    authenticatedUser: AuthenticatedUser | null
 }
 
 export const treePageRepositoryFragment = gql`
@@ -290,6 +293,20 @@ export const TreePage: FC<Props> = ({
                             >
                                 <Icon aria-hidden={true} svgPath={mdiBrain} />{' '}
                                 <span className={styles.text}>Code graph data</span>
+                            </Button>
+                        </Tooltip>
+                    )}
+                    {window.context?.embeddingsEnabled && (
+                        <Tooltip content="Embeddings settings">
+                            <Button
+                                className="flex-shrink-0"
+                                to={`/${encodeURIPathComponent(repoName)}/-/embeddings`}
+                                variant="secondary"
+                                outline={true}
+                                as={Link}
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiVectorPolyline} />{' '}
+                                <span className={styles.text}>Embeddings settings</span>
                             </Button>
                         </Tooltip>
                     )}

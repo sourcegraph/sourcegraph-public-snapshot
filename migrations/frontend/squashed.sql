@@ -924,6 +924,26 @@ CREATE TABLE aggregated_user_statistics (
     user_events_count bigint
 );
 
+CREATE TABLE assigned_owners (
+    id integer NOT NULL,
+    owner_user_id integer NOT NULL,
+    file_path_id integer NOT NULL,
+    who_assigned_user_id integer,
+    assigned_at timestamp without time zone DEFAULT now() NOT NULL
+);
+
+COMMENT ON TABLE assigned_owners IS 'Table for ownership assignments, one entry contains an assigned user ID, which repo_path is assigned and the date and user who assigned the owner.';
+
+CREATE SEQUENCE assigned_owners_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE assigned_owners_id_seq OWNED BY assigned_owners.id;
+
 CREATE TABLE batch_changes (
     id bigint NOT NULL,
     name text NOT NULL,
@@ -1660,6 +1680,80 @@ COMMENT ON COLUMN codeintel_commit_dates.commit_bytea IS 'Identifies the 40-char
 
 COMMENT ON COLUMN codeintel_commit_dates.committed_at IS 'The commit date (may be -infinity if unresolvable).';
 
+CREATE TABLE lsif_configuration_policies (
+    id integer NOT NULL,
+    repository_id integer,
+    name text,
+    type text NOT NULL,
+    pattern text NOT NULL,
+    retention_enabled boolean NOT NULL,
+    retention_duration_hours integer,
+    retain_intermediate_commits boolean NOT NULL,
+    indexing_enabled boolean NOT NULL,
+    index_commit_max_age_hours integer,
+    index_intermediate_commits boolean NOT NULL,
+    protected boolean DEFAULT false NOT NULL,
+    repository_patterns text[],
+    last_resolved_at timestamp with time zone,
+    embeddings_enabled boolean DEFAULT false NOT NULL
+);
+
+COMMENT ON COLUMN lsif_configuration_policies.repository_id IS 'The identifier of the repository to which this configuration policy applies. If absent, this policy is applied globally.';
+
+COMMENT ON COLUMN lsif_configuration_policies.type IS 'The type of Git object (e.g., COMMIT, BRANCH, TAG).';
+
+COMMENT ON COLUMN lsif_configuration_policies.pattern IS 'A pattern used to match` names of the associated Git object type.';
+
+COMMENT ON COLUMN lsif_configuration_policies.retention_enabled IS 'Whether or not this configuration policy affects data retention rules.';
+
+COMMENT ON COLUMN lsif_configuration_policies.retention_duration_hours IS 'The max age of data retained by this configuration policy. If null, the age is unbounded.';
+
+COMMENT ON COLUMN lsif_configuration_policies.retain_intermediate_commits IS 'If the matching Git object is a branch, setting this value to true will also retain all data used to resolve queries for any commit on the matching branches. Setting this value to false will only consider the tip of the branch.';
+
+COMMENT ON COLUMN lsif_configuration_policies.indexing_enabled IS 'Whether or not this configuration policy affects auto-indexing schedules.';
+
+COMMENT ON COLUMN lsif_configuration_policies.index_commit_max_age_hours IS 'The max age of commits indexed by this configuration policy. If null, the age is unbounded.';
+
+COMMENT ON COLUMN lsif_configuration_policies.index_intermediate_commits IS 'If the matching Git object is a branch, setting this value to true will also index all commits on the matching branches. Setting this value to false will only consider the tip of the branch.';
+
+COMMENT ON COLUMN lsif_configuration_policies.protected IS 'Whether or not this configuration policy is protected from modification of its data retention behavior (except for duration).';
+
+COMMENT ON COLUMN lsif_configuration_policies.repository_patterns IS 'The name pattern matching repositories to which this configuration policy applies. If absent, all repositories are matched.';
+
+CREATE VIEW codeintel_configuration_policies AS
+ SELECT lsif_configuration_policies.id,
+    lsif_configuration_policies.repository_id,
+    lsif_configuration_policies.name,
+    lsif_configuration_policies.type,
+    lsif_configuration_policies.pattern,
+    lsif_configuration_policies.retention_enabled,
+    lsif_configuration_policies.retention_duration_hours,
+    lsif_configuration_policies.retain_intermediate_commits,
+    lsif_configuration_policies.indexing_enabled,
+    lsif_configuration_policies.index_commit_max_age_hours,
+    lsif_configuration_policies.index_intermediate_commits,
+    lsif_configuration_policies.protected,
+    lsif_configuration_policies.repository_patterns,
+    lsif_configuration_policies.last_resolved_at,
+    lsif_configuration_policies.embeddings_enabled
+   FROM lsif_configuration_policies;
+
+CREATE TABLE lsif_configuration_policies_repository_pattern_lookup (
+    policy_id integer NOT NULL,
+    repo_id integer NOT NULL
+);
+
+COMMENT ON TABLE lsif_configuration_policies_repository_pattern_lookup IS 'A lookup table to get all the repository patterns by repository id that apply to a configuration policy.';
+
+COMMENT ON COLUMN lsif_configuration_policies_repository_pattern_lookup.policy_id IS 'The policy identifier associated with the repository.';
+
+COMMENT ON COLUMN lsif_configuration_policies_repository_pattern_lookup.repo_id IS 'The repository identifier associated with the policy.';
+
+CREATE VIEW codeintel_configuration_policies_repository_pattern_lookup AS
+ SELECT lsif_configuration_policies_repository_pattern_lookup.policy_id,
+    lsif_configuration_policies_repository_pattern_lookup.repo_id
+   FROM lsif_configuration_policies_repository_pattern_lookup;
+
 CREATE TABLE codeintel_inference_scripts (
     insert_timestamp timestamp with time zone DEFAULT now() NOT NULL,
     script text NOT NULL
@@ -1757,7 +1851,8 @@ CREATE TABLE codeintel_ranking_exports (
     locked_at timestamp with time zone DEFAULT now() NOT NULL,
     id integer NOT NULL,
     last_scanned_at timestamp with time zone,
-    deleted_at timestamp with time zone
+    deleted_at timestamp with time zone,
+    upload_key text
 );
 
 CREATE SEQUENCE codeintel_ranking_exports_id_seq
@@ -1772,11 +1867,10 @@ ALTER SEQUENCE codeintel_ranking_exports_id_seq OWNED BY codeintel_ranking_expor
 
 CREATE TABLE codeintel_ranking_path_counts_inputs (
     id bigint NOT NULL,
-    document_path text NOT NULL,
     count integer NOT NULL,
     graph_key text NOT NULL,
     processed boolean DEFAULT false NOT NULL,
-    repository_id integer NOT NULL
+    definition_id bigint
 );
 
 CREATE SEQUENCE codeintel_ranking_path_counts_inputs_id_seq
@@ -1791,14 +1885,18 @@ ALTER SEQUENCE codeintel_ranking_path_counts_inputs_id_seq OWNED BY codeintel_ra
 CREATE TABLE codeintel_ranking_progress (
     id bigint NOT NULL,
     graph_key text NOT NULL,
-    max_definition_id integer NOT NULL,
-    max_reference_id integer NOT NULL,
-    max_path_id integer NOT NULL,
     mappers_started_at timestamp with time zone NOT NULL,
     mapper_completed_at timestamp with time zone,
     seed_mapper_completed_at timestamp with time zone,
     reducer_started_at timestamp with time zone,
-    reducer_completed_at timestamp with time zone
+    reducer_completed_at timestamp with time zone,
+    num_path_records_total integer,
+    num_reference_records_total integer,
+    num_count_records_total integer,
+    num_path_records_processed integer,
+    num_reference_records_processed integer,
+    num_count_records_processed integer,
+    max_export_id bigint NOT NULL
 );
 
 CREATE SEQUENCE codeintel_ranking_progress_id_seq
@@ -2398,23 +2496,6 @@ COMMENT ON CONSTRAINT required_bool_fields ON feature_flags IS 'Checks that bool
 
 COMMENT ON CONSTRAINT required_rollout_fields ON feature_flags IS 'Checks that rollout is set IFF flag_type = rollout';
 
-CREATE TABLE github_app_installs (
-    id integer NOT NULL,
-    app_id integer NOT NULL,
-    installation_id integer NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
-CREATE SEQUENCE github_app_installs_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE github_app_installs_id_seq OWNED BY github_app_installs.id;
-
 CREATE TABLE github_apps (
     id integer NOT NULL,
     app_id integer NOT NULL,
@@ -2627,48 +2708,6 @@ CREATE SEQUENCE insights_settings_migration_jobs_id_seq
 
 ALTER SEQUENCE insights_settings_migration_jobs_id_seq OWNED BY insights_settings_migration_jobs.id;
 
-CREATE TABLE lsif_configuration_policies (
-    id integer NOT NULL,
-    repository_id integer,
-    name text,
-    type text NOT NULL,
-    pattern text NOT NULL,
-    retention_enabled boolean NOT NULL,
-    retention_duration_hours integer,
-    retain_intermediate_commits boolean NOT NULL,
-    indexing_enabled boolean NOT NULL,
-    index_commit_max_age_hours integer,
-    index_intermediate_commits boolean NOT NULL,
-    protected boolean DEFAULT false NOT NULL,
-    repository_patterns text[],
-    last_resolved_at timestamp with time zone,
-    lockfile_indexing_enabled boolean DEFAULT false NOT NULL
-);
-
-COMMENT ON COLUMN lsif_configuration_policies.repository_id IS 'The identifier of the repository to which this configuration policy applies. If absent, this policy is applied globally.';
-
-COMMENT ON COLUMN lsif_configuration_policies.type IS 'The type of Git object (e.g., COMMIT, BRANCH, TAG).';
-
-COMMENT ON COLUMN lsif_configuration_policies.pattern IS 'A pattern used to match` names of the associated Git object type.';
-
-COMMENT ON COLUMN lsif_configuration_policies.retention_enabled IS 'Whether or not this configuration policy affects data retention rules.';
-
-COMMENT ON COLUMN lsif_configuration_policies.retention_duration_hours IS 'The max age of data retained by this configuration policy. If null, the age is unbounded.';
-
-COMMENT ON COLUMN lsif_configuration_policies.retain_intermediate_commits IS 'If the matching Git object is a branch, setting this value to true will also retain all data used to resolve queries for any commit on the matching branches. Setting this value to false will only consider the tip of the branch.';
-
-COMMENT ON COLUMN lsif_configuration_policies.indexing_enabled IS 'Whether or not this configuration policy affects auto-indexing schedules.';
-
-COMMENT ON COLUMN lsif_configuration_policies.index_commit_max_age_hours IS 'The max age of commits indexed by this configuration policy. If null, the age is unbounded.';
-
-COMMENT ON COLUMN lsif_configuration_policies.index_intermediate_commits IS 'If the matching Git object is a branch, setting this value to true will also index all commits on the matching branches. Setting this value to false will only consider the tip of the branch.';
-
-COMMENT ON COLUMN lsif_configuration_policies.protected IS 'Whether or not this configuration policy is protected from modification of its data retention behavior (except for duration).';
-
-COMMENT ON COLUMN lsif_configuration_policies.repository_patterns IS 'The name pattern matching repositories to which this configuration policy applies. If absent, all repositories are matched.';
-
-COMMENT ON COLUMN lsif_configuration_policies.lockfile_indexing_enabled IS 'Whether to index the lockfiles in the repositories matched by this policy';
-
 CREATE SEQUENCE lsif_configuration_policies_id_seq
     AS integer
     START WITH 1
@@ -2678,17 +2717,6 @@ CREATE SEQUENCE lsif_configuration_policies_id_seq
     CACHE 1;
 
 ALTER SEQUENCE lsif_configuration_policies_id_seq OWNED BY lsif_configuration_policies.id;
-
-CREATE TABLE lsif_configuration_policies_repository_pattern_lookup (
-    policy_id integer NOT NULL,
-    repo_id integer NOT NULL
-);
-
-COMMENT ON TABLE lsif_configuration_policies_repository_pattern_lookup IS 'A lookup table to get all the repository patterns by repository id that apply to a configuration policy.';
-
-COMMENT ON COLUMN lsif_configuration_policies_repository_pattern_lookup.policy_id IS 'The policy identifier associated with the repository.';
-
-COMMENT ON COLUMN lsif_configuration_policies_repository_pattern_lookup.repo_id IS 'The repository identifier associated with the policy.';
 
 CREATE TABLE lsif_dependency_indexing_jobs (
     id integer NOT NULL,
@@ -3651,6 +3679,35 @@ CREATE TABLE own_background_jobs (
     job_type integer NOT NULL
 );
 
+CREATE TABLE own_signal_configurations (
+    id integer NOT NULL,
+    name text NOT NULL,
+    description text DEFAULT ''::text NOT NULL,
+    excluded_repo_patterns text[],
+    enabled boolean DEFAULT false NOT NULL
+);
+
+CREATE VIEW own_background_jobs_config_aware AS
+ SELECT obj.id,
+    obj.state,
+    obj.failure_message,
+    obj.queued_at,
+    obj.started_at,
+    obj.finished_at,
+    obj.process_after,
+    obj.num_resets,
+    obj.num_failures,
+    obj.last_heartbeat_at,
+    obj.execution_logs,
+    obj.worker_hostname,
+    obj.cancel,
+    obj.repo_id,
+    obj.job_type,
+    osc.name AS config_name
+   FROM (own_background_jobs obj
+     JOIN own_signal_configurations osc ON ((obj.job_type = osc.id)))
+  WHERE (osc.enabled IS TRUE);
+
 CREATE SEQUENCE own_background_jobs_id_seq
     AS integer
     START WITH 1
@@ -3660,6 +3717,16 @@ CREATE SEQUENCE own_background_jobs_id_seq
     CACHE 1;
 
 ALTER SEQUENCE own_background_jobs_id_seq OWNED BY own_background_jobs.id;
+
+CREATE SEQUENCE own_signal_configurations_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE own_signal_configurations_id_seq OWNED BY own_signal_configurations.id;
 
 CREATE TABLE own_signal_recent_contribution (
     id integer NOT NULL,
@@ -3829,15 +3896,19 @@ CREATE TABLE product_subscriptions (
     archived_at timestamp with time zone,
     account_number text,
     llm_proxy_enabled boolean DEFAULT false NOT NULL,
-    llm_proxy_rate_limit integer,
-    llm_proxy_rate_interval_seconds integer
+    llm_proxy_chat_rate_limit integer,
+    llm_proxy_chat_rate_interval_seconds integer,
+    llm_proxy_chat_rate_limit_allowed_models text[],
+    llm_proxy_code_rate_limit integer,
+    llm_proxy_code_rate_interval_seconds integer,
+    llm_proxy_code_rate_limit_allowed_models text[]
 );
 
 COMMENT ON COLUMN product_subscriptions.llm_proxy_enabled IS 'Whether or not this subscription has access to LLM-proxy';
 
-COMMENT ON COLUMN product_subscriptions.llm_proxy_rate_limit IS 'Custom requests per time interval allowed for LLM-proxy';
+COMMENT ON COLUMN product_subscriptions.llm_proxy_chat_rate_limit IS 'Custom requests per time interval allowed for LLM-proxy';
 
-COMMENT ON COLUMN product_subscriptions.llm_proxy_rate_interval_seconds IS 'Custom time interval over which the for LLM-proxy rate limit is applied';
+COMMENT ON COLUMN product_subscriptions.llm_proxy_chat_rate_interval_seconds IS 'Custom time interval over which the for LLM-proxy rate limit is applied';
 
 CREATE TABLE query_runner_state (
     query text,
@@ -3975,6 +4046,24 @@ CREATE SEQUENCE registry_extensions_id_seq
     CACHE 1;
 
 ALTER SEQUENCE registry_extensions_id_seq OWNED BY registry_extensions.id;
+
+CREATE TABLE repo_commits_changelists (
+    id integer NOT NULL,
+    repo_id integer NOT NULL,
+    commit_sha bytea NOT NULL,
+    perforce_changelist_id integer NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE repo_commits_changelists_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE repo_commits_changelists_id_seq OWNED BY repo_commits_changelists.id;
 
 CREATE TABLE repo_embedding_jobs (
     id integer NOT NULL,
@@ -4439,7 +4528,7 @@ CREATE TABLE user_public_repos (
 );
 
 CREATE TABLE user_repo_permissions (
-    id integer NOT NULL,
+    id bigint NOT NULL,
     user_id integer,
     repo_id integer NOT NULL,
     user_external_account_id integer,
@@ -4449,7 +4538,6 @@ CREATE TABLE user_repo_permissions (
 );
 
 CREATE SEQUENCE user_repo_permissions_id_seq
-    AS integer
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
@@ -4634,6 +4722,8 @@ ALTER TABLE ONLY access_requests ALTER COLUMN id SET DEFAULT nextval('access_req
 
 ALTER TABLE ONLY access_tokens ALTER COLUMN id SET DEFAULT nextval('access_tokens_id_seq'::regclass);
 
+ALTER TABLE ONLY assigned_owners ALTER COLUMN id SET DEFAULT nextval('assigned_owners_id_seq'::regclass);
+
 ALTER TABLE ONLY batch_changes ALTER COLUMN id SET DEFAULT nextval('batch_changes_id_seq'::regclass);
 
 ALTER TABLE ONLY batch_changes_site_credentials ALTER COLUMN id SET DEFAULT nextval('batch_changes_site_credentials_id_seq'::regclass);
@@ -4736,8 +4826,6 @@ ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs ALTER COLUMN id SE
 
 ALTER TABLE ONLY external_services ALTER COLUMN id SET DEFAULT nextval('external_services_id_seq'::regclass);
 
-ALTER TABLE ONLY github_app_installs ALTER COLUMN id SET DEFAULT nextval('github_app_installs_id_seq'::regclass);
-
 ALTER TABLE ONLY github_apps ALTER COLUMN id SET DEFAULT nextval('github_apps_id_seq'::regclass);
 
 ALTER TABLE ONLY gitserver_relocator_jobs ALTER COLUMN id SET DEFAULT nextval('gitserver_relocator_jobs_id_seq'::regclass);
@@ -4800,6 +4888,8 @@ ALTER TABLE ONLY own_aggregate_recent_view ALTER COLUMN id SET DEFAULT nextval('
 
 ALTER TABLE ONLY own_background_jobs ALTER COLUMN id SET DEFAULT nextval('own_background_jobs_id_seq'::regclass);
 
+ALTER TABLE ONLY own_signal_configurations ALTER COLUMN id SET DEFAULT nextval('own_signal_configurations_id_seq'::regclass);
+
 ALTER TABLE ONLY own_signal_recent_contribution ALTER COLUMN id SET DEFAULT nextval('own_signal_recent_contribution_id_seq'::regclass);
 
 ALTER TABLE ONLY package_repo_filters ALTER COLUMN id SET DEFAULT nextval('package_repo_filters_id_seq'::regclass);
@@ -4817,6 +4907,8 @@ ALTER TABLE ONLY registry_extension_releases ALTER COLUMN id SET DEFAULT nextval
 ALTER TABLE ONLY registry_extensions ALTER COLUMN id SET DEFAULT nextval('registry_extensions_id_seq'::regclass);
 
 ALTER TABLE ONLY repo ALTER COLUMN id SET DEFAULT nextval('repo_id_seq'::regclass);
+
+ALTER TABLE ONLY repo_commits_changelists ALTER COLUMN id SET DEFAULT nextval('repo_commits_changelists_id_seq'::regclass);
 
 ALTER TABLE ONLY repo_embedding_jobs ALTER COLUMN id SET DEFAULT nextval('repo_embedding_jobs_id_seq'::regclass);
 
@@ -4874,6 +4966,9 @@ ALTER TABLE ONLY access_tokens
 
 ALTER TABLE ONLY aggregated_user_statistics
     ADD CONSTRAINT aggregated_user_statistics_pkey PRIMARY KEY (user_id);
+
+ALTER TABLE ONLY assigned_owners
+    ADD CONSTRAINT assigned_owners_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY batch_changes
     ADD CONSTRAINT batch_changes_pkey PRIMARY KEY (id);
@@ -5076,9 +5171,6 @@ ALTER TABLE ONLY feature_flag_overrides
 ALTER TABLE ONLY feature_flags
     ADD CONSTRAINT feature_flags_pkey PRIMARY KEY (flag_name);
 
-ALTER TABLE ONLY github_app_installs
-    ADD CONSTRAINT github_app_installs_pkey PRIMARY KEY (id);
-
 ALTER TABLE ONLY github_apps
     ADD CONSTRAINT github_apps_pkey PRIMARY KEY (id);
 
@@ -5211,6 +5303,9 @@ ALTER TABLE ONLY own_aggregate_recent_view
 ALTER TABLE ONLY own_background_jobs
     ADD CONSTRAINT own_background_jobs_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY own_signal_configurations
+    ADD CONSTRAINT own_signal_configurations_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY own_signal_recent_contribution
     ADD CONSTRAINT own_signal_recent_contribution_pkey PRIMARY KEY (id);
 
@@ -5246,6 +5341,9 @@ ALTER TABLE ONLY registry_extension_releases
 
 ALTER TABLE ONLY registry_extensions
     ADD CONSTRAINT registry_extensions_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY repo_commits_changelists
+    ADD CONSTRAINT repo_commits_changelists_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY repo_embedding_jobs
     ADD CONSTRAINT repo_embedding_jobs_pkey PRIMARY KEY (id);
@@ -5376,7 +5474,7 @@ CREATE INDEX access_requests_status ON access_requests USING btree (status);
 
 CREATE INDEX access_tokens_lookup ON access_tokens USING hash (value_sha256) WHERE (deleted_at IS NULL);
 
-CREATE INDEX app_id_idx ON github_app_installs USING btree (app_id);
+CREATE INDEX assigned_owners_file_path ON assigned_owners USING btree (file_path_id);
 
 CREATE INDEX batch_changes_namespace_org_id ON batch_changes USING btree (namespace_org_id);
 
@@ -5480,13 +5578,15 @@ CREATE INDEX codeintel_ranking_definitions_exported_upload_id ON codeintel_ranki
 
 CREATE INDEX codeintel_ranking_definitions_graph_key_symbol_search ON codeintel_ranking_definitions USING btree (graph_key, symbol_name, exported_upload_id, document_path);
 
+CREATE INDEX codeintel_ranking_exports_graph_key_deleted_at_id ON codeintel_ranking_exports USING btree (graph_key, deleted_at DESC, id);
+
 CREATE INDEX codeintel_ranking_exports_graph_key_last_scanned_at ON codeintel_ranking_exports USING btree (graph_key, last_scanned_at NULLS FIRST, id);
 
 CREATE UNIQUE INDEX codeintel_ranking_exports_graph_key_upload_id ON codeintel_ranking_exports USING btree (graph_key, upload_id);
 
-CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, id);
+CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_definition_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, definition_id, id) WHERE (NOT processed);
 
-CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_repository_id_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository_id, id) WHERE (NOT processed);
+CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, id);
 
 CREATE INDEX codeintel_ranking_references_exported_upload_id ON codeintel_ranking_references USING btree (exported_upload_id);
 
@@ -5606,8 +5706,6 @@ CREATE INDEX insights_query_runner_jobs_series_id_state ON insights_query_runner
 
 CREATE INDEX insights_query_runner_jobs_state_btree ON insights_query_runner_jobs USING btree (state);
 
-CREATE INDEX installation_id_idx ON github_app_installs USING btree (installation_id);
-
 CREATE UNIQUE INDEX kind_cloud_default ON external_services USING btree (kind, cloud_default) WHERE ((cloud_default = true) AND (deleted_at IS NULL));
 
 CREATE INDEX lsif_configuration_policies_repository_id ON lsif_configuration_policies USING btree (repository_id);
@@ -5712,6 +5810,8 @@ CREATE INDEX own_background_jobs_repo_id_idx ON own_background_jobs USING btree 
 
 CREATE INDEX own_background_jobs_state_idx ON own_background_jobs USING btree (state);
 
+CREATE UNIQUE INDEX own_signal_configurations_name_uidx ON own_signal_configurations USING btree (name);
+
 CREATE UNIQUE INDEX package_repo_filters_unique_matcher_per_scheme ON package_repo_filters USING btree (scheme, matcher);
 
 CREATE INDEX package_repo_versions_blocked ON package_repo_versions USING btree (blocked);
@@ -5759,6 +5859,8 @@ CREATE UNIQUE INDEX repo_external_unique_idx ON repo USING btree (external_servi
 CREATE INDEX repo_fork ON repo USING btree (fork);
 
 CREATE INDEX repo_hashed_name_idx ON repo USING btree (sha256((lower((name)::text))::bytea)) WHERE (deleted_at IS NULL);
+
+CREATE UNIQUE INDEX repo_id_perforce_changelist_id_unique ON repo_commits_changelists USING btree (repo_id, perforce_changelist_id);
 
 CREATE INDEX repo_is_not_blocked_idx ON repo USING btree (((blocked IS NULL)));
 
@@ -5925,6 +6027,15 @@ ALTER TABLE ONLY access_tokens
 
 ALTER TABLE ONLY aggregated_user_statistics
     ADD CONSTRAINT aggregated_user_statistics_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY assigned_owners
+    ADD CONSTRAINT assigned_owners_file_path_id_fkey FOREIGN KEY (file_path_id) REFERENCES repo_paths(id);
+
+ALTER TABLE ONLY assigned_owners
+    ADD CONSTRAINT assigned_owners_owner_user_id_fkey FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY assigned_owners
+    ADD CONSTRAINT assigned_owners_who_assigned_user_id_fkey FOREIGN KEY (who_assigned_user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE;
 
 ALTER TABLE ONLY batch_changes
     ADD CONSTRAINT batch_changes_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE;
@@ -6190,9 +6301,6 @@ ALTER TABLE ONLY vulnerability_affected_symbols
 ALTER TABLE ONLY vulnerability_matches
     ADD CONSTRAINT fk_vulnerability_affected_packages FOREIGN KEY (vulnerability_affected_package_id) REFERENCES vulnerability_affected_packages(id) ON DELETE CASCADE;
 
-ALTER TABLE ONLY github_app_installs
-    ADD CONSTRAINT github_app_installs_app_id_fkey FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE;
-
 ALTER TABLE ONLY github_apps
     ADD CONSTRAINT github_apps_webhook_id_fkey FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE SET NULL;
 
@@ -6336,6 +6444,9 @@ ALTER TABLE ONLY registry_extensions
 
 ALTER TABLE ONLY registry_extensions
     ADD CONSTRAINT registry_extensions_publisher_user_id_fkey FOREIGN KEY (publisher_user_id) REFERENCES users(id);
+
+ALTER TABLE ONLY repo_commits_changelists
+    ADD CONSTRAINT repo_commits_changelists_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY repo_kvps
     ADD CONSTRAINT repo_kvps_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;

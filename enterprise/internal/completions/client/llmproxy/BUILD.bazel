@@ -7,7 +7,10 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/completions/client/anthropic",
+        "//enterprise/internal/completions/client/openai",
         "//enterprise/internal/completions/types",
+        "//enterprise/internal/llm-proxy",
         "//internal/httpcli",
+        "//lib/errors",
     ],
 )

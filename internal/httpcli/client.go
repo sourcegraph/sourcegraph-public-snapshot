@@ -23,10 +23,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -315,16 +315,6 @@ func GitHubProxyRedirectMiddleware(cli Doer) Doer {
 	})
 }
 
-// GerritUnauthenticateMiddleware rewrites requests to Gerrit code host to
-// make them unauthenticated, used for testing against a non-Authed gerrit instance
-func GerritUnauthenticateMiddleware(cli Doer) Doer {
-	return DoerFunc(func(req *http.Request) (*http.Response, error) {
-		req.URL.Path = strings.ReplaceAll(req.URL.Path, "/a/", "/")
-		req.Header.Del("Authorization")
-		return cli.Do(req)
-	})
-}
-
 // requestContextKey is used to denote keys to fields that should be logged by the logging
 // middleware. They should be set to the request context associated with a response.
 type requestContextKey int
@@ -478,7 +468,7 @@ func TracedTransportOpt(cli *http.Client) error {
 
 	// Collect and propagate OpenTelemetry trace (among other formats initialized
 	// in internal/tracer)
-	cli.Transport = otelhttp.NewTransport(cli.Transport)
+	cli.Transport = instrumentation.NewHTTPTransport(cli.Transport)
 
 	return nil
 }

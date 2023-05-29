@@ -118,7 +118,7 @@ Continue with the following steps *after* you have created a public or private c
 
 ```bash
   # Specify the version you want to install
-  export SOURCEGRAPH_VERSION="v5.0.3"
+  export SOURCEGRAPH_VERSION="v5.0.4"
   # Check out the selected version for use, in a new branch called "release"
   git checkout $SOURCEGRAPH_VERSION -b release
 ```
@@ -137,6 +137,7 @@ If you would like to make changes to the default configurations, we highly recom
   - Expose debug port
   - Git SSH configuration
   - Update or add new environment variables
+  - Enable the Embeddings service
   - And more!
 
 Please make sure to commit any changes to your `release` branch.

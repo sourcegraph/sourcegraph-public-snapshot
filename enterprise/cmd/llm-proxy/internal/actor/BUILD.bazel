@@ -10,11 +10,18 @@ go_library(
     visibility = ["//enterprise/cmd/llm-proxy:__subpackages__"],
     deps = [
         "//enterprise/cmd/llm-proxy/internal/limiter",
+        "//enterprise/internal/completions/types",
         "//internal/goroutine",
+        "//internal/observation",
+        "//internal/trace",
         "//lib/errors",
         "@com_github_go_redsync_redsync_v4//:redsync",
         "@com_github_sourcegraph_conc//pool",
         "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//attribute",
+        "@io_opentelemetry_go_otel//codes",
+        "@io_opentelemetry_go_otel_trace//:trace",
     ],
 )
 
@@ -27,6 +34,7 @@ go_test(
         "requires-network",
     ],
     deps = [
+        "//internal/observation",
         "//internal/redispool",
         "//lib/errors",
         "@com_github_go_redsync_redsync_v4//:redsync",

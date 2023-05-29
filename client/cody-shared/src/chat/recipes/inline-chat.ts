@@ -13,17 +13,14 @@ export class InlineChat implements Recipe {
     public id: RecipeID = 'inline-chat'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const selection = context.editor.controller?.selection
+        const selection = context.editor.controllers?.inline.selection
         if (!humanChatInput || !selection) {
-            await context.editor.showWarningMessage(
-                'Failed to start Inline Assist. Please highlight a small section of code in your file to try again.'
-            )
+            await context.editor.showWarningMessage('Failed to start Inline Chat: empty input or selection.')
             return null
         }
-
-        // Redirect fix-up requests
-        if (humanChatInput.startsWith('/fix ') || humanChatInput.startsWith('/f ')) {
-            return new Fixup().getInteraction(humanChatInput.replace('/fix ', '').replace('/f ', ''), context)
+        // Check if this is a fix-up request
+        if (/^\/f(ix)?\s/i.test(humanChatInput)) {
+            return new Fixup().getInteraction(humanChatInput.replace(/^\/f(ix)?\s/i, ''), context)
         }
 
         const truncatedText = truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS)

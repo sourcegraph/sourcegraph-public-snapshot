@@ -54,7 +54,7 @@ helm repo add sourcegraph https://helm.sourcegraph.com/release
 Install the Sourcegraph chart using default values:
 
 ```sh
-helm install --version 5.0.3 sourcegraph sourcegraph/sourcegraph
+helm install --version 5.0.4 sourcegraph sourcegraph/sourcegraph
 ```
 
 Sourcegraph should now be available via the address set. Browsing to the url should now provide access to the Sourcegraph UI to create the initial administrator account.
@@ -81,7 +81,7 @@ Example overrides can be found in the [examples](https://github.com/sourcegraph/
 
 Providing the override file to Helm is done with the inclusion of the values flag and the name of the file:
 ```sh
-helm upgrade --install --values ./override.yaml --version 5.0.3 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 5.0.4 sourcegraph sourcegraph/sourcegraph
 ```
 When making configuration changes, it's recommended to review the changes that will be applied—see [Reviewing Changes](#reviewing-changes).
 
@@ -277,6 +277,64 @@ preciseCodeIntel:
   env:
     <<: *objectStorageEnv
 ```
+
+#### Enabling the Embeddings Service
+To enable the Embeddings Service using the built-in `blobstore` storage specify the following in your override file.
+```yaml
+embeddings:
+  enabled: true
+```
+
+#### Using external Object Storage for Embeddings Indexes
+To use an external Object Storage service (S3-compatible services, or GCS), first review our [general recommendations](https://docs.sourcegraph.com/cody/explanations/code_graph_context#storing-embedding-indexes). Then review the following example and adjust to your use case.
+
+> The example assumes the use of AWS S3. You may configure the environment variables accordingly for your own use case based on our [general recommendations](https://docs.sourcegraph.com/cody/explanations/code_graph_context#storing-embedding-indexes).
+
+If you provide credentials with an access key / secret key, we recommend storing the credentials in [Secrets] created outside of the helm chart and managed in a secure manner. An example Secret is shown here:
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: sourcegraph-s3-credentials
+data:
+  # notes: secrets data has to be base64-encoded
+  EMBEDDINGS_UPLOAD_AWS_ACCESS_KEY_ID: ""
+  EMBEDDINGS_UPLOAD_AWS_SECRET_ACCESS_KEY: ""
+```
+
+In your [override.yaml](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples/external-object-storage-embeddings/override.yaml), reference this Secret and the necessary environment variables:
+
+```yaml
+# we use YAML anchors and alias to keep override file clean
+objectStorageEnv: &objectStorageEnv
+  EMBEDDINGS_UPLOAD_BACKEND:
+    value: S3 # external object stoage type, one of "S3" or "GCS"
+  EMBEDDINGS_UPLOAD_BUCKET:
+    value: embeddings-uploads # external object storage bucket name
+  EMBEDDINGS_UPLOAD_AWS_ENDPOINT:
+    value: https://s3.us-east-1.amazonaws.com
+  EMBEDDINGS_UPLOAD_AWS_REGION:
+    value: us-east-1
+  EMBEDDINGS_UPLOAD_AWS_ACCESS_KEY_ID:
+    secretKeyRef: # Pre-existing secret, not created by this chart
+      name: sourcegraph-s3-credentials
+      key: EMBEDDINGS_UPLOAD_AWS_ACCESS_KEY_ID
+  EMBEDDINGS_UPLOAD_AWS_SECRET_ACCESS_KEY:
+    secretKeyRef: # Pre-existing secret, not created by this chart
+      name: sourcegraph-s3-credentials
+      key: EMBEDDINGS_UPLOAD_AWS_SECRET_ACCESS_KEY
+
+embeddings:
+  enabled: true # Enable the Embeddings service
+  env:
+    <<: *objectStorageEnv
+
+worker:
+  env:
+    <<: *objectStorageEnv
+```
+
 
 #### Using SSH to clone repositories
 
@@ -518,7 +576,7 @@ The override file includes a [BackendConfig] CRD. This is necessary to instruct 
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 5.0.3 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 5.0.4 sourcegraph sourcegraph/sourcegraph
 ```
 
 It will take around 10 minutes for the load balancer to be fully ready, you may check on the status and obtain the load balancer IP using the following command:
@@ -637,7 +695,7 @@ storageClass:
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 5.0.3 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 5.0.4 sourcegraph sourcegraph/sourcegraph
 ```
 
 It will take some time for the load balancer to be fully ready, use the following to check on the status and obtain the load balancer address (once available):
@@ -722,7 +780,7 @@ storageClass:
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 5.0.3 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 5.0.4 sourcegraph sourcegraph/sourcegraph
 ```
 
 It will take some time for the load balancer to be fully ready, you can check on the status and obtain the load balancer address (when ready) using:
@@ -808,7 +866,7 @@ storageClass:
 **2** – Install the chart
 
 ```sh
-helm upgrade --install --values ./override.yaml --version 5.0.3 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install --values ./override.yaml --version 5.0.4 sourcegraph sourcegraph/sourcegraph
 ```
 
 It may take some time before your ingress is up and ready to proceed. Depending on how your Ingress Controller works, you may be able to check on its status and obtain the public address of your Ingress using:
@@ -885,16 +943,13 @@ Now the deployment is complete, more information on configuring the Sourcegraph 
 
 ## Upgrading Sourcegraph
 
-A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) for release announcements.
+The following procedures describe the process to update a Helm Sourcegraph instance. If you are unfamiliar with sourcegraph versioning or releases see our [general concepts documentation](../../updates/index.md).
+
+> ***⚠️ Attention: Always consult the [release notes](../../updates/kubernetes.md) for the versions your upgrade will pass over and end on.***
 
 ### Standard upgrades
 
-A [standard upgrade](../../updates/index.md#standard-upgrades) occurs between two minor versions of Sourcegraph. If you are looking to jump forward several versions, you must perform a [multi-version upgrade](#multi-version-upgrades) instead.
-
-**Before upgrading:**
-
-- Read our [update policy](../../updates/index.md#update-policy) to learn about Sourcegraph updates.
-- Find the relevant entry for your update in the [update notes for Sourcegraph with Kubernetes](../../updates/kubernetes.md).
+A [standard upgrade](../../updates/index.md#upgrade-types) occurs between a Sourcegraph version and the minor or major version released immediately after it. If you would like to jump forward several versions, you must perform a [multi-version upgrade](#multi-version-upgrades) instead.
 
 1. Review [Helm Changelog] and [Sourcegraph Changelog] and select the most recent version compatible with your current Sourcegraph version.
 
@@ -911,7 +966,7 @@ helm repo update sourcegraph
 4.  Install the new version:
 
 ```bash
-helm upgrade --install -f override.yaml --version 5.0.3 sourcegraph sourcegraph/sourcegraph
+helm upgrade --install -f override.yaml --version 5.0.4 sourcegraph sourcegraph/sourcegraph
 ```
 
 5.  Verify the installation has started:
@@ -924,22 +979,15 @@ When all pods have restarted and show as Running, you can browse to your Sourceg
 
 ### Multi-version upgrades
 
-A [multi-version upgrade](../../updates/index.md#multi-version-upgrades) is a downtime-incurring upgrade from version 3.20 or later to any future version. Multi-version upgrades will run both schema and data migrations to ensure the data available from the instance remains available post-upgrade.
-
-> NOTE: It is highly recommended to **take an up-to-date snapshot of your databases** prior to starting a multi-version upgrade. The upgrade process aggressively mutates the shape and contents of your database, and undiscovered errors in the migration process or unexpected environmental differences may cause an unusable instance or data loss.
->
-> We recommend performing the entire upgrade procedure on an idle clone of the production instance and switch traffic over on success, if possible. This may be low-effort for installations with a canary environment or a blue/green deployment strategy.
->
-> **If you do not feel confident running this process solo**, contact the customer support team to help guide you thorough the process.
-
-**Before performing a multi-version upgrade**:
-
-- Read our [update policy](../../updates/index.md#update-policy) to learn about Sourcegraph updates.
-- Find the entries that apply to the version range you're passing through in the [update notes for Sourcegraph with Kubernetes](../../updates/kubernetes.md#multi-version-upgrade-procedure).
+> **⚠️ Attention:** please see our [cautionary note](../../updates/index.md#best-practices) on upgrades, if you have any concerns about running a multiversion upgrade, please reach out to us at [support@sourcegraph.com](emailto:support@sourcegraph.com) for advisement.
 
 ### Multi-version upgrade procedure
 
-1. **Scale down `deployments` and `statefulSets` that access the database**, _this step prevents services from accessing the database while schema migrations are in process._ 
+1. **Check Upgrade Readiness**:
+   - Check the [upgrade notes](../../updates/kubernetes.md#kubernetes-upgrade-notes) for the version range you're passing through.
+   - Check the `Site Admin > Updates` page to determine [upgrade readiness](../../updates/index.md#upgrade-readiness).
+
+2. **Scale down `deployments` and `statefulSets` that access the database**, _this step prevents services from accessing the database while schema migrations are in process._ 
   The following services must have their replicas scaled to 0:
     - Deployments (e.g., `kubectl scale deployment <name> --replicas=0`)
       - precise-code-intel-worker
@@ -965,15 +1013,31 @@ A [multi-version upgrade](../../updates/index.md#multi-version-upgrades) is a do
     ```
 
     > NOTE: The commands above use the `sourcegraph` namespace and are specific to the kubernetes-helm deployment.
-2. **Run the migrator `upgrade` command**
+3. **Run the migrator `upgrade` command**
   - The following command is the general template for running an upgrade
     ```
     helm upgrade --install -n <your namespace> --set "migrator.args={upgrade,--from=<current version>,--to=<version to upgrade to>}" sourcegraph-migrator sourcegraph/sourcegraph-migrator --version <migrator image version> 
     ```
     > NOTE: The command above is general and you'll need to substitute in your own namespace, target sourcegraph version, and desired migrator image version. In general run the most recent version of migrator.
 
-    You can learn more about running migrator operations in helm in the [migrator operations doc](../../how-to/manual_database_migrations.md#helm-kubernetes).
-3. **Upgrade your instance via `helm upgrade`**
+    **Example:**
+    ```bash
+    λ helm upgrade --install -n sourcegraph --set "migrator.args={upgrade,--from=3.41.0,--to=4.5.1}" sourcegraph-migrator sourcegraph/sourcegraph-migrator --version 4.5.1
+    Release "sourcegraph-migrator" has been upgraded. Happy Helming!
+    NAME: sourcegraph-migrator
+    LAST DEPLOYED: Tue Mar  7 18:23:56 2023
+    NAMESPACE: sourcegraph
+    STATUS: deployed
+    REVISION: 2
+    TEST SUITE: None
+    ✅ Out of band migrations complete
+    👉 Migrating to v4.5 (step 3 of 3)
+    👉 Running schema migrations
+    ✅ Schema migrations complete
+    ```
+
+    You can learn more about running migrator operations in helm in the [migrator operations doc](../../updates/migrator/migrator-operations.md#kubernetes-helm).
+4. **Upgrade your instance via `helm upgrade`**
   - Now that the databases have been migrated to the latest versions, services can be scaled up and upgrade via the [standard procedure](#standard-upgrades). For example:
     ```
     helm upgrade -n <your namespace> --install -f override.yaml --version <sourcegraph version> sourcegraph sourcegraph/sourcegraph

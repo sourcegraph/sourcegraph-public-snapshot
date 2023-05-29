@@ -117,10 +117,7 @@ func (r *Resolver) Iterator(ctx context.Context, opts search.RepoOptions) *itera
 
 func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolved, errs error) {
 	tr, ctx := trace.New(ctx, "searchrepos.Resolve", op.String())
-	defer func() {
-		tr.SetError(errs)
-		tr.Finish()
-	}()
+	defer tr.FinishWithErr(&errs)
 
 	excludePatterns := op.MinusRepoFilters
 	includePatterns, includePatternRevs := findPatternRevs(op.RepoFilters)

@@ -3,16 +3,13 @@ import * as vscode from 'vscode'
 import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
+import { logEvent } from '../event-logger'
+
 import { CodeLensProvider } from './CodeLensProvider'
+import { CodyTaskState, getIconPath, updateRangeOnDocChange } from './InlineAssist'
 
 const initPost = new vscode.Position(0, 0)
 const initRange = new vscode.Range(initPost, initPost)
-
-export enum CodyTaskState {
-    'idle' = 0,
-    'pending' = 1,
-    'done' = 2,
-}
 
 export class InlineController {
     // Controller init
@@ -42,9 +39,12 @@ export class InlineController {
     constructor(private extensionPath: string) {
         this.commentController = vscode.comments.createCommentController(this.id, this.label)
         this.commentController.options = this.options
-        // Track last selection in valid doc
+        // Track last selection range in valid doc before an action is called
         vscode.window.onDidChangeTextEditorSelection(e => {
-            if (e.textEditor.document.uri.scheme !== 'file') {
+            if (
+                e.textEditor.document.uri.scheme !== 'file' ||
+                e.textEditor.document.uri.fsPath !== this.thread?.uri.fsPath
+            ) {
                 return
             }
             const selection = e.selections[0]
@@ -56,20 +56,25 @@ export class InlineController {
                 this.selectionRange = range
             }
         })
-        // Track and update line of changes when the task for the current selected range is being processed
+        // Track and update line diff when a task for the current selected range is being processed (this.isInProgress)
+        // This makes sure the comment range and highlights are also updated correctly
         vscode.workspace.onDidChangeTextDocument(e => {
             // don't track
-            if (!this.isInProgress || !this.selectionRange || e.document.uri.scheme !== 'file') {
+            if (
+                !this.isInProgress ||
+                !this.selectionRange ||
+                e.document.uri.scheme !== 'file' ||
+                e.document.uri.fsPath !== this.thread?.uri.fsPath
+            ) {
                 return
             }
-            const newRange = lineTracker(e, this.selectionRange)
-            if (newRange) {
-                this.selectionRange = newRange
+            for (const change of e.contentChanges) {
+                this.selectionRange = updateRangeOnDocChange(this.selectionRange, change.range, change.text)
             }
         })
     }
     /**
-     * Getter
+     * Getter to return instance
      */
     public get(): vscode.CommentController {
         return this.commentController
@@ -106,7 +111,7 @@ export class InlineController {
         this.threads = threads
         this.thread = thread
         this.selection = await this.makeSelection(isFixMode)
-        await vscode.commands.executeCommand('setContext', 'cody.replied', false)
+        void vscode.commands.executeCommand('setContext', 'cody.replied', false)
     }
     /**
      * List response from Cody as comment
@@ -118,7 +123,6 @@ export class InlineController {
         const codyReply = new Comment(text, 'Cody', this.codyIcon, false, this.thread, undefined)
         this.thread.comments = [...this.thread.comments, codyReply]
         this.thread.canReply = true
-        this.currentTaskId = ''
         void vscode.commands.executeCommand('setContext', 'cody.replied', true)
     }
     /**
@@ -182,9 +186,10 @@ export class InlineController {
                 new vscode.Position(this.thread.range.end.line + 1 + SURROUNDING_LINES, 0)
             )
         )
+        // Add space when selectedText is empty --empty selectedText could cause delayed response
         const selection = {
             fileName: vscode.workspace.asRelativePath(this.thread.uri.fsPath),
-            selectedText: activeDocument.getText(selectionRange),
+            selectedText: activeDocument.getText(selectionRange) || ' ',
             precedingText,
             followingText,
         }
@@ -197,7 +202,7 @@ export class InlineController {
      * Get the current editor using the comment thread uri instead
      */
     public async makeCodeLenses(taskID: string, uri: vscode.Uri, extPath: string): Promise<CodeLensProvider> {
-        const lens = new CodeLensProvider(taskID, extPath)
+        const lens = new CodeLensProvider(taskID, extPath, uri)
         const activeDocument = await vscode.workspace.openTextDocument(uri)
         await lens.provideCodeLenses(activeDocument, new vscode.CancellationTokenSource().token)
         vscode.languages.registerCodeLensProvider('*', lens)
@@ -221,15 +226,17 @@ export class InlineController {
         // Stop tracking for file changes to perfotm replacement
         this.isInProgress = false
         // Perform edits
-        await activeEditor.edit(edit => {
-            edit.replace(selection, replacement)
-        })
         const startLine = selection.start.line
+        await activeEditor.edit(edit => {
+            edit.delete(selection)
+            edit.insert(new vscode.Position(startLine, 0), replacement)
+        })
         const newLineCount = replacement.split('\n').length - 2
         // Highlight from the start line to the length of the replacement content
         const newRange = new vscode.Range(startLine, 0, startLine + newLineCount, 0)
         await this.setReplacementRange(newRange)
         this.currentTaskId = ''
+        logEvent('CodyVSCodeExtension:inline-assist:replaced')
         return
     }
     /**
@@ -257,9 +264,10 @@ export class InlineController {
         if (!this.thread) {
             return null
         }
-        await vscode.window.showTextDocument(this.thread.uri)
-        this.editor = vscode.window.activeTextEditor || null
-        return this.editor
+        const activeDocument = await vscode.workspace.openTextDocument(this.thread.uri)
+        const activeEditor = (await vscode.window.showTextDocument(activeDocument)) || null
+        this.editor = activeEditor
+        return activeEditor
     }
     /**
      * Return latest selection
@@ -314,37 +322,4 @@ export class Comment implements vscode.Comment {
         markdownText.supportHtml = true
         return markdownText
     }
-}
-
-export function lineTracker(e: vscode.TextDocumentChangeEvent, cur: vscode.Range): vscode.Range | null {
-    for (const change of e.contentChanges) {
-        if (change.range.start.line > cur.end.line) {
-            return null
-        }
-        let addedLines = 0
-        if (change.text.includes('\n')) {
-            addedLines = change.text.split('\n').length - 1
-        } else if (change.range.end.line - change.range.start.line > 0) {
-            addedLines -= change.range.end.line - change.range.start.line
-        }
-        const newRange = new vscode.Range(
-            new vscode.Position(cur.start.line + addedLines, 0),
-            new vscode.Position(cur.end.line + addedLines, 0)
-        )
-        return newRange
-    }
-    return null
-}
-
-export function singleLineRange(line: number): vscode.Range {
-    return new vscode.Range(line, 0, line, 0)
-}
-
-/**
- * Generate icon path for each speaker
- */
-export function getIconPath(speaker: string, extPath: string): vscode.Uri {
-    const extensionPath = vscode.Uri.file(extPath)
-    const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist')
-    return vscode.Uri.joinPath(webviewPath, speaker === 'cody' ? 'cody.png' : 'sourcegraph.png')
 }

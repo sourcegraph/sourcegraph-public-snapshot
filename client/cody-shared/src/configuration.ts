@@ -1,16 +1,18 @@
 export type ConfigurationUseContext = 'embeddings' | 'keyword' | 'none' | 'blended'
 
 export interface Configuration {
-    enabled: boolean
     serverEndpoint: string
     codebase?: string
-    debug: boolean
+    debugEnable: boolean
+    debugFilter: RegExp | null
+    debugVerbose: boolean
     useContext: ConfigurationUseContext
+    customHeaders: Record<string, string>
     experimentalSuggest: boolean
     experimentalChatPredictions: boolean
     experimentalInline: boolean
-    experimentalConnectToApp: boolean
-    customHeaders: Record<string, string>
+    experimentalGuardrails: boolean
+    experimentalNonStop: boolean
 }
 
 export interface ConfigurationWithAccessToken extends Configuration {

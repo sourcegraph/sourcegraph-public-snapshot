@@ -1,0 +1,69 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers: {}
+    url: https://gerrit.sgdev.org/a/changes/I52bede3e6dd80b9048924d0416e5d1a7bf49cf5b
+    method: GET
+  response:
+    body: |
+      )]}'
+      {
+        "id": "src-cli~master~I52bede3e6dd80b9048924d0416e5d1a7bf49cf5b",
+        "project": "src-cli",
+        "branch": "master",
+        "hashtags": [
+          "bad",
+          "extremebad",
+          "gerritsux"
+        ],
+        "change_id": "I52bede3e6dd80b9048924d0416e5d1a7bf49cf5b",
+        "subject": "newest change",
+        "status": "MERGED",
+        "created": "2023-05-11 19:08:09.000000000",
+        "updated": "2023-05-16 20:34:52.000000000",
+        "submitted": "2023-05-16 20:34:40.000000000",
+        "submitter": {
+          "_account_id": 1000018
+        },
+        "insertions": 2,
+        "deletions": 0,
+        "total_comment_count": 0,
+        "unresolved_comment_count": 0,
+        "has_review_started": true,
+        "_number": 328,
+        "owner": {
+          "_account_id": 1000018
+        },
+        "requirements": []
+      }
+    headers:
+      Cache-Control:
+      - private, max-age=0, must-revalidate
+      Cf-Cache-Status:
+      - DYNAMIC
+      Cf-Ray:
+      - 7cc0edb9a877541f-YYZ
+      Content-Disposition:
+      - attachment
+      Content-Type:
+      - application/json;charset=utf-8
+      Date:
+      - Tue, 23 May 2023 23:02:48 GMT
+      Etag:
+      - 47c2551b8d83e19c5bb7d70f66359848
+      Expires:
+      - Tue, 23 May 2023 23:02:48 GMT
+      Server:
+      - cloudflare
+      Strict-Transport-Security:
+      - max-age=15724800; includeSubDomains
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - DENY
+    status: 200 OK
+    code: 200
+    duration: ""

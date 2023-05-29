@@ -23,6 +23,7 @@ To add permissions for a new feature, follow these steps:
 1. Add the namespace and action to [`schema.yaml`](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/internal/rbac/schema.yaml). Namespace string must be unique.
 
 2. Generate the access control constants with the command `sg gen`. This will generate access control constants for [Typescript](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@8b4e1cb/-/blob/client/web/src/rbac/constants.ts) and [Go](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@8b4e1cb4374d1449c918f695c21d2c933c5a1d15/-/blob/internal/rbac/constants.go).
+    - Additionally modify [schema.graphql](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@2badaeb3ccb0d9bf660234e8b5eddb4cba6598bb/-/blob/cmd/frontend/graphqlbackend/schema.graphql?L9729) by adding a new namespace enum
 
 3. Once these constants have been generated, you can protect any resource using the access control system. 
     * In Go, you can do this by importing the [`CheckCurrentUserHasPermission`](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@8b4e1cb/-/blob/internal/rbac/permission.go) method from the `internal/rbac` package. [Example](https://github.com/sourcegraph/sourcegraph/pull/49594/files).

@@ -1,10 +1,14 @@
 export interface ActiveTextEditor {
     content: string
     filePath: string
+    repoName?: string
+    revision?: string
 }
 
 export interface ActiveTextEditorSelection {
     fileName: string
+    repoName?: string
+    revision?: string
     precedingText: string
     selectedText: string
     followingText: string
@@ -13,14 +17,26 @@ export interface ActiveTextEditorSelection {
 export interface ActiveTextEditorVisibleContent {
     content: string
     fileName: string
+    repoName?: string
+    revision?: string
 }
 
-export interface InlineController {
+interface VsCodeInlineController {
     selection: ActiveTextEditorSelection | null
 }
 
+interface VsCodeTaskContoller {
+    add(input: string, selection: ActiveTextEditorSelection): string | null
+    stop(taskID: string): void
+}
+
+export interface ActiveTextEditorViewControllers {
+    inline: VsCodeInlineController
+    task: VsCodeTaskContoller
+}
+
 export interface Editor {
-    controller?: InlineController
+    controllers?: ActiveTextEditorViewControllers
     getWorkspaceRootPath(): string | null
     getActiveTextEditor(): ActiveTextEditor | null
     getActiveTextEditorSelection(): ActiveTextEditorSelection | null

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
@@ -279,32 +280,33 @@ func TestUserEmails_ListByUser(t *testing.T) {
 		Password:              "pw",
 		EmailVerificationCode: "c",
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	testTime := time.Now().Round(time.Second).UTC()
-	if _, err := db.ExecContext(ctx,
+	_, err = db.ExecContext(ctx,
 		`INSERT INTO user_emails(user_id, email, verification_code, verified_at) VALUES($1, $2, $3, $4)`,
-		user.ID, "b@example.com", "c2", testTime); err != nil {
-		t.Fatal(err)
-	}
+		user.ID, "b@example.com", "c2", testTime)
+	require.NoError(t, err)
+
+	t.Run("list emails when there are none without errors", func(t *testing.T) {
+		userEmails, err := db.UserEmails().ListByUser(ctx, UserEmailsListOptions{
+			UserID: 42133742,
+		})
+		require.NoError(t, err)
+		assert.Empty(t, userEmails)
+	})
 
 	t.Run("list all emails", func(t *testing.T) {
 		userEmails, err := db.UserEmails().ListByUser(ctx, UserEmailsListOptions{
 			UserID: user.ID,
 		})
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, err)
 		normalizeUserEmails(userEmails)
 		want := []*UserEmail{
 			{UserID: user.ID, Email: "a@example.com", VerificationCode: strptr("c"), Primary: true},
 			{UserID: user.ID, Email: "b@example.com", VerificationCode: strptr("c2"), VerifiedAt: &testTime},
 		}
-		if diff := cmp.Diff(want, userEmails); diff != "" {
-			t.Fatalf("userEmails: %s", diff)
-		}
+		assert.Empty(t, cmp.Diff(want, userEmails))
 	})
 
 	t.Run("list only verified emails", func(t *testing.T) {
@@ -312,16 +314,12 @@ func TestUserEmails_ListByUser(t *testing.T) {
 			UserID:       user.ID,
 			OnlyVerified: true,
 		})
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, err)
 		normalizeUserEmails(userEmails)
 		want := []*UserEmail{
 			{UserID: user.ID, Email: "b@example.com", VerificationCode: strptr("c2"), VerifiedAt: &testTime},
 		}
-		if diff := cmp.Diff(want, userEmails); diff != "" {
-			t.Fatalf("userEmails: %s", diff)
-		}
+		assert.Empty(t, cmp.Diff(want, userEmails))
 	})
 }
 
