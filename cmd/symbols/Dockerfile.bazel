@@ -6,25 +6,6 @@ USER root
 COPY ctags-install-alpine.sh /ctags-install-alpine.sh
 RUN /ctags-install-alpine.sh
 
-
-FROM rust:1.68.0-alpine3.17@sha256:d119a621ae12f84ec0c5fed77c24795120ed1c7874b2428b5a6ccc0f294dbe18 as scip-ctags
-# hadolint ignore=DL3002
-USER root
-RUN apk add --no-cache musl-dev>=1.1.24-r10 build-base
-COPY docker-images/syntax-highlighter /repo
-WORKDIR /repo
-RUN cargo fetch
-
-ARG TARGETARCH
-
-# Because .cargo/config.toml doesnt support triplet-specific env
-COPY cmd/symbols/cargo-config.sh /cargo-config.sh
-RUN /cargo-config.sh
-
-RUN cargo rustc --release --bin scip-ctags
-
-RUN cp ./target/release/scip-ctags /usr/local/bin/scip-ctags
-
 FROM sourcegraph/alpine-3.14:213466_2023-04-17_5.0-bdda34a71619@sha256:6354a4ff578b685e36c8fbde81f62125ae0011b047fb2cc22d1b0de616b3c59a AS symbols
 
 # TODO(security): This container should not run as root!
@@ -48,6 +29,9 @@ RUN apk add --no-cache bind-tools ca-certificates mailcap tini jansson libstdc++
 
 COPY --from=ctags /usr/local/bin/universal-ctags /usr/local/bin/universal-ctags
 
+# the scip binary and symbols was already built by bazel
+# see cmd/symbols/build-bazel.sh where it is built and put in the context directory aka $OUTPUT for docker
+COPY scip-ctags /usr/local/bin/scip-ctags
 COPY symbols /usr/local/bin/symbols
 
 # symbols is cgo, ensure we have the requisite dynamic libraries

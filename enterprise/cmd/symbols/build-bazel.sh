@@ -36,6 +36,8 @@ out=$(
 cp -v "$out" "$OUTPUT"
 
 # we can't build scip-ctags with symbols since the platform args conflict
+# NOTE: cmd/symbols/cargo-config.sh sets some specific config when running on arm64
+# since this bazel run typically runs on CI that config change isn't made
 echo "--- :bazel: bazel build for target //docker-images/syntax-highlighter:scip-ctags"
 bazel \
   --bazelrc=.bazelrc \
@@ -58,11 +60,10 @@ cp -v "$out" "$OUTPUT"
 
 cp cmd/symbols/ctags-install-alpine.sh "$OUTPUT"
 
-echo "--- DEBUG"
-shasum cmd/symbols/Dockerfile.bazel
-ls -lah $OUTPUT
-git checkout cmd/symbols/Dockerfile.bazel
+echo ":docker: context directory contains the following:"
+ls -lah "$OUTPUT"
 echo "--- :docker: docker build for symbols"
+cat cmd/symbols/Dockerfile.bazel
 docker build -f cmd/symbols/Dockerfile.bazel -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --build-arg COMMIT_SHA \
