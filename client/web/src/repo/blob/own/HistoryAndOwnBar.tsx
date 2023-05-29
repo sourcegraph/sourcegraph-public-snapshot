@@ -66,7 +66,9 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
 
     const history = data?.node?.commit?.ancestors?.nodes?.[0]
     const ownership = data.node.commit?.blob?.ownership
-    const ownershipIncludingSignals = data.node.commit?.blob?.ownershipIncludingSignals
+    const contributors = data.node.commit?.blob?.contributors
+    // +1 contributor (singular), but +3 contributors (plural)
+    const contributorText = contributors?.totalCount == 1 ? 'contributor' : 'contributors'
 
     return (
         <div className={styles.wrapper}>
@@ -119,9 +121,9 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
                             {ownership.totalCount > 2 ? (
                                 <div className={styles.ownMore}>+{ownership.totalCount - 2} more</div>
                             ) : (
-                                ownershipIncludingSignals.totalCount > ownership.totalCount && (
+                                contributors.totalCount > 0 && (
                                     <div className={styles.ownMore}>
-                                        +{ownershipIncludingSignals.totalCount - ownership.totalCount} inferred
+                                        +{contributors.totalCount} {contributorText}
                                     </div>
                                 )
                             )}

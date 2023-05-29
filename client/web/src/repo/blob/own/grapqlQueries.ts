@@ -107,7 +107,7 @@ export const FETCH_OWNERS_AND_HISTORY = gql`
                             }
                             totalCount
                         }
-                        ownershipIncludingSignals: ownership {
+                        contributors: ownership(reasons: [RECENT_CONTRIBUTOR_OWNERSHIP_SIGNAL]) {
                             totalCount
                         }
                     }
