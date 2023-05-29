@@ -1,8 +1,8 @@
 # How-to guides
 
-- [How to manually execute database migrations with `migrator`](manual_database_migrations.md)
-  - Commands: [up](manual_database_migrations.md#up), [upto](manual_database_migrations.md#upto), [downto](manual_database_migrations.md#downto), [validate](manual_database_migrations.md#validate), [add-log](manual_database_migrations.md#add-log)
-  - Environments: [Kubernetes](manual_database_migrations.md#kubernetes), [Docker compose](manual_database_migrations.md#docker--docker-compose), [Local development](manual_database_migrations.md#local-development)
+- [How to manually execute database migrations with `migrator`](../updates/migrator/migrator-operations.md)
+  - Commands: [up](../updates/migrator/migrator-operations.md#up), [upto](../updates/migrator/migrator-operations.md#upto), [downto](../updates/migrator/migrator-operations.md#downto), [validate](../updates/migrator/migrator-operations.md#validate), [add-log](../updates/migrator/migrator-operations.md#add-log)
+  - Environments: [Kubernetes](../updates/migrator/migrator-operations.md#kubernetes), [Docker compose](../updates/migrator/migrator-operations.md#docker--docker-compose), [Local development](../updates/migrator/migrator-operations.md#local-development)
 - [How to troubleshoot a dirty database](dirty_database.md)
 - [How to rollback the Postgres database](rollback_database.md)
 - [How to apply privileged migrations](privileged_migrations.md)

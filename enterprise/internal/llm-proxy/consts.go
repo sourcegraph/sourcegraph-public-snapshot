@@ -2,6 +2,8 @@ package llmproxy
 
 const ProductSubscriptionActorSourceName = "dotcom-product-subscriptions"
 
+const CompletionsEventFeatureMetadataField = "feature"
+
 type EventName string
 
 const (
@@ -11,3 +13,5 @@ const (
 	EventNameCompletionsStarted  EventName = "CompletionsStarted"
 	EventNameCompletionsFinished EventName = "CompletionsFinished"
 )
+
+const LLMProxyFeatureHeaderName = "X-Sourcegraph-Feature"

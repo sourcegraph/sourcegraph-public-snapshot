@@ -42,7 +42,7 @@ type Services struct {
 	CodeInsightsDataExportHandler http.Handler
 
 	// Handler for completions stream.
-	NewCompletionsStreamHandler NewCompletionsStreamHandler
+	NewChatCompletionsStreamHandler NewChatCompletionsStreamHandler
 
 	// Handler for code completions endpoint.
 	NewCodeCompletionsHandler NewCodeCompletionsHandler
@@ -80,8 +80,8 @@ type NewGitHubAppSetupHandler func() http.Handler
 // NewComputeStreamHandler creates a new handler for the Sourcegraph Compute streaming endpoint.
 type NewComputeStreamHandler func() http.Handler
 
-// NewCompletionsStreamHandler creates a new handler for the completions streaming endpoint.
-type NewCompletionsStreamHandler func() http.Handler
+// NewChatCompletionsStreamHandler creates a new handler for the completions streaming endpoint.
+type NewChatCompletionsStreamHandler func() http.Handler
 
 // NewCodeCompletionsHandler creates a new handler for the code completions endpoint.
 type NewCodeCompletionsHandler func() http.Handler
@@ -109,7 +109,7 @@ func DefaultServices() Services {
 		NewGitHubAppSetupHandler:        func() http.Handler { return makeNotFoundHandler("Sourcegraph GitHub App setup") },
 		NewComputeStreamHandler:         func() http.Handler { return makeNotFoundHandler("compute streaming endpoint") },
 		CodeInsightsDataExportHandler:   makeNotFoundHandler("code insights data export handler"),
-		NewCompletionsStreamHandler:     func() http.Handler { return makeNotFoundHandler("completions streaming endpoint") },
+		NewChatCompletionsStreamHandler: func() http.Handler { return makeNotFoundHandler("chat completions streaming endpoint") },
 		NewCodeCompletionsHandler:       func() http.Handler { return makeNotFoundHandler("code completions streaming endpoint") },
 		EnterpriseSearchJobs:            jobutil.NewUnimplementedEnterpriseJobs(),
 	}
