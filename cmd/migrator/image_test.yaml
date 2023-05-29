@@ -13,3 +13,11 @@ commandTests:
       - -u
     excludedOutput: ["^0"]
     exitCode: 0
+
+# TODO: Need to add /schema-descriptions to container
+# fileExistenceTests:
+# - name: '/schema-descriptions test'
+#   path: '/schema-descriptions/v3.20.0-internal_database_schema.json'
+#   shouldExist: true
+#   uid: 0
+#   gid: 0

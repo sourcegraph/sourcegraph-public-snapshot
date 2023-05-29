@@ -37,6 +37,8 @@ commandTests:
       - -h
   - name: "coursier is runnable"
     command: "coursier"
+  - name: "p4-fusion is runnable"
+    command: "p4-fusion"
 
 # TODO: Missing new p4-fusion-wrapper-detect-kill.sh and process-stats-watcher.sh scripts
 

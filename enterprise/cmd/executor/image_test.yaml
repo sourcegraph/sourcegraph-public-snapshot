@@ -24,3 +24,9 @@ commandTests:
       - -u
     excludedOutput: ["^0"]
     exitCode: 0
+
+# TODO: Test currently fails
+# metadataTest:
+#   envVars:
+#     - key: EXECUTOR_USE_FIRECRACKER
+#       value: false

@@ -10,6 +10,10 @@ commandTests:
     command: "pcregrep"
     args:
       - --help
+  - name: "comby is runnable"
+    command: "comby"
+    args:
+      - -h
 
   - name: "not running as root"
     command: "/usr/bin/id"
@@ -17,3 +21,10 @@ commandTests:
       - -u
     excludedOutput: ["^0"]
     exitCode: 0
+
+fileExistenceTests:
+- name: '/mnt/cache/searcher'
+  path: '/mnt/cache/searcher'
+  shouldExist: true
+  uid: 100
+  gid: 101
