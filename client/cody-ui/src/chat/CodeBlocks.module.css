@@ -9,8 +9,8 @@
 
 .buttons {
     position: absolute;
-    top: .25rem;
-    right: .25rem;
+    bottom: .25rem;
+    left: .25rem;
     visibility: hidden;
     display: flex;
     gap: .125rem;

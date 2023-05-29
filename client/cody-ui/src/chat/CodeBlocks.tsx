@@ -32,7 +32,7 @@ function createCopyButtonWithContainer(
     insertButtonClassName?: string
 ): HTMLElement {
     const copyButton = document.createElement('button')
-    copyButton.textContent = 'Copy Code'
+    copyButton.textContent = 'Copy'
     copyButton.title = 'Copy this code'
     copyButton.className = className
     copyButton.addEventListener('click', () => {
@@ -68,7 +68,7 @@ function createInsertButton(
         return document.createElement('span')
     }
     const insertButton = document.createElement('button')
-    insertButton.textContent = 'Insert Code'
+    insertButton.textContent = 'Insert at Cursor'
     insertButton.title = 'Insert this code at the current cursor position'
     insertButton.className = classNames(styles.insertButton, insertButtonClassName)
     insertButton.addEventListener('click', () => {
