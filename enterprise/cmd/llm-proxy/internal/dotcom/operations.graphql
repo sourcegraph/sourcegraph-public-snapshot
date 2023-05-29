@@ -1,9 +1,17 @@
+fragment RateLimitFields on LLMProxyRateLimit {
+    allowedModels
+    source
+    limit
+    intervalSeconds
+}
+
 fragment LLMProxyAccessFields on LLMProxyAccess {
     enabled
-    rateLimit {
-        source
-        limit
-        intervalSeconds
+    chatCompletionsRateLimit {
+        ...RateLimitFields
+    }
+    codeCompletionsRateLimit {
+        ...RateLimitFields
     }
 }
 

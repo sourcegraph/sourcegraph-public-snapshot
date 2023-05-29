@@ -304,29 +304,65 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 				// No CODEOWNERS
 				repoContent: map[string]string{},
 			},
-			setup: func(db *edb.MockEnterpriseDB) {
-				user := &types.User{
+			setup: assignedOwnerSetup(
+				"src/main",
+				&types.User{
 					ID:       42,
 					Username: "test",
-				}
-				assignedOwners := []*database.AssignedOwnerSummary{
-					{
-						OwnerUserID: user.ID,
-						FilePath:    "src/main",
-					},
-				}
-				usersStore := database.NewMockUserStore()
-				usersStore.GetByUsernameFunc.SetDefaultReturn(user, nil)
-				usersStore.GetByVerifiedEmailFunc.SetDefaultReturn(nil, nil)
-				db.UsersFunc.SetDefaultReturn(usersStore)
-				assignedOwnersStore := database.NewMockAssignedOwnersStore()
-				assignedOwnersStore.ListAssignedOwnersForRepoFunc.SetDefaultReturn(assignedOwners, nil)
-				db.AssignedOwnersFunc.SetDefaultReturn(assignedOwnersStore)
-			},
+				},
+			),
 			want: autogold.Expect([]result.Match{
 				&result.FileMatch{
 					File: result.File{
 						Path: "src/main/README.md",
+					},
+				},
+			}),
+		},
+		{
+			name: "selects results with AND-ed owners specified",
+			args: args{
+				includeOwners: []string{"assigned", "codeowner"},
+				excludeOwners: []string{},
+				matches: []result.Match{
+					&result.FileMatch{
+						File: result.File{
+							// assigned owns src/main,
+							// but @codeowner does not own the file
+							Path: "src/main/onlyAssigned.md",
+						},
+					},
+					&result.FileMatch{
+						File: result.File{
+							// @codeowner owns all go files,
+							// and assigned owns src/main
+							Path: "src/main/bothMatch.go",
+						},
+					},
+					&result.FileMatch{
+						File: result.File{
+							// @codeowner owns all go files
+							// but assigned only owns src/main
+							// and this is in src/test.
+							Path: "src/test/onlyCodeowner.go",
+						},
+					},
+				},
+				repoContent: map[string]string{
+					"CODEOWNERS": "*.go @codeowner",
+				},
+			},
+			setup: assignedOwnerSetup(
+				"src/main",
+				&types.User{
+					ID:       42,
+					Username: "assigned",
+				},
+			),
+			want: autogold.Expect([]result.Match{
+				&result.FileMatch{
+					File: result.File{
+						Path: "src/main/bothMatch.go",
 					},
 				},
 			}),
@@ -366,22 +402,54 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 				tt.setup(db)
 			}
 
+			// TODO(#52450): Invoke filterHasOwnersJob.Run rather than duplicate code here.
 			rules := NewRulesCache(gitserverClient, db)
 
-			include, err := own.ByTextReference(ctx, db, tt.args.includeOwners...)
-			require.NoError(t, err)
-			exclude, err := own.ByTextReference(ctx, db, tt.args.excludeOwners...)
-			require.NoError(t, err)
+			var includeBags []own.Bag
+			for _, o := range tt.args.includeOwners {
+				b, err := own.ByTextReference(ctx, db, o)
+				require.NoError(t, err)
+				includeBags = append(includeBags, b)
+			}
+			var excludeBags []own.Bag
+			for _, o := range tt.args.excludeOwners {
+				b, err := own.ByTextReference(ctx, db, o)
+				require.NoError(t, err)
+				excludeBags = append(excludeBags, b)
+			}
 			matches, _ := applyCodeOwnershipFiltering(
 				ctx,
 				&rules,
-				include,
+				includeBags,
 				tt.args.includeOwners,
-				exclude,
+				excludeBags,
 				tt.args.excludeOwners,
 				tt.args.matches)
 			//require.NoError(t, err)
 			tt.want.Equal(t, matches)
 		})
+	}
+}
+
+func assignedOwnerSetup(path string, user *types.User) func(*edb.MockEnterpriseDB) {
+	return func(db *edb.MockEnterpriseDB) {
+		assignedOwners := []*database.AssignedOwnerSummary{
+			{
+				OwnerUserID: user.ID,
+				FilePath:    path,
+			},
+		}
+		usersStore := database.NewMockUserStore()
+		usersStore.GetByUsernameFunc.SetDefaultHook(func(_ context.Context, name string) (*types.User, error) {
+			if name == user.Username {
+				return user, nil
+			}
+			return nil, database.NewUserNotFoundErr()
+		})
+		usersStore.GetByVerifiedEmailFunc.SetDefaultReturn(nil, nil)
+		db.UsersFunc.SetDefaultReturn(usersStore)
+		assignedOwnersStore := database.NewMockAssignedOwnersStore()
+		assignedOwnersStore.ListAssignedOwnersForRepoFunc.SetDefaultReturn(assignedOwners, nil)
+		db.AssignedOwnersFunc.SetDefaultReturn(assignedOwnersStore)
 	}
 }

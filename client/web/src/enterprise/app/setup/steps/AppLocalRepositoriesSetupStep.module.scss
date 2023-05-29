@@ -1,0 +1,60 @@
+.root {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.description,
+.local-repositories {
+    flex-grow: 1;
+    flex-shrink: 0;
+    flex-basis: 24rem;
+}
+
+.description {
+    padding: 4.5rem 3.5rem;
+
+    &-heading {
+        font-size: 2rem;
+        font-weight: normal;
+        color: var(--white);
+    }
+
+    &-text {
+        color: #dedede;
+        font-size: 1.25rem;
+
+        &--small {
+            font-size: 1rem;
+        }
+    }
+
+    &-next {
+        margin-top: 1.75rem;
+    }
+}
+
+.local-repositories {
+    padding: 2rem;
+    background-color: var(--white);
+
+    &-buttons-group {
+        justify-content: stretch;
+        align-items: center;
+        min-width: 0;
+        flex-wrap: wrap;
+
+        > * {
+            flex-grow: 1;
+            flex-shrink: 0;
+        }
+    }
+
+    &-widget {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        width: auto;
+        overflow: hidden;
+    }
+}

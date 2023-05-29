@@ -8,6 +8,7 @@ go_library(
     deps = [
         "//enterprise/cmd/llm-proxy/internal/actor",
         "//enterprise/cmd/llm-proxy/internal/dotcom",
+        "//enterprise/internal/completions/types",
         "//enterprise/internal/licensing",
         "//enterprise/internal/llm-proxy",
         "//internal/trace",

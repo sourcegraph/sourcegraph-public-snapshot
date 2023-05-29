@@ -50,7 +50,7 @@ func (r *rootResolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		IndexingEnabled:           args.IndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
-		EmbeddingEnabled:          args.EmbeddingsEnabled,
+		EmbeddingEnabled:          args.EmbeddingsEnabled != nil && *args.EmbeddingsEnabled,
 	}
 	configurationPolicy, err := r.policySvc.CreateConfigurationPolicy(ctx, opts)
 	if err != nil {
@@ -92,7 +92,7 @@ func (r *rootResolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Con
 		IndexingEnabled:           args.IndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
-		EmbeddingEnabled:          args.EmbeddingsEnabled,
+		EmbeddingEnabled:          args.EmbeddingsEnabled != nil && *args.EmbeddingsEnabled,
 	}
 	if err := r.policySvc.UpdateConfigurationPolicy(ctx, opts); err != nil {
 		return nil, err
@@ -157,7 +157,7 @@ func validateConfigurationPolicy(policy resolverstubs.CodeIntelConfigurationPoli
 		return errors.Errorf("illegal index commit max age '%d'", *policy.IndexCommitMaxAgeHours)
 	}
 
-	if policy.EmbeddingsEnabled {
+	if policy.EmbeddingsEnabled != nil && *policy.EmbeddingsEnabled {
 		if policy.RetentionEnabled || policy.IndexingEnabled {
 			return errors.Errorf("configuration policies can apply to SCIP indexes or embeddings, but not both")
 		}
