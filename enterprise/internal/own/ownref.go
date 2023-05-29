@@ -164,9 +164,8 @@ func (b bag) Contains(ref Reference) bool {
 func (b bag) String() string {
 	var mapping []string
 	for k, refCtx := range b.references {
-		mapping = append(mapping, fmt.Sprintf("%s->%d", k, refCtx.resolvedUserID))
+		mapping = append(mapping, fmt.Sprintf("%s->%s", k, refCtx.resolvedIDForDebugging()))
 	}
-	// TODO add unresolved references to the bag
 	return fmt.Sprintf("[%s]", strings.Join(mapping, ", "))
 }
 
@@ -198,8 +197,8 @@ func (b *bag) resolve(ctx context.Context, db edb.EnterpriseDB) error {
 					if err := userRefs.augment(ctx, db); err != nil {
 						return err
 					}
-					userRefs.linkBack(b)
 					b.resolvedUsers[userRefs.id] = userRefs
+					userRefs.linkBack(b)
 				}
 			}
 			// Team resolved
@@ -321,9 +320,12 @@ func (r *userReferences) linkBack(b *bag) {
 		}
 	}
 	for _, k := range ks {
-		// reference already present.
-		// TODO: Resolve conflicts?
-		if r, ok := b.references[k]; !ok || !r.successfullyResolved() {
+		// Reference already present.
+		// TODO(#52441): Keeping context with reference key can improve resolution.
+		// For instance teams and users under the same name can be discerned
+		// in github CODEOWNERS context (where only team name in CODEOWNERS
+		// must contain `/`).
+		if r, ok := b.references[k]; ok && r.successfullyResolved() {
 			continue
 		}
 		b.references[k] = &refContext{
@@ -340,9 +342,12 @@ type teamReferences struct {
 
 func (r *teamReferences) linkBack(b *bag) {
 	for _, k := range []refKey{{teamID: r.id}, {handle: r.name}} {
-		// reference already present.
-		// TODO: Resolve conflicts?
-		if r, ok := b.references[k]; !ok || !r.successfullyResolved() {
+		// Reference already present.
+		// TODO(#52441): Keeping context can improve conflict resolution.
+		// For instance teams and users under the same name can be discerned
+		// in github CODEOWNERS context (where only team name in CODEOWNERS
+		// must contain `/`).
+		if r, ok := b.references[k]; ok && r.successfullyResolved() {
 			continue
 		}
 		b.references[k] = &refContext{
@@ -389,7 +394,7 @@ func (k refKey) fetch(ctx context.Context, db edb.EnterpriseDB) (*userReferences
 		if err != nil {
 			return nil, nil, err
 		}
-		// TODO: Weird situation if team is not found by ID.
+		// TODO(#52547): Weird situation if team is not found by ID.
 		if t != nil {
 			return nil, &teamReferences{
 				id:   t.ID,
@@ -485,7 +490,11 @@ func (c refContext) successfullyResolved() bool {
 }
 
 func (c refContext) resolvedIDForDebugging() string {
-	if c.resolvedUserID != 0 {
-		return fmt.Sprintf("%d", )
+	if id := c.resolvedUserID; id != 0 {
+		return fmt.Sprintf("user-%d", id)
 	}
+	if id := c.resolvedTeamID; id != 0 {
+		return fmt.Sprintf("team-%d", id)
+	}
+	return "<nil>"
 }
