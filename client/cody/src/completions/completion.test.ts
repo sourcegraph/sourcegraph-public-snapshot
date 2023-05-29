@@ -5,40 +5,13 @@ import {
     CompletionResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
+import { mockVSCodeExports } from '../testSetup/vscode'
+
 import { CodyCompletionItemProvider, inlineCompletionsCache } from '.'
 
 jest.mock('vscode', () => {
-    class Position {
-        public line: number
-        public character: number
-
-        constructor(line: number, character: number) {
-            this.line = line
-            this.character = character
-        }
-    }
-    class Range {
-        public start: Position
-        public end: Position
-
-        constructor(start: Position, end: Position) {
-            if (typeof start === 'number') {
-                throw new TypeError('this version of the constructor is not implemented')
-            }
-            this.start = start
-            this.end = end
-        }
-    }
-    class InlineCompletionItem {
-        public content: string
-        constructor(content: string) {
-            this.content = content
-        }
-    }
     return {
-        Position,
-        Range,
-        InlineCompletionItem,
+        ...mockVSCodeExports(),
         InlineCompletionTriggerKind: {
             Invoke: 0,
             Automatic: 1,
@@ -59,15 +32,6 @@ jest.mock('vscode', () => {
             onDidChangeTextDocument() {
                 return null
             },
-        },
-        window: {
-            createOutputChannel() {
-                return null
-            },
-            showErrorMessage(message: string) {
-                throw new Error(message)
-            },
-            activeTextEditor: { document: { uri: { scheme: 'not-cody' } } },
         },
     }
 })
