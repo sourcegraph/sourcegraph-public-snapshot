@@ -23,8 +23,8 @@ fileExistenceTests:
 - name: '/mnt/cache/symbols'
   path: '/mnt/cache/symbols'
   shouldExist: true
-  uid: 0
-  gid: 0
+  uid: 100
+  gid: 101
   permissions: 'drwxr-xr-x'
 - name: 'jansson package'
   path: 'usr/lib/libjansson.la'
