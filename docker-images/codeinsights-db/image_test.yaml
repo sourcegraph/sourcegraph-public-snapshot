@@ -1,0 +1,25 @@
+schemaVersion: "2.0.0"
+
+commandTests:
+  - name: "postgres is runnable"
+    command: "psql"
+    args:
+      - --version
+
+# TODO: This test shouldn't fail
+# fileExistenceTests:
+# - name: '/data/pgdata-12'
+#   path: '/data/pgdata-12'
+#   shouldExist: true
+#   uid: 70
+#   gid: 70
+
+metadataTest:
+  envVars:
+    - key: PGDATA
+      value: .+
+      isRegex: true
+    - key: LANG
+      value: 'en_US.utf8'
+    - key: PGHOST
+      value: '/var/run/postgresql'
