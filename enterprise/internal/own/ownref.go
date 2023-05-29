@@ -410,17 +410,6 @@ func (k refKey) fetch(ctx context.Context, db edb.EnterpriseDB) (*userReferences
 		if u != nil {
 			return &userReferences{id: u.ID, user: u}, nil, nil
 		}
-	}
-	if k.email != "" {
-		id, err := findUserIDByEmail(ctx, db, k.email)
-		if err != nil {
-			return nil, nil, err
-		}
-		if id != 0 {
-			return &userReferences{id: id}, nil, nil
-		}
-	}
-	if k.handle != "" {
 		t, err := findTeamByName(ctx, db, k.handle)
 		if err != nil {
 			return nil, nil, err
@@ -430,6 +419,15 @@ func (k refKey) fetch(ctx context.Context, db edb.EnterpriseDB) (*userReferences
 				id:   t.ID,
 				name: t.Name,
 			}, nil
+		}
+	}
+	if k.email != "" {
+		id, err := findUserIDByEmail(ctx, db, k.email)
+		if err != nil {
+			return nil, nil, err
+		}
+		if id != 0 {
+			return &userReferences{id: id}, nil, nil
 		}
 	}
 	// Neither user nor team was found.
@@ -448,7 +446,7 @@ func findUserByUsername(ctx context.Context, db edb.EnterpriseDB, handle string)
 func findUserIDByEmail(ctx context.Context, db edb.EnterpriseDB, email string) (int32, error) {
 	// Checking that provided email is verified.
 	verifiedEmails, err := db.UserEmails().GetVerifiedEmails(ctx, email)
-	if err != nil && !errcode.IsNotFound(err) {
+	if err != nil {
 		return 0, errors.Wrap(err, "findUserIDByEmail")
 	}
 	if len(verifiedEmails) == 0 {
