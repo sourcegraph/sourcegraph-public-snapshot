@@ -121,7 +121,7 @@ func (r *ownResolver) GitBlobOwnership(
 	var ownerships []*ownershipResolver
 
 	// Evaluate CODEOWNERS rules.
-	if args.ListsReason(graphqlbackend.CodeownersFileEntry) {
+	if args.IncludeReason(graphqlbackend.CodeownersFileEntry) {
 		codeowners, err := r.computeCodeowners(ctx, blob)
 		if err != nil {
 			return nil, err
@@ -132,7 +132,7 @@ func (r *ownResolver) GitBlobOwnership(
 	repoID := blob.Repository().IDInt32()
 
 	// Retrieve recent contributors signals.
-	if args.ListsReason(graphqlbackend.RecentContributorOwnershipSignal) {
+	if args.IncludeReason(graphqlbackend.RecentContributorOwnershipSignal) {
 		contribResolvers, err := computeRecentContributorSignals(ctx, r.db, blob.Path(), repoID)
 		if err != nil {
 			return nil, err
@@ -141,7 +141,7 @@ func (r *ownResolver) GitBlobOwnership(
 	}
 
 	// Retrieve recent view signals.
-	if args.ListsReason(graphqlbackend.RecentViewOwnershipSignal) {
+	if args.IncludeReason(graphqlbackend.RecentViewOwnershipSignal) {
 		viewerResolvers, err := computeRecentViewSignals(ctx, r.logger, r.db, blob.Path(), repoID)
 		if err != nil {
 			return nil, err

@@ -4,7 +4,7 @@ import { mdiAccount } from '@mdi/js'
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
-import { logger } from '@sourcegraph/common'
+import { logger, pluralize } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
@@ -66,9 +66,7 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
 
     const history = data?.node?.commit?.ancestors?.nodes?.[0]
     const ownership = data.node.commit?.blob?.ownership
-    const contributorsCount = data.node.commit?.blob?.contributors?.totalCount || 0
-    // +1 contributor (singular), but +3 contributors (plural)
-    const contributorText = contributorsCount ? 'contributor' : 'contributors'
+    const contributorsCount = data.node.commit?.blob?.contributors?.totalCount ?? 0
 
     return (
         <div className={styles.wrapper}>
@@ -123,7 +121,7 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
                             ) : (
                                 contributorsCount > 0 && (
                                     <div className={styles.ownMore}>
-                                        +{contributorsCount} {contributorText}
+                                        +{contributorsCount} {pluralize('contributor', contributorsCount)}
                                     </div>
                                 )
                             )}

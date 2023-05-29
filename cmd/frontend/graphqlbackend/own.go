@@ -24,8 +24,10 @@ const (
 	RecentViewOwnershipSignal        OwnershipReasonType = "RECENT_VIEW_OWNERSHIP_SIGNAL"
 )
 
-func (args *ListOwnershipArgs) ListsReason(reason OwnershipReasonType) bool {
+func (args *ListOwnershipArgs) IncludeReason(reason OwnershipReasonType) bool {
 	rs := args.Reasons
+	// When the reasons list is empty, we do not filter - the result
+	// contains all the reasons, so for every reason we return true.
 	if rs == nil || len(*rs) == 0 {
 		return true
 	}
