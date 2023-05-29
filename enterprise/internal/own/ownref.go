@@ -233,6 +233,13 @@ func (b bag) FindResolved(ref Reference) (codeowners.ResolvedOwner, bool) {
 					// TODO: How to set email?
 				}, true
 			}
+			if id := refCtx.resolvedTeamID; id != 0 {
+				teamRefs := b.resolvedTeams[id]
+				return &codeowners.Team{
+					Team:   teamRefs.team,
+					Handle: teamRefs.name,
+				}, true
+			}
 		}
 	}
 	// Best effort, return the default asssumed person based
@@ -429,8 +436,10 @@ func (r *userReferences) linkBack(b *bag) {
 	}
 }
 
+// TODO: Should we just store *types.Team?
 type teamReferences struct {
 	id   int32
+	team *types.Team
 	name string
 }
 
@@ -492,6 +501,7 @@ func (k refKey) fetch(ctx context.Context, db edb.EnterpriseDB) (*userReferences
 		if t != nil {
 			return nil, &teamReferences{
 				id:   t.ID,
+				team: t,
 				name: t.Name,
 			}, nil
 		}
@@ -511,6 +521,7 @@ func (k refKey) fetch(ctx context.Context, db edb.EnterpriseDB) (*userReferences
 		if t != nil {
 			return nil, &teamReferences{
 				id:   t.ID,
+				team: t,
 				name: t.Name,
 			}, nil
 		}

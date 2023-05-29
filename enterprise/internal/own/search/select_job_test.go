@@ -2,6 +2,8 @@ package search
 
 import (
 	"context"
+	"fmt"
+	"hash/fnv"
 	"io/fs"
 	"sort"
 	"testing"
@@ -47,6 +49,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, nil)
 		db := edb.NewMockEnterpriseDB()
 		db.CodeownersFunc.SetDefaultReturn(codeownersStore)
+		db.AssignedOwnersFunc.SetDefaultReturn(database.NewMockAssignedOwnersStore())
 		return db
 	}
 
@@ -109,9 +112,10 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		})
 		mockUserStore := database.NewMockUserStore()
 		mockTeamStore := database.NewMockTeamStore()
+		mockEmailStore := database.NewMockUserEmailsStore()
 		db := setupDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
-		db.UserEmailsFunc.SetDefaultReturn(database.NewMockUserEmailsStore())
+		db.UserEmailsFunc.SetDefaultReturn(mockEmailStore)
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
 		db.AssignedOwnersFunc.SetDefaultReturn(database.NewMockAssignedOwnersStore())
 		db.UserExternalAccountsFunc.SetDefaultReturn(database.NewMockUserExternalAccountsStore())
@@ -127,12 +131,17 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 			return nil, database.MockUserNotFoundErr
 		})
 		mockUserStore.GetByVerifiedEmailFunc.SetDefaultHook(func(ctx context.Context, email string) (*types.User, error) {
+			fmt.Println("USER EMAIL ", email)
 			if email == "user@email.com" {
 				return personOwnerByEmail, nil
 			}
 			return nil, database.MockUserNotFoundErr
 		})
+		mockEmailStore.GetVerifiedEmailsFunc.SetDefaultHook(func(_ context.Context, emails ...string) ([]*database.UserEmail, error) {
+			return nil, nil
+		})
 		mockTeamStore.GetTeamByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*types.Team, error) {
+			fmt.Println("TEAM HANDLE", name)
 			if name == "testTeamHandle" {
 				return teamOwner, nil
 			}
@@ -169,7 +178,7 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		want := []result.Match{
+		want := result.Matches{
 			&result.OwnerMatch{
 				ResolvedOwner: &result.OwnerPerson{User: personOwnerByEmail, Email: "user@email.com"},
 				InputRev:      nil,
@@ -212,8 +221,10 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 }
 
 func newTestUser(username string) *types.User {
+	h := fnv.New32a()
+	h.Write([]byte(username))
 	return &types.User{
-		ID:          1,
+		ID:          int32(h.Sum32()),
 		Username:    username,
 		AvatarURL:   "https://sourcegraph.com/avatar/" + username,
 		DisplayName: "User " + username,
@@ -221,8 +232,10 @@ func newTestUser(username string) *types.User {
 }
 
 func newTestTeam(teamName string) *types.Team {
+	h := fnv.New32a()
+	h.Write([]byte(teamName))
 	return &types.Team{
-		ID:          1,
+		ID:          int32(h.Sum32()),
 		Name:        teamName,
 		DisplayName: "Team " + teamName,
 	}
