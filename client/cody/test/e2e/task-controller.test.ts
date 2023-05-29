@@ -10,8 +10,8 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     // Open the Explorer view from the sidebar
     await sidebarExplorer(page).click()
 
-    // Select the second files from the tree view, which is the index.html file
-    await page.locator('.monaco-highlighted-label').nth(2).click()
+    // Select the 4th file from the tree view, which is the index.html file
+    await page.locator('.monaco-highlighted-label').nth(3).click()
 
     // Bring the cody sidebar to the foreground
     await page.click('[aria-label="Sourcegraph Cody"]')
