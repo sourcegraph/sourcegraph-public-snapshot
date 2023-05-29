@@ -1429,7 +1429,8 @@
               "default": false
             },
             "severityLevel": {
-              "description": "Severity logging level for the audit log.",
+              "deprecationMessage": "No effect, audit logs are always set to SRC_LOG_LEVEL",
+              "description": "DEPRECATED: No effect, audit logs are always set to SRC_LOG_LEVEL",
               "type": "string",
               "enum": ["DEBUG", "INFO", "WARN", "ERROR"],
               "default": "INFO"

@@ -71,7 +71,7 @@ The audit log is currently configured using the site config. Here's the correspo
       "internalTraffic": false,
       "graphQL": false,
       "gitserverAccess": false,
-      "severityLevel": "INFO"
+      "severityLevel": "INFO" // DEPRECATED, defaults to SRC_LOG_LEVEL
     }
     "securityEventLog": {
      "location": "auditlog" // option to set "database" or "all" as well, default to outputing as an audit log 
@@ -82,7 +82,6 @@ We believe the individual settings are self-explanatory, but here are a couple o
 
 - `securityEventLog` configures the destination of security events, logging to the database may result in performance issues
 - `internalTraffic` is disabled by default and will result in security events from internal traffic not being logged
-- We recommend using `INFO` level severity, but beware, if your instance sets the base logging level above, the audit log will be lost.
 
 ## Using
 
