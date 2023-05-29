@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -46,6 +47,16 @@ type Reference struct {
 	Email string
 }
 
+func (r Reference) ResolutionGuess() *codeowners.Person {
+	if r.Handle == "" && r.Email == "" {
+		return nil
+	}
+	return &codeowners.Person{
+		Handle: r.Handle,
+		Email:  r.Email,
+	}
+}
+
 func (r Reference) String() string {
 	var b bytes.Buffer
 	fmt.Fprint(&b, "{")
@@ -76,13 +87,40 @@ func (r Reference) String() string {
 	return b.String()
 }
 
-// Bag is a collection of platonic forms or identities of owners (teams, people
-// or otherwise). It is pre-seeded with database information based on the search
-// query using `ByTextReference`, and used to match found owner references.
+// Bag is a collection of platonic forms or identities of owners (currently supports
+// only users - teams coming). The purpose of this object is to group references
+// that refer to the same user, so that the user can be found by each of the references.
+//
+// It can either be created from test references using `ByTextReference`,
+// or `EmptyBag` if no initial references are know for the unification use case.
 type Bag interface {
-	// Contains answers true if given bag contains an owner form
-	// that the given reference points at in some way.
-	Contains(ref Reference) bool
+	// Contains answers true if given bag contains any of the references
+	// in given References object. This includes references that are in the bag
+	// (via `Add` or `ByTextReference`) and were not resolved to a user.
+	Contains(Reference) bool
+
+	// FindResolved returns the owner that was resolved from a reference
+	// that was added through Add or the ByTextReference constructor (and true flag).
+	// In case the reference was not resolved to any user, the result
+	// is nil, and false boolean is returned.
+	FindResolved(Reference) (codeowners.ResolvedOwner, bool)
+
+	// Add puts a Reference in the Bag so that later a user associated
+	// with that Reference can be pulled from the database by calling Resolve.
+	Add(Reference)
+
+	// Resolve retrieves all users it can find that are associated
+	// with references that are in the Bag by means of Add or ByTextReference
+	// constructor.
+	Resolve(context.Context, edb.EnterpriseDB) error
+}
+
+func EmptyBag() *bag {
+	return &bag{
+		resolvedUsers: map[int32]*userReferences{},
+		resolvedTeams: map[int32]*teamReferences{},
+		references:    map[refKey]*refContext{},
+	}
 }
 
 // ByTextReference returns a Bag of all the forms (users, persons, teams)
@@ -92,11 +130,7 @@ type Bag interface {
 // TODO(#52141): Search by code host handle.
 // TODO(#52246): ByTextReference uses fewer queries.
 func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text ...string) (Bag, error) {
-	b := &bag{
-		resolvedUsers: map[int32]*userReferences{},
-		resolvedTeams: map[int32]*teamReferences{},
-		references:    map[refKey]*refContext{},
-	}
+	b := EmptyBag()
 	for _, t := range text {
 		// Empty text does not resolve at all.
 		if t == "" {
@@ -108,7 +142,7 @@ func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text ...string) (
 			b.add(refKey{handle: strings.TrimPrefix(t, "@")})
 		}
 	}
-	if err := b.resolve(ctx, db); err != nil {
+	if err := b.Resolve(ctx, db); err != nil {
 		return nil, err
 	}
 	return b, nil
@@ -161,12 +195,72 @@ func (b bag) Contains(ref Reference) bool {
 	return false
 }
 
+func (b bag) FindResolved(ref Reference) (codeowners.ResolvedOwner, bool) {
+	var ks []refKey
+	if id := ref.UserID; id != 0 {
+		ks = append(ks, refKey{userID: id})
+	}
+	if h := ref.Handle; h != "" {
+		ks = append(ks, refKey{handle: strings.TrimPrefix(h, "@")})
+	}
+	if e := ref.Email; e != "" {
+		ks = append(ks, refKey{email: e})
+	}
+	// Attempt to find user by any reference:
+	for _, k := range ks {
+		if refCtx, ok := b.references[k]; ok {
+			if id := refCtx.resolvedUserID; id != 0 {
+				userRefs := b.resolvedUsers[id]
+				// TODO: Email resolution here is best effort,
+				// we do not know if this is primary email.
+				var email *string
+				if len(userRefs.verifiedEmails) > 0 {
+					e := userRefs.verifiedEmails[0]
+					email = &e
+				}
+				return &codeowners.Person{
+					User:         userRefs.user,
+					PrimaryEmail: email,
+					Handle:       userRefs.user.Username,
+					// TODO: How to set email?
+				}, true
+			}
+			if id := refCtx.resolvedTeamID; id != 0 {
+				teamRefs := b.resolvedTeams[id]
+				return &codeowners.Team{
+					Team:   teamRefs.team,
+					Handle: teamRefs.team.Name,
+				}, true
+			}
+		}
+	}
+	return nil, false
+}
+
 func (b bag) String() string {
 	var mapping []string
 	for k, refCtx := range b.references {
 		mapping = append(mapping, fmt.Sprintf("%s->%s", k, refCtx.resolvedIDForDebugging()))
 	}
 	return fmt.Sprintf("[%s]", strings.Join(mapping, ", "))
+}
+
+// Add inserts all given references individually to the Bag.
+// Next time Resolve is called, Bag will attempt to evaluate these
+// against the database.
+func (b *bag) Add(ref Reference) {
+	if e := ref.Email; e != "" {
+		b.add(refKey{email: e})
+	}
+	if h := ref.Handle; h != "" {
+		b.add(refKey{handle: h})
+	}
+	if id := ref.UserID; id != 0 {
+		b.add(refKey{userID: id})
+	}
+	if id := ref.TeamID; id != 0 {
+		b.add(refKey{teamID: id})
+	}
 }
 
 // add inserts given reference key (one of: user ID, email, handle)
@@ -177,12 +271,12 @@ func (b *bag) add(k refKey) {
 	}
 }
 
-// resolve takes all references that were added but not resolved
+// Resolve takes all references that were added but not resolved
 // before and queries the database to find corresponding users.
 // Fetched users are augmented with all the other references that
 // can point to them (also from the database), and the newly fetched
 // references are then linked back to the bag.
-func (b *bag) resolve(ctx context.Context, db edb.EnterpriseDB) error {
+func (b *bag) Resolve(ctx context.Context, db edb.EnterpriseDB) error {
 	for k, refCtx := range b.references {
 		if !refCtx.resolutionDone {
 			userRefs, teamRefs, err := k.fetch(ctx, db)
@@ -203,9 +297,10 @@ func (b *bag) resolve(ctx context.Context, db edb.EnterpriseDB) error {
 			}
 			// Team resolved
 			if teamRefs != nil {
-				refCtx.resolvedTeamID = teamRefs.id
-				if _, ok := b.resolvedTeams[teamRefs.id]; !ok {
-					b.resolvedTeams[teamRefs.id] = teamRefs
+				id := teamRefs.team.ID
+				refCtx.resolvedTeamID = id
+				if _, ok := b.resolvedTeams[id]; !ok {
+					b.resolvedTeams[id] = teamRefs
 				}
 				// Team was referred to either by ID or by name, need to link back.
 				teamRefs.linkBack(b)
@@ -336,12 +431,11 @@ func (r *userReferences) linkBack(b *bag) {
 }
 
 type teamReferences struct {
-	id   int32
-	name string
+	team *types.Team
 }
 
 func (r *teamReferences) linkBack(b *bag) {
-	for _, k := range []refKey{{teamID: r.id}, {handle: r.name}} {
+	for _, k := range []refKey{{teamID: r.team.ID}, {handle: r.team.Name}} {
 		// Reference already present.
 		// TODO(#52441): Keeping context can improve conflict resolution.
 		// For instance teams and users under the same name can be discerned
@@ -351,7 +445,7 @@ func (r *teamReferences) linkBack(b *bag) {
 			continue
 		}
 		b.references[k] = &refContext{
-			resolvedTeamID: r.id,
+			resolvedTeamID: r.team.ID,
 			resolutionDone: true,
 		}
 	}
@@ -396,10 +490,7 @@ func (k refKey) fetch(ctx context.Context, db edb.EnterpriseDB) (*userReferences
 		}
 		// TODO(#52547): Weird situation if team is not found by ID.
 		if t != nil {
-			return nil, &teamReferences{
-				id:   t.ID,
-				name: t.Name,
-			}, nil
+			return nil, &teamReferences{t}, nil
 		}
 	}
 	if k.handle != "" {
@@ -415,19 +506,16 @@ func (k refKey) fetch(ctx context.Context, db edb.EnterpriseDB) (*userReferences
 			return nil, nil, err
 		}
 		if t != nil {
-			return nil, &teamReferences{
-				id:   t.ID,
-				name: t.Name,
-			}, nil
+			return nil, &teamReferences{t}, nil
 		}
 	}
 	if k.email != "" {
-		id, err := findUserIDByEmail(ctx, db, k.email)
+		u, err := findUserByEmail(ctx, db, k.email)
 		if err != nil {
 			return nil, nil, err
 		}
-		if id != 0 {
-			return &userReferences{id: id}, nil, nil
+		if u != nil {
+			return &userReferences{id: u.ID, user: u}, nil, nil
 		}
 	}
 	// Neither user nor team was found.
@@ -442,17 +530,13 @@ func findUserByUsername(ctx context.Context, db edb.EnterpriseDB, handle string)
 	return user, nil
 }
 
-// TODO(#52246): GetVerifiedEmails accepts var-args, can batch
-func findUserIDByEmail(ctx context.Context, db edb.EnterpriseDB, email string) (int32, error) {
+func findUserByEmail(ctx context.Context, db edb.EnterpriseDB, email string) (*types.User, error) {
 	// Checking that provided email is verified.
-	verifiedEmails, err := db.UserEmails().GetVerifiedEmails(ctx, email)
-	if err != nil {
-		return 0, errors.Wrap(err, "findUserIDByEmail")
+	user, err := db.Users().GetByVerifiedEmail(ctx, email)
+	if err != nil && !errcode.IsNotFound(err) {
+		return nil, errors.Wrap(err, "findUserIDByEmail")
 	}
-	if len(verifiedEmails) == 0 {
-		return 0, nil
-	}
-	return verifiedEmails[0].UserID, nil
+	return user, nil
 }
 
 func findTeamByID(ctx context.Context, db edb.EnterpriseDB, id int32) (*types.Team, error) {
