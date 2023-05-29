@@ -20,10 +20,7 @@ function lastNLines(text: string, n: number): string {
     return lines.slice(Math.max(0, lines.length - n)).join('\n')
 }
 
-let inlineCompletionsCache = new CompletionsCache()
-export const __test_only_resetCache = (): void => {
-    inlineCompletionsCache = new CompletionsCache()
-}
+export const inlineCompletionsCache = new CompletionsCache()
 
 export class CodyCompletionItemProvider implements vscode.InlineCompletionItemProvider {
     private promptTokens: number

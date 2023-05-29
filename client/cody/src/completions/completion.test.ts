@@ -5,7 +5,7 @@ import {
     CompletionResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
-import { CodyCompletionItemProvider, __test_only_resetCache } from '.'
+import { CodyCompletionItemProvider, inlineCompletionsCache } from '.'
 
 jest.mock('vscode', () => {
     class Position {
@@ -200,7 +200,7 @@ function truncateMultilineString(string: string): string {
 }
 
 describe('Cody completions', () => {
-    beforeEach(() => __test_only_resetCache())
+    beforeEach(() => inlineCompletionsCache.clear())
 
     it('uses a simple prompt for small files', async () => {
         const { requests } = await complete('foo |')
