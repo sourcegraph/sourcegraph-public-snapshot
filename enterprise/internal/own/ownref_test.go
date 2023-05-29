@@ -323,8 +323,8 @@ func TestBagRetrievesTeamsByName(t *testing.T) {
 	require.NoError(t, err)
 	bag, err := ByTextReference(ctx, db, "team-name")
 	require.NoError(t, err)
-	fmt.Printf("%s contains\n", bag)
-	assert.True(t, bag.Contains(Reference{TeamID: team.ID}))
+	ref := Reference{TeamID: team.ID}
+	assert.True(t, bag.Contains(ref), "%s contains %s", bag, ref)
 }
 
 func TestBagManyUsers(t *testing.T) {
