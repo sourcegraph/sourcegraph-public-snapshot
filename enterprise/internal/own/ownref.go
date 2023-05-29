@@ -527,12 +527,12 @@ func (k refKey) fetch(ctx context.Context, db edb.EnterpriseDB) (*userReferences
 		}
 	}
 	if k.email != "" {
-		id, err := findUserIDByEmail(ctx, db, k.email)
+		u, err := findUserByEmail(ctx, db, k.email)
 		if err != nil {
 			return nil, nil, err
 		}
-		if id != 0 {
-			return &userReferences{id: id}, nil, nil
+		if u != nil {
+			return &userReferences{id: u.ID, user: u}, nil, nil
 		}
 	}
 	// Neither user nor team was found.
@@ -547,17 +547,13 @@ func findUserByUsername(ctx context.Context, db edb.EnterpriseDB, handle string)
 	return user, nil
 }
 
-// TODO(#52246): GetVerifiedEmails accepts var-args, can batch
-func findUserIDByEmail(ctx context.Context, db edb.EnterpriseDB, email string) (int32, error) {
+func findUserByEmail(ctx context.Context, db edb.EnterpriseDB, email string) (*types.User, error) {
 	// Checking that provided email is verified.
-	verifiedEmails, err := db.UserEmails().GetVerifiedEmails(ctx, email)
-	if err != nil {
-		return 0, errors.Wrap(err, "findUserIDByEmail")
+	user, err := db.Users().GetByVerifiedEmail(ctx, email)
+	if err != nil && !errcode.IsNotFound(err) {
+		return nil, errors.Wrap(err, "findUserIDByEmail")
 	}
-	if len(verifiedEmails) == 0 {
-		return 0, nil
-	}
-	return verifiedEmails[0].UserID, nil
+	return user, nil
 }
 
 func findTeamByID(ctx context.Context, db edb.EnterpriseDB, id int32) (*types.Team, error) {

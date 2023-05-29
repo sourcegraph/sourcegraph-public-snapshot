@@ -2,7 +2,6 @@ package search
 
 import (
 	"context"
-	"fmt"
 	"hash/fnv"
 	"io/fs"
 	"sort"
@@ -131,17 +130,25 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 			return nil, database.MockUserNotFoundErr
 		})
 		mockUserStore.GetByVerifiedEmailFunc.SetDefaultHook(func(ctx context.Context, email string) (*types.User, error) {
-			fmt.Println("USER EMAIL ", email)
 			if email == "user@email.com" {
 				return personOwnerByEmail, nil
 			}
 			return nil, database.MockUserNotFoundErr
 		})
-		mockEmailStore.GetVerifiedEmailsFunc.SetDefaultHook(func(_ context.Context, emails ...string) ([]*database.UserEmail, error) {
-			return nil, nil
+		mockEmailStore.ListByUserFunc.SetDefaultHook(func(_ context.Context, opts database.UserEmailsListOptions) ([]*database.UserEmail, error) {
+			switch opts.UserID {
+			case personOwnerByEmail.ID:
+				return []*database.UserEmail{
+					{
+						UserID: personOwnerByEmail.ID,
+						Email:  "user@email.com",
+					},
+				}, nil
+			default:
+				return nil, nil
+			}
 		})
 		mockTeamStore.GetTeamByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*types.Team, error) {
-			fmt.Println("TEAM HANDLE", name)
 			if name == "testTeamHandle" {
 				return teamOwner, nil
 			}
@@ -180,11 +187,15 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 		}
 		want := result.Matches{
 			&result.OwnerMatch{
-				ResolvedOwner: &result.OwnerPerson{User: personOwnerByEmail, Email: "user@email.com"},
-				InputRev:      nil,
-				Repo:          types.MinimalRepo{},
-				CommitID:      "",
-				LimitHit:      0,
+				ResolvedOwner: &result.OwnerPerson{
+					User:   personOwnerByEmail,
+					Email:  "user@email.com",
+					Handle: "user@email.com", // This is username in the mock storage.
+				},
+				InputRev: nil,
+				Repo:     types.MinimalRepo{},
+				CommitID: "",
+				LimitHit: 0,
 			},
 			&result.OwnerMatch{
 				ResolvedOwner: &result.OwnerPerson{Handle: "unknown"},
