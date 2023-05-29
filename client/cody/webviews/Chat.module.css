@@ -56,7 +56,10 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
     color: var(--vscode-button-secondaryForeground);
     background-color: var(--vscode-button-secondaryBackground);
     border: none;
-    border-right: 1px solid var(--vscode-button-secondaryForeground);
+}
+
+.code-blocks-copy-button:hover, .code-blocks-insert-button:hover {
+    background-color: var(--vscode-button-secondaryHoverBackground);
 }
 
 .input-row {

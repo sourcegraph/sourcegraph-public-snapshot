@@ -32,11 +32,12 @@ function createCopyButtonWithContainer(
     insertButtonClassName?: string
 ): HTMLElement {
     const copyButton = document.createElement('button')
-    copyButton.textContent = 'Copy'
+    copyButton.textContent = 'Copy Code'
+    copyButton.title = 'Copy this code'
     copyButton.className = className
     copyButton.addEventListener('click', () => {
         navigator.clipboard.writeText(text).catch(error => console.error(error))
-        copyButton.textContent = 'Copied!'
+        copyButton.textContent = 'Copied'
         setTimeout(() => (copyButton.textContent = 'Copy'), 3000)
         if (copyButtonOnSubmit) {
             copyButtonOnSubmit('copyButton')
@@ -45,11 +46,16 @@ function createCopyButtonWithContainer(
     // The insert button is for IDE integrations. It allows the user to insert the code into the editor.
     const insertButton = createInsertButton(text, insertButtonClassName, copyButtonOnSubmit)
 
-    // The container will contain the copy button and the <pre> element with the code.
-    // This allows us to position the copy button independent of the code.
+    // The container will contain the buttons and the <pre> element with the code.
+    // This allows us to position the buttons independent of the code.
+    const buttons = document.createElement('div')
+    buttons.className = styles.buttons
+    buttons.append(insertButton, copyButton)
+
     const container = document.createElement('div')
     container.className = styles.container
-    container.append(copyButton, insertButton)
+    container.append(buttons)
+
     return container
 }
 
@@ -62,13 +68,11 @@ function createInsertButton(
         return document.createElement('span')
     }
     const insertButton = document.createElement('button')
-    insertButton.textContent = 'Insert'
-    insertButton.title = 'Insert code into current cursor position in editor'
+    insertButton.textContent = 'Insert Code'
+    insertButton.title = 'Insert this code at the current cursor position'
     insertButton.className = classNames(styles.insertButton, insertButtonClassName)
     insertButton.addEventListener('click', () => {
         copyButtonOnSubmit(text, true)
-        insertButton.textContent = 'Inserted!'
-        setTimeout(() => (insertButton.textContent = 'Insert'), 3000)
     })
     return insertButton
 }

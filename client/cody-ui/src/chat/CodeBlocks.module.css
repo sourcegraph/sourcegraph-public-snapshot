@@ -3,36 +3,25 @@
     overflow: visible;
 }
 
-.copy-button {
+.container > pre {
+    margin-top: 0;
+}
+
+.buttons {
     position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 50%;
+    top: .25rem;
+    right: .25rem;
     visibility: hidden;
-    cursor: pointer;
-    padding: 0.2rem;
-    opacity: 0.8;
+    display: flex;
+    gap: .125rem;
 }
 
-.insert-button {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 50%;
-    visibility: hidden;
-    cursor: pointer;
-    padding: 0.2rem;
-    opacity: 0.8;
-}
-
-.none {
-    visibility: none;
-}
-
-.container:hover .copy-button {
+.container:hover .buttons {
     visibility: visible;
 }
 
-.container:hover .insert-button {
-    visibility: visible;
+.copy-button, .insert-button {
+    cursor: pointer;
+    padding: .25rem .5rem;
+    font-size: .95em;
 }
