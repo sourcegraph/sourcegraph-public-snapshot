@@ -111,10 +111,17 @@ def oci_deps():
         digest = "sha256:0ab096b0ffae9054fa18fa8121b105acfda767c5f74fd8530f72f8fe87ef20c2",
         image = "us.gcr.io/sourcegraph-dev/wolfi-executor-base",
     )
+
     oci_pull(
         name = "wolfi_bundled_executor_base",
         digest = "sha256:8941bfcf8db44c462c4fee057b4d2a128cd268d6fb385989086af4381a05137e",
         image = "us.gcr.io/sourcegraph-dev/wolfi-bundled-executor-base",
+    )
+
+    oci_pull(
+        name = "wolfi_executor_kubernetes_base",
+        digest = "sha256:c2053b17cb8904a09773552049929b73215af24520ca22613cb5b16f96d8bcfa",
+        image = "us.gcr.io/sourcegraph-dev/wolfi-executor-kubernetes-base",
     )
 
     oci_pull(
