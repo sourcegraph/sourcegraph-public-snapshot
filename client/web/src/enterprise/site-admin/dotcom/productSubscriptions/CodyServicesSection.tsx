@@ -111,13 +111,13 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
                             {updateLLMProxyConfigError && <ErrorAlert error={updateLLMProxyConfigError} />}
                             <Label className="mb-0">
                                 <Toggle
-                                    id="llm-proxy-enabled"
+                                    id="cody-gateway-enabled"
                                     value={llmProxyAccess.enabled}
                                     disabled={updateLLMProxyConfigLoading || !viewerCanAdminister}
                                     onToggle={onToggleCompletions}
                                     className="mr-1 align-text-bottom"
                                 />
-                                Access to hosted completions (LLM-proxy)
+                                Access to hosted Cody services
                                 {updateLLMProxyConfigLoading && (
                                     <>
                                         {' '}
