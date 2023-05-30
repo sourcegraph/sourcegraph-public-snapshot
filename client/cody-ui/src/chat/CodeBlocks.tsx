@@ -60,6 +60,7 @@ function createCopyButton(
 ): HTMLElement {
     const button = document.createElement('button')
     button.textContent = 'Copy'
+    button.title = 'Copy text'
     button.className = classNames(styles.copyButton, className)
     button.addEventListener('click', () => {
         navigator.clipboard.writeText(text).catch(error => console.error(error))
@@ -81,15 +82,15 @@ function createInsertButton(
     if (!className || !copyButtonOnSubmit) {
         return null
     }
-    const insertButton = document.createElement('button')
-    insertButton.textContent = 'Insert at Cursor'
-    insertButton.title = 'Insert this at the current cursor position'
-    insertButton.className = classNames(styles.insertButton, className)
-    insertButton.addEventListener('click', () => {
+    const button = document.createElement('button')
+    button.textContent = 'Insert at Cursor'
+    button.title = 'Insert text at current cursor position'
+    button.className = classNames(styles.insertButton, className)
+    button.addEventListener('click', () => {
         const selectedText = getSelectedTextWithin(container.querySelector('pre'))
         copyButtonOnSubmit(selectedText || text, true)
     })
-    return insertButton
+    return button
 }
 
 function getSelectedTextWithin(element: HTMLElement | null): string | null {

@@ -9,8 +9,8 @@
 
 .buttons {
     position: absolute;
-    top: .5rem;
-    right: .5rem;
+    top: 0;
+    right: 0;
     visibility: hidden;
     display: flex;
     gap: .25rem;
@@ -22,6 +22,4 @@
 
 .copy-button, .insert-button {
     cursor: pointer;
-    padding: .25rem .5rem;
-    font-size: .95em;
 }
