@@ -19,6 +19,7 @@ The default run type.
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - Push
   - **Linters and static analysis**: Run sg lint
 
 - Pipeline for `Client` changes:
@@ -26,6 +27,7 @@ The default run type.
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - Push
   - **Linters and static analysis**: Run sg lint
   - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit, integration, and E2E tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
   - **Pipeline setup**: Trigger async
@@ -35,6 +37,7 @@ The default run type.
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - Push
   - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit, integration, and E2E tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
 
 - Pipeline for `DatabaseSchema` changes:
@@ -42,12 +45,14 @@ The default run type.
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - Push
 
 - Pipeline for `Docs` changes:
   - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - Push
   - **Linters and static analysis**: Run sg lint
 
 - Pipeline for `Dockerfiles` changes:
@@ -55,6 +60,7 @@ The default run type.
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - Push
   - **Linters and static analysis**: Run sg lint
 
 - Pipeline for `ExecutorVMImage` changes:
@@ -62,30 +68,35 @@ The default run type.
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - Push
 
 - Pipeline for `ExecutorDockerRegistryMirror` changes:
   - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - Push
 
 - Pipeline for `CIScripts` changes:
   - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - Push
 
 - Pipeline for `Terraform` changes:
   - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - Push
 
 - Pipeline for `SVG` changes:
   - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - Push
   - **Linters and static analysis**: Run sg lint
 
 - Pipeline for `Shell` changes:
@@ -93,6 +104,7 @@ The default run type.
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - Push
   - **Linters and static analysis**: Run sg lint
 
 - Pipeline for `DockerImages` changes:
@@ -100,24 +112,28 @@ The default run type.
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - Push
 
 - Pipeline for `WolfiPackages` changes:
   - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - Push
 
 - Pipeline for `WolfiBaseImages` changes:
   - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - Push
 
 - Pipeline for `Protobuf` changes:
   - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - Push
   - **Linters and static analysis**: Run sg lint
 
 ### Wolfi Exp Branch
@@ -198,6 +214,7 @@ Base pipeline (more steps might be included based on branch changes):
 - Ensure buildfiles are up to date
 - Tests
 - BackCompat Tests
+- Push
 - **Linters and static analysis**: Run sg lint
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit, integration, and E2E tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
@@ -217,6 +234,7 @@ Base pipeline (more steps might be included based on branch changes):
 - Ensure buildfiles are up to date
 - Tests
 - BackCompat Tests
+- Push
 - **Linters and static analysis**: Run sg lint
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit, integration, and E2E tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
@@ -277,6 +295,7 @@ Base pipeline (more steps might be included based on branch changes):
 - Ensure buildfiles are up to date
 - Tests
 - BackCompat Tests
+- Push
 - **Linters and static analysis**: Run sg lint
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit, integration, and E2E tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
@@ -301,6 +320,7 @@ Base pipeline (more steps might be included based on branch changes):
 - Ensure buildfiles are up to date
 - Tests
 - BackCompat Tests
+- Push
 - **Linters and static analysis**: Run sg lint
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit, integration, and E2E tests for the Cody VS Code extension, ESLint (all), ESLint (web), Stylelint (all)
 - **Integration tests**: Backend integration tests (gRPC), Backend integration tests, Code Intel QA
