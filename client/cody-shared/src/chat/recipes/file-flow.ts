@@ -25,7 +25,7 @@ export class FileFlow implements Recipe {
     private workspacePath = vscode.workspace.workspaceFolders?.[0].uri
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const selection = context.editor.getActiveTextEditorSelection() || context.editor.controller?.selection
+        const selection = context.editor.getActiveTextEditorSelection() || context.editor.controllers?.inline.selection
         if (!selection || !this.workspacePath) {
             await context.editor.showWarningMessage('Failed to start Inline Chat: empty selection.')
             return null
@@ -72,7 +72,7 @@ export class FileFlow implements Recipe {
         const displayText = this.getHumanDisplayText(humanInput, selection.fileName)
 
         context.responseMultiplexer.sub(
-            'inline',
+            'selection',
             new BufferedBotResponseSubscriber(async content => {
                 if (!content) {
                     await context.editor.showWarningMessage(
@@ -130,10 +130,10 @@ export class FileFlow implements Recipe {
     - Follow my instructions above to produce new code for the new file we are working on together
     - Think carefully and use the share context as reference before produce the new code to make sure the new code works with the shared context.
     - You must use the same framework and language as the shared context that are also in the current directory I am working on.
-    - Please put the new content inside <inline> tags.
-    - I only want to see the new code enclosed with the <inline> tags if you understand the instruction provided.
+    - Please put the new content inside <selection> tags.
+    - I only want to see the new code enclosed with the <selection> tags if you understand the instruction provided.
     - Do not enclose any part of your answer with tags if you are not sure about the answer.
-    - Only provide me with the code inside <inline> and nothing else.
+    - Only provide me with the code inside <selection> and nothing else.
     - It is unacceptable to enclose the rewritten replacement with markdowns.
 
     ## Guidelines for the new code
