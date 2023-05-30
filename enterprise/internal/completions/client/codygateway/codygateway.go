@@ -16,13 +16,17 @@ import (
 )
 
 const (
-	ProviderName = "cody-gateway"
-	// TODO: Change to "https://cody-gateway.sourcegraph.com" once available.
-	DefaultEndpoint      = "https://completions.sourcegraph.com"
+	// ProviderName is 'sourcegraph', since this is a Sourcegraph-provided service,
+	// backed by Cody Gateway. This is the value accepted in site configuration.
+	ProviderName    = "sourcegraph"
+	DefaultEndpoint = "https://cody-gateway.sourcegraph.com"
+
 	openAIModelPrefix    = "openai/"
 	anthropicModelPrefix = "anthropic/"
 )
 
+// NewClient instantiates a completions provider backed by Sourcegraph's managed
+// Cody Gateway service.
 func NewClient(cli httpcli.Doer, endpoint, accessToken string) (types.CompletionsClient, error) {
 	// TODO: Backcompat with older configs: We can remove this once S2 and k8s are migrated.
 	endpoint = strings.TrimSuffix(endpoint, "/v1/completions/anthropic")
