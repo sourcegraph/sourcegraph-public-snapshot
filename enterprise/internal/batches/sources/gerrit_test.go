@@ -487,7 +487,7 @@ func assertGerritChangesetMatchesPullRequest(t *testing.T, cs *Changeset, pr *ge
 	// We're not thoroughly testing setChangesetMetadata() et al in this
 	// assertion, but we do want to ensure that the PR was used to populate
 	// fields on the Changeset.
-	assert.EqualValues(t, pr.ID, cs.ExternalID)
+	assert.EqualValues(t, pr.ChangeID, cs.ExternalID)
 }
 
 // mockGerritChangeset creates a plausible non-forked changeset, repo,
@@ -512,8 +512,8 @@ func mockGerritChangeset() (*Changeset, *types.Repo) {
 // returned from Bitbucket Cloud for a non-forked changeset.
 func mockGerritChange(project *gerrit.Project) *gerrit.Change {
 	return &gerrit.Change{
-		ID:      "42",
-		Project: project.Name,
+		ChangeID: "42",
+		Project:  project.Name,
 	}
 }
 

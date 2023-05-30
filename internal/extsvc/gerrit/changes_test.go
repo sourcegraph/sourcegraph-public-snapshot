@@ -80,7 +80,7 @@ func TestClient_SetReadyForReview(t *testing.T) {
 
 	ctx := context.Background()
 
-	err := cli.SetReadyForReview(ctx, "Ida085bb4e62b9adb5991496ab31987e45cfd5d62")
+	err := cli.SetReadyForReview(ctx, "Ibcbfdbb6e19cec62feabfec5da47251820947067")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -92,7 +92,7 @@ func TestClient_SetWIP(t *testing.T) {
 
 	ctx := context.Background()
 
-	err := cli.SetWIP(ctx, "Ida085bb4e62b9adb5991496ab31987e45cfd5d62")
+	err := cli.SetWIP(ctx, "Ibcbfdbb6e19cec62feabfec5da47251820947067")
 	if err != nil {
 		t.Fatal(err)
 	}
