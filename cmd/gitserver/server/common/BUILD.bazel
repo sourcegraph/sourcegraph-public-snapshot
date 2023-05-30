@@ -4,6 +4,7 @@ go_library(
     name = "common",
     srcs = [
         "common.go",
+        "queue.go",
         "run.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common",
@@ -20,7 +21,10 @@ go_library(
 
 go_test(
     name = "common_test",
-    srcs = ["run_test.go"],
+    srcs = [
+        "queue_test.go",
+        "run_test.go",
+    ],
     embed = [":common"],
     deps = [
         "//internal/conf",
