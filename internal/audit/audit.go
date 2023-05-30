@@ -3,10 +3,10 @@ package audit
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/sourcegraph/log"
-	"go.uber.org/zap/zapcore"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
-
 
 // Log creates an INFO log statement that will be a part of the audit log.
 // The audit log records comply with the following design: an actor takes an action on an entity within a context.
@@ -107,18 +106,18 @@ func IsEnabled(cfg schema.SiteConfiguration, setting AuditLogSetting) bool {
 
 // getLoggerFuncWithSeverity returns a specific logger function (logger.Info, logger.Warn, etc.) based on the overall audit log configuration
 func getLoggerFuncWithSeverity(logger log.Logger) func(string, ...log.Field) {
-	lvl := log.Level(env.LogLevel).Parse()
+	lvl := log.Level(strings.ToLower(env.LogLevel))
 	switch lvl {
-	case zapcore.DebugLevel:
+	case log.LevelDebug:
 		return logger.Debug
-	case zapcore.InfoLevel:
+	case log.LevelInfo:
 		return logger.Info
-	case zapcore.WarnLevel:
+	case log.LevelWarn:
 		return logger.Warn
-	case zapcore.ErrorLevel:
+	case log.LevelError:
 		return logger.Error
 	default:
-		return logger.Info
+		return logger.Warn // match default log level
 	}
 }
 
