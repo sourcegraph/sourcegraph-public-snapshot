@@ -11,20 +11,25 @@ cleanup() {
 }
 trap cleanup EXIT
 
+bazelrc=(
+  --bazelrc=.bazelrc
+)
+if [[ ${CI:-""} == "true" ]]; then
+  bazelrc+=(
+    --bazelrc=.aspect/bazelrc/ci.bazelrc
+    --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc
+  )
+fi
+
 echo "--- :bazel: bazel build for targets //cmd/symbols"
-bazel \
-  --bazelrc=.bazelrc \
-  --bazelrc=.aspect/bazelrc/ci.bazelrc \
-  --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
+bazel "${bazelrc[@]}" \
   build //cmd/symbols \
   --stamp \
   --workspace_status_command=./dev/bazel_stamp_vars.sh \
   --config incompat-zig-linux-amd64
 
 out=$(
-  bazel --bazelrc=.bazelrc \
-    --bazelrc=.aspect/bazelrc/ci.bazelrc \
-    --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
+  bazel "${bazelrc[@]}" \
     cquery //cmd/symbols \
     --stamp \
     --workspace_status_command=./dev/bazel_stamp_vars.sh \
@@ -37,18 +42,13 @@ cp -v "$out" "$OUTPUT"
 # NOTE: cmd/symbols/cargo-config.sh sets some specific config when running on arm64
 # since this bazel run typically runs on CI that config change isn't made
 echo "--- :bazel: bazel build for target //docker-images/syntax-highlighter:scip-ctags"
-bazel \
-  --bazelrc=.bazelrc \
-  --bazelrc=.aspect/bazelrc/ci.bazelrc \
-  --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
+bazel "${bazelrc[@]}" \
   build //docker-images/syntax-highlighter:scip-ctags \
   --stamp \
   --workspace_status_command=./dev/bazel_stamp_vars.sh
 
 out=$(
-  bazel --bazelrc=.bazelrc \
-    --bazelrc=.aspect/bazelrc/ci.bazelrc \
-    --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
+  bazel "${bazelrc[@]}" \
     cquery //docker-images/syntax-highlighter:scip-ctags \
     --stamp \
     --workspace_status_command=./dev/bazel_stamp_vars.sh \
