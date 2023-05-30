@@ -398,25 +398,23 @@ export const SourcegraphURLForm: React.FunctionComponent<React.PropsWithChildren
                                     className="d-flex justify-content-between p-0"
                                 >
                                     <Text className="py-2 pl-3 m-0">{suggestion}</Text>
-                                    <Tooltip content="Remove suggestion">
-                                        <Button
-                                            className={classNames('m-0 py-0 px-2', styles.suggestionRemoveButton)}
-                                            onClick={event => {
-                                                // prevent click from becoming option selection
-                                                event.preventDefault()
-                                                event.stopPropagation()
-                                                if (
-                                                    confirm(
-                                                        `Are you sure you want to remove ${suggestion} from auto suggestion list?`
-                                                    )
-                                                ) {
-                                                    onSuggestionDelete(suggestion)
-                                                }
-                                            }}
-                                        >
-                                            <Icon svgPath={mdiClose} aria-label="Remove suggestion" />
-                                        </Button>
-                                    </Tooltip>
+                                    <Button
+                                        className={classNames('m-0 py-0 px-2', styles.suggestionRemoveButton)}
+                                        onClick={event => {
+                                            // prevent click from becoming option selection
+                                            event.preventDefault()
+                                            event.stopPropagation()
+                                            if (
+                                                confirm(
+                                                    `Are you sure you want to remove ${suggestion} from auto suggestion list?`
+                                                )
+                                            ) {
+                                                onSuggestionDelete(suggestion)
+                                            }
+                                        }}
+                                    >
+                                        <Icon svgPath={mdiClose} aria-label="Remove suggestion" />
+                                    </Button>
                                 </ComboboxOption>
                             ))}
                         </ComboboxList>
