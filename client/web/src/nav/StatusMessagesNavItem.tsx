@@ -273,9 +273,7 @@ export const StatusMessagesNavItem: React.FunctionComponent<React.PropsWithChild
                                 key="no-repositories"
                                 title="No repositories"
                                 message="Connect a code host to connect repositories to Sourcegraph."
-                                linkTo={
-                                    props.isSourcegraphApp ? '/users/admin/app-settings/local-repositories' : '/setup'
-                                }
+                                linkTo={props.isSourcegraphApp ? '/user/app-settings/local-repositories' : '/setup'}
                                 linkText="Setup code hosts"
                                 linkOnClick={toggleIsOpen}
                                 entryType="info"
