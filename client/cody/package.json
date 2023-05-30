@@ -60,7 +60,7 @@
     "release": "ts-node ./scripts/release.ts",
     "release:dry-run": "CODY_RELEASE_TYPE=dry-run ts-node ./scripts/release.ts",
     "storybook": "STORIES_GLOB='client/cody/webviews/**/*.story.tsx' pnpm --filter @sourcegraph/storybook run start",
-    "test:e2e": "npx playwright install && pnpm run --silent build:dev && playwright test test/e2e",
+    "test:e2e": "npx playwright install && pnpm run --silent build:dev && playwright test",
     "test:integration": "tsc -b ./test/integration && pnpm run --silent build:dev && node --inspect -r ts-node/register out/test/integration/main.js",
     "test:unit": "jest",
     "vscode:prepublish": "scripts/check-rg.sh",
