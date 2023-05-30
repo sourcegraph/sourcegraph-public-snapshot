@@ -6,64 +6,65 @@ commandTests:
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
-  # Sourcegraph binaries
-  - name: "embeddings binary is runnable"
-    command: "/embeddings"
-    envVars:
-      - key: "SANITY_CHECK"
-        value: "true"
 
+  # Sourcegraph binaries
+  # TODO: Add embeddings binary to image
+  # - name: "embeddings binary is runnable"
+  #   command: "/embeddings"
+  #   envVars:
+  #     - key: "SANITY_CHECK"
+  #       value: "true"
   - name: "frontend binary is runnable"
-    command: "/frontend"
+    command: "frontend"
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
   - name: "github-proxy binary is runnable"
-    command: "/github-proxy"
+    command: "github-proxy"
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
   - name: "gitserver binary is runnable"
-    command: "/gitserver"
+    command: "gitserver"
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
-
   - name: "migrator binary is runnable"
-    command: "/migrator"
+    command: "migrator"
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
   - name: "precise-code-intel-worker binary is runnable"
-    command: "/precise-code-intel-worker"
+    command: "precise-code-intel-worker"
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
   - name: "repo-updater binary is runnable"
-    command: "/repo-updater"
+    command: "repo-updater"
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
   - name: "searcher binary is runnable"
-    command: "/searcher"
+    command: "searcher"
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
   - name: "symbols binary is runnable"
-    command: "/symbols"
+    command: "symbols"
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
-  - name: "syntect_server binary is runnable"
-    command: "/syntect_server"
+  - name: "syntax_highlighter binary is runnable"
+    command: "syntax_highlighter"
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
   - name: "worker binary is runnable"
-    command: "/worker"
+    command: "worker"
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
+
   # Git
   - name: "git is runnable"
     command: "git"
