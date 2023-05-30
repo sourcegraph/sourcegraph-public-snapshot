@@ -184,7 +184,7 @@ func (c *KubernetesCommand) WaitForPodToSucceed(ctx context.Context, namespace s
 			return nil, errors.New("unexpected object type")
 		}
 		c.Logger.Debug(
-			"watching pod",
+			"Watching pod",
 			log.String("name", pod.Name),
 			log.String("phase", string(pod.Status.Phase)),
 		)
