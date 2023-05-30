@@ -2,13 +2,13 @@ import * as vscode from 'vscode'
 
 import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage } from '../../codebase-context/messages'
+import { computeDiff } from '../../non-stop/concurrent-editing'
 import { updateRange } from '../../non-stop/tracked-range'
 import { MAX_CURRENT_FILE_TOKENS } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { Interaction } from '../transcript/interaction'
 
-import { computeDiff } from './concurrent-editing'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 type TrackedDecoration = vscode.DecorationOptions
@@ -123,6 +123,7 @@ export class NonStopCody implements Recipe {
     private textDocumentChanged(event: vscode.TextDocumentChangeEvent): void {
         console.log(this.doc)
 
+        /* Demonstration that we can interact with diagnostics:
         this.diags.forEach((uri, diagnostics, collection) => {
             if (uri !== event.document.uri) {
                 return
@@ -131,6 +132,7 @@ export class NonStopCody implements Recipe {
                 console.log(diagnostic)
             }
         })
+        */
 
         // TODO: Experiment with a cooldown timer which commits changes when the user is idle.
 

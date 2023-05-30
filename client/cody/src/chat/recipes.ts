@@ -13,7 +13,6 @@ import { ImproveVariableNames } from '@sourcegraph/cody-shared/src/chat/recipes/
 import { InlineAssist } from '@sourcegraph/cody-shared/src/chat/recipes/inline-chat'
 import { NextQuestions } from '@sourcegraph/cody-shared/src/chat/recipes/next-questions'
 import { NonStop } from '@sourcegraph/cody-shared/src/chat/recipes/non-stop'
-import { NonStopCody } from '@sourcegraph/cody-shared/src/chat/recipes/non-stop-cody'
 import { OptimizeCode } from '@sourcegraph/cody-shared/src/chat/recipes/optimize-code'
 import { Recipe, RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { TranslateToLanguage } from '@sourcegraph/cody-shared/src/chat/recipes/translate'
@@ -39,6 +38,7 @@ function init(): void {
         new ChatQuestion(debug),
         new ContextSearch(),
         new ContextSearch(),
+        new ContextSearch(),
         new ExplainCodeDetailed(),
         new ExplainCodeHighLevel(),
         new FileFlow(),
@@ -52,8 +52,6 @@ function init(): void {
         new NextQuestions(),
         new NonStop(),
         new OptimizeCode(),
-        new OptimizeCode(),
-        new ReleaseNotes(),
         new ReleaseNotes(),
         new TranslateToLanguage(),
     ]

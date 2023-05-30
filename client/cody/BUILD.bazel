@@ -55,7 +55,7 @@ ts_project(
         "src/log.ts",
         "src/main.ts",
         "src/non-stop/FixupTask.ts",
-        "src/non-stop/TaskController.ts",
+        "src/non-stop/FixupController.ts",
         "src/non-stop/TaskViewProvider.ts",
         "src/non-stop/utils.ts",
         "src/rg.ts",

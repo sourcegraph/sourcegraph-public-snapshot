@@ -8,14 +8,16 @@ import {
 } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
-import { TaskController } from '../non-stop/TaskController'
+import { FixupController } from '../non-stop/FixupController'
 import { InlineController } from '../services/InlineController'
 
 export class VSCodeEditor implements Editor {
     constructor(
         public controllers: {
             inline: InlineController
-            task: TaskController
+            // TODO: Rename this from "task" to "fixup" when the fixup data
+            // model moves from client/cody-shared to client/cody
+            task: FixupController
         }
     ) {}
 
@@ -164,5 +166,11 @@ export class VSCodeEditor implements Editor {
         return vscode.window.showInputBox({
             placeHolder: prompt || 'Enter here...',
         })
+    }
+
+    // TODO: When Non-Stop Fixup doesn't depend directly on the chat view,
+    // move the recipe to client/cody and remove this entrypoint.
+    public async didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
+        await this.controllers.task.didReceiveFixupText(id, text, state)
     }
 }
