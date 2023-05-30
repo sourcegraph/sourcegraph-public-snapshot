@@ -10,8 +10,8 @@ test('start a fixup job from inline assist with valid auth', async ({ page, side
     // Open the Explorer view from the sidebar
     await sidebarExplorer(page).click()
 
-    // Select the second files from the tree view, which is the index.html file
-    await page.locator('.monaco-highlighted-label').nth(2).click()
+    // Select the 4th file from the tree view, which is the index.html file
+    await page.locator('.monaco-highlighted-label').nth(3).click()
 
     // Click on line number 6 to open the comment thread
     await page.locator('.comment-diff-added').nth(5).hover()
