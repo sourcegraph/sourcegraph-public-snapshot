@@ -13,7 +13,30 @@ import (
 type ListOwnershipArgs struct {
 	First   *int32
 	After   *string
-	Reasons *[]string
+	Reasons *[]OwnershipReasonType
+}
+
+type OwnershipReasonType string
+
+const (
+	CodeownersFileEntry              OwnershipReasonType = "CODEOWNERS_FILE_ENTRY"
+	RecentContributorOwnershipSignal OwnershipReasonType = "RECENT_CONTRIBUTOR_OWNERSHIP_SIGNAL"
+	RecentViewOwnershipSignal        OwnershipReasonType = "RECENT_VIEW_OWNERSHIP_SIGNAL"
+)
+
+func (args *ListOwnershipArgs) IncludeReason(reason OwnershipReasonType) bool {
+	rs := args.Reasons
+	// When the reasons list is empty, we do not filter - the result
+	// contains all the reasons, so for every reason we return true.
+	if rs == nil || len(*rs) == 0 {
+		return true
+	}
+	for _, r := range *rs {
+		if r == reason {
+			return true
+		}
+	}
+	return false
 }
 
 type OwnResolver interface {

@@ -121,7 +121,8 @@ The only way we can recognize ownership at this point is through CODEOWNERS file
 """
 enum OwnershipReasonType {
     CODEOWNERS_FILE_ENTRY
-    GIT_COMMITS
+    RECENT_CONTRIBUTOR_OWNERSHIP_SIGNAL
+    RECENT_VIEW_OWNERSHIP_SIGNAL
 }
 
 """
