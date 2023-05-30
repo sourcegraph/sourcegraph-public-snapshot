@@ -1,6 +1,7 @@
 package env
 
 import (
+	"expvar"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -64,5 +65,17 @@ func TestGet(t *testing.T) {
 		}()
 		Get("A", "y", "bar")
 		t.Error("want panic")
+	})
+
+	t.Run("export", func(t *testing.T) {
+		reset(nil)
+
+		_ = Get("MY_ENV", "my default value", "my description")
+		Lock()
+		got := expvar.Get("env").String()
+		want := `{"MY_ENV":{"description":"my description","value":"my default value"}}`
+		if want != got {
+			t.Fatalf("got %q, want %q", got, want)
+		}
 	})
 }

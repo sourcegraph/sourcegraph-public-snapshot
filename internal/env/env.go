@@ -16,8 +16,8 @@ import (
 )
 
 type envflag struct {
-	description string
-	value       string
+	Description string `json:"description"`
+	Value       string `json:"value"`
 }
 
 var (
@@ -126,7 +126,7 @@ func Get(name, defaultValue, description string) string {
 		env = map[string]envflag{}
 	}
 
-	e := envflag{description: description, value: value}
+	e := envflag{Description: description, Value: value}
 	if existing, ok := env[name]; ok && existing != e {
 		panic(fmt.Sprintf("env var %q already registered with a different description or value", name))
 	}
@@ -201,7 +201,7 @@ func HelpString() string {
 
 	for _, name := range sorted {
 		e := env[name]
-		helpStr += fmt.Sprintf("  %-40s %s (value: %q)\n", name, e.description, e.value)
+		helpStr += fmt.Sprintf("  %-40s %s (value: %q)\n", name, e.Description, e.Value)
 	}
 
 	return helpStr
