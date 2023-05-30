@@ -31,11 +31,15 @@ func (c *batchChangesCodeHostResolver) RequiresSSH() bool {
 
 func (c *batchChangesCodeHostResolver) RequiresUsername() bool {
 	switch c.codeHost.ExternalServiceType {
-	case extsvc.TypeBitbucketCloud, extsvc.TypeAzureDevOps:
+	case extsvc.TypeBitbucketCloud, extsvc.TypeAzureDevOps, extsvc.TypeGerrit:
 		return true
 	}
 
 	return false
+}
+
+func (c *batchChangesCodeHostResolver) SupportsCommitSigning() bool {
+	return c.codeHost.ExternalServiceType == extsvc.TypeGitHub
 }
 
 func (c *batchChangesCodeHostResolver) HasWebhooks() bool {

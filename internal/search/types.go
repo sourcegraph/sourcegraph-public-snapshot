@@ -349,6 +349,8 @@ type Features struct {
 	// from here. For now we treat this like a feature flag for convenience.
 	Debug bool `json:"debug"`
 
+	KeywordScoring bool `json:"keyword-scoring"`
+
 	// CodeOwnershipSearch when true will enable searching through code ownership
 	// using `file:has.owner({owner})` and `select:file.owners` filters.
 	CodeOwnershipSearch bool `json:"codeownership"`

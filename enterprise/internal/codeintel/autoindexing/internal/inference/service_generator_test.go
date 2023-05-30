@@ -143,7 +143,7 @@ func testGenerator(t *testing.T, testCase generatorTestCase) {
 	t.Run(testCase.description, func(t *testing.T) {
 		service := testService(t, testCase.repositoryContents)
 
-		jobs, err := service.InferIndexJobs(
+		result, err := service.InferIndexJobs(
 			context.Background(),
 			"github.com/test/test",
 			"HEAD",
@@ -152,7 +152,7 @@ func testGenerator(t *testing.T, testCase generatorTestCase) {
 		if err != nil {
 			t.Fatalf("unexpected error inferring jobs: %s", err)
 		}
-		if diff := cmp.Diff(sortIndexJobs(testCase.expected), sortIndexJobs(jobs)); diff != "" {
+		if diff := cmp.Diff(sortIndexJobs(testCase.expected), sortIndexJobs(result.IndexJobs)); diff != "" {
 			t.Errorf("unexpected index jobs (-want +got):\n%s", diff)
 		}
 	})

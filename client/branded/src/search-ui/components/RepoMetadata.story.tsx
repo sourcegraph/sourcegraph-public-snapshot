@@ -33,28 +33,16 @@ export const RepoMetadataStory: Story = () => (
         {() => (
             <Card className="p-3">
                 <Grid columnCount={3}>
-                    <div />
-                    <H2 className="mb-0 mr-3 text-no-wrap">small=false (default)</H2>
-                    <H2 className="mb-0 mr-3 text-no-wrap">small=true</H2>
-
                     <H3 className="mb-0 mr-3 text-no-wrap">Default</H3>
+                    <H2 className="mb-0 mr-3 text-no-wrap">Link</H2>
+                    <H3 className="mb-0 mr-3 text-no-wrap">Delete</H3>
                     <RepoMetadata items={mockItems} />
-                    <RepoMetadata items={mockItems} small={true} />
-                    <H3 className="mb-0 mr-3 text-no-wrap">Clickable</H3>
                     <RepoMetadata
                         items={mockItems}
                         queryState={{ query: '' }}
                         buildSearchURLQueryFromQueryState={() => ''}
                     />
-                    <RepoMetadata
-                        items={mockItems}
-                        queryState={{ query: '' }}
-                        buildSearchURLQueryFromQueryState={() => ''}
-                        small={true}
-                    />
-                    <H3 className="mb-0 mr-3 text-no-wrap">Deletable</H3>
                     <RepoMetadata items={mockItems} onDelete={key => alert(key)} />
-                    <RepoMetadata items={mockItems} onDelete={key => alert(key)} small={true} />
                 </Grid>
             </Card>
         )}

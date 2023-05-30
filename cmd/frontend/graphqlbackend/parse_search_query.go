@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/printer"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/settings"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -96,7 +97,7 @@ func outputJobTree(
 		return "", err
 	}
 
-	settings, err := DecodedViewerFinalSettings(ctx, db)
+	settings, err := settings.CurrentUserFinal(ctx, db)
 	if err != nil {
 		return "", err
 	}

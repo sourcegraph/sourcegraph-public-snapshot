@@ -11,6 +11,7 @@ go_library(
         "//cmd/frontend/graphqlbackend",
         "//enterprise/cmd/frontend/internal/auth/azureoauth",
         "//enterprise/cmd/frontend/internal/auth/bitbucketcloudoauth",
+        "//enterprise/cmd/frontend/internal/auth/confauth",
         "//enterprise/cmd/frontend/internal/auth/gerrit",
         "//enterprise/cmd/frontend/internal/auth/githubappauth",
         "//enterprise/cmd/frontend/internal/auth/githuboauth",

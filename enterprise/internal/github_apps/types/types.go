@@ -1,13 +1,17 @@
 package types
 
-import "time"
+import (
+	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/types"
+)
 
 // GitHubApp represents a GitHub App.
 type GitHubApp struct {
 	ID            int
 	AppID         int
 	Name          string
-	Domain        string
+	Domain        types.GitHubAppDomain
 	Slug          string
 	BaseURL       string
 	AppURL        string

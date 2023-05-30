@@ -81,7 +81,7 @@ extend type Query {
     """
     Return (but do not enqueue) descriptions of auto indexing jobs at the current revision.
     """
-    inferAutoIndexJobsForRepo(repository: ID!, rev: String, script: String): [AutoIndexJobDescription!]!
+    inferAutoIndexJobsForRepo(repository: ID!, rev: String, script: String): InferAutoIndexJobsResult!
 }
 
 extend type Mutation {
@@ -190,6 +190,21 @@ extend type Repository {
     Provides a summary of the most recent upload and index status.
     """
     codeIntelSummary: CodeIntelRepositorySummary!
+}
+
+"""
+The result of running the auto-index inference script over a particular repo.
+"""
+type InferAutoIndexJobsResult {
+    """
+    The list of inferred jobs.
+    """
+    jobs: [AutoIndexJobDescription!]!
+
+    """
+    The output from the inference script.
+    """
+    inferenceOutput: String!
 }
 
 """

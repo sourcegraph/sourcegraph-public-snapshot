@@ -101,7 +101,7 @@ export abstract class CompletionProvider {
     public abstract generateCompletions(abortSignal: AbortSignal, n?: number): Promise<Completion[]>
 }
 
-export class MultilineCompletionProvider extends CompletionProvider {
+export class ManualCompletionProvider extends CompletionProvider {
     protected createPromptPrefix(): Message[] {
         // TODO(beyang): escape 'Human:' and 'Assistant:'
         const prefix = this.prefix.trim()
@@ -203,7 +203,7 @@ export class MultilineCompletionProvider extends CompletionProvider {
     }
 }
 
-export class EndOfLineCompletionProvider extends CompletionProvider {
+export class InlineCompletionProvider extends CompletionProvider {
     constructor(
         completionsClient: SourcegraphNodeCompletionsClient,
         promptChars: number,
@@ -265,7 +265,11 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
         // Extract a few common parts for the processing
         const currentLinePrefix = this.prefix.slice(this.prefix.lastIndexOf('\n') + 1)
         const firstNlInSuffix = this.suffix.indexOf('\n') + 1
-        const nextLine = this.suffix.slice(firstNlInSuffix, this.suffix.indexOf('\n', firstNlInSuffix))
+        const nextNonEmptyLine =
+            this.suffix
+                .slice(firstNlInSuffix)
+                .split('\n')
+                .find(line => line.trim().length > 0) ?? ''
 
         // Sometimes Claude emits an extra space
         let hasOddIndentation = false
@@ -273,7 +277,7 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
             completion.length > 0 &&
             completion.startsWith(' ') &&
             this.prefix.length > 0 &&
-            this.prefix.endsWith(' ')
+            (this.prefix.endsWith(' ') || this.prefix.endsWith('\t'))
         ) {
             completion = completion.slice(1)
             hasOddIndentation = true
@@ -335,18 +339,18 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
             completion = lines.slice(0, cutOffIndex).join('\n')
         }
 
-        // If a completed line matches the next line of the suffix 1:1, we remove
+        // If a completed line matches the next non-empty line of the suffix 1:1, we remove
         const lines = completion.split('\n')
         const matchedLineIndex = lines.findIndex((line, index) => {
             if (index === 0) {
                 line = currentLinePrefix + line
             }
-            if (line.trim() !== '' && nextLine.trim() !== '') {
+            if (line.trim() !== '' && nextNonEmptyLine.trim() !== '') {
                 // We need a trimEnd here because the machine likes to add trailing whitespace.
                 //
                 // TODO: Fix this earlier in the post process run but this needs to be careful not
                 // to alter the meaning
-                return line.trimEnd() === nextLine
+                return line.trimEnd() === nextNonEmptyLine
             }
             return false
         })

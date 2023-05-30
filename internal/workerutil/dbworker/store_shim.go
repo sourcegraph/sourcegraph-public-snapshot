@@ -41,7 +41,7 @@ func (s *storeShim[T]) Dequeue(ctx context.Context, workerHostname string, extra
 	return s.Store.Dequeue(ctx, workerHostname, conditions)
 }
 
-func (s *storeShim[T]) Heartbeat(ctx context.Context, ids []int) (knownIDs, cancelIDs []int, err error) {
+func (s *storeShim[T]) Heartbeat(ctx context.Context, ids []string) (knownIDs, cancelIDs []string, err error) {
 	return s.Store.Heartbeat(ctx, ids, store.HeartbeatOptions{})
 }
 

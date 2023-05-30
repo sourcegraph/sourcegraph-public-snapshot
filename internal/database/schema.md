@@ -961,6 +961,7 @@ Foreign-key constraints:
  id              | integer                  |           | not null | nextval('codeintel_ranking_exports_id_seq'::regclass)
  last_scanned_at | timestamp with time zone |           |          | 
  deleted_at      | timestamp with time zone |           |          | 
+ upload_key      | text                     |           |          | 
 Indexes:
     "codeintel_ranking_exports_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_exports_graph_key_upload_id" UNIQUE, btree (graph_key, upload_id)
@@ -980,15 +981,14 @@ Referenced by:
     Column     |  Type   | Collation | Nullable |                             Default                              
 ---------------+---------+-----------+----------+------------------------------------------------------------------
  id            | bigint  |           | not null | nextval('codeintel_ranking_path_counts_inputs_id_seq'::regclass)
- document_path | text    |           | not null | 
  count         | integer |           | not null | 
  graph_key     | text    |           | not null | 
  processed     | boolean |           | not null | false
- repository_id | integer |           | not null | 
+ definition_id | bigint  |           |          | 
 Indexes:
     "codeintel_ranking_path_counts_inputs_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_path_counts_inputs_graph_key_definition_id" btree (graph_key, definition_id, id) WHERE NOT processed
     "codeintel_ranking_path_counts_inputs_graph_key_id" btree (graph_key, id)
-    "codeintel_ranking_path_counts_inputs_graph_key_repository_id_id" btree (graph_key, repository_id, id) WHERE NOT processed
 
 ```
 
@@ -1880,7 +1880,7 @@ Stores data points for a code insight that do not need to be queried directly, b
  protected                   | boolean                  |           | not null | false
  repository_patterns         | text[]                   |           |          | 
  last_resolved_at            | timestamp with time zone |           |          | 
- lockfile_indexing_enabled   | boolean                  |           | not null | false
+ embeddings_enabled          | boolean                  |           | not null | false
 Indexes:
     "lsif_configuration_policies_pkey" PRIMARY KEY, btree (id)
     "lsif_configuration_policies_repository_id" btree (repository_id)
@@ -1896,8 +1896,6 @@ Triggers:
 **index_intermediate_commits**: If the matching Git object is a branch, setting this value to true will also index all commits on the matching branches. Setting this value to false will only consider the tip of the branch.
 
 **indexing_enabled**: Whether or not this configuration policy affects auto-indexing schedules.
-
-**lockfile_indexing_enabled**: Whether to index the lockfiles in the repositories matched by this policy
 
 **pattern**: A pattern used to match` names of the associated Git object type.
 
@@ -4288,6 +4286,39 @@ Foreign-key constraints:
           WHERE ((changeset_specs_1.id = changesets.current_spec_id) AND (changeset_specs_1.head_ref = changeset_specs.head_ref)))))))
      JOIN repo ON ((changeset_specs.repo_id = repo.id)))
   WHERE ((changeset_specs.external_id IS NULL) AND (repo.deleted_at IS NULL));
+```
+
+# View "public.codeintel_configuration_policies"
+
+## View query:
+
+```sql
+ SELECT lsif_configuration_policies.id,
+    lsif_configuration_policies.repository_id,
+    lsif_configuration_policies.name,
+    lsif_configuration_policies.type,
+    lsif_configuration_policies.pattern,
+    lsif_configuration_policies.retention_enabled,
+    lsif_configuration_policies.retention_duration_hours,
+    lsif_configuration_policies.retain_intermediate_commits,
+    lsif_configuration_policies.indexing_enabled,
+    lsif_configuration_policies.index_commit_max_age_hours,
+    lsif_configuration_policies.index_intermediate_commits,
+    lsif_configuration_policies.protected,
+    lsif_configuration_policies.repository_patterns,
+    lsif_configuration_policies.last_resolved_at,
+    lsif_configuration_policies.embeddings_enabled
+   FROM lsif_configuration_policies;
+```
+
+# View "public.codeintel_configuration_policies_repository_pattern_lookup"
+
+## View query:
+
+```sql
+ SELECT lsif_configuration_policies_repository_pattern_lookup.policy_id,
+    lsif_configuration_policies_repository_pattern_lookup.repo_id
+   FROM lsif_configuration_policies_repository_pattern_lookup;
 ```
 
 # View "public.external_service_sync_jobs_with_next_sync_at"
