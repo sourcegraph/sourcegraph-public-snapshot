@@ -50,8 +50,13 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         vscode.workspace.onDidChangeTextDocument(event => {
             const document = event.document
-            const text = event.contentChanges[0].text
+            const changes = event.contentChanges
 
+            if (changes.length <= 0) {
+                return
+            }
+
+            const text = changes[0].text
             this.lastContentChanges.set(document.fileName, text.length > 0 ? 'add' : 'del')
         })
     }
