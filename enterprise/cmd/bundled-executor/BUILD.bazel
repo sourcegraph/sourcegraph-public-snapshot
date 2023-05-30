@@ -12,6 +12,12 @@ DEPS = [
 
 container_dependencies(DEPS)
 
+pkg_tar(
+    name = "tar_src-cli",
+    srcs = ["@src-cli-linux-amd64//:src-cli-linux-amd64"],
+    package_dir = "/usr/local/bin",
+)
+
 oci_image(
     name = "image",
     base = "@wolfi_bundled_executor_base",
@@ -20,10 +26,7 @@ oci_image(
         "--",
         "/usr/local/bin/executor",
     ],
-    tars = [
-        ":tar_executor",
-        ":tar_batcheshelper",
-    ],
+    tars = dependencies_tars(DEPS) + [":tar_src-cli"],
     user = "sourcegraph",
     env = {
         "EXECUTOR_USE_FIRECRACKER": "false",  # Firecracker doesn't work in docker, so disable it by default
