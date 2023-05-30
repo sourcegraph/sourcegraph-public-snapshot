@@ -76,64 +76,60 @@
   "contributes": {
     "walkthroughs": [
       {
-        "id": "cody",
-        "title": "Welcome do Cody",
-        "description": "Discover how Cody can help you",
+        "id": "welcome",
+        "title": "Getting Started with Cody AI",
+        "description": "Discover the features of Cody AI and how it can help your write code faster.",
         "steps": [
           {
-            "id": "setupCody",
+            "id": "setup",
             "title": "Setup Cody",
-            "description": "Getting started with Cody is easy and only takes a few clicks",
+            "description": "Get started by logging into Sourcegraph and setting up Cody. If you’re wanting to use Cody with local, private code you’ll also want to download the [Cody App](https://about.sourcegraph.com/app).\n[Setup Cody](command:cody.setup)",
             "media": {
-              "markdown": "guides/setup.md"
+              "markdown": "walkthroughs/setup.md"
             },
             "completionEvents": [
-              "//SEND EVENT"
-            ]
-          },
-          {
-            "id": "chatInterface",
-            "title": "Asking Cody",
-            "description": "Chat with Cody to know more about your codebase",
-            "media": {
-              "markdown": "guides/chat.md"
-            },
-            "completionEvents": [
-              "//SEND EVENT"
-            ]
-          },
-          {
-            "id": "usingRecipes",
-            "title": "Using recipes",
-            "description": "What is possible with recipes?",
-            "media": {
-              "markdown": "guides/recipes.md"
-            },
-            "completionEvents": [
-              "//SEND EVENT"
+              "onContext:cody.activated"
             ]
           },
           {
             "id": "completions",
-            "title": "Auto completions",
-            "description": "Cody is able to suggest the next few lines for you \n [Activate Autocomplete](command:getting-started-sample.changeSetting) ",
+            "title": "Enable Automatic Completions",
+            "description": "Cody’s automatic completions can write code for you, with single and multi-line completions.\n[Enable Completions](command:TODO)",
             "media": {
-              "markdown": "guides/completions.md"
-            },
-            "completionEvents": [
-              "//SEND EVENT"
-            ]
+              "markdown": "walkthroughs/completions.md"
+            }
+          },
+          {
+            "id": "recipes",
+            "title": "Run a Recipe",
+            "description": "Open a file and run one of the built-in recipes.\n[Open Recipes](command:TODO)\n__Try 'Summarize recent code changes'__",
+            "media": {
+              "markdown": "walkthroughs/recipes.md"
+            }
+          },
+          {
+            "id": "chat",
+            "title": "Ask Cody a Question",
+            "description": "Chat with Cody to know more about your codebase\n[Open Chat](command:cody.chat.focus)\n__Try asking 'Where is user authorisation handled?'__",
+            "media": {
+              "markdown": "walkthroughs/chat.md"
+            }
           },
           {
             "id": "fixup",
-            "title": "Using fixup",
-            "description": "What is and how to use fixup",
+            "title": "Inline Chat & Editing",
+            "description": "Ask Cody to edit your code inline using fixups.\n\n__Open a file and click the + button next to any line number.__'",
             "media": {
-              "markdown": "guides/fixup.md"
-            },
-            "completionEvents": [
-              "//SEND EVENT"
-            ]
+              "markdown": "walkthroughs/fixup.md"
+            }
+          },
+          {
+            "id": "learn-more",
+            "title": "Documentation & Support",
+            "description": "TODO.\n[See the documentation](https://docs.sourcegraph.com/cody)",
+            "media": {
+              "markdown": "walkthroughs/learn-more.md"
+            }
           }
         ]
       }
@@ -172,6 +168,12 @@
       }
     ],
     "commands": [
+      {
+        "command": "cody.welcome",
+        "title": "Cody: Getting Started Guide (Help)",
+        "group": "Cody",
+        "icon": "$(book)"
+      },
       {
         "command": "cody.recipe.optimize-code",
         "title": "Ask Cody: Optimize Code"
@@ -468,14 +470,19 @@
           "group": "navigation@1"
         },
         {
+          "command": "cody.history",
+          "when": "view == cody.chat && cody.activated",
+          "group": "navigation@2"
+        },
+        {
           "command": "cody.settings",
           "when": "view == cody.chat && cody.activated",
           "group": "navigation@3"
         },
         {
-          "command": "cody.history",
-          "when": "view == cody.chat && cody.activated",
-          "group": "navigation@2"
+          "command": "cody.welcome",
+          "when": "view == cody.chat",
+          "group": "navigation@4"
         },
         {
           "command": "cody.fixup.apply-all",
