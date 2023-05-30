@@ -595,6 +595,22 @@ func TestZoektSearchOptions(t *testing.T) {
 				DocumentRanksWeight: 4500,
 			},
 		},
+		{
+			name:    "test keyword scoring",
+			context: context.Background(),
+			options: &Options{
+				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
+				NumRepos:       3,
+				KeywordScoring: true,
+			},
+			want: &zoekt.SearchOptions{
+				ShardMaxMatchCount: 10000,
+				TotalMaxMatchCount: 100000,
+				MaxWallTime:        20000000000,
+				MaxDocDisplayCount: 500,
+				ChunkMatches:       true,
+				UseKeywordScoring:  true},
+		},
 	}
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {

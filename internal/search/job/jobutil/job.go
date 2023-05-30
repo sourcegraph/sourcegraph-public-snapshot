@@ -93,6 +93,7 @@ func NewBasicJob(inputs *search.Inputs, b query.Basic, enterpriseJobs Enterprise
 
 		builder := &jobBuilder{
 			query:          b,
+			patternType:    inputs.PatternType,
 			resultTypes:    resultTypes,
 			repoOptions:    repoOptions,
 			features:       inputs.Features,
@@ -747,6 +748,7 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 // If in doubt, ask the search team.
 type jobBuilder struct {
 	query          query.Basic
+	patternType    query.SearchType
 	resultTypes    result.Types
 	repoOptions    search.RepoOptions
 	features       *search.Features
@@ -779,6 +781,7 @@ func (b *jobBuilder) newZoektGlobalSearch(typ search.IndexedRequestType) (job.Jo
 		FileMatchLimit: b.fileMatchLimit,
 		Select:         b.selector,
 		Features:       *b.features,
+		KeywordScoring: b.patternType == query.SearchTypeKeyword,
 	}
 
 	switch typ {
@@ -809,6 +812,7 @@ func (b *jobBuilder) newZoektSearch(typ search.IndexedRequestType) (job.Job, err
 		FileMatchLimit: b.fileMatchLimit,
 		Select:         b.selector,
 		Features:       *b.features,
+		KeywordScoring: b.patternType == query.SearchTypeKeyword,
 	}
 
 	switch typ {

@@ -88,6 +88,9 @@ type Options struct {
 
 	// Features are feature flags that can affect behaviour of searcher.
 	Features search.Features
+
+	// If true, use keyword-style scoring instead of Zoekt's default scoring formula.
+	KeywordScoring bool
 }
 
 func (o *Options) ToSearch(ctx context.Context, logger log.Logger) *zoekt.SearchOptions {
@@ -97,7 +100,7 @@ func (o *Options) ToSearch(ctx context.Context, logger log.Logger) *zoekt.Search
 		SpanContext:       spanContext,
 		MaxWallTime:       defaultTimeout,
 		ChunkMatches:      true,
-		UseKeywordScoring: o.Features.KeywordScoring,
+		UseKeywordScoring: o.KeywordScoring,
 	}
 
 	// These are reasonable default amounts of work to do per shard and

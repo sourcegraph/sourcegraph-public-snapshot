@@ -276,6 +276,7 @@ func DoZoektSearchGlobal(ctx context.Context, logger log.Logger, client zoekt.St
 		Selector:       params.Select,
 		FileMatchLimit: params.FileMatchLimit,
 		Features:       params.Features,
+		KeywordScoring: params.KeywordScoring,
 		GlobalSearch:   true,
 	}).ToSearch(ctx, logger)
 
@@ -325,6 +326,7 @@ func zoektSearch(ctx context.Context, logger log.Logger, repos *IndexedRepoRevs,
 		NumRepos:       len(repos.RepoRevs),
 		FileMatchLimit: zoektParams.FileMatchLimit,
 		Features:       zoektParams.Features,
+		KeywordScoring: zoektParams.KeywordScoring,
 	}).ToSearch(ctx, logger)
 
 	// Start event stream.

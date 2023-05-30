@@ -174,6 +174,9 @@ type ZoektParameters struct {
 
 	// Features are feature flags that can affect behaviour of searcher.
 	Features Features
+
+	// If true, use keyword-style scoring instead of Zoekt's default scoring formula.
+	KeywordScoring bool
 }
 
 // SearcherParameters the inputs for a search fulfilled by the Searcher service
@@ -348,8 +351,6 @@ type Features struct {
 	// Debug when true will set the Debug field on FileMatches. This may grow
 	// from here. For now we treat this like a feature flag for convenience.
 	Debug bool `json:"debug"`
-
-	KeywordScoring bool `json:"keyword-scoring"`
 
 	// CodeOwnershipSearch when true will enable searching through code ownership
 	// using `file:has.owner({owner})` and `select:file.owners` filters.
