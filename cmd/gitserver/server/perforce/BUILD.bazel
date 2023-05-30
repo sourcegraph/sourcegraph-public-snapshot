@@ -5,12 +5,11 @@ go_test(
     srcs = ["perforce_test.go"],
     embed = [":perforce"],
     deps = [
-        "//cmd/gitserver/server",
+        "//cmd/gitserver/server/common",
         "//internal/api",
         "//internal/database",
         "//internal/database/dbutil",
         "//internal/gitserver",
-        "//internal/observation",
         "//internal/types",
         "@com_github_google_go_cmp//cmp",
         "@com_github_sourcegraph_log//logtest",
