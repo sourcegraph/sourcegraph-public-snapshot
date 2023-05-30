@@ -23,7 +23,7 @@ oci_image(
     ],
     env = {
         "DATA_DIR": "/data/index",
-        "SRC_FRONTEND_INTERNAL": "https://sourcegraph-frontend-internal",
+        "SRC_FRONTEND_INTERNAL": "http://sourcegraph-frontend-internal",
     },
     tars = dependencies_tars(DEPS),
     user = "sourcegraph",

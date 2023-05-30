@@ -6,7 +6,7 @@ commandTests:
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
-  # TODO: Test currently fails
+  # TODO: Test currently fails - we should create a new base image
   # - name: "bash is runnable"
   #   command: "bash"
   #   args:
