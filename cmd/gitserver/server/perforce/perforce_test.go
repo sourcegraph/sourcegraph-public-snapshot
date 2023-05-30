@@ -170,7 +170,7 @@ func TestReadGitLogOutput(t *testing.T) {
 		reader := strings.NewReader("line1\nline2\nline3\n")
 
 		go func() {
-			err := readGitLogOutput(ctx, logger, reader, logLineResults)
+			err := readGitLogOutput(ctx, reader, logLineResults)
 			if err != nil {
 				panic(fmt.Sprintf("unexpected error from readGitLogOutput: %q", err.Error()))
 			}
@@ -202,7 +202,7 @@ func TestReadGitLogOutput(t *testing.T) {
 		reader := strings.NewReader("line1\nline2\nline3\n")
 
 		go func() {
-			err := readGitLogOutput(ctx, logger, reader, logLineResults)
+			err := readGitLogOutput(ctx, reader, logLineResults)
 			if err == nil {
 				panic("no error from readGitLogOutput, but should have received context cancelled")
 			}
