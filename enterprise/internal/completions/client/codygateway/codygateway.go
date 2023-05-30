@@ -64,7 +64,7 @@ func (c *codyGatewayClient) clientForParams(feature types.CompletionsFeature, re
 
 	if strings.HasPrefix(model, openAIModelPrefix) {
 		requestParams.Model = strings.TrimPrefix(model, openAIModelPrefix)
-		return openai.NewClient(gatewayDoer(c.upstream, feature, c.gatewayURL, c.accessToken, "/v1/completions/openai"), ""), nil
+		return openai.NewClient(gatewayDoer(c.upstream, feature, c.gatewayURL, c.accessToken, "/v1/completions/openai"), "", ""), nil
 	}
 	if strings.HasPrefix(model, anthropicModelPrefix) {
 		requestParams.Model = strings.TrimPrefix(model, anthropicModelPrefix)

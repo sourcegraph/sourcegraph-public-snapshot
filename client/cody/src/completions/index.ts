@@ -20,10 +20,7 @@ function lastNLines(text: string, n: number): string {
     return lines.slice(Math.max(0, lines.length - n)).join('\n')
 }
 
-let inlineCompletionsCache = new CompletionsCache()
-export const __test_only_resetCache = (): void => {
-    inlineCompletionsCache = new CompletionsCache()
-}
+export const inlineCompletionsCache = new CompletionsCache()
 
 export class CodyCompletionItemProvider implements vscode.InlineCompletionItemProvider {
     private promptTokens: number
@@ -53,8 +50,13 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         vscode.workspace.onDidChangeTextDocument(event => {
             const document = event.document
-            const text = event.contentChanges[0].text
+            const changes = event.contentChanges
 
+            if (changes.length <= 0) {
+                return
+            }
+
+            const text = changes[0].text
             this.lastContentChanges.set(document.fileName, text.length > 0 ? 'add' : 'del')
         })
     }
