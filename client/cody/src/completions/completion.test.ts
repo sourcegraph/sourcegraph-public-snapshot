@@ -573,7 +573,7 @@ describe('Cody completions', () => {
 
             expect(completions[0]).toMatchInlineSnapshot(`
                 InlineCompletionItem {
-                  "content": "console.log('one')",
+                  "insertText": "console.log('one')",
                 }
             `)
         })
