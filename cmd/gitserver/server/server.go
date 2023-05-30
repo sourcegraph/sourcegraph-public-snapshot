@@ -289,7 +289,7 @@ type Server struct {
 	// particular command should be recorded or not.
 	recordingCommandFactory *wrexec.RecordingCommandFactory
 
-	// TODO: Update docsstring
+	// Perforce is a plugin-like service attached to Server for all things Perforce.
 	Perforce perforce.Service
 }
 
