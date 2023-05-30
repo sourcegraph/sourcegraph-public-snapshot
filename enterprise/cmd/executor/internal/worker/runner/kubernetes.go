@@ -84,39 +84,36 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 	}
 	r.jobNames = append(r.jobNames, job.Name)
 
-	if err := r.cmd.WaitForJobToComplete(ctx, r.options.Namespace, job.Name); err != nil {
-		if errors.Is(err, command.ErrKubernetesJobFailed) {
-			pod, findPodErr := r.cmd.FindPod(ctx, r.options.Namespace, job.Name)
-			if findPodErr != nil {
-				return errors.Append(err, findPodErr)
-			}
-
-			var errMessage string
-			if pod.Status.Message != "" {
-				errMessage = fmt.Sprintf("job %s failed: %s", job.Name, pod.Status.Message)
-			} else {
-				errMessage = fmt.Sprintf("job %s failed", job.Name)
-			}
-			readLogErr := r.cmd.ReadLogs(
-				ctx,
-				r.options.Namespace,
-				pod,
-				command.KubernetesJobContainerName,
-				r.commandLogger,
-				spec.CommandSpec.Key,
-				spec.CommandSpec.Command,
-			)
-			if err != nil {
-				return errors.Wrap(readLogErr, errMessage)
-			}
-			return errors.New(errMessage)
+	// Wait for the job to complete before reading the logs. This lets us get also get exit codes.
+	pod, podWaitErr := r.cmd.WaitForPodToSucceed(ctx, r.options.Namespace, job.Name)
+	// Handle when the wait failed to do the things.
+	if podWaitErr != nil && pod == nil {
+		return errors.Wrapf(podWaitErr, "waiting for job %s to complete", job.Name)
+	}
+	// Always read the logs, even if the job fails.
+	readLogErr := r.cmd.ReadLogs(
+		ctx,
+		r.options.Namespace,
+		pod,
+		command.KubernetesJobContainerName,
+		r.commandLogger,
+		spec.CommandSpec.Key,
+		spec.CommandSpec.Command,
+	)
+	// Now handle the wait error.
+	if podWaitErr != nil {
+		var errMessage string
+		if pod.Status.Message != "" {
+			errMessage = fmt.Sprintf("job %s failed: %s", job.Name, pod.Status.Message)
+		} else {
+			errMessage = fmt.Sprintf("job %s failed", job.Name)
 		}
-		return errors.Wrapf(err, "waiting for job %s to complete", job.Name)
-	}
-	pod, err := r.cmd.FindPod(ctx, r.options.Namespace, job.Name)
-	if err != nil {
-		return errors.Wrapf(err, "job %s succeeded but failed to find pod", job.Name)
+
+		if readLogErr != nil {
+			return errors.Wrap(readLogErr, errMessage)
+		}
+		return errors.New(errMessage)
 	}
 
-	return r.cmd.ReadLogs(ctx, r.options.Namespace, pod, command.KubernetesJobContainerName, r.commandLogger, spec.CommandSpec.Key, spec.CommandSpec.Command)
+	return readLogErr
 }
