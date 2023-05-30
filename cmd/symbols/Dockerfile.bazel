@@ -29,9 +29,6 @@ RUN apk add --no-cache bind-tools ca-certificates mailcap tini jansson libstdc++
 
 COPY --from=ctags /usr/local/bin/universal-ctags /usr/local/bin/universal-ctags
 
-# the scip binary and symbols was already built by bazel
-# see cmd/symbols/build-bazel.sh where it is built and put in the context directory aka $OUTPUT for docker
-COPY scip-ctags /usr/local/bin/scip-ctags
 COPY symbols /usr/local/bin/symbols
 
 # symbols is cgo, ensure we have the requisite dynamic libraries

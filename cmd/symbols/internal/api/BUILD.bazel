@@ -52,7 +52,6 @@ go_test(
         "//cmd/symbols/internal/database/writer",
         "//cmd/symbols/parser",
         "//internal/api",
-        "//internal/ctags_config",
         "//internal/database",
         "//internal/diskcache",
         "//internal/endpoint",
