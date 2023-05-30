@@ -88,7 +88,10 @@ function highlightLine(line: string, tokens: HighlightedToken[]): string {
 
 function getHighlightedTokenHTML(token: HighlightedToken): string {
     const isHallucinatedClassName = token.isHallucinated ? 'hallucinated' : 'not-hallucinated'
-    return ` <span class="token-${token.type} token-${isHallucinatedClassName}">${token.outerValue.trim()}</span> `
+    const title = token.isHallucinated ? 'Hallucination detected: file does not exist' : 'Open file'
+    return ` <span class="token-${
+        token.type
+    } token-${isHallucinatedClassName}" title="${title}">${token.outerValue.trim()}</span> `
 }
 
 export function findFilePaths(line: string): { fullMatch: string; pathMatch: string }[] {

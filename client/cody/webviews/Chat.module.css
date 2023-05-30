@@ -65,34 +65,19 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .human-transcript-item {
 }
 
 :global(.token-hallucinated) {
-    border-bottom: 2px solid var(--vscode-testing-iconQueued);
+    border-bottom: 2px dashed var(--vscode-problemsWarningIcon-foreground);
+    color: var(--vscode-problemsWarningIcon-foreground);
     word-break: break-all;
-    position: relative;
+}
+
+:global(.token-hallucinated):before {
+    content: '⚠️';
 }
 
 :global(.token-not-hallucinated) {
-    border-bottom: 2px solid var(--vscode-testing-iconPassed);
+    border-bottom: 2px solid var(--vscode-textLink-foreground);
+    color: var(--vscode-textLink-foreground);
     word-break: break-all;
-    position: relative;
-}
-
-:global(.token-not-hallucinated):hover:after,
-:global(.token-hallucinated):hover:after {
-    position: absolute;
-    background: var(--vscode-editorGutter-background);
-    color: var(--vscode-editorCursor-foreground);
-    bottom: 1rem;
-    left: 0;
-    margin: 0.3rem;
-    padding: 0.1rem 0.3rem;
-}
-
-:global(.token-not-hallucinated):hover:after {
-    content: "This file exists";
-}
-
-:global(.token-hallucinated):hover:after {
-    content: "This file does not exist";
 }
 
 .feedback-buttons {
