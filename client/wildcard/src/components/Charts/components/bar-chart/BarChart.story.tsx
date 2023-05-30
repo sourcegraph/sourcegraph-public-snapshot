@@ -57,7 +57,7 @@ const getValue = (datum: LanguageUsageDatum) => datum.value
 const getColor = (datum: LanguageUsageDatum) => datum.fill
 const getLink = (datum: LanguageUsageDatum) => datum.linkURL
 const getName = (datum: LanguageUsageDatum) => datum.name
-const getGroup = (datum: LanguageUsageDatum) => datum.group
+const getGroup = (datum: LanguageUsageDatum) => null
 
 export const BarChartDemo: Story = () => (
     <main

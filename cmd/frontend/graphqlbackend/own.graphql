@@ -120,6 +120,7 @@ type Ownership {
 The only way we can recognize ownership at this point is through CODEOWNERS file entry.
 """
 enum OwnershipReasonType {
+    ASSIGNED_OWNER
     CODEOWNERS_FILE_ENTRY
     RECENT_CONTRIBUTOR_OWNERSHIP_SIGNAL
     RECENT_VIEW_OWNERSHIP_SIGNAL
