@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"os/exec"
 	"testing"
+	"time"
 )
 
 type testCase struct {
@@ -262,6 +263,7 @@ func BenchmarkMatch(b *testing.B) {
 			}
 
 			b.ResetTimer()
+			start := time.Now()
 
 			for n := 0; n < b.N; n++ {
 				count := 0
@@ -273,7 +275,7 @@ func BenchmarkMatch(b *testing.B) {
 				b.ReportMetric(float64(count)/float64(len(paths)), "match_p")
 			}
 
-			b.ReportMetric(float64(b.Elapsed().Nanoseconds())/float64(b.N*len(paths)), "ns/match")
+			b.ReportMetric(float64(time.Since(start).Nanoseconds())/float64(b.N*len(paths)), "ns/match")
 		})
 	}
 }
