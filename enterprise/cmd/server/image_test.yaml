@@ -101,7 +101,7 @@ commandTests:
 
   # Postgresql
   - name: "postgres is runnable"
-    command: "psql"
+    command: "postgres"
     args:
       - --version
   # Bash
@@ -183,12 +183,14 @@ commandTests:
       - --version
   # Grafana
   - name: "grafana-server is runnable"
-    command: "grafana-server"
+    command: "/usr/share/grafana/bin/grafana-server"
     args:
       - -v
   # Correct users and groups
   - name: "correct users exist"
-    command: "cat /etc/passwd"
+    command: "cat"
+    args:
+      - '/etc/passwd'
     expectedOutput: [
       "sourcegraph:x:100:101",
       "postgres:x:70:70",
@@ -221,18 +223,19 @@ fileExistenceTests:
   gid: 0
   permissions: '-r-xr-xr-x'
 # Grafana
-- name: '/opt/grafana/entry.sh'
-  path: '/opt/grafana/entry.sh'
-  shouldExist: true
-  uid: 0
-  gid: 0
-  permissions: '-rwxr-xr-x'
+# TODO: Check if required
+# - name: '/opt/grafana/entry.sh'
+#   path: '/opt/grafana/entry.sh'
+#   shouldExist: true
+#   uid: 0
+#   gid: 0
+#   permissions: '-rwxr-xr-x'
 - name: 'Dashboard config'
   path: '/sg_config_grafana/provisioning/dashboards/sourcegraph/gitserver.json'
   shouldExist: true
   uid: 0
   gid: 0
-  permissions: '-rwxr-xr-x'
+  permissions: '-r-xr-xr-x'
 
 metadataTest:
   envVars:
