@@ -11,6 +11,8 @@ cleanup() {
 }
 trap cleanup EXIT
 
+echo "--- :bazel: bazel build for targets //enterprise/cmd/symbols"
+
 bazelrc=(
   --bazelrc=.bazelrc
 )
@@ -21,9 +23,9 @@ if [[ ${CI:-""} == "true" ]]; then
   )
 fi
 
-echo "--- :bazel: bazel build for targets //enterprise/cmd/symbols"
 bazel "${bazelrc[@]}" \
-  build //enterprise/cmd/symbols \
+  build \
+  //enterprise/cmd/symbols \
   --stamp \
   --workspace_status_command=./dev/bazel_stamp_vars.sh \
   --config incompat-zig-linux-amd64
