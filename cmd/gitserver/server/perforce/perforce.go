@@ -145,17 +145,6 @@ func (s *Service) doChangelistMapping(ctx context.Context, job *ChangelistMappin
 	return nil
 }
 
-func headCommitSHA(ctx context.Context, logger log.Logger, dir common.GitDir) (string, error) {
-	cmd := exec.CommandContext(ctx, "git", "rev-parse", "HEAD")
-	dir.Set(cmd)
-	output, err := common.RunWith(ctx, wrexec.Wrap(ctx, logger, cmd), false, nil)
-	if err != nil {
-		return "", &common.GitCommandError{Err: err, Output: string(output)}
-	}
-
-	return string(bytes.TrimSpace(output)), nil
-}
-
 func (s *Service) getCommitsToInsert(ctx context.Context, logger log.Logger, repoID api.RepoID, dir common.GitDir) (commitsMap []types.PerforceChangelist, err error) {
 	latestRowCommit, err := s.DB.RepoCommitsChangelists().GetLatestForRepo(ctx, repoID)
 	if err != nil {
@@ -186,6 +175,17 @@ func (s *Service) getCommitsToInsert(ctx context.Context, logger log.Logger, rep
 	}
 
 	return results, nil
+}
+
+func headCommitSHA(ctx context.Context, logger log.Logger, dir common.GitDir) (string, error) {
+	cmd := exec.CommandContext(ctx, "git", "rev-parse", "HEAD")
+	dir.Set(cmd)
+	output, err := common.RunWith(ctx, wrexec.Wrap(ctx, logger, cmd), false, nil)
+	if err != nil {
+		return "", &common.GitCommandError{Err: err, Output: string(output)}
+	}
+
+	return string(bytes.TrimSpace(output)), nil
 }
 
 // logFormatWithCommitSHAAndCommitBodyOnly will print the commit SHA and the commit body (skips the
