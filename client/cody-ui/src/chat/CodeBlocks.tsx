@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 
 import classNames from 'classnames'
 
@@ -82,13 +82,17 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = ({
     CopyButtonProps,
     insertButtonClassName,
 }) => {
+    const rootRef = useRef<HTMLDivElement>(null)
+
     useEffect(() => {
-        const preElements = document.querySelectorAll('pre')
+        const preElements = rootRef.current?.querySelectorAll('pre')
+        if (!preElements?.length) {
+            return
+        }
+
         for (const preElement of preElements) {
             const preText = preElement.textContent
-            // check if preElement has button element
-            const hasCopyButton = preElement.querySelector(`.${styles.container}`)
-            if (!hasCopyButton && preText?.trim()) {
+            if (preText?.trim()) {
                 // We have to wrap the `<pre>` tag in the copy button container, otherwise
                 // the Copy button scrolls along with the code.
                 wrapElement(
@@ -102,7 +106,10 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = ({
                 )
             }
         }
-    }, [CopyButtonProps, copyButtonClassName, displayText, insertButtonClassName])
+    }, [CopyButtonProps, copyButtonClassName, displayText, insertButtonClassName, rootRef])
 
-    return useMemo(() => <div dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(displayText) }} />, [displayText])
+    return useMemo(
+        () => <div ref={rootRef} dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(displayText) }} />,
+        [displayText]
+    )
 }
