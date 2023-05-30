@@ -347,7 +347,7 @@
         },
         {
           "command": "cody.comment.load",
-          "when": "false"<
+          "when": "false"
         },
         {
           "command": "cody.fixup.apply",
