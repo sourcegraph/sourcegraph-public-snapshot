@@ -108,8 +108,9 @@ type GitHubAppResponse struct {
 }
 
 type gitHubAppStateDetails struct {
-	WebhookUUID string `json:"webhookUUID"`
+	WebhookUUID string `json:"webhookUUID,omitempty"`
 	Domain      string `json:"domain"`
+	AppID       int    `json:"app_id,omitempty"`
 }
 
 func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.Handler {
@@ -222,7 +223,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 		var stateDeets gitHubAppStateDetails
 		err := json.Unmarshal(stateValue, &stateDeets)
 		if err != nil {
-			http.Error(w, "Bad request, invalid state", http.StatusInternalServerError)
+			http.Error(w, "Bad request, invalid state", http.StatusBadRequest)
 			return
 		}
 
@@ -274,7 +275,17 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			http.Error(w, fmt.Sprintf("Unexpected error when creating state param: %s", err.Error()), http.StatusInternalServerError)
 			return
 		}
-		cache.Set(state, []byte(strconv.Itoa(id)))
+
+		newStateDetails := gitHubAppStateDetails{
+			Domain: stateDeets.Domain,
+			AppID:  id,
+		}
+		newStateDeets, err := json.Marshal(newStateDetails)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("unexpected error when marshalling state: %s", err.Error()), http.StatusInternalServerError)
+			return
+		}
+		cache.Set(state, newStateDeets)
 
 		redirectURL, err := url.JoinPath(app.AppURL, "installations/new")
 		if err != nil {
@@ -300,16 +311,19 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			http.Redirect(w, req, "/site-admin/github-apps", http.StatusFound)
 			return
 		}
-		idBytes, ok := cache.Get(state)
+
+		setupInfo, ok := cache.Get(state)
 		if !ok {
 			http.Error(w, "Bad request, state query param does not match", http.StatusBadRequest)
 			return
 		}
 		cache.Delete(state)
 
-		id, err := strconv.Atoi(string(idBytes))
+		var stateDeets gitHubAppStateDetails
+		err := json.Unmarshal(setupInfo, &stateDeets)
 		if err != nil {
-			http.Error(w, "Bad request, cannot parse appID", http.StatusBadRequest)
+			http.Error(w, "Bad request, invalid state", http.StatusBadRequest)
+			return
 		}
 
 		installationID, err := strconv.Atoi(instID)
@@ -321,19 +335,25 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 		action := query.Get("setup_action")
 		if action == "install" {
 			ctx := req.Context()
-			app, err := db.GitHubApps().GetByID(ctx, id)
+			app, err := db.GitHubApps().GetByID(ctx, stateDeets.AppID)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("Unexpected error while fetching github app data: %s", err.Error()), http.StatusInternalServerError)
 				return
 			}
 
-			err = db.GitHubApps().Install(ctx, id, installationID)
+			err = db.GitHubApps().Install(ctx, app.ID, installationID)
 			if err != nil {
 				http.Error(w, fmt.Sprintf("Unexpected error while installing github app: %s", err.Error()), http.StatusInternalServerError)
 				return
 			}
 
-			http.Redirect(w, req, fmt.Sprintf("/site-admin/github-apps/%s?installation_id=%d", MarshalGitHubAppID(int64(app.ID)), installationID), http.StatusFound)
+			redirectURL, err := generateRedirectURL(&stateDeets.Domain, installationID, app.ID)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("unexpected error while generating redirect URL: %s", err.Error()), http.StatusInternalServerError)
+				return
+			}
+
+			http.Redirect(w, req, redirectURL, http.StatusFound)
 			return
 		} else {
 			http.Error(w, fmt.Sprintf("Bad request; unsupported setup action: %s", action), http.StatusBadRequest)
@@ -342,6 +362,22 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 	})
 
 	return r
+}
+
+func generateRedirectURL(domain *string, installationID, appID int) (string, error) {
+	parsedDomain, err := parseDomain(domain)
+	if err != nil {
+		return "", errors.Errorf("invalid domain: %s", domain)
+	}
+
+	switch *parsedDomain {
+	case types.ReposDomain:
+		return fmt.Sprintf("/site-admin/github-apps/%s?installation_id=%d", MarshalGitHubAppID(int64(appID)), installationID), nil
+	case types.BatchesDomain:
+		return fmt.Sprintf("/site-admin/batch-changes/github-apps/%s?installation_id=%d", MarshalGitHubAppID(int64(appID)), installationID), nil
+	default:
+		return "", errors.Errorf("unsupported github apps domain: %v", parsedDomain)
+	}
 }
 
 func getAPIUrl(req *http.Request, code string) (string, error) {
