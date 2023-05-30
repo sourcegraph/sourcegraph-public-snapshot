@@ -1,4 +1,4 @@
-package auth
+package permissions
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/permissions"
 	"github.com/stretchr/testify/require"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -37,10 +38,10 @@ func TestPermsSyncerScheduler_scheduleJobs(t *testing.T) {
 		t.Skip()
 	}
 
-	zeroBackoffDuringTest = true
+	permissions.ZeroBackoffDuringTest = true
 	t.Cleanup(func() {
 		conf.Mock(nil)
-		zeroBackoffDuringTest = false
+		permissions.ZeroBackoffDuringTest = false
 	})
 
 	ctx := context.Background()
