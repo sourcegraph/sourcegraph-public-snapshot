@@ -33,13 +33,16 @@ const hasTokens = tokens.vscode !== undefined && tokens.openvsx !== undefined
 // Get today's date for nightly build. Example: 2021-01-01 = 20210101
 const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
 // Set the version number for today's nightly build.
+// The minor number should be the current minor number plus 1.
 // The patch number should be today's date while major and minor should reminds the same as package.json version.
-// Example: 1.0.0 in package.json -> 1.0.today's date -> 1.0.20210101
+// Example: 1.0.0 in package.json -> 1.1.today's date -> 1.1.20210101
 const currentVersion = semver.valid(version)
-const tonightVersion = currentVersion?.replace(/\.\d+$/, `.${today}`)
-
-if (!tonightVersion || !currentVersion) {
-    throw new Error("Could not get the version number for tonight's build.")
+if (!currentVersion) {
+    throw new Error('Cannot get the current version number from package.json')
+}
+const tonightVersion = semver.inc(currentVersion, 'minor')?.replace(/\.\d+$/, `.${today}`)
+if (!tonightVersion || semver.minor(tonightVersion) - semver.minor(currentVersion) !== 1) {
+    throw new Error("Could not populate the current version number for tonight's build.")
 }
 
 export const commands = {
