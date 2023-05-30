@@ -1,0 +1,12 @@
+---
+source: crates/scip-syntax/src/lib.rs
+expression: "String::from_utf8_lossy(buf_writer.buffer())"
+---
+{"_type":"tag","name":"multierror","path":"go-globals.go","language":"go","line":1,"kind":"namespace","scope":null}
+{"_type":"tag","name":"Group","path":"go-globals.go","language":"go","line":7,"kind":"type","scope":"multierror"}
+{"_type":"tag","name":"wg","path":"go-globals.go","language":"go","line":10,"kind":"variable","scope":"multierror.Group"}
+{"_type":"tag","name":"err","path":"go-globals.go","language":"go","line":9,"kind":"variable","scope":"multierror.Group"}
+{"_type":"tag","name":"mutex","path":"go-globals.go","language":"go","line":8,"kind":"variable","scope":"multierror.Group"}
+{"_type":"tag","name":"Wait","path":"go-globals.go","language":"go","line":33,"kind":"method","scope":"multierror.Group"}
+{"_type":"tag","name":"Go","path":"go-globals.go","language":"go","line":17,"kind":"method","scope":"multierror.Group"}
+
