@@ -6,15 +6,15 @@ By following the steps outlined in this guide, you can configure the necessary p
 
 ## Generate Index
 
-You can enhance Cody's understanding of existing code by generating index for your codebases to enable [code graph context](../code_graph_context.md).
+You can enhance Cody's understanding of existing code by generating index for your codebases to enable [code graph context](code_graph_context.md).
 
 ### Sourcegraph Enterprise
 
 To generate an index for your codebase and enable codebase-aware answers for Cody, your site admin must complete the following:
 
-- [Configure Code Graph Context](../code_graph_context.md) for your Sourcegraph instance
-- [Enable Cody for your Sourcegraph instance](../enabling_cody_enterprise.md#step-1-enable-cody-on-your-sourcegraph-instance)
-- [Enable Cody for your Sourcegraph account](../enabling_cody_enterprise.md#turning-cody-off)
+- [Configure Code Graph Context](code_graph_context.md) for your Sourcegraph instance
+- [Enable Cody for your Sourcegraph instance](enabling_cody_enterprise.md#step-1-enable-cody-on-your-sourcegraph-instance)
+- [Enable Cody for your Sourcegraph account](enabling_cody_enterprise.md#turning-cody-off)
 
 ### Sourcegraph.com
 
