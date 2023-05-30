@@ -40,8 +40,13 @@ const currentVersion = semver.valid(version)
 if (!currentVersion) {
     throw new Error('Cannot get the current version number from package.json')
 }
+
 const tonightVersion = semver.inc(currentVersion, 'minor')?.replace(/\.\d+$/, `.${today}`)
-if (!tonightVersion || semver.minor(tonightVersion) - semver.minor(currentVersion) !== 1) {
+if (
+    !tonightVersion ||
+    semver.minor(tonightVersion) - semver.minor(currentVersion) !== 1 ||
+    semver.minor(tonightVersion) % 2 === 0
+) {
     throw new Error("Could not populate the current version number for tonight's build.")
 }
 
@@ -80,6 +85,10 @@ switch (releaseType) {
         childProcess.execSync(commands.openvsx_publish, { stdio: 'inherit' })
         break
     case 'nightly':
+        // if minor is not an odd number, throw an error
+        if (semver.minor(tonightVersion) % 2 === 0) {
+            throw new Error('Cannot publish nightly build with an even minor number: ' + tonightVersion)
+        }
         // check if tonightVersion is a valid semv version number
         if (!tonightVersion || !semver.valid(tonightVersion) || semver.valid(tonightVersion) === currentVersion) {
             throw new Error('Cannot publish nightly build with an invalid version number: ' + tonightVersion)
