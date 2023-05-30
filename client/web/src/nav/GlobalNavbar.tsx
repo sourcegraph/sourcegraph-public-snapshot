@@ -366,7 +366,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
                     {props.authenticatedUser?.siteAdmin && (
                         <NavAction>
-                            <StatusMessagesNavItem />
+                            <StatusMessagesNavItem isSourcegraphApp={isSourcegraphApp} />
                         </NavAction>
                     )}
                     {!props.authenticatedUser ? (
