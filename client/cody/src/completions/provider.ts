@@ -304,6 +304,13 @@ export class InlineCompletionProvider extends CompletionProvider {
             const prefixIndentationWithFirstCompletionLine = this.prefix.slice(prefixLastNewline + 1) + completion[0]
             const startIndent = indentation(prefixIndentationWithFirstCompletionLine)
 
+            // Normalize responses that start with a newline followed by the exact indentation of
+            // the first line.
+            if (lines.length > 1 && lines[0] === '' && indentation(lines[1]) === startIndent) {
+                lines.shift()
+                lines[0] = lines[0].trimStart()
+            }
+
             // If odd indentation is detected (i.e Claude adds a space to every line),
             // we fix it for the whole multiline block first.
             //

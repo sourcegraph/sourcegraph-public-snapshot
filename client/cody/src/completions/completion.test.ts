@@ -556,5 +556,15 @@ describe('Cody completions', () => {
                 \t}"
             `)
         })
+
+        it('normalizes Cody responses starting with an empty line and following the exact same indentation as the start line', async () => {
+            const { completions } = await complete(
+                `function test() {
+                    ${CURSOR_MARKER}`,
+                [createCompletionResponse("\n    console.log('foo')")]
+            )
+
+            expect(completions[0].insertText).toBe("console.log('foo')")
+        })
     })
 })
