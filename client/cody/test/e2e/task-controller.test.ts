@@ -10,7 +10,7 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     // Open the Explorer view from the sidebar
     await sidebarExplorer(page).click()
 
-    // Select the index.html file from the tree view
+    // Open the index.html file from the tree view
     await page.getByRole('treeitem', { name: 'index.html' }).locator('a').dblclick()
 
     // Bring the cody sidebar to the foreground

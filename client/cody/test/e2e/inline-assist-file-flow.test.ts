@@ -10,16 +10,17 @@ test('start a fixup job from inline assist with valid auth', async ({ page, side
     // Open the Explorer view from the sidebar
     await sidebarExplorer(page).click()
 
-    // Select the index.html file from the tree view
+    // Open the index.html file from the tree view
     await page.getByRole('treeitem', { name: 'index.html' }).locator('a').dblclick()
 
     // wait for the editor to load
     await expect(page.getByText('<title>Hello Cody</title>')).toBeVisible()
 
-    // Click on the gutter to highlight the line
+    // Click on the doc and then the gutter to highlight whole line 7
     await page.locator('.view-lines > div:nth-child(11)').click()
-
     await page.getByText('7').click()
+
+    // Click on line number 7 to open the comment thread
     await page.locator('.comment-range-glyph').nth(8).hover()
     await page.locator('.comment-range-glyph').nth(8).click()
 
@@ -32,7 +33,8 @@ test('start a fixup job from inline assist with valid auth', async ({ page, side
     // Click on the submit button with the name Ask Cody
     await page.click('.monaco-text-button')
 
-    // Ensures a new file called index.cody.html is created
+    // Check if a new file called index.cody.html is created
     await expect(page.getByText('index.cody.html')).toBeVisible()
-    // TODO check if content is correct
+
+    // TODO check if content is correct. Currently blocked by ability to highlight in test
 })

@@ -145,12 +145,9 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                             >
                                 Settings
                             </MenuLink>
-                            <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
-                                Saved searches
-                            </MenuLink>
-                            {isSourcegraphApp && (
-                                <MenuLink as={Link} to="/site-admin/repositories">
-                                    Repositories
+                            {!isSourcegraphApp && (
+                                <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
+                                    Saved searches
                                 </MenuLink>
                             )}
                             {isSourcegraphApp && <AppUserConnectDotComAccount />}

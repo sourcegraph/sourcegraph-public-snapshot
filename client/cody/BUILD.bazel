@@ -33,6 +33,7 @@ ts_project(
     srcs = [
         "package.json",
         "src/chat/ChatViewProvider.ts",
+        "src/chat/fastFileFinder.ts",
         "src/chat/protocol.ts",
         "src/chat/recipes.ts",
         "src/chat/utils.ts",
@@ -119,6 +120,7 @@ ts_project(
     name = "cody_tests",
     testonly = True,
     srcs = [
+        "src/chat/fastFileFinder.test.ts",
         "src/chat/utils.test.ts",
         "src/completions/cache.test.ts",
         "src/completions/completion.test.ts",
