@@ -10,29 +10,29 @@ import { mockVSCodeExports } from '../testSetup/vscode'
 import { CodyCompletionItemProvider, inlineCompletionsCache } from '.'
 
 jest.mock('vscode', () => ({
-        ...mockVSCodeExports(),
-        InlineCompletionTriggerKind: {
-            Invoke: 0,
-            Automatic: 1,
+    ...mockVSCodeExports(),
+    InlineCompletionTriggerKind: {
+        Invoke: 0,
+        Automatic: 1,
+    },
+    workspace: {
+        getConfiguration() {
+            return {
+                get(key: string) {
+                    switch (key) {
+                        case 'cody.debug.filter':
+                            return '.*'
+                        default:
+                            return ''
+                    }
+                },
+            }
         },
-        workspace: {
-            getConfiguration() {
-                return {
-                    get(key: string) {
-                        switch (key) {
-                            case 'cody.debug.filter':
-                                return '.*'
-                            default:
-                                return ''
-                        }
-                    },
-                }
-            },
-            onDidChangeTextDocument() {
-                return null
-            },
+        onDidChangeTextDocument() {
+            return null
         },
-    }))
+    },
+}))
 
 function createCompletionResponse(completion: string): CompletionResponse {
     return {
