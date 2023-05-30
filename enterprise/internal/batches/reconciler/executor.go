@@ -12,6 +12,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 
 	"github.com/sourcegraph/log"
 
@@ -714,7 +715,7 @@ func buildCommitOpts(repo *types.Repo, changeset *btypes.Changeset, spec *btypes
 	if repo.ExternalRepo.ServiceType == extsvc.TypeGerrit {
 		opts.Gerrit = &protocol.GerritConfig{
 			ChangeID:     changeset.ExternalID,
-			PushMagicRef: strings.Replace(spec.BaseRef, "refs/heads", "refs/for", 1), //Magical Gerrit ref for pushing changes.
+			PushMagicRef: strings.Replace(gitdomain.EnsureRefPrefix(spec.BaseRef), "refs/heads", "refs/for", 1), //Magical Gerrit ref for pushing changes.
 		}
 	}
 	return opts

@@ -487,7 +487,8 @@ func (c *Changeset) Title() (string, error) {
 	case *adobatches.AnnotatedPullRequest:
 		return m.Title, nil
 	case *gerritbatches.AnnotatedChange:
-		return m.Change.Subject, nil
+		title, _, _ := strings.Cut(m.Change.Subject, "\n")
+		return title, nil
 	default:
 		return "", errors.New("title unknown changeset type")
 	}
