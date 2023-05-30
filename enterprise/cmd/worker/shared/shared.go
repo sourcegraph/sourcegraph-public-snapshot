@@ -45,6 +45,8 @@ var additionalJobs = map[string]job.Job{
 	"executors-metricsserver":       executors.NewMetricsServerJob(),
 	"codemonitors-job":              codemonitors.NewCodeMonitorJob(),
 	"bitbucket-project-permissions": permissions.NewBitbucketProjectPermissionsJob(),
+	"permission-sync-job-cleaner":   permissions.NewPermissionSyncJobCleaner(),
+	"permission-sync-job-scheduler": permissions.NewPermissionSyncJobScheduler(),
 	"export-usage-telemetry":        telemetry.NewTelemetryJob(),
 
 	"codeintel-policies-repository-matcher":       codeintel.NewPoliciesRepositoryMatcherJob(),
@@ -62,9 +64,7 @@ var additionalJobs = map[string]job.Job{
 	"codeintel-sentinel-cve-scanner":              codeintel.NewSentinelCVEScannerJob(),
 	"codeintel-package-filter-applicator":         codeintel.NewPackagesFilterApplicatorJob(),
 
-	"auth-sourcegraph-operator-cleaner":  auth.NewSourcegraphOperatorCleaner(),
-	"auth-permission-sync-job-cleaner":   auth.NewPermissionSyncJobCleaner(),
-	"auth-permission-sync-job-scheduler": auth.NewPermissionSyncJobScheduler(),
+	"auth-sourcegraph-operator-cleaner": auth.NewSourcegraphOperatorCleaner(),
 
 	"repo-embedding-janitor":              repoembeddings.NewRepoEmbeddingJanitorJob(),
 	"repo-embedding-job":                  repoembeddings.NewRepoEmbeddingJob(),
