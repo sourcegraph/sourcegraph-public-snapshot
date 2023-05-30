@@ -2,7 +2,6 @@ package embeddings
 
 import (
 	"context"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -10,10 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-type SchedulerConfig struct {
-	CoolDown time.Duration
-}
 
 func ScheduleRepositoriesForEmbedding(
 	ctx context.Context,
