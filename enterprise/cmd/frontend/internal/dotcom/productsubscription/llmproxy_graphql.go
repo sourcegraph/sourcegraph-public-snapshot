@@ -22,7 +22,7 @@ func (r llmProxyAccessResolver) ChatCompletionsRateLimit(ctx context.Context) (g
 		return nil, nil
 	}
 
-	var rateLimit licensing.LLMProxyRateLimit
+	var rateLimit licensing.CodyGatewayRateLimit
 
 	// Get default access from active license. Call hydrate and access field directly to
 	// avoid parsing license key which is done in (*productLicense).Info(), instead just
@@ -34,7 +34,7 @@ func (r llmProxyAccessResolver) ChatCompletionsRateLimit(ctx context.Context) (g
 	var source graphqlbackend.LLMProxyRateLimitSource
 	if activeLicense != nil {
 		source = graphqlbackend.LLMProxyRateLimitSourcePlan
-		rateLimit = licensing.NewLLMProxyChatRateLimit(licensing.PlanFromTags(activeLicense.LicenseTags), activeLicense.LicenseUserCount, activeLicense.LicenseTags)
+		rateLimit = licensing.NewCodyGatewayChatRateLimit(licensing.PlanFromTags(activeLicense.LicenseTags), activeLicense.LicenseUserCount, activeLicense.LicenseTags)
 	}
 
 	// Apply overrides
@@ -65,7 +65,7 @@ func (r llmProxyAccessResolver) CodeCompletionsRateLimit(ctx context.Context) (g
 		return nil, nil
 	}
 
-	var rateLimit licensing.LLMProxyRateLimit
+	var rateLimit licensing.CodyGatewayRateLimit
 
 	// Get default access from active license. Call hydrate and access field directly to
 	// avoid parsing license key which is done in (*productLicense).Info(), instead just
@@ -77,7 +77,7 @@ func (r llmProxyAccessResolver) CodeCompletionsRateLimit(ctx context.Context) (g
 	var source graphqlbackend.LLMProxyRateLimitSource
 	if activeLicense != nil {
 		source = graphqlbackend.LLMProxyRateLimitSourcePlan
-		rateLimit = licensing.NewLLMProxyCodeRateLimit(licensing.PlanFromTags(activeLicense.LicenseTags), activeLicense.LicenseUserCount, activeLicense.LicenseTags)
+		rateLimit = licensing.NewCodyGatewayCodeRateLimit(licensing.PlanFromTags(activeLicense.LicenseTags), activeLicense.LicenseUserCount, activeLicense.LicenseTags)
 	}
 
 	// Apply overrides
@@ -107,7 +107,7 @@ type llmProxyRateLimitResolver struct {
 	subUUID string
 	feature types.CompletionsFeature
 	source  graphqlbackend.LLMProxyRateLimitSource
-	v       licensing.LLMProxyRateLimit
+	v       licensing.CodyGatewayRateLimit
 }
 
 func (r *llmProxyRateLimitResolver) Source() graphqlbackend.LLMProxyRateLimitSource { return r.source }

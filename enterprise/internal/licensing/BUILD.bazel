@@ -3,12 +3,12 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "licensing",
     srcs = [
+        "codygateway.go",
         "conf.go",
         "data.go",
         "doc.go",
         "features.go",
         "licensing.go",
-        "llmproxy.go",
         "plans.go",
         "tags.go",
         "user_count.go",
@@ -34,8 +34,8 @@ go_test(
     name = "licensing_test",
     timeout = "short",
     srcs = [
+        "codygateway_test.go",
         "features_test.go",
-        "llmproxy_test.go",
         "plans_test.go",
         "tags_test.go",
     ],
