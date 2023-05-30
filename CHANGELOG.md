@@ -52,7 +52,8 @@ All notable changes to Sourcegraph are documented in this file.
 - GitLab code host connections will disable repo-centric repository permission syncs when the authentication provider is set as "oauth". This prevents repo-centric permission sync from getting incorrect data. [#51452](https://github.com/sourcegraph/sourcegraph/pull/51452)
 - Code intelligence background jobs did not correctly use an internal context, causing SCIP data to sometimes be prematurely deleted. [#51591](https://github.com/sourcegraph/sourcegraph/pull/51591)
 - Slow request logs now have the correct trace and span IDs attached if a trace is present on the request. [#51826](https://github.com/sourcegraph/sourcegraph/pull/51826)
-- `id` column of `user_repo_permissions` table was switched to `bigint` to avoid `int` overflow. #[52299](https://github.com/sourcegraph/sourcegraph/pull/52299)
+- `id` column of `user_repo_permissions` table was switched to `bigint` to avoid `int` overflow. [#52299](https://github.com/sourcegraph/sourcegraph/pull/52299)
+- MAU calculation in product analytics and pings use the same condition and UTC at all times. [#52306](https://github.com/sourcegraph/sourcegraph/pull/52306) [#52579](https://github.com/sourcegraph/sourcegraph/pull/52579) [#52581](https://github.com/sourcegraph/sourcegraph/pull/52581)
 
 ### Removed
 
