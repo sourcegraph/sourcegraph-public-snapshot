@@ -45,8 +45,8 @@ oci_image(
     base = "@wolfi_executor_base",
     entrypoint = ["/executor"],
     tars = [
-      ":tar_executor",
-      ":tar_src-cli",
+        ":tar_executor",
+        ":tar_src-cli",
     ],
     user = "sourcegraph",
 )
