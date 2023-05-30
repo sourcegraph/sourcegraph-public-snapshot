@@ -3,7 +3,7 @@ import { Meta, Story } from '@storybook/react'
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
-iport { ReferencesPanel } from './ReferencesPanel'
+import { ReferencesPanel } from './ReferencesPanel'
 import { buildReferencePanelMocks, defaultProps } from './ReferencesPanel.mocks'
 
 import webStyles from '../SourcegraphWebApp.scss'
