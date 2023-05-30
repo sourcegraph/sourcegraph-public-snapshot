@@ -2,10 +2,7 @@ package command_test
 
 import (
 	"context"
-	"io"
-	"net/http"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
@@ -18,13 +15,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes/fake"
-	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
-	fakerest "k8s.io/client-go/rest/fake"
 	k8stesting "k8s.io/client-go/testing"
 	"k8s.io/utils/pointer"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -32,8 +27,9 @@ func TestKubernetesCommand_CreateJob(t *testing.T) {
 	clientset := fake.NewSimpleClientset()
 
 	cmd := &command.KubernetesCommand{
-		Logger:    logtest.Scoped(t),
-		Clientset: clientset,
+		Logger:     logtest.Scoped(t),
+		Clientset:  clientset,
+		Operations: command.NewOperations(&observation.TestContext),
 	}
 
 	job := &batchv1.Job{}
@@ -51,8 +47,9 @@ func TestKubernetesCommand_DeleteJob(t *testing.T) {
 	clientset := fake.NewSimpleClientset()
 
 	cmd := &command.KubernetesCommand{
-		Logger:    logtest.Scoped(t),
-		Clientset: clientset,
+		Logger:     logtest.Scoped(t),
+		Clientset:  clientset,
+		Operations: command.NewOperations(&observation.TestContext),
 	}
 
 	job := &batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: "my-job"}}
@@ -204,8 +201,9 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 			}
 
 			cmd := &command.KubernetesCommand{
-				Logger:    logtest.Scoped(t),
-				Clientset: clientset,
+				Logger:     logtest.Scoped(t),
+				Clientset:  clientset,
+				Operations: command.NewOperations(&observation.TestContext),
 			}
 
 			err := cmd.ReadLogs(
@@ -229,20 +227,6 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 			}
 		})
 	}
-}
-
-func fakeRequest(status int, body string) *rest.Request {
-	fakeClient := &fakerest.RESTClient{
-		Client: fakerest.CreateHTTPClient(func(request *http.Request) (*http.Response, error) {
-			resp := &http.Response{
-				StatusCode: status,
-				Body:       io.NopCloser(strings.NewReader(body)),
-			}
-			return resp, nil
-		}),
-		NegotiatedSerializer: scheme.Codecs.WithoutConversion(),
-	}
-	return fakeClient.Request()
 }
 
 func TestKubernetesCommand_FindPod(t *testing.T) {
@@ -300,8 +284,9 @@ func TestKubernetesCommand_FindPod(t *testing.T) {
 			}
 
 			cmd := &command.KubernetesCommand{
-				Logger:    logtest.Scoped(t),
-				Clientset: clientset,
+				Logger:     logtest.Scoped(t),
+				Clientset:  clientset,
+				Operations: command.NewOperations(&observation.TestContext),
 			}
 
 			_, err := cmd.FindPod(context.Background(), "my-namespace", "my-pod")
@@ -406,8 +391,9 @@ func TestKubernetesCommand_WaitForJobToComplete(t *testing.T) {
 			}
 
 			cmd := &command.KubernetesCommand{
-				Logger:    logtest.Scoped(t),
-				Clientset: clientset,
+				Logger:     logtest.Scoped(t),
+				Clientset:  clientset,
+				Operations: command.NewOperations(&observation.TestContext),
 			}
 
 			err := cmd.WaitForJobToComplete(

@@ -18,6 +18,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -169,7 +170,7 @@ func TestKubernetesRunner_Run(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			clientset := fake.NewSimpleClientset()
-			cmd := &command.KubernetesCommand{Logger: logtest.Scoped(t), Clientset: clientset}
+			cmd := &command.KubernetesCommand{Logger: logtest.Scoped(t), Clientset: clientset, Operations: command.NewOperations(&observation.TestContext)}
 			logger := runner.NewMockLogger()
 			logEntry := runner.NewMockLogEntry()
 			logger.LogEntryFunc.PushReturn(logEntry)
