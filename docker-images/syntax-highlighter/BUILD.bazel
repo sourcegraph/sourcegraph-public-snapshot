@@ -73,6 +73,8 @@ oci_image(
         # See https://github.com/sourcegraph/sourcegraph/issues/2615 for details on
         # what we observed when this was enabled with the default 5s.
         "ROCKET_KEEP_ALIVE": "0",
+        "WORKERS": "4",
+        "QUIET": "true",
     },
     tars = [":tar_syntect_server"],
 )

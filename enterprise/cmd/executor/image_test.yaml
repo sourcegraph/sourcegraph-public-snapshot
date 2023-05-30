@@ -6,6 +6,17 @@ commandTests:
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
+  - name: "docker is runnable"
+    command: "docker"
+  - name: "git is runnable"
+    command: "git"
+    args:
+      - version
+  # TODO: Test currently fails
+  # - name: "src is runnable"
+  #   command: "src"
+  #   args:
+  #     - version
 
   - name: "src-cli binary is runnable"
     command: "/usr/local/bin/src"
@@ -18,3 +29,9 @@ commandTests:
       - -u
     excludedOutput: ["^0"]
     exitCode: 0
+
+# TODO: Test currently fails
+# metadataTest:
+#   envVars:
+#     - key: EXECUTOR_USE_FIRECRACKER
+#       value: false

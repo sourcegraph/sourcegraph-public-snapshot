@@ -1,13 +1,8 @@
 schemaVersion: "2.0.0"
 
 commandTests:
-  - name: "binary is runnable"
-    command: "/symbols"
-    envVars:
-      - key: "SANITY_CHECK"
-        value: "true"
-  - name: "ctags is runnable"
-    command: "universal-ctags"
+  - name: "otelcol-sourcegraph is runnable"
+    command: "otelcol-sourcegraph"
     args:
       - --version
 
@@ -20,12 +15,16 @@ commandTests:
   #   exitCode: 0
 
 fileExistenceTests:
-- name: '/mnt/cache/symbols'
-  path: '/mnt/cache/symbols'
+- name: '/otel-collector'
+  path: '/otel-collector'
   shouldExist: true
-  uid: 100
-  gid: 101
+  uid: 0
+  gid: 0
   permissions: 'drwxr-xr-x'
-- name: 'jansson package'
-  path: 'usr/lib/libjansson.la'
+- name: 'Opentelemetry Configs'
+  path: '/etc/otel-collector/configs/jaeger.yaml'
   shouldExist: true
+  uid: 0
+  gid: 0
+  # TODO: Different permissions
+  # permissions: '-rw-r--r--'

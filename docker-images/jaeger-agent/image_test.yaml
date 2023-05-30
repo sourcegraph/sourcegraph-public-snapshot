@@ -1,0 +1,20 @@
+schemaVersion: "2.0.0"
+
+commandTests:
+  - name: "jaeger-agent is runnable"
+    command: "jaeger-agent"
+    args:
+      - --help
+
+  - name: "not running as root"
+    command: "/usr/bin/id"
+    args:
+      - -u
+    excludedOutput: ["^0"]
+    exitCode: 0
+  - name: "running as jaeger"
+    command: "/usr/bin/id"
+    args:
+      - -u
+    expectedOutput: ["^10001"]
+    exitCode: 0

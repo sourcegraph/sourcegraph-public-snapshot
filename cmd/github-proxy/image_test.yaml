@@ -13,3 +13,8 @@ commandTests:
       - -u
     excludedOutput: ["^0"]
     exitCode: 0
+
+metadataTest:
+  envVars:
+    - key: LOG_REQUEST
+      value: true

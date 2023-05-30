@@ -1,0 +1,43 @@
+schemaVersion: "2.0.0"
+
+commandTests:
+  - name: "postgres is runnable"
+    command: "postgres"
+    args:
+      - --version
+
+  - name: "not running as root"
+    command: "/usr/bin/id"
+    args:
+      - -u
+    excludedOutput: ["^0"]
+    exitCode: 0
+  - name: "postgres user has correct uid"
+    command: "/usr/bin/id"
+    args:
+      - -u
+    expectedOutput: ["^999\n"]
+    exitCode: 0
+  - name: "postgres user has correct gid"
+    command: "/usr/bin/id"
+    args:
+      - -g
+    expectedOutput: ["^999\n"]
+    exitCode: 0
+
+fileExistenceTests:
+- name: '/data/pgdata-12'
+  path: '/data/pgdata-12'
+  shouldExist: true
+  uid: 999
+  gid: 999
+
+metadataTest:
+  envVars:
+    - key: PGDATA
+      value: .+
+      isRegex: true
+    - key: LANG
+      value: 'en_US.utf8'
+    - key: PGHOST
+      value: '/var/run/postgresql'
