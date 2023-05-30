@@ -17,6 +17,7 @@ import { Button, Icon, TextArea } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { useChatStoreState } from '../../stores/chat'
+import { ContextScope } from '../ContextScope/ContextScope'
 
 import styles from './ChatUi.module.scss'
 
@@ -173,16 +174,20 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
     }, [adjustTextAreaHeight, value, width])
 
     return (
-        <TextArea
-            ref={textAreaRef}
-            className={className}
-            value={value}
-            onChange={handleChange}
-            rows={1}
-            autoFocus={false}
-            required={true}
-            onKeyDown={onKeyDown}
-            onInput={onInput}
-        />
+        <>
+            <ContextScope />
+            <div style={{ height: 12 }} />
+            <TextArea
+                ref={textAreaRef}
+                className={className}
+                value={value}
+                onChange={handleChange}
+                rows={1}
+                autoFocus={false}
+                required={true}
+                onKeyDown={onKeyDown}
+                onInput={onInput}
+            />
+        </>
     )
 }
