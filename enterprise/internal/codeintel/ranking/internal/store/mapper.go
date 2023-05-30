@@ -147,7 +147,7 @@ processable_symbols AS (
 		)
 ),
 referenced_symbols AS (
-	SELECT unnest(r.symbol_names) AS symbol_name
+	SELECT DISTINCT unnest(r.symbol_names) AS symbol_name
 	FROM processable_symbols r
 ),
 referenced_definitions AS (
