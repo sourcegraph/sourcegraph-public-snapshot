@@ -1,0 +1,33 @@
+2023.05.26 14:31:06 INFO  Started: Metals version 0.11.12 in workspace '/Users/philipp/dev/sourcegraph' for client Visual Studio Code 1.78.2.[0m
+May 26, 2023 2:31:06 PM org.flywaydb.core.internal.license.VersionPrinter printVersionOnly
+INFO: Flyway Community Edition 9.16.3 by Redgate
+May 26, 2023 2:31:06 PM org.flywaydb.core.internal.license.VersionPrinter printVersion
+INFO: See release notes here: https://rd.gt/416ObMi
+May 26, 2023 2:31:06 PM org.flywaydb.core.internal.license.VersionPrinter printVersion
+INFO: 
+May 26, 2023 2:31:06 PM org.flywaydb.core.internal.database.base.BaseDatabaseType createDatabase
+INFO: Database: jdbc:h2:file:/Users/philipp/dev/sourcegraph/.metals/metals (H2 2.1)
+May 26, 2023 2:31:06 PM org.flywaydb.core.internal.schemahistory.JdbcTableSchemaHistory allAppliedMigrations
+INFO: Schema history table "PUBLIC"."flyway_schema_history" does not exist yet
+May 26, 2023 2:31:06 PM org.flywaydb.core.internal.command.DbValidate validate
+INFO: Successfully validated 4 migrations (execution time 00:00.006s)
+May 26, 2023 2:31:06 PM org.flywaydb.core.internal.schemahistory.JdbcTableSchemaHistory create
+INFO: Creating Schema History table "PUBLIC"."flyway_schema_history" ...
+May 26, 2023 2:31:06 PM org.flywaydb.core.internal.command.DbMigrate migrateGroup
+INFO: Current version of schema "PUBLIC": << Empty Schema >>
+May 26, 2023 2:31:06 PM org.flywaydb.core.internal.command.DbMigrate doMigrateGroup
+INFO: Migrating schema "PUBLIC" to version "1 - Create tables"
+May 26, 2023 2:31:06 PM org.flywaydb.core.internal.command.DbMigrate doMigrateGroup
+INFO: Migrating schema "PUBLIC" to version "2 - Server discovery"
+May 26, 2023 2:31:06 PM org.flywaydb.core.internal.command.DbMigrate doMigrateGroup
+INFO: Migrating schema "PUBLIC" to version "3 - Jar symbols"
+May 26, 2023 2:31:06 PM org.flywaydb.core.internal.command.DbMigrate doMigrateGroup
+INFO: Migrating schema "PUBLIC" to version "4 - Fingerprints"
+May 26, 2023 2:31:06 PM org.flywaydb.core.internal.command.DbMigrate logSummary
+INFO: Successfully applied 4 migrations to schema "PUBLIC", now at version v4 (execution time 00:00.024s)
+2023.05.26 14:31:06 INFO  time: initialize in 0.3s[0m
+2023.05.26 14:31:07 WARN  Build server is not auto-connectable.[0m
+2023.05.26 14:31:07 WARN  the build tool Bazel is not supported by Metals, please open an issue if you would like to contribute to improve the situation.[0m
+2023.05.26 14:47:27 INFO  Shutting down server[0m
+2023.05.26 14:47:27 INFO  shutting down Metals[0m
+2023.05.26 14:47:27 INFO  Exiting server[0m

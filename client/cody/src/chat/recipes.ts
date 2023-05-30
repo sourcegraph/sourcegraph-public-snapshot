@@ -11,6 +11,8 @@ import { GitHistory } from '@sourcegraph/cody-shared/src/chat/recipes/git-log'
 import { ImproveVariableNames } from '@sourcegraph/cody-shared/src/chat/recipes/improve-variable-names'
 import { InlineChat } from '@sourcegraph/cody-shared/src/chat/recipes/inline-chat'
 import { NextQuestions } from '@sourcegraph/cody-shared/src/chat/recipes/next-questions'
+import { NonStop } from '@sourcegraph/cody-shared/src/chat/recipes/non-stop'
+import { OptimizeCode } from '@sourcegraph/cody-shared/src/chat/recipes/optimize-code'
 import { Recipe, RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { TranslateToLanguage } from '@sourcegraph/cody-shared/src/chat/recipes/translate'
 
@@ -46,6 +48,8 @@ function init(): void {
         new NextQuestions(),
         new ContextSearch(),
         new ReleaseNotes(),
+        new NonStop(),
+        new OptimizeCode(),
     ]
 
     for (const recipe of recipes) {

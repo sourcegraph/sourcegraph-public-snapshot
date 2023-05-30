@@ -3,7 +3,7 @@ package com.sourcegraph.cody.chat;
 import com.intellij.ui.JBColor;
 import com.intellij.util.ui.JBInsets;
 import com.intellij.util.ui.UIUtil;
-import com.sourcegraph.cody.completions.Speaker;
+import com.sourcegraph.cody.api.Speaker;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;

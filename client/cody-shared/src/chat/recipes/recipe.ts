@@ -28,6 +28,8 @@ export type RecipeID =
     | 'release-notes'
     | 'inline-chat'
     | 'next-questions'
+    | 'non-stop'
+    | 'optimize-code'
 
 export interface Recipe {
     id: RecipeID
