@@ -18,11 +18,7 @@ To generate an index for your codebase and enable codebase-aware answers for Cod
 
 ### Sourcegraph.com
 
-Code graph context is available instantly for public repositories on Sourcegraph.com that are already embedded. Please refer to the [list of repositories with embeddings](https://docs.sourcegraph.com/cody/embedded-repos) for the latest information.
-
-Code graph context is not available for codebases that are not included in the list. 
-
-However, you can make requests and ask for assistance in the [Sourcegraph Discord](https://discord.gg/8wJF5EdAyA) under the `#cody-embeddings` channel.
+ See the current [list of repositories with code graph context available](https://docs.sourcegraph.com/cody/embedded-repos), and request any that you'd like to add by pinging a Sourcegraph team member in the [Sourcegraph Discord](https://discord.gg/8wJF5EdAyA) under the `#cody-embeddings` channel.
 
 > NOTE: Sourcegraph.com does not support connections to private repositories
 
