@@ -1760,16 +1760,19 @@ END
 
 // makeDateTruncExpression returns an expression that converts the given
 // SQL expression into the start of the containing date container specified
-// by the unit parameter (e.g. day, week, month, or rolling month [prior 30 days]).
+// by the unit parameter (e.g. day, week, month, or rolling month [prior 1 month]).
+// Note: If unit is 'week', the function will truncate to the preceding Sunday.
+// This is because some locales start the week on Sunday, unlike the Postgres default
+// (and many parts of the world) which start the week on Monday.
 func makeDateTruncExpression(unit, expr string) string {
 	if unit == "week" {
-		return fmt.Sprintf(`DATE_TRUNC('%s', TIMEZONE('UTC', %s) + '1 day'::interval) - '1 day'::interval`, unit, expr)
+		return fmt.Sprintf(`TIMEZONE('UTC', (DATE_TRUNC('week', TIMEZONE('UTC', %s) + '1 day'::interval) - '1 day'::interval))`, expr)
 	}
 	if unit == "rolling_month" {
-		return fmt.Sprintf(`DATE_TRUNC('day', TIMEZONE('UTC', %s)) - '30 day'::interval`, expr)
+		return fmt.Sprintf(`TIMEZONE('UTC', (DATE_TRUNC('day', TIMEZONE('UTC', %s)) - '1 month'::interval))`, expr)
 	}
 
-	return fmt.Sprintf(`DATE_TRUNC('%s', TIMEZONE('UTC', %s))`, unit, expr)
+	return fmt.Sprintf(`TIMEZONE('UTC', DATE_TRUNC('%s', TIMEZONE('UTC', %s)))`, unit, expr)
 }
 
 // RequestsByLanguage returns a map of language names to the number of requests of precise support for that language.
