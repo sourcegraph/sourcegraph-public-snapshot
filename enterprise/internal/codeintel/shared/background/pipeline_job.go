@@ -126,7 +126,12 @@ func (j *pipeline) Handle(ctx context.Context) error {
 		j.opts.Metrics.numRecordsAltered.With(prometheus.Labels{"record": name}).Add(float64(count))
 	}
 
-	return nil
+	if numRecordsProcessed == 0 {
+		return nil
+	}
+
+	// There were records to process, so attempt a next batch immediately
+	return goroutine.ErrReinvokeImmediately
 }
 
 //
