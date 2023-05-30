@@ -239,11 +239,8 @@ func (c *cloneQueue) empty() bool {
 }
 
 // NewCloneQueue initializes a new cloneQueue.
-func NewCloneQueue(jobs *list.List) *cloneQueue {
-	cq := cloneQueue{jobs: jobs}
-	cq.cond = sync.NewCond(&cq.cmu)
-
-	return &cq
+func NewCloneQueue(jobs *list.List) *common.Queue[cloneJob] {
+	return common.NewQueue[cloneJob](jobs)
 }
 
 // Server is a gitserver server.
@@ -289,7 +286,7 @@ type Server struct {
 
 	// CloneQueue is a threadsafe queue used by DoBackgroundClones to process incoming clone
 	// requests asynchronously.
-	CloneQueue *cloneQueue
+	CloneQueue *common.Queue[cloneJob]
 
 	// skipCloneForTests is set by tests to avoid clones.
 	skipCloneForTests bool
@@ -653,19 +650,19 @@ func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) {
 
 	for {
 		// Acquire the cond mutex lock and wait for a signal if the queue is empty.
-		s.CloneQueue.cmu.Lock()
-		if s.CloneQueue.empty() {
-			s.CloneQueue.cond.Wait()
+		s.CloneQueue.Mutex.Lock()
+		if s.CloneQueue.Empty() {
+			s.CloneQueue.Cond.Wait()
 		}
 
 		// The queue is not empty and we have a job to process! But don't forget to unlock the cond
 		// mutex here as we don't need to hold the lock beyond this point for now.
-		s.CloneQueue.cmu.Unlock()
+		s.CloneQueue.Mutex.Unlock()
 
 		// Keep popping from the queue until the queue is empty again, in which case we start all
 		// over again from the top.
 		for {
-			job := s.CloneQueue.pop()
+			job := s.CloneQueue.Pop()
 			if job == nil {
 				break
 			}
@@ -2239,7 +2236,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	// We push the cloneJob to a queue and let the producer-consumer pipeline take over from this
 	// point. See definitions of cloneJobProducer and cloneJobConsumer to understand how these jobs
 	// are processed.
-	s.CloneQueue.push(&cloneJob{
+	s.CloneQueue.Push(&cloneJob{
 		repo:      repo,
 		dir:       dir,
 		syncer:    syncer,
