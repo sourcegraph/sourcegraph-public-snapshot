@@ -1,0 +1,60 @@
+fragment RateLimitFields on LLMProxyRateLimit {
+    allowedModels
+    source
+    limit
+    intervalSeconds
+}
+
+fragment LLMProxyAccessFields on LLMProxyAccess {
+    enabled
+    chatCompletionsRateLimit {
+        ...RateLimitFields
+    }
+    codeCompletionsRateLimit {
+        ...RateLimitFields
+    }
+}
+
+fragment ProductSubscriptionState on ProductSubscription {
+    id
+    uuid
+    isArchived
+    llmProxyAccess {
+        ...LLMProxyAccessFields
+    }
+    activeLicense {
+        info {
+            tags
+        }
+    }
+}
+
+# CheckAccessToken returns traits of the product subscription associated with
+# the given access token.
+query CheckAccessToken($token: String!) {
+    dotcom {
+        productSubscriptionByAccessToken(accessToken: $token) {
+            ...ProductSubscriptionState
+        }
+    }
+}
+
+fragment ListProductSubscriptionFields on ProductSubscription {
+    ...ProductSubscriptionState
+    sourcegraphAccessTokens
+}
+
+query ListProductSubscriptions {
+    dotcom {
+        productSubscriptions {
+            totalCount
+            pageInfo {
+                endCursor
+                hasNextPage
+            }
+            nodes {
+                ...ListProductSubscriptionFields
+            }
+        }
+    }
+}

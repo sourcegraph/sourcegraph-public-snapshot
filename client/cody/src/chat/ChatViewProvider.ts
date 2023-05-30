@@ -24,6 +24,7 @@ import { VSCodeEditor } from '../editor/vscode-editor'
 import { logEvent } from '../event-logger'
 import { LocalAppDetector } from '../local-app-detector'
 import { debug } from '../log'
+import { FixupTask } from '../non-stop/FixupTask'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../services/SecretStorageProvider'
 import { TestSupport } from '../test-support'
@@ -239,6 +240,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 void this.webview?.postMessage({ type: 'login', authStatus })
                 break
             }
+            case 'insert':
+                await vscode.commands.executeCommand('cody.inline.insert', message.text)
+                break
             case 'event':
                 this.sendEvent(message.event, message.value)
                 break
@@ -302,14 +306,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 if (lastInteraction) {
                     const displayText = reformatBotMessage(text, responsePrefix)
                     let { text: highlightedDisplayText } = await highlightTokens(displayText || '', filesExist)
-                    if (this.config.experimentalGuardrails) {
-                        // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
-                        highlightedDisplayText = await annotateAttribution(this.guardrails, highlightedDisplayText)
-                    }
+                    // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
+                    highlightedDisplayText = await this.guardrailsAnnotateAttributions(highlightedDisplayText)
                     this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
-                    this.editor.controller.reply(highlightedDisplayText)
+                    this.editor.controllers.inline.reply(highlightedDisplayText)
                 }
                 void this.onCompletionEnd()
+                this.publishEmbeddingsError()
             },
         })
 
@@ -364,6 +367,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.sendTranscript()
         void this.saveTranscriptToChatHistory()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', false)
+        if (!this.codebaseContext.checkEmbeddingsConnection()) {
+            this.publishEmbeddingsError()
+            this.sendErrorToWebview(
+                'Error while establishing embeddings server connection. Please try after sometime! If the issue still persists contact support'
+            )
+            return
+        }
     }
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion'): Promise<void> {
@@ -435,6 +445,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             intentDetector: this.intentDetector,
             codebaseContext: this.codebaseContext,
             responseMultiplexer: this.multiplexer,
+            firstInteraction: this.transcript.isEmpty,
         })
         if (!interaction) {
             return
@@ -478,6 +489,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             intentDetector: this.intentDetector,
             codebaseContext: this.codebaseContext,
             responseMultiplexer: multiplexer,
+            firstInteraction: this.transcript.isEmpty,
         })
         if (!interaction) {
             return
@@ -519,6 +531,25 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 console.error(error, statusCode)
             },
         })
+    }
+
+    private async guardrailsAnnotateAttributions(text: string): Promise<string> {
+        if (!this.config.experimentalGuardrails) {
+            return text
+        }
+
+        const result = await annotateAttribution(this.guardrails, text)
+
+        // Only log telemetry if we did work (ie had to annotate something).
+        if (result.codeBlocks > 0) {
+            const event = {
+                codeBlocks: result.codeBlocks,
+                duration: result.duration,
+            }
+            logEvent('CodyVSCodeExtension:guardrails:annotate', event, event)
+        }
+
+        return result.text
     }
 
     private showTab(tab: string): void {
@@ -631,9 +662,19 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 },
             })
         }
-
         this.disposables.push(vscode.window.onDidChangeTextEditorSelection(() => send()))
         send()
+    }
+
+    /**
+     * Publish embedding connections or results error to webview
+     */
+    private publishEmbeddingsError(): void {
+        const searchErrors = this.codebaseContext.getEmbeddingSearchErrors()
+        if (searchErrors.length) {
+            this.sendErrorToWebview(searchErrors)
+            return
+        }
     }
 
     /**
@@ -772,6 +813,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             return []
         }
         return this.transcript.toChat()
+    }
+
+    public fixupTasksForTesting(testing: TestSupport): FixupTask[] {
+        if (!testing) {
+            console.error('used ForTesting method without test support object')
+            return []
+        }
+        return this.editor.controllers.task.getTasks()
     }
 
     public dispose(): void {

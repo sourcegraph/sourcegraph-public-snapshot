@@ -1,6 +1,7 @@
 package contextdetection
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/executor"
@@ -24,4 +25,8 @@ type ContextDetectionEmbeddingJob struct {
 
 func (j *ContextDetectionEmbeddingJob) RecordID() int {
 	return j.ID
+}
+
+func (j *ContextDetectionEmbeddingJob) RecordUID() string {
+	return strconv.Itoa(j.ID)
 }

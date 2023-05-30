@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -34,6 +35,10 @@ type TriggerJob struct {
 
 func (r *TriggerJob) RecordID() int {
 	return int(r.ID)
+}
+
+func (r *TriggerJob) RecordUID() string {
+	return strconv.FormatInt(int64(r.ID), 10)
 }
 
 const enqueueTriggerQueryFmtStr = `

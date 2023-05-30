@@ -13,6 +13,8 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+- Fix code-intel tooltips for pull request pages on Bitbucket: https://github.com/sourcegraph/sourcegraph/pull/52609
+
 ## Chrome & Firefox 23.4.14.1343, Safari 1.24
 
 - Fix view on Sourcegraph links on GitHub (global navigation update feature enabled): https://github.com/sourcegraph/sourcegraph/pull/50551

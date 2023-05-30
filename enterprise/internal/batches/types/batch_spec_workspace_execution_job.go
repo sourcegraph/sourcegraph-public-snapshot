@@ -1,6 +1,7 @@
 package types
 
 import (
+	"strconv"
 	"strings"
 	"time"
 
@@ -74,3 +75,7 @@ type BatchSpecWorkspaceExecutionJob struct {
 }
 
 func (j *BatchSpecWorkspaceExecutionJob) RecordID() int { return int(j.ID) }
+
+func (j *BatchSpecWorkspaceExecutionJob) RecordUID() string {
+	return strconv.FormatInt(j.ID, 10)
+}

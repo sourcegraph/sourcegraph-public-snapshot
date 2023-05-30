@@ -9,7 +9,11 @@ ts_project(
     testonly = True,
     srcs = [
         "auth.test.ts",
+        "common.ts",
         "helpers.ts",
+        "history.test.ts",
+        "inline-assist.test.ts",
+        "task-controller.test.ts",
     ],
     tsconfig = "//client/cody:tsconfig",
     deps = [

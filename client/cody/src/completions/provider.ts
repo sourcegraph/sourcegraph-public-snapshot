@@ -1,4 +1,5 @@
 import * as anthropic from '@anthropic-ai/sdk'
+import * as vscode from 'vscode'
 
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import {
@@ -101,7 +102,7 @@ export abstract class CompletionProvider {
     public abstract generateCompletions(abortSignal: AbortSignal, n?: number): Promise<Completion[]>
 }
 
-export class MultilineCompletionProvider extends CompletionProvider {
+export class ManualCompletionProvider extends CompletionProvider {
     protected createPromptPrefix(): Message[] {
         // TODO(beyang): escape 'Human:' and 'Assistant:'
         const prefix = this.prefix.trim()
@@ -203,7 +204,7 @@ export class MultilineCompletionProvider extends CompletionProvider {
     }
 }
 
-export class EndOfLineCompletionProvider extends CompletionProvider {
+export class InlineCompletionProvider extends CompletionProvider {
     constructor(
         completionsClient: SourcegraphNodeCompletionsClient,
         promptChars: number,
@@ -213,7 +214,7 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
         suffix: string,
         injectPrefix: string,
         defaultN: number = 1,
-        protected multiline: boolean = false
+        protected multilineMode: null | 'block' | 'statement' = null
     ) {
         super(completionsClient, promptChars, responseTokens, snippets, prefix, suffix, injectPrefix, defaultN)
     }
@@ -261,36 +262,67 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
         return prefixMessages
     }
 
-    private postProcess(completion: string): string {
+    private postProcess(completion: string): null | string {
+        // Extract a few common parts for the processing
+        const currentLinePrefix = this.prefix.slice(this.prefix.lastIndexOf('\n') + 1)
+        const firstNlInSuffix = this.suffix.indexOf('\n') + 1
+        const nextNonEmptyLine =
+            this.suffix
+                .slice(firstNlInSuffix)
+                .split('\n')
+                .find(line => line.trim().length > 0) ?? ''
+
         // Sometimes Claude emits an extra space
+        let hasOddIndentation = false
         if (
             completion.length > 0 &&
             completion.startsWith(' ') &&
             this.prefix.length > 0 &&
-            this.prefix.endsWith(' ')
+            (this.prefix.endsWith(' ') || this.prefix.endsWith('\t'))
         ) {
             completion = completion.slice(1)
+            hasOddIndentation = true
         }
         // Insert the injected prefix back in
         if (this.injectPrefix.length > 0) {
             completion = this.injectPrefix + completion
         }
+
         // Strip out trailing markdown block and trim trailing whitespace
         const endBlockIndex = completion.indexOf('```')
         if (endBlockIndex !== -1) {
-            return completion.slice(0, endBlockIndex).trimEnd()
+            completion = completion.slice(0, endBlockIndex)
         }
 
-        if (this.multiline) {
+        if (this.multilineMode !== null) {
+            const lines = completion.split('\n')
+
             // We use a whitespace counting approach to finding the end of the completion. To find
             // an end, we look for the first line that is below the start scope of the completion (
             // calculated by the number of leading spaces or tabs)
+            const prefixLastNewline = this.prefix.lastIndexOf('\n')
+            const prefixIndentationWithFirstCompletionLine = this.prefix.slice(prefixLastNewline + 1) + completion[0]
+            const startIndent = indentation(prefixIndentationWithFirstCompletionLine)
 
-            const prefixLastLineIndent = this.prefix.length - this.prefix.lastIndexOf('\n') - 1
-            const completionFirstLineIndent = indentation(completion)
-            const startIndent = prefixLastLineIndent + completionFirstLineIndent
+            // Normalize responses that start with a newline followed by the exact indentation of
+            // the first line.
+            if (lines.length > 1 && lines[0] === '' && indentation(lines[1]) === startIndent) {
+                lines.shift()
+                lines[0] = lines[0].trimStart()
+            }
 
-            const lines = completion.split('\n')
+            // If odd indentation is detected (i.e Claude adds a space to every line),
+            // we fix it for the whole multiline block first.
+            //
+            // We can skip the first line as it was already corrected above
+            if (hasOddIndentation) {
+                for (let i = 1; i < lines.length; i++) {
+                    if (indentation(lines[i]) >= startIndent) {
+                        lines[i] = lines[i].replace(/^(\t)* /, '$1')
+                    }
+                }
+            }
+
             let cutOffIndex = lines.length
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i]
@@ -302,7 +334,7 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
                 if (indentation(line) < startIndent) {
                     // When we find the first block below the start indentation, only include it if
                     // it is an end block
-                    if (line.trim() === '}') {
+                    if (line.trim().startsWith('}')) {
                         cutOffIndex = i + 1
                     } else {
                         cutOffIndex = i
@@ -312,6 +344,33 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
             }
 
             completion = lines.slice(0, cutOffIndex).join('\n')
+        }
+
+        // If a completed line matches the next non-empty line of the suffix 1:1, we remove
+        const lines = completion.split('\n')
+        const matchedLineIndex = lines.findIndex((line, index) => {
+            if (index === 0) {
+                line = currentLinePrefix + line
+            }
+            if (line.trim() !== '' && nextNonEmptyLine.trim() !== '') {
+                // We need a trimEnd here because the machine likes to add trailing whitespace.
+                //
+                // TODO: Fix this earlier in the post process run but this needs to be careful not
+                // to alter the meaning
+                return line.trimEnd() === nextNonEmptyLine
+            }
+            return false
+        })
+        if (matchedLineIndex !== -1) {
+            completion = lines.slice(0, matchedLineIndex).join('\n')
+        }
+
+        // Ignore completions that start with a whitespace. These are handled oddly in VS Code
+        // since you can't accept them via tab.
+        //
+        // TODO: Should we trim the response instead?
+        if (completion.trimStart().length !== completion.length) {
+            return null
         }
 
         return completion.trimEnd()
@@ -331,7 +390,8 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
             this.completionsClient,
             {
                 messages: prompt,
-                stopSequences: this.multiline ? [anthropic.HUMAN_PROMPT, '\n\n\n'] : [anthropic.HUMAN_PROMPT, '\n'],
+                stopSequences:
+                    this.multilineMode !== null ? [anthropic.HUMAN_PROMPT, '\n\n\n'] : [anthropic.HUMAN_PROMPT, '\n'],
                 maxTokensToSample: this.responseTokens,
                 temperature: 1,
                 topK: -1,
@@ -340,13 +400,24 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
             n || this.defaultN,
             abortSignal
         )
+
         // Post-process
-        return responses.map(resp => ({
-            prefix,
-            messages: prompt,
-            content: this.postProcess(resp.completion),
-            stopReason: resp.stopReason,
-        }))
+        return responses.flatMap(resp => {
+            const content = this.postProcess(resp.completion)
+
+            if (content === null) {
+                return []
+            }
+
+            return [
+                {
+                    prefix,
+                    messages: prompt,
+                    content,
+                    stopReason: resp.stopReason,
+                },
+            ]
+        })
     }
 }
 
@@ -404,7 +475,22 @@ export function sliceUntilFirstNLinesOfSuffixMatch(suggestion: string, suffix: s
     return suggestion
 }
 
+/**
+ * Counts space or tabs in the beginning of a line.
+ *
+ * Since Cody can sometimes respond in a mix of tab and spaces, this function
+ * normalizes the whitespace first using the currently enabled tabSize option.
+ */
 function indentation(line: string): number {
+    const tabSize = vscode.window.activeTextEditor
+        ? // tabSize is always resolved to a number when accessing the property
+          (vscode.window.activeTextEditor.options.tabSize as number)
+        : 2
+
     const regex = line.match(/^[\t ]*/)
-    return regex ? regex[0].length : 0
+    if (regex) {
+        const whitespace = regex[0]
+        return [...whitespace].reduce((p, c) => p + (c === '\t' ? tabSize : 1), 0)
+    }
+    return 0
 }
