@@ -135,11 +135,7 @@ export const useClient = ({
         setScopeState(scope => ({ ...scope, editor }))
     }, [])
 
-    // TODO(naman): temoprarily set codebase to the first repository in the list until multi-repo context is implemented throughout.
-    // Later we need the following logic:
-    // 1. Find IDs for all the repos, along group them based on if they have embeddings for not.
-    // 2. CodebaseContext will be updated to accept those two groups and then use both embeddings & keyword context APIs to fetch context.
-    // 3. Also update interface for Recipes to accept the new CodyClientScope. (sucks)
+    // TODO(naman): temporarily set codebase to the first repository in the list until multi-repo context is implemented throughout.
     const codebase: string | null = useMemo(() => scope.repositories[0] || null, [scope])
     const codebaseId: Promise<string | null> = useMemo(async () => {
         if (codebase === null) {
@@ -299,21 +295,40 @@ export const useClient = ({
         [chatMessages, messageInProgress]
     )
 
-    return {
-        transcript,
-        chatMessages: returningChatMessages,
-        isMessageInProgress,
-        messageInProgress,
-        setTranscript,
-        scope,
-        setScope,
-        setEditorScope,
-        config,
-        setConfig,
-        executeRecipe,
-        submitMessage,
-        initializeNewChat,
-        editMessage,
-        legacyChatContext,
-    }
+    return useMemo(
+        () => ({
+            transcript,
+            chatMessages: returningChatMessages,
+            isMessageInProgress,
+            messageInProgress,
+            setTranscript,
+            scope,
+            setScope,
+            setEditorScope,
+            config,
+            setConfig,
+            executeRecipe,
+            submitMessage,
+            initializeNewChat,
+            editMessage,
+            legacyChatContext,
+        }),
+        [
+            transcript,
+            returningChatMessages,
+            isMessageInProgress,
+            messageInProgress,
+            setTranscript,
+            scope,
+            setScope,
+            setEditorScope,
+            config,
+            setConfig,
+            executeRecipe,
+            submitMessage,
+            initializeNewChat,
+            editMessage,
+            legacyChatContext,
+        ]
+    )
 }

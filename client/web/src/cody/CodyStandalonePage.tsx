@@ -9,7 +9,7 @@ import { HeroPage } from '../components/HeroPage'
 import { GetReposForCodyResult, GetReposForCodyVariables } from '../graphql-operations'
 
 import { CodyLogo } from './components/CodyLogo'
-import { CodySidebar, useCodySidebar, CodySidebarStoreProvider } from './sidebar'
+import { CodySidebar, useCodySidebar } from './sidebar'
 
 import styles from './CodyStandalonePage.module.scss'
 
@@ -133,9 +133,5 @@ const CodyStandalonePageContext: React.FC<{ repos: GetReposForCodyResult['reposi
 export const CodyStandalonePage: React.FunctionComponent<{}> = () => {
     const { data } = useQuery<GetReposForCodyResult, GetReposForCodyVariables>(REPOS_QUERY, {})
 
-    return (
-        <CodySidebarStoreProvider>
-            <CodyStandalonePageContext repos={data?.repositories?.nodes || []} />
-        </CodySidebarStoreProvider>
-    )
+    return <CodyStandalonePageContext repos={data?.repositories?.nodes || []} />
 }

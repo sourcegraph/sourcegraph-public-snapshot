@@ -30,17 +30,6 @@ export const useIsCodyEnabled = (): IsCodyEnabled => {
     const [editorRecipesEnabled, editorRecipesEnabledStatus] = useFeatureFlag('cody-web-editor-recipes')
     let [allEnabled, allEnabledStatus] = useFeatureFlag('cody-web-all')
 
-    const loaded = useMemo(
-        () =>
-            window.context.sourcegraphAppMode ||
-            (chatEnabledStatus === 'loaded' &&
-                searchEnabledStatus === 'loaded' &&
-                sidebarEnabledStatus === 'loaded' &&
-                editorRecipesEnabledStatus === 'loaded' &&
-                allEnabledStatus === 'loaded'),
-        [chatEnabledStatus, searchEnabledStatus, sidebarEnabledStatus, editorRecipesEnabledStatus, allEnabledStatus]
-    )
-
     if (window.context.sourcegraphAppMode) {
         // If the user is using the Sourcegraph app, all features are enabled
         // as long as the user has a connected Sourcegraph.com account.
@@ -49,14 +38,31 @@ export const useIsCodyEnabled = (): IsCodyEnabled => {
 
     const enabled = useMemo(
         () => ({
-            loaded,
+            loaded:
+                window.context.sourcegraphAppMode ||
+                (chatEnabledStatus === 'loaded' &&
+                    searchEnabledStatus === 'loaded' &&
+                    sidebarEnabledStatus === 'loaded' &&
+                    editorRecipesEnabledStatus === 'loaded' &&
+                    allEnabledStatus === 'loaded'),
             chat: chatEnabled || allEnabled,
             sidebar: sidebarEnabled || allEnabled,
             search: searchEnabled || allEnabled,
             editorRecipes: (editorRecipesEnabled && sidebarEnabled) || allEnabled,
             needsEmailVerification: isEmailVerificationNeeded(),
         }),
-        [chatEnabled, sidebarEnabled, searchEnabled, editorRecipesEnabled, allEnabled, loaded]
+        [
+            chatEnabled,
+            sidebarEnabled,
+            searchEnabled,
+            editorRecipesEnabled,
+            allEnabled,
+            chatEnabledStatus,
+            searchEnabledStatus,
+            sidebarEnabledStatus,
+            editorRecipesEnabledStatus,
+            allEnabledStatus,
+        ]
     )
 
     if (!window.context?.codyEnabled) {

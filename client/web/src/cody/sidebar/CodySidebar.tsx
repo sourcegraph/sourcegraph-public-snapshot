@@ -77,7 +77,7 @@ export const CodySidebar: React.FC<CodySidebarProps> = ({ onClose, titleContent 
         [loadTranscriptFromHistory, setShowHistory]
     )
 
-    if (!loaded || !isCodyEnabled.sidebar) {
+    if (!(loaded && isCodyEnabled.sidebar)) {
         return null
     }
 

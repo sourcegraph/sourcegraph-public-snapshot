@@ -1,4 +1,4 @@
-import React, { useContext, useState, useCallback } from 'react'
+import React, { useContext, useState, useCallback, useMemo } from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 
@@ -47,15 +47,18 @@ export const CodySidebarStoreProvider: React.FC<ICodySidebarStoreProviderProps> 
 
     const codyChatStore = useCodyChat({ onEvent, scope: defaultScope })
 
-    const state = {
-        ...codyChatStore,
-        isSidebarOpen: isSidebarOpen ?? false,
-        inputNeedsFocus,
-        sidebarSize: isSidebarOpen && codyChatStore.isCodyEnabled.sidebar ? sidebarSize : 0,
-        setIsSidebarOpen,
-        setFocusProvided,
-        setSidebarSize,
-    }
+    const state = useMemo<CodySidebarStore>(
+        () => ({
+            ...codyChatStore,
+            isSidebarOpen: isSidebarOpen ?? false,
+            inputNeedsFocus,
+            sidebarSize: isSidebarOpen && codyChatStore.isCodyEnabled.sidebar ? sidebarSize : 0,
+            setIsSidebarOpen,
+            setFocusProvided,
+            setSidebarSize,
+        }),
+        [codyChatStore, isSidebarOpen, sidebarSize, setIsSidebarOpen, setFocusProvided, setSidebarSize, inputNeedsFocus]
+    )
 
     // dirty fix because CodyRecipesWidget is rendered inside a different React DOM tree.
     const global = window as any
