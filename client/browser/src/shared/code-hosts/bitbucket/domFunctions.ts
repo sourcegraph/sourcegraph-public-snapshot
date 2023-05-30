@@ -132,6 +132,10 @@ const newGetDiffLineElementFromLineNumber = (codeView: HTMLElement, line: number
 
 export const newDiffDOMFunctions: DOMFunctions = {
     getCodeElementFromTarget: target => {
+        if (target.closest('.additional-line-content')) {
+            // ignore additional (non-code) content inside a diff line: comments, etc.
+            return null
+        }
         const container = target.closest<HTMLElement>('.diff-line')
         return container
     },
