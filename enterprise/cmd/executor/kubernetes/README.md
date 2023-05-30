@@ -27,13 +27,26 @@ If you run `codeintel`, you may need to tinker with the `EXECUTOR_KUBERNETES_RES
 and `EXECUTOR_MAXIMUM_NUM_JOBS` to ensure that each Job has enough memory to run and that the node does not run out of
 memory.
 
-## Build Image
+## Build Images
 
-Run the following command to build the image.
+To run Executors in Kubernetes you will need to build the `executor-kubernetes` image. If you are running Server Side
+Batch Changes, you will also need to build the `batcheshelper` image.
+
+### Executor
+
+Run the following command to build the executor image.
 
 ```bash
 # Build the image in enterprise/cmd/executor-kubernetes
 IMAGE=executor-kubernetes ../../executor-kubernetes/build.sh
+```
+
+### Batches Helper
+
+If you are running Server Side Batch Changes, you will need to build the batches helper image.
+
+```bash
+IMAGE=sourcegraph/batcheshelper:insiders ../../batcheshelper/build.sh
 ```
 
 ## Secrets
