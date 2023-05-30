@@ -200,44 +200,6 @@ type cloneJob struct {
 	options   *cloneOptions
 }
 
-// cloneQueue is a threadsafe list.List of cloneJobs that functions as a queue in practice.
-type cloneQueue struct {
-	mu   sync.Mutex
-	jobs *list.List
-
-	cmu  sync.Mutex
-	cond *sync.Cond
-}
-
-// push will queue the cloneJob to the end of the queue.
-func (c *cloneQueue) push(cj *cloneJob) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	c.jobs.PushBack(cj)
-	c.cond.Signal()
-}
-
-// pop will return the next cloneJob. If there's no next job available, it returns nil.
-func (c *cloneQueue) pop() *cloneJob {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	next := c.jobs.Front()
-	if next == nil {
-		return nil
-	}
-
-	return c.jobs.Remove(next).(*cloneJob)
-}
-
-func (c *cloneQueue) empty() bool {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	return c.jobs.Len() == 0
-}
-
 // NewCloneQueue initializes a new cloneQueue.
 func NewCloneQueue(jobs *list.List) *common.Queue[cloneJob] {
 	return common.NewQueue[cloneJob](jobs)
