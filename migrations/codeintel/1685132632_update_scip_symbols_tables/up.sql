@@ -17,5 +17,5 @@ CREATE TABLE IF NOT EXISTS codeintel_scip_symbols_lookup (
      scip_name_type text NOT NULL
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS codeintel_scip_symbols_lookup_unique_fuzzy ON codeintel_scip_symbols_lookup USING btree (upload_id, scip_name_type, name);
+CREATE INDEX IF NOT EXISTS codeintel_scip_symbols_lookup_unique_fuzzy ON codeintel_scip_symbols_lookup USING btree (upload_id, scip_name_type, name);
 CREATE UNIQUE INDEX IF NOT EXISTS codeintel_scip_symbols_lookup_unique_precise ON codeintel_scip_symbols_lookup USING btree (upload_id, id);

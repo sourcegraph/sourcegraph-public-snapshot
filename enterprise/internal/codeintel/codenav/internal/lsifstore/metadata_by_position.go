@@ -88,14 +88,19 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 	// by path, which is arbitrary but deterministic in the case that multiple files mark a defining
 	// occurrence of a symbol.
 
-	documents, err := s.scanDocumentData(s.db.Query(ctx, sqlf.Sprintf(
+	query := sqlf.Sprintf(
 		hoverSymbolsQuery,
 		pq.Array(symbolNames),
 		pq.Array([]int{bundleID}),
 		pq.Array(explodedSymbols),
 		pq.Array([]int{bundleID}),
 		bundleID,
-	)))
+	)
+
+	debug := fmt.Sprintf("**********QUERY************* \n query: %s \n variables: %s", query.Query(sqlf.PostgresBindVar), query.Args())
+	fmt.Println(debug)
+
+	documents, err := s.scanDocumentData(s.db.Query(ctx, query))
 	if err != nil {
 		return "", shared.Range{}, false, err
 	}
@@ -179,15 +184,15 @@ matching_prefixes(upload_id, id, prefix, search) AS (
 			mp.search LIKE ssn.name_segment || '%%'
 	)
 ),
-symbol_parts AS (
+symbols_parts AS (
 	SELECT
-		decode(split_part(t.payload, '$', 1), 'base64') AS scheme,
-		decode(split_part(t.payload, '$', 2), 'base64') AS package_manager,
-		decode(split_part(t.payload, '$', 3), 'base64') AS package_name,
-		decode(split_part(t.payload, '$', 4), 'base64') AS package_version,
-		decode(split_part(t.payload, '$', 5), 'base64') AS descriptor
+		convert_from(decode(split_part(t.payload, '$', 1), 'base64'), 'utf-8') AS scheme,
+		convert_from(decode(split_part(t.payload, '$', 2), 'base64'), 'utf-8') AS package_manager,
+		convert_from(decode(split_part(t.payload, '$', 3), 'base64'), 'utf-8') AS package_name,
+		convert_from(decode(split_part(t.payload, '$', 4), 'base64'), 'utf-8') AS package_version,
+		convert_from(decode(split_part(t.payload, '$', 5), 'base64'), 'utf-8') AS descriptor
 	FROM unnest(%s::text[]) AS t(payload)
-)
+),
 -- Consume from the worktable results defined above. This will throw out any rows
 -- that still have a non-empty search field, as this indicates a proper prefix and
 -- therefore a non-match. The remaining rows will all be exact matches.
@@ -202,20 +207,25 @@ matching_symbol_names AS (
 			css.symbol_id,
 			l1.name || ' ' || l2.name || ' ' || l3.name || ' ' || l4.name || ' ' || l5.name AS symbol_name
 		FROM symbols_parts p
-		JOIN codeintel_scip_symbols_lookup l1 ON l1.upload_id = css.upload_id AND l1.scip_name_type = 'SCHEME'          AND l1.name = p.scheme
-		JOIN codeintel_scip_symbols_lookup l2 ON l2.upload_id = css.upload_id AND l2.scip_name_type = 'PACKAGE_MANAGER' AND l2.name = p.package_manager
-		JOIN codeintel_scip_symbols_lookup l3 ON l3.upload_id = css.upload_id AND l3.scip_name_type = 'PACKAGE_NAME'    AND l3.name = p.package_name
-		JOIN codeintel_scip_symbols_lookup l4 ON l4.upload_id = css.upload_id AND l4.scip_name_type = 'PACKAGE_VERSION' AND l4.name = p.package_version
-		JOIN codeintel_scip_symbols_lookup l5 ON l5.upload_id = css.upload_id AND l5.scip_name_type = 'DESCRIPTOR'      AND l5.name = p.descriptor
-		JOIN codeintel_scip_symbols css ON
-			css.scheme_id = l1.id AND
-			css.package_manager_id = l2.id AND
-			css.package_name_id = l3.id AND
-			css.package_version_id = l4.id AND
-			css.descriptor_id = l5.id
+		JOIN codeintel_scip_symbols_lookup l1 ON l1.scip_name_type = 'SCHEME'          AND l1.name = p.scheme
+		JOIN codeintel_scip_symbols_lookup l2 ON l2.scip_name_type = 'PACKAGE_MANAGER' AND l2.name = p.package_manager
+		JOIN codeintel_scip_symbols_lookup l3 ON l3.scip_name_type = 'PACKAGE_NAME'    AND l3.name = p.package_name
+		JOIN codeintel_scip_symbols_lookup l4 ON l4.scip_name_type = 'PACKAGE_VERSION' AND l4.name = p.package_version
+		JOIN codeintel_scip_symbols_lookup l5 ON l5.scip_name_type = 'DESCRIPTOR'      AND l5.name = p.descriptor
+		JOIN codeintel_scip_symbols css
+			ON  css.scheme_id = l1.id
+			AND css.package_manager_id = l2.id
+			AND css.package_name_id = l3.id
+			AND css.package_version_id = l4.id
+			AND css.descriptor_id = l5.id
+			AND css.upload_id = l1.upload_id
+			AND css.upload_id = l2.upload_id
+			AND css.upload_id = l3.upload_id
+			AND css.upload_id = l4.upload_id
+			AND css.upload_id = l5.upload_id
 		WHERE
-			-- pq.Array(uploadIDs)
 			css.upload_id = ANY(%s)
+	)
 )
 `
 

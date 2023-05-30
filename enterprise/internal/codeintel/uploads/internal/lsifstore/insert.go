@@ -182,7 +182,8 @@ CREATE TEMPORARY TABLE t_codeintel_scip_symbols_lookup(
 
 type scipWriter struct {
 	uploadID             int
-	nextID               int
+	nextSymbolLookupID   int
+	nextSymbolID         int
 	db                   *basestore.Store
 	symbolNameInserter   *batch.Inserter
 	symbolInserter       *batch.Inserter
@@ -335,7 +336,6 @@ func (s *scipWriter) flush(ctx context.Context) error {
 	}
 	sort.Strings(symbolNames)
 
-	currentID := 2
 	schemes := make(map[string]int)
 	managers := make(map[string]int)
 	packageNames := make(map[string]int)
@@ -350,35 +350,35 @@ func (s *scipWriter) flush(ctx context.Context) error {
 		}
 
 		if _, ok := schemes[p.Scheme]; !ok {
-			schemes[p.Scheme] = currentID
-			currentID++
+			schemes[p.Scheme] = s.nextSymbolLookupID
+			s.nextSymbolLookupID++
 		}
 
 		if _, ok := managers[p.Package.Manager]; !ok {
-			managers[p.Package.Manager] = currentID
-			currentID++
+			managers[p.Package.Manager] = s.nextSymbolLookupID
+			s.nextSymbolLookupID++
 		}
 
 		if _, ok := packageNames[p.Package.Name]; !ok {
-			packageNames[p.Package.Name] = currentID
-			currentID++
+			packageNames[p.Package.Name] = s.nextSymbolLookupID
+			s.nextSymbolLookupID++
 		}
 
 		if _, ok := packageVersions[p.Package.Version]; !ok {
-			packageVersions[p.Package.Version] = currentID
-			currentID++
+			packageVersions[p.Package.Version] = s.nextSymbolLookupID
+			s.nextSymbolLookupID++
 		}
 
 		desc := scip.DescriptorOnlyFormatter.FormatSymbol(p)
 		if _, ok := descriptors[desc]; !ok {
-			descriptors[desc] = currentID
-			currentID++
+			descriptors[desc] = s.nextSymbolLookupID
+			s.nextSymbolLookupID++
 		}
 
 		descNoSuffix := scip.SyntacticDescriptorOnlyFormatter.FormatSymbol(p)
 		if _, ok := descriptorsNoSuffix[descNoSuffix]; !ok {
-			descriptorsNoSuffix[descNoSuffix] = currentID
-			currentID++
+			descriptorsNoSuffix[descNoSuffix] = s.nextSymbolLookupID
+			s.nextSymbolLookupID++
 		}
 
 	}
@@ -431,11 +431,11 @@ func (s *scipWriter) flush(ctx context.Context) error {
 			descriptorID := descriptors[scip.DescriptorOnlyFormatter.FormatSymbol(p)]
 			descriptorNoDisambiguatorID := descriptors[scip.SyntacticDescriptorOnlyFormatter.FormatSymbol(p)]
 
-			s.nextID++
+			s.nextSymbolID++
 			if err := s.symbolInserter.Insert(
 				ctx,
 				documentLookupIDs[i],
-				s.nextID,
+				s.nextSymbolID,
 				definitionRanges,
 				referenceRanges,
 				implementationRanges,
