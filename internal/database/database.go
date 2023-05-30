@@ -46,6 +46,7 @@ type DB interface {
 	Phabricator() PhabricatorStore
 	RedisKeyValue() RedisKeyValueStore
 	Repos() RepoStore
+	RepoPaths() RepoPathStore
 	RepoCommitsChangelists() RepoCommitsChangelistsStore
 	RepoKVPs() RepoKVPStore
 	RolePermissions() RolePermissionStore
@@ -207,6 +208,10 @@ func (d *db) OutboundWebhookLogs(key encryption.Key) OutboundWebhookLogStore {
 
 func (d *db) RecentContributionSignals() RecentContributionSignalStore {
 	return RecentContributionSignalStoreWith(d.Store)
+}
+
+func (d *db) RepoPaths() RepoPathStore {
+	return &repoPaths{d.Store}
 }
 
 func (d *db) Permissions() PermissionStore {
