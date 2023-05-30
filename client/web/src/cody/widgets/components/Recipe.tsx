@@ -11,9 +11,10 @@ export interface RecipeProps {
     title?: string
     icon?: string
     children?: React.ReactNode
+    onClick?: () => void
 }
 
-export function Recipe({ children, title, icon }: RecipeProps): JSX.Element {
+export function Recipe({ children, title, icon, onClick }: RecipeProps): JSX.Element {
     const mainButtonRef = useRef<HTMLButtonElement>(null)
     const [menuWidth, setMenuWidth] = useState<number | undefined>(undefined)
 
@@ -32,6 +33,7 @@ export function Recipe({ children, title, icon }: RecipeProps): JSX.Element {
                 outline={true}
                 className={classNames(styles.recipeWrapper)}
                 ref={mainButtonRef}
+                onClick={onClick}
             >
                 {icon && <Icon aria-hidden={true} svgPath={icon} />} {title && title}{' '}
                 {children && <Icon aria-hidden={true} svgPath={mdiChevronDown} />}

@@ -6,8 +6,12 @@ import { AskCodyIcon } from '@sourcegraph/cody-ui/src/icons/AskCodyIcon'
 
 import styles from './Recipes.module.scss'
 
-export const Recipes: React.FC<React.PropsWithChildren<{}>> = ({ children }) => (
-    <div className={classNames(styles.recipesWrapper)}>
+export interface RecipesProps {
+    className?: string
+}
+
+export const Recipes: React.FC<React.PropsWithChildren<RecipesProps>> = ({ children, className }) => (
+    <div className={classNames(styles.recipesWrapper, className)}>
         <AskCodyIcon />
         {children}
     </div>
