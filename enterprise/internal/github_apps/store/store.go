@@ -25,6 +25,9 @@ type GitHubAppsStore interface {
 	// Update updates a GitHub App in the database and returns the updated struct.
 	Update(ctx context.Context, id int, app *ghtypes.GitHubApp) (*ghtypes.GitHubApp, error)
 
+	// Install creates a new GitHub App installation in the database.
+	Install(ctx context.Context, id, installationID int) error
+
 	// GetByID retrieves a GitHub App from the database by ID.
 	GetByID(ctx context.Context, id int) (*ghtypes.GitHubApp, error)
 
@@ -182,6 +185,17 @@ func (s *gitHubAppsStore) Update(ctx context.Context, id int, app *ghtypes.GitHu
 		return nil, err
 	}
 	return apps[0], nil
+}
+
+// Install creates a new GitHub App installation in the database.
+func (s *gitHubAppsStore) Install(ctx context.Context, id, installationID int) error {
+	query := sqlf.Sprintf(`
+		INSERT INTO github_app_installs (app_id, installation_id)
+    	VALUES (%s, %s)
+		ON CONFLICT DO NOTHING
+		RETURNING id`,
+		id, installationID)
+	return s.Exec(ctx, query)
 }
 
 func (s *gitHubAppsStore) get(ctx context.Context, where *sqlf.Query) (*ghtypes.GitHubApp, error) {
