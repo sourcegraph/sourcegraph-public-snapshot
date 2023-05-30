@@ -185,17 +185,17 @@ WHERE lsj.finished_at IS NULL OR lsj.finished_at < current_timestamp - (%s * '1 
 `
 
 type EmbeddableRepoOpts struct {
-	// CoolDown is the minimum amount of time that must have passed since the last
+	// MinimumInterval is the minimum amount of time that must have passed since the last
 	// successful embedding job.
-	CoolDown time.Duration
+	MinimumInterval time.Duration
 }
 
 func GetEmbeddableRepoOpts(logger sglog.Logger) EmbeddableRepoOpts {
-	coolDownString := conf.Get().Embeddings.CoolDown
-	d, err := time.ParseDuration(coolDownString)
+	minimumIntervalString := conf.Get().Embeddings.MinimumInterval
+	d, err := time.ParseDuration(minimumIntervalString)
 	if err != nil {
 		d = 24 * time.Hour // default
-		if coolDownString != "" {
+		if minimumIntervalString != "" {
 			logger.Warn(
 				"Could not parse site-config value for embeddings.coolDown. Using default value instead.",
 				sglog.Duration("default", d),
@@ -204,11 +204,11 @@ func GetEmbeddableRepoOpts(logger sglog.Logger) EmbeddableRepoOpts {
 		}
 	}
 
-	return EmbeddableRepoOpts{CoolDown: d}
+	return EmbeddableRepoOpts{MinimumInterval: d}
 }
 
 func (s *repoEmbeddingJobsStore) GetEmbeddableRepos(ctx context.Context, opts EmbeddableRepoOpts) ([]EmbeddableRepo, error) {
-	q := sqlf.Sprintf(getEmbeddableReposFmtStr, opts.CoolDown.Seconds())
+	q := sqlf.Sprintf(getEmbeddableReposFmtStr, opts.MinimumInterval.Seconds())
 	return scanEmbeddableRepos(s.Query(ctx, q))
 }
 
