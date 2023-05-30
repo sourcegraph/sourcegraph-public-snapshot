@@ -32,9 +32,26 @@ func doMain() error {
 	previousPath := flag.String("previousStepPath", "", "The path to the previous step's result file. Defaults to current working directory.")
 	workspaceFilesPath := flag.String("workspaceFiles", "/job/workspace-files", "The path to the workspace files. Defaults to \"/job/workspace-files\".")
 	flag.Usage = usage
-	flag.Parse()
 
-	arguments, err := parseArgs(os.Args[1:])
+	// So golang flags get confused when arguments are mixed in. We need to do a little work to support `args -flags`.
+	var flags []string
+	var programArgs []string
+
+	argLen := len(os.Args[1:])
+	for i := 0; i < argLen; i++ {
+		token := os.Args[i+1]
+		if token[0] == '-' {
+			flags = append(flags, token, os.Args[i+2])
+			i++
+		} else {
+			programArgs = append(programArgs, token)
+		}
+	}
+	if err := flag.CommandLine.Parse(flags); err != nil {
+		return err
+	}
+
+	arguments, err := parseArgs(programArgs)
 	if err != nil {
 		return err
 	}
@@ -55,6 +72,7 @@ func doMain() error {
 	if err != nil {
 		return errors.Wrap(err, "getting working directory")
 	}
+
 	ctx := context.Background()
 	switch arguments.mode {
 	case "pre":
