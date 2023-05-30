@@ -128,7 +128,7 @@ func (r codyGatewayRateLimitResolver) Usage(ctx context.Context) ([]graphqlbacke
 
 	resolvers := make([]graphqlbackend.CodyGatewayUsageDatapoint, 0, len(usage))
 	for _, u := range usage {
-		resolvers = append(resolvers, &llmProxyUsageDatapoint{
+		resolvers = append(resolvers, &codyGatewayUsageDatapoint{
 			date:  u.Date,
 			model: u.Model,
 			count: u.Count,
@@ -138,20 +138,20 @@ func (r codyGatewayRateLimitResolver) Usage(ctx context.Context) ([]graphqlbacke
 	return resolvers, nil
 }
 
-type llmProxyUsageDatapoint struct {
+type codyGatewayUsageDatapoint struct {
 	date  time.Time
 	model string
 	count int
 }
 
-func (r *llmProxyUsageDatapoint) Date() gqlutil.DateTime {
+func (r *codyGatewayUsageDatapoint) Date() gqlutil.DateTime {
 	return gqlutil.DateTime{Time: r.date}
 }
 
-func (r *llmProxyUsageDatapoint) Model() string {
+func (r *codyGatewayUsageDatapoint) Model() string {
 	return r.model
 }
 
-func (r *llmProxyUsageDatapoint) Count() int32 {
+func (r *codyGatewayUsageDatapoint) Count() int32 {
 	return int32(r.count)
 }

@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-func TestLLMProxyAccessResolverRateLimit(t *testing.T) {
+func TestCodeGatewayAccessResolverRateLimit(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
