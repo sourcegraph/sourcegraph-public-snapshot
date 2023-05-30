@@ -272,6 +272,7 @@ func addCodyExtensionTests(pipeline *bk.Pipeline) {
 		":vscode::robot_face: Unit, integration, and E2E tests for the Cody VS Code extension",
 		withPnpmCache(),
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
+		bk.Cmd("client/cody/scripts/download-rg.sh x86_64-unknown-linux"),
 		bk.Cmd("pnpm --filter cody-ai run test:unit"),
 		bk.Cmd("pnpm --filter cody-shared run test"),
 		bk.Cmd("pnpm --filter cody-ai run test:integration"),

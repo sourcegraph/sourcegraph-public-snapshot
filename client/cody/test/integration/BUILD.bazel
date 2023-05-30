@@ -26,6 +26,7 @@ ts_project(
         "chat.test.ts",
         "helpers.ts",
         "index.ts",
+        "local-search.test.ts",
         "main.ts",
         "recipes.test.ts",
         "task-controller.test.ts",
