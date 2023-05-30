@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/ranges"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/symbols"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
@@ -375,7 +376,7 @@ func (s *scipWriter) flush(ctx context.Context) error {
 			s.nextSymbolLookupID++
 		}
 
-		descNoSuffix := scip.SyntacticDescriptorOnlyFormatter.FormatSymbol(p)
+		descNoSuffix := symbols.ReducedDescriptorOnlyFormatter.FormatSymbol(p)
 		if _, ok := descriptorsNoSuffix[descNoSuffix]; !ok {
 			descriptorsNoSuffix[descNoSuffix] = s.nextSymbolLookupID
 			s.nextSymbolLookupID++
@@ -429,7 +430,7 @@ func (s *scipWriter) flush(ctx context.Context) error {
 			packageNameID := packageNames[p.Package.Name]
 			packageVersionID := packageVersions[p.Package.Version]
 			descriptorID := descriptors[scip.DescriptorOnlyFormatter.FormatSymbol(p)]
-			descriptorNoDisambiguatorID := descriptors[scip.SyntacticDescriptorOnlyFormatter.FormatSymbol(p)]
+			descriptorNoDisambiguatorID := descriptors[symbols.ReducedDescriptorOnlyFormatter.FormatSymbol(p)]
 
 			s.nextSymbolID++
 			if err := s.symbolInserter.Insert(

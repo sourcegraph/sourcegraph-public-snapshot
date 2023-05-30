@@ -18,6 +18,7 @@ import (
 	"k8s.io/utils/lru"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/ranges"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/symbols"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/trie"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -649,42 +650,6 @@ func (s *scipWriter) InsertDocument(
 	return nil
 }
 
-// ReducedDescriptorOnlyFormatter formats a reduced descriptor omitting suffixes outside
-// of an explicit allowlist (currently including namespace, type, term, and method) as
-// well as method disambiguators.
-//
-// This formatter is meant to produce a "good enough" representation of the symbol that
-// can used to search for or match against a list of compiler-accurate SCIP symbols. The
-// suffixes in the allowlist are chosen as they are, in most cases, producible given only
-// a syntax tree.
-var ReducedDescriptorOnlyFormatter = ogscip.SymbolFormatter{
-	OnError:               func(err error) error { return err },
-	IncludeScheme:         func(scheme string) bool { return scheme == "local" },
-	IncludePackageManager: func(_ string) bool { return false },
-	IncludePackageName:    func(_ string) bool { return false },
-	IncludePackageVersion: func(_ string) bool { return false },
-	IncludeDescriptor:     func(_ string) bool { return true },
-	IncludeRawDescriptor:  includeReducedRawDescriptor,
-	IncludeDisambiguator:  func(_ string) bool { return false },
-}
-
-var reducedSuffixes = []ogscip.Descriptor_Suffix{
-	ogscip.Descriptor_Namespace,
-	ogscip.Descriptor_Type,
-	ogscip.Descriptor_Term,
-	ogscip.Descriptor_Method,
-}
-
-func includeReducedRawDescriptor(descriptor *ogscip.Descriptor) bool {
-	for _, suffix := range reducedSuffixes {
-		if suffix == descriptor.Suffix {
-			return true
-		}
-	}
-
-	return false
-}
-
 func (s *scipWriter) flush(ctx context.Context) (err error) {
 	documents := s.batch
 	s.batch = nil
@@ -810,7 +775,7 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 			currentID++
 		}
 
-		descNoSuffix := ReducedDescriptorOnlyFormatter.FormatSymbol(p)
+		descNoSuffix := symbols.ReducedDescriptorOnlyFormatter.FormatSymbol(p)
 		if _, ok := descriptorsNoSuffix[descNoSuffix]; !ok {
 			descriptorsNoSuffix[descNoSuffix] = currentID
 			currentID++
@@ -902,7 +867,7 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 			packageNameID := packageNames[p.Package.Name]
 			packageVersionID := packageVersions[p.Package.Version]
 			descriptorID := descriptors[ogscip.DescriptorOnlyFormatter.FormatSymbol(p)]
-			descriptorNoDisambiguatorID := descriptors[ReducedDescriptorOnlyFormatter.FormatSymbol(p)]
+			descriptorNoDisambiguatorID := descriptors[symbols.ReducedDescriptorOnlyFormatter.FormatSymbol(p)]
 
 			// symbolID is null because we are using all the other ones now
 			symbolID, ok := idsBySymbolName[index.SymbolName]
