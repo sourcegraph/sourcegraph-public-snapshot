@@ -384,27 +384,27 @@ commands:
       - enterprise/cmd/embeddings
       - enterprise/internal/embeddings
 
-  llm-proxy:
+  cody-gateway:
     cmd: |
-      .bin/llm-proxy
+      .bin/cody-gateway
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
 
-      go build -gcflags="$GCFLAGS" -o .bin/llm-proxy github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy
-    checkBinary: .bin/llm-proxy
+      go build -gcflags="$GCFLAGS" -o .bin/cody-gateway github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway
+    checkBinary: .bin/cody-gateway
     env:
-      LLM_PROXY_ANTHROPIC_ACCESS_TOKEN: foobar
-      LLM_PROXY_DOTCOM_ACCESS_TOKEN: foobar
-      LLM_PROXY_DOTCOM_API_URL: https://sourcegraph.test:3443/.api/graphql
-      LLM_PROXY_ALLOW_ANONYMOUS: true
-      LLM_PROXY_DIAGNOSTICS_SECRET: sekret
+      CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN: foobar
+      CODY_GATEWAY_DOTCOM_ACCESS_TOKEN: foobar
+      CODY_GATEWAY_DOTCOM_API_URL: https://sourcegraph.test:3443/.api/graphql
+      CODY_GATEWAY_ALLOW_ANONYMOUS: true
+      CODY_GATEWAY_DIAGNOSTICS_SECRET: sekret
       SRC_LOG_LEVEL: dbug
     watch:
       - lib
       - internal
-      - enterprise/cmd/llm-proxy
+      - enterprise/cmd/cody-gateway
 
   searcher:
     cmd: .bin/searcher
@@ -1216,7 +1216,7 @@ commandsets:
       - zoekt-web-0
       - zoekt-web-1
       - blobstore
-      - llm-proxy
+      - cody-gateway
     env:
       SOURCEGRAPHDOTCOM_MODE: true
 
@@ -1485,11 +1485,11 @@ commandsets:
       DISABLE_CODE_INSIGHTS: false
       SOURCEGRAPH_APP: 1
 
-  llm-proxy:
+  cody-gateway:
     checks:
       - redis
     commands:
-      - llm-proxy
+      - cody-gateway
 
 tests:
   # These can be run with `sg test [name]`

@@ -1,16 +1,25 @@
 .container {
     position: relative;
+    overflow: visible;
 }
 
-.copy-button {
+.container > pre {
+    margin-top: 0;
+}
+
+.buttons {
     position: absolute;
     top: 0;
     right: 0;
     visibility: hidden;
-    cursor: pointer;
-    padding: 0.5rem;
+    display: flex;
+    gap: .25rem;
 }
 
-.container:hover .copy-button {
+.container:hover .buttons {
     visibility: visible;
+}
+
+.copy-button, .insert-button {
+    cursor: pointer;
 }

@@ -14,6 +14,7 @@ go_library(
     deps = [
         "//enterprise/internal/codeintel/shared",
         "//enterprise/internal/codeintel/shared/ranges",
+        "//enterprise/internal/codeintel/shared/symbols",
         "//enterprise/internal/codeintel/uploads/shared",
         "//internal/database/basestore",
         "//internal/database/batch",

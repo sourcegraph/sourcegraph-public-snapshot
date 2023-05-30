@@ -118,26 +118,36 @@ func (r *ownResolver) GitBlobOwnership(
 		return nil, err
 	}
 
+	var ownerships []*ownershipResolver
+
 	// Evaluate CODEOWNERS rules.
-	ownerships, err := r.computeCodeowners(ctx, blob)
-	if err != nil {
-		return nil, err
+	if args.IncludeReason(graphqlbackend.CodeownersFileEntry) {
+		codeowners, err := r.computeCodeowners(ctx, blob)
+		if err != nil {
+			return nil, err
+		}
+		ownerships = append(ownerships, codeowners...)
 	}
+
+	repoID := blob.Repository().IDInt32()
 
 	// Retrieve recent contributors signals.
-	repoID := blob.Repository().IDInt32()
-	contribResolvers, err := computeRecentContributorSignals(ctx, r.db, blob.Path(), repoID)
-	if err != nil {
-		return nil, err
+	if args.IncludeReason(graphqlbackend.RecentContributorOwnershipSignal) {
+		contribResolvers, err := computeRecentContributorSignals(ctx, r.db, blob.Path(), repoID)
+		if err != nil {
+			return nil, err
+		}
+		ownerships = append(ownerships, contribResolvers...)
 	}
-	ownerships = append(ownerships, contribResolvers...)
 
 	// Retrieve recent view signals.
-	viewerResolvers, err := computeRecentViewSignals(ctx, r.logger, r.db, blob.Path(), repoID)
-	if err != nil {
-		return nil, err
+	if args.IncludeReason(graphqlbackend.RecentViewOwnershipSignal) {
+		viewerResolvers, err := computeRecentViewSignals(ctx, r.logger, r.db, blob.Path(), repoID)
+		if err != nil {
+			return nil, err
+		}
+		ownerships = append(ownerships, viewerResolvers...)
 	}
-	ownerships = append(ownerships, viewerResolvers...)
 
 	// Retrieve assigned owners.
 	assignedOwners, err := r.computeAssignedOwners(ctx, r.logger, r.db, blob, repoID)

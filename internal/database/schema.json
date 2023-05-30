@@ -7893,6 +7893,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
+        },
+        {
+          "Name": "upload_key",
+          "Index": 8,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
         }
       ],
       "Indexes": [
@@ -7966,10 +7979,10 @@
           "Comment": ""
         },
         {
-          "Name": "document_path",
-          "Index": 3,
-          "TypeName": "text",
-          "IsNullable": false,
+          "Name": "definition_id",
+          "Index": 8,
+          "TypeName": "bigint",
+          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -8016,19 +8029,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
-        },
-        {
-          "Name": "repository_id",
-          "Index": 7,
-          "TypeName": "integer",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         }
       ],
       "Indexes": [
@@ -8043,22 +8043,22 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         },
         {
+          "Name": "codeintel_ranking_path_counts_inputs_graph_key_definition_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_definition_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, definition_id, id) WHERE NOT processed",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "codeintel_ranking_path_counts_inputs_graph_key_id",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "codeintel_ranking_path_counts_inputs_graph_key_repository_id_id",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX codeintel_ranking_path_counts_inputs_graph_key_repository_id_id ON codeintel_ranking_path_counts_inputs USING btree (graph_key, repository_id, id) WHERE NOT processed",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
@@ -20822,20 +20822,7 @@
           "Comment": ""
         },
         {
-          "Name": "llm_proxy_enabled",
-          "Index": 8,
-          "TypeName": "boolean",
-          "IsNullable": false,
-          "Default": "false",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": "Whether or not this subscription has access to LLM-proxy"
-        },
-        {
-          "Name": "llm_proxy_rate_interval_seconds",
+          "Name": "llm_proxy_chat_rate_interval_seconds",
           "Index": 10,
           "TypeName": "integer",
           "IsNullable": true,
@@ -20848,7 +20835,7 @@
           "Comment": "Custom time interval over which the for LLM-proxy rate limit is applied"
         },
         {
-          "Name": "llm_proxy_rate_limit",
+          "Name": "llm_proxy_chat_rate_limit",
           "Index": 9,
           "TypeName": "integer",
           "IsNullable": true,
@@ -20859,6 +20846,71 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "Custom requests per time interval allowed for LLM-proxy"
+        },
+        {
+          "Name": "llm_proxy_chat_rate_limit_allowed_models",
+          "Index": 11,
+          "TypeName": "text[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "llm_proxy_code_rate_interval_seconds",
+          "Index": 13,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "llm_proxy_code_rate_limit",
+          "Index": 12,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "llm_proxy_code_rate_limit_allowed_models",
+          "Index": 14,
+          "TypeName": "text[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "llm_proxy_enabled",
+          "Index": 8,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Whether or not this subscription has access to LLM-proxy"
         },
         {
           "Name": "updated_at",

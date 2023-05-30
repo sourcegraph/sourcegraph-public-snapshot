@@ -796,11 +796,11 @@ func TestSchema_SetUserCompletionsQuota(t *testing.T) {
 		users.UpdateFunc.SetDefaultReturn(nil)
 		db.UsersFunc.SetDefaultReturn(users)
 		var quota *int
-		users.SetCompletionsQuotaFunc.SetDefaultHook(func(ctx context.Context, i1 int32, i2 *int) error {
+		users.SetChatCompletionsQuotaFunc.SetDefaultHook(func(ctx context.Context, i1 int32, i2 *int) error {
 			quota = i2
 			return nil
 		})
-		users.GetCompletionsQuotaFunc.SetDefaultHook(func(ctx context.Context, i int32) (*int, error) {
+		users.GetChatCompletionsQuotaFunc.SetDefaultHook(func(ctx context.Context, i int32) (*int, error) {
 			return quota, nil
 		})
 

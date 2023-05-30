@@ -16,6 +16,7 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/shared/ranges",
+        "//enterprise/internal/codeintel/shared/symbols",
         "//enterprise/internal/codeintel/shared/trie",
         "//enterprise/internal/codeintel/uploads/shared",
         "//internal/database/basestore",
