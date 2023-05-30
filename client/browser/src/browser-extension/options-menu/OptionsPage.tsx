@@ -372,11 +372,10 @@ export const SourcegraphURLForm: React.FunctionComponent<React.PropsWithChildren
                                     value={suggestion}
                                     className="d-flex justify-content-between"
                                 >
-                                    {suggestion}
+                                    <Text className="py-2 pl-3 m-0">{suggestion}</Text>
                                     <Tooltip content="Remove suggestion">
                                         <Button
-                                            className={classNames('my-0 py-0', styles.suggestionRemoveButton)}
-                                            size="sm"
+                                            className={classNames('m-0 py-0 px-2', styles.suggestionRemoveButton)}
                                             onClick={event => {
                                                 // prevent click from becoming option selection
                                                 event.preventDefault()
@@ -390,7 +389,7 @@ export const SourcegraphURLForm: React.FunctionComponent<React.PropsWithChildren
                                                 }
                                             }}
                                         >
-                                            <Icon svgPath={mdiClose} aria-label="Remove suggestion" size="sm" />
+                                            <Icon svgPath={mdiClose} aria-label="Remove suggestion" />
                                         </Button>
                                     </Tooltip>
                                 </ComboboxOption>

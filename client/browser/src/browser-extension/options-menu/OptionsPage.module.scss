@@ -69,18 +69,20 @@
     [data-reach-combobox-option] {
         list-style: none;
         margin: 0;
-        padding: 0.5rem 0.75rem;
+        padding: 0;
         cursor: pointer;
 
         &:hover,
         &[aria-selected='true'] {
-            background: var(--color-bg-2);
+            background: var(--oc-gray-1);
         }
     }
 }
 
 .suggestion-remove-button {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
     &:hover {
-        background: var(--danger-2);
+        background: var(--color-bg-2);
     }
 }
