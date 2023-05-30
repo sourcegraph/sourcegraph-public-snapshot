@@ -107,6 +107,8 @@ func (s GerritSource) CreateChangeset(ctx context.Context, cs *Changeset) (bool,
 // CreateDraftChangeset creates the given changeset on the code host in draft mode.
 func (s GerritSource) CreateDraftChangeset(ctx context.Context, cs *Changeset) (bool, error) {
 	// For Gerrit, the Change is created at `git push` time, so we just API to mark it as WIP.
+	// We assume here, that the change is already made through `git push`, and we are just
+	// setting it to WIP.
 	if err := s.client.SetWIP(ctx, cs.ExternalID); err != nil {
 		if errcode.IsNotFound(err) {
 			return false, ChangesetNotFoundError{Changeset: cs}
