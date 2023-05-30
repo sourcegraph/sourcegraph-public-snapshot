@@ -89,18 +89,19 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID)
 			}
 
 			limitErr = errors.Append(limitErr, err)
+		} else {
+			// indexJobHints, err := r.autoindexSvc.InferIndexJobHintsFromRepositoryStructure(ctx, repoID, commit)
+			// if err != nil {
+			// 	if !errors.As(err, &inference.LimitError{}) {
+			// 		return nil, err
+			// 	}
+
+			// 	limitErr = errors.Append(limitErr, err)
+			// }
+
+			inferredAvailableIndexers = uploadsShared.PopulateInferredAvailableIndexers(result.IndexJobs, blocklist, inferredAvailableIndexers)
+			// inferredAvailableIndexers = uploadsShared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
 		}
-		// indexJobHints, err := r.autoindexSvc.InferIndexJobHintsFromRepositoryStructure(ctx, repoID, commit)
-		// if err != nil {
-		// 	if !errors.As(err, &inference.LimitError{}) {
-		// 		return nil, err
-		// 	}
-
-		// 	limitErr = errors.Append(limitErr, err)
-		// }
-
-		inferredAvailableIndexers = uploadsShared.PopulateInferredAvailableIndexers(result.IndexJobs, blocklist, inferredAvailableIndexers)
-		// inferredAvailableIndexers = uploadsShared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
 	}
 
 	inferredAvailableIndexersResolver := make([]inferredAvailableIndexers2, 0, len(inferredAvailableIndexers))
