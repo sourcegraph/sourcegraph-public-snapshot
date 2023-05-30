@@ -4,15 +4,15 @@ import (
 	"context"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-func DeleteOldEventLogsInPostgres(ctx context.Context, db database.DB) {
+func DeleteOldEventLogsInPostgres(ctx context.Context, logger log.Logger, db database.DB) {
+	logger = logger.Scoped("deleteOldEventLogs", "background job to prune old event logs in database")
+
 	for {
 		// We choose 93 days as the interval to ensure that we have at least the last three months
 		// of logs at all times.
@@ -21,7 +21,7 @@ func DeleteOldEventLogsInPostgres(ctx context.Context, db database.DB) {
 			`DELETE FROM event_logs WHERE "timestamp" < now() - interval '93' day`,
 		)
 		if err != nil {
-			log15.Error("deleting expired rows from event_logs table", "error", err)
+			logger.Error("deleting expired rows from event_logs table", log.Error(err))
 		}
 		time.Sleep(time.Hour)
 	}
