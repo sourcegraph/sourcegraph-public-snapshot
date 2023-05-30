@@ -5,6 +5,7 @@ export interface EditorStore {
     editor: null | {
         filename: string
         repo: string
+        revision: string
         content: string
         view: EditorView
     }

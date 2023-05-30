@@ -9,16 +9,20 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/events"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/anthropic"
 )
 
 const anthropicAPIURL = "https://api.anthropic.com/v1/complete"
 
-func newAnthropicHandler(logger log.Logger, eventLogger events.Logger, accessToken string) http.Handler {
-	return makeUpstreamHandler[anthropicRequest](
+func newAnthropicHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisStore, accessToken string, allowedModels []string) http.Handler {
+	return makeUpstreamHandler(
 		logger,
 		eventLogger,
+		rs,
+		"Anthropic",
 		anthropicAPIURL,
+		allowedModels,
 		func(body *anthropicRequest) {
 			// Null the metadata field, we don't want to allow users to specify it:
 			body.Metadata = nil

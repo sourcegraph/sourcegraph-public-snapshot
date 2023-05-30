@@ -270,7 +270,16 @@ WITH ranked_migration_logs AS (
 		migration_logs.*,
 		ROW_NUMBER() OVER (PARTITION BY version ORDER BY backfilled, started_at DESC) AS row_number
 	FROM migration_logs
-	WHERE schema = %s
+	WHERE
+		schema = %s AND
+		-- Filter out failed reverts, which should have no visible effect but are
+		-- a common occurrence in development. We don't allow CIC in downgrades
+		-- therefore all reverts are applied in a txn.
+		NOT (
+			NOT up AND
+			NOT success AND
+			finished_at IS NOT NULL
+		)
 )
 SELECT
 	schema,
@@ -281,6 +290,25 @@ FROM ranked_migration_logs
 WHERE row_number = 1
 ORDER BY version
 `
+
+func (s *Store) RunDDLStatements(ctx context.Context, statements []string) (err error) {
+	ctx, _, endObservation := s.operations.runDDLStatements.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	for _, statement := range statements {
+		if err := tx.Exec(ctx, sqlf.Sprintf(strings.ReplaceAll(statement, "%", "%%"))); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 // TryLock attempts to create hold an advisory lock. This method returns a function that should be
 // called once the lock should be released. This method accepts the current function's error output

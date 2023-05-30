@@ -1,0 +1,24 @@
+{
+  "created": "2023-05-11 19:08:09.000000000",
+  "updated": "2023-05-16 20:34:52.000000000",
+  "id": "src-cli~master~I52bede3e6dd80b9048924d0416e5d1a7bf49cf5b",
+  "project": "src-cli",
+  "branch": "master",
+  "change_id": "I52bede3e6dd80b9048924d0416e5d1a7bf49cf5b",
+  "topic": "",
+  "subject": "newest change",
+  "status": "MERGED",
+  "reviewed": false,
+  "work_in_progress": false,
+  "hashtags": [
+   "bad",
+   "extremebad",
+   "gerritsux"
+  ],
+  "_number": 328,
+  "owner": {
+   "name": "",
+   "email": "",
+   "username": ""
+  }
+ }

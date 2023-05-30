@@ -46,6 +46,7 @@ type DB interface {
 	Phabricator() PhabricatorStore
 	RedisKeyValue() RedisKeyValueStore
 	Repos() RepoStore
+	RepoCommitsChangelists() RepoCommitsChangelistsStore
 	RepoKVPs() RepoKVPStore
 	RolePermissions() RolePermissionStore
 	Roles() RoleStore
@@ -69,6 +70,7 @@ type DB interface {
 	EventLogsScrapeState() EventLogsScrapeStateStore
 	RecentViewSignal() RecentViewSignalStore
 	AssignedOwners() AssignedOwnersStore
+	OwnSignalConfigurations() SignalConfigurationStore
 
 	WithTransact(context.Context, func(tx DB) error) error
 }
@@ -227,6 +229,10 @@ func (d *db) Repos() RepoStore {
 	return ReposWith(d.logger, d.Store)
 }
 
+func (d *db) RepoCommitsChangelists() RepoCommitsChangelistsStore {
+	return RepoCommitsChangelistsWith(d.logger, d.Store)
+}
+
 func (d *db) RepoKVPs() RepoKVPStore {
 	return &repoKVPStore{d.Store}
 }
@@ -317,4 +323,8 @@ func (d *db) RecentViewSignal() RecentViewSignalStore {
 
 func (d *db) AssignedOwners() AssignedOwnersStore {
 	return AssignedOwnersStoreWith(d.Store, d.logger)
+}
+
+func (d *db) OwnSignalConfigurations() SignalConfigurationStore {
+	return SignalConfigurationStoreWith(d.Store)
 }

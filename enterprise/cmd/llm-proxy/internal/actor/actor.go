@@ -2,27 +2,34 @@ package actor
 
 import (
 	"context"
+	"fmt"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/limiter"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type RateLimit struct {
-	Limit    int
-	Interval time.Duration
+	AllowedModels []string      `json:"allowedModels"`
+	Limit         int           `json:"limit"`
+	Interval      time.Duration `json:"interval"`
 }
 
 func (r *RateLimit) IsValid() bool {
-	return r != nil && r.Interval > 0 && r.Limit > 0
+	return r != nil && r.Interval > 0 && r.Limit > 0 && len(r.AllowedModels) > 0
 }
 
 type Actor struct {
-	// Key is the original key used to identify the actor.
+	// Key is the original key used to identify the actor. It may be a sensitive value
+	// so use with care!
 	//
 	// For example, for product subscriptions this is the license-based access token.
 	Key string `json:"key"`
-	// ID is the identifier for this actor's rate-limiting pool.
+	// ID is the identifier for this actor's rate-limiting pool. It is not a sensitive
+	// value.
 	//
 	// For example, for product subscriptions this is the subscription UUID. For
 	// Sourcegraph.com users, this is the string representation of the user ID.
@@ -33,8 +40,8 @@ type Actor struct {
 	// For example, for product subscriptions it is based on whether the subscription is
 	// archived, if access is enabled, and if any rate limits are set.
 	AccessEnabled bool `json:"accessEnabled"`
-	// RateLimit is the rate limit for LLM-proxy access for this actor.
-	RateLimit RateLimit `json:"rateLimit"`
+	// RateLimits holds the rate limits for LLM-proxy access for this actor.
+	RateLimits map[types.CompletionsFeature]RateLimit `json:"rateLimits"`
 	// LastUpdated indicates when this actor's state was last updated.
 	LastUpdated *time.Time `json:"lastUpdated"`
 	// Source is a reference to the source of this actor's state.
@@ -55,6 +62,19 @@ func FromContext(ctx context.Context) *Actor {
 	return a
 }
 
+// Logger returns a logger that has metadata about the actor attached to it.
+func (a *Actor) Logger(logger log.Logger) log.Logger {
+	if a == nil {
+		return logger
+	}
+	return logger.With(
+		log.String("actor.ID", a.ID),
+		log.String("actor.Source", a.Source.Name()),
+		log.Bool("actor.AccessEnabled", a.AccessEnabled),
+		log.Timep("actor.LastUpdated", a.LastUpdated),
+	)
+}
+
 // Update updates the given actor's state using the actor's originating source
 // if it implements SourceUpdater.
 //
@@ -73,20 +93,29 @@ func WithActor(ctx context.Context, a *Actor) context.Context {
 	return context.WithValue(ctx, actorKey, a)
 }
 
-func (a *Actor) Limiter(redis limiter.RedisStore) limiter.Limiter {
+func (a *Actor) Limiter(redis limiter.RedisStore, feature types.CompletionsFeature) (limiter.Limiter, bool) {
 	if a == nil {
-		return &limiter.StaticLimiter{}
+		// Not logged in, no limit applicable.
+		return nil, false
 	}
-	return updateOnFailureLimiter{Redis: redis, Actor: a}
+	limit, ok := a.RateLimits[feature]
+	if !ok {
+		return nil, false
+	}
+	// The redis store has to use a prefix for the given feature because we need
+	// to rate limit by feature.
+	rs := limiter.NewPrefixRedisStore(fmt.Sprintf("%s:", string(feature)), redis)
+	return updateOnFailureLimiter{Redis: rs, RateLimit: limit, Actor: a}, true
 }
 
 type updateOnFailureLimiter struct {
-	Redis limiter.RedisStore
+	Redis     limiter.RedisStore
+	RateLimit RateLimit
 	*Actor
 }
 
-func (u updateOnFailureLimiter) TryAcquire(ctx context.Context) error {
-	err := (limiter.StaticLimiter{
+func (u updateOnFailureLimiter) TryAcquire(ctx context.Context) (func() error, error) {
+	commit, err := (limiter.StaticLimiter{
 		Identifier: u.ID,
 		Redis:      u.Redis,
 		Limit:      u.RateLimit.Limit,
@@ -99,5 +128,5 @@ func (u updateOnFailureLimiter) TryAcquire(ctx context.Context) error {
 		u.Actor.Update(ctx) // TODO: run this in goroutine+background context maybe?
 	}
 
-	return err
+	return commit, err
 }

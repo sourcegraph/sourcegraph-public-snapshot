@@ -35,7 +35,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/gitserver/server/accesslog",
-        "//cmd/gitserver/server/internal/cacert",
+        "//cmd/gitserver/server/common",
         "//internal/actor",
         "//internal/api",
         "//internal/codeintel/dependencies",
@@ -129,10 +129,10 @@ go_test(
         "requires-network",
     ],
     deps = [
+        "//cmd/gitserver/server/common",
         "//internal/actor",
         "//internal/api",
         "//internal/codeintel/dependencies",
-        "//internal/conf",
         "//internal/conf/reposource",
         "//internal/database",
         "//internal/database/dbtest",

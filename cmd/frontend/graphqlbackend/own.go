@@ -13,7 +13,30 @@ import (
 type ListOwnershipArgs struct {
 	First   *int32
 	After   *string
-	Reasons *[]string
+	Reasons *[]OwnershipReasonType
+}
+
+type OwnershipReasonType string
+
+const (
+	CodeownersFileEntry              OwnershipReasonType = "CODEOWNERS_FILE_ENTRY"
+	RecentContributorOwnershipSignal OwnershipReasonType = "RECENT_CONTRIBUTOR_OWNERSHIP_SIGNAL"
+	RecentViewOwnershipSignal        OwnershipReasonType = "RECENT_VIEW_OWNERSHIP_SIGNAL"
+)
+
+func (args *ListOwnershipArgs) IncludeReason(reason OwnershipReasonType) bool {
+	rs := args.Reasons
+	// When the reasons list is empty, we do not filter - the result
+	// contains all the reasons, so for every reason we return true.
+	if rs == nil || len(*rs) == 0 {
+		return true
+	}
+	for _, r := range *rs {
+		if r == reason {
+			return true
+		}
+	}
+	return false
 }
 
 type OwnResolver interface {
@@ -35,6 +58,10 @@ type OwnResolver interface {
 	AddCodeownersFile(context.Context, *CodeownersFileArgs) (CodeownersIngestedFileResolver, error)
 	UpdateCodeownersFile(context.Context, *CodeownersFileArgs) (CodeownersIngestedFileResolver, error)
 	DeleteCodeownersFiles(context.Context, *DeleteCodeownersFileArgs) (*EmptyResponse, error)
+
+	// config
+	OwnSignalConfigurations(ctx context.Context) ([]SignalConfigurationResolver, error)
+	UpdateOwnSignalConfigurations(ctx context.Context, configurationsArgs UpdateSignalConfigurationsArgs) ([]SignalConfigurationResolver, error)
 }
 
 type OwnershipConnectionResolver interface {
@@ -65,6 +92,7 @@ type OwnershipReasonResolver interface {
 	ToCodeownersFileEntry() (CodeownersFileEntryResolver, bool)
 	ToRecentContributorOwnershipSignal() (RecentContributorOwnershipSignalResolver, bool)
 	ToRecentViewOwnershipSignal() (RecentViewOwnershipSignalResolver, bool)
+	ToAssignedOwner() (AssignedOwnerResolver, bool)
 }
 
 type SimpleOwnReasonResolver interface {
@@ -85,6 +113,11 @@ type RecentContributorOwnershipSignalResolver interface {
 }
 
 type RecentViewOwnershipSignalResolver interface {
+	Title() (string, error)
+	Description() (string, error)
+}
+
+type AssignedOwnerResolver interface {
 	Title() (string, error)
 	Description() (string, error)
 }
@@ -125,4 +158,25 @@ type CodeownersIngestedFileConnectionResolver interface {
 	Nodes(ctx context.Context) ([]CodeownersIngestedFileResolver, error)
 	TotalCount(ctx context.Context) (int32, error)
 	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+}
+
+type SignalConfigurationResolver interface {
+	Name() string
+	Description() string
+	IsEnabled() bool
+	ExcludedRepoPatterns() []string
+}
+
+type UpdateSignalConfigurationsArgs struct {
+	Input UpdateSignalConfigurationsInput
+}
+
+type UpdateSignalConfigurationsInput struct {
+	Configs []SignalConfigurationUpdate
+}
+
+type SignalConfigurationUpdate struct {
+	Name                 string
+	ExcludedRepoPatterns []string
+	Enabled              bool
 }

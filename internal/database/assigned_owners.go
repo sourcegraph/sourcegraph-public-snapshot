@@ -15,6 +15,7 @@ import (
 type AssignedOwnersStore interface {
 	Insert(ctx context.Context, assignedOwnerID int32, repoID api.RepoID, absolutePath string, whoAssignedUserID int32) error
 	ListAssignedOwnersForRepo(ctx context.Context, repoID api.RepoID) ([]*AssignedOwnerSummary, error)
+	DeleteOwner(ctx context.Context, assignedOwnerID int32, repoID api.RepoID, absolutePath string) error
 }
 
 type AssignedOwnerSummary struct {
@@ -47,19 +48,16 @@ const insertAssignedOwnerFmtstr = `
 	ON CONFLICT DO NOTHING
 `
 
+// Insert not only inserts a new assigned owner with provided user ID, repo ID
+// and path, but it ensures that such a path exists in the first place, after
+// which the user is inserted.
 func (s assignedOwnersStore) Insert(ctx context.Context, assignedOwnerID int32, repoID api.RepoID, absolutePath string, whoAssignedUserID int32) error {
+	_, err := ensureRepoPaths(ctx, s.Store, []string{absolutePath}, repoID)
+	if err != nil {
+		return errors.New("cannot insert repo paths")
+	}
 	q := sqlf.Sprintf(insertAssignedOwnerFmtstr, absolutePath, repoID, assignedOwnerID, whoAssignedUserID)
-	result, err := s.ExecResult(ctx, q)
-	if err != nil {
-		return errors.Wrap(err, "executing SQL query")
-	}
-	insertedRows, err := result.RowsAffected()
-	if err != nil {
-		return errors.Wrap(err, "getting rows affected")
-	}
-	if insertedRows == 0 {
-		return notFoundError{errors.Newf("cannot find %q path for repo with ID=%d", absolutePath, repoID)}
-	}
+	_, err = s.ExecResult(ctx, q)
 	return err
 }
 
@@ -73,6 +71,35 @@ const listAssignedOwnersForRepoFmtstr = `
 func (s assignedOwnersStore) ListAssignedOwnersForRepo(ctx context.Context, repoID api.RepoID) ([]*AssignedOwnerSummary, error) {
 	q := sqlf.Sprintf(listAssignedOwnersForRepoFmtstr, repoID)
 	return scanAssignedOwners(s.Query(ctx, q))
+}
+
+const deleteAssignedOwnerFmtstr = `
+	WITH repo_path AS (
+		SELECT id
+		FROM repo_paths
+		WHERE absolute_path = %s AND repo_id = %s
+	)
+	DELETE FROM assigned_owners
+	WHERE owner_user_id = %s AND file_path_id = (
+		SELECT p.id
+		FROM repo_path AS p
+	)
+`
+
+func (s assignedOwnersStore) DeleteOwner(ctx context.Context, assignedOwnerID int32, repoID api.RepoID, absolutePath string) error {
+	q := sqlf.Sprintf(deleteAssignedOwnerFmtstr, absolutePath, repoID, assignedOwnerID)
+	result, err := s.ExecResult(ctx, q)
+	if err != nil {
+		return errors.Wrap(err, "executing SQL query")
+	}
+	deletedRows, err := result.RowsAffected()
+	if err != nil {
+		return errors.Wrap(err, "getting rows affected")
+	}
+	if deletedRows == 0 {
+		return notFoundError{errors.Newf("cannot delete assigned owner with ID=%d for %q path for repo with ID=%d", assignedOwnerID, absolutePath, repoID)}
+	}
+	return err
 }
 
 var scanAssignedOwners = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (*AssignedOwnerSummary, error) {

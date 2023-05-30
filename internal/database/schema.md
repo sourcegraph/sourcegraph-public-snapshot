@@ -71,7 +71,7 @@ Foreign-key constraints:
  assigned_at          | timestamp without time zone |           | not null | now()
 Indexes:
     "assigned_owners_pkey" PRIMARY KEY, btree (id)
-    "assigned_owners_file_path" UNIQUE, btree (file_path_id)
+    "assigned_owners_file_path" btree (file_path_id)
 Foreign-key constraints:
     "assigned_owners_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
     "assigned_owners_owner_user_id_fkey" FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
@@ -961,9 +961,11 @@ Foreign-key constraints:
  id              | integer                  |           | not null | nextval('codeintel_ranking_exports_id_seq'::regclass)
  last_scanned_at | timestamp with time zone |           |          | 
  deleted_at      | timestamp with time zone |           |          | 
+ upload_key      | text                     |           |          | 
 Indexes:
     "codeintel_ranking_exports_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_exports_graph_key_upload_id" UNIQUE, btree (graph_key, upload_id)
+    "codeintel_ranking_exports_graph_key_deleted_at_id" btree (graph_key, deleted_at DESC, id)
     "codeintel_ranking_exports_graph_key_last_scanned_at" btree (graph_key, last_scanned_at NULLS FIRST, id)
 Foreign-key constraints:
     "codeintel_ranking_exports_upload_id_fkey" FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE SET NULL
@@ -979,32 +981,35 @@ Referenced by:
     Column     |  Type   | Collation | Nullable |                             Default                              
 ---------------+---------+-----------+----------+------------------------------------------------------------------
  id            | bigint  |           | not null | nextval('codeintel_ranking_path_counts_inputs_id_seq'::regclass)
- document_path | text    |           | not null | 
  count         | integer |           | not null | 
  graph_key     | text    |           | not null | 
  processed     | boolean |           | not null | false
- repository_id | integer |           | not null | 
+ definition_id | bigint  |           |          | 
 Indexes:
     "codeintel_ranking_path_counts_inputs_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_path_counts_inputs_graph_key_definition_id" btree (graph_key, definition_id, id) WHERE NOT processed
     "codeintel_ranking_path_counts_inputs_graph_key_id" btree (graph_key, id)
-    "codeintel_ranking_path_counts_inputs_graph_key_repository_id_id" btree (graph_key, repository_id, id) WHERE NOT processed
 
 ```
 
 # Table "public.codeintel_ranking_progress"
 ```
-          Column          |           Type           | Collation | Nullable |                        Default                         
---------------------------+--------------------------+-----------+----------+--------------------------------------------------------
- id                       | bigint                   |           | not null | nextval('codeintel_ranking_progress_id_seq'::regclass)
- graph_key                | text                     |           | not null | 
- mappers_started_at       | timestamp with time zone |           | not null | 
- mapper_completed_at      | timestamp with time zone |           |          | 
- seed_mapper_completed_at | timestamp with time zone |           |          | 
- reducer_started_at       | timestamp with time zone |           |          | 
- reducer_completed_at     | timestamp with time zone |           |          | 
- max_definition_id        | bigint                   |           | not null | 
- max_reference_id         | bigint                   |           | not null | 
- max_path_id              | bigint                   |           | not null | 
+             Column              |           Type           | Collation | Nullable |                        Default                         
+---------------------------------+--------------------------+-----------+----------+--------------------------------------------------------
+ id                              | bigint                   |           | not null | nextval('codeintel_ranking_progress_id_seq'::regclass)
+ graph_key                       | text                     |           | not null | 
+ mappers_started_at              | timestamp with time zone |           | not null | 
+ mapper_completed_at             | timestamp with time zone |           |          | 
+ seed_mapper_completed_at        | timestamp with time zone |           |          | 
+ reducer_started_at              | timestamp with time zone |           |          | 
+ reducer_completed_at            | timestamp with time zone |           |          | 
+ num_path_records_total          | integer                  |           |          | 
+ num_reference_records_total     | integer                  |           |          | 
+ num_count_records_total         | integer                  |           |          | 
+ num_path_records_processed      | integer                  |           |          | 
+ num_reference_records_processed | integer                  |           |          | 
+ num_count_records_processed     | integer                  |           |          | 
+ max_export_id                   | bigint                   |           | not null | 
 Indexes:
     "codeintel_ranking_progress_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_progress_graph_key_key" UNIQUE CONSTRAINT, btree (graph_key)
@@ -1639,23 +1644,6 @@ Referenced by:
 
 **rollout**: Rollout only defined when flag_type is rollout. Increments of 0.01%
 
-# Table "public.github_app_installs"
-```
-     Column      |           Type           | Collation | Nullable |                     Default                     
------------------+--------------------------+-----------+----------+-------------------------------------------------
- id              | integer                  |           | not null | nextval('github_app_installs_id_seq'::regclass)
- app_id          | integer                  |           | not null | 
- installation_id | integer                  |           | not null | 
- created_at      | timestamp with time zone |           | not null | now()
-Indexes:
-    "github_app_installs_pkey" PRIMARY KEY, btree (id)
-    "app_id_idx" btree (app_id)
-    "installation_id_idx" btree (installation_id)
-Foreign-key constraints:
-    "github_app_installs_app_id_fkey" FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE
-
-```
-
 # Table "public.github_apps"
 ```
       Column       |           Type           | Collation | Nullable |                 Default                 
@@ -1679,8 +1667,6 @@ Indexes:
     "github_apps_app_id_slug_base_url_unique" UNIQUE, btree (app_id, slug, base_url)
 Foreign-key constraints:
     "github_apps_webhook_id_fkey" FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE SET NULL
-Referenced by:
-    TABLE "github_app_installs" CONSTRAINT "github_app_installs_app_id_fkey" FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE
 
 ```
 
@@ -1893,7 +1879,7 @@ Stores data points for a code insight that do not need to be queried directly, b
  protected                   | boolean                  |           | not null | false
  repository_patterns         | text[]                   |           |          | 
  last_resolved_at            | timestamp with time zone |           |          | 
- lockfile_indexing_enabled   | boolean                  |           | not null | false
+ embeddings_enabled          | boolean                  |           | not null | false
 Indexes:
     "lsif_configuration_policies_pkey" PRIMARY KEY, btree (id)
     "lsif_configuration_policies_repository_id" btree (repository_id)
@@ -1909,8 +1895,6 @@ Triggers:
 **index_intermediate_commits**: If the matching Git object is a branch, setting this value to true will also index all commits on the matching branches. Setting this value to false will only consider the tip of the branch.
 
 **indexing_enabled**: Whether or not this configuration policy affects auto-indexing schedules.
-
-**lockfile_indexing_enabled**: Whether to index the lockfiles in the repositories matched by this policy
 
 **pattern**: A pattern used to match` names of the associated Git object type.
 
@@ -2947,6 +2931,21 @@ Indexes:
 
 ```
 
+# Table "public.own_signal_configurations"
+```
+         Column         |  Type   | Collation | Nullable |                        Default                        
+------------------------+---------+-----------+----------+-------------------------------------------------------
+ id                     | integer |           | not null | nextval('own_signal_configurations_id_seq'::regclass)
+ name                   | text    |           | not null | 
+ description            | text    |           | not null | ''::text
+ excluded_repo_patterns | text[]  |           |          | 
+ enabled                | boolean |           | not null | false
+Indexes:
+    "own_signal_configurations_pkey" PRIMARY KEY, btree (id)
+    "own_signal_configurations_name_uidx" UNIQUE, btree (name)
+
+```
+
 # Table "public.own_signal_recent_contribution"
 ```
         Column        |            Type             | Collation | Nullable |                          Default                           
@@ -3123,18 +3122,22 @@ Foreign-key constraints:
 
 # Table "public.product_subscriptions"
 ```
-             Column              |           Type           | Collation | Nullable | Default 
----------------------------------+--------------------------+-----------+----------+---------
- id                              | uuid                     |           | not null | 
- user_id                         | integer                  |           | not null | 
- billing_subscription_id         | text                     |           |          | 
- created_at                      | timestamp with time zone |           | not null | now()
- updated_at                      | timestamp with time zone |           | not null | now()
- archived_at                     | timestamp with time zone |           |          | 
- account_number                  | text                     |           |          | 
- llm_proxy_enabled               | boolean                  |           | not null | false
- llm_proxy_rate_limit            | integer                  |           |          | 
- llm_proxy_rate_interval_seconds | integer                  |           |          | 
+                  Column                  |           Type           | Collation | Nullable | Default 
+------------------------------------------+--------------------------+-----------+----------+---------
+ id                                       | uuid                     |           | not null | 
+ user_id                                  | integer                  |           | not null | 
+ billing_subscription_id                  | text                     |           |          | 
+ created_at                               | timestamp with time zone |           | not null | now()
+ updated_at                               | timestamp with time zone |           | not null | now()
+ archived_at                              | timestamp with time zone |           |          | 
+ account_number                           | text                     |           |          | 
+ llm_proxy_enabled                        | boolean                  |           | not null | false
+ llm_proxy_chat_rate_limit                | integer                  |           |          | 
+ llm_proxy_chat_rate_interval_seconds     | integer                  |           |          | 
+ llm_proxy_chat_rate_limit_allowed_models | text[]                   |           |          | 
+ llm_proxy_code_rate_limit                | integer                  |           |          | 
+ llm_proxy_code_rate_interval_seconds     | integer                  |           |          | 
+ llm_proxy_code_rate_limit_allowed_models | text[]                   |           |          | 
 Indexes:
     "product_subscriptions_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -3144,11 +3147,11 @@ Referenced by:
 
 ```
 
+**llm_proxy_chat_rate_interval_seconds**: Custom time interval over which the for LLM-proxy rate limit is applied
+
+**llm_proxy_chat_rate_limit**: Custom requests per time interval allowed for LLM-proxy
+
 **llm_proxy_enabled**: Whether or not this subscription has access to LLM-proxy
-
-**llm_proxy_rate_interval_seconds**: Custom time interval over which the for LLM-proxy rate limit is applied
-
-**llm_proxy_rate_limit**: Custom requests per time interval allowed for LLM-proxy
 
 # Table "public.query_runner_state"
 ```
@@ -3285,6 +3288,7 @@ Referenced by:
     TABLE "lsif_index_configuration" CONSTRAINT "lsif_index_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "lsif_retention_configuration" CONSTRAINT "lsif_retention_configuration_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "permission_sync_jobs" CONSTRAINT "permission_sync_jobs_repository_id_fkey" FOREIGN KEY (repository_id) REFERENCES repo(id) ON DELETE CASCADE
+    TABLE "repo_commits_changelists" CONSTRAINT "repo_commits_changelists_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "repo_kvps" CONSTRAINT "repo_kvps_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
     TABLE "repo_paths" CONSTRAINT "repo_paths_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
     TABLE "search_context_repos" CONSTRAINT "search_context_repos_repo_id_fk" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
@@ -3300,6 +3304,23 @@ Triggers:
     trig_recalc_repo_statistics_on_repo_insert AFTER INSERT ON repo REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_insert()
     trig_recalc_repo_statistics_on_repo_update AFTER UPDATE ON repo REFERENCING OLD TABLE AS oldtab NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION recalc_repo_statistics_on_repo_update()
     trigger_gitserver_repo_insert AFTER INSERT ON repo FOR EACH ROW EXECUTE FUNCTION func_insert_gitserver_repo()
+
+```
+
+# Table "public.repo_commits_changelists"
+```
+         Column         |           Type           | Collation | Nullable |                       Default                        
+------------------------+--------------------------+-----------+----------+------------------------------------------------------
+ id                     | integer                  |           | not null | nextval('repo_commits_changelists_id_seq'::regclass)
+ repo_id                | integer                  |           | not null | 
+ commit_sha             | bytea                    |           | not null | 
+ perforce_changelist_id | integer                  |           | not null | 
+ created_at             | timestamp with time zone |           | not null | now()
+Indexes:
+    "repo_commits_changelists_pkey" PRIMARY KEY, btree (id)
+    "repo_id_perforce_changelist_id_unique" UNIQUE, btree (repo_id, perforce_changelist_id)
+Foreign-key constraints:
+    "repo_commits_changelists_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 
 ```
 
@@ -3867,7 +3888,7 @@ Foreign-key constraints:
 ```
           Column          |           Type           | Collation | Nullable |                      Default                      
 --------------------------+--------------------------+-----------+----------+---------------------------------------------------
- id                       | integer                  |           | not null | nextval('user_repo_permissions_id_seq'::regclass)
+ id                       | bigint                   |           | not null | nextval('user_repo_permissions_id_seq'::regclass)
  user_id                  | integer                  |           |          | 
  repo_id                  | integer                  |           | not null | 
  user_external_account_id | integer                  |           |          | 
@@ -4270,6 +4291,39 @@ Foreign-key constraints:
   WHERE ((changeset_specs.external_id IS NULL) AND (repo.deleted_at IS NULL));
 ```
 
+# View "public.codeintel_configuration_policies"
+
+## View query:
+
+```sql
+ SELECT lsif_configuration_policies.id,
+    lsif_configuration_policies.repository_id,
+    lsif_configuration_policies.name,
+    lsif_configuration_policies.type,
+    lsif_configuration_policies.pattern,
+    lsif_configuration_policies.retention_enabled,
+    lsif_configuration_policies.retention_duration_hours,
+    lsif_configuration_policies.retain_intermediate_commits,
+    lsif_configuration_policies.indexing_enabled,
+    lsif_configuration_policies.index_commit_max_age_hours,
+    lsif_configuration_policies.index_intermediate_commits,
+    lsif_configuration_policies.protected,
+    lsif_configuration_policies.repository_patterns,
+    lsif_configuration_policies.last_resolved_at,
+    lsif_configuration_policies.embeddings_enabled
+   FROM lsif_configuration_policies;
+```
+
+# View "public.codeintel_configuration_policies_repository_pattern_lookup"
+
+## View query:
+
+```sql
+ SELECT lsif_configuration_policies_repository_pattern_lookup.policy_id,
+    lsif_configuration_policies_repository_pattern_lookup.repo_id
+   FROM lsif_configuration_policies_repository_pattern_lookup;
+```
+
 # View "public.external_service_sync_jobs_with_next_sync_at"
 
 ## View query:
@@ -4465,6 +4519,32 @@ Foreign-key constraints:
            FROM outbound_webhook_event_types
           WHERE (outbound_webhook_event_types.outbound_webhook_id = outbound_webhooks.id))) AS event_types
    FROM outbound_webhooks;
+```
+
+# View "public.own_background_jobs_config_aware"
+
+## View query:
+
+```sql
+ SELECT obj.id,
+    obj.state,
+    obj.failure_message,
+    obj.queued_at,
+    obj.started_at,
+    obj.finished_at,
+    obj.process_after,
+    obj.num_resets,
+    obj.num_failures,
+    obj.last_heartbeat_at,
+    obj.execution_logs,
+    obj.worker_hostname,
+    obj.cancel,
+    obj.repo_id,
+    obj.job_type,
+    osc.name AS config_name
+   FROM (own_background_jobs obj
+     JOIN own_signal_configurations osc ON ((obj.job_type = osc.id)))
+  WHERE (osc.enabled IS TRUE);
 ```
 
 # View "public.reconciler_changesets"

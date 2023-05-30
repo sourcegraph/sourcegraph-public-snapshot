@@ -17,6 +17,9 @@ import (
 type Store interface {
 	WithTransaction(ctx context.Context, f func(tx Store) error) error
 
+	// Metadata
+	Summaries(ctx context.Context) ([]shared.Summary, error)
+
 	// Retrieval
 	GetStarRank(ctx context.Context, repoName api.RepoName) (float64, error)
 	GetDocumentRanks(ctx context.Context, repoName api.RepoName) (map[string]float64, bool, error)
@@ -32,7 +35,7 @@ type Store interface {
 	// Exported data (raw)
 	InsertDefinitionsForRanking(ctx context.Context, graphKey string, definitions chan shared.RankingDefinitions) error
 	InsertReferencesForRanking(ctx context.Context, graphKey string, batchSize int, exportedUploadID int, references chan string) error
-	InsertInitialPathRanks(ctx context.Context, exportedUploadID int, documentPaths chan string, batchSize int, graphKey string) error
+	InsertInitialPathRanks(ctx context.Context, exportedUploadID int, documentPaths []string, batchSize int, graphKey string) error
 
 	// Coordinates mapper+reducer phases
 	Coordinate(ctx context.Context, derivativeGraphKey string) error

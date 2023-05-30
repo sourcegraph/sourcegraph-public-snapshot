@@ -14,6 +14,7 @@ type RootResolver interface {
 	PoliciesServiceResolver
 	SentinelServiceResolver
 	UploadsServiceResolver
+	RankingServiceResolver
 }
 
 type Resolver struct {
@@ -22,6 +23,7 @@ type Resolver struct {
 	policiesRootResolver     PoliciesServiceResolver
 	uploadsRootResolver      UploadsServiceResolver
 	sentinelRootResolver     SentinelServiceResolver
+	rankingServiceResolver   RankingServiceResolver
 }
 
 func NewCodeIntelResolver(
@@ -30,6 +32,7 @@ func NewCodeIntelResolver(
 	policiesRootResolver PoliciesServiceResolver,
 	uploadsRootResolver UploadsServiceResolver,
 	sentinelRootResolver SentinelServiceResolver,
+	rankingServiceResolver RankingServiceResolver,
 ) *Resolver {
 	return &Resolver{
 		autoIndexingRootResolver: autoIndexingRootResolver,
@@ -37,6 +40,7 @@ func NewCodeIntelResolver(
 		policiesRootResolver:     policiesRootResolver,
 		uploadsRootResolver:      uploadsRootResolver,
 		sentinelRootResolver:     sentinelRootResolver,
+		rankingServiceResolver:   rankingServiceResolver,
 	}
 }
 
@@ -145,7 +149,7 @@ func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *QueueAut
 	return r.autoIndexingRootResolver.QueueAutoIndexJobsForRepo(ctx, args)
 }
 
-func (r *Resolver) InferAutoIndexJobsForRepo(ctx context.Context, args *InferAutoIndexJobsForRepoArgs) (_ []AutoIndexJobDescriptionResolver, err error) {
+func (r *Resolver) InferAutoIndexJobsForRepo(ctx context.Context, args *InferAutoIndexJobsForRepoArgs) (_ InferAutoIndexJobsResultResolver, err error) {
 	return r.autoIndexingRootResolver.InferAutoIndexJobsForRepo(ctx, args)
 }
 
@@ -203,4 +207,8 @@ func (r *Resolver) UpdateCodeIntelligenceInferenceScript(ctx context.Context, ar
 
 func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *PreviewGitObjectFilterArgs) (_ GitObjectFilterPreviewResolver, err error) {
 	return r.policiesRootResolver.PreviewGitObjectFilter(ctx, id, args)
+}
+
+func (r *Resolver) RankingSummary(ctx context.Context) (_ []RankingSummaryResolver, err error) {
+	return r.rankingServiceResolver.RankingSummary(ctx)
 }

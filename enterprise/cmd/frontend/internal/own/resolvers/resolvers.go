@@ -4,10 +4,14 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
+	owntypes "github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 
 	"github.com/sourcegraph/log"
@@ -51,6 +55,8 @@ var (
 	_ graphqlbackend.SimpleOwnReasonResolver                  = &recentContributorOwnershipSignal{}
 	_ graphqlbackend.RecentViewOwnershipSignalResolver        = &recentViewOwnershipSignal{}
 	_ graphqlbackend.SimpleOwnReasonResolver                  = &recentViewOwnershipSignal{}
+	_ graphqlbackend.AssignedOwnerResolver                    = &assignedOwner{}
+	_ graphqlbackend.SimpleOwnReasonResolver                  = &assignedOwner{}
 	_ graphqlbackend.SimpleOwnReasonResolver                  = &codeownersFileEntryResolver{}
 )
 
@@ -92,9 +98,15 @@ func (o *ownershipReasonResolver) ToRecentViewOwnershipSignal() (res graphqlback
 	return
 }
 
+func (o *ownershipReasonResolver) ToAssignedOwner() (res graphqlbackend.AssignedOwnerResolver, ok bool) {
+	res, ok = o.resolver.(*assignedOwner)
+	return
+}
+
 func (o *ownershipReasonResolver) makesAnOwner() bool {
-	_, ok := o.resolver.(*codeownersFileEntryResolver)
-	return ok
+	_, makesAnOwner := o.resolver.(*codeownersFileEntryResolver)
+	_, makesAnAssignedOwner := o.resolver.(*assignedOwner)
+	return makesAnOwner || makesAnAssignedOwner
 }
 
 func (r *ownResolver) GitBlobOwnership(
@@ -106,26 +118,43 @@ func (r *ownResolver) GitBlobOwnership(
 		return nil, err
 	}
 
+	var ownerships []*ownershipResolver
+
 	// Evaluate CODEOWNERS rules.
-	ownerships, err := r.computeCodeowners(ctx, blob)
-	if err != nil {
-		return nil, err
+	if args.IncludeReason(graphqlbackend.CodeownersFileEntry) {
+		codeowners, err := r.computeCodeowners(ctx, blob)
+		if err != nil {
+			return nil, err
+		}
+		ownerships = append(ownerships, codeowners...)
 	}
+
+	repoID := blob.Repository().IDInt32()
 
 	// Retrieve recent contributors signals.
-	repoID := blob.Repository().IDInt32()
-	contribResolvers, err := computeRecentContributorSignals(ctx, r.db, blob.Path(), repoID)
-	if err != nil {
-		return nil, err
+	if args.IncludeReason(graphqlbackend.RecentContributorOwnershipSignal) {
+		contribResolvers, err := computeRecentContributorSignals(ctx, r.db, blob.Path(), repoID)
+		if err != nil {
+			return nil, err
+		}
+		ownerships = append(ownerships, contribResolvers...)
 	}
-	ownerships = append(ownerships, contribResolvers...)
 
 	// Retrieve recent view signals.
-	viewerResolvers, err := computeRecentViewSignals(ctx, r.logger, r.db, blob.Path(), repoID)
+	if args.IncludeReason(graphqlbackend.RecentViewOwnershipSignal) {
+		viewerResolvers, err := computeRecentViewSignals(ctx, r.logger, r.db, blob.Path(), repoID)
+		if err != nil {
+			return nil, err
+		}
+		ownerships = append(ownerships, viewerResolvers...)
+	}
+
+	// Retrieve assigned owners.
+	assignedOwners, err := r.computeAssignedOwners(ctx, r.logger, r.db, blob, repoID)
 	if err != nil {
 		return nil, err
 	}
-	ownerships = append(ownerships, viewerResolvers...)
+	ownerships = append(ownerships, assignedOwners...)
 
 	return r.ownershipConnection(args, ownerships)
 }
@@ -482,6 +511,14 @@ func (g *recentContributorOwnershipSignal) Description() (string, error) {
 }
 
 func computeRecentContributorSignals(ctx context.Context, db edb.EnterpriseDB, path string, repoID api.RepoID) (results []*ownershipResolver, err error) {
+	enabled, err := db.OwnSignalConfigurations().IsEnabled(ctx, owntypes.SignalRecentContributors)
+	if err != nil {
+		return nil, errors.Wrap(err, "IsEnabled")
+	}
+	if !enabled {
+		return nil, nil
+	}
+
 	recentAuthors, err := db.RecentContributionSignals().FindRecentAuthors(ctx, repoID, path)
 	if err != nil {
 		return nil, errors.Wrap(err, "FindRecentAuthors")
@@ -529,6 +566,14 @@ func (v *recentViewOwnershipSignal) Description() (string, error) {
 }
 
 func computeRecentViewSignals(ctx context.Context, logger log.Logger, db edb.EnterpriseDB, path string, repoID api.RepoID) (results []*ownershipResolver, err error) {
+	enabled, err := db.OwnSignalConfigurations().IsEnabled(ctx, owntypes.SignalRecentViews)
+	if err != nil {
+		return nil, errors.Wrap(err, "IsEnabled")
+	}
+	if !enabled {
+		return nil, nil
+	}
+
 	summaries, err := db.RecentViewSignal().List(ctx, database.ListRecentViewSignalOpts{Path: path, RepoID: repoID})
 	if err != nil {
 		return nil, errors.Wrap(err, "list recent view signals")
@@ -579,4 +624,149 @@ func computeRecentViewSignals(ctx context.Context, logger log.Logger, db edb.Ent
 		results = append(results, &res)
 	}
 	return results, nil
+}
+
+type assignedOwner struct {
+	total int32
+}
+
+func (a *assignedOwner) Title() (string, error) {
+	return "assigned owner", nil
+}
+
+func (a *assignedOwner) Description() (string, error) {
+	return "Owner is manually assigned.", nil
+}
+
+func (r *ownResolver) computeAssignedOwners(ctx context.Context, logger log.Logger, db edb.EnterpriseDB, blob *graphqlbackend.GitTreeEntryResolver, repoID api.RepoID) (results []*ownershipResolver, err error) {
+	assignedOwnership, err := r.ownService().AssignedOwnership(ctx, repoID, api.CommitID(blob.Commit().OID()))
+	if err != nil {
+		return nil, errors.Wrap(err, "computing assigned ownership")
+	}
+	assignedOwnerSummaries := assignedOwnership.Match(blob.Path())
+
+	fetchedUsers := make(map[int32]*types.User)
+	userEmails := make(map[int32]string)
+
+	for _, summary := range assignedOwnerSummaries {
+		var user *types.User
+		var email string
+		userID := summary.OwnerUserID
+		if fetchedUser, found := fetchedUsers[userID]; found {
+			user = fetchedUser
+			email = userEmails[userID]
+		} else {
+			userFromDB, err := db.Users().GetByID(ctx, userID)
+			if err != nil {
+				return nil, errors.Wrap(err, "getting user")
+			}
+			primaryEmail, _, err := db.UserEmails().GetPrimaryEmail(ctx, userID)
+			if err != nil {
+				if errcode.IsNotFound(err) {
+					logger.Warn("Cannot find a primary email", log.Int32("userID", userID))
+				} else {
+					return nil, errors.Wrap(err, "getting user primary email")
+				}
+			}
+			user = userFromDB
+			email = primaryEmail
+			fetchedUsers[userID] = userFromDB
+			userEmails[userID] = primaryEmail
+		}
+		res := ownershipResolver{
+			db: db,
+			resolvedOwner: &codeowners.Person{
+				User:         user,
+				PrimaryEmail: &email,
+				Handle:       user.Username,
+			},
+			reasons: []*ownershipReasonResolver{
+				{
+					&assignedOwner{},
+				},
+			},
+		}
+		results = append(results, &res)
+	}
+	return results, nil
+}
+
+func (r *ownResolver) OwnSignalConfigurations(ctx context.Context) ([]graphqlbackend.SignalConfigurationResolver, error) {
+	err := auth.CheckCurrentActorIsSiteAdmin(actor.FromContext(ctx), r.db)
+	if err != nil {
+		return nil, err
+	}
+	var resolvers []graphqlbackend.SignalConfigurationResolver
+	store := r.db.OwnSignalConfigurations()
+	configurations, err := store.LoadConfigurations(ctx, database.LoadSignalConfigurationArgs{})
+	if err != nil {
+		return nil, errors.Wrap(err, "LoadConfigurations")
+	}
+
+	for _, configuration := range configurations {
+		resolvers = append(resolvers, &signalConfigResolver{config: configuration})
+	}
+
+	return resolvers, nil
+}
+
+type signalConfigResolver struct {
+	config database.SignalConfiguration
+}
+
+func (s *signalConfigResolver) Name() string {
+	return s.config.Name
+}
+
+func (s *signalConfigResolver) Description() string {
+	return s.config.Description
+}
+
+func (s *signalConfigResolver) IsEnabled() bool {
+	return s.config.Enabled
+}
+
+func (s *signalConfigResolver) ExcludedRepoPatterns() []string {
+	return userifyPatterns(s.config.ExcludedRepoPatterns)
+}
+
+func (r *ownResolver) UpdateOwnSignalConfigurations(ctx context.Context, args graphqlbackend.UpdateSignalConfigurationsArgs) ([]graphqlbackend.SignalConfigurationResolver, error) {
+	err := auth.CheckCurrentActorIsSiteAdmin(actor.FromContext(ctx), r.db)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.db.OwnSignalConfigurations().WithTransact(ctx, func(store database.SignalConfigurationStore) error {
+		for _, config := range args.Input.Configs {
+			if err := store.UpdateConfiguration(ctx, database.UpdateSignalConfigurationArgs{
+				Name:                 config.Name,
+				ExcludedRepoPatterns: postgresifyPatterns(config.ExcludedRepoPatterns),
+				Enabled:              config.Enabled,
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return r.OwnSignalConfigurations(ctx)
+}
+
+// postgresifyPatterns will convert glob-ish patterns to postgres compatible patterns. For example github.com/* -> github.com/%
+func postgresifyPatterns(patterns []string) (results []string) {
+	for _, pattern := range patterns {
+		results = append(results, strings.ReplaceAll(pattern, "*", "%"))
+	}
+	return results
+}
+
+// userifyPatterns will convert postgres patterns to glob-ish patterns. For example github.com/% -> github.com/*.
+func userifyPatterns(patterns []string) (results []string) {
+	for _, pattern := range patterns {
+		results = append(results, strings.ReplaceAll(pattern, "%", "*"))
+	}
+	return results
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -32,6 +33,10 @@ type ActionJob struct {
 
 func (a *ActionJob) RecordID() int {
 	return int(a.ID)
+}
+
+func (a *ActionJob) RecordUID() string {
+	return strconv.FormatInt(int64(a.ID), 10)
 }
 
 type ActionJobMetadata struct {

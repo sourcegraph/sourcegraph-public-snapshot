@@ -24,9 +24,9 @@ type Trace struct {
 }
 
 // New returns a new Trace with the specified family and title.
-func New(ctx context.Context, family, title string, tags ...Tag) (*Trace, context.Context) {
+func New(ctx context.Context, family, title string, attrs ...attribute.KeyValue) (*Trace, context.Context) {
 	tr := Tracer{TracerProvider: otel.GetTracerProvider()}
-	return tr.New(ctx, family, title, tags...)
+	return tr.New(ctx, family, title, attrs...)
 }
 
 // SetAttributes sets kv as attributes of the Span.
@@ -86,4 +86,12 @@ func (t *Trace) SetErrorIfNotContext(err error) {
 func (t *Trace) Finish() {
 	t.nettraceTrace.Finish()
 	t.oteltraceSpan.End()
+}
+
+// FinishWithErr finishes the span and sets its error value.
+// It takes a pointer to an error so it can be used directly
+// in a defer statement.
+func (t *Trace) FinishWithErr(err *error) {
+	t.SetError(*err)
+	t.Finish()
 }

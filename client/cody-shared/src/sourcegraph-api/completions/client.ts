@@ -1,24 +1,21 @@
 import { ConfigurationWithAccessToken } from '../../configuration'
 
-import {
-    Event,
-    CompletionParameters,
-    CompletionCallbacks,
-    CodeCompletionParameters,
-    CodeCompletionResponse,
-} from './types'
+import { Event, CompletionCallbacks, CompletionParameters, CompletionResponse } from './types'
 
 export interface CompletionLogger {
-    startCompletion(params: CodeCompletionParameters | CompletionParameters):
+    startCompletion(params: CompletionParameters):
         | undefined
         | {
               onError: (error: string) => void
-              onComplete: (response: string | CodeCompletionResponse) => void
+              onComplete: (response: string | CompletionResponse) => void
               onEvents: (events: Event[]) => void
           }
 }
 
-export type Config = Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'debug' | 'customHeaders'>
+export type Config = Pick<
+    ConfigurationWithAccessToken,
+    'serverEndpoint' | 'accessToken' | 'debugEnable' | 'customHeaders'
+>
 
 export abstract class SourcegraphCompletionsClient {
     constructor(protected config: Config, protected logger?: CompletionLogger) {}
@@ -52,8 +49,5 @@ export abstract class SourcegraphCompletionsClient {
     }
 
     public abstract stream(params: CompletionParameters, cb: CompletionCallbacks): () => void
-    public abstract complete(
-        params: CodeCompletionParameters,
-        abortSignal: AbortSignal
-    ): Promise<CodeCompletionResponse>
+    public abstract complete(params: CompletionParameters, abortSignal: AbortSignal): Promise<CompletionResponse>
 }

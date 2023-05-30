@@ -17,6 +17,7 @@ go_library(
         "//enterprise/internal/codeintel/autoindexing/internal/inference/libs",
         "//enterprise/internal/codeintel/autoindexing/internal/inference/lua",
         "//enterprise/internal/codeintel/autoindexing/internal/inference/luatypes",
+        "//enterprise/internal/codeintel/autoindexing/shared",
         "//enterprise/internal/paths",
         "//internal/api",
         "//internal/authz",

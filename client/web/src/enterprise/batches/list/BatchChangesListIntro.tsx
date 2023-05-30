@@ -49,7 +49,7 @@ const BatchChangesUnlicensedAlert: React.FunctionComponent<React.PropsWithChildr
                     <H4>Batch changes trial</H4>
                     <Text>
                         Batch changes is a paid feature of Sourcegraph. All users can create sample batch changes with
-                        up to five changesets without a license.
+                        up to ten changesets without a license.
                     </Text>
                     <Text className="mb-0">
                         <Link to="https://about.sourcegraph.com/contact/sales/">Contact sales</Link> to obtain a trial

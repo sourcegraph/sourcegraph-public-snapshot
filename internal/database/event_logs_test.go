@@ -1885,3 +1885,145 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 		})
 	}
 }
+
+func TestEventLogs_AggregatedRepoMetadataStats(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	ptr := func(i int32) *int32 { return &i }
+	now := time.Date(2000, time.January, 20, 12, 0, 0, 0, time.UTC)
+	events := []*Event{
+		{
+			UserID:    1,
+			Name:      "RepoMetadataAdded",
+			Source:    "BACKEND",
+			Timestamp: now,
+		},
+		{
+			UserID:    1,
+			Name:      "RepoMetadataAdded",
+			Source:    "BACKEND",
+			Timestamp: now,
+		},
+		{
+			UserID:    1,
+			Name:      "RepoMetadataAdded",
+			Source:    "BACKEND",
+			Timestamp: time.Date(now.Year(), now.Month(), now.Day()-1, now.Hour(), 0, 0, 0, time.UTC),
+		},
+		{
+			UserID:    1,
+			Name:      "RepoMetadataUpdated",
+			Source:    "BACKEND",
+			Timestamp: now,
+		},
+		{
+			UserID:    1,
+			Name:      "RepoMetadataDeleted",
+			Source:    "BACKEND",
+			Timestamp: now,
+		},
+		{
+			UserID:    1,
+			Name:      "SearchSubmitted",
+			Argument:  json.RawMessage(`{"query": "repo:has(some:meta)"}`),
+			Source:    "BACKEND",
+			Timestamp: now,
+		},
+	}
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	for _, e := range events {
+		if err := db.EventLogs().Insert(ctx, e); err != nil {
+			t.Fatalf("failed inserting test data: %s", err)
+		}
+	}
+
+	for name, testCase := range map[string]struct {
+		now    time.Time
+		period PeriodType
+		stats  *types.RepoMetadataAggregatedEvents
+	}{
+		"daily": {
+			now:    now,
+			period: Daily,
+			stats: &types.RepoMetadataAggregatedEvents{
+				StartTime: time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC),
+				CreateRepoMetadata: &types.EventStats{
+					UsersCount:  ptr(1),
+					EventsCount: ptr(2),
+				},
+				UpdateRepoMetadata: &types.EventStats{
+					UsersCount:  ptr(1),
+					EventsCount: ptr(1),
+				},
+				DeleteRepoMetadata: &types.EventStats{
+					UsersCount:  ptr(1),
+					EventsCount: ptr(1),
+				},
+				SearchFilterUsage: &types.EventStats{
+					UsersCount:  ptr(1),
+					EventsCount: ptr(1),
+				},
+			},
+		},
+		"weekly": {
+			now:    now,
+			period: Weekly,
+			stats: &types.RepoMetadataAggregatedEvents{
+				StartTime: time.Date(now.Year(), now.Month(), now.Day()-int(now.Weekday()), 0, 0, 0, 0, time.UTC),
+				CreateRepoMetadata: &types.EventStats{
+					UsersCount:  ptr(1),
+					EventsCount: ptr(3),
+				},
+				UpdateRepoMetadata: &types.EventStats{
+					UsersCount:  ptr(1),
+					EventsCount: ptr(1),
+				},
+				DeleteRepoMetadata: &types.EventStats{
+					UsersCount:  ptr(1),
+					EventsCount: ptr(1),
+				},
+				SearchFilterUsage: &types.EventStats{
+					UsersCount:  ptr(1),
+					EventsCount: ptr(1),
+				},
+			},
+		},
+		"monthly": {
+			now:    now,
+			period: Monthly,
+			stats: &types.RepoMetadataAggregatedEvents{
+				StartTime: time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+				CreateRepoMetadata: &types.EventStats{
+					UsersCount:  ptr(1),
+					EventsCount: ptr(3),
+				},
+				UpdateRepoMetadata: &types.EventStats{
+					UsersCount:  ptr(1),
+					EventsCount: ptr(1),
+				},
+				DeleteRepoMetadata: &types.EventStats{
+					UsersCount:  ptr(1),
+					EventsCount: ptr(1),
+				},
+				SearchFilterUsage: &types.EventStats{
+					UsersCount:  ptr(1),
+					EventsCount: ptr(1),
+				},
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			stats, err := db.EventLogs().AggregatedRepoMetadataEvents(ctx, testCase.now, testCase.period)
+			if err != nil {
+				t.Fatalf("querying activity failed: %s", err)
+			}
+			if diff := cmp.Diff(testCase.stats, stats); diff != "" {
+				t.Errorf("unexpected statistics returned:\n%s", diff)
+			}
+		})
+	}
+}

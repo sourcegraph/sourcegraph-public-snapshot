@@ -3,8 +3,8 @@ import * as vscode from 'vscode'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 
-import { ChatViewProvider, isValidLogin } from './chat/ChatViewProvider'
-import { DOTCOM_URL, LOCAL_APP_URL } from './chat/protocol'
+import { ChatViewProvider, getAuthStatus } from './chat/ChatViewProvider'
+import { DOTCOM_URL, LOCAL_APP_URL, isLoggedIn } from './chat/protocol'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
@@ -12,7 +12,9 @@ import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
+import { TaskController } from './non-stop/TaskController'
 import { getRgPath } from './rg'
+import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { InlineController } from './services/InlineController'
 import { LocalStorage } from './services/LocalStorageProvider'
 import {
@@ -72,13 +74,16 @@ const register = async (
 }> => {
     const disposables: vscode.Disposable[] = []
 
-    void updateEventLogger(initialConfig, localStorage)
+    await updateEventLogger(initialConfig, localStorage)
 
     // Controller for inline assist
     const commentController = new InlineController(context.extensionPath)
     disposables.push(commentController.get())
 
-    const editor = new VSCodeEditor(commentController)
+    const taskController = new TaskController()
+    const controllers = { inline: commentController, task: taskController }
+
+    const editor = new VSCodeEditor(controllers)
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
 
@@ -87,6 +92,7 @@ const register = async (
         codebaseContext,
         chatClient,
         completionsClient,
+        guardrails,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
     } = await configureExternalServices(initialConfig, rgPath, editor)
 
@@ -97,6 +103,7 @@ const register = async (
         chatClient,
         intentDetector,
         codebaseContext,
+        guardrails,
         editor,
         secretStorage,
         localStorage,
@@ -162,6 +169,7 @@ const register = async (
         vscode.commands.registerCommand('cody.history', () => chatProvider.setWebviewView('history')),
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
             await chatProvider.clearAndRestartSession()
+            chatProvider.setWebviewView('chat')
         }),
         vscode.commands.registerCommand('cody.recipe.explain-code', () => executeRecipe('explain-code-detailed')),
         vscode.commands.registerCommand('cody.recipe.explain-code-high-level', () =>
@@ -179,6 +187,7 @@ const register = async (
         ),
         vscode.commands.registerCommand('cody.recipe.find-code-smells', () => executeRecipe('find-code-smells')),
         vscode.commands.registerCommand('cody.recipe.context-search', () => executeRecipe('context-search')),
+        vscode.commands.registerCommand('cody.recipe.optimize-code', () => executeRecipe('optimize-code')),
         // Register URI Handler for resolving token sending back from sourcegraph.com
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {
@@ -191,14 +200,14 @@ const register = async (
                 const token = params.get('code')
                 if (token && token.length > 8) {
                     await secretStorage.store(CODY_ACCESS_TOKEN_SECRET, token)
-                    const isAuthed = await isValidLogin({
+                    const authStatus = await getAuthStatus({
                         serverEndpoint,
                         accessToken: token,
                         customHeaders: config.customHeaders,
                     })
-                    await chatProvider.sendLogin(isAuthed)
-                    if (isAuthed) {
-                        void vscode.window.showInformationMessage('Token has been retreived and updated successfully')
+                    await chatProvider.sendLogin(authStatus)
+                    if (isLoggedIn(authStatus)) {
+                        void vscode.window.showInformationMessage('Token has been retrieved and updated successfully')
                     }
                 }
             },
@@ -218,8 +227,8 @@ const register = async (
             history
         )
         disposables.push(
-            vscode.commands.registerCommand('cody.experimental.suggest', async () => {
-                await completionsProvider.fetchAndShowCompletions()
+            vscode.commands.registerCommand('cody.manual-completions', async () => {
+                await completionsProvider.fetchAndShowManualCompletions()
             }),
             vscode.commands.registerCommand('cody.completions.inline.accepted', () => {
                 const params = { type: 'inline' }
@@ -237,6 +246,25 @@ const register = async (
                 return [new vscode.Range(0, 0, lineCount - 1, 0)]
             },
         }
+    }
+
+    if (initialConfig.experimentalGuardrails) {
+        const guardrailsProvider = new GuardrailsProvider(guardrails, editor)
+        disposables.push(
+            vscode.commands.registerCommand('cody.guardrails.debug', async () => {
+                await guardrailsProvider.debugEditorSelection()
+            })
+        )
+    }
+    // Register task view and non-stop cody command when feature flag is on
+    if (initialConfig.experimentalNonStop || process.env.CODY_TESTING === 'true') {
+        disposables.push(vscode.window.registerTreeDataProvider('cody.fixup.tree.view', taskController.getTaskView()))
+        disposables.push(
+            vscode.commands.registerCommand('cody.recipe.non-stop', async () => {
+                await chatProvider.executeRecipe('non-stop', '', false)
+            })
+        )
+        await vscode.commands.executeCommand('setContext', 'cody.nonstop.fixups.enabled', true)
     }
 
     return {

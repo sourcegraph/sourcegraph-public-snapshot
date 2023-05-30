@@ -1,11 +1,10 @@
 use crate::cody::init_cody_window;
-use crate::common::show_window;
+use crate::common::{show_logs, show_window};
 use tauri::api::shell;
 use tauri::{
     AppHandle, CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu,
     SystemTrayMenuItem,
 };
-use tauri_plugin_positioner::{Position, WindowExt};
 
 pub fn create_system_tray() -> SystemTray {
     SystemTray::new().with_menu(create_system_tray_menu())
@@ -13,10 +12,7 @@ pub fn create_system_tray() -> SystemTray {
 
 fn create_system_tray_menu() -> SystemTrayMenu {
     SystemTrayMenu::new()
-        .add_item(CustomMenuItem::new(
-            "open".to_string(),
-            "Open Sourcegraph App",
-        ))
+        .add_item(CustomMenuItem::new("open".to_string(), "Open Sourcegraph"))
         .add_item(CustomMenuItem::new("cody".to_string(), "Show Cody"))
         .add_native_item(SystemTrayMenuItem::Separator)
         .add_item(
@@ -53,14 +49,8 @@ pub fn on_system_tray_event(app: &AppHandle, event: SystemTrayEvent) {
                 window.eval("window.location.href = '/settings'").unwrap();
                 show_window(app, "main");
             }
-            "troubleshoot" => {
-                let log_dir_path = app.path_resolver().app_log_dir().unwrap();
-                if let Some(log_path_str) = log_dir_path.to_str() {
-                    let name = &app.package_info().name;
-                    let combined_path = format!("{}/{}.log", log_path_str, name);
-                    shell::open(&app.shell_scope(), &combined_path, None).unwrap()
-                }
-            }
+            "troubleshoot" => show_logs(app),
+
             "about" => {
                 shell::open(&app.shell_scope(), "https://about.sourcegraph.com", None).unwrap()
             }

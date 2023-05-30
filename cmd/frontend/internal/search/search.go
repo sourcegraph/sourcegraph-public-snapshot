@@ -34,6 +34,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	streamclient "github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
+	"github.com/sourcegraph/sourcegraph/internal/settings"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -45,7 +46,7 @@ func StreamHandler(db database.DB, enterpriseJobs jobutil.EnterpriseJobs) http.H
 	return &streamHandler{
 		logger:              logger,
 		db:                  db,
-		searchClient:        client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs(), enterpriseJobs),
+		searchClient:        client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs(), search.SearcherGRPCConnectionCache(), enterpriseJobs),
 		flushTickerInternal: 100 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
 	}
@@ -99,7 +100,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 		attribute.Int("search_mode", args.SearchMode),
 	)
 
-	settings, err := graphqlbackend.DecodedViewerFinalSettings(ctx, h.db)
+	settings, err := settings.CurrentUserFinal(ctx, h.db)
 	if err != nil {
 		return err
 	}

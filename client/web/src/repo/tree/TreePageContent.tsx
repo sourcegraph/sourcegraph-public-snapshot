@@ -19,6 +19,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Badge, ButtonLink, Card, CardHeader, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../auth'
 import { requestGraphQL } from '../../backend/graphql'
 import {
     ConnectionContainer,
@@ -49,6 +50,7 @@ import {
 import { PersonLink } from '../../person/PersonLink'
 import { quoteIfNeeded, searchQueryForRepoRevision } from '../../search'
 import { buildSearchURLQueryFromQueryState, useNavbarQueryState } from '../../stores'
+import { canWriteRepoMetadata } from '../../util/rbac'
 import { OWNER_FIELDS, RECENT_CONTRIBUTOR_FIELDS, RECENT_VIEW_FIELDS } from '../blob/own/grapqlQueries'
 import { GitCommitNodeTableRow } from '../commits/GitCommitNodeTableRow'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
@@ -206,9 +208,9 @@ const ExtraInfoSectionItemHeader: React.FunctionComponent<
 const ExtraInfoSection: React.FC<{
     repo: TreePageRepositoryFields
     className?: string
-    viewerCanAdminister?: boolean
-}> = ({ repo, className, viewerCanAdminister }) => {
-    const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', false)
+    hasWritePermissions?: boolean
+}> = ({ repo, className, hasWritePermissions }) => {
+    const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', true)
 
     const metadataItems = useMemo(() => repo.metadata.map(({ key, value }) => ({ key, value })) || [], [repo.metadata])
     const queryState = useNavbarQueryState(state => state.queryState)
@@ -216,7 +218,7 @@ const ExtraInfoSection: React.FC<{
     return (
         <Card className={className}>
             <ExtraInfoSectionItem>
-                <ExtraInfoSectionItemHeader title="Description" tooltip="Synced from the code host." />
+                <ExtraInfoSectionItemHeader title="Description" tooltip="Synchronized from the code host" />
                 {repo.description && <Text>{repo.description}</Text>}
             </ExtraInfoSectionItem>
             {enableRepositoryMetadata && (
@@ -234,10 +236,10 @@ const ExtraInfoSection: React.FC<{
                             </>
                         }
                     >
-                        {viewerCanAdminister && (
+                        {hasWritePermissions && (
                             <Tooltip content="Edit repository metadata">
                                 <ButtonLink
-                                    to={`/${encodeURIPathComponent(repo.name)}/-/settings/metadata`}
+                                    to={`/${encodeURIPathComponent(repo.name)}/-/metadata`}
                                     className={classNames('p-0', styles.extraInfoSectionItemHeaderIcon)}
                                 >
                                     <Icon
@@ -272,10 +274,13 @@ interface TreePageContentProps extends ExtensionsControllerProps, TelemetryProps
     commitID: string
     revision: string
     isPackage: boolean
+    authenticatedUser: AuthenticatedUser | null
 }
 
 export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<TreePageContentProps>> = props => {
     const { filePath, tree, repo, revision, isPackage } = props
+
+    const isRoot = filePath === ''
 
     const readmeEntry = useMemo(() => {
         for (const entry of tree.entries) {
@@ -304,24 +309,29 @@ export const TreePageContent: React.FunctionComponent<React.PropsWithChildren<Tr
     const [recentViewsComputed] = useFeatureFlag('own-background-index-repo-recent-views', false)
 
     const ownSignalsEnabled = recentContributorsComputed || recentViewsComputed
+    const hasRepoMetaWritePermissions = canWriteRepoMetadata(props.authenticatedUser)
 
     return (
         <>
-            <section className={classNames('container mb-3 px-0', styles.section)}>
-                {readmeEntry && (
-                    <ReadmePreviewCard
-                        entry={readmeEntry}
-                        repoName={repo.name}
-                        revision={revision}
-                        className={styles.files}
-                    />
-                )}
-                <ExtraInfoSection
-                    repo={repo}
-                    className={classNames(styles.contributors, 'p-3')}
-                    viewerCanAdminister={repo.viewerCanAdminister}
-                />
-            </section>
+            {(readmeEntry || isRoot) && (
+                <section className={classNames('container mb-3 px-0', styles.section)}>
+                    {readmeEntry && (
+                        <ReadmePreviewCard
+                            entry={readmeEntry}
+                            repoName={repo.name}
+                            revision={revision}
+                            className={styles.files}
+                        />
+                    )}
+                    {isRoot && (
+                        <ExtraInfoSection
+                            repo={repo}
+                            className={styles.extraInfo}
+                            hasWritePermissions={hasRepoMetaWritePermissions}
+                        />
+                    )}
+                </section>
+            )}
             <section className={classNames('test-tree-entries container mb-3 px-0', styles.section)}>
                 <FilesCard diffStats={diffStats} entries={tree.entries} className={styles.files} filePath={filePath} />
 
