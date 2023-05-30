@@ -28,7 +28,6 @@ OSS_TARGETS=(
   //cmd/gitserver
   //cmd/searcher
   //cmd/server
-  //docker-images/syntax-highlighter:scip-ctags
   # https://github.com/sourcegraph/s3proxy is still the default for now.
   # //cmd/blobstore
   @com_github_sourcegraph_zoekt//cmd/zoekt-archive-index
@@ -47,7 +46,6 @@ ENTERPRISE_TARGETS=(
   //enterprise/cmd/repo-updater
   //enterprise/cmd/precise-code-intel-worker
   //enterprise/cmd/server
-  //docker-images/syntax-highlighter:scip-ctags
 )
 
 MUSL_TARGETS=(

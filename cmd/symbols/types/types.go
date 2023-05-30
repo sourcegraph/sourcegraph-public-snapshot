@@ -45,8 +45,7 @@ func LoadSqliteConfig(baseConfig env.BaseConfig, ctags CtagsConfig, repositoryFe
 }
 
 type CtagsConfig struct {
-	UniversalCommand   string
-	ScipCommand        string
+	Command            string
 	PatternLengthLimit int
 	LogErrors          bool
 	DebugLogs          bool
@@ -65,14 +64,8 @@ func LoadCtagsConfig(baseConfig env.BaseConfig) CtagsConfig {
 		ctagsCommandDefault = ""
 	}
 
-	scipCtagsCommandDefault := "scip-ctags"
-	if deploy.IsSingleBinary() {
-		scipCtagsCommandDefault = ""
-	}
-
 	return CtagsConfig{
-		UniversalCommand:   baseConfig.Get("CTAGS_COMMAND", ctagsCommandDefault, "ctags command (should point to universal-ctags executable compiled with JSON and seccomp support)"),
-		ScipCommand:        baseConfig.Get("SCIP_CTAGS_COMMAND", scipCtagsCommandDefault, "scip-ctags command"),
+		Command:            baseConfig.Get("CTAGS_COMMAND", ctagsCommandDefault, "ctags command (should point to universal-ctags executable compiled with JSON and seccomp support)"),
 		PatternLengthLimit: baseConfig.GetInt("CTAGS_PATTERN_LENGTH_LIMIT", "250", "the maximum length of the patterns output by ctags"),
 		LogErrors:          baseConfig.GetBool("LOG_CTAGS_ERRORS", logCtagsErrorsDefault, "log ctags errors"),
 		DebugLogs:          false,

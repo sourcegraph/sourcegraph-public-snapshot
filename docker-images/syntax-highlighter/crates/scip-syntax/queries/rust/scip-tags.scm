@@ -7,15 +7,16 @@
  name: (_) @descriptor.type) @scope
 
 (impl_item
- trait: (_)? @descriptor.type
+ trait: (_) @descriptor.type
  type: (_) @descriptor.type) @scope
 
 ;; TODO: @local to stop traversal
 (function_signature_item
  name: (identifier) @descriptor.method)
 
+;; TODO: @local to stop traversal
 (function_item
- name: (identifier) @descriptor.method body: (_) @local)
+ name: (identifier) @descriptor.method)
 
 (struct_item
  name: (type_identifier) @descriptor.type) @scope

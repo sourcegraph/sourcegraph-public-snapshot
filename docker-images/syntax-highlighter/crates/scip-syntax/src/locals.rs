@@ -5,15 +5,27 @@ use scip::{
     symbol::format_symbol,
     types::{Occurrence, Symbol},
 };
-use scip_treesitter::{prelude::*, types::PackedRange};
+use scip_treesitter::prelude::*;
 use tree_sitter::Node;
 
 use crate::languages::LocalConfiguration;
 
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct ByteRange {
+    start: usize,
+    end: usize,
+}
+
+impl ByteRange {
+    pub fn contains(&self, other: &Self) -> bool {
+        self.start <= other.start && self.end >= other.end
+    }
+}
+
 #[derive(Debug)]
 pub struct Scope<'a> {
     pub scope: Node<'a>,
-    pub range: PackedRange,
+    pub range: ByteRange,
     pub definitions: HashMap<&'a str, Definition<'a>>,
     pub references: HashMap<&'a str, Vec<Reference<'a>>>,
     pub children: Vec<Scope<'a>>,
@@ -43,7 +55,10 @@ impl<'a> Scope<'a> {
     pub fn new(scope: Node<'a>) -> Self {
         Self {
             scope,
-            range: scope.into(),
+            range: ByteRange {
+                start: scope.start_byte(),
+                end: scope.end_byte(),
+            },
             definitions: HashMap::default(),
             references: HashMap::default(),
             children: vec![],
@@ -87,10 +102,10 @@ impl<'a> Scope<'a> {
             }
         }
 
-        match self.children.binary_search_by_key(
-            &(reference.range.start_line, reference.range.start_col),
-            |r| (r.range.start_line, r.range.start_col),
-        ) {
+        match self
+            .children
+            .binary_search_by_key(&reference.range.start, |r| r.range.start)
+        {
             Ok(_) => {
                 // self.children[idx].insert_reference(reference);
                 todo!("I'm not sure what to do yet, think more now");
@@ -140,8 +155,7 @@ impl<'a> Scope<'a> {
             self.children.extend(child.children);
         }
 
-        self.children
-            .sort_by_key(|s| (s.range.start_line, s.range.end_line, s.range.start_col));
+        self.children.sort_by_key(|s| s.range.start);
     }
 
     pub fn into_occurrences(&mut self, hint: usize) -> Vec<Occurrence> {
@@ -155,7 +169,7 @@ impl<'a> Scope<'a> {
         //  We could probably make this a runtime option, where `self` has a `sorted` value
         //  that decides whether we need to or not. But on a huge file, this made no difference.
         let mut values = self.definitions.values().collect::<Vec<_>>();
-        values.sort_by_key(|d| &d.range);
+        values.sort_by_key(|d| d.range.start);
 
         for definition in values {
             *id += 1;
@@ -256,7 +270,7 @@ pub struct Definition<'a> {
     pub group: &'a str,
     pub identifier: &'a str,
     pub node: Node<'a>,
-    pub range: PackedRange,
+    pub range: ByteRange,
     pub scope_modifier: ScopeModifier,
 }
 
@@ -265,7 +279,7 @@ pub struct Reference<'a> {
     pub group: &'a str,
     pub identifier: &'a str,
     pub node: Node<'a>,
-    pub range: PackedRange,
+    pub range: ByteRange,
 }
 
 pub fn parse_tree<'a>(
@@ -342,7 +356,10 @@ pub fn parse_tree<'a>(
 
             let scope_modifier = scope_modifier.unwrap_or_default();
             definitions.push(Definition {
-                range: node.into(),
+                range: ByteRange {
+                    start: node.start_byte(),
+                    end: node.end_byte(),
+                },
                 group,
                 identifier,
                 node,
@@ -355,7 +372,10 @@ pub fn parse_tree<'a>(
             };
 
             references.push(Reference {
-                range: node.into(),
+                range: ByteRange {
+                    start: node.start_byte(),
+                    end: node.end_byte(),
+                },
                 group,
                 identifier,
                 node,
@@ -375,9 +395,8 @@ pub fn parse_tree<'a>(
     // Sort smallest to largest, so we can pop off the end of the list for the largest, first scope
     scopes.sort_by_key(|m| {
         (
-            std::cmp::Reverse(m.range.start_line),
-            m.range.end_line - m.range.start_line,
-            m.range.end_col - m.range.start_col,
+            std::cmp::Reverse(m.range.start),
+            m.range.end - m.range.start,
         )
     });
 
