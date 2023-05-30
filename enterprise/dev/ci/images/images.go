@@ -66,7 +66,7 @@ var SourcegraphDockerImagesMisc = []string{
 	"executor-vm",
 	"jaeger-agent",
 	"jaeger-all-in-one",
-	"llm-proxy",
+	"cody-gateway",
 	"sg",
 	"cody-slack"}
 

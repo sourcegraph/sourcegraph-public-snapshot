@@ -9,8 +9,8 @@ import (
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
-	llmproxy "github.com/sourcegraph/sourcegraph/enterprise/internal/llm-proxy"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -145,7 +145,7 @@ ORDER BY
 	q.Parameters = []bigquery.QueryParameter{
 		{
 			Name:  "source",
-			Value: llmproxy.ProductSubscriptionActorSourceName,
+			Value: codygateway.ProductSubscriptionActorSourceName,
 		},
 		{
 			Name:  "identifier",
@@ -153,10 +153,10 @@ ORDER BY
 		},
 		{
 			Name:  "eventName",
-			Value: llmproxy.EventNameCompletionsStarted,
+			Value: codygateway.EventNameCompletionsStarted,
 		},
 		{
-			Name:  llmproxy.CompletionsEventFeatureMetadataField,
+			Name:  codygateway.CompletionsEventFeatureMetadataField,
 			Value: feature,
 		},
 	}

@@ -140,7 +140,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				"indexed-searcher",
 				"jaeger-agent",
 				"jaeger-all-in-one",
-				"llm-proxy",
+				"cody-gateway",
 				"loadtest",
 				"migrator",
 				"node-exporter",
