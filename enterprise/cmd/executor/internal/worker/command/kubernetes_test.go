@@ -229,7 +229,7 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 	}
 }
 
-func TestKubernetesCommand_FindPod(t *testing.T) {
+func TestKubernetesCommand_WaitForPodToSucceed(t *testing.T) {
 	tests := []struct {
 		name           string
 		mockFunc       func(clientset *fake.Clientset)
@@ -237,145 +237,82 @@ func TestKubernetesCommand_FindPod(t *testing.T) {
 		expectedErr    error
 	}{
 		{
-			name: "Pod found",
-			mockFunc: func(clientset *fake.Clientset) {
-				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, &corev1.PodList{Items: []corev1.Pod{
-						{ObjectMeta: metav1.ObjectMeta{
-							Name:   "my-pod",
-							Labels: map[string]string{"job-name": "my-pod"},
-						}}},
-					}, nil
-				})
-			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
-				require.Len(t, actions, 1)
-
-				assert.Equal(t, "list", actions[0].GetVerb())
-				assert.Equal(t, "pods", actions[0].GetResource().Resource)
-				assert.Equal(t, "job-name=my-pod", actions[0].(k8stesting.ListAction).GetListRestrictions().Labels.String())
-			},
-		},
-		{
-			name: "Pod not found",
-			mockFunc: func(clientset *fake.Clientset) {
-				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, &corev1.PodList{}, nil
-				})
-			},
-			expectedErr: errors.New("no pods found for job my-pod"),
-		},
-		{
-			name: "Error occurred",
-			mockFunc: func(clientset *fake.Clientset) {
-				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, nil, errors.New("failed")
-				})
-			},
-			expectedErr: errors.New("finding pod: failed"),
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			clientset := fake.NewSimpleClientset()
-
-			if test.mockFunc != nil {
-				test.mockFunc(clientset)
-			}
-
-			cmd := &command.KubernetesCommand{
-				Logger:     logtest.Scoped(t),
-				Clientset:  clientset,
-				Operations: command.NewOperations(&observation.TestContext),
-			}
-
-			_, err := cmd.FindPod(context.Background(), "my-namespace", "my-pod")
-			if test.expectedErr != nil {
-				require.Error(t, err)
-				assert.EqualError(t, err, test.expectedErr.Error())
-			} else {
-				require.NoError(t, err)
-			}
-
-			if test.mockAssertFunc != nil {
-				test.mockAssertFunc(t, clientset.Actions())
-			}
-		})
-	}
-}
-
-func TestKubernetesCommand_WaitForJobToComplete(t *testing.T) {
-	tests := []struct {
-		name           string
-		mockFunc       func(clientset *fake.Clientset)
-		mockAssertFunc func(t *testing.T, actions []k8stesting.Action)
-		expectedErr    error
-	}{
-		{
-			name: "Job succeeded",
+			name: "Pod succeeded",
 			mockFunc: func(clientset *fake.Clientset) {
 				watcher := watch.NewFakeWithChanSize(10, false)
-				watcher.Add(&batchv1.Job{
+				watcher.Add(&corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "my-job",
+						Name: "my-pod",
+						Labels: map[string]string{
+							"job-name": "my-job",
+						},
 					},
-					Status: batchv1.JobStatus{
-						Succeeded: 1,
+					Status: corev1.PodStatus{
+						Phase: corev1.PodSucceeded,
 					},
 				})
-				clientset.PrependWatchReactor("jobs", k8stesting.DefaultWatchReactor(watcher, nil))
+				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(watcher, nil))
 			},
 			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
 				require.Len(t, actions, 1)
 				assert.Equal(t, "watch", actions[0].GetVerb())
-				assert.Equal(t, "jobs", actions[0].GetResource().Resource)
-				assert.Equal(t, "metadata.name=my-job", actions[0].(k8stesting.WatchActionImpl).GetWatchRestrictions().Fields.String())
+				assert.Equal(t, "pods", actions[0].GetResource().Resource)
+				assert.Equal(t, "job-name=my-job", actions[0].(k8stesting.WatchActionImpl).GetWatchRestrictions().Labels.String())
 			},
 		},
 		{
-			name: "Job failed",
+			name: "Pod failed",
 			mockFunc: func(clientset *fake.Clientset) {
 				watcher := watch.NewFakeWithChanSize(10, false)
-				watcher.Add(&batchv1.Job{
+				watcher.Add(&corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "my-job",
+						Name: "my-pod",
+						Labels: map[string]string{
+							"job-name": "my-job",
+						},
 					},
-					Status: batchv1.JobStatus{
-						Failed: 1,
+					Status: corev1.PodStatus{
+						Phase: corev1.PodFailed,
 					},
 				})
-				clientset.PrependWatchReactor("jobs", k8stesting.DefaultWatchReactor(watcher, nil))
+				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(watcher, nil))
 			},
-			expectedErr: errors.New("job failed"),
+			expectedErr: errors.New("pod failed"),
 		},
 		{
 			name: "Error occurred",
 			mockFunc: func(clientset *fake.Clientset) {
-				clientset.PrependWatchReactor("jobs", k8stesting.DefaultWatchReactor(nil, errors.New("failed")))
+				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(nil, errors.New("failed")))
 			},
-			expectedErr: errors.New("watching job: failed"),
+			expectedErr: errors.New("watching pod: failed"),
 		},
 		{
-			name: "Job succeeded second try",
+			name: "Pod succeeded second try",
 			mockFunc: func(clientset *fake.Clientset) {
 				watcher := watch.NewFakeWithChanSize(10, false)
-				watcher.Add(&batchv1.Job{
+				watcher.Add(&corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "my-job",
+						Name: "my-pod",
+						Labels: map[string]string{
+							"job-name": "my-job",
+						},
 					},
-					Status: batchv1.JobStatus{
-						Active: 1,
+					Status: corev1.PodStatus{
+						Phase: corev1.PodRunning,
 					},
 				})
-				watcher.Add(&batchv1.Job{
+				watcher.Add(&corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "my-job",
+						Name: "my-pod",
+						Labels: map[string]string{
+							"job-name": "my-job",
+						},
 					},
-					Status: batchv1.JobStatus{
-						Succeeded: 1,
+					Status: corev1.PodStatus{
+						Phase: corev1.PodSucceeded,
 					},
 				})
-				clientset.PrependWatchReactor("jobs", k8stesting.DefaultWatchReactor(watcher, nil))
+				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(watcher, nil))
 			},
 			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
 				require.Len(t, actions, 1)
@@ -396,7 +333,7 @@ func TestKubernetesCommand_WaitForJobToComplete(t *testing.T) {
 				Operations: command.NewOperations(&observation.TestContext),
 			}
 
-			err := cmd.WaitForJobToComplete(
+			pod, err := cmd.WaitForPodToSucceed(
 				context.Background(),
 				"my-namespace",
 				"my-job",
@@ -406,6 +343,7 @@ func TestKubernetesCommand_WaitForJobToComplete(t *testing.T) {
 				assert.EqualError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
+				require.NotNil(t, pod)
 			}
 
 			if test.mockAssertFunc != nil {
