@@ -11,7 +11,6 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
@@ -28,66 +27,27 @@ import (
 type Service struct {
 	Logger                 log.Logger
 	DB                     database.DB
-	changelistMappingQueue *changelistMappingQueue
+	changelistMappingQueue *common.Queue[ChangelistMappingJob]
 }
 
 func (s *Service) EnqueueChangelistMappingJob(job *ChangelistMappingJob) {
-	s.changelistMappingQueue.push(job)
+	s.changelistMappingQueue.Push(job)
 }
 
 // NewCloneQueue initializes a new cloneQueue.
 func NewService(logger log.Logger, db database.DB, jobs *list.List) Service {
-	cq := changelistMappingQueue{jobs: jobs}
-	cq.cond = sync.NewCond(&cq.cmu)
+	queue := common.NewQueue[ChangelistMappingJob](jobs)
 
 	return Service{
 		Logger:                 logger,
 		DB:                     db,
-		changelistMappingQueue: &cq,
+		changelistMappingQueue: queue,
 	}
 }
 
 type ChangelistMappingJob struct {
 	RepoName api.RepoName
 	RepoDir  common.GitDir
-}
-
-// FIXME: Use generics.
-type changelistMappingQueue struct {
-	mu   sync.Mutex
-	jobs *list.List
-
-	cmu  sync.Mutex
-	cond *sync.Cond
-}
-
-// push will queue the cloneJob to the end of the queue.
-func (p *changelistMappingQueue) push(pj *ChangelistMappingJob) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	p.jobs.PushBack(pj)
-	p.cond.Signal()
-}
-
-// pop will return the next cloneJob. If there's no next job available, it returns nil.
-func (p *changelistMappingQueue) pop() *ChangelistMappingJob {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	next := p.jobs.Front()
-	if next == nil {
-		return nil
-	}
-
-	return p.jobs.Remove(next).(*ChangelistMappingJob)
-}
-
-func (p *changelistMappingQueue) empty() bool {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-
-	return p.jobs.Len() == 0
 }
 
 func (s *Service) StartPerforceChangelistMappingPipeline(ctx context.Context) {
@@ -100,15 +60,15 @@ func (s *Service) changelistMappingProducer(ctx context.Context, jobs chan<- *Ch
 	defer close(jobs)
 
 	for {
-		s.changelistMappingQueue.cmu.Lock()
-		if s.changelistMappingQueue.empty() {
-			s.changelistMappingQueue.cond.Wait()
+		s.changelistMappingQueue.Mutex.Lock()
+		if s.changelistMappingQueue.Empty() {
+			s.changelistMappingQueue.Cond.Wait()
 		}
 
-		s.changelistMappingQueue.cmu.Unlock()
+		s.changelistMappingQueue.Mutex.Unlock()
 
 		for {
-			job := s.changelistMappingQueue.pop()
+			job := s.changelistMappingQueue.Pop()
 			if job == nil {
 				break
 			}
@@ -163,7 +123,6 @@ func (s *Service) doChangelistMapping(ctx context.Context, job *ChangelistMappin
 
 	logger.Warn("repo received from DB")
 
-	// dir := s.dir(protocol.NormalizeRepo(repo.Name))
 	dir := job.RepoDir
 
 	logger.Warn("latestRowCommit")
