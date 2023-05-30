@@ -7,10 +7,8 @@ import com.intellij.openapi.editor.Inlay;
 import com.intellij.openapi.editor.colors.EditorFontType;
 import com.intellij.openapi.editor.impl.EditorImpl;
 import com.intellij.openapi.editor.markup.TextAttributes;
-import com.sourcegraph.cody.vscode.CancellationToken;
-import org.jetbrains.annotations.NotNull;
-
 import java.awt.*;
+import org.jetbrains.annotations.NotNull;
 
 /** Implements the logic to render a completion item inline in the editor. */
 public class CodyCompletionElementRenderer implements EditorCustomElementRenderer {

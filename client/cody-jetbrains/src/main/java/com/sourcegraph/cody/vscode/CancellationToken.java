@@ -2,7 +2,6 @@ package com.sourcegraph.cody.vscode;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Consumer;
 
 public class CancellationToken {
   public final CompletableFuture<Boolean> cancelled = new CompletableFuture<>();

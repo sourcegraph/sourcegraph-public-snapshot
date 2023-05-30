@@ -3,7 +3,6 @@ package com.sourcegraph.cody.completions.prompt_library;
 import com.sourcegraph.cody.vscode.CancellationToken;
 import com.sourcegraph.cody.vscode.Completion;
 import com.sourcegraph.cody.vscode.TextDocumentContentProvider;
-
 import java.net.URI;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;

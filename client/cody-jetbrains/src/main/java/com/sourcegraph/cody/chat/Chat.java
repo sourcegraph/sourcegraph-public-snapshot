@@ -3,10 +3,9 @@ package com.sourcegraph.cody.chat;
 import com.sourcegraph.cody.UpdatableChat;
 import com.sourcegraph.cody.api.*;
 import com.sourcegraph.cody.prompts.Preamble;
+import com.sourcegraph.cody.vscode.CancellationToken;
 import java.util.ArrayList;
 import java.util.List;
-
-import com.sourcegraph.cody.vscode.CancellationToken;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

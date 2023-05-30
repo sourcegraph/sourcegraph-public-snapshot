@@ -1,11 +1,10 @@
 package com.sourcegraph.cody.completions.prompt_library;
 
 import com.sourcegraph.cody.api.Message;
-import com.sourcegraph.cody.api.Speaker;
 import com.sourcegraph.cody.api.Promises;
+import com.sourcegraph.cody.api.Speaker;
 import com.sourcegraph.cody.vscode.CancellationToken;
 import com.sourcegraph.cody.vscode.Completion;
-
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;

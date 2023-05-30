@@ -4,7 +4,6 @@ import com.sourcegraph.cody.api.Message;
 import com.sourcegraph.cody.api.Speaker;
 import com.sourcegraph.cody.vscode.CancellationToken;
 import com.sourcegraph.cody.vscode.Completion;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;

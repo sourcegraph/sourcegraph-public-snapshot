@@ -5,7 +5,6 @@ import com.sourcegraph.cody.api.CompletionsCallbacks;
 import com.sourcegraph.cody.api.CompletionsInput;
 import com.sourcegraph.cody.api.CompletionsService;
 import com.sourcegraph.cody.vscode.CancellationToken;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;

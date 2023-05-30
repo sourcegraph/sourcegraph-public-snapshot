@@ -1,7 +1,6 @@
 package com.sourcegraph.cody.completions.prompt_library;
 
 import com.sourcegraph.cody.api.Message;
-
 import java.util.List;
 
 public class CompletionParameters {

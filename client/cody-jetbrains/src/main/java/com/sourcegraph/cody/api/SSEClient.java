@@ -3,6 +3,7 @@ package com.sourcegraph.cody.api;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.sourcegraph.cody.vscode.CancellationToken;
 import java.io.*;
 import java.net.ConnectException;
 import java.net.URI;
@@ -13,8 +14,6 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Objects;
-
-import com.sourcegraph.cody.vscode.CancellationToken;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;

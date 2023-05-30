@@ -1,7 +1,6 @@
 package com.sourcegraph.cody.completions.prompt_library;
 
 import com.intellij.openapi.Disposable;
-
 import java.util.ArrayList;
 import java.util.List;
 

@@ -18,10 +18,9 @@ import com.sourcegraph.cody.completions.prompt_library.*;
 import com.sourcegraph.cody.config.ConfigUtil;
 import com.sourcegraph.cody.config.SettingsComponent;
 import com.sourcegraph.cody.vscode.*;
-import org.jetbrains.annotations.NotNull;
-
 import java.util.Optional;
 import java.util.concurrent.*;
+import org.jetbrains.annotations.NotNull;
 
 /** Responsible for triggering and clearing inline code completions. */
 public class CodyCompletionsManager {
