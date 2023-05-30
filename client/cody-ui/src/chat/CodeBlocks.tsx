@@ -31,13 +31,16 @@ function createButtons(
     copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit'],
     insertButtonClassName?: string
 ): HTMLElement {
+    const container = document.createElement('div')
+    container.className = styles.container
+
     // The container will contain the buttons and the <pre> element with the code.
     // This allows us to position the buttons independent of the code.
     const buttons = document.createElement('div')
     buttons.className = styles.buttons
 
     const copyButton = createCopyButton(text, copyButtonClassName, copyButtonOnSubmit)
-    const insertButton = createInsertButton(text, insertButtonClassName, copyButtonOnSubmit)
+    const insertButton = createInsertButton(text, container, insertButtonClassName, copyButtonOnSubmit)
 
     // The insert button only exists for IDE integrations
     if (insertButton) {
@@ -45,8 +48,6 @@ function createButtons(
     }
     buttons.append(copyButton)
 
-    const container = document.createElement('div')
-    container.className = styles.container
     container.append(buttons)
 
     return container
@@ -73,6 +74,7 @@ function createCopyButton(
 
 function createInsertButton(
     text: string,
+    container: HTMLElement,
     className?: string,
     copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
 ): HTMLElement | null {
@@ -84,9 +86,31 @@ function createInsertButton(
     insertButton.title = 'Insert this at the current cursor position'
     insertButton.className = classNames(styles.insertButton, className)
     insertButton.addEventListener('click', () => {
-        copyButtonOnSubmit(text, true)
+        const selectedText = getSelectedTextWithin(container.querySelector('pre'))
+        copyButtonOnSubmit(selectedText || text, true)
     })
     return insertButton
+}
+
+function getSelectedTextWithin(element: HTMLElement | null): string | null {
+    if (!element) {
+        return null
+    }
+
+    const selection = document.getSelection()
+    if (!selection) {
+        return null
+    }
+
+    const range = selection.getRangeAt(0)
+    const startContainer = range.startContainer
+    const endContainer = range.endContainer
+
+    if (element.contains(startContainer) && element.contains(endContainer)) {
+        return selection.toString()
+    }
+
+    return null
 }
 
 export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = ({
