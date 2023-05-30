@@ -18,7 +18,6 @@ import (
 	"k8s.io/utils/lru"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/ranges"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/symbols"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/trie"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -491,14 +490,13 @@ WHERE
 `
 
 type scipWriter struct {
-	tx                   *basestore.Store
-	symbolNameInserter   *batch.Inserter
-	symbolInserter       *batch.Inserter
-	symbolLookupInserter *batch.Inserter
-	uploadID             int
-	nextID               int
-	batchPayloadSum      int
-	batch                []bufferedDocument
+	tx                 *basestore.Store
+	symbolNameInserter *batch.Inserter
+	symbolInserter     *batch.Inserter
+	uploadID           int
+	nextID             int
+	batchPayloadSum    int
+	batch              []bufferedDocument
 }
 
 type bufferedDocument struct {
@@ -516,9 +514,6 @@ func makeSCIPWriter(ctx context.Context, tx *basestore.Store, uploadID int) (*sc
 		return nil, err
 	}
 	if err := tx.Exec(ctx, sqlf.Sprintf(makeSCIPWriterTemporarySymbolsTableQuery)); err != nil {
-		return nil, err
-	}
-	if err := tx.Exec(ctx, sqlf.Sprintf(makeSCIPWriterTemporarySymbolLookupTableQuery)); err != nil {
 		return nil, err
 	}
 
@@ -542,32 +537,13 @@ func makeSCIPWriter(ctx context.Context, tx *basestore.Store, uploadID int) (*sc
 		"definition_ranges",
 		"reference_ranges",
 		"implementation_ranges",
-
-		"scheme_id",
-		"package_manager_id",
-		"package_name_id",
-		"package_version_id",
-		"descriptor_id",
-		"descriptor_no_suffix_id",
-	)
-
-	symbolLookupInserter := batch.NewInserter(
-		ctx,
-		tx.Handle(),
-		"t_codeintel_scip_symbols_lookup",
-		batch.MaxNumPostgresParameters,
-		"id",
-		"upload_id",
-		"name",
-		"scip_name_type",
 	)
 
 	return &scipWriter{
-		tx:                   tx,
-		symbolNameInserter:   symbolNameInserter,
-		symbolInserter:       symbolInserter,
-		symbolLookupInserter: symbolLookupInserter,
-		uploadID:             uploadID,
+		tx:                 tx,
+		symbolNameInserter: symbolNameInserter,
+		symbolInserter:     symbolInserter,
+		uploadID:           uploadID,
 	}, nil
 }
 
@@ -585,23 +561,7 @@ CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
 	document_lookup_id integer NOT NULL,
 	definition_ranges bytea,
 	reference_ranges bytea,
-	implementation_ranges bytea,
-
-	scheme_id integer,
-	package_manager_id integer,
-	package_name_id integer,
-	package_version_id integer,
-	descriptor_id integer,
-	descriptor_no_suffix_id integer
-) ON COMMIT DROP
-`
-
-const makeSCIPWriterTemporarySymbolLookupTableQuery = `
-CREATE TEMPORARY TABLE t_codeintel_scip_symbols_lookup(
-	id integer NOT NULL,
-	upload_id integer NOT NULL,
-	name text NOT NULL,
-	scip_name_type text NOT NULL
+	implementation_ranges bytea
 ) ON COMMIT DROP
 `
 
@@ -735,54 +695,6 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 	}
 	sort.Strings(symbolNames)
 
-	currentID := 1
-	schemes := make(map[string]int)
-	managers := make(map[string]int)
-	packageNames := make(map[string]int)
-	packageVersions := make(map[string]int)
-	descriptors := make(map[string]int)
-	descriptorsNoSuffix := make(map[string]int)
-
-	for _, symbolName := range symbolNames {
-		p, err := ogscip.ParseSymbol(symbolName)
-		if err != nil {
-			return err
-		}
-
-		if _, ok := schemes[p.Scheme]; !ok {
-			schemes[p.Scheme] = currentID
-			currentID++
-		}
-
-		if _, ok := managers[p.Package.Manager]; !ok {
-			managers[p.Package.Manager] = currentID
-			currentID++
-		}
-
-		if _, ok := packageNames[p.Package.Name]; !ok {
-			packageNames[p.Package.Name] = currentID
-			currentID++
-		}
-
-		if _, ok := packageVersions[p.Package.Version]; !ok {
-			packageVersions[p.Package.Version] = currentID
-			currentID++
-		}
-
-		desc := ogscip.DescriptorOnlyFormatter.FormatSymbol(p)
-		if _, ok := descriptors[desc]; !ok {
-			descriptors[desc] = currentID
-			currentID++
-		}
-
-		descNoSuffix := symbols.ReducedDescriptorOnlyFormatter.FormatSymbol(p)
-		if _, ok := descriptorsNoSuffix[descNoSuffix]; !ok {
-			descriptorsNoSuffix[descNoSuffix] = currentID
-			currentID++
-		}
-
-	}
-
 	var symbolNameTrie trie.Trie
 	symbolNameTrie, s.nextID = trie.NewTrie(symbolNames, s.nextID)
 
@@ -811,37 +723,6 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 		return err
 	}
 
-	for scheme, schemeID := range schemes {
-		if err := s.symbolLookupInserter.Insert(ctx, schemeID, s.uploadID, scheme, "SCHEME"); err != nil {
-			return err
-		}
-	}
-	for manager, managerID := range managers {
-		if err := s.symbolLookupInserter.Insert(ctx, managerID, s.uploadID, manager, "PACKAGE_MANAGER"); err != nil {
-			return err
-		}
-	}
-	for packageName, packageNameID := range packageNames {
-		if err := s.symbolLookupInserter.Insert(ctx, packageNameID, s.uploadID, packageName, "PACKAGE_NAME"); err != nil {
-			return err
-		}
-	}
-	for packageVersion, packageVersionID := range packageVersions {
-		if err := s.symbolLookupInserter.Insert(ctx, packageVersionID, s.uploadID, packageVersion, "PACKAGE_VERSION"); err != nil {
-			return err
-		}
-	}
-	for descriptor, descriptorID := range descriptors {
-		if err := s.symbolLookupInserter.Insert(ctx, descriptorID, s.uploadID, descriptor, "DESCRIPTOR"); err != nil {
-			return err
-		}
-	}
-	for descriptorNoSuffix, descriptorNoSuffixID := range descriptorsNoSuffix {
-		if err := s.symbolLookupInserter.Insert(ctx, descriptorNoSuffixID, s.uploadID, descriptorNoSuffix, "DESCRIPTOR_NO_SUFFIX"); err != nil {
-			return err
-		}
-	}
-
 	for i, invertedRangeIndexes := range invertedRangeIndexes {
 		for _, index := range invertedRangeIndexes {
 			definitionRanges, err := ranges.EncodeRanges(index.DefinitionRanges)
@@ -857,19 +738,6 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 				return err
 			}
 
-			p, err := ogscip.ParseSymbol(index.SymbolName)
-			if err != nil {
-				return err
-			}
-
-			schemeID := schemes[p.Scheme]
-			packageManagerID := managers[p.Package.Manager]
-			packageNameID := packageNames[p.Package.Name]
-			packageVersionID := packageVersions[p.Package.Version]
-			descriptorID := descriptors[ogscip.DescriptorOnlyFormatter.FormatSymbol(p)]
-			descriptorNoDisambiguatorID := descriptors[symbols.ReducedDescriptorOnlyFormatter.FormatSymbol(p)]
-
-			// symbolID is null because we are using all the other ones now
 			symbolID, ok := idsBySymbolName[index.SymbolName]
 			if !ok {
 				return errors.Newf("malformed trie - expected %q to be a member", index.SymbolName)
@@ -882,13 +750,6 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 				definitionRanges,
 				referenceRanges,
 				implementationRanges,
-
-				schemeID,
-				packageManagerID,
-				packageNameID,
-				packageVersionID,
-				descriptorID,
-				descriptorNoDisambiguatorID,
 			); err != nil {
 				return err
 			}
@@ -913,18 +774,12 @@ func (s *scipWriter) Flush(ctx context.Context) error {
 	if err := s.symbolInserter.Flush(ctx); err != nil {
 		return err
 	}
-	if err := s.symbolLookupInserter.Flush(ctx); err != nil {
-		return err
-	}
 
 	// Move all data from temp tables into target tables
 	if err := s.tx.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolNamesQuery, s.uploadID)); err != nil {
 		return err
 	}
 	if err := s.tx.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolsQuery, s.uploadID)); err != nil {
-		return err
-	}
-	if err := s.tx.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolLookupQuery, s.uploadID)); err != nil {
 		return err
 	}
 
@@ -947,22 +802,6 @@ FROM t_codeintel_scip_symbol_names source
 ON CONFLICT DO NOTHING
 `
 
-const scipWriterFlushSymbolLookupQuery = `
-INSERT INTO codeintel_scip_symbols_lookup (
-	upload_id,
-	id,
-	name,
-	scip_name_type
-)
-SELECT
-	%s,
-	source.id,
-	source.name,
-	source.scip_name_type
-FROM t_codeintel_scip_symbols_lookup source
-ON CONFLICT DO NOTHING
-`
-
 const scipWriterFlushSymbolsQuery = `
 INSERT INTO codeintel_scip_symbols (
 	upload_id,
@@ -971,14 +810,7 @@ INSERT INTO codeintel_scip_symbols (
 	schema_version,
 	definition_ranges,
 	reference_ranges,
-	implementation_ranges,
-
-	scheme_id,
-	package_manager_id,
-	package_name_id,
-	package_version_id,
-	descriptor_id,
-	descriptor_no_suffix_id
+	implementation_ranges
 )
 SELECT
 	%s,
@@ -987,14 +819,7 @@ SELECT
 	1,
 	source.definition_ranges,
 	source.reference_ranges,
-	source.implementation_ranges,
-
-	source.scheme_id,
-	source.package_manager_id,
-	source.package_name_id,
-	source.package_version_id,
-	source.descriptor_id,
-	source.descriptor_no_suffix_id
+	source.implementation_ranges
 FROM t_codeintel_scip_symbols source
 ON CONFLICT DO NOTHING
 `
