@@ -26,6 +26,10 @@ go_test(
     name = "auth_test",
     srcs = ["sourcegraph_operator_cleaner_test.go"],
     embed = [":auth"],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
     deps = [
         "//enterprise/cmd/worker/shared/sourcegraphoperator",
         "//enterprise/internal/cloud",
