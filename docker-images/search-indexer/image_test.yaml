@@ -50,8 +50,7 @@ fileExistenceTests:
 
 metadataTest:
   envVars:
-    # TODO: Should this be http or https?
-    # - key: SRC_FRONTEND_INTERNAL
-    #   value: 'http://sourcegraph-frontend-internal'
+    - key: SRC_FRONTEND_INTERNAL
+      value: 'http://sourcegraph-frontend-internal'
     - key: DATA_DIR
       value: '/data/index'

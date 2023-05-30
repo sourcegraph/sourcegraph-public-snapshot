@@ -12,11 +12,6 @@ commandTests:
     command: "git"
     args:
       - version
-  # TODO: Test currently fails
-  # - name: "src is runnable"
-  #   command: "src"
-  #   args:
-  #     - version
 
   - name: "src-cli binary is runnable"
     command: "/usr/local/bin/src"
