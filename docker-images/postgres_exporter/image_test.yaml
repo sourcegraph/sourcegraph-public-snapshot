@@ -16,7 +16,7 @@ commandTests:
     command: "/usr/bin/id"
     args:
       - -u
-    excludedOutput: ["^20001"]
+    expectedOutput: ["^20001"]
     exitCode: 0
 
 fileExistenceTests:
@@ -25,7 +25,7 @@ fileExistenceTests:
   shouldExist: true
   uid: 0
   gid: 0
-  permissions: '-rw-r--r--'
+  permissions: '-r-xr-xr-x'
 
 metadataTest:
   envVars:

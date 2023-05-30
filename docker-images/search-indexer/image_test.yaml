@@ -4,7 +4,7 @@ commandTests:
   - name: "zoekt-sourcegraph-indexserver is runnable"
     command: "zoekt-sourcegraph-indexserver"
     args:
-      - --version
+      - --help
   - name: "zoekt-archive-index is runnable"
     command: "zoekt-archive-index"
     args:
