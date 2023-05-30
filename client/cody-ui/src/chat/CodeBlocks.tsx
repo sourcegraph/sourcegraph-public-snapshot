@@ -33,7 +33,6 @@ function createCopyButtonWithContainer(
 ): HTMLElement {
     const copyButton = document.createElement('button')
     copyButton.textContent = 'Copy'
-    copyButton.title = 'Copy this code'
     copyButton.className = className
     copyButton.addEventListener('click', () => {
         navigator.clipboard.writeText(text).catch(error => console.error(error))
@@ -69,7 +68,7 @@ function createInsertButton(
     }
     const insertButton = document.createElement('button')
     insertButton.textContent = 'Insert at Cursor'
-    insertButton.title = 'Insert this code at the current cursor position'
+    insertButton.title = 'Insert this at the current cursor position'
     insertButton.className = classNames(styles.insertButton, insertButtonClassName)
     insertButton.addEventListener('click', () => {
         copyButtonOnSubmit(text, true)

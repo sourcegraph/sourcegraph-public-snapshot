@@ -9,11 +9,11 @@
 
 .buttons {
     position: absolute;
-    bottom: .25rem;
-    left: .25rem;
+    top: .5rem;
+    right: .5rem;
     visibility: hidden;
     display: flex;
-    gap: .125rem;
+    gap: .25rem;
 }
 
 .container:hover .buttons {
