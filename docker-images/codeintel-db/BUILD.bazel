@@ -15,5 +15,5 @@ oci_push(
     name = "candidate_push",
     image = ":image",
     remote_tags = "//:tags",
-    repository = image_repository("codeinte-db"),
+    repository = image_repository("codeintel-db"),
 )
