@@ -82,6 +82,7 @@ export interface FeedbackButtonsProps {
     feedbackButtonsOnSubmit: (text: string) => void
 }
 
+// TODO: Rename to CodeBlockActionsProps
 export interface CopyButtonProps {
     copyButtonOnSubmit: (text: string, insert?: boolean) => void
 }
