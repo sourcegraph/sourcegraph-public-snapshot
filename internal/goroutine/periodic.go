@@ -172,7 +172,7 @@ loop:
 			default:
 				reinvocations++
 
-				if reinvocations <= MaxConsecutiveReinvocations {
+				if reinvocations < MaxConsecutiveReinvocations {
 					continue loop
 				}
 
