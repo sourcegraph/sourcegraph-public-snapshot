@@ -9,15 +9,28 @@ import {
     mdiOpenInNew,
     mdiClose,
 } from '@mdi/js'
-import { Combobox, ComboboxInput, ComboboxOption, ComboboxPopover, ComboboxList } from '@reach/combobox'
 import classNames from 'classnames'
 import { Observable } from 'rxjs'
 
 import { SourcegraphLogo } from '@sourcegraph/branded/src/components/SourcegraphLogo'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { createURLWithUTM } from '@sourcegraph/shared/src/tracking/utm'
-import { useInputValidation, deriveInputClassName } from '@sourcegraph/shared/src/util/useInputValidation'
-import { Button, Link, Icon, Label, H4, Text, LoaderInput, Tooltip } from '@sourcegraph/wildcard'
+import { InputValidationState, useInputValidation } from '@sourcegraph/shared/src/util/useInputValidation'
+import {
+    Combobox,
+    ComboboxInput,
+    ComboboxOption,
+    ComboboxPopover,
+    ComboboxList,
+    Button,
+    Link,
+    Icon,
+    Label,
+    H4,
+    Text,
+    Tooltip,
+    InputStatus,
+} from '@sourcegraph/wildcard'
 
 import { CurrentUserResult } from '../../graphql-operations'
 import { getPlatformName, isDefaultSourcegraphUrl } from '../../shared/util/context'
@@ -291,6 +304,19 @@ interface SourcegraphURLFormProps {
     onSuggestionDelete: OptionsPageProps['onSuggestedSourcegraphUrlDelete']
 }
 
+const getInputStatusFromKind = (kind: InputValidationState['kind']): InputStatus => {
+    switch (kind) {
+        case 'INVALID':
+            return InputStatus.error
+        case 'VALID':
+            return InputStatus.valid
+        case 'LOADING':
+            return InputStatus.loading
+        default:
+            return InputStatus.initial
+    }
+}
+
 export const SourcegraphURLForm: React.FunctionComponent<React.PropsWithChildren<SourcegraphURLFormProps>> = ({
     value,
     validate,
@@ -345,32 +371,31 @@ export const SourcegraphURLForm: React.FunctionComponent<React.PropsWithChildren
         <form onSubmit={preventDefault} noValidate={true}>
             <Label htmlFor="sourcegraph-url">Sourcegraph URL</Label>
             <Combobox openOnFocus={true} onSelect={nextUrlFieldChange}>
-                <LoaderInput loading={urlState.kind === 'LOADING'} className={deriveInputClassName(urlState)}>
-                    <ComboboxInput
-                        type="url"
-                        required={true}
-                        spellCheck={false}
-                        autoComplete="off"
-                        autocomplete={false}
-                        pattern="^https://.*"
-                        placeholder="https://"
-                        onFocus={onFocus}
-                        id="sourcegraph-url"
-                        ref={urlInputElements}
-                        value={urlState.value}
-                        onChange={nextUrlFieldChange}
-                        className={classNames('form-control', 'test-sourcegraph-url', deriveInputClassName(urlState))}
-                    />
-                </LoaderInput>
+                <ComboboxInput
+                    type="url"
+                    required={true}
+                    spellCheck={false}
+                    autoComplete="off"
+                    autocomplete={false}
+                    status={getInputStatusFromKind(urlState.kind)}
+                    pattern="^https://.*"
+                    placeholder="https://"
+                    onFocus={onFocus}
+                    id="sourcegraph-url"
+                    ref={urlInputElements}
+                    value={urlState.value}
+                    onChange={nextUrlFieldChange}
+                    className="test-sourcegraph-url"
+                />
 
                 {suggestions.length > 1 && hasInteracted && (
-                    <ComboboxPopover className={styles.popover}>
+                    <ComboboxPopover>
                         <ComboboxList>
                             {suggestions.map(suggestion => (
                                 <ComboboxOption
                                     key={suggestion}
                                     value={suggestion}
-                                    className="d-flex justify-content-between"
+                                    className="d-flex justify-content-between p-0"
                                 >
                                     <Text className="py-2 pl-3 m-0">{suggestion}</Text>
                                     <Tooltip content="Remove suggestion">

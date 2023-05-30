@@ -5,7 +5,7 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import GithubIcon from 'mdi-react/GithubIcon'
 import { Observable, of } from 'rxjs'
 
-import { H1, H2, H3 } from '@sourcegraph/wildcard'
+import { Grid, H1, H2, H3 } from '@sourcegraph/wildcard'
 import { BrandedStory } from '@sourcegraph/wildcard/src/stories'
 
 import { OptionsPage, OptionsPageProps } from './OptionsPage'
@@ -77,75 +77,73 @@ const WithAdvancedSettings: Story = args => {
 export const AllOptionsPages: Story = (args = {}) => (
     <div>
         <H1 className="text-center mb-3">All Options Pages</H1>
-        <div>
-            <div className="d-flex justify-content-center">
-                <div className="mx-4">
-                    <H3 className="text-center">Interactive</H3>
-                    <Interactive {...args} />
-                </div>
-                <div className="mx-4">
-                    <H3 className="text-center">URL validation error</H3>
-                    <OptionsPageWrapper validateSourcegraphUrl={invalidSourcegraphUrl} {...args} />
-                </div>
-                <div className="mx-4">
-                    <H3 className="text-center">With advanced settings</H3>
-                    <WithAdvancedSettings {...args} />
-                </div>
+        <Grid columnCount={3}>
+            <div>
+                <H3 className="text-center">Interactive</H3>
+                <Interactive {...args} />
             </div>
-
-            <div className="d-flex justify-content-center mt-5">
-                <div className="mx-4">
-                    <H3 className="text-center">On Sourcegraph.com</H3>
-                    <OptionsPageWrapper
-                        requestPermissionsHandler={requestPermissionsHandler}
-                        showSourcegraphComAlert={true}
-                        sourcegraphUrl={args.sourcegraphUrl}
-                        version={args.version}
-                    />
-                </div>
-                <div className="mx-4">
-                    <H3 className="text-center">Asking for permission</H3>
-                    <OptionsPageWrapper
-                        permissionAlert={{ name: 'GitHub', icon: GithubIcon }}
-                        requestPermissionsHandler={requestPermissionsHandler}
-                        {...args}
-                    />
-                </div>
+            <div>
+                <H3 className="text-center">URL validation error</H3>
+                <OptionsPageWrapper validateSourcegraphUrl={invalidSourcegraphUrl} {...args} />
             </div>
-
-            <H2 className="mt-5 text-center">Not synced repository</H2>
-            <div className="d-flex justify-content-center mb-3">
-                <div className="mx-4">
-                    <H3 className="text-center">Sourcegraph.com</H3>
-                    <OptionsPageWrapper
-                        sourcegraphUrl="https://sourcegraph.com"
-                        currentUser={{ settingsURL: '/users/john-doe/settings', siteAdmin: false }}
-                        hasRepoSyncError={true}
-                        requestPermissionsHandler={requestPermissionsHandler}
-                        showSourcegraphComAlert={args.showSourcegraphComAlert}
-                        version={args.version}
-                    />
-                </div>
-                <div className="mx-4">
-                    <H3 className="text-center">Self-hosted</H3>
-                    <OptionsPageWrapper
-                        currentUser={{ settingsURL: '/users/john-doe/settings', siteAdmin: false }}
-                        hasRepoSyncError={true}
-                        requestPermissionsHandler={requestPermissionsHandler}
-                        {...args}
-                    />
-                </div>
-                <div className="mx-4">
-                    <H3 className="text-center">Self-hosted instance, user is admin</H3>
-                    <OptionsPageWrapper
-                        currentUser={{ settingsURL: '/users/john-doe/settings', siteAdmin: true }}
-                        hasRepoSyncError={true}
-                        requestPermissionsHandler={requestPermissionsHandler}
-                        {...args}
-                    />
-                </div>
+            <div>
+                <H3 className="text-center">With advanced settings</H3>
+                <WithAdvancedSettings {...args} />
             </div>
-        </div>
+            <div>
+                <H3 className="text-center">No previous url suggestion</H3>
+                <OptionsPageWrapper suggestedSourcegraphUrls={[]} {...args} />
+            </div>
+            <div>
+                <H3 className="text-center">On Sourcegraph.com</H3>
+                <OptionsPageWrapper
+                    requestPermissionsHandler={requestPermissionsHandler}
+                    showSourcegraphComAlert={true}
+                    sourcegraphUrl={args.sourcegraphUrl}
+                    version={args.version}
+                />
+            </div>
+            <div>
+                <H3 className="text-center">Asking for permission</H3>
+                <OptionsPageWrapper
+                    permissionAlert={{ name: 'GitHub', icon: GithubIcon }}
+                    requestPermissionsHandler={requestPermissionsHandler}
+                    {...args}
+                />
+            </div>
+        </Grid>
+        <H2 className="mt-5 text-center">Not synced repository</H2>
+        <Grid columnCount={3}>
+            <div>
+                <H3 className="text-center">Sourcegraph.com</H3>
+                <OptionsPageWrapper
+                    sourcegraphUrl="https://sourcegraph.com"
+                    currentUser={{ settingsURL: '/users/john-doe/settings', siteAdmin: false }}
+                    hasRepoSyncError={true}
+                    requestPermissionsHandler={requestPermissionsHandler}
+                    showSourcegraphComAlert={args.showSourcegraphComAlert}
+                    version={args.version}
+                />
+            </div>
+            <div>
+                <H3 className="text-center">Self-hosted</H3>
+                <OptionsPageWrapper
+                    currentUser={{ settingsURL: '/users/john-doe/settings', siteAdmin: false }}
+                    hasRepoSyncError={true}
+                    requestPermissionsHandler={requestPermissionsHandler}
+                    {...args}
+                />
+            </div>
+            <div>
+                <H3 className="text-center">Self-hosted instance, user is admin</H3>
+                <OptionsPageWrapper
+                    currentUser={{ settingsURL: '/users/john-doe/settings', siteAdmin: true }}
+                    hasRepoSyncError={true}
+                    requestPermissionsHandler={requestPermissionsHandler}
+                    {...args}
+                />
+            </div>
+        </Grid>
     </div>
 )
 AllOptionsPages.argTypes = {
