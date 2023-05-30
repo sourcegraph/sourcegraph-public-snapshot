@@ -1453,7 +1453,34 @@ func (c *clientImplementor) newBlobReader(ctx context.Context, repo api.RepoName
 		return nil, err
 	}
 
-	cmd := c.gitCommand(repo, "show", string(commit)+":"+name)
+	var cmd GitCommand
+	if strings.Contains(name, "..") {
+		// We special case ".." in path to running a less efficient two
+		// commands. For other paths we can rely on the faster git show.
+		//
+		// git show will try and resolve revisions on anything containing
+		// "..". Depending on what branches/files exist, this can lead to:
+		//
+		//   - error: object $SHA is a tree, not a commit
+		//   - fatal: Invalid symmetric difference expression $SHA:$name
+		//   - outputting a diff instead of the file
+		//
+		// The last point is a security issue for repositories with sub-repo
+		// permissions since the diff will not be filtered.
+		blobOID, err := c.gitCommand(repo, "ls-tree", "--object-only", string(commit), "--", name).Output(ctx)
+		if err != nil {
+			return nil, err
+		}
+		blobOID = bytes.TrimSpace(blobOID)
+		if len(blobOID) == 0 {
+			return nil, &os.PathError{Op: "open", Path: name, Err: os.ErrNotExist}
+		}
+		cmd = c.gitCommand(repo, "cat-file", "-p", string(blobOID))
+	} else {
+		// Otherwise we can rely on a single command git show sha:name.
+		cmd = c.gitCommand(repo, "show", string(commit)+":"+name)
+	}
+
 	stdout, err := cmd.StdoutReader(ctx)
 	if err != nil {
 		return nil, err
