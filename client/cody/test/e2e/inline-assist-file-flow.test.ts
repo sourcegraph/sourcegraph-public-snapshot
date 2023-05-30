@@ -10,7 +10,7 @@ test('start a fixup job from inline assist with valid auth', async ({ page, side
     // Open the Explorer view from the sidebar
     await sidebarExplorer(page).click()
 
-    // Select the second file from the tree view, which is the index.html file
+    // Select the index.html file from the tree view
     await page.getByRole('treeitem', { name: 'index.html' }).locator('a').dblclick()
 
     // Click on the gutter to open the comment thread
