@@ -208,6 +208,10 @@
         "enablement": "config.cody.debug && config.cody.experimental.guardrails && editorHasSelection"
       },
       {
+        "command": "cody.recipe.file-flow",
+        "title": "Cody: File Flow"
+      },
+      {
         "command": "cody.inline.insert",
         "title": "Cody: Insert text at the current cursor position"
       },
@@ -289,6 +293,10 @@
         },
         {
           "command": "cody.recipe.explain-code-high-level",
+          "when": "cody.activated"
+        },
+        {
+          "command": "cody.recipe.file-flow",
           "when": "cody.activated"
         },
         {
@@ -378,6 +386,10 @@
         },
         {
           "command": "cody.recipe.explain-code-high-level",
+          "when": "cody.activated"
+        },
+        {
+          "command": "cody.recipe.file-flow",
           "when": "cody.activated"
         },
         {
