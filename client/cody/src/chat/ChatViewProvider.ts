@@ -240,6 +240,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 void this.webview?.postMessage({ type: 'login', authStatus })
                 break
             }
+            case 'insert':
+                await vscode.commands.executeCommand('cody.inline.insert', message.text)
+                break
             case 'event':
                 this.sendEvent(message.event, message.value)
                 break

@@ -41,6 +41,7 @@ export const Transcript: React.FunctionComponent<
     fileLinkComponent,
     className,
     codeBlocksCopyButtonClassName,
+    codeBlocksInsertButtonClassName,
     transcriptItemClassName,
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
@@ -100,6 +101,7 @@ export const Transcript: React.FunctionComponent<
                             setBeingEdited={setMessageBeingEdited}
                             fileLinkComponent={fileLinkComponent}
                             codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
+                            codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
                             transcriptItemClassName={transcriptItemClassName}
                             humanTranscriptItemClassName={humanTranscriptItemClassName}
                             transcriptItemParticipantClassName={transcriptItemParticipantClassName}
@@ -125,6 +127,7 @@ export const Transcript: React.FunctionComponent<
                     setBeingEdited={setMessageBeingEdited}
                     fileLinkComponent={fileLinkComponent}
                     codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
+                    codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
                     transcriptItemClassName={transcriptItemClassName}
                     transcriptItemParticipantClassName={transcriptItemParticipantClassName}
                     transcriptActionClassName={transcriptActionClassName}

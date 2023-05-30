@@ -82,8 +82,9 @@ export interface FeedbackButtonsProps {
     feedbackButtonsOnSubmit: (text: string) => void
 }
 
+// TODO: Rename to CodeBlockActionsProps
 export interface CopyButtonProps {
-    copyButtonOnSubmit: (text: string) => void
+    copyButtonOnSubmit: (text: string, insert?: boolean) => void
 }
 /**
  * The Cody chat interface, with a transcript of all messages and a message form.
@@ -106,6 +107,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     afterTips,
     className,
     codeBlocksCopyButtonClassName,
+    codeBlocksInsertButtonClassName,
     transcriptItemClassName,
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
@@ -227,6 +229,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     setMessageBeingEdited={setMessageBeingEdited}
                     fileLinkComponent={fileLinkComponent}
                     codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
+                    codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
                     transcriptItemClassName={transcriptItemClassName}
                     humanTranscriptItemClassName={humanTranscriptItemClassName}
                     transcriptItemParticipantClassName={transcriptItemParticipantClassName}

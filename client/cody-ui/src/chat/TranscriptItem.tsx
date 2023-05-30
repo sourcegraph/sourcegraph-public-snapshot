@@ -27,6 +27,7 @@ export interface TranscriptItemClassNames {
     humanTranscriptItemClassName?: string
     transcriptItemParticipantClassName?: string
     codeBlocksCopyButtonClassName?: string
+    codeBlocksInsertButtonClassName?: string
     transcriptActionClassName?: string
     chatInputClassName?: string
 }
@@ -61,6 +62,7 @@ export const TranscriptItem: React.FunctionComponent<
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
     codeBlocksCopyButtonClassName,
+    codeBlocksInsertButtonClassName,
     transcriptActionClassName,
     textAreaComponent: TextArea,
     EditButtonContainer,
@@ -170,6 +172,7 @@ export const TranscriptItem: React.FunctionComponent<
                             displayText={message.displayText}
                             copyButtonClassName={codeBlocksCopyButtonClassName}
                             CopyButtonProps={copyButtonOnSubmit}
+                            insertButtonClassName={codeBlocksInsertButtonClassName}
                         />
                     )
                 ) : inProgress ? (

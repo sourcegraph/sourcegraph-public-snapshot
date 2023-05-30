@@ -208,6 +208,10 @@
         "enablement": "config.cody.debug && config.cody.experimental.guardrails && editorHasSelection"
       },
       {
+        "command": "cody.inline.insert",
+        "title": "Cody: Insert text at the current cursor position"
+      },
+      {
 				"command": "cody.recipe.non-stop",
 				"title": "Cody: Fixup (Experimental)",
         "icon": "resources/cody.png",
@@ -347,6 +351,14 @@
         {
           "command": "cody.manual-completions",
           "when": "config.cody.experimental.suggestions"
+        },
+        {
+          "command": "cody.guardrails.debug",
+          "when": "false"
+        },
+        {
+          "command": "cody.inline.insert",
+          "when": "false"
         }
       ],
       "editor/context": [
@@ -394,7 +406,7 @@
         },
         {
           "command": "cody.guardrails.debug",
-          "when": "config.cody.debug && config.cody.experimental.guardrails && editorHasSelection"
+          "when": "cody.activated && config.cody.debug && config.cody.experimental.guardrails && editorHasSelection"
         }
       ],
       "view/title": [

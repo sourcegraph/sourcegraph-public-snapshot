@@ -71,8 +71,12 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     )
 
     const onCopyBtnClick = useCallback(
-        (text: string) => {
-            vscodeAPI.postMessage({ command: 'event', event: 'click', value: text })
+        (text: string, isInsert = false) => {
+            if (isInsert) {
+                vscodeAPI.postMessage({ command: 'insert', text })
+            } else {
+                vscodeAPI.postMessage({ command: 'event', event: 'click', value: text })
+            }
         },
         [vscodeAPI]
     )
@@ -95,6 +99,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             fileLinkComponent={FileLink}
             className={styles.innerContainer}
             codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
+            codeBlocksInsertButtonClassName={styles.codeBlocksInsertButton}
             transcriptItemClassName={styles.transcriptItem}
             humanTranscriptItemClassName={styles.humanTranscriptItem}
             transcriptItemParticipantClassName={styles.transcriptItemParticipant}
