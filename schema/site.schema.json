@@ -2349,6 +2349,11 @@
           "description": "Experimental: Whether to generate embeddings incrementally. If true, only files that have changed since the last run will be processed.",
           "type": "boolean",
           "default": false
+        },
+        "minimumInterval": {
+          "description": "The time to wait between runs. Valid time units are \"s\", \"m\", \"h\". Example values: \"30s\", \"5m\", \"1h\".",
+          "type": "string",
+          "default": "24h"
         }
       },
       "examples": [
