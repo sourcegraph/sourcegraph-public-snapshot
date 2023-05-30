@@ -146,6 +146,8 @@ func (r *PeriodicGoroutine) Start() {
 
 loop:
 	for {
+		intervalCh := r.clock.After(r.getInterval())
+
 		start := time.Now()
 		shutdown, err := runPeriodicHandler(r.ctx, r.handler, r.operation)
 		duration := time.Since(start)
@@ -161,7 +163,7 @@ loop:
 		}
 
 		select {
-		case <-r.clock.After(r.getInterval()):
+		case <-intervalCh:
 		case <-r.ctx.Done():
 			break loop
 		}
