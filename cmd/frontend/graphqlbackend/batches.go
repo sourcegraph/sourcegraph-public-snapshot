@@ -557,6 +557,7 @@ type BatchChangesCodeHostResolver interface {
 	SupportsCommitSigning() bool
 	HasWebhooks() bool
 	Credential() BatchChangesCredentialResolver
+	CommitSigningConfiguration() CommitSigningConfigResolver
 }
 
 type BatchChangesCredentialResolver interface {
@@ -566,6 +567,10 @@ type BatchChangesCredentialResolver interface {
 	SSHPublicKey(ctx context.Context) (*string, error)
 	CreatedAt() gqlutil.DateTime
 	IsSiteCredential() bool
+}
+
+type CommitSigningConfigResolver interface {
+	//TODO: Returns GitHubApp fields or nil, or flexible for future fields?
 }
 
 type ChangesetCountsArgs struct {

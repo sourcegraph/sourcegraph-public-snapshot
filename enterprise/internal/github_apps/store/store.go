@@ -37,6 +37,9 @@ type GitHubAppsStore interface {
 	// GetBySlug retrieves a GitHub App from the database by slug and base url
 	GetBySlug(ctx context.Context, slug string, baseURL string) (*ghtypes.GitHubApp, error)
 
+	// GetByDomain retrieves a GitHub App from the database by domain and base url
+	GetByDomain(ctx context.Context, domain *types.GitHubAppDomain, baseURL string) (*ghtypes.GitHubApp, error)
+
 	// WithEncryptionKey sets encryption key on store. Returns a new GitHubAppsStore
 	WithEncryptionKey(key encryption.Key) GitHubAppsStore
 
@@ -94,7 +97,17 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
 	if domain == "" {
 		domain = types.ReposDomain
 	}
+	if domain == types.BatchesDomain {
+		// TODO: Add a check so GH instance doesn't already exist for batches apps
+		// When domain:"batches", check for an existing DB entry with the same base_url, fail if one is encountered
+		existingGHApp, err := s.GetByDomain(ctx, &domain, app.BaseURL)
+		if existingGHApp != nil {
+			return errors.New("GitHub App already exists for this base URL")
+		}
+	}
 
+	// TODO: extsvc.NormalizeBaseURL(app.BaseURL) here -- type issue (param needs to be not a string)
+	// TODO: Update past entries with this?
 	query := sqlf.Sprintf(`INSERT INTO
 	    github_apps (app_id, name, domain, slug, base_url, app_url, client_id, client_secret, private_key, encryption_key_id, logo)
     	VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
@@ -276,6 +289,11 @@ func (s *gitHubAppsStore) GetByAppID(ctx context.Context, appID int, baseURL str
 // GetBySlug retrieves a GitHub App from the database by slug and base url
 func (s *gitHubAppsStore) GetBySlug(ctx context.Context, slug string, baseURL string) (*ghtypes.GitHubApp, error) {
 	return s.get(ctx, sqlf.Sprintf(`slug = %s AND base_url = %s`, slug, baseURL))
+}
+
+// GetByDomain retrieves a GitHub App from the database by domain and base url
+func (s *gitHubAppsStore) GetByDomain(ctx context.Context, domain *types.GitHubAppDomain, baseURL string) (*ghtypes.GitHubApp, error) {
+	return s.get(ctx, sqlf.Sprintf(`domain = %s AND base_url = %s`, *domain, baseURL))
 }
 
 // List lists all GitHub Apps in the store

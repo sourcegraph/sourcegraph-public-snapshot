@@ -3,6 +3,7 @@ package resolvers
 import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
 
@@ -23,6 +24,15 @@ func (c *batchChangesCodeHostResolver) ExternalServiceURL() string {
 
 func (c *batchChangesCodeHostResolver) Credential() graphqlbackend.BatchChangesCredentialResolver {
 	return c.credential
+}
+
+func (c *batchChangesCodeHostResolver) CommitSigningConfiguration() graphqlbackend.BatchChangesCredentialResolver {
+	switch c.codeHost.ExternalServiceType {
+	case extsvc.TypeGitHub:
+		// TODO: How to access gh_apps store from here?
+		return store.GetByDomain(ctx, c.codeHost.ExternalServiceID, GitHubAppDomain.Batches)
+	}
+	return nil
 }
 
 func (c *batchChangesCodeHostResolver) RequiresSSH() bool {
