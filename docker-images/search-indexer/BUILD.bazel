@@ -1,6 +1,7 @@
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
 load("//cmd/server:macro.bzl", "container_dependencies", "dependencies_tars")
 load("//dev:oci_defs.bzl", "image_repository")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
 
 DEPS = [
     "@com_github_sourcegraph_zoekt//cmd/zoekt-archive-index",
@@ -33,6 +34,15 @@ oci_tarball(
     name = "image_tarball",
     image = ":image",
     repo_tags = ["zoekt-indexserver:candidate"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = ["requires-network"],
 )
 
 oci_push(

@@ -9,7 +9,7 @@ commandTests:
   - name: "ctags is runnable"
     command: "universal-ctags"
     args:
-      - --help
+      - --version
 
   # TODO(security): This container should not be running as root
   # - name: "not running as root"
