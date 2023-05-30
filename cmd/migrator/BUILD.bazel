@@ -302,6 +302,7 @@ pkg_tar(
     name = "tar_schema_descriptions",
     srcs = [":schema_descriptions"],
     package_dir = "schema-descriptions",
+    visibility = ["//enterprise/cmd/migrator:__pkg__"],
 )
 
 pkg_tar(
