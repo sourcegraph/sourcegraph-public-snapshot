@@ -28,7 +28,7 @@ go_binary(
 )
 
 genrule(
-    name = "schema-descriptions",
+    name = "schema_descriptions",
     srcs = ["generate.sh"],
     outs = [
         "schema-descriptions/v3.20.0-internal_database_schema.json",
@@ -275,8 +275,33 @@ genrule(
         "schema-descriptions/v5.0.4-internal_database_schema.codeintel.json",
         "schema-descriptions/v5.0.4-internal_database_schema.json",
     ],
-    cmd = "$(location generate.sh)",
+    cmd = "$(location generate.sh) $(@D)",
+    tags = ["requires-network"],
     visibility = ["//visibility:public"],
+)
+
+sh_test(
+    name = "schema_descriptions_test",
+    size = "small",
+    srcs = [
+        "schema_descriptions_test.sh",
+    ],
+    args = [
+        "$(location generate.sh)",
+        "$(locations :schema_descriptions)",
+    ],
+    data = [
+        "generate.sh",
+        ":schema_descriptions",
+    ],
+    tags = ["requires-network"],
+)
+
+pkg_tar(
+    name = "tar_schema_descriptions",
+    srcs = [":schema_descriptions"],
+    package_dir = "schema-descriptions",
+    visibility = ["//enterprise/cmd/migrator:__pkg__"],
 )
 
 pkg_tar(
@@ -288,7 +313,10 @@ oci_image(
     name = "image",
     base = "@wolfi_base",
     entrypoint = ["/migrator"],
-    tars = [":tar_migrator"],
+    tars = [
+        ":tar_migrator",
+        ":tar_schema_descriptions",
+    ],
     user = "sourcegraph",
 )
 

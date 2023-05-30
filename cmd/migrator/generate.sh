@@ -1,17 +1,13 @@
 #!/usr/bin/env bash
 
-# This script builds the migrator docker image.
+# This script generates all the schema-descriptions files.
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
-set -ex
+set -eu
 
-OUTPUT=$(mktemp -d -t sgdockerbuild_XXXXXXX)
-cleanup() {
-  rm -rf "$OUTPUT"
-}
-trap cleanup EXIT
+OUTPUT="$1"
 
-echo "--- compile schema descriptions"
+echo "Compiling schema descriptions ..."
 mkdir -p "${OUTPUT}/schema-descriptions"
 
 # See internal/database/migration/cliutil/drift-schemas/generate-all.sh
@@ -47,8 +43,8 @@ gcs_filenames=(
 
 function download_gcs() {
   outfile="${OUTPUT}/schema-descriptions/${1}-${2}"
-  echo ${outfile}
-  if ! curl -fsSL "https://storage.googleapis.com/sourcegraph-assets/migrations/drift/${1}-${2}" 2>/dev/null >"${outfile}"; then
+  # 3.20.0 is missing the codeintel and codeinsights schemas.
+  if ! curl -fsSL "https://storage.googleapis.com/sourcegraph-assets/migrations/drift/${1}-${2}" >"${outfile}"; then
     rm "${outfile}"
   fi
 }
@@ -60,6 +56,17 @@ for version in "${gcs_versions[@]}"; do
   done
 done
 
+function download_github() {
+  local version
+  version="$1"
+  local github_url
+  github_url="https://raw.githubusercontent.com/sourcegraph/sourcegraph/${version}/internal/database"
+
+  curl -fsSL "$github_url/schema.json" >"${OUTPUT}/schema-descriptions/${version}-internal_database_schema.json"
+  curl -fsSL "$github_url/schema.codeintel.json" >"${OUTPUT}/schema-descriptions/${version}-internal_database_schema.codeintel.json"
+  curl -fsSL "$github_url/schema.codeinsights.json" >"${OUTPUT}/schema-descriptions/${version}-internal_database_schema.codeinsights.json"
+}
+
 git_versions=(
   v3.42.0 v3.42.1 v3.42.2
   v3.43.0 v3.43.1 v3.43.2
@@ -69,13 +76,11 @@ git_versions=(
   v4.3.0 v4.3.1
   v4.4.0 v4.4.1 v4.4.2
   v4.5.0 v4.5.1
-  v5.0.0 v5.0.1 v5.0.2 v5.0.3 v5.0.4)
+  v5.0.0 v5.0.1 v5.0.2 v5.0.3 v5.0.4
+)
 
 for version in "${git_versions[@]}"; do
-  echo "Persisting schemas for ${version} from Git..."
-  git show "${version}:internal/database/schema.json" >"${OUTPUT}/schema-descriptions/${version}-internal_database_schema.json"
-  git show "${version}:internal/database/schema.codeintel.json" >"${OUTPUT}/schema-descriptions/${version}-internal_database_schema.codeintel.json"
-  git show "${version}:internal/database/schema.codeinsights.json" >"${OUTPUT}/schema-descriptions/${version}-internal_database_schema.codeinsights.json"
+  echo "Persisting schemas for ${version} from GitHub..."
+  download_github "${version}"
 done
 
-cp -r "${OUTPUT}/schema-descriptions" .

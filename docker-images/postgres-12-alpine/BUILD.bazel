@@ -3,6 +3,8 @@ load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
 load("//dev:oci_defs.bzl", "image_repository")
 
+# TODO move this to a different folder
+
 filegroup(
     name = "config",
     srcs = glob(
@@ -59,5 +61,5 @@ oci_push(
     name = "candidate_push",
     image = ":image",
     remote_tags = "//:tags",
-    repository = image_repository("postgres-12"),
+    repository = image_repository("postgres-12-alpine"),  # TODO careful, this is not an alpine
 )

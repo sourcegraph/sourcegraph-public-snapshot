@@ -34,13 +34,20 @@ pkg_tar(
     srcs = [":executor"],
 )
 
-# TODO check, we need src-cli
-# TODO other images
+pkg_tar(
+    name = "tar_src-cli",
+    srcs = ["@src-cli-linux-amd64//:src-cli-linux-amd64"],
+    package_dir = "/usr/local/bin",
+)
+
 oci_image(
     name = "image",
     base = "@wolfi_executor_base",
     entrypoint = ["/executor"],
-    tars = [":tar_executor"],
+    tars = [
+        ":tar_executor",
+        ":tar_src-cli",
+    ],
     user = "sourcegraph",
 )
 

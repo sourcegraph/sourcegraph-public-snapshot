@@ -18,6 +18,11 @@ commandTests:
   #   args:
   #     - version
 
+  - name: "src-cli binary is runnable"
+    command: "/usr/local/bin/src"
+    args:
+      - -v
+
   - name: "not running as root"
     command: "/usr/bin/id"
     args:

@@ -113,6 +113,18 @@ def oci_deps():
     )
 
     oci_pull(
+        name = "wolfi_bundled_executor_base",
+        digest = "sha256:8941bfcf8db44c462c4fee057b4d2a128cd268d6fb385989086af4381a05137e",
+        image = "us.gcr.io/sourcegraph-dev/wolfi-bundled-executor-base",
+    )
+
+    oci_pull(
+        name = "wolfi_executor_kubernetes_base",
+        digest = "sha256:c2053b17cb8904a09773552049929b73215af24520ca22613cb5b16f96d8bcfa",
+        image = "us.gcr.io/sourcegraph-dev/wolfi-executor-kubernetes-base",
+    )
+
+    oci_pull(
         name = "wolfi_batcheshelper_base",
         digest = "sha256:2abe940a2d9e13a998d07e4faf072c7ba6e17243a0b9c56a3adf9878d9332f6a",
         image = "us.gcr.io/sourcegraph-dev/wolfi-batcheshelper-base",
@@ -152,4 +164,10 @@ def oci_deps():
         name = "wolfi_searcher_base",
         digest = "sha256:7ae7d14bc055f5dbcdc727261025e9527558513a61093e956cb39dae7dbc0dcf",
         image = "us.gcr.io/sourcegraph-dev/wolfi-searcher-base",
+    )
+
+    oci_pull(
+      name = "wolfi_s3proxy",
+      digest = "sha256:62820e5e3b133ce46ac748a08ff84ead03e3e46666bea0e69b03f944c88f92f3",
+      image = "us.gcr.io/sourcegraph-dev/wolfi-blobstore",
     )
