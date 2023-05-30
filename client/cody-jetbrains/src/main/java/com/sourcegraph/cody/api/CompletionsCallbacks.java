@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.completions;
+package com.sourcegraph.cody.api;
 
 // Define a callback interface to handle events
 public interface CompletionsCallbacks {
@@ -9,4 +9,6 @@ public interface CompletionsCallbacks {
   void onError(Throwable error);
 
   void onComplete();
+
+  void onCancelled();
 }

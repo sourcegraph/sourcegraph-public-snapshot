@@ -1,9 +1,11 @@
-package com.sourcegraph.cody.completions;
+package com.sourcegraph.cody.api;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.sourcegraph.cody.vscode.CancellationToken;
 import java.io.*;
+import java.net.ConnectException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -21,6 +23,7 @@ public class SSEClient {
   private final String accessToken;
   private final String body;
   private final CompletionsCallbacks cb;
+  private CompletionsService.Endpoint endpoint;
 
   private InputStream inputStream;
 
@@ -28,11 +31,24 @@ public class SSEClient {
       @NotNull String url,
       @NotNull String accessToken,
       @NotNull String body,
-      @NotNull CompletionsCallbacks cb) {
+      @NotNull CompletionsCallbacks cb,
+      @NotNull CompletionsService.Endpoint endpoint,
+      CancellationToken token) {
     this.url = url;
     this.body = body;
     this.accessToken = accessToken;
     this.cb = cb;
+    this.endpoint = endpoint;
+  }
+
+  private class DebugInformation {
+    public final String instanceURL;
+    public final String body;
+
+    private DebugInformation(String instanceURL, String body) {
+      this.instanceURL = instanceURL;
+      this.body = body;
+    }
   }
 
   public void start() {
@@ -50,11 +66,24 @@ public class SSEClient {
               .POST(HttpRequest.BodyPublishers.ofString(body));
       HttpRequest request = requestBuilder.build();
 
-      HttpResponse<InputStream> response =
-          HttpClient.newBuilder()
-              .connectTimeout(Duration.ofSeconds(30))
-              .build()
-              .send(request, BodyHandlers.ofInputStream());
+      HttpResponse<InputStream> response;
+      try {
+        response =
+            HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(30))
+                .build()
+                // TODO: consider using sendAsync instead. Might fix slow latency right now.
+                .send(request, BodyHandlers.ofInputStream());
+      } catch (InterruptedException e) {
+        // InterruptedException is thrown when we cancel a `Future<?>` returned from
+        // `ExecutorService.submit()`. The JDK HTTP client listens to `Thread.interrupted()` signals
+        // and tries to gracefully cancel the HTTP request.
+        this.cb.onCancelled();
+        return;
+      } catch (ConnectException e) {
+        this.cb.onError(e);
+        return;
+      }
 
       if (response.statusCode() == HttpStatus.SC_OK) {
         cb.onSubscribed();
@@ -122,6 +151,9 @@ public class SSEClient {
               return;
             }
             messageBuilder = new StringBuilder();
+          } else if (endpoint == CompletionsService.Endpoint.Code) {
+            cb.onData(line);
+            cb.onComplete();
           }
         }
         if (messageBuilder.length() > 0) {
