@@ -57,33 +57,36 @@ MUSL_TARGETS=(
 
 if [[ "${ENTERPRISE:-"false"}" == "false" ]]; then
   MUSL_TARGETS+=(//cmd/symbols)
-  exit $?
 else
   MUSL_TARGETS+=(//enterprise/cmd/symbols)
 fi
 
+bazelrc=(
+  --bazelrc=.bazelrc
+)
+if [[ ${CI:-""} == "true" ]]; then
+  bazelrc+=(
+    --bazelrc=.aspect/bazelrc/ci.bazelrc
+    --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc
+  )
+fi
+
 echo "--- bazel build musl"
 bazel \
-  --bazelrc=.bazelrc \
-  --bazelrc=.aspect/bazelrc/ci.bazelrc \
-  --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
+  "${bazelrc[@]}" \
   build \
   "${MUSL_TARGETS[@]}" \
   --stamp \
   --workspace_status_command=./dev/bazel_stamp_vars.sh \
-  --platforms @zig_sdk//platform:linux_amd64 \
-  --extra_toolchains @zig_sdk//toolchain:linux_amd64_musl
+  --config incompat-zig-linux-amd64
 
 for MUSL_TARGET in "${MUSL_TARGETS[@]}"; do
-  out=$(bazel --bazelrc=.bazelrc \
-    --bazelrc=.aspect/bazelrc/ci.bazelrc \
-    --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
+  out=$(bazel "${bazelrc[@]}" \
     cquery \
     "$MUSL_TARGET" \
     --stamp \
     --workspace_status_command=./dev/bazel_stamp_vars.sh \
-    --platforms @zig_sdk//platform:linux_amd64 \
-    --extra_toolchains @zig_sdk//toolchain:linux_amd64_musl \
+    --config incompat-zig-linux-amd64 \
     --output=files)
   cp "$out" "$BINDIR"
   echo "copying $MUSL_TARGET"
@@ -91,7 +94,6 @@ done
 
 if [[ "${ENTERPRISE:-"false"}" == "false" ]]; then
   TARGETS=("${OSS_TARGETS[@]}")
-  exit $?
 else
   TARGETS=("${ENTERPRISE_TARGETS[@]}")
 fi
