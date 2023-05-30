@@ -212,6 +212,11 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         } else if (context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke || precedingLine.endsWith('.')) {
             // Do nothing
             return []
+        } else if (/\w/.test(suffix.slice(0, suffix.indexOf('\n')))) {
+            // If we have a suffix in the same line as the cursor and the suffix contains any word
+            // characters, do not attempt to make a completion. This means we only make completions
+            // if we have a suffix in the same line for special characters like `)]}` etc.
+            return []
         } else {
             // End of line: long debounce, complete until newline
             timeout = 500
