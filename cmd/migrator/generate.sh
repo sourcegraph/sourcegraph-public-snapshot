@@ -7,7 +7,7 @@ set -eu
 
 OUTPUT="$1"
 
-echo "--- compile schema descriptions"
+echo "Compiling schema descriptions ..."
 mkdir -p "${OUTPUT}/schema-descriptions"
 
 # See internal/database/migration/cliutil/drift-schemas/generate-all.sh
