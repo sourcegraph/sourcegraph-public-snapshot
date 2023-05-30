@@ -7,6 +7,10 @@ export class CompletionsCache {
         max: 500, // Maximum input prefixes in the cache.
     })
 
+    public clear(): void {
+        this.cache.clear()
+    }
+
     // TODO: The caching strategy only takes the file content prefix into
     // account. We need to add additional information like file path or suffix
     // to make sure the cache does not return undesired results for other files
