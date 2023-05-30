@@ -14,6 +14,14 @@ type Queue[T any] struct {
 	Cond  *sync.Cond
 }
 
+// NewQueue initializes a new Queue.
+func NewQueue[T any](jobs *list.List) *Queue[T] {
+	q := Queue[T]{jobs: jobs}
+	q.Cond = sync.NewCond(&q.Mutex)
+
+	return &q
+}
+
 // Push will queue the job to the end of the queue.
 func (q *Queue[T]) Push(job *T) {
 	q.mu.Lock()
@@ -41,12 +49,4 @@ func (q *Queue[T]) Empty() bool {
 	defer q.mu.Unlock()
 
 	return q.jobs.Len() == 0
-}
-
-// NewQueue initializes a new Queue.
-func NewQueue[T any](jobs *list.List) *Queue[T] {
-	q := Queue[T]{jobs: jobs}
-	q.Cond = sync.NewCond(&q.Mutex)
-
-	return &q
 }
