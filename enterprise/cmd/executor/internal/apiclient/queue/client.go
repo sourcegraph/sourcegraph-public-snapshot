@@ -240,6 +240,7 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, canc
 func parseJobIDs(jobIDs []string) ([]types.QueueJobIDs, error) {
 	var queueJobIDs []types.QueueJobIDs
 	queueIds := map[string][]string{}
+
 	for _, stringID := range jobIDs {
 		parts := strings.Split(stringID, "-")
 		if len(parts) != 2 {
@@ -247,13 +248,9 @@ func parseJobIDs(jobIDs []string) ([]types.QueueJobIDs, error) {
 		}
 
 		id, queueName := parts[0], parts[1]
-
-		if _, ok := queueIds[queueName]; ok {
-			queueIds[queueName] = append(queueIds[queueName], id)
-		} else {
-			queueIds[queueName] = []string{id}
-		}
+		queueIds[queueName] = append(queueIds[queueName], id)
 	}
+
 	for q, ids := range queueIds {
 		queueJobIDs = append(queueJobIDs, types.QueueJobIDs{QueueName: q, JobIDs: ids})
 	}
@@ -287,7 +284,7 @@ func gatherMetrics(logger log.Logger, gatherer prometheus.Gatherer) (string, err
 func (c *Client) Ping(ctx context.Context) (err error) {
 	var req *http.Request
 	if len(c.options.QueueNames) > 0 {
-		req, err = c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("/heartbeat"), types.HeartbeatRequest{
+		req, err = c.client.NewJSONRequest(http.MethodPost, "/heartbeat", types.HeartbeatRequest{
 			ExecutorName: c.options.ExecutorName,
 			QueueNames:   c.options.QueueNames,
 		})
