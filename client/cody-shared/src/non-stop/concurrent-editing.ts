@@ -247,7 +247,7 @@ function updatedPosition(position: Position, text: string): Position {
 export function computeDiff(original: string, a: string, b: string, bStart: Position): Diff {
     const chunks = computeChunks(original, a, b)
     const edits = []
-    const highlights = []
+    const postEditHighlights = []
     let clean = true
     let originalPos = bStart
     let mergedPos = bStart
@@ -265,7 +265,7 @@ export function computeDiff(original: string, a: string, b: string, bStart: Posi
                 },
             })
             const mergedEnd = updatedPosition(mergedPos, chunk[0])
-            highlights.push({ start: mergedPos, end: mergedEnd })
+            postEditHighlights.push({ start: mergedPos, end: mergedEnd })
             mergedPos = mergedEnd
         } else if (chunk[1] === chunk[0] && chunk[1] !== chunk[2]) {
             // Changed by human
@@ -283,6 +283,6 @@ export function computeDiff(original: string, a: string, b: string, bStart: Posi
     return {
         clean,
         edits,
-        highlights,
+        highlights: postEditHighlights,
     }
 }

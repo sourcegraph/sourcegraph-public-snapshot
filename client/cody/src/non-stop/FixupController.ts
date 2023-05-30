@@ -20,7 +20,8 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
     private readonly taskViewProvider: TaskViewProvider
     private readonly files: FixupFileObserver
     private readonly editObserver: FixupDocumentEditObserver
-    private readonly scheduler: FixupScheduler = new FixupScheduler(1000)
+    // TODO: Make the fixup scheduler use a cooldown timer with a longer delay
+    private readonly scheduler: FixupScheduler = new FixupScheduler(10)
 
     private _disposables: vscode.Disposable[] = []
 
@@ -267,6 +268,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
             // Switch to using a gross line-based range and updating it in the
             // FixupDocumentEditObserver.
             const diff = computeDiff(task.original, botText, bufferText, task.selectionRange.start)
+            console.log(botText)
             if (!diff.clean) {
                 // TODO: If this isn't an in-progress diff, then schedule
                 // a re-spin or notify failure
@@ -288,11 +290,11 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
             // TODO: Do highlights for deletions, not just insertions
             editor.setDecorations(
                 this.decorationCodyEdited_,
-                diff.highlights.map(
-                    range =>
+                diff.edits.map(
+                    edit =>
                         new vscode.Range(
-                            new vscode.Position(range.start.line, range.start.character),
-                            new vscode.Position(range.end.line, range.end.character)
+                            new vscode.Position(edit.range.start.line, edit.range.start.character),
+                            new vscode.Position(edit.range.end.line, edit.range.end.character)
                         )
                 )
             )
