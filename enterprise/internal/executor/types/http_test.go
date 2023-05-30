@@ -71,6 +71,33 @@ func TestHeartbeatRequest_UnmarshalJSON(t *testing.T) {
 				PrometheusMetrics: "test-metrics",
 			},
 		},
+		{
+			name: "Mix of IDs",
+			payload: `{
+  "executorName":"test-executor",
+  "jobIds": [42, 72, "12"],
+  "os": "test-os",
+  "architecture":"test-arch",
+  "dockerVersion":"test-docker",
+  "executorVersion":"test-executor",
+  "gitVersion":"test-git",
+  "igniteVersion":"test-ignite",
+  "srcCliVersion":"test-src-cli",
+  "prometheusMetrics":"test-metrics"
+}`,
+			expectedRequest: types.HeartbeatRequest{
+				ExecutorName:      "test-executor",
+				JobIDs:            []string{"42", "72", "12"},
+				OS:                "test-os",
+				Architecture:      "test-arch",
+				DockerVersion:     "test-docker",
+				ExecutorVersion:   "test-executor",
+				GitVersion:        "test-git",
+				IgniteVersion:     "test-ignite",
+				SrcCliVersion:     "test-src-cli",
+				PrometheusMetrics: "test-metrics",
+			},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
