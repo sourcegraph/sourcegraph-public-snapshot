@@ -1,5 +1,8 @@
-load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("//dev:oci_defs.bzl", "image_repository")
+
+# TODO move this to a different folder
 
 filegroup(
     name = "config",
@@ -48,5 +51,5 @@ oci_push(
     name = "candidate_push",
     image = ":image",
     remote_tags = "//:tags",
-    repository = image_repository("postgres-12"),
+    repository = image_repository("postgres-12-alpine"),  # TODO careful, this is not an alpine
 )
