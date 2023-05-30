@@ -4,8 +4,6 @@ import (
 	"context"
 	"time"
 
-	sglog "github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
@@ -41,20 +39,19 @@ func (r repoEmbeddingSchedulerJob) Routines(_ context.Context, observationCtx *o
 	ctx := context.Background()
 
 	return []goroutine.BackgroundRoutine{
-		newRepoEmbeddingScheduler(ctx, observationCtx.Logger, gitserver.NewClient(), db, repo.NewRepoEmbeddingJobsStore(db)),
+		newRepoEmbeddingScheduler(ctx, gitserver.NewClient(), db, repo.NewRepoEmbeddingJobsStore(db)),
 	}, nil
 }
 
 func newRepoEmbeddingScheduler(
 	ctx context.Context,
-	logger sglog.Logger,
 	gitserverClient gitserver.Client,
 	db database.DB,
 	repoEmbeddingJobsStore repo.RepoEmbeddingJobsStore,
 ) goroutine.BackgroundRoutine {
 	enqueueActive := goroutine.HandlerFunc(
 		func(ctx context.Context) error {
-			opts := repo.GetEmbeddableRepoOpts(logger)
+			opts := repo.GetEmbeddableRepoOpts()
 			embeddableRepos, err := repoEmbeddingJobsStore.GetEmbeddableRepos(ctx, opts)
 			if err != nil {
 				return err

@@ -8,10 +8,10 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -190,18 +190,37 @@ type EmbeddableRepoOpts struct {
 	MinimumInterval time.Duration
 }
 
-func GetEmbeddableRepoOpts(logger sglog.Logger) EmbeddableRepoOpts {
-	minimumIntervalString := conf.Get().Embeddings.MinimumInterval
+func init() {
+	conf.ContributeValidator(embeddingConfigValidator)
+}
+
+func embeddingConfigValidator(q conftypes.SiteConfigQuerier) conf.Problems {
+	embeddingsConf := q.SiteConfig().Embeddings
+	if embeddingsConf == nil {
+		return nil
+	}
+
+	minimumIntervalString := embeddingsConf.MinimumInterval
+	_, err := time.ParseDuration(minimumIntervalString)
+	if err != nil && minimumIntervalString != "" {
+		return conf.NewSiteProblems(fmt.Sprintf("Could not parse \"embeddings.minimumInterval: %s\". %s", minimumIntervalString, err))
+	}
+
+	return nil
+}
+
+func GetEmbeddableRepoOpts() EmbeddableRepoOpts {
+	defaultMinimumInterval := 24 * time.Hour
+
+	embeddingsConf := conf.Get().Embeddings
+	if embeddingsConf == nil {
+		return EmbeddableRepoOpts{MinimumInterval: defaultMinimumInterval}
+	}
+
+	minimumIntervalString := embeddingsConf.MinimumInterval
 	d, err := time.ParseDuration(minimumIntervalString)
 	if err != nil {
-		d = 24 * time.Hour // default
-		if minimumIntervalString != "" {
-			logger.Warn(
-				"Could not parse site-config value for embeddings.coolDown. Using default value instead.",
-				sglog.Duration("default", d),
-				sglog.Error(err),
-			)
-		}
+		return EmbeddableRepoOpts{MinimumInterval: defaultMinimumInterval}
 	}
 
 	return EmbeddableRepoOpts{MinimumInterval: d}
