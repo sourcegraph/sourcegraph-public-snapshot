@@ -24,14 +24,15 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+type ChangelistMappingJob struct {
+	RepoName api.RepoName
+	RepoDir  common.GitDir
+}
+
 type Service struct {
 	Logger                 log.Logger
 	DB                     database.DB
 	changelistMappingQueue *common.Queue[ChangelistMappingJob]
-}
-
-func (s *Service) EnqueueChangelistMappingJob(job *ChangelistMappingJob) {
-	s.changelistMappingQueue.Push(job)
 }
 
 // NewCloneQueue initializes a new cloneQueue.
@@ -45,9 +46,8 @@ func NewService(logger log.Logger, db database.DB, jobs *list.List) Service {
 	}
 }
 
-type ChangelistMappingJob struct {
-	RepoName api.RepoName
-	RepoDir  common.GitDir
+func (s *Service) EnqueueChangelistMappingJob(job *ChangelistMappingJob) {
+	s.changelistMappingQueue.Push(job)
 }
 
 func (s *Service) StartPerforceChangelistMappingPipeline(ctx context.Context) {
