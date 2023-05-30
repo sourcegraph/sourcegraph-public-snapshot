@@ -46,18 +46,17 @@ func (r *filesBackfillIndexer) indexRepo(ctx context.Context, repoId api.RepoID)
 	if err != nil {
 		return errors.Wrap(err, "repoStore.Get")
 	}
-	// commitLog, err := r.client.CommitLog(ctx, repo.Name, time.Now().AddDate(0, 0, -90))
-	// if err != nil {
-	// 	return errors.Wrap(err, "CommitLog")
-	// }
+	fmt.Println("LS_FILES")
 	files, err := r.client.LsFiles(ctx, nil, repo.Name, "HEAD")
 	if err != nil {
-		return err
+		return errors.Wrap(err, "LsFiles")
 	}
-	for _, f := range files {
-		fmt.Println(f)
+	fmt.Println("ENSURE EXIST")
+	if err := r.db.RepoPaths().EnsureExist(ctx, repo.ID, files); err != nil {
+		return errors.Wrap(err, "EnsureExist")
 	}
-	r.logger.Info("commits inserted", logger.Int("count", len(files)), logger.Int("repo_id", int(repoId)))
-	commitCounter.Add(float64(len(files)))
+	fmt.Printf("FILES #%d ENSURE EXIST DONE FOR %s", len(files), repo.Name)
+	r.logger.Info("files inserted", logger.Int("count", len(files)), logger.Int("repo_id", int(repoId)))
+	filesCounter.Add(float64(len(files)))
 	return nil
 }
