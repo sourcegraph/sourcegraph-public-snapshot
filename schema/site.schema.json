@@ -2413,7 +2413,7 @@
           "type": "string",
           "description": "The external completions provider.",
           "default": "anthropic",
-          "enum": ["anthropic", "openai"]
+          "enum": ["anthropic", "openai", "llmproxy"]
         },
         "endpoint": {
           "type": "string",
