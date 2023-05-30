@@ -72,6 +72,7 @@ public class SSEClient {
             HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(30))
                 .build()
+                // TODO: consider using sendAsync instead. Might fix slow latency right now.
                 .send(request, BodyHandlers.ofInputStream());
       } catch (InterruptedException e) {
         // InterruptedException is thrown when we cancel a `Future<?>` returned from

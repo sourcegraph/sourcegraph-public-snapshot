@@ -20,7 +20,7 @@ public class SourcegraphNodeCompletionsClient {
   }
 
   public CompletableFuture<CompletionResponse> complete(CompletionParameters params) {
-    SuggestionsCallbacks callbacks = new SuggestionsCallbacks(token);
+    CodeCompletionCallbacks callbacks = new CodeCompletionCallbacks(token);
     //    System.out.println(
     //        "QUERY: " +
     // params.messages.stream().map(Message::prompt).collect(Collectors.joining("")));
@@ -38,12 +38,12 @@ public class SourcegraphNodeCompletionsClient {
     return callbacks.promise;
   }
 
-  private static class SuggestionsCallbacks implements CompletionsCallbacks {
+  private static class CodeCompletionCallbacks implements CompletionsCallbacks {
     private final CancellationToken token;
     CompletableFuture<CompletionResponse> promise = new CompletableFuture<>();
     List<String> chunks = new ArrayList<>();
 
-    private SuggestionsCallbacks(CancellationToken token) {
+    private CodeCompletionCallbacks(CancellationToken token) {
       this.token = token;
     }
 
