@@ -6,13 +6,25 @@ import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
 import { ChatQuestion } from './chat-question'
+import { FileFlow } from './file-flow'
 import { Fixup } from './fixup'
+import { commandRegex } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
-export class InlineChat implements Recipe {
+export class InlineAssist implements Recipe {
     public id: RecipeID = 'inline-chat'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
+        // Check if this is a fix-up request
+        if (commandRegex.touch.test(humanChatInput)) {
+            return new FileFlow().getInteraction(humanChatInput.replace(commandRegex.touch, ''), context)
+        }
+
+        // Check if this is a fix-up request
+        if (commandRegex.fix.test(humanChatInput)) {
+            return new Fixup().getInteraction(humanChatInput.replace(commandRegex.fix, ''), context)
+        }
+
         const selection = context.editor.controllers?.inline.selection
         if (!humanChatInput || !selection) {
             await context.editor.showWarningMessage('Failed to start Inline Chat: empty input or selection.')
@@ -29,13 +41,14 @@ export class InlineChat implements Recipe {
 
         // Reconstruct Cody's prompt using user's context
         // Replace placeholders in reverse order to avoid collisions if a placeholder occurs in the input
-        const promptText = InlineChat.prompt
+        const promptText = InlineAssist.prompt
             .replace('{humanInput}', truncatedText)
             .replace('{selectedText}', truncatedSelectedText)
             .replace('{fileName}', selection.fileName)
 
         // Text display in UI fpr human that includes the selected code
-        const displayText = humanChatInput + InlineChat.displayPrompt.replace('{selectedText}', selection.selectedText)
+        const displayText =
+            humanChatInput + InlineAssist.displayPrompt.replace('{selectedText}', selection.selectedText)
 
         return Promise.resolve(
             new Interaction(
