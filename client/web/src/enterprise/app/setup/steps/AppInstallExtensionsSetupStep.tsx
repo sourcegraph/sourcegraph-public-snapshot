@@ -39,7 +39,7 @@ export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ classNam
 
                             <Button
                                 as={Link}
-                                to="https://docs.sourcegraph.com/integration/editor"
+                                to="https://docs.sourcegraph.com/cody#get-cody"
                                 target="_blank"
                                 size="lg"
                                 variant="secondary"

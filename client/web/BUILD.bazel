@@ -347,7 +347,6 @@ ts_project(
         "src/enterprise/EnterpriseWebApp.tsx",
         "src/enterprise/app-main.tsx",
         "src/enterprise/app/AppAuthCallbackPage.tsx",
-        "src/enterprise/app/AppComingSoonPage.tsx",
         "src/enterprise/app/settings/AppSettingsArea.tsx",
         "src/enterprise/app/settings/local-repositories/LocalRepositoriesTab.tsx",
         "src/enterprise/app/setup/AppSetupWizard.tsx",
