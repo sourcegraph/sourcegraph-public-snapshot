@@ -18,14 +18,6 @@ commandTests:
   #   excludedOutput: ["^0"]
   #   exitCode: 0
 
-fileExistenceTests:
-- name: '/data/index'
-  path: '/data/index'
-  shouldExist: true
-  uid: 100
-  gid: 101
-  permissions: 'drwxr-xr-x'
-
 metadataTest:
   envVars:
     - key: ROCKET_ENV

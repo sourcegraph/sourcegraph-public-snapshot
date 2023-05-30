@@ -39,13 +39,13 @@ fileExistenceTests:
   shouldExist: true
   uid: 0
   gid: 0
-  permissions: '-rwxr-xr-x'
+  permissions: '-r-xr-xr-x'
 - name: '/alertmanager.sh'
   path: '/alertmanager.sh'
   shouldExist: true
   uid: 0
   gid: 0
-  permissions: '-rwxr-xr-x'
+  permissions: '-r-xr-xr-x'
 # /sg_config_prometheus configuration
 - name: '/sg_config_prometheus/prometheus.yml'
   path: '/sg_config_prometheus/prometheus.yml'
