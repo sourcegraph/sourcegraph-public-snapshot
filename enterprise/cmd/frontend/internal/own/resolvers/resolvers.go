@@ -8,6 +8,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/sourcegraph/sourcegraph/internal/rbac"
 
 	owntypes "github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -769,4 +770,56 @@ func userifyPatterns(patterns []string) (results []string) {
 		results = append(results, strings.ReplaceAll(pattern, "%", "*"))
 	}
 	return results
+}
+
+func (r *ownResolver) AssignOwner(ctx context.Context, args *graphqlbackend.AssignOwnerArgs) (*graphqlbackend.EmptyResponse, error) {
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.OwnershipAssignPermission); err != nil {
+		return nil, err
+	}
+	u, err := unmarshalAssignOwnerArgs(args.Input)
+	if err != nil {
+		return nil, err
+	}
+	err = r.db.AssignedOwners().Insert(ctx, u.AssignedOwnerID, u.RepoID, u.AbsolutePath, u.WhoAssignedUserID)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating assigned owner")
+	}
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+type UnmarshalledAssignOwnerArgs struct {
+	AssignedOwnerID   int32
+	RepoID            api.RepoID
+	AbsolutePath      string
+	WhoAssignedUserID int32
+}
+
+func unmarshalAssignOwnerArgs(args graphqlbackend.AssignOwnerInput) (*UnmarshalledAssignOwnerArgs, error) {
+	userID, err := graphqlbackend.UnmarshalUserID(args.AssignedOwnerID)
+	if err != nil {
+		return nil, err
+	}
+	if userID == 0 {
+		return nil, errors.New("assigned user ID should not be 0")
+	}
+	repoID, err := graphqlbackend.UnmarshalRepositoryID(args.RepoID)
+	if err != nil {
+		return nil, err
+	}
+	if repoID == 0 {
+		return nil, errors.New("repo ID should not be 0")
+	}
+	whoAssignedUserID, err := graphqlbackend.UnmarshalUserID(args.WhoAssignedUserID)
+	if err != nil {
+		return nil, err
+	}
+	if whoAssignedUserID == 0 {
+		return nil, errors.New("ID of a user, who is assigning a new owner should not be 0")
+	}
+	return &UnmarshalledAssignOwnerArgs{
+		AssignedOwnerID:   userID,
+		RepoID:            repoID,
+		AbsolutePath:      args.AbsolutePath,
+		WhoAssignedUserID: whoAssignedUserID,
+	}, nil
 }
