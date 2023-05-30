@@ -11,8 +11,9 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/events"
-	llmproxy "github.com/sourcegraph/sourcegraph/enterprise/internal/llm-proxy"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
@@ -27,11 +28,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor/anonymous"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/actor/productsubscription"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/httpapi"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy/internal/response"
 )
 
 func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFunc, config *Config) error {
@@ -65,9 +63,17 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			config.Dotcom.InternalMode),
 	}
 
+	authr := &auth.Authenticator{
+		Logger:      obctx.Logger.Scoped("auth", "authentication middleware"),
+		EventLogger: eventLogger,
+		Sources:     sources,
+	}
+
+	rs := newRedisStore(redispool.Cache)
+
 	// Set up our handler chain, which is run from the bottom up. Application handlers
 	// come last.
-	handler := httpapi.NewHandler(obctx.Logger, eventLogger, &httpapi.Config{
+	handler := httpapi.NewHandler(obctx.Logger, eventLogger, rs, authr, &httpapi.Config{
 		AnthropicAccessToken:   config.Anthropic.AccessToken,
 		AnthropicAllowedModels: config.Anthropic.AllowedModels,
 		OpenAIAccessToken:      config.OpenAI.AccessToken,
@@ -75,16 +81,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		OpenAIAllowedModels:    config.OpenAI.AllowedModels,
 	})
 
-	// Authentication and rate-limting layers
-	handler = rateLimit(obctx.Logger, eventLogger, newPrefixRedisStore("rate_limit:", redispool.Cache), handler)
-	handler = &auth.Authenticator{
-		Logger:      obctx.Logger.Scoped("auth", "authentication middleware"),
-		EventLogger: eventLogger,
-		Sources:     sources,
-		Next:        handler,
-	}
-
-	// Diagnostic layers should come before auth/rate-limiting
+	// Diagnostic layers
 	handler = httpapi.NewDiagnosticsHandler(obctx.Logger, handler, config.DiagnosticsSecret)
 
 	// Instrumentation layers
@@ -137,58 +134,6 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	return nil
 }
 
-func rateLimit(baseLogger log.Logger, eventLogger events.Logger, cache limiter.RedisStore, next http.Handler) http.Handler {
-	baseLogger = baseLogger.Scoped("rateLimit", "rate limit handler")
-
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		act := actor.FromContext(r.Context())
-		logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))
-
-		l := act.Limiter(cache)
-
-		commit, err := l.TryAcquire(r.Context())
-		if err != nil {
-			if loggerErr := eventLogger.LogEvent(
-				r.Context(),
-				events.Event{
-					Name:       llmproxy.EventNameRateLimited,
-					Source:     act.Source.Name(),
-					Identifier: act.ID,
-					Metadata: map[string]any{
-						"error": err.Error(),
-					},
-				},
-			); loggerErr != nil {
-				logger.Error("failed to log event", log.Error(loggerErr))
-			}
-
-			var rateLimitExceeded limiter.RateLimitExceededError
-			if errors.As(err, &rateLimitExceeded) {
-				rateLimitExceeded.WriteResponse(w)
-				return
-			}
-
-			if errors.Is(err, limiter.NoAccessError{}) {
-				response.JSONError(logger, w, http.StatusForbidden, err)
-				return
-			}
-
-			response.JSONError(logger, w, http.StatusInternalServerError, err)
-			return
-		}
-
-		responseRecorder := response.NewStatusHeaderRecorder(w)
-		next.ServeHTTP(responseRecorder, r)
-
-		// If response is healthy, consume the rate limit
-		if responseRecorder.StatusCode >= 200 || responseRecorder.StatusCode < 300 {
-			if err := commit(); err != nil {
-				logger.Error("failed to commit rate limit consumption", log.Error(err))
-			}
-		}
-	})
-}
-
 func requestLogger(logger log.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Only requestclient is available at the point, actor middleware is later
@@ -204,34 +149,32 @@ func requestLogger(logger log.Logger, next http.Handler) http.Handler {
 	})
 }
 
-func newPrefixRedisStore(prefix string, store redispool.KeyValue) limiter.RedisStore {
-	return &prefixRedisStore{
-		prefix: prefix,
-		store:  store,
+func newRedisStore(store redispool.KeyValue) limiter.RedisStore {
+	return &redisStore{
+		store: store,
 	}
 }
 
-type prefixRedisStore struct {
-	prefix string
-	store  redispool.KeyValue
+type redisStore struct {
+	store redispool.KeyValue
 }
 
-func (s *prefixRedisStore) Incr(key string) (int, error) {
-	return s.store.Incr(s.prefix + key)
+func (s *redisStore) Incr(key string) (int, error) {
+	return s.store.Incr(key)
 }
 
-func (s *prefixRedisStore) GetInt(key string) (int, error) {
-	i, err := s.store.Get(s.prefix + key).Int()
+func (s *redisStore) GetInt(key string) (int, error) {
+	i, err := s.store.Get(key).Int()
 	if err != nil && err != redis.ErrNil {
 		return 0, err
 	}
 	return i, nil
 }
 
-func (s *prefixRedisStore) TTL(key string) (int, error) {
-	return s.store.TTL(s.prefix + key)
+func (s *redisStore) TTL(key string) (int, error) {
+	return s.store.TTL(key)
 }
 
-func (s *prefixRedisStore) Expire(key string, ttlSeconds int) error {
-	return s.store.Expire(s.prefix+key, ttlSeconds)
+func (s *redisStore) Expire(key string, ttlSeconds int) error {
+	return s.store.Expire(key, ttlSeconds)
 }

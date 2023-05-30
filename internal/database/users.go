@@ -88,8 +88,8 @@ type UserStore interface {
 	Transact(context.Context) (UserStore, error)
 	Update(context.Context, int32, UserUpdate) error
 	UpdatePassword(ctx context.Context, id int32, oldPassword, newPassword string) error
-	SetCompletionsQuota(ctx context.Context, id int32, quota *int) error
-	GetCompletionsQuota(ctx context.Context, id int32) (*int, error)
+	SetChatCompletionsQuota(ctx context.Context, id int32, quota *int) error
+	GetChatCompletionsQuota(ctx context.Context, id int32) (*int, error)
 	SetCodeCompletionsQuota(ctx context.Context, id int32, quota *int) error
 	GetCodeCompletionsQuota(ctx context.Context, id int32) (*int, error)
 	With(basestore.ShareableStore) UserStore
@@ -1479,16 +1479,16 @@ func (u *userStore) UpdatePassword(ctx context.Context, id int32, oldPassword, n
 	return nil
 }
 
-// SetCompletionsQuota sets the user's quota override for completions. Nil means unset.
-func (u *userStore) SetCompletionsQuota(ctx context.Context, id int32, quota *int) error {
+// SetChatCompletionsQuota sets the user's quota override for completions. Nil means unset.
+func (u *userStore) SetChatCompletionsQuota(ctx context.Context, id int32, quota *int) error {
 	if quota == nil {
 		return u.Exec(ctx, sqlf.Sprintf("UPDATE users SET completions_quota = NULL WHERE id = %s", id))
 	}
 	return u.Exec(ctx, sqlf.Sprintf("UPDATE users SET completions_quota = %s WHERE id = %s", *quota, id))
 }
 
-// GetCompletionsQuota reads the user's quota override for completions. Nil means unset.
-func (u *userStore) GetCompletionsQuota(ctx context.Context, id int32) (*int, error) {
+// GetChatCompletionsQuota reads the user's quota override for completions. Nil means unset.
+func (u *userStore) GetChatCompletionsQuota(ctx context.Context, id int32) (*int, error) {
 	quota, found, err := basestore.ScanFirstInt(u.Query(ctx, sqlf.Sprintf("SELECT completions_quota FROM users WHERE id = %s AND completions_quota IS NOT NULL", id)))
 	if err != nil {
 		return nil, err

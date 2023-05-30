@@ -9,6 +9,7 @@ go_library(
         "//enterprise/internal/completions/client/anthropic",
         "//enterprise/internal/completions/client/openai",
         "//enterprise/internal/completions/types",
+        "//enterprise/internal/llm-proxy",
         "//internal/httpcli",
         "//lib/errors",
     ],

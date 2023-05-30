@@ -20,7 +20,7 @@ function lastNLines(text: string, n: number): string {
     return lines.slice(Math.max(0, lines.length - n)).join('\n')
 }
 
-const inlineCompletionsCache = new CompletionsCache()
+export const inlineCompletionsCache = new CompletionsCache()
 
 export class CodyCompletionItemProvider implements vscode.InlineCompletionItemProvider {
     private promptTokens: number
@@ -41,7 +41,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         private charsPerToken = 4,
         private responseTokens = 200,
         private prefixPercentage = 0.6,
-        private suffixPercentage = 0.1
+        private suffixPercentage = 0.1,
+        private disableTimeouts = false
     ) {
         this.promptTokens = this.contextWindowTokens - this.responseTokens
         this.maxPrefixTokens = Math.floor(this.promptTokens * this.prefixPercentage)
@@ -240,7 +241,9 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             )
         }
 
-        await new Promise<void>(resolve => setTimeout(resolve, timeout))
+        if (!this.disableTimeouts) {
+            await new Promise<void>(resolve => setTimeout(resolve, timeout))
+        }
 
         // We don't need to make a request at all if the signal is already aborted after the
         // debounce

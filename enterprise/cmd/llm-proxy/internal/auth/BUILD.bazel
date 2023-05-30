@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "auth",
@@ -13,7 +13,31 @@ go_library(
         "//enterprise/cmd/llm-proxy/internal/events",
         "//enterprise/cmd/llm-proxy/internal/response",
         "//enterprise/internal/llm-proxy",
+        "//internal/trace",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "auth_test",
+    srcs = [
+        "auth_test.go",
+        "mocks_test.go",
+    ],
+    embed = [":auth"],
+    deps = [
+        "//enterprise/cmd/llm-proxy/internal/actor",
+        "//enterprise/cmd/llm-proxy/internal/actor/anonymous",
+        "//enterprise/cmd/llm-proxy/internal/actor/productsubscription",
+        "//enterprise/cmd/llm-proxy/internal/dotcom",
+        "//enterprise/cmd/llm-proxy/internal/events",
+        "//enterprise/internal/licensing",
+        "@com_github_derision_test_go_mockgen//testutil/require",
+        "@com_github_gregjones_httpcache//:httpcache",
+        "@com_github_khan_genqlient//graphql",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )
