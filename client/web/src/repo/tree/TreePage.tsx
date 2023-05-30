@@ -46,6 +46,7 @@ import { AuthenticatedUser } from '../../auth'
 import { BatchChangesProps } from '../../batches'
 import { RepoBatchChangesButton } from '../../batches/RepoBatchChangesButton'
 import { CodeIntelligenceProps } from '../../codeintel'
+import { CodyActionBarWidget } from '../../cody/widgets/CodyActionBarWidget'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
@@ -357,6 +358,9 @@ export const TreePage: FC<Props> = ({
     return (
         <div className={classNames(styles.treePage, className)}>
             <Container className={styles.container}>
+                <div className={styles.codyActionBar}>
+                    <CodyActionBarWidget repoName={repoName} />
+                </div>
                 <div className={classNames(styles.header)}>
                     <PageTitle title={getPageTitle()} />
 

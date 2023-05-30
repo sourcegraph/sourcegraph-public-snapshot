@@ -14,6 +14,12 @@
     }
 }
 
+.codyActionBar {
+    padding: .62rem 2.5rem .62rem;
+    margin: -1.5rem -2.5rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
 .header {
     width: 100%;
     max-width: var(--media-xl);
