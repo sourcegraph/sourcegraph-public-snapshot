@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "productsubscription",
+    srcs = ["productsubscription.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor/productsubscription",
+    visibility = ["//enterprise/cmd/cody-gateway:__subpackages__"],
+    deps = [
+        "//enterprise/cmd/cody-gateway/internal/actor",
+        "//enterprise/cmd/cody-gateway/internal/dotcom",
+        "//enterprise/internal/codygateway",
+        "//enterprise/internal/completions/types",
+        "//enterprise/internal/licensing",
+        "//internal/trace",
+        "//lib/errors",
+        "@com_github_gregjones_httpcache//:httpcache",
+        "@com_github_khan_genqlient//graphql",
+        "@com_github_sourcegraph_log//:log",
+        "@org_golang_x_exp//slices",
+    ],
+)
+
+go_test(
+    name = "productsubscription_test",
+    srcs = ["productsubscription_test.go"],
+    embed = [":productsubscription"],
+    deps = [
+        "//enterprise/cmd/cody-gateway/internal/dotcom",
+        "@com_github_stretchr_testify//assert",
+    ],
+)
