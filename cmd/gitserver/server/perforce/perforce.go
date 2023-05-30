@@ -56,6 +56,8 @@ func (s *Service) StartPerforceChangelistMappingPipeline(ctx context.Context) {
 	go s.changelistMappingProducer(ctx, jobs)
 }
 
+// changelistMappingProducer "pops" jobs from the FIFO queue of the "Service" and produce them
+// for "consumption".
 func (s *Service) changelistMappingProducer(ctx context.Context, jobs chan<- *ChangelistMappingJob) {
 	defer close(jobs)
 
@@ -83,6 +85,7 @@ func (s *Service) changelistMappingProducer(ctx context.Context, jobs chan<- *Ch
 	}
 }
 
+// changelistMappingConsumer "consumes" jobs "produced" by the producer.
 func (s *Service) changelistMappingConsumer(ctx context.Context, jobs <-chan *ChangelistMappingJob) {
 	logger := s.Logger.Scoped("changelistMappingConsumer", "process perforce changelist mapping jobs")
 
@@ -104,12 +107,13 @@ func (s *Service) changelistMappingConsumer(ctx context.Context, jobs <-chan *Ch
 	}
 }
 
+// doChangelistMapping performs the commits -> changelist ID mapping for a new or existing repo.
 func (s *Service) doChangelistMapping(ctx context.Context, job *ChangelistMappingJob) error {
 	logger := s.Logger.Scoped("doChangelistMapping", "").With(
 		log.String("repo", string(job.RepoName)),
 	)
 
-	logger.Warn("started")
+	logger.Debug("started")
 
 	repo, err := s.DB.Repos().GetByName(ctx, job.RepoName)
 	if err != nil {
@@ -121,11 +125,7 @@ func (s *Service) doChangelistMapping(ctx context.Context, job *ChangelistMappin
 		return nil
 	}
 
-	logger.Warn("repo received from DB")
-
 	dir := job.RepoDir
-
-	logger.Warn("latestRowCommit")
 
 	commitsMap, err := s.getCommitsToInsert(ctx, logger, repo.ID, dir)
 	if err != nil {
@@ -145,6 +145,11 @@ func (s *Service) doChangelistMapping(ctx context.Context, job *ChangelistMappin
 	return nil
 }
 
+// getCommitsToInsert returns a list of commitsSHA -> changelistID for each commit that is yet to
+// be "mapped" in the DB. For new repos, this will contain all the commits and for existing repos it
+// will only return the commits yet to be mapped in the DB.
+//
+// It returns an error if any.
 func (s *Service) getCommitsToInsert(ctx context.Context, logger log.Logger, repoID api.RepoID, dir common.GitDir) (commitsMap []types.PerforceChangelist, err error) {
 	latestRowCommit, err := s.DB.RepoCommitsChangelists().GetLatestForRepo(ctx, repoID)
 	if err != nil {
@@ -156,8 +161,6 @@ func (s *Service) getCommitsToInsert(ctx context.Context, logger log.Logger, rep
 
 		return nil, errors.Wrap(err, "RepoCommits.GetLatestForRepo")
 	}
-
-	logger.Warn("continuing from latestCommit")
 
 	head, err := headCommitSHA(ctx, logger, dir)
 	if err != nil {
@@ -177,6 +180,7 @@ func (s *Service) getCommitsToInsert(ctx context.Context, logger log.Logger, rep
 	return results, nil
 }
 
+// headCommitSHA returns the commitSHA at HEAD of the repo.
 func headCommitSHA(ctx context.Context, logger log.Logger, dir common.GitDir) (string, error) {
 	cmd := exec.CommandContext(ctx, "git", "rev-parse", "HEAD")
 	dir.Set(cmd)
@@ -188,7 +192,7 @@ func headCommitSHA(ctx context.Context, logger log.Logger, dir common.GitDir) (s
 	return string(bytes.TrimSpace(output)), nil
 }
 
-// logFormatWithCommitSHAAndCommitBodyOnly will print the commit SHA and the commit body (skips the
+// logFormatWithCommitSHAAndCommitBodyOnly prints the commit SHA and the commit body (skips the
 // subject) separated by a space. These are the only two fields that we need to parse the changelist
 // ID from the commit.
 //
@@ -199,6 +203,13 @@ func headCommitSHA(ctx context.Context, logger log.Logger, dir common.GitDir) (s
 // 90b9b9574517f30810346f0ab07f66c49c77ab0f [p4-fusion: depot-paths = "//rhia-depot-test/": change = 83731]
 var logFormatWithCommitSHAAndCommitBodyOnly = "--format=format:%H %b"
 
+// newMappableCommits executes git log with "logFormatWithCommitSHAAndCommitBodyOnly" as the format
+// specifier and return a list of commitsSHA -> changelistID for each commit between the range
+// "lastMappedCommit..HEAD".
+//
+// If "lastMappedCommit" is empty, it will return the list for all commits of this repo.
+//
+// newMappableCommits will read the output one commit at a time to avoid an unbounded memory growth.
 func newMappableCommits(ctx context.Context, logger log.Logger, dir common.GitDir, lastMappedCommit, head string) ([]types.PerforceChangelist, error) {
 	cmd := exec.CommandContext(ctx, "git", "log")
 	// FIXME: When lastMappedCommit..head is an invalid range.
@@ -257,6 +268,7 @@ func newMappableCommits(ctx context.Context, logger log.Logger, dir common.GitDi
 	return commitMaps, errors.Wrap(g.Wait(), "command exeuction pipeline failed")
 }
 
+// readGitLogOutput scans one line at a time from the git log output.
 func readGitLogOutput(ctx context.Context, reader io.Reader, logLineResults chan<- string) error {
 	scan := bufio.NewScanner(reader)
 	scan.Split(bufio.ScanLines)
@@ -273,6 +285,7 @@ func readGitLogOutput(ctx context.Context, reader io.Reader, logLineResults chan
 	return errors.Wrap(scan.Err(), "scanning git-log output failed")
 }
 
+// parseGitLogLine will parse the a line from the git-log output and return the commitSHA and changelistID.
 func parseGitLogLine(line string) (*types.PerforceChangelist, error) {
 	// Expected format: "<commitSHA> <commitBody>"
 	parts := strings.SplitN(line, " ", 2)

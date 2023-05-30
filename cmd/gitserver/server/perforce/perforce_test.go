@@ -161,8 +161,6 @@ func TestNewMappableCommits(t *testing.T) {
 }
 
 func TestReadGitLogOutput(t *testing.T) {
-	logger := logtest.NoOp(t)
-
 	t.Run("clean exit, no error", func(t *testing.T) {
 		ctx := context.Background()
 
@@ -216,7 +214,7 @@ func TestReadGitLogOutput(t *testing.T) {
 	})
 }
 
-func TestParseGitLogLint(t *testing.T) {
+func TestParseGitLogLine(t *testing.T) {
 	t.Run("passes valid perforce commit", func(t *testing.T) {
 		got, err := parseGitLogLine(`4e5b9dbc6393b195688a93ea04b98fada50bfa03 [p4-fusion: depot-paths = "//rhia-depot-test/": change = 83733]`)
 
