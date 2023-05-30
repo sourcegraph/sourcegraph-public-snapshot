@@ -340,6 +340,7 @@ commands:
     checkBinary: .bin/oss-symbols
     env:
       CTAGS_COMMAND: dev/universal-ctags-dev
+      SCIP_CTAGS_COMMAND: dev/scip-ctags-dev
       CTAGS_PROCESSES: 2
     watch:
       - lib
@@ -358,6 +359,7 @@ commands:
     checkBinary: .bin/symbols
     env:
       CTAGS_COMMAND: dev/universal-ctags-dev
+      SCIP_CTAGS_COMMAND: dev/scip-ctags-dev
       CTAGS_PROCESSES: 2
       USE_ROCKSKIP: "false"
     watch:
@@ -544,6 +546,7 @@ commands:
     checkBinary: .bin/zoekt-sourcegraph-indexserver
     env: &zoektenv
       CTAGS_COMMAND: dev/universal-ctags-dev
+      SCIP_CTAGS_COMMAND: dev/scip-ctags-dev
       GRPC_ENABLED: true
 
   zoekt-index-0:
@@ -956,6 +959,7 @@ bazelCommands:
     target: //cmd/symbols
     env:
       CTAGS_COMMAND: dev/universal-ctags-dev
+      SCIP_CTAGS_COMMAND: dev/scip-ctags-dev
       CTAGS_PROCESSES: 2
   oss-gitserver-0:
     target: //cmd/gitserver
@@ -1023,6 +1027,7 @@ bazelCommands:
     checkBinary: .bin/symbols
     env:
       CTAGS_COMMAND: dev/universal-ctags-dev
+      SCIP_CTAGS_COMMAND: dev/scip-ctags-dev
       CTAGS_PROCESSES: 2
       USE_ROCKSKIP: "false"
   gitserver-template: &gitserver_bazel_template

@@ -6,6 +6,7 @@ pub fn capture_name_to_descriptor(capture: &str, name: String) -> Descriptor {
             "descriptor.method" => Suffix::Method,
             "descriptor.namespace" => Suffix::Namespace,
             "descriptor.type" => Suffix::Type,
+            "descriptor.term" => Suffix::Term,
 
             // TODO: Should consider moving to result here.
             _ => Suffix::UnspecifiedSuffix,
