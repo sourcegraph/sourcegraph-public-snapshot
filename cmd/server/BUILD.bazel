@@ -87,6 +87,11 @@ pkg_tar(
     remap_paths = {"/syntect_server": "/usr/local/bin/syntax_highlighter"},
 )
 
+pkg_tar(
+    name = "tar_postgres_optimize",
+    srcs = ["//cmd/server/rootfs:postgres-optimize.sh"],
+)
+
 # Tip: to view exactly what gets built here, you can run:
 #   bazel cquery '//cmd/server:image' --output build
 oci_image(
@@ -103,6 +108,7 @@ oci_image(
         ":tar_postgres_exporter_config",
         ":tar_monitoring_config",
         ":tar_syntax-highlighter",
+        ":tar_postgres_optimize",
     ] + dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS),
     workdir = "/",
 )

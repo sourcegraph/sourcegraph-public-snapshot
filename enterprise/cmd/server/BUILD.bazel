@@ -59,6 +59,11 @@ pkg_tar(
 )
 
 pkg_tar(
+    name = "tar_postgres_optimize",
+    srcs = ["//cmd/server/rootfs:postgres-optimize.sh"],
+)
+
+pkg_tar(
     name = "tar_monitoring_config",
     srcs = [
         "//dev/prometheus:prometheus_targets_linux",
@@ -128,7 +133,8 @@ oci_image(
         ":static_config_tar",
         ":tar_postgres_exporter_config",
         ":tar_monitoring_config",
-        ":tar_syntax-highlighter",
+        # ":tar_syntax-highlighter",
+        ":tar_postgres_optimize",
     ] + dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS),
     workdir = "/",
 )
