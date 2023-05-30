@@ -2,10 +2,10 @@ package types
 
 import (
 	"encoding/json"
-	"fmt"
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/internal/executor"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type DequeueRequest struct {
@@ -113,17 +113,17 @@ func (h *HeartbeatRequest) UnmarshalJSON(b []byte) error {
 	h.PrometheusMetrics = req.PrometheusMetrics
 
 	for _, id := range req.JobIDs {
-		switch id.(type) {
+		switch jobId := id.(type) {
 		case int:
-			h.JobIDs = append(h.JobIDs, strconv.Itoa(id.(int)))
+			h.JobIDs = append(h.JobIDs, strconv.Itoa(jobId))
 		case float32:
-			h.JobIDs = append(h.JobIDs, strconv.FormatFloat(float64(id.(float32)), 'f', -1, 32))
+			h.JobIDs = append(h.JobIDs, strconv.FormatFloat(float64(jobId), 'f', -1, 32))
 		case float64:
-			h.JobIDs = append(h.JobIDs, strconv.FormatFloat(id.(float64), 'f', -1, 64))
+			h.JobIDs = append(h.JobIDs, strconv.FormatFloat(jobId, 'f', -1, 64))
 		case string:
-			h.JobIDs = append(h.JobIDs, id.(string))
+			h.JobIDs = append(h.JobIDs, jobId)
 		default:
-			return fmt.Errorf("unknown type for job ID: %T", id)
+			return errors.Newf("unknown type for job ID: %T", id)
 		}
 	}
 	return nil
