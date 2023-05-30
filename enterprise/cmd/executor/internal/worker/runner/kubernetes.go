@@ -88,7 +88,7 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 		if errors.Is(err, command.ErrKubernetesJobFailed) {
 			pod, findPodErr := r.cmd.FindPod(ctx, r.options.Namespace, job.Name)
 			if findPodErr != nil {
-				return err
+				return errors.Append(err, findPodErr)
 			}
 
 			var errMessage string
