@@ -187,6 +187,8 @@ func (h *handler) Handle(ctx context.Context, lgr log.Logger, record *Job) error
 	switch record.ConfigName {
 	case types.SignalRecentContributors:
 		delegate = handleRecentContributors
+	case types.FilesBackfill:
+		delegate = handleFilesBackfill
 	default:
 		return errcode.MakeNonRetryable(errors.New("unsupported own index job type"))
 	}

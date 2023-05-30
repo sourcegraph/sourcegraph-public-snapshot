@@ -11,6 +11,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	logger "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -30,6 +31,10 @@ type IndexJobType struct {
 var QueuePerRepoIndexJobs = []IndexJobType{{
 	Name:            types.SignalRecentContributors,
 	IndexInterval:   time.Hour * 24,
+	RefreshInterval: time.Minute * 5,
+}, {
+	Name:            types.FilesBackfill,
+	IndexInterval:   time.Hour * 5,
 	RefreshInterval: time.Minute * 5,
 }}
 
