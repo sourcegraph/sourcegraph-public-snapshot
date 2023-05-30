@@ -2365,6 +2365,11 @@
           "description": "Experimental: Whether to generate embeddings incrementally. If true, only files that have changed since the last run will be processed.",
           "type": "boolean",
           "default": false
+        },
+        "minimumInterval": {
+          "description": "The time to wait between runs. Valid time units are \"s\", \"m\", \"h\". Example values: \"30s\", \"5m\", \"1h\".",
+          "type": "string",
+          "default": "24h"
         }
       },
       "examples": [
@@ -2409,6 +2414,20 @@
           "description": "The external completions provider.",
           "default": "anthropic",
           "enum": ["anthropic", "openai"]
+        },
+        "endpoint": {
+          "type": "string",
+          "description": "The endpoint under which to reach the provider. Currently only used for provider types \"llmproxy\", \"openai\" and \"anthropic\". The default values are \"https://completions.sourcegraph.com\", \"https://api.openai.com/v1/chat/completions\", and \"https://api.anthropic.com/v1/complete\" for LLM proxy, OpenAI, and Anthropic, respectively."
+        },
+        "perUserDailyLimit": {
+          "description": "If > 0, enables the maximum number of completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.",
+          "type": "integer",
+          "default": 0
+        },
+        "perUserCodeCompletionsDailyLimit": {
+          "description": "If > 0, enables the maximum number of code completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.",
+          "type": "integer",
+          "default": 0
         }
       },
       "examples": [

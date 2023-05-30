@@ -66,6 +66,7 @@ ts_project(
         "src/services/LocalStorageProvider.ts",
         "src/services/SecretStorageProvider.ts",
         "src/test-support.ts",
+        "src/testSetup/vscode.ts",
         "src/wink-nlp-utils.d.ts",
         "webviews/App.story.tsx",
         "webviews/App.tsx",

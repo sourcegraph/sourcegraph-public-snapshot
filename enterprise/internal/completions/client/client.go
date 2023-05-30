@@ -16,9 +16,9 @@ import (
 func Get(endpoint, provider, accessToken string) (types.CompletionsClient, error) {
 	switch provider {
 	case anthropic.ProviderName:
-		return anthropic.NewClient(httpcli.ExternalDoer, accessToken, endpoint), nil
+		return anthropic.NewClient(httpcli.ExternalDoer, endpoint, accessToken), nil
 	case openai.ProviderName:
-		return openai.NewClient(httpcli.ExternalDoer, accessToken), nil
+		return openai.NewClient(httpcli.ExternalDoer, endpoint, accessToken), nil
 	case dotcom.ProviderName:
 		return dotcom.NewClient(httpcli.ExternalDoer, accessToken), nil
 	case llmproxy.ProviderName:

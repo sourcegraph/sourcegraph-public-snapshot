@@ -14,13 +14,12 @@ trap cleanup EXIT
 echo "--- :bazel: bazel build for targets //enterprise/cmd/symbols"
 bazel \
   --bazelrc=.bazelrc \
-    --bazelrc=.aspect/bazelrc/ci.bazelrc \
-    --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
+  --bazelrc=.aspect/bazelrc/ci.bazelrc \
+  --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
   build //enterprise/cmd/symbols \
-    --stamp \
+  --stamp \
   --workspace_status_command=./dev/bazel_stamp_vars.sh \
-  --platforms @zig_sdk//platform:linux_amd64 \
-  --extra_toolchains @zig_sdk//toolchain:linux_amd64_musl
+  --config incompat-zig-linux-amd64
 
 out=$(
   bazel --bazelrc=.bazelrc \
@@ -29,8 +28,7 @@ out=$(
     cquery //enterprise/cmd/symbols \
     --stamp \
     --workspace_status_command=./dev/bazel_stamp_vars.sh \
-    --platforms @zig_sdk//platform:linux_amd64 \
-    --extra_toolchains @zig_sdk//toolchain:linux_amd64_musl \
+    --config incompat-zig-linux-amd64 \
     --output=files
 )
 cp -v "$out" "$OUTPUT"
@@ -41,11 +39,11 @@ cp -v "$out" "$OUTPUT"
 echo "--- :bazel: bazel build for target //docker-images/syntax-highlighter:scip-ctags"
 bazel \
   --bazelrc=.bazelrc \
-    --bazelrc=.aspect/bazelrc/ci.bazelrc \
-    --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
+  --bazelrc=.aspect/bazelrc/ci.bazelrc \
+  --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
   build //docker-images/syntax-highlighter:scip-ctags \
-    --stamp \
-  --workspace_status_command=./dev/bazel_stamp_vars.sh \
+  --stamp \
+  --workspace_status_command=./dev/bazel_stamp_vars.sh
 
 out=$(
   bazel --bazelrc=.bazelrc \
