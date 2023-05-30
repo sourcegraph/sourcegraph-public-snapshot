@@ -66,6 +66,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Code Insights scoped to a static list of repository names would fail to resolve repositories with permissions enabled, resulting in insights that would not process. [#51657](https://github.com/sourcegraph/sourcegraph/pull/51657)
 - Slow request logs now have the correct trace and span IDs attached if a trace is present on the request. [#51826](https://github.com/sourcegraph/sourcegraph/pull/51826)
 - Batches: Resolved an issue with GitHub webhooks where CI check updates fail due to the removal of a field from the GitHub webhook payload. [#52035](https://github.com/sourcegraph/sourcegraph/pull/52035)
+- Bitbucket native integration: fix code-intel popovers on the pull request pages. [#52609](https://github.com/sourcegraph/sourcegraph/pull/52609)
 
 ## 5.0.3
 
