@@ -12,11 +12,17 @@ commandTests:
       - -u
     excludedOutput: ["^0"]
     exitCode: 0
-  - name: "running as redis"
+  - name: "redis user has correct uid"
     command: "/usr/bin/id"
     args:
       - -u
     expectedOutput: ["^999\n"]
+    exitCode: 0
+  - name: "redis user has correct gid"
+    command: "/usr/bin/id"
+    args:
+      - -g
+    expectedOutput: ["^1000\n"]
     exitCode: 0
 
 fileExistenceTests:

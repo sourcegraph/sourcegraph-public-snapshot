@@ -12,6 +12,18 @@ commandTests:
       - -u
     excludedOutput: ["^0"]
     exitCode: 0
+  - name: "postgres user has correct uid"
+    command: "/usr/bin/id"
+    args:
+      - -u
+    expectedOutput: ["^70\n"]
+    exitCode: 0
+  - name: "postgres user has correct gid"
+    command: "/usr/bin/id"
+    args:
+      - -g
+    expectedOutput: ["^70\n"]
+    exitCode: 0
 
 # TODO: This test shouldn't fail
 # fileExistenceTests:
