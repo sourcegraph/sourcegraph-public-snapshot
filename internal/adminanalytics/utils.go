@@ -74,12 +74,14 @@ LEFT OUTER JOIN users ON users.id = event_logs.user_id
 `
 
 func getDefaultConds() []*sqlf.Query {
-	return database.BuildCommonUsageConds(&database.CommonUsageOptions{
+	commonConds := database.BuildCommonUsageConds(&database.CommonUsageOptions{
 		ExcludeSystemUsers:          true,
 		ExcludeNonActiveUsers:       true,
 		ExcludeSourcegraphAdmins:    true,
 		ExcludeSourcegraphOperators: true,
 	}, []*sqlf.Query{})
+
+	return append(commonConds, sqlf.Sprintf("anonymous_user_id != 'backend'"))
 }
 
 func makeEventLogsQueries(dateRange string, grouping string, events []string, conditions ...*sqlf.Query) (*sqlf.Query, *sqlf.Query, error) {
