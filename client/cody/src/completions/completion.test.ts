@@ -239,10 +239,10 @@ describe('Cody completions', () => {
         expect(completions).toMatchInlineSnapshot(`
             Array [
               InlineCompletionItem {
-                "content": "'bar'",
+                "insertText": "'bar'",
               },
               InlineCompletionItem {
-                "content": "'baz'",
+                "insertText": "'baz'",
               },
             ]
         `)
@@ -257,10 +257,10 @@ describe('Cody completions', () => {
         expect(completions).toMatchInlineSnapshot(`
             Array [
               InlineCompletionItem {
-                "content": "array) {",
+                "insertText": "array) {",
               },
               InlineCompletionItem {
-                "content": "items) {",
+                "insertText": "items) {",
               },
             ]
         `)
@@ -287,7 +287,7 @@ describe('Cody completions', () => {
         expect(completions).toMatchInlineSnapshot(`
             Array [
               InlineCompletionItem {
-                "content": "items) {",
+                "insertText": "items) {",
               },
             ]
         `)
@@ -300,17 +300,38 @@ describe('Cody completions', () => {
             expect(completions).toMatchInlineSnapshot(`
                 Array [
                   InlineCompletionItem {
-                    "content": "1",
+                    "insertText": "1",
                   },
                   InlineCompletionItem {
-                    "content": "",
+                    "insertText": "",
                   },
                 ]
             `)
         })
 
-        it.todo('removes odd indentation in multi-line completions')
-        it.todo('handles \t in multi-line completions')
+        it('removes odd indentation in multi-line completions', async () => {
+            const { completions } = await complete(
+                `
+                function test() {
+                    ${CURSOR_MARKER}
+                }`,
+                [createCompletionResponse(' foo()\n     bar()')]
+            )
+
+            expect(completions[0].insertText).toBe('foo()\n    bar()')
+        })
+
+        it('handles \t in multi-line completions', async () => {
+            const { completions } = await complete(
+                `
+                function test() {
+                \t${CURSOR_MARKER}
+                }`,
+                [createCompletionResponse(' foo()\n\t bar()')]
+            )
+
+            expect(completions[0].insertText).toBe('foo()\n\tbar()')
+        })
     })
 
     describe('multi-line completions', () => {
@@ -352,15 +373,15 @@ describe('Cody completions', () => {
             expect(completions).toMatchInlineSnapshot(`
                 Array [
                   InlineCompletionItem {
-                    "content": "if (foo) {
+                    "insertText": "if (foo) {
                             console.log('foo1');
                         }",
                   },
                   InlineCompletionItem {
-                    "content": "console.log('foo')",
+                    "insertText": "console.log('foo')",
                   },
                   InlineCompletionItem {
-                    "content": "",
+                    "insertText": "",
                   },
                 ]
             `)
@@ -386,7 +407,7 @@ describe('Cody completions', () => {
 
             expect(completions[0]).toMatchInlineSnapshot(`
                 InlineCompletionItem {
-                  "content": "console.log('foo')
+                  "insertText": "console.log('foo')
 
                         console.log('bar')
 
@@ -412,7 +433,7 @@ describe('Cody completions', () => {
 
             expect(completions[0]).toMatchInlineSnapshot(`
                 InlineCompletionItem {
-                  "content": "console.log('one')
+                  "insertText": "console.log('one')
                 } else {
                     console.log('two')",
                 }
@@ -434,7 +455,7 @@ describe('Cody completions', () => {
 
             expect(completions[0]).toMatchInlineSnapshot(`
                 InlineCompletionItem {
-                  "content": "console.log('one')
+                  "insertText": "console.log('one')
                 }",
                 }
             `)
@@ -460,7 +481,7 @@ describe('Cody completions', () => {
 
             expect(completions[0]).toMatchInlineSnapshot(`
                 InlineCompletionItem {
-                  "content": "console.log('one')
+                  "insertText": "console.log('one')
                     console.log('two')",
                 }
             `)
@@ -491,22 +512,49 @@ describe('Cody completions', () => {
             expect(completions).toMatchInlineSnapshot(`
                 Array [
                   InlineCompletionItem {
-                    "content": "console.log('foo')
+                    "insertText": "console.log('foo')
                     console.log('foo')
                     console.log('foo')
                     console.log('foo')
                     console.log('foo')",
                   },
                   InlineCompletionItem {
-                    "content": "console.log('foo')",
+                    "insertText": "console.log('foo')",
                   },
                   InlineCompletionItem {
-                    "content": "console.log('foo')",
+                    "insertText": "console.log('foo')",
                   },
                 ]
             `)
         })
 
-        it.todo('handles tab/newline interop in completion truncation')
+        it('handles tab/newline interop in completion truncation', async () => {
+            const { completions } = await complete(
+                `
+                class Foo {
+                    constructor() {
+                        ${CURSOR_MARKER}`,
+                [
+                    createCompletionResponse(`
+                    console.log('foo')
+                    \t\tif (yes) {
+                    \t\t    sure()
+                    \t\t}
+                    \t}
+
+                    \tadd() {
+                        \tconsole.log('bar')
+                        }`),
+                ]
+            )
+
+            expect(completions[0].insertText).toMatchInlineSnapshot(`
+                "console.log('foo')
+                \t\tif (yes) {
+                \t\t    sure()
+                \t\t}
+                \t}"
+            `)
+        })
     })
 })
