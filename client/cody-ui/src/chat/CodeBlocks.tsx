@@ -93,8 +93,8 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = ({
         for (const preElement of preElements) {
             const preText = preElement.textContent
             if (preText?.trim()) {
-                // We have to wrap the `<pre>` tag in the copy button container, otherwise
-                // the Copy button scrolls along with the code.
+                // We have to wrap the `<pre>` tag in the button container, otherwise
+                // the buttons scroll along with the code.
                 wrapElement(
                     preElement,
                     createCopyButtonWithContainer(
