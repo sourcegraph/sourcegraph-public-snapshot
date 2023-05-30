@@ -16,9 +16,8 @@ import (
 )
 
 const (
-	ProviderName = "cody-gateway"
-	// TODO: Change to "https://cody-gateway.sourcegraph.com" once available.
-	DefaultEndpoint      = "https://completions.sourcegraph.com"
+	ProviderName         = "cody-gateway"
+	DefaultEndpoint      = "https://cody-gateway.sourcegraph.com"
 	openAIModelPrefix    = "openai/"
 	anthropicModelPrefix = "anthropic/"
 )
