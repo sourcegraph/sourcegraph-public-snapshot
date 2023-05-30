@@ -14,7 +14,7 @@ import (
 
 const ProviderName = "anthropic"
 
-func NewClient(cli httpcli.Doer, accessToken, apiURL string) types.CompletionsClient {
+func NewClient(cli httpcli.Doer, apiURL, accessToken string) types.CompletionsClient {
 	if apiURL == "" {
 		apiURL = defaultAPIURL
 	}

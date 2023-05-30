@@ -15,18 +15,23 @@ import (
 
 const ProviderName = "openai"
 
-func NewClient(cli httpcli.Doer, accessToken string) types.CompletionsClient {
+func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.CompletionsClient {
+	if endpoint == "" {
+		endpoint = defaultAPIURL
+	}
 	return &openAIChatCompletionStreamClient{
 		cli:         cli,
 		accessToken: accessToken,
+		endpoint:    endpoint,
 	}
 }
 
-const apiURL = "https://api.openai.com/v1/chat/completions"
+const defaultAPIURL = "https://api.openai.com/v1/chat/completions"
 
 type openAIChatCompletionStreamClient struct {
 	cli         httpcli.Doer
 	accessToken string
+	endpoint    string
 }
 
 func (c *openAIChatCompletionStreamClient) Complete(
@@ -147,7 +152,7 @@ func (c *openAIChatCompletionStreamClient) makeRequest(ctx context.Context, requ
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", apiURL, bytes.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", c.endpoint, bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, err
 	}
