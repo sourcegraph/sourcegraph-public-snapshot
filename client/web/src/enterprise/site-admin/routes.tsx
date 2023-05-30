@@ -7,6 +7,7 @@ import { SiteAdminAreaRoute } from '../../site-admin/SiteAdminArea'
 import { BatchSpecsPageProps } from '../batches/BatchSpecsPage'
 import { CodeIntelConfigurationPolicyPage } from '../codeintel/configuration/pages/CodeIntelConfigurationPolicyPage'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
+import { OwnAnalyticsPage } from '../own/admin-ui/OwnAnalyticsPage'
 import { SiteAdminRolesPageProps } from '../rbac/SiteAdminRolesPage'
 
 import { RoleAssignmentModalProps } from './UserManagement/components/RoleAssignmentModal'
@@ -163,6 +164,11 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             exact: true,
             path: '/own-signal-page',
             render: () => <OwnStatusPage />,
+        },
+        {
+            exact: true,
+            path: '/analytics/own',
+            render: () => <OwnAnalyticsPage />,
         },
 
         // Code intelligence redirect
