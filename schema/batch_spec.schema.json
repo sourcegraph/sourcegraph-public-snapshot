@@ -321,7 +321,7 @@
         },
         "fork": {
           "type": "boolean",
-          "description": "Force the default forking behaivor of the code host"
+          "description": "Whether to publish the changeset to a fork of the target repository. If omitted, the changeset will be published to a branch directly on the target repository, unless the global `batches.enforceFork` setting is enabled. If set, this property will override any global setting."
         },
         "commit": {
           "title": "ExpandedGitCommitDescription",
