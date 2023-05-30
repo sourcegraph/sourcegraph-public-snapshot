@@ -15,11 +15,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
-	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -136,29 +134,14 @@ func min(a, b int) int {
 	return b
 }
 
-func (p *parser) handleParseRequest(
-	ctx context.Context,
-	symbolOrErrors chan<- SymbolOrError,
-	parseRequest fetcher.ParseRequest,
-	totalSymbols *uint32,
-) (err error) {
+func (p *parser) handleParseRequest(ctx context.Context, symbolOrErrors chan<- SymbolOrError, parseRequest fetcher.ParseRequest, totalSymbols *uint32) (err error) {
 	ctx, trace, endObservation := p.operations.handleParseRequest.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("path", parseRequest.Path),
 		attribute.Int("fileSize", len(parseRequest.Data)),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	language, found := languages.GetLanguage(parseRequest.Path, string(parseRequest.Data))
-	if !found {
-		return nil
-	}
-
-	source := GetParserType(language)
-	if source == ctags_config.NoCtags || source == ctags_config.UnknownCtags {
-		return nil
-	}
-
-	parser, err := p.parserFromPool(ctx, source)
+	parser, err := p.parserFromPool(ctx)
 	if err != nil {
 		return err
 	}
@@ -172,12 +155,12 @@ func (p *parser) handleParseRequest(
 		}
 
 		if err == nil {
-			p.parserPool.Done(parser, source)
+			p.parserPool.Done(parser)
 		} else {
 			// Close parser and return nil to pool, indicating that the next receiver should create a new parser
 			log15.Error("Closing failed parser", "error", err)
 			parser.Close()
-			p.parserPool.Done(nil, source)
+			p.parserPool.Done(nil)
 			p.operations.parseFailed.Inc()
 		}
 	}()
@@ -236,15 +219,11 @@ func (p *parser) handleParseRequest(
 	return nil
 }
 
-func (p *parser) parserFromPool(ctx context.Context, source ctags_config.ParserType) (ctags.Parser, error) {
-	if source == ctags_config.NoCtags || source == ctags_config.UnknownCtags {
-		return nil, errors.New("Should not pass NoCtags to this function")
-	}
-
+func (p *parser) parserFromPool(ctx context.Context) (ctags.Parser, error) {
 	p.operations.parseQueueSize.Inc()
 	defer p.operations.parseQueueSize.Dec()
 
-	parser, err := p.parserPool.Get(ctx, source)
+	parser, err := p.parserPool.Get(ctx)
 	if err != nil {
 		if err == context.DeadlineExceeded {
 			p.operations.parseQueueTimeouts.Inc()
@@ -271,20 +250,12 @@ func shouldPersistEntry(e *ctags.Entry) bool {
 	return true
 }
 
-func SpawnCtags(logger log.Logger, ctagsConfig types.CtagsConfig, source ctags_config.ParserType) (ctags.Parser, error) {
+func SpawnCtags(logger log.Logger, ctagsConfig types.CtagsConfig) (ctags.Parser, error) {
 	logger = logger.Scoped("ctags", "ctags processes")
 
-	var options ctags.Options
-	if source == ctags_config.UniversalCtags {
-		options = ctags.Options{
-			Bin:                ctagsConfig.UniversalCommand,
-			PatternLengthLimit: ctagsConfig.PatternLengthLimit,
-		}
-	} else {
-		options = ctags.Options{
-			Bin:                ctagsConfig.ScipCommand,
-			PatternLengthLimit: ctagsConfig.PatternLengthLimit,
-		}
+	options := ctags.Options{
+		Bin:                ctagsConfig.Command,
+		PatternLengthLimit: ctagsConfig.PatternLengthLimit,
 	}
 	if ctagsConfig.LogErrors {
 		options.Info = std.NewLogger(logger, log.LevelInfo)
