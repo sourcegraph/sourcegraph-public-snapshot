@@ -17,6 +17,7 @@ contents:
     - openjdk-11
     - openssh-client
     - pcre
+    - posix-libc-utils # Adds locale, used by server postgres init scripts
     - postgresql-12
     - postgresql-12-contrib
     - prometheus-postgres-exporter=0.12.0-r1 # IMPORTANT: Pinned version for managed updates
@@ -70,4 +71,4 @@ paths:
     type: directory
     permissions: 0o755
 
-# MANUAL REBUILD: 
+# MANUAL REBUILD:
