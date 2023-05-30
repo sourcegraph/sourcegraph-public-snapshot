@@ -218,7 +218,7 @@ func newMappableCommits(ctx context.Context, logger log.Logger, dir common.GitDi
 	// Start reading the output of the command in a goroutine.
 	g.Go(func() error {
 		defer close(logLineResults)
-		return readGitLogOutput(ctx, logger, progressReader, logLineResults)
+		return readGitLogOutput(ctx, progressReader, logLineResults)
 	})
 
 	// Run the command in a goroutine. It will start writing the output to progressWriter.
@@ -257,7 +257,7 @@ func newMappableCommits(ctx context.Context, logger log.Logger, dir common.GitDi
 	return commitMaps, errors.Wrap(g.Wait(), "command exeuction pipeline failed")
 }
 
-func readGitLogOutput(ctx context.Context, logger log.Logger, reader io.Reader, logLineResults chan<- string) error {
+func readGitLogOutput(ctx context.Context, reader io.Reader, logLineResults chan<- string) error {
 	scan := bufio.NewScanner(reader)
 	scan.Split(bufio.ScanLines)
 	for scan.Scan() {
