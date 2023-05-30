@@ -25,31 +25,25 @@ function wrapElement(element: HTMLElement, wrapperElement: HTMLElement): void {
     wrapperElement.append(element)
 }
 
-function createCopyButtonWithContainer(
+function createButtons(
     text: string,
-    className: string,
+    copyButtonClassName?: string,
     copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit'],
     insertButtonClassName?: string
 ): HTMLElement {
-    const copyButton = document.createElement('button')
-    copyButton.textContent = 'Copy'
-    copyButton.className = className
-    copyButton.addEventListener('click', () => {
-        navigator.clipboard.writeText(text).catch(error => console.error(error))
-        copyButton.textContent = 'Copied'
-        setTimeout(() => (copyButton.textContent = 'Copy'), 3000)
-        if (copyButtonOnSubmit) {
-            copyButtonOnSubmit('copyButton')
-        }
-    })
-    // The insert button is for IDE integrations. It allows the user to insert the code into the editor.
-    const insertButton = createInsertButton(text, insertButtonClassName, copyButtonOnSubmit)
-
     // The container will contain the buttons and the <pre> element with the code.
     // This allows us to position the buttons independent of the code.
     const buttons = document.createElement('div')
     buttons.className = styles.buttons
-    buttons.append(insertButton, copyButton)
+
+    const copyButton = createCopyButton(text, copyButtonClassName, copyButtonOnSubmit)
+    const insertButton = createInsertButton(text, insertButtonClassName, copyButtonOnSubmit)
+
+    // The insert button only exists for IDE integrations
+    if (insertButton) {
+        buttons.append(insertButton)
+    }
+    buttons.append(copyButton)
 
     const container = document.createElement('div')
     container.className = styles.container
@@ -58,18 +52,37 @@ function createCopyButtonWithContainer(
     return container
 }
 
-function createInsertButton(
+function createCopyButton(
     text: string,
-    insertButtonClassName?: string,
+    className?: string,
     copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
 ): HTMLElement {
-    if (!insertButtonClassName || !copyButtonOnSubmit) {
-        return document.createElement('span')
+    const button = document.createElement('button')
+    button.textContent = 'Copy'
+    button.className = classNames(styles.copyButton, className)
+    button.addEventListener('click', () => {
+        navigator.clipboard.writeText(text).catch(error => console.error(error))
+        button.textContent = 'Copied'
+        setTimeout(() => (button.textContent = 'Copy'), 3000)
+        if (copyButtonOnSubmit) {
+            copyButtonOnSubmit('copyButton')
+        }
+    })
+    return button
+}
+
+function createInsertButton(
+    text: string,
+    className?: string,
+    copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
+): HTMLElement | null {
+    if (!className || !copyButtonOnSubmit) {
+        return null
     }
     const insertButton = document.createElement('button')
     insertButton.textContent = 'Insert at Cursor'
     insertButton.title = 'Insert this at the current cursor position'
-    insertButton.className = classNames(styles.insertButton, insertButtonClassName)
+    insertButton.className = classNames(styles.insertButton, className)
     insertButton.addEventListener('click', () => {
         copyButtonOnSubmit(text, true)
     })
@@ -79,8 +92,8 @@ function createInsertButton(
 export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = ({
     displayText,
     copyButtonClassName,
-    CopyButtonProps,
     insertButtonClassName,
+    CopyButtonProps,
 }) => {
     const rootRef = useRef<HTMLDivElement>(null)
 
@@ -97,16 +110,11 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = ({
                 // the buttons scroll along with the code.
                 wrapElement(
                     preElement,
-                    createCopyButtonWithContainer(
-                        preText,
-                        classNames(styles.copyButton, copyButtonClassName),
-                        CopyButtonProps,
-                        classNames(styles.insertButton, insertButtonClassName)
-                    )
+                    createButtons(preText, copyButtonClassName, CopyButtonProps, insertButtonClassName)
                 )
             }
         }
-    }, [CopyButtonProps, copyButtonClassName, displayText, insertButtonClassName, rootRef])
+    }, [displayText, CopyButtonProps, copyButtonClassName, insertButtonClassName, rootRef])
 
     return useMemo(
         () => <div ref={rootRef} dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(displayText) }} />,
