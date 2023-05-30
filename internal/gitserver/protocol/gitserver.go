@@ -473,7 +473,6 @@ type PushConfig struct {
 type GerritConfig struct {
 	ChangeID     string
 	PushMagicRef string
-	Draft        bool
 }
 
 // CreateCommitFromPatchResponse is the response type returned after creating

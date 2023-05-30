@@ -105,20 +105,33 @@ func (s GerritSource) CreateChangeset(ctx context.Context, cs *Changeset) (bool,
 }
 
 // CreateDraftChangeset creates the given changeset on the code host in draft mode.
-// Noop, Gerrit creates changes through commits directly
 func (s GerritSource) CreateDraftChangeset(ctx context.Context, cs *Changeset) (bool, error) {
-	// For Gerrit, the Change is created at `git push` time, so we just load it here to verify it
-	// was created successfully.
-	err := s.LoadChangeset(ctx, cs)
-	if err != nil {
+	// For Gerrit, the Change is created at `git push` time, so we just API to mark it as WIP.
+	if err := s.client.SetWIP(ctx, cs.ExternalID); err != nil {
+		if errcode.IsNotFound(err) {
+			return false, ChangesetNotFoundError{Changeset: cs}
+		}
+		return false, errors.Wrap(err, "getting change")
+	}
+
+	if err := s.LoadChangeset(ctx, cs); err != nil {
 		return false, err
 	}
 	return true, nil
 }
 
 // UndraftChangeset will update the Changeset on the source to be not in draft mode anymore.
-// Noop, Gerrit creates changes through commits directly
-func (s GerritSource) UndraftChangeset(context.Context, *Changeset) error {
+func (s GerritSource) UndraftChangeset(ctx context.Context, cs *Changeset) error {
+	if err := s.client.SetReadyForReview(ctx, cs.ExternalID); err != nil {
+		if errcode.IsNotFound(err) {
+			return ChangesetNotFoundError{Changeset: cs}
+		}
+		return errors.Wrap(err, "setting change as ready")
+	}
+
+	if err := s.LoadChangeset(ctx, cs); err != nil {
+		return errors.Wrap(err, "getting change")
+	}
 	return nil
 }
 

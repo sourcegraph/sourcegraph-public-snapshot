@@ -715,7 +715,6 @@ func buildCommitOpts(repo *types.Repo, changeset *btypes.Changeset, spec *btypes
 		opts.Gerrit = &protocol.GerritConfig{
 			ChangeID:     changeset.ExternalID,
 			PushMagicRef: strings.Replace(spec.BaseRef, "refs/heads", "refs/for", 1), //Magical Gerrit ref for pushing changes.
-			Draft:        changeset.State == btypes.ChangesetStateDraft,
 		}
 	}
 	return opts

@@ -671,7 +671,7 @@ func computeSingleChangesetReviewState(c *btypes.Changeset) (s btypes.ChangesetR
 				states[btypes.ChangesetReviewStatePending] = true
 			}
 		}
-	case gerritbatches.AnnotatedChange:
+	case *gerritbatches.AnnotatedChange:
 		if m.Reviewers == nil {
 			states[btypes.ChangesetReviewStatePending] = true
 			break
@@ -689,10 +689,8 @@ func computeSingleChangesetReviewState(c *btypes.Changeset) (s btypes.ChangesetR
 				states[btypes.ChangesetReviewStateApproved] = true
 			case " 0": // This isn't a typo, there is actually a space in the string.
 				states[btypes.ChangesetReviewStatePending] = true
-			case "-1":
+			case "-1", "-2":
 				states[btypes.ChangesetReviewStateChangesRequested] = true
-			case "-2":
-				states[btypes.ChangesetReviewStateDismissed] = true
 			default:
 				states[btypes.ChangesetReviewStatePending] = true
 			}

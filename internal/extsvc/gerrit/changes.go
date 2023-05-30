@@ -108,6 +108,54 @@ func (c *client) RestoreChange(ctx context.Context, changeID string) (*Change, e
 	return &change, nil
 }
 
+// SetReadyForReview sets the change status as ready for review.
+func (c *client) SetReadyForReview(ctx context.Context, changeID string) error {
+	pathStr, err := url.JoinPath("a/changes", url.PathEscape(changeID), "ready")
+	if err != nil {
+		return err
+	}
+	reqURL := url.URL{Path: pathStr}
+	req, err := http.NewRequest("POST", reqURL.String(), nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.do(ctx, req, nil)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode >= http.StatusBadRequest {
+		return errors.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
+// SetWIP sets the change status as WIP (draft).
+func (c *client) SetWIP(ctx context.Context, changeID string) error {
+	pathStr, err := url.JoinPath("a/changes", url.PathEscape(changeID), "wip")
+	if err != nil {
+		return err
+	}
+	reqURL := url.URL{Path: pathStr}
+	req, err := http.NewRequest("POST", reqURL.String(), nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.do(ctx, req, nil)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode >= http.StatusBadRequest {
+		return errors.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
 // WriteReviewComment writes a review comment on a Gerrit change.
 func (c *client) WriteReviewComment(ctx context.Context, changeID string, comment ChangeReviewComment) error {
 	pathStr, err := url.JoinPath("a/changes", url.PathEscape(changeID), "revisions/current/review")

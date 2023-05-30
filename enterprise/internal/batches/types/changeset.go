@@ -10,16 +10,15 @@ import (
 	"github.com/goware/urlx"
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-diff/diff"
-	gerritbatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/gerrit"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
-
 	adobatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
+	gerritbatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -862,9 +861,6 @@ func (c *Changeset) Events() (events []*ChangesetEvent, err error) {
 		// There is one type of event that we create from an annotated pull
 		// request: review events, based on the reviewers within the change.
 		var kind ChangesetEventKind
-		if m.Reviewers == nil {
-			break
-		}
 
 		for _, reviewer := range m.Reviewers {
 			if kind, err = ChangesetEventKindFor(&reviewer); err != nil {
@@ -878,6 +874,7 @@ func (c *Changeset) Events() (events []*ChangesetEvent, err error) {
 			})
 		}
 	}
+
 	return events, nil
 }
 
@@ -1477,7 +1474,15 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (any, error) {
 		default:
 			return new(azuredevops.PullRequestUpdatedEvent), nil
 		}
-		// TODO: @varsanojidan revisit if webhooks are in scope
+	case strings.HasPrefix(string(k), "gerrit"):
+		switch k {
+		case ChangesetEventKindGerritChangeApproved,
+			ChangesetEventKindGerritChangeApprovedWithSuggestions,
+			ChangesetEventKindGerritChangeReviewed,
+			ChangesetEventKindGerritChangeNeedsChanges,
+			ChangesetEventKindGerritChangeRejected:
+			return new(gerrit.Reviewer), nil
+		}
 	}
 	return nil, errors.Errorf("changeset event metadata unknown changeset event kind %q", k)
 }

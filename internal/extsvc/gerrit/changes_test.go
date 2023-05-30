@@ -74,6 +74,30 @@ func TestClient_RestoreChange(t *testing.T) {
 	testutil.AssertGolden(t, "testdata/golden/RestoreChange.json", *update, resp)
 }
 
+func TestClient_SetReadyForReview(t *testing.T) {
+	cli, save := NewTestClient(t, "SetReadyForReview", *update)
+	defer save()
+
+	ctx := context.Background()
+
+	err := cli.SetReadyForReview(ctx, "Ida085bb4e62b9adb5991496ab31987e45cfd5d62")
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestClient_SetWIP(t *testing.T) {
+	cli, save := NewTestClient(t, "SetWIP", *update)
+	defer save()
+
+	ctx := context.Background()
+
+	err := cli.SetWIP(ctx, "Ida085bb4e62b9adb5991496ab31987e45cfd5d62")
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestClient_GetChangeReviews(t *testing.T) {
 	cli, save := NewTestClient(t, "GetChangeReviews", *update)
 	defer save()

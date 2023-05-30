@@ -79,19 +79,18 @@ func (c *Change) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-//func (c *Change) MarshalJSON() ([]byte, error) {
-//	fmt.Println("IN CHANGE MARSHAL")
-//	type Alias Change
-//	return json.Marshal(&struct {
-//		Created string `json:"created"`
-//		Updated string `json:"updated"`
-//		*Alias
-//	}{
-//		Created: c.Created.Format("2006-01-02 15:04:05.000000000"),
-//		Updated: c.Updated.Format("2006-01-02 15:04:05.000000000"),
-//		Alias:   (*Alias)(c),
-//	})
-//}
+func (c *Change) MarshalJSON() ([]byte, error) {
+	type Alias Change
+	return json.Marshal(&struct {
+		Created string `json:"created"`
+		Updated string `json:"updated"`
+		*Alias
+	}{
+		Created: c.Created.Format("2006-01-02 15:04:05.000000000"),
+		Updated: c.Updated.Format("2006-01-02 15:04:05.000000000"),
+		Alias:   (*Alias)(c),
+	})
+}
 
 type ChangeReviewComment struct {
 	Message       string            `json:"message"`

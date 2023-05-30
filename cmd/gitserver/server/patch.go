@@ -284,10 +284,6 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		// If the push is to a Gerrit project,we need to push to a magic ref.
 		if req.Gerrit != nil {
 			pushRef = req.Gerrit.PushMagicRef
-			if req.Gerrit.Draft {
-				// This is really how you create a WIP (draft) change in Gerrit.
-				pushRef = pushRef + "%wip"
-			}
 		}
 		cmd = exec.CommandContext(ctx, "git", "push", "--force", remoteURL.String(), fmt.Sprintf("%s:%s", cmtHash, pushRef))
 		cmd.Dir = repoGitDir
