@@ -170,7 +170,7 @@
     "commands": [
       {
         "command": "cody.welcome",
-        "title": "Cody: Getting Started Guide (Help)",
+        "title": "Cody: Help & Getting Started",
         "group": "Cody",
         "icon": "$(book)"
       },
