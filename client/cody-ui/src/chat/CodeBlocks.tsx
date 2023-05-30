@@ -114,12 +114,12 @@ function getSelectedTextWithin(element: HTMLElement | null): string | null {
     return null
 }
 
-export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = ({
+export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = React.memo(function CodeBlocksContent({
     displayText,
     copyButtonClassName,
     insertButtonClassName,
     CopyButtonProps,
-}) => {
+}) {
     const rootRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
@@ -145,4 +145,4 @@ export const CodeBlocks: React.FunctionComponent<CodeBlocksProps> = ({
         () => <div ref={rootRef} dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(displayText) }} />,
         [displayText]
     )
-}
+})

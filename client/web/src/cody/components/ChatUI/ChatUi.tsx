@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { mdiClose, mdiSend, mdiArrowDown, mdiPencil, mdiThumbUp, mdiThumbDown, mdiCheck } from '@mdi/js'
 import classNames from 'classnames'
@@ -17,9 +17,8 @@ import { Button, Icon, TextArea, Link, Tooltip, Alert, Text, H2 } from '@sourceg
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { CodyPageIcon } from '../../chat/CodyPageIcon'
-import { useChatStoreState } from '../../stores/chat'
-import { useCodySidebarStore } from '../../stores/sidebar'
-import { useIsCodyEnabled } from '../../useIsCodyEnabled'
+import { useCodySidebar } from '../../sidebar/Provider'
+import { CodyChatStore } from '../../useCodyChat'
 
 import styles from './ChatUi.module.scss'
 
@@ -27,17 +26,22 @@ export const SCROLL_THRESHOLD = 100
 
 const onFeedbackSubmit = (feedback: string): void => eventLogger.log(`web:cody:feedbackSubmit:${feedback}`)
 
-export const ChatUI = (): JSX.Element => {
+interface IChatUIProps {
+    codyChatStore: CodyChatStore
+}
+
+export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore }): JSX.Element => {
     const {
         submitMessage,
         editMessage,
         messageInProgress,
+        chatMessages,
         transcript,
-        getChatContext,
-        transcriptId,
         transcriptHistory,
-    } = useChatStoreState()
-    const { needsEmailVerification } = useIsCodyEnabled()
+        loaded,
+        isCodyEnabled,
+        legacyChatContext,
+    } = codyChatStore
 
     const [formInput, setFormInput] = useState('')
     const [inputHistory, setInputHistory] = useState<string[] | []>(() =>
@@ -49,19 +53,26 @@ export const ChatUI = (): JSX.Element => {
     )
     const [messageBeingEdited, setMessageBeingEdited] = useState<boolean>(false)
 
+    const onSubmit = useCallback((text: string) => submitMessage(text), [submitMessage])
+    const onEdit = useCallback((text: string) => editMessage(text), [editMessage])
+
+    if (!loaded) {
+        return <></>
+    }
+
     return (
         <Chat
-            key={transcriptId}
+            key={transcript?.id}
             messageInProgress={messageInProgress}
             messageBeingEdited={messageBeingEdited}
             setMessageBeingEdited={setMessageBeingEdited}
-            transcript={transcript}
+            transcript={chatMessages}
             formInput={formInput}
             setFormInput={setFormInput}
             inputHistory={inputHistory}
             setInputHistory={setInputHistory}
-            onSubmit={submitMessage}
-            contextStatus={getChatContext()}
+            onSubmit={onSubmit}
+            contextStatus={legacyChatContext}
             submitButtonComponent={SubmitButton}
             fileLinkComponent={FileLink}
             className={styles.container}
@@ -72,47 +83,57 @@ export const ChatUI = (): JSX.Element => {
             inputRowClassName={styles.inputRow}
             chatInputClassName={styles.chatInput}
             EditButtonContainer={EditButton}
-            editButtonOnSubmit={editMessage}
+            editButtonOnSubmit={onEdit}
             textAreaComponent={AutoResizableTextArea}
             codeBlocksCopyButtonClassName={styles.codeBlocksCopyButton}
             transcriptActionClassName={styles.transcriptAction}
             FeedbackButtonsContainer={FeedbackButtons}
             feedbackButtonsOnSubmit={onFeedbackSubmit}
-            needsEmailVerification={needsEmailVerification}
+            needsEmailVerification={isCodyEnabled.needsEmailVerification}
             needsEmailVerificationNotice={NeedsEmailVerificationNotice}
         />
     )
 }
 
-export const ScrollDownButton = ({ onClick }: { onClick: () => void }): JSX.Element => (
-    <div className={styles.scrollButtonWrapper}>
-        <Button className={styles.scrollButton} onClick={onClick}>
-            <Icon aria-label="Scroll down" svgPath={mdiArrowDown} />
-        </Button>
-    </div>
-)
+export const ScrollDownButton = React.memo(function ScrollDownButtonContent({
+    onClick,
+}: {
+    onClick: () => void
+}): JSX.Element {
+    return (
+        <div className={styles.scrollButtonWrapper}>
+            <Button className={styles.scrollButton} onClick={onClick}>
+                <Icon aria-label="Scroll down" svgPath={mdiArrowDown} />
+            </Button>
+        </div>
+    )
+})
 
-export const EditButton: React.FunctionComponent<EditButtonProps> = ({
+export const EditButton: React.FunctionComponent<EditButtonProps> = React.memo(function EditButtonContent({
     className,
     messageBeingEdited,
     setMessageBeingEdited,
-}) => (
-    <div className={className}>
-        <button
-            className={classNames(className, styles.editButton)}
-            type="button"
-            onClick={() => setMessageBeingEdited(!messageBeingEdited)}
-        >
-            {messageBeingEdited ? (
-                <Icon aria-label="Close" svgPath={mdiClose} />
-            ) : (
-                <Icon aria-label="Edit" svgPath={mdiPencil} />
-            )}
-        </button>
-    </div>
-)
+}) {
+    return (
+        <div className={className}>
+            <button
+                className={classNames(className, styles.editButton)}
+                type="button"
+                onClick={() => setMessageBeingEdited(!messageBeingEdited)}
+            >
+                {messageBeingEdited ? (
+                    <Icon aria-label="Close" svgPath={mdiClose} />
+                ) : (
+                    <Icon aria-label="Edit" svgPath={mdiPencil} />
+                )}
+            </button>
+        </div>
+    )
+})
 
-const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ feedbackButtonsOnSubmit }) => {
+const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = React.memo(function FeedbackButtonsContent({
+    feedbackButtonsOnSubmit,
+}) {
     const [feedbackSubmitted, setFeedbackSubmitted] = useState(false)
 
     const onFeedbackBtnSubmit = useCallback(
@@ -151,95 +172,117 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = ({ feedba
             )}
         </div>
     )
-}
+})
 
-export const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ className, disabled, onClick }) => (
-    <button className={classNames(className, styles.submitButton)} type="submit" disabled={disabled} onClick={onClick}>
-        <Icon aria-label="Submit" svgPath={mdiSend} />
-    </button>
-)
+export const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = React.memo(function SubmitButtonContent({
+    className,
+    disabled,
+    onClick,
+}) {
+    return (
+        <button
+            className={classNames(className, styles.submitButton)}
+            type="submit"
+            disabled={disabled}
+            onClick={onClick}
+        >
+            <Icon aria-label="Submit" svgPath={mdiSend} />
+        </button>
+    )
+})
 
-export const FileLink: React.FunctionComponent<FileLinkProps> = ({ path, repoName, revision }) =>
-    repoName ? <Link to={`/${repoName}${revision ? `@${revision}` : ''}/-/blob/${path}`}>{path}</Link> : <>{path}</>
+export const FileLink: React.FunctionComponent<FileLinkProps> = React.memo(function FileLinkContent({
+    path,
+    repoName,
+    revision,
+}) {
+    return repoName ? (
+        <Link to={`/${repoName}${revision ? `@${revision}` : ''}/-/blob/${path}`}>{path}</Link>
+    ) : (
+        <>{path}</>
+    )
+})
 
 interface AutoResizableTextAreaProps extends ChatUITextAreaProps {}
 
-export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
-    value,
-    onInput,
-    onKeyDown,
-    className,
-    disabled = false,
-}) => {
-    const { inputNeedsFocus, setFocusProvided } = useCodySidebarStore()
-    const { needsEmailVerification } = useIsCodyEnabled()
-    const textAreaRef = useRef<HTMLTextAreaElement>(null)
-    const { width = 0 } = useResizeObserver({ ref: textAreaRef })
-
-    const adjustTextAreaHeight = useCallback((): void => {
-        if (textAreaRef.current) {
-            textAreaRef.current.style.height = '0px'
-            const scrollHeight = textAreaRef.current.scrollHeight
-            textAreaRef.current.style.height = `${scrollHeight}px`
-
-            // Hide scroll if the textArea isn't overflowing.
-            textAreaRef.current.style.overflowY = scrollHeight < 200 ? 'hidden' : 'auto'
+export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = React.memo(
+    function AutoResizableTextAreaContent({ value, onInput, onKeyDown, className, disabled = false }) {
+        const { inputNeedsFocus, setFocusProvided, isCodyEnabled } = useCodySidebar() || {
+            inputNeedsFocus: false,
+            setFocusProvided: () => null,
         }
-    }, [])
+        const textAreaRef = useRef<HTMLTextAreaElement>(null)
+        const { width = 0 } = useResizeObserver({ ref: textAreaRef })
 
-    const handleChange = (): void => {
-        adjustTextAreaHeight()
+        const adjustTextAreaHeight = useCallback((): void => {
+            if (textAreaRef.current) {
+                textAreaRef.current.style.height = '0px'
+                const scrollHeight = textAreaRef.current.scrollHeight
+                textAreaRef.current.style.height = `${scrollHeight}px`
+
+                // Hide scroll if the textArea isn't overflowing.
+                textAreaRef.current.style.overflowY = scrollHeight < 200 ? 'hidden' : 'auto'
+            }
+        }, [])
+
+        const handleChange = (): void => {
+            adjustTextAreaHeight()
+        }
+
+        useEffect(() => {
+            if (inputNeedsFocus && textAreaRef.current) {
+                textAreaRef.current.focus()
+                setFocusProvided()
+            }
+        }, [inputNeedsFocus, setFocusProvided])
+
+        useEffect(() => {
+            adjustTextAreaHeight()
+        }, [adjustTextAreaHeight, value, width])
+
+        const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>): void => {
+            if (onKeyDown) {
+                onKeyDown(event, textAreaRef.current?.selectionStart ?? null)
+            }
+        }
+
+        return (
+            <Tooltip content={isCodyEnabled.needsEmailVerification ? 'Verify your email to use Cody.' : ''}>
+                <TextArea
+                    ref={textAreaRef}
+                    className={className}
+                    value={value}
+                    onChange={handleChange}
+                    rows={1}
+                    autoFocus={false}
+                    required={true}
+                    onKeyDown={handleKeyDown}
+                    onInput={onInput}
+                    disabled={disabled}
+                />
+            </Tooltip>
+        )
     }
+)
 
-    useEffect(() => {
-        if (inputNeedsFocus && textAreaRef.current) {
-            textAreaRef.current.focus()
-            setFocusProvided()
-        }
-    }, [inputNeedsFocus, setFocusProvided])
-
-    useEffect(() => {
-        adjustTextAreaHeight()
-    }, [adjustTextAreaHeight, value, width])
-
-    const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>): void => {
-        if (onKeyDown) {
-            onKeyDown(event, textAreaRef.current?.selectionStart ?? null)
-        }
+const NeedsEmailVerificationNotice: React.FunctionComponent = React.memo(
+    function NeedsEmailVerificationNoticeContent() {
+        return (
+            <div className="p-3">
+                <H2 className={classNames('d-flex gap-1 align-items-center mb-3', styles.codyMessageHeader)}>
+                    <CodyPageIcon /> Cody
+                </H2>
+                <Alert variant="warning">
+                    <Text className="mb-0">Verify email</Text>
+                    <Text className="mb-0">
+                        Using Cody requires a verified email.{' '}
+                        <Link to={`${window.context.currentUser?.settingsURL}/emails`} target="_blank" rel="noreferrer">
+                            Resend email verification
+                        </Link>
+                        .
+                    </Text>
+                </Alert>
+            </div>
+        )
     }
-
-    return (
-        <Tooltip content={needsEmailVerification ? 'Verify your email to use Cody.' : ''}>
-            <TextArea
-                ref={textAreaRef}
-                className={className}
-                value={value}
-                onChange={handleChange}
-                rows={1}
-                autoFocus={false}
-                required={true}
-                onKeyDown={handleKeyDown}
-                onInput={onInput}
-                disabled={disabled}
-            />
-        </Tooltip>
-    )
-}
-
-const NeedsEmailVerificationNotice: React.FunctionComponent = () => (
-    <div className="p-3">
-        <H2 className={classNames('d-flex gap-1 align-items-center mb-3', styles.codyMessageHeader)}>
-            <CodyPageIcon /> Cody
-        </H2>
-        <Alert variant="warning">
-            <Text className="mb-0">Verify email</Text>
-            <Text className="mb-0">
-                Using Cody requires a verified email.{' '}
-                <Link to={`${window.context.currentUser?.settingsURL}/emails`} target="_blank" rel="noreferrer">
-                    Resend email verification
-                </Link>
-                .
-            </Text>
-        </Alert>
-    </div>
 )

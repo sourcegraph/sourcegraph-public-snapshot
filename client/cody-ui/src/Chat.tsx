@@ -157,6 +157,13 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         },
         [inputHistory, messageInProgress, onSubmit, setInputHistory, setSuggestions]
     )
+    const onChatInput = useCallback(
+        ({ target }: React.SyntheticEvent) => {
+            const { value } = target as HTMLInputElement
+            inputHandler(value)
+        },
+        [inputHandler]
+    )
 
     const onChatSubmit = useCallback((): void => {
         // Submit chat only when input is not empty and not in progress
@@ -268,10 +275,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         autoFocus={true}
                         required={true}
                         disabled={needsEmailVerification}
-                        onInput={({ target }) => {
-                            const { value } = target as HTMLInputElement
-                            inputHandler(value)
-                        }}
+                        onInput={onChatInput}
                         onKeyDown={onChatKeyDown}
                     />
                     <SubmitButton

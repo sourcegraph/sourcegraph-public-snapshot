@@ -91,6 +91,13 @@ export class Transcript {
         this.interactions.pop()
     }
 
+    public removeInteractionsSince(id: string): void {
+        const index = this.interactions.findIndex(({ timestamp }) => timestamp === id)
+        if (index >= 0) {
+            this.interactions = this.interactions.slice(0, index)
+        }
+    }
+
     public addAssistantResponse(text: string, displayText?: string): void {
         this.getLastInteraction()?.setAssistantMessage({
             speaker: 'assistant',
@@ -154,6 +161,14 @@ export class Transcript {
         return {
             id: this.id,
             interactions,
+            lastInteractionTimestamp: this.lastInteractionTimestamp,
+        }
+    }
+
+    public toJSONEmpty(): TranscriptJSON {
+        return {
+            id: this.id,
+            interactions: [],
             lastInteractionTimestamp: this.lastInteractionTimestamp,
         }
     }
