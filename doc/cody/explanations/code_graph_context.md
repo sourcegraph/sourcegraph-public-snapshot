@@ -120,3 +120,23 @@ Incremental embeddings are disabled by default.
   }
 }
 ```
+
+### Adjust the minimum time interval between automatically scheduled embeddings
+
+If you configure a repository for automated embeddings, the repository will be scheduled for embedding with every new
+commit. By default, there is a 24-hour time interval that must pass between two embeddings. For example, if a repository
+is scheduled for embedding at 10:00 AM and a new commit happens at 11:00 AM, the next embedding will be scheduled
+earliest for 10:00 AM the next day.
+
+You can configure the minimum time interval by setting the minimumInterval property in the embeddings configuration.
+Supported time units are h (hours), m ( minutes), and s (seconds).
+
+```json
+{
+  // [...]
+  "embeddings": {
+    // [...]
+    "minimumInterval": "24h"
+  }
+}
+```
