@@ -10,6 +10,8 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -101,7 +103,7 @@ type RepoEmbeddingJobsStore interface {
 	GetLastRepoEmbeddingJobForRevision(ctx context.Context, repoID api.RepoID, revision api.CommitID) (*RepoEmbeddingJob, error)
 	ListRepoEmbeddingJobs(ctx context.Context, args *database.PaginationArgs) ([]*RepoEmbeddingJob, error)
 	CountRepoEmbeddingJobs(ctx context.Context) (int, error)
-	GetEmbeddableRepos(ctx context.Context) ([]EmbeddableRepo, error)
+	GetEmbeddableRepos(ctx context.Context, opts EmbeddableRepoOpts) ([]EmbeddableRepo, error)
 	CancelRepoEmbeddingJob(ctx context.Context, job int) error
 }
 
@@ -131,6 +133,14 @@ global_policy_descriptor AS MATERIALIZED (
 		p.repository_id IS NULL AND
 		p.repository_patterns IS NULL
 	LIMIT 1
+),
+last_successful_jobs AS (
+	SELECT DISTINCT ON (repo_id) repo_id, finished_at
+	FROM repo_embedding_jobs
+	WHERE
+		state = 'completed' AND
+		failure_message IS NULL
+	ORDER BY repo_id, finished_at DESC
 ),
 repositories_matching_policy AS (
     (
@@ -167,13 +177,57 @@ repositories_matching_policy AS (
             gr.clone_status = 'cloned'
     )
 )
-
 --
-SELECT DISTINCT ON (id) * FROM repositories_matching_policy;
+SELECT DISTINCT ON (rmp.id) rmp.id, rmp.last_changed
+FROM repositories_matching_policy rmp
+LEFT JOIN last_successful_jobs lsj ON lsj.repo_id = rmp.id
+WHERE lsj.finished_at IS NULL OR lsj.finished_at < current_timestamp - (%s * '1 second'::interval);
 `
 
-func (s *repoEmbeddingJobsStore) GetEmbeddableRepos(ctx context.Context) ([]EmbeddableRepo, error) {
-	q := sqlf.Sprintf(getEmbeddableReposFmtStr)
+type EmbeddableRepoOpts struct {
+	// MinimumInterval is the minimum amount of time that must have passed since the last
+	// successful embedding job.
+	MinimumInterval time.Duration
+}
+
+func init() {
+	conf.ContributeValidator(embeddingConfigValidator)
+}
+
+func embeddingConfigValidator(q conftypes.SiteConfigQuerier) conf.Problems {
+	embeddingsConf := q.SiteConfig().Embeddings
+	if embeddingsConf == nil {
+		return nil
+	}
+
+	minimumIntervalString := embeddingsConf.MinimumInterval
+	_, err := time.ParseDuration(minimumIntervalString)
+	if err != nil && minimumIntervalString != "" {
+		return conf.NewSiteProblems(fmt.Sprintf("Could not parse \"embeddings.minimumInterval: %s\". %s", minimumIntervalString, err))
+	}
+
+	return nil
+}
+
+func GetEmbeddableRepoOpts() EmbeddableRepoOpts {
+	defaultMinimumInterval := 24 * time.Hour
+
+	embeddingsConf := conf.Get().Embeddings
+	if embeddingsConf == nil {
+		return EmbeddableRepoOpts{MinimumInterval: defaultMinimumInterval}
+	}
+
+	minimumIntervalString := embeddingsConf.MinimumInterval
+	d, err := time.ParseDuration(minimumIntervalString)
+	if err != nil {
+		return EmbeddableRepoOpts{MinimumInterval: defaultMinimumInterval}
+	}
+
+	return EmbeddableRepoOpts{MinimumInterval: d}
+}
+
+func (s *repoEmbeddingJobsStore) GetEmbeddableRepos(ctx context.Context, opts EmbeddableRepoOpts) ([]EmbeddableRepo, error) {
+	q := sqlf.Sprintf(getEmbeddableReposFmtStr, opts.MinimumInterval.Seconds())
 	return scanEmbeddableRepos(s.Query(ctx, q))
 }
 
