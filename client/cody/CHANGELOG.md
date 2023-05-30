@@ -11,6 +11,7 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 ### Fixed
 
 - Fixes an issue where new conversations did not bring the chat into the foreground. [pull/52363](https://github.com/sourcegraph/sourcegraph/pull/52363)
+- Fixes an issue where multi-line inline completions closed the current block even if it already had content. [pull/](https://github.com/sourcegraph/sourcegraph/)
 
 ### Changed
 

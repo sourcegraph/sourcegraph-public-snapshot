@@ -508,5 +508,26 @@ describe('Cody completions', () => {
         })
 
         it.todo('handles tab/newline interop in completion truncation')
+
+        it('does not include block end character if there is already content in the block', async () => {
+            const { completions } = await complete(
+                `
+                if (check) {
+                    ${CURSOR_MARKER}
+                    console.log('two')
+                `,
+                [
+                    createCompletionResponse(`
+                    console.log('one')
+                    }`),
+                ]
+            )
+
+            expect(completions[0]).toMatchInlineSnapshot(`
+                InlineCompletionItem {
+                  "content": "console.log('one')",
+                }
+            `)
+        })
     })
 })
