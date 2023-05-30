@@ -1,0 +1,44 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+
+go_library(
+    name = "auth",
+    srcs = ["sourcegraph_operator_cleaner.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/auth",
+    visibility = ["//enterprise/cmd/worker:__subpackages__"],
+    deps = [
+        "//cmd/worker/job",
+        "//cmd/worker/shared/init/db",
+        "//enterprise/cmd/worker/shared/sourcegraphoperator",
+        "//enterprise/internal/cloud",
+        "//internal/actor",
+        "//internal/auth",
+        "//internal/database",
+        "//internal/env",
+        "//internal/errcode",
+        "//internal/goroutine",
+        "//internal/observation",
+        "//lib/errors",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+    ],
+)
+
+go_test(
+    name = "auth_test",
+    srcs = ["sourcegraph_operator_cleaner_test.go"],
+    embed = [":auth"],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
+    deps = [
+        "//enterprise/cmd/worker/shared/sourcegraphoperator",
+        "//enterprise/internal/cloud",
+        "//internal/auth",
+        "//internal/database",
+        "//internal/database/dbtest",
+        "//internal/extsvc",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

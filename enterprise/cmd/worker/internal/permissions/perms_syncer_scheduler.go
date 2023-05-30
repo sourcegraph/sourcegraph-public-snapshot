@@ -1,4 +1,4 @@
-package auth
+package permissions
 
 import (
 	"context"
@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/permissions"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
@@ -173,7 +174,7 @@ func getSchedule(ctx context.Context, store edb.PermsStore) (*schedule, error) {
 	userLimit, repoLimit := oldestUserPermissionsBatchSize(), oldestRepoPermissionsBatchSize()
 
 	if userLimit > 0 {
-		usersWithOldestPerms, err := scheduleUsersWithOldestPerms(ctx, store, userLimit, SyncUserBackoff())
+		usersWithOldestPerms, err := scheduleUsersWithOldestPerms(ctx, store, userLimit, permissions.SyncUserBackoff())
 		if err != nil {
 			return nil, errors.Wrap(err, "load users with oldest permissions")
 		}
@@ -181,7 +182,7 @@ func getSchedule(ctx context.Context, store edb.PermsStore) (*schedule, error) {
 	}
 
 	if repoLimit > 0 {
-		reposWithOldestPerms, err := scheduleReposWithOldestPerms(ctx, store, repoLimit, SyncRepoBackoff())
+		reposWithOldestPerms, err := scheduleReposWithOldestPerms(ctx, store, repoLimit, permissions.SyncRepoBackoff())
 		if err != nil {
 			return nil, errors.Wrap(err, "scan repositories with oldest permissions")
 		}
@@ -285,30 +286,4 @@ func oldestRepoPermissionsBatchSize() int {
 		batchSize = *c
 	}
 	return batchSize
-}
-
-var zeroBackoffDuringTest = false
-
-func SyncUserBackoff() time.Duration {
-	if zeroBackoffDuringTest {
-		return time.Duration(0)
-	}
-
-	seconds := conf.Get().PermissionsSyncUsersBackoffSeconds
-	if seconds <= 0 {
-		return 60 * time.Second
-	}
-	return time.Duration(seconds) * time.Second
-}
-
-func SyncRepoBackoff() time.Duration {
-	if zeroBackoffDuringTest {
-		return time.Duration(0)
-	}
-
-	seconds := conf.Get().PermissionsSyncReposBackoffSeconds
-	if seconds <= 0 {
-		return 60 * time.Second
-	}
-	return time.Duration(seconds) * time.Second
 }

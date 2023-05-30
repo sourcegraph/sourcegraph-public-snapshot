@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold/v2"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/sourcegraphoperator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -84,7 +85,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 			accountDetails: &accountDetailsBody{
 				ClientID:  "foobar",
 				AccountID: "bob",
-				ExternalAccountData: ExternalAccountData{
+				ExternalAccountData: sourcegraphoperator.ExternalAccountData{
 					ServiceAccount: true,
 				},
 			},
@@ -109,7 +110,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 			accountDetails: &accountDetailsBody{
 				ClientID:  "foobar",
 				AccountID: "bob",
-				ExternalAccountData: ExternalAccountData{
+				ExternalAccountData: sourcegraphoperator.ExternalAccountData{
 					ServiceAccount: true,
 				},
 			},
@@ -149,7 +150,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 			accountDetails: &accountDetailsBody{
 				ClientID:  "soap_client",
 				AccountID: "bob",
-				ExternalAccountData: ExternalAccountData{
+				ExternalAccountData: sourcegraphoperator.ExternalAccountData{
 					ServiceAccount: true,
 				},
 			},
@@ -165,7 +166,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 				assert.Equal(t, "soap_client", accts[0].ClientID)
 				assert.Equal(t, serviceID, accts[0].ServiceID)
 
-				data, err := GetAccountData(ctx, accts[0].AccountData)
+				data, err := sourcegraphoperator.GetAccountData(ctx, accts[0].AccountData)
 				require.NoError(t, err)
 				assert.True(t, data.ServiceAccount)
 			},
@@ -209,7 +210,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 			accountDetails: &accountDetailsBody{
 				ClientID:  "soap_client",
 				AccountID: "bob", // trying to change account ID
-				ExternalAccountData: ExternalAccountData{
+				ExternalAccountData: sourcegraphoperator.ExternalAccountData{
 					ServiceAccount: true, // trying to promote themselves to service account
 				},
 			},
@@ -225,7 +226,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 				assert.Equal(t, "soap_client", accts[0].ClientID)
 				assert.Equal(t, serviceID, accts[0].ServiceID)
 
-				data, err := GetAccountData(ctx, accts[0].AccountData)
+				data, err := sourcegraphoperator.GetAccountData(ctx, accts[0].AccountData)
 				require.NoError(t, err)
 				assert.False(t, data.ServiceAccount) // still not a service account
 			},

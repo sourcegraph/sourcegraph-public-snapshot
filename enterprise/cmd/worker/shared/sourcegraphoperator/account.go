@@ -3,6 +3,7 @@ package sourcegraphoperator
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -29,4 +30,14 @@ func MarshalAccountData(data ExternalAccountData) (extsvc.AccountData, error) {
 	return extsvc.AccountData{
 		Data: extsvc.NewUnencryptedData(serializedData),
 	}, nil
+}
+
+// LifecycleDuration returns the converted lifecycle duration from given minutes.
+// It returns the default duration (60 minutes) if the given minutes is
+// non-positive.
+func LifecycleDuration(minutes int) time.Duration {
+	if minutes <= 0 {
+		return 60 * time.Minute
+	}
+	return time.Duration(minutes) * time.Minute
 }
