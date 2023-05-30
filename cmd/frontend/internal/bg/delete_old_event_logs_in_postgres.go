@@ -6,6 +6,9 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -24,8 +27,21 @@ func DeleteOldEventLogsInPostgres(ctx context.Context, db database.DB) {
 	}
 }
 
-func DeleteOldSecurityEventLogsInPostgres(ctx context.Context, db database.DB) {
+func DeleteOldSecurityEventLogsInPostgres(ctx context.Context, logger log.Logger, db database.DB) {
+	logger = logger.Scoped("deleteOldSecurityEventLogs", "background job to prune old security event logs in database")
+
 	for {
+		time.Sleep(time.Hour)
+
+		// Only clean up if security event logs are being stored in the database.
+		c := conf.Get()
+		if c.Log == nil || c.Log.SecurityEventLog == nil {
+			continue
+		}
+		if c.Log.SecurityEventLog.Location != "database" && c.Log.SecurityEventLog.Location != "all" {
+			continue
+		}
+
 		// We choose 30 days as the interval to ensure that we have at least the last month's worth of
 		// logs at all times.
 		_, err := db.ExecContext(
@@ -33,8 +49,7 @@ func DeleteOldSecurityEventLogsInPostgres(ctx context.Context, db database.DB) {
 			`DELETE FROM security_event_logs WHERE "timestamp" < now() - interval '30' day`,
 		)
 		if err != nil {
-			log15.Error("deleting expired rows from security_event_logs table", "error", err)
+			logger.Error("deleting expired rows from security_event_logs table", log.Error(err))
 		}
-		time.Sleep(time.Hour)
 	}
 }
