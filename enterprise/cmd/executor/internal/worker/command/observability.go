@@ -25,11 +25,11 @@ type Operations struct {
 
 	Exec *observation.Operation
 
-	KubernetesCreateJob            *observation.Operation
-	KubernetesDeleteJob            *observation.Operation
-	KubernetesReadLogs             *observation.Operation
-	KubernetesFindPod              *observation.Operation
-	KubernetesWaitForJobToComplete *observation.Operation
+	KubernetesCreateJob           *observation.Operation
+	KubernetesDeleteJob           *observation.Operation
+	KubernetesReadLogs            *observation.Operation
+	KubernetesFindPod             *observation.Operation
+	KubernetesWaitForPodToSucceed *observation.Operation
 
 	RunLockWaitTotal prometheus.Counter
 	RunLockHeldTotal prometheus.Counter
@@ -83,11 +83,11 @@ func NewOperations(observationCtx *observation.Context) *Operations {
 
 		Exec: op("exec"),
 
-		KubernetesCreateJob:            op("kubernetes.job.create"),
-		KubernetesDeleteJob:            op("kubernetes.job.delete"),
-		KubernetesReadLogs:             op("kubernetes.pod.logs"),
-		KubernetesFindPod:              op("kubernetes.pod.find"),
-		KubernetesWaitForJobToComplete: op("kubernetes.job.wait"),
+		KubernetesCreateJob:           op("kubernetes.job.create"),
+		KubernetesDeleteJob:           op("kubernetes.job.delete"),
+		KubernetesReadLogs:            op("kubernetes.pod.logs"),
+		KubernetesFindPod:             op("kubernetes.pod.find"),
+		KubernetesWaitForPodToSucceed: op("kubernetes.pod.wait"),
 
 		RunLockWaitTotal: runLockWaitTotal,
 		RunLockHeldTotal: runLockHeldTotal,
