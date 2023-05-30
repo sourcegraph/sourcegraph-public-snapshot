@@ -57,6 +57,7 @@ export const CodyActionBarWidget: React.FC<CodyActionBarWidgetProps> = ({ repoNa
                 onClick={() => {
                     // Implement recipe action.
                 }}
+                disabled={isMessageInProgress}
             />
             <Recipe
                 title="Summarize recent commits"
@@ -64,6 +65,7 @@ export const CodyActionBarWidget: React.FC<CodyActionBarWidgetProps> = ({ repoNa
                 onClick={() => {
                     // Implement recipe action.
                 }}
+                disabled={isMessageInProgress}
             />
             <Recipe
                 title="List dependencies"
@@ -71,6 +73,7 @@ export const CodyActionBarWidget: React.FC<CodyActionBarWidgetProps> = ({ repoNa
                 onClick={() => {
                     // Implement recipe action.
                 }}
+                disabled={isMessageInProgress}
             />
             <Recipe
                 title="Evaluate test coverage"
@@ -85,6 +88,7 @@ export const CodyActionBarWidget: React.FC<CodyActionBarWidgetProps> = ({ repoNa
                 onClick={() => {
                     // Implement recipe action.
                 }}
+                disabled={isMessageInProgress}
             />
         </Recipes>
     )
