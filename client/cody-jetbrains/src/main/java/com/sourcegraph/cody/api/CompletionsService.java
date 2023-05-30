@@ -1,9 +1,10 @@
-package com.sourcegraph.cody.completions;
+package com.sourcegraph.cody.api;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.sourcegraph.api.GraphQlClient;
+import com.sourcegraph.cody.vscode.CancellationToken;
 import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,6 +15,16 @@ public class CompletionsService {
   public CompletionsService(@NotNull String instanceUrl, @NotNull String accessToken) {
     this.instanceUrl = instanceUrl;
     this.accessToken = accessToken;
+  }
+
+  public enum Endpoint {
+    Stream(".api/completions/stream"),
+    Code(".api/completions/code");
+    public final String urlPath;
+
+    Endpoint(String urlPath) {
+      this.urlPath = urlPath;
+    }
   }
 
   /** Sends a completions request to the Sourcegraph instance, and returns the response. */
@@ -41,15 +52,20 @@ public class CompletionsService {
    * Sends a completions request to the Sourcegraph instance, and receives the response in a
    * streaming fashion.
    */
-  public void streamCompletion(@NotNull CompletionsInput input, @NotNull CompletionsCallbacks cb) {
+  public void streamCompletion(
+      @NotNull CompletionsInput input,
+      @NotNull CompletionsCallbacks cb,
+      @NotNull Endpoint endpoint,
+      CancellationToken token) {
     Gson gson =
         new GsonBuilder()
             .registerTypeAdapter(Speaker.class, new SpeakerLowercaseSerializer())
             .create();
 
     String body = gson.toJsonTree(input).getAsJsonObject().toString();
+
     SSEClient sseClient =
-        new SSEClient(instanceUrl + ".api/completions/stream", accessToken, body, cb);
+        new SSEClient(instanceUrl + endpoint.urlPath, accessToken, body, cb, endpoint, token);
     sseClient.start();
   }
 }

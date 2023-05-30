@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.completions;
+package com.sourcegraph.cody.api;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -17,6 +17,10 @@ public class Message {
 
   public @NotNull String getText() {
     return text;
+  }
+
+  public @NotNull String prompt() {
+    return speaker.prompt() + (text.isEmpty() ? "" : " " + text);
   }
 
   @Override

@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.completions;
+package com.sourcegraph.cody.api;
 
 import com.sourcegraph.cody.UpdatableChat;
 import com.sourcegraph.cody.chat.ChatMessage;
@@ -58,6 +58,9 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
   public void onComplete() {
     System.out.println("Streaming completed.");
   }
+
+  @Override
+  public void onCancelled() {}
 
   private static @NotNull String reformatBotMessage(@NotNull String text, @Nullable String prefix) {
     String STOP_SEQUENCE_REGEXP = "(H|Hu|Hum|Huma|Human|Human:)$";
