@@ -526,6 +526,45 @@ func TestMultiQueueHeartbeatBadResponse(t *testing.T) {
 	})
 }
 
+func Test_parseJobIDs(t *testing.T) {
+	tests := []struct {
+		name               string
+		jobIDs             []string
+		expected           []types.QueueJobIDs
+		expectedErrMessage string
+	}{
+		{
+			name:   "Successful parse",
+			jobIDs: []string{"1-foo", "2-foo", "3-bar", "44-foo"},
+			expected: []types.QueueJobIDs{
+				{
+					QueueName: "foo",
+					JobIDs:    []string{"1", "2", "44"},
+				},
+				{
+					QueueName: "bar",
+					JobIDs:    []string{"3"},
+				},
+			},
+		},
+		{
+			name:               "Invalid ID format",
+			jobIDs:             []string{"1+foo", "2--bar"},
+			expected:           nil,
+			expectedErrMessage: "failed to parse one or more unexpected job ID formats: 1+foo, 2--bar",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := queue.ParseJobIDs(tt.jobIDs)
+			if tt.expectedErrMessage != "" && tt.expectedErrMessage != err.Error() {
+				t.Fatalf("expected error message %s, got %s", tt.expectedErrMessage, err.Error())
+			}
+			assert.Equalf(t, tt.expected, got, "parseJobIDs(%v)", tt.jobIDs)
+		})
+	}
+}
+
 func TestAddExecutionLogEntry(t *testing.T) {
 	entry := internalexecutor.ExecutionLogEntry{
 		Key:        "foo",

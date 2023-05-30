@@ -191,7 +191,7 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, canc
 	if len(c.options.QueueNames) > 0 {
 		queueAttr = attribute.StringSlice("queueNames", c.options.QueueNames)
 		endpoint = "/heartbeat"
-		queueJobIDs, err := parseJobIDs(jobIDs)
+		queueJobIDs, err := ParseJobIDs(jobIDs)
 		if err != nil {
 			c.logger.Error("failed to parse job IDs", log.Error(err))
 			return nil, nil, err
@@ -237,18 +237,31 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, canc
 	return nil, nil, err
 }
 
-func parseJobIDs(jobIDs []string) ([]types.QueueJobIDs, error) {
+type JobIDsParseError struct {
+	JobIDs []string
+}
+
+func (e JobIDsParseError) Error() string {
+	return fmt.Sprintf("failed to parse one or more unexpected job ID formats: %s", strings.Join(e.JobIDs, ", "))
+}
+
+func ParseJobIDs(jobIDs []string) ([]types.QueueJobIDs, error) {
 	var queueJobIDs []types.QueueJobIDs
 	queueIds := map[string][]string{}
+	var invalidIds []string
 
 	for _, stringID := range jobIDs {
 		parts := strings.Split(stringID, "-")
 		if len(parts) != 2 {
-			return nil, errors.Newf("Unexpected job ID format: %s", stringID)
+			invalidIds = append(invalidIds, stringID)
+			//return nil, JobIDParseError{JobID: stringID}
+		} else {
+			id, queueName := parts[0], parts[1]
+			queueIds[queueName] = append(queueIds[queueName], id)
 		}
-
-		id, queueName := parts[0], parts[1]
-		queueIds[queueName] = append(queueIds[queueName], id)
+	}
+	if len(invalidIds) > 0 {
+		return nil, JobIDsParseError{JobIDs: invalidIds}
 	}
 
 	for q, ids := range queueIds {
