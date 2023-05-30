@@ -1,7 +1,7 @@
 package com.sourcegraph.cody.prompts;
 
-import com.sourcegraph.cody.completions.Message;
-import com.sourcegraph.cody.completions.Speaker;
+import com.sourcegraph.cody.api.Message;
+import com.sourcegraph.cody.api.Speaker;
 import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.Nullable;

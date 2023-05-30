@@ -45,9 +45,9 @@ class Range {
 }
 
 class InlineCompletionItem {
-    public content: string
+    public insertText: string
     constructor(content: string) {
-        this.content = content
+        this.insertText = content
     }
 }
 
@@ -66,7 +66,7 @@ const vsCodeMocks = {
         showErrorMessage(message: string) {
             throw new Error(message)
         },
-        activeTextEditor: { document: { uri: { scheme: 'not-cody' } } },
+        activeTextEditor: { document: { uri: { scheme: 'not-cody' } }, options: { tabSize: 4 } },
     },
     workspace: {
         getConfiguration() {
