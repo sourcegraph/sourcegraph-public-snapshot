@@ -1,4 +1,5 @@
 import * as anthropic from '@anthropic-ai/sdk'
+import * as vscode from 'vscode'
 
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import {
@@ -299,10 +300,9 @@ export class InlineCompletionProvider extends CompletionProvider {
             // We use a whitespace counting approach to finding the end of the completion. To find
             // an end, we look for the first line that is below the start scope of the completion (
             // calculated by the number of leading spaces or tabs)
-
-            const prefixLastLineIndent = this.prefix.length - this.prefix.lastIndexOf('\n') - 1
-            const completionFirstLineIndent = indentation(completion)
-            const startIndent = prefixLastLineIndent + completionFirstLineIndent
+            const prefixLastNewline = this.prefix.lastIndexOf('\n')
+            const prefixIndentationWithFirstCompletionLine = this.prefix.slice(prefixLastNewline + 1) + completion[0]
+            const startIndent = indentation(prefixIndentationWithFirstCompletionLine)
 
             // If odd indentation is detected (i.e Claude adds a space to every line),
             // we fix it for the whole multiline block first.
@@ -311,7 +311,7 @@ export class InlineCompletionProvider extends CompletionProvider {
             if (hasOddIndentation) {
                 for (let i = 1; i < lines.length; i++) {
                     if (indentation(lines[i]) >= startIndent) {
-                        lines[i] = lines[i].replace(/^ /, '')
+                        lines[i] = lines[i].replace(/^(\t)* /, '$1')
                     }
                 }
             }
@@ -469,9 +469,21 @@ export function sliceUntilFirstNLinesOfSuffixMatch(suggestion: string, suffix: s
 }
 
 /**
- * Counts space or tabs in the beginning of a line
+ * Counts space or tabs in the beginning of a line.
+ *
+ * Since Cody can sometimes respond in a mix of tab and spaces, this function
+ * normalizes the whitespace first using the currently enabled tabSize option.
  */
 function indentation(line: string): number {
+    const tabSize = vscode.window.activeTextEditor
+        ? // tabSize is always resolved to a number when accessing the property
+          (vscode.window.activeTextEditor.options.tabSize as number)
+        : 2
+
     const regex = line.match(/^[\t ]*/)
-    return regex ? regex[0].length : 0
+    if (regex) {
+        const whitespace = regex[0]
+        return [...whitespace].reduce((p, c) => p + (c === '\t' ? tabSize : 1), 0)
+    }
+    return 0
 }

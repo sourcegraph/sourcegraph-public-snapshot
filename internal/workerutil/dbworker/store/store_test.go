@@ -1045,7 +1045,7 @@ func TestStoreHeartbeat(t *testing.T) {
 
 	clock.Advance(5 * time.Second)
 
-	if _, _, err := store.Heartbeat(context.Background(), []int{1, 2, 3}, HeartbeatOptions{}); err != nil {
+	if _, _, err := store.Heartbeat(context.Background(), []string{"1", "2", "3"}, HeartbeatOptions{}); err != nil {
 		t.Fatalf("unexpected error updating heartbeat: %s", err)
 	}
 	readAndCompareTimes(map[int]time.Duration{
@@ -1062,7 +1062,7 @@ func TestStoreHeartbeat(t *testing.T) {
 	clock.Advance(5 * time.Second)
 
 	// Only one worker
-	if _, _, err := store.Heartbeat(context.Background(), []int{1, 2, 3}, HeartbeatOptions{WorkerHostname: "worker1"}); err != nil {
+	if _, _, err := store.Heartbeat(context.Background(), []string{"1", "2", "3"}, HeartbeatOptions{WorkerHostname: "worker1"}); err != nil {
 		t.Fatalf("unexpected error updating heartbeat: %s", err)
 	}
 	readAndCompareTimes(map[int]time.Duration{
@@ -1074,7 +1074,7 @@ func TestStoreHeartbeat(t *testing.T) {
 	clock.Advance(5 * time.Second)
 
 	// Multiple workers
-	if _, _, err := store.Heartbeat(context.Background(), []int{1, 3}, HeartbeatOptions{}); err != nil {
+	if _, _, err := store.Heartbeat(context.Background(), []string{"1", "3"}, HeartbeatOptions{}); err != nil {
 		t.Fatalf("unexpected error updating heartbeat: %s", err)
 	}
 	readAndCompareTimes(map[int]time.Duration{
@@ -1102,10 +1102,10 @@ func TestStoreCanceledJobs(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	_, toCancel, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).Heartbeat(context.Background(), []int{1, 2, 3}, HeartbeatOptions{WorkerHostname: "worker1"})
+	_, toCancel, err := testStore(db, defaultTestStoreOptions(nil, testScanRecord)).Heartbeat(context.Background(), []string{"1", "2", "3"}, HeartbeatOptions{WorkerHostname: "worker1"})
 	if err != nil {
 		t.Fatalf("unexpected error fetching canceled jobs: %s", err)
 	}
 
-	require.ElementsMatch(t, toCancel, []int{3}, "invalid set of jobs returned")
+	require.ElementsMatch(t, toCancel, []string{"3"}, "invalid set of jobs returned")
 }

@@ -550,7 +550,7 @@ type Completions struct {
 	CompletionModel string `json:"completionModel,omitempty"`
 	// Enabled description: Toggles whether completions are enabled.
 	Enabled bool `json:"enabled"`
-	// Endpoint description: The endpoint under which to reach the provider. Currently only used for provider types "llmproxy" and "anthropic". The default values are "https://completions.sourcegraph.com" and "https://api.anthropic.com/v1/complete" for LLM proxy and Anthropic, respectively.
+	// Endpoint description: The endpoint under which to reach the provider. Currently only used for provider types "llmproxy", "openai" and "anthropic". The default values are "https://completions.sourcegraph.com", "https://api.openai.com/v1/chat/completions", and "https://api.anthropic.com/v1/complete" for LLM proxy, OpenAI, and Anthropic, respectively.
 	Endpoint string `json:"endpoint,omitempty"`
 	// Model description: DEPRECATED. Use chatModel instead.
 	Model string `json:"model"`
@@ -620,6 +620,8 @@ type Embeddings struct {
 	MaxCodeEmbeddingsPerRepo int `json:"maxCodeEmbeddingsPerRepo,omitempty"`
 	// MaxTextEmbeddingsPerRepo description: The maximum number of embeddings for text files to generate per repo
 	MaxTextEmbeddingsPerRepo int `json:"maxTextEmbeddingsPerRepo,omitempty"`
+	// MinimumInterval description: The time to wait between runs. Valid time units are "s", "m", "h". Example values: "30s", "5m", "1h".
+	MinimumInterval string `json:"minimumInterval,omitempty"`
 	// Model description: The model used for embedding.
 	Model string `json:"model"`
 	// Url description: The url to the external embedding API service.
@@ -2770,10 +2772,18 @@ type SubRepoPermissions struct {
 	UserCacheTTLSeconds int `json:"userCacheTTLSeconds,omitempty"`
 }
 
+// SymbolConfiguration description: Configure symbol generation
+type SymbolConfiguration struct {
+	// Engine description: Manually specify overrides for symbol generation engine per language
+	Engine map[string]string `json:"engine"`
+}
+
 // SyntaxHighlighting description: Syntax highlighting configuration
 type SyntaxHighlighting struct {
 	Engine    SyntaxHighlightingEngine   `json:"engine"`
 	Languages SyntaxHighlightingLanguage `json:"languages"`
+	// Symbols description: Configure symbol generation
+	Symbols SymbolConfiguration `json:"symbols"`
 }
 type SyntaxHighlightingEngine struct {
 	// Default description: The default syntax highlighting engine to use

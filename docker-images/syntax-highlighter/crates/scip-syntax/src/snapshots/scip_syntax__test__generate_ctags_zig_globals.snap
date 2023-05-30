@@ -1,0 +1,27 @@
+---
+source: crates/scip-syntax/src/lib.rs
+expression: "String::from_utf8_lossy(buf_writer.buffer())"
+---
+{"_type":"tag","name":"Bruh","path":"globals.zig","language":"zig","line":1,"kind":"variable","scope":null}
+{"_type":"tag","name":"init","path":"globals.zig","language":"zig","line":4,"kind":"method","scope":"Bruh"}
+{"_type":"tag","name":"zig_is_cool","path":"globals.zig","language":"zig","line":2,"kind":"variable","scope":"Bruh"}
+{"_type":"tag","name":"MyUnion","path":"globals.zig","language":"zig","line":10,"kind":"variable","scope":null}
+{"_type":"tag","name":"init","path":"globals.zig","language":"zig","line":16,"kind":"method","scope":"MyUnion"}
+{"_type":"tag","name":"b","path":"globals.zig","language":"zig","line":14,"kind":"variable","scope":"MyUnion"}
+{"_type":"tag","name":"a","path":"globals.zig","language":"zig","line":13,"kind":"variable","scope":"MyUnion"}
+{"_type":"tag","name":"decl","path":"globals.zig","language":"zig","line":11,"kind":"variable","scope":"MyUnion"}
+{"_type":"tag","name":"MyEnum","path":"globals.zig","language":"zig","line":19,"kind":"variable","scope":null}
+{"_type":"tag","name":"init","path":"globals.zig","language":"zig","line":25,"kind":"method","scope":"MyEnum"}
+{"_type":"tag","name":"b","path":"globals.zig","language":"zig","line":23,"kind":"variable","scope":"MyEnum"}
+{"_type":"tag","name":"a","path":"globals.zig","language":"zig","line":22,"kind":"variable","scope":"MyEnum"}
+{"_type":"tag","name":"decl","path":"globals.zig","language":"zig","line":20,"kind":"variable","scope":"MyEnum"}
+{"_type":"tag","name":"MyUnionEnum","path":"globals.zig","language":"zig","line":28,"kind":"variable","scope":null}
+{"_type":"tag","name":"init","path":"globals.zig","language":"zig","line":34,"kind":"method","scope":"MyUnionEnum"}
+{"_type":"tag","name":"b","path":"globals.zig","language":"zig","line":32,"kind":"variable","scope":"MyUnionEnum"}
+{"_type":"tag","name":"a","path":"globals.zig","language":"zig","line":31,"kind":"variable","scope":"MyUnionEnum"}
+{"_type":"tag","name":"decl","path":"globals.zig","language":"zig","line":29,"kind":"variable","scope":"MyUnionEnum"}
+{"_type":"tag","name":"Ahh","path":"globals.zig","language":"zig","line":37,"kind":"variable","scope":null}
+{"_type":"tag","name":"opaqueFn","path":"globals.zig","language":"zig","line":38,"kind":"method","scope":"Ahh"}
+{"_type":"tag","name":"complex","path":"globals.zig","language":"zig","line":47,"kind":"method","scope":null}
+{"_type":"tag","name":"bruh","path":"globals.zig","language":"zig","line":41,"kind":"method","scope":null}
+

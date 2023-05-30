@@ -48,7 +48,7 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<R
     )
 
     // Feature flag only used as this is under development - will be enabled by default
-    const [llmProxyManagementUI] = useFeatureFlag('llm-proxy-management-ui')
+    const [codyGatewayManagementUI] = useFeatureFlag('cody-gateway-management-ui')
 
     if (loading) {
         return <LoadingSpinner />
@@ -108,13 +108,14 @@ export const UserSubscriptionsProductSubscriptionPage: React.FunctionComponent<R
                 </Container>
             )}
 
-            {llmProxyManagementUI && (
+            {codyGatewayManagementUI && (
                 <CodyServicesSection
                     viewerCanAdminister={false}
                     currentSourcegraphAccessToken={productSubscription.currentSourcegraphAccessToken}
                     accessTokenError={errorForPath(error, accessTokenPath)}
                     llmProxyAccess={productSubscription.llmProxyAccess}
                     productSubscriptionID={productSubscription.id}
+                    productSubscriptionUUID={subscriptionUUID}
                     refetchSubscription={refetch}
                 />
             )}

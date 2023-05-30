@@ -7,8 +7,14 @@ All notable changes to Sourcegraph Cody will be documented in this file.
 ### Added
 
 - Inline Assist Recipe: File Flow. It automates file creation with tailored content based on the selected code. [pull/52511](https://github.com/sourcegraph/sourcegraph/pull/52511)
+- Display embeddings search, and connection error to the webview panel. [pull/52491](https://github.com/sourcegraph/sourcegraph/pull/52491)
+- New recipe: `Optimize Code`. Optimize the time and space consumption of code. [pull/51974](https://github.com/sourcegraph/sourcegraph/pull/51974)
+- Button to insert code block text at cursor position in text editor [pull/52528](https://github.com/sourcegraph/sourcegraph/pull/52528)
 
 ### Fixed
+
+- Cody completions: Fixed interop between spaces and tabs. [pull/52497](https://github.com/sourcegraph/sourcegraph/pull/52497)
+- Fixes an issue where new conversations did not bring the chat into the foreground. [pull/52363](https://github.com/sourcegraph/sourcegraph/pull/52363)
 
 ### Changed
 

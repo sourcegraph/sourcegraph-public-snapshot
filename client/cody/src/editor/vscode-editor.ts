@@ -8,10 +8,16 @@ import {
 } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
+import { TaskController } from '../non-stop/TaskController'
 import { InlineController } from '../services/InlineController'
 
 export class VSCodeEditor implements Editor {
-    constructor(public controller: InlineController) {}
+    constructor(
+        public controllers: {
+            inline: InlineController
+            task: TaskController
+        }
+    ) {}
 
     public getWorkspaceRootPath(): string | null {
         const uri = vscode.window.activeTextEditor?.document?.uri
@@ -40,7 +46,7 @@ export class VSCodeEditor implements Editor {
     }
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
-        if (this.controller.isInProgress) {
+        if (this.controllers.inline.isInProgress) {
             return null
         }
         const activeEditor = this.getActiveTextEditorInstance()
@@ -115,8 +121,8 @@ export class VSCodeEditor implements Editor {
 
     public async replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
         const activeEditor = this.getActiveTextEditorInstance()
-        if (this.controller.isInProgress) {
-            await this.controller.replaceSelection(replacement)
+        if (this.controllers.inline.isInProgress) {
+            await this.controllers.inline.replaceSelection(replacement)
             return
         }
         if (!activeEditor || vscode.workspace.asRelativePath(activeEditor.document.uri.fsPath) !== fileName) {
