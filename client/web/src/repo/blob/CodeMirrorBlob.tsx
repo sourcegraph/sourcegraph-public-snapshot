@@ -274,7 +274,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     )
 
     // Added fallback to take care of ReferencesPanel/Simple storybook
-    const { isCodyEnabled, setEditorScope } = useCodySidebar() || { isCodyEnabled: false, setEditorScope: () => {} }
+    const { isCodyEnabled, setEditorScope } = useCodySidebar()
 
     const extensions = useMemo(
         () => [

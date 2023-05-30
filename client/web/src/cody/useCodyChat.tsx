@@ -10,7 +10,8 @@ import {
 } from '@sourcegraph/cody-shared/src/chat/useClient'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
-import { useIsCodyEnabled, IsCodyEnabled } from './useIsCodyEnabled'
+import { CodeMirrorEditor } from './components/CodeMirrorEditor'
+import { useIsCodyEnabled, IsCodyEnabled, notEnabled } from './useIsCodyEnabled'
 
 export type { CodyClientScope } from '@sourcegraph/cody-shared/src/chat/useClient'
 
@@ -36,6 +37,27 @@ export interface CodyChatStore
     clearHistory: () => void
     deleteHistoryItem: (id: string) => void
     loadTranscriptFromHistory: (id: string) => Promise<void>
+}
+
+export const codyChatStoreMock: CodyChatStore = {
+    transcript: null,
+    chatMessages: [],
+    isMessageInProgress: false,
+    messageInProgress: null,
+    submitMessage: () => Promise.resolve(null),
+    editMessage: () => Promise.resolve(null),
+    initializeNewChat: () => null,
+    executeRecipe: () => Promise.resolve(null),
+    scope: { type: 'Automatic', repositories: [], editor: new CodeMirrorEditor() },
+    setScope: () => {},
+    setEditorScope: () => {},
+    legacyChatContext: {},
+    transcriptHistory: [],
+    loaded: true,
+    isCodyEnabled: notEnabled,
+    clearHistory: () => {},
+    deleteHistoryItem: () => {},
+    loadTranscriptFromHistory: () => Promise.resolve(),
 }
 
 interface CodyChatProps {

@@ -3,7 +3,7 @@ import React, { useContext, useState, useCallback, useMemo } from 'react'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 
 import { CodeMirrorEditor } from '../components/CodeMirrorEditor'
-import { useCodyChat, CodyChatStore, CodyClientScope } from '../useCodyChat'
+import { useCodyChat, CodyChatStore, CodyClientScope, codyChatStoreMock } from '../useCodyChat'
 
 interface CodySidebarStore extends CodyChatStore {
     readonly isSidebarOpen: boolean
@@ -14,7 +14,15 @@ interface CodySidebarStore extends CodyChatStore {
     setSidebarSize: (size: number) => void
 }
 
-const CodySidebarContext = React.createContext<CodySidebarStore | null>(null)
+const CodySidebarContext = React.createContext<CodySidebarStore | null>({
+    ...codyChatStoreMock,
+    isSidebarOpen: false,
+    inputNeedsFocus: false,
+    sidebarSize: 0,
+    setSidebarSize: () => {},
+    setIsSidebarOpen: () => {},
+    setFocusProvided: () => {},
+})
 
 interface ICodySidebarStoreProviderProps {
     children?: React.ReactNode

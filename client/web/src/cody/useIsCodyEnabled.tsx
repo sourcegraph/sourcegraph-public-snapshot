@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
-const notEnabled = {
+export const notEnabled = {
     loaded: true,
     chat: false,
     sidebar: false,

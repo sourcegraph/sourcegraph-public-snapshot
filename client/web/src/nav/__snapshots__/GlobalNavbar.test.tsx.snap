@@ -36,7 +36,6 @@ exports[`GlobalNavbar default 1`] = `
     at new Promise (&lt;anonymous&gt;)
     at callAsyncCircusFn (/Users/naman/Work/sourcegraph/node_modules/.pnpm/jest-circus@28.1.3/node_modules/jest-circus/build/utils.js:259:10)
     at _callCircusTest (/Users/naman/Work/sourcegraph/node_modules/.pnpm/jest-circus@28.1.3/node_modules/jest-circus/build/run.js:277:40)
-    at runMicrotasks (&lt;anonymous&gt;)
     at processTicksAndRejections (node:internal/process/task_queues:96:5)
     at _runTest (/Users/naman/Work/sourcegraph/node_modules/.pnpm/jest-circus@28.1.3/node_modules/jest-circus/build/run.js:209:3)
     at _runTestsForDescribeBlock (/Users/naman/Work/sourcegraph/node_modules/.pnpm/jest-circus@28.1.3/node_modules/jest-circus/build/run.js:97:9)
