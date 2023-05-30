@@ -240,6 +240,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 void this.webview?.postMessage({ type: 'login', authStatus })
                 break
             }
+            case 'insert':
+                await vscode.commands.executeCommand('cody.inline.insert', message.text)
+                break
             case 'event':
                 this.sendEvent(message.event, message.value)
                 break
@@ -309,6 +312,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     this.editor.controllers.inline.reply(highlightedDisplayText)
                 }
                 void this.onCompletionEnd()
+                this.publishEmbeddingsError()
             },
         })
 
@@ -363,6 +367,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.sendTranscript()
         void this.saveTranscriptToChatHistory()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', false)
+        if (!this.codebaseContext.checkEmbeddingsConnection()) {
+            this.publishEmbeddingsError()
+            this.sendErrorToWebview(
+                'Error while establishing embeddings server connection. Please try after sometime! If the issue still persists contact support'
+            )
+            return
+        }
     }
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion'): Promise<void> {
@@ -651,9 +662,19 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 },
             })
         }
-
         this.disposables.push(vscode.window.onDidChangeTextEditorSelection(() => send()))
         send()
+    }
+
+    /**
+     * Publish embedding connections or results error to webview
+     */
+    private publishEmbeddingsError(): void {
+        const searchErrors = this.codebaseContext.getEmbeddingSearchErrors()
+        if (searchErrors.length) {
+            this.sendErrorToWebview(searchErrors)
+            return
+        }
     }
 
     /**

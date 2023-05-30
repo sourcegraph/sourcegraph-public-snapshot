@@ -11,6 +11,7 @@ contents:
     - git
     - git-lfs
     - git-p4
+    - glibc-locale-en
     - libev
     - libstdc++ # TODO: Is this still required?
     - nginx
