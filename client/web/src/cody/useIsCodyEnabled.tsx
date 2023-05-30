@@ -30,7 +30,7 @@ export const useIsCodyEnabled = (): IsCodyEnabled => {
     const [editorRecipesEnabled, editorRecipesEnabledStatus] = useFeatureFlag('cody-web-editor-recipes')
     let [allEnabled, allEnabledStatus] = useFeatureFlag('cody-web-all')
 
-    if (window.context.sourcegraphAppMode) {
+    if (window.context?.sourcegraphAppMode) {
         // If the user is using the Sourcegraph app, all features are enabled
         // as long as the user has a connected Sourcegraph.com account.
         allEnabled = true
@@ -39,7 +39,7 @@ export const useIsCodyEnabled = (): IsCodyEnabled => {
     const enabled = useMemo(
         () => ({
             loaded:
-                window.context.sourcegraphAppMode ||
+                window.context?.sourcegraphAppMode ||
                 (chatEnabledStatus === 'loaded' &&
                     searchEnabledStatus === 'loaded' &&
                     sidebarEnabledStatus === 'loaded' &&
