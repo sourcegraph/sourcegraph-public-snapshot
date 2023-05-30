@@ -79,18 +79,21 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 		r.dir,
 		r.options,
 	)
+	r.internalLogger.Debug("Creating job", log.Int("jobID", spec.JobID))
 	if _, err := r.cmd.CreateJob(ctx, r.options.Namespace, job); err != nil {
 		return errors.Wrap(err, "creating job")
 	}
 	r.jobNames = append(r.jobNames, job.Name)
 
 	// Wait for the job to complete before reading the logs. This lets us get also get exit codes.
+	r.internalLogger.Debug("Waiting for pod to succeed", log.Int("jobID", spec.JobID), log.String("jobName", job.Name))
 	pod, podWaitErr := r.cmd.WaitForPodToSucceed(ctx, r.options.Namespace, job.Name)
 	// Handle when the wait failed to do the things.
 	if podWaitErr != nil && pod == nil {
 		return errors.Wrapf(podWaitErr, "waiting for job %s to complete", job.Name)
 	}
 	// Always read the logs, even if the job fails.
+	r.internalLogger.Debug("Reading logs", log.String("podName", pod.Name))
 	readLogErr := r.cmd.ReadLogs(
 		ctx,
 		r.options.Namespace,
@@ -114,6 +117,6 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 		}
 		return errors.New(errMessage)
 	}
-
+	r.internalLogger.Debug("Job completed successfully", log.Int("jobID", spec.JobID))
 	return readLogErr
 }
