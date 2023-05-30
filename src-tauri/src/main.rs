@@ -46,6 +46,16 @@ fn reload_cody_window(app_handle: tauri::AppHandle) {
     }
 }
 
+#[tauri::command]
+fn show_logs(app_handle: tauri::AppHandle) {
+    common::show_logs(&app_handle);
+}
+
+#[tauri::command]
+fn restart_app(app_handle: tauri::AppHandle) {
+    app_handle.restart();
+}
+
 fn set_launch_path(url: String) {
     *LAUNCH_PATH.write().unwrap() = url;
 }
@@ -150,7 +160,14 @@ fn main() {
         // its name which may suggest that it invokes something, actually only
         // *defines* an invoke() handler and does not invoke anything during
         // setup here.)
-        .invoke_handler(tauri::generate_handler![get_launch_path, app_shell_loaded, show_main_window, reload_cody_window])
+        .invoke_handler(tauri::generate_handler![
+            get_launch_path,
+            app_shell_loaded,
+            show_main_window,
+            reload_cody_window,
+            show_logs,
+            restart_app
+        ])
         .run(context)
         .expect("error while running tauri application");
 }
@@ -202,10 +219,28 @@ fn start_embedded_services(handle: &tauri::AppHandle) {
                     }
                     log::error!("{}", line);
                 }
+                CommandEvent::Error(err) => {
+                    show_error_screen(&app);
+                    log::error!("Command Error: {:#?}", err)
+                }
+                CommandEvent::Terminated(payload) => {
+                    show_error_screen(&app);
+                    log::error!("Command Terminated: {:#?}", payload)
+                }
                 _ => continue,
             };
         }
     });
+}
+
+/// Show the error page in the main window
+fn show_error_screen(app_handle: &tauri::AppHandle) {
+    app_handle
+        .get_window("main")
+        .unwrap()
+        .eval("window.location.href = 'tauri://localhost/error.html';")
+        .unwrap();
+    show_window(app_handle, "main");
 }
 
 fn get_sourcegraph_args(app_handle: &tauri::AppHandle) -> Vec<String> {

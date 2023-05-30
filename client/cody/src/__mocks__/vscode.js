@@ -1,21 +1,2 @@
-module.exports = {
-  window: {
-    showInformationMessage: () => undefined,
-    showErrorMessage: () => undefined,
-    showWarningMessage: () => undefined,
-    showQuickPick: () => undefined,
-    showInputBox: () => undefined,
-    createOutputChannel: () => undefined,
-  },
-  getConfiguration: () => undefined,
-  WorkspaceConfiguration: {
-    get: () => undefined,
-    update: () => undefined,
-  },
-  workspace: {
-    getConfiguration: () => undefined,
-  },
-  ConfigurationTarget: {
-    Global: undefined,
-  },
-}
+// The Typescript mock is defined in `client/cody/src/testSetup/vscode.ts`.
+module.exports = {}
