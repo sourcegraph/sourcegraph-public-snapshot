@@ -1,6 +1,6 @@
 # Generate Index to Enable Codebase-Aware Answers
 
-This docs provides instructions on how to generate an index that enables codebase-aware answers for Cody. Codebase-aware answers leverage code graph context to enhance Cody's understanding of code from selected codebases. 
+These docs provide instructions on how to generate an index that enables codebase-aware answers for Cody. Codebase-aware answers leverage code graph context to enhance Cody's understanding of code from selected codebases. 
 
 By following the steps outlined in this guide, you can configure the necessary prerequisites and enable Cody to provide more accurate and contextually relevant answers to your coding questions based on the codebase you are working in.
 
@@ -10,7 +10,7 @@ You can enhance Cody's understanding of existing code by generating index for yo
 
 ### Sourcegraph Enterprise
 
-To generate an index for your codebase and enable codebase-aware answers for Cody, your Site Admins must complete the following:
+To generate an index for your codebase and enable codebase-aware answers for Cody, your site admin must complete the following:
 
 - [Configure Code Graph Context](https://docs.sourcegraph.com/cody/explanations/code_graph_context) for your Sourcegraph instance
 - [Enable Cody for your Sourcegraph instance](../enabling_cody_enterprise.md#step-1-enable-cody-on-your-sourcegraph-instance)
