@@ -475,7 +475,7 @@ export function sliceUntilFirstNLinesOfSuffixMatch(suggestion: string, suffix: s
  * normalizes the whitespace first using the currently enabled tabSize option.
  */
 function indentation(line: string): number {
-    const tabSize: number = vscode.window.activeTextEditor
+    const tabSize = vscode.window.activeTextEditor
         ? // tabSize is always resolved to a number when accessing the property
           (vscode.window.activeTextEditor.options.tabSize as number)
         : 2
