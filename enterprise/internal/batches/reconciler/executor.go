@@ -10,6 +10,8 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 
 	"github.com/sourcegraph/log"
 
@@ -166,6 +168,11 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 		afterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetUpdateError) }
 	}
 
+	// Gerrit relies on a ChangeID that is included in the commit body, so we generate it here.
+	if e.ch.ExternalServiceType == extsvc.TypeGerrit && e.ch.ExternalID == "" {
+		e.ch.ExternalID = gerrit.GenerateRandomChangeID()
+	}
+
 	existingSameBranch, err := e.tx.GetChangeset(ctx, store.GetChangesetOpts{
 		ExternalServiceType: e.ch.ExternalServiceType,
 		RepoID:              e.ch.RepoID,
@@ -201,7 +208,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 	if err != nil {
 		return afterDone, err
 	}
-	opts := buildCommitOpts(e.targetRepo, e.spec, pushConf)
+	opts := buildCommitOpts(e.targetRepo, e.ch, e.spec, pushConf)
 
 	err = e.pushCommit(ctx, opts)
 	var pce pushCommitError
@@ -283,6 +290,11 @@ func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (afterDon
 			// emit ChangesetPublish webhook events here.
 			return afterDonePublish, errors.Wrap(err, "creating changeset")
 		}
+	}
+
+	// Gerrit publishes the Change at push time, and therefore
+	if e.ch.ExternalServiceType == extsvc.TypeGerrit {
+		exists = false
 	}
 
 	// If the Changeset already exists and our source can update it, we try to update it
@@ -670,7 +682,7 @@ func (e *executor) enqueueWebhook(ctx context.Context, store *store.Store, event
 	webhooks.EnqueueChangeset(ctx, e.logger, store, eventType, bgql.MarshalChangesetID(e.ch.ID))
 }
 
-func buildCommitOpts(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+func buildCommitOpts(repo *types.Repo, changeset *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
 	// IMPORTANT: We add a trailing newline here, otherwise `git apply`
 	// will fail with "corrupt patch at line <N>" where N is the last line.
 	patch := append([]byte{}, spec.Diff...)
@@ -699,7 +711,13 @@ func buildCommitOpts(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *pro
 		GitApplyArgs: []string{"-p0"},
 		Push:         pushOpts,
 	}
-
+	if repo.ExternalRepo.ServiceType == extsvc.TypeGerrit {
+		opts.Gerrit = &protocol.GerritConfig{
+			ChangeID:     changeset.ExternalID,
+			PushMagicRef: strings.Replace(spec.BaseRef, "refs/heads", "refs/for", 1), //Magical Gerrit ref for pushing changes.
+			Draft:        changeset.State == btypes.ChangesetStateDraft,
+		}
+	}
 	return opts
 }
 

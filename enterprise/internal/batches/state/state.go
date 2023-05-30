@@ -571,19 +571,19 @@ func computeSingleChangesetExternalState(c *btypes.Changeset) (s btypes.Changese
 			return "", errors.Errorf("unknown Azure DevOps pull request state: %s", m.Status)
 		}
 	case *gerritbatches.AnnotatedChange:
-		switch m.Status {
+		switch m.Change.Status {
 		case gerrit.ChangeStatusAbandoned:
 			s = btypes.ChangesetExternalStateClosed
 		case gerrit.ChangeStatusMerged:
 			s = btypes.ChangesetExternalStateMerged
 		case gerrit.ChangeStatusNew:
-			if m.WorkInProgress {
+			if m.Change.WorkInProgress {
 				s = btypes.ChangesetExternalStateDraft
 			} else {
 				s = btypes.ChangesetExternalStateOpen
 			}
 		default:
-			return "", errors.Errorf("unknown Gerrit Change state: %s", m.Status)
+			return "", errors.Errorf("unknown Gerrit Change state: %s", m.Change.Status)
 		}
 	default:
 		return "", errors.New("unknown changeset type")
@@ -676,7 +676,7 @@ func computeSingleChangesetReviewState(c *btypes.Changeset) (s btypes.ChangesetR
 			states[btypes.ChangesetReviewStatePending] = true
 			break
 		}
-		for _, reviewer := range *m.Reviewers {
+		for _, reviewer := range m.Reviewers {
 			// Score represents the status of a review on Gerrit. Here are possible values for Vote:
 			//
 			//  +2 : approved, can be merged

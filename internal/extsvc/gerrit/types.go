@@ -3,6 +3,7 @@ package gerrit
 import (
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"net/url"
 	"time"
@@ -61,33 +62,36 @@ func (c *Change) UnmarshalJSON(data []byte) error {
 		return err
 	}
 
-	created, err := time.Parse("2006-01-02 15:04:05.000000000", aux.Created)
-	if err != nil {
-		return err
+	var created, updated time.Time
+
+	createdParsed, err := time.Parse("2006-01-02 15:04:05.000000000", aux.Created)
+	if err == nil {
+		created = createdParsed
 	}
 	c.Created = created
 
-	updated, err := time.Parse("2006-01-02 15:04:05.000000000", aux.Updated)
-	if err != nil {
-		return err
+	updatedParsed, err := time.Parse("2006-01-02 15:04:05.000000000", aux.Updated)
+	if err == nil {
+		updated = updatedParsed
 	}
 	c.Updated = updated
 
 	return nil
 }
 
-func (c *Change) MarshalJSON() ([]byte, error) {
-	type Alias Change
-	return json.Marshal(&struct {
-		Created string `json:"created"`
-		Updated string `json:"updated"`
-		*Alias
-	}{
-		Created: c.Created.Format("2006-01-02 15:04:05.000000000"),
-		Updated: c.Updated.Format("2006-01-02 15:04:05.000000000"),
-		Alias:   (*Alias)(c),
-	})
-}
+//func (c *Change) MarshalJSON() ([]byte, error) {
+//	fmt.Println("IN CHANGE MARSHAL")
+//	type Alias Change
+//	return json.Marshal(&struct {
+//		Created string `json:"created"`
+//		Updated string `json:"updated"`
+//		*Alias
+//	}{
+//		Created: c.Created.Format("2006-01-02 15:04:05.000000000"),
+//		Updated: c.Updated.Format("2006-01-02 15:04:05.000000000"),
+//		Alias:   (*Alias)(c),
+//	})
+//}
 
 type ChangeReviewComment struct {
 	Message       string            `json:"message"`
@@ -161,6 +165,18 @@ type Pagination struct {
 	// Either Skip or Page should be set. If Skip is non-zero, it takes precedence.
 	Page int
 	Skip int
+}
+
+const (
+	changeIDCharset = "abcdef0123456789"
+)
+
+func GenerateRandomChangeID() string {
+	changeID := "I"
+	for i := 1; i < 41; i++ {
+		changeID = changeID + string(changeIDCharset[rand.Intn(len(changeIDCharset))])
+	}
+	return changeID
 }
 
 type httpError struct {

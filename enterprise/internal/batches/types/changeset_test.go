@@ -227,9 +227,9 @@ func TestChangeset_SetMetadata(t *testing.T) {
 		"Gerrit": {
 			meta: &gerritbatches.AnnotatedChange{
 				Change: &gerrit.Change{
-					ID:      "I5de272baea22ef34dfbd00d6e96c45b25019697f",
-					Branch:  "branch",
-					Updated: time.Unix(10, 0),
+					ChangeID: "I5de272baea22ef34dfbd00d6e96c45b25019697f",
+					Branch:   "branch",
+					Updated:  time.Unix(10, 0),
 				},
 			},
 			want: &Changeset{

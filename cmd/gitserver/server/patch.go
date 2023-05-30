@@ -218,6 +218,10 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 
 	cmd = exec.CommandContext(ctx, "git", "commit", "-m", fmt.Sprintf("%q", message))
+	if req.Gerrit != nil {
+		// The Change ID needs to be the footer of the commit for Gerrit.
+		cmd = exec.CommandContext(ctx, "git", "commit", "-m", fmt.Sprintf("%q", message), "-m", fmt.Sprintf("Change-Id: %s", req.Gerrit.ChangeID))
+	}
 	cmd.Dir = tmpRepoDir
 	cmd.Env = append(os.Environ(), []string{
 		tmpGitPathEnv,
@@ -276,7 +280,16 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 
 	if req.Push != nil {
-		cmd = exec.CommandContext(ctx, "git", "push", "--force", remoteURL.String(), fmt.Sprintf("%s:%s", cmtHash, ref))
+		pushRef := ref
+		// If the push is to a Gerrit project,we need to push to a magic ref.
+		if req.Gerrit != nil {
+			pushRef = req.Gerrit.PushMagicRef
+			if req.Gerrit.Draft {
+				// This is really how you create a WIP (draft) change in Gerrit.
+				pushRef = pushRef + "%wip"
+			}
+		}
+		cmd = exec.CommandContext(ctx, "git", "push", "--force", remoteURL.String(), fmt.Sprintf("%s:%s", cmtHash, pushRef))
 		cmd.Dir = repoGitDir
 
 		// If the protocol is SSH and a private key was given, we want to

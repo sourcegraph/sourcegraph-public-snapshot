@@ -11,7 +11,7 @@ import (
 // This type is used as the primary metadata type for Gerrit
 // changesets.
 type AnnotatedChange struct {
-	*gerrit.Change
-	Reviewers   *[]gerrit.Reviewer
-	CodeHostURL *url.URL
+	Change      *gerrit.Change    `json:"change"`
+	Reviewers   []gerrit.Reviewer `json:"reviewers"`
+	CodeHostURL url.URL           `json:"codeHostURL"`
 }

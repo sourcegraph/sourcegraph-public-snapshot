@@ -454,12 +454,12 @@ func (c *Changeset) SetMetadata(meta any) error {
 		}
 	case *gerritbatches.AnnotatedChange:
 		c.Metadata = pr
-		c.ExternalID = pr.ID
+		c.ExternalID = pr.Change.ChangeID
 		c.ExternalServiceType = extsvc.TypeGerrit
-		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.Branch)
-		c.ExternalUpdatedAt = pr.Updated
+		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.Change.Branch)
+		c.ExternalUpdatedAt = pr.Change.Updated
 	default:
-		return errors.New("unknown changeset type")
+		return errors.New("setmetadata unknown changeset type")
 	}
 	return nil
 }
@@ -488,9 +488,9 @@ func (c *Changeset) Title() (string, error) {
 	case *adobatches.AnnotatedPullRequest:
 		return m.Title, nil
 	case *gerritbatches.AnnotatedChange:
-		return m.Subject, nil
+		return m.Change.Subject, nil
 	default:
-		return "", errors.New("unknown changeset type")
+		return "", errors.New("title unknown changeset type")
 	}
 }
 
@@ -513,9 +513,9 @@ func (c *Changeset) AuthorName() (string, error) {
 	case *adobatches.AnnotatedPullRequest:
 		return m.CreatedBy.UniqueName, nil
 	case *gerritbatches.AnnotatedChange:
-		return m.Owner.Name, nil
+		return m.Change.Owner.Name, nil
 	default:
-		return "", errors.New("unknown changeset type")
+		return "", errors.New("authorname unknown changeset type")
 	}
 }
 
@@ -546,9 +546,9 @@ func (c *Changeset) AuthorEmail() (string, error) {
 	case *adobatches.AnnotatedPullRequest:
 		return m.CreatedBy.UniqueName, nil
 	case *gerritbatches.AnnotatedChange:
-		return m.Owner.Email, nil
+		return m.Change.Owner.Email, nil
 	default:
-		return "", errors.New("unknown changeset type")
+		return "", errors.New("author email unknown changeset type")
 	}
 }
 
@@ -568,7 +568,7 @@ func (c *Changeset) ExternalCreatedAt() time.Time {
 	case *adobatches.AnnotatedPullRequest:
 		return m.CreationDate
 	case *gerritbatches.AnnotatedChange:
-		return m.Created
+		return m.Change.Created
 	default:
 		return time.Time{}
 	}
@@ -589,9 +589,9 @@ func (c *Changeset) Body() (string, error) {
 		return m.Description, nil
 	case *gerritbatches.AnnotatedChange:
 		// Gerrit doesn't really differentiate between title/description.
-		return m.Subject, nil
+		return m.Change.Subject, nil
 	default:
-		return "", errors.New("unknown changeset type")
+		return "", errors.New("body unknown changeset type")
 	}
 }
 
@@ -655,9 +655,9 @@ func (c *Changeset) URL() (s string, err error) {
 
 		return returnURL.String(), nil
 	case *gerritbatches.AnnotatedChange:
-		return m.CodeHostURL.JoinPath("c", url.PathEscape(m.Project), "+", url.PathEscape(strconv.Itoa(m.ChangeNumber))).String(), nil
+		return m.CodeHostURL.JoinPath("c", url.PathEscape(m.Change.Project), "+", url.PathEscape(strconv.Itoa(m.Change.ChangeNumber))).String(), nil
 	default:
-		return "", errors.New("unknown changeset type")
+		return "", errors.New("url unknown changeset type")
 	}
 }
 
@@ -866,7 +866,7 @@ func (c *Changeset) Events() (events []*ChangesetEvent, err error) {
 			break
 		}
 
-		for _, reviewer := range *m.Reviewers {
+		for _, reviewer := range m.Reviewers {
 			if kind, err = ChangesetEventKindFor(&reviewer); err != nil {
 				return
 			}
@@ -899,7 +899,7 @@ func (c *Changeset) HeadRefOid() (string, error) {
 	case *gerritbatches.AnnotatedChange:
 		return "", nil
 	default:
-		return "", errors.New("unknown changeset type")
+		return "", errors.New("head ref oid unknown changeset type")
 	}
 }
 
@@ -920,7 +920,7 @@ func (c *Changeset) HeadRef() (string, error) {
 	case *gerritbatches.AnnotatedChange:
 		return "", nil
 	default:
-		return "", errors.New("unknown changeset type")
+		return "", errors.New("headref unknown changeset type")
 	}
 }
 
@@ -942,7 +942,7 @@ func (c *Changeset) BaseRefOid() (string, error) {
 	case *gerritbatches.AnnotatedChange:
 		return "", nil
 	default:
-		return "", errors.New("unknown changeset type")
+		return "", errors.New("base ref oid unknown changeset type")
 	}
 }
 
@@ -961,9 +961,9 @@ func (c *Changeset) BaseRef() (string, error) {
 	case *adobatches.AnnotatedPullRequest:
 		return m.TargetRefName, nil
 	case *gerritbatches.AnnotatedChange:
-		return "refs/heads/" + m.Branch, nil
+		return "refs/heads/" + m.Change.Branch, nil
 	default:
-		return "", errors.New("unknown changeset type")
+		return "", errors.New(" base ref unknown changeset type")
 	}
 }
 
@@ -1073,8 +1073,8 @@ func (c *Changeset) Labels() []ChangesetLabel {
 		}
 		return labels
 	case *gerritbatches.AnnotatedChange:
-		labels := make([]ChangesetLabel, len(m.Hashtags))
-		for i, l := range m.Hashtags {
+		labels := make([]ChangesetLabel, len(m.Change.Hashtags))
+		for i, l := range m.Change.Hashtags {
 			labels[i] = ChangesetLabel{Name: l, Color: "000000"}
 		}
 		return labels
@@ -1342,7 +1342,7 @@ func ChangesetEventKindFor(e any) (ChangesetEventKind, error) {
 			return ChangesetEventKindGerritChangeRejected, nil
 		}
 	}
-	return ChangesetEventKindInvalid, errors.Errorf("unknown changeset event kind for %T", e)
+	return ChangesetEventKindInvalid, errors.Errorf("changeset eventkindfor unknown changeset event kind for %T", e)
 }
 
 // NewChangesetEventMetadata returns a new metadata object for the given
@@ -1479,5 +1479,5 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (any, error) {
 		}
 		// TODO: @varsanojidan revisit if webhooks are in scope
 	}
-	return nil, errors.Errorf("unknown changeset event kind %q", k)
+	return nil, errors.Errorf("changeset event metadata unknown changeset event kind %q", k)
 }

@@ -106,7 +106,13 @@ func (s GerritSource) CreateChangeset(ctx context.Context, cs *Changeset) (bool,
 
 // CreateDraftChangeset creates the given changeset on the code host in draft mode.
 // Noop, Gerrit creates changes through commits directly
-func (s GerritSource) CreateDraftChangeset(context.Context, *Changeset) (bool, error) {
+func (s GerritSource) CreateDraftChangeset(ctx context.Context, cs *Changeset) (bool, error) {
+	// For Gerrit, the Change is created at `git push` time, so we just load it here to verify it
+	// was created successfully.
+	err := s.LoadChangeset(ctx, cs)
+	if err != nil {
+		return false, err
+	}
 	return true, nil
 }
 
@@ -187,7 +193,7 @@ func (s GerritSource) annotateChange(ctx context.Context, change *gerrit.Change)
 	}
 	return &gerritbatches.AnnotatedChange{
 		Change:      change,
-		Reviewers:   reviewers,
-		CodeHostURL: s.client.GetURL(),
+		Reviewers:   *reviewers,
+		CodeHostURL: *s.client.GetURL(),
 	}, nil
 }
