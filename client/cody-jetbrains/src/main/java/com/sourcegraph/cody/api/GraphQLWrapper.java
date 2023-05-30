@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.completions;
+package com.sourcegraph.cody.api;
 
 import com.google.gson.Gson;
 import java.util.HashMap;

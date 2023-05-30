@@ -12,25 +12,31 @@ cleanup() {
 trap cleanup EXIT
 
 echo "--- bazel build"
-bazel build \
-  --bazelrc=.bazelrc \
-  --bazelrc=.aspect/bazelrc/ci.bazelrc \
-  --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \
+
+bazelrc=(
+  --bazelrc=.bazelrc
+)
+if [[ ${CI:-""} == "true" ]]; then
+  bazelrc+=(
+    --bazelrc=.aspect/bazelrc/ci.bazelrc
+    --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc
+  )
+fi
+
+
+bazel "${bazelrc[@]}" \
+  build \
   //cmd/symbols \
   --stamp \
   --workspace_status_command=./dev/bazel_stamp_vars.sh \
-  --platforms @zig_sdk//platform:linux_amd64 \
-  --extra_toolchains @zig_sdk//toolchain:linux_amd64_musl
+  --config incompat-zig-linux-amd64
 
 out=$(
-  bazel build \
-    --bazelrc=.bazelrc \
-    --bazelrc=.aspect/bazelrc/ci.bazelrc \
-    --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc \ cquery //cmd/symbols \
+  bazel "${bazelrc[@]}" \
+    cquery //cmd/symbols \
     --stamp \
     --workspace_status_command=./dev/bazel_stamp_vars.sh \
-    --platforms @zig_sdk//platform:linux_amd64 \
-    --extra_toolchains @zig_sdk//toolchain:linux_amd64_musl \
+    --config incompat-zig-linux-amd64 \
     --output=files
 )
 cp "$out" "$OUTPUT"
