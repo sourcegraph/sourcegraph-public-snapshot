@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -162,21 +163,54 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, canc
 		// Continue, no metric errors should prevent heartbeats.
 	}
 
-	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", c.options.QueueName), types.HeartbeatRequest{
-		ExecutorName: c.options.ExecutorName,
-		JobIDs:       jobIDs,
+	var req *http.Request
+	var reqErr error
+	// If queueName is empty (but queueNames is set), then we are using the newer multi-queue API. It is safe to send
+	// jobIds as strings in that case.
+	if c.options.QueueName == "" {
+		req, reqErr = c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", c.options.QueueName), types.HeartbeatRequest{
+			ExecutorName: c.options.ExecutorName,
+			JobIDs:       jobIDs,
 
-		OS:              c.options.TelemetryOptions.OS,
-		Architecture:    c.options.TelemetryOptions.Architecture,
-		DockerVersion:   c.options.TelemetryOptions.DockerVersion,
-		ExecutorVersion: c.options.TelemetryOptions.ExecutorVersion,
-		GitVersion:      c.options.TelemetryOptions.GitVersion,
-		IgniteVersion:   c.options.TelemetryOptions.IgniteVersion,
-		SrcCliVersion:   c.options.TelemetryOptions.SrcCliVersion,
+			OS:              c.options.TelemetryOptions.OS,
+			Architecture:    c.options.TelemetryOptions.Architecture,
+			DockerVersion:   c.options.TelemetryOptions.DockerVersion,
+			ExecutorVersion: c.options.TelemetryOptions.ExecutorVersion,
+			GitVersion:      c.options.TelemetryOptions.GitVersion,
+			IgniteVersion:   c.options.TelemetryOptions.IgniteVersion,
+			SrcCliVersion:   c.options.TelemetryOptions.SrcCliVersion,
 
-		PrometheusMetrics: metrics,
-	})
-	if err != nil {
+			PrometheusMetrics: metrics,
+		})
+	} else {
+		// If queueName is set, then we cannot be sure whether Sourcegraph is new enough (since Heartbeat can't provide
+		// that context). So to be safe, we send jobIds as ints. If Sourcegraph is older, it expects ints anyway. If
+		// it is newer, it knows how to convert the values to strings.
+		// TODO remove in Sourcegraph 5.2.
+		var jobIDsInt []int
+		for _, jobID := range jobIDs {
+			jobIDInt, err := strconv.Atoi(jobID)
+			if err != nil {
+				return nil, nil, err
+			}
+			jobIDsInt = append(jobIDsInt, jobIDInt)
+		}
+		req, reqErr = c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", c.options.QueueName), types.HeartbeatRequestV1{
+			ExecutorName: c.options.ExecutorName,
+			JobIDs:       jobIDsInt,
+
+			OS:              c.options.TelemetryOptions.OS,
+			Architecture:    c.options.TelemetryOptions.Architecture,
+			DockerVersion:   c.options.TelemetryOptions.DockerVersion,
+			ExecutorVersion: c.options.TelemetryOptions.ExecutorVersion,
+			GitVersion:      c.options.TelemetryOptions.GitVersion,
+			IgniteVersion:   c.options.TelemetryOptions.IgniteVersion,
+			SrcCliVersion:   c.options.TelemetryOptions.SrcCliVersion,
+
+			PrometheusMetrics: metrics,
+		})
+	}
+	if reqErr != nil {
 		return nil, nil, err
 	}
 
