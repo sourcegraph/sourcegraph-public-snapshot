@@ -36,7 +36,7 @@ type Source struct {
 	dotcom graphql.Client
 
 	// internalMode, if true, indicates only dev and internal licenses may use
-	// this LLM-proxy instance.
+	// this Cody Gateway instance.
 	internalMode bool
 }
 
@@ -170,25 +170,25 @@ func NewActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 	a := &actor.Actor{
 		Key:           token,
 		ID:            s.Uuid,
-		AccessEnabled: !disallowedLicense && !s.IsArchived && s.LlmProxyAccess.Enabled,
+		AccessEnabled: !disallowedLicense && !s.IsArchived && s.CodyGatewayAccess.Enabled,
 		RateLimits:    map[types.CompletionsFeature]actor.RateLimit{},
 		LastUpdated:   &now,
 		Source:        source,
 	}
 
-	if s.LlmProxyAccess.ChatCompletionsRateLimit != nil {
+	if s.CodyGatewayAccess.ChatCompletionsRateLimit != nil {
 		a.RateLimits[types.CompletionsFeatureChat] = actor.RateLimit{
-			AllowedModels: s.LlmProxyAccess.ChatCompletionsRateLimit.AllowedModels,
-			Limit:         s.LlmProxyAccess.ChatCompletionsRateLimit.Limit,
-			Interval:      time.Duration(s.LlmProxyAccess.ChatCompletionsRateLimit.IntervalSeconds) * time.Second,
+			AllowedModels: s.CodyGatewayAccess.ChatCompletionsRateLimit.AllowedModels,
+			Limit:         s.CodyGatewayAccess.ChatCompletionsRateLimit.Limit,
+			Interval:      time.Duration(s.CodyGatewayAccess.ChatCompletionsRateLimit.IntervalSeconds) * time.Second,
 		}
 	}
 
-	if s.LlmProxyAccess.CodeCompletionsRateLimit != nil {
+	if s.CodyGatewayAccess.CodeCompletionsRateLimit != nil {
 		a.RateLimits[types.CompletionsFeatureCode] = actor.RateLimit{
-			AllowedModels: s.LlmProxyAccess.CodeCompletionsRateLimit.AllowedModels,
-			Limit:         s.LlmProxyAccess.CodeCompletionsRateLimit.Limit,
-			Interval:      time.Duration(s.LlmProxyAccess.CodeCompletionsRateLimit.IntervalSeconds) * time.Second,
+			AllowedModels: s.CodyGatewayAccess.CodeCompletionsRateLimit.AllowedModels,
+			Limit:         s.CodyGatewayAccess.CodeCompletionsRateLimit.Limit,
+			Interval:      time.Duration(s.CodyGatewayAccess.CodeCompletionsRateLimit.IntervalSeconds) * time.Second,
 		}
 	}
 

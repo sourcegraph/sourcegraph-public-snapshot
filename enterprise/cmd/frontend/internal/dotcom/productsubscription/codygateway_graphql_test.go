@@ -36,7 +36,7 @@ func TestLLMProxyAccessResolverRateLimit(t *testing.T) {
 	_, err = dbLicenses{db: db}.Create(ctx, subID, "k2", 1, info)
 	require.NoError(t, err)
 
-	// Enable access to LLM proxy.
+	// Enable access to Cody Gateway.
 	tru := true
 	err = dbSubscriptions{db: db}.Update(ctx, subID, dbSubscriptionUpdate{codyGatewayAccess: &graphqlbackend.UpdateCodyGatewayAccessInput{Enabled: &tru}})
 	require.NoError(t, err)

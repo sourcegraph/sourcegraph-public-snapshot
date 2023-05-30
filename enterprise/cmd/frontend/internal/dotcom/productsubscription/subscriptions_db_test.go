@@ -155,7 +155,7 @@ func TestProductSubscriptions_Update(t *testing.T) {
 		})
 	})
 
-	t.Run("llmProxyAccess", func(t *testing.T) {
+	t.Run("codyGatewayAccess", func(t *testing.T) {
 		t.Run("set non-null values", func(t *testing.T) {
 			err := subscriptions.Update(ctx, sub0, dbSubscriptionUpdate{
 				codyGatewayAccess: &graphqlbackend.UpdateCodyGatewayAccessInput{

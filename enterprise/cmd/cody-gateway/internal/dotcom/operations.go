@@ -53,9 +53,9 @@ func (v *CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProduc
 	return v.ProductSubscriptionState.IsArchived
 }
 
-// GetLlmProxyAccess returns CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription.LlmProxyAccess, and is useful for accessing the field via an interface.
-func (v *CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription) GetLlmProxyAccess() ProductSubscriptionStateLlmProxyAccessLLMProxyAccess {
-	return v.ProductSubscriptionState.LlmProxyAccess
+// GetCodyGatewayAccess returns CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription.CodyGatewayAccess, and is useful for accessing the field via an interface.
+func (v *CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription) GetCodyGatewayAccess() ProductSubscriptionStateCodyGatewayAccess {
+	return v.ProductSubscriptionState.CodyGatewayAccess
 }
 
 // GetActiveLicense returns CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription.ActiveLicense, and is useful for accessing the field via an interface.
@@ -95,7 +95,7 @@ type __premarshalCheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTok
 
 	IsArchived bool `json:"isArchived"`
 
-	LlmProxyAccess ProductSubscriptionStateLlmProxyAccessLLMProxyAccess `json:"llmProxyAccess"`
+	CodyGatewayAccess ProductSubscriptionStateCodyGatewayAccess `json:"codyGatewayAccess"`
 
 	ActiveLicense *ProductSubscriptionStateActiveLicenseProductLicense `json:"activeLicense"`
 }
@@ -114,7 +114,7 @@ func (v *CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProduc
 	retval.Id = v.ProductSubscriptionState.Id
 	retval.Uuid = v.ProductSubscriptionState.Uuid
 	retval.IsArchived = v.ProductSubscriptionState.IsArchived
-	retval.LlmProxyAccess = v.ProductSubscriptionState.LlmProxyAccess
+	retval.CodyGatewayAccess = v.ProductSubscriptionState.CodyGatewayAccess
 	retval.ActiveLicense = v.ProductSubscriptionState.ActiveLicense
 	return &retval, nil
 }
@@ -130,73 +130,73 @@ type CheckAccessTokenResponse struct {
 // GetDotcom returns CheckAccessTokenResponse.Dotcom, and is useful for accessing the field via an interface.
 func (v *CheckAccessTokenResponse) GetDotcom() CheckAccessTokenDotcomDotcomQuery { return v.Dotcom }
 
-// LLMProxyAccessFields includes the GraphQL fields of LLMProxyAccess requested by the fragment LLMProxyAccessFields.
+// CodyGatewayAccessFields includes the GraphQL fields of CodyGatewayAccess requested by the fragment CodyGatewayAccessFields.
 // The GraphQL type's documentation follows.
 //
-// LLM-proxy access granted to a subscription.
+// Cody Gateway access granted to a subscription.
 // FOR INTERNAL USE ONLY.
-type LLMProxyAccessFields struct {
-	// Whether or not a subscription has LLM-proxy access.
+type CodyGatewayAccessFields struct {
+	// Whether or not a subscription has Cody Gateway access.
 	Enabled bool `json:"enabled"`
 	// Rate limit for chat completions access, or null if not enabled.
-	ChatCompletionsRateLimit *LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit `json:"chatCompletionsRateLimit"`
+	ChatCompletionsRateLimit *CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit `json:"chatCompletionsRateLimit"`
 	// Rate limit for code completions access, or null if not enabled.
-	CodeCompletionsRateLimit *LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit `json:"codeCompletionsRateLimit"`
+	CodeCompletionsRateLimit *CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit `json:"codeCompletionsRateLimit"`
 }
 
-// GetEnabled returns LLMProxyAccessFields.Enabled, and is useful for accessing the field via an interface.
-func (v *LLMProxyAccessFields) GetEnabled() bool { return v.Enabled }
+// GetEnabled returns CodyGatewayAccessFields.Enabled, and is useful for accessing the field via an interface.
+func (v *CodyGatewayAccessFields) GetEnabled() bool { return v.Enabled }
 
-// GetChatCompletionsRateLimit returns LLMProxyAccessFields.ChatCompletionsRateLimit, and is useful for accessing the field via an interface.
-func (v *LLMProxyAccessFields) GetChatCompletionsRateLimit() *LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit {
+// GetChatCompletionsRateLimit returns CodyGatewayAccessFields.ChatCompletionsRateLimit, and is useful for accessing the field via an interface.
+func (v *CodyGatewayAccessFields) GetChatCompletionsRateLimit() *CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit {
 	return v.ChatCompletionsRateLimit
 }
 
-// GetCodeCompletionsRateLimit returns LLMProxyAccessFields.CodeCompletionsRateLimit, and is useful for accessing the field via an interface.
-func (v *LLMProxyAccessFields) GetCodeCompletionsRateLimit() *LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit {
+// GetCodeCompletionsRateLimit returns CodyGatewayAccessFields.CodeCompletionsRateLimit, and is useful for accessing the field via an interface.
+func (v *CodyGatewayAccessFields) GetCodeCompletionsRateLimit() *CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit {
 	return v.CodeCompletionsRateLimit
 }
 
-// LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit includes the requested fields of the GraphQL type LLMProxyRateLimit.
+// CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit includes the requested fields of the GraphQL type CodyGatewayRateLimit.
 // The GraphQL type's documentation follows.
 //
-// LLM-proxy access rate limits for a subscription.
+// Cody Gateway access rate limits for a subscription.
 // FOR INTERNAL USE ONLY.
-type LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit struct {
+type CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit struct {
 	RateLimitFields `json:"-"`
 }
 
-// GetAllowedModels returns LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit.AllowedModels, and is useful for accessing the field via an interface.
-func (v *LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit) GetAllowedModels() []string {
+// GetAllowedModels returns CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit.AllowedModels, and is useful for accessing the field via an interface.
+func (v *CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit) GetAllowedModels() []string {
 	return v.RateLimitFields.AllowedModels
 }
 
-// GetSource returns LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit.Source, and is useful for accessing the field via an interface.
-func (v *LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit) GetSource() LLMProxyRateLimitSource {
+// GetSource returns CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit.Source, and is useful for accessing the field via an interface.
+func (v *CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit) GetSource() CodyGatewayRateLimitSource {
 	return v.RateLimitFields.Source
 }
 
-// GetLimit returns LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit.Limit, and is useful for accessing the field via an interface.
-func (v *LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit) GetLimit() int {
+// GetLimit returns CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit.Limit, and is useful for accessing the field via an interface.
+func (v *CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit) GetLimit() int {
 	return v.RateLimitFields.Limit
 }
 
-// GetIntervalSeconds returns LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit.IntervalSeconds, and is useful for accessing the field via an interface.
-func (v *LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit) GetIntervalSeconds() int {
+// GetIntervalSeconds returns CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit.IntervalSeconds, and is useful for accessing the field via an interface.
+func (v *CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit) GetIntervalSeconds() int {
 	return v.RateLimitFields.IntervalSeconds
 }
 
-func (v *LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit) UnmarshalJSON(b []byte) error {
+func (v *CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit) UnmarshalJSON(b []byte) error {
 
 	if string(b) == "null" {
 		return nil
 	}
 
 	var firstPass struct {
-		*LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit
+		*CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit
 		graphql.NoUnmarshalJSON
 	}
-	firstPass.LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit = v
+	firstPass.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit = v
 
 	err := json.Unmarshal(b, &firstPass)
 	if err != nil {
@@ -211,17 +211,17 @@ func (v *LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit) Unmarsha
 	return nil
 }
 
-type __premarshalLLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit struct {
+type __premarshalCodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit struct {
 	AllowedModels []string `json:"allowedModels"`
 
-	Source LLMProxyRateLimitSource `json:"source"`
+	Source CodyGatewayRateLimitSource `json:"source"`
 
 	Limit int `json:"limit"`
 
 	IntervalSeconds int `json:"intervalSeconds"`
 }
 
-func (v *LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit) MarshalJSON() ([]byte, error) {
+func (v *CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit) MarshalJSON() ([]byte, error) {
 	premarshaled, err := v.__premarshalJSON()
 	if err != nil {
 		return nil, err
@@ -229,8 +229,8 @@ func (v *LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit) MarshalJ
 	return json.Marshal(premarshaled)
 }
 
-func (v *LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit) __premarshalJSON() (*__premarshalLLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit, error) {
-	var retval __premarshalLLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit
+func (v *CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit) __premarshalJSON() (*__premarshalCodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit, error) {
+	var retval __premarshalCodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit
 
 	retval.AllowedModels = v.RateLimitFields.AllowedModels
 	retval.Source = v.RateLimitFields.Source
@@ -239,46 +239,46 @@ func (v *LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit) __premar
 	return &retval, nil
 }
 
-// LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit includes the requested fields of the GraphQL type LLMProxyRateLimit.
+// CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit includes the requested fields of the GraphQL type CodyGatewayRateLimit.
 // The GraphQL type's documentation follows.
 //
-// LLM-proxy access rate limits for a subscription.
+// Cody Gateway access rate limits for a subscription.
 // FOR INTERNAL USE ONLY.
-type LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit struct {
+type CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit struct {
 	RateLimitFields `json:"-"`
 }
 
-// GetAllowedModels returns LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit.AllowedModels, and is useful for accessing the field via an interface.
-func (v *LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit) GetAllowedModels() []string {
+// GetAllowedModels returns CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit.AllowedModels, and is useful for accessing the field via an interface.
+func (v *CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit) GetAllowedModels() []string {
 	return v.RateLimitFields.AllowedModels
 }
 
-// GetSource returns LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit.Source, and is useful for accessing the field via an interface.
-func (v *LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit) GetSource() LLMProxyRateLimitSource {
+// GetSource returns CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit.Source, and is useful for accessing the field via an interface.
+func (v *CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit) GetSource() CodyGatewayRateLimitSource {
 	return v.RateLimitFields.Source
 }
 
-// GetLimit returns LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit.Limit, and is useful for accessing the field via an interface.
-func (v *LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit) GetLimit() int {
+// GetLimit returns CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit.Limit, and is useful for accessing the field via an interface.
+func (v *CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit) GetLimit() int {
 	return v.RateLimitFields.Limit
 }
 
-// GetIntervalSeconds returns LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit.IntervalSeconds, and is useful for accessing the field via an interface.
-func (v *LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit) GetIntervalSeconds() int {
+// GetIntervalSeconds returns CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit.IntervalSeconds, and is useful for accessing the field via an interface.
+func (v *CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit) GetIntervalSeconds() int {
 	return v.RateLimitFields.IntervalSeconds
 }
 
-func (v *LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit) UnmarshalJSON(b []byte) error {
+func (v *CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit) UnmarshalJSON(b []byte) error {
 
 	if string(b) == "null" {
 		return nil
 	}
 
 	var firstPass struct {
-		*LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit
+		*CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit
 		graphql.NoUnmarshalJSON
 	}
-	firstPass.LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit = v
+	firstPass.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit = v
 
 	err := json.Unmarshal(b, &firstPass)
 	if err != nil {
@@ -293,17 +293,17 @@ func (v *LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit) Unmarsha
 	return nil
 }
 
-type __premarshalLLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit struct {
+type __premarshalCodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit struct {
 	AllowedModels []string `json:"allowedModels"`
 
-	Source LLMProxyRateLimitSource `json:"source"`
+	Source CodyGatewayRateLimitSource `json:"source"`
 
 	Limit int `json:"limit"`
 
 	IntervalSeconds int `json:"intervalSeconds"`
 }
 
-func (v *LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit) MarshalJSON() ([]byte, error) {
+func (v *CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit) MarshalJSON() ([]byte, error) {
 	premarshaled, err := v.__premarshalJSON()
 	if err != nil {
 		return nil, err
@@ -311,8 +311,8 @@ func (v *LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit) MarshalJ
 	return json.Marshal(premarshaled)
 }
 
-func (v *LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit) __premarshalJSON() (*__premarshalLLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit, error) {
-	var retval __premarshalLLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit
+func (v *CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit) __premarshalJSON() (*__premarshalCodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit, error) {
+	var retval __premarshalCodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit
 
 	retval.AllowedModels = v.RateLimitFields.AllowedModels
 	retval.Source = v.RateLimitFields.Source
@@ -323,13 +323,13 @@ func (v *LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit) __premar
 
 // The source of the rate limit returned.
 // FOR INTERNAL USE ONLY.
-type LLMProxyRateLimitSource string
+type CodyGatewayRateLimitSource string
 
 const (
 	// Indicates that a custom override for the rate limit has been stored.
-	LLMProxyRateLimitSourceOverride LLMProxyRateLimitSource = "OVERRIDE"
+	CodyGatewayRateLimitSourceOverride CodyGatewayRateLimitSource = "OVERRIDE"
 	// Indicates that the rate limit is inferred by the subscriptions active plan.
-	LLMProxyRateLimitSourcePlan LLMProxyRateLimitSource = "PLAN"
+	CodyGatewayRateLimitSourcePlan CodyGatewayRateLimitSource = "PLAN"
 )
 
 // ListProductSubscriptionFields includes the GraphQL fields of ProductSubscription requested by the fragment ListProductSubscriptionFields.
@@ -360,9 +360,9 @@ func (v *ListProductSubscriptionFields) GetIsArchived() bool {
 	return v.ProductSubscriptionState.IsArchived
 }
 
-// GetLlmProxyAccess returns ListProductSubscriptionFields.LlmProxyAccess, and is useful for accessing the field via an interface.
-func (v *ListProductSubscriptionFields) GetLlmProxyAccess() ProductSubscriptionStateLlmProxyAccessLLMProxyAccess {
-	return v.ProductSubscriptionState.LlmProxyAccess
+// GetCodyGatewayAccess returns ListProductSubscriptionFields.CodyGatewayAccess, and is useful for accessing the field via an interface.
+func (v *ListProductSubscriptionFields) GetCodyGatewayAccess() ProductSubscriptionStateCodyGatewayAccess {
+	return v.ProductSubscriptionState.CodyGatewayAccess
 }
 
 // GetActiveLicense returns ListProductSubscriptionFields.ActiveLicense, and is useful for accessing the field via an interface.
@@ -404,7 +404,7 @@ type __premarshalListProductSubscriptionFields struct {
 
 	IsArchived bool `json:"isArchived"`
 
-	LlmProxyAccess ProductSubscriptionStateLlmProxyAccessLLMProxyAccess `json:"llmProxyAccess"`
+	CodyGatewayAccess ProductSubscriptionStateCodyGatewayAccess `json:"codyGatewayAccess"`
 
 	ActiveLicense *ProductSubscriptionStateActiveLicenseProductLicense `json:"activeLicense"`
 }
@@ -424,7 +424,7 @@ func (v *ListProductSubscriptionFields) __premarshalJSON() (*__premarshalListPro
 	retval.Id = v.ProductSubscriptionState.Id
 	retval.Uuid = v.ProductSubscriptionState.Uuid
 	retval.IsArchived = v.ProductSubscriptionState.IsArchived
-	retval.LlmProxyAccess = v.ProductSubscriptionState.LlmProxyAccess
+	retval.CodyGatewayAccess = v.ProductSubscriptionState.CodyGatewayAccess
 	retval.ActiveLicense = v.ProductSubscriptionState.ActiveLicense
 	return &retval, nil
 }
@@ -504,9 +504,9 @@ func (v *ListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsProductSub
 	return v.ListProductSubscriptionFields.ProductSubscriptionState.IsArchived
 }
 
-// GetLlmProxyAccess returns ListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsProductSubscriptionConnectionNodesProductSubscription.LlmProxyAccess, and is useful for accessing the field via an interface.
-func (v *ListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsProductSubscriptionConnectionNodesProductSubscription) GetLlmProxyAccess() ProductSubscriptionStateLlmProxyAccessLLMProxyAccess {
-	return v.ListProductSubscriptionFields.ProductSubscriptionState.LlmProxyAccess
+// GetCodyGatewayAccess returns ListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsProductSubscriptionConnectionNodesProductSubscription.CodyGatewayAccess, and is useful for accessing the field via an interface.
+func (v *ListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsProductSubscriptionConnectionNodesProductSubscription) GetCodyGatewayAccess() ProductSubscriptionStateCodyGatewayAccess {
+	return v.ListProductSubscriptionFields.ProductSubscriptionState.CodyGatewayAccess
 }
 
 // GetActiveLicense returns ListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsProductSubscriptionConnectionNodesProductSubscription.ActiveLicense, and is useful for accessing the field via an interface.
@@ -548,7 +548,7 @@ type __premarshalListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsPr
 
 	IsArchived bool `json:"isArchived"`
 
-	LlmProxyAccess ProductSubscriptionStateLlmProxyAccessLLMProxyAccess `json:"llmProxyAccess"`
+	CodyGatewayAccess ProductSubscriptionStateCodyGatewayAccess `json:"codyGatewayAccess"`
 
 	ActiveLicense *ProductSubscriptionStateActiveLicenseProductLicense `json:"activeLicense"`
 }
@@ -568,7 +568,7 @@ func (v *ListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsProductSub
 	retval.Id = v.ListProductSubscriptionFields.ProductSubscriptionState.Id
 	retval.Uuid = v.ListProductSubscriptionFields.ProductSubscriptionState.Uuid
 	retval.IsArchived = v.ListProductSubscriptionFields.ProductSubscriptionState.IsArchived
-	retval.LlmProxyAccess = v.ListProductSubscriptionFields.ProductSubscriptionState.LlmProxyAccess
+	retval.CodyGatewayAccess = v.ListProductSubscriptionFields.ProductSubscriptionState.CodyGatewayAccess
 	retval.ActiveLicense = v.ListProductSubscriptionFields.ProductSubscriptionState.ActiveLicense
 	return &retval, nil
 }
@@ -620,8 +620,8 @@ type ProductSubscriptionState struct {
 	Uuid string `json:"uuid"`
 	// Whether this product subscription was archived.
 	IsArchived bool `json:"isArchived"`
-	// LLM-proxy access granted to this subscription. Properties may be inferred from the active license, or be defined in overrides.
-	LlmProxyAccess ProductSubscriptionStateLlmProxyAccessLLMProxyAccess `json:"llmProxyAccess"`
+	// Cody Gateway access granted to this subscription. Properties may be inferred from the active license, or be defined in overrides.
+	CodyGatewayAccess ProductSubscriptionStateCodyGatewayAccess `json:"codyGatewayAccess"`
 	// The currently active product license associated with this product subscription, if any.
 	ActiveLicense *ProductSubscriptionStateActiveLicenseProductLicense `json:"activeLicense"`
 }
@@ -635,9 +635,9 @@ func (v *ProductSubscriptionState) GetUuid() string { return v.Uuid }
 // GetIsArchived returns ProductSubscriptionState.IsArchived, and is useful for accessing the field via an interface.
 func (v *ProductSubscriptionState) GetIsArchived() bool { return v.IsArchived }
 
-// GetLlmProxyAccess returns ProductSubscriptionState.LlmProxyAccess, and is useful for accessing the field via an interface.
-func (v *ProductSubscriptionState) GetLlmProxyAccess() ProductSubscriptionStateLlmProxyAccessLLMProxyAccess {
-	return v.LlmProxyAccess
+// GetCodyGatewayAccess returns ProductSubscriptionState.CodyGatewayAccess, and is useful for accessing the field via an interface.
+func (v *ProductSubscriptionState) GetCodyGatewayAccess() ProductSubscriptionStateCodyGatewayAccess {
+	return v.CodyGatewayAccess
 }
 
 // GetActiveLicense returns ProductSubscriptionState.ActiveLicense, and is useful for accessing the field via an interface.
@@ -672,41 +672,41 @@ type ProductSubscriptionStateActiveLicenseProductLicenseInfo struct {
 // GetTags returns ProductSubscriptionStateActiveLicenseProductLicenseInfo.Tags, and is useful for accessing the field via an interface.
 func (v *ProductSubscriptionStateActiveLicenseProductLicenseInfo) GetTags() []string { return v.Tags }
 
-// ProductSubscriptionStateLlmProxyAccessLLMProxyAccess includes the requested fields of the GraphQL type LLMProxyAccess.
+// ProductSubscriptionStateCodyGatewayAccess includes the requested fields of the GraphQL type CodyGatewayAccess.
 // The GraphQL type's documentation follows.
 //
-// LLM-proxy access granted to a subscription.
+// Cody Gateway access granted to a subscription.
 // FOR INTERNAL USE ONLY.
-type ProductSubscriptionStateLlmProxyAccessLLMProxyAccess struct {
-	LLMProxyAccessFields `json:"-"`
+type ProductSubscriptionStateCodyGatewayAccess struct {
+	CodyGatewayAccessFields `json:"-"`
 }
 
-// GetEnabled returns ProductSubscriptionStateLlmProxyAccessLLMProxyAccess.Enabled, and is useful for accessing the field via an interface.
-func (v *ProductSubscriptionStateLlmProxyAccessLLMProxyAccess) GetEnabled() bool {
-	return v.LLMProxyAccessFields.Enabled
+// GetEnabled returns ProductSubscriptionStateCodyGatewayAccess.Enabled, and is useful for accessing the field via an interface.
+func (v *ProductSubscriptionStateCodyGatewayAccess) GetEnabled() bool {
+	return v.CodyGatewayAccessFields.Enabled
 }
 
-// GetChatCompletionsRateLimit returns ProductSubscriptionStateLlmProxyAccessLLMProxyAccess.ChatCompletionsRateLimit, and is useful for accessing the field via an interface.
-func (v *ProductSubscriptionStateLlmProxyAccessLLMProxyAccess) GetChatCompletionsRateLimit() *LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit {
-	return v.LLMProxyAccessFields.ChatCompletionsRateLimit
+// GetChatCompletionsRateLimit returns ProductSubscriptionStateCodyGatewayAccess.ChatCompletionsRateLimit, and is useful for accessing the field via an interface.
+func (v *ProductSubscriptionStateCodyGatewayAccess) GetChatCompletionsRateLimit() *CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit {
+	return v.CodyGatewayAccessFields.ChatCompletionsRateLimit
 }
 
-// GetCodeCompletionsRateLimit returns ProductSubscriptionStateLlmProxyAccessLLMProxyAccess.CodeCompletionsRateLimit, and is useful for accessing the field via an interface.
-func (v *ProductSubscriptionStateLlmProxyAccessLLMProxyAccess) GetCodeCompletionsRateLimit() *LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit {
-	return v.LLMProxyAccessFields.CodeCompletionsRateLimit
+// GetCodeCompletionsRateLimit returns ProductSubscriptionStateCodyGatewayAccess.CodeCompletionsRateLimit, and is useful for accessing the field via an interface.
+func (v *ProductSubscriptionStateCodyGatewayAccess) GetCodeCompletionsRateLimit() *CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit {
+	return v.CodyGatewayAccessFields.CodeCompletionsRateLimit
 }
 
-func (v *ProductSubscriptionStateLlmProxyAccessLLMProxyAccess) UnmarshalJSON(b []byte) error {
+func (v *ProductSubscriptionStateCodyGatewayAccess) UnmarshalJSON(b []byte) error {
 
 	if string(b) == "null" {
 		return nil
 	}
 
 	var firstPass struct {
-		*ProductSubscriptionStateLlmProxyAccessLLMProxyAccess
+		*ProductSubscriptionStateCodyGatewayAccess
 		graphql.NoUnmarshalJSON
 	}
-	firstPass.ProductSubscriptionStateLlmProxyAccessLLMProxyAccess = v
+	firstPass.ProductSubscriptionStateCodyGatewayAccess = v
 
 	err := json.Unmarshal(b, &firstPass)
 	if err != nil {
@@ -714,22 +714,22 @@ func (v *ProductSubscriptionStateLlmProxyAccessLLMProxyAccess) UnmarshalJSON(b [
 	}
 
 	err = json.Unmarshal(
-		b, &v.LLMProxyAccessFields)
+		b, &v.CodyGatewayAccessFields)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-type __premarshalProductSubscriptionStateLlmProxyAccessLLMProxyAccess struct {
+type __premarshalProductSubscriptionStateCodyGatewayAccess struct {
 	Enabled bool `json:"enabled"`
 
-	ChatCompletionsRateLimit *LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit `json:"chatCompletionsRateLimit"`
+	ChatCompletionsRateLimit *CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit `json:"chatCompletionsRateLimit"`
 
-	CodeCompletionsRateLimit *LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit `json:"codeCompletionsRateLimit"`
+	CodeCompletionsRateLimit *CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit `json:"codeCompletionsRateLimit"`
 }
 
-func (v *ProductSubscriptionStateLlmProxyAccessLLMProxyAccess) MarshalJSON() ([]byte, error) {
+func (v *ProductSubscriptionStateCodyGatewayAccess) MarshalJSON() ([]byte, error) {
 	premarshaled, err := v.__premarshalJSON()
 	if err != nil {
 		return nil, err
@@ -737,19 +737,19 @@ func (v *ProductSubscriptionStateLlmProxyAccessLLMProxyAccess) MarshalJSON() ([]
 	return json.Marshal(premarshaled)
 }
 
-func (v *ProductSubscriptionStateLlmProxyAccessLLMProxyAccess) __premarshalJSON() (*__premarshalProductSubscriptionStateLlmProxyAccessLLMProxyAccess, error) {
-	var retval __premarshalProductSubscriptionStateLlmProxyAccessLLMProxyAccess
+func (v *ProductSubscriptionStateCodyGatewayAccess) __premarshalJSON() (*__premarshalProductSubscriptionStateCodyGatewayAccess, error) {
+	var retval __premarshalProductSubscriptionStateCodyGatewayAccess
 
-	retval.Enabled = v.LLMProxyAccessFields.Enabled
-	retval.ChatCompletionsRateLimit = v.LLMProxyAccessFields.ChatCompletionsRateLimit
-	retval.CodeCompletionsRateLimit = v.LLMProxyAccessFields.CodeCompletionsRateLimit
+	retval.Enabled = v.CodyGatewayAccessFields.Enabled
+	retval.ChatCompletionsRateLimit = v.CodyGatewayAccessFields.ChatCompletionsRateLimit
+	retval.CodeCompletionsRateLimit = v.CodyGatewayAccessFields.CodeCompletionsRateLimit
 	return &retval, nil
 }
 
-// RateLimitFields includes the GraphQL fields of LLMProxyRateLimit requested by the fragment RateLimitFields.
+// RateLimitFields includes the GraphQL fields of CodyGatewayRateLimit requested by the fragment RateLimitFields.
 // The GraphQL type's documentation follows.
 //
-// LLM-proxy access rate limits for a subscription.
+// Cody Gateway access rate limits for a subscription.
 // FOR INTERNAL USE ONLY.
 type RateLimitFields struct {
 	// The models that are allowed for this rate limit bucket.
@@ -758,7 +758,7 @@ type RateLimitFields struct {
 	// config could include [{claude-v1, claude-v1.3},{claude-instant-v1}].
 	AllowedModels []string `json:"allowedModels"`
 	// The source of the rate limit configuration.
-	Source LLMProxyRateLimitSource `json:"source"`
+	Source CodyGatewayRateLimitSource `json:"source"`
 	// Requests per time interval.
 	Limit int `json:"limit"`
 	// Interval for rate limiting.
@@ -769,7 +769,7 @@ type RateLimitFields struct {
 func (v *RateLimitFields) GetAllowedModels() []string { return v.AllowedModels }
 
 // GetSource returns RateLimitFields.Source, and is useful for accessing the field via an interface.
-func (v *RateLimitFields) GetSource() LLMProxyRateLimitSource { return v.Source }
+func (v *RateLimitFields) GetSource() CodyGatewayRateLimitSource { return v.Source }
 
 // GetLimit returns RateLimitFields.Limit, and is useful for accessing the field via an interface.
 func (v *RateLimitFields) GetLimit() int { return v.Limit }
@@ -806,8 +806,8 @@ fragment ProductSubscriptionState on ProductSubscription {
 	id
 	uuid
 	isArchived
-	llmProxyAccess {
-		... LLMProxyAccessFields
+	codyGatewayAccess {
+		... CodyGatewayAccessFields
 	}
 	activeLicense {
 		info {
@@ -815,7 +815,7 @@ fragment ProductSubscriptionState on ProductSubscription {
 		}
 	}
 }
-fragment LLMProxyAccessFields on LLMProxyAccess {
+fragment CodyGatewayAccessFields on CodyGatewayAccess {
 	enabled
 	chatCompletionsRateLimit {
 		... RateLimitFields
@@ -824,7 +824,7 @@ fragment LLMProxyAccessFields on LLMProxyAccess {
 		... RateLimitFields
 	}
 }
-fragment RateLimitFields on LLMProxyRateLimit {
+fragment RateLimitFields on CodyGatewayRateLimit {
 	allowedModels
 	source
 	limit
@@ -878,8 +878,8 @@ fragment ProductSubscriptionState on ProductSubscription {
 	id
 	uuid
 	isArchived
-	llmProxyAccess {
-		... LLMProxyAccessFields
+	codyGatewayAccess {
+		... CodyGatewayAccessFields
 	}
 	activeLicense {
 		info {
@@ -887,7 +887,7 @@ fragment ProductSubscriptionState on ProductSubscription {
 		}
 	}
 }
-fragment LLMProxyAccessFields on LLMProxyAccess {
+fragment CodyGatewayAccessFields on CodyGatewayAccess {
 	enabled
 	chatCompletionsRateLimit {
 		... RateLimitFields
@@ -896,7 +896,7 @@ fragment LLMProxyAccessFields on LLMProxyAccess {
 		... RateLimitFields
 	}
 }
-fragment RateLimitFields on LLMProxyRateLimit {
+fragment RateLimitFields on CodyGatewayRateLimit {
 	allowedModels
 	source
 	limit

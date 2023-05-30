@@ -46,11 +46,11 @@ func NewCodyGatewayService() *codyGatewayService {
 	opts := CodyGatewayServiceOptions{}
 
 	d := conf.Get().Dotcom
-	if d != nil && d.LlmProxy != nil {
+	if d != nil && d.CodyGateway != nil {
 		opts.BigQuery.CredentialFilePath = codyGatewaySACredentialFilePath
-		opts.BigQuery.ProjectID = d.LlmProxy.BigQueryGoogleProjectID
-		opts.BigQuery.Dataset = d.LlmProxy.BigQueryDataset
-		opts.BigQuery.EventsTable = d.LlmProxy.BigQueryTable
+		opts.BigQuery.ProjectID = d.CodyGateway.BigQueryGoogleProjectID
+		opts.BigQuery.Dataset = d.CodyGateway.BigQueryDataset
+		opts.BigQuery.EventsTable = d.CodyGateway.BigQueryTable
 	}
 
 	return NewCodyGatewayServiceWithOptions(opts)

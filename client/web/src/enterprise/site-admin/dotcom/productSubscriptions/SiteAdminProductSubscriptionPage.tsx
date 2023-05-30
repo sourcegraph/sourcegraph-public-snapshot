@@ -178,7 +178,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                         viewerCanAdminister={true}
                         currentSourcegraphAccessToken={productSubscription.currentSourcegraphAccessToken}
                         accessTokenError={errorForPath(error, accessTokenPath)}
-                        llmProxyAccess={productSubscription.llmProxyAccess}
+                        codyGatewayAccess={productSubscription.codyGatewayAccess}
                         productSubscriptionID={productSubscription.id}
                         productSubscriptionUUID={subscriptionUUID}
                         refetchSubscription={refetch}
