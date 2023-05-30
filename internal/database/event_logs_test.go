@@ -1885,3 +1885,222 @@ func TestEventLogs_OwnershipFeatureActivity(t *testing.T) {
 		})
 	}
 }
+
+func TestEventLogs_AggregatedRepoMetadataStats(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	ptr := func(i int32) *int32 { return &i }
+	now := time.Date(2000, time.January, 20, 12, 0, 0, 0, time.UTC)
+	events := []*Event{
+		{
+			UserID:    1,
+			Name:      "RepoMetadataAdded",
+			Source:    "BACKEND",
+			Timestamp: now,
+		},
+		{
+			UserID:    1,
+			Name:      "RepoMetadataAdded",
+			Source:    "BACKEND",
+			Timestamp: now,
+		},
+		{
+			UserID:    1,
+			Name:      "RepoMetadataAdded",
+			Source:    "BACKEND",
+			Timestamp: time.Date(now.Year(), now.Month(), now.Day()-1, now.Hour(), 0, 0, 0, time.UTC),
+		},
+		{
+			UserID:    1,
+			Name:      "RepoMetadataUpdated",
+			Source:    "BACKEND",
+			Timestamp: now,
+		},
+		{
+			UserID:    1,
+			Name:      "RepoMetadataDeleted",
+			Source:    "BACKEND",
+			Timestamp: now,
+		},
+		{
+			UserID:    1,
+			Name:      "SearchSubmitted",
+			Argument:  json.RawMessage(`{"query": "repo:has(some:meta)"}`),
+			Source:    "BACKEND",
+			Timestamp: now,
+		},
+	}
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	for _, e := range events {
+		if err := db.EventLogs().Insert(ctx, e); err != nil {
+			t.Fatalf("failed inserting test data: %s", err)
+		}
+	}
+
+	for name, testCase := range map[string]struct {
+		now    time.Time
+		period PeriodType
+		stats  *types.RepoMetadataAggregatedEvents
+	}{
+		"daily": {
+			now:    now,
+			period: Daily,
+			stats: &types.RepoMetadataAggregatedEvents{
+				StartTime: time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC),
+				CreateRepoMetadata: &types.EventStats{
+					UsersCount:  ptr(1),
+					EventsCount: ptr(2),
+				},
+				UpdateRepoMetadata: &types.EventStats{
+					UsersCount:  ptr(1),
+					EventsCount: ptr(1),
+				},
+				DeleteRepoMetadata: &types.EventStats{
+					UsersCount:  ptr(1),
+					EventsCount: ptr(1),
+				},
+				SearchFilterUsage: &types.EventStats{
+					UsersCount:  ptr(1),
+					EventsCount: ptr(1),
+				},
+			},
+		},
+		"weekly": {
+			now:    now,
+			period: Weekly,
+			stats: &types.RepoMetadataAggregatedEvents{
+				StartTime: time.Date(now.Year(), now.Month(), now.Day()-int(now.Weekday()), 0, 0, 0, 0, time.UTC),
+				CreateRepoMetadata: &types.EventStats{
+					UsersCount:  ptr(1),
+					EventsCount: ptr(3),
+				},
+				UpdateRepoMetadata: &types.EventStats{
+					UsersCount:  ptr(1),
+					EventsCount: ptr(1),
+				},
+				DeleteRepoMetadata: &types.EventStats{
+					UsersCount:  ptr(1),
+					EventsCount: ptr(1),
+				},
+				SearchFilterUsage: &types.EventStats{
+					UsersCount:  ptr(1),
+					EventsCount: ptr(1),
+				},
+			},
+		},
+		"monthly": {
+			now:    now,
+			period: Monthly,
+			stats: &types.RepoMetadataAggregatedEvents{
+				StartTime: time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC),
+				CreateRepoMetadata: &types.EventStats{
+					UsersCount:  ptr(1),
+					EventsCount: ptr(3),
+				},
+				UpdateRepoMetadata: &types.EventStats{
+					UsersCount:  ptr(1),
+					EventsCount: ptr(1),
+				},
+				DeleteRepoMetadata: &types.EventStats{
+					UsersCount:  ptr(1),
+					EventsCount: ptr(1),
+				},
+				SearchFilterUsage: &types.EventStats{
+					UsersCount:  ptr(1),
+					EventsCount: ptr(1),
+				},
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			stats, err := db.EventLogs().AggregatedRepoMetadataEvents(ctx, testCase.now, testCase.period)
+			if err != nil {
+				t.Fatalf("querying activity failed: %s", err)
+			}
+			if diff := cmp.Diff(testCase.stats, stats); diff != "" {
+				t.Errorf("unexpected statistics returned:\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestMakeDateTruncExpression(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping long test")
+	}
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	cases := []struct {
+		name     string
+		unit     string
+		expr     string
+		expected string
+	}{
+		{
+			name:     "truncates to beginning of day in UTC",
+			unit:     "day",
+			expr:     "'2023-02-14T20:53:24Z'",
+			expected: "2023-02-14T00:00:00Z",
+		},
+		{
+			name:     "truncates to beginning of day in UTC, regardless of input timezone",
+			unit:     "day",
+			expr:     "'2023-02-14T20:53:24-09:00'",
+			expected: "2023-02-15T00:00:00Z",
+		},
+		{
+			name:     "truncates to beginning of week in UTC, starting with Sunday",
+			unit:     "week",
+			expr:     "'2023-02-14T20:53:24Z'",
+			expected: "2023-02-12T00:00:00Z",
+		},
+		{
+			name:     "truncates to beginning of month in UTC",
+			unit:     "month",
+			expr:     "'2023-02-14T20:53:24Z'",
+			expected: "2023-02-01T00:00:00Z",
+		},
+		{
+			name:     "truncates to rolling month in UTC, if month has 30 days",
+			unit:     "rolling_month",
+			expr:     "'2023-04-20T20:53:24Z'",
+			expected: "2023-03-20T00:00:00Z",
+		},
+		{
+			name:     "truncates to rolling month in UTC, even if March has 31 days",
+			unit:     "rolling_month",
+			expr:     "'2023-03-14T20:53:24Z'",
+			expected: "2023-02-14T00:00:00Z",
+		},
+		{
+			name:     "truncates to rolling month in UTC, even if Feb only has 28 days",
+			unit:     "rolling_month",
+			expr:     "'2023-02-14T20:53:24Z'",
+			expected: "2023-01-14T00:00:00Z",
+		},
+		{
+			name:     "truncates to rolling month in UTC, even for leap year February",
+			unit:     "rolling_month",
+			expr:     "'2024-02-29T20:53:24Z'",
+			expected: "2024-01-29T00:00:00Z",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			format := fmt.Sprintf("SELECT %s AS date", makeDateTruncExpression(tc.unit, tc.expr))
+			q := sqlf.Sprintf(format)
+			date, _, err := basestore.ScanFirstTime(db.Handle().QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...))
+			require.NoError(t, err)
+
+			require.Equal(t, tc.expected, date.Format(time.RFC3339))
+		})
+	}
+}

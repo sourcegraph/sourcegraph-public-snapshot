@@ -25,7 +25,7 @@ Ensure you have the following tools installed:
 
 1. Clone the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository to your local machine.
 2. Run `cd deploy-sourcegraph/configure/executors`.
-3. Configure the [Executor environment variables](https://docs.sourcegraph.com/admin/deploy_executors_binary#step-2-setup-environment-variables) in the `executor/executor.deployment.yaml` file.
+3. Configure the [Executor environment variables](https://docs.sourcegraph.com/admin/executors/deploy_executors_binary#step-2-setup-environment-variables) in the `executor/executor.deployment.yaml` file.
 4. Run  `kubectl apply -f . --recursive` to deploy all components.
 5. Confirm executors are working are working by checking the _Executors_ page under **Site admin > Executors > Instances** .
 
@@ -107,7 +107,7 @@ set on the Executor `Deployment` and will configure the `Job`s that it spawns.
 | EXECUTOR_KUBERNETES_RESOURCE_LIMIT_MEMORY                    | `12Gi`            | The maximum memory resource for Kubernetes Jobs.                                                                                       |
 | EXECUTOR_KUBERNETES_RESOURCE_REQUEST_CPU                     | N/A               | The minimum CPU resource for Kubernetes Jobs.                                                                                          |
 | EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY                  | `12Gi`            | The minimum memory resource for Kubernetes Jobs.                                                                                       |
-| KUBERNETES_JOB_DEADLINE                                      | `300`             | The number of seconds after which a Kubernetes job will be terminated.                                                                 |
+| KUBERNETES_JOB_DEADLINE                                      | `1200`             | The number of seconds after which a Kubernetes job will be terminated.                                                                 |
 | KUBERNETES_RUN_AS_USER                                       | N/A               | The user ID to run Kubernetes jobs as.                                                                                                 |
 | KUBERNETES_RUN_AS_GROUP                                      | N/A               | The group ID to run Kubernetes jobs as.                                                                                                |
 | KUBERNETES_FS_GROUP                                          | `1000`            | The group ID to run all containers in the Kubernetes jobs as.                                                                          |
@@ -182,7 +182,7 @@ Ensure you have the following tools installed.
 1. Clone the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository to your local machine.
 2. Run `cd deploy-sourcegraph/configure/executors`.
 3. Configure
-   the [Executor environment variables](https://docs.sourcegraph.com/admin/deploy_executors_binary#step-2-setup-environment-variables)
+   the [Executor environment variables](https://docs.sourcegraph.com/admin/executors/deploy_executors_binary#step-2-setup-environment-variables)
    in the `executor/executor.deployment.yaml` file.
 4. Run  `kubectl apply -f . --recursive` to deploy all components.
 5. Confirm executors are working by checking the _Executors_ page under _Site Admin_ > _Executors_ > _Instances_ .

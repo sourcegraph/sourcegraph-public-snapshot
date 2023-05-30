@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -116,7 +117,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		}
 
 		t := time.Now()
-		out, err := runWith(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, nil)
+		out, err := common.RunWith(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, nil)
 
 		logger := logger.With(
 			log.String("prefix", prefix),

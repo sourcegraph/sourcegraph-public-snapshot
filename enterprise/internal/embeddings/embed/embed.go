@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	codeintelContext "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
@@ -13,13 +15,8 @@ import (
 )
 
 const GET_EMBEDDINGS_MAX_RETRIES = 5
-
-const EMBEDDING_BATCHES = 5
 const EMBEDDING_BATCH_SIZE = 512
-
 const maxFileSize = 1000000 // 1MB
-
-type ranksGetter func(ctx context.Context, repoName string) (types.RepoPathRanks, error)
 
 // EmbedRepo embeds file contents from the given file names for a repository.
 // It separates the file names into code files and text files and embeds them separately.
@@ -29,18 +26,42 @@ func EmbedRepo(
 	client EmbeddingsClient,
 	contextService ContextService,
 	readLister FileReadLister,
-	getDocumentRanks ranksGetter,
+	ranks types.RepoPathRanks,
 	opts EmbedRepoOpts,
-) (*embeddings.RepoEmbeddingIndex, *embeddings.EmbedRepoStats, error) {
+	logger log.Logger,
+) (*embeddings.RepoEmbeddingIndex, []string, *embeddings.EmbedRepoStats, error) {
 	start := time.Now()
 
-	allFiles, err := readLister.List(ctx)
-	if err != nil {
-		return nil, nil, err
+	var toIndex []FileEntry
+	var toRemove []string
+	var err error
+
+	isDelta := opts.IndexedRevision != ""
+
+	if isDelta {
+		toIndex, toRemove, err = readLister.Diff(ctx, opts.IndexedRevision)
+		if err != nil {
+			logger.Error(
+				"failed to get diff. Falling back to full index",
+				log.String("RepoName", string(opts.RepoName)),
+				log.String("revision", string(opts.Revision)),
+				log.String("old revision", string(opts.IndexedRevision)),
+				log.Error(err),
+			)
+			toRemove = nil
+			isDelta = false
+		}
+	}
+
+	if !isDelta { // full index
+		toIndex, err = readLister.List(ctx)
+		if err != nil {
+			return nil, nil, nil, err
+		}
 	}
 
 	var codeFileNames, textFileNames []FileEntry
-	for _, file := range allFiles {
+	for _, file := range toIndex {
 		if isValidTextFile(file.Name) {
 			textFileNames = append(textFileNames, file)
 		} else {
@@ -48,19 +69,14 @@ func EmbedRepo(
 		}
 	}
 
-	ranks, err := getDocumentRanks(ctx, string(opts.RepoName))
-	if err != nil {
-		return nil, nil, err
-	}
-
 	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, ranks)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 
 	textIndex, textIndexStats, err := embedFiles(ctx, textFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, ranks)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 
 	}
 
@@ -76,9 +92,10 @@ func EmbedRepo(
 		HasRanks:       len(ranks.Paths) > 0,
 		CodeIndexStats: codeIndexStats,
 		TextIndexStats: textIndexStats,
+		IsDelta:        isDelta,
 	}
 
-	return index, stats, nil
+	return index, toRemove, stats, nil
 }
 
 type EmbedRepoOpts struct {
@@ -88,6 +105,9 @@ type EmbedRepoOpts struct {
 	SplitOptions      codeintelContext.SplitOptions
 	MaxCodeEmbeddings int
 	MaxTextEmbeddings int
+
+	// If set, we already have an index for a previous commit.
+	IndexedRevision api.CommitID
 }
 
 // embedFiles embeds file contents from the given file names. Since embedding models can only handle a certain amount of text (tokens) we cannot embed
@@ -162,6 +182,10 @@ func embedFiles(
 		statsSkipped            SkipStats
 	)
 	for _, file := range files {
+		if ctx.Err() != nil {
+			return embeddings.EmbeddingIndex{}, embeddings.EmbedFilesStats{}, ctx.Err()
+		}
+
 		// This is a fail-safe measure to prevent producing an extremely large index for large repositories.
 		if statsEmbeddedChunkCount >= maxEmbeddingVectors {
 			statsSkipped.Add(SkipReasonMaxEmbeddings, int(file.Size))
@@ -223,6 +247,7 @@ func embedFiles(
 type FileReadLister interface {
 	FileReader
 	FileLister
+	FileDiffer
 }
 
 type FileEntry struct {
@@ -236,4 +261,8 @@ type FileLister interface {
 
 type FileReader interface {
 	Read(context.Context, string) ([]byte, error)
+}
+
+type FileDiffer interface {
+	Diff(context.Context, api.CommitID) ([]FileEntry, []string, error)
 }

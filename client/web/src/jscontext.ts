@@ -1,5 +1,6 @@
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
+import { BatchChangesLicenseInfo } from '@sourcegraph/shared/src/testing/batches'
 
 import { TemporarySettingsResult } from './graphql-operations'
 
@@ -177,6 +178,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether cody is enabled for the user. */
     codyEnabled: boolean
 
+    /** Whether the site requires a verified email for cody. */
+    codyRequiresVerifiedEmail: boolean
+
     /** Whether executors are enabled on the site. */
     executorsEnabled: boolean
 
@@ -252,6 +256,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
         codeScaleLimit?: string
         codeScaleCloseToLimit?: boolean
         codeScaleExceededLimit?: boolean
+        batchChanges?: BatchChangesLicenseInfo
         knownLicenseTags?: string[]
     }
 

@@ -11,6 +11,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 
@@ -90,7 +91,7 @@ func (s *vcsPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL
 	}
 
 	// The Fetch method is responsible for cleaning up temporary directories.
-	if _, err := s.Fetch(ctx, remoteURL, GitDir(bareGitDirectory), ""); err != nil {
+	if _, err := s.Fetch(ctx, remoteURL, common.GitDir(bareGitDirectory), ""); err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch repo for %s", remoteURL)
 	}
 
@@ -98,7 +99,7 @@ func (s *vcsPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL
 	return exec.CommandContext(ctx, "git", "--version"), nil
 }
 
-func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir, revspec string) ([]byte, error) {
+func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir common.GitDir, revspec string) ([]byte, error) {
 	var pkg reposource.Package
 	pkg, err := s.source.ParsePackageFromRepoName(api.RepoName(remoteURL.Path))
 	if err != nil {
@@ -122,7 +123,7 @@ func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 // existingVersions. If download and upserting the new version into database
 // succeeds, it calls s.fetchVersions with the newly-added version and the old
 // ones, to possibly update the "latest" tag.
-func (s *vcsPackagesSyncer) fetchRevspec(ctx context.Context, name reposource.PackageName, dir GitDir, existingVersions []string, revspec string) error {
+func (s *vcsPackagesSyncer) fetchRevspec(ctx context.Context, name reposource.PackageName, dir common.GitDir, existingVersions []string, revspec string) error {
 	// Optionally try to resolve the version of the user-provided revspec (formatted as `"v${VERSION}^0"`).
 	// This logic lives inside `vcsPackagesSyncer` meaning this repo must be a package repo where all
 	// the git tags are created by our npm/crates/pypi/maven integrations (no human commits/branches/tags).
@@ -184,7 +185,7 @@ func (s *vcsPackagesSyncer) fetchRevspec(ctx context.Context, name reposource.Pa
 // fetchVersions checks whether the given versions are all valid version
 // specifiers, then checks whether they've already been downloaded and, if not,
 // downloads them.
-func (s *vcsPackagesSyncer) fetchVersions(ctx context.Context, name reposource.PackageName, dir GitDir, versions []string) error {
+func (s *vcsPackagesSyncer) fetchVersions(ctx context.Context, name reposource.PackageName, dir common.GitDir, versions []string) error {
 	var errs errors.MultiError
 	cloneable := make([]reposource.VersionedPackage, 0, len(versions))
 	for _, version := range versions {
@@ -384,7 +385,7 @@ func runCommandInDirectory(ctx context.Context, cmd *exec.Cmd, workingDirectory 
 	cmd.Env = append(cmd.Env, "GIT_COMMITTER_NAME="+gitName)
 	cmd.Env = append(cmd.Env, "GIT_COMMITTER_EMAIL="+gitEmail)
 	cmd.Env = append(cmd.Env, "GIT_COMMITTER_DATE="+stableGitCommitDate)
-	output, err := runWith(ctx, wrexec.Wrap(ctx, nil, cmd), false, nil)
+	output, err := common.RunWith(ctx, wrexec.Wrap(ctx, nil, cmd), false, nil)
 	if err != nil {
 		return "", errors.Wrapf(err, "command %s failed with output %s", cmd.Args, string(output))
 	}

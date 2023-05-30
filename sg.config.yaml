@@ -7,7 +7,7 @@ env:
   PGPASSWORD: sourcegraph
   PGDATABASE: sourcegraph
   PGSSLMODE: disable
-  SG_DEV_MIGRATE_ON_APPLICATION_STARTUP: 'true'
+  SG_DEV_MIGRATE_ON_APPLICATION_STARTUP: "true"
   INSECURE_DEV: true
 
   SRC_REPOS_DIR: $HOME/.sourcegraph/repos
@@ -25,11 +25,11 @@ env:
   # Enable sharded indexed search mode:
   INDEXED_SEARCH_SERVERS: localhost:3070 localhost:3071
 
-  GO111MODULE: 'on'
+  GO111MODULE: "on"
 
   DEPLOY_TYPE: dev
 
-  SRC_HTTP_ADDR: ':3082'
+  SRC_HTTP_ADDR: ":3082"
 
   GITHUB_BASE_URL: http://127.0.0.1:3180
   # I don't think we even need to set these?
@@ -44,8 +44,8 @@ env:
   PROMETHEUS_URL: http://localhost:9090
   JAEGER_SERVER_URL: http://localhost:16686
 
-  SRC_DEVELOPMENT: 'true'
-  SRC_PROF_HTTP: ''
+  SRC_DEVELOPMENT: "true"
+  SRC_PROF_HTTP: ""
   SRC_PROF_SERVICES: |
     [
       { "Name": "oss-frontend", "Host": "127.0.0.1:6063" },
@@ -91,7 +91,7 @@ env:
   SOURCEGRAPH_HTTPS_PORT: 3443
 
   # Required for `web` commands
-  NODE_OPTIONS: '--max_old_space_size=8192'
+  NODE_OPTIONS: "--max_old_space_size=8192"
   # Default `NODE_ENV` to `development`
   NODE_ENV: development
 
@@ -130,9 +130,9 @@ commands:
     cmd: ./dev/run-server-image.sh
     env:
       TAG: insiders
-      CLEAN: 'true'
-      DATA: '/tmp/sourcegraph-data'
-      URL: 'http://localhost:7080'
+      CLEAN: "true"
+      DATA: "/tmp/sourcegraph-data"
+      URL: "http://localhost:7080"
 
   oss-frontend:
     cmd: .bin/oss-frontend
@@ -171,8 +171,8 @@ commands:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
       ENTERPRISE: 1
-      SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
-      SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
+      SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
+      SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
       # frontend processes need this to be so that the paths to the assets are rendered correctly
       WEBPACK_DEV_SERVER: 1
     watch:
@@ -340,6 +340,7 @@ commands:
     checkBinary: .bin/oss-symbols
     env:
       CTAGS_COMMAND: dev/universal-ctags-dev
+      SCIP_CTAGS_COMMAND: dev/scip-ctags-dev
       CTAGS_PROCESSES: 2
     watch:
       - lib
@@ -358,8 +359,9 @@ commands:
     checkBinary: .bin/symbols
     env:
       CTAGS_COMMAND: dev/universal-ctags-dev
+      SCIP_CTAGS_COMMAND: dev/scip-ctags-dev
       CTAGS_PROCESSES: 2
-      USE_ROCKSKIP: 'false'
+      USE_ROCKSKIP: "false"
     watch:
       - lib
       - internal
@@ -384,27 +386,27 @@ commands:
       - enterprise/cmd/embeddings
       - enterprise/internal/embeddings
 
-  llm-proxy:
+  cody-gateway:
     cmd: |
-      .bin/llm-proxy
+      .bin/cody-gateway
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
 
-      go build -gcflags="$GCFLAGS" -o .bin/llm-proxy github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy
-    checkBinary: .bin/llm-proxy
+      go build -gcflags="$GCFLAGS" -o .bin/cody-gateway github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway
+    checkBinary: .bin/cody-gateway
     env:
-      LLM_PROXY_ANTHROPIC_ACCESS_TOKEN: foobar
-      LLM_PROXY_DOTCOM_ACCESS_TOKEN: foobar
-      LLM_PROXY_DOTCOM_API_URL: https://sourcegraph.test:3443/.api/graphql
-      LLM_PROXY_ALLOW_ANONYMOUS: true
-      LLM_PROXY_DIAGNOSTICS_SECRET: sekret
+      CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN: foobar
+      CODY_GATEWAY_DOTCOM_ACCESS_TOKEN: foobar
+      CODY_GATEWAY_DOTCOM_API_URL: https://sourcegraph.test:3443/.api/graphql
+      CODY_GATEWAY_ALLOW_ANONYMOUS: true
+      CODY_GATEWAY_DIAGNOSTICS_SECRET: sekret
       SRC_LOG_LEVEL: dbug
     watch:
       - lib
       - internal
-      - enterprise/cmd/llm-proxy
+      - enterprise/cmd/cody-gateway
 
   searcher:
     cmd: .bin/searcher
@@ -474,19 +476,38 @@ commands:
       INTEGRATION_TESTS: true
       NODE_ENV: production
 
-  cody-slack:
-    description: Start Cody-Slack locally server locally
+  cody-slack-dev:
+    description: Start Cody-Slack dev locally
     cmd: pnpm --filter @sourcegraph/cody-slack run start
-    env:
+    env: &cody_slack_env
+      GITHUB_TOKEN: XXX
+      OPENAI_API_KEY: XXX
       SLACK_APP_TOKEN: XXX
       SLACK_SIGNING_SECRET: XXX
       SLACK_BOT_TOKEN: XXX
       SOURCEGRAPH_ACCESS_TOKEN: XXX
 
+  cody-slack-docker:
+    description: Start Cody-Slack locally prod in Docker
+    cmd: |
+      docker run -p 0.0.0.0:${PORT}:${PORT} \
+      -e SRC_FRONTEND_INTERNAL="${SRC_FRONTEND_INTERNAL}" \
+      -e GITHUB_TOKEN="${GITHUB_TOKEN}" \
+      -e OPENAI_API_KEY="${OPENAI_API_KEY}" \
+      -e SLACK_APP_TOKEN="${SLACK_APP_TOKEN}" \
+      -e SLACK_SIGNING_SECRET="${SLACK_SIGNING_SECRET}" \
+      -e SLACK_BOT_TOKEN="${SLACK_BOT_TOKEN}" \
+      -e SOURCEGRAPH_ACCESS_TOKEN="${SOURCEGRAPH_ACCESS_TOKEN}" \
+      ${IMAGE}
+    env:
+      <<: *cody_slack_env
+      PORT: 3000
+      IMAGE: cody-slack:0.0.1
+
   docsite:
     description: Docsite instance serving the docs
     cmd: .bin/docsite_${DOCSITE_VERSION} -config doc/docsite.json serve -http=localhost:5080
-    install_func: 'installDocsite'
+    install_func: "installDocsite"
     env:
       DOCSITE_VERSION: v1.9.2 # Update in all places (including outside this repo)
 
@@ -525,6 +546,7 @@ commands:
     checkBinary: .bin/zoekt-sourcegraph-indexserver
     env: &zoektenv
       CTAGS_COMMAND: dev/universal-ctags-dev
+      SCIP_CTAGS_COMMAND: dev/scip-ctags-dev
       GRPC_ENABLED: true
 
   zoekt-index-0:
@@ -743,8 +765,8 @@ commands:
       CONTAINER: grafana
       PORT: 3370
       # docker containers must access things via docker host on non-linux platforms
-      DOCKER_USER: ''
-      ADD_HOST_FLAG: ''
+      DOCKER_USER: ""
+      ADD_HOST_FLAG: ""
       CACHE: false
 
   prometheus:
@@ -793,11 +815,11 @@ commands:
       CONTAINER: prometheus
       PORT: 9090
       CONFIG_DIR: docker-images/prometheus/config
-      DOCKER_USER: ''
-      DOCKER_NET: ''
+      DOCKER_USER: ""
+      DOCKER_NET: ""
       PROM_TARGETS: dev/prometheus/all/prometheus_targets.yml
       SRC_FRONTEND_INTERNAL: host.docker.internal:3090
-      ADD_HOST_FLAG: ''
+      ADD_HOST_FLAG: ""
       DISABLE_SOURCEGRAPH_CONFIG: false
 
   postgres_exporter:
@@ -824,7 +846,7 @@ commands:
       docker pull index.docker.io/grafana/loki:$LOKI_VERSION
     env:
       LOKI_DISK: $HOME/.sourcegraph-dev/data/loki
-      LOKI_VERSION: '2.3.0'
+      LOKI_VERSION: "2.3.0"
       LOKI_LOG_FILE: $HOME/.sourcegraph-dev/logs/loki/loki.log
 
   otel-collector:
@@ -852,7 +874,7 @@ commands:
       IMAGE: sourcegraph/opentelemetry-collector:dev
       # Overwrite the following in sg.config.overwrite.yaml, based on which collector
       # config you are using - see docker-images/opentelemetry-collector for more details.
-      CONFIGURATION_FILE: 'configs/jaeger.yaml'
+      CONFIGURATION_FILE: "configs/jaeger.yaml"
       # HONEYCOMB_API_KEY: ''
       # HONEYCOMB_DATASET: ''
 
@@ -889,8 +911,8 @@ commands:
     checkBinary: .bin/sourcegraph
     env:
       ENTERPRISE: 1
-      SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
-      SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
+      SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
+      SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
       WEBPACK_DEV_SERVER: 1
     watch:
       - cmd
@@ -937,6 +959,7 @@ bazelCommands:
     target: //cmd/symbols
     env:
       CTAGS_COMMAND: dev/universal-ctags-dev
+      SCIP_CTAGS_COMMAND: dev/scip-ctags-dev
       CTAGS_PROCESSES: 2
   oss-gitserver-0:
     target: //cmd/gitserver
@@ -964,13 +987,13 @@ bazelCommands:
     ignoreStderr: true
     env:
       # Environment copied from Dockerfile
-      WORKERS: "1"
-      ROCKET_ENV: "production"
-      ROCKET_LIMITS: "{json=10485760}"
-      ROCKET_SECRET_KEY: "SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA="
-      ROCKET_KEEP_ALIVE: "0"
-      ROCKET_PORT: "9238"
-      QUIET: "true"
+      WORKERS: '1'
+      ROCKET_ENV: 'production'
+      ROCKET_LIMITS: '{json=10485760}'
+      ROCKET_SECRET_KEY: 'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='
+      ROCKET_KEEP_ALIVE: '0'
+      ROCKET_PORT: '9238'
+      QUIET: 'true'
   github-proxy:
     target: //cmd/github-proxy
   frontend:
@@ -984,8 +1007,8 @@ bazelCommands:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
       ENTERPRISE: 1
-      SITE_CONFIG_FILE: '../dev-private/enterprise/dev/site-config.json'
-      SITE_CONFIG_ESCAPE_HATCH_PATH: '$HOME/.sourcegraph/site-config.json'
+      SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
+      SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
       # frontend processes need this to be so that the paths to the assets are rendered correctly
       WEBPACK_DEV_SERVER: 1
   worker:
@@ -1004,8 +1027,9 @@ bazelCommands:
     checkBinary: .bin/symbols
     env:
       CTAGS_COMMAND: dev/universal-ctags-dev
+      SCIP_CTAGS_COMMAND: dev/scip-ctags-dev
       CTAGS_PROCESSES: 2
-      USE_ROCKSKIP: 'false'
+      USE_ROCKSKIP: "false"
   gitserver-template: &gitserver_bazel_template
     target: //enterprise/cmd/gitserver
     env: &gitserverenv
@@ -1169,7 +1193,7 @@ commandsets:
     env:
       # EXTSVC_CONFIG_FILE being set prevents the e2e test suite to add
       # additional connections.
-      EXTSVC_CONFIG_FILE: ''
+      EXTSVC_CONFIG_FILE: ""
 
   dotcom:
     # This is 95% the enterprise runset, with the addition of LLM-proxy.
@@ -1197,7 +1221,7 @@ commandsets:
       - zoekt-web-0
       - zoekt-web-1
       - blobstore
-      - llm-proxy
+      - cody-gateway
     env:
       SOURCEGRAPHDOTCOM_MODE: true
 
@@ -1466,11 +1490,11 @@ commandsets:
       DISABLE_CODE_INSIGHTS: false
       SOURCEGRAPH_APP: 1
 
-  llm-proxy:
+  cody-gateway:
     checks:
       - redis
     commands:
-      - llm-proxy
+      - cody-gateway
 
 tests:
   # These can be run with `sg test [name]`
@@ -1483,9 +1507,9 @@ tests:
     env:
       # These are defaults. They can be overwritten by setting the env vars when
       # running the command.
-      BASE_URL: 'http://localhost:3080'
-      EMAIL: 'joe@sourcegraph.com'
-      PASSWORD: '12345'
+      BASE_URL: "http://localhost:3080"
+      EMAIL: "joe@sourcegraph.com"
+      PASSWORD: "12345"
 
   bext:
     cmd: pnpm --filter @sourcegraph/browser test
@@ -1503,6 +1527,21 @@ tests:
 
   client:
     cmd: pnpm jest --testPathIgnorePatterns end-to-end regression integration storybook
+
+  cody-e2e:
+    cmd: pnpm --filter @sourcegraph/cody run test:e2e
+    env:
+      CODY_TESTING: true
+
+  cody-integration:
+    cmd: pnpm --filter @sourcegraph/cody run test:integration
+    env:
+      CODY_TESTING: true
+
+  cody-unit:
+    cmd: pnpm --filter @sourcegraph/cody run test:unit
+    env:
+      CODY_TESTING: true
 
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
@@ -1523,8 +1562,8 @@ tests:
       BROWSER: chrome
     external_secrets:
       GH_TOKEN:
-        project: 'sourcegraph-ci'
-        name: 'BUILDKITE_GITHUBDOTCOM_TOKEN'
+        project: "sourcegraph-ci"
+        name: "BUILDKITE_GITHUBDOTCOM_TOKEN"
 
   web-regression:
     preamble: |

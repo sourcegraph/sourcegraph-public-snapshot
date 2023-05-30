@@ -14,6 +14,7 @@ go_library(
         "index_storage.go",
         "mocks_temp.go",
         "quantize.go",
+        "schedule.go",
         "similarity_search.go",
         "tokens.go",
         "types.go",
@@ -22,10 +23,14 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
+        "//enterprise/internal/embeddings/background/repo",
         "//internal/api",
+        "//internal/codeintel/types",
         "//internal/conf/conftypes",
+        "//internal/database",
         "//internal/endpoint",
         "//internal/env",
+        "//internal/gitserver",
         "//internal/httpcli",
         "//internal/lazyregexp",
         "//internal/observation",
@@ -59,8 +64,10 @@ go_test(
     embed = [":embeddings"],
     deps = [
         "//internal/api",
+        "//internal/codeintel/types",
         "//internal/uploadstore",
         "//lib/errors",
+        "@com_github_google_go_cmp//cmp",
         "@com_github_stretchr_testify//require",
     ],
 )

@@ -180,10 +180,10 @@ func (glob GlobPattern) Match(filePath string) bool {
 		}
 	}
 	// Dirty cheap version of strings.Trim(filePath, separator)
-	if filePath[0] == '/' {
+	if len(filePath) > 0 && filePath[0] == '/' {
 		filePath = filePath[1:]
 	}
-	if filePath[len(filePath)-1] == '/' {
+	if len(filePath) > 0 && filePath[len(filePath)-1] == '/' {
 		filePath = filePath[:len(filePath)-1]
 	}
 	var (

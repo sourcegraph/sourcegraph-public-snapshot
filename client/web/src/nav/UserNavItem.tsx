@@ -139,20 +139,15 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     <MenuDivider className={styles.dropdownDivider} />
                                 </>
                             ) : null}
-                            <MenuLink as={Link} to={authenticatedUser.settingsURL!}>
+                            <MenuLink
+                                as={Link}
+                                to={isSourcegraphApp ? '/user/app-settings' : authenticatedUser.settingsURL!}
+                            >
                                 Settings
                             </MenuLink>
-                            <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
-                                Saved searches
-                            </MenuLink>
-                            {isSourcegraphApp && (
-                                <MenuLink as={Link} to="/setup">
-                                    Setup wizard
-                                </MenuLink>
-                            )}
-                            {isSourcegraphApp && (
-                                <MenuLink as={Link} to="/site-admin/repositories">
-                                    Repositories
+                            {!isSourcegraphApp && (
+                                <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
+                                    Saved searches
                                 </MenuLink>
                             )}
                             {isSourcegraphApp && <AppUserConnectDotComAccount />}

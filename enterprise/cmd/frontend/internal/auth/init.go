@@ -14,6 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/azureoauth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/bitbucketcloudoauth"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/confauth"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/gerrit"
 	githubapp "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/githubappauth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/githuboauth"
@@ -52,6 +54,7 @@ func Init(logger log.Logger, db database.DB) {
 		bitbucketcloudoauth.Middleware(db),
 		azureoauth.Middleware(db),
 		githubapp.Middleware(db),
+		confauth.Middleware(),
 	)
 	// Register app-level sign-out handler
 	app.RegisterSSOSignOutHandler(ssoSignOutHandler)

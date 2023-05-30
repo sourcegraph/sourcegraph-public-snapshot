@@ -24,6 +24,7 @@ import styles from './GlobalAlerts.module.scss'
 
 interface Props {
     authenticatedUser: AuthenticatedUser | null
+    isSourcegraphApp: boolean
 }
 
 // NOTE: The name of the query is also added in the refreshSiteFlags() function
@@ -40,7 +41,7 @@ const QUERY = gql`
 /**
  * Fetches and displays relevant global alerts at the top of the page
  */
-export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser }) => {
+export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser, isSourcegraphApp }) => {
     const settings = useSettings()
     const { data } = useQuery<GlobalAlertsSiteFlagsResult, GlobalAlertsSiteFlagsVariables>(QUERY, {
         fetchPolicy: 'cache-and-network',
@@ -51,7 +52,7 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
         <div className={classNames('test-global-alert', styles.globalAlerts)}>
             {siteFlagsValue && (
                 <>
-                    {siteFlagsValue?.externalServicesCounts.remoteExternalServicesCount === 0 && (
+                    {siteFlagsValue?.externalServicesCounts.remoteExternalServicesCount === 0 && !isSourcegraphApp && (
                         <NeedsRepositoryConfigurationAlert className={styles.alert} />
                     )}
                     {siteFlagsValue.freeUsersExceeded && (
@@ -107,7 +108,12 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
                 </DismissibleAlert>
             )}
             <Notices alertClassName={styles.alert} location="top" />
-            <VerifyEmailNotices authenticatedUser={authenticatedUser} alertClassName={styles.alert} />
+
+            {/* The link in the notice doesn't work in the Sourcegraph app since it's rendered by Markdown,
+            so don't show it there for now. */}
+            {!isSourcegraphApp && (
+                <VerifyEmailNotices authenticatedUser={authenticatedUser} alertClassName={styles.alert} />
+            )}
         </div>
     )
 }

@@ -7,9 +7,21 @@ import (
 )
 
 const (
+	// TrialTag denotes trial licenses.
+	TrialTag = "trial"
 	// TrueUpUserCountTag is the license tag that indicates that the licensed user count can be
 	// exceeded and will be charged later.
 	TrueUpUserCountTag = "true-up"
+	// InternalTag denotes Sourcegraph-internal tags
+	InternalTag = "internal"
+	// DevTag denotes licenses used in development environments
+	DevTag = "dev"
+	// GPTLLMAccessTag is the license tag that indicates that the licensed instance
+	// should be allowed by default to use GPT models in LLM Proxy.
+	GPTLLMAccessTag = "gpt"
+	// AllowAnonymousUsageTag denotes licenses that allow anonymous usage, a.k.a public access to the instance
+	// Warning: This should be used with care and only at special, probably trial/poc stages with customers
+	AllowAnonymousUsageTag = "allow-anonymous-usage"
 )
 
 // ProductNameWithBrand returns the product name with brand (e.g., "Sourcegraph Enterprise") based
@@ -55,11 +67,14 @@ func ProductNameWithBrand(hasLicense bool, licenseTags []string) string {
 	}
 
 	var misc []string
-	if hasTag("trial") {
+	if hasTag(TrialTag) {
 		misc = append(misc, "trial")
 	}
-	if hasTag("dev") {
+	if hasTag(DevTag) {
 		misc = append(misc, "dev use only")
+	}
+	if hasTag(InternalTag) {
+		misc = append(misc, "internal use only")
 	}
 	if len(misc) > 0 {
 		name += " (" + strings.Join(misc, ", ") + ")"
@@ -69,9 +84,12 @@ func ProductNameWithBrand(hasLicense bool, licenseTags []string) string {
 }
 
 var MiscTags = []string{
-	"trial",
-	"dev",
+	TrialTag,
 	TrueUpUserCountTag,
+	InternalTag,
+	DevTag,
+	AllowAnonymousUsageTag,
 	"starter",
 	"mau",
+	GPTLLMAccessTag,
 }

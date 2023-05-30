@@ -183,7 +183,8 @@
               "type": "boolean",
               "default": false
             }
-          }
+          },
+          "deprecationMessage": "Deprecated in favor of internal debug logging."
         },
         "structuralSearch": {
           "description": "Enables structural search.",
@@ -568,6 +569,12 @@
       "group": "BatchChanges",
       "default": false
     },
+    "batchChanges.autoDeleteBranch": {
+      "description": "Automatically delete branches created for Batch Changes changesets when the changeset is merged or closed, for supported code hosts. Overrides any setting on the repository on the code host itself.",
+      "type": "boolean",
+      "group": "BatchChanges",
+      "default": false
+    },
     "batchChanges.rolloutWindows": {
       "description": "Specifies specific windows, which can have associated rate limits, to be used when reconciling published changesets (creating or updating). All days and times are handled in UTC.",
       "type": "array",
@@ -841,7 +848,7 @@
       "title": "SyntaxHighlighting",
       "description": "Syntax highlighting configuration",
       "type": "object",
-      "required": ["engine", "languages"],
+      "required": ["engine", "languages", "symbols"],
       "properties": {
         "engine": {
           "title": "SyntaxHighlightingEngine",
@@ -893,6 +900,22 @@
                     "type": "string"
                   }
                 }
+              }
+            }
+          }
+        },
+        "symbols": {
+          "title": "SymbolConfiguration",
+          "description": "Configure symbol generation",
+          "type": "object",
+          "required": ["engine"],
+          "properties": {
+            "engine": {
+              "description": "Manually specify overrides for symbol generation engine per language",
+              "type": "object",
+              "additionalProperties": {
+                "type": "string",
+                "enum": ["universal-ctags", "scip-ctags", "off"]
               }
             }
           }
@@ -1435,6 +1458,24 @@
               "graphQL": false,
               "gitserverAccess": false,
               "severityLevel": "INFO"
+            }
+          ]
+        },
+        "securityEventLog": {
+          "description": "EXPERIMENTAL: Configuration for security event logging",
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "location": {
+              "description": "Where to output the security event log [none, auditlog, database, all] where auditlog is the default logging to stdout with the specified audit log format",
+              "type": "string",
+              "enum": ["none", "auditlog", "database", "all"],
+              "default": "auditlog"
+            }
+          },
+          "examples": [
+            {
+              "location": "auditlog"
             }
           ]
         }
@@ -2319,6 +2360,16 @@
           "description": "The maximum number of embeddings for text files to generate per repo",
           "type": "integer",
           "minimum": 0
+        },
+        "incremental": {
+          "description": "Experimental: Whether to generate embeddings incrementally. If true, only files that have changed since the last run will be processed.",
+          "type": "boolean",
+          "default": false
+        },
+        "minimumInterval": {
+          "description": "The time to wait between runs. Valid time units are \"s\", \"m\", \"h\". Example values: \"30s\", \"5m\", \"1h\".",
+          "type": "string",
+          "default": "24h"
         }
       },
       "examples": [
@@ -2362,11 +2413,11 @@
           "type": "string",
           "description": "The external completions provider.",
           "default": "anthropic",
-          "enum": ["anthropic", "openai", "llmproxy"]
+          "enum": ["anthropic", "openai", "sourcegraph", "llmproxy"]
         },
         "endpoint": {
           "type": "string",
-          "description": "The endpoint under which to reach the provider. Currently only used for provider types \"llmproxy\" and \"anthropic\". The default values are \"https://completions.sourcegraph.com\" and \"https://api.anthropic.com/v1/complete\" for LLM proxy and Anthropic, respectively."
+          "description": "The endpoint under which to reach the provider. Currently only used for provider types \"sourcegraph\", \"openai\" and \"anthropic\". The default values are \"https://cody-gateway.sourcegraph.com\", \"https://api.openai.com/v1/chat/completions\", and \"https://api.anthropic.com/v1/complete\" for Sourcegraph, OpenAI, and Anthropic, respectively."
         },
         "perUserDailyLimit": {
           "description": "If > 0, enables the maximum number of completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.",

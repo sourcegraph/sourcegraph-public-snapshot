@@ -269,11 +269,15 @@ func addVsceTests(pipeline *bk.Pipeline) {
 
 func addCodyExtensionTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(
-		":vscode::robot_face: Integration tests for the Cody VS Code extension",
+		":vscode::robot_face: Unit, integration, and E2E tests for the Cody VS Code extension",
 		withPnpmCache(),
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
-		bk.Cmd("pnpm --filter cody-ai run test:integration"),
+		bk.Cmd("client/cody/scripts/download-rg.sh x86_64-unknown-linux"),
+		bk.Cmd("pnpm --filter cody-ai run test:unit"),
 		bk.Cmd("pnpm --filter cody-shared run test"),
+		bk.Cmd("pnpm --filter cody-ai run test:integration"),
+		bk.Cmd("pnpm --filter cody-ai run test:e2e"),
+		bk.ArtifactPaths("./playwright/**/*"),
 	)
 }
 
@@ -831,6 +835,9 @@ func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) 
 			cmds = append(cmds,
 				bk.Cmd("ls -lah "+filepath.Join("docker-images", app, "build.sh")),
 				bk.Cmd(filepath.Join("docker-images", app, "build.sh")))
+		} else if _, err := os.Stat(filepath.Join("client", app)); err == nil {
+			// Building Docker image located under $REPO_ROOT/client/
+			cmds = append(cmds, bk.AnnotatedCmd("client/"+app+"/build.sh", buildAnnotationOptions))
 		} else {
 			// Building Docker images located under $REPO_ROOT/cmd/
 			cmdDir := func() string {

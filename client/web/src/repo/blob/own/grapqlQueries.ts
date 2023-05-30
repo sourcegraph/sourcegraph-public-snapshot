@@ -41,10 +41,18 @@ export const RECENT_VIEW_FIELDS = gql`
     }
 `
 
+export const ASSIGNED_OWNER_FIELDS = gql`
+    fragment AssignedOwnerFields on AssignedOwner {
+        title
+        description
+    }
+`
+
 export const FETCH_OWNERS = gql`
     ${OWNER_FIELDS}
     ${RECENT_CONTRIBUTOR_FIELDS}
     ${RECENT_VIEW_FIELDS}
+    ${ASSIGNED_OWNER_FIELDS}
 
     fragment CodeownersFileEntryFields on CodeownersFileEntry {
         title
@@ -70,6 +78,7 @@ export const FETCH_OWNERS = gql`
                                     ...CodeownersFileEntryFields
                                     ...RecentContributorOwnershipSignalFields
                                     ...RecentViewOwnershipSignalFields
+                                    ...AssignedOwnerFields
                                 }
                             }
                         }
@@ -90,12 +99,15 @@ export const FETCH_OWNERS_AND_HISTORY = gql`
                 sourceType
                 commit(rev: $revision) {
                     blob(path: $currentPath) {
-                        ownership(first: 2) {
+                        ownership(first: 2, reasons: [CODEOWNERS_FILE_ENTRY]) {
                             nodes {
                                 owner {
                                     ...OwnerFields
                                 }
                             }
+                            totalCount
+                        }
+                        contributors: ownership(reasons: [RECENT_CONTRIBUTOR_OWNERSHIP_SIGNAL]) {
                             totalCount
                         }
                     }

@@ -24,11 +24,26 @@ To generate an index for your codebase and enable codebase-aware answers for Cod
 
 ## Enable Codebase-Aware Answers
 
-To enable codebase-aware answers for the Cody extension, you must set the `Cody: Codebase` (`cody.codebase`) configuration option in VS Code to the repository name on your Sourcegraph instance. By doing so, Cody will provide more accurate and relevant answers to your coding questions, referencing to the context of the codebase you are currently working in.
+
+When connected to the correct codebase, Cody provides accurate and relevant answers to your coding questions, taking into account the context of the codebase you are currently working in.
+
+Cody attempts to connect to the appropriate codebase automatically using Git, eliminating the need for manual configuration of the `Cody: Codebase` (`cody.codebase`) option. 
+
+You only need to configure the `Cody: Codebase` (`cody.codebase`) setting if Cody displays `NOT INDEXED` below the chat window.
+
 
 ### Extension Settings
 
-Here are the steps to configure the `codebase` setting for Cody via the [Extension Settings](https://code.visualstudio.com/docs/getstarted/settings#_extension-settings) in VS Code:
+
+Cody tries to connect to the correct codebase using Git at start-up, so manual configuration of `cody.codebase` is unnecessary.
+
+To enable Cody to connect to the codebase using Git, ensure that the `Cody: Codebase` (`cody.codebase`) configuration field is empty.
+
+If this attempt fails and you see `NOT INDEXED` below your Cody chatbox, you can manually specify the correct codebase for Cody using the `Cody: Codebase` (`cody.codebase`) configuration option.
+
+#### Manual Configuration
+
+Follow these steps to manually configure the `codebase` setting for Cody via the [Extension Settings](https://code.visualstudio.com/docs/getstarted/settings#_extension-settings) in VS Code:
 
 1. Open the VS Code workspace settings by clicking: 
    - Mac: `Code` > `Settings` > `Settings`
@@ -44,7 +59,7 @@ github.com/sourcegraph/sourcegraph
 
 ### Settings.json
 
-Alternatively, you can configure via [settings.json](https://code.visualstudio.com/docs/getstarted/settings#_settingsjson) using the `cody.codebase` configuration contribution point:
+Alternatively, you can configure `codebase` manually via [settings.json](https://code.visualstudio.com/docs/getstarted/settings#_settingsjson) using the `cody.codebase` configuration contribution point:
 
 ```json
 {
