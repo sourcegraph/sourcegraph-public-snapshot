@@ -389,12 +389,12 @@ func TestHeartbeat(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *queue.Client) {
-		unknownIDs, cancelIDs, err := client.Heartbeat(context.Background(), []string{"1", "2", "3"})
+		knownIDs, cancelIDs, err := client.Heartbeat(context.Background(), []string{"1", "2", "3"})
 		if err != nil {
 			t.Fatalf("unexpected error performing heartbeat: %s", err)
 		}
 
-		if diff := cmp.Diff([]string{"1"}, unknownIDs); diff != "" {
+		if diff := cmp.Diff([]string{"1"}, knownIDs); diff != "" {
 			t.Errorf("unexpected unknown ids (-want +got):\n%s", diff)
 		}
 
@@ -430,6 +430,97 @@ func TestHeartbeatBadResponse(t *testing.T) {
 
 	testRoute(t, spec, func(client *queue.Client) {
 		if _, _, err := client.Heartbeat(context.Background(), []string{"1", "2", "3"}); err == nil {
+			t.Fatalf("expected an error")
+		}
+	})
+}
+
+func TestMultiQueueHeartbeat(t *testing.T) {
+	spec := routeSpec{
+		expectedMethod:   "POST",
+		expectedPath:     "/.executors/queue/heartbeat",
+		expectedUsername: "test",
+		expectedToken:    "hunter2",
+		expectedPayload: `{
+			"executorName": "deadbeef",
+			"jobIdsByQueue": [
+				{
+					"queueName": "test_queue_one",
+					"jobIds": ["1", "3"]
+				},
+				{
+					"queueName": "test_queue_two",
+					"jobIds": ["2"]
+				}
+			],
+			"queueNames": ["test_queue_one", "test_queue_two"],
+			"os": "test-os",
+			"architecture": "test-architecture",
+			"dockerVersion": "test-docker-version",
+			"executorVersion": "test-executor-version",
+			"gitVersion": "test-git-version",
+			"igniteVersion": "test-ignite-version",
+			"srcCliVersion": "test-src-cli-version",
+
+			"prometheusMetrics": ""
+		}`,
+		responseStatus:  http.StatusOK,
+		responsePayload: `{"knownIDs": ["1-test_queue_one"], "cancelIDs": ["2-test_queue_two"]}`,
+		multiQueue:      true,
+	}
+
+	testRoute(t, spec, func(client *queue.Client) {
+		knownIDs, cancelIDs, err := client.Heartbeat(context.Background(), []string{"1-test_queue_one", "2-test_queue_two", "3-test_queue_one"})
+		if err != nil {
+			t.Fatalf("unexpected error performing heartbeat: %s", err)
+		}
+
+		if diff := cmp.Diff([]string{"1-test_queue_one"}, knownIDs); diff != "" {
+			t.Errorf("unexpected unknown ids (-want +got):\n%s", diff)
+		}
+
+		if diff := cmp.Diff([]string{"2-test_queue_two"}, cancelIDs); diff != "" {
+			t.Errorf("unexpected unknown cancel ids (-want +got):\n%s", diff)
+		}
+	})
+}
+
+func TestMultiQueueHeartbeatBadResponse(t *testing.T) {
+	spec := routeSpec{
+		expectedMethod:   "POST",
+		expectedPath:     "/.executors/queue/heartbeat",
+		expectedUsername: "test",
+		expectedToken:    "hunter2",
+		expectedPayload: `{
+			"executorName": "deadbeef",
+			"jobIdsByQueue": [
+				{
+					"queueName": "test_queue_one",
+					"jobIds": ["1", "3"]
+				},
+				{
+					"queueName": "test_queue_two",
+					"jobIds": ["2"]
+				}
+			],
+			"queueNames": ["test_queue_one", "test_queue_two"],
+			"os": "test-os",
+			"architecture": "test-architecture",
+			"dockerVersion": "test-docker-version",
+			"executorVersion": "test-executor-version",
+			"gitVersion": "test-git-version",
+			"igniteVersion": "test-ignite-version",
+			"srcCliVersion": "test-src-cli-version",
+
+			"prometheusMetrics": ""
+		}`,
+		responseStatus:  http.StatusInternalServerError,
+		responsePayload: ``,
+		multiQueue:      true,
+	}
+
+	testRoute(t, spec, func(client *queue.Client) {
+		if _, _, err := client.Heartbeat(context.Background(), []string{"1-test_queue_one", "2-test_queue_two", "3-test_queue_one"}); err == nil {
 			t.Fatalf("expected an error")
 		}
 	})
