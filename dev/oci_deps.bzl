@@ -144,7 +144,7 @@ def oci_deps():
 
     oci_pull(
         name = "wolfi_postgresql-12-codeinsights_base",
-        digest = "sha256:8a81ff942cb9d07c2402d24a2c31a8a33c55b59deb80576c6a448dd1ade764a7",
+        digest = "sha256:4d85ed245a6d3f22a42cf2fdf840a8e14590fb5216f597a19697e7f3025a0a26",
         image = "us.gcr.io/sourcegraph-dev/wolfi-postgresql-12-codeinsights-base",
     )
 
@@ -167,7 +167,7 @@ def oci_deps():
     )
 
     oci_pull(
-      name = "wolfi_s3proxy_base",
-      digest = "sha256:4076564aaa3bfc17a8e50822e9937f240f155a69f9cffcb039a49f892446d28c",
-      image = "us.gcr.io/sourcegraph-dev/wolfi-blobstore-base",
+        name = "wolfi_s3proxy_base",
+        digest = "sha256:4076564aaa3bfc17a8e50822e9937f240f155a69f9cffcb039a49f892446d28c",
+        image = "us.gcr.io/sourcegraph-dev/wolfi-blobstore-base",
     )
