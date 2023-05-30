@@ -6,19 +6,19 @@ By following the steps outlined in this guide, you can configure the necessary p
 
 ## Generate Index
 
-You can enhance Cody's understanding of existing code by generating index for your codebases to enable [code graph context](https://docs.sourcegraph.com/cody/explanations/code_graph_context).
+You can enhance Cody's understanding of existing code by generating index for your codebases to enable [code graph context](../code_graph_context.md).
 
 ### Sourcegraph Enterprise
 
 To generate an index for your codebase and enable codebase-aware answers for Cody, your site admin must complete the following:
 
-- [Configure Code Graph Context](https://docs.sourcegraph.com/cody/explanations/code_graph_context) for your Sourcegraph instance
+- [Configure Code Graph Context](../code_graph_context.md) for your Sourcegraph instance
 - [Enable Cody for your Sourcegraph instance](../enabling_cody_enterprise.md#step-1-enable-cody-on-your-sourcegraph-instance)
 - [Enable Cody for your Sourcegraph account](../enabling_cody_enterprise.md#turning-cody-off)
 
 ### Sourcegraph.com
 
- See the current [list of repositories with code graph context available](https://docs.sourcegraph.com/cody/embedded-repos), and request any that you'd like to add by pinging a Sourcegraph team member in the [Sourcegraph Discord](https://discord.gg/8wJF5EdAyA) under the `#cody-embeddings` channel.
+ See the current [list of repositories with code graph context available](../embedded-repos.md), and request any that you'd like to add by pinging a Sourcegraph team member in the [Sourcegraph Discord](https://discord.gg/8wJF5EdAyA) under the `#cody-embeddings` channel.
 
 > NOTE: Sourcegraph.com does not support connections to private repositories
 
