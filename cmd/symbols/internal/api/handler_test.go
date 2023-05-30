@@ -17,6 +17,7 @@ import (
 	symbolsdatabase "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/writer"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
+	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/diskcache"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -38,7 +39,7 @@ func TestHandler(t *testing.T) {
 
 	cache := diskcache.NewStore(tmpDir, "symbols", diskcache.WithBackgroundTimeout(20*time.Minute))
 
-	parserFactory := func() (ctags.Parser, error) {
+	parserFactory := func(source ctags_config.ParserType) (ctags.Parser, error) {
 		pathToEntries := map[string][]*ctags.Entry{
 			"a.js": {
 				{
