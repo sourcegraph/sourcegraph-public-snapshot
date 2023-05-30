@@ -81,6 +81,15 @@ func TestMatch(t *testing.T) {
 				"/main/src/foo/bar/README.md",
 			},
 		},
+		{
+			// A workaround used by embeddings to exclude filenames containing
+			// ".." which breaks git show.
+			pattern: "**..**",
+			paths: []string{
+				"doc/foo..bar",
+				"doc/foo...bar",
+			},
+		},
 	}
 
 	for _, testCase := range cases {
@@ -177,6 +186,16 @@ func TestNoMatch(t *testing.T) {
 				"/main/src/foo/bar/README.mdf",
 				"/nested/main/src/README.md",
 				"/nested/main/src/foo/bar/README.md",
+			},
+		},
+		{
+			// A workaround used by embeddings to exclude filenames containing
+			// ".." which breaks git show.
+			pattern: "**..**",
+			paths: []string{
+				"doc/foo.bar",
+				"doc/foo",
+				"README.md",
 			},
 		},
 	}
