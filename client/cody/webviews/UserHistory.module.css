@@ -43,5 +43,6 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 4;
     overflow: hidden;
-    overflow-wrap: break-word
+    overflow-wrap: break-word;
+    word-break: break-all;
 }
