@@ -245,6 +245,9 @@ func (e JobIDsParseError) Error() string {
 	return fmt.Sprintf("failed to parse one or more unexpected job ID formats: %s", strings.Join(e.JobIDs, ", "))
 }
 
+// ParseJobIDs attempts to split the job IDs on a separator character in order to categorize them by queue
+// name, returning a list of types.QueueJobIDs.
+// The expected format is <job id>-<queue name>, e.g. "42-batches".
 func ParseJobIDs(jobIDs []string) ([]types.QueueJobIDs, error) {
 	var queueJobIDs []types.QueueJobIDs
 	queueIds := map[string][]string{}
