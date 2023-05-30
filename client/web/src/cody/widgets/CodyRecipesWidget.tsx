@@ -6,7 +6,7 @@ import { mdiCardBulletedOutline, mdiDotsVertical, mdiProgressPencil, mdiShuffleV
 
 import { TranslateToLanguage } from '@sourcegraph/cody-shared/src/chat/recipes/translate'
 
-import { useCodySidebar } from '../sidebar'
+import { useCodySidebar } from '../sidebar/Provider'
 
 import { Recipe } from './components/Recipe'
 import { RecipeAction } from './components/RecipeAction'

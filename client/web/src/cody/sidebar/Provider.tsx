@@ -5,6 +5,8 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { CodeMirrorEditor } from '../components/CodeMirrorEditor'
 import { useCodyChat, CodyChatStore, CodyClientScope, codyChatStoreMock } from '../useCodyChat'
 
+import { useSidebarSize } from './useSidebarSize'
+
 interface CodySidebarStore extends CodyChatStore {
     readonly isSidebarOpen: boolean
     readonly inputNeedsFocus: boolean
@@ -37,7 +39,7 @@ const defaultScope: CodyClientScope = {
 export const CodySidebarStoreProvider: React.FC<ICodySidebarStoreProviderProps> = ({ children }) => {
     const [isSidebarOpen, setIsSidebarOpenState] = useTemporarySetting('cody.showSidebar', false)
     const [inputNeedsFocus, setInputNeedsFocus] = useState(false)
-    const [sidebarSize, setSidebarSize] = useState(0)
+    const { sidebarSize, setSidebarSize } = useSidebarSize()
 
     const setFocusProvided = useCallback(() => {
         setInputNeedsFocus(false)

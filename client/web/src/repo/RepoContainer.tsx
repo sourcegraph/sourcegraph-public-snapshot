@@ -32,7 +32,8 @@ import { Button, Icon, Link, Panel, useObservable } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { CodeIntelligenceProps } from '../codeintel'
-import { CodySidebar, useCodySidebar } from '../cody/sidebar'
+import { CodySidebar } from '../cody/sidebar'
+import { useCodySidebar } from '../cody/sidebar/Provider'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { RouteError } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
@@ -164,7 +165,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
     } = useCodySidebar()
 
     useEffect(() => {
-        if (codyLoaded && scope.type === 'Automatic' && !scope.repositories.find(name => name === repoName)) {
+        if (codyLoaded && scope.type === 'Automatic' && !scope.repositories.find((name: string) => name === repoName)) {
             setScope({ ...scope, repositories: [...scope.repositories, repoName] })
         }
     }, [scope, repoName, setScope, codyLoaded])
