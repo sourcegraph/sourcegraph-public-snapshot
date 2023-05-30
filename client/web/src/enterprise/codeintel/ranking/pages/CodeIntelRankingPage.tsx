@@ -157,7 +157,9 @@ const Progress: FunctionComponent<ProgressProps> = ({ title, subtitle, progress,
             <div className={styles.row}>
                 <div>Progress</div>
                 <div>
-                    {progress.total === 0 ? 100 : Math.floor(((progress.processed / progress.total) * 100 * 100) / 100)}
+                    {progress.total === 0
+                        ? 100
+                        : Math.floor(((progress.processed / progress.total) * 100 * 10000) / 10000)}
                     %
                 </div>
             </div>
