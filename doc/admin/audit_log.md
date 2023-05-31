@@ -142,7 +142,7 @@ GraphQL query:
 }
 ```
 
-**Excessive audit logging**
+### Excessive audit logging
 
 If you are seeing a large number of logs in the format `frontend.SecurityEvents` or similar, these are securityEventLogs.
 
