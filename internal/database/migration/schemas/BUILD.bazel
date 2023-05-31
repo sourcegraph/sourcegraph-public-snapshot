@@ -18,7 +18,6 @@ go_library(
         "//internal/database/migration/shared",
         "//internal/lazyregexp",
         "//lib/errors",
-        "//migrations",
         "@com_github_google_go_cmp//cmp",
     ],
 )
