@@ -19,9 +19,7 @@ export const ContextScopePicker: React.FC<ContextScopePickerProps> = ({ onSelect
     }
 
     const menuItems = [
-        { label: 'Organizations', icon: mdiEarth },
         { label: 'Repositories', icon: mdiGit },
-        { label: 'Files', icon: mdiFileDocumentOutline },
         { label: 'None', icon: mdiCircleOutline },
         { label: 'Automatic', icon: codyIconPath },
     ]

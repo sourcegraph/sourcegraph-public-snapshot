@@ -2,17 +2,16 @@ import React, { useState } from 'react'
 
 import { mdiFileDocumentOutline, mdiGithub } from '@mdi/js'
 
+import { ChatStatusIndicator } from './components/ChatStatusIndicator'
 import { ContextPopover } from './components/ContextPopover'
 import { ContextScopePicker } from './components/ContextScopePicker'
 
 import styles from './ContextScope.module.scss'
 
 export const SELECTED = {
-    ORGANIZATIONS: 0,
-    REPOSITORIES: 1,
-    FILES: 2,
-    NONE: 3,
-    AUTOMATIC: 4,
+    REPOSITORIES: 0,
+    NONE: 1,
+    AUTOMATIC: 2,
 } as const
 
 export type ContextType = typeof SELECTED[keyof typeof SELECTED]
@@ -26,9 +25,18 @@ export const ContextScope: React.FC<ContextScopeProps> = ({}) => {
         setSelectedItem(itemIndex)
     }
 
+    let chatStatus = 'low'
+    if (selectedItem === SELECTED.REPOSITORIES) {
+        chatStatus = 'medium'
+    } else if (selectedItem === SELECTED.NONE) {
+        chatStatus = 'high'
+    }
+
     return (
         <div className={styles.wrapper}>
-            <div className={styles.title}>Context scope</div>
+            <ChatStatusIndicator status={chatStatus} />
+            {/* <ContextSeparator />
+            <div className={styles.title}>Context</div> */}
             <ContextSeparator />
             <ContextScopePicker onSelect={handleItemSelected} selected={selectedItem} />
             <ContextSeparator />

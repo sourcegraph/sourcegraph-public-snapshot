@@ -1,0 +1,33 @@
+.wrapper {
+    width: 480px;
+    margin:0;
+
+}
+
+.header {
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--input-placeholder-color);
+    display: flex;
+    border-bottom: 1px solid var(--border-color-2);
+    padding: 0.6rem 0.8rem;
+}
+
+.contentBody {
+    display: flex;
+    padding: 0.9rem;
+    gap: 5px;
+    font-size: 0.8rem;
+}
+
+.leftPanel {
+    font-weight: 500;
+    height:100%;
+}
+
+.rightPanel {
+    height: 100%;
+}
+
+
