@@ -69,7 +69,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
-- Organization members can now administer batch changes created by other members in their organization's namespace if the setting `orgs.allMembersBatchChangesAdmin` is enabled for that organization.
+- Organization members can now administer batch changes created by other members in their organization's namespace if the setting `orgs.allMembersBatchChangesAdmin` is enabled for that organization. [#50724](https://github.com/sourcegraph/sourcegraph/pull/50724)
 
 ## 5.0.4
 
