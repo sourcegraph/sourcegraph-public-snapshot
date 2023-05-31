@@ -52,6 +52,10 @@ let
     unshareUts = false;
     unshareCgroup = false;
   };
+
+  # We have scripts which use gsed on darwin since that is what homebrew calls
+  # the binary for GNU sed.
+  gsed = pkgs.writeShellScriptBin "gsed" ''exec ${pkgs.gnused}/bin/sed "$@"'';
 in
 pkgs.mkShell {
   name = "sourcegraph-dev";
@@ -106,6 +110,9 @@ pkgs.mkShell {
     (if pkgs.hostPlatform.isLinux then bazel-fhs else bazel-wrapper)
     bazel-watcher
     bazel-buildtools
+
+    # Release tool and sg check for gsed
+    gsed
   ];
 
   # Startup postgres, redis & set nixos specific stuff
