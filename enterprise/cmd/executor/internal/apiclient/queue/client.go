@@ -254,12 +254,10 @@ func ParseJobIDs(jobIDs []string) ([]types.QueueJobIDs, error) {
 	var invalidIds []string
 
 	for _, stringID := range jobIDs {
-		parts := strings.Split(stringID, "-")
-		if len(parts) != 2 {
+		id, queueName, found := strings.Cut(stringID, "-")
+		if !found {
 			invalidIds = append(invalidIds, stringID)
-			//return nil, JobIDParseError{JobID: stringID}
 		} else {
-			id, queueName := parts[0], parts[1]
 			queueIds[queueName] = append(queueIds[queueName], id)
 		}
 	}

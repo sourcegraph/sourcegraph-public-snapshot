@@ -549,9 +549,9 @@ func Test_parseJobIDs(t *testing.T) {
 		},
 		{
 			name:               "Invalid ID format",
-			jobIDs:             []string{"1+foo", "2--bar"},
+			jobIDs:             []string{"1+foo", "2--bar", "3baz"},
 			expected:           nil,
-			expectedErrMessage: "failed to parse one or more unexpected job ID formats: 1+foo, 2--bar",
+			expectedErrMessage: "failed to parse one or more unexpected job ID formats: 1+foo, 3baz",
 		},
 	}
 	for _, tt := range tests {
