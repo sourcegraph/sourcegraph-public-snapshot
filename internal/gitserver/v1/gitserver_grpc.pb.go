@@ -35,7 +35,7 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GitserverServiceClient interface {
-	CreateCommitFromPatchBinary(ctx context.Context, in *CreateCommitFromPatchRequest, opts ...grpc.CallOption) (*CreateCommitFromPatchResponse, error)
+	CreateCommitFromPatchBinary(ctx context.Context, in *CreateCommitFromPatchBinaryRequest, opts ...grpc.CallOption) (*CreateCommitFromPatchBinaryResponse, error)
 	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error)
 	IsRepoCloneable(ctx context.Context, in *IsRepoCloneableRequest, opts ...grpc.CallOption) (*IsRepoCloneableResponse, error)
 	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (GitserverService_SearchClient, error)
@@ -55,8 +55,8 @@ func NewGitserverServiceClient(cc grpc.ClientConnInterface) GitserverServiceClie
 	return &gitserverServiceClient{cc}
 }
 
-func (c *gitserverServiceClient) CreateCommitFromPatchBinary(ctx context.Context, in *CreateCommitFromPatchRequest, opts ...grpc.CallOption) (*CreateCommitFromPatchResponse, error) {
-	out := new(CreateCommitFromPatchResponse)
+func (c *gitserverServiceClient) CreateCommitFromPatchBinary(ctx context.Context, in *CreateCommitFromPatchBinaryRequest, opts ...grpc.CallOption) (*CreateCommitFromPatchBinaryResponse, error) {
+	out := new(CreateCommitFromPatchBinaryResponse)
 	err := c.cc.Invoke(ctx, GitserverService_CreateCommitFromPatchBinary_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -218,7 +218,7 @@ func (c *gitserverServiceClient) ReposStats(ctx context.Context, in *ReposStatsR
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
 type GitserverServiceServer interface {
-	CreateCommitFromPatchBinary(context.Context, *CreateCommitFromPatchRequest) (*CreateCommitFromPatchResponse, error)
+	CreateCommitFromPatchBinary(context.Context, *CreateCommitFromPatchBinaryRequest) (*CreateCommitFromPatchBinaryResponse, error)
 	Exec(*ExecRequest, GitserverService_ExecServer) error
 	IsRepoCloneable(context.Context, *IsRepoCloneableRequest) (*IsRepoCloneableResponse, error)
 	Search(*SearchRequest, GitserverService_SearchServer) error
@@ -235,7 +235,7 @@ type GitserverServiceServer interface {
 type UnimplementedGitserverServiceServer struct {
 }
 
-func (UnimplementedGitserverServiceServer) CreateCommitFromPatchBinary(context.Context, *CreateCommitFromPatchRequest) (*CreateCommitFromPatchResponse, error) {
+func (UnimplementedGitserverServiceServer) CreateCommitFromPatchBinary(context.Context, *CreateCommitFromPatchBinaryRequest) (*CreateCommitFromPatchBinaryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateCommitFromPatchBinary not implemented")
 }
 func (UnimplementedGitserverServiceServer) Exec(*ExecRequest, GitserverService_ExecServer) error {
@@ -279,7 +279,7 @@ func RegisterGitserverServiceServer(s grpc.ServiceRegistrar, srv GitserverServic
 }
 
 func _GitserverService_CreateCommitFromPatchBinary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateCommitFromPatchRequest)
+	in := new(CreateCommitFromPatchBinaryRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -291,7 +291,7 @@ func _GitserverService_CreateCommitFromPatchBinary_Handler(srv interface{}, ctx 
 		FullMethod: GitserverService_CreateCommitFromPatchBinary_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(GitserverServiceServer).CreateCommitFromPatchBinary(ctx, req.(*CreateCommitFromPatchRequest))
+		return srv.(GitserverServiceServer).CreateCommitFromPatchBinary(ctx, req.(*CreateCommitFromPatchBinaryRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
