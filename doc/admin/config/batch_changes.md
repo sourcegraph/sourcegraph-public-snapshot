@@ -145,6 +145,7 @@ Sourcegraph can be configured to push branches created by Batch Changes to a for
 
 When enabled, Batch Changes will now prefix the name of the fork repo it creates with the original repo's namespace name in order to prevent repo name collisions. For example, a changeset that opens a pull request against https://github.com/org/project would push the branch to https://github.com/user/org-project. Note that if a [global service account](../../batch_changes/how-tos/configuring_credentials.md#global-service-account-tokens) is in use, then the fork will be created in the namespace of the service account, **not** the user.
 
+You can also specify this behaivor per batch change when the property `changesetTemplate.fork` is specified in the batch spec. This will override the site configuration setting, enabling per-batch-change control for pushing to a fork.
 ### Examples
 
 To enable forks, update the site configuration to include:
