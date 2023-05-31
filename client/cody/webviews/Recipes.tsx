@@ -19,6 +19,7 @@ export const recipesList = {
     'context-search': 'Codebase context search',
     'release-notes': 'Generate release notes',
     'pr-description': 'Generate pull request description',
+    'optimize-code': 'Optimize code',
 }
 
 export const Recipes: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {

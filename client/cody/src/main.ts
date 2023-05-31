@@ -12,6 +12,7 @@ import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
+import { TaskController } from './non-stop/TaskController'
 import { getRgPath } from './rg'
 import { GuardrailsProvider } from './services/GuardrailsProvider'
 import { InlineController } from './services/InlineController'
@@ -79,7 +80,10 @@ const register = async (
     const commentController = new InlineController(context.extensionPath)
     disposables.push(commentController.get())
 
-    const editor = new VSCodeEditor(commentController)
+    const taskController = new TaskController()
+    const controllers = { inline: commentController, task: taskController }
+
+    const editor = new VSCodeEditor(controllers)
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
 
@@ -114,9 +118,11 @@ const register = async (
         { dispose: () => vscode.commands.executeCommand('setContext', 'cody.activated', false) }
     )
 
-    const executeRecipe = async (recipe: RecipeID): Promise<void> => {
-        await vscode.commands.executeCommand('cody.chat.focus')
-        await chatProvider.executeRecipe(recipe, '')
+    const executeRecipe = async (recipe: RecipeID, showTab = true): Promise<void> => {
+        if (showTab) {
+            await vscode.commands.executeCommand('cody.chat.focus')
+        }
+        await chatProvider.executeRecipe(recipe, '', showTab)
     }
 
     const webviewErrorMessager = async (error: string): Promise<void> => {
@@ -140,7 +146,13 @@ const register = async (
     }
 
     disposables.push(
-        // File Chat Provider
+        vscode.commands.registerCommand('cody.inline.insert', async (copiedText: string) => {
+            // Insert copiedText to the current cursor position
+            await vscode.commands.executeCommand('editor.action.insertSnippet', {
+                snippet: copiedText,
+            })
+        }),
+        // Inline Assist Provider
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
             const isFixMode = /^\/f(ix)?\s/i.test(comment.text.trimStart())
             await commentController.chat(comment, isFixMode)
@@ -165,6 +177,7 @@ const register = async (
         vscode.commands.registerCommand('cody.history', () => chatProvider.setWebviewView('history')),
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
             await chatProvider.clearAndRestartSession()
+            chatProvider.setWebviewView('chat')
         }),
         vscode.commands.registerCommand('cody.recipe.explain-code', () => executeRecipe('explain-code-detailed')),
         vscode.commands.registerCommand('cody.recipe.explain-code-high-level', () =>
@@ -182,6 +195,7 @@ const register = async (
         ),
         vscode.commands.registerCommand('cody.recipe.find-code-smells', () => executeRecipe('find-code-smells')),
         vscode.commands.registerCommand('cody.recipe.context-search', () => executeRecipe('context-search')),
+        vscode.commands.registerCommand('cody.recipe.optimize-code', () => executeRecipe('optimize-code')),
         // Register URI Handler for resolving token sending back from sourcegraph.com
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {
@@ -221,8 +235,8 @@ const register = async (
             history
         )
         disposables.push(
-            vscode.commands.registerCommand('cody.experimental.suggest', async () => {
-                await completionsProvider.fetchAndShowCompletions()
+            vscode.commands.registerCommand('cody.manual-completions', async () => {
+                await completionsProvider.fetchAndShowManualCompletions()
             }),
             vscode.commands.registerCommand('cody.completions.inline.accepted', () => {
                 const params = { type: 'inline' }
@@ -240,6 +254,9 @@ const register = async (
                 return [new vscode.Range(0, 0, lineCount - 1, 0)]
             },
         }
+        disposables.push(
+            vscode.commands.registerCommand('cody.recipe.file-flow', () => executeRecipe('file-flow', false))
+        )
     }
 
     if (initialConfig.experimentalGuardrails) {
@@ -249,6 +266,16 @@ const register = async (
                 await guardrailsProvider.debugEditorSelection()
             })
         )
+    }
+    // Register task view and non-stop cody command when feature flag is on
+    if (initialConfig.experimentalNonStop || process.env.CODY_TESTING === 'true') {
+        disposables.push(vscode.window.registerTreeDataProvider('cody.fixup.tree.view', taskController.getTaskView()))
+        disposables.push(
+            vscode.commands.registerCommand('cody.recipe.non-stop', async () => {
+                await chatProvider.executeRecipe('non-stop', '', false)
+            })
+        )
+        await vscode.commands.executeCommand('setContext', 'cody.nonstop.fixups.enabled', true)
     }
 
     return {

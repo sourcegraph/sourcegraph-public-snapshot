@@ -15,7 +15,7 @@ export const RolloutWindowsConfiguration: React.FunctionComponent = () => {
     const { loading, error, rolloutWindowConfig } = useBatchChangesRolloutWindowConfig()
     return (
         <Container className="mb-3">
-            <H3>Rollout Windows</H3>
+            <H3>Rollout windows</H3>
             {loading && <LoadingSpinner />}
             {error && <ErrorAlert error={error} />}
             {!loading &&

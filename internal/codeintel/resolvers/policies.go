@@ -29,6 +29,7 @@ type CodeIntelligenceConfigurationPoliciesArgs struct {
 	Query            *string
 	ForDataRetention *bool
 	ForIndexing      *bool
+	ForEmbeddings    *bool
 	Protected        *bool
 }
 
@@ -49,6 +50,8 @@ type CodeIntelConfigurationPolicy struct {
 	IndexingEnabled           bool
 	IndexCommitMaxAgeHours    *int32
 	IndexIntermediateCommits  bool
+	// EmbeddingsEnabled, if nil, should currently default to false.
+	EmbeddingsEnabled *bool
 }
 
 type UpdateCodeIntelligenceConfigurationPolicyArgs struct {
@@ -91,6 +94,7 @@ type CodeIntelligenceConfigurationPolicyResolver interface {
 	IndexingEnabled() bool
 	IndexCommitMaxAgeHours() *int32
 	IndexIntermediateCommits() bool
+	EmbeddingsEnabled() bool
 }
 
 type RepositoryFilterPreviewResolver interface {

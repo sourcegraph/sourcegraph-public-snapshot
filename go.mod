@@ -113,7 +113,7 @@ require (
 	github.com/getsentry/sentry-go v0.21.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/gitchander/permutation v0.0.0-20210517125447-a5d73722e1b1
-	github.com/go-enry/go-enry/v2 v2.8.3
+	github.com/go-enry/go-enry/v2 v2.8.4
 	github.com/go-git/go-git/v5 v5.5.2
 	github.com/go-openapi/strfmt v0.21.3
 	github.com/gobwas/glob v0.2.3
@@ -196,7 +196,7 @@ require (
 	github.com/sourcegraph/go-lsp v0.0.0-20200429204803-219e11d77f5d
 	github.com/sourcegraph/go-rendezvous v0.0.0-20210910070954-ef39ade5591d
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
-	github.com/sourcegraph/log v0.0.0-20230518041250-1102986b54c0
+	github.com/sourcegraph/log v0.0.0-20230523201558-ad2d71b4d2ee
 	github.com/sourcegraph/run v0.12.0
 	github.com/sourcegraph/scip v0.2.4-0.20230403145725-e720fb88e6fd
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-20220203145655-4d2a39d3038a
@@ -507,7 +507,7 @@ require (
 	github.com/sourcegraph/conc v0.2.0
 	github.com/sourcegraph/mountinfo v0.0.0-20230106004439-7026e28cef67
 	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-20230124144931-b2d81b1accb6
-	github.com/sourcegraph/zoekt v0.0.0-20230519150519-d6d1e686095e
+	github.com/sourcegraph/zoekt v0.0.0-20230524133412-579a9a1eb19b
 	github.com/spf13/cobra v1.6.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
@@ -533,7 +533,7 @@ require (
 	go.opentelemetry.io/collector/pdata v1.0.0-rc5 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.13.0 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
-	golang.org/x/exp v0.0.0-20221208152030-732eee02a75a
+	golang.org/x/exp v0.0.0-20230425010034-47ecfdc1ba53
 	golang.org/x/mod v0.8.0
 	golang.org/x/term v0.8.0 // indirect
 	golang.org/x/text v0.9.0

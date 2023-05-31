@@ -1,9 +1,26 @@
 import express from 'express'
 
+// create interface for the request
+interface MockRequest {
+    headers: {
+        authorization: string
+    }
+    body: {
+        messages: {
+            text: string
+        }[]
+    }
+}
+
 const SERVER_PORT = 49300
 
 export const SERVER_URL = 'http://localhost:49300'
 export const VALID_TOKEN = 'abcdefgh1234'
+
+const responses = {
+    chat: 'hello from the assistant',
+    fixup: '<selection><title>Goodbye Cody</title></selection>',
+}
 
 // Runs a stub Cody service for testing.
 export async function run<T>(around: () => Promise<T>): Promise<T> {
@@ -11,7 +28,13 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
     app.use(express.json())
 
     app.post('/.api/completions/stream', (req, res) => {
-        res.send('event: completion\ndata: {"completion": "hello from the assistant"}\n\nevent: done\ndata: {}\n\n')
+        // TODO: Filter streaming response
+        // TODO: Handle multiple messages
+        // Ideas from Dom - see if we could put something in the test request itself where we tell it what to respond with
+        // or have a method on the server to send a set response the next time it sees a trigger word in the request.
+        const request = req as MockRequest
+        const response = request.body.messages[2].text.includes('<selection>') ? responses.fixup : responses.chat
+        res.send(`event: completion\ndata: {"completion": ${JSON.stringify(response)}}\n\nevent: done\ndata: {}\n\n`)
     })
 
     app.post('/.api/graphql', (req, res) => {
