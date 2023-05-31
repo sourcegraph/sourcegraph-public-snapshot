@@ -210,7 +210,7 @@
       },
       {
         "command": "cody.recipe.file-flow",
-        "title": "Cody: Touch File"
+        "title": "Cody: Touch"
       },
       {
         "command": "cody.inline.insert",
@@ -263,7 +263,7 @@
         "command": "cody.recipe.fixup",
         "key": "ctrl+alt+/",
         "mac": "ctrl+alt+/",
-        "when": "cody.activated && editorHasSelection && !editorReadonly"
+        "when": "cody.activated && editorTextFocus && !editorReadonly"
       },
       {
         "command": "cody.recipe.non-stop",
@@ -275,7 +275,7 @@
         "command": "cody.recipe.file-flow",
         "key": "ctrl+shift+t",
         "mac": "shift+cmd+t",
-        "when": "cody.activated && editorHasSelection && !editorReadonly"
+        "when": "cody.activated && editorTextFocus && !editorReadonly"
       }
     ],
     "submenus": [
@@ -397,7 +397,7 @@
         },
         {
           "command": "cody.recipe.file-flow",
-          "when": "cody.activated && editorHasSelection"
+          "when": "cody.activated"
         },
         {
           "command": "cody.recipe.generate-unit-test",
