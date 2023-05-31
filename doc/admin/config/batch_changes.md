@@ -10,7 +10,7 @@ Batch Changes is [RBAC-enabled](../../admin/access_control/index.md) <span class
 
 ### Enable organization members to administer
 
-<span class="badge badge-note">Sourcegraph 5.1+</span>
+<span class="badge badge-note">Sourcegraph 5.0.5+</span>
 
 By default, only a batch change's author or a site admin can administer (apply, close, rename, etc.) a batch change. However, admins can use [organizations](../../admin/organizations) to facilitate closer collaboration and shared administrative control over batch changes by enabling the `orgs.allMembersBatchChangesAdmin` setting for an organization. When enabled, members of the organization will be able to administer all batch changes created in that organization's namespace. Batch changes created in other namespaces (user or organization) will still be restricted to the author and site admins.
 
