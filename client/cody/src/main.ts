@@ -8,6 +8,7 @@ import { DOTCOM_URL, LOCAL_APP_URL, isLoggedIn } from './chat/protocol'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
+import * as CompletionsLogger from './completions/logger'
 import { getConfiguration, getFullConfig } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger } from './event-logger'
@@ -238,9 +239,8 @@ const register = async (
             vscode.commands.registerCommand('cody.manual-completions', async () => {
                 await completionsProvider.fetchAndShowManualCompletions()
             }),
-            vscode.commands.registerCommand('cody.completions.inline.accepted', () => {
-                const params = { type: 'inline' }
-                logEvent('CodyVSCodeExtension:completion:accepted', params, params)
+            vscode.commands.registerCommand('cody.completions.inline.accepted', ({ codyLogId }) => {
+                CompletionsLogger.accept(codyLogId)
             }),
             vscode.languages.registerInlineCompletionItemProvider({ scheme: 'file' }, completionsProvider)
         )
