@@ -4,6 +4,7 @@ go_library(
     name = "background",
     srcs = [
         "background.go",
+        "files_backfill.go",
         "recent_contributors.go",
         "recent_views.go",
         "scheduler.go",
