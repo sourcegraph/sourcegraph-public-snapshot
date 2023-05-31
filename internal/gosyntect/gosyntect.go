@@ -111,6 +111,15 @@ type Response struct {
 	Plaintext bool
 }
 
+// SymbolsResponse represents a response to a symbols query.
+type SymbolsResponse struct {
+	// TODO
+	Scip string
+
+	// TODO
+	Plaintext bool
+}
+
 var (
 	// ErrInvalidTheme is returned when the Query.Theme is not a valid theme.
 	ErrInvalidTheme = errors.New("invalid theme")
@@ -141,6 +150,17 @@ type response struct {
 	// Error response fields.
 	Error string `json:"error"`
 	Code  string `json:"code"`
+}
+
+type SymbolsQuery struct {
+	// FileName is the name of the file to get symbols for.
+	FileName string `json:"filename"`
+
+	// Content is the content of the file to get symbols for.
+	Content string `json:"content"`
+
+	// // Which highlighting engine to use
+	// Engine string `json:"engine"`
 }
 
 // Client represents a client connection to a syntect_server.
@@ -264,6 +284,55 @@ func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightRespon
 
 func (c *Client) url(path string) string {
 	return c.syntectServer + path
+}
+
+type symbolsResponse struct {
+	Scip      string `json:"scip"`
+	Plaintext bool   `json:"plaintext"`
+}
+
+func (c *Client) Symbols(ctx context.Context, q *SymbolsQuery) (*SymbolsResponse, error) {
+	jsonQuery, err := json.Marshal(q)
+	if err != nil {
+		return nil, errors.Wrap(err, "encoding query")
+	}
+
+	fmt.Println("jsonQuery", string(jsonQuery))
+
+	req, err := http.NewRequest("POST", c.url("/symbols"), bytes.NewReader(jsonQuery))
+	if err != nil {
+		return nil, errors.Wrap(err, "building request")
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	// Perform the request.
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("making request to %s", c.url("/")))
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.Newf("Whoopsie %s", resp.StatusCode)
+	}
+
+	// buf, err := io.ReadAll(resp.Body)
+	// if err != nil {
+	// 	return nil, errors.Wrap(err, "reading response body")
+	// }
+	// fmt.Println("resp Body", string(buf))
+
+	var r symbolsResponse
+	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("decoding JSON response from %s", c.url("/")))
+	}
+
+	return &SymbolsResponse{
+		Scip:      r.Scip,
+		Plaintext: r.Plaintext,
+	}, nil
+
+	// return response, nil
 }
 
 // New returns a client connection to a syntect_server.

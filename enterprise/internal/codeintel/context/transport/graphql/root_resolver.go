@@ -21,5 +21,10 @@ func NewRootResolver(observationCtx *observation.Context, svc ContextService) re
 
 func (r *rootResolver) FindMostRelevantSCIPSymbols(ctx context.Context, args *resolverstubs.FindMostRelevantSCIPSymbolsArgs) (string, error) {
 	fmt.Println("GetSCIPSymbolArgs: ", args)
+	symbols, err := r.svc.FindMostRelevantSCIPSymbols(ctx, args)
+	if err != nil {
+		return "", err
+	}
+	_ = symbols
 	return "foo", nil
 }
