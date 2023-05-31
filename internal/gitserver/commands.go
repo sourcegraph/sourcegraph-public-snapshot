@@ -1937,10 +1937,6 @@ var runCommitLog = func(ctx context.Context, cmd GitCommand, opt CommitsOptions)
 	return parseCommitLogOutput(data, opt.NameOnly)
 }
 
-func ParseCommitLogOutput(data []byte, nameOnly bool) ([]*wrappedCommit, error) {
-	return parseCommitLogOutput(data, nameOnly)
-}
-
 func parseCommitLogOutput(data []byte, nameOnly bool) ([]*wrappedCommit, error) {
 	allParts := bytes.Split(data, []byte{'\x00'})
 	partsPerCommit := partsPerCommitBasic
@@ -1958,20 +1954,6 @@ func parseCommitLogOutput(data []byte, nameOnly bool) ([]*wrappedCommit, error) 
 		}
 		commits = append(commits, commit)
 	}
-	return commits, nil
-}
-
-func ParseGitLogOutput(data []byte) ([]*gitdomain.Commit, error) {
-	wrappedCommits, err := parseCommitLogOutput(data, false)
-	if err != nil {
-		return nil, err
-	}
-
-	commits := make([]*gitdomain.Commit, len(wrappedCommits))
-	for i, c := range wrappedCommits {
-		commits[i] = c.Commit
-	}
-
 	return commits, nil
 }
 
@@ -2212,10 +2194,6 @@ const (
 	// don't include refs (faster, should be used if refs are not needed)
 	logFormatWithoutRefs = "--format=format:%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00"
 )
-
-func ParseCommitFromLog(data []byte, partsPerCommit int) (commit *wrappedCommit, rest []byte, err error) {
-	return parseCommitFromLog(data, partsPerCommit)
-}
 
 // parseCommitFromLog parses the next commit from data and returns the commit and the remaining
 // data. The data arg is a byte array that contains NUL-separated log fields as formatted by

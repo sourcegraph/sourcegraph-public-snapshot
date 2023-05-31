@@ -28,9 +28,11 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
@@ -547,10 +549,19 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		mDB := database.NewMockDB()
 		mDB.GitserverReposFunc.SetDefaultReturn(database.NewMockGitserverRepoStore())
 		mDB.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
+
+		repoStore := database.NewMockRepoStore()
+		repoStore.GetByNameFunc.SetDefaultReturn(nil, &database.RepoNotFoundErr{})
+
+		mDB.ReposFunc.SetDefaultReturn(repoStore)
+
 		db = mDB
 	}
+
+	logger := logtest.Scoped(t)
+
 	s := &Server{
-		Logger:           logtest.Scoped(t),
+		Logger:           logger,
 		ObservationCtx:   observation.TestContextTB(t),
 		ReposDir:         repoDir,
 		GetRemoteURLFunc: staticGetRemoteURL(remote),
@@ -565,6 +576,7 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		cloneableLimiter:        limiter.NewMutable(1),
 		rpsLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
 		recordingCommandFactory: wrexec.NewRecordingCommandFactory(nil, 0),
+		Perforce:                perforce.NewService(logger, db, list.New()),
 	}
 
 	s.StartClonePipeline(ctx)
@@ -1809,6 +1821,75 @@ func TestLogIfCorrupt(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Len(t, fromDB.CorruptionLogs, 0)
 	})
+}
+
+func TestServerMaybeEnqueuePerforceChangelistMappingJob(t *testing.T) {
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+
+	repoName := api.RepoName("github.com/sourcegraph/sourcegraph")
+	dir := common.GitDir(repoName)
+
+	db := database.NewMockDB()
+	r := database.NewMockRepoStore()
+	db.ReposFunc.SetDefaultReturn(r)
+
+	var enqueueChangelistMappingJobFuncInvoked bool
+
+	// Mock Perforce service to check job is enqueued
+	perforceService := NewMockPerforceService()
+	perforceService.EnqueueChangelistMappingJobFunc.SetDefaultHook(
+		func(_ *perforce.ChangelistMappingJob) {
+			enqueueChangelistMappingJobFuncInvoked = true
+		},
+	)
+
+	s := &Server{
+		DB:       db,
+		Perforce: perforceService,
+	}
+
+	testCases := []struct {
+		name                 string
+		getByNameDefaultHook func(context.Context, api.RepoName) (*types.Repo, error)
+		expectedEnqueued     bool
+	}{
+		{
+			name: "perforce depot",
+			getByNameDefaultHook: func(ctx context.Context, rn api.RepoName) (*types.Repo, error) {
+				return &types.Repo{
+					Name: repoName,
+					ExternalRepo: api.ExternalRepoSpec{
+						ServiceType: extsvc.TypePerforce,
+					},
+				}, nil
+			},
+			expectedEnqueued: true,
+		},
+		{
+			name: "git repo",
+			getByNameDefaultHook: func(ctx context.Context, rn api.RepoName) (*types.Repo, error) {
+				return &types.Repo{
+					Name: repoName,
+					ExternalRepo: api.ExternalRepoSpec{
+						ServiceType: extsvc.TypeGitHub,
+					},
+				}, nil
+			},
+			expectedEnqueued: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			// Reset state for each test case.
+			enqueueChangelistMappingJobFuncInvoked = false
+			r.GetByNameFunc.SetDefaultHook(tc.getByNameDefaultHook)
+
+			s.maybeEnqueuePerforceChangelistMappingJob(ctx, logger, repoName, dir)
+			require.Equal(t, tc.expectedEnqueued, enqueueChangelistMappingJobFuncInvoked)
+		})
+	}
 }
 
 func mustEncodeJSONResponse(value any) string {

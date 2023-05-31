@@ -290,7 +290,7 @@ type Server struct {
 	recordingCommandFactory *wrexec.RecordingCommandFactory
 
 	// Perforce is a plugin-like service attached to Server for all things Perforce.
-	Perforce perforce.Service
+	Perforce perforce.PerforceService
 }
 
 type locks struct {
@@ -1090,6 +1090,8 @@ func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdate
 		// An update error "wins" over a status error.
 		if updateErr != nil {
 			resp.Error = updateErr.Error()
+		} else {
+			s.maybeEnqueuePerforceChangelistMappingJob(ctx, logger, req.Repo, dir)
 		}
 	}
 
@@ -2371,13 +2373,8 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	logger.Info("repo cloned")
 	repoClonedCounter.Inc()
 
-	if r, err := s.DB.Repos().GetByName(ctx, repo); err != nil {
-		logger.Warn("failed to retrieve repo from DB (this could be a data inconsistency)", log.Error(err))
-	} else if r.ExternalRepo.ServiceType == extsvc.TypePerforce {
-		s.Perforce.EnqueueChangelistMappingJob(&perforce.ChangelistMappingJob{
-			RepoName: repo,
-			RepoDir:  dir,
-		})
+	if err == nil {
+		s.maybeEnqueuePerforceChangelistMappingJob(ctx, logger, repo, dir)
 	}
 
 	return nil
@@ -2992,6 +2989,17 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev stri
 		s.Logger.Warn("failed to perform background repo update", log.Error(err), log.String("repo", string(repo)), log.String("rev", rev))
 	}
 	return true
+}
+
+func (s *Server) maybeEnqueuePerforceChangelistMappingJob(ctx context.Context, logger log.Logger, repoName api.RepoName, dir common.GitDir) {
+	if r, err := s.DB.Repos().GetByName(ctx, repoName); err != nil {
+		logger.Warn("failed to retrieve repo from DB (this could be a data inconsistency)", log.Error(err))
+	} else if r.ExternalRepo.ServiceType == extsvc.TypePerforce {
+		s.Perforce.EnqueueChangelistMappingJob(&perforce.ChangelistMappingJob{
+			RepoName: repoName,
+			RepoDir:  dir,
+		})
+	}
 }
 
 const headFileRefPrefix = "ref: "
