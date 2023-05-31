@@ -1,34 +1,33 @@
-{ nixpkgs, lib, utils }:
-lib.genAttrs utils.lib.defaultSystems (system:
+{ pkgs, pkgsStatic, pkgsMusl, hostPlatform, lib }:
 let
-  inherit (import ./util.nix { inherit (nixpkgs) lib; }) makeStatic unNixifyDylibs;
-  pkgs = nixpkgs.legacyPackages.${system};
-  isMacOS = nixpkgs.legacyPackages.${system}.hostPlatform.isMacOS;
-  combyBuilder = ocamlPkgs: systemDepsPkgs:
+  inherit (import ./util.nix { inherit lib; }) mkStatic unNixifyDylibs;
+  combyBuilder = ocamlPkgs:
     (ocamlPkgs.comby.override {
-      sqlite = systemDepsPkgs.sqlite;
-      zlib = if isMacOS then systemDepsPkgs.zlib.static else systemDepsPkgs.zlib;
-      libev = (makeStatic (systemDepsPkgs.libev)).override { static = false; };
-      gmp = makeStatic systemDepsPkgs.gmp;
-      ocamlPackages = ocamlPkgs.ocamlPackages.overrideScope' (self: super: {
-        ocaml_pcre = super.ocaml_pcre.override {
-          pcre = makeStatic systemDepsPkgs.pcre;
+      ocamlPackages = ocamlPkgs.ocamlPackages.overrideScope' (_: prev: {
+        ocaml_pcre = prev.ocaml_pcre.override {
+          pcre = mkStatic pkgsStatic.pcre;
         };
-        ssl = super.ssl.override {
-          openssl = (makeStatic systemDepsPkgs.openssl).override { static = true; };
+        ssl = prev.ssl.override {
+          openssl = mkStatic pkgsStatic.openssl;
         };
       });
+      sqlite = pkgsStatic.sqlite;
+      # pkgsStatic.zlib.static doesn't exist on linux, but does on macos
+      zlib = pkgsStatic.zlib.static or pkgsStatic.zlib;
+      # `static = true` from mkStatic is currently broken on macos, noah to fix upstream
+      libev = (mkStatic pkgsStatic.libev).override { static = false; };
+      gmp = mkStatic pkgsStatic.gmp;
     });
 in
-if isMacOS then {
-  comby = unNixifyDylibs pkgs (combyBuilder pkgs pkgs.pkgsStatic);
-} else {
-  comby = (combyBuilder pkgs.pkgsMusl pkgs.pkgsStatic).overrideAttrs (_: {
+if hostPlatform.isMacOS then
+  unNixifyDylibs pkgs (combyBuilder pkgs)
+else
+# ocaml in pkgsStatic is problematic, so we use it from pkgsMusl instead and just
+# supply pkgsStatic system libraries such as openssl etc
+  (combyBuilder pkgsMusl).overrideAttrs (_: {
     postPatch = ''
       cat >> src/dune <<EOF
       (env (release (flags  :standard -ccopt -static)))
       EOF
     '';
-  });
-}
-)
+  })
