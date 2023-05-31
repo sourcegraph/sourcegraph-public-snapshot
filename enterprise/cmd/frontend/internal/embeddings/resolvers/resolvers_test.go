@@ -88,7 +88,6 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, codeResults, 1)
 	require.Equal(t, "test\nfirst\nfour\nlines", codeResults[0].Content(ctx))
-
 }
 
 func Test_extractLineRange(t *testing.T) {

@@ -133,9 +133,10 @@ func (index *EmbeddingIndex) SimilaritySearch(
 	sort.Slice(neighbors, func(i, j int) bool { return neighbors[i].scoreDetails.Score > neighbors[j].scoreDetails.Score })
 
 	// Take top neighbors and return them as results.
-	results := make([]EmbeddingSearchResult, numResults)
+	n := min(numResults, len(neighbors))
+	results := make([]EmbeddingSearchResult, n)
 
-	for idx := 0; idx < min(numResults, len(neighbors)); idx++ {
+	for idx := 0; idx < n; idx++ {
 		metadata := index.RowMetadata[neighbors[idx].index]
 		results[idx] = EmbeddingSearchResult{
 			RepoName:     repoName,

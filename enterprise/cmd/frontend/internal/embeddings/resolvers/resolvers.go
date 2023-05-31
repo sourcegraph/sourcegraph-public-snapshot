@@ -224,6 +224,10 @@ func (r *embeddingsSearchResultsResolver) TextResults(ctx context.Context) ([]gr
 	return embeddingsSearchResultsToResolvers(ctx, r.logger, r.gitserver, r.results.TextResults)
 }
 
+func (r *embeddingsSearchResultsResolver) BudgetHit() bool {
+	return r.results.BudgetHit
+}
+
 func embeddingsSearchResultsToResolvers(
 	ctx context.Context,
 	logger log.Logger,

@@ -105,6 +105,7 @@ func (c *client) Search(ctx context.Context, args EmbeddingsSearchParameters) (*
 	for _, result := range allResults {
 		combinedResult.CodeResults.MergeTruncate(result.CodeResults, args.CodeResultsCount)
 		combinedResult.TextResults.MergeTruncate(result.TextResults, args.TextResultsCount)
+		combinedResult.BudgetHit = combinedResult.BudgetHit || result.BudgetHit
 	}
 
 	return &combinedResult, nil

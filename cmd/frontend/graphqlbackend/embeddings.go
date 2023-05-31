@@ -47,6 +47,7 @@ type EmbeddingsMultiSearchInputArgs struct {
 type EmbeddingsSearchResultsResolver interface {
 	CodeResults(ctx context.Context) ([]EmbeddingsSearchResultResolver, error)
 	TextResults(ctx context.Context) ([]EmbeddingsSearchResultResolver, error)
+	BudgetHit() bool
 }
 
 type EmbeddingsSearchResultResolver interface {

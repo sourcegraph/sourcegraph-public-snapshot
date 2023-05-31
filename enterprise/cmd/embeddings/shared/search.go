@@ -42,6 +42,10 @@ func searchRepoEmbeddingIndexes(
 	if params.Budget != nil {
 		timer := time.AfterFunc(*params.Budget, func() { budgetExpired.Store(true) })
 		defer timer.Stop()
+		// For tests, make a zero-budget deterministically expire
+		if *params.Budget == 0 {
+			budgetExpired.Store(true)
+		}
 	}
 
 	var result embeddings.EmbeddingCombinedSearchResults
