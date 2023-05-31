@@ -108,18 +108,13 @@ func (c *KubernetesCommand) ReadLogs(
 	namespace string,
 	pod *corev1.Pod,
 	containerName string,
-	cmdLogger Logger,
-	key string,
-	command []string,
+	logEntry LogEntry,
 ) (err error) {
 	ctx, _, endObservation := c.Operations.KubernetesReadLogs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("podName", pod.Name),
 		attribute.String("containerName", containerName),
 	}})
 	defer endObservation(1, observation.Args{})
-
-	logEntry := cmdLogger.LogEntry(key, command)
-	defer logEntry.Close()
 
 	// If the pod just failed to even start, then we can't get logs from it.
 	if pod.Status.Phase == corev1.PodFailed && len(pod.Status.ContainerStatuses) == 0 {

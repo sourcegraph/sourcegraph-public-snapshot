@@ -70,8 +70,8 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 	tests := []struct {
 		name           string
 		pod            *corev1.Pod
-		mockFunc       func(clientset *fake.Clientset, logger *command.MockLogger, logEntry *command.MockLogEntry)
-		mockAssertFunc func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger, logEntry *command.MockLogEntry)
+		mockFunc       func(clientset *fake.Clientset, logEntry *command.MockLogEntry)
+		mockAssertFunc func(t *testing.T, actions []k8stesting.Action, logEntry *command.MockLogEntry)
 		expectedErr    error
 	}{
 		{
@@ -93,7 +93,7 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 					},
 				},
 			},
-			mockFunc: func(clientset *fake.Clientset, logger *command.MockLogger, logEntry *command.MockLogEntry) {
+			mockFunc: func(clientset *fake.Clientset, logEntry *command.MockLogEntry) {
 				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
 					return true, &corev1.PodList{Items: []corev1.Pod{
 						{ObjectMeta: metav1.ObjectMeta{
@@ -103,24 +103,18 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 					}, nil
 				})
 			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger, logEntry *command.MockLogEntry) {
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logEntry *command.MockLogEntry) {
 				require.Len(t, actions, 1)
 				assert.Equal(t, "get", actions[0].GetVerb())
 				assert.Equal(t, "pods", actions[0].GetResource().Resource)
 				assert.Equal(t, "log", actions[0].GetSubresource())
 				assert.Equal(t, "sg-executor-job-container", actions[0].(k8stesting.GenericAction).GetValue().(*corev1.PodLogOptions).Container)
 
-				require.Len(t, logger.LogEntryFunc.History(), 1)
-				assert.Equal(t, "my-key", logger.LogEntryFunc.History()[0].Arg0)
-				assert.Equal(t, []string{"echo", "hello"}, logger.LogEntryFunc.History()[0].Arg1)
-
 				require.Len(t, logEntry.WriteFunc.History(), 1)
 				assert.Equal(t, "stdout: fake logs\n", string(logEntry.WriteFunc.History()[0].Arg0))
 
 				require.Len(t, logEntry.FinalizeFunc.History(), 1)
 				assert.Equal(t, 0, logEntry.FinalizeFunc.History()[0].Arg0)
-
-				require.Len(t, logEntry.CloseFunc.History(), 1)
 			},
 		},
 		{
@@ -133,17 +127,13 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 					Phase: corev1.PodFailed,
 				},
 			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger, logEntry *command.MockLogEntry) {
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logEntry *command.MockLogEntry) {
 				require.Len(t, actions, 0)
-
-				require.Len(t, logger.LogEntryFunc.History(), 1)
 
 				require.Len(t, logEntry.WriteFunc.History(), 0)
 
 				require.Len(t, logEntry.FinalizeFunc.History(), 1)
 				assert.Equal(t, 1, logEntry.FinalizeFunc.History()[0].Arg0)
-
-				require.Len(t, logEntry.CloseFunc.History(), 1)
 			},
 		},
 		{
@@ -165,7 +155,7 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 					},
 				},
 			},
-			mockFunc: func(clientset *fake.Clientset, logger *command.MockLogger, logEntry *command.MockLogEntry) {
+			mockFunc: func(clientset *fake.Clientset, logEntry *command.MockLogEntry) {
 				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
 					return true, &corev1.PodList{Items: []corev1.Pod{
 						{ObjectMeta: metav1.ObjectMeta{
@@ -175,17 +165,13 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 					}, nil
 				})
 			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger, logEntry *command.MockLogEntry) {
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logEntry *command.MockLogEntry) {
 				require.Len(t, actions, 1)
-
-				require.Len(t, logger.LogEntryFunc.History(), 1)
 
 				require.Len(t, logEntry.WriteFunc.History(), 1)
 
 				require.Len(t, logEntry.FinalizeFunc.History(), 1)
 				assert.Equal(t, 128, logEntry.FinalizeFunc.History()[0].Arg0)
-
-				require.Len(t, logEntry.CloseFunc.History(), 1)
 			},
 		},
 	}
@@ -197,7 +183,7 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 			logger.LogEntryFunc.PushReturn(logEntry)
 
 			if test.mockFunc != nil {
-				test.mockFunc(clientset, logger, logEntry)
+				test.mockFunc(clientset, logEntry)
 			}
 
 			cmd := &command.KubernetesCommand{
@@ -211,9 +197,7 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 				"my-namespace",
 				test.pod,
 				command.KubernetesJobContainerName,
-				logger,
-				"my-key",
-				[]string{"echo", "hello"},
+				logEntry,
 			)
 			if test.expectedErr != nil {
 				require.Error(t, err)
@@ -223,7 +207,7 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 			}
 
 			if test.mockAssertFunc != nil {
-				test.mockAssertFunc(t, clientset.Actions(), logger, logEntry)
+				test.mockAssertFunc(t, clientset.Actions(), logEntry)
 			}
 		})
 	}
