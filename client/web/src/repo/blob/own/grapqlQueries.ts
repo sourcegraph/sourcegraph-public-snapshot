@@ -103,7 +103,7 @@ export const FETCH_TREE_OWNERS = gql`
         }
         ruleLineMatch
     }
-    
+
     fragment OwnershipConnectionFields on OwnershipConnection {
         totalOwners
         nodes {
