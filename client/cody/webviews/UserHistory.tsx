@@ -57,6 +57,17 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
                     </div>
                 </div>
                 <div className={styles.itemsContainer}>
+                    <VSCodeButton
+                        key="current"
+                        className={styles.itemButton}
+                        onClick={() => setView('chat')}
+                        type="button"
+                    >
+                        <div className={styles.itemButtonInnerContainer}>
+                            <div className={styles.itemDate}>{new Date(Date.now()).toLocaleString()} - current</div>
+                            <div className={styles.itemLastMessage}>Conversation in progress...</div>
+                        </div>
+                    </VSCodeButton>
                     {userHistory &&
                         [...Object.entries(userHistory)]
                             .sort(
