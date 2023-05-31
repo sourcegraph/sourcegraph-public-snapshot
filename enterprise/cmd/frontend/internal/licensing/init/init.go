@@ -49,11 +49,7 @@ func Init(
 	database.BeforeCreateExternalService = enforcement.NewBeforeCreateExternalServiceHook()
 
 	logger := log.Scoped("licensing", "licensing enforcement")
-	hooks.GetLicenseInfo = func(isSiteAdmin bool) *hooks.LicenseInfo {
-		if !isSiteAdmin {
-			return nil
-		}
-
+	hooks.GetLicenseInfo = func() *hooks.LicenseInfo {
 		info, err := licensing.GetConfiguredProductLicenseInfo()
 		if err != nil {
 			logger.Error("Failed to get license info", log.Error(err))

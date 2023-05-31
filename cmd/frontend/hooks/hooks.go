@@ -31,4 +31,4 @@ type LicenseInfo struct {
 	BatchChanges           *FeatureBatchChanges `json:"batchChanges"`
 }
 
-var GetLicenseInfo = func(isSiteAdmin bool) *LicenseInfo { return nil }
+var GetLicenseInfo = func() *LicenseInfo { return nil }

@@ -277,15 +277,13 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		openTelemetry = clientObservability.OpenTelemetry
 	}
 
-	var licenseInfo *hooks.LicenseInfo
+	licenseInfo := hooks.GetLicenseInfo()
+
 	var user *types.User
 	temporarySettings := "{}"
-	if !a.IsAuthenticated() {
-		licenseInfo = hooks.GetLicenseInfo(false)
-	} else {
+	if a.IsAuthenticated() {
 		// Ignore err as we don't care if user does not exist
 		user, _ = a.User(ctx, db.Users())
-		licenseInfo = hooks.GetLicenseInfo(user != nil && user.SiteAdmin)
 		if user != nil {
 			if settings, err := db.TemporarySettings().GetTemporarySettings(ctx, user.ID); err == nil {
 				temporarySettings = settings.Contents
