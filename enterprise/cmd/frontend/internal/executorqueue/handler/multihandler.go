@@ -236,6 +236,24 @@ func (m *MultiHandler) heartbeat(ctx context.Context, executor types.Executor, i
 		return nil, nil, err
 	}
 
+	if len(executor.QueueNames) == 0 {
+		return nil, nil, errors.Newf("queueNames must be set for multi-queue heartbeats")
+	}
+
+	var invalidQueueNames []string
+	for _, queue := range idsByQueue {
+		if !slices.Contains(executor.QueueNames, queue.QueueName) {
+			invalidQueueNames = append(invalidQueueNames, queue.QueueName)
+		}
+	}
+	if len(invalidQueueNames) > 0 {
+		return nil, nil, errors.Newf(
+			"unsupported queue name(s) '%s' submitted in queueJobIds, executor is configured for queues '%s'",
+			strings.Join(invalidQueueNames, ", "),
+			strings.Join(executor.QueueNames, ", "),
+		)
+	}
+
 	logger := log.Scoped("multiqueue.heartbeat", "Write the heartbeat of multiple queues to the database")
 
 	// Write this heartbeat to the database so that we can populate the UI with recent executor activity.
@@ -259,6 +277,10 @@ func (m *MultiHandler) heartbeat(ctx context.Context, executor types.Executor, i
 			known, cancel, err = m.CodeIntelQueueHandler.Store.Heartbeat(ctx, queue.JobIDs, heartbeatOptions)
 		}
 
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "multiqueue.UpsertHeartbeat")
+		}
+
 		// TODO: this could move into the executor client's Heartbeat impl, but considering this is
 		// multi-queue specific code, it's a bit ambiguous where it should live. Having it here allows
 		// types.HeartbeatResponse to be simpler and enables the client to pass the ID sets back to the worker
@@ -273,7 +295,7 @@ func (m *MultiHandler) heartbeat(ctx context.Context, executor types.Executor, i
 		cancelIDs = append(cancelIDs, cancel...)
 	}
 
-	return knownIDs, cancelIDs, errors.Wrap(err, "multiqueue.UpsertHeartbeat")
+	return knownIDs, cancelIDs, nil
 }
 
 func (m *MultiHandler) validateQueues(queues []string) []string {
