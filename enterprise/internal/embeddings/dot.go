@@ -3,7 +3,7 @@ package embeddings
 import "github.com/sourcegraph/sourcegraph/internal/env"
 
 var (
-	simdEnabled = env.MustGetBool("ENABLE_EMBEDDINGS_SEARCH_SIMD", false, "Enable SIMD dot product for embeddings search")
+	simdEnabled = env.MustGetBool("ENABLE_EMBEDDINGS_SEARCH_SIMD", true, "Enable SIMD dot product for embeddings search")
 
 	// dotArch is a dot product function that is architecture-optimized. Its
 	// inputs must be of equal length and that length must be a multiple of 64.
