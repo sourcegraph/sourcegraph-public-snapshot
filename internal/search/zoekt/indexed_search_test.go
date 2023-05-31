@@ -310,13 +310,17 @@ func TestIndexedSearch(t *testing.T) {
 				t.Errorf("unindexed mismatch (-want +got):\n%s", diff)
 			}
 
-			zoektJob := &RepoSubsetTextSearchJob{
-				Repos:          indexed,
-				Query:          zoektQuery,
-				Typ:            search.TextRequest,
+			zoektParams := &search.ZoektParameters{
 				FileMatchLimit: tt.args.fileMatchLimit,
 				Select:         tt.args.selectPath,
-				Since:          tt.args.since,
+			}
+
+			zoektJob := &RepoSubsetTextSearchJob{
+				Repos:       indexed,
+				Query:       zoektQuery,
+				Typ:         search.TextRequest,
+				ZoektParams: zoektParams,
+				Since:       tt.args.since,
 			}
 
 			_, err = zoektJob.Run(tt.args.ctx, job.RuntimeClients{Zoekt: fakeZoekt}, agg)
@@ -590,6 +594,22 @@ func TestZoektSearchOptions(t *testing.T) {
 				UseDocumentRanks:    true,
 				DocumentRanksWeight: 4500,
 			},
+		},
+		{
+			name:    "test keyword scoring",
+			context: context.Background(),
+			options: &Options{
+				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
+				NumRepos:       3,
+				KeywordScoring: true,
+			},
+			want: &zoekt.SearchOptions{
+				ShardMaxMatchCount: 10000,
+				TotalMaxMatchCount: 100000,
+				MaxWallTime:        20000000000,
+				MaxDocDisplayCount: 500,
+				ChunkMatches:       true,
+				UseKeywordScoring:  true},
 		},
 	}
 	for _, tt := range cases {
