@@ -31,8 +31,7 @@ fileExistenceTests:
   shouldExist: true
   uid: 0
   gid: 0
-  # TODO: Tweak permissions
-  # permissions: '-rw-r--r--'
+  permissions: '-rw-r--r--'
 - name: '/redis-data'
   path: '/redis-data'
   shouldExist: true

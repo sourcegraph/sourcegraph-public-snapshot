@@ -11,6 +11,9 @@ filegroup(
 pkg_tar(
     name = "redis_tarball",
     srcs = [":redis_conf"],
+    modes = {
+        "/etc/redis/redis.conf": "0644",
+    },
     remap_paths = {
         "/redis.conf": "/etc/redis/redis.conf",
     },
