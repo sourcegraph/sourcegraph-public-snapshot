@@ -150,7 +150,7 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 			return gqlerror.List{
 				{
 					Message:    "access denied",
-					Extensions: map[string]any{"code": codygateway.ErrCodeProductSubscriptionNotFound},
+					Extensions: map[string]any{"code": codygateway.GQLErrCodeProductSubscriptionNotFound},
 				},
 			}
 		})

@@ -148,7 +148,7 @@ func (s *Source) checkAccessToken(ctx context.Context, token string) (*dotcom.Ch
 	}
 
 	for _, gqlerr := range gqlerrs {
-		if gqlerr.Extensions != nil && gqlerr.Extensions["code"] == codygateway.ErrCodeProductSubscriptionNotFound {
+		if gqlerr.Extensions != nil && gqlerr.Extensions["code"] == codygateway.GQLErrCodeProductSubscriptionNotFound {
 			return nil, actor.ErrAccessTokenDenied{"associated product subscription not found"}
 		}
 	}

@@ -31,7 +31,7 @@ func (e ErrProductSubscriptionNotFound) Error() string {
 }
 
 func (e ErrProductSubscriptionNotFound) Extensions() map[string]any {
-	return map[string]any{"code": codygateway.ErrCodeProductSubscriptionNotFound}
+	return map[string]any{"code": codygateway.GQLErrCodeProductSubscriptionNotFound}
 }
 
 // ProductSubscriptionByAccessToken retrieves the subscription corresponding to the
