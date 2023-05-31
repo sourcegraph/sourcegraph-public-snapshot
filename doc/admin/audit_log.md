@@ -126,9 +126,9 @@ audit.Log(ctx, logger, audit.Record{
 The `audit.actor` node carries ID of the user who performed the action (`actorUID`), but it’s not mapped into a full Sourcegraph user right now. You can, however, obtain the user details by following these steps:
 
 1. Grab the user ID from the audit log
-2. Base64 [encode](https://www.base64encode.org) the ID with a "User:" prefix. For example, for Actor with ID 71 use `User:71`, which encodes to `VXNlcjo3MQ==`
-4. Navigate to Site Admin -> API Console and run the query below
-5. Find the corresponding user by searching the query results for the encoded ID from above
+1. Base64 [encode](https://www.base64encode.org) the ID with a "User:" prefix. For example, for Actor with ID 71 use `User:71`, which encodes to `VXNlcjo3MQ==`
+1. Navigate to Site Admin -> API Console and run the query below
+1. Find the corresponding user by searching the query results for the encoded ID from above
 
 GraphQL query:
 ```
@@ -140,4 +140,17 @@ GraphQL query:
     }
   }
 }
+```
+
+**Excessive audit logging**
+
+If you are seeing a large number of logs in the format `frontend.SecurityEvents` or similar, these are securityEventLogs.
+
+To disable them, in the site config set `log.securityEventLog.location` to `none`.
+
+```
+ "log": {
+    "securityEventLog": {
+      "location": "none"
+    }
 ```

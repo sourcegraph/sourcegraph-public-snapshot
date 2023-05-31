@@ -1432,8 +1432,7 @@
               "deprecationMessage": "No effect, audit logs are always set to SRC_LOG_LEVEL",
               "description": "DEPRECATED: No effect, audit logs are always set to SRC_LOG_LEVEL",
               "type": "string",
-              "enum": ["DEBUG", "INFO", "WARN", "ERROR"],
-              "default": "INFO"
+              "enum": ["DEBUG", "INFO", "WARN", "ERROR"]
             }
           },
           "required": ["internalTraffic", "graphQL", "gitserverAccess"],
@@ -1441,8 +1440,7 @@
             {
               "internalTraffic": false,
               "graphQL": false,
-              "gitserverAccess": false,
-              "severityLevel": "INFO"
+              "gitserverAccess": false
             }
           ]
         },

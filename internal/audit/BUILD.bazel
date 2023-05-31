@@ -30,6 +30,7 @@ go_test(
     deps = [
         "//internal/actor",
         "//internal/conf",
+        "//internal/env",
         "//internal/requestclient",
         "//schema",
         "@com_github_sourcegraph_log//:log",
