@@ -5,9 +5,7 @@ import { formatDistance, format, parseISO } from 'date-fns'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, ErrorAlert, LoadingSpinner, PageHeader, H4, H3, Text } from '@sourcegraph/wildcard'
-
-import { Collapsible } from '../../../../components/Collapsible'
+import { Container, ErrorAlert, LoadingSpinner, PageHeader, H4, Text } from '@sourcegraph/wildcard'
 
 import { useRankingSummary as defaultUseRankingSummary } from './backend'
 
@@ -56,8 +54,8 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
                     ) : (
                         <>
                             {data.rankingSummary.map(summary => (
-                                <Container className="mb-3">
-                                    <Summary key={summary.graphKey} summary={summary} />
+                                <Container key={summary.graphKey} className="mb-3">
+                                    <Summary summary={summary} />
                                 </Container>
                             ))}
                         </>
