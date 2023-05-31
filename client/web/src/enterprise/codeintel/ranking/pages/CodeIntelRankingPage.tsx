@@ -45,22 +45,18 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
                 className="mb-3"
             />
 
-            <>
-                {data &&
-                    (data.rankingSummary.length === 0 ? (
-                        <Container>
-                            <>No data.</>
+            {data &&
+                (data.rankingSummary.length === 0 ? (
+                    <Container>
+                        <>No data.</>
+                    </Container>
+                ) : (
+                    data.rankingSummary.map(summary => (
+                        <Container key={summary.graphKey} className="mb-3">
+                            <Summary summary={summary} />
                         </Container>
-                    ) : (
-                        <>
-                            {data.rankingSummary.map(summary => (
-                                <Container key={summary.graphKey} className="mb-3">
-                                    <Summary summary={summary} />
-                                </Container>
-                            ))}
-                        </>
-                    ))}
-            </>
+                    ))
+                ))}
         </>
     )
 }
