@@ -6,7 +6,7 @@ import (
 )
 
 // Watch for configuration changes related to the builtin auth provider.
-func Init() {
+func init() {
 	go func() {
 		conf.Watch(func() {
 			newPC, _ := GetProviderConfig()
