@@ -1,37 +1,100 @@
-{ pkgs, pkgsStatic, fetchFromGitHub, lib }:
+{ pkgs
+, lib
+, autoreconfHook
+, perl
+, pkg-config
+, coreutils
+, pkgsStatic
+, fetchFromGitHub
+, buildPackages
+}:
 let
-  inherit (import ./util.nix { inherit lib; }) mkStatic unNixifyDylibs removePackagesByName;
+  inherit (import ./util.nix { inherit lib; }) mkStatic unNixifyDylibs;
   pcre2 = mkStatic pkgsStatic.pcre2;
   libyaml = mkStatic pkgsStatic.libyaml;
   jansson = pkgsStatic.jansson.overrideAttrs (oldAttrs: {
     cmakeFlags = [ "-DJANSSON_BUILD_SHARED_LIBS=OFF" ];
   });
+  stdenv = pkgsStatic.stdenv;
 in
-unNixifyDylibs pkgs ((pkgsStatic.universal-ctags.override {
-  # static python is a hassle, and its only used for docs here so we dont care about
-  # it being static or not
-  inherit (pkgs) python3;
-  inherit pcre2 libyaml jansson;
-}).overrideAttrs (oldAttrs: {
+# yoinked from github.com/nixos/nixpkgs
+unNixifyDylibs pkgs (stdenv.mkDerivation rec {
+  pname = "universal-ctags";
   version = "5.9.20220403.0";
+
   src = fetchFromGitHub {
     owner = "universal-ctags";
     repo = "ctags";
-    rev = "f95bb3497f53748c2b6afc7f298cff218103ab90";
+    rev = "p${version}";
     sha256 = "sha256-pd89KERQj6K11Nue3YFNO+NLOJGqcMnHkeqtWvMFk38=";
   };
-  enableParallelBuilding = true; # must be enabled on a per-package basis
-  # pkgsStatic moves `buildInputs` into `propagatedBuildInputs`, and we don't want sandbox support so we remove
-  # libseccomp so it autoconfigures to no sandbox
-  propagatedBuildInputs = (removePackagesByName (oldAttrs.propagatedBuildInputs or [ ]) [ pkgsStatic.libseccomp ]);
-  # 1) check-genfile tries to perform git operations, but .git is removed by default (and leaveDotGit not recommended)
-  #    due to being non-deterministic https://github.com/NixOS/nixpkgs/issues/8567
-  # 2) tutil tests may be for libseccomp builds only:
-  #    `make: *** No rule to make target 'tutil'.  Stop`
-  checkFlags = lib.remove "tutil" (oldAttrs.checkFlags ++ [ "-o" "check-genfile" ]);
-  # don't include libintl/gettext on macos
-  dontAddExtraLibs = true;
-  postFixup = (oldAttrs.postFixup or "") + ''
+
+  depsBuildBuild = [
+    buildPackages.stdenv.cc
+  ];
+
+  nativeBuildInputs = [
+    autoreconfHook
+    perl
+    pkg-config
+  ];
+
+  buildInputs = [
+    libyaml
+    pcre2
+    jansson
+    pkgsStatic.libxml2
+  ]
+  ++ lib.optional stdenv.isDarwin pkgsStatic.libiconv;
+
+  configureFlags = [ "--enable-tmpdir=/tmp" ];
+
+  patches = [
+    "${pkgs.path}/pkgs/development/tools/misc/universal-ctags/000-nixos-specific.patch"
+  ];
+
+  postPatch = ''
+    substituteInPlace Tmain/utils.sh \
+      --replace /bin/echo ${coreutils}/bin/echo
+
+    patchShebangs misc/*
+  '';
+
+  postFixup = ''
     ln -s $out/bin/ctags $out/bin/universal-ctags
   '';
-}))
+
+  doCheck = true;
+
+  checkTarget = [
+    "tlib"
+    "tmain"
+    "units"
+  ];
+  # disable check-genfile, this attempts to run some git commands
+  # which arent supported as we dont have/include .git
+  checkFlags = [
+    "-o"
+    "check-genfile"
+  ];
+
+  # must be enabled on a per-package basis
+  enableParallelBuilding = true;
+  enableParallelChecking = true;
+
+  meta = with lib; {
+    homepage = "https://docs.ctags.io/en/latest/";
+    description = "A maintained ctags implementation";
+    longDescription = ''
+      Universal Ctags (abbreviated as u-ctags) is a maintained implementation of
+      ctags. ctags generates an index (or tag) file of language objects found in
+      source files for programming languages. This index makes it easy for text
+      editors and other tools to locate the indexed items.
+    '';
+    license = licenses.gpl2Plus;
+    maintainers = [ maintainers.AndersonTorres ];
+    platforms = platforms.all;
+    mainProgram = "ctags";
+    priority = 1; # over the emacs implementation
+  };
+})
