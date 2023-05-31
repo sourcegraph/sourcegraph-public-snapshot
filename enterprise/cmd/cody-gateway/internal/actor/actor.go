@@ -131,5 +131,12 @@ func (u updateOnFailureLimiter) TryAcquire(ctx context.Context) (func() error, e
 	return commit, err
 }
 
-// ErrAccessTokenDenied is returned when the access token is denied.
-var ErrAccessTokenDenied = errors.New("access token denied")
+// ErrAccessTokenDenied is returned when the access token is denied due to the
+// reason.
+type ErrAccessTokenDenied struct {
+	Reason string
+}
+
+func (e ErrAccessTokenDenied) Error() string {
+	return fmt.Sprintf("access token denied: %s", e.Reason)
+}

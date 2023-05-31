@@ -30,7 +30,8 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 
 		act, err := a.Sources.Get(r.Context(), token)
 		if err != nil {
-			if errors.Is(err, actor.ErrAccessTokenDenied) {
+			var e actor.ErrAccessTokenDenied
+			if errors.As(err, &e) {
 				response.JSONError(logger, w, http.StatusUnauthorized, err)
 
 				err := a.EventLogger.LogEvent(
@@ -39,6 +40,9 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 						Name:       codygateway.EventNameUnauthorized,
 						Source:     "anonymous",
 						Identifier: "anonymous",
+						Metadata: map[string]any{
+							"reason": e.Reason,
+						},
 					},
 				)
 				if err != nil {
