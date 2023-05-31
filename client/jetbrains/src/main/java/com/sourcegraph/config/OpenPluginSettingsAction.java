@@ -8,16 +8,17 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class OpenPluginSettingsAction extends DumbAwareAction {
-    public OpenPluginSettingsAction() {
-        super();
-    }
+  public OpenPluginSettingsAction() {
+    super();
+  }
 
-    public OpenPluginSettingsAction(@Nullable @NlsActions.ActionText String text) {
-        super(text);
-    }
+  public OpenPluginSettingsAction(@Nullable @NlsActions.ActionText String text) {
+    super(text);
+  }
 
-    @Override
-    public void actionPerformed(@NotNull AnActionEvent event) {
-        ShowSettingsUtil.getInstance().showSettingsDialog(event.getProject(), SettingsConfigurable.class);
-    }
+  @Override
+  public void actionPerformed(@NotNull AnActionEvent event) {
+    ShowSettingsUtil.getInstance()
+        .showSettingsDialog(event.getProject(), SettingsConfigurable.class);
+  }
 }
