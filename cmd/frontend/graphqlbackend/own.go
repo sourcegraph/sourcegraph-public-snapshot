@@ -50,16 +50,19 @@ type OwnResolver interface {
 
 	NodeResolvers() map[string]NodeByIDFunc
 
-	// Codeowners queries
+	// Codeowners queries.
 	CodeownersIngestedFiles(context.Context, *CodeownersIngestedFilesArgs) (CodeownersIngestedFileConnectionResolver, error)
 	RepoIngestedCodeowners(context.Context, api.RepoID) (CodeownersIngestedFileResolver, error)
 
-	// Codeowners mutations
+	// Codeowners mutations.
 	AddCodeownersFile(context.Context, *CodeownersFileArgs) (CodeownersIngestedFileResolver, error)
 	UpdateCodeownersFile(context.Context, *CodeownersFileArgs) (CodeownersIngestedFileResolver, error)
 	DeleteCodeownersFiles(context.Context, *DeleteCodeownersFileArgs) (*EmptyResponse, error)
 
-	// config
+	// Assigned ownership mutations.
+	AssignOwner(context.Context, *AssignOwnerArgs) (*EmptyResponse, error)
+
+	// Config.
 	OwnSignalConfigurations(ctx context.Context) ([]SignalConfigurationResolver, error)
 	UpdateOwnSignalConfigurations(ctx context.Context, configurationsArgs UpdateSignalConfigurationsArgs) ([]SignalConfigurationResolver, error)
 }
@@ -135,6 +138,17 @@ type CodeownersFileInput struct {
 type DeleteCodeownersFilesInput struct {
 	RepoID   *graphql.ID
 	RepoName *string
+}
+
+type AssignOwnerArgs struct {
+	Input AssignOwnerInput
+}
+
+type AssignOwnerInput struct {
+	// AssignedOwnerID is an ID of a user who is assigned as an owner.
+	AssignedOwnerID graphql.ID
+	RepoID          graphql.ID
+	AbsolutePath    string
 }
 
 type DeleteCodeownersFileArgs struct {

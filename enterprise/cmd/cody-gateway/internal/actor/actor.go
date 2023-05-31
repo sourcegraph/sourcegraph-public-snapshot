@@ -34,13 +34,13 @@ type Actor struct {
 	// For example, for product subscriptions this is the subscription UUID. For
 	// Sourcegraph.com users, this is the string representation of the user ID.
 	ID string `json:"id"`
-	// AccessEnabled is an evaluated field that summarizes whether or not LLM-proxy access
+	// AccessEnabled is an evaluated field that summarizes whether or not Cody Gateway access
 	// is enabled.
 	//
 	// For example, for product subscriptions it is based on whether the subscription is
 	// archived, if access is enabled, and if any rate limits are set.
 	AccessEnabled bool `json:"accessEnabled"`
-	// RateLimits holds the rate limits for LLM-proxy access for this actor.
+	// RateLimits holds the rate limits for Cody Gateway access for this actor.
 	RateLimits map[types.CompletionsFeature]RateLimit `json:"rateLimits"`
 	// LastUpdated indicates when this actor's state was last updated.
 	LastUpdated *time.Time `json:"lastUpdated"`

@@ -323,6 +323,10 @@ export class InlineCompletionProvider extends CompletionProvider {
                 }
             }
 
+            // Only include a closing line (e.g. `}`) if the block is empty yet. We detect this by
+            // looking at the indentation of the next non-empty line.
+            const includeClosingLine = indentation(nextNonEmptyLine) < startIndent
+
             let cutOffIndex = lines.length
             for (let i = 0; i < lines.length; i++) {
                 const line = lines[i]
@@ -334,7 +338,7 @@ export class InlineCompletionProvider extends CompletionProvider {
                 if (indentation(line) < startIndent) {
                     // When we find the first block below the start indentation, only include it if
                     // it is an end block
-                    if (line.trim().startsWith('}')) {
+                    if (includeClosingLine && line.trim().startsWith('}')) {
                         cutOffIndex = i + 1
                     } else {
                         cutOffIndex = i

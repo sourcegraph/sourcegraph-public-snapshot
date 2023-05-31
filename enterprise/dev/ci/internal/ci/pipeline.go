@@ -225,7 +225,15 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addClientLintersForAllFiles,
 			addCodyExtensionTests,
 			wait,
-			addCodyReleaseSteps)
+			addCodyReleaseSteps("stable"))
+
+	case runtype.CodyNightly:
+		// If this is a Cody VS Code extension nightly build, run the Cody tests and release
+		ops = operations.NewSet(
+			addClientLintersForAllFiles,
+			addCodyExtensionTests,
+			wait,
+			addCodyReleaseSteps("nightly"))
 
 	case runtype.BextNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and
@@ -291,10 +299,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.CandidatesNoTest:
 		imageBuildOps := operations.NewNamedSet("Image builds")
 		imageBuildOps.Append(buildCandidateDockerImage("syntax-highlighter", c.Version, c.candidateImageTag(), false))
+		imageBuildOps.Append(buildCandidateDockerImage("symbols", c.Version, c.candidateImageTag(), false))
 		imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesTestDeps, c.Version, c.candidateImageTag(), c.RunType))
 		var deployImages = []string{}
 		for _, image := range images.DeploySourcegraphDockerImages {
-			if image == "syntax-highlighter" {
+			if image == "syntax-highlighter" || image == "symbols" {
 				continue
 			}
 			deployImages = append(deployImages, image)
@@ -353,10 +362,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			}
 		} else {
 			imageBuildOps.Append(buildCandidateDockerImage("syntax-highlighter", c.Version, c.candidateImageTag(), false))
+			imageBuildOps.Append(buildCandidateDockerImage("symbols", c.Version, c.candidateImageTag(), false))
 			imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesTestDeps, c.Version, c.candidateImageTag(), c.RunType))
 			var deployImages = []string{}
 			for _, image := range images.DeploySourcegraphDockerImages {
-				if image == "syntax-highlighter" {
+				if image == "syntax-highlighter" || image == "symbols" {
 					continue
 				}
 				deployImages = append(deployImages, image)

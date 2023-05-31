@@ -29,6 +29,7 @@ import { LocalStorage } from '../services/LocalStorageProvider'
 import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../services/SecretStorageProvider'
 import { TestSupport } from '../test-support'
 
+import { fastFilesExist } from './fastFileFinder'
 import {
     AuthStatus,
     ConfigurationSubsetForWebview,
@@ -39,7 +40,7 @@ import {
     isLoggedIn,
 } from './protocol'
 import { getRecipe } from './recipes'
-import { filesExist, getCodebaseContext } from './utils'
+import { getCodebaseContext } from './utils'
 
 export async function getAuthStatus(
     config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
@@ -305,7 +306,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 const lastInteraction = this.transcript.getLastInteraction()
                 if (lastInteraction) {
                     const displayText = reformatBotMessage(text, responsePrefix)
-                    let { text: highlightedDisplayText } = await highlightTokens(displayText || '', filesExist)
+                    const fileExistFunc = (filePaths: string[]): Promise<{ [filePath: string]: boolean }> => {
+                        const rootPath = this.editor.getWorkspaceRootPath()
+                        if (!rootPath) {
+                            return Promise.resolve({})
+                        }
+                        return fastFilesExist(this.rgPath, rootPath, filePaths)
+                    }
+                    let { text: highlightedDisplayText } = await highlightTokens(displayText || '', fileExistFunc)
                     // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
                     highlightedDisplayText = await this.guardrailsAnnotateAttributions(highlightedDisplayText)
                     this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
