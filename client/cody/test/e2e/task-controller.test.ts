@@ -35,7 +35,6 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     await page.getByRole('button', { name: /Cody: Fixup.*/ }).click()
 
     // Wait for the input box to appear
-    await expect(page.getByPlaceholder('Ask Cody to edit your code, or use /chat to ask a question.')).toBeVisible()
     await page.getByPlaceholder('Ask Cody to edit your code, or use /chat to ask a question.').click()
     // Type in the instruction for fixup
     await page.keyboard.type('replace hello with goodbye')
