@@ -241,11 +241,14 @@ extend type Mutation {
     deleteCodeownersFiles deletes any existing Codeowners file for the given repositories.
     """
     deleteCodeownersFiles(repositories: [DeleteCodeownersFilesInput!]!): EmptyResponse
-
     """
-    Update ownership signal configurations. This operation will update any configurations keyed by name. It will do nothing if the key doesn't exist.
+    updateOwnSignalConfigurations updates any configurations keyed by name. It will do nothing if the key doesn't exist.
     """
     updateOwnSignalConfigurations(input: UpdateSignalConfigurationsInput!): [OwnSignalConfiguration!]!
+    """
+    assignOwner creates a new assigned owner.
+    """
+    assignOwner(input: AssignOwnerInput!): EmptyResponse
 }
 
 """
@@ -341,6 +344,24 @@ input UpdateSignalConfigurationsInput {
     The signal configuration updates.
     """
     configs: [OwnSignalConfigurationUpdate!]!
+}
+
+"""
+AssignOwnerInput represents the input for assigning an owner.
+"""
+input AssignOwnerInput {
+    """
+    ID of an assigned owner.
+    """
+    assignedOwnerID: ID!
+    """
+    ID of a repo, which (or which directory/file) is assigned for ownership.
+    """
+    repoID: ID!
+    """
+    Path of the file/directory or a root path of the repo, which is assigned for ownership.
+    """
+    absolutePath: String!
 }
 
 """
