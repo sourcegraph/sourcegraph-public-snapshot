@@ -70,6 +70,7 @@ const dartSpec: LanguageSpec = {
     stylized: 'Dart',
     fileExts: ['dart'],
     commentStyles: [{ lineRegex: tripleSlashPattern }],
+    textDocumentImplemenationSupport: true,
 }
 
 const elixirSpec: LanguageSpec = {
