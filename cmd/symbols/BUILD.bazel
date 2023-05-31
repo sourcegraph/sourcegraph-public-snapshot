@@ -47,7 +47,10 @@ oci_image(
     env = {
         "CACHE_DIR": "/mnt/cache/symbols",
     },
-    tars = [":tar_symbols", ":tar_scip-ctags"],
+    tars = [
+        ":tar_symbols",
+        ":tar_scip-ctags",
+    ],
 )
 
 oci_tarball(
