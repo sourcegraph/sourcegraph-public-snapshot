@@ -544,7 +544,7 @@ func jsonSettingFragment(setting string, value any) string {
 func buildCountUniqueUserConds(opt *CountUniqueUsersOptions) []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
-		conds = buildCommonUsageConds(&opt.CommonUsageOptions, conds)
+		conds = BuildCommonUsageConds(&opt.CommonUsageOptions, conds)
 
 		if opt.EventFilters != nil {
 			if opt.EventFilters.ByEventNamePrefix != "" {
@@ -568,7 +568,7 @@ func buildCountUniqueUserConds(opt *CountUniqueUsersOptions) []*sqlf.Query {
 	return conds
 }
 
-func buildCommonUsageConds(opt *CommonUsageOptions, conds []*sqlf.Query) []*sqlf.Query {
+func BuildCommonUsageConds(opt *CommonUsageOptions, conds []*sqlf.Query) []*sqlf.Query {
 	if opt != nil {
 		if opt.ExcludeSystemUsers {
 			conds = append(conds, sqlf.Sprintf("event_logs.user_id > 0 OR event_logs.anonymous_user_id <> 'backend'"))
@@ -900,7 +900,7 @@ func (l *eventLogStore) SiteUsageCurrentPeriods(ctx context.Context) (types.Site
 func (l *eventLogStore) siteUsageCurrentPeriods(ctx context.Context, now time.Time, opt *SiteUsageOptions) (summary types.SiteUsageSummary, err error) {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
-		conds = buildCommonUsageConds(&opt.CommonUsageOptions, conds)
+		conds = BuildCommonUsageConds(&opt.CommonUsageOptions, conds)
 	}
 
 	query := sqlf.Sprintf(siteUsageCurrentPeriodsQuery, now, now, now, now, now, now, sqlf.Join(conds, ") AND ("))
@@ -1660,16 +1660,19 @@ END
 
 // makeDateTruncExpression returns an expression that converts the given
 // SQL expression into the start of the containing date container specified
-// by the unit parameter (e.g. day, week, month, or rolling month [prior 30 days]).
+// by the unit parameter (e.g. day, week, month, or rolling month [prior 1 month]).
+// Note: If unit is 'week', the function will truncate to the preceding Sunday.
+// This is because some locales start the week on Sunday, unlike the Postgres default
+// (and many parts of the world) which start the week on Monday.
 func makeDateTruncExpression(unit, expr string) string {
 	if unit == "week" {
-		return fmt.Sprintf(`DATE_TRUNC('%s', TIMEZONE('UTC', %s) + '1 day'::interval) - '1 day'::interval`, unit, expr)
+		return fmt.Sprintf(`TIMEZONE('UTC', (DATE_TRUNC('week', TIMEZONE('UTC', %s) + '1 day'::interval) - '1 day'::interval))`, expr)
 	}
 	if unit == "rolling_month" {
-		return fmt.Sprintf(`DATE_TRUNC('day', TIMEZONE('UTC', %s)) - '30 day'::interval`, expr)
+		return fmt.Sprintf(`TIMEZONE('UTC', (DATE_TRUNC('day', TIMEZONE('UTC', %s)) - '1 month'::interval))`, expr)
 	}
 
-	return fmt.Sprintf(`DATE_TRUNC('%s', TIMEZONE('UTC', %s))`, unit, expr)
+	return fmt.Sprintf(`TIMEZONE('UTC', DATE_TRUNC('%s', TIMEZONE('UTC', %s)))`, unit, expr)
 }
 
 // RequestsByLanguage returns a map of language names to the number of requests of precise support for that language.

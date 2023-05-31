@@ -49,14 +49,12 @@ func getItemFromCache[T interface{}](cacheKey string) (*T, error) {
 	return &summary, nil
 }
 
-func setDataToCache(key string, data string, expireSeconds int) error {
+func setDataToCache(key string, data string) error {
 	if cacheDisabledInTest {
 		return nil
 	}
 
-	if expireSeconds == 0 {
-		expireSeconds = 24 * 60 * 60 // 1 day
-	}
+	expireSeconds := 24 * 60 * 60 // 1 day
 
 	return store.SetEx(scopeKey+key, expireSeconds, data)
 }
@@ -67,7 +65,7 @@ func setArrayToCache[T interface{}](cacheKey string, nodes []*T) error {
 		return err
 	}
 
-	return setDataToCache(cacheKey, string(data), 0)
+	return setDataToCache(cacheKey, string(data))
 }
 
 func setItemToCache[T interface{}](cacheKey string, summary *T) error {
@@ -76,7 +74,7 @@ func setItemToCache[T interface{}](cacheKey string, summary *T) error {
 		return err
 	}
 
-	return setDataToCache(cacheKey, string(data), 0)
+	return setDataToCache(cacheKey, string(data))
 }
 
 var dateRanges = []string{LastThreeMonths, LastMonth, LastWeek}
