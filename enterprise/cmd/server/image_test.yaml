@@ -59,6 +59,11 @@ commandTests:
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
+  - name: "scip-ctags is runnable"
+    command: "/usr/local/bin/scip-ctags"
+    envVars:
+      - key: "SANITY_CHECK"
+        value: "true"
   - name: "worker binary is runnable"
     command: "worker"
     envVars:

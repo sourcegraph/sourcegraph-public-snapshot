@@ -30,6 +30,12 @@ pkg_tar(
     srcs = [":symbols"],
 )
 
+pkg_tar(
+    name = "tar_scip-ctags",
+    srcs = ["//docker-images/syntax-highlighter:scip-ctags"],
+    package_dir = "/usr/local/bin",
+)
+
 oci_image(
     name = "image",
     base = "@wolfi_symbols_base",
@@ -41,7 +47,7 @@ oci_image(
     env = {
         "CACHE_DIR": "/mnt/cache/symbols",
     },
-    tars = [":tar_symbols"],
+    tars = [":tar_symbols", ":tar_scip-ctags"],
 )
 
 oci_tarball(

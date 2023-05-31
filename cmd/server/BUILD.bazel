@@ -88,6 +88,12 @@ pkg_tar(
 )
 
 pkg_tar(
+    name = "tar_scip-ctags",
+    srcs = ["//docker-images/syntax-highlighter:scip-ctags"],
+    package_dir = "/usr/local/bin",
+)
+
+pkg_tar(
     name = "tar_postgres_optimize",
     srcs = ["//cmd/server/rootfs:postgres-optimize.sh"],
 )
@@ -113,6 +119,7 @@ oci_image(
         ":tar_postgres_exporter_config",
         ":tar_monitoring_config",
         ":tar_syntax-highlighter",
+        ":tar_scip-ctags",
         ":tar_postgres_optimize",
     ] + dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS),
     workdir = "/",
