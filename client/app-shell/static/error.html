@@ -48,6 +48,9 @@
                 <a href="https://github.com/sourcegraph/app" class="button">File an issue</a>
                 <p>When filing an issue, be sure to include the logs.</p>
                 <button class="button button-secondary" id="restart-button">Close and restart</button>
+
+                <button class="button button-secondary" id="clear-data-button">Clear all data and restart</button>
+
             </div>
         </div>
 
@@ -58,6 +61,10 @@
 
             document.getElementById('restart-button').addEventListener('click', () => {
                 __TAURI__.invoke('restart_app').catch(console.error)
+            })
+
+            document.getElementById('clear-all-button').addEventListener('click', () => {
+                __TAURI__.invoke('clear_all_data').catch(console.error)
             })
         </script>
     </body>
