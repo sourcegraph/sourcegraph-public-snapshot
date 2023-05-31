@@ -78,10 +78,12 @@ pkgs.mkShell {
     go_1_20
 
     # Lots of our tooling and go tests rely on git et al.
+    comby
     git
     git-lfs
-    parallel
+    gsed
     nssTools
+    parallel
 
     # CI lint tools you need locally
     shfmt
@@ -110,9 +112,6 @@ pkgs.mkShell {
     (if pkgs.hostPlatform.isLinux then bazel-fhs else bazel-wrapper)
     bazel-watcher
     bazel-buildtools
-
-    # Release tool and sg check for gsed
-    gsed
   ];
 
   # Startup postgres, redis & set nixos specific stuff
