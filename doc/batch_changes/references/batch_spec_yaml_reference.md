@@ -737,10 +737,6 @@ changesetTemplate:
 
 ## `transformChanges`
 
-<aside class="experimental">
-<span class="badge badge-experimental">Experimental</span> <code>transformChanges</code> is an experimental feature in Sourcegraph 3.23 and <a href="https://sourcegraph.com/github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.23. It's a <b>preview</b> of functionality we're currently exploring to make managing large changes in large repositories easier. If you have any feedback, please let us know!
-</aside>
-
 A description of how to transform the changes (diffs) produced in each repository before turning them into separate changeset specs by inserting them into the [`changesetTemplate`](#changesettemplate).
 
 This allows the creation of multiple changeset specs (and thus changesets) in a single repository.
@@ -799,10 +795,6 @@ The branch that should be used for this additional changeset. This **overwrites 
 Optional: the file diffs matching the given directory will only be grouped in a repository with that name, as configured on your Sourcegraph instance.
 
 ## `workspaces`
-
-<aside class="experimental">
-<span class="badge badge-experimental">Experimental</span> <code>workspaces</code> is an experimental feature in Sourcegraph 3.25 and <a href="https://sourcegraph.com/github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.25. It's a <b>preview</b> of functionality we're currently exploring to make managing large changes in large repositories easier. If you have any feedback, please let us know!
-</aside>
 
 The optional `workspaces` property allows users to define where projects are located in repositories and cause the [`steps`](#steps) to be executed for each project, instead of once per repository. That allows easier creation of multiple changesets in large repositories.
 
