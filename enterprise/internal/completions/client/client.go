@@ -2,8 +2,8 @@ package client
 
 import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/anthropic"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/codygateway"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/dotcom"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/llmproxy"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/openai"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -16,13 +16,13 @@ import (
 func Get(endpoint, provider, accessToken string) (types.CompletionsClient, error) {
 	switch provider {
 	case anthropic.ProviderName:
-		return anthropic.NewClient(httpcli.ExternalDoer, accessToken, endpoint), nil
+		return anthropic.NewClient(httpcli.ExternalDoer, endpoint, accessToken), nil
 	case openai.ProviderName:
-		return openai.NewClient(httpcli.ExternalDoer, accessToken), nil
+		return openai.NewClient(httpcli.ExternalDoer, endpoint, accessToken), nil
 	case dotcom.ProviderName:
 		return dotcom.NewClient(httpcli.ExternalDoer, accessToken), nil
-	case llmproxy.ProviderName:
-		return llmproxy.NewClient(httpcli.ExternalDoer, endpoint, accessToken)
+	case codygateway.ProviderName, "llmproxy": // temporary back-compat
+		return codygateway.NewClient(httpcli.ExternalDoer, endpoint, accessToken)
 	default:
 		return nil, errors.Newf("unknown completion stream provider: %s", provider)
 	}
@@ -43,15 +43,15 @@ func GetCompletionsConfig() *schema.Completions {
 
 		// TODO: Temporary workaround to fix instances where no completion model is set.
 		if completionsConfig.CompletionModel == "" {
-			if completionsConfig.Provider == llmproxy.ProviderName {
-				completionsConfig.CompletionModel = "anthropic/claude-instant-v1.0"
+			if completionsConfig.Provider == codygateway.ProviderName {
+				completionsConfig.CompletionModel = "anthropic/claude-instant-v1"
 			}
-			completionsConfig.CompletionModel = "claude-instant-v1.0"
+			completionsConfig.CompletionModel = "claude-instant-v1"
 		}
 
-		// Set a default for the llmproxy provider, so users don't have to specify it.
-		if completionsConfig.Provider == llmproxy.ProviderName && completionsConfig.Endpoint == "" {
-			completionsConfig.Endpoint = llmproxy.DefaultEndpoint
+		// Set a default for the Cody Gateway provider, so users don't have to specify it.
+		if completionsConfig.Provider == codygateway.ProviderName && completionsConfig.Endpoint == "" {
+			completionsConfig.Endpoint = codygateway.DefaultEndpoint
 		}
 
 		return completionsConfig
@@ -70,7 +70,7 @@ func GetCompletionsConfig() *schema.Completions {
 			Enabled:     len(appConfig.DotcomAuthToken) > 0,
 			Provider:    dotcom.ProviderName,
 			// TODO: These are not required right now as upstream overwrites this,
-			// but should we switch to LLM Proxy they will be.
+			// but should we switch to Cody Gateway they will be.
 			ChatModel:       "claude-v1",
 			CompletionModel: "claude-instant-v1",
 		}

@@ -118,9 +118,11 @@ const register = async (
         { dispose: () => vscode.commands.executeCommand('setContext', 'cody.activated', false) }
     )
 
-    const executeRecipe = async (recipe: RecipeID): Promise<void> => {
-        await vscode.commands.executeCommand('cody.chat.focus')
-        await chatProvider.executeRecipe(recipe, '')
+    const executeRecipe = async (recipe: RecipeID, showTab = true): Promise<void> => {
+        if (showTab) {
+            await vscode.commands.executeCommand('cody.chat.focus')
+        }
+        await chatProvider.executeRecipe(recipe, '', showTab)
     }
 
     const webviewErrorMessager = async (error: string): Promise<void> => {
@@ -144,7 +146,13 @@ const register = async (
     }
 
     disposables.push(
-        // File Chat Provider
+        vscode.commands.registerCommand('cody.inline.insert', async (copiedText: string) => {
+            // Insert copiedText to the current cursor position
+            await vscode.commands.executeCommand('editor.action.insertSnippet', {
+                snippet: copiedText,
+            })
+        }),
+        // Inline Assist Provider
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
             const isFixMode = /^\/f(ix)?\s/i.test(comment.text.trimStart())
             await commentController.chat(comment, isFixMode)
@@ -246,6 +254,9 @@ const register = async (
                 return [new vscode.Range(0, 0, lineCount - 1, 0)]
             },
         }
+        disposables.push(
+            vscode.commands.registerCommand('cody.recipe.file-flow', () => executeRecipe('file-flow', false))
+        )
     }
 
     if (initialConfig.experimentalGuardrails) {

@@ -136,6 +136,8 @@ func newPeriodicGoroutine(ctx context.Context, name, description string, getInte
 	}
 }
 
+const MaxConsecutiveReinvocations = 100
+
 // Start begins the process of calling the registered handler in a loop. This process will
 // wait the interval supplied at construction between invocations.
 func (r *PeriodicGoroutine) Start() {
@@ -144,10 +146,12 @@ func (r *PeriodicGoroutine) Start() {
 	}
 	defer close(r.finished)
 
+	reinvocations := 0
+
 loop:
 	for {
 		start := time.Now()
-		shutdown, err := runPeriodicHandler(r.ctx, r.handler, r.operation)
+		shutdown, reinvoke, err := runPeriodicHandler(r.ctx, r.handler, r.operation)
 		duration := time.Since(start)
 		if r.recorder != nil {
 			go r.recorder.LogRun(r, duration, err)
@@ -159,6 +163,23 @@ loop:
 		} else if h, ok := r.handler.(ErrorHandler); ok && err != nil {
 			h.HandleError(err)
 		}
+
+		if reinvoke {
+			select {
+			case <-r.ctx.Done():
+				break loop
+
+			default:
+				reinvocations++
+
+				if reinvocations < MaxConsecutiveReinvocations {
+					continue loop
+				}
+
+			}
+		}
+
+		reinvocations = 0
 
 		select {
 		case <-r.clock.After(r.getInterval()):
@@ -215,7 +236,9 @@ func (r *PeriodicGoroutine) RegisterRecorder(recorder *recorder.Recorder) {
 	r.recorder = recorder
 }
 
-func runPeriodicHandler(ctx context.Context, handler Handler, operation *observation.Operation) (_ bool, err error) {
+var ErrReinvokeImmediately = errors.New("periodic handler wishes to be immediately re-invoked")
+
+func runPeriodicHandler(ctx context.Context, handler Handler, operation *observation.Operation) (shutdown, reinvoke bool, err error) {
 	if operation != nil {
 		tmpCtx, _, endObservation := operation.With(ctx, &err, observation.Args{})
 		defer endObservation(1, observation.Args{})
@@ -227,9 +250,13 @@ func runPeriodicHandler(ctx context.Context, handler Handler, operation *observa
 		if ctx.Err() != nil && errors.Is(err, ctx.Err()) {
 			// If the error is due to the loop being shut down, break
 			// from the run loop in the calling function
-			return true, nil
+			return true, false, nil
+		}
+
+		if errors.Is(err, ErrReinvokeImmediately) {
+			return false, true, nil
 		}
 	}
 
-	return false, err
+	return false, false, err
 }

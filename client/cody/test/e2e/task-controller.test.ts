@@ -10,8 +10,8 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     // Open the Explorer view from the sidebar
     await sidebarExplorer(page).click()
 
-    // Select the second files from the tree view, which is the index.html file
-    await page.locator('.monaco-highlighted-label').nth(2).click()
+    // Open the index.html file from the tree view
+    await page.getByRole('treeitem', { name: 'index.html' }).locator('a').dblclick()
 
     // Bring the cody sidebar to the foreground
     await page.click('[aria-label="Sourcegraph Cody"]')
@@ -33,6 +33,9 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
 
     // Open the command palette by clicking on the Cody Icon
     await page.getByRole('button', { name: /Cody: Fixup.*/ }).click()
+
+    // Wait for the input box to appear
+    await page.getByPlaceholder('Ask Cody to edit your code, or use /chat to ask a question.').click()
     // Type in the instruction for fixup
     await page.keyboard.type('replace hello with goodbye')
     // Press enter to submit the fixup

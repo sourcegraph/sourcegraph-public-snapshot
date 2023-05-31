@@ -1,7 +1,7 @@
 package com.sourcegraph.cody.chat;
 
-import com.sourcegraph.cody.completions.Message;
-import com.sourcegraph.cody.completions.Speaker;
+import com.sourcegraph.cody.api.Message;
+import com.sourcegraph.cody.api.Speaker;
 import java.util.ArrayList;
 import org.jetbrains.annotations.NotNull;
 

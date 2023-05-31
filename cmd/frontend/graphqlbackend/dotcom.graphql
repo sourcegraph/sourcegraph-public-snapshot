@@ -276,9 +276,9 @@ type ProductSubscription implements Node {
     """
     sourcegraphAccessTokens: [String!]!
     """
-    LLM-proxy access granted to this subscription. Properties may be inferred from the active license, or be defined in overrides.
+    Cody Gateway access granted to this subscription. Properties may be inferred from the active license, or be defined in overrides.
     """
-    llmProxyAccess: LLMProxyAccess!
+    codyGatewayAccess: CodyGatewayAccess!
     """
     The date when this product subscription was created.
     """
@@ -299,9 +299,9 @@ type ProductSubscription implements Node {
 }
 
 """
-A usage data point of LLM proxy use of a subscription.
+A usage data point of Cody Gateway usage of a subscription.
 """
-type LLMProxyUsageDatapoint {
+type CodyGatewayUsageDatapoint {
     """
     The day the usage occurred.
     """
@@ -317,29 +317,29 @@ type LLMProxyUsageDatapoint {
 }
 
 """
-LLM-proxy access granted to a subscription.
+Cody Gateway access granted to a subscription.
 FOR INTERNAL USE ONLY.
 """
-type LLMProxyAccess {
+type CodyGatewayAccess {
     """
-    Whether or not a subscription has LLM-proxy access.
+    Whether or not a subscription has Cody Gateway access.
     """
     enabled: Boolean!
     """
     Rate limit for chat completions access, or null if not enabled.
     """
-    chatCompletionsRateLimit: LLMProxyRateLimit
+    chatCompletionsRateLimit: CodyGatewayRateLimit
     """
     Rate limit for code completions access, or null if not enabled.
     """
-    codeCompletionsRateLimit: LLMProxyRateLimit
+    codeCompletionsRateLimit: CodyGatewayRateLimit
 }
 
 """
 The source of the rate limit returned.
 FOR INTERNAL USE ONLY.
 """
-enum LLMProxyRateLimitSource {
+enum CodyGatewayRateLimitSource {
     """
     Indicates that a custom override for the rate limit has been stored.
     """
@@ -352,14 +352,14 @@ enum LLMProxyRateLimitSource {
 }
 
 """
-LLM-proxy access rate limits for a subscription.
+Cody Gateway access rate limits for a subscription.
 FOR INTERNAL USE ONLY.
 """
-type LLMProxyRateLimit {
+type CodyGatewayRateLimit {
     """
     The source of the rate limit configuration.
     """
-    source: LLMProxyRateLimitSource!
+    source: CodyGatewayRateLimitSource!
     """
     The models that are allowed for this rate limit bucket.
     Usually, customers will have two separate rate limits, one
@@ -376,9 +376,9 @@ type LLMProxyRateLimit {
     """
     intervalSeconds: Int!
     """
-    Recent usage data of LLM proxy for the subscription.
+    Recent usage data of Cody Gateway for the subscription.
     """
-    usage: [LLMProxyUsageDatapoint!]!
+    usage: [CodyGatewayUsageDatapoint!]!
 }
 
 """
@@ -386,17 +386,17 @@ Partial update to apply to a subscription. Omitted fields are not applied.
 """
 input UpdateProductSubscriptionInput {
     """
-    Partial update to LLM-proxy access granted to this subscription.
+    Partial update to Cody Gateway access granted to this subscription.
     """
-    llmProxyAccess: UpdateLLMProxyAccessInput
+    codyGatewayAccess: UpdateCodyGatewayAccessInput
 }
 
 """
-Partial update to apply to a subscription's LLM-proxy access. Omitted fields are not applied.
+Partial update to apply to a subscription's Cody Gateway access. Omitted fields are not applied.
 """
-input UpdateLLMProxyAccessInput {
+input UpdateCodyGatewayAccessInput {
     """
-    Enable or disable LLM-proxy access.
+    Enable or disable Cody Gateway access.
     """
     enabled: Boolean
     """

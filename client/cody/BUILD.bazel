@@ -33,6 +33,7 @@ ts_project(
     srcs = [
         "package.json",
         "src/chat/ChatViewProvider.ts",
+        "src/chat/fastFileFinder.ts",
         "src/chat/protocol.ts",
         "src/chat/recipes.ts",
         "src/chat/utils.ts",
@@ -66,6 +67,7 @@ ts_project(
         "src/services/LocalStorageProvider.ts",
         "src/services/SecretStorageProvider.ts",
         "src/test-support.ts",
+        "src/testSetup/vscode.ts",
         "src/wink-nlp-utils.d.ts",
         "webviews/App.story.tsx",
         "webviews/App.tsx",
@@ -118,8 +120,10 @@ ts_project(
     name = "cody_tests",
     testonly = True,
     srcs = [
+        "src/chat/fastFileFinder.test.ts",
         "src/chat/utils.test.ts",
         "src/completions/cache.test.ts",
+        "src/completions/completion.test.ts",
         "src/completions/context.test.ts",
         "src/completions/provider.test.ts",
         "src/configuration.test.ts",

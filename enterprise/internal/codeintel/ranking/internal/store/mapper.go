@@ -147,7 +147,7 @@ processable_symbols AS (
 		)
 ),
 referenced_symbols AS (
-	SELECT unnest(r.symbol_names) AS symbol_name
+	SELECT DISTINCT unnest(r.symbol_names) AS symbol_name
 	FROM processable_symbols r
 ),
 referenced_definitions AS (
@@ -164,14 +164,8 @@ referenced_definitions AS (
 			RANK() OVER (PARTITION BY cre.upload_key ORDER BY cre.upload_id DESC) AS rank
 		FROM codeintel_ranking_definitions rd
 		JOIN referenced_symbols rs ON rs.symbol_name = rd.symbol_name
-		JOIN codeintel_ranking_exports cre ON cre.id = rd.exported_upload_id
-		JOIN progress p ON TRUE
-		WHERE
-			rd.graph_key = %s AND
-			-- Ensure that the record is within the bounds where it would be visible
-			-- to the current "snapshot" defined by the ranking computation state row.
-			cre.id <= p.max_export_id AND
-			(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at)
+		JOIN exported_uploads cre ON cre.id = rd.exported_upload_id
+		WHERE rd.graph_key = %s
 	) s
 
 	-- For multiple uploads in the same repository/root/indexer, only consider
