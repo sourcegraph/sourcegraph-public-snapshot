@@ -222,7 +222,7 @@ func renderUsageTable(ctx context.Context, cfg *Config, pods []corev1.Pod) error
 		}
 	}
 
-	style.ResourceTable(columns, rows)
+	style.UsageTable(columns, rows)
 	return nil
 }
 

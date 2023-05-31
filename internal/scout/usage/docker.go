@@ -79,7 +79,7 @@ func renderDockerUsageTable(ctx context.Context, cfg *Config, containers []types
 		os.Exit(1)
 	}
 
-	style.ResourceTable(columns, rows)
+	style.UsageTable(columns, rows)
 	return nil
 }
 
