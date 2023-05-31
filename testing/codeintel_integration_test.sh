@@ -28,8 +28,12 @@ export ALLOW_SINGLE_DOCKER_CODE_INSIGHTS
 run_server_image "$tarball" "$image_name" "$url" "$port"
 
 echo '--- Initializing instance'
-"$init_sg" initSG
+"$init_sg" initSG -sg_envrc="./sg_envrc"
 
+# TODO debug
+cat ./sg_envrc
+
+source ./sg_envrc
 echo '--- :horse: Running init-sg addRepos'
 "$init_sg" addRepos -config "$testdata_repos"
 

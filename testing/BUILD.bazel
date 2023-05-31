@@ -129,7 +129,6 @@ sh_test(
         "PERFORCE_USER",
         "SOURCEGRAPH_LICENSE_GENERATION_KEY",
         "SOURCEGRAPH_LICENSE_KEY",
-        "SOURCEGRAPH_SUDO_TOKEN",
     ],
     tags = ["requires-network"],
     deps = ["//testing/tools:integration_runner"],
