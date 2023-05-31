@@ -1954,21 +1954,21 @@
             }
           }
         },
-        "llmProxy": {
-          "description": "Configuration related to the LLM Proxy service management. This should only be used on sourcegraph.com.",
+        "codyGateway": {
+          "description": "Configuration related to the Cody Gateway service management. This should only be used on sourcegraph.com.",
           "type": "object",
           "group": "Sourcegraph.com",
           "properties": {
             "bigQueryGoogleProjectID": {
-              "description": "The project ID to pull BigQuery LLM Proxy related events from.",
+              "description": "The project ID to pull BigQuery Cody Gatewayrelated events from.",
               "type": "string"
             },
             "bigQueryDataset": {
-              "description": "The dataset to pull BigQuery LLM Proxy related events from.",
+              "description": "The dataset to pull BigQuery Cody Gateway related events from.",
               "type": "string"
             },
             "bigQueryTable": {
-              "description": "The table in the dataset to pull BigQuery LLM Proxy related events from.",
+              "description": "The table in the dataset to pull BigQuery Cody Gateway related events from.",
               "type": "string"
             }
           }

@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-func TestLLMProxyAccessResolverRateLimit(t *testing.T) {
+func TestCodeGatewayAccessResolverRateLimit(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
@@ -36,27 +36,27 @@ func TestLLMProxyAccessResolverRateLimit(t *testing.T) {
 	_, err = dbLicenses{db: db}.Create(ctx, subID, "k2", 1, info)
 	require.NoError(t, err)
 
-	// Enable access to LLM proxy.
+	// Enable access to Cody Gateway.
 	tru := true
-	err = dbSubscriptions{db: db}.Update(ctx, subID, dbSubscriptionUpdate{llmProxyAccess: &graphqlbackend.UpdateLLMProxyAccessInput{Enabled: &tru}})
+	err = dbSubscriptions{db: db}.Update(ctx, subID, dbSubscriptionUpdate{codyGatewayAccess: &graphqlbackend.UpdateCodyGatewayAccessInput{Enabled: &tru}})
 	require.NoError(t, err)
 
 	t.Run("default rate limit for a plan", func(t *testing.T) {
 		sub, err := dbSubscriptions{db: db}.GetByID(ctx, subID)
 		require.NoError(t, err)
 
-		r := llmProxyAccessResolver{sub: &productSubscription{v: sub, db: db}}
-		wantRateLimit := licensing.NewCodyGatewayChatRateLimit(licensing.PlanEnterprise1, pointify(int(info.UserCount)), []string{})
+		r := codyGatewayAccessResolver{sub: &productSubscription{v: sub, db: db}}
 		rateLimit, err := r.ChatCompletionsRateLimit(ctx)
 		require.NoError(t, err)
 
+		wantRateLimit := licensing.NewCodyGatewayChatRateLimit(licensing.PlanEnterprise1, pointify(int(info.UserCount)), []string{})
 		assert.Equal(t, wantRateLimit.Limit, rateLimit.Limit())
 		assert.Equal(t, wantRateLimit.IntervalSeconds, rateLimit.IntervalSeconds())
 	})
 
 	t.Run("override default rate limit for a plan", func(t *testing.T) {
 		err := (dbSubscriptions{db: db}.Update(ctx, subID, dbSubscriptionUpdate{
-			llmProxyAccess: &graphqlbackend.UpdateLLMProxyAccessInput{
+			codyGatewayAccess: &graphqlbackend.UpdateCodyGatewayAccessInput{
 				ChatCompletionsRateLimit: pointify(int32(10)),
 			},
 		}))
@@ -65,11 +65,11 @@ func TestLLMProxyAccessResolverRateLimit(t *testing.T) {
 		sub, err := dbSubscriptions{db: db}.GetByID(ctx, subID)
 		require.NoError(t, err)
 
-		r := llmProxyAccessResolver{sub: &productSubscription{v: sub, db: db}}
-		defaultRateLimit := licensing.NewCodyGatewayChatRateLimit(licensing.PlanEnterprise1, pointify(10), []string{})
+		r := codyGatewayAccessResolver{sub: &productSubscription{v: sub, db: db}}
 		rateLimit, err := r.ChatCompletionsRateLimit(ctx)
 		require.NoError(t, err)
 
+		defaultRateLimit := licensing.NewCodyGatewayChatRateLimit(licensing.PlanEnterprise1, pointify(10), []string{})
 		assert.Equal(t, int32(10), rateLimit.Limit())
 		assert.Equal(t, defaultRateLimit.IntervalSeconds, rateLimit.IntervalSeconds())
 	})

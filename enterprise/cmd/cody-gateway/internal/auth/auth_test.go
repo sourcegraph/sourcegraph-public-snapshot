@@ -58,16 +58,16 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 						Id:         "UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==",
 						Uuid:       "6452a8fc-e650-45a7-a0a2-357f776b3b46",
 						IsArchived: false,
-						LlmProxyAccess: dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccess{
-							LLMProxyAccessFields: dotcom.LLMProxyAccessFields{
+						CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
+							CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
 								Enabled: true,
-								ChatCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit{
+								ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
 									RateLimitFields: dotcom.RateLimitFields{
 										Limit:           10,
 										IntervalSeconds: 10,
 									},
 								},
-								CodeCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit{
+								CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
 									RateLimitFields: dotcom.RateLimitFields{
 										Limit:           10,
 										IntervalSeconds: 10,
@@ -150,16 +150,16 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 						Id:         "UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==",
 						Uuid:       "6452a8fc-e650-45a7-a0a2-357f776b3b46",
 						IsArchived: false,
-						LlmProxyAccess: dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccess{
-							LLMProxyAccessFields: dotcom.LLMProxyAccessFields{
+						CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
+							CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
 								Enabled: true,
-								ChatCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit{
+								ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
 									RateLimitFields: dotcom.RateLimitFields{
 										Limit:           10,
 										IntervalSeconds: 10,
 									},
 								},
-								CodeCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit{
+								CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
 									RateLimitFields: dotcom.RateLimitFields{
 										Limit:           10,
 										IntervalSeconds: 10,
@@ -199,16 +199,16 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 						Id:         "UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==",
 						Uuid:       "6452a8fc-e650-45a7-a0a2-357f776b3b46",
 						IsArchived: false,
-						LlmProxyAccess: dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccess{
-							LLMProxyAccessFields: dotcom.LLMProxyAccessFields{
+						CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
+							CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
 								Enabled: true,
-								ChatCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit{
+								ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
 									RateLimitFields: dotcom.RateLimitFields{
 										Limit:           10,
 										IntervalSeconds: 10,
 									},
 								},
-								CodeCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit{
+								CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
 									RateLimitFields: dotcom.RateLimitFields{
 										Limit:           10,
 										IntervalSeconds: 10,
@@ -248,16 +248,16 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 						Id:         "UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==",
 						Uuid:       "6452a8fc-e650-45a7-a0a2-357f776b3b46",
 						IsArchived: false,
-						LlmProxyAccess: dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccess{
-							LLMProxyAccessFields: dotcom.LLMProxyAccessFields{
+						CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
+							CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
 								Enabled: true,
-								ChatCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit{
+								ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
 									RateLimitFields: dotcom.RateLimitFields{
 										Limit:           10,
 										IntervalSeconds: 10,
 									},
 								},
-								CodeCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit{
+								CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
 									RateLimitFields: dotcom.RateLimitFields{
 										Limit:           10,
 										IntervalSeconds: 10,

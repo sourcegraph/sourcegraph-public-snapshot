@@ -16,13 +16,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var llmProxySACredentialFilePath = env.Get("LLM_PROXY_BIGQUERY_ACCESS_CREDENTIALS_FILE", "", "")
+var codyGatewaySACredentialFilePath = func() string {
+	if v := env.Get("CODY_GATEWAY_BIGQUERY_ACCESS_CREDENTIALS_FILE", "", "BigQuery credentials for the Cody Gateway service"); v != "" {
+		return v
+	}
+	return env.Get("LLM_PROXY_BIGQUERY_ACCESS_CREDENTIALS_FILE", "", "DEPRECATED: Use CODY_GATEWAY_BIGQUERY_ACCESS_CREDENTIALS_FILE instead")
+}()
 
-type LLMProxyService interface {
+type CodyGatewayService interface {
 	UsageForSubscription(ctx context.Context, uuid string) ([]SubscriptionUsage, error)
 }
 
-type LLMProxyServiceOptions struct {
+type CodyGatewayServiceOptions struct {
 	BigQuery ServiceBigQueryOptions
 }
 
@@ -37,22 +42,22 @@ func (o ServiceBigQueryOptions) IsConfigured() bool {
 	return o.ProjectID != "" && o.Dataset != "" && o.EventsTable != ""
 }
 
-func NewLLMProxyService() *llmProxyService {
-	opts := LLMProxyServiceOptions{}
+func NewCodyGatewayService() *codyGatewayService {
+	opts := CodyGatewayServiceOptions{}
 
 	d := conf.Get().Dotcom
-	if d != nil && d.LlmProxy != nil {
-		opts.BigQuery.CredentialFilePath = llmProxySACredentialFilePath
-		opts.BigQuery.ProjectID = d.LlmProxy.BigQueryGoogleProjectID
-		opts.BigQuery.Dataset = d.LlmProxy.BigQueryDataset
-		opts.BigQuery.EventsTable = d.LlmProxy.BigQueryTable
+	if d != nil && d.CodyGateway != nil {
+		opts.BigQuery.CredentialFilePath = codyGatewaySACredentialFilePath
+		opts.BigQuery.ProjectID = d.CodyGateway.BigQueryGoogleProjectID
+		opts.BigQuery.Dataset = d.CodyGateway.BigQueryDataset
+		opts.BigQuery.EventsTable = d.CodyGateway.BigQueryTable
 	}
 
-	return NewLLMProxyServiceWithOptions(opts)
+	return NewCodyGatewayServiceWithOptions(opts)
 }
 
-func NewLLMProxyServiceWithOptions(opts LLMProxyServiceOptions) *llmProxyService {
-	return &llmProxyService{
+func NewCodyGatewayServiceWithOptions(opts CodyGatewayServiceOptions) *codyGatewayService {
+	return &codyGatewayService{
 		opts: opts,
 	}
 }
@@ -63,11 +68,11 @@ type SubscriptionUsage struct {
 	Count int
 }
 
-type llmProxyService struct {
-	opts LLMProxyServiceOptions
+type codyGatewayService struct {
+	opts CodyGatewayServiceOptions
 }
 
-func (s *llmProxyService) UsageForSubscription(ctx context.Context, feature types.CompletionsFeature, uuid string) ([]SubscriptionUsage, error) {
+func (s *codyGatewayService) UsageForSubscription(ctx context.Context, feature types.CompletionsFeature, uuid string) ([]SubscriptionUsage, error) {
 	if !s.opts.BigQuery.IsConfigured() {
 		// Not configured, nothing we can do.
 		return nil, nil
