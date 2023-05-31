@@ -58,6 +58,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Slow request logs now have the correct trace and span IDs attached if a trace is present on the request. [#51826](https://github.com/sourcegraph/sourcegraph/pull/51826)
 - `id` column of `user_repo_permissions` table was switched to `bigint` to avoid `int` overflow. [#52299](https://github.com/sourcegraph/sourcegraph/pull/52299)
 - MAU calculation in product analytics and pings use the same condition and UTC at all times. [#52306](https://github.com/sourcegraph/sourcegraph/pull/52306) [#52579](https://github.com/sourcegraph/sourcegraph/pull/52579) [#52581](https://github.com/sourcegraph/sourcegraph/pull/52581)
+- In some circumstances filenames containing `..` either could not be read or would return a diff when viewed. We now always correctly read those files. [#52605](https://github.com/sourcegraph/sourcegraph/pull/52605)
 
 ### Removed
 
