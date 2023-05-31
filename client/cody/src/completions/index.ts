@@ -11,6 +11,7 @@ import { CompletionsCache } from './cache'
 import { getContext } from './context'
 import { CompletionsDocumentProvider } from './docprovider'
 import { History } from './history'
+import * as CompletionLogger from './logger'
 import { CompletionProvider, InlineCompletionProvider, ManualCompletionProvider } from './provider'
 
 const LOG_MANUAL = { type: 'manual' }
@@ -94,6 +95,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         token.onCancellationRequested(() => abortController.abort())
         this.abortOpenInlineCompletions = () => abortController.abort()
 
+        CompletionLogger.clear()
+
         const currentEditor = vscode.window.activeTextEditor
         if (!currentEditor || currentEditor?.document.uri.scheme === 'cody') {
             return []
@@ -121,15 +124,15 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             // render if you insert whitespace but not on the original place when you delete it
             // again
             const cachedCompletions = inlineCompletionsCache.get(prefix, false)
-            if (cachedCompletions) {
-                return cachedCompletions.map(toInlineCompletionItem)
+            if (cachedCompletions?.isExactPrefix) {
+                return toInlineCompletionItems(cachedCompletions.logId, cachedCompletions.completions)
             }
             return []
         }
 
         const cachedCompletions = inlineCompletionsCache.get(prefix)
         if (cachedCompletions) {
-            return cachedCompletions.map(toInlineCompletionItem)
+            return toInlineCompletionItems(cachedCompletions.logId, cachedCompletions.completions)
         }
 
         const remainingChars = this.tokToChar(this.promptTokens)
@@ -263,23 +266,16 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return []
         }
 
-        const logParams = {
-            type: 'inline',
-            multilineMode,
-        }
-
-        logEvent('CodyVSCodeExtension:completion:started', logParams, logParams)
-        const start = Date.now()
+        const logId = CompletionLogger.start({ type: 'inline', multilineMode })
 
         const results = rankCompletions(
             (await Promise.all(completers.map(c => c.generateCompletions(abortController.signal)))).flat()
         )
 
         if (hasVisibleCompletions(results)) {
-            const logParamsWithTimings = { ...logParams, latency: Date.now() - start, timeout }
-            logEvent('CodyVSCodeExtension:completion:suggested', logParamsWithTimings, logParamsWithTimings)
-            inlineCompletionsCache.add(results)
-            return results.map(toInlineCompletionItem)
+            CompletionLogger.suggest(logId)
+            inlineCompletionsCache.add(logId, results)
+            return toInlineCompletionItems(logId, results)
         }
         return []
     }
@@ -456,11 +452,15 @@ export interface Completion {
     stopReason?: string
 }
 
-function toInlineCompletionItem(completion: Completion): vscode.InlineCompletionItem {
-    return new vscode.InlineCompletionItem(completion.content, undefined, {
-        title: 'Completion accepted',
-        command: 'cody.completions.inline.accepted',
-    })
+function toInlineCompletionItems(logId: string, completions: Completion[]): vscode.InlineCompletionItem[] {
+    return completions.map(
+        completion =>
+            new vscode.InlineCompletionItem(completion.content, undefined, {
+                title: 'Completion accepted',
+                command: 'cody.completions.inline.accepted',
+                arguments: [{ codyLogId: logId }],
+            })
+    )
 }
 
 function rankCompletions(completions: Completion[]): Completion[] {
