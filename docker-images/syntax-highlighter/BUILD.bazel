@@ -72,7 +72,7 @@ oci_image(
         "-workers=4",
         "--",
         "env",
-        "ROCKET_PORT=9238",
+        "ROCKET_PORT={{.Port}}",  # {{.Port}} is a templated variable used by http-server-stabilizer
         "/syntect_server",
     ],
     env = {
