@@ -55,6 +55,8 @@ extend type GitTree {
         """
         after: String
     ): OwnershipConnection!
+
+    ownershipStats: OwnershipStats!
 }
 
 extend type GitCommit {
@@ -71,6 +73,11 @@ extend type GitCommit {
         """
         after: String
     ): OwnershipConnection!
+}
+
+type OwnershipStats {
+    totalFiles: Int!
+    assignedOwnerFiles: Int!
 }
 
 """

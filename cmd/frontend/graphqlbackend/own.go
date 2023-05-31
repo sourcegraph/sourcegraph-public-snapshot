@@ -44,6 +44,8 @@ type OwnResolver interface {
 	GitCommitOwnership(ctx context.Context, commit *GitCommitResolver, args ListOwnershipArgs) (OwnershipConnectionResolver, error)
 	GitTreeOwnership(ctx context.Context, tree *GitTreeEntryResolver, args ListOwnershipArgs) (OwnershipConnectionResolver, error)
 
+	GitTreeOwnershipStats(ctx context.Context, tree *GitTreeEntryResolver) (OwnershipStatsResolver, error)
+
 	PersonOwnerField(person *PersonResolver) string
 	UserOwnerField(user *UserResolver) string
 	TeamOwnerField(team *TeamResolver) string
@@ -72,6 +74,11 @@ type OwnershipConnectionResolver interface {
 	TotalOwners(context.Context) (int32, error)
 	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
 	Nodes(context.Context) ([]OwnershipResolver, error)
+}
+
+type OwnershipStatsResolver interface {
+	TotalFiles(context.Context) (int32, error)
+	AssignedOwnerFiles(context.Context) (int32, error)
 }
 
 type Ownable interface {

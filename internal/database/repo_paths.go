@@ -12,6 +12,12 @@ import (
 
 type RepoPathStore interface {
 	EnsureExist(ctx context.Context, repoID api.RepoID, paths []string) (int, error)
+	StatsCount(context.Context, api.RepoID, string) (RepoPathStats, error)
+}
+
+type RepoPathStats struct {
+	TotalFiles         int32
+	AssignedOwnerFiles int32
 }
 
 type repoPaths struct {
@@ -19,6 +25,11 @@ type repoPaths struct {
 }
 
 var _ RepoPathStore = &repoPaths{}
+
+// TODO we need to precompute this.
+func (r *repoPaths) StatsCount(context.Context, api.RepoID, string) (RepoPathStats, error) {
+	return RepoPathStats{}, nil
+}
 
 var findPathsFmtstr = `
 	WITH new_paths (absolute_path) AS (
