@@ -40,6 +40,7 @@ All notable changes to Sourcegraph are documented in this file.
 - 429 errors from external services Sourcegraph talks to are only retried automatically if the Retry-After header doesn't indicate that a retry would be useless. The time grace period can be configured using `SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION` and `SRC_HTTP_CLI_INTERNAL_RETRY_AFTER_MAX_DURATION`. [#51743](https://github.com/sourcegraph/sourcegraph/pull/51743)
 - Security Events NO LONGER write to database by default - instead, they will be written in the [audit log format](https://docs.sourcegraph.com/admin/audit_log) to console. There is a new site config setting `log.securityEventLogs` that can be used to configure security event logs to write to database if the old behaviour is desired. This new default will significantly improve performance for large instances. In addition, the old environment variable `SRC_DISABLE_LOG_PRIVATE_REPO_ACCESS` no longer does anything. [#51686](https://github.com/sourcegraph/sourcegraph/pull/51686)
 - Update minimum supported Redis version to 6.2 [#52248](https://github.com/sourcegraph/sourcegraph/pull/52248)
+- The batch spec properties [`transformChanges`](https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference#transformchanges) and [`workspaces`](https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference#workspaces) are now generally available.
 
 ### Fixed
 
