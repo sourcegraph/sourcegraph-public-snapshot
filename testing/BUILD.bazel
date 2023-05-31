@@ -123,7 +123,7 @@ sh_test(
         "BITBUCKET_SERVER_TOKEN",
         "BITBUCKET_SERVER_URL",
         "BITBUCKET_SERVER_USERNAME",
-        "GHE_GITHUB_TOKEN",
+        "GH_TOKEN",
         "PERFORCE_PASSWORD",
         "PERFORCE_PORT",
         "PERFORCE_USER",
