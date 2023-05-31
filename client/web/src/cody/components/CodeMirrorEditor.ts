@@ -1,3 +1,5 @@
+import type { EditorView } from '@codemirror/view'
+
 import {
     ActiveTextEditor,
     ActiveTextEditorSelection,
@@ -5,20 +7,26 @@ import {
     Editor,
 } from '@sourcegraph/cody-shared/src/editor'
 
-import { EditorStore } from '../stores/editor'
+export interface EditorStore {
+    filename: string
+    repo: string
+    revision: string
+    content: string
+    view: EditorView
+}
 
 export class CodeMirrorEditor implements Editor {
-    private editorStoreRef: React.MutableRefObject<EditorStore>
-    constructor(editorStoreRef: React.MutableRefObject<EditorStore>) {
-        this.editorStoreRef = editorStoreRef
+    private editor?: EditorStore | null
+    constructor(editor?: EditorStore | null) {
+        this.editor = editor
     }
 
     public get repoName(): string | undefined {
-        return this.editorStoreRef.current.editor?.repo
+        return this.editor?.repo
     }
 
     public get revision(): string | undefined {
-        return this.editorStoreRef.current.editor?.revision
+        return this.editor?.revision
     }
 
     public getWorkspaceRootPath(): string | null {
@@ -26,16 +34,20 @@ export class CodeMirrorEditor implements Editor {
     }
 
     public getActiveTextEditor(): ActiveTextEditor | null {
-        const editor = this.editorStoreRef.current.editor
-        if (editor === null) {
-            return null
+        const editor = this.editor
+        if (editor) {
+            return {
+                content: editor.content,
+                filePath: editor.filename,
+                repoName: this.repoName,
+                revision: this.revision,
+            }
         }
-
-        return { content: editor.content, filePath: editor.filename, repoName: this.repoName, revision: this.revision }
+        return null
     }
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
-        const editor = this.editorStoreRef.current.editor
+        const editor = this.editor
 
         if (!editor || editor.view.state.selection.main.empty) {
             return null
@@ -63,41 +75,40 @@ export class CodeMirrorEditor implements Editor {
     }
 
     public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
-        const editor = this.editorStoreRef.current.editor
-        if (editor === null) {
-            return null
+        if (this.editor) {
+            const selection = this.getActiveTextEditorSelection()
+            if (selection) {
+                return selection
+            }
+
+            return {
+                fileName: this.editor.filename,
+                repoName: this.repoName,
+                revision: this.revision,
+                precedingText: '',
+                selectedText: this.editor.content,
+                followingText: '',
+            }
         }
 
-        const selection = this.getActiveTextEditorSelection()
-        if (selection) {
-            return selection
-        }
-
-        return {
-            fileName: editor.filename,
-            repoName: this.repoName,
-            revision: this.revision,
-            precedingText: '',
-            selectedText: editor.content,
-            followingText: '',
-        }
+        return null
     }
 
     public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
-        const editor = this.editorStoreRef.current.editor
-        if (editor === null) {
-            return null
+        const editor = this.editor
+        if (editor) {
+            const { from, to } = editor.view.viewport
+
+            const content = editor.view?.state.sliceDoc(from, to)
+            return {
+                fileName: editor.filename,
+                repoName: this.repoName,
+                revision: this.revision,
+                content,
+            }
         }
 
-        const { from, to } = editor.view.viewport
-
-        const content = editor.view?.state.sliceDoc(from, to)
-        return {
-            fileName: editor.filename,
-            repoName: this.repoName,
-            revision: this.revision,
-            content,
-        }
+        return null
     }
 
     public replaceSelection(_fileName: string, _selectedText: string, _replacement: string): Promise<void> {

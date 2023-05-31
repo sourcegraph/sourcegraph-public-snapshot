@@ -96,7 +96,7 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
     }, [refetch, licenseUpdates])
 
     // Feature flag only used as this is under development - will be enabled by default
-    const [llmProxyManagementUI] = useFeatureFlag('llm-proxy-management-ui')
+    const [codyGatewayMananagementUI] = useFeatureFlag('cody-gateway-management-ui')
 
     if (loading && !data) {
         return <LoadingSpinner />
@@ -173,12 +173,12 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                     </table>
                 </Container>
 
-                {llmProxyManagementUI && (
+                {codyGatewayMananagementUI && (
                     <CodyServicesSection
                         viewerCanAdminister={true}
                         currentSourcegraphAccessToken={productSubscription.currentSourcegraphAccessToken}
                         accessTokenError={errorForPath(error, accessTokenPath)}
-                        llmProxyAccess={productSubscription.llmProxyAccess}
+                        codyGatewayAccess={productSubscription.codyGatewayAccess}
                         productSubscriptionID={productSubscription.id}
                         productSubscriptionUUID={subscriptionUUID}
                         refetchSubscription={refetch}

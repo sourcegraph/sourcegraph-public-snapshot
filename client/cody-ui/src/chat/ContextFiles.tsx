@@ -17,17 +17,19 @@ export const ContextFiles: React.FunctionComponent<{
     contextFiles: ContextFile[]
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
     className?: string
-}> = ({ contextFiles, fileLinkComponent: FileLink, className }) => (
-    <TranscriptAction
-        title={{ verb: 'Read', object: `${contextFiles.length} ${pluralize('file', contextFiles.length)}` }}
-        steps={[
-            { verb: 'Searched', object: 'entire codebase for relevant files', icon: mdiMagnify },
-            ...contextFiles.map(file => ({
-                verb: '',
-                object: <FileLink path={file.fileName} repoName={file.repoName} revision={file.revision} />,
-                icon: mdiFileDocumentOutline,
-            })),
-        ]}
-        className={className}
-    />
-)
+}> = React.memo(function ContextFilesContent({ contextFiles, fileLinkComponent: FileLink, className }) {
+    return (
+        <TranscriptAction
+            title={{ verb: 'Read', object: `${contextFiles.length} ${pluralize('file', contextFiles.length)}` }}
+            steps={[
+                { verb: 'Searched', object: 'entire codebase for relevant files', icon: mdiMagnify },
+                ...contextFiles.map(file => ({
+                    verb: '',
+                    object: <FileLink path={file.fileName} repoName={file.repoName} revision={file.revision} />,
+                    icon: mdiFileDocumentOutline,
+                })),
+            ]}
+            className={className}
+        />
+    )
+})

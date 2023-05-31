@@ -16,7 +16,7 @@ const warning =
 export const ChatInputContext: React.FunctionComponent<{
     contextStatus: ChatContextStatus
     className?: string
-}> = ({ contextStatus, className }) => {
+}> = React.memo(function ChatInputContextContent({ contextStatus, className }) {
     const items: Pick<React.ComponentProps<typeof ContextItem>, 'icon' | 'text' | 'tooltip'>[] = useMemo(
         () =>
             [
@@ -66,7 +66,7 @@ export const ChatInputContext: React.FunctionComponent<{
             )}
         </div>
     )
-}
+})
 
 const ContextItem: React.FunctionComponent<{ icon: string; text: string; tooltip?: string; as: 'li' }> = ({
     icon,

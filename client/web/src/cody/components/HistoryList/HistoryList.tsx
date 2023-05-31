@@ -4,66 +4,63 @@ import { mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
+import { Transcript, TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
 import { Text, Icon, Tooltip } from '@sourcegraph/wildcard'
 
-import { safeTimestampToDate, useChatStoreState } from '../../stores/chat'
+import { CodyChatStore, safeTimestampToDate } from '../../useCodyChat'
 
 import styles from './HistoryList.module.scss'
 
 interface HistoryListProps {
+    transcriptHistory: TranscriptJSON[]
+    currentTranscript: Transcript | null
+    loadTranscriptFromHistory: CodyChatStore['loadTranscriptFromHistory']
+    deleteHistoryItem: CodyChatStore['deleteHistoryItem']
     truncateMessageLength?: number
-    onSelect?: (id: string) => void
     itemClassName?: string
 }
 
 export const HistoryList: React.FunctionComponent<HistoryListProps> = ({
+    currentTranscript,
+    transcriptHistory,
     truncateMessageLength,
-    onSelect,
+    loadTranscriptFromHistory,
+    deleteHistoryItem,
     itemClassName,
-}) => {
-    const { transcriptHistory } = useChatStoreState()
-    const transcripts = useMemo(
-        () =>
-            transcriptHistory.sort(
-                (a, b) =>
-                    -1 *
-                    ((safeTimestampToDate(a.lastInteractionTimestamp) as any) -
-                        (safeTimestampToDate(b.lastInteractionTimestamp) as any))
-            ),
-        [transcriptHistory]
-    )
-
-    return transcriptHistory.length === 0 ? (
+}) =>
+    transcriptHistory.length === 0 ? (
         <Text className="p-2 pb-0 text-muted text-center">No chats yet</Text>
     ) : (
         <div className="p-0 d-flex flex-column">
-            {transcripts.map(transcript => (
+            {transcriptHistory.map(transcript => (
                 <HistoryListItem
                     key={transcript.id}
+                    currentTranscript={currentTranscript}
                     transcript={transcript}
-                    onSelect={onSelect}
                     className={itemClassName}
                     truncateMessageLength={truncateMessageLength}
+                    loadTranscriptFromHistory={loadTranscriptFromHistory}
+                    deleteHistoryItem={deleteHistoryItem}
                 />
             ))}
         </div>
     )
-}
 
 const HistoryListItem: React.FunctionComponent<{
+    currentTranscript: Transcript | null
     transcript: TranscriptJSON
+    loadTranscriptFromHistory: CodyChatStore['loadTranscriptFromHistory']
+    deleteHistoryItem: CodyChatStore['deleteHistoryItem']
     truncateMessageLength?: number
-    onSelect?: (id: string) => void
     className?: string
 }> = ({
+    currentTranscript,
     transcript: { id, interactions, lastInteractionTimestamp },
     truncateMessageLength = 80,
-    onSelect,
+    loadTranscriptFromHistory,
+    deleteHistoryItem,
     className,
 }) => {
-    const { loadTranscriptFromHistory, transcriptId, deleteHistoryItem } = useChatStoreState()
-
     const lastMessage = useMemo(() => {
         let message = null
 
@@ -102,18 +99,12 @@ const HistoryListItem: React.FunctionComponent<{
                 'text-left',
                 styles.historyItem,
                 {
-                    [styles.selected]: transcriptId === id,
+                    [styles.selected]: currentTranscript?.id === id,
                 },
                 className
             )}
-            onClick={(): any => {
-                onSelect?.(id)
-                return loadTranscriptFromHistory(id)
-            }}
-            onKeyDown={(): any => {
-                onSelect?.(id)
-                return loadTranscriptFromHistory(id)
-            }}
+            onClick={() => loadTranscriptFromHistory(id)}
+            onKeyDown={() => loadTranscriptFromHistory(id)}
         >
             <div className="d-flex align-items-center mb-1 justify-content-between w-100">
                 <Text className="mb-1 text-muted" size="small">
