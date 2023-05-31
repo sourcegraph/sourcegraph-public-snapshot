@@ -49,6 +49,10 @@ func Init(
 	database.BeforeCreateExternalService = enforcement.NewBeforeCreateExternalServiceHook()
 
 	logger := log.Scoped("licensing", "licensing enforcement")
+
+	// Surface basic, non-sensitive information about the license type. This information
+	// can be used to soft-gate features from the UI, and to provide info to admins from
+	// site admin settings pages in the UI.
 	hooks.GetLicenseInfo = func() *hooks.LicenseInfo {
 		info, err := licensing.GetConfiguredProductLicenseInfo()
 		if err != nil {

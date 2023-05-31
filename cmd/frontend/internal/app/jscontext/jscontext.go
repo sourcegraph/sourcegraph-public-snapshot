@@ -277,6 +277,10 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		openTelemetry = clientObservability.OpenTelemetry
 	}
 
+	// License info contains basic, non-sensitive information about the license type. Some
+	// properties are only set for certain license types. This information can be used to
+	// soft-gate features from the UI, and to provide info to admins from site admin
+	// settings pages in the UI.
 	licenseInfo := hooks.GetLicenseInfo()
 
 	var user *types.User
