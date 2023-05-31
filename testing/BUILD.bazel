@@ -111,6 +111,7 @@ sh_test(
         "SG_FEATURE_FLAG_GRPC": "false",
         "TEST_USER_EMAIL": "test@sourcegraph.com",
         "TEST_USER_PASSWORD": "supersecurepassword",
+        "SOURCEGRAPH_SUDO_TOKEN": "fake-sg-token",
     },
     env_inherit = [
         "AWS_ACCESS_KEY_ID",
