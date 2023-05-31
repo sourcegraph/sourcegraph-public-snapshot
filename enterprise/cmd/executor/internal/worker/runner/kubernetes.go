@@ -21,7 +21,6 @@ type kubernetesRunner struct {
 	internalLogger log.Logger
 	commandLogger  command.Logger
 	cmd            *command.KubernetesCommand
-	jobNames       []string
 	dir            string
 	options        command.KubernetesContainerOptions
 	// tmpDir is used to store temporary files used for k8s execution.
@@ -56,18 +55,6 @@ func (r *kubernetesRunner) TempDir() string {
 }
 
 func (r *kubernetesRunner) Teardown(ctx context.Context) error {
-	if !r.options.KeepJobs {
-		for _, name := range r.jobNames {
-			if err := r.cmd.DeleteJob(ctx, r.options.Namespace, name); err != nil {
-				r.internalLogger.Error(
-					"Failed to delete kubernetes job",
-					log.String("jobName", name),
-					log.Error(err),
-				)
-			}
-		}
-	}
-
 	return nil
 }
 
@@ -83,7 +70,7 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 	if _, err := r.cmd.CreateJob(ctx, r.options.Namespace, job); err != nil {
 		return errors.Wrap(err, "creating job")
 	}
-	r.jobNames = append(r.jobNames, job.Name)
+	defer r.deleteJob(ctx, job.Name)
 
 	// Start the log entry for the command.
 	logEntry := r.commandLogger.LogEntry(spec.CommandSpec.Key, spec.CommandSpec.Command)
@@ -121,4 +108,17 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 	}
 	r.internalLogger.Debug("Job completed successfully", log.Int("jobID", spec.JobID))
 	return readLogErr
+}
+
+func (r *kubernetesRunner) deleteJob(ctx context.Context, jobName string) {
+	if !r.options.KeepJobs {
+		r.internalLogger.Debug("Deleting kubernetes job", log.String("jobName", jobName))
+		if err := r.cmd.DeleteJob(ctx, r.options.Namespace, jobName); err != nil {
+			r.internalLogger.Error(
+				"Failed to delete kubernetes job",
+				log.String("jobName", jobName),
+				log.Error(err),
+			)
+		}
+	}
 }

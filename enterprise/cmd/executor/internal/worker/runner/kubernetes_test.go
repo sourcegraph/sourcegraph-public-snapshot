@@ -164,12 +164,19 @@ func TestKubernetesRunner_Run(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			err = kubernetesRunner.Teardown(context.Background())
-			require.NoError(t, err)
-
 			if test.mockAssertFunc != nil {
 				test.mockAssertFunc(t, clientset.Actions())
 			}
 		})
 	}
+}
+
+func TestKubernetesRunner_Teardown(t *testing.T) {
+	clientset := fake.NewSimpleClientset()
+	cmd := &command.KubernetesCommand{Logger: logtest.Scoped(t), Clientset: clientset, Operations: command.NewOperations(&observation.TestContext)}
+	logger := runner.NewMockLogger()
+	kubernetesRunner := runner.NewKubernetesRunner(cmd, logger, "", command.KubernetesContainerOptions{})
+
+	err := kubernetesRunner.Teardown(context.Background())
+	require.NoError(t, err)
 }
