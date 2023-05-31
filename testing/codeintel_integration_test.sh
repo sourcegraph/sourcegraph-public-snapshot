@@ -46,7 +46,7 @@ echo '--- :one: clearing existing state'
 # src-cli must be in the PATH for upload to find it.
 echo '--- :two: integration test
 ./dev/codeintel-qa/cmd/upload'
-"$cmd_upload" --timeout=5m --index-dir="./dev/codeintel-qa/testdata/indexes" --src-path="$src_cli"
+"$cmd_upload" --timeout=5m --index-dir="./dev/codeintel-qa/testdata/indexes" --src-path="$(rlocation "$src_cli")"
 
 echo '--- :three: integration test ./dev/codeintel-qa/cmd/query'
 "$cmd_query" --index-dir="./dev/codeintel-qa/testdata/indexes"

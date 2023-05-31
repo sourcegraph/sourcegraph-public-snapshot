@@ -90,7 +90,7 @@ sh_test(
         "$(location //enterprise/cmd/server:image_tarball)",  # image we're testing against
         "server:candidate",
         "$(location //internal/cmd/init-sg)",
-        "$(rlocation @src-cli-linux-amd64//:src-cli-linux-amd64)",
+        "$(location @src-cli-linux-amd64//:src-cli-linux-amd64)",
         "$(location //dev/codeintel-qa/cmd/download)",
         "$(location //dev/codeintel-qa/cmd/clear)",
         "$(location //dev/codeintel-qa/cmd/upload)",
