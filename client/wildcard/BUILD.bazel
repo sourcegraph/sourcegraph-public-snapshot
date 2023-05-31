@@ -3,7 +3,7 @@ load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "jest_test", "npm_package", "sass", "ts_project")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
-load("//dev:eslint.bzl", "eslint_config")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
@@ -24,7 +24,7 @@ ts_config(
     ],
 )
 
-eslint_config()
+eslint_config_and_lint_root()
 
 module_style_typings(
     name = "module_style_typings",
