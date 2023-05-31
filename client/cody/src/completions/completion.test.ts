@@ -557,6 +557,27 @@ describe('Cody completions', () => {
             `)
         })
 
+        it('does not include block end character if there is already content in the block', async () => {
+            const { completions } = await complete(
+                `
+                if (check) {
+                    ${CURSOR_MARKER}
+                    console.log('two')
+                `,
+                [
+                    createCompletionResponse(`
+                    console.log('one')
+                    }`),
+                ]
+            )
+
+            expect(completions[0]).toMatchInlineSnapshot(`
+                InlineCompletionItem {
+                  "insertText": "console.log('one')",
+                }
+            `)
+        })
+
         it('normalizes Cody responses starting with an empty line and following the exact same indentation as the start line', async () => {
             const { completions } = await complete(
                 `function test() {
