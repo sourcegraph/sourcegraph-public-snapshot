@@ -43,3 +43,6 @@ jobs:
 
       - name: Run Build Plugin
         run: ./gradlew buildPlugin
+
+      - name: Check formatting
+        run: ./gradlew spotlessCheck

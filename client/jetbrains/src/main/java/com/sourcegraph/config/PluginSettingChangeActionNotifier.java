@@ -5,9 +5,11 @@ import org.jetbrains.annotations.NotNull;
 
 public interface PluginSettingChangeActionNotifier {
 
-    Topic<PluginSettingChangeActionNotifier> TOPIC = Topic.create("Sourcegraph plugin settings have changed", PluginSettingChangeActionNotifier.class);
+  Topic<PluginSettingChangeActionNotifier> TOPIC =
+      Topic.create(
+          "Sourcegraph plugin settings have changed", PluginSettingChangeActionNotifier.class);
 
-    void beforeAction(@NotNull PluginSettingChangeContext context);
+  void beforeAction(@NotNull PluginSettingChangeContext context);
 
-    void afterAction(@NotNull PluginSettingChangeContext context);
+  void afterAction(@NotNull PluginSettingChangeContext context);
 }
