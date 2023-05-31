@@ -9,7 +9,10 @@ proto_library(
     srcs = ["gitserver.proto"],
     strip_import_prefix = "/internal",  # keep
     visibility = ["//visibility:private"],
-    deps = ["@com_google_protobuf//:timestamp_proto"],
+    deps = [
+        "@com_google_protobuf//:duration_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
 )
 
 go_proto_library(
