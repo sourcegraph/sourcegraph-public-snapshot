@@ -1,7 +1,7 @@
 { lib }:
 {
   # utility function to add some best-effort flags for emitting static objects instead of dynamic
-  makeStatic = pkg:
+  mkStatic = pkg:
     let
       auto = builtins.intersectAttrs pkg.override.__functionArgs { withStatic = true; static = true; enableStatic = true; enableShared = false; };
       overridden = pkg.overrideAttrs (oldAttrs: {
@@ -10,7 +10,7 @@
         configureFlags = (oldAttrs.configureFlags or [ ]) ++ [ "--disable-shared" "--enable-static" "--enable-shared=false" ];
       });
     in
-    overridden.override auto;
+    if pkg.pname == "openssl" then pkg.override { static = true; } else overridden.override auto;
 
   # doesn't actually change anything in practice, just makes otool -L not display nix store paths for libiconv and libxml.
   # they exist in macos dydl cache anyways, so where they point to is irrelevant. worst case, this will let you catch earlier
@@ -25,4 +25,12 @@
         done
       '';
     });
+
+  # removes packages from a list of packages by name.
+  # Copied from https://sourcegraph.com/github.com/NixOS/nixpkgs@4d924a6b3376c5e3cae3ba8c971007bf736084c5/-/blob/nixos/lib/utils.nix?L219
+  removePackagesByName = packages: packagesToRemove:
+    let
+      namesToRemove = map lib.getName packagesToRemove;
+    in
+    lib.filter (x: !(builtins.elem (lib.getName x) namesToRemove)) packages;
 }
