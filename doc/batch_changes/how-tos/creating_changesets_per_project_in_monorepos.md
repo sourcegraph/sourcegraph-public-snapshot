@@ -5,8 +5,6 @@
 .markdown-body pre.chroma { font-size: 0.75em; }
 </style>
 
-<span class="badge badge-note">Sourcegraph 3.25+</span>
-
 ## Overview
 
 Large repositories often contain multiple projects, making them so-called monorepos. It can make sense to run the batch spec [`steps`][steps] separately in each project and create one changeset per project.

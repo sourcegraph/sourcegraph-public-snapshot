@@ -151,7 +151,7 @@ To enable forks, update the site configuration to include:
 
 ## Automatically delete branches on merge/close
 
-<span class="badge badge-note">Sourcegraph 5.0.5+</span>
+<span class="badge badge-note">Sourcegraph 5.1+</span>
 
 Sourcegraph can be configured to automatically delete branches created for Batch Changes changesets when changesets are merged or closed by enabling the `batchChanges.autoDeleteBranch` site configuration option.
 

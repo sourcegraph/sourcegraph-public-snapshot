@@ -43,6 +43,7 @@ All notable changes to Sourcegraph are documented in this file.
   issue when `log.AuditLogs.SeverityLevel` was set below the overall instance log level. `log.AuditLogs.SeverityLevel` has
   been marked as deprecated and will be removed in a future release [#52566](https://github.com/sourcegraph/sourcegraph/pull/52566)
 - Update minimum supported Redis version to 6.2 [#52248](https://github.com/sourcegraph/sourcegraph/pull/52248)
+- The batch spec properties [`transformChanges`](https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference#transformchanges) and [`workspaces`](https://docs.sourcegraph.com/batch_changes/references/batch_spec_yaml_reference#workspaces) are now generally available.
 
 ### Fixed
 
