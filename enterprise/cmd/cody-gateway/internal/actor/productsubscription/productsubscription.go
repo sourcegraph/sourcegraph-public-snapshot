@@ -135,8 +135,6 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 	return seen, errs
 }
 
-var errAccessTokenDenied = errors.New("access token denied")
-
 func (s *Source) checkAccessToken(ctx context.Context, token string) (*dotcom.CheckAccessTokenResponse, error) {
 	resp, err := dotcom.CheckAccessToken(ctx, s.dotcom, token)
 	if err == nil {
@@ -150,8 +148,8 @@ func (s *Source) checkAccessToken(ctx context.Context, token string) (*dotcom.Ch
 	}
 
 	for _, gqlerr := range gqlerrs {
-		if gqlerr.Extensions != nil && gqlerr.Extensions["code"] == "ErrProductSubscriptionNotFound" {
-			return nil, errAccessTokenDenied
+		if gqlerr.Extensions != nil && gqlerr.Extensions["code"] == codygateway.ErrCodeProductSubscriptionNotFound {
+			return nil, actor.ErrAccessTokenDenied
 		}
 	}
 	return nil, err

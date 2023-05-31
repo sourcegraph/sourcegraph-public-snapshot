@@ -15,3 +15,5 @@ const (
 )
 
 const FeatureHeaderName = "X-Sourcegraph-Feature"
+
+const ErrCodeProductSubscriptionNotFound = "ErrProductSubscriptionNotFound"

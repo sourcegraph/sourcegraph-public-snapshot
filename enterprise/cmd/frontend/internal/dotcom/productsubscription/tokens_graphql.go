@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 )
 
 // productSubscriptionAccessTokenPrefix is the prefix used for identifying tokens
@@ -29,7 +30,7 @@ func (e ErrProductSubscriptionNotFound) Error() string {
 }
 
 func (e ErrProductSubscriptionNotFound) Extensions() map[string]any {
-	return map[string]any{"code": "ErrProductSubscriptionNotFound"}
+	return map[string]any{"code": codygateway.ErrCodeProductSubscriptionNotFound}
 }
 
 // ProductSubscriptionByAccessToken retrieves the subscription corresponding to the
