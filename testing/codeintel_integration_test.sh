@@ -25,13 +25,15 @@ export SOURCEGRAPH_BASE_URL
 ALLOW_SINGLE_DOCKER_CODE_INSIGHTS="true"
 export ALLOW_SINGLE_DOCKER_CODE_INSIGHTS
 
+# Codeintel integration tests uses a specific GITHUB_TOKEN that is available as GHE_GITHUB_TOKEN
+# because it refers to our internal GitHub enterprise instance used for testing.
+GITHUB_TOKEN="$GHE_GITHUB_TOKEN"
+export GITHUB_TOKEN
+
 run_server_image "$tarball" "$image_name" "$url" "$port"
 
 echo '--- Initializing instance'
 "$init_sg" initSG -sg_envrc="./sg_envrc"
-
-# TODO debug
-cat ./sg_envrc
 
 source ./sg_envrc
 echo '--- :horse: Running init-sg addRepos'
