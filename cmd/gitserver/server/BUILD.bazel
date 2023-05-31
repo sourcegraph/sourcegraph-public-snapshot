@@ -108,6 +108,7 @@ go_test(
         "cleanup_test.go",
         "customfetch_test.go",
         "list_gitolite_test.go",
+        "perforce_mock_test.go",
         "server_test.go",
         "serverutil_test.go",
         "ssh_agent_test.go",
@@ -130,6 +131,7 @@ go_test(
     ],
     deps = [
         "//cmd/gitserver/server/common",
+        "//cmd/gitserver/server/perforce",
         "//internal/actor",
         "//internal/api",
         "//internal/codeintel/dependencies",
@@ -137,6 +139,7 @@ go_test(
         "//internal/database",
         "//internal/database/dbtest",
         "//internal/encryption",
+        "//internal/extsvc",
         "//internal/extsvc/gitolite",
         "//internal/extsvc/jvmpackages/coursier",
         "//internal/extsvc/npm",
