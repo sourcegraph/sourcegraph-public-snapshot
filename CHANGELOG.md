@@ -39,6 +39,9 @@ All notable changes to Sourcegraph are documented in this file.
 - The commit message defined in a batch spec will now be quoted when git is invoked, i.e. `git commit -m "commit message"`, to improve how the message is interpreted by the shell in certain edge cases, such as when the commit message begins with a dash. This may mean that previous escaping strategies will behave differently.
 - 429 errors from external services Sourcegraph talks to are only retried automatically if the Retry-After header doesn't indicate that a retry would be useless. The time grace period can be configured using `SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION` and `SRC_HTTP_CLI_INTERNAL_RETRY_AFTER_MAX_DURATION`. [#51743](https://github.com/sourcegraph/sourcegraph/pull/51743)
 - Security Events NO LONGER write to database by default - instead, they will be written in the [audit log format](https://docs.sourcegraph.com/admin/audit_log) to console. There is a new site config setting `log.securityEventLogs` that can be used to configure security event logs to write to database if the old behaviour is desired. This new default will significantly improve performance for large instances. In addition, the old environment variable `SRC_DISABLE_LOG_PRIVATE_REPO_ACCESS` no longer does anything. [#51686](https://github.com/sourcegraph/sourcegraph/pull/51686)
+- Audit Logs & Security Events are written with the same severity level as `SRC_LOG_LEVEL`. This prevents a misconfiguration
+  issue when `log.AuditLogs.SeverityLevel` was set below the overall instance log level. `log.AuditLogs.SeverityLevel` has
+  been marked as deprecated and will be removed in a future release [#52566](https://github.com/sourcegraph/sourcegraph/pull/52566)
 - Update minimum supported Redis version to 6.2 [#52248](https://github.com/sourcegraph/sourcegraph/pull/52248)
 
 ### Fixed

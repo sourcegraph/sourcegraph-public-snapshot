@@ -78,7 +78,7 @@ type AuditLog struct {
 	GraphQL bool `json:"graphQL"`
 	// InternalTraffic description: Capture security events performed by the internal traffic (adds significant noise).
 	InternalTraffic bool `json:"internalTraffic"`
-	// SeverityLevel description: Severity logging level for the audit log.
+	// SeverityLevel description: DEPRECATED: No effect, audit logs are always set to SRC_LOG_LEVEL
 	SeverityLevel string `json:"severityLevel,omitempty"`
 }
 
