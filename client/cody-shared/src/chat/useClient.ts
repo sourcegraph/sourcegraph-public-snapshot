@@ -252,6 +252,7 @@ export const useClient = ({
             chatClient,
             isMessageInProgress,
             onEvent,
+            web,
         ]
     )
 
