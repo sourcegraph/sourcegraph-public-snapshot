@@ -15,7 +15,6 @@ import { MarketingBlock } from '../../../components/MarketingBlock'
 import {
     FetchOwnershipResult,
     FetchOwnershipVariables,
-    FetchTreeOwnershipResult,
     OwnerFields,
     OwnershipConnectionFields,
     SearchPatternType,
@@ -141,7 +140,7 @@ interface OwnerListProps {
 }
 
 const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data }) => {
-    if (data && data.nodes && data.nodes.length > 0) {
+    if (data?.nodes && data.nodes.length > 0) {
         const nodes = data.nodes
         const totalCount = data.totalOwners
         return (
