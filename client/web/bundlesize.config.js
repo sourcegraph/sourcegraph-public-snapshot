@@ -1,6 +1,16 @@
 const path = require('path')
 
-const STATIC_ASSETS_PATH = process.env.WEB_BUNDLE_PATH || path.join(__dirname, '../../ui/assets')
+function relativeAssets(base) {
+  if (process.env.NODE_ENV !== undefined && process.env.NODE_ENV === 'development') {
+    return path.join(base, '../../ui/assets')
+  }
+  if (process.env.ENTERPRISE !== undefined && process.env.ENTERPRISE === '1') {
+    return path.join(base, '../../ui/assets/enterprise')
+  }
+  return path.join(base, '../../ui/assets/oss')
+}
+
+const STATIC_ASSETS_PATH = process.env.WEB_BUNDLE_PATH || relativeAssets(__dirname)
 
 const config = {
   files: [
