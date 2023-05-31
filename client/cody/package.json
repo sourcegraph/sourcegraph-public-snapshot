@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI by Sourcegraph",
-  "version": "0.1.5",
+  "version": "0.2.0",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -105,7 +105,7 @@
       {
         "view": "cody.fixup.tree.view",
         "contents": "No pending Cody fixups",
-        "when": "cody.nonstop.fixups.enabled"
+        "when": "cody.nonstop.fixups.enabled && cody.activated"
       }
     ],
     "commands": [
@@ -210,7 +210,7 @@
       },
       {
         "command": "cody.recipe.file-flow",
-        "title": "Cody: File Flow"
+        "title": "Cody: Touch"
       },
       {
         "command": "cody.inline.insert",
@@ -269,6 +269,12 @@
         "command": "cody.recipe.non-stop",
         "key": "ctrl+shift+v",
         "mac": "shift+cmd+v",
+        "when": "cody.activated && editorHasSelection && !editorReadonly"
+      },
+      {
+        "command": "cody.recipe.file-flow",
+        "key": "ctrl+shift+t",
+        "mac": "shift+cmd+t",
         "when": "cody.activated && editorTextFocus && !editorReadonly"
       }
     ],
@@ -553,6 +559,7 @@
         },
         "cody.experimental.inline": {
           "order": 7,
+          "title": "Cody Inline Assist",
           "type": "boolean",
           "markdownDescription": "Enables Cody Inline Assist, an inline way to explicitly ask questions and propose modifications to code.",
           "default": false
@@ -560,11 +567,13 @@
         "cody.experimental.guardrails": {
           "order": 8,
           "type": "boolean",
+          "markdownDescription": "Experimental feature for internal use.",
           "default": false
         },
         "cody.experimental.nonStop": {
           "order": 9,
           "type": "boolean",
+          "markdownDescription": "Experimental feature for internal use.",
           "default": false
         },
         "cody.debug.enable": {
