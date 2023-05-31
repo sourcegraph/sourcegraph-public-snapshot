@@ -34,6 +34,7 @@ Available comamndsets in `sg.config.yaml`:
 * batches 🦡
 * codeintel
 * codeintel-bazel
+* cody-gateway
 * dotcom
 * embeddings
 * enterprise
@@ -43,7 +44,6 @@ Available comamndsets in `sg.config.yaml`:
 * enterprise-codeintel-bazel
 * enterprise-e2e
 * iam
-* llm-proxy
 * monitoring
 * monitoring-alerts
 * oss
@@ -101,6 +101,7 @@ Available commands in `sg.config.yaml`:
 * codeintel-executor
 * codeintel-executor-firecracker
 * codeintel-worker
+* cody-gateway
 * cody-slack-dev: Start Cody-Slack dev locally
 * cody-slack-docker: Start Cody-Slack locally prod in Docker
 * debug-env: Debug env vars
@@ -115,7 +116,6 @@ Available commands in `sg.config.yaml`:
 * gitserver-template
 * grafana
 * jaeger
-* llm-proxy
 * loki
 * monitoring-generator
 * oss-frontend

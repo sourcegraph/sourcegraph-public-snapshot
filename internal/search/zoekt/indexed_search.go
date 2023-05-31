@@ -271,11 +271,12 @@ func PartitionRepos(
 	return indexed, unindexed, nil
 }
 
-func DoZoektSearchGlobal(ctx context.Context, logger log.Logger, client zoekt.Streamer, args *search.ZoektParameters, pathRegexps []*regexp.Regexp, c streaming.Sender) error {
+func DoZoektSearchGlobal(ctx context.Context, logger log.Logger, client zoekt.Streamer, params *search.ZoektParameters, pathRegexps []*regexp.Regexp, c streaming.Sender) error {
 	searchOpts := (&Options{
-		Selector:       args.Select,
-		FileMatchLimit: args.FileMatchLimit,
-		Features:       args.Features,
+		Selector:       params.Select,
+		FileMatchLimit: params.FileMatchLimit,
+		Features:       params.Features,
+		KeywordScoring: params.KeywordScoring,
 		GlobalSearch:   true,
 	}).ToSearch(ctx, logger)
 
@@ -296,19 +297,19 @@ func DoZoektSearchGlobal(ctx context.Context, logger log.Logger, client zoekt.St
 		defer cancel()
 	}
 
-	return client.StreamSearch(ctx, args.Query, searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+	return client.StreamSearch(ctx, params.Query, searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 		sendMatches(event, pathRegexps, func(file *zoekt.FileMatch) (types.MinimalRepo, []string) {
 			repo := types.MinimalRepo{
 				ID:   api.RepoID(file.RepositoryID),
 				Name: api.RepoName(file.Repository),
 			}
 			return repo, []string{""}
-		}, args.Typ, args.Select, c)
+		}, params.Typ, params.Select, c)
 	}))
 }
 
 // zoektSearch searches repositories using zoekt.
-func zoektSearch(ctx context.Context, logger log.Logger, repos *IndexedRepoRevs, q zoektquery.Q, pathRegexps []*regexp.Regexp, typ search.IndexedRequestType, client zoekt.Streamer, fileMatchLimit int32, selector filter.SelectPath, feat search.Features, since func(t time.Time) time.Duration, c streaming.Sender) error {
+func zoektSearch(ctx context.Context, logger log.Logger, repos *IndexedRepoRevs, q zoektquery.Q, pathRegexps []*regexp.Regexp, typ search.IndexedRequestType, client zoekt.Streamer, zoektParams *search.ZoektParameters, since func(t time.Time) time.Duration, c streaming.Sender) error {
 	if len(repos.RepoRevs) == 0 {
 		return nil
 	}
@@ -321,10 +322,11 @@ func zoektSearch(ctx context.Context, logger log.Logger, repos *IndexedRepoRevs,
 	finalQuery := zoektquery.NewAnd(&zoektquery.BranchesRepos{List: brs}, q)
 
 	searchOpts := (&Options{
-		Selector:       selector,
+		Selector:       zoektParams.Select,
 		NumRepos:       len(repos.RepoRevs),
-		FileMatchLimit: fileMatchLimit,
-		Features:       feat,
+		FileMatchLimit: zoektParams.FileMatchLimit,
+		Features:       zoektParams.Features,
+		KeywordScoring: zoektParams.KeywordScoring,
 	}).ToSearch(ctx, logger)
 
 	// Start event stream.
@@ -350,7 +352,7 @@ func zoektSearch(ctx context.Context, logger log.Logger, repos *IndexedRepoRevs,
 	foundResults := atomic.Bool{}
 	err := client.StreamSearch(ctx, finalQuery, searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
 		foundResults.CompareAndSwap(false, event.FileCount != 0 || event.MatchCount != 0)
-		sendMatches(event, pathRegexps, repos.getRepoInputRev, typ, selector, c)
+		sendMatches(event, pathRegexps, repos.getRepoInputRev, typ, zoektParams.Select, c)
 	}))
 	if err != nil {
 		return err
@@ -667,9 +669,7 @@ type RepoSubsetTextSearchJob struct {
 	Query             zoektquery.Q
 	ZoektQueryRegexps []*regexp.Regexp // used for getting file path match ranges
 	Typ               search.IndexedRequestType
-	FileMatchLimit    int32
-	Select            filter.SelectPath
-	Features          search.Features
+	ZoektParams       *search.ZoektParameters
 	Since             func(time.Time) time.Duration `json:"-"` // since if non-nil will be used instead of time.Since. For tests
 }
 
@@ -690,7 +690,7 @@ func (z *RepoSubsetTextSearchJob) Run(ctx context.Context, clients job.RuntimeCl
 		since = z.Since
 	}
 
-	return nil, zoektSearch(ctx, clients.Logger, z.Repos, z.Query, z.ZoektQueryRegexps, z.Typ, clients.Zoekt, z.FileMatchLimit, z.Select, z.Features, since, stream)
+	return nil, zoektSearch(ctx, clients.Logger, z.Repos, z.Query, z.ZoektQueryRegexps, z.Typ, clients.Zoekt, z.ZoektParams, since, stream)
 }
 
 func (*RepoSubsetTextSearchJob) Name() string {
@@ -701,8 +701,8 @@ func (z *RepoSubsetTextSearchJob) Attributes(v job.Verbosity) (res []attribute.K
 	switch v {
 	case job.VerbosityMax:
 		res = append(res,
-			attribute.Int("fileMatchLimit", int(z.FileMatchLimit)),
-			attribute.Stringer("select", z.Select),
+			attribute.Int("fileMatchLimit", int(z.ZoektParams.FileMatchLimit)),
+			attribute.Stringer("select", z.ZoektParams.Select),
 			trace.Stringers("zoektQueryRegexps", z.ZoektQueryRegexps),
 		)
 		// z.Repos is nil for un-indexed search
@@ -727,7 +727,7 @@ func (j *RepoSubsetTextSearchJob) MapChildren(job.MapFunc) job.Job { return j }
 
 type GlobalTextSearchJob struct {
 	GlobalZoektQuery        *GlobalZoektQuery
-	ZoektArgs               *search.ZoektParameters
+	ZoektParams             *search.ZoektParameters
 	RepoOpts                search.RepoOptions
 	GlobalZoektQueryRegexps []*regexp.Regexp // used for getting file path match ranges
 }
@@ -738,9 +738,9 @@ func (t *GlobalTextSearchJob) Run(ctx context.Context, clients job.RuntimeClient
 
 	userPrivateRepos := privateReposForActor(ctx, clients.Logger, clients.DB, t.RepoOpts)
 	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
-	t.ZoektArgs.Query = t.GlobalZoektQuery.Generate()
+	t.ZoektParams.Query = t.GlobalZoektQuery.Generate()
 
-	return nil, DoZoektSearchGlobal(ctx, clients.Logger, clients.Zoekt, t.ZoektArgs, t.GlobalZoektQueryRegexps, stream)
+	return nil, DoZoektSearchGlobal(ctx, clients.Logger, clients.Zoekt, t.ZoektParams, t.GlobalZoektQueryRegexps, stream)
 }
 
 func (*GlobalTextSearchJob) Name() string {
@@ -751,8 +751,8 @@ func (t *GlobalTextSearchJob) Attributes(v job.Verbosity) (res []attribute.KeyVa
 	switch v {
 	case job.VerbosityMax:
 		res = append(res,
-			attribute.Int("fileMatchLimit", int(t.ZoektArgs.FileMatchLimit)),
-			attribute.Stringer("select", t.ZoektArgs.Select),
+			attribute.Int("fileMatchLimit", int(t.ZoektParams.FileMatchLimit)),
+			attribute.Stringer("select", t.ZoektParams.Select),
 			trace.Stringers("repoScope", t.GlobalZoektQuery.RepoScope),
 			attribute.Bool("includePrivate", t.GlobalZoektQuery.IncludePrivate),
 			trace.Stringers("globalZoektQueryRegexps", t.GlobalZoektQueryRegexps),
@@ -761,7 +761,7 @@ func (t *GlobalTextSearchJob) Attributes(v job.Verbosity) (res []attribute.KeyVa
 	case job.VerbosityBasic:
 		res = append(res,
 			attribute.Stringer("query", t.GlobalZoektQuery.Query),
-			attribute.String("type", string(t.ZoektArgs.Typ)),
+			attribute.String("type", string(t.ZoektParams.Typ)),
 		)
 		res = append(res, trace.Scoped("repoOpts", t.RepoOpts.Attributes()...)...)
 	}

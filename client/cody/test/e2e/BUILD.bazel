@@ -11,7 +11,10 @@ ts_project(
         "auth.test.ts",
         "common.ts",
         "helpers.ts",
+        "history.test.ts",
         "inline-assist.test.ts",
+        "inline-assist-file-flow.test.ts",
+        "task-controller.test.ts",
     ],
     tsconfig = "//client/cody:tsconfig",
     deps = [

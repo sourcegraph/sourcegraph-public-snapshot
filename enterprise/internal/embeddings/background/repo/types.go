@@ -36,5 +36,5 @@ func (j *RepoEmbeddingJob) RecordUID() string {
 }
 
 func (j *RepoEmbeddingJob) IsRepoEmbeddingJobScheduledOrCompleted() bool {
-	return j != nil && (j.State == "completed" || j.State == "processing" || j.State == "queued")
+	return j != nil && (j.State == "completed" || j.State == "processing" || j.State == "queued" || j.Cancel)
 }
