@@ -109,7 +109,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return []
         }
 
-        const { prefix, suffix, prevLine: precedingLine } = docContext
+        const { prefix, suffix, prevLine: sameLinePrefix } = docContext
+        const sameLineSuffix = suffix.slice(0, suffix.indexOf('\n'))
 
         // Avoid showing completions when we're deleting code (Cody can only insert code at the
         // moment)
@@ -155,27 +156,41 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             contextChars
         )
 
-        let timeout: number
         const completers: CompletionProvider[] = []
+        let timeout: number
+        let multilineMode: null | 'block' = null
+        // TODO(philipp-spiess): Add a better detection for start-of-block and don't require C like
+        // languages.
+        const multilineEnabledLanguage =
+            document.languageId === 'typescript' || document.languageId === 'javascript' || document.languageId === 'go'
 
         // VS Code does not show completions if we are in the process of writing a word or if a
         // selected completion info is present (so something is selected from the completions
         // dropdown list based on the lang server) and the returned completion range does not
         // contain the same selection.
-        if (context.selectedCompletionInfo || /[A-Za-z]$/.test(precedingLine)) {
+        if (context.selectedCompletionInfo || /[A-Za-z]$/.test(sameLinePrefix)) {
+            return []
+        }
+        // If we have a suffix in the same line as the cursor and the suffix contains any word
+        // characters, do not attempt to make a completion. This means we only make completions if
+        // we have a suffix in the same line for special characters like `)]}` etc.
+        //
+        // VS Code will attempt to merge the remainder of the current line by characters but for
+        // words this will easily get very confusing.
+        if (/\w/.test(sameLineSuffix)) {
+            return []
+        }
+        // In this case, VS Code won't be showing suggestions anyway and we are more likely to want
+        // suggested method names from the language server instead.
+        if (context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke || sameLinePrefix.endsWith('.')) {
             return []
         }
 
-        let multilineMode: null | 'block' = null
-
-        // TODO(philipp-spiess): Add a better detection for start-of-block and don't require C like
-        // languages.
-        const multilineEnabledLanguage =
-            document.languageId === 'typescript' || document.languageId === 'javascript' || document.languageId === 'go'
         if (
             multilineEnabledLanguage &&
             // Only trigger multiline inline suggestions for empty lines
-            precedingLine.trim() === '' &&
+            sameLinePrefix.trim() === '' &&
+            sameLineSuffix.trim() === '' &&
             // Only trigger multiline inline suggestions for the beginning of blocks
             prefix.trim().at(prefix.trim().length - 1) === '{'
         ) {
@@ -194,7 +209,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     multilineMode
                 )
             )
-        } else if (precedingLine.trim() === '') {
+        } else if (sameLinePrefix.trim() === '') {
             // Start of line: medium debounce
             timeout = 200
             completers.push(
@@ -209,9 +224,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     2 // tries
                 )
             )
-        } else if (context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke || precedingLine.endsWith('.')) {
-            // Do nothing
-            return []
         } else {
             // End of line: long debounce, complete until newline
             timeout = 500
