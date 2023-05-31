@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"net/url"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	encryption "github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -93,6 +95,10 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
 	if err != nil {
 		return -1, err
 	}
+
+	// TODO: Update past entries with this? (write migration)
+	baseURL, err := url.Parse(app.BaseURL)
+	baseURL = extsvc.NormalizeBaseURL(baseURL)
 	domain := app.Domain
 	if domain == "" {
 		domain = types.ReposDomain
@@ -106,13 +112,11 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
 		// }
 	}
 
-	// TODO: extsvc.NormalizeBaseURL(app.BaseURL) here -- type issue (param needs to be not a string)
-	// TODO: Update past entries with this?
 	query := sqlf.Sprintf(`INSERT INTO
 	    github_apps (app_id, name, domain, slug, base_url, app_url, client_id, client_secret, private_key, encryption_key_id, logo)
     	VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		RETURNING id`,
-		app.AppID, app.Name, domain, app.Slug, app.BaseURL, app.AppURL, app.ClientID, clientSecret, privateKey, keyID, app.Logo)
+		app.AppID, app.Name, domain, app.Slug, baseURL, app.AppURL, app.ClientID, clientSecret, privateKey, keyID, app.Logo)
 	id, _, err := basestore.ScanFirstInt(s.Query(ctx, query))
 	return id, err
 }
