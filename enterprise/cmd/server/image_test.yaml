@@ -9,7 +9,7 @@ commandTests:
 
   # Sourcegraph binaries
   - name: "embeddings binary is runnable"
-    command: "/embeddings"
+    command: "embeddings"
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
