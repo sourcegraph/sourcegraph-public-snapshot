@@ -111,7 +111,7 @@ sh_test(
         "SG_FEATURE_FLAG_GRPC": "false",
         "TEST_USER_EMAIL": "test@sourcegraph.com",
         "TEST_USER_PASSWORD": "supersecurepassword",
-        "SOURCEGRAPH_SUDO_TOKEN": "fake-sg-token",
+        "SOURCEGRAPH_SUDO_USER": "admin",
     },
     env_inherit = [
         "AWS_ACCESS_KEY_ID",
@@ -129,6 +129,7 @@ sh_test(
         "PERFORCE_USER",
         "SOURCEGRAPH_LICENSE_GENERATION_KEY",
         "SOURCEGRAPH_LICENSE_KEY",
+        "SOURCEGRAPH_SUDO_TOKEN",
     ],
     tags = ["requires-network"],
     deps = ["//testing/tools:integration_runner"],
