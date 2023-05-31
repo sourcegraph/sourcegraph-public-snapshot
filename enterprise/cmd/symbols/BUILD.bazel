@@ -34,7 +34,11 @@ pkg_tar(
 oci_image(
     name = "image",
     base = "@wolfi_symbols_base",
-    entrypoint = ["/symbols"],
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+        "/symbols",
+    ],
     tars = [":tar_symbols"],
 )
 

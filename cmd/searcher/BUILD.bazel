@@ -34,7 +34,11 @@ pkg_tar(
 oci_image(
     name = "image",
     base = "@wolfi_searcher_base",
-    entrypoint = ["/searcher"],
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+        "/searcher",
+    ],
     env = {
         "CACHE_DIR": "/mnt/cache/searcher",
     },

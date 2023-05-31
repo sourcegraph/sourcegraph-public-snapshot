@@ -43,7 +43,11 @@ pkg_tar(
 oci_image(
     name = "image",
     base = "@wolfi_executor_base",
-    entrypoint = ["/executor"],
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+        "/executor",
+    ],
     tars = [
         ":tar_executor",
         ":tar_src-cli",

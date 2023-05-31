@@ -33,7 +33,11 @@ pkg_tar(
 oci_image(
     name = "image",
     base = "@wolfi_base",
-    entrypoint = ["/worker"],
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+        "/worker",
+    ],
     tars = [":tar_worker"],
     user = "sourcegraph",
 )

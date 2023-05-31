@@ -97,7 +97,11 @@ pkg_tar(
 oci_image(
     name = "image",
     base = "@wolfi_server_base",
-    entrypoint = ["/server"],
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+        "/server",
+    ],
     env = {
         "GO111MODULES": "on",
         "LANG": "en_US.utf8",

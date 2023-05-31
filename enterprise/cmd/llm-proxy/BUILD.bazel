@@ -34,7 +34,11 @@ pkg_tar(
 oci_image(
     name = "image",
     base = "@wolfi_base",
-    entrypoint = ["/llm-proxy"],
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+        "/llm-proxy",
+    ],
     tars = [":tar_llm-proxy"],
     user = "sourcegraph",
 )

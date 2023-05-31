@@ -38,7 +38,11 @@ pkg_tar(
 oci_image(
     name = "image",
     base = "@wolfi_base",
-    entrypoint = ["/migrator"],
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+        "/migrator",
+    ],
     tars = [
         ":tar_migrator",
         "//cmd/migrator:tar_schema_descriptions",

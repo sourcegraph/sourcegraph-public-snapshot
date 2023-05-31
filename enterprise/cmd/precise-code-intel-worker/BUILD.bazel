@@ -34,7 +34,11 @@ pkg_tar(
 oci_image(
     name = "image",
     base = "@wolfi_base",
-    entrypoint = ["/precise-code-intel-worker"],
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+        "/precise-code-intel-worker",
+    ],
     tars = [":tar_precise-code-intel-worker"],
     user = "sourcegraph",
 )

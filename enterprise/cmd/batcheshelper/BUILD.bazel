@@ -46,7 +46,11 @@ pkg_tar(
 oci_image(
     name = "image",
     base = "@wolfi_batcheshelper_base",
-    entrypoint = ["/batcheshelper"],
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+        "/batcheshelper",
+    ],
     tars = [":tar_batcheshelper"],
 )
 

@@ -30,7 +30,11 @@ pkg_tar(
 oci_image(
     name = "image",
     base = "@wolfi_base",
-    entrypoint = ["/embeddings"],
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+        "/embeddings",
+    ],
     tars = [":tar_embeddings"],
     user = "sourcegraph",
     workdir = "/",
