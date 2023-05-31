@@ -209,13 +209,9 @@ func (gs *GRPCServer) RepoDelete(ctx context.Context, req *proto.RepoDeleteReque
 func (gs *GRPCServer) RepoUpdate(ctx context.Context, req *proto.RepoUpdateRequest) (*proto.RepoUpdateResponse, error) {
 	var in protocol.RepoUpdateRequest
 	in.FromProto(req)
-	grpcResp, err := gs.Server.repoUpdate(&in)
-	if err != nil {
-		return nil, err
-	}
+	grpcResp := gs.Server.repoUpdate(&in)
 
 	return grpcResp.ToProto(), nil
-
 }
 
 func (gs *GRPCServer) ReposStats(ctx context.Context, req *proto.ReposStatsRequest) (*proto.ReposStatsResponse, error) {

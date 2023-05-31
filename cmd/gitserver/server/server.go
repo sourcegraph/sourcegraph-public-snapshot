@@ -1025,9 +1025,9 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp, err := s.repoUpdate(&req)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	resp := s.repoUpdate(&req)
+	if resp.Error != "" {
+		http.Error(w, resp.Error, http.StatusInternalServerError)
 		return
 	}
 
@@ -1037,7 +1037,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) (protocol.RepoUpdateResponse, error) {
+func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
 	logger := s.Logger.Scoped("handleRepoUpdate", "synchronous http handler for repo updates")
 	var resp protocol.RepoUpdateResponse
 	req.Repo = protocol.NormalizeRepo(req.Repo)
@@ -1095,7 +1095,7 @@ func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) (protocol.RepoUpdat
 			resp.Error = updateErr.Error()
 		}
 	}
-	return resp, nil
+	return resp
 }
 
 // handleRepoClone is an asynchronous (does not wait for update to complete or
