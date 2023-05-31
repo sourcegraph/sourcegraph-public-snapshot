@@ -49,6 +49,8 @@ unNixifyDylibs pkgs (stdenv.mkDerivation rec {
 
   configureFlags = [ "--enable-tmpdir=/tmp" ];
 
+  dontAddExtraLibs = true;
+
   patches = [
     "${pkgs.path}/pkgs/development/tools/misc/universal-ctags/000-nixos-specific.patch"
   ];
