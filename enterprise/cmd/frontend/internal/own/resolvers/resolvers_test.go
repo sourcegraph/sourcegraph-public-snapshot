@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/hexops/autogold/v2"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
@@ -1402,7 +1403,8 @@ func TestOwnership_WithAssignedOwners(t *testing.T) {
 
 func TestAssignOwner(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	testDB := dbtest.NewDB(logger, t)
+	db := database.NewDB(logger, testDB)
 	git := fakeGitserver{}
 	own := fakeOwnService{}
 	ctx := context.Background()
@@ -1441,24 +1443,51 @@ func TestAssignOwner(t *testing.T) {
 	adminCtx := actor.WithActor(ctx, actor.FromUser(admin.ID))
 	userCtx := actor.WithActor(ctx, actor.FromUser(user.ID))
 
-	baseTest := &graphqlbackend.Test{
-		Context: userCtx,
-		Schema:  schema,
-		Query: `
+	getBaseTest := func() *graphqlbackend.Test {
+		return &graphqlbackend.Test{
+			Context: userCtx,
+			Schema:  schema,
+			Query: `
 				mutation assignOwner($input:AssignOwnerInput!) {
 				  assignOwner(input:$input) {
 					alwaysNil
 				  }
 				}`,
-		Variables: map[string]any{"input": map[string]any{
-			"assignedOwnerID":   string(graphqlbackend.MarshalUserID(user.ID)),
-			"repoID":            string(graphqlbackend.MarshalRepositoryID(repo.ID)),
-			"absolutePath":      "",
-			"whoAssignedUserID": string(graphqlbackend.MarshalUserID(admin.ID)),
-		}},
+			Variables: map[string]any{"input": map[string]any{
+				"assignedOwnerID": string(graphqlbackend.MarshalUserID(user.ID)),
+				"repoID":          string(graphqlbackend.MarshalRepositoryID(repo.ID)),
+				"absolutePath":    "",
+			}},
+		}
+	}
+
+	removeOwners := func() {
+		t.Helper()
+		_, err := testDB.ExecContext(ctx, "DELETE FROM assigned_owners")
+		require.NoError(t, err)
+	}
+
+	assertAssignedOwner := func(t *testing.T, ownerID, whoAssigned int32, repoID api.RepoID, path string) {
+		t.Helper()
+		owners, err := db.AssignedOwners().ListAssignedOwnersForRepo(ctx, repoID)
+		require.NoError(t, err)
+		require.Len(t, owners, 1)
+		owner := owners[0]
+		assert.Equal(t, ownerID, owner.OwnerUserID)
+		assert.Equal(t, whoAssigned, owner.WhoAssignedUserID)
+		assert.Equal(t, path, owner.FilePath)
+	}
+
+	assertNoAssignedOwners := func(t *testing.T, repoID api.RepoID) {
+		t.Helper()
+		owners, err := db.AssignedOwners().ListAssignedOwnersForRepo(ctx, repoID)
+		require.NoError(t, err)
+		require.Empty(t, owners)
 	}
 
 	t.Run("non-admin cannot assign owner", func(t *testing.T) {
+		t.Cleanup(removeOwners)
+		baseTest := getBaseTest()
 		expectedErrs := []*gqlerrors.QueryError{{
 			Message: "user is missing permission OWNERSHIP#ASSIGN",
 			Path:    []any{"assignOwner"},
@@ -1466,9 +1495,12 @@ func TestAssignOwner(t *testing.T) {
 		baseTest.ExpectedErrors = expectedErrs
 		baseTest.ExpectedResult = `{"assignOwner":null}`
 		graphqlbackend.RunTest(t, baseTest)
+		assertNoAssignedOwners(t, repo.ID)
 	})
 
 	t.Run("bad request", func(t *testing.T) {
+		t.Cleanup(removeOwners)
+		baseTest := getBaseTest()
 		baseTest.Context = adminCtx
 		expectedErrs := []*gqlerrors.QueryError{{
 			Message: "assigned user ID should not be 0",
@@ -1483,11 +1515,15 @@ func TestAssignOwner(t *testing.T) {
 			"whoAssignedUserID": string(graphqlbackend.MarshalUserID(admin.ID)),
 		}}
 		graphqlbackend.RunTest(t, baseTest)
+		assertNoAssignedOwners(t, repo.ID)
 	})
 
 	t.Run("successfully assigned an owner", func(t *testing.T) {
+		t.Cleanup(removeOwners)
+		baseTest := getBaseTest()
 		baseTest.Context = adminCtx
-		baseTest.ExpectedResult = `{"assignOwner":null}`
+		baseTest.ExpectedResult = `{"assignOwner":{"alwaysNil": null}}`
 		graphqlbackend.RunTest(t, baseTest)
+		assertAssignedOwner(t, user.ID, admin.ID, repo.ID, "")
 	})
 }

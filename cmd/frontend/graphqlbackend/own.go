@@ -145,10 +145,10 @@ type AssignOwnerArgs struct {
 }
 
 type AssignOwnerInput struct {
-	AssignedOwnerID   graphql.ID
-	RepoID            graphql.ID
-	AbsolutePath      string
-	WhoAssignedUserID graphql.ID
+	// AssignedOwnerID is an ID of a user who is assigned as an owner.
+	AssignedOwnerID graphql.ID
+	RepoID          graphql.ID
+	AbsolutePath    string
 }
 
 type DeleteCodeownersFileArgs struct {

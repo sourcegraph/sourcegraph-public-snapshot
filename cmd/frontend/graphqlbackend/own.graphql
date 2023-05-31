@@ -362,10 +362,6 @@ input AssignOwnerInput {
     Path of the file/directory or a root path of the repo, which is assigned for ownership.
     """
     absolutePath: String!
-    """
-    ID of a user, who is assigning a new owner.
-    """
-    whoAssignedUserID: ID!
 }
 
 """

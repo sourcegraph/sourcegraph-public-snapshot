@@ -773,14 +773,29 @@ func userifyPatterns(patterns []string) (results []string) {
 }
 
 func (r *ownResolver) AssignOwner(ctx context.Context, args *graphqlbackend.AssignOwnerArgs) (*graphqlbackend.EmptyResponse, error) {
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.OwnershipAssignPermission); err != nil {
+	// Internal actor is a no-op, only a user can assign an owner.
+	if actor.FromContext(ctx).IsInternal() {
+		return nil, nil
+	}
+	// Extracting the user to run an RBAC check and then use their ID as an
+	// `whoAssignedUserID`.
+	user, err := auth.CurrentUser(ctx, r.db)
+	if err != nil {
+		return nil, err
+	}
+	if user == nil {
+		return nil, auth.ErrNotAuthenticated
+	}
+	// Checking if the user has permission to assign an owner.
+	if err := rbac.CheckGivenUserHasPermission(ctx, r.db, user, rbac.OwnershipAssignPermission); err != nil {
 		return nil, err
 	}
 	u, err := unmarshalAssignOwnerArgs(args.Input)
 	if err != nil {
 		return nil, err
 	}
-	err = r.db.AssignedOwners().Insert(ctx, u.AssignedOwnerID, u.RepoID, u.AbsolutePath, u.WhoAssignedUserID)
+	whoAssignedUserID := user.ID
+	err = r.db.AssignedOwners().Insert(ctx, u.AssignedOwnerID, u.RepoID, u.AbsolutePath, whoAssignedUserID)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating assigned owner")
 	}
@@ -788,10 +803,9 @@ func (r *ownResolver) AssignOwner(ctx context.Context, args *graphqlbackend.Assi
 }
 
 type UnmarshalledAssignOwnerArgs struct {
-	AssignedOwnerID   int32
-	RepoID            api.RepoID
-	AbsolutePath      string
-	WhoAssignedUserID int32
+	AssignedOwnerID int32
+	RepoID          api.RepoID
+	AbsolutePath    string
 }
 
 func unmarshalAssignOwnerArgs(args graphqlbackend.AssignOwnerInput) (*UnmarshalledAssignOwnerArgs, error) {
@@ -809,17 +823,9 @@ func unmarshalAssignOwnerArgs(args graphqlbackend.AssignOwnerInput) (*Unmarshall
 	if repoID == 0 {
 		return nil, errors.New("repo ID should not be 0")
 	}
-	whoAssignedUserID, err := graphqlbackend.UnmarshalUserID(args.WhoAssignedUserID)
-	if err != nil {
-		return nil, err
-	}
-	if whoAssignedUserID == 0 {
-		return nil, errors.New("ID of a user, who is assigning a new owner should not be 0")
-	}
 	return &UnmarshalledAssignOwnerArgs{
-		AssignedOwnerID:   userID,
-		RepoID:            repoID,
-		AbsolutePath:      args.AbsolutePath,
-		WhoAssignedUserID: whoAssignedUserID,
+		AssignedOwnerID: userID,
+		RepoID:          repoID,
+		AbsolutePath:    args.AbsolutePath,
 	}, nil
 }
