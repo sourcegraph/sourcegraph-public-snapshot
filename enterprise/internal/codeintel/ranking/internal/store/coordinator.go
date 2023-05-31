@@ -14,6 +14,10 @@ import (
 // for lazy mocking in tests
 var testNow = time.Now
 
+// MaxProgressRecords is the maximum number of progress records we'll track before pruning
+// older entries.
+const MaxProgressRecords = 10
+
 func (s *store) Coordinate(
 	ctx context.Context,
 	derivativeGraphKey string,
@@ -28,7 +32,13 @@ func (s *store) Coordinate(
 
 	now := testNow()
 
-	if err := s.db.Exec(ctx, sqlf.Sprintf(
+	tx, err := s.db.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if err := tx.Exec(ctx, sqlf.Sprintf(
 		coordinateStartMapperQuery,
 		graphKey,
 		graphKey,
@@ -40,7 +50,11 @@ func (s *store) Coordinate(
 		return err
 	}
 
-	if err := s.db.Exec(ctx, sqlf.Sprintf(
+	if err := tx.Exec(ctx, sqlf.Sprintf(coordinatePruneQuery, derivativeGraphKey, MaxProgressRecords)); err != nil {
+		return err
+	}
+
+	if err := tx.Exec(ctx, sqlf.Sprintf(
 		coordinateStartReducerQuery,
 		derivativeGraphKey,
 		now,
@@ -101,6 +115,16 @@ INSERT INTO codeintel_ranking_progress(
 )
 SELECT * FROM values
 ON CONFLICT DO NOTHING
+`
+
+const coordinatePruneQuery = `
+DELETE FROM codeintel_ranking_progress WHERE id IN (
+	SELECT id
+	FROM codeintel_ranking_progress
+	WHERE graph_key != %s
+	ORDER BY mappers_started_at DESC
+	OFFSET %s
+)
 `
 
 const coordinateStartReducerQuery = `
