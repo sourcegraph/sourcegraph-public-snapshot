@@ -2171,9 +2171,10 @@
       },
       "examples": [
         {
-          "enabled": true,
-          "emailDomains": ["example.com"],
-          "message": "Please explain why you need access in your request."
+          "enabled": true
+        },
+        {
+          "enabled": false
         }
       ]
     },
