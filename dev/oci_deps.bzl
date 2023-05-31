@@ -60,7 +60,7 @@ def oci_deps():
 
     oci_pull(
         name = "wolfi_jaeger_all_in_one_base",
-        digest = "sha256:2473c26cc21777f8051ac86d10ac680b0d06071f2949cc2e300a6904d5235d5b",
+        digest = "sha256:f8e416626dcdc7d14894876e0751f2bfa0653169b14c4a929b3834d30cea087d",
         image = "us.gcr.io/sourcegraph-dev/wolfi-jaeger-all-in-one-base",
     )
 

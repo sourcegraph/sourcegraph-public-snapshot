@@ -1,6 +1,18 @@
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("//dev:oci_defs.bzl", "image_repository")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
+
+filegroup(
+    name = "config",
+    srcs = glob(["config/*"]),
+)
+
+pkg_tar(
+    name = "config_tar",
+    srcs = [":config"],
+    remap_paths = {"": "/etc/jaeger/"},
+)
 
 oci_image(
     name = "image",
@@ -13,6 +25,7 @@ oci_image(
         # Default configuration file for setting sampling strategies, we override the command in docker-compose
         "SAMPLING_STRATEGIES_FILE": "/etc/jaeger/sampling_strategies.json",
     },
+    tars = [":config_tar"],
     user = "jaeger",
 )
 

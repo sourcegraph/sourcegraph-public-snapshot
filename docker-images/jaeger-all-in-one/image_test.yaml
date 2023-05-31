@@ -20,20 +20,18 @@ commandTests:
     exitCode: 0
 
 fileExistenceTests:
-# TODO: File should exist, comes from jaegertracing/all-in-one
-# - name: '/etc/jaeger/sampling_strategies.json'
-#   path: '/etc/jaeger/sampling_strategies.json'
-#   shouldExist: true
-#   uid: 10001
-#   gid: 0
-#   permissions: '-rw-r--r--'
+- name: '/etc/jaeger/sampling_strategies.json'
+  path: '/etc/jaeger/sampling_strategies.json'
+  shouldExist: true
+  uid: 0
+  gid: 0
+  permissions: '-r-xr-xr-x'
 - name: '/tmp'
   path: '/tmp'
   shouldExist: true
   uid: 10001
   gid: 0
-  # TODO: Permission has changed - necessary?
-  # permissions: 'drwxrwxrwt'
+  permissions: 'drwxrwxrwt'
 
 metadataTest:
   envVars:
