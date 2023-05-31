@@ -88,8 +88,10 @@ type HeartbeatRequestV1 struct {
 }
 
 type heartbeatRequestUnmarshaller struct {
-	ExecutorName string `json:"executorName"`
-	JobIDs       []any  `json:"jobIds"`
+	ExecutorName  string        `json:"executorName"`
+	JobIDs        []any         `json:"jobIds"`
+	JobIDsByQueue []QueueJobIDs `json:"jobIdsByQueue"`
+	QueueNames    []string      `json:"queueNames"`
 
 	// Telemetry data.
 	OS              string `json:"os"`
@@ -111,6 +113,8 @@ func (h *HeartbeatRequest) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &req); err != nil {
 		return err
 	}
+	h.JobIDsByQueue = req.JobIDsByQueue
+	h.QueueNames = req.QueueNames
 	h.ExecutorName = req.ExecutorName
 	h.OS = req.OS
 	h.Architecture = req.Architecture

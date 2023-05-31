@@ -241,26 +241,26 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, canc
 	req, reqErr := c.client.NewJSONRequest(http.MethodPost, endpoint, payload)
 
 	if reqErr != nil {
-		return nil, nil, err
+		return nil, nil, reqErr
 	}
 
 	// Do the request and get the reader for the response body.
-	_, body, err := c.client.Do(ctx, req)
-	if err != nil {
-		return nil, nil, err
+	_, body, doErr := c.client.Do(ctx, req)
+	if doErr != nil {
+		return nil, nil, doErr
 	}
 
 	// Now read the response body into a buffer, so that we can decode it twice.
 	// This will always be small, so no problem that we don't stream this.
 	defer body.Close()
-	bodyBytes, err := io.ReadAll(body)
-	if err != nil {
-		return nil, nil, err
+	bodyBytes, readErr := io.ReadAll(body)
+	if readErr != nil {
+		return nil, nil, readErr
 	}
 
 	// First, try to unmarshal the response into a V2 response object.
 	var respV2 types.HeartbeatResponse
-	if err := json.Unmarshal(bodyBytes, &respV2); err == nil {
+	if unmarshalErr := json.Unmarshal(bodyBytes, &respV2); unmarshalErr == nil {
 		// If that works, we can return the data.
 		return respV2.KnownIDs, respV2.CancelIDs, nil
 	}
