@@ -169,6 +169,18 @@ Base pipeline (more steps might be included based on branch changes):
 - Stylelint (all)
 - Tests for VS Code extension
 
+### Cody VS Code extension nightly release build
+
+The run type for environment including `{"CODY_NIGHTLY":"true"}`.
+
+Base pipeline (more steps might be included based on branch changes):
+
+- ESLint (all)
+- ESLint (web)
+- Stylelint (all)
+- Unit, integration, and E2E tests for the Cody VS Code extension
+- Cody release
+
 ### App release build
 
 The run type for branches matching `app/release` (exact match).

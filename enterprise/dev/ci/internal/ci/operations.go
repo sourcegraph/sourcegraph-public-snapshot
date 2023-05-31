@@ -132,6 +132,7 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 			"BEXT_NIGHTLY":    os.Getenv("BEXT_NIGHTLY"),
 			"RELEASE_NIGHTLY": os.Getenv("RELEASE_NIGHTLY"),
 			"VSCE_NIGHTLY":    os.Getenv("VSCE_NIGHTLY"),
+			"CODY_NIGHTLY":    os.Getenv("CODY_NIGHTLY"),
 		})
 	)
 
@@ -581,12 +582,14 @@ func addVsceReleaseSteps(pipeline *bk.Pipeline) {
 }
 
 // Release the Cody extension.
-func addCodyReleaseSteps(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":vscode::robot_face: Cody release",
-		withPnpmCache(),
-		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
-		bk.Cmd("pnpm generate"),
-		bk.Cmd("pnpm --filter cody-ai run release"))
+func addCodyReleaseSteps(releaseType string) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(":vscode::robot_face: Cody release",
+			withPnpmCache(),
+			bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
+			bk.Env("CODY_RELEASE_TYPE", releaseType),
+			bk.Cmd("pnpm --filter cody-ai run release"))
+	}
 }
 
 // Release a snapshot of App.
