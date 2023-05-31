@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -15,7 +16,7 @@ type accountDetailsBody struct {
 	ClientID  string `json:"clientID"`
 	AccountID string `json:"accountID"`
 
-	ExternalAccountData
+	sourcegraphoperator.ExternalAccountData
 }
 
 // addSourcegraphOperatorExternalAccount links the given user with a Sourcegraph Operator
@@ -75,7 +76,7 @@ func addSourcegraphOperatorExternalAccount(ctx context.Context, db database.DB, 
 		}
 
 		// Create an association
-		accountData, err := MarshalAccountData(details.ExternalAccountData)
+		accountData, err := sourcegraphoperator.MarshalAccountData(details.ExternalAccountData)
 		if err != nil {
 			return errors.Wrap(err, "failed to marshal account data")
 		}

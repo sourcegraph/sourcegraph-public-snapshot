@@ -2027,3 +2027,80 @@ func TestEventLogs_AggregatedRepoMetadataStats(t *testing.T) {
 		})
 	}
 }
+
+func TestMakeDateTruncExpression(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping long test")
+	}
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	cases := []struct {
+		name     string
+		unit     string
+		expr     string
+		expected string
+	}{
+		{
+			name:     "truncates to beginning of day in UTC",
+			unit:     "day",
+			expr:     "'2023-02-14T20:53:24Z'",
+			expected: "2023-02-14T00:00:00Z",
+		},
+		{
+			name:     "truncates to beginning of day in UTC, regardless of input timezone",
+			unit:     "day",
+			expr:     "'2023-02-14T20:53:24-09:00'",
+			expected: "2023-02-15T00:00:00Z",
+		},
+		{
+			name:     "truncates to beginning of week in UTC, starting with Sunday",
+			unit:     "week",
+			expr:     "'2023-02-14T20:53:24Z'",
+			expected: "2023-02-12T00:00:00Z",
+		},
+		{
+			name:     "truncates to beginning of month in UTC",
+			unit:     "month",
+			expr:     "'2023-02-14T20:53:24Z'",
+			expected: "2023-02-01T00:00:00Z",
+		},
+		{
+			name:     "truncates to rolling month in UTC, if month has 30 days",
+			unit:     "rolling_month",
+			expr:     "'2023-04-20T20:53:24Z'",
+			expected: "2023-03-20T00:00:00Z",
+		},
+		{
+			name:     "truncates to rolling month in UTC, even if March has 31 days",
+			unit:     "rolling_month",
+			expr:     "'2023-03-14T20:53:24Z'",
+			expected: "2023-02-14T00:00:00Z",
+		},
+		{
+			name:     "truncates to rolling month in UTC, even if Feb only has 28 days",
+			unit:     "rolling_month",
+			expr:     "'2023-02-14T20:53:24Z'",
+			expected: "2023-01-14T00:00:00Z",
+		},
+		{
+			name:     "truncates to rolling month in UTC, even for leap year February",
+			unit:     "rolling_month",
+			expr:     "'2024-02-29T20:53:24Z'",
+			expected: "2024-01-29T00:00:00Z",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			format := fmt.Sprintf("SELECT %s AS date", makeDateTruncExpression(tc.unit, tc.expr))
+			q := sqlf.Sprintf(format)
+			date, _, err := basestore.ScanFirstTime(db.Handle().QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...))
+			require.NoError(t, err)
+
+			require.Equal(t, tc.expected, date.Format(time.RFC3339))
+		})
+	}
+}

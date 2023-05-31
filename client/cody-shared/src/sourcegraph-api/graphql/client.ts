@@ -100,7 +100,9 @@ export class SourcegraphGraphQLAPIClient {
         private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
     ) {}
 
-    public onConfigurationChange(newConfig: typeof this.config): void {
+    public onConfigurationChange(
+        newConfig: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
+    ): void {
         this.config = newConfig
     }
 

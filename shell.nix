@@ -52,6 +52,10 @@ let
     unshareUts = false;
     unshareCgroup = false;
   };
+
+  # We have scripts which use gsed on darwin since that is what homebrew calls
+  # the binary for GNU sed.
+  gsed = pkgs.writeShellScriptBin "gsed" ''exec ${pkgs.gnused}/bin/sed "$@"'';
 in
 pkgs.mkShell {
   name = "sourcegraph-dev";
@@ -74,10 +78,12 @@ pkgs.mkShell {
     go_1_20
 
     # Lots of our tooling and go tests rely on git et al.
+    comby
     git
     git-lfs
-    parallel
+    gsed
     nssTools
+    parallel
 
     # CI lint tools you need locally
     shfmt

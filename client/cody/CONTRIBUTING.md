@@ -70,6 +70,10 @@
 
 ## Release Process
 
+Starting from 1.0.0, Cody is using `major.EVEN_NUMBER.patch` for release versions and `major.ODD_NUMBER.patch` for pre-release versions.
+
+- For example: 1.2._ for release and 1.3._ for pre-release.
+
 Follow the steps below to package and publish the VS Code extension.
 
 > NOTE: Since the extension has already been bundled during build, we will need to add the `--no-dependencies` flag to the `vsce` step during the packaging step to exclude the npm dependencies ([source](https://github.com/microsoft/vscode-vsce/issues/421#issuecomment-1038911725))
@@ -100,14 +104,18 @@ Follow the steps below to package and publish the VS Code extension.
    $ git push origin main:cody/release
    ```
 
-   - This will trigger the build pipeline for publishing the extension using the `pnpm release` command
-   - Publish release to [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
-   - Publish release to [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai)
+This will trigger the build pipeline for publishing the extension using the `pnpm release` command
 
-   4. Visit the [buildkite page for the vsce/release pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=cody%2Frelease) to watch the build process
+- Publish release to [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
+- Publish release to [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai)
+- Publish a pre-release version to [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
+  - Create a [pre-release version with minor version bump](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#prerelease-extensions) allow the Nightly build to patch the pre-release version at the correct version number through the [auto-incrementing the extension version feature from the VSCE API](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#autoincrementing-the-extension-version)
+
+* Visit the [buildkite page for the vsce/release pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=cody%2Frelease) to watch the build process
 
 ## Resources
 
+- [VS Code Publishing Extensions](https://code.visualstudio.com/api/working-with-extensions/publishing-extension)
 - [VS Code UX Guidelines](https://code.visualstudio.com/api/ux-guidelines/webviews)
 - [VS Code Webview UI Toolkit](https://microsoft.github.io/vscode-webview-ui-toolkit)
 - [VS Code Icons - Codicons](https://microsoft.github.io/vscode-codicons/dist/codicon.html)

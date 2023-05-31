@@ -34,6 +34,7 @@ ts_project(
         "src/chat/recipes/context-search.ts",
         "src/chat/recipes/explain-code-detailed.ts",
         "src/chat/recipes/explain-code-high-level.ts",
+        "src/chat/recipes/file-flow.ts",
         "src/chat/recipes/find-code-smells.ts",
         "src/chat/recipes/fixup.ts",
         "src/chat/recipes/generate-docstring.ts",
@@ -52,6 +53,7 @@ ts_project(
         "src/chat/transcript/index.ts",
         "src/chat/transcript/interaction.ts",
         "src/chat/transcript/messages.ts",
+        "src/chat/useClient.ts",
         "src/chat/viewHelpers.ts",
         "src/codebase-context/index.ts",
         "src/codebase-context/messages.ts",
@@ -92,10 +94,12 @@ ts_project(
         "//:node_modules/@types/isomorphic-fetch",
         "//:node_modules/@types/marked",
         "//:node_modules/@types/node",
+        "//:node_modules/@types/react",
         "//:node_modules/@types/vscode",  #keep
         "//:node_modules/@vscode",
         "//:node_modules/isomorphic-fetch",
         "//:node_modules/marked",
+        "//:node_modules/react",
     ],
 )
 

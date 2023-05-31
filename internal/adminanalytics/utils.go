@@ -16,6 +16,7 @@ var (
 	LastWeek        = "LAST_WEEK"
 	Daily           = "DAILY"
 	Weekly          = "WEEKLY"
+	timeNow         = time.Now
 )
 
 func makeDateParameters(dateRange string, grouping string, dateColumnName string) (*sqlf.Query, *sqlf.Query, error) {
@@ -74,12 +75,14 @@ LEFT OUTER JOIN users ON users.id = event_logs.user_id
 `
 
 func getDefaultConds() []*sqlf.Query {
-	return database.BuildCommonUsageConds(&database.CommonUsageOptions{
+	commonConds := database.BuildCommonUsageConds(&database.CommonUsageOptions{
 		ExcludeSystemUsers:          true,
 		ExcludeNonActiveUsers:       true,
 		ExcludeSourcegraphAdmins:    true,
 		ExcludeSourcegraphOperators: true,
 	}, []*sqlf.Query{})
+
+	return append(commonConds, sqlf.Sprintf("anonymous_user_id != 'backend'"))
 }
 
 func makeEventLogsQueries(dateRange string, grouping string, events []string, conditions ...*sqlf.Query) (*sqlf.Query, *sqlf.Query, error) {
@@ -106,4 +109,14 @@ func makeEventLogsQueries(dateRange string, grouping string, events []string, co
 	summaryQuery := sqlf.Sprintf(eventLogsSummaryQuery, sqlf.Sprintf("WHERE (%s)", sqlf.Join(conds, ") AND (")))
 
 	return nodesQuery, summaryQuery, nil
+}
+
+// getTimestamps returns the start and end timestamps for the given number of months.
+func getTimestamps(months int) (string, string) {
+	now := timeNow().UTC()
+	to := now.Format(time.RFC3339)
+	prevMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, -months, 0)
+	from := prevMonth.Format(time.RFC3339)
+
+	return from, to
 }

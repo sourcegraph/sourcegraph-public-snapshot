@@ -25,6 +25,9 @@ New issues and feature requests can be filed through our [issue tracker](https:/
 - Install the google-java-format plugin
   https://plugins.jetbrains.com/plugin/8527-google-java-format and configure
   IntelliJ's file save actions to format.
+- Ensure `src login` is logged into your sourcegraph.com account. This avoids
+  the need to manually configure the access token in the UI every time you run
+  `./gradlew :runIde`.
 
 ## Publishing a new version
 

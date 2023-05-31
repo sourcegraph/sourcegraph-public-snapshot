@@ -24,7 +24,7 @@ export const AggregationModeControls: FC<AggregationModeControlsProps> = props =
     const { mode, loading, availability = [], size, className, onModeChange, onModeHover, ...attributes } = props
 
     const debouncedOnModeHover = useDebouncedCallback(onModeHover, 1000)
-    const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', false)
+    const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', true)
 
     const availabilityGroups = availability.reduce((store, availability) => {
         store[availability.mode] = availability

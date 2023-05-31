@@ -35,6 +35,38 @@ func TestPeriodicGoroutine(t *testing.T) {
 	}
 }
 
+func TestPeriodicGoroutineReinvoke(t *testing.T) {
+	clock := glock.NewMockClock()
+	handler := NewMockHandler()
+	called := make(chan struct{}, 1)
+
+	handler.HandleFunc.SetDefaultHook(func(ctx context.Context) error {
+		called <- struct{}{}
+		return ErrReinvokeImmediately
+	})
+
+	witnessHandler := func() {
+		for i := 0; i < MaxConsecutiveReinvocations; i++ {
+			<-called
+		}
+	}
+
+	goroutine := newPeriodicGoroutine(context.Background(), t.Name(), "", func() time.Duration { return time.Second }, handler, nil, clock)
+	go goroutine.Start()
+	witnessHandler()
+	clock.BlockingAdvance(time.Second)
+	witnessHandler()
+	clock.BlockingAdvance(time.Second)
+	witnessHandler()
+	clock.BlockingAdvance(time.Second)
+	witnessHandler()
+	goroutine.Stop()
+
+	if calls := len(handler.HandleFunc.History()); calls != 4*MaxConsecutiveReinvocations {
+		t.Errorf("unexpected number of handler invocations. want=%d have=%d", 4*MaxConsecutiveReinvocations, calls)
+	}
+}
+
 func TestPeriodicGoroutineWithDynamicInterval(t *testing.T) {
 	clock := glock.NewMockClock()
 	handler := NewMockHandler()

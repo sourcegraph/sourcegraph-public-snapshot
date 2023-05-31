@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -23,14 +24,11 @@ func (e *ErrNotAuthorized) Unauthorized() bool {
 	return true
 }
 
-// var ErrNotAuthorized = errors.Newf("user is missing permission")
-
 // CheckCurrentUserHasPermission returns an error if the current user doesn't have a permission assigned to them.
 func CheckCurrentUserHasPermission(ctx context.Context, db database.DB, permission string) error {
 	if actor.FromContext(ctx).IsInternal() {
 		return nil
 	}
-
 	// We check the current user exists and is authenticated.
 	user, err := auth.CurrentUser(ctx, db)
 	if err != nil {
@@ -39,7 +37,15 @@ func CheckCurrentUserHasPermission(ctx context.Context, db database.DB, permissi
 	if user == nil {
 		return auth.ErrNotAuthenticated
 	}
+	return checkUserHasPermission(ctx, db, user, permission)
+}
 
+// CheckGivenUserHasPermission returns an error if the given user doesn't have a permission assigned to them.
+func CheckGivenUserHasPermission(ctx context.Context, db database.DB, user *types.User, permission string) error {
+	return checkUserHasPermission(ctx, db, user, permission)
+}
+
+func checkUserHasPermission(ctx context.Context, db database.DB, user *types.User, permission string) error {
 	namespace, action, err := ParsePermissionDisplayName(permission)
 	if err != nil {
 		return err
