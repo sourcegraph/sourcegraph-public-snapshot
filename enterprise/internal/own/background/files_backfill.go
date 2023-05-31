@@ -2,7 +2,6 @@ package background
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -20,7 +19,7 @@ func handleFilesBackfill(ctx context.Context, lgr logger.Logger, repoId api.Repo
 	// 🚨 SECURITY: we use the internal actor because the background indexer is not associated with any user, and needs
 	// to see all repos and files
 	internalCtx := actor.WithInternalActor(ctx)
-
+	lgr.Info("backfilling files for repository")
 	indexer := newFilesBackfillIndexer(gitserver.NewClient(), db, lgr)
 	return indexer.indexRepo(internalCtx, repoId)
 }
@@ -46,17 +45,18 @@ func (r *filesBackfillIndexer) indexRepo(ctx context.Context, repoId api.RepoID)
 	if err != nil {
 		return errors.Wrap(err, "repoStore.Get")
 	}
-	fmt.Println("LS_FILES")
+	r.logger.Info("LsFines", logger.String("repo_name", string(repo.Name)))
 	files, err := r.client.LsFiles(ctx, nil, repo.Name, "HEAD")
 	if err != nil {
+		r.logger.Error("ls-files failed", logger.String("msg", err.Error()))
 		return errors.Wrap(err, "LsFiles")
 	}
-	fmt.Println("ENSURE EXIST")
-	if err := r.db.RepoPaths().EnsureExist(ctx, repo.ID, files); err != nil {
+	newlyInserted, err := r.db.RepoPaths().EnsureExist(ctx, repo.ID, files)
+	if err != nil {
+		r.logger.Error("inserting backfill files failed", logger.String("msg", err.Error()))
 		return errors.Wrap(err, "EnsureExist")
 	}
-	fmt.Printf("FILES #%d ENSURE EXIST DONE FOR %s", len(files), repo.Name)
-	r.logger.Info("files inserted", logger.Int("count", len(files)), logger.Int("repo_id", int(repoId)))
+	r.logger.Info("files", logger.Int("total", len(files)), logger.Int("diff", newlyInserted), logger.String("repo_name", string(repo.Name)))
 	filesCounter.Add(float64(len(files)))
 	return nil
 }

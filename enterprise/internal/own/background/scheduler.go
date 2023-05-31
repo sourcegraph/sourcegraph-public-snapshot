@@ -34,8 +34,8 @@ var QueuePerRepoIndexJobs = []IndexJobType{{
 	RefreshInterval: time.Minute * 5,
 }, {
 	Name:            types.FilesBackfill,
-	IndexInterval:   time.Hour * 5,
-	RefreshInterval: time.Minute * 5,
+	IndexInterval:   time.Minute * 2,
+	RefreshInterval: time.Minute * 2,
 }}
 
 var repoCounter = promauto.NewCounterVec(prometheus.CounterOpts{
