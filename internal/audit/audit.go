@@ -3,12 +3,14 @@ package audit
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -38,7 +40,7 @@ func Log(ctx context.Context, logger log.Logger, record Record) {
 			log.String("X-Forwarded-For", forwardedFor(client)))))
 	fields = append(fields, record.Fields...)
 
-	loggerFunc := getLoggerFuncWithSeverity(logger, siteConfig)
+	loggerFunc := getLoggerFuncWithSeverity(logger)
 	// message string looks like: #{record.Action} (sampling immunity token: #{auditId})
 	loggerFunc(fmt.Sprintf("%s (sampling immunity token: %s)", record.Action, auditId), fields...)
 }
@@ -102,22 +104,21 @@ func IsEnabled(cfg schema.SiteConfiguration, setting AuditLogSetting) bool {
 	return false
 }
 
-// getLoggerFuncWithSeverity returns a specific logger function (logger.Info, logger.Warn, etc.), the severity is configurable.
-func getLoggerFuncWithSeverity(logger log.Logger, cfg schema.SiteConfiguration) func(string, ...log.Field) {
-	if auditCfg := getAuditCfg(cfg); auditCfg != nil {
-		switch auditCfg.SeverityLevel {
-		case "DEBUG":
-			return logger.Debug
-		case "INFO":
-			return logger.Info
-		case "WARN":
-			return logger.Warn
-		case "ERROR":
-			return logger.Error
-		}
+// getLoggerFuncWithSeverity returns a specific logger function (logger.Info, logger.Warn, etc.) based on the overall audit log configuration
+func getLoggerFuncWithSeverity(logger log.Logger) func(string, ...log.Field) {
+	lvl := log.Level(strings.ToLower(env.LogLevel))
+	switch lvl {
+	case log.LevelDebug:
+		return logger.Debug
+	case log.LevelInfo:
+		return logger.Info
+	case log.LevelWarn:
+		return logger.Warn
+	case log.LevelError:
+		return logger.Error
+	default:
+		return logger.Warn // match default log level
 	}
-	// default to INFO
-	return logger.Info
 }
 
 func getAuditCfg(cfg schema.SiteConfiguration) *schema.AuditLog {
