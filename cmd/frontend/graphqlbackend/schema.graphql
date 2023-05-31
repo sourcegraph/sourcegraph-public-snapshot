@@ -667,7 +667,7 @@ type Mutation {
     setMigrationDirection(id: ID!, applyReverse: Boolean!): EmptyResponse!
 
     """
-    (experimental) Create a new feature flag
+    EXPERIMENTAL: Create a new feature flag
     """
     # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
     # introduce any breaking changes, and let new parameters be optional with
@@ -693,7 +693,7 @@ type Mutation {
     ): FeatureFlag!
 
     """
-    (experimental) Delete a feature flag
+    EXPERIMENTAL: Delete a feature flag
     """
     # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
     # introduce any breaking changes, and let new parameters be optional with
@@ -706,7 +706,7 @@ type Mutation {
     ): EmptyResponse!
 
     """
-    (experimental) Update a feature flag
+    EXPERIMENTAL: Update a feature flag
     """
     # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
     # introduce any breaking changes, and let new parameters be optional with
@@ -731,7 +731,7 @@ type Mutation {
     ): FeatureFlag!
 
     """
-    (experimental) Create a new feature flag override for the given org or user
+    EXPERIMENTAL: Create a new feature flag override for the given org or user
     """
     createFeatureFlagOverride(
         """
@@ -1733,7 +1733,7 @@ type Query {
         before: String
     ): SavedSearchesConnection!
     """
-    (experimental) Return the parse tree of a search query.
+    EXPERIMENTAL: Return the parse tree of a search query.
     """
     parseSearchQuery(
         """
@@ -1924,8 +1924,7 @@ type Query {
     ): BackgroundJobConnection!
 
     """
-    (experimental)
-    Get invitation based on the JWT in the invitation URL
+    EXPERIMENTAL: Get invitation based on the JWT in the invitation URL
     """
     invitationByToken(
         """
@@ -5788,7 +5787,7 @@ type GitBlob implements TreeEntry & File2 {
         query: String
     ): SymbolConnection!
     """
-    (Experimental) Symbol defined in this blob at the specific line number and character offset.
+    EXPERIMENTAL: Symbol defined in this blob at the specific line number and character offset.
     """
     symbol(
         """
