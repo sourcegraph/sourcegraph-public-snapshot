@@ -1,7 +1,7 @@
 use anyhow::Result;
 use bitvec::prelude::*;
 use protobuf::Enum;
-use scip::types::{Descriptor, Occurrence};
+use scip::types::{Descriptor, Occurrence, Package};
 use scip_treesitter::types::PackedRange;
 
 use crate::languages::TagConfiguration;
@@ -71,7 +71,12 @@ impl Scope {
                 symbol: scip::symbol::format_symbol(scip::types::Symbol {
                     scheme: "scip-ctags".into(),
                     // TODO: Package?
-                    package: None.into(),
+                    package: protobuf::MessageField::some(Package {
+                        manager: ".".to_string(),
+                        name: ".".to_string(),
+                        version: ".".to_string(),
+                        ..Default::default()
+                    }),
                     descriptors: descriptor_stack.clone(),
                     ..Default::default()
                 }),

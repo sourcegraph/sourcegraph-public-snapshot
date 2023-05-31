@@ -5,7 +5,7 @@ extern crate rocket;
 
 use std::path;
 
-use ::scip::types::Document;
+use ::scip::types::{Descriptor, Document};
 use protobuf::Message;
 use rocket::serde::json::{json, Json, Value as JsonValue};
 use scip_syntax::get_globals;
