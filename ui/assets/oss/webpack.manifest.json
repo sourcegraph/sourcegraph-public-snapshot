@@ -1,5 +1,0 @@
-{
-  "environment": "development",
-  "app.js": "/.assets/scripts/app.bundle.js",
-  "runtime.js": "/.assets/scripts/runtime.bundle.js"
-}
