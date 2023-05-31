@@ -29,7 +29,7 @@ fi
 echo "--- :docker: Previewing tags"
 for tag in "${tags[@]}"; do
   for registry in "${registries[@]}"; do
-    echo -e "\t ${registry}/\$IMAGE:${tag}"
+    echo -e "\t ${registry}/\$IMAGE:${qa_prefix}-${tag}"
   done
 done
 echo "--- "
