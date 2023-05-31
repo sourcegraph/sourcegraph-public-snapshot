@@ -8,12 +8,11 @@ commandTests:
         value: "true"
 
   # Sourcegraph binaries
-  # TODO: Add embeddings binary to image
-  # - name: "embeddings binary is runnable"
-  #   command: "/embeddings"
-  #   envVars:
-  #     - key: "SANITY_CHECK"
-  #       value: "true"
+  - name: "embeddings binary is runnable"
+    command: "/embeddings"
+    envVars:
+      - key: "SANITY_CHECK"
+        value: "true"
   - name: "frontend binary is runnable"
     command: "frontend"
     envVars:
@@ -223,13 +222,6 @@ fileExistenceTests:
   gid: 0
   permissions: '-r-xr-xr-x'
 # Grafana
-# TODO: Check if required
-# - name: '/opt/grafana/entry.sh'
-#   path: '/opt/grafana/entry.sh'
-#   shouldExist: true
-#   uid: 0
-#   gid: 0
-#   permissions: '-rwxr-xr-x'
 - name: 'Dashboard config'
   path: '/sg_config_grafana/provisioning/dashboards/sourcegraph/gitserver.json'
   shouldExist: true
