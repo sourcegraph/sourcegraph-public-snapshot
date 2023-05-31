@@ -14,10 +14,10 @@ func NewGraphKey(graphKey string) string {
 	return encode(graphKey)
 }
 
-// NewDerivativeGraphKeyKey creates a new derivative graph key. This key identifies work related
+// NewDerivativeGraphKey creates a new derivative graph key. This key identifies work related
 // to ranking, excluding the SCIP export tasks, which are identified by the same root graph key
 // but with different bucket or derivative graph key prefix values.
-func NewDerivativeGraphKeyKey(graphKey, derivativeGraphKeyPrefix string, bucket int64) string {
+func NewDerivativeGraphKey(graphKey, derivativeGraphKeyPrefix string, bucket int64) string {
 	return fmt.Sprintf("%s.%s-%d",
 		encode(graphKey),
 		encode(derivativeGraphKeyPrefix),
@@ -42,7 +42,7 @@ func DerivativeGraphKeyFromTime(now time.Time) string {
 	derivativeGraphKeyPrefix := conf.CodeIntelRankingDocumentReferenceCountsDerivativeGraphKeyPrefix()
 	bucket := now.UTC().Unix() / int64(conf.CodeIntelRankingStaleResultAge().Seconds())
 
-	return NewDerivativeGraphKeyKey(graphKey, derivativeGraphKeyPrefix, bucket)
+	return NewDerivativeGraphKey(graphKey, derivativeGraphKeyPrefix, bucket)
 }
 
 // GraphKeyFromDerivativeGraphKey returns the root of the given derivative graph key.
