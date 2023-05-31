@@ -6,7 +6,8 @@ commandTests:
     envVars:
       - key: "SANITY_CHECK"
         value: "true"
-  # TODO: Test currently fails - we should create a new base image
+  # TODO: Have asked the team and they don't think bash is required
+  #   Leaving this test as a comment until we've confirmed with QA
   # - name: "bash is runnable"
   #   command: "bash"
   #   args:
