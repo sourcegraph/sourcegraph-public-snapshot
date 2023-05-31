@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -61,6 +62,7 @@ type EmbeddingsSearchParameters struct {
 	Query            string         `json:"query"`
 	CodeResultsCount int            `json:"codeResultsCount"`
 	TextResultsCount int            `json:"textResultsCount"`
+	Budget           *time.Duration `json:"budget"`
 
 	UseDocumentRanks bool `json:"useDocumentRanks"`
 }

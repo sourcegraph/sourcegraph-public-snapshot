@@ -33,6 +33,7 @@ type EmbeddingsSearchInputArgs struct {
 	Query            string
 	CodeResultsCount int32
 	TextResultsCount int32
+	BudgetSeconds    *int32
 }
 
 type EmbeddingsMultiSearchInputArgs struct {
@@ -40,6 +41,7 @@ type EmbeddingsMultiSearchInputArgs struct {
 	Query            string
 	CodeResultsCount int32
 	TextResultsCount int32
+	BudgetSeconds    *int32
 }
 
 type EmbeddingsSearchResultsResolver interface {

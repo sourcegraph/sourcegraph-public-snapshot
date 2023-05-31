@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"os"
+	"time"
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/conc/pool"
@@ -60,6 +61,7 @@ func (r *Resolver) EmbeddingsSearch(ctx context.Context, args graphqlbackend.Emb
 		Query:            args.Query,
 		CodeResultsCount: args.CodeResultsCount,
 		TextResultsCount: args.TextResultsCount,
+		BudgetSeconds:    args.BudgetSeconds,
 	})
 }
 
@@ -101,6 +103,13 @@ func (r *Resolver) EmbeddingsMultiSearch(ctx context.Context, args graphqlbacken
 		Query:            args.Query,
 		CodeResultsCount: int(args.CodeResultsCount),
 		TextResultsCount: int(args.TextResultsCount),
+		Budget: func() *time.Duration {
+			if args.BudgetSeconds == nil {
+				return nil
+			}
+			budget := time.Duration(*args.BudgetSeconds) * time.Second
+			return &budget
+		}(),
 	})
 	if err != nil {
 		return nil, err

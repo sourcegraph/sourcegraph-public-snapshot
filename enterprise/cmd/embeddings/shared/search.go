@@ -3,6 +3,8 @@ package shared
 import (
 	"context"
 	"runtime"
+	"sync/atomic"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -36,6 +38,12 @@ func searchRepoEmbeddingIndexes(
 		UseDocumentRanks: params.UseDocumentRanks,
 	}
 
+	var budgetExpired atomic.Bool
+	if params.Budget != nil {
+		timer := time.AfterFunc(*params.Budget, func() { budgetExpired.Store(true) })
+		defer timer.Stop()
+	}
+
 	var result embeddings.EmbeddingCombinedSearchResults
 
 	for i, repoName := range params.RepoNames {
@@ -55,12 +63,12 @@ func searchRepoEmbeddingIndexes(
 			return nil, errors.Wrapf(err, "getting repo embedding index for repo %q", repoName)
 		}
 
-		codeResults := embeddingIndex.CodeIndex.SimilaritySearch(embeddedQuery, params.CodeResultsCount, workerOpts, searchOpts, embeddingIndex.RepoName, embeddingIndex.Revision)
-		textResults := embeddingIndex.TextIndex.SimilaritySearch(embeddedQuery, params.TextResultsCount, workerOpts, searchOpts, embeddingIndex.RepoName, embeddingIndex.Revision)
+		codeResults, codeResultsBudgetHit := embeddingIndex.CodeIndex.SimilaritySearch(&budgetExpired, embeddedQuery, params.CodeResultsCount, workerOpts, searchOpts, embeddingIndex.RepoName, embeddingIndex.Revision)
+		textResults, textResultsBudgetHit := embeddingIndex.TextIndex.SimilaritySearch(&budgetExpired, embeddedQuery, params.TextResultsCount, workerOpts, searchOpts, embeddingIndex.RepoName, embeddingIndex.Revision)
 
 		result.CodeResults.MergeTruncate(codeResults, params.CodeResultsCount)
 		result.TextResults.MergeTruncate(textResults, params.TextResultsCount)
-
+		result.BudgetHit = codeResultsBudgetHit || textResultsBudgetHit
 	}
 
 	return &result, nil

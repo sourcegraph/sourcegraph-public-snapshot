@@ -5,6 +5,7 @@ import (
 	"math"
 	"math/rand"
 	"strconv"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -64,7 +65,7 @@ func TestSimilaritySearch(t *testing.T) {
 			for q := 0; q < numQueries; q++ {
 				t.Run(fmt.Sprintf("find nearest neighbors query=%d numResults=%d numWorkers=%d", q, numResults, numWorkers), func(t *testing.T) {
 					query := queries[q*columnDimension : (q+1)*columnDimension]
-					results := index.SimilaritySearch(query, numResults, WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: 0}, SearchOptions{}, "", "")
+					results, _ := index.SimilaritySearch(&atomic.Bool{}, query, numResults, WorkerOptions{NumWorkers: numWorkers, MinRowsToSplit: 0}, SearchOptions{}, "", "")
 					resultRowNums := make([]int, len(results))
 					for i, r := range results {
 						resultRowNums[i], _ = strconv.Atoi(r.FileName)
@@ -75,6 +76,14 @@ func TestSimilaritySearch(t *testing.T) {
 			}
 		}
 	}
+
+	t.Run("budgetHit", func(t *testing.T) {
+		var budgetExpired atomic.Bool
+		budgetExpired.Store(true)
+		query := queries[:columnDimension]
+		_, budgetHit := index.SimilaritySearch(&budgetExpired, query, 33, WorkerOptions{NumWorkers: 1, MinRowsToSplit: 0}, SearchOptions{}, "", "")
+		require.True(t, budgetHit)
+	})
 }
 
 func TestSplitRows(t *testing.T) {
@@ -152,7 +161,7 @@ func BenchmarkSimilaritySearch(b *testing.B) {
 		b.Run(fmt.Sprintf("numWorkers=%d", numWorkers), func(b *testing.B) {
 			start := time.Now()
 			for n := 0; n < b.N; n++ {
-				_ = index.SimilaritySearch(query, numResults, WorkerOptions{NumWorkers: numWorkers}, SearchOptions{}, "", "")
+				_, _ = index.SimilaritySearch(&atomic.Bool{}, query, numResults, WorkerOptions{NumWorkers: numWorkers}, SearchOptions{}, "", "")
 			}
 			m := float64(numRows) * float64(b.N) / time.Since(start).Seconds()
 			b.ReportMetric(m, "embeddings/s")

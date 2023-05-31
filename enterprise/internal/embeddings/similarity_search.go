@@ -4,6 +4,7 @@ import (
 	"container/heap"
 	"math"
 	"sort"
+	"sync/atomic"
 
 	"github.com/sourcegraph/conc"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -83,15 +84,16 @@ type WorkerOptions struct {
 // SimilaritySearch finds the `nResults` most similar rows to a query vector. It uses the cosine similarity metric.
 // IMPORTANT: The vectors in the embedding index have to be normalized for similarity search to work correctly.
 func (index *EmbeddingIndex) SimilaritySearch(
+	budgetExpired *atomic.Bool,
 	query []int8,
 	numResults int,
 	workerOptions WorkerOptions,
 	opts SearchOptions,
 	repoName api.RepoName,
 	revision api.CommitID,
-) []EmbeddingSearchResult {
+) (_ []EmbeddingSearchResult, budgetHit bool) {
 	if numResults == 0 || len(index.Embeddings) == 0 {
-		return nil
+		return nil, false
 	}
 
 	numRows := len(index.RowMetadata)
@@ -103,6 +105,7 @@ func (index *EmbeddingIndex) SimilaritySearch(
 	// Split index rows among the workers. Each worker will run a partial similarity search on the assigned rows.
 	rowsPerWorker := splitRows(numRows, numWorkers, workerOptions.MinRowsToSplit)
 	heaps := make([]*nearestNeighborsHeap, len(rowsPerWorker))
+	budgetHits := make([]bool, len(rowsPerWorker))
 
 	if len(rowsPerWorker) > 1 {
 		var wg conc.WaitGroup
@@ -110,13 +113,13 @@ func (index *EmbeddingIndex) SimilaritySearch(
 			// Capture the loop variable value so we can use it in the closure below.
 			workerIdx := workerIdx
 			wg.Go(func() {
-				heaps[workerIdx] = index.partialSimilaritySearch(query, numResults, rowsPerWorker[workerIdx], opts)
+				heaps[workerIdx], budgetHits[workerIdx] = index.partialSimilaritySearch(budgetExpired, query, numResults, rowsPerWorker[workerIdx], opts)
 			})
 		}
 		wg.Wait()
 	} else {
 		// Run the similarity search directly when we have a single worker to eliminate the concurrency overhead.
-		heaps[0] = index.partialSimilaritySearch(query, numResults, rowsPerWorker[0], opts)
+		heaps[0], budgetHits[0] = index.partialSimilaritySearch(budgetExpired, query, numResults, rowsPerWorker[0], opts)
 	}
 
 	// Collect all heap neighbors from workers into a single array.
@@ -144,23 +147,35 @@ func (index *EmbeddingIndex) SimilaritySearch(
 		}
 	}
 
-	return results
+	return results, anyOf(budgetHits)
 }
 
-func (index *EmbeddingIndex) partialSimilaritySearch(query []int8, numResults int, partialRows partialRows, opts SearchOptions) *nearestNeighborsHeap {
+func (index *EmbeddingIndex) partialSimilaritySearch(
+	budgetExpired *atomic.Bool,
+	query []int8,
+	numResults int,
+	partialRows partialRows,
+	opts SearchOptions,
+) (_ *nearestNeighborsHeap, budgetHit bool) {
 	nRows := partialRows.end - partialRows.start
 	if nRows <= 0 {
-		return nil
+		return nil, false
 	}
 	numResults = min(nRows, numResults)
 
 	nnHeap := newNearestNeighborsHeap()
 	for i := partialRows.start; i < partialRows.start+numResults; i++ {
+		if budgetExpired.Load() {
+			return nnHeap, true
+		}
 		scoreDetails := index.score(query, i, opts)
 		heap.Push(nnHeap, nearestNeighbor{index: i, scoreDetails: scoreDetails})
 	}
 
 	for i := partialRows.start + numResults; i < partialRows.end; i++ {
+		if budgetExpired.Load() {
+			return nnHeap, true
+		}
 		scoreDetails := index.score(query, i, opts)
 		// Add row if it has greater similarity than the smallest similarity in the heap.
 		// This way we ensure keep a set of the highest similarities in the heap.
@@ -170,7 +185,7 @@ func (index *EmbeddingIndex) partialSimilaritySearch(query []int8, numResults in
 		}
 	}
 
-	return nnHeap
+	return nnHeap, false
 }
 
 const (
@@ -214,6 +229,15 @@ func max(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func anyOf(input []bool) bool {
+	for _, val := range input {
+		if val {
+			return true
+		}
+	}
+	return false
 }
 
 type SearchOptions struct {

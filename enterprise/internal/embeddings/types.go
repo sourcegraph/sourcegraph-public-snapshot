@@ -85,6 +85,7 @@ type ContextDetectionEmbeddingIndex struct {
 type EmbeddingCombinedSearchResults struct {
 	CodeResults EmbeddingSearchResults `json:"codeResults"`
 	TextResults EmbeddingSearchResults `json:"textResults"`
+	BudgetHit   bool                   `json:"budgetHit"`
 }
 
 type EmbeddingSearchResults []EmbeddingSearchResult

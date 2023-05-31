@@ -21,6 +21,10 @@ extend type Query {
         The number of text results to return. Text results contain Markdown files and similar file types primarily used for writing documentation.
         """
         textResultsCount: Int!
+        """
+        An optional time limit (in seconds) to search before returning the partial set of results
+        """
+        budgetSeconds: Int
     ): EmbeddingsSearchResults!
 
     """
@@ -45,6 +49,10 @@ extend type Query {
         The number of text results to return. Text results contain Markdown files and similar file types primarily used for writing documentation.
         """
         textResultsCount: Int!
+        """
+        An optional time limit (in seconds) to search before returning the partial set of results
+        """
+        budgetSeconds: Int
     ): EmbeddingsSearchResults!
 
     """
@@ -138,6 +146,10 @@ type EmbeddingsSearchResults {
     A list of text file results.
     """
     textResults: [EmbeddingsSearchResult!]!
+    """
+    Whether the search stopped early due to reaching its time budget. If true, the results may be incomplete.
+    """
+    budgetHit: Boolean!
 }
 
 """
