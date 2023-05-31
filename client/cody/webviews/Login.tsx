@@ -41,12 +41,12 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
         [endpoint, onLogin, token]
     )
     const handleReload = (): void => {
-        getVSCodeAPI().postMessage({ command: 'reload' })
+        getVSCodeAPI().postMessage({ command: 'settings', serverEndpoint: '', accessToken: '' })
     }
 
     return (
         <div className={styles.container}>
-            {authStatus?.isNetworkError && (
+            {authStatus?.showNetworkError && (
                 <>
                     <div className={styles.error}>
                         <p>

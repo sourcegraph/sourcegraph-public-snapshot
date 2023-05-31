@@ -51,10 +51,10 @@ export function isNetworkError(error: string): boolean {
     )
 }
 
-export function handleNetworkError(): AuthStatus {
+export function authStatusOnNetworkError(): AuthStatus {
     return {
         showInvalidAccessTokenError: false,
-        isNetworkError: true,
+        showNetworkError: true,
         authenticated: false,
         hasVerifiedEmail: false,
         requiresVerifiedEmail: false,
@@ -80,7 +80,7 @@ export async function getAuthStatus(
         // check first if the error is due to network related issues
         if (isError(data)) {
             if (isNetworkError(data.message)) {
-                const authStatus = handleNetworkError()
+                const authStatus = authStatusOnNetworkError()
                 return authStatus
             }
         }
@@ -96,7 +96,7 @@ export async function getAuthStatus(
     const currentUserID = await client.getCurrentUserId()
     if (isError(currentUserID)) {
         if (isNetworkError(currentUserID.message)) {
-            const authStatus = handleNetworkError()
+            const authStatus = authStatusOnNetworkError()
             return authStatus
         }
     }
@@ -259,17 +259,24 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 await this.executeRecipe(message.recipe)
                 break
             case 'settings': {
+                const endpoint = message.serverEndpoint.length > 0 ? message.serverEndpoint : this.config.serverEndpoint
+                const token = message.accessToken.length > 0 ? message.accessToken : this.config.accessToken
                 const authStatus = await getAuthStatus({
-                    serverEndpoint: message.serverEndpoint,
-                    accessToken: message.accessToken,
+                    serverEndpoint: endpoint,
+                    accessToken: token,
                     customHeaders: this.config.customHeaders,
                 })
                 // activate when user has valid login
                 await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
                 if (isLoggedIn(authStatus)) {
-                    await updateConfiguration('serverEndpoint', message.serverEndpoint)
-                    await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, message.accessToken)
+                    await updateConfiguration('serverEndpoint', endpoint)
+                    if (token) {
+                        await this.secretStorage.store(CODY_ACCESS_TOKEN_SECRET, token)
+                    }
                     this.sendEvent('auth', 'login')
+
+                    // clear chat view to handle server disconnection settings
+                    await this.clearAndRestartSession()
                 }
                 void this.webview?.postMessage({ type: 'login', authStatus })
                 break
@@ -313,25 +320,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 }
                 break
             }
-            case 'reload': {
-                const auth = await this.reloadExtension()
-                void this.sendLogin(auth)
-                break
-            }
             default:
                 this.sendErrorToWebview('Invalid request type from Webview')
         }
-    }
-
-    private async reloadExtension(): Promise<AuthStatus> {
-        const authStatus = await getAuthStatus({
-            serverEndpoint: this.config.serverEndpoint,
-            customHeaders: this.config.customHeaders,
-            accessToken: this.config.accessToken,
-        })
-        // handle case while in middle of executing recipes
-        await this.clearAndRestartSession()
-        return authStatus
     }
 
     private createNewChatID(): void {
