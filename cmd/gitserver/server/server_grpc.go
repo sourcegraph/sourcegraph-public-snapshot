@@ -26,6 +26,20 @@ type GRPCServer struct {
 	proto.UnimplementedGitserverServiceServer
 }
 
+func (gs *GRPCServer) CreateCommitFromPatchBinary(ctx context.Context, req *proto.CreateCommitFromPatchBinaryRequest) (*proto.CreateCommitFromPatchBinaryResponse, error) {
+	var r protocol.CreateCommitFromPatchRequest
+	var resp protocol.CreateCommitFromPatchResponse
+	r.FromProto(req)
+	_, resp = gs.Server.createCommitFromPatch(ctx, r)
+
+	if resp.Error != nil {
+		return resp.ToProto(), resp.Error
+	}
+
+	return resp.ToProto(), nil
+
+}
+
 func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_ExecServer) error {
 	internalReq := protocol.ExecRequest{
 		Repo:           api.RepoName(req.GetRepo()),

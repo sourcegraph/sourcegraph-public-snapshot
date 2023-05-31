@@ -32,7 +32,7 @@ message PatchCommitInfo {
   // committer_email is the email of the committer to be used for the commit
   string committer_email = 5;
   // author_date is the date of the author to be used for the commit
-  google.protobuf.Timestamp author_date = 6;
+  google.protobuf.Timestamp date = 6;
 }
 
 message PushConfig {
@@ -65,7 +65,7 @@ message CreateCommitFromPatchBinaryRequest {
   // commit_info is the information to be used for the commit
   PatchCommitInfo commit_info = 6;
   // push_config is the configuration to be used for pushing the commit
-  PushConfig push_config = 7;
+  PushConfig push = 7;
   repeated string git_apply_args = 8;
 }
 
@@ -86,7 +86,7 @@ message CreateCommitFromPatchBinaryResponse {
   // rev is the tag that the staging object can be found at
   string rev = 1;
   // error is populated only on error
-  repeated CreateCommitFromPatchError errors = 2;
+  CreateCommitFromPatchError error = 2;
 }
 message ExecRequest {
   string repo = 1;

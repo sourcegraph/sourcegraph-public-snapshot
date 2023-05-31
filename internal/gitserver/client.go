@@ -1503,30 +1503,49 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 }
 
 func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
-	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch-binary", req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return "", errors.Wrap(err, "failed to read response body")
-	}
 	var res protocol.CreateCommitFromPatchResponse
-	if err := json.Unmarshal(body, &res); err != nil {
-		c.logger.Warn("decoding gitserver create-commit-from-patch response", sglog.Error(err))
-		return "", &url.Error{
-			URL: resp.Request.URL.String(),
-			Op:  "CreateCommitFromPatch",
-			Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.StatusCode, string(body)),
-		}
-	}
 
-	if res.Error != nil {
-		return res.Rev, res.Error
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		client, err := c.ClientForRepo(req.Repo)
+		if err != nil {
+			return "", err
+		}
+		resp, err := client.CreateCommitFromPatchBinary(ctx, req.ToProto())
+		if err != nil {
+			return "", err
+		}
+
+		if resp.GetError() != nil {
+			return resp.Rev, errors.New(resp.GetError().String())
+		}
+
+		res.FromProto(resp)
+		return res.Rev, nil
+	} else {
+		resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch-binary", req)
+		if err != nil {
+			return "", err
+		}
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return "", errors.Wrap(err, "failed to read response body")
+		}
+		if err := json.Unmarshal(body, &res); err != nil {
+			c.logger.Warn("decoding gitserver create-commit-from-patch response", sglog.Error(err))
+			return "", &url.Error{
+				URL: resp.Request.URL.String(),
+				Op:  "CreateCommitFromPatch",
+				Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.StatusCode, string(body)),
+			}
+		}
+
+		if res.Error != nil {
+			return res.Rev, res.Error
+		}
+		return res.Rev, nil
 	}
-	return res.Rev, nil
 }
 
 func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
