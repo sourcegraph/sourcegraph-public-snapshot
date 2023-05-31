@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 import { computeDiff } from '@sourcegraph/cody-shared/src/non-stop/concurrent-editing'
 
+import { FixupDecorator } from './FixupDecorator'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
 import { FixupFile } from './FixupFile'
 import { FixupFileObserver } from './FixupFileObserver'
@@ -22,6 +23,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
     private readonly editObserver: FixupDocumentEditObserver
     // TODO: Make the fixup scheduler use a cooldown timer with a longer delay
     private readonly scheduler: FixupScheduler = new FixupScheduler(10)
+    private readonly decorator: FixupDecorator = new FixupDecorator()
 
     private _disposables: vscode.Disposable[] = []
 
@@ -54,7 +56,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
     // FixupFileCollection
 
     public tasksForFile(file: FixupFile): FixupTask[] {
-        return Array.prototype.filter.call(this.tasks.values(), task => task.file === file)
+        return [...this.tasks.values()].filter(task => task.fixupFile === file)
     }
 
     public maybeFileForUri(uri: vscode.Uri): FixupFile | undefined {
@@ -199,6 +201,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
      * Dispose the disposables
      */
     public dispose(): void {
+        this.decorator.dispose()
         this.taskViewProvider.dispose()
         for (const disposable of this._disposables) {
             disposable.dispose()
@@ -268,38 +271,16 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
             // Switch to using a gross line-based range and updating it in the
             // FixupDocumentEditObserver.
             const diff = computeDiff(task.original, botText, bufferText, task.selectionRange.start)
+            // TODO: Cache the source text and diff edits for application
             console.log(botText)
+            // TODO: Cache the diff output on the fixup so it can be applied;
+            // have the decorator reapply decorations to visible editors
+            this.decorator.decorate(editor, diff)
             if (!diff.clean) {
                 // TODO: If this isn't an in-progress diff, then schedule
                 // a re-spin or notify failure
                 continue
             }
-            // TODO: Cache the source text and diff edits for application
-            if (!this.decorationCodyEdited_) {
-                // TODO: Dispose this decoration when done
-                // TODO: Switch colors depending on the theme
-                this.decorationCodyEdited_ = vscode.window.createTextEditorDecorationType({
-                    borderColor: '#9CDCFE',
-                    borderStyle: 'solid',
-                    borderWidth: '1px',
-                    backgroundColor: '#569CD6',
-                })
-            }
-            // TODO: Move this to a component which can manage highlights
-            // for multiple fixups per file
-            // TODO: Do highlights for deletions, not just insertions
-            editor.setDecorations(
-                this.decorationCodyEdited_,
-                diff.edits.map(
-                    edit =>
-                        new vscode.Range(
-                            new vscode.Position(edit.range.start.line, edit.range.start.character),
-                            new vscode.Position(edit.range.end.line, edit.range.end.character)
-                        )
-                )
-            )
         }
     }
-
-    private decorationCodyEdited_: vscode.TextEditorDecorationType | undefined
 }

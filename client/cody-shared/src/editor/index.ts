@@ -95,4 +95,8 @@ export class NoopEditor implements Editor {
     public showInputBox(_prompt?: string): Promise<string | undefined> {
         return Promise.resolve(undefined)
     }
+
+    public didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
+        return Promise.resolve()
+    }
 }

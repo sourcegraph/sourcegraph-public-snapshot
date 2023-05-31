@@ -37,8 +37,6 @@ function init(): void {
     const recipes: Recipe[] = [
         new ChatQuestion(debug),
         new ContextSearch(),
-        new ContextSearch(),
-        new ContextSearch(),
         new ExplainCodeDetailed(),
         new ExplainCodeHighLevel(),
         new FileFlow(),

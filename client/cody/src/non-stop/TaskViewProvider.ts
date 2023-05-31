@@ -122,7 +122,9 @@ export class FixupTaskTreeItem extends vscode.TreeItem {
         this.state = task.state
         this.id = task.id
         this.fsPath = task.selection.fileName
-        this.resourceUri = task.documentUri
+        // TODO: Files change URIs when they are renamed, so add a change
+        // notification and don't cache this here.
+        this.resourceUri = task.fixupFile.uri
         this.contextValue = 'task'
         this.collapsibleState = vscode.TreeItemCollapsibleState.None
         this.tooltip = new vscode.MarkdownString(`Task #${task.id}: ${task.instruction}`, true)

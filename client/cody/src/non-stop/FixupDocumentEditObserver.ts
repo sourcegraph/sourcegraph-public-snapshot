@@ -3,15 +3,6 @@ import * as vscode from 'vscode'
 import { FixupFileCollection, FixupTextChanged } from './roles'
 
 /**
- * A "live" range of lines in an input file. FixupDocumentEditObserver updates
- * FixupLineRanges as the document is edited.
- */
-export class FixupLineRange {
-    /** Creates a FixupLineRange over the specified lines. */
-    constructor(public start: number, public end: number) {}
-}
-
-/**
  * Observes text document changes and updates the regions with active fixups.
  * Notifies the fixup controller when text being edited by a fixup changes.
  * Fixups must track ranges of interest within documents that are being worked
@@ -40,7 +31,11 @@ export class FixupDocumentEditObserver {
                 break
             }
         }
-        // TODO: Update the selection ranges which were edited
+        // TODO: Update the selection ranges which were edited, see
+        // client/code-shared/src/non-stop/tracked-range or consider using
+        // simpler line-based ranges. Until this is implemented adding/deleting
+        // lines before fixups will cause conflicts.
+        //
         // Need to clarify whether multi-range edits are progressive in the
         // sense that edit 2 refers to ranges updated after edit 1, or if
         // all the edits refer to ranges in the original document.

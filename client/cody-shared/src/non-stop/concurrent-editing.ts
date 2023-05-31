@@ -1,3 +1,5 @@
+/*
+
 // Debugging helpers
 
 function time<T>(label: string, f: () => T): T {
@@ -45,6 +47,8 @@ function dumpUse(use: Uint8Array, a: string, b: string): void {
     }
     console.log(buffer.join(''))
 }
+
+*/
 
 // * the root of the program at the start of the strings
 // I insert from B
@@ -203,23 +207,24 @@ function computeChunks(original: string, a: string, b: string): Chunk[] {
     return chunks
 }
 
-interface Position {
+export interface Position {
     line: number
     character: number
 }
 
-interface Range {
+export interface Range {
     start: Position
     end: Position
 }
 
-interface Edit {
+export interface Edit {
     text: string
     range: Range
 }
 
-interface Diff {
+export interface Diff {
     clean: boolean
+    conflicts: Range[]
     edits: Edit[]
     highlights: Range[]
 }
@@ -247,6 +252,7 @@ function updatedPosition(position: Position, text: string): Position {
 export function computeDiff(original: string, a: string, b: string, bStart: Position): Diff {
     const chunks = computeChunks(original, a, b)
     const edits = []
+    const conflicts = []
     const postEditHighlights = []
     let clean = true
     let originalPos = bStart
@@ -265,7 +271,9 @@ export function computeDiff(original: string, a: string, b: string, bStart: Posi
                 },
             })
             const mergedEnd = updatedPosition(mergedPos, chunk[0])
-            postEditHighlights.push({ start: mergedPos, end: mergedEnd })
+            if (clean) {
+                postEditHighlights.push({ start: mergedPos, end: mergedEnd })
+            }
             mergedPos = mergedEnd
         } else if (chunk[1] === chunk[0] && chunk[1] !== chunk[2]) {
             // Changed by human
@@ -275,6 +283,7 @@ export function computeDiff(original: string, a: string, b: string, bStart: Posi
             mergedPos = updatedPosition(mergedPos, chunk[2])
         } else {
             // Conflict! chunk[0]/chunk[2]`
+            conflicts.push({ start: originalPos, end: originalPos })
             clean = false
             // We give up on tracking positions.
         }
@@ -282,6 +291,7 @@ export function computeDiff(original: string, a: string, b: string, bStart: Posi
     }
     return {
         clean,
+        conflicts,
         edits,
         highlights: postEditHighlights,
     }
