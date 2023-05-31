@@ -577,7 +577,7 @@ describe('Cody completions', () => {
                 }
             `)
         })
-      
+
         it('normalizes Cody responses starting with an empty line and following the exact same indentation as the start line', async () => {
             const { completions } = await complete(
                 `function test() {
