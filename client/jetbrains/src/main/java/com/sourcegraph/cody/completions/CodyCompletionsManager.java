@@ -15,9 +15,9 @@ import com.intellij.util.concurrency.annotations.RequiresEdt;
 import com.sourcegraph.cody.CodyCompatibility;
 import com.sourcegraph.cody.api.CompletionsService;
 import com.sourcegraph.cody.completions.prompt_library.*;
-import com.sourcegraph.cody.config.ConfigUtil;
-import com.sourcegraph.cody.config.SettingsComponent;
 import com.sourcegraph.cody.vscode.*;
+import com.sourcegraph.config.ConfigUtil;
+import com.sourcegraph.config.SettingsComponent;
 import java.util.Optional;
 import java.util.concurrent.*;
 import org.jetbrains.annotations.NotNull;
@@ -178,6 +178,8 @@ public class CodyCompletionsManager {
     if (accessToken == null) {
       throw new IllegalArgumentException("ACCESS_TOKEN is null");
     }
+    System.out.println("ENDPOINT " + srcEndpoint);
+    System.out.println("ACCESS_TOKEN " + accessToken);
     return new CompletionsService(instanceUrl, accessToken);
   }
 

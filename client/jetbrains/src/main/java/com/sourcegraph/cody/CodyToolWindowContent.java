@@ -10,10 +10,10 @@ import com.sourcegraph.cody.api.Speaker;
 import com.sourcegraph.cody.chat.Chat;
 import com.sourcegraph.cody.chat.ChatBubble;
 import com.sourcegraph.cody.chat.ChatMessage;
-import com.sourcegraph.cody.config.ConfigUtil;
-import com.sourcegraph.cody.config.SettingsComponent;
 import com.sourcegraph.cody.editor.EditorContextGetter;
 import com.sourcegraph.cody.recipes.RecipeRunner;
+import com.sourcegraph.config.ConfigUtil;
+import com.sourcegraph.config.SettingsComponent;
 import java.awt.*;
 import java.awt.event.AdjustmentListener;
 import java.util.ArrayList;
@@ -168,6 +168,7 @@ class CodyToolWindowContent implements UpdatableChat {
         isEnterprise
             ? ConfigUtil.getEnterpriseAccessToken(project)
             : ConfigUtil.getDotcomAccessToken(project);
+    System.out.println("isEnterprise: " + isEnterprise);
 
     var chat = new Chat("", instanceUrl, accessToken != null ? accessToken : "");
     ArrayList<String> contextFiles =

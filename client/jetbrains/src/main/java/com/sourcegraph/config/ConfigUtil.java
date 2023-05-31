@@ -236,6 +236,14 @@ public class ConfigUtil {
 
   @NotNull
   private static SourcegraphProjectService getProjectLevelConfig(@NotNull Project project) {
-    return Objects.requireNonNull(SourcegraphProjectService.getInstance(project));
+    return Objects.requireNonNull(SourcegraphService.getInstance(project));
+  }
+
+  public static String getEnterpriseAccessToken(Project project) {
+    return getAccessToken(project);
+  }
+
+  public static String getDotcomAccessToken(Project project) {
+    return getAccessToken(project);
   }
 }
