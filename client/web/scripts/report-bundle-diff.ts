@@ -34,8 +34,9 @@ async function findFile(root: string, filename: string): Promise<string> {
             try {
                 await fs.access(filePath)
                 return filePath
-            } catch (e) {}
-            return ''
+            } catch {
+                return ''
+            }
         })
     )
 
