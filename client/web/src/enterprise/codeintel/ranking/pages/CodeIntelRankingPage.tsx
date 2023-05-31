@@ -47,34 +47,22 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
                 className="mb-3"
             />
 
-            <Container className="mb-3">
+            <>
                 {data &&
                     (data.rankingSummary.length === 0 ? (
-                        <>No data.</>
+                        <Container>
+                            <>No data.</>
+                        </Container>
                     ) : (
                         <>
-                            <H3>Current ranking calculation ({data.rankingSummary[0].graphKey})</H3>
-
-                            <div className="p-2">
-                                <Summary
-                                    key={data.rankingSummary[0].graphKey}
-                                    summary={data.rankingSummary[0]}
-                                    displayGraphKey={false}
-                                />
-                            </div>
+                            {data.rankingSummary.map(summary => (
+                                <Container className="mb-3">
+                                    <Summary key={summary.graphKey} summary={summary} />
+                                </Container>
+                            ))}
                         </>
                     ))}
-            </Container>
-
-            {data && data.rankingSummary.length > 1 && (
-                <Container>
-                    <Collapsible title="Historic ranking calculations" titleAtStart={true} titleClassName="h3">
-                        {data.rankingSummary.slice(1).map(summary => (
-                            <Summary key={summary.graphKey} summary={summary} displayGraphKey={true} />
-                        ))}
-                    </Collapsible>
-                </Container>
-            )}
+            </>
         </>
     )
 }
@@ -95,14 +83,13 @@ interface Progress {
 
 interface SummaryProps {
     summary: Summary
-    displayGraphKey: boolean
 }
 
-const Summary: FunctionComponent<SummaryProps> = ({ summary, displayGraphKey }) => (
-    <div className="py-2">
-        {displayGraphKey && <H4>Historic ranking calculation ({summary.graphKey})</H4>}
+const Summary: FunctionComponent<SummaryProps> = ({ summary }) => (
+    <div className="p-2">
+        <H4 className="mb-4">Ranking calculation ({summary.graphKey})</H4>
 
-        <div className={displayGraphKey ? 'px-4' : ''}>
+        <div>
             <Progress
                 title="Path mapper"
                 subtitle="Reads the paths of SCIP indexes exported for ranking and produce path/zero-count pairs consumed by the ranking phase."
