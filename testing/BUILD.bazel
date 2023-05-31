@@ -104,6 +104,7 @@ sh_test(
         "//dev/codeintel-qa/cmd/query",
         "//dev/codeintel-qa/cmd/upload",
         "//enterprise/cmd/server:image_tarball",
+        "//internal/cmd/init-sg",
         "@src-cli-linux-amd64//:src-cli-linux-amd64",
     ],
     env = {
