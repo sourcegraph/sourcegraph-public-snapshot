@@ -148,9 +148,10 @@ If you are seeing a large number of logs in the format `frontend.SecurityEvents`
 
 To disable them, in the site config set `log.securityEventLog.location` to `none`.
 
-```
+```json
  "log": {
     "securityEventLog": {
       "location": "none"
     }
+}
 ```
