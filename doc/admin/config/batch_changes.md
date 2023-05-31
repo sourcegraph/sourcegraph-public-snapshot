@@ -8,6 +8,12 @@ Batch Changes is generally configured through the same [site configuration](site
 
 Batch Changes is [RBAC-enabled](../../admin/access_control/index.md) <span class="badge badge-beta">Beta</span>. By default, all users have full read and write access for Batch Changes, but this can be restricted by changing the default role permissions, or by creating new custom roles.
 
+### Enable organization members to administer
+
+<span class="badge badge-note">Sourcegraph 5.0.5+</span>
+
+By default, only a batch change's author or a site admin can administer (apply, close, rename, etc.) a batch change. However, admins can use [organizations](../../admin/organizations.md) to facilitate closer collaboration and shared administrative control over batch changes by enabling the `orgs.allMembersBatchChangesAdmin` setting for an organization. When enabled, members of the organization will be able to administer all batch changes created in that organization's namespace. Batch changes created in other namespaces (user or organization) will still be restricted to the author and site admins.
+
 ## Rollout windows
 
 By default, Sourcegraph attempts to reconcile (create, update, or close) changesets as quickly as the rate limits on the code host allow. This can result in CI systems being overwhelmed if hundreds or thousands of changesets are being handled as part of a single batch change.
