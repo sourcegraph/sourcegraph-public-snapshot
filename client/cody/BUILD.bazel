@@ -43,6 +43,7 @@ ts_project(
         "src/completions/history.ts",
         "src/completions/index.ts",
         "src/completions/logger.ts",
+        "src/completions/multiline.ts",
         "src/completions/prompts.ts",
         "src/completions/provider.ts",
         "src/configuration.ts",
