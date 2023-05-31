@@ -79,6 +79,21 @@ func TestComputeRunType(t *testing.T) {
 		},
 		want: AppInsiders,
 	}, {
+		name: "cody nightly",
+		args: args{
+			branch: "main",
+			env: map[string]string{
+				"CODY_NIGHTLY": "true",
+			},
+		},
+		want: CodyNightly,
+	}, {
+		name: "cody release",
+		args: args{
+			branch: "cody/release",
+		},
+		want: CodyReleaseBranch,
+	}, {
 		name: "release nightly",
 		args: args{
 			branch: "main",
