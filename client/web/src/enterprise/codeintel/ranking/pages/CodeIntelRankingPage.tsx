@@ -4,12 +4,14 @@ import classNames from 'classnames'
 import { formatDistance, format, parseISO } from 'date-fns'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { useMutation } from '@sourcegraph/http-client'
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, ErrorAlert, LoadingSpinner, PageHeader, H4, H3, Text } from '@sourcegraph/wildcard'
+import { Container, ErrorAlert, LoadingSpinner, PageHeader, H4, H3, Text, Button } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../../components/Collapsible'
+import { BumpDerivativeGraphKeyResult, BumpDerivativeGraphKeyVariables } from '../../../../graphql-operations'
 
-import { useRankingSummary as defaultUseRankingSummary } from './backend'
+import { BUMP_DERIVATIVE_GRAPH_KEY, useRankingSummary as defaultUseRankingSummary } from './backend'
 
 import styles from './CodeIntelRankingPage.module.scss'
 
@@ -25,6 +27,11 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
     useEffect(() => telemetryService.logViewEvent('CodeIntelRankingPage'), [telemetryService])
 
     const { data, loading, error } = useRankingSummary({})
+
+    const [bumpDerivativeGraphKey, { loading: bumping }] = useMutation<
+        BumpDerivativeGraphKeyResult,
+        BumpDerivativeGraphKeyVariables
+    >(BUMP_DERIVATIVE_GRAPH_KEY)
 
     if (loading && !data) {
         return <LoadingSpinner />
@@ -45,6 +52,11 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
                 ]}
                 description="View the history of ranking calculation."
                 className="mb-3"
+                actions={
+                    <Button onClick={() => bumpDerivativeGraphKey()} disabled={bumping} variant="secondary">
+                        Start new ranking map/reduce job
+                    </Button>
+                }
             />
 
             <Container className="mb-3">

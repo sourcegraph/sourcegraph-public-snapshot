@@ -37,9 +37,8 @@ func GraphKey() string {
 // Constructing a graph key for the mapper and reducer jobs in this way ensures that begin a fresh
 // map/reduce job on a periodic cadence (equal to the bucket length). Changing the root graph key
 // will also create a new map/reduce job (without switching buckets).
-func DerivativeGraphKeyFromTime(now time.Time) string {
+func DerivativeGraphKeyFromTime(derivativeGraphKeyPrefix string, now time.Time) string {
 	graphKey := conf.CodeIntelRankingDocumentReferenceCountsGraphKey()
-	derivativeGraphKeyPrefix := conf.CodeIntelRankingDocumentReferenceCountsDerivativeGraphKeyPrefix()
 	bucket := now.UTC().Unix() / int64(conf.CodeIntelRankingStaleResultAge().Seconds())
 
 	return NewDerivativeGraphKey(graphKey, derivativeGraphKeyPrefix, bucket)

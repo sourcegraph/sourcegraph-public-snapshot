@@ -113,12 +113,17 @@ func softDeleteStaleExportedUploads(ctx context.Context, store store.Store) (int
 	return store.SoftDeleteStaleExportedUploads(ctx, rankingshared.GraphKey())
 }
 
-func vacuumDeletedExportedUploads(ctx context.Context, store store.Store) (int, error) {
+func vacuumDeletedExportedUploads(ctx context.Context, s store.Store) (int, error) {
 	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 		return 0, nil
 	}
 
-	return store.VacuumDeletedExportedUploads(ctx, rankingshared.DerivativeGraphKeyFromTime(time.Now()))
+	derivativeGraphKeyPrefix, err := store.DerivativeGraphKey(ctx, s)
+	if err != nil {
+		return 0, err
+	}
+
+	return s.VacuumDeletedExportedUploads(ctx, rankingshared.DerivativeGraphKeyFromTime(derivativeGraphKeyPrefix, time.Now()))
 }
 
 const vacuumBatchSize = 100 // TODO - configure via envvar
@@ -131,18 +136,28 @@ func vacuumAbandonedExportedUploads(ctx context.Context, store store.Store) (int
 	return store.VacuumAbandonedExportedUploads(ctx, rankingshared.GraphKey(), vacuumBatchSize)
 }
 
-func vacuumStaleGraphs(ctx context.Context, store store.Store) (int, error) {
+func vacuumStaleGraphs(ctx context.Context, s store.Store) (int, error) {
 	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 		return 0, nil
 	}
 
-	return store.VacuumStaleGraphs(ctx, rankingshared.DerivativeGraphKeyFromTime(time.Now()), vacuumBatchSize)
+	derivativeGraphKeyPrefix, err := store.DerivativeGraphKey(ctx, s)
+	if err != nil {
+		return 0, err
+	}
+
+	return s.VacuumStaleGraphs(ctx, rankingshared.DerivativeGraphKeyFromTime(derivativeGraphKeyPrefix, time.Now()), vacuumBatchSize)
 }
 
-func vacuumStaleRanks(ctx context.Context, store store.Store) (int, int, error) {
+func vacuumStaleRanks(ctx context.Context, s store.Store) (int, int, error) {
 	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 		return 0, 0, nil
 	}
 
-	return store.VacuumStaleRanks(ctx, rankingshared.DerivativeGraphKeyFromTime(time.Now()))
+	derivativeGraphKeyPrefix, err := store.DerivativeGraphKey(ctx, s)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return s.VacuumStaleRanks(ctx, rankingshared.DerivativeGraphKeyFromTime(derivativeGraphKeyPrefix, time.Now()))
 }
