@@ -71,7 +71,7 @@ func (c *Client) Dequeue(ctx context.Context, workerHostname string, extraArgume
 	}
 
 	if len(c.options.QueueNames) > 0 {
-		queueAttr = attribute.String("queueNames", strings.Join(c.options.QueueNames, ","))
+		queueAttr = attribute.StringSlice("queueNames", c.options.QueueNames)
 		endpoint = "/dequeue"
 		dequeueRequest.Queues = c.options.QueueNames
 	} else {
@@ -168,32 +168,29 @@ func (c *Client) MarkFailed(ctx context.Context, job types.Job, failureMessage s
 }
 
 func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, cancelIDs []string, err error) {
-	if len(c.options.QueueNames) > 0 {
-		// TODO: multi-queue heartbeats are not implemented yet, so simply return the job ids immediately
-		// to allow jobs to terminate while testing
-		return jobIDs, nil, nil
-	}
-	ctx, _, endObservation := c.operations.heartbeat.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("queueName", c.options.QueueName),
-		attribute.StringSlice("jobIDs", jobIDs),
-	}})
-	defer endObservation(1, observation.Args{})
-
 	metrics, err := gatherMetrics(c.logger, c.metricsGatherer)
 	if err != nil {
 		c.logger.Error("Failed to collect prometheus metrics for heartbeat", log.Error(err))
 		// Continue, no metric errors should prevent heartbeats.
 	}
 
-	var req *http.Request
-	var reqErr error
+	var queueAttr attribute.KeyValue
+	var endpoint string
+	var payload any
 	// If queueName is empty (but queueNames is set), then we are using the newer multi-queue API. It is safe to send
 	// jobIds as strings in that case.
 	if c.options.QueueName == "" {
-		req, reqErr = c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", c.options.QueueName), types.HeartbeatRequest{
-			ExecutorName: c.options.ExecutorName,
-			JobIDs:       jobIDs,
-
+		queueAttr = attribute.StringSlice("queueNames", c.options.QueueNames)
+		queueJobIDs, parseErr := ParseJobIDs(jobIDs)
+		if parseErr != nil {
+			c.logger.Error("failed to parse job IDs", log.Error(parseErr))
+			return nil, nil, err
+		}
+		endpoint = "/heartbeat"
+		payload = types.HeartbeatRequest{
+			ExecutorName:    c.options.ExecutorName,
+			QueueNames:      c.options.QueueNames,
+			JobIDsByQueue:   queueJobIDs,
 			OS:              c.options.TelemetryOptions.OS,
 			Architecture:    c.options.TelemetryOptions.Architecture,
 			DockerVersion:   c.options.TelemetryOptions.DockerVersion,
@@ -201,9 +198,7 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, canc
 			GitVersion:      c.options.TelemetryOptions.GitVersion,
 			IgniteVersion:   c.options.TelemetryOptions.IgniteVersion,
 			SrcCliVersion:   c.options.TelemetryOptions.SrcCliVersion,
-
-			PrometheusMetrics: metrics,
-		})
+		}
 	} else {
 		// If queueName is set, then we cannot be sure whether Sourcegraph is new enough (since Heartbeat can't provide
 		// that context). So to be safe, we send jobIds as ints. If Sourcegraph is older, it expects ints anyway. If
@@ -211,13 +206,17 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, canc
 		// TODO remove in Sourcegraph 5.2.
 		var jobIDsInt []int
 		for _, jobID := range jobIDs {
-			jobIDInt, err := strconv.Atoi(jobID)
-			if err != nil {
+			jobIDInt, convErr := strconv.Atoi(jobID)
+			if convErr != nil {
+				c.logger.Error("failed to convert job ID to int", log.String("jobID", jobID), log.Error(convErr))
 				return nil, nil, err
 			}
 			jobIDsInt = append(jobIDsInt, jobIDInt)
 		}
-		req, reqErr = c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", c.options.QueueName), types.HeartbeatRequestV1{
+
+		queueAttr = attribute.String("queueName", c.options.QueueName)
+		endpoint = fmt.Sprintf("%s/heartbeat", c.options.QueueName)
+		payload = types.HeartbeatRequestV1{
 			ExecutorName: c.options.ExecutorName,
 			JobIDs:       jobIDsInt,
 
@@ -230,33 +229,76 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, canc
 			SrcCliVersion:   c.options.TelemetryOptions.SrcCliVersion,
 
 			PrometheusMetrics: metrics,
-		})
+		}
 	}
+
+	ctx, _, endObservation := c.operations.heartbeat.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		queueAttr,
+		attribute.StringSlice("jobIDs", jobIDs),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	req, reqErr := c.client.NewJSONRequest(http.MethodPost, endpoint, payload)
+
 	if reqErr != nil {
-		return nil, nil, err
+		return nil, nil, reqErr
 	}
 
 	// Do the request and get the reader for the response body.
-	_, body, err := c.client.Do(ctx, req)
-	if err != nil {
-		return nil, nil, err
+	_, body, doErr := c.client.Do(ctx, req)
+	if doErr != nil {
+		return nil, nil, doErr
 	}
 
 	// Now read the response body into a buffer, so that we can decode it twice.
 	// This will always be small, so no problem that we don't stream this.
 	defer body.Close()
-	bodyBytes, err := io.ReadAll(body)
-	if err != nil {
-		return nil, nil, err
+	bodyBytes, readErr := io.ReadAll(body)
+	if readErr != nil {
+		return nil, nil, readErr
 	}
 
 	// First, try to unmarshal the response into a V2 response object.
 	var respV2 types.HeartbeatResponse
-	if err := json.Unmarshal(bodyBytes, &respV2); err == nil {
+	if unmarshalErr := json.Unmarshal(bodyBytes, &respV2); unmarshalErr == nil {
 		// If that works, we can return the data.
 		return respV2.KnownIDs, respV2.CancelIDs, nil
 	}
 	return nil, nil, err
+}
+
+type JobIDsParseError struct {
+	JobIDs []string
+}
+
+func (e JobIDsParseError) Error() string {
+	return fmt.Sprintf("failed to parse one or more unexpected job ID formats: %s", strings.Join(e.JobIDs, ", "))
+}
+
+// ParseJobIDs attempts to split the job IDs on a separator character in order to categorize them by queue
+// name, returning a list of types.QueueJobIDs.
+// The expected format is <job id>-<queue name>, e.g. "42-batches".
+func ParseJobIDs(jobIDs []string) ([]types.QueueJobIDs, error) {
+	var queueJobIDs []types.QueueJobIDs
+	queueIds := map[string][]string{}
+	var invalidIds []string
+
+	for _, stringID := range jobIDs {
+		id, queueName, found := strings.Cut(stringID, "-")
+		if !found {
+			invalidIds = append(invalidIds, stringID)
+		} else {
+			queueIds[queueName] = append(queueIds[queueName], id)
+		}
+	}
+	if len(invalidIds) > 0 {
+		return nil, JobIDsParseError{JobIDs: invalidIds}
+	}
+
+	for q, ids := range queueIds {
+		queueJobIDs = append(queueJobIDs, types.QueueJobIDs{QueueName: q, JobIDs: ids})
+	}
+	return queueJobIDs, nil
 }
 
 func gatherMetrics(logger log.Logger, gatherer prometheus.Gatherer) (string, error) {
@@ -286,16 +328,9 @@ func gatherMetrics(logger log.Logger, gatherer prometheus.Gatherer) (string, err
 func (c *Client) Ping(ctx context.Context) (err error) {
 	var req *http.Request
 	if len(c.options.QueueNames) > 0 {
-		var jobIDsByQueue []types.QueueJobIDs
-		for _, queueName := range c.options.QueueNames {
-			jobIDsByQueue = append(jobIDsByQueue, types.QueueJobIDs{
-				QueueName: queueName,
-				JobIDs:    nil,
-			})
-		}
-		req, err = c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("/heartbeat"), types.HeartbeatRequest{
-			ExecutorName:  c.options.ExecutorName,
-			JobIDsByQueue: jobIDsByQueue,
+		req, err = c.client.NewJSONRequest(http.MethodPost, "/heartbeat", types.HeartbeatRequest{
+			ExecutorName: c.options.ExecutorName,
+			QueueNames:   c.options.QueueNames,
 		})
 	} else {
 		req, err = c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", c.options.QueueName), types.HeartbeatRequest{
@@ -307,18 +342,6 @@ func (c *Client) Ping(ctx context.Context) (err error) {
 	}
 
 	return c.client.DoAndDrop(ctx, req)
-}
-
-func (c *Client) getFirstQueueName() string {
-	// TODO: temp solution to allow multi-queue executor to start up before heartbeats are implemented.
-	// Simply pick the first queue name when multiple are configured
-	var queue string
-	if len(c.options.QueueNames) > 0 {
-		queue = c.options.QueueNames[0]
-	} else {
-		queue = c.options.QueueName
-	}
-	return queue
 }
 
 func (c *Client) AddExecutionLogEntry(ctx context.Context, job types.Job, entry internalexecutor.ExecutionLogEntry) (entryID int, err error) {
