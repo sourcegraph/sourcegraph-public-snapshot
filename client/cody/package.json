@@ -508,8 +508,11 @@
         "cody.codebase": {
           "order": 2,
           "type": "string",
-          "markdownDescription": "The name of the embedded repository that Cody will use to gather context for its responses. This is automatically inferred from your Git metadata, but you can use this option if you need to override the default.",
-          "example": "github.com/sourcegraph/sourcegraph"
+          "markdownDescription": "The Git repository URL for your code. This will be sent to the Sourcegraph API to fetch the code graph context data. When set to empty, the URL will be inferred from your Git metadata.",
+          "examples": [
+            "https://github.com/sourcegraph/sourcegraph.git",
+            "ssh://git@github.com/sourcegraph/sourcegraph"
+          ]
         },
         "cody.useContext": {
           "order": 3,
