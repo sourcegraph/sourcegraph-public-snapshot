@@ -72,7 +72,8 @@ exported_uploads AS (
 	SELECT
 		cre.id,
 		cre.upload_id,
-		cre.upload_key
+		cre.upload_key,
+		cre.deleted_at
 	FROM codeintel_ranking_exports cre
 	JOIN progress p ON TRUE
 	WHERE
@@ -106,6 +107,7 @@ refs AS (
 				rrp.graph_key = %s AND
 				rrp.codeintel_ranking_reference_id = rr.id
 		)
+	ORDER BY eu.deleted_at DESC NULLS FIRST, eu.id, rr.exported_upload_id
 	LIMIT %s
 	FOR UPDATE SKIP LOCKED
 ),
@@ -256,7 +258,8 @@ progress AS (
 exported_uploads AS (
 	SELECT
 		cre.id,
-		cre.upload_id
+		cre.upload_id,
+		cre.deleted_at
 	FROM codeintel_ranking_exports cre
 	JOIN progress p ON TRUE
 	WHERE
@@ -294,6 +297,7 @@ unprocessed_path_counts AS (
 				prp.graph_key = %s AND
 				prp.codeintel_initial_path_ranks_id = ipr.id
 		)
+	ORDER BY eu.deleted_at DESC NULLS FIRST, eu.id, ipr.exported_upload_id
 	LIMIT %s
 	FOR UPDATE SKIP LOCKED
 ),
