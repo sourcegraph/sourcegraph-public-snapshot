@@ -16,7 +16,7 @@ import (
 func BazelOperations() []operations.Operation {
 	ops := []operations.Operation{}
 	ops = append(ops, bazelConfigure())
-	ops = append(ops, bazelTest("//...")) //, "//client/web:test"))
+	ops = append(ops, bazelTest("//...", "//client/web:test"))
 	ops = append(ops, bazelBackCompatTest(
 		"@sourcegraph_back_compat//cmd/...",
 		"@sourcegraph_back_compat//lib/...",
@@ -128,7 +128,7 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 	// Test commands
 	bazelTestCmds := []bk.StepOpt{}
 	for _, target := range targets {
-		cmd := bazelCmd(fmt.Sprintf("test --generate_json_trace_profile --profile=command.profile.gz --experimental_announce_profile_path %s", target))
+		cmd := bazelCmd(fmt.Sprintf("test %s", target))
 		bazelTestCmds = append(bazelTestCmds,
 			bazelAnnouncef("bazel test %s", target),
 			bk.Cmd(cmd))
