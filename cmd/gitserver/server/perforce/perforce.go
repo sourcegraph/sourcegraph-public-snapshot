@@ -24,6 +24,11 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+type PerforceService interface {
+	EnqueueChangelistMappingJob(*ChangelistMappingJob)
+	StartPerforceChangelistMappingPipeline(context.Context)
+}
+
 type ChangelistMappingJob struct {
 	RepoName api.RepoName
 	RepoDir  common.GitDir
@@ -36,10 +41,10 @@ type Service struct {
 }
 
 // NewCloneQueue initializes a new cloneQueue.
-func NewService(logger log.Logger, db database.DB, jobs *list.List) Service {
+func NewService(logger log.Logger, db database.DB, jobs *list.List) PerforceService {
 	queue := common.NewQueue[ChangelistMappingJob](jobs)
 
-	return Service{
+	return &Service{
 		Logger:                 logger,
 		DB:                     db,
 		changelistMappingQueue: queue,
