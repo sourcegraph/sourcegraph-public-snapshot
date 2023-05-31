@@ -249,6 +249,10 @@ extend type Mutation {
     assignOwner creates a new assigned owner.
     """
     assignOwner(input: AssignOwnerInput!): EmptyResponse
+    """
+    removeAssignedOwner removes an assigned owner.
+    """
+    removeAssignedOwner(input: AssignOwnerInput!): EmptyResponse
 }
 
 """
@@ -347,7 +351,7 @@ input UpdateSignalConfigurationsInput {
 }
 
 """
-AssignOwnerInput represents the input for assigning an owner.
+AssignOwnerInput represents the input for assigning or deleting an owner.
 """
 input AssignOwnerInput {
     """
