@@ -49,19 +49,14 @@ func Init(
 	database.BeforeCreateExternalService = enforcement.NewBeforeCreateExternalServiceHook()
 
 	logger := log.Scoped("licensing", "licensing enforcement")
-	hooks.GetLicenseInfo = func(isSiteAdmin bool) *hooks.LicenseInfo {
-		if !isSiteAdmin {
-			return nil
-		}
 
+	// Surface basic, non-sensitive information about the license type. This information
+	// can be used to soft-gate features from the UI, and to provide info to admins from
+	// site admin settings pages in the UI.
+	hooks.GetLicenseInfo = func() *hooks.LicenseInfo {
 		info, err := licensing.GetConfiguredProductLicenseInfo()
 		if err != nil {
 			logger.Error("Failed to get license info", log.Error(err))
-			return nil
-		}
-
-		if info.Plan().IsFree() {
-			// We don't enforce anything on the free plan
 			return nil
 		}
 
@@ -94,7 +89,7 @@ func Init(
 				licenseInfo.KnownLicenseTags = append(licenseInfo.KnownLicenseTags, feature.FeatureName())
 			}
 			licenseInfo.KnownLicenseTags = append(licenseInfo.KnownLicenseTags, licensing.MiscTags...)
-		} else {
+		} else { // returning BC info only makes sense on non-dotcom
 			bcFeature := &licensing.FeatureBatchChanges{}
 			if err := licensing.Check(bcFeature); err == nil {
 				if bcFeature.Unrestricted {
