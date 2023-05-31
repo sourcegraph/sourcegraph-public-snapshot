@@ -50,6 +50,7 @@ All notable changes to Sourcegraph are documented in this file.
 - GitLab code host connections will disable repo-centric repository permission syncs when the authentication provider is set as "oauth". This prevents repo-centric permission sync from getting incorrect data. [#51452](https://github.com/sourcegraph/sourcegraph/pull/51452)
 - Code intelligence background jobs did not correctly use an internal context, causing SCIP data to sometimes be prematurely deleted. [#51591](https://github.com/sourcegraph/sourcegraph/pull/51591)
 - `id` column of `user_repo_permissions` table was switched to `bigint` to avoid `int` overflow. #[52299](https://github.com/sourcegraph/sourcegraph/pull/52299)
+- In some circumstances filenames containing `..` either could not be read or would return a diff when viewed. We now always correctly read those files. [#52605](https://github.com/sourcegraph/sourcegraph/pull/52605)
 
 ### Removed
 
