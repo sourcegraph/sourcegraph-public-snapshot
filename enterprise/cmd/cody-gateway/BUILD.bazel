@@ -27,8 +27,8 @@ go_binary(
 )
 
 pkg_tar(
-    name = "tar_llm-proxy",
-    srcs = [":llm-proxy"],
+    name = "tar_cody-gateway",
+    srcs = [":cody-gateway"],
 )
 
 oci_image(
@@ -37,16 +37,16 @@ oci_image(
     entrypoint = [
         "/sbin/tini",
         "--",
-        "/llm-proxy",
+        "/cody-gateway",
     ],
-    tars = [":tar_llm-proxy"],
+    tars = [":tar_cody-gateway"],
     user = "sourcegraph",
 )
 
 oci_tarball(
     name = "image_tarball",
     image = ":image",
-    repo_tags = ["llm-proxy:candidate"],
+    repo_tags = ["cody-gateway:candidate"],
 )
 
 container_structure_test(
@@ -62,5 +62,5 @@ oci_push(
     name = "candidate_push",
     image = ":image",
     remote_tags = "//:tags",
-    repository = image_repository("llm-proxy"),
+    repository = image_repository("cody-gateway"),
 )
