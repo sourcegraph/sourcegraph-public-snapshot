@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 // productSubscriptionAccessTokenPrefix is the prefix used for identifying tokens
@@ -41,13 +42,20 @@ func (r ProductSubscriptionLicensingResolver) ProductSubscriptionByAccessToken(c
 		return nil, err
 	}
 
-	subID, err := newDBTokens(r.DB).LookupAccessToken(ctx, args.AccessToken)
+	subID, err := newDBTokens(r.DB).LookupProductSubscriptionIDByAccessToken(ctx, args.AccessToken)
 	if err != nil {
-		return nil, ErrProductSubscriptionNotFound{err}
+		if errcode.IsNotFound(err) {
+			return nil, ErrProductSubscriptionNotFound{err}
+		}
+		return nil, err
 	}
+
 	v, err := dbSubscriptions{db: r.DB}.GetByID(ctx, subID)
 	if err != nil {
-		return nil, ErrProductSubscriptionNotFound{err}
+		if err == errSubscriptionNotFound {
+			return nil, ErrProductSubscriptionNotFound{err}
+		}
+		return nil, err
 	}
 	return &productSubscription{v: v, db: r.DB}, nil
 }
