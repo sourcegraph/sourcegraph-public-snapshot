@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+
 import { gql, useQuery } from '@sourcegraph/http-client'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { Button, Link, Select, Text, useLocalStorage } from '@sourcegraph/wildcard'
@@ -7,13 +9,10 @@ import { HeroPage } from '../components/HeroPage'
 import { GetReposForCodyResult, GetReposForCodyVariables } from '../graphql-operations'
 
 import { CodyLogo } from './components/CodyLogo'
-import { CodySidebar } from './sidebar/CodySidebar'
-import { useChatStore } from './stores/chat'
-import { useIsCodyEnabled } from './useIsCodyEnabled'
+import { CodySidebar } from './sidebar'
+import { useCodySidebar, CodySidebarStoreProvider } from './sidebar/Provider'
 
 import styles from './CodyStandalonePage.module.scss'
-
-const noop = (): void => {}
 
 const REPOS_QUERY = gql`
     query GetReposForCody {
@@ -25,21 +24,6 @@ const REPOS_QUERY = gql`
         }
     }
 `
-
-export const CodyStandalonePage: React.FunctionComponent<{}> = () => {
-    // eslint-disable-next-line no-restricted-syntax
-    const [appSetupFinished] = useLocalStorage('app.setup.finished', false)
-    const { chat, needsEmailVerification } = useIsCodyEnabled()
-
-    const isCodyEnabled = appSetupFinished && chat && !needsEmailVerification
-    const disabledReason: CodyDisabledReason = !appSetupFinished
-        ? 'setupNotCompleted'
-        : !chat
-        ? 'accountNotConnected'
-        : 'emailNotVerified'
-
-    return isCodyEnabled ? <CodyChat /> : <CodyDisabledNotice reason={disabledReason} />
-}
 
 type CodyDisabledReason = 'setupNotCompleted' | 'accountNotConnected' | 'emailNotVerified'
 
@@ -95,13 +79,25 @@ const CodyDisabledNotice: React.FunctionComponent<{ reason: CodyDisabledReason }
     />
 )
 
-const CodyChat: React.FunctionComponent<{}> = () => {
-    const { data } = useQuery<GetReposForCodyResult, GetReposForCodyVariables>(REPOS_QUERY, {})
-
+const CodyStandalonePageContext: React.FC<{ repos: GetReposForCodyResult['repositories']['nodes'] }> = ({ repos }) => {
+    // eslint-disable-next-line no-restricted-syntax
+    const [appSetupFinished] = useLocalStorage('app.setup.finished', false)
     const [selectedRepo, setSelectedRepo] = useTemporarySetting('app.codyStandalonePage.selectedRepo', '')
-    useChatStore({ codebase: selectedRepo || '', setIsCodySidebarOpen: noop })
 
-    const repos = data?.repositories.nodes ?? []
+    const { scope, setScope, loaded, isCodyEnabled } = useCodySidebar()
+
+    const enabled = appSetupFinished && isCodyEnabled.chat && !isCodyEnabled.needsEmailVerification
+    const disabledReason: CodyDisabledReason = !appSetupFinished
+        ? 'setupNotCompleted'
+        : !isCodyEnabled.chat
+        ? 'accountNotConnected'
+        : 'emailNotVerified'
+
+    useEffect(() => {
+        if (loaded && scope.type === 'Automatic' && !scope.repositories.find(name => name === selectedRepo)) {
+            setScope({ ...scope, repositories: selectedRepo ? [selectedRepo] : [] })
+        }
+    }, [loaded, scope, selectedRepo, setScope])
 
     const repoSelector = (
         <Select
@@ -118,7 +114,7 @@ const CodyChat: React.FunctionComponent<{}> = () => {
             <option value="" disabled={true}>
                 Select a repo
             </option>
-            {repos.map(({ name }) => (
+            {repos.map(({ name }: { name: string }) => (
                 <option key={name} value={name}>
                     {name}
                 </option>
@@ -126,9 +122,21 @@ const CodyChat: React.FunctionComponent<{}> = () => {
         </Select>
     )
 
-    return (
+    return enabled ? (
         <div className="d-flex flex-column w-100">
             <CodySidebar titleContent={repoSelector} />
         </div>
+    ) : (
+        <CodyDisabledNotice reason={disabledReason} />
+    )
+}
+
+export const CodyStandalonePage: React.FunctionComponent<{}> = () => {
+    const { data } = useQuery<GetReposForCodyResult, GetReposForCodyVariables>(REPOS_QUERY, {})
+
+    return (
+        <CodySidebarStoreProvider>
+            <CodyStandalonePageContext repos={data?.repositories?.nodes || []} />
+        </CodySidebarStoreProvider>
     )
 }

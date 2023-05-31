@@ -364,6 +364,7 @@ func TestClient_MarkFailed(t *testing.T) {
 	}
 }
 
+// TODO: add test with string jobIDs when multi-queue is implemented.
 func TestHeartbeat(t *testing.T) {
 	spec := routeSpec{
 		expectedMethod:   "POST",
@@ -372,7 +373,7 @@ func TestHeartbeat(t *testing.T) {
 		expectedToken:    "hunter2",
 		expectedPayload: `{
 			"executorName": "deadbeef",
-			"jobIds": ["1","2","3"],
+			"jobIds": [1,2,3],
 
 			"os": "test-os",
 			"architecture": "test-architecture",
@@ -404,6 +405,7 @@ func TestHeartbeat(t *testing.T) {
 	})
 }
 
+// TODO: add test with string jobIDs when multi-queue is implemented.
 func TestHeartbeatBadResponse(t *testing.T) {
 	spec := routeSpec{
 		expectedMethod:   "POST",
@@ -412,7 +414,7 @@ func TestHeartbeatBadResponse(t *testing.T) {
 		expectedToken:    "hunter2",
 		expectedPayload: `{
 			"executorName": "deadbeef",
-			"jobIds": ["1","2","3"],
+			"jobIds": [1,2,3],
 
 			"os": "test-os",
 			"architecture": "test-architecture",

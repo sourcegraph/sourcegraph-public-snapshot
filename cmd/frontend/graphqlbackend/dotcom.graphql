@@ -276,9 +276,9 @@ type ProductSubscription implements Node {
     """
     sourcegraphAccessTokens: [String!]!
     """
-    LLM-proxy access granted to this subscription. Properties may be inferred from the active license, or be defined in overrides.
+    Cody Gateway access granted to this subscription. Properties may be inferred from the active license, or be defined in overrides.
     """
-    llmProxyAccess: LLMProxyAccess!
+    codyGatewayAccess: CodyGatewayAccess!
     """
     The date when this product subscription was created.
     """
@@ -299,9 +299,9 @@ type ProductSubscription implements Node {
 }
 
 """
-A usage data point of LLM proxy use of a subscription.
+A usage data point of Cody Gateway usage of a subscription.
 """
-type LLMProxyUsageDatapoint {
+type CodyGatewayUsageDatapoint {
     """
     The day the usage occurred.
     """
@@ -310,32 +310,36 @@ type LLMProxyUsageDatapoint {
     The number of requests made.
     """
     count: Int!
+    """
+    The model that was used.
+    """
+    model: String!
 }
 
 """
-LLM-proxy access granted to a subscription.
+Cody Gateway access granted to a subscription.
 FOR INTERNAL USE ONLY.
 """
-type LLMProxyAccess {
+type CodyGatewayAccess {
     """
-    Whether or not a subscription has LLM-proxy access.
+    Whether or not a subscription has Cody Gateway access.
     """
     enabled: Boolean!
     """
-    Rate limits for LLM-proxy access, or null if not enabled.
+    Rate limit for chat completions access, or null if not enabled.
     """
-    rateLimit: LLMProxyRateLimit
+    chatCompletionsRateLimit: CodyGatewayRateLimit
     """
-    Recent usage data of LLM proxy for the subscription.
+    Rate limit for code completions access, or null if not enabled.
     """
-    usage: [LLMProxyUsageDatapoint!]!
+    codeCompletionsRateLimit: CodyGatewayRateLimit
 }
 
 """
 The source of the rate limit returned.
 FOR INTERNAL USE ONLY.
 """
-enum LLMProxyRateLimitSource {
+enum CodyGatewayRateLimitSource {
     """
     Indicates that a custom override for the rate limit has been stored.
     """
@@ -348,14 +352,21 @@ enum LLMProxyRateLimitSource {
 }
 
 """
-LLM-proxy access rate limits for a subscription.
+Cody Gateway access rate limits for a subscription.
 FOR INTERNAL USE ONLY.
 """
-type LLMProxyRateLimit {
+type CodyGatewayRateLimit {
     """
     The source of the rate limit configuration.
     """
-    source: LLMProxyRateLimitSource!
+    source: CodyGatewayRateLimitSource!
+    """
+    The models that are allowed for this rate limit bucket.
+    Usually, customers will have two separate rate limits, one
+    for chat completions and one for code completions. A usual
+    config could include [{claude-v1, claude-v1.3},{claude-instant-v1}].
+    """
+    allowedModels: [String!]!
     """
     Requests per time interval.
     """
@@ -364,6 +375,10 @@ type LLMProxyRateLimit {
     Interval for rate limiting.
     """
     intervalSeconds: Int!
+    """
+    Recent usage data of Cody Gateway for the subscription.
+    """
+    usage: [CodyGatewayUsageDatapoint!]!
 }
 
 """
@@ -371,17 +386,17 @@ Partial update to apply to a subscription. Omitted fields are not applied.
 """
 input UpdateProductSubscriptionInput {
     """
-    Partial update to LLM-proxy access granted to this subscription.
+    Partial update to Cody Gateway access granted to this subscription.
     """
-    llmProxyAccess: UpdateLLMProxyAccessInput
+    codyGatewayAccess: UpdateCodyGatewayAccessInput
 }
 
 """
-Partial update to apply to a subscription's LLM-proxy access. Omitted fields are not applied.
+Partial update to apply to a subscription's Cody Gateway access. Omitted fields are not applied.
 """
-input UpdateLLMProxyAccessInput {
+input UpdateCodyGatewayAccessInput {
     """
-    Enable or disable LLM-proxy access.
+    Enable or disable Cody Gateway access.
     """
     enabled: Boolean
     """
@@ -389,11 +404,33 @@ input UpdateLLMProxyAccessInput {
 
     Set to 0 to remove the override.
     """
-    rateLimit: Int
+    chatCompletionsRateLimit: Int
     """
     Override default interval for rate limiting.
 
     Set to 0 to remove the override.
     """
-    rateLimitIntervalSeconds: Int
+    chatCompletionsRateLimitIntervalSeconds: Int
+    """
+    Override the set of allowed models for chat completions
+    for this subscription.
+    """
+    chatCompletionsAllowedModels: [String!]
+    """
+    Override default requests per time interval.
+
+    Set to 0 to remove the override.
+    """
+    codeCompletionsRateLimit: Int
+    """
+    Override default interval for rate limiting.
+
+    Set to 0 to remove the override.
+    """
+    codeCompletionsRateLimitIntervalSeconds: Int
+    """
+    Override the set of allowed models for chat completions
+    for this subscription.
+    """
+    codeCompletionsAllowedModels: [String!]
 }

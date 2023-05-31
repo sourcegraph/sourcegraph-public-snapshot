@@ -24,4 +24,4 @@ paths:
   - path: /tmp
     type: directory
     uid: 10001
-    permissions: 0o755
+    permissions: 0o777

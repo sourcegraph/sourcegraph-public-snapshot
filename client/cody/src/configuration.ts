@@ -41,6 +41,7 @@ export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'ge
         experimentalChatPredictions: config.get('cody.experimental.chatPredictions', isTesting),
         experimentalInline: config.get('cody.experimental.inline', isTesting),
         experimentalGuardrails: config.get('cody.experimental.guardrails', isTesting),
+        experimentalNonStop: config.get('cody.experimental.nonStop', isTesting),
     }
 }
 

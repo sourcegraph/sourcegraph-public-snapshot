@@ -320,13 +320,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         </>
                     )}
                     {isSourcegraphApp && (
-                        <NavAction>
-                            <Link className={styles.link} to="/app/coming-soon">
-                                Coming soon
-                            </Link>
-                        </NavAction>
-                    )}
-                    {isSourcegraphApp && (
                         <ButtonLink
                             variant="secondary"
                             outline={true}
@@ -373,7 +366,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
                     {props.authenticatedUser?.siteAdmin && (
                         <NavAction>
-                            <StatusMessagesNavItem />
+                            <StatusMessagesNavItem isSourcegraphApp={isSourcegraphApp} />
                         </NavAction>
                     )}
                     {!props.authenticatedUser ? (

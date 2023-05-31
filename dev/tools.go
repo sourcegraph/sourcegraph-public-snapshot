@@ -20,6 +20,6 @@ import (
 	// used in many places
 	_ "golang.org/x/tools/cmd/stringer"
 
-	// Used for llm-proxy to generate a GraphQL client
+	// Used for cody-gateway to generate a GraphQL client
 	_ "github.com/Khan/genqlient"
 )

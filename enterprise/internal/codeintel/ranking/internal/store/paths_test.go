@@ -30,19 +30,19 @@ func TestInsertInitialPathRanks(t *testing.T) {
 
 	// Insert exported uploads
 	if _, err := db.ExecContext(ctx, `
-		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key)
-		VALUES (104, 4, $1)
+		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key, upload_key)
+		VALUES (104, 4, $1, md5('key-4'))
 	`,
 		mockRankingGraphKey,
 	); err != nil {
 		t.Fatalf("unexpected error inserting exported upload record: %s", err)
 	}
 
-	mockPathNames := make(chan string, 3)
-	mockPathNames <- "foo.go"
-	mockPathNames <- "bar.go"
-	mockPathNames <- "baz.go"
-	close(mockPathNames)
+	mockPathNames := []string{
+		"foo.go",
+		"bar.go",
+		"baz.go",
+	}
 	if err := store.InsertInitialPathRanks(ctx, 104, mockPathNames, 2, mockRankingGraphKey); err != nil {
 		t.Fatalf("unexpected error inserting initial path counts: %s", err)
 	}
