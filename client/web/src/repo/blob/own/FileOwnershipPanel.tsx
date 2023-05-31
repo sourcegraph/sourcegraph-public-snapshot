@@ -14,8 +14,10 @@ import { Alert, Button, ErrorAlert, H3, H4, Icon, Link, LoadingSpinner, Text } f
 import { MarketingBlock } from '../../../components/MarketingBlock'
 import {
     FetchOwnershipResult,
-    FetchOwnershipVariables, FetchTreeOwnershipResult,
-    OwnerFields, OwnershipConnectionFields,
+    FetchOwnershipVariables,
+    FetchTreeOwnershipResult,
+    OwnerFields,
+    OwnershipConnectionFields,
     SearchPatternType,
 } from '../../../graphql-operations'
 
@@ -60,9 +62,7 @@ export const FileOwnershipPanel: React.FunctionComponent<
         )
     }
 
-    return (
-        <OwnerList data={data?.node?.commit?.blob?.ownership} />
-    )
+    return <OwnerList data={data?.node?.commit?.blob?.ownership} />
 }
 
 interface OwnExplanationProps {
@@ -140,16 +140,11 @@ interface OwnerListProps {
     data?: OwnershipConnectionFields
 }
 
-const OwnerList: React.FunctionComponent<OwnerListProps> = ({data}) => {
+const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data }) => {
     console.log(data)
     if (!data) {
-
     }
-    if (
-        data &&
-        data.nodes &&
-        data.nodes.length > 0
-    ) {
+    if (data && data.nodes && data.nodes.length > 0) {
         const nodes = data.nodes
         const totalCount = data.totalOwners
         return (
@@ -157,74 +152,72 @@ const OwnerList: React.FunctionComponent<OwnerListProps> = ({data}) => {
                 <OwnExplanation owners={nodes.map(ownership => ownership.owner)} />
                 <table className={styles.table}>
                     <thead>
-                    <tr className="sr-only">
-                        <th>Contact</th>
-                        <th>Owner</th>
-                        <th>Reason</th>
-                    </tr>
+                        <tr className="sr-only">
+                            <th>Contact</th>
+                            <th>Owner</th>
+                            <th>Reason</th>
+                        </tr>
                     </thead>
                     <tbody>
-                    <tr>
-                        <th colSpan={3}>
-                            {totalCount === 0 ? (
-                                <Alert variant="info">No ownership data for this file.</Alert>
-                            ) : (
-                                <H4 className="mb-3">Owners</H4>
-                            )}
-                        </th>
-                    </tr>
-                    {nodes
-                        .filter(ownership =>
-                            ownership.reasons.some(
-                                reason =>
-                                    reason.__typename === 'CodeownersFileEntry' ||
-                                    reason.__typename === 'AssignedOwner'
-                            )
-                        )
-                        .map((ownership, index) => (
-                            // This list is not expected to change, so it's safe to use the index as a key.
-                            // eslint-disable-next-line react/no-array-index-key
-                            <React.Fragment key={index}>
-                                {index > 0 && <tr className={styles.bordered} />}
-                                <FileOwnershipEntry owner={ownership.owner} reasons={ownership.reasons} />
-                            </React.Fragment>
-                        ))}
-                    {
-                        /* Visually separate two sets with a horizontal rule (like subsequent owners are)
-                         * if there is data in both owners and signals.
-                         */
-                        totalCount > 0 &&
-                        nodes.length >
-                        totalCount && <tr className={styles.bordered} />
-                    }
-                    {nodes.length > totalCount && (
                         <tr>
                             <th colSpan={3}>
-                                <H4 className="mt-3 mb-2">Inference signals</H4>
-                                <Text className={styles.ownInferenceExplanation}>
-                                    These users have viewed or contributed to the file but are not registered owners
-                                    of the file.
-                                </Text>
+                                {totalCount === 0 ? (
+                                    <Alert variant="info">No ownership data for this file.</Alert>
+                                ) : (
+                                    <H4 className="mb-3">Owners</H4>
+                                )}
                             </th>
                         </tr>
-                    )}
-                    {nodes
-                        .filter(
-                            ownership =>
-                                !ownership.reasons.some(
+                        {nodes
+                            .filter(ownership =>
+                                ownership.reasons.some(
                                     reason =>
                                         reason.__typename === 'CodeownersFileEntry' ||
                                         reason.__typename === 'AssignedOwner'
                                 )
-                        )
-                        .map((ownership, index) => (
-                            // This list is not expected to change, so it's safe to use the index as a key.
-                            // eslint-disable-next-line react/no-array-index-key
-                            <React.Fragment key={index}>
-                                {index > 0 && <tr className={styles.bordered} />}
-                                <FileOwnershipEntry owner={ownership.owner} reasons={ownership.reasons} />
-                            </React.Fragment>
-                        ))}
+                            )
+                            .map((ownership, index) => (
+                                // This list is not expected to change, so it's safe to use the index as a key.
+                                // eslint-disable-next-line react/no-array-index-key
+                                <React.Fragment key={index}>
+                                    {index > 0 && <tr className={styles.bordered} />}
+                                    <FileOwnershipEntry owner={ownership.owner} reasons={ownership.reasons} />
+                                </React.Fragment>
+                            ))}
+                        {
+                            /* Visually separate two sets with a horizontal rule (like subsequent owners are)
+                             * if there is data in both owners and signals.
+                             */
+                            totalCount > 0 && nodes.length > totalCount && <tr className={styles.bordered} />
+                        }
+                        {nodes.length > totalCount && (
+                            <tr>
+                                <th colSpan={3}>
+                                    <H4 className="mt-3 mb-2">Inference signals</H4>
+                                    <Text className={styles.ownInferenceExplanation}>
+                                        These users have viewed or contributed to the file but are not registered owners
+                                        of the file.
+                                    </Text>
+                                </th>
+                            </tr>
+                        )}
+                        {nodes
+                            .filter(
+                                ownership =>
+                                    !ownership.reasons.some(
+                                        reason =>
+                                            reason.__typename === 'CodeownersFileEntry' ||
+                                            reason.__typename === 'AssignedOwner'
+                                    )
+                            )
+                            .map((ownership, index) => (
+                                // This list is not expected to change, so it's safe to use the index as a key.
+                                // eslint-disable-next-line react/no-array-index-key
+                                <React.Fragment key={index}>
+                                    {index > 0 && <tr className={styles.bordered} />}
+                                    <FileOwnershipEntry owner={ownership.owner} reasons={ownership.reasons} />
+                                </React.Fragment>
+                            ))}
                     </tbody>
                 </table>
             </div>
