@@ -248,6 +248,20 @@ const Options: React.FunctionComponent<React.PropsWithChildren<unknown>> = () =>
         [telemetryService]
     )
 
+    const handleRemovePreviousSourcegraphUrl = useCallback(
+        (url: string): void => {
+            if (!url || previouslyUsedUrls?.length === 0) {
+                return
+            }
+            storage.sync
+                .set({
+                    previouslyUsedURLs: previouslyUsedUrls?.filter(previouslyUsedUrl => previouslyUsedUrl !== url),
+                })
+                .catch(console.error)
+        },
+        [previouslyUsedUrls]
+    )
+
     return (
         <ThemeWrapper>
             <WildcardThemeProvider isBranded={true}>
@@ -255,6 +269,7 @@ const Options: React.FunctionComponent<React.PropsWithChildren<unknown>> = () =>
                     isFullPage={isFullPage}
                     sourcegraphUrl={sourcegraphUrl || ''}
                     suggestedSourcegraphUrls={uniqURLs(previouslyUsedUrls || [])}
+                    onSuggestedSourcegraphUrlDelete={handleRemovePreviousSourcegraphUrl}
                     onChangeSourcegraphUrl={handleChangeSourcegraphUrl}
                     version={version}
                     validateSourcegraphUrl={validateSourcegraphUrl}
