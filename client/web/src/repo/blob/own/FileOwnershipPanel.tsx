@@ -61,7 +61,10 @@ export const FileOwnershipPanel: React.FunctionComponent<
         )
     }
 
-    return <OwnerList data={data?.node?.commit?.blob?.ownership} />
+    if (data?.node?.__typename === 'Repository') {
+        return <OwnerList data={data?.node?.commit?.blob?.ownership} />
+    }
+    return <OwnerList/>
 }
 
 interface OwnExplanationProps {
