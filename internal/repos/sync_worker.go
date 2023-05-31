@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 	"database/sql"
+	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -153,4 +154,8 @@ type SyncJob struct {
 // RecordID implements workerutil.Record and indicates the queued item id
 func (s *SyncJob) RecordID() int {
 	return s.ID
+}
+
+func (s *SyncJob) RecordUID() string {
+	return strconv.Itoa(s.ID)
 }

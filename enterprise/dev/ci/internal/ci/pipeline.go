@@ -140,7 +140,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				"indexed-searcher",
 				"jaeger-agent",
 				"jaeger-all-in-one",
-				"llm-proxy",
+				"cody-gateway",
 				"loadtest",
 				"migrator",
 				"node-exporter",
@@ -287,10 +287,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.CandidatesNoTest:
 		imageBuildOps := operations.NewNamedSet("Image builds")
 		imageBuildOps.Append(buildCandidateDockerImage("syntax-highlighter", c.Version, c.candidateImageTag(), false))
+		imageBuildOps.Append(buildCandidateDockerImage("symbols", c.Version, c.candidateImageTag(), false))
 		imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesTestDeps, c.Version, c.candidateImageTag(), c.RunType))
 		var deployImages = []string{}
 		for _, image := range images.DeploySourcegraphDockerImages {
-			if image == "syntax-highlighter" {
+			if image == "syntax-highlighter" || image == "symbols" {
 				continue
 			}
 			deployImages = append(deployImages, image)
@@ -349,10 +350,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			}
 		} else {
 			imageBuildOps.Append(buildCandidateDockerImage("syntax-highlighter", c.Version, c.candidateImageTag(), false))
+			imageBuildOps.Append(buildCandidateDockerImage("symbols", c.Version, c.candidateImageTag(), false))
 			imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesTestDeps, c.Version, c.candidateImageTag(), c.RunType))
 			var deployImages = []string{}
 			for _, image := range images.DeploySourcegraphDockerImages {
-				if image == "syntax-highlighter" {
+				if image == "syntax-highlighter" || image == "symbols" {
 					continue
 				}
 				deployImages = append(deployImages, image)

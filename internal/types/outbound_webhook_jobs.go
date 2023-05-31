@@ -1,6 +1,7 @@
 package types
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -30,4 +31,8 @@ type OutboundWebhookJob struct {
 
 func (j *OutboundWebhookJob) RecordID() int {
 	return int(j.ID)
+}
+
+func (j *OutboundWebhookJob) RecordUID() string {
+	return strconv.FormatInt(j.ID, 10)
 }

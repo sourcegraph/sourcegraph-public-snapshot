@@ -26,8 +26,8 @@ import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
-import { useEditorStore } from '../../cody/stores/editor'
-import { useIsCodyEnabled } from '../../cody/useIsCodyEnabled'
+import { CodeMirrorEditor } from '../../cody/components/CodeMirrorEditor'
+import { useCodySidebar } from '../../cody/sidebar/Provider'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { ExternalLinkFields, Scalars } from '../../graphql-operations'
 import { BlameHunkData } from '../blame/useBlameHunks'
@@ -273,7 +273,8 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         [customHistoryAction]
     )
 
-    const codyEnabled = useIsCodyEnabled()
+    // Added fallback to take care of ReferencesPanel/Simple storybook
+    const { isCodyEnabled, setEditorScope } = useCodySidebar()
 
     const extensions = useMemo(
         () => [
@@ -291,7 +292,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             }),
             scipSnapshot(blobInfo.snapshotData),
             codeFoldingExtension(),
-            codyEnabled.editorRecipes ? codyWidgetExtension() : [],
+            isCodyEnabled.editorRecipes ? codyWidgetExtension() : [],
             navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : tokenSelectionExtension(),
             syntaxHighlight.of(blobInfo),
             languageSupport.of(blobInfo),
@@ -321,7 +322,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         // further below. However, they are still needed here because we need to
         // set initial values when we re-initialize the editor.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [onSelection, blobInfo, extensionsController]
+        [onSelection, blobInfo, extensionsController, isCodyEnabled]
     )
 
     const editorRef = useRef<EditorView | null>(null)
@@ -439,19 +440,27 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
     // like Cody to know what file and range a user is looking at.
     useEffect(() => {
         const view = editorRef.current
-        useEditorStore.setState({
-            editor: view
-                ? {
-                      view,
-                      repo: props.blobInfo.repoName,
-                      revision: props.blobInfo.revision,
-                      filename: props.blobInfo.filePath,
-                      content: props.blobInfo.content,
-                  }
-                : null,
-        })
-        return () => useEditorStore.setState({ editor: null })
-    }, [props.blobInfo.content, props.blobInfo.filePath, props.blobInfo.repoName, props.blobInfo.revision])
+        setEditorScope(
+            new CodeMirrorEditor(
+                view
+                    ? {
+                          view,
+                          repo: props.blobInfo.repoName,
+                          revision: props.blobInfo.revision,
+                          filename: props.blobInfo.filePath,
+                          content: props.blobInfo.content,
+                      }
+                    : undefined
+            )
+        )
+        return () => setEditorScope(new CodeMirrorEditor())
+    }, [
+        props.blobInfo.content,
+        props.blobInfo.filePath,
+        props.blobInfo.repoName,
+        props.blobInfo.revision,
+        setEditorScope,
+    ])
 
     return (
         <>

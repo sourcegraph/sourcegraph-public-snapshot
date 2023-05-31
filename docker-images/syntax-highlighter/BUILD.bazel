@@ -17,6 +17,7 @@ rust_binary(
         normal = True,
     ) + [
         "//docker-images/syntax-highlighter/crates/sg-syntax:sg-syntax",
+        "//docker-images/syntax-highlighter/crates/scip-syntax:scip-syntax",
         "//docker-images/syntax-highlighter/crates/scip-treesitter-languages:scip-treesitter-languages",
     ],
 )
@@ -35,6 +36,20 @@ rust_test(
     deps = all_crate_deps(
         normal_dev = True,
     ),
+)
+
+rust_binary(
+    name = "scip-ctags",
+    srcs = ["src/bin/scip-ctags.rs"],
+    aliases = aliases(),
+    proc_macro_deps = all_crate_deps(
+        proc_macro = True,
+    ),
+    deps = all_crate_deps(
+        normal = True,
+    ) + [
+        "//docker-images/syntax-highlighter/crates/scip-syntax:scip-syntax",
+    ],
 )
 
 pkg_tar(
@@ -78,8 +93,6 @@ oci_image(
     },
     tars = [":tar_syntect_server"],
 )
-
-# Port is hardcoded
 
 oci_tarball(
     name = "image_tarball",

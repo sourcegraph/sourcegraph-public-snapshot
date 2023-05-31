@@ -82,8 +82,9 @@ export interface FeedbackButtonsProps {
     feedbackButtonsOnSubmit: (text: string) => void
 }
 
+// TODO: Rename to CodeBlockActionsProps
 export interface CopyButtonProps {
-    copyButtonOnSubmit: (text: string) => void
+    copyButtonOnSubmit: (text: string, insert?: boolean) => void
 }
 /**
  * The Cody chat interface, with a transcript of all messages and a message form.
@@ -106,6 +107,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     afterTips,
     className,
     codeBlocksCopyButtonClassName,
+    codeBlocksInsertButtonClassName,
     transcriptItemClassName,
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
@@ -154,6 +156,13 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             setInputHistory([...inputHistory, input])
         },
         [inputHistory, messageInProgress, onSubmit, setInputHistory, setSuggestions]
+    )
+    const onChatInput = useCallback(
+        ({ target }: React.SyntheticEvent) => {
+            const { value } = target as HTMLInputElement
+            inputHandler(value)
+        },
+        [inputHandler]
     )
 
     const onChatSubmit = useCallback((): void => {
@@ -227,6 +236,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     setMessageBeingEdited={setMessageBeingEdited}
                     fileLinkComponent={fileLinkComponent}
                     codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
+                    codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
                     transcriptItemClassName={transcriptItemClassName}
                     humanTranscriptItemClassName={humanTranscriptItemClassName}
                     transcriptItemParticipantClassName={transcriptItemParticipantClassName}
@@ -265,10 +275,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         autoFocus={true}
                         required={true}
                         disabled={needsEmailVerification}
-                        onInput={({ target }) => {
-                            const { value } = target as HTMLInputElement
-                            inputHandler(value)
-                        }}
+                        onInput={onChatInput}
                         onKeyDown={onChatKeyDown}
                     />
                     <SubmitButton

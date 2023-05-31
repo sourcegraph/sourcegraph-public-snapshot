@@ -26,50 +26,61 @@ set_version() {
 
 bundle_path() {
   local platform
-  platform="$(./enterprise/dev/app/detect_platform.sh)"
+  platform="$(./enterprise/dev/app/detect-platform.sh)"
   echo  "./src-tauri/target/${platform}/release/bundle"
 }
 
 upload_dist() {
   local path
+  local target_dir
   path="$(bundle_path)"
   echo "searching for artefacts in '${path}' and moving them to dist/"
-  src=$(find "${path}" -type f \( -name "Sourcegraph*.dmg" -o -name "Sourcegraph*.tar.gz" -o -name "sourcegraph*.deb" -o -name "sourcegraph*.AppImage" -o -name "sourcegraph*.tar.gz" \));
+  src=$(find "${path}" -type f \( -name "Sourcegraph*.dmg" -o -name "Sourcegraph*.tar.gz" -o -name "sourcegraph*.deb" -o -name "sourcegraph*.AppImage" -o -name "sourcegraph*.tar.gz" -o -name "*.sig" \));
+  target_dir="./${DIST_DIR}"
 
-  mkdir -p dist
+  mkdir -p "${target_dir}"
   for from in ${src}; do
-    mv -vf "${from}" "./${DIST_DIR}/"
+    mv -vf "${from}" "${target_dir}/"
   done
 
   echo --- Uploading artifacts from dist
-  ls -al ./dist
-  buildkite-agent artifact upload "./${DIST_DIR}/*"
-
+  ls -al "./${DIST_DIR}"
+  buildkite-agent artifact upload "${DIST_DIR}/*"
 }
 
 create_app_archive() {
   local version
+  local platform
   local path
   local app_path
+  local arch
+  local target
+
   version=$1
+  platform=$2
   path="$(bundle_path)"
   app_path=$(find "${path}" -type d -name "Sourcegraph.app")
+  app_tar_gz=$(find "${path}" -type f -name "Sourcegraph.app.tar.gz")
 
+  # we extract the arch from the platform
+  arch=$(echo "${platform}" | cut -d '-' -f1)
+  if [[ -z ${arch} ]]; then
+    arch=$(uname -m)
+  fi
+
+
+  target="Sourcegraph.${version}.${arch}.app.tar.gz"
   # # we have to handle Sourcegraph.App differently since it is a dir
-  if [[ -d  ${app_path} ]]; then
-    local arch
-    local target
-    arch="$(uname -m)"
-    if [[ "${arch}" == "arm64" ]]; then
-      arch="aarch64"
-    fi
-
-    target="Sourcegraph.${version}.${arch}.app.tar.gz"
+  if [[ -d  ${app_path} && -z ${app_tar_gz} ]]; then
     pushd .
     cd "${path}/macos/"
     echo "--- :file_cabinet: Creating archive ${target}"
     tar -czvf "${target}" "Sourcegraph.app"
     popd
+  elif [[ -e ${app_tar_gz} ]]; then
+    echo "--- :file_cabinet: Moving existing archive/signatures to ${target}"
+    mv -vf "${app_tar_gz}" "$(dirname "${app_tar_gz}")/${target}"
+    mv -vf "${app_tar_gz}.sig" "$(dirname "${app_tar_gz}")/${target}.sig" || echo "--- signature not found - skipping"
   fi
 }
 
@@ -120,7 +131,7 @@ pre_codesign() {
   security import ./cert.p12 -k my_temporary_keychain.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
   security set-key-partition-list -S apple-tool:,apple:, -s -k my_temporary_keychain_password -D "$APPLE_SIGNING_IDENTITY" -t private my_temporary_keychain.keychain
 
-  echo "--- :mac::pencil2: binary: ${binary_path}"
+  echo "--- :mac::spiral_note_pad::lower_left_fountain_pen: binary: ${binary_path}"
   codesign --force -s "$APPLE_SIGNING_IDENTITY" --keychain my_temporary_keychain.keychain --deep "${binary_path}"
 
   security delete-keychain my_temporary_keychain.keychain
@@ -143,11 +154,21 @@ secret_value() {
 
 build() {
   echo --- :magnify_glass: detecting platform
+  local version
+  local do_updater_bundle
   local platform
-  platform="$(./enterprise/dev/app/detect_platform.sh)"
+  local bundles
+
+  platform="$1"
+  version="$2"
+  do_updater_bundle="$3"
+
+  # we only allow the updater build once we're in CI or see "SRC_APP_UPDATER_BUILD=1"
+  bundles="deb,appimage,app,dmg"
+
   echo "platform is: ${platform}"
 
-  if [[ ${CI} == "true" ]]; then
+  if [[ ${CI:-""} == "true" ]]; then
     local secrets
     echo "--- :aws::gcp::tauri: Retrieving tauri signing secrets"
     secrets=$(secret_value "sourcegraph/tauri-key")
@@ -156,17 +177,22 @@ build() {
     export TAURI_KEY_PASSWORD="${TAURI_KEY_PASSWORD:-"$(echo "${secrets}" | jq -r '.TAURI_KEY_PASSWORD' || echo '')"}"
   fi
 
-  echo "--- :tauri: Building Application (${VERSION}) for platform: ${platform}"
+  if [[ ${do_updater_bundle} == 1 ]]; then
+    bundles="$bundles,updater"
+  fi
+
+  echo "--- :tauri: Building Application (${version}) with bundles '${bundles}' for platform: ${platform}"
   NODE_ENV=production pnpm run build-app-shell
-  pnpm tauri build --bundles deb,appimage,app,dmg,updater --target "${platform}"
+  pnpm tauri build --bundles ${bundles} --target "${platform}"
 }
 
 if [[ ${CI:-""} == "true" ]]; then
   download_artifacts
 fi
 
-VERSION=$(./enterprise/dev/app/app_version.sh)
+VERSION=$(./enterprise/dev/app/app-version.sh)
 set_version "${VERSION}"
+PLATFORM="$(./enterprise/dev/app/detect-platform.sh)"
 
 
 if [[ ${CODESIGNING:-"0"} == 1 && $(uname -s) == "Darwin" ]]; then
@@ -179,7 +205,7 @@ if [[ ${CODESIGNING:-"0"} == 1 && $(uname -s) == "Darwin" ]]; then
   export PATH="/usr/bin/:$PATH"
 
   echo "--- :tauri::mac: Performing code signing"
-  binaries=$(find ${BIN_DIR} -type f -name "*apple*")
+  binaries=$(find ${BIN_DIR} -type f -name "*${PLATFORM}*")
   # if the paths contain spaces this for loop will fail, but we're pretty sure the binaries in bin don't contain spaces
   for binary in ${binaries}; do
     pre_codesign "${binary}"
@@ -187,10 +213,11 @@ if [[ ${CODESIGNING:-"0"} == 1 && $(uname -s) == "Darwin" ]]; then
 fi
 
 CI="${CI:-"false"}"
-PLATFORM="$(./enterprise/dev/app/detect_platform.sh)"
-build "${PLATFORM}"
+# note that this script respects the OVERRIDE_PLATFORM env variable
+SRC_APP_UPDATER_BUILD="${SRC_APP_UPDATER_BUILD:-"0"}"
+build "${PLATFORM}" "${VERSION}" "${SRC_APP_UPDATER_BUILD:-"0"}"
 
-create_app_archive "${VERSION}"
+create_app_archive "${VERSION}" "${PLATFORM}"
 
 if [[ ${CI:-""} == "true" ]]; then
   upload_dist

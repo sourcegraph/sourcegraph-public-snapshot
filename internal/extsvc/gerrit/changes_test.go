@@ -55,9 +55,22 @@ func TestClient_SubmitChange(t *testing.T) {
 
 	ctx := context.Background()
 
-	resp, err := cli.SubmitChange(ctx, "I520f9c61e8e1785d60195ed444cb71ce54cd4353")
+	resp, err := cli.SubmitChange(ctx, "I4ae8b9886059252657eef100c74602251b544e82")
 	if err != nil {
 		t.Fatal(err)
 	}
 	testutil.AssertGolden(t, "testdata/golden/SubmitChange.json", *update, resp)
+}
+
+func TestClient_RestoreChange(t *testing.T) {
+	cli, save := NewTestClient(t, "RestoreChange", *update)
+	defer save()
+
+	ctx := context.Background()
+
+	resp, err := cli.RestoreChange(ctx, "Ida085bb4e62b9adb5991496ab31987e45cfd5d62")
+	if err != nil {
+		t.Fatal(err)
+	}
+	testutil.AssertGolden(t, "testdata/golden/RestoreChange.json", *update, resp)
 }

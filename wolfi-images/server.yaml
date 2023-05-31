@@ -11,10 +11,12 @@ contents:
     - git
     - git-lfs
     - git-p4
+    - glibc-locale-en
     - libev
     - libstdc++
     - nginx
     - openjdk-11
+    - openjdk-11-default-jvm
     - openssh-client
     - pcre
     - posix-libc-utils # Adds locale, used by server postgres init scripts
@@ -23,6 +25,9 @@ contents:
     - prometheus-postgres-exporter=0.12.0-r1 # IMPORTANT: Pinned version for managed updates
     - prometheus-alertmanager
     - python3
+    - posix-libc-utils # Locales
+    - prometheus
+    - prometheus-alertmanager
     - redis-6.2
     - sqlite-libs
     - su-exec
@@ -32,6 +37,8 @@ contents:
     - coursier@sourcegraph
     - p4cli@sourcegraph
     - p4-fusion@sourcegraph
+    - s3proxy@sourcegraph
+    - grafana@chainguard
 
 accounts:
   groups:

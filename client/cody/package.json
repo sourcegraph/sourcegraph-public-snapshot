@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI by Sourcegraph",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -59,7 +59,7 @@
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
     "test:integration": "tsc -b ./test/integration && pnpm run --silent build:dev && node --inspect -r ts-node/register out/test/integration/main.js",
     "test:unit": "jest",
-    "test:e2e": "npx playwright install && pnpm run --silent build:dev && playwright test test/e2e",
+    "test:e2e": "npx playwright install && pnpm run --silent build:dev && playwright test",
     "vscode:prepublish": "scripts/check-rg.sh",
     "vsce:package": "pnpm --silent build && vsce package --no-dependencies -o dist/cody.vsix",
     "vsce:prerelease": "pnpm --silent build && vsce package patch --pre-release --no-dependencies -o dist/cody.vsix",
@@ -90,10 +90,28 @@
           "id": "cody.chat",
           "name": "Chat",
           "visibility": "visible"
+        },
+        {
+          "id": "cody.fixup.tree.view",
+          "name": "Fixups",
+          "when": "cody.nonstop.fixups.enabled && cody.activated",
+          "icon": "cody.svg",
+          "contextualTitle": "Fixups"
         }
       ]
     },
+    "viewsWelcome": [
+      {
+        "view": "cody.fixup.tree.view",
+        "contents": "No pending Cody fixups",
+        "when": "cody.nonstop.fixups.enabled"
+      }
+    ],
     "commands": [
+      {
+        "command": "cody.recipe.optimize-code",
+        "title": "Ask Cody: Optimize Code"
+      },
       {
         "command": "cody.recipe.explain-code",
         "title": "Ask Cody: Explain Code in Detail"
@@ -139,8 +157,8 @@
         "title": "Cody: Sign out"
       },
       {
-        "command": "cody.experimental.suggest",
-        "title": "Cody: View Suggestions"
+        "command": "cody.manual-completions",
+        "title": "Cody: Open Completions Panel"
       },
       {
         "command": "cody.settings",
@@ -188,7 +206,51 @@
         "command": "cody.guardrails.debug",
         "title": "Cody: Guardrails Debug Attribution",
         "enablement": "config.cody.debug && config.cody.experimental.guardrails && editorHasSelection"
-      }
+      },
+      {
+        "command": "cody.recipe.file-flow",
+        "title": "Cody: File Flow"
+      },
+      {
+        "command": "cody.inline.insert",
+        "title": "Cody: Insert text at the current cursor position"
+      },
+      {
+				"command": "cody.recipe.non-stop",
+				"title": "Cody: Fixup (Experimental)",
+        "icon": "resources/cody.png",
+        "enablement": "cody.nonstop.fixups.enabled"
+			},
+      {
+				"command": "cody.fixup.open",
+				"title": "Cody: Go to Fixup",
+        "enablement": "cody.nonstop.fixups.enabled",
+        "icon": "$(file-code)"
+			},
+      {
+				"command": "cody.fixup.apply",
+				"title": "Cody: Apply fixup",
+        "enablement": "!cody.fixup.view.isEmpty",
+        "icon": "$(check)"
+			},
+      {
+				"command": "cody.fixup.apply-all",
+				"title": "Cody: Apply all fixups",
+        "enablement": "!cody.fixup.view.isEmpty",
+        "icon": "$(check-all)"
+			},
+      {
+				"command": "cody.fixup.apply-by-file",
+				"title": "Cody: Apply fixups to selected directory",
+        "enablement": "!cody.fixup.view.isEmpty",
+        "icon": "$(check-all)"
+			},
+      {
+				"command": "cody.fixup.diff",
+				"title": "Cody: Show diff for fixup",
+        "enablement": "!cody.fixup.view.isEmpty",
+        "icon": "$(diff)"
+			}
     ],
     "keybindings": [
       {
@@ -200,6 +262,12 @@
         "command": "cody.recipe.fixup",
         "key": "ctrl+alt+/",
         "mac": "ctrl+alt+/",
+        "when": "cody.activated && editorTextFocus && !editorReadonly"
+      },
+      {
+        "command": "cody.recipe.non-stop",
+        "key": "ctrl+shift+v",
+        "mac": "shift+cmd+v",
         "when": "cody.activated && editorTextFocus && !editorReadonly"
       }
     ],
@@ -220,7 +288,15 @@
           "when": "cody.activated"
         },
         {
+          "command": "cody.recipe.optimize-code",
+          "when": "cody.activated"
+        },
+        {
           "command": "cody.recipe.explain-code-high-level",
+          "when": "cody.activated"
+        },
+        {
+          "command": "cody.recipe.file-flow",
           "when": "cody.activated"
         },
         {
@@ -263,6 +339,34 @@
         {
           "command": "cody.comment.load",
           "when": "false"
+        },
+        {
+          "command": "cody.fixup.apply",
+          "when": "false"
+        },
+        {
+          "command": "cody.fixup.apply-all",
+          "when": "false"
+        },
+        {
+          "command": "cody.fixup.apply-by-file",
+          "when": "false"
+        },
+        {
+          "command": "cody.fixup.diff",
+          "when": "false"
+        },
+        {
+          "command": "cody.manual-completions",
+          "when": "config.cody.experimental.suggestions"
+        },
+        {
+          "command": "cody.guardrails.debug",
+          "when": "false"
+        },
+        {
+          "command": "cody.inline.insert",
+          "when": "false"
         }
       ],
       "editor/context": [
@@ -277,7 +381,15 @@
           "when": "cody.activated"
         },
         {
+          "command": "cody.recipe.optimize-code",
+          "when": "cody.activated"
+        },
+        {
           "command": "cody.recipe.explain-code-high-level",
+          "when": "cody.activated"
+        },
+        {
+          "command": "cody.recipe.file-flow",
           "when": "cody.activated"
         },
         {
@@ -306,7 +418,7 @@
         },
         {
           "command": "cody.guardrails.debug",
-          "when": "config.cody.debug && config.cody.experimental.guardrails && editorHasSelection"
+          "when": "cody.activated && config.cody.debug && config.cody.experimental.guardrails && editorHasSelection"
         }
       ],
       "view/title": [
@@ -324,6 +436,19 @@
           "command": "cody.history",
           "when": "view == cody.chat && cody.activated",
           "group": "navigation@2"
+        },
+        {
+          "command": "cody.fixup.apply-all",
+          "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated",
+          "group": "navigation"
+        }
+      ],
+      "editor/title": [
+        {
+          "command": "cody.recipe.non-stop",
+          "when": "cody.nonstop.fixups.enabled && cody.activated",
+          "group": "navigation",
+          "visibility": "visible"
         }
       ],
       "comments/commentThread/context": [
@@ -349,6 +474,24 @@
           "group": "inline@2",
           "when": "cody.activated && commentController =~ /^cody-inline/ && cody.reply.pending"
         }
+      ],
+      "view/item/context": [
+        {
+          "command": "cody.fixup.apply-by-file",
+          "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated && viewItem == fsPath",
+          "enable": "cody.fixup.filesWithApplicableFixups",
+          "group": "inline"
+        },
+        {
+          "command": "cody.fixup.apply",
+          "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated && viewItem == task",
+          "group": "inline@2"
+        },
+        {
+          "command": "cody.fixup.diff",
+          "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated && viewItem == task",
+          "group": "inline@1"
+        }
       ]
     },
     "configuration": {
@@ -365,8 +508,11 @@
         "cody.codebase": {
           "order": 2,
           "type": "string",
-          "markdownDescription": "The name of the embedded repository that Cody will use to gather context for its responses. This is automatically inferred from your Git metadata, but you can use this option if you need to override the default.",
-          "example": "github.com/sourcegraph/sourcegraph"
+          "markdownDescription": "The Git repository URL for your code. This will be sent to the Sourcegraph API to fetch the code graph context data. When set to empty, the URL will be inferred from your Git metadata.",
+          "examples": [
+            "https://github.com/sourcegraph/sourcegraph.git",
+            "ssh://git@github.com/sourcegraph/sourcegraph"
+          ]
         },
         "cody.useContext": {
           "order": 3,
@@ -395,7 +541,7 @@
         "cody.experimental.suggestions": {
           "order": 5,
           "type": "boolean",
-          "markdownDescription": "Enables Cody inline autocompletion in your editor.",
+          "markdownDescription": "Enables experimental Cody completions in your editor.",
           "default": false
         },
         "cody.experimental.chatPredictions": {
@@ -412,6 +558,11 @@
         },
         "cody.experimental.guardrails": {
           "order": 8,
+          "type": "boolean",
+          "default": false
+        },
+        "cody.experimental.nonStop": {
+          "order": 9,
           "type": "boolean",
           "default": false
         },

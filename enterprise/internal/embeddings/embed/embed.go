@@ -15,10 +15,7 @@ import (
 )
 
 const GET_EMBEDDINGS_MAX_RETRIES = 5
-
-const EMBEDDING_BATCHES = 5
 const EMBEDDING_BATCH_SIZE = 512
-
 const maxFileSize = 1000000 // 1MB
 
 // EmbedRepo embeds file contents from the given file names for a repository.
@@ -185,6 +182,10 @@ func embedFiles(
 		statsSkipped            SkipStats
 	)
 	for _, file := range files {
+		if ctx.Err() != nil {
+			return embeddings.EmbeddingIndex{}, embeddings.EmbedFilesStats{}, ctx.Err()
+		}
+
 		// This is a fail-safe measure to prevent producing an extremely large index for large repositories.
 		if statsEmbeddedChunkCount >= maxEmbeddingVectors {
 			statsSkipped.Add(SkipReasonMaxEmbeddings, int(file.Size))

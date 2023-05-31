@@ -8,11 +8,12 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -123,7 +124,7 @@ func TestSearchFilteringExample(t *testing.T) {
 			require.NoError(t, err)
 			for name, r := range ownerReferences {
 				t.Run(name, func(t *testing.T) {
-					assert.True(t, bag.Contains(r), fmt.Sprintf("bag.Contains(%s), want true, got false", r))
+					assert.True(t, bag.Contains(r), fmt.Sprintf("%s.Contains(%s), want true, got false", bag, r))
 				})
 			}
 		})
@@ -306,6 +307,24 @@ func TestBagUnverifiedEmailOnlyMatchesWithItself(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestBagRetrievesTeamsByName(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	ctx := context.Background()
+	err := db.Teams().CreateTeam(ctx, &types.Team{Name: "team-name"})
+	require.NoError(t, err)
+	team, err := db.Teams().GetTeamByName(ctx, "team-name")
+	require.NoError(t, err)
+	bag, err := ByTextReference(ctx, db, "team-name")
+	require.NoError(t, err)
+	ref := Reference{TeamID: team.ID}
+	assert.True(t, bag.Contains(ref), "%s contains %s", bag, ref)
 }
 
 func TestBagManyUsers(t *testing.T) {
