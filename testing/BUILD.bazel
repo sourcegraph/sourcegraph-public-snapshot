@@ -1,42 +1,3 @@
-# This test target runs the container on port=7081
-sh_test(
-    name = "backend_integration_test",
-    srcs = [":backend_integration_test.sh"],
-    args = [
-        "$(location //enterprise/cmd/server:image_tarball)",  # image we're testing against
-        "server:candidate",
-        "$(location //dev/gqltest:gqltest_test)",  # actual test
-        "$(location //dev/authtest:authtest_test)",  # actual test
-    ],
-    data = [
-        "//dev/authtest:authtest_test",
-        "//dev/gqltest:gqltest_test",
-        "//enterprise/cmd/server:image_tarball",
-    ],
-    env = {
-        "SG_FEATURE_FLAG_GRPC": "false",
-    },
-    env_inherit = [
-        "AWS_ACCESS_KEY_ID",
-        "AWS_CODE_COMMIT_PASSWORD",
-        "AWS_CODE_COMMIT_USERNAME",
-        "AWS_SECRET_ACCESS_KEY",
-        "AZURE_DEVOPS_TOKEN",
-        "AZURE_DEVOPS_USERNAME",
-        "BITBUCKET_SERVER_TOKEN",
-        "BITBUCKET_SERVER_URL",
-        "BITBUCKET_SERVER_USERNAME",
-        "GHE_GITHUB_TOKEN",
-        "PERFORCE_PASSWORD",
-        "PERFORCE_PORT",
-        "PERFORCE_USER",
-        "SOURCEGRAPH_LICENSE_GENERATION_KEY",
-        "SOURCEGRAPH_LICENSE_KEY",
-    ],
-    tags = ["requires-network"],
-    deps = ["//testing/tools:integration_runner"],
-)
-
 # This test target runs the container on port=7080
 sh_test(
     name = "e2e_test",
@@ -81,3 +42,91 @@ sh_test(
     tags = ["requires-network"],
     deps = ["//testing/tools:integration_runner"],
 )
+
+# This test target runs the container on port=7081
+sh_test(
+    name = "backend_integration_test",
+    srcs = [":backend_integration_test.sh"],
+    args = [
+        "$(location //enterprise/cmd/server:image_tarball)",  # image we're testing against
+        "server:candidate",
+        "$(location //dev/gqltest:gqltest_test)",  # actual test
+        "$(location //dev/authtest:authtest_test)",  # actual test
+    ],
+    data = [
+        "//dev/authtest:authtest_test",
+        "//dev/gqltest:gqltest_test",
+        "//enterprise/cmd/server:image_tarball",
+    ],
+    env = {
+        "SG_FEATURE_FLAG_GRPC": "false",
+    },
+    env_inherit = [
+        "AWS_ACCESS_KEY_ID",
+        "AWS_CODE_COMMIT_PASSWORD",
+        "AWS_CODE_COMMIT_USERNAME",
+        "AWS_SECRET_ACCESS_KEY",
+        "AZURE_DEVOPS_TOKEN",
+        "AZURE_DEVOPS_USERNAME",
+        "BITBUCKET_SERVER_TOKEN",
+        "BITBUCKET_SERVER_URL",
+        "BITBUCKET_SERVER_USERNAME",
+        "GHE_GITHUB_TOKEN",
+        "PERFORCE_PASSWORD",
+        "PERFORCE_PORT",
+        "PERFORCE_USER",
+        "SOURCEGRAPH_LICENSE_GENERATION_KEY",
+        "SOURCEGRAPH_LICENSE_KEY",
+    ],
+    tags = ["requires-network"],
+    deps = ["//testing/tools:integration_runner"],
+)
+
+# This test target runs the container on port=7082
+sh_test(
+    name = "codeintel_integration_test",
+    srcs = [":codeintel_integration_test.sh"],
+    args = [
+        "$(location //enterprise/cmd/server:image_tarball)",  # image we're testing against
+        "server:candidate",
+        "$(location //internal/cmd/init-sg)",
+        "$(location @src-cli-linux-amd64//:src-cli-linux-amd64)",
+        "$(location //dev/codeintel-qa/cmd/download)",
+        "$(location //dev/codeintel-qa/cmd/clear)",
+        "$(location //dev/codeintel-qa/cmd/upload)",
+        "$(location //dev/codeintel-qa/cmd/query)",
+        "$(location //dev/ci/integration/code-intel:repos.json)"
+    ],
+    data = [
+        "//enterprise/cmd/server:image_tarball",
+        "@src-cli-linux-amd64//:src-cli-linux-amd64",
+        "//dev/codeintel-qa/cmd/download",
+        "//dev/codeintel-qa/cmd/clear",
+        "//dev/codeintel-qa/cmd/upload",
+        "//dev/codeintel-qa/cmd/query",
+        "//dev/ci/integration/code-intel:repos.json"
+    ],
+    env = {
+        "SG_FEATURE_FLAG_GRPC": "false",
+    },
+    env_inherit = [
+        "AWS_ACCESS_KEY_ID",
+        "AWS_CODE_COMMIT_PASSWORD",
+        "AWS_CODE_COMMIT_USERNAME",
+        "AWS_SECRET_ACCESS_KEY",
+        "AZURE_DEVOPS_TOKEN",
+        "AZURE_DEVOPS_USERNAME",
+        "BITBUCKET_SERVER_TOKEN",
+        "BITBUCKET_SERVER_URL",
+        "BITBUCKET_SERVER_USERNAME",
+        "GHE_GITHUB_TOKEN",
+        "PERFORCE_PASSWORD",
+        "PERFORCE_PORT",
+        "PERFORCE_USER",
+        "SOURCEGRAPH_LICENSE_GENERATION_KEY",
+        "SOURCEGRAPH_LICENSE_KEY",
+    ],
+    tags = ["requires-network"],
+    deps = ["//testing/tools:integration_runner"],
+)
+
