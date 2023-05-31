@@ -26,5 +26,4 @@ fileExistenceTests:
   shouldExist: true
   uid: 0
   gid: 0
-  # TODO: Different permissions
-  # permissions: '-rw-r--r--'
+  permissions: '-r-xr-xr-x'
