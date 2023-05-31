@@ -226,11 +226,11 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			return
 		}
 
-		webhookUUID, err := uuid.Parse(stateDeets.WebhookUUID)
-		if err != nil {
-			http.Error(w, "Bad request, invalid state", http.StatusInternalServerError)
-			return
-		}
+		// webhookUUID, err := uuid.Parse(stateDeets.WebhookUUID)
+		// if err != nil {
+		// 	http.Error(w, "Bad request, invalid state", http.StatusInternalServerError)
+		// 	return
+		// }
 
 		webhookUUID, err := uuid.Parse(stateDeets.WebhookUUID)
 		if err != nil {

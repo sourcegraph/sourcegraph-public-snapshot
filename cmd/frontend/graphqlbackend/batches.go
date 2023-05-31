@@ -557,7 +557,7 @@ type BatchChangesCodeHostResolver interface {
 	SupportsCommitSigning() bool
 	HasWebhooks() bool
 	Credential() BatchChangesCredentialResolver
-	CommitSigningConfiguration() CommitSigningConfigResolver
+	CommitSigningConfiguration(context.Context) (CommitSigningConfigResolver, error)
 }
 
 type BatchChangesCredentialResolver interface {
@@ -569,8 +569,16 @@ type BatchChangesCredentialResolver interface {
 	IsSiteCredential() bool
 }
 
+// Only GitHubApps are supported for commit signing for now.
 type CommitSigningConfigResolver interface {
-	//TODO: Returns GitHubApp fields or nil, or flexible for future fields?
+	ToGitHubAppConfiguration() (GitHubAppConfigResolver, bool)
+}
+
+type GitHubAppConfigResolver interface {
+	AppID() int32
+	Name() string
+	AppURL() string
+	Logo() string
 }
 
 type ChangesetCountsArgs struct {

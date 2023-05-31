@@ -100,10 +100,10 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
 	if domain == types.BatchesDomain {
 		// TODO: Add a check so GH instance doesn't already exist for batches apps
 		// When domain:"batches", check for an existing DB entry with the same base_url, fail if one is encountered
-		existingGHApp, err := s.GetByDomain(ctx, &domain, app.BaseURL)
-		if existingGHApp != nil {
-			return errors.New("GitHub App already exists for this base URL")
-		}
+		// existingGHApp, err := s.GetByDomain(ctx, &domain, app.BaseURL)
+		// if existingGHApp != nil {
+		// 	return errors.New("GitHub App already exists for this base URL")
+		// }
 	}
 
 	// TODO: extsvc.NormalizeBaseURL(app.BaseURL) here -- type issue (param needs to be not a string)

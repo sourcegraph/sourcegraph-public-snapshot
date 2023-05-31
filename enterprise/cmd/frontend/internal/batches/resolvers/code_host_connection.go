@@ -63,7 +63,7 @@ func (c *batchChangesCodeHostConnectionResolver) Nodes(ctx context.Context) ([]g
 			externalServiceType: ch.ExternalServiceType,
 		}
 		cred := credsByIDType[t]
-		nodes[i] = &batchChangesCodeHostResolver{codeHost: ch, credential: cred}
+		nodes[i] = &batchChangesCodeHostResolver{codeHost: ch, credential: cred, store: c.store}
 	}
 
 	return nodes, nil
