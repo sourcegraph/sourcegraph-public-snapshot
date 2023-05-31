@@ -9,11 +9,8 @@ rules:
     resources:
       - jobs
     verbs:
-      - get
       - create
       - delete
-      - watch
-      - list
   - apiGroups:
       - ""
     resources:

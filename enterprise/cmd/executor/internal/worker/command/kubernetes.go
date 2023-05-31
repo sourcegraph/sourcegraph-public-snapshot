@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -15,6 +16,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/utils/pointer"
 
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -73,26 +75,46 @@ type KubernetesSecurityContext struct {
 
 // KubernetesCommand interacts with the Kubernetes API.
 type KubernetesCommand struct {
-	Logger    log.Logger
-	Clientset kubernetes.Interface
+	Logger     log.Logger
+	Clientset  kubernetes.Interface
+	Operations *Operations
 }
 
 // CreateJob creates a Kubernetes job with the given name and command.
-func (c *KubernetesCommand) CreateJob(ctx context.Context, namespace string, job *batchv1.Job) (*batchv1.Job, error) {
+func (c *KubernetesCommand) CreateJob(ctx context.Context, namespace string, job *batchv1.Job) (createdJob *batchv1.Job, err error) {
+	ctx, _, endObservation := c.Operations.KubernetesCreateJob.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("name", job.Name),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return c.Clientset.BatchV1().Jobs(namespace).Create(ctx, job, metav1.CreateOptions{})
 }
 
 // DeleteJob deletes the Kubernetes job with the given name.
-func (c *KubernetesCommand) DeleteJob(ctx context.Context, namespace string, jobName string) error {
+func (c *KubernetesCommand) DeleteJob(ctx context.Context, namespace string, jobName string) (err error) {
+	ctx, _, endObservation := c.Operations.KubernetesDeleteJob.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("name", jobName),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	return c.Clientset.BatchV1().Jobs(namespace).Delete(ctx, jobName, metav1.DeleteOptions{PropagationPolicy: &propagationPolicy})
 }
 
 var propagationPolicy = metav1.DeletePropagationBackground
 
 // ReadLogs reads the logs of the given pod and writes them to the logger.
-func (c *KubernetesCommand) ReadLogs(ctx context.Context, namespace string, pod *corev1.Pod, containerName string, cmdLogger Logger, key string, command []string) error {
-	logEntry := cmdLogger.LogEntry(key, command)
-	defer logEntry.Close()
+func (c *KubernetesCommand) ReadLogs(
+	ctx context.Context,
+	namespace string,
+	pod *corev1.Pod,
+	containerName string,
+	logEntry LogEntry,
+) (err error) {
+	ctx, _, endObservation := c.Operations.KubernetesReadLogs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("podName", pod.Name),
+		attribute.String("containerName", containerName),
+	}})
+	defer endObservation(1, observation.Args{})
 
 	// If the pod just failed to even start, then we can't get logs from it.
 	if pod.Status.Phase == corev1.PodFailed && len(pod.Status.ContainerStatuses) == 0 {
@@ -138,52 +160,41 @@ func readProcessPipe(w io.WriteCloser, stdout io.Reader) *errgroup.Group {
 	return eg
 }
 
-// FindPod finds the pod for the given job name.
-func (c *KubernetesCommand) FindPod(ctx context.Context, namespace string, name string) (*corev1.Pod, error) {
-	list, err := c.Clientset.CoreV1().Pods(namespace).List(ctx, metav1.ListOptions{LabelSelector: "job-name=" + name})
-	if err != nil {
-		return nil, errors.Wrap(err, "finding pod")
-	}
-	if len(list.Items) == 0 {
-		return nil, errors.Newf("no pods found for job %s", name)
-	}
-	return &list.Items[0], nil
-}
+// WaitForPodToSucceed waits for the pod with the given job label to succeed.
+func (c *KubernetesCommand) WaitForPodToSucceed(ctx context.Context, namespace string, jobName string) (p *corev1.Pod, err error) {
+	ctx, _, endObservation := c.Operations.KubernetesWaitForPodToSucceed.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("jobName", jobName),
+	}})
+	defer endObservation(1, observation.Args{})
 
-// WaitForJobToComplete waits for the job with the given name to complete.
-func (c *KubernetesCommand) WaitForJobToComplete(ctx context.Context, namespace string, name string) error {
-	watch, err := c.Clientset.BatchV1().Jobs(namespace).Watch(ctx, metav1.ListOptions{Watch: true, FieldSelector: "metadata.name=" + name})
+	watch, err := c.Clientset.CoreV1().Pods(namespace).Watch(ctx, metav1.ListOptions{Watch: true, LabelSelector: "job-name=" + jobName})
 	if err != nil {
-		return errors.Wrap(err, "watching job")
+		return nil, errors.Wrap(err, "watching pod")
 	}
 	defer watch.Stop()
 	// No need to add a timer. If the job exceeds the deadline, it will fail.
 	for event := range watch.ResultChan() {
-		job, ok := event.Object.(*batchv1.Job)
+		pod, ok := event.Object.(*corev1.Pod)
 		if !ok {
-			return errors.New("unexpected object type")
+			return nil, errors.New("unexpected object type")
 		}
-		if job.Status.Succeeded > 0 {
-			return nil
-		}
-		if job.Status.Failed > 0 {
-			return ErrKubernetesJobFailed
+		c.Logger.Debug(
+			"Watching pod",
+			log.String("name", pod.Name),
+			log.String("phase", string(pod.Status.Phase)),
+		)
+		switch pod.Status.Phase {
+		case corev1.PodFailed:
+			return pod, ErrKubernetesPodFailed
+		case corev1.PodSucceeded:
+			return pod, nil
 		}
 	}
-	// Wont happen
-	return nil
+	return nil, errors.New("unexpected end of watch")
 }
 
-// ErrKubernetesJobFailed is returned when a Kubernetes job fails.
-var ErrKubernetesJobFailed = errors.New("job failed")
-
-func (c *KubernetesCommand) getJob(ctx context.Context, namespace string, name string) (*batchv1.Job, error) {
-	return c.Clientset.BatchV1().Jobs(namespace).Get(ctx, name, metav1.GetOptions{})
-}
-
-func (c *KubernetesCommand) getPod(ctx context.Context, namespace string, name string) (*corev1.Pod, error) {
-	return c.Clientset.CoreV1().Pods(namespace).Get(ctx, name, metav1.GetOptions{})
-}
+// ErrKubernetesPodFailed is returned when a Kubernetes pod fails.
+var ErrKubernetesPodFailed = errors.New("pod failed")
 
 // NewKubernetesJob creates a Kubernetes job with the given name, image, volume path, and spec.
 func NewKubernetesJob(name string, image string, spec Spec, path string, options KubernetesContainerOptions) *batchv1.Job {
