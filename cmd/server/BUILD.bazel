@@ -101,6 +101,7 @@ oci_image(
     env = {
         "GO111MODULES": "on",
         "LANG": "en_US.utf8",
+        "LC_ALL": "en_US.utf8",
         # "PGHOST": "/var/run/postgresql",
     },
     tars = [
