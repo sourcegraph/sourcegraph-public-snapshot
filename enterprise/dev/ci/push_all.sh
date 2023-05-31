@@ -104,4 +104,4 @@ done < "$log_file"
 
 echo "--- :bazel::docker: detailed summary"
 cat "$log_file"
-echo "--- "
+echo "--- done"
