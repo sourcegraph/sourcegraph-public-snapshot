@@ -41,6 +41,8 @@ echo '--- :zero: downloading test data from GCS'
 echo '--- :one: clearing existing state'
 "$cmd_clear"
 
+# src-cli must be in the PATH for upload to find it.
+export PATH="$(dirname "$src_cli"):$PATH"
 echo '--- :two: integration test ./dev/codeintel-qa/cmd/upload'
 "$cmd_upload" --timeout=5m --index-dir="./dev/codeintel-qa/testdata/indexes"
 

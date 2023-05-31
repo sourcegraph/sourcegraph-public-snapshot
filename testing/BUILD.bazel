@@ -95,16 +95,16 @@ sh_test(
         "$(location //dev/codeintel-qa/cmd/clear)",
         "$(location //dev/codeintel-qa/cmd/upload)",
         "$(location //dev/codeintel-qa/cmd/query)",
-        "$(location //dev/ci/integration/code-intel:repos.json)"
+        "$(location //dev/ci/integration/code-intel:repos.json)",
     ],
     data = [
+        "//dev/ci/integration/code-intel:repos.json",
+        "//dev/codeintel-qa/cmd/clear",
+        "//dev/codeintel-qa/cmd/download",
+        "//dev/codeintel-qa/cmd/query",
+        "//dev/codeintel-qa/cmd/upload",
         "//enterprise/cmd/server:image_tarball",
         "@src-cli-linux-amd64//:src-cli-linux-amd64",
-        "//dev/codeintel-qa/cmd/download",
-        "//dev/codeintel-qa/cmd/clear",
-        "//dev/codeintel-qa/cmd/upload",
-        "//dev/codeintel-qa/cmd/query",
-        "//dev/ci/integration/code-intel:repos.json"
     ],
     env = {
         "SG_FEATURE_FLAG_GRPC": "false",
@@ -129,4 +129,3 @@ sh_test(
     tags = ["requires-network"],
     deps = ["//testing/tools:integration_runner"],
 )
-
