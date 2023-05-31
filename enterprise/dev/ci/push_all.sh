@@ -95,9 +95,9 @@ do
         exitcode="$(echo "$line" | cut -f7)"
         duration="$(echo "$line" | cut -f4 | tr -d "[:blank:]")"
         if [ "$exitcode" == "0" ]; then
-          echo "-- :docker::arrow_heading_up: $target ${duration}s :white_check_mark:"
+          echo "--- :docker::arrow_heading_up: $target ${duration}s :white_check_mark:"
         else
-          echo "-- :docker::arrow_heading_up: $target ${duration}s: failed with $exitcode) :red_circle:"
+          echo "--- :docker::arrow_heading_up: $target ${duration}s: failed with $exitcode) :red_circle:"
         fi
     fi
 done < "$log_file"
