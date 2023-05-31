@@ -1,7 +1,4 @@
 import { spawnSync } from 'child_process'
-import path from 'path'
-
-import * as vscode from 'vscode'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
@@ -12,46 +9,6 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 import { LocalKeywordContextFetcher } from '../keyword-context/local-keyword-context-fetcher'
 
 import { Config } from './ChatViewProvider'
-
-function filePathContains(container: string, contained: string): boolean {
-    let trimmedContained = contained
-    if (trimmedContained.endsWith(path.sep)) {
-        trimmedContained = trimmedContained.slice(0, -path.sep.length)
-    }
-    if (trimmedContained.startsWith(path.sep)) {
-        trimmedContained = trimmedContained.slice(path.sep.length)
-    }
-    if (trimmedContained.startsWith('.' + path.sep)) {
-        trimmedContained = trimmedContained.slice(1 + path.sep.length)
-    }
-    return (
-        container.includes(path.sep + trimmedContained + path.sep) || // mid-level directory
-        container.endsWith(path.sep + trimmedContained) // child
-    )
-}
-
-export async function filesExist(filePaths: string[]): Promise<{ [filePath: string]: boolean }> {
-    if (filePaths.length === 0) {
-        return {}
-    }
-    const { debug } = await import('../log')
-
-    const searchPath = `{${filePaths.join(',')}}`
-    debug('ChatViewProvider:filesExist', `searchPath: ${searchPath}`)
-    const realFiles = await vscode.workspace.findFiles(searchPath, null, filePaths.length * 5)
-    const ret: { [filePath: string]: boolean } = {}
-    for (const filePath of filePaths) {
-        let pathExists = false
-        for (const realFile of realFiles) {
-            if (filePathContains(realFile.fsPath, filePath)) {
-                pathExists = true
-                break
-            }
-        }
-        ret[filePath] = pathExists
-    }
-    return ret
-}
 
 // Converts a git clone URL to the codebase name that includes the slash-separated code host, owner, and repository name
 // This should captures:

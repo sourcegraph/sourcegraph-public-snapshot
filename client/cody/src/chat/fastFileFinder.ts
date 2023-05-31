@@ -1,40 +1,53 @@
 import { execFile } from 'child_process'
 import * as path from 'path'
 
+/**
+ * Checks whether the specified file paths exist within a root path using the 'rg' tool.
+ *
+ * @param rgPath - The path to the 'rg' tool.
+ * @param rootPath - The path of the directory to be searched.
+ * @param filePaths - The file paths to search for.
+ * @returns An object that maps each file path to a boolean indicating whether the file was found.
+ */
 export async function fastFilesExist(
     rgPath: string,
     rootPath: string,
     filePaths: string[]
 ): Promise<{ [filePath: string]: boolean }> {
-    const searchPath =
-        '{' +
-        filePaths
-            .flatMap(filePath => {
-                let pathChunk = filePath
-                while (
-                    pathChunk.endsWith('*') ||
-                    pathChunk.endsWith(path.sep) ||
-                    pathChunk.startsWith('*') ||
-                    pathChunk.startsWith(path.sep)
-                ) {
-                    const trimToks = ['**', '*', path.sep]
-                    for (const trimTok of trimToks) {
-                        if (pathChunk.startsWith(trimTok)) {
-                            pathChunk = pathChunk.slice(trimTok.length)
-                        }
-                        if (pathChunk.endsWith(trimTok)) {
-                            pathChunk = pathChunk.slice(0, -trimTok.length)
-                        }
-                    }
-                }
-                return [`**${path.sep}${pathChunk}${path.sep}**`, `**${path.sep}${pathChunk}`]
-            })
-            .join(',') +
-        '}'
-    const out = await new Promise<string>((resolve, reject) => {
+    const searchPattern = constructSearchPattern(filePaths)
+    const rgOutput = await executeRg(rgPath, rootPath, searchPattern)
+    return processRgOutput(rgOutput, filePaths)
+}
+
+// Regex to match '**', '*' or path.sep at the start (^) or end ($) of the string.
+const trimRegex = new RegExp(`^([*${path.sep}]*)|([*${path.sep}]*)$`, 'g')
+/**
+ * Constructs a search pattern for the 'rg' tool.
+ *
+ * @param filePaths - The file paths to include in the pattern.
+ * @returns The search pattern.
+ */
+function constructSearchPattern(filePaths: string[]): string {
+    const searchPatternParts = filePaths.map(filePath => {
+        const pathChunk = filePath.replace(trimRegex, '')
+        // Create a pattern that matches any file that ends with the specified filePath
+        return `**${path.sep}${pathChunk}${path.sep}**,**${path.sep}${pathChunk}`
+    })
+    return `{${searchPatternParts.join(',')}}`
+}
+/**
+ * Executes the 'rg' tool and returns the output.
+ *
+ * @param rgPath - The path to the 'rg' tool.
+ * @param rootPath - The path of the directory to be searched.
+ * @param searchPattern - The search pattern to use.
+ * @returns The output from the 'rg' tool.
+ */
+async function executeRg(rgPath: string, rootPath: string, searchPattern: string): Promise<string> {
+    return new Promise((resolve, reject) => {
         execFile(
             rgPath,
-            ['--files', '-g', searchPath, '--crlf', '--fixed-strings', '--no-config', '--no-ignore-global'],
+            ['--files', '-g', searchPattern, '--crlf', '--fixed-strings', '--no-config', '--no-ignore-global'],
             {
                 cwd: rootPath,
                 maxBuffer: 1024 * 1024 * 1024,
@@ -48,8 +61,19 @@ export async function fastFilesExist(
             }
         )
     })
+}
+
+/**
+ * Processes the output from the 'rg' tool to find matching file paths.
+ *
+ * @param rgOutput - The output from the 'rg' tool.
+ * @param filePaths - The file paths to search for.
+ * @returns An object that maps each file path to a boolean indicating whether the file was found.
+ */
+function processRgOutput(rgOutput: string, filePaths: string[]): { [filePath: string]: boolean } {
     const unvalidatedPaths = new Set<string>(filePaths)
-    for (const line of out.split('\n')) {
+    const filePathsExist: { [filePath: string]: boolean } = {}
+    for (const line of rgOutput.split('\n')) {
         const realFile = line.trim()
         for (const filePath of [...unvalidatedPaths]) {
             if (filePathContains(realFile, filePath)) {
@@ -60,13 +84,10 @@ export async function fastFilesExist(
             break
         }
     }
-
-    const ret: { [filePath: string]: boolean } = {}
     for (const filePath of filePaths) {
-        ret[filePath] = !unvalidatedPaths.has(filePath)
+        filePathsExist[filePath] = !unvalidatedPaths.has(filePath)
     }
-
-    return ret
+    return filePathsExist
 }
 
 export function filePathContains(container: string, contained: string): boolean {
