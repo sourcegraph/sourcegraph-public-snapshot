@@ -1,11 +1,10 @@
 schemaVersion: "2.0.0"
 
 commandTests:
-  # TODO: sg does not exist in final image
-  # - name: "sg is runnable"
-  #   command: "sg"
-  #   args:
-  #     - version
+  - name: "sg is runnable"
+    command: "sg"
+    args:
+      - version
 
   - name: "not running as root"
     command: "/usr/bin/id"

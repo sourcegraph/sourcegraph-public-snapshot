@@ -7,7 +7,7 @@ pkg_tar(
     name = "sg_tarball",
     srcs = ["//dev/sg"],
     remap_paths = {
-        "sg": "/usr/local/bin/sg",
+        "/sg": "/usr/local/bin/sg",
     },
 )
 
@@ -17,6 +17,7 @@ oci_image(
     entrypoint = [
         "/usr/local/bin/sg",
     ],
+    tars = [":sg_tarball"],
     user = "sourcegraph",
 )
 
