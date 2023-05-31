@@ -56,11 +56,6 @@ func Init(
 			return nil
 		}
 
-		if info.Plan().IsFree() {
-			// We don't enforce anything on the free plan
-			return nil
-		}
-
 		licenseInfo := &hooks.LicenseInfo{
 			CurrentPlan: string(info.Plan()),
 		}
@@ -90,7 +85,7 @@ func Init(
 				licenseInfo.KnownLicenseTags = append(licenseInfo.KnownLicenseTags, feature.FeatureName())
 			}
 			licenseInfo.KnownLicenseTags = append(licenseInfo.KnownLicenseTags, licensing.MiscTags...)
-		} else {
+		} else { // returning BC info only makes sense on non-dotcom
 			bcFeature := &licensing.FeatureBatchChanges{}
 			if err := licensing.Check(bcFeature); err == nil {
 				if bcFeature.Unrestricted {
