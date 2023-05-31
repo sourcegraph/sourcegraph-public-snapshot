@@ -1467,7 +1467,7 @@ func (c *clientImplementor) newBlobReader(ctx context.Context, repo api.RepoName
 		//
 		// The last point is a security issue for repositories with sub-repo
 		// permissions since the diff will not be filtered.
-		blobOID, err := c.gitCommand(repo, "ls-tree", "--object-only", string(commit), "--", name).Output(ctx)
+		blobOID, err := c.gitCommand(repo, "ls-tree", "--format=%(objectname)", string(commit), "--", name).Output(ctx)
 		if err != nil {
 			return nil, err
 		}
