@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 
 	"github.com/keegancsmith/sqlf"
@@ -104,19 +105,21 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
 		domain = types.ReposDomain
 	}
 	if domain == types.BatchesDomain {
-		// TODO: Add a check so GH instance doesn't already exist for batches apps
-		// When domain:"batches", check for an existing DB entry with the same base_url, fail if one is encountered
-		// existingGHApp, err := s.GetByDomain(ctx, &domain, app.BaseURL)
-		// if existingGHApp != nil {
-		// 	return errors.New("GitHub App already exists for this base URL")
-		// }
+		existingGHApp, err := s.GetByDomain(ctx, &domain, baseURL.String())
+		if err != nil {
+			fmt.Println(err)
+		}
+		if existingGHApp != nil {
+			// TODO: Error handle better (GH App gets stuck in Auth flow showing this message)
+			return -1, errors.New("GitHub App already exists for this GitHub instance")
+		}
 	}
 
 	query := sqlf.Sprintf(`INSERT INTO
 	    github_apps (app_id, name, domain, slug, base_url, app_url, client_id, client_secret, private_key, encryption_key_id, logo)
     	VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 		RETURNING id`,
-		app.AppID, app.Name, domain, app.Slug, baseURL, app.AppURL, app.ClientID, clientSecret, privateKey, keyID, app.Logo)
+		app.AppID, app.Name, domain, app.Slug, baseURL.String(), app.AppURL, app.ClientID, clientSecret, privateKey, keyID, app.Logo)
 	id, _, err := basestore.ScanFirstInt(s.Query(ctx, query))
 	return id, err
 }
