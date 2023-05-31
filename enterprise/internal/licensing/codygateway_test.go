@@ -6,20 +6,20 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestNewLLMProxyChatRateLimit(t *testing.T) {
+func TestNewCodyGatewayChatRateLimit(t *testing.T) {
 	tests := []struct {
 		name        string
 		plan        Plan
 		userCount   *int
 		licenseTags []string
-		want        LLMProxyRateLimit
+		want        CodyGatewayRateLimit
 	}{
 		{
 			name:        "Enterprise plan with GPT tag and user count",
 			plan:        PlanEnterprise1,
 			userCount:   intPtr(50),
 			licenseTags: []string{GPTLLMAccessTag},
-			want: LLMProxyRateLimit{
+			want: CodyGatewayRateLimit{
 				AllowedModels:   []string{"gpt-4", "gpt-3.5-turbo"},
 				Limit:           2500,
 				IntervalSeconds: 60 * 60 * 24,
@@ -29,7 +29,7 @@ func TestNewLLMProxyChatRateLimit(t *testing.T) {
 			name:      "Enterprise plan with no GPT tag",
 			plan:      PlanEnterprise1,
 			userCount: intPtr(50),
-			want: LLMProxyRateLimit{
+			want: CodyGatewayRateLimit{
 				AllowedModels:   []string{"claude-v1", "claude-instant-v1"},
 				Limit:           2500,
 				IntervalSeconds: 60 * 60 * 24,
@@ -38,7 +38,7 @@ func TestNewLLMProxyChatRateLimit(t *testing.T) {
 		{
 			name: "Enterprise plan with no user count",
 			plan: PlanEnterprise1,
-			want: LLMProxyRateLimit{
+			want: CodyGatewayRateLimit{
 				AllowedModels:   []string{"claude-v1", "claude-instant-v1"},
 				Limit:           50,
 				IntervalSeconds: 60 * 60 * 24,
@@ -47,7 +47,7 @@ func TestNewLLMProxyChatRateLimit(t *testing.T) {
 		{
 			name: "Non-enterprise plan with no GPT tag and no user count",
 			plan: "unknown",
-			want: LLMProxyRateLimit{
+			want: CodyGatewayRateLimit{
 				AllowedModels:   []string{"claude-v1", "claude-instant-v1"},
 				Limit:           10,
 				IntervalSeconds: 60 * 60 * 24,
@@ -56,7 +56,7 @@ func TestNewLLMProxyChatRateLimit(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := NewLLMProxyChatRateLimit(tt.plan, tt.userCount, tt.licenseTags)
+			got := NewCodyGatewayChatRateLimit(tt.plan, tt.userCount, tt.licenseTags)
 			if diff := cmp.Diff(got, tt.want); diff != "" {
 				t.Fatalf("incorrect rate limit computed: %s", diff)
 			}
@@ -64,20 +64,20 @@ func TestNewLLMProxyChatRateLimit(t *testing.T) {
 	}
 }
 
-func TestNewLLMProxyCodeRateLimit(t *testing.T) {
+func TestCodyGatewayCodeRateLimit(t *testing.T) {
 	tests := []struct {
 		name        string
 		plan        Plan
 		userCount   *int
 		licenseTags []string
-		want        LLMProxyRateLimit
+		want        CodyGatewayRateLimit
 	}{
 		{
 			name:        "Enterprise plan with GPT tag and user count",
 			plan:        PlanEnterprise1,
 			userCount:   intPtr(50),
 			licenseTags: []string{GPTLLMAccessTag},
-			want: LLMProxyRateLimit{
+			want: CodyGatewayRateLimit{
 				AllowedModels:   []string{"gpt-3.5-turbo"},
 				Limit:           25000,
 				IntervalSeconds: 60 * 60 * 24,
@@ -87,7 +87,7 @@ func TestNewLLMProxyCodeRateLimit(t *testing.T) {
 			name:      "Enterprise plan with no GPT tag",
 			plan:      PlanEnterprise1,
 			userCount: intPtr(50),
-			want: LLMProxyRateLimit{
+			want: CodyGatewayRateLimit{
 				AllowedModels:   []string{"claude-instant-v1"},
 				Limit:           25000,
 				IntervalSeconds: 60 * 60 * 24,
@@ -96,7 +96,7 @@ func TestNewLLMProxyCodeRateLimit(t *testing.T) {
 		{
 			name: "Enterprise plan with no user count",
 			plan: PlanEnterprise1,
-			want: LLMProxyRateLimit{
+			want: CodyGatewayRateLimit{
 				AllowedModels:   []string{"claude-instant-v1"},
 				Limit:           500,
 				IntervalSeconds: 60 * 60 * 24,
@@ -105,7 +105,7 @@ func TestNewLLMProxyCodeRateLimit(t *testing.T) {
 		{
 			name: "Non-enterprise plan with no GPT tag and no user count",
 			plan: "unknown",
-			want: LLMProxyRateLimit{
+			want: CodyGatewayRateLimit{
 				AllowedModels:   []string{"claude-instant-v1"},
 				Limit:           100,
 				IntervalSeconds: 60 * 60 * 24,
@@ -114,7 +114,7 @@ func TestNewLLMProxyCodeRateLimit(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := NewLLMProxyCodeRateLimit(tt.plan, tt.userCount, tt.licenseTags)
+			got := NewCodyGatewayCodeRateLimit(tt.plan, tt.userCount, tt.licenseTags)
 			if diff := cmp.Diff(got, tt.want); diff != "" {
 				t.Fatalf("incorrect rate limit computed: %s", diff)
 			}

@@ -6,7 +6,7 @@ import { parseISO } from 'date-fns'
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { logger } from '@sourcegraph/common'
 import { useMutation, useQuery } from '@sourcegraph/http-client'
-import { LLMProxyRateLimitSource } from '@sourcegraph/shared/src/graphql-operations'
+import { CodyGatewayRateLimitSource } from '@sourcegraph/shared/src/graphql-operations'
 import {
     H3,
     ProductStatusBadge,
@@ -27,19 +27,19 @@ import {
 
 import { CopyableText } from '../../../../components/CopyableText'
 import {
-    LLMProxyAccessFields,
+    CodyGatewayAccessFields,
     Scalars,
-    UpdateLLMProxyConfigResult,
-    UpdateLLMProxyConfigVariables,
-    LLMProxyRateLimitUsageDatapoint,
-    LLMProxyRateLimitFields,
-    DotComProductSubscriptionLLMUsageResult,
-    DotComProductSubscriptionLLMUsageVariables,
+    UpdateCodyGatewayConfigResult,
+    UpdateCodyGatewayConfigVariables,
+    CodyGatewayRateLimitUsageDatapoint,
+    CodyGatewayRateLimitFields,
+    DotComProductSubscriptionCodyGatewayUsageResult,
+    DotComProductSubscriptionCodyGatewayUsageVariables,
 } from '../../../../graphql-operations'
 import { ChartContainer } from '../../../../site-admin/analytics/components/ChartContainer'
 
-import { DOTCOM_PRODUCT_SUBSCRIPTION_LLM_USAGE, UPDATE_LLM_PROXY_CONFIG } from './backend'
-import { LLMProxyRateLimitModal } from './LlmProxyRateLimitModal'
+import { DOTCOM_PRODUCT_SUBSCRIPTION_CODY_GATEWAY_USAGE, UPDATE_CODY_GATEWAY_CONFIG } from './backend'
+import { CodyGatewayRateLimitModal } from './CodyGatewayRateLimitModal'
 import { ModelBadges } from './ModelBadges'
 import { prettyInterval } from './utils'
 
@@ -52,7 +52,7 @@ interface Props {
     accessTokenError?: Error
     viewerCanAdminister: boolean
     refetchSubscription: () => Promise<any>
-    llmProxyAccess: LLMProxyAccessFields
+    codyGatewayAccess: CodyGatewayAccessFields
 }
 
 export const CodyServicesSection: React.FunctionComponent<Props> = ({
@@ -62,18 +62,18 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
     currentSourcegraphAccessToken,
     accessTokenError,
     refetchSubscription,
-    llmProxyAccess,
+    codyGatewayAccess,
 }) => {
-    const [updateLLMProxyConfig, { loading: updateLLMProxyConfigLoading, error: updateLLMProxyConfigError }] =
-        useMutation<UpdateLLMProxyConfigResult, UpdateLLMProxyConfigVariables>(UPDATE_LLM_PROXY_CONFIG)
+    const [updateCodyGatewayConfig, { loading: updateCodyGatewayConfigLoading, error: updateCodyGatewayConfigError }] =
+        useMutation<UpdateCodyGatewayConfigResult, UpdateCodyGatewayConfigVariables>(UPDATE_CODY_GATEWAY_CONFIG)
 
     const onToggleCompletions = useCallback(
         async (value: boolean) => {
             try {
-                await updateLLMProxyConfig({
+                await updateCodyGatewayConfig({
                     variables: {
                         productSubscriptionID,
-                        llmProxyAccess: { enabled: value },
+                        access: { enabled: value },
                     },
                 })
                 await refetchSubscription()
@@ -81,7 +81,7 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
                 logger.error(error)
             }
         },
-        [productSubscriptionID, refetchSubscription, updateLLMProxyConfig]
+        [productSubscriptionID, refetchSubscription, updateCodyGatewayConfig]
     )
 
     return (
@@ -91,7 +91,7 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
             </H3>
             <Container className="mb-3">
                 <H4>Access token</H4>
-                <Text className="mb-2">Access tokens can be used for LLM-proxy access</Text>
+                <Text className="mb-2">Access tokens can be used for Cody Gateway access</Text>
                 {currentSourcegraphAccessToken && (
                     <CopyableText
                         label="Access token"
@@ -108,17 +108,17 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
                         <H4>Completions</H4>
 
                         <div className="form-group mb-2">
-                            {updateLLMProxyConfigError && <ErrorAlert error={updateLLMProxyConfigError} />}
+                            {updateCodyGatewayConfigError && <ErrorAlert error={updateCodyGatewayConfigError} />}
                             <Label className="mb-0">
                                 <Toggle
                                     id="cody-gateway-enabled"
-                                    value={llmProxyAccess.enabled}
-                                    disabled={updateLLMProxyConfigLoading || !viewerCanAdminister}
+                                    value={codyGatewayAccess.enabled}
+                                    disabled={updateCodyGatewayConfigLoading || !viewerCanAdminister}
                                     onToggle={onToggleCompletions}
                                     className="mr-1 align-text-bottom"
                                 />
                                 Access to hosted Cody services
-                                {updateLLMProxyConfigLoading && (
+                                {updateCodyGatewayConfigLoading && (
                                     <>
                                         {' '}
                                         <LoadingSpinner />
@@ -127,7 +127,7 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
                             </Label>
                         </div>
 
-                        {llmProxyAccess.enabled && (
+                        {codyGatewayAccess.enabled && (
                             <>
                                 <Label className="mb-2">Rate limits</Label>
                                 <table className={styles.limitsTable}>
@@ -144,7 +144,7 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
                                         <RateLimitRow
                                             mode="chat"
                                             productSubscriptionID={productSubscriptionID}
-                                            rateLimit={llmProxyAccess.chatCompletionsRateLimit}
+                                            rateLimit={codyGatewayAccess.chatCompletionsRateLimit}
                                             refetchSubscription={refetchSubscription}
                                             title="Chat rate limit"
                                             viewerCanAdminister={viewerCanAdminister}
@@ -152,7 +152,7 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
                                         <RateLimitRow
                                             mode="code"
                                             productSubscriptionID={productSubscriptionID}
-                                            rateLimit={llmProxyAccess.codeCompletionsRateLimit}
+                                            rateLimit={codyGatewayAccess.codeCompletionsRateLimit}
                                             refetchSubscription={refetchSubscription}
                                             title="Code completions rate limit"
                                             viewerCanAdminister={viewerCanAdminister}
@@ -169,12 +169,12 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
     )
 }
 
-export const LLMProxyRateLimitSourceBadge: React.FunctionComponent<{
-    source: LLMProxyRateLimitSource
+export const CodyGatewayRateLimitSourceBadge: React.FunctionComponent<{
+    source: CodyGatewayRateLimitSource
     className?: string
 }> = ({ source, className }) => {
     switch (source) {
-        case LLMProxyRateLimitSource.OVERRIDE:
+        case CodyGatewayRateLimitSource.OVERRIDE:
             return (
                 <Tooltip content="The limit has been specified by a custom override">
                     <Badge variant="primary" className={className}>
@@ -182,7 +182,7 @@ export const LLMProxyRateLimitSourceBadge: React.FunctionComponent<{
                     </Badge>
                 </Tooltip>
             )
-        case LLMProxyRateLimitSource.PLAN:
+        case CodyGatewayRateLimitSource.PLAN:
             return (
                 <Tooltip content="The limit is derived from the current subscription plan">
                     <Badge variant="primary" className={className}>
@@ -193,8 +193,8 @@ export const LLMProxyRateLimitSourceBadge: React.FunctionComponent<{
     }
 }
 
-function generateSeries(data: LLMProxyRateLimitUsageDatapoint[]): LLMProxyRateLimitUsageDatapoint[][] {
-    const series: Record<string, LLMProxyRateLimitUsageDatapoint[]> = {}
+function generateSeries(data: CodyGatewayRateLimitUsageDatapoint[]): CodyGatewayRateLimitUsageDatapoint[][] {
+    const series: Record<string, CodyGatewayRateLimitUsageDatapoint[]> = {}
     for (const entry of data) {
         if (!series[entry.model]) {
             series[entry.model] = []
@@ -210,7 +210,7 @@ interface RateLimitRowProps {
     viewerCanAdminister: boolean
     refetchSubscription: () => Promise<any>
     mode: 'chat' | 'code'
-    rateLimit: LLMProxyRateLimitFields | null
+    rateLimit: CodyGatewayRateLimitFields | null
 }
 
 const RateLimitRow: React.FunctionComponent<RateLimitRowProps> = ({
@@ -223,15 +223,15 @@ const RateLimitRow: React.FunctionComponent<RateLimitRowProps> = ({
 }) => {
     const [showConfigModal, setShowConfigModal] = useState<boolean>(false)
 
-    const [updateLLMProxyConfig, { loading: updateLLMProxyConfigLoading, error: updateLLMProxyConfigError }] =
-        useMutation<UpdateLLMProxyConfigResult, UpdateLLMProxyConfigVariables>(UPDATE_LLM_PROXY_CONFIG)
+    const [updateCodyGatewayConfig, { loading: updateCodyGatewayConfigLoading, error: updateCodyGatewayConfigError }] =
+        useMutation<UpdateCodyGatewayConfigResult, UpdateCodyGatewayConfigVariables>(UPDATE_CODY_GATEWAY_CONFIG)
 
     const onRemoveRateLimitOverride = useCallback(async () => {
         try {
-            await updateLLMProxyConfig({
+            await updateCodyGatewayConfig({
                 variables: {
                     productSubscriptionID,
-                    llmProxyAccess:
+                    access:
                         mode === 'chat'
                             ? {
                                   chatCompletionsRateLimit: 0,
@@ -249,7 +249,7 @@ const RateLimitRow: React.FunctionComponent<RateLimitRowProps> = ({
         } catch (error) {
             logger.error(error)
         }
-    }, [productSubscriptionID, refetchSubscription, updateLLMProxyConfig, mode])
+    }, [productSubscriptionID, refetchSubscription, updateCodyGatewayConfig, mode])
 
     const afterSaveRateLimit = useCallback(async () => {
         try {
@@ -269,7 +269,7 @@ const RateLimitRow: React.FunctionComponent<RateLimitRowProps> = ({
                 {rateLimit !== null && (
                     <>
                         <td>
-                            <LLMProxyRateLimitSourceBadge source={rateLimit.source} />
+                            <CodyGatewayRateLimitSourceBadge source={rateLimit.source} />
                         </td>
                         <td>
                             {rateLimit.limit} requests / {prettyInterval(rateLimit.intervalSeconds)}
@@ -288,28 +288,28 @@ const RateLimitRow: React.FunctionComponent<RateLimitRowProps> = ({
                                 >
                                     <Icon aria-hidden={true} svgPath={mdiPencil} />
                                 </Button>
-                                {rateLimit.source === LLMProxyRateLimitSource.OVERRIDE && (
+                                {rateLimit.source === CodyGatewayRateLimitSource.OVERRIDE && (
                                     <Tooltip content="Remove rate limit override">
                                         <Button
                                             size="sm"
                                             variant="link"
                                             aria-label="Remove rate limit override"
                                             className="ml-1"
-                                            disabled={updateLLMProxyConfigLoading}
+                                            disabled={updateCodyGatewayConfigLoading}
                                             onClick={onRemoveRateLimitOverride}
                                         >
                                             <Icon aria-hidden={true} svgPath={mdiTrashCan} className="text-danger" />
                                         </Button>
                                     </Tooltip>
                                 )}
-                                {updateLLMProxyConfigError && <ErrorAlert error={updateLLMProxyConfigError} />}
+                                {updateCodyGatewayConfigError && <ErrorAlert error={updateCodyGatewayConfigError} />}
                             </td>
                         )}
                     </>
                 )}
             </tr>
             {showConfigModal && (
-                <LLMProxyRateLimitModal
+                <CodyGatewayRateLimitModal
                     productSubscriptionID={productSubscriptionID}
                     afterSave={afterSaveRateLimit}
                     current={rateLimit}
@@ -327,9 +327,9 @@ interface RateLimitUsageProps {
 
 const RateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = ({ productSubscriptionUUID }) => {
     const { data, loading, error } = useQuery<
-        DotComProductSubscriptionLLMUsageResult,
-        DotComProductSubscriptionLLMUsageVariables
-    >(DOTCOM_PRODUCT_SUBSCRIPTION_LLM_USAGE, { variables: { uuid: productSubscriptionUUID } })
+        DotComProductSubscriptionCodyGatewayUsageResult,
+        DotComProductSubscriptionCodyGatewayUsageVariables
+    >(DOTCOM_PRODUCT_SUBSCRIPTION_CODY_GATEWAY_USAGE, { variables: { uuid: productSubscriptionUUID } })
 
     if (loading && !data) {
         return (
@@ -349,7 +349,7 @@ const RateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = ({ productS
         )
     }
 
-    const llmProxyAccess = data!.dotcom.productSubscription.llmProxyAccess
+    const { codyGatewayAccess } = data!.dotcom.productSubscription
 
     return (
         <>
@@ -360,8 +360,8 @@ const RateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = ({ productS
                         width={width}
                         height={200}
                         series={[
-                            ...generateSeries(llmProxyAccess.chatCompletionsRateLimit?.usage ?? []).map(
-                                (data): Series<LLMProxyRateLimitUsageDatapoint> => ({
+                            ...generateSeries(codyGatewayAccess.chatCompletionsRateLimit?.usage ?? []).map(
+                                (data): Series<CodyGatewayRateLimitUsageDatapoint> => ({
                                     data,
                                     getXValue(datum) {
                                         return parseISO(datum.date)
@@ -370,12 +370,12 @@ const RateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = ({ productS
                                         return datum.count
                                     },
                                     id: 'chat-usage',
-                                    name: 'LLM Proxy chat completions usage',
+                                    name: 'Cody Gateway chat completions usage',
                                     color: 'var(--purple)',
                                 })
                             ),
-                            ...generateSeries(llmProxyAccess.codeCompletionsRateLimit?.usage ?? []).map(
-                                (data): Series<LLMProxyRateLimitUsageDatapoint> => ({
+                            ...generateSeries(codyGatewayAccess.codeCompletionsRateLimit?.usage ?? []).map(
+                                (data): Series<CodyGatewayRateLimitUsageDatapoint> => ({
                                     data,
                                     getXValue(datum) {
                                         return parseISO(datum.date)
@@ -384,7 +384,7 @@ const RateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = ({ productS
                                         return datum.count
                                     },
                                     id: 'code-completions-usage',
-                                    name: 'LLM Proxy code completions usage',
+                                    name: 'Cody Gateway code completions usage',
                                     color: 'var(--orange)',
                                 })
                             ),

@@ -1196,7 +1196,7 @@ commandsets:
       EXTSVC_CONFIG_FILE: ""
 
   dotcom:
-    # This is 95% the enterprise runset, with the addition of LLM-proxy.
+    # This is 95% the enterprise runset, with the addition of Cody Gateway.
     requiresDevPrivate: true
     checks:
       - docker

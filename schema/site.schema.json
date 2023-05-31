@@ -1445,10 +1445,10 @@
               "default": false
             },
             "severityLevel": {
-              "description": "Severity logging level for the audit log.",
+              "deprecationMessage": "No effect, audit logs are always set to SRC_LOG_LEVEL",
+              "description": "DEPRECATED: No effect, audit logs are always set to SRC_LOG_LEVEL",
               "type": "string",
-              "enum": ["DEBUG", "INFO", "WARN", "ERROR"],
-              "default": "INFO"
+              "enum": ["DEBUG", "INFO", "WARN", "ERROR"]
             }
           },
           "required": ["internalTraffic", "graphQL", "gitserverAccess"],
@@ -1456,8 +1456,7 @@
             {
               "internalTraffic": false,
               "graphQL": false,
-              "gitserverAccess": false,
-              "severityLevel": "INFO"
+              "gitserverAccess": false
             }
           ]
         },
@@ -1954,21 +1953,21 @@
             }
           }
         },
-        "llmProxy": {
-          "description": "Configuration related to the LLM Proxy service management. This should only be used on sourcegraph.com.",
+        "codyGateway": {
+          "description": "Configuration related to the Cody Gateway service management. This should only be used on sourcegraph.com.",
           "type": "object",
           "group": "Sourcegraph.com",
           "properties": {
             "bigQueryGoogleProjectID": {
-              "description": "The project ID to pull BigQuery LLM Proxy related events from.",
+              "description": "The project ID to pull BigQuery Cody Gatewayrelated events from.",
               "type": "string"
             },
             "bigQueryDataset": {
-              "description": "The dataset to pull BigQuery LLM Proxy related events from.",
+              "description": "The dataset to pull BigQuery Cody Gateway related events from.",
               "type": "string"
             },
             "bigQueryTable": {
-              "description": "The table in the dataset to pull BigQuery LLM Proxy related events from.",
+              "description": "The table in the dataset to pull BigQuery Cody Gateway related events from.",
               "type": "string"
             }
           }
@@ -2172,9 +2171,10 @@
       },
       "examples": [
         {
-          "enabled": true,
-          "emailDomains": ["example.com"],
-          "message": "Please explain why you need access in your request."
+          "enabled": true
+        },
+        {
+          "enabled": false
         }
       ]
     },
@@ -2413,11 +2413,11 @@
           "type": "string",
           "description": "The external completions provider.",
           "default": "anthropic",
-          "enum": ["anthropic", "openai", "llmproxy"]
+          "enum": ["anthropic", "openai", "sourcegraph", "llmproxy"]
         },
         "endpoint": {
           "type": "string",
-          "description": "The endpoint under which to reach the provider. Currently only used for provider types \"llmproxy\", \"openai\" and \"anthropic\". The default values are \"https://completions.sourcegraph.com\", \"https://api.openai.com/v1/chat/completions\", and \"https://api.anthropic.com/v1/complete\" for LLM proxy, OpenAI, and Anthropic, respectively."
+          "description": "The endpoint under which to reach the provider. Currently only used for provider types \"sourcegraph\", \"openai\" and \"anthropic\". The default values are \"https://cody-gateway.sourcegraph.com\", \"https://api.openai.com/v1/chat/completions\", and \"https://api.anthropic.com/v1/complete\" for Sourcegraph, OpenAI, and Anthropic, respectively."
         },
         "perUserDailyLimit": {
           "description": "If > 0, enables the maximum number of completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.",

@@ -2,6 +2,7 @@ import { ChatQuestion } from '@sourcegraph/cody-shared/src/chat/recipes/chat-que
 import { ContextSearch } from '@sourcegraph/cody-shared/src/chat/recipes/context-search'
 import { ExplainCodeDetailed } from '@sourcegraph/cody-shared/src/chat/recipes/explain-code-detailed'
 import { ExplainCodeHighLevel } from '@sourcegraph/cody-shared/src/chat/recipes/explain-code-high-level'
+import { FileFlow } from '@sourcegraph/cody-shared/src/chat/recipes/file-flow'
 import { FindCodeSmells } from '@sourcegraph/cody-shared/src/chat/recipes/find-code-smells'
 import { Fixup } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
 import { GenerateDocstring } from '@sourcegraph/cody-shared/src/chat/recipes/generate-docstring'
@@ -9,7 +10,7 @@ import { ReleaseNotes } from '@sourcegraph/cody-shared/src/chat/recipes/generate
 import { GenerateTest } from '@sourcegraph/cody-shared/src/chat/recipes/generate-test'
 import { GitHistory } from '@sourcegraph/cody-shared/src/chat/recipes/git-log'
 import { ImproveVariableNames } from '@sourcegraph/cody-shared/src/chat/recipes/improve-variable-names'
-import { InlineChat } from '@sourcegraph/cody-shared/src/chat/recipes/inline-chat'
+import { InlineAssist } from '@sourcegraph/cody-shared/src/chat/recipes/inline-chat'
 import { NextQuestions } from '@sourcegraph/cody-shared/src/chat/recipes/next-questions'
 import { NonStop } from '@sourcegraph/cody-shared/src/chat/recipes/non-stop'
 import { OptimizeCode } from '@sourcegraph/cody-shared/src/chat/recipes/optimize-code'
@@ -35,21 +36,22 @@ function init(): void {
 
     const recipes: Recipe[] = [
         new ChatQuestion(debug),
+        new ContextSearch(),
         new ExplainCodeDetailed(),
         new ExplainCodeHighLevel(),
-        new InlineChat(),
+        new FileFlow(),
+        new FindCodeSmells(),
+        new Fixup(),
         new GenerateDocstring(),
         new GenerateTest(),
         new GitHistory(),
         new ImproveVariableNames(),
-        new Fixup(),
-        new TranslateToLanguage(),
-        new FindCodeSmells(),
+        new InlineAssist(),
         new NextQuestions(),
-        new ContextSearch(),
-        new ReleaseNotes(),
         new NonStop(),
         new OptimizeCode(),
+        new ReleaseNotes(),
+        new TranslateToLanguage(),
     ]
 
     for (const recipe of recipes) {

@@ -2,17 +2,17 @@ package licensing
 
 import "golang.org/x/exp/slices"
 
-// LLMProxyRateLimit indicates rate limits for Sourcegraph's managed LLM-proxy service.
+// CodyGatewayRateLimit indicates rate limits for Sourcegraph's managed Cody Gateway service.
 //
 // Zero values in either field indicates no access.
-type LLMProxyRateLimit struct {
+type CodyGatewayRateLimit struct {
 	AllowedModels   []string
 	Limit           int32
 	IntervalSeconds int32
 }
 
-// NewLLMProxyChatRateLimit applies default LLM-proxy access based on the plan.
-func NewLLMProxyChatRateLimit(plan Plan, userCount *int, licenseTags []string) LLMProxyRateLimit {
+// NewCodyGatewayChatRateLimit applies default Cody Gateway access based on the plan.
+func NewCodyGatewayChatRateLimit(plan Plan, userCount *int, licenseTags []string) CodyGatewayRateLimit {
 	uc := 0
 	if userCount != nil {
 		uc = *userCount
@@ -29,7 +29,7 @@ func NewLLMProxyChatRateLimit(plan Plan, userCount *int, licenseTags []string) L
 	// TODO: This is just an example for now.
 	case PlanEnterprise1,
 		PlanEnterprise0:
-		return LLMProxyRateLimit{
+		return CodyGatewayRateLimit{
 			AllowedModels:   models,
 			Limit:           int32(50 * uc),
 			IntervalSeconds: 60 * 60 * 24, // day
@@ -37,7 +37,7 @@ func NewLLMProxyChatRateLimit(plan Plan, userCount *int, licenseTags []string) L
 
 	// TODO: Defaults for other plans
 	default:
-		return LLMProxyRateLimit{
+		return CodyGatewayRateLimit{
 			AllowedModels:   models,
 			Limit:           int32(10 * uc),
 			IntervalSeconds: 60 * 60 * 24, // day
@@ -45,8 +45,8 @@ func NewLLMProxyChatRateLimit(plan Plan, userCount *int, licenseTags []string) L
 	}
 }
 
-// NewLLMProxyCodeRateLimit applies default LLM-proxy access based on the plan.
-func NewLLMProxyCodeRateLimit(plan Plan, userCount *int, licenseTags []string) LLMProxyRateLimit {
+// NewCodyGatewayCodeRateLimit applies default Cody Gateway access based on the plan.
+func NewCodyGatewayCodeRateLimit(plan Plan, userCount *int, licenseTags []string) CodyGatewayRateLimit {
 	uc := 0
 	if userCount != nil {
 		uc = *userCount
@@ -63,7 +63,7 @@ func NewLLMProxyCodeRateLimit(plan Plan, userCount *int, licenseTags []string) L
 	// TODO: This is just an example for now.
 	case PlanEnterprise1,
 		PlanEnterprise0:
-		return LLMProxyRateLimit{
+		return CodyGatewayRateLimit{
 			AllowedModels:   models,
 			Limit:           int32(500 * uc),
 			IntervalSeconds: 60 * 60 * 24, // day
@@ -71,7 +71,7 @@ func NewLLMProxyCodeRateLimit(plan Plan, userCount *int, licenseTags []string) L
 
 	// TODO: Defaults for other plans
 	default:
-		return LLMProxyRateLimit{
+		return CodyGatewayRateLimit{
 			AllowedModels:   models,
 			Limit:           int32(100 * uc),
 			IntervalSeconds: 60 * 60 * 24, // day

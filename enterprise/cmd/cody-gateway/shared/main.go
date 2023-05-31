@@ -34,7 +34,7 @@ import (
 
 func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFunc, config *Config) error {
 	// Enable tracing, at this point tracing wouldn't have been enabled yet because
-	// we run LLM-proxy without conf which means Sourcegraph tracing is not enabled.
+	// we run Cody Gateway without conf which means Sourcegraph tracing is not enabled.
 	shutdownTracing, err := maybeEnableTracing(ctx,
 		obctx.Logger.Scoped("tracing", "tracing configuration"),
 		config.Trace)
@@ -95,7 +95,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	handler = instrumentation.HTTPMiddleware("cody-gateway", handler, otelhttpOpts...)
 
 	// Collect request client for downstream handlers. Outside of dev, we always set up
-	// Cloudflare in from of LLM-proxy. This comes first.
+	// Cloudflare in from of Cody Gateway. This comes first.
 	hasCloudflare := !config.InsecureDev
 	handler = requestclient.ExternalHTTPMiddleware(handler, hasCloudflare)
 

@@ -51,7 +51,7 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 				logger,
 				w,
 				http.StatusForbidden,
-				errors.New("LLM proxy access not enabled"),
+				errors.New("Cody Gateway access not enabled"),
 			)
 
 			err := a.EventLogger.LogEvent(
