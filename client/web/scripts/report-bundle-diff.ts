@@ -27,21 +27,23 @@ let COMPARE_REV = ''
 
 async function findFile(root: string, filename: string): Promise<string> {
     // file can be in one of 3 base paths
-    const parts: string[] = ["oss", "enterprise", ""]
-    const files = await Promise.all(parts.flatMap(async (p: string) => {
-        const filePath = path.join(root, p, filename)
-        try {
-            await fs.access(filePath)
-            return filePath
-        } catch (e) { }
-        return ""
-    }))
+    const parts: string[] = ['oss', 'enterprise', '']
+    const files = await Promise.all(
+        parts.flatMap(async (dir: string) => {
+            const filePath = path.join(root, dir, filename)
+            try {
+                await fs.access(filePath)
+                return filePath
+            } catch (e) {}
+            return ''
+        })
+    )
 
-    const foundFile = files.reduce((acc: string, p: string): string => {
-        if (p) {
-            return p
+    const foundFile = files.reduce((accumulator: string, possibleFile: string): string => {
+        if (possibleFile) {
+            return possibleFile
         }
-        return acc
+        return accumulator
     })
 
     if (!foundFile) {
@@ -49,7 +51,6 @@ async function findFile(root: string, filename: string): Promise<string> {
     }
 
     return foundFile
-
 }
 
 /**
@@ -91,7 +92,6 @@ async function prepareStats(): Promise<{ commitFile: string; compareFile: string
     if (tarPath) {
         exec(`tar -xf ${tarPath} --strip-components=2 -C ${STATIC_ASSETS_PATH}`)
         exec(`ls -la ${STATIC_ASSETS_PATH}`)
-
 
         try {
             const commitFile = await findFile(STATIC_ASSETS_PATH, `stats-${BUILDKITE_COMMIT}.json`)
