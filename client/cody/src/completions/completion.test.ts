@@ -293,6 +293,16 @@ describe('Cody completions', () => {
         `)
     })
 
+    it('should not trigger a request if there is text in the suffix for the same line', async () => {
+        const { requests } = await complete(`foo: ${CURSOR_MARKER} = 123;`)
+        expect(requests).toHaveLength(0)
+    })
+
+    it('should trigger a request if the suffix of the same line is only special tags', async () => {
+        const { requests } = await complete(`if(${CURSOR_MARKER}) {`)
+        expect(requests).toHaveLength(3)
+    })
+
     describe('odd indentation', () => {
         it('filters our odd indentation in single-line completions', async () => {
             const { completions } = await complete(`const foo = ${CURSOR_MARKER}`, [createCompletionResponse(' 1')])
