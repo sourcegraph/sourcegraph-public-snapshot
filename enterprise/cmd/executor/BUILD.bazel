@@ -48,6 +48,9 @@ oci_image(
         "--",
         "/executor",
     ],
+    env = {
+        "EXECUTOR_USE_FIRECRACKER": "false",  # Firecracker doesn't work in docker, so disable it by default
+    },
     tars = [
         ":tar_executor",
         ":tar_src-cli",
