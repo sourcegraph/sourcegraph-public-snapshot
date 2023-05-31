@@ -3,7 +3,6 @@ load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("@container_structure_test//:defs.bzl", "container_structure_test")
 load("//cmd/server:macro.bzl", "container_dependencies", "dependencies_tars")
-load("//:stamp_tags.bzl", "stamp_tags")
 load("//dev:oci_defs.bzl", "image_repository")
 
 go_library(
@@ -87,6 +86,7 @@ pkg_tar(
 DEPS = [
     "//cmd/github-proxy",
     "//cmd/searcher",
+    "//enterprise/cmd/embeddings",
     "//enterprise/cmd/frontend",
     "//enterprise/cmd/gitserver",
     "//enterprise/cmd/migrator",
