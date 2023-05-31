@@ -27,6 +27,7 @@ export const languageMarkdownID: { [name: string]: string } = {
     Scala: 'scala',
     Swift: 'swift',
     TypeScript: 'typescript',
+    Zig: 'zig',
 }
 
 export const languageNames = Array.from(Object.keys(languageMarkdownID))
