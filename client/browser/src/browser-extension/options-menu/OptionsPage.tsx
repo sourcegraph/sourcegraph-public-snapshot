@@ -28,7 +28,6 @@ import {
     Label,
     H4,
     Text,
-    Tooltip,
     InputStatus,
 } from '@sourcegraph/wildcard'
 
