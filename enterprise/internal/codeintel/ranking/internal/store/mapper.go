@@ -37,6 +37,7 @@ func (s *store) InsertPathCountInputs(
 		derivativeGraphKey,
 		derivativeGraphKey,
 		graphKey,
+		graphKey,
 		derivativeGraphKey,
 	))
 	if err != nil {
@@ -152,23 +153,38 @@ referenced_symbols AS (
 	SELECT DISTINCT unnest(r.symbol_names) AS symbol_name
 	FROM processable_symbols r
 ),
+ranked_referenced_definitions AS (
+	SELECT
+		rd.id AS definition_id,
+
+		-- Group by repository/root/indexer and order by descending ids. We
+		-- will only count the rows with rank = 1 in the outer query in order
+		-- to break ties when shadowed definitions are present.
+		RANK() OVER (PARTITION BY cre.upload_key ORDER BY cre.upload_id DESC) AS rank
+	FROM codeintel_ranking_definitions rd
+	JOIN referenced_symbols rs ON rs.symbol_name = rd.symbol_name
+	JOIN codeintel_ranking_exports cre ON cre.id = rd.exported_upload_id
+	JOIN progress p ON TRUE
+	WHERE
+		rd.graph_key = %s AND
+		cre.graph_key = %s AND
+
+		-- Note that we do a check in the processable_symbols CTE below that will
+		-- ensure that we don't process a record AND the one it shadows. We end up
+		-- taking the lowest ID and no-oping any others that happened to fall into
+		-- the window.
+
+		-- Ensure that the record is within the bounds where it would be visible
+		-- to the current "snapshot" defined by the ranking computation state row.
+		cre.id <= p.max_export_id AND
+		(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at)
+	ORDER BY cre.graph_key, cre.deleted_at DESC NULLS FIRST, cre.id
+),
 referenced_definitions AS (
 	SELECT
 		s.definition_id,
 		COUNT(*) AS count
-	FROM (
-		SELECT
-			rd.id AS definition_id,
-
-			-- Group by repository/root/indexer and order by descending ids. We
-			-- will only count the rows with rank = 1 in the outer query in order
-			-- to break ties when shadowed definitions are present.
-			RANK() OVER (PARTITION BY cre.upload_key ORDER BY cre.upload_id DESC) AS rank
-		FROM codeintel_ranking_definitions rd
-		JOIN referenced_symbols rs ON rs.symbol_name = rd.symbol_name
-		JOIN exported_uploads cre ON cre.id = rd.exported_upload_id
-		WHERE rd.graph_key = %s
-	) s
+	FROM ranked_referenced_definitions s
 
 	-- For multiple uploads in the same repository/root/indexer, only consider
 	-- definition records attached to the one with the highest id. This should
