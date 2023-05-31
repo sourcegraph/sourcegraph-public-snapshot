@@ -59,6 +59,13 @@ All notable changes to Sourcegraph are documented in this file.
 - Legacy (table-based) blob viewer. [#50915](https://github.com/sourcegraph/sourcegraph/pull/50915)
 
 ## Unreleased 5.0.4
+## 5.0.5
+
+### Added
+
+- Organization members can now administer batch changes created by other members in their organization's namespace if the setting `orgs.allMembersBatchChangesAdmin` is enabled for that organization. [#50724](https://github.com/sourcegraph/sourcegraph/pull/50724)
+
+## 5.0.4
 
 ### Fixed
 
