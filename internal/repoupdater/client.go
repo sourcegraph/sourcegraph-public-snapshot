@@ -133,8 +133,7 @@ func (c *Client) RepoLookup(
 		if result != nil {
 			tr.SetAttributes(attribute.Bool("found", result.Repo != nil))
 		}
-		tr.SetError(err)
-		tr.Finish()
+		tr.FinishWithErr(&err)
 	}()
 
 	if internalgrpc.IsGRPCEnabled(ctx) {
