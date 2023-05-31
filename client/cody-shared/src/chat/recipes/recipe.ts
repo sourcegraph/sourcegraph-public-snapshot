@@ -27,9 +27,9 @@ export type RecipeID =
     | 'improve-variable-names'
     | 'inline-chat'
     | 'next-questions'
-    | 'pr-description'
     | 'non-stop'
     | 'optimize-code'
+    | 'pr-description'
     | 'release-notes'
     | 'translate-to-language'
 
