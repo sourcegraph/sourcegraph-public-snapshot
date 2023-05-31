@@ -134,7 +134,7 @@ oci_image(
         ":static_config_tar",
         ":tar_postgres_exporter_config",
         ":tar_monitoring_config",
-        # ":tar_syntax-highlighter",
+        ":tar_syntax-highlighter",
         ":tar_postgres_optimize",
     ] + dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS),
     workdir = "/",
