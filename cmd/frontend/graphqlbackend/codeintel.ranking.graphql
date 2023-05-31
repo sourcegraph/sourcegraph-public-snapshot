@@ -7,7 +7,7 @@ extend type Query {
 
 extend type Mutation {
     """
-    TODO - rename?
+    Effectively begins a new ranking map/reduce job.
     """
     bumpDerivativeGraphKey: EmptyResponse!
 }
