@@ -89,9 +89,9 @@ func TestVacuumAbandonedExportedUploads(t *testing.T) {
 		WITH
 			v1 AS (SELECT unnest('{11, 12, 13, 14, 15, 16, 17, 18, 19}'::integer[])),
 			v2 AS (SELECT unnest('{21, 22, 23, 24, 25, 26, 27, 28, 29}'::integer[]))
-		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key)
-		SELECT 100 + id, id, $1 FROM v1 AS v1(id) UNION
-		SELECT 100 + id, id, $2 FROM v2 AS v1(id)
+		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key, upload_key)
+		SELECT 100 + id, id, $1, md5('key-' || id::text) FROM v1 AS v1(id) UNION
+		SELECT 100 + id, id, $2, md5('key-' || id::text) FROM v2 AS v1(id)
 	`,
 		mockRankingGraphKey,
 		mockRankingGraphKey+"-old",
@@ -145,9 +145,9 @@ func TestSoftDeleteStaleExportedUploads(t *testing.T) {
 		WITH
 			v1 AS (SELECT unnest('{11, 12, 13, 14, 15, 16, 17, 18, 19}'::integer[])),
 			v2 AS (SELECT unnest('{21, 22, 23, 24, 25, 26, 27, 28, 29}'::integer[]))
-		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key)
-		SELECT 100 + id, id, $1 FROM v1 AS v1(id) UNION
-		SELECT 100 + id, id, $1 FROM v2 AS v1(id)
+		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key, upload_key)
+		SELECT 100 + id, id, $1, md5('key-' || id::text) FROM v1 AS v1(id) UNION
+		SELECT 100 + id, id, $1, md5('key-' || id::text) FROM v2 AS v1(id)
 	`,
 		mockRankingGraphKey,
 	); err != nil {
@@ -204,9 +204,9 @@ func TestVacuumDeletedExportedUploads(t *testing.T) {
 		WITH
 			v1 AS (SELECT unnest('{11, 12, 13, 14, 15, 16, 17, 18, 19}'::integer[])),
 			v2 AS (SELECT unnest('{21, 22, 23, 24, 25, 26, 27, 28, 29}'::integer[]))
-		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key)
-		SELECT 100 + id, id, $1 FROM v1 AS v1(id) UNION
-		SELECT 100 + id, id, $1 FROM v2 AS v1(id)
+		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key, upload_key)
+		SELECT 100 + id, id, $1, md5('key-' || id::text) FROM v1 AS v1(id) UNION
+		SELECT 100 + id, id, $1, md5('key-' || id::text) FROM v2 AS v1(id)
 	`,
 		mockRankingGraphKey,
 	); err != nil {

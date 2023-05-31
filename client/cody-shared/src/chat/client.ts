@@ -39,6 +39,7 @@ export interface Client {
         recipeId: RecipeID,
         options?: {
             prefilledOptions?: PrefilledOptions
+            humanChatInput?: string
         }
     ) => Promise<void>
     reset: () => void

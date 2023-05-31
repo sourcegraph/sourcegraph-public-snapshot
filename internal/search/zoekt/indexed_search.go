@@ -224,10 +224,7 @@ func PartitionRepos(
 	}
 
 	tr, ctx := trace.New(ctx, "PartitionRepos", string(typ))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	defer tr.FinishWithErr(&err)
 
 	// Only include indexes with symbol information if a symbol request.
 	var filterFunc func(repo *zoekt.MinimalRepoListEntry) bool

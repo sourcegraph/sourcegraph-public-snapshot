@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -175,42 +176,71 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, canc
 
 	var queueAttr attribute.KeyValue
 	var endpoint string
-	heartbeatRequest := types.HeartbeatRequest{
-		ExecutorName: c.options.ExecutorName,
-
-		OS:              c.options.TelemetryOptions.OS,
-		Architecture:    c.options.TelemetryOptions.Architecture,
-		DockerVersion:   c.options.TelemetryOptions.DockerVersion,
-		ExecutorVersion: c.options.TelemetryOptions.ExecutorVersion,
-		GitVersion:      c.options.TelemetryOptions.GitVersion,
-		IgniteVersion:   c.options.TelemetryOptions.IgniteVersion,
-		SrcCliVersion:   c.options.TelemetryOptions.SrcCliVersion,
-
-		PrometheusMetrics: metrics,
-	}
-	if len(c.options.QueueNames) > 0 {
+	var payload any
+	// If queueName is empty (but queueNames is set), then we are using the newer multi-queue API. It is safe to send
+	// jobIds as strings in that case.
+	if c.options.QueueName == "" {
 		queueAttr = attribute.StringSlice("queueNames", c.options.QueueNames)
-		endpoint = "/heartbeat"
-		queueJobIDs, err := ParseJobIDs(jobIDs)
-		if err != nil {
-			c.logger.Error("failed to parse job IDs", log.Error(err))
+		queueJobIDs, parseErr := ParseJobIDs(jobIDs)
+		if parseErr != nil {
+			c.logger.Error("failed to parse job IDs", log.Error(parseErr))
 			return nil, nil, err
 		}
-		heartbeatRequest.JobIDsByQueue = queueJobIDs
-		heartbeatRequest.QueueNames = c.options.QueueNames
+		endpoint = "/heartbeat"
+		payload = types.HeartbeatRequest{
+			ExecutorName:    c.options.ExecutorName,
+			QueueNames:      c.options.QueueNames,
+			JobIDsByQueue:   queueJobIDs,
+			OS:              c.options.TelemetryOptions.OS,
+			Architecture:    c.options.TelemetryOptions.Architecture,
+			DockerVersion:   c.options.TelemetryOptions.DockerVersion,
+			ExecutorVersion: c.options.TelemetryOptions.ExecutorVersion,
+			GitVersion:      c.options.TelemetryOptions.GitVersion,
+			IgniteVersion:   c.options.TelemetryOptions.IgniteVersion,
+			SrcCliVersion:   c.options.TelemetryOptions.SrcCliVersion,
+		}
 	} else {
+		// If queueName is set, then we cannot be sure whether Sourcegraph is new enough (since Heartbeat can't provide
+		// that context). So to be safe, we send jobIds as ints. If Sourcegraph is older, it expects ints anyway. If
+		// it is newer, it knows how to convert the values to strings.
+		// TODO remove in Sourcegraph 5.2.
+		var jobIDsInt []int
+		for _, jobID := range jobIDs {
+			jobIDInt, convErr := strconv.Atoi(jobID)
+			if convErr != nil {
+				c.logger.Error("failed to convert job ID to int", log.String("jobID", jobID), log.Error(convErr))
+				return nil, nil, err
+			}
+			jobIDsInt = append(jobIDsInt, jobIDInt)
+		}
+
 		queueAttr = attribute.String("queueName", c.options.QueueName)
 		endpoint = fmt.Sprintf("%s/heartbeat", c.options.QueueName)
-		heartbeatRequest.JobIDs = jobIDs
+		payload = types.HeartbeatRequestV1{
+			ExecutorName: c.options.ExecutorName,
+			JobIDs:       jobIDsInt,
+
+			OS:              c.options.TelemetryOptions.OS,
+			Architecture:    c.options.TelemetryOptions.Architecture,
+			DockerVersion:   c.options.TelemetryOptions.DockerVersion,
+			ExecutorVersion: c.options.TelemetryOptions.ExecutorVersion,
+			GitVersion:      c.options.TelemetryOptions.GitVersion,
+			IgniteVersion:   c.options.TelemetryOptions.IgniteVersion,
+			SrcCliVersion:   c.options.TelemetryOptions.SrcCliVersion,
+
+			PrometheusMetrics: metrics,
+		}
 	}
+
 	ctx, _, endObservation := c.operations.heartbeat.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		queueAttr,
 		attribute.StringSlice("jobIDs", jobIDs),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.client.NewJSONRequest(http.MethodPost, endpoint, heartbeatRequest)
-	if err != nil {
+	req, reqErr := c.client.NewJSONRequest(http.MethodPost, endpoint, payload)
+
+	if reqErr != nil {
 		return nil, nil, err
 	}
 
