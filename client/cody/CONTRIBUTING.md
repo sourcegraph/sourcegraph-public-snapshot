@@ -1,9 +1,26 @@
-# Contributing to the Sourcegraph Cody VS Code Extension
+# Contributing to the Cody AI by Sourcegraph VS Code Extension
+
+Thank you for taking the time to help improve our project. We are grateful for your interest in contributing to Cody.
+
+## Code of Conduct
+
+All interactions with the Sourcegraph open source project are governed by the [Sourcegraph Community Code of Conduct](https://handbook.sourcegraph.com/company-info-and-process/community/code_of_conduct/).
+
+## Build and Run
+
+At Sourcegraph we use [sg](https://docs.sourcegraph.com/dev/setup/quickstart), the Sourcegraph developer tool, to set up and manage our local development environment.
+
+Prerequisites:
+
+- [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git) (v2.18 or higher)
+- [Node JS](https://nodejs.org/en/download) (see current recommended version in .nvmrc)
+- [VS Code](https://code.visualstudio.com/download)
 
 1. Update your VS Code user setting to turn on debugging mode:
 
    ```json
-   "cody.debug": true,
+   "cody.debug.enable": true,
+   "cody.debug.verbose": true
    ```
 
 2. Run `pnpm install` from the **root** of this repository
@@ -67,6 +84,30 @@
    # Example: Run the inline-assist test in debug mode
    pnpm test:e2e inline-assist --debug
    ```
+
+## Submitting a Pull Request
+
+To facilitate a streamlined review process and enable us to properly evaluate your contributions, please follow these guidelines when submitting a Pull Request for your contributions to Cody:
+
+1. Provide Sufficient Review Time
+
+Please allow 5-7 business days for our team to review your PR. We value thorough and thoughtful reviews, and this time period enables us to provide meaningful feedback.
+
+If you have not heard back from us after 7 days, please ping and remind the `sourcegraph/cody` team.
+
+1. Include Relevant Tests
+
+To expedite the review process and ensure the reliability of our codebase, we request that you include either integration test(s), unit test(s), or end-to-end test(s) relevant to your PR. Tests validate changes and maintain stability. They also help contributors and reviewers understand how new changes interact with existing features.
+
+3. Provide Clear Setup and Reproduction Steps
+
+Please provide clear and concise steps to set up or reproduce the changes in your PR. This information greatly helps reviewers and other contributors understand the context of your modifications.
+
+4. Add the `cody/contributor` Label
+
+To help us track and manage contributions from external contributors, please add the `cody/contributor` label to the related GitHub issue when submitting your PR. This label facilitates the identification and prioritization of external contributions.
+
+Thank you for following these guidelines. Your cooperation enables us to maintain the quality and efficiency of our open-source project. We greatly appreciate your valuable contributions and look forward to reviewing your PR!
 
 ## Release Process
 
