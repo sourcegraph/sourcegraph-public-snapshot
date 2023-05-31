@@ -15,7 +15,7 @@ type codyGatewayAccessResolver struct {
 	sub *productSubscription
 }
 
-func (r codyGatewayAccessResolver) Enabled() bool { return r.sub.v.LLMProxyAccess.Enabled }
+func (r codyGatewayAccessResolver) Enabled() bool { return r.sub.v.CodyGatewayAccess.Enabled }
 
 func (r codyGatewayAccessResolver) ChatCompletionsRateLimit(ctx context.Context) (graphqlbackend.CodyGatewayRateLimit, error) {
 	if !r.Enabled() {
@@ -38,7 +38,7 @@ func (r codyGatewayAccessResolver) ChatCompletionsRateLimit(ctx context.Context)
 	}
 
 	// Apply overrides
-	rateLimitOverrides := r.sub.v.LLMProxyAccess
+	rateLimitOverrides := r.sub.v.CodyGatewayAccess
 	if rateLimitOverrides.ChatRateLimit.RateLimit != nil {
 		source = graphqlbackend.CodyGatewayRateLimitSourceOverride
 		rateLimit.Limit = *rateLimitOverrides.ChatRateLimit.RateLimit
@@ -81,7 +81,7 @@ func (r codyGatewayAccessResolver) CodeCompletionsRateLimit(ctx context.Context)
 	}
 
 	// Apply overrides
-	rateLimitOverrides := r.sub.v.LLMProxyAccess
+	rateLimitOverrides := r.sub.v.CodyGatewayAccess
 	if rateLimitOverrides.CodeRateLimit.RateLimit != nil {
 		source = graphqlbackend.CodyGatewayRateLimitSourceOverride
 		rateLimit.Limit = *rateLimitOverrides.CodeRateLimit.RateLimit
