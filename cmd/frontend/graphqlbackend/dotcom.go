@@ -40,7 +40,7 @@ type ProductSubscription interface {
 	Account(context.Context) (*UserResolver, error)
 	ActiveLicense(context.Context) (ProductLicense, error)
 	ProductLicenses(context.Context, *graphqlutil.ConnectionArgs) (ProductLicenseConnection, error)
-	LLMProxyAccess() LLMProxyAccess
+	CodyGatewayAccess() CodyGatewayAccess
 	CreatedAt() gqlutil.DateTime
 	IsArchived() bool
 	URL(context.Context) (string, error)
@@ -126,10 +126,10 @@ type UpdateProductSubscriptionArgs struct {
 }
 
 type UpdateProductSubscriptionInput struct {
-	LLMProxyAccess *UpdateLLMProxyAccessInput
+	CodyGatewayAccess *UpdateCodyGatewayAccessInput
 }
 
-type UpdateLLMProxyAccessInput struct {
+type UpdateCodyGatewayAccessInput struct {
 	Enabled                                 *bool
 	ChatCompletionsRateLimit                *int32
 	ChatCompletionsRateLimitIntervalSeconds *int32
@@ -139,29 +139,29 @@ type UpdateLLMProxyAccessInput struct {
 	CodeCompletionsAllowedModels            *[]string
 }
 
-type LLMProxyAccess interface {
+type CodyGatewayAccess interface {
 	Enabled() bool
-	ChatCompletionsRateLimit(context.Context) (LLMProxyRateLimit, error)
-	CodeCompletionsRateLimit(context.Context) (LLMProxyRateLimit, error)
+	ChatCompletionsRateLimit(context.Context) (CodyGatewayRateLimit, error)
+	CodeCompletionsRateLimit(context.Context) (CodyGatewayRateLimit, error)
 }
 
-type LLMProxyUsageDatapoint interface {
+type CodyGatewayUsageDatapoint interface {
 	Date() gqlutil.DateTime
 	Model() string
 	Count() int32
 }
 
-type LLMProxyRateLimitSource string
+type CodyGatewayRateLimitSource string
 
 const (
-	LLMProxyRateLimitSourceOverride LLMProxyRateLimitSource = "OVERRIDE"
-	LLMProxyRateLimitSourcePlan     LLMProxyRateLimitSource = "PLAN"
+	CodyGatewayRateLimitSourceOverride CodyGatewayRateLimitSource = "OVERRIDE"
+	CodyGatewayRateLimitSourcePlan     CodyGatewayRateLimitSource = "PLAN"
 )
 
-type LLMProxyRateLimit interface {
-	Source() LLMProxyRateLimitSource
+type CodyGatewayRateLimit interface {
+	Source() CodyGatewayRateLimitSource
 	AllowedModels() []string
 	Limit() int32
 	IntervalSeconds() int32
-	Usage(context.Context) ([]LLMProxyUsageDatapoint, error)
+	Usage(context.Context) ([]CodyGatewayUsageDatapoint, error)
 }

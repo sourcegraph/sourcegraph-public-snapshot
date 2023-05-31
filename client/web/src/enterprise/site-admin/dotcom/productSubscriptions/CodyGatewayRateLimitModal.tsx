@@ -6,32 +6,28 @@ import { Button, Modal, Input, H3, Text, ErrorAlert, Form } from '@sourcegraph/w
 
 import { LoaderButton } from '../../../../components/LoaderButton'
 import {
-    LLMProxyRateLimitFields,
+    CodyGatewayRateLimitFields,
     Scalars,
-    UpdateLLMProxyConfigResult,
-    UpdateLLMProxyConfigVariables,
+    UpdateCodyGatewayConfigResult,
+    UpdateCodyGatewayConfigVariables,
 } from '../../../../graphql-operations'
 
-import { UPDATE_LLM_PROXY_CONFIG } from './backend'
+import { UPDATE_CODY_GATEWAY_CONFIG } from './backend'
 import { ModelBadges } from './ModelBadges'
 import { prettyInterval } from './utils'
 
-export interface LLMProxyRateLimitModalProps {
+export interface CodyGatewayRateLimitModalProps {
     onCancel: () => void
     afterSave: () => void
     productSubscriptionID: Scalars['ID']
-    current: LLMProxyRateLimitFields | null
+    current: CodyGatewayRateLimitFields | null
     mode: 'chat' | 'code'
 }
 
-export const LLMProxyRateLimitModal: React.FunctionComponent<React.PropsWithChildren<LLMProxyRateLimitModalProps>> = ({
-    onCancel,
-    afterSave,
-    productSubscriptionID,
-    current,
-    mode,
-}) => {
-    const labelId = 'llmProxyRateLimit'
+export const CodyGatewayRateLimitModal: React.FunctionComponent<
+    React.PropsWithChildren<CodyGatewayRateLimitModalProps>
+> = ({ onCancel, afterSave, productSubscriptionID, current, mode }) => {
+    const labelId = 'codyGatewayRateLimit'
 
     const [limit, setLimit] = useState<number>(current?.limit ?? 100)
     const onChangeLimit = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
@@ -48,20 +44,20 @@ export const LLMProxyRateLimitModal: React.FunctionComponent<React.PropsWithChil
         setAllowedModels(event.target.value)
     }, [])
 
-    const [updateLLMProxyConfig, { loading, error }] = useMutation<
-        UpdateLLMProxyConfigResult,
-        UpdateLLMProxyConfigVariables
-    >(UPDATE_LLM_PROXY_CONFIG)
+    const [updateCodyGatewayConfig, { loading, error }] = useMutation<
+        UpdateCodyGatewayConfigResult,
+        UpdateCodyGatewayConfigVariables
+    >(UPDATE_CODY_GATEWAY_CONFIG)
 
     const onSubmit = useCallback<React.FormEventHandler>(
         async event => {
             event.preventDefault()
 
             try {
-                await updateLLMProxyConfig({
+                await updateCodyGatewayConfig({
                     variables: {
                         productSubscriptionID,
-                        llmProxyAccess: {
+                        access: {
                             chatCompletionsRateLimit: mode === 'chat' ? limit : undefined,
                             chatCompletionsRateLimitIntervalSeconds: mode === 'chat' ? limitInterval : undefined,
                             chatCompletionsAllowedModels: mode === 'chat' ? splitModels(allowedModels) : undefined,
@@ -79,17 +75,17 @@ export const LLMProxyRateLimitModal: React.FunctionComponent<React.PropsWithChil
                 logger.error(error)
             }
         },
-        [updateLLMProxyConfig, productSubscriptionID, limit, limitInterval, afterSave, allowedModels, mode]
+        [updateCodyGatewayConfig, productSubscriptionID, limit, limitInterval, afterSave, allowedModels, mode]
     )
 
     return (
         <Modal onDismiss={onCancel} aria-labelledby={labelId}>
             <H3 id={labelId}>
-                Configure {mode === 'chat' ? 'chat request' : 'code completion request'} rate limit for LLM proxy
+                Configure {mode === 'chat' ? 'chat request' : 'code completion request'} rate limit for Cody Gateway
             </H3>
             <Text>
-                LLM proxy is a Sourcegraph managed service that allows customer instances to talk to upstream LLMs under
-                our negotiated terms in a safe manner.
+                Cody Gateway is a Sourcegraph managed service that allows customer instances to talk to upstream LLMs
+                under our negotiated terms in a safe manner.
             </Text>
 
             {error && <ErrorAlert error={error} />}

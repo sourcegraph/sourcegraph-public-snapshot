@@ -49,18 +49,18 @@ const siteAdminProductSubscriptionFragment = gql`
     }
 `
 
-export const LLM_PROXY_ACCESS_FIELDS_FRAGMENT = gql`
-    fragment LLMProxyAccessFields on LLMProxyAccess {
+export const CODY_GATEWAY_ACCESS_FIELDS_FRAGMENT = gql`
+    fragment CodyGatewayAccessFields on CodyGatewayAccess {
         enabled
         codeCompletionsRateLimit {
-            ...LLMProxyRateLimitFields
+            ...CodyGatewayRateLimitFields
         }
         chatCompletionsRateLimit {
-            ...LLMProxyRateLimitFields
+            ...CodyGatewayRateLimitFields
         }
     }
 
-    fragment LLMProxyRateLimitFields on LLMProxyRateLimit {
+    fragment CodyGatewayRateLimitFields on CodyGatewayRateLimit {
         allowedModels
         source
         limit
@@ -68,42 +68,42 @@ export const LLM_PROXY_ACCESS_FIELDS_FRAGMENT = gql`
     }
 `
 
-export const LLM_PROXY_ACCESS_USAGE_FIELDS_FRAGMENT = gql`
-    fragment LLMProxyAccessUsageFields on LLMProxyAccess {
+export const CODY_GATEWAY_ACCESS_USAGE_FIELDS_FRAGMENT = gql`
+    fragment CodyGatewayAccessUsageFields on CodyGatewayAccess {
         codeCompletionsRateLimit {
-            ...LLMProxyRateLimitUsageFields
+            ...CodyGatewayRateLimitUsageFields
         }
         chatCompletionsRateLimit {
-            ...LLMProxyRateLimitUsageFields
+            ...CodyGatewayRateLimitUsageFields
         }
     }
 
-    fragment LLMProxyRateLimitUsageFields on LLMProxyRateLimit {
+    fragment CodyGatewayRateLimitUsageFields on CodyGatewayRateLimit {
         usage {
-            ...LLMProxyRateLimitUsageDatapoint
+            ...CodyGatewayRateLimitUsageDatapoint
         }
     }
 
-    fragment LLMProxyRateLimitUsageDatapoint on LLMProxyUsageDatapoint {
+    fragment CodyGatewayRateLimitUsageDatapoint on CodyGatewayUsageDatapoint {
         date
         count
         model
     }
 `
 
-export const DOTCOM_PRODUCT_SUBSCRIPTION_LLM_USAGE = gql`
-    query DotComProductSubscriptionLLMUsage($uuid: String!) {
+export const DOTCOM_PRODUCT_SUBSCRIPTION_CODY_GATEWAY_USAGE = gql`
+    query DotComProductSubscriptionCodyGatewayUsage($uuid: String!) {
         dotcom {
             productSubscription(uuid: $uuid) {
                 id
-                llmProxyAccess {
-                    ...LLMProxyAccessUsageFields
+                codyGatewayAccess {
+                    ...CodyGatewayAccessUsageFields
                 }
             }
         }
     }
 
-    ${LLM_PROXY_ACCESS_USAGE_FIELDS_FRAGMENT}
+    ${CODY_GATEWAY_ACCESS_USAGE_FIELDS_FRAGMENT}
 `
 
 export const DOTCOM_PRODUCT_SUBSCRIPTION = gql`
@@ -143,8 +143,8 @@ export const DOTCOM_PRODUCT_SUBSCRIPTION = gql`
                     createdAt
                 }
                 currentSourcegraphAccessToken
-                llmProxyAccess {
-                    ...LLMProxyAccessFields
+                codyGatewayAccess {
+                    ...CodyGatewayAccessFields
                 }
                 createdAt
                 isArchived
@@ -163,7 +163,7 @@ export const DOTCOM_PRODUCT_SUBSCRIPTION = gql`
         }
     }
 
-    ${LLM_PROXY_ACCESS_FIELDS_FRAGMENT}
+    ${CODY_GATEWAY_ACCESS_FIELDS_FRAGMENT}
 `
 
 export const ARCHIVE_PRODUCT_SUBSCRIPTION = gql`
@@ -176,10 +176,10 @@ export const ARCHIVE_PRODUCT_SUBSCRIPTION = gql`
     }
 `
 
-export const UPDATE_LLM_PROXY_CONFIG = gql`
-    mutation UpdateLLMProxyConfig($productSubscriptionID: ID!, $llmProxyAccess: UpdateLLMProxyAccessInput!) {
+export const UPDATE_CODY_GATEWAY_CONFIG = gql`
+    mutation UpdateCodyGatewayConfig($productSubscriptionID: ID!, $access: UpdateCodyGatewayAccessInput!) {
         dotcom {
-            updateProductSubscription(id: $productSubscriptionID, update: { llmProxyAccess: $llmProxyAccess }) {
+            updateProductSubscription(id: $productSubscriptionID, update: { codyGatewayAccess: $access }) {
                 alwaysNil
             }
         }

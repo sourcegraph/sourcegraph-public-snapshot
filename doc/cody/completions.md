@@ -42,4 +42,6 @@ You have to configure the model used for Cody completions via the `completionMod
 
 > NOTE: Self-hosted customers need to update to a minimum of version 5.0.4 to use completions.
 
-> NOTE: Cody completions currently only work with Claude Instant or our LLMProxy configured with Claude Instant. Support for other models will be coming later.
+<br />
+
+> NOTE: Cody completions currently only work with Claude Instant or our Cody Gateway configured with Claude Instant. Support for other models will be coming later.

@@ -23,6 +23,7 @@ type dbRateLimit struct {
 	RateIntervalSeconds *int32
 }
 
+// TODO(@bobheadxi): Rename when DB columns are renamed.
 type dbLLMProxyAccess struct {
 	Enabled       bool
 	ChatRateLimit dbRateLimit
@@ -38,7 +39,9 @@ type dbSubscription struct {
 	CreatedAt             time.Time
 	ArchivedAt            *time.Time
 	AccountNumber         *string
-	LLMProxyAccess        dbLLMProxyAccess
+
+	// TODO(@bobheadxi): Rename when DB columns are renamed.
+	LLMProxyAccess dbLLMProxyAccess
 }
 
 var emailQueries = sqlf.Sprintf(`all_primary_emails AS (
@@ -212,7 +215,7 @@ WHERE (%s)`, emailQueries, sqlf.Join(opt.sqlConditions(), ") AND ("))
 // value is nil, the field remains unchanged in the database.
 type dbSubscriptionUpdate struct {
 	billingSubscriptionID *sql.NullString
-	llmProxyAccess        *graphqlbackend.UpdateLLMProxyAccessInput
+	codyGatewayAccess     *graphqlbackend.UpdateCodyGatewayAccessInput
 }
 
 // Update updates a product subscription.
@@ -223,7 +226,7 @@ func (s dbSubscriptions) Update(ctx context.Context, id string, update dbSubscri
 	if v := update.billingSubscriptionID; v != nil {
 		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("billing_subscription_id=%s", *v))
 	}
-	if access := update.llmProxyAccess; access != nil {
+	if access := update.codyGatewayAccess; access != nil {
 		if v := access.Enabled; v != nil {
 			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("llm_proxy_enabled=%s", *v))
 		}

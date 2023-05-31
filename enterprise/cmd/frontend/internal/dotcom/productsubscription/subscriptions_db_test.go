@@ -155,10 +155,10 @@ func TestProductSubscriptions_Update(t *testing.T) {
 		})
 	})
 
-	t.Run("llmProxyAccess", func(t *testing.T) {
+	t.Run("codyGatewayAccess", func(t *testing.T) {
 		t.Run("set non-null values", func(t *testing.T) {
 			err := subscriptions.Update(ctx, sub0, dbSubscriptionUpdate{
-				llmProxyAccess: &graphqlbackend.UpdateLLMProxyAccessInput{
+				codyGatewayAccess: &graphqlbackend.UpdateCodyGatewayAccessInput{
 					Enabled:                                 pointify(true),
 					ChatCompletionsRateLimit:                pointify(int32(12)),
 					ChatCompletionsRateLimitIntervalSeconds: pointify(int32(time.Hour.Seconds())),
@@ -178,7 +178,7 @@ func TestProductSubscriptions_Update(t *testing.T) {
 
 		t.Run("set to zero/null values", func(t *testing.T) {
 			err := subscriptions.Update(ctx, sub0, dbSubscriptionUpdate{
-				llmProxyAccess: &graphqlbackend.UpdateLLMProxyAccessInput{
+				codyGatewayAccess: &graphqlbackend.UpdateCodyGatewayAccessInput{
 					Enabled:                                 pointify(false),
 					ChatCompletionsRateLimit:                pointify(int32(0)),
 					ChatCompletionsRateLimitIntervalSeconds: pointify(int32(0)),
