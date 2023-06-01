@@ -143,7 +143,7 @@ interface OwnerListProps {
 }
 
 const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data }) => {
-    if (data?.nodes && data.nodes.length > 0) {
+    if (data?.nodes && data.nodes.length) {
         const nodes = data.nodes
         const totalCount = data.totalOwners
         return (
