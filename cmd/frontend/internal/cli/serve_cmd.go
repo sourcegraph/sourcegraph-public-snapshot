@@ -22,13 +22,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
 	"github.com/sourcegraph/sourcegraph/internal/adminanalytics"
+	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -112,6 +112,9 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		}
 	}
 
+	userpasswd.Init()
+	highlight.Init()
+
 	// After our DB, redis is our next most important datastore
 	if err := redispoolRegisterDB(db); err != nil {
 		return errors.Wrap(err, "failed to register postgres backed redis")
@@ -141,9 +144,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	// Run enterprise setup hook
 	enterpriseServices := enterpriseSetupHook(db, conf.DefaultClient())
-
-	highlight.Init()
-	userpasswd.Init()
 
 	if err != nil {
 		return errors.Wrap(err, "Failed to create sub-repo client")
