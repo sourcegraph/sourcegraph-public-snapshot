@@ -863,7 +863,7 @@ func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password str
 		attribute.StringSlice("args", args),
 	}})
 	defer endObservation(1, observation.Args{})
-
+	fmt.Print("P4Exec")
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
 		deadlineExceededCounter.Inc()
@@ -876,17 +876,45 @@ func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password str
 		P4Passwd: password,
 		Args:     args,
 	}
-	resp, err := c.httpPost(ctx, "", "p4-exec", req)
-	if err != nil {
-		return nil, nil, err
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		client, err := c.ClientForRepo("")
+		if err != nil {
+			return nil, nil, err
+		}
+
+		ctx, cancel := context.WithCancel(ctx)
+
+		stream, err := client.P4Exec(ctx, req.ToProto())
+		if err != nil {
+			cancel()
+			return nil, nil, err
+		}
+		r := streamio.NewReader(func() ([]byte, error) {
+			msg, err := stream.Recv()
+			if status.Code(err) == codes.Canceled {
+				return nil, context.Canceled
+			} else if err != nil {
+				return nil, err
+			}
+			return msg.GetData(), nil
+		})
+
+		return &readCloseWrapper{r: r, closeFn: cancel}, nil, nil
+	} else {
+		resp, err := c.httpPost(ctx, "", "p4-exec", req)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			defer resp.Body.Close()
+			return nil, nil, errors.Errorf("unexpected status code: %d - %s", resp.StatusCode, readResponseBody(resp.Body))
+		}
+
+		return resp.Body, resp.Trailer, nil
+
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		defer resp.Body.Close()
-		return nil, nil, errors.Errorf("unexpected status code: %d - %s", resp.StatusCode, readResponseBody(resp.Body))
-	}
-
-	return resp.Body, resp.Trailer, nil
 }
 
 var deadlineExceededCounter = promauto.NewCounter(prometheus.CounterOpts{

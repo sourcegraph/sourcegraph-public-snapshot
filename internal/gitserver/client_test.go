@@ -1167,7 +1167,14 @@ type spyGitserverServiceClient struct {
 	repoDelete                        bool
 	repoUpdate                        bool
 	reposStatsCalled                  bool
+	p4ExecCalled                      bool
 	base                              proto.GitserverServiceClient
+}
+
+// P4Exec implements v1.GitserverServiceClient.
+func (s *spyGitserverServiceClient) P4Exec(ctx context.Context, in *proto.P4ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_P4ExecClient, error) {
+	s.p4ExecCalled = true
+	return s.base.P4Exec(ctx, in, opts...)
 }
 
 // CreateCommitFromPatchBinary implements v1.GitserverServiceClient.
@@ -1236,6 +1243,12 @@ type mockClient struct {
 	mockRepoUpdate                  func(ctx context.Context, in *proto.RepoUpdateRequest, opts ...grpc.CallOption) (*proto.RepoUpdateResponse, error)
 	mockArchive                     func(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error)
 	mockSearch                      func(ctx context.Context, in *proto.SearchRequest, opts ...grpc.CallOption) (proto.GitserverService_SearchClient, error)
+	mockP4Exec                      func(ctx context.Context, in *proto.P4ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_P4ExecClient, error)
+}
+
+// P4Exec implements v1.GitserverServiceClient.
+func (mc *mockClient) P4Exec(ctx context.Context, in *proto.P4ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_P4ExecClient, error) {
+	return mc.mockP4Exec(ctx, in, opts...)
 }
 
 // CreateCommitFromPatchBinary implements v1.GitserverServiceClient.
