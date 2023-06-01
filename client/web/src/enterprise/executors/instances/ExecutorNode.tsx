@@ -50,11 +50,12 @@ export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNod
                                     {node.queueName}
                                 </Badge>
                             )}
-                            {(node.queueNames || [])?.map(queue => (
+                            {(node.queueNames || [])?.map((queue, index, arr) => (
                                 <Badge
                                     key={queue}
                                     variant="secondary"
                                     tooltip={`The executor is configured to pull data from the queue "${queue}"`}
+                                    className={arr.length - 1 !== index ? 'mr-1' : ''}
                                 >
                                     {queue}
                                 </Badge>
