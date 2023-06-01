@@ -177,6 +177,22 @@ func (c *V3Client) post(ctx context.Context, requestURI string, payload, result 
 	return c.request(ctx, req, result)
 }
 
+func (c *V3Client) patch(ctx context.Context, requestURI string, payload, result any) (*httpResponseState, error) {
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling payload")
+	}
+
+	req, err := http.NewRequest("PATCH", requestURI, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	return c.request(ctx, req, result)
+}
+
 func (c *V3Client) delete(ctx context.Context, requestURI string) (*httpResponseState, error) {
 	req, err := http.NewRequest("DELETE", requestURI, bytes.NewReader(make([]byte, 0)))
 	if err != nil {

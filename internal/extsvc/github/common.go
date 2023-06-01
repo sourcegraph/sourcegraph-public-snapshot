@@ -1578,7 +1578,7 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 		return newHttpResponseState(resp.StatusCode, resp.Header), nil
 	}
 
-	if resp.StatusCode != http.StatusNoContent {
+	if resp.StatusCode != http.StatusNoContent && result != nil {
 		err = json.NewDecoder(resp.Body).Decode(result)
 	}
 	return newHttpResponseState(resp.StatusCode, resp.Header), err
