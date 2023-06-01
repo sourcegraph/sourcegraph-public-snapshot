@@ -15,22 +15,23 @@
     padding: 4.5rem 3.5rem;
 
     &-heading {
-        font-size: 2rem;
-        font-weight: normal;
+        font-size: 2.25rem;
         color: var(--white);
     }
 
     &-text {
         color: #dedede;
-        font-size: 1.25rem;
+        font-size: 1.5rem;
+        margin-bottom: 1.5rem;
 
         &--small {
             font-size: 1rem;
+            margin-bottom: 1rem;
         }
     }
 
     &-next {
-        margin-top: 1.75rem;
+        margin-top: 1.5rem;
     }
 }
 

@@ -16,10 +16,10 @@ export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ classNam
         <div className={classNames(styles.root, className)}>
             <div className={styles.content}>
                 <div className={styles.description}>
-                    <H1 className={styles.descriptionHeading}>Get Cody in your editor</H1>
+                    <H1 className={styles.descriptionHeading}>Get the extension</H1>
                     <Text className={styles.descriptionText}>
-                        Our extension combines an LLM with the context of your code to help you generate and fix code
-                        more accurately.
+                        Ask Cody questions right within your editor. The Cody extension also has a fixup code feature,
+                        recipes, and experimental completions.
                     </Text>
                 </div>
 
@@ -44,7 +44,7 @@ export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ classNam
                                 size="lg"
                                 variant="secondary"
                             >
-                                Other editors
+                                Other editors (Coming soon)
                             </Button>
 
                             <Button variant="secondary" size="lg" className={styles.actionsButton} onClick={onNextStep}>
