@@ -80,21 +80,6 @@ childProcess.execSync(releaseType === 'nightly' ? commands.vscode_package_nightl
 
 // Run the publish commands based on the release type
 switch (releaseType) {
-    case 'dry-run': {
-        console.info(
-            `Current version is ${currentVersion} and the pre-release number for tonight's build is ${tonightVersion}.`
-        )
-        if (!semver.valid(tonightVersion) || semver.minor(tonightVersion) % 2 === 0) {
-            console.error(
-                'The nightly build will not be published because the minor number is even or version number not valid: ' +
-                    tonightVersion
-            )
-        }
-        break
-    }
-    case 'openvsx':
-        childProcess.execSync(commands.openvsx_publish, { stdio: 'inherit' })
-        break
     case 'nightly':
         // if minor is not an odd number, throw an error
         if (
@@ -112,9 +97,17 @@ switch (releaseType) {
         break
     case 'stable':
         // Publish to VS Code Marketplace as the version number listed in package.json
-        // Publish to Open VSX Marketplace
         childProcess.execSync(commands.vscode_publish, { stdio: 'inherit' })
+        // Publish to Open VSX Marketplace
         childProcess.execSync(commands.openvsx_publish, { stdio: 'inherit' })
+        break
+    case 'dry-run':
+        console.info(`Current version: ${currentVersion}.`)
+        console.info(`Pre-release version for tonight's build: ${tonightVersion}.`)
+        if (!semver.valid(tonightVersion) || semver.minor(tonightVersion) % 2 === 0) {
+            throw new Error('The nightly build will fail due to invalid version number.')
+        }
+        break
     default:
         throw new Error(`Invalid release type: ${releaseType}`)
 }
