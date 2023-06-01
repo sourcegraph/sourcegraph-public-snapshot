@@ -21,8 +21,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
+type updateManifestFlag struct {
+	bucket           string
+	build            int
+	tag              string
+	updateSignatures bool
+	noUpload         bool
+}
+
+var manifestFlags updateManifestFlag
 var appCommand = &cli.Command{
 	Name:  "app",
 	Usage: "Manage releases and update manifests used to let Sourcegraph App clients know that a new update is available",
@@ -44,8 +54,41 @@ Various commands to handle management of releases, and processes around Sourcegr
 	Category:  CategoryDev,
 	Subcommands: []*cli.Command{
 		{
-			Name:   "update-manifest",
-			Usage:  "update the manifest used by the updater endpoint on dotCom",
+			Name:  "update-manifest",
+			Usage: "update the manifest used by the updater endpoint on dotCom",
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:        "bucket",
+					Required:    true,
+					Value:       "sourcegraph-app",
+					Destination: &manifestFlags.bucket,
+					Usage:       "Bucket where the updated manifest should be uploaded to once updated.",
+				},
+				&cli.IntFlag{
+					Name:        "build",
+					Value:       -1,
+					Destination: &manifestFlags.build,
+					Usage:       "Build number to retrieve the update-manifest from. If no build number is given, the latest build will be used",
+					DefaultText: "latest",
+				},
+				&cli.StringFlag{
+					Name:        "release-tag",
+					Value:       "latest",
+					Destination: &manifestFlags.tag,
+					Usage:       "GitHub release tag which should be used to update the manifest with. If no tag is given the latest GitHub release is used",
+					DefaultText: "latest",
+				},
+				&cli.BoolFlag{
+					Name:        "update-signatures",
+					Destination: &manifestFlags.updateSignatures,
+					Usage:       "update the signatures in the update manifest by retrieving the signature content from the GitHub release",
+				},
+				&cli.BoolFlag{
+					Name:        "no-upload",
+					Destination: &manifestFlags.noUpload,
+					Usage:       "do everything except upload the final manifest",
+				},
+			},
 			Action: UpdateSourcegraphAppManifest,
 		},
 	},
@@ -75,18 +118,39 @@ func UpdateSourcegraphAppManifest(ctx *cli.Context) error {
 	pipeline := "sourcegraph-app-release"
 	branch := "app-release/stable"
 
-	build, err := client.GetMostRecentBuild(ctx.Context, pipeline, branch)
+	var build *buildkite.Build
+
+	pending := std.Out.Pending(output.Line(output.EmojiHourglass, output.StylePending, "Updating manifest"))
+	destroyPending := true
+	defer func() {
+		if destroyPending {
+			pending.Destroy()
+		}
+	}()
+
+	if manifestFlags.build == -1 {
+		pending.Update("Retrieving latest build")
+		build, err = client.GetMostRecentBuild(ctx.Context, pipeline, branch)
+	} else {
+		pending.Updatef(fmt.Sprintf("Retrieving build %d", manifestFlags.build))
+		build, err = client.GetBuildByNumber(ctx.Context, pipeline, strconv.Itoa(manifestFlags.build))
+	}
 	if err != nil {
 		return err
 	}
 
+	pending.Update("Looking for app.update.manifest artifact on build")
 	manifestArtifact, err := findArtifactByBuild(ctx.Context, client, build, "app.update.manifest")
 	if err != nil {
 		return err
 	}
 
 	buf := bytes.NewBuffer(nil)
-	client.DownloadArtifact(*manifestArtifact, buf)
+	pending.Update("Downloading app.update.manifest artifact")
+	err = client.DownloadArtifact(*manifestArtifact, buf)
+	if err != nil {
+		return err
+	}
 
 	manifest := appUpdateManifest{}
 	err = json.NewDecoder(buf).Decode(&manifest)
@@ -95,34 +159,66 @@ func UpdateSourcegraphAppManifest(ctx *cli.Context) error {
 	}
 
 	githubClient := github.NewClient(http.DefaultClient)
-	release, err := getAppGitHubRelease(ctx.Context, githubClient, "latest")
+
+	pending.Update(fmt.Sprintf("Retrieving GitHub release with tag %q", manifestFlags.tag))
+	release, err := getAppGitHubRelease(ctx.Context, githubClient, manifestFlags.tag)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "failed to get Sourcegraph App release with tag %q", manifestFlags.tag)
 	}
 
-	updateSignatures := (fmt.Sprintf("app-v%s", manifest.Version) != release.GetTagName())
+	var updateSignatures bool
+	if manifestFlags.updateSignatures {
+		updateSignatures = false
+	} else {
+		// the tag is the version just with 'app-v' prepended
+		// we only update the signatures if the tags differ
+		updateSignatures = (fmt.Sprintf("app-v%s", manifest.Version) != release.GetTagName())
+	}
+
+	pending.Update(fmt.Sprintf("Updating manifest with data from the release - update sinatures: %v", updateSignatures))
 	manifest, err = updateManifestFromRelease(manifest, release, updateSignatures)
 	if err != nil {
 		return err
 	}
 
-	storageClient, err := storage.NewClient(ctx.Context)
-	if err != nil {
-		return err
-	}
+	destroyPending = false
+	pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Manifest updated!"))
 
-	storageWriter := storageClient.Bucket("sourcegraph-app-dev").Object("app.update.prod.manifest.json").NewWriter(ctx.Context)
-	err = json.NewEncoder(storageWriter).Encode(&manifest)
-	defer func() {
-		if err := storageWriter.Close(); err != nil {
-			std.Out.WriteFailuref("Google Storage Writer failed on close: %v", err)
+	if !manifestFlags.noUpload {
+		std.Out.Writef("Please ensure you have the necassery permission requested via Entitle to upload to GCP buckets")
+
+		std.Out.WriteNoticef("Uploading manitfest to bucket %q", manifestFlags.bucket)
+		storageClient, err := storage.NewClient(ctx.Context)
+		if err != nil {
+			return err
 		}
-	}()
-	if err != nil {
-		return err
+		storageWriter := storageClient.Bucket(manifestFlags.bucket).Object("app.update.prod.manifest.json").NewWriter(ctx.Context)
+		err = json.NewEncoder(storageWriter).Encode(&manifest)
+		defer func() {
+			if err := storageWriter.Close(); err != nil {
+				std.Out.WriteFailuref("Google Storage Writer failed on close: %v", err)
+			}
+		}()
+		if err != nil {
+			return err
+		}
+
+		if err := storageWriter.Close(); err != nil {
+			return err
+		}
+		std.Out.WriteSuccessf("Updated manifest uploaded!")
+		return nil
 	}
 
-	return storageWriter.Close()
+	buf = bytes.NewBuffer(nil)
+	enc := json.NewEncoder(buf)
+	enc.SetIndent(" ", " ")
+	if err := enc.Encode(&manifest); err != nil {
+		return err
+	} else {
+		std.Out.WriteCode("json", buf.String())
+	}
+	return nil
 }
 
 func updateManifestFromRelease(manifest appUpdateManifest, release *github.RepositoryRelease, updateSignatures bool) (appUpdateManifest, error) {
@@ -177,6 +273,8 @@ func updateManifestFromRelease(manifest appUpdateManifest, release *github.Repos
 
 		manifest.Platforms[platform] = appPlatform
 	}
+
+	manifest.Notes = release.GetBody()
 
 	return manifest, nil
 }
