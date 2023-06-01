@@ -67,11 +67,8 @@ func (p *permissionSyncJobCleaner) Routines(_ context.Context, observationCtx *o
 	})
 
 	return []goroutine.BackgroundRoutine{
-		goroutine.NewPeriodicGoroutineWithMetricsAndDynamicInterval(
+		goroutine.NewPeriodicGoroutine(
 			context.Background(),
-			"auth.permission_sync_job_cleaner",
-			p.Description(),
-			func() time.Duration { return cleanupInterval },
 			goroutine.HandlerFunc(
 				func(ctx context.Context) error {
 					start := time.Now()
@@ -80,7 +77,10 @@ func (p *permissionSyncJobCleaner) Routines(_ context.Context, observationCtx *o
 					return err
 				},
 			),
-			operation,
+			goroutine.WithName("auth.permission_sync_job_cleaner"),
+			goroutine.WithDescription(p.Description()),
+			goroutine.WithIntervalFunc(func() time.Duration { return cleanupInterval }),
+			goroutine.WithOperation(operation),
 		),
 	}, nil
 }
