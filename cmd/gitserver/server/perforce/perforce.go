@@ -158,7 +158,7 @@ func (s *Service) getCommitsToInsert(ctx context.Context, logger log.Logger, rep
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			// This repo has not been imported into the RepoCommits table yet. Start from the beginning.
-			results, err := newMappableCommits(ctx, logger, dir, "", "")
+			results, err := newMappableCommits(ctx, dir, "", "")
 			return results, errors.Wrap(err, "failed to import new repo (perforce changelists will have limited functionality)")
 		}
 
@@ -175,7 +175,7 @@ func (s *Service) getCommitsToInsert(ctx context.Context, logger log.Logger, rep
 		return nil, nil
 	}
 
-	results, err := newMappableCommits(ctx, logger, dir, string(latestRowCommit.CommitSHA), head)
+	results, err := newMappableCommits(ctx, dir, string(latestRowCommit.CommitSHA), head)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to import existing repo's commits after HEAD: %q", head)
 	}
@@ -213,7 +213,7 @@ var logFormatWithCommitSHAAndCommitBodyOnly = "--format=format:%H %b%x00"
 // If "lastMappedCommit" is empty, it will return the list for all commits of this repo.
 //
 // newMappableCommits will read the output one commit at a time to avoid an unbounded memory growth.
-func newMappableCommits(ctx context.Context, logger log.Logger, dir common.GitDir, lastMappedCommit, head string) ([]types.PerforceChangelist, error) {
+func newMappableCommits(ctx context.Context, dir common.GitDir, lastMappedCommit, head string) ([]types.PerforceChangelist, error) {
 	// ensure we cleanup command when returning
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -228,10 +228,12 @@ func newMappableCommits(ctx context.Context, logger log.Logger, dir common.GitDi
 
 	out, err := cmd.StdoutPipe()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to create stdout pipe for command")
 	}
 
-	cmd.Start()
+	if err := cmd.Start(); err != nil {
+		return nil, errors.Wrap(err, "failed to start command")
+	}
 
 	scan := bufio.NewScanner(out)
 	scan.Split(scanNull)
