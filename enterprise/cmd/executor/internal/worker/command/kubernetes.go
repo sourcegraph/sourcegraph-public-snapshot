@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
-	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -200,9 +199,9 @@ func (c *KubernetesCommand) WaitForPodToSucceed(ctx context.Context, namespace s
 	return nil, errors.New("unexpected end of watch")
 }
 
-func kubernetesTimep(key string, time *metav1.Time) zap.Field {
+func kubernetesTimep(key string, time *metav1.Time) log.Field {
 	if time == nil {
-		return zap.Reflect(key, nil)
+		return log.Timep(key, nil)
 	}
 	return log.Time(key, time.Time)
 }
