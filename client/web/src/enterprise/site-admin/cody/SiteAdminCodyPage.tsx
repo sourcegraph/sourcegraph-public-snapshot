@@ -1,37 +1,31 @@
-import { FC, useCallback, useEffect } from 'react'
+import { FC, useEffect, useCallback, useMemo } from 'react'
+
+import { mdiMapSearch } from '@mdi/js'
+import { Subject } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
     Container,
-    getDefaultInputProps,
-    Label,
-    PageHeader,
-    useField,
-    useForm,
-    H3,
-    Validator,
     ErrorAlert,
     Form,
+    getDefaultInputProps,
+    H3,
+    Icon,
+    Label,
+    PageHeader,
+    Text,
+    useField,
+    useForm,
+    Validator,
 } from '@sourcegraph/wildcard'
 
-import {
-    ConnectionContainer,
-    ConnectionError,
-    ConnectionList,
-    ConnectionLoading,
-    ConnectionSummary,
-    ShowMoreButton,
-    SummaryContainer,
-} from '../../../components/FilteredConnection/ui'
+import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
+import { RepoEmbeddingJobConnectionFields, RepoEmbeddingJobFields } from '../../../graphql-operations'
 import { RepositoriesField } from '../../insights/components'
 
-import {
-    useRepoEmbeddingJobsConnection,
-    useScheduleContextDetectionEmbeddingJob,
-    useScheduleRepoEmbeddingJobs,
-} from './backend'
+import { repoEmbeddingJobs, useScheduleContextDetectionEmbeddingJob, useScheduleRepoEmbeddingJobs } from './backend'
 import { RepoEmbeddingJobNode } from './RepoEmbeddingJobNode'
 
 import styles from './SiteAdminCodyPage.module.scss'
@@ -55,8 +49,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
     useEffect(() => {
         telemetryService.logPageView('SiteAdminCodyPage')
     }, [telemetryService])
-
-    const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useRepoEmbeddingJobsConnection()
+    const refresh = useMemo(() => new Subject<undefined>(), [])
 
     const [scheduleRepoEmbeddingJobs, { loading: repoEmbeddingJobsLoading, error: repoEmbeddingJobsError }] =
         useScheduleRepoEmbeddingJobs()
@@ -72,9 +65,9 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                 scheduleContextDetectionEmbeddingJob(),
                 scheduleRepoEmbeddingJobs({ variables: { repoNames } }),
             ])
-            refetchAll()
+            refresh.next()
         },
-        [refetchAll, scheduleContextDetectionEmbeddingJob, scheduleRepoEmbeddingJobs]
+        [scheduleContextDetectionEmbeddingJob, scheduleRepoEmbeddingJobs]
     )
 
     const form = useForm<RepoEmbeddingJobsFormValues>({
@@ -93,7 +86,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
         <>
             <PageTitle title="Cody" />
             <PageHeader path={[{ text: 'Cody' }]} className="mb-3" headingElement="h2" />
-            <Container className="mb-3">
+            <Container>
                 <H3>Schedule repositories for embedding</H3>
                 <Form ref={form.ref} noValidate={true} onSubmit={form.handleSubmit}>
                     <Label htmlFor="repositories-id" className="mt-1">
@@ -130,37 +123,35 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                     </div>
                 )}
                 <H3 className="mt-3">Repository embedding jobs</H3>
-                <ConnectionContainer>
-                    {error && <ConnectionError errors={[error.message]} />}
-                    {loading && !connection && <ConnectionLoading />}
-                    <ConnectionList as="ul" className="list-group" aria-label="Repository embedding jobs">
-                        {connection?.nodes?.map(node => (
-                            <RepoEmbeddingJobNode key={node.id} {...node} />
-                        ))}
-                    </ConnectionList>
-                    {connection && (
-                        <SummaryContainer className="mt-2" centered={true}>
-                            <ConnectionSummary
-                                noSummaryIfAllNodesVisible={false}
-                                first={connection.totalCount ?? 0}
-                                centered={true}
-                                connection={connection}
-                                noun="repository embedding job"
-                                pluralNoun="repository embedding jobs"
-                                hasNextPage={hasNextPage}
-                                emptyElement={<EmptyList />}
-                            />
-                            {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
-                        </SummaryContainer>
-                    )}
-                </ConnectionContainer>
+                <FilteredConnection<
+                    RepoEmbeddingJobFields,
+                    RepoEmbeddingJobFields,
+                    {},
+                    RepoEmbeddingJobConnectionFields
+                >
+                    className="mb-0 mt-1"
+                    listComponent="div"
+                    inputClassName="ml-2 flex-1"
+                    listClassName="mb-3"
+                    noun="repository embedding job"
+                    pluralNoun="repository embedding jobs"
+                    defaultFirst={10}
+                    queryConnection={repoEmbeddingJobs}
+                    nodeComponent={RepoEmbeddingJobNode}
+                    hideSearch={true}
+                    updates={refresh}
+                    emptyElement={<EmptyIndex />}
+                    withCenteredSummary={true}
+                />
             </Container>
         </>
     )
 }
 
-const EmptyList: FC<{}> = () => (
-    <div className="text-muted text-center mb-3 w-100">
-        <div className="pt-2">No repository embedding jobs have been created so far.</div>
-    </div>
+const EmptyIndex: React.FunctionComponent<{}> = () => (
+    <Text alignment="center" className="text-muted w-100 mb-0 mt-1">
+        <Icon className="mb-2" svgPath={mdiMapSearch} inline={false} aria-hidden={true} />
+        <br />
+        No repository embedding jobs have been created so far.
+    </Text>
 )

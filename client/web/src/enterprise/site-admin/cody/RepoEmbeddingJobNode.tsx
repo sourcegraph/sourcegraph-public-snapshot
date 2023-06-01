@@ -21,13 +21,11 @@ import { RepoEmbeddingJobFields, RepoEmbeddingJobState } from '../../../graphql-
 
 import styles from './RepoEmbeddingJobNode.module.scss'
 
-interface RepoEmbeddingJobNodeProps extends RepoEmbeddingJobFields {}
-
-interface RepoEmbeddingJobNodePropsNew {
+interface RepoEmbeddingJobNodeProps {
     node: RepoEmbeddingJobFields
 }
 
-export const RepoEmbeddingJobNodeNew: React.FunctionComponent<RepoEmbeddingJobNodePropsNew> = ({ node }) => {
+export const RepoEmbeddingJobNode: React.FunctionComponent<RepoEmbeddingJobNodeProps> = ({ node }) => {
     const { state, repo, revision, finishedAt, queuedAt, startedAt, failureMessage } = node
     return (
         <>
@@ -59,42 +57,6 @@ export const RepoEmbeddingJobNodeNew: React.FunctionComponent<RepoEmbeddingJobNo
         </>
     )
 }
-
-export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
-    state,
-    repo,
-    revision,
-    finishedAt,
-    queuedAt,
-    startedAt,
-    failureMessage,
-}) => (
-    <li className="list-group-item p-2">
-        <div className="d-flex align-items-center">
-            <div className={styles.badgeWrapper}>
-                <RepoEmbeddingJobStateBadge state={state} />
-            </div>
-            <div className="d-flex flex-column ml-3">
-                {repo && revision ? (
-                    <Link to={`${repo.url}@${revision.oid}`}>
-                        {repo.name}@{revision.abbreviatedOID}
-                    </Link>
-                ) : (
-                    <div>Unknown repository</div>
-                )}
-                <div className="mt-1">
-                    <RepoEmbeddingJobExecutionInfo
-                        state={state}
-                        finishedAt={finishedAt}
-                        queuedAt={queuedAt}
-                        startedAt={startedAt}
-                        failureMessage={failureMessage}
-                    />
-                </div>
-            </div>
-        </div>
-    </li>
-)
 
 const RepoEmbeddingJobExecutionInfo: FC<
     Pick<RepoEmbeddingJobFields, 'state' | 'finishedAt' | 'failureMessage' | 'queuedAt' | 'startedAt'>
