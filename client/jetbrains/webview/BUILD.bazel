@@ -3,7 +3,8 @@ load("//client/shared/dev:tools.bzl", "module_style_typings")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 
-# gazelle:js_files src/**/*.{ts,tsx}
+# TODO(bazel): storybook build
+# gazelle:exclude **/*.story.{ts,tsx}
 
 # gazelle:js_resolve **/*.module.scss :module_style_typings
 
@@ -86,7 +87,6 @@ ts_project(
         "src/search/StatusBar.tsx",
         "src/search/compat/fetchSearchContexts.ts",
         "src/search/index.tsx",
-        "src/search/input/JetBrainsSearchBox.story.tsx",
         "src/search/input/JetBrainsSearchBox.tsx",
         "src/search/input/JetBrainsToggles.tsx",
         "src/search/java-to-js-bridge.ts",
@@ -103,7 +103,6 @@ ts_project(
         "src/search/results/RepoSearchResult.tsx",
         "src/search/results/SearchResultHeader.tsx",
         "src/search/results/SearchResultLayout.tsx",
-        "src/search/results/SearchResultList.story.tsx",
         "src/search/results/SearchResultList.tsx",
         "src/search/results/SelectableSearchResult.tsx",
         "src/search/results/TrimmedCodeLineWithHighlights.tsx",
