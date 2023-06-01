@@ -977,6 +977,18 @@ Referenced by:
 
 ```
 
+# Table "public.codeintel_ranking_graph_keys"
+```
+   Column   |           Type           | Collation | Nullable |                         Default                          
+------------+--------------------------+-----------+----------+----------------------------------------------------------
+ id         | integer                  |           | not null | nextval('codeintel_ranking_graph_keys_id_seq'::regclass)
+ graph_key  | text                     |           | not null | 
+ created_at | timestamp with time zone |           |          | now()
+Indexes:
+    "codeintel_ranking_graph_keys_pkey" PRIMARY KEY, btree (id)
+
+```
+
 # Table "public.codeintel_ranking_path_counts_inputs"
 ```
     Column     |  Type   | Collation | Nullable |                             Default                              
