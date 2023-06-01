@@ -1411,10 +1411,10 @@ func TestAssignOwner(t *testing.T) {
 	repo := types.Repo{Name: "test-repo-1", ID: 101}
 	err := db.Repos().Create(ctx, &repo)
 	require.NoError(t, err)
-	// Creating admin and non-admin users, only admin has rights to assign owners.
-	admin, err := db.Users().Create(context.Background(), database.NewUser{Username: "admin"})
+	// Creating 2 users, only "hasPermission" user has rights to assign owners.
+	hasPermission, err := db.Users().Create(context.Background(), database.NewUser{Username: "has-permission"})
 	require.NoError(t, err)
-	user, err := db.Users().Create(context.Background(), database.NewUser{Username: "non-admin"})
+	noPermission, err := db.Users().Create(context.Background(), database.NewUser{Username: "no-permission"})
 	require.NoError(t, err)
 	// RBAC stuff below.
 	permission, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
@@ -1430,7 +1430,7 @@ func TestAssignOwner(t *testing.T) {
 	})
 	require.NoError(t, err)
 	err = db.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
-		UserID: admin.ID,
+		UserID: hasPermission.ID,
 		RoleID: role.ID,
 	})
 	require.NoError(t, err)
@@ -1440,8 +1440,8 @@ func TestAssignOwner(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	adminCtx := actor.WithActor(ctx, actor.FromUser(admin.ID))
-	userCtx := actor.WithActor(ctx, actor.FromUser(user.ID))
+	adminCtx := actor.WithActor(ctx, actor.FromUser(hasPermission.ID))
+	userCtx := actor.WithActor(ctx, actor.FromUser(noPermission.ID))
 
 	getBaseTest := func() *graphqlbackend.Test {
 		return &graphqlbackend.Test{
@@ -1454,7 +1454,7 @@ func TestAssignOwner(t *testing.T) {
 				  }
 				}`,
 			Variables: map[string]any{"input": map[string]any{
-				"assignedOwnerID": string(graphqlbackend.MarshalUserID(user.ID)),
+				"assignedOwnerID": string(graphqlbackend.MarshalUserID(noPermission.ID)),
 				"repoID":          string(graphqlbackend.MarshalRepositoryID(repo.ID)),
 				"absolutePath":    "",
 			}},
@@ -1512,7 +1512,7 @@ func TestAssignOwner(t *testing.T) {
 			"assignedOwnerID":   string(graphqlbackend.MarshalUserID(0)),
 			"repoID":            string(graphqlbackend.MarshalRepositoryID(repo.ID)),
 			"absolutePath":      "",
-			"whoAssignedUserID": string(graphqlbackend.MarshalUserID(admin.ID)),
+			"whoAssignedUserID": string(graphqlbackend.MarshalUserID(hasPermission.ID)),
 		}}
 		graphqlbackend.RunTest(t, baseTest)
 		assertNoAssignedOwners(t, repo.ID)
@@ -1524,7 +1524,7 @@ func TestAssignOwner(t *testing.T) {
 		baseTest.Context = adminCtx
 		baseTest.ExpectedResult = `{"assignOwner":{"alwaysNil": null}}`
 		graphqlbackend.RunTest(t, baseTest)
-		assertAssignedOwner(t, user.ID, admin.ID, repo.ID, "")
+		assertAssignedOwner(t, noPermission.ID, hasPermission.ID, repo.ID, "")
 	})
 }
 
@@ -1538,13 +1538,13 @@ func TestDeleteAssignedOwner(t *testing.T) {
 	repo := types.Repo{Name: "test-repo-1", ID: 101}
 	err := db.Repos().Create(ctx, &repo)
 	require.NoError(t, err)
-	// Creating admin and non-admin users, only admin has rights to assign owners.
-	admin, err := db.Users().Create(context.Background(), database.NewUser{Username: "admin"})
+	// Creating 2 users, only "hasPermission" user has rights to assign owners.
+	hasPermission, err := db.Users().Create(context.Background(), database.NewUser{Username: "has-permission"})
 	require.NoError(t, err)
-	user, err := db.Users().Create(context.Background(), database.NewUser{Username: "non-admin"})
+	noPermission, err := db.Users().Create(context.Background(), database.NewUser{Username: "non-permission"})
 	require.NoError(t, err)
 	// Creating an existing assigned owner.
-	require.NoError(t, db.AssignedOwners().Insert(ctx, user.ID, repo.ID, "", admin.ID))
+	require.NoError(t, db.AssignedOwners().Insert(ctx, noPermission.ID, repo.ID, "", hasPermission.ID))
 	// RBAC stuff below.
 	permission, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
 		Namespace: rbactypes.OwnershipNamespace,
@@ -1559,7 +1559,7 @@ func TestDeleteAssignedOwner(t *testing.T) {
 	})
 	require.NoError(t, err)
 	err = db.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
-		UserID: admin.ID,
+		UserID: hasPermission.ID,
 		RoleID: role.ID,
 	})
 	require.NoError(t, err)
@@ -1569,8 +1569,8 @@ func TestDeleteAssignedOwner(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	adminCtx := actor.WithActor(ctx, actor.FromUser(admin.ID))
-	userCtx := actor.WithActor(ctx, actor.FromUser(user.ID))
+	adminCtx := actor.WithActor(ctx, actor.FromUser(hasPermission.ID))
+	userCtx := actor.WithActor(ctx, actor.FromUser(noPermission.ID))
 
 	getBaseTest := func() *graphqlbackend.Test {
 		return &graphqlbackend.Test{
@@ -1583,7 +1583,7 @@ func TestDeleteAssignedOwner(t *testing.T) {
 				  }
 				}`,
 			Variables: map[string]any{"input": map[string]any{
-				"assignedOwnerID": string(graphqlbackend.MarshalUserID(user.ID)),
+				"assignedOwnerID": string(graphqlbackend.MarshalUserID(noPermission.ID)),
 				"repoID":          string(graphqlbackend.MarshalRepositoryID(repo.ID)),
 				"absolutePath":    "",
 			}},
@@ -1596,8 +1596,8 @@ func TestDeleteAssignedOwner(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, owners, 1)
 		owner := owners[0]
-		assert.Equal(t, user.ID, owner.OwnerUserID)
-		assert.Equal(t, admin.ID, owner.WhoAssignedUserID)
+		assert.Equal(t, noPermission.ID, owner.OwnerUserID)
+		assert.Equal(t, hasPermission.ID, owner.WhoAssignedUserID)
 		assert.Equal(t, "", owner.FilePath)
 	}
 
@@ -1608,7 +1608,7 @@ func TestDeleteAssignedOwner(t *testing.T) {
 		require.Empty(t, owners)
 	}
 
-	t.Run("non-admin cannot delete an assigned owner", func(t *testing.T) {
+	t.Run("cannot delete assigned owner without permission", func(t *testing.T) {
 		baseTest := getBaseTest()
 		expectedErrs := []*gqlerrors.QueryError{{
 			Message: "user is missing permission OWNERSHIP#ASSIGN",
