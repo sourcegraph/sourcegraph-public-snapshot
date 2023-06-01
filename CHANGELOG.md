@@ -57,9 +57,6 @@ All notable changes to Sourcegraph are documented in this file.
 - GitLab code host connections will disable repo-centric repository permission syncs when the authentication provider is set as "oauth". This prevents repo-centric permission sync from getting incorrect data. [#51452](https://github.com/sourcegraph/sourcegraph/pull/51452)
 - Code intelligence background jobs did not correctly use an internal context, causing SCIP data to sometimes be prematurely deleted. [#51591](https://github.com/sourcegraph/sourcegraph/pull/51591)
 - Slow request logs now have the correct trace and span IDs attached if a trace is present on the request. [#51826](https://github.com/sourcegraph/sourcegraph/pull/51826)
-- `id` column of `user_repo_permissions` table was switched to `bigint` to avoid `int` overflow. [#52299](https://github.com/sourcegraph/sourcegraph/pull/52299)
-- MAU calculation in product analytics and pings use the same condition and UTC at all times. [#52306](https://github.com/sourcegraph/sourcegraph/pull/52306) [#52579](https://github.com/sourcegraph/sourcegraph/pull/52579) [#52581](https://github.com/sourcegraph/sourcegraph/pull/52581)
-- In some circumstances filenames containing `..` either could not be read or would return a diff when viewed. We now always correctly read those files. [#52605](https://github.com/sourcegraph/sourcegraph/pull/52605)
 
 ### Removed
 
@@ -73,6 +70,16 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Organization members can now administer batch changes created by other members in their organization's namespace if the setting `orgs.allMembersBatchChangesAdmin` is enabled for that organization. [#50724](https://github.com/sourcegraph/sourcegraph/pull/50724)
+- Allow instance public access mode based on `auth.public` site config and `allow-anonymous-usage` license tag [#52440](https://github.com/sourcegraph/sourcegraph/pull/52440)
+- The endpoint configuration field for completions is now supported by the OpenAI provider [#52530](https://github.com/sourcegraph/sourcegraph/pull/52530)
+
+### Fixed
+
+- MAU calculation in product analytics and pings use the same condition and UTC at all times. [#52306](https://github.com/sourcegraph/sourcegraph/pull/52306) [#52579](https://github.com/sourcegraph/sourcegraph/pull/52579) [#52581](https://github.com/sourcegraph/sourcegraph/pull/52581)
+- Bitbucket native integration: fix code-intel popovers on the pull request pages. [#52609](https://github.com/sourcegraph/sourcegraph/pull/52609)
+- `id` column of `user_repo_permissions` table was switched to `bigint` to avoid `int` overflow. [#52299](https://github.com/sourcegraph/sourcegraph/pull/52299)
+- In some circumstances filenames containing `..` either could not be read or would return a diff when viewed. We now always correctly read those files. [#52605](https://github.com/sourcegraph/sourcegraph/pull/52605)
+- Syntax highlighting for several languages including Python, Java, C++, Ruby, TypeScript, and JavaScript is now working again when using the single Docker container deployment option. Other deployment options were not affected.
 
 ## 5.0.4
 
@@ -81,7 +88,6 @@ All notable changes to Sourcegraph are documented in this file.
 - Git blame lookups of repositories synced through `src serve-git` or code hosts using a custom `repositoryPathPattern` will now use the correct URL when streaming git blame is enabled. [#51525](https://github.com/sourcegraph/sourcegraph/pull/51525)
 - Code Insights scoped to a static list of repository names would fail to resolve repositories with permissions enabled, resulting in insights that would not process. [#51657](https://github.com/sourcegraph/sourcegraph/pull/51657)
 - Batches: Resolved an issue with GitHub webhooks where CI check updates fail due to the removal of a field from the GitHub webhook payload. [#52035](https://github.com/sourcegraph/sourcegraph/pull/52035)
-- Bitbucket native integration: fix code-intel popovers on the pull request pages. [#52609](https://github.com/sourcegraph/sourcegraph/pull/52609)
 
 ## 5.0.3
 

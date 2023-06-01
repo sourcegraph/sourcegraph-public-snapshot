@@ -1,16 +1,23 @@
 package search
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/grafana/regexp"
+	"github.com/opentracing/opentracing-go" //nolint:staticcheck // Drop once we get rid of OpenTracing
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot" //nolint:staticcheck // Drop once we get rid of OpenTracing
+	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -175,8 +182,76 @@ type ZoektParameters struct {
 	// Features are feature flags that can affect behaviour of searcher.
 	Features Features
 
-	// If true, use keyword-style scoring instead of Zoekt's default scoring formula.
+	// EXPERIMENTAL: If true, use keyword-style scoring instead of Zoekt's default scoring formula.
 	KeywordScoring bool
+}
+
+// ToSearchOptions converts the parameters to options for the Zoekt search API.
+func (o *ZoektParameters) ToSearchOptions(ctx context.Context, logger log.Logger) *zoekt.SearchOptions {
+	shouldTrace, spanContext := getSpanContext(ctx, logger)
+	defaultTimeout := 20 * time.Second
+	searchOpts := &zoekt.SearchOptions{
+		Trace:             shouldTrace,
+		SpanContext:       spanContext,
+		MaxWallTime:       defaultTimeout,
+		ChunkMatches:      true,
+		UseKeywordScoring: o.KeywordScoring,
+	}
+
+	// These are reasonable default amounts of work to do per shard and
+	// replica respectively.
+	searchOpts.ShardMaxMatchCount = 10_000
+	searchOpts.TotalMaxMatchCount = 100_000
+
+	// Tell each zoekt replica to not send back more than limit results.
+	limit := int(o.FileMatchLimit)
+	searchOpts.MaxDocDisplayCount = limit
+
+	// If we are searching for large limits, raise the amount of work we
+	// are willing to do per shard and zoekt replica respectively.
+	if limit > searchOpts.ShardMaxMatchCount {
+		searchOpts.ShardMaxMatchCount = limit
+	}
+	if limit > searchOpts.TotalMaxMatchCount {
+		searchOpts.TotalMaxMatchCount = limit
+	}
+
+	// If we're searching repos, ignore the other options and only check one file per repo
+	if o.Select.Root() == filter.Repository {
+		searchOpts.ShardRepoMaxMatchCount = 1
+		return searchOpts
+	}
+
+	if o.Features.Debug {
+		searchOpts.DebugScore = true
+	}
+
+	if o.Features.Ranking {
+		// This enables our stream based ranking, where we wait a certain amount
+		// of time to collect results before ranking.
+		searchOpts.FlushWallTime = conf.SearchFlushWallTime()
+
+		// This enables the use of document ranks in scoring, if they are available.
+		searchOpts.UseDocumentRanks = true
+		searchOpts.DocumentRanksWeight = conf.SearchDocumentRanksWeight()
+	}
+
+	return searchOpts
+}
+
+func getSpanContext(ctx context.Context, logger log.Logger) (shouldTrace bool, spanContext map[string]string) {
+	if !policy.ShouldTrace(ctx) {
+		return false, nil
+	}
+
+	spanContext = make(map[string]string)
+	if span := opentracing.SpanFromContext(ctx); span != nil {
+		if err := ot.GetTracer(ctx).Inject(span.Context(), opentracing.TextMap, opentracing.TextMapCarrier(spanContext)); err != nil { //nolint:staticcheck // Drop once we get rid of OpenTracing
+			logger.Warn("Error injecting span context into map", log.Error(err))
+			return true, nil
+		}
+	}
+	return true, spanContext
 }
 
 // SearcherParameters the inputs for a search fulfilled by the Searcher service
