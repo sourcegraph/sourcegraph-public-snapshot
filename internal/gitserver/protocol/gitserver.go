@@ -438,6 +438,14 @@ type RepoCloneProgress struct {
 	Cloned          bool   // whether the repository has been cloned successfully
 }
 
+func (r *RepoCloneProgress) FromProto(p *proto.RepoCloneProgress) {
+	*r = RepoCloneProgress{
+		CloneInProgress: p.GetCloneInProgress(),
+		CloneProgress:   p.GetCloneProgress(),
+		Cloned:          p.GetCloned(),
+	}
+}
+
 // RepoCloneProgressResponse is the response to a repository clone progress request
 // for multiple repositories at the same time.
 type RepoCloneProgressResponse struct {

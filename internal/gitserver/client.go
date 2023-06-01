@@ -1260,12 +1260,9 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 		for _, r := range res {
 
 			for repo, info := range r.Results {
-				result.Results[api.RepoName(repo)] = &protocol.RepoCloneProgress{
-					Cloned:          info.Cloned,
-					CloneInProgress: info.CloneInProgress,
-					CloneProgress:   info.CloneProgress,
-				}
-
+				var rp protocol.RepoCloneProgress
+				rp.FromProto(info)
+				result.Results[api.RepoName(repo)] = &rp
 			}
 
 		}
