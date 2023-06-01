@@ -51,6 +51,9 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
             case 'IsContextRequiredForChatQuery':
                 res.send(JSON.stringify({ data: { isContextRequiredForChatQuery: false } }))
                 break
+            case 'SiteProductVersion':
+                res.send(JSON.stringify({ data: { site: { productVersion: '10.10.10' } } }))
+                break
             default:
                 res.sendStatus(400)
                 break

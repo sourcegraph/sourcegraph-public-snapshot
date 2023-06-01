@@ -15,11 +15,16 @@ import {
     REPOSITORY_EMBEDDING_EXISTS_QUERY,
     SEARCH_TYPE_REPO_QUERY,
     CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY,
+    CURRENT_SITE_VERSION_QUERY,
 } from './queries'
 
 interface APIResponse<T> {
     data?: T
     errors?: { message: string; path?: string[] }[]
+}
+
+interface SiteVersionResponse {
+    site: { productVersion: string } | null
 }
 
 interface CurrentUserIdResponse {
@@ -108,6 +113,16 @@ export class SourcegraphGraphQLAPIClient {
 
     public isDotCom(): boolean {
         return new URL(this.config.serverEndpoint).origin === new URL(this.dotcomUrl).origin
+    }
+
+    public async getSiteVersion(): Promise<string | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<SiteVersionResponse>>(CURRENT_SITE_VERSION_QUERY, {}).then(
+            response =>
+                extractDataOrError(response, data =>
+                    // Example values: "5.1.0" or "222587_2023-05-30_5.0-39cbcf1a50f0" for insider builds
+                    data.site?.productVersion ? data.site?.productVersion : new Error('instance version not found')
+                )
+        )
     }
 
     public async getCurrentUserId(): Promise<string | Error> {

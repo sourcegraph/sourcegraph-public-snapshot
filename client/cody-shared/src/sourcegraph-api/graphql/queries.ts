@@ -5,6 +5,13 @@ query CurrentUser {
     }
 }`
 
+export const CURRENT_SITE_VERSION_QUERY = `
+query SiteProductVersion {
+    site {
+        productVersion
+    }
+}`
+
 export const CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY = `
 query CurrentUser {
     currentUser {

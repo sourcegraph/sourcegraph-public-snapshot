@@ -1,6 +1,7 @@
 import { spawnSync } from 'child_process'
 
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/embeddings/client'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
@@ -9,6 +10,7 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 import { LocalKeywordContextFetcher } from '../keyword-context/local-keyword-context-fetcher'
 
 import { Config } from './ChatViewProvider'
+import { AuthStatus, isLocalApp, isSiteVersionSupported } from './protocol'
 
 // Converts a git clone URL to the codebase name that includes the slash-separated code host, owner, and repository name
 // This should captures:
@@ -80,4 +82,39 @@ export async function getCodebaseContext(
 
     const embeddingsSearch = repoId && !isError(repoId) ? new SourcegraphEmbeddingsSearchClient(client, repoId) : null
     return new CodebaseContext(config, codebase, embeddingsSearch, new LocalKeywordContextFetcher(rgPath, editor))
+}
+
+export async function getAuthStatus(
+    config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
+): Promise<AuthStatus> {
+    if (!config.accessToken) {
+        return {
+            showInvalidAccessTokenError: false,
+            authenticated: false,
+            hasVerifiedEmail: false,
+            requiresVerifiedEmail: false,
+            onSupportedSiteVersion: false,
+        }
+    }
+    const client = new SourcegraphGraphQLAPIClient(config)
+    if (client.isDotCom() || isLocalApp(config.serverEndpoint)) {
+        const data = await client.getCurrentUserIdAndVerifiedEmail()
+        return {
+            showInvalidAccessTokenError: isError(data),
+            authenticated: !isError(data),
+            hasVerifiedEmail: !isError(data) && data?.hasVerifiedEmail,
+            // on sourcegraph.com this is always true
+            requiresVerifiedEmail: true,
+            onSupportedSiteVersion: true,
+        }
+    }
+    const currentUserID = await client.getCurrentUserId()
+    const instanceVersion = await client.getSiteVersion()
+    return {
+        showInvalidAccessTokenError: isError(currentUserID),
+        authenticated: !isError(currentUserID),
+        hasVerifiedEmail: false,
+        requiresVerifiedEmail: false,
+        onSupportedSiteVersion: isSiteVersionSupported(instanceVersion),
+    }
 }
