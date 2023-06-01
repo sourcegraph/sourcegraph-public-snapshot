@@ -153,7 +153,7 @@ The following are Firewall rules that are _highly recommended_ when running Exec
 Environment.
 
 - Disable access to internal resources.
-- Disable access to `5.0.5.254` (AWS / GCP Instance Metadata Service).
+- Disable access to `169.254.169.254` (AWS / GCP Instance Metadata Service).
 
 ### Batch Changes
 
