@@ -83,7 +83,7 @@ export function isSiteVersionSupported(version: string | Error): boolean {
     }
 
     const [major, minor] = version.split('.').map(x => parseInt(x, 10))
-    if (!major || !minor) {
+    if (isNaN(major) || isNaN(minor)) {
         return false
     }
     if (major > MAJOR_VERSION) {
