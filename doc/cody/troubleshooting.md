@@ -24,3 +24,13 @@ command 'cody.set-access-token' not found
 5. Try opening VS Code again
 
 ![Opening up Keychain Access](https://storage.googleapis.com/sourcegraph-assets/blog/cody-docs-troubleshooting-keychain-access.png)
+
+### Codebase is `Not Indexed`
+
+If you are logged into Sourcegraph.com, only public open source repositories on [this list](embedded-repos.md) are indexed. Please join the [Sourcegraph Discord](https://discord.gg/8wJF5EdAyA) and message the `#cody-embeddings` channel to get an open source repository added to the public index.
+
+If you’re connected to a Sourcegraph Enterprise instance, please ask your site admin to [Configure Code Graph Context](explanations/code_graph_context.md) for your Sourcegraph instance and then [Enable Cody](explanations/enabling_cody_enterprise.md) for your account.
+
+If you've completed the above and still seeing your codebase showing up as `NOT INDEXED`, try updating the `Cody: Codebase` (`cody.codebase`) setting in VS Code to the repository name as listed on your Sourcegraph instance.
+
+For more information, see [Generate Index to Enable Codebase-Aware Answers](explanations/indexing.md).
