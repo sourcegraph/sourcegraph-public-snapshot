@@ -6,7 +6,7 @@ pkgs.nodejs-16_x.overrideAttrs (oldAttrs: {
 
   passthru.pkgs = oldAttrs.passthru.pkgs // {
     pnpm = oldAttrs.passthru.pkgs.pnpm.override rec {
-      version = "8.1.0";
+      version = "8.3.0";
       src = fetchurl {
         url = "https://registry.npmjs.org/pnpm/-/pnpm-${version}.tgz";
         sha512 = "sha512-e2H73wTRxmc5fWF/6QJqbuwU6O3NRVZC1G1WFXG8EqfN/+ZBu8XVHJZwPH6Xh0DxbEoZgw8/wy2utgCDwPu4Sg==";
