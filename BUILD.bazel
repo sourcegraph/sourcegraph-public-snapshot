@@ -244,6 +244,7 @@ js_library(
     ],
     data = [
         ".eslintignore",
+        "package.json",
         ":eslint-relative-formatter",
     ],
     deps = [
