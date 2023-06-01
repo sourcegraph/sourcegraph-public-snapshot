@@ -150,7 +150,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                     nodeComponent={RepoEmbeddingJobNode}
                     hideSearch={true}
                     updates={refresh}
-                    emptyElement={<EmptyIndex />}
+                    emptyElement={<EmtpyList />}
                     withCenteredSummary={true}
                 />
             </Container>
@@ -158,7 +158,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
     )
 }
 
-const EmptyIndex: React.FunctionComponent<{}> = () => (
+const EmtpyList: React.FunctionComponent<{}> = () => (
     <Text alignment="center" className="text-muted w-100 mb-0 mt-1">
         <Icon className="mb-2" svgPath={mdiMapSearch} inline={false} aria-hidden={true} />
         <br />
