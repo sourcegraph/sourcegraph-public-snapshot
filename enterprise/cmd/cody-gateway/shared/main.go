@@ -3,6 +3,7 @@ package shared
 import (
 	"context"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/go-redsync/redsync/v4"
@@ -56,6 +57,15 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		}
 	} else {
 		eventLogger = events.NewStdoutLogger(obctx.Logger)
+
+		// Useful for testing event logging in a way that has latency that is
+		// somewhat similar to BigQuery.
+		if os.Getenv("CODY_GATEWAY_BUFFERED_LAGGY_EVENT_LOGGING_FUN_TIMES_MODE") == "true" {
+			eventLogger = events.NewBufferedLogger(
+				obctx.Logger,
+				events.NewDelayedLogger(eventLogger),
+				config.BigQuery.EventBufferSize)
+		}
 	}
 
 	// Supported actor/auth sources
