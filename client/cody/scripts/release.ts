@@ -63,36 +63,23 @@ export const commands = {
     // Get the latest release version number of the last release from VS Code Marketplace
     vscode_info: 'vsce show sourcegraph.cody-ai --json',
     // Stable: publish to VS Code Marketplace
+    vscode_package: 'pnpm run vsce:package',
     vscode_publish: 'vsce publish --packagePath dist/cody.vsix --pat $VSCODE_MARKETPLACE_TOKEN',
     // Nightly release: publish to VS Code Marketplace with today's date as patch number
-    vscode_nightly: `vsce publish ${tonightVersion} --pre-release --packagePath dist/cody.vsix --pat $VSCODE_MARKETPLACE_TOKEN`,
+    vscode_package_nightly: `pnpm --silent build && vsce package ${tonightVersion} --no-dependencies -o dist/cody.vsix`,
+    vscode_nightly: 'vsce publish --pre-release --packagePath dist/cody.vsix --pat $VSCODE_MARKETPLACE_TOKEN',
     // To publish to the open-vsx registry
     openvsx_publish: 'npx ovsx publish dist/cody.vsix --pat $VSCODE_OPENVSX_TOKEN',
 }
 
-if (releaseType !== 'dry-run') {
-    // Build and bundle the extension
-    childProcess.execSync('pnpm run download-rg', { stdio: 'inherit' })
-    childProcess.execSync('pnpm run vsce:package', { stdio: 'inherit' })
-}
+// Build and bundle the extension
+childProcess.execSync('pnpm run download-rg', { stdio: 'inherit' })
+childProcess.execSync(releaseType === 'nightly' ? commands.vscode_package_nightly : commands.vscode_package, {
+    stdio: 'inherit',
+})
 
 // Run the publish commands based on the release type
 switch (releaseType) {
-    case 'dry-run': {
-        console.info(
-            `Current version is ${currentVersion} and the pre-release number for tonight's build is ${tonightVersion}.`
-        )
-        if (!semver.valid(tonightVersion) || semver.minor(tonightVersion) % 2 === 0) {
-            console.error(
-                'The nightly build will not be published because the minor number is even or version number not valid: ' +
-                    tonightVersion
-            )
-        }
-        break
-    }
-    case 'openvsx':
-        childProcess.execSync(commands.openvsx_publish, { stdio: 'inherit' })
-        break
     case 'nightly':
         // if minor is not an odd number, throw an error
         if (
@@ -110,9 +97,17 @@ switch (releaseType) {
         break
     case 'stable':
         // Publish to VS Code Marketplace as the version number listed in package.json
-        // Publish to Open VSX Marketplace
         childProcess.execSync(commands.vscode_publish, { stdio: 'inherit' })
+        // Publish to Open VSX Marketplace
         childProcess.execSync(commands.openvsx_publish, { stdio: 'inherit' })
+        break
+    case 'dry-run':
+        console.info(`Current version: ${currentVersion}.`)
+        console.info(`Pre-release version for tonight's build: ${tonightVersion}.`)
+        if (!semver.valid(tonightVersion) || semver.minor(tonightVersion) % 2 === 0) {
+            throw new Error('The nightly build will fail due to invalid version number.')
+        }
+        break
     default:
         throw new Error(`Invalid release type: ${releaseType}`)
 }
