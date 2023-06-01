@@ -38,7 +38,7 @@ type Store interface {
 	InsertInitialPathRanks(ctx context.Context, exportedUploadID int, documentPaths []string, batchSize int, graphKey string) error
 
 	// Graph keys
-	DerivativeGraphKey(ctx context.Context) (string, bool, error)
+	DerivativeGraphKey(ctx context.Context) (string, time.Time, bool, error)
 	BumpDerivativeGraphKey(ctx context.Context) error
 
 	// Coordinates mapper+reducer phases
