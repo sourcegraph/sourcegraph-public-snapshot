@@ -71,3 +71,5 @@ accounts:
     - username: grafana
       uid: 103
       gid: 104
+
+# MANUAL REBUILD: 
