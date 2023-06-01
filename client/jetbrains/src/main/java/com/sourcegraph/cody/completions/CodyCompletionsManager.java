@@ -29,8 +29,13 @@ public class CodyCompletionsManager {
   // TODO: figure out how to avoid the ugly nested `Future<CompletableFuture<T>>` type.
   private final ConcurrentLinkedQueue<Future<CompletableFuture<Void>>> jobs =
       new ConcurrentLinkedQueue<>();
+
+  // We don't want casual users to turn on completions by discovering a setting in the UI so
+  // we only allow enabling completions via a system property. This property is automatically
+  // configured when running `./gradle :runIde`, and we'll need to document internally for
+  // Sourcegraph team members how to use "Edit Custom VM Options..." to enable completions.
   private static final boolean IS_COMPLETIONS_ENABLED =
-      "true".equals(System.getenv("CODY_COMPLETIONS_ENABLED"));
+      "true".equals(System.getProperty("cody.completions.enabled"));
 
   public static @NotNull CodyCompletionsManager getInstance() {
     return ApplicationManager.getApplication().getService(CodyCompletionsManager.class);
