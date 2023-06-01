@@ -46,7 +46,7 @@ Various commands to handle management of releases, and processes around Sourcegr
 		{
 			Name:   "update-manifest",
 			Usage:  "update the manifest used by the updater endpoint on dotCom",
-			Action: updateAppManifest,
+			Action: UpdateSourcegraphAppManifest,
 		},
 	},
 }
@@ -66,7 +66,7 @@ type appLocation struct {
 	URL       string `json:"url"`
 }
 
-func updateAppManifest(ctx *cli.Context) error {
+func UpdateSourcegraphAppManifest(ctx *cli.Context) error {
 	client, err := bk.NewClient(ctx.Context, std.Out)
 	if err != nil {
 		return err
@@ -88,8 +88,6 @@ func updateAppManifest(ctx *cli.Context) error {
 	buf := bytes.NewBuffer(nil)
 	client.DownloadArtifact(*manifestArtifact, buf)
 
-	fmt.Printf("-----------------\n%s\n-------------\n", buf.String())
-
 	manifest := appUpdateManifest{}
 	err = json.NewDecoder(buf).Decode(&manifest)
 	if err != nil {
@@ -102,6 +100,32 @@ func updateAppManifest(ctx *cli.Context) error {
 		return err
 	}
 
+	updateSignatures := (fmt.Sprintf("app-v%s", manifest.Version) != release.GetTagName())
+	manifest, err = updateManifestFromRelease(manifest, release, updateSignatures)
+	if err != nil {
+		return err
+	}
+
+	storageClient, err := storage.NewClient(ctx.Context)
+	if err != nil {
+		return err
+	}
+
+	storageWriter := storageClient.Bucket("sourcegraph-app-dev").Object("app.update.prod.manifest.json").NewWriter(ctx.Context)
+	err = json.NewEncoder(storageWriter).Encode(&manifest)
+	defer func() {
+		if err := storageWriter.Close(); err != nil {
+			std.Out.WriteFailuref("Google Storage Writer failed on close: %v", err)
+		}
+	}()
+	if err != nil {
+		return err
+	}
+
+	return storageWriter.Close()
+}
+
+func updateManifestFromRelease(manifest appUpdateManifest, release *github.RepositoryRelease, updateSignatures bool) (appUpdateManifest, error) {
 	platformMatch := map[string]*regexp.Regexp{
 		// note the regular expression will capture
 		// .tar.gz
@@ -131,22 +155,19 @@ func updateAppManifest(ctx *cli.Context) error {
 		}
 	}
 
-	fmt.Printf("manifest before\n---------------\n%v\n----------------\n", manifest)
-
 	// update the manifest
-	updateSignatures := (fmt.Sprintf("app-v%s", manifest.Version) != release.GetTagName())
 	for platform, assets := range platformAssets {
 		appPlatform := manifest.Platforms[platform]
 		u := assets[0].GetBrowserDownloadURL()
 		if u == "" {
-			return errors.Newf("failed to get download url for asset: %q", assets[0].GetName())
+			return manifest, errors.Newf("failed to get download url for asset: %q", assets[0].GetName())
 		}
 		var sig = appPlatform.Signature
 
 		if updateSignatures {
 			b, err := downloadSignatureContent(assets[1].GetBrowserDownloadURL())
 			if err != nil {
-				return errors.Wrapf(err, "failed to content of signature asset %q", assets[1].GetName())
+				return manifest, errors.Wrapf(err, "failed to content of signature asset %q", assets[1].GetName())
 			}
 			sig = string(b)
 		}
@@ -157,28 +178,7 @@ func updateAppManifest(ctx *cli.Context) error {
 		manifest.Platforms[platform] = appPlatform
 	}
 
-	fmt.Printf("manifest after\n---------------\n%v\n----------------\n", manifest)
-	storageClient, err := storage.NewClient(ctx.Context)
-	if err != nil {
-		return err
-	}
-
-	storageWriter := storageClient.Bucket("sourcegraph-app-dev").Object("app.update.prod.manifest.json").NewWriter(ctx.Context)
-	err = json.NewEncoder(storageWriter).Encode(&manifest)
-	defer func() {
-		if err := storageWriter.Close(); err != nil {
-			std.Out.WriteFailuref("Google Storage Writer failed on close: %v", err)
-		}
-	}()
-	if err != nil {
-		return err
-	}
-
-	// 1. Get the latest build
-	// 2. Get the latest release
-	// 3. Update the manifest from the release
-	// 4. Upload the manifest to the correct bucket on dotcom
-	return storageWriter.Close()
+	return manifest, nil
 }
 
 func downloadSignatureContent(url string) ([]byte, error) {
