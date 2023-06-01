@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
+	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -182,6 +183,8 @@ func (c *KubernetesCommand) WaitForPodToSucceed(ctx context.Context, namespace s
 			"Watching pod",
 			log.String("name", pod.Name),
 			log.String("phase", string(pod.Status.Phase)),
+			log.Time("creationTimestamp", pod.CreationTimestamp.Time),
+			kubernetesTimep("deletionTimestamp", pod.DeletionTimestamp),
 		)
 		switch pod.Status.Phase {
 		case corev1.PodFailed:
@@ -189,12 +192,25 @@ func (c *KubernetesCommand) WaitForPodToSucceed(ctx context.Context, namespace s
 		case corev1.PodSucceeded:
 			return pod, nil
 		}
+		if pod.DeletionTimestamp != nil {
+			return nil, ErrKubernetesPodNotScheduled
+		}
 	}
 	return nil, errors.New("unexpected end of watch")
 }
 
+func kubernetesTimep(key string, time *metav1.Time) zap.Field {
+	if time == nil {
+		return zap.Reflect(key, nil)
+	}
+	return log.Time(key, time.Time)
+}
+
 // ErrKubernetesPodFailed is returned when a Kubernetes pod fails.
 var ErrKubernetesPodFailed = errors.New("pod failed")
+
+// ErrKubernetesPodNotScheduled is returned when a Kubernetes pod could not be scheduled and was deleted.
+var ErrKubernetesPodNotScheduled = errors.New("deleted by scheduler: pod could not be scheduled")
 
 // NewKubernetesJob creates a Kubernetes job with the given name, image, volume path, and spec.
 func NewKubernetesJob(name string, image string, spec Spec, path string, options KubernetesContainerOptions) *batchv1.Job {
