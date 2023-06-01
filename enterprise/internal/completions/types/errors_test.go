@@ -13,8 +13,8 @@ import (
 
 func TestErrStatusNotOK(t *testing.T) {
 	rec := httptest.NewRecorder()
-	rec.WriteHeader(http.StatusTooManyRequests)
 	rec.Header().Set("X-RateLimit-Limit", "100")
+	rec.WriteHeader(http.StatusTooManyRequests)
 	rec.Write([]byte("oh no, please slow down!"))
 	resp := rec.Result()
 
@@ -52,4 +52,27 @@ func TestErrStatusNotOK(t *testing.T) {
 			assert.Empty(t, writtenBody)
 		})
 	})
+}
+
+func TestErrStatusNotOKWriteHeader503(t *testing.T) {
+	rec := httptest.NewRecorder()
+	rec.Header().Set("X-RateLimit-Limit", "100")
+	rec.WriteHeader(http.StatusUnauthorized)
+	rec.Write([]byte("fishy business!!!"))
+	resp := rec.Result()
+
+	err := NewErrStatusNotOK(t.Name(), resp)
+	errNotOK, ok := IsErrStatusNotOK(err)
+	require.True(t, ok)
+
+	// Error message still indicates the original status code.
+	autogold.Expect("TestErrStatusNotOKWriteHeader503: unexpected status code 401: fishy business!!!").Equal(t, err.Error())
+
+	// WriteHeader should not write the original status code.
+	writeRec := httptest.NewRecorder()
+	errNotOK.WriteHeader(writeRec)
+	writtenResp := writeRec.Result()
+	assert.NotEqual(t, resp.StatusCode, writtenResp.StatusCode)
+	assert.Equal(t, http.StatusServiceUnavailable, writtenResp.StatusCode)
+	assert.Equal(t, resp.Header, writtenResp.Header)
 }

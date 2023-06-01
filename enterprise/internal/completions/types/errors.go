@@ -64,7 +64,11 @@ func IsErrStatusNotOK(err error) (*ErrStatusNotOK, bool) {
 	return nil, false
 }
 
-// WriteHeader writes the error code and headers to the response.
+// WriteHeader writes the resolved error code and headers to the response.
+// Currently, only certain allow-listed status codes are written back as-is -
+// all other codes are written back as 503 to indicate the upstream service is
+// available.
+//
 // It does not write the response body, to allow different handlers to provide
 // the message in different formats.
 func (e *ErrStatusNotOK) WriteHeader(w http.ResponseWriter) {
@@ -73,6 +77,18 @@ func (e *ErrStatusNotOK) WriteHeader(w http.ResponseWriter) {
 			w.Header().Set(k, v)
 		}
 	}
+
 	// WriteHeader must come last, since it flushes the headers.
-	w.WriteHeader(e.statusCode)
+	switch e.statusCode {
+	// Only write back certain allow-listed status codes as-is - all other status
+	// codes are written back as 503 to avoid potential confusions with Sourcegraph
+	// status codes while indicating that the upstream service is unavailable.
+	//
+	// Currently, we only write back status code 429 as-is to help support
+	// rate limit handling in clients.
+	case http.StatusTooManyRequests:
+		w.WriteHeader(e.statusCode)
+	default:
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}
 }
