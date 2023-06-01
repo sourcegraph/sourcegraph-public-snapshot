@@ -77,6 +77,11 @@ In VS Code, select the recipes tab or  right-click on a selection of code and ch
 - Detect code smells
 - Generate release notes
 
+## Highlights
+
+- <span class="badge badge-experimental">Experimental</span> [Cody Completions](completions.md)
+- <span class="badge badge-experimental">Experimental</span> [Non-Stop Cody](non-stop.md)
+
 ## Troubleshooting
 
 See [Cody troubleshooting guide](troubleshooting.md).
