@@ -130,6 +130,9 @@ sh_test(
         "SOURCEGRAPH_LICENSE_GENERATION_KEY",
         "SOURCEGRAPH_LICENSE_KEY",
     ],
-    tags = ["manual", "requires-network"],
+    tags = [
+        "manual",
+        "requires-network",
+    ],
     deps = ["//testing/tools:integration_runner"],
 )
