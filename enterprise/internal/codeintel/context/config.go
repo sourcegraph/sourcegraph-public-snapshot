@@ -6,10 +6,13 @@ import (
 
 type config struct {
 	env.BaseConfig
+
+	syntectServer string
 }
 
 var ConfigInst = &config{}
 
 func (c *config) Load() {
-	// TODO
+	c.syntectServer = c.Get("SRC_SYNTECT_SERVER", "http://syntect-server:9238", "syntect_server HTTP(s) address")
 }
+

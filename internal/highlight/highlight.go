@@ -33,14 +33,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func LoadConfig() {
+var Client *gosyntect.Client
+
+func init() {
 	syntectServer := env.Get("SRC_SYNTECT_SERVER", "http://syntect-server:9238", "syntect_server HTTP(s) address")
-	client = gosyntect.New(syntectServer)
+	clientOnce.Do(func() {
+		Client = gosyntect.New(syntectServer)
+	})
 }
 
-var client *gosyntect.Client
+func LoadConfig() *gosyntect.Client {
+	return Client
+}
 
 var (
+	clientOnce      sync.Once
 	highlightOpOnce sync.Once
 	highlightOp     *observation.Operation
 )
@@ -422,7 +429,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		Tracer:           ot.GetTracer(ctx), //nolint:staticcheck // Drop once we get rid of OpenTracing
 		LineLengthLimit:  maxLineLength,
 		CSS:              true,
-		Engine:           getEngineParameter(filetypeQuery.Engine),
+		Engine:           GetEngineParameter(filetypeQuery.Engine),
 	}
 
 	// Set the Filetype part of the command if:
@@ -466,7 +473,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		}, false, nil
 	}
 
-	resp, err := client.Highlight(ctx, query, p.Format)
+	resp, err := Client.Highlight(ctx, query, p.Format)
 
 	if ctx.Err() == context.DeadlineExceeded {
 		log15.Warn(
@@ -515,7 +522,6 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	if p.Format == gosyntect.FormatJSONSCIP || filetypeQuery.Engine.isTreesitterBased() {
 		document := new(scip.Document)
 		data, err := base64.StdEncoding.DecodeString(resp.Data)
-
 		if err != nil {
 			return unhighlightedCode(err, code)
 		}
@@ -555,6 +561,20 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		document: nil,
 	}, false, nil
 }
+
+// func Highlight(ctx context.Context, fileName, content string) error {
+// 	q := &gosyntect.SymbolsQuery{
+// 		FileName: fileName,
+// 		Content:  content,
+// 	}
+
+// 	resp, err := client.Symbols(ctx, q)
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	return
+// }
 
 // TODO (Dax): Determine if Histogram provides value and either use only histogram or counter, not both
 var requestCounter = promauto.NewCounterVec(prometheus.CounterOpts{

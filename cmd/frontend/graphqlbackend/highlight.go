@@ -6,8 +6,8 @@ import (
 
 	"github.com/gogo/protobuf/jsonpb"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
+	"github.com/sourcegraph/sourcegraph/internal/highlight"
 	searchresult "github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
