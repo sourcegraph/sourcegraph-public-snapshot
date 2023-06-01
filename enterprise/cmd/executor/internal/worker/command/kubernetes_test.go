@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
@@ -301,6 +302,40 @@ func TestKubernetesCommand_WaitForPodToSucceed(t *testing.T) {
 			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
 				require.Len(t, actions, 1)
 			},
+		},
+		{
+			name: "Pod deleted by scheduler",
+			mockFunc: func(clientset *fake.Clientset) {
+				watcher := watch.NewFakeWithChanSize(10, false)
+				watcher.Add(&corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "my-pod",
+						Labels: map[string]string{
+							"job-name": "my-job",
+						},
+					},
+					Status: corev1.PodStatus{
+						Phase: corev1.PodPending,
+					},
+				})
+				watcher.Add(&corev1.Pod{
+					ObjectMeta: metav1.ObjectMeta{
+						Name: "my-pod",
+						Labels: map[string]string{
+							"job-name": "my-job",
+						},
+						DeletionTimestamp: &metav1.Time{Time: time.Now()},
+					},
+					Status: corev1.PodStatus{
+						Phase: corev1.PodPending,
+					},
+				})
+				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(watcher, nil))
+			},
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
+				require.Len(t, actions, 1)
+			},
+			expectedErr: errors.New("deleted by scheduler: pod could not be scheduled"),
 		},
 	}
 	for _, test := range tests {

@@ -48,7 +48,10 @@ spec:
               # Since the host is 'host.docker.internal', this needs to be true.
             - name: EXECUTOR_DOCKER_ADD_HOST_GATEWAY
               value: "true"
-            # Ensure that the job pods are scheduled on the same node as the executor pod.
+              # Ensure that the job pods are scheduled on the same node as the executor pod.
+#            - name: EXECUTOR_KUBERNETES_POD_AFFINITY
+#              value: '[{"labelSelector": {"matchExpressions": [{"key": "app", "operator": "In", "values": ["sg-executor-batches"]}]}, "topologyKey": "kubernetes.io/hostname"}]'
+            # Another option to ensure that the job pods are scheduled on the same node as the executor pod.
             - name: EXECUTOR_KUBERNETES_NODE_NAME
               valueFrom:
                 fieldRef:

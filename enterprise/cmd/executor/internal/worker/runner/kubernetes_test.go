@@ -164,6 +164,9 @@ func TestKubernetesRunner_Run(t *testing.T) {
 				require.NoError(t, err)
 			}
 
+			err = kubernetesRunner.Teardown(context.Background())
+			require.NoError(t, err)
+
 			if test.mockAssertFunc != nil {
 				test.mockAssertFunc(t, clientset.Actions())
 			}
