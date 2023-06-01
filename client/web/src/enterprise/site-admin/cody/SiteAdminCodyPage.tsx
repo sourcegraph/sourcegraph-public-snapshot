@@ -86,7 +86,8 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
 
     const onDelete = useCallback(
         async (id: string) => {
-            await cancelRepoEmbeddingJob({ variables: { id } }), refresh.next()
+            await cancelRepoEmbeddingJob({ variables: { id } })
+            refresh.next()
         },
         [cancelRepoEmbeddingJob, refresh]
     )
