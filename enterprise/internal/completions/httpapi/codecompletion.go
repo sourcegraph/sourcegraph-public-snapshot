@@ -30,7 +30,7 @@ func NewCodeCompletionsHandler(logger log.Logger, db database.DB) http.Handler {
 
 			// Propagate the upstream headers to the client if available.
 			if errNotOK, ok := types.IsErrStatusNotOK(err); ok {
-				errNotOK.WriteResponseHeaders(w)
+				errNotOK.WriteHeader(w)
 			} else {
 				w.WriteHeader(http.StatusInternalServerError)
 			}

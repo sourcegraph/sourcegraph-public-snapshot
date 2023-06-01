@@ -39,7 +39,7 @@ func TestErrStatusNotOK(t *testing.T) {
 
 		t.Run("WriteResponseHeaders", func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			errNotOK.WriteResponseHeaders(rec)
+			errNotOK.WriteHeader(rec)
 
 			// Should have written status code and headers.
 			writtenResp := rec.Result()

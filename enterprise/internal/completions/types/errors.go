@@ -64,14 +64,15 @@ func IsErrStatusNotOK(err error) (*ErrStatusNotOK, bool) {
 	return nil, false
 }
 
-// WriteResponseHeaders writes the error code and headers to the response.
+// WriteHeader writes the error code and headers to the response.
 // It does not write the response body, to allow different handlers to provide
 // the message in different formats.
-func (e *ErrStatusNotOK) WriteResponseHeaders(w http.ResponseWriter) {
-	w.WriteHeader(e.statusCode)
+func (e *ErrStatusNotOK) WriteHeader(w http.ResponseWriter) {
 	for k, vs := range e.responseHeader {
 		for _, v := range vs {
 			w.Header().Set(k, v)
 		}
 	}
+	// WriteHeader must come last, since it flushes the headers.
+	w.WriteHeader(e.statusCode)
 }
