@@ -369,7 +369,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			if c.RunType.Is(runtype.ReleaseBranch, runtype.TaggedRelease) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
 				imageBuildOps.Append(buildExecutorDockerMirror(c))
 			}
-			ops.Append(bazelPushImagesCmd())
 		}
 		ops.Merge(imageBuildOps)
 
@@ -420,6 +419,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				publishOps.Append(publishExecutorDockerMirror(c))
 			}
 		}
+		publishOps.Append(bazelPushImagesCmd())
 		ops.Merge(publishOps)
 	}
 
