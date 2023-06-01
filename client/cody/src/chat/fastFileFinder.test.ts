@@ -1,4 +1,15 @@
-import { filePathContains } from './fastFileFinder'
+import { filePathContains, makeTrimRegex } from './fastFileFinder'
+
+describe('makeTrimRegex', () => {
+    it('should not fail using the Windows path separator', () => {
+        expect(makeTrimRegex('\\').test('foo\\*')).toBe(true)
+        expect(makeTrimRegex('\\').test('foo\\*\\bar')).toBe(false)
+    })
+    it('should trim leading and trailing path separators and wildcards', () => {
+        expect('**\\foo\\bar'.replace(makeTrimRegex('\\'), '')).toBe('foo\\bar')
+        expect('//foo/bar/**'.replace(makeTrimRegex('/'), '')).toBe('foo/bar')
+    })
+})
 
 describe('filePathContains', () => {
     it('should handle exact matches', () => {

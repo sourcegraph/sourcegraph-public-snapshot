@@ -19,8 +19,15 @@ export async function fastFilesExist(
     return processRgOutput(rgOutput, filePaths)
 }
 
+export function makeTrimRegex(sep: string): RegExp {
+    if (sep === '\\') {
+        sep = '\\\\' // Regex escape this character
+    }
+    return new RegExp(`(^[*${sep}]+)|([*${sep}]+$)`, 'g')
+}
+
 // Regex to match '**', '*' or path.sep at the start (^) or end ($) of the string.
-const trimRegex = new RegExp(`^([*${path.sep}]*)|([*${path.sep}]*)$`, 'g')
+const trimRegex = makeTrimRegex(path.sep)
 /**
  * Constructs a search pattern for the 'rg' tool.
  *
