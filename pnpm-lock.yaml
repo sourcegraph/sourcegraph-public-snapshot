@@ -1419,6 +1419,15 @@ importers:
         specifier: ^1.33.0
         version: 1.33.0
 
+  client/cody-agent:
+    dependencies:
+      '@sourcegraph/cody-shared':
+        specifier: workspace:*
+        version: link:../cody-shared
+      '@sourcegraph/common':
+        specifier: workspace:*
+        version: link:../common
+
   client/cody-cli:
     dependencies:
       '@sourcegraph/cody-shared':
