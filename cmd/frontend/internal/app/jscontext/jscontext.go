@@ -277,15 +277,17 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		openTelemetry = clientObservability.OpenTelemetry
 	}
 
-	var licenseInfo *hooks.LicenseInfo
+	// License info contains basic, non-sensitive information about the license type. Some
+	// properties are only set for certain license types. This information can be used to
+	// soft-gate features from the UI, and to provide info to admins from site admin
+	// settings pages in the UI.
+	licenseInfo := hooks.GetLicenseInfo()
+
 	var user *types.User
 	temporarySettings := "{}"
-	if !a.IsAuthenticated() {
-		licenseInfo = hooks.GetLicenseInfo(false)
-	} else {
+	if a.IsAuthenticated() {
 		// Ignore err as we don't care if user does not exist
 		user, _ = a.User(ctx, db.Users())
-		licenseInfo = hooks.GetLicenseInfo(user != nil && user.SiteAdmin)
 		if user != nil {
 			if settings, err := db.TemporarySettings().GetTemporarySettings(ctx, user.ID); err == nil {
 				temporarySettings = settings.Contents
