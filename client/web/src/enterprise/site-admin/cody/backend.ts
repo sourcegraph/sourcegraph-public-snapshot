@@ -1,7 +1,11 @@
 import { MutationTuple } from '@apollo/client'
+import { Observable } from 'rxjs'
+import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql, useMutation } from '@sourcegraph/http-client'
 
+import { requestGraphQL } from '../../../backend/graphql'
+import { FilteredConnectionQueryArguments } from '../../../components/FilteredConnection'
 import {
     useShowMorePagination,
     UseShowMorePaginationResult,
@@ -10,6 +14,7 @@ import {
     RepoEmbeddingJobFields,
     RepoEmbeddingJobsListResult,
     RepoEmbeddingJobsListVariables,
+    RepoEmbeddingJobConnectionFields,
     ScheduleContextDetectionEmbeddingJobResult,
     ScheduleContextDetectionEmbeddingJobVariables,
     ScheduleRepoEmbeddingJobsResult,
@@ -35,22 +40,40 @@ const REPO_EMBEDDING_JOB_FRAGMENT = gql`
     }
 `
 
-export const REPO_EMBEDDING_JOBS_LIST_QUERY = gql`
+const REPO_EMBEDDING_JOB_CONNECTION_FIELDS_FRAGMENT = gql`
     ${REPO_EMBEDDING_JOB_FRAGMENT}
-
-    query RepoEmbeddingJobsList($first: Int, $after: String) {
-        repoEmbeddingJobs(first: $first, after: $after) {
-            nodes {
-                ...RepoEmbeddingJobFields
-            }
-            totalCount
-            pageInfo {
-                endCursor
-                hasNextPage
-            }
+    fragment RepoEmbeddingJobConnectionFields on RepoEmbeddingJobsConnection {
+        totalCount
+        pageInfo {
+            endCursor
+            hasNextPage
+        }
+        nodes {
+            ...RepoEmbeddingJobFields
         }
     }
 `
+
+export const REPO_EMBEDDING_JOBS_LIST_QUERY = gql`
+    ${REPO_EMBEDDING_JOB_CONNECTION_FIELDS_FRAGMENT}
+    query RepoEmbeddingJobsList($first: Int, $after: String) {
+        repoEmbeddingJobs(first: $first, after: $after) {
+            ...RepoEmbeddingJobConnectionFields
+        }
+    }
+`
+
+export function repoEmbeddingJobs(
+    variables: FilteredConnectionQueryArguments
+): Observable<RepoEmbeddingJobConnectionFields> {
+    return requestGraphQL<RepoEmbeddingJobsListResult, RepoEmbeddingJobsListVariables>(REPO_EMBEDDING_JOBS_LIST_QUERY, {
+        first: variables.first ?? null,
+        after: variables.after ?? null,
+    }).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.repoEmbeddingJobs)
+    )
+}
 
 export const useRepoEmbeddingJobsConnection = (): UseShowMorePaginationResult<
     RepoEmbeddingJobsListResult,

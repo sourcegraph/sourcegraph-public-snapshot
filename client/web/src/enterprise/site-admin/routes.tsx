@@ -75,6 +75,7 @@ const CodeInsightsJobsPage = lazyComponent(() => import('../insights/admin-ui/Co
 const OwnStatusPage = lazyComponent(() => import('../own/admin-ui/OwnStatusPage'), 'OwnStatusPage')
 
 const SiteAdminCodyPage = lazyComponent(() => import('./cody/SiteAdminCodyPage'), 'SiteAdminCodyPage')
+const SiteAdminCodyPageNew = lazyComponent(() => import('./cody/SiteAdminCodyPageNEW'), 'SiteAdminCodyPageNew')
 const CodyConfigurationPage = lazyComponent(
     () => import('../cody/configuration/pages/CodyConfigurationPage'),
     'CodyConfigurationPage'
@@ -198,6 +199,12 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             exact: true,
             path: '/embeddings',
             render: props => <SiteAdminCodyPage {...props} />,
+            condition: () => Boolean(window.context?.embeddingsEnabled),
+        },
+        {
+            exact: true,
+            path: '/embeddings-new',
+            render: props => <SiteAdminCodyPageNew {...props} />,
             condition: () => Boolean(window.context?.embeddingsEnabled),
         },
         {
