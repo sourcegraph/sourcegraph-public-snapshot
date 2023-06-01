@@ -60,7 +60,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
     const [scheduleRepoEmbeddingJobs, { loading: repoEmbeddingJobsLoading, error: repoEmbeddingJobsError }] =
         useScheduleRepoEmbeddingJobs()
 
-    const [cancelRepoEmbeddingJob] = useCancelRepoEmbeddingJob()
+    const [cancelRepoEmbeddingJob, { error: cancelRepoEmbeddingJobError }] = useCancelRepoEmbeddingJob()
 
     const [
         scheduleContextDetectionEmbeddingJob,
@@ -137,11 +137,15 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                         </div>
                     </div>
                 </Form>
-                {(repoEmbeddingJobsError || contextDetectionEmbeddingJobError) && (
+                {(repoEmbeddingJobsError || contextDetectionEmbeddingJobError || cancelRepoEmbeddingJobError) && (
                     <div className="mt-1">
                         <ErrorAlert
                             prefix="Error scheduling embedding jobs"
-                            error={repoEmbeddingJobsError || contextDetectionEmbeddingJobError}
+                            error={
+                                repoEmbeddingJobsError ||
+                                contextDetectionEmbeddingJobError ||
+                                cancelRepoEmbeddingJobError
+                            }
                         />
                     </div>
                 )}
