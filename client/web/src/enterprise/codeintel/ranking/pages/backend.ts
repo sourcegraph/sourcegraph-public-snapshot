@@ -1,13 +1,8 @@
-import { ApolloError, useMutation } from '@apollo/client'
+import { ApolloError } from '@apollo/client'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 
-import {
-    RankingSummaryResult,
-    RankingSummaryVariables,
-    BumpDerivativeGraphKeyVariables,
-    BumpDerivativeGraphKeyResult,
-} from '../../../../graphql-operations'
+import { RankingSummaryResult, RankingSummaryVariables } from '../../../../graphql-operations'
 
 export const RankingSummaryFieldsFragment = gql`
     fragment RankingSummaryFields on RankingSummary {
