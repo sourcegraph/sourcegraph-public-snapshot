@@ -2,7 +2,10 @@ package coordinator
 
 import (
 	"context"
+	"fmt"
 	"time"
+
+	"github.com/hashicorp/cronexpr"
 
 	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store"
@@ -26,6 +29,23 @@ func NewCoordinator(
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 				return nil
+			}
+
+			previous := time.Now() // TODO - from db
+			if previous.IsZero() {
+
+				// TODO - bump
+				fmt.Printf("NOTHING YET\n")
+			} else {
+				expr, err := cronexpr.Parse(conf.CodeIntelRankingDocumentReferenceCountsCronExpression())
+				if err != nil {
+					return err
+				}
+
+				if !time.Now().Before(expr.Next(previous)) {
+					// TODO - bump
+					fmt.Printf("BUMP FROM CRONNIE\n")
+				}
 			}
 
 			derivativeGraphKeyPrefix, err := store.DerivativeGraphKey(ctx, s)

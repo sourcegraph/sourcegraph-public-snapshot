@@ -280,6 +280,14 @@ func CodeIntelRankingDocumentReferenceCountsEnabled() bool {
 	return false
 }
 
+func CodeIntelRankingDocumentReferenceCountsCronExpression() string {
+	if cronExpression := Get().CodeIntelRankingDocumentReferenceCountsCronExpression; cronExpression != nil {
+		return *cronExpression
+	}
+
+	return ""
+}
+
 func CodeIntelRankingDocumentReferenceCountsGraphKey() string {
 	if val := Get().CodeIntelRankingDocumentReferenceCountsGraphKey; val != "" {
 		return val
