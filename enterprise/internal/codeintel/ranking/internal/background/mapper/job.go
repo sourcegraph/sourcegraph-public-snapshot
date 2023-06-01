@@ -71,7 +71,7 @@ func mapInitializerRankingGraph(
 		return 0, 0, nil
 	}
 
-	derivativeGraphKeyPrefix, err := store.DerivativeGraphKey(ctx, s)
+	derivativeGraphKeyPrefix, _, err := store.DerivativeGraphKey(ctx, s)
 	if err != nil {
 		return 0, 0, err
 	}
@@ -92,7 +92,7 @@ func mapRankingGraph(
 		return 0, 0, nil
 	}
 
-	derivativeGraphKeyPrefix, err := store.DerivativeGraphKey(ctx, s)
+	derivativeGraphKeyPrefix, _, err := store.DerivativeGraphKey(ctx, s)
 	if err != nil {
 		return 0, 0, err
 	}

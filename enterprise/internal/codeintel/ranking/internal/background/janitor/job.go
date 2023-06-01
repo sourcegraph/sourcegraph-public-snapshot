@@ -118,7 +118,7 @@ func vacuumDeletedExportedUploads(ctx context.Context, s store.Store) (int, erro
 		return 0, nil
 	}
 
-	derivativeGraphKeyPrefix, err := store.DerivativeGraphKey(ctx, s)
+	derivativeGraphKeyPrefix, _, err := store.DerivativeGraphKey(ctx, s)
 	if err != nil {
 		return 0, err
 	}
@@ -141,7 +141,7 @@ func vacuumStaleGraphs(ctx context.Context, s store.Store) (int, error) {
 		return 0, nil
 	}
 
-	derivativeGraphKeyPrefix, err := store.DerivativeGraphKey(ctx, s)
+	derivativeGraphKeyPrefix, _, err := store.DerivativeGraphKey(ctx, s)
 	if err != nil {
 		return 0, err
 	}
@@ -154,7 +154,7 @@ func vacuumStaleRanks(ctx context.Context, s store.Store) (int, int, error) {
 		return 0, 0, nil
 	}
 
-	derivativeGraphKeyPrefix, err := store.DerivativeGraphKey(ctx, s)
+	derivativeGraphKeyPrefix, _, err := store.DerivativeGraphKey(ctx, s)
 	if err != nil {
 		return 0, 0, err
 	}

@@ -2,10 +2,9 @@ package coordinator
 
 import (
 	"context"
-	"fmt"
 	"time"
 
-	"github.com/hashicorp/cronexpr"
+	"github.com/sourcegraph/log"
 
 	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store"
@@ -31,24 +30,24 @@ func NewCoordinator(
 				return nil
 			}
 
-			previous := time.Now() // TODO - from db
-			if previous.IsZero() {
-
-				// TODO - bump
-				fmt.Printf("NOTHING YET\n")
+			if expr, err := conf.CodeIntelRankingDocumentReferenceCountsCronExpression(); err != nil {
+				observationCtx.Logger.Warn("Illegal ranking cron expression", log.Error(err))
 			} else {
-				expr, err := cronexpr.Parse(conf.CodeIntelRankingDocumentReferenceCountsCronExpression())
+				_, previous, err := store.DerivativeGraphKey(ctx, s)
 				if err != nil {
 					return err
 				}
 
-				if !time.Now().Before(expr.Next(previous)) {
-					// TODO - bump
-					fmt.Printf("BUMP FROM CRONNIE\n")
+				if delta := time.Until(expr.Next(previous)); delta <= 0 {
+					observationCtx.Logger.Info("Starting a new ranking calculation", log.Int("seconds overdue", -int(delta/time.Second)))
+
+					if err := s.BumpDerivativeGraphKey(ctx); err != nil {
+						return err
+					}
 				}
 			}
 
-			derivativeGraphKeyPrefix, err := store.DerivativeGraphKey(ctx, s)
+			derivativeGraphKeyPrefix, _, err := store.DerivativeGraphKey(ctx, s)
 			if err != nil {
 				return err
 			}
