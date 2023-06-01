@@ -1,10 +1,9 @@
-import { MutationTuple } from '@apollo/client'
-import { Observable } from 'rxjs'
+import { ApolloClient, MutationTuple } from '@apollo/client'
+import { from, Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
-import { dataOrThrowErrors, gql, useMutation } from '@sourcegraph/http-client'
+import { dataOrThrowErrors, getDocumentNode, gql, useMutation } from '@sourcegraph/http-client'
 
-import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnectionQueryArguments } from '../../../components/FilteredConnection'
 import {
     useShowMorePagination,
@@ -64,12 +63,18 @@ export const REPO_EMBEDDING_JOBS_LIST_QUERY = gql`
 `
 
 export function repoEmbeddingJobs(
-    variables: FilteredConnectionQueryArguments
+    variables: FilteredConnectionQueryArguments,
+    apolloClient: ApolloClient<object>
 ): Observable<RepoEmbeddingJobConnectionFields> {
-    return requestGraphQL<RepoEmbeddingJobsListResult, RepoEmbeddingJobsListVariables>(REPO_EMBEDDING_JOBS_LIST_QUERY, {
-        first: variables.first ?? null,
-        after: variables.after ?? null,
-    }).pipe(
+    return from(
+        apolloClient.query<RepoEmbeddingJobsListResult, RepoEmbeddingJobsListVariables>({
+            query: getDocumentNode(REPO_EMBEDDING_JOBS_LIST_QUERY),
+            variables: {
+                first: variables.first ?? null,
+                after: variables.after ?? null,
+            },
+        })
+    ).pipe(
         map(dataOrThrowErrors),
         map(data => data.repoEmbeddingJobs)
     )

@@ -1,5 +1,6 @@
 import { FC, useEffect, useCallback, useMemo } from 'react'
 
+import { useApolloClient } from '@apollo/client'
 import { mdiMapSearch } from '@mdi/js'
 import { Subject } from 'rxjs'
 
@@ -20,7 +21,7 @@ import {
     Validator,
 } from '@sourcegraph/wildcard'
 
-import { FilteredConnection } from '../../../components/FilteredConnection'
+import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import { RepoEmbeddingJobConnectionFields, RepoEmbeddingJobFields } from '../../../graphql-operations'
 import { RepositoriesField } from '../../insights/components'
@@ -82,6 +83,15 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
         validators: { sync: repositoriesValidator },
     })
 
+    const apolloClient = useApolloClient()
+
+    const queryConnection = useCallback(
+        (args: FilteredConnectionQueryArguments) => {
+            return repoEmbeddingJobs(args, apolloClient)
+        },
+        [repoEmbeddingJobs, apolloClient]
+    )
+
     return (
         <>
             <PageTitle title="Cody" />
@@ -136,7 +146,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                     noun="repository embedding job"
                     pluralNoun="repository embedding jobs"
                     defaultFirst={10}
-                    queryConnection={repoEmbeddingJobs}
+                    queryConnection={queryConnection}
                     nodeComponent={RepoEmbeddingJobNode}
                     hideSearch={true}
                     updates={refresh}
