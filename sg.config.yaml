@@ -1268,13 +1268,7 @@ commandsets:
       - grafana
       - prometheus
 
-  codeintel: &codeintel_set
-    requiresDevPrivate: true
-    checks:
-      - docker
-      - redis
-      - postgres
-      - git
+  codeintel-single-queue-commands: &codeintel_single_queue_commands
     commands:
       - frontend
       - worker
@@ -1300,8 +1294,46 @@ commandsets:
       - grafana
       - prometheus
 
+  codeintel-multi-queue-commands: &codeintel_multi_queue_commands
+    commands:
+      - frontend
+      - worker
+      - repo-updater
+      - web
+      - gitserver-0
+      - gitserver-1
+      - searcher
+      - symbols
+      - caddy
+      - docsite
+      - syntax-highlighter
+      - github-proxy
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
+      - blobstore
+      - codeintel-worker
+      - multiqueue-executor
+      # - otel-collector
+      - jaeger
+      - grafana
+      - prometheus
+
+  codeintel: &codeintel_set
+    requiresDevPrivate: true
+    checks:
+      - docker
+      - redis
+      - postgres
+      - git
+
   enterprise-codeintel:
     <<: *codeintel_set
+    <<: *codeintel_single_queue_commands
+  enterprise-codeintel-multi-queue-executor:
+    <<: *codeintel_set
+    <<: *codeintel_multi_queue_commands
   enterprise-codeintel-bazel:
     <<: *codeintel_bazel_set
 
