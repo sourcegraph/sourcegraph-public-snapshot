@@ -27,5 +27,3 @@ ENV  PG_EXPORTER_EXTEND_QUERY_PATH=/config/queries.yaml
 EXPOSE 9187
 
 ENTRYPOINT [ "/usr/local/bin/postgres_exporter"]
-
-#
