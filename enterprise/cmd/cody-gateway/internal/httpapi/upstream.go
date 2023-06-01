@@ -40,7 +40,8 @@ func makeUpstreamHandler[ReqT any](
 	transformRequest requestTransformer,
 	parseResponse responseParser[ReqT],
 ) http.Handler {
-	baseLogger = baseLogger.Scoped(strings.ToLower(upstreamName), fmt.Sprintf("%s upstream handler", upstreamName))
+	baseLogger = baseLogger.Scoped(strings.ToLower(upstreamName), fmt.Sprintf("%s upstream handler", upstreamName)).
+		With(log.String("upstream.url", upstreamAPIURL))
 
 	return rateLimit(baseLogger, eventLogger, limiter.NewPrefixRedisStore("rate_limit:", rs), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		act := actor.FromContext(r.Context())
@@ -118,9 +119,14 @@ func makeUpstreamHandler[ReqT any](
 			}
 		}
 
-		upstreamStarted := time.Now()
 		var (
-			upstreamStatusCode       int = -1
+			upstreamStarted        = time.Now()
+			upstreamStatusCode int = -1
+			// resolvedStatusCode is the status code that we returned to the
+			// client - in most case it is the same as upstreamStatusCode,
+			// but sometimes we write something different.
+			resolvedStatusCode int = -1
+			// completionCharacterCount is extracted from parseResponse.
 			completionCharacterCount int = -1
 		)
 		defer func() {
@@ -134,6 +140,7 @@ func makeUpstreamHandler[ReqT any](
 						codygateway.CompletionsEventFeatureMetadataField: feature,
 						"upstream_request_duration_ms":                   time.Since(upstreamStarted).Milliseconds(),
 						"upstream_status_code":                           upstreamStatusCode,
+						"resolved_status_code":                           resolvedStatusCode,
 						"completion_character_count":                     completionCharacterCount,
 					},
 				},
@@ -160,7 +167,18 @@ func makeUpstreamHandler[ReqT any](
 
 		// Forward status code.
 		upstreamStatusCode = resp.StatusCode
-		w.WriteHeader(resp.StatusCode)
+		if upstreamStatusCode == http.StatusTooManyRequests {
+			// Rewrite 429 to 503 because we share a quota when talking to upstream,
+			// and a 429 from upstream should NOT indicate to the client that they
+			// should retry.
+			logger.Warn("upstream returned 429, rewriting to 503")
+			resolvedStatusCode = http.StatusServiceUnavailable
+			w.WriteHeader(resolvedStatusCode)
+		} else {
+			// Otherwise, write the upstream's status code back as-is.
+			resolvedStatusCode = upstreamStatusCode
+			w.WriteHeader(resolvedStatusCode)
+		}
 
 		// Set up a buffer to capture the response as it's streamed and sent to the client.
 		var responseBuf bytes.Buffer
@@ -174,7 +192,6 @@ func makeUpstreamHandler[ReqT any](
 
 		} else if upstreamStatusCode >= 500 {
 			logger.Error("error from upstream",
-				log.String("url", upstreamAPIURL),
 				log.Int("status_code", upstreamStatusCode))
 		}
 	}))
