@@ -777,6 +777,25 @@ func (r *ownResolver) AssignOwner(ctx context.Context, args *graphqlbackend.Assi
 	if actor.FromContext(ctx).IsInternal() {
 		return nil, nil
 	}
+	user, err := r.checkAssignedOwnershipPermission(ctx)
+	if err != nil {
+		return nil, err
+	}
+	u, err := unmarshalAssignOwnerArgs(args.Input)
+	if err != nil {
+		return nil, err
+	}
+	whoAssignedUserID := user.ID
+	err = r.db.AssignedOwners().Insert(ctx, u.AssignedOwnerID, u.RepoID, u.AbsolutePath, whoAssignedUserID)
+	if err != nil {
+		return nil, errors.Wrap(err, "creating assigned owner")
+	}
+	return &graphqlbackend.EmptyResponse{}, nil
+}
+
+// checkAssignedOwnershipPermission checks that the user from the context has
+// `rbac.OwnershipAssignPermission` and returns the user if so.
+func (r *ownResolver) checkAssignedOwnershipPermission(ctx context.Context) (*types.User, error) {
 	// Extracting the user to run an RBAC check and then use their ID as an
 	// `whoAssignedUserID`.
 	user, err := auth.CurrentUser(ctx, r.db)
@@ -790,14 +809,25 @@ func (r *ownResolver) AssignOwner(ctx context.Context, args *graphqlbackend.Assi
 	if err := rbac.CheckGivenUserHasPermission(ctx, r.db, user, rbac.OwnershipAssignPermission); err != nil {
 		return nil, err
 	}
+	return user, nil
+}
+
+func (r *ownResolver) RemoveAssignedOwner(ctx context.Context, args *graphqlbackend.AssignOwnerArgs) (*graphqlbackend.EmptyResponse, error) {
+	// Internal actor is a no-op, only a user can remove an assigned owner.
+	if actor.FromContext(ctx).IsInternal() {
+		return nil, nil
+	}
+	_, err := r.checkAssignedOwnershipPermission(ctx)
+	if err != nil {
+		return nil, err
+	}
 	u, err := unmarshalAssignOwnerArgs(args.Input)
 	if err != nil {
 		return nil, err
 	}
-	whoAssignedUserID := user.ID
-	err = r.db.AssignedOwners().Insert(ctx, u.AssignedOwnerID, u.RepoID, u.AbsolutePath, whoAssignedUserID)
+	err = r.db.AssignedOwners().DeleteOwner(ctx, u.AssignedOwnerID, u.RepoID, u.AbsolutePath)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating assigned owner")
+		return nil, errors.Wrap(err, "deleting assigned owner")
 	}
 	return &graphqlbackend.EmptyResponse{}, nil
 }
