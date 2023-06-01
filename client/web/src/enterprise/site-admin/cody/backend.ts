@@ -13,6 +13,8 @@ import {
     ScheduleContextDetectionEmbeddingJobVariables,
     ScheduleRepoEmbeddingJobsResult,
     ScheduleRepoEmbeddingJobsVariables,
+    CancelRepoEmbeddingJobResult,
+    CancelRepoEmbeddingJobVariables,
 } from '../../../graphql-operations'
 
 const REPO_EMBEDDING_JOB_FRAGMENT = gql`
@@ -73,6 +75,21 @@ export function repoEmbeddingJobs(
         map(dataOrThrowErrors),
         map(data => data.repoEmbeddingJobs)
     )
+}
+
+export const CANCEL_REPO_EMBEDDING_JOB = gql`
+    mutation CancelRepoEmbeddingJob($id: ID!) {
+        cancelRepoEmbeddingJob(job: $id) {
+            alwaysNil
+        }
+    }
+`
+
+export function useCancelRepoEmbeddingJob(): MutationTuple<
+    CancelRepoEmbeddingJobResult,
+    CancelRepoEmbeddingJobVariables
+> {
+    return useMutation<CancelRepoEmbeddingJobResult, CancelRepoEmbeddingJobVariables>(CANCEL_REPO_EMBEDDING_JOB)
 }
 
 export const SCHEDULE_REPO_EMBEDDING_JOBS = gql`

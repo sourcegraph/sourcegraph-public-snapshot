@@ -1,5 +1,6 @@
 import { FC, useState } from 'react'
 
+import { mdiCancel } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
@@ -15,6 +16,8 @@ import {
     Link,
     H4,
     Alert,
+    Tooltip,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import { RepoEmbeddingJobFields, RepoEmbeddingJobState } from '../../../graphql-operations'
@@ -25,31 +28,56 @@ interface RepoEmbeddingJobNodeProps {
     node: RepoEmbeddingJobFields
 }
 
-export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({ node }) => {
-    const { state, repo, revision, finishedAt, queuedAt, startedAt, failureMessage } = node
+export interface RepoEmbeddingJobFieldsProps {
+    onDelete(id: string): void
+}
+
+export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps & RepoEmbeddingJobFieldsProps> = ({
+    node,
+    onDelete,
+}) => {
+    const { id, state, repo, revision, finishedAt, queuedAt, startedAt, failureMessage } = node
     return (
         <li className="list-group-item p-2">
-            <div className="d-flex align-items-center">
-                <div className={styles.badgeWrapper}>
-                    <RepoEmbeddingJobStateBadge state={state} />
-                </div>
-                <div className="d-flex flex-column ml-3">
-                    {repo && revision ? (
-                        <Link to={`${repo.url}@${revision.oid}`}>
-                            {repo.name}@{revision.abbreviatedOID}
-                        </Link>
-                    ) : (
-                        <div>Unknown repository</div>
-                    )}
-                    <div className="mt-1">
-                        <RepoEmbeddingJobExecutionInfo
-                            state={state}
-                            finishedAt={finishedAt}
-                            queuedAt={queuedAt}
-                            startedAt={startedAt}
-                            failureMessage={failureMessage}
-                        />
+            <div className="d-flex justify-content-between">
+                <div className="d-flex align-items-center">
+                    <div className={styles.badgeWrapper}>
+                        <RepoEmbeddingJobStateBadge state={state} />
                     </div>
+                    <div className="d-flex flex-column ml-3">
+                        {repo && revision ? (
+                            <Link to={`${repo.url}@${revision.oid}`}>
+                                {repo.name}@{revision.abbreviatedOID}
+                            </Link>
+                        ) : (
+                            <div>Unknown repository</div>
+                        )}
+                        <div className="mt-1">
+                            <RepoEmbeddingJobExecutionInfo
+                                state={state}
+                                finishedAt={finishedAt}
+                                queuedAt={queuedAt}
+                                startedAt={startedAt}
+                                failureMessage={failureMessage}
+                            />
+                        </div>
+                    </div>
+                </div>
+                <div className="d-flex align-items-center">
+                    {state === RepoEmbeddingJobState.QUEUED || state === RepoEmbeddingJobState.PROCESSING ? (
+                        <Tooltip content="Cancel repository embedding job">
+                            <Button
+                                aria-label="Cancel"
+                                className="test-delete-external-service-button"
+                                onClick={() => onDelete(id)}
+                                variant="secondary"
+                                size="sm"
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiCancel} />
+                                {' Cancel'}
+                            </Button>
+                        </Tooltip>
+                    ) : null}
                 </div>
             </div>
         </li>

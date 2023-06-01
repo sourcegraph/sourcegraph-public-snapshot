@@ -26,8 +26,13 @@ import { PageTitle } from '../../../components/PageTitle'
 import { RepoEmbeddingJobConnectionFields, RepoEmbeddingJobFields } from '../../../graphql-operations'
 import { RepositoriesField } from '../../insights/components'
 
-import { repoEmbeddingJobs, useScheduleContextDetectionEmbeddingJob, useScheduleRepoEmbeddingJobs } from './backend'
-import { RepoEmbeddingJobNode } from './RepoEmbeddingJobNode'
+import {
+    useCancelRepoEmbeddingJob,
+    repoEmbeddingJobs,
+    useScheduleContextDetectionEmbeddingJob,
+    useScheduleRepoEmbeddingJobs,
+} from './backend'
+import { RepoEmbeddingJobNode, RepoEmbeddingJobFieldsProps } from './RepoEmbeddingJobNode'
 
 import styles from './SiteAdminCodyPage.module.scss'
 
@@ -55,6 +60,8 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
     const [scheduleRepoEmbeddingJobs, { loading: repoEmbeddingJobsLoading, error: repoEmbeddingJobsError }] =
         useScheduleRepoEmbeddingJobs()
 
+    const [cancelRepoEmbeddingJob] = useCancelRepoEmbeddingJob()
+
     const [
         scheduleContextDetectionEmbeddingJob,
         { loading: contextDetectionEmbeddingJobLoading, error: contextDetectionEmbeddingJobError },
@@ -76,6 +83,13 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
         touched: false,
         onSubmit: values => onSubmit(values.repositories),
     })
+
+    const onDelete = useCallback(
+        async (id: string) => {
+            await cancelRepoEmbeddingJob({ variables: { id } }), refresh.next()
+        },
+        [cancelRepoEmbeddingJob, refresh]
+    )
 
     const repositories = useField({
         name: 'repositories',
@@ -133,7 +147,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                 <H3 className="mt-3">Repository embedding jobs</H3>
                 <FilteredConnection<
                     RepoEmbeddingJobFields,
-                    RepoEmbeddingJobFields,
+                    RepoEmbeddingJobFieldsProps,
                     {},
                     RepoEmbeddingJobConnectionFields
                 >
@@ -146,6 +160,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                     defaultFirst={10}
                     queryConnection={queryConnection}
                     nodeComponent={RepoEmbeddingJobNode}
+                    nodeComponentProps={{ onDelete }}
                     hideSearch={true}
                     updates={refresh}
                     emptyElement={<EmtpyList />}
