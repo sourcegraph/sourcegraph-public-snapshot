@@ -173,12 +173,11 @@ func makeUpstreamHandler[ReqT any](
 			// should retry.
 			logger.Warn("upstream returned 429, rewriting to 503")
 			resolvedStatusCode = http.StatusServiceUnavailable
-			w.WriteHeader(resolvedStatusCode)
 		} else {
 			// Otherwise, write the upstream's status code back as-is.
 			resolvedStatusCode = upstreamStatusCode
-			w.WriteHeader(resolvedStatusCode)
 		}
+		w.WriteHeader(resolvedStatusCode)
 
 		// Set up a buffer to capture the response as it's streamed and sent to the client.
 		var responseBuf bytes.Buffer
