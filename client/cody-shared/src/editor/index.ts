@@ -21,12 +21,22 @@ export interface ActiveTextEditorVisibleContent {
     revision?: string
 }
 
-export interface InlineController {
+interface VsCodeInlineController {
     selection: ActiveTextEditorSelection | null
 }
 
+interface VsCodeTaskContoller {
+    add(input: string, selection: ActiveTextEditorSelection): string | null
+    stop(taskID: string): void
+}
+
+export interface ActiveTextEditorViewControllers {
+    inline: VsCodeInlineController
+    task: VsCodeTaskContoller
+}
+
 export interface Editor {
-    controller?: InlineController
+    controllers?: ActiveTextEditorViewControllers
     getWorkspaceRootPath(): string | null
     getActiveTextEditor(): ActiveTextEditor | null
     getActiveTextEditorSelection(): ActiveTextEditorSelection | null
@@ -41,4 +51,42 @@ export interface Editor {
     showQuickPick(labels: string[]): Promise<string | undefined>
     showWarningMessage(message: string): Promise<void>
     showInputBox(prompt?: string): Promise<string | undefined>
+}
+
+export class NoopEditor implements Editor {
+    public getWorkspaceRootPath(): string | null {
+        return null
+    }
+
+    public getActiveTextEditor(): ActiveTextEditor | null {
+        return null
+    }
+
+    public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
+        return null
+    }
+
+    public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
+        return null
+    }
+
+    public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
+        return null
+    }
+
+    public replaceSelection(_fileName: string, _selectedText: string, _replacement: string): Promise<void> {
+        return Promise.resolve()
+    }
+
+    public showQuickPick(_labels: string[]): Promise<string | undefined> {
+        return Promise.resolve(undefined)
+    }
+
+    public showWarningMessage(_message: string): Promise<void> {
+        return Promise.resolve()
+    }
+
+    public showInputBox(_prompt?: string): Promise<string | undefined> {
+        return Promise.resolve(undefined)
+    }
 }

@@ -36,7 +36,7 @@ func getMockClient(responseBody []byte) types.CompletionsClient {
 		func(r *http.Request) (*http.Response, error) {
 			return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(bytes.NewReader(responseBody))}, nil
 		},
-	}, "", "", "")
+	}, "", "")
 }
 
 func TestValidAnthropicStream(t *testing.T) {
@@ -50,7 +50,7 @@ func TestValidAnthropicStream(t *testing.T) {
 
 	mockClient := getMockClient(linesToResponse(mockAnthropicResponseLines))
 	events := []types.CompletionResponse{}
-	err := mockClient.Stream(context.Background(), types.CompletionRequestParameters{}, func(event types.CompletionResponse) error {
+	err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error {
 		events = append(events, event)
 		return nil
 	})
@@ -64,7 +64,7 @@ func TestInvalidAnthropicStream(t *testing.T) {
 	var mockAnthropicInvalidResponseLines = []string{`{]`}
 
 	mockClient := getMockClient(linesToResponse(mockAnthropicInvalidResponseLines))
-	err := mockClient.Stream(context.Background(), types.CompletionRequestParameters{}, func(event types.CompletionResponse) error { return nil })
+	err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error { return nil })
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}

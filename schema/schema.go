@@ -78,7 +78,7 @@ type AuditLog struct {
 	GraphQL bool `json:"graphQL"`
 	// InternalTraffic description: Capture security events performed by the internal traffic (adds significant noise).
 	InternalTraffic bool `json:"internalTraffic"`
-	// SeverityLevel description: Severity logging level for the audit log.
+	// SeverityLevel description: DEPRECATED: No effect, audit logs are always set to SRC_LOG_LEVEL
 	SeverityLevel string `json:"severityLevel,omitempty"`
 }
 
@@ -519,6 +519,8 @@ type ChangesetTemplate struct {
 	Branch string `json:"branch"`
 	// Commit description: The Git commit to create with the changes.
 	Commit ExpandedGitCommitDescription `json:"commit"`
+	// Fork description: Whether to publish the changeset to a fork of the target repository. If omitted, the changeset will be published to a branch directly on the target repository, unless the global `batches.enforceFork` setting is enabled. If set, this property will override any global setting.
+	Fork bool `json:"fork,omitempty"`
 	// Published description: Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the batch change, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host. If omitted, the publication state is controlled from the Batch Changes UI.
 	Published any `json:"published,omitempty"`
 	// Title description: The title of the changeset.
@@ -540,6 +542,16 @@ type CloudKMSEncryptionKey struct {
 	Type            string `json:"type"`
 }
 
+// CodyGateway description: Configuration related to the Cody Gateway service management. This should only be used on sourcegraph.com.
+type CodyGateway struct {
+	// BigQueryDataset description: The dataset to pull BigQuery Cody Gateway related events from.
+	BigQueryDataset string `json:"bigQueryDataset,omitempty"`
+	// BigQueryGoogleProjectID description: The project ID to pull BigQuery Cody Gatewayrelated events from.
+	BigQueryGoogleProjectID string `json:"bigQueryGoogleProjectID,omitempty"`
+	// BigQueryTable description: The table in the dataset to pull BigQuery Cody Gateway related events from.
+	BigQueryTable string `json:"bigQueryTable,omitempty"`
+}
+
 // Completions description: Configuration for the completions service.
 type Completions struct {
 	// AccessToken description: The access token used to authenticate with the external completions provider.
@@ -550,7 +562,7 @@ type Completions struct {
 	CompletionModel string `json:"completionModel,omitempty"`
 	// Enabled description: Toggles whether completions are enabled.
 	Enabled bool `json:"enabled"`
-	// Endpoint description: The endpoint under which to reach the provider. Currently only used for provider types "llmproxy" and "anthropic". The default values are "https://completions.sourcegraph.com" and "https://api.anthropic.com/v1/complete" for LLM proxy and Anthropic, respectively.
+	// Endpoint description: The endpoint under which to reach the provider. Currently only used for provider types "sourcegraph", "openai" and "anthropic". The default values are "https://cody-gateway.sourcegraph.com", "https://api.openai.com/v1/chat/completions", and "https://api.anthropic.com/v1/complete" for Sourcegraph, OpenAI, and Anthropic, respectively.
 	Endpoint string `json:"endpoint,omitempty"`
 	// Model description: DEPRECATED. Use chatModel instead.
 	Model string `json:"model"`
@@ -580,8 +592,8 @@ type DebugLog struct {
 type Dotcom struct {
 	// AppNotifications description: Notifications to display in the Sourcegraph app.
 	AppNotifications []*AppNotifications `json:"app.notifications,omitempty"`
-	// LlmProxy description: Configuration related to the LLM Proxy service management. This should only be used on sourcegraph.com.
-	LlmProxy *LlmProxy `json:"llmProxy,omitempty"`
+	// CodyGateway description: Configuration related to the Cody Gateway service management. This should only be used on sourcegraph.com.
+	CodyGateway *CodyGateway `json:"codyGateway,omitempty"`
 	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
 	SlackLicenseExpirationWebhook string `json:"slackLicenseExpirationWebhook,omitempty"`
 	// SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.
@@ -620,6 +632,8 @@ type Embeddings struct {
 	MaxCodeEmbeddingsPerRepo int `json:"maxCodeEmbeddingsPerRepo,omitempty"`
 	// MaxTextEmbeddingsPerRepo description: The maximum number of embeddings for text files to generate per repo
 	MaxTextEmbeddingsPerRepo int `json:"maxTextEmbeddingsPerRepo,omitempty"`
+	// MinimumInterval description: The time to wait between runs. Valid time units are "s", "m", "h". Example values: "30s", "5m", "1h".
+	MinimumInterval string `json:"minimumInterval,omitempty"`
 	// Model description: The model used for embedding.
 	Model string `json:"model"`
 	// Url description: The url to the external embedding API service.
@@ -1348,16 +1362,6 @@ type ImportChangesets struct {
 type JVMPackagesConnection struct {
 	// Maven description: Configuration for resolving from Maven repositories.
 	Maven Maven `json:"maven"`
-}
-
-// LlmProxy description: Configuration related to the LLM Proxy service management. This should only be used on sourcegraph.com.
-type LlmProxy struct {
-	// BigQueryDataset description: The dataset to pull BigQuery LLM Proxy related events from.
-	BigQueryDataset string `json:"bigQueryDataset,omitempty"`
-	// BigQueryGoogleProjectID description: The project ID to pull BigQuery LLM Proxy related events from.
-	BigQueryGoogleProjectID string `json:"bigQueryGoogleProjectID,omitempty"`
-	// BigQueryTable description: The table in the dataset to pull BigQuery LLM Proxy related events from.
-	BigQueryTable string `json:"bigQueryTable,omitempty"`
 }
 
 // Log description: Configuration for logging and alerting, including to external services.
@@ -2770,10 +2774,18 @@ type SubRepoPermissions struct {
 	UserCacheTTLSeconds int `json:"userCacheTTLSeconds,omitempty"`
 }
 
+// SymbolConfiguration description: Configure symbol generation
+type SymbolConfiguration struct {
+	// Engine description: Manually specify overrides for symbol generation engine per language
+	Engine map[string]string `json:"engine"`
+}
+
 // SyntaxHighlighting description: Syntax highlighting configuration
 type SyntaxHighlighting struct {
 	Engine    SyntaxHighlightingEngine   `json:"engine"`
 	Languages SyntaxHighlightingLanguage `json:"languages"`
+	// Symbols description: Configure symbol generation
+	Symbols SymbolConfiguration `json:"symbols"`
 }
 type SyntaxHighlightingEngine struct {
 	// Default description: The default syntax highlighting engine to use

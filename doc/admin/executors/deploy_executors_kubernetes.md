@@ -25,7 +25,7 @@ Ensure you have the following tools installed:
 
 1. Clone the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository to your local machine.
 2. Run `cd deploy-sourcegraph/configure/executors`.
-3. Configure the [Executor environment variables](https://docs.sourcegraph.com/admin/deploy_executors_binary#step-2-setup-environment-variables) in the `executor/executor.deployment.yaml` file.
+3. Configure the [Executor environment variables](https://docs.sourcegraph.com/admin/executors/deploy_executors_binary#step-2-setup-environment-variables) in the `executor/executor.deployment.yaml` file.
 4. Run  `kubectl apply -f . --recursive` to deploy all components.
 5. Confirm executors are working are working by checking the _Executors_ page under **Site admin > Executors > Instances** .
 
@@ -74,7 +74,7 @@ Kubernetes.
 
 | API Groups | Resources          | Verbs                     | Reason                                                                                    |
 |------------|--------------------|---------------------------|-------------------------------------------------------------------------------------------|
-| `batch`    | `jobs`             | `create`, `delete`, `get`, `list`, `watch` | Executors create Job pods to run processes. Once Jobs are completed, they are cleaned up. |
+| `batch`    | `jobs`             | `create`, `delete`        | Executors create Job pods to run processes. Once Jobs are completed, they are cleaned up. |
 |            | `pods`, `pods/log` | `get`, `list`, `watch`    | Executors need to look up and steam logs from the Job Pods.                               |
 
 See
@@ -182,7 +182,7 @@ Ensure you have the following tools installed.
 1. Clone the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository to your local machine.
 2. Run `cd deploy-sourcegraph/configure/executors`.
 3. Configure
-   the [Executor environment variables](https://docs.sourcegraph.com/admin/deploy_executors_binary#step-2-setup-environment-variables)
+   the [Executor environment variables](https://docs.sourcegraph.com/admin/executors/deploy_executors_binary#step-2-setup-environment-variables)
    in the `executor/executor.deployment.yaml` file.
 4. Run  `kubectl apply -f . --recursive` to deploy all components.
 5. Confirm executors are working by checking the _Executors_ page under _Site Admin_ > _Executors_ > _Instances_ .

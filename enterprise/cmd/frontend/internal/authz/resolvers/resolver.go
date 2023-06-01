@@ -7,6 +7,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/permissions"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 
@@ -17,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	authworker "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/worker/auth"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -706,7 +706,6 @@ type permissionsSyncingStats struct {
 
 func (s permissionsSyncingStats) QueueSize(ctx context.Context) (int32, error) {
 	count, err := s.ossDB.PermissionSyncJobs().Count(ctx, database.ListPermissionSyncJobOpts{State: database.PermissionsSyncJobStateQueued})
-
 	return int32(count), err
 }
 
@@ -720,24 +719,20 @@ func (s permissionsSyncingStats) ReposWithLatestJobFailing(ctx context.Context) 
 
 func (s permissionsSyncingStats) UsersWithNoPermissions(ctx context.Context) (int32, error) {
 	count, err := s.db.Perms().CountUsersWithNoPerms(ctx)
-
 	return int32(count), err
 }
 
 func (s permissionsSyncingStats) ReposWithNoPermissions(ctx context.Context) (int32, error) {
 	count, err := s.db.Perms().CountReposWithNoPerms(ctx)
-
 	return int32(count), err
 }
 
 func (s permissionsSyncingStats) UsersWithStalePermissions(ctx context.Context) (int32, error) {
-	count, err := s.db.Perms().CountUsersWithStalePerms(ctx, authworker.SyncUserBackoff())
-
+	count, err := s.db.Perms().CountUsersWithStalePerms(ctx, permissions.SyncUserBackoff())
 	return int32(count), err
 }
 
 func (s permissionsSyncingStats) ReposWithStalePermissions(ctx context.Context) (int32, error) {
-	count, err := s.db.Perms().CountReposWithStalePerms(ctx, authworker.SyncRepoBackoff())
-
+	count, err := s.db.Perms().CountReposWithStalePerms(ctx, permissions.SyncRepoBackoff())
 	return int32(count), err
 }

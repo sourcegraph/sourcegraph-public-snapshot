@@ -1,3 +1,4 @@
+use tauri::api::shell;
 use tauri::AppHandle;
 use tauri::Manager;
 
@@ -28,4 +29,13 @@ pub fn extract_path_from_scheme_url<'a>(url: &'a str, scheme: &str) -> &'a str {
 #[cfg(not(target_os = "macos"))]
 pub fn is_scheme_url(url: &str, scheme: &str) -> bool {
     url.starts_with(scheme) && url[scheme.len()..].starts_with("://")
+}
+
+pub fn show_logs(app: &AppHandle) {
+    let log_dir_path = app.path_resolver().app_log_dir().unwrap();
+    if let Some(log_path_str) = log_dir_path.to_str() {
+        let name = &app.package_info().name;
+        let combined_path = format!("{}/{}.log", log_path_str, name);
+        shell::open(&app.shell_scope(), &combined_path, None).unwrap()
+    }
 }

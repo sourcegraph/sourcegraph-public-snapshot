@@ -10,105 +10,100 @@ import org.jetbrains.annotations.Nullable;
 @State(
     name = "ApplicationConfig",
     storages = {@Storage("sourcegraph.xml")})
-public class SourcegraphApplicationService implements PersistentStateComponent<SourcegraphApplicationService> {
-    @Nullable
-    public String instanceType;
-    @Nullable
-    public String url;
-    @Nullable
-    public String accessToken;
-    @Nullable
-    public String customRequestHeaders;
-    @Nullable
-    public String defaultBranch;
-    @Nullable
-    public String remoteUrlReplacements;
-    @Nullable
-    public String anonymousUserId;
-    public boolean isInstallEventLogged;
-    public boolean isUrlNotificationDismissed;
-    @Nullable
-    public Boolean authenticationFailedLastTime;
-    @Nullable
-    public String lastUpdateNotificationPluginVersion; // The version of the plugin that last notified the user about an update
+public class SourcegraphApplicationService
+    implements PersistentStateComponent<SourcegraphApplicationService> {
+  @Nullable public String instanceType;
+  @Nullable public String url;
+  @Nullable public String accessToken;
+  @Nullable public String customRequestHeaders;
+  @Nullable public String defaultBranch;
+  @Nullable public String remoteUrlReplacements;
+  @Nullable public String anonymousUserId;
+  public boolean isInstallEventLogged;
+  public boolean isUrlNotificationDismissed;
+  @Nullable public Boolean authenticationFailedLastTime;
 
-    @NotNull
-    public static SourcegraphApplicationService getInstance() {
-        return ApplicationManager.getApplication()
-            .getService(SourcegraphApplicationService.class);
-    }
+  @Nullable
+  public String
+      lastUpdateNotificationPluginVersion; // The version of the plugin that last notified the user
 
-    @Nullable
-    public String getInstanceType() {
-        return instanceType;
-    }
+  // about an update
 
-    @Nullable
-    public String getSourcegraphUrl() {
-        return url;
-    }
+  @NotNull
+  public static SourcegraphApplicationService getInstance() {
+    return ApplicationManager.getApplication().getService(SourcegraphApplicationService.class);
+  }
 
-    @Nullable
-    public String getAccessToken() {
-        return accessToken;
-    }
+  @Nullable
+  public String getInstanceType() {
+    return instanceType;
+  }
 
-    @Nullable
-    public String getCustomRequestHeaders() {
-        return customRequestHeaders;
-    }
+  @Nullable
+  public String getSourcegraphUrl() {
+    return url;
+  }
 
-    @Nullable
-    public String getDefaultBranchName() {
-        return defaultBranch;
-    }
+  @Nullable
+  public String getAccessToken() {
+    return accessToken;
+  }
 
-    @Nullable
-    public String getRemoteUrlReplacements() {
-        return remoteUrlReplacements;
-    }
+  @Nullable
+  public String getCustomRequestHeaders() {
+    return customRequestHeaders;
+  }
 
+  @Nullable
+  public String getDefaultBranchName() {
+    return defaultBranch;
+  }
 
-    @Nullable
-    public String getAnonymousUserId() {
-        return anonymousUserId;
-    }
+  @Nullable
+  public String getRemoteUrlReplacements() {
+    return remoteUrlReplacements;
+  }
 
-    public boolean isInstallEventLogged() {
-        return isInstallEventLogged;
-    }
+  @Nullable
+  public String getAnonymousUserId() {
+    return anonymousUserId;
+  }
 
-    public boolean isUrlNotificationDismissed() {
-        return isUrlNotificationDismissed;
-    }
+  public boolean isInstallEventLogged() {
+    return isInstallEventLogged;
+  }
 
-    @Nullable
-    public Boolean getAuthenticationFailedLastTime() {
-        return authenticationFailedLastTime;
-    }
+  public boolean isUrlNotificationDismissed() {
+    return isUrlNotificationDismissed;
+  }
 
-    @Nullable
-    public String getLastUpdateNotificationPluginVersion() {
-        return lastUpdateNotificationPluginVersion;
-    }
+  @Nullable
+  public Boolean getAuthenticationFailedLastTime() {
+    return authenticationFailedLastTime;
+  }
 
-    @Nullable
-    @Override
-    public SourcegraphApplicationService getState() {
-        return this;
-    }
+  @Nullable
+  public String getLastUpdateNotificationPluginVersion() {
+    return lastUpdateNotificationPluginVersion;
+  }
 
-    @Override
-    public void loadState(@NotNull SourcegraphApplicationService settings) {
-        this.instanceType = settings.instanceType;
-        this.url = settings.url;
-        this.accessToken = settings.accessToken;
-        this.customRequestHeaders = settings.customRequestHeaders;
-        this.defaultBranch = settings.defaultBranch;
-        this.remoteUrlReplacements = settings.remoteUrlReplacements;
-        this.anonymousUserId = settings.anonymousUserId;
-        this.isUrlNotificationDismissed = settings.isUrlNotificationDismissed;
-        this.authenticationFailedLastTime = settings.authenticationFailedLastTime;
-        this.lastUpdateNotificationPluginVersion = settings.lastUpdateNotificationPluginVersion;
-    }
+  @Nullable
+  @Override
+  public SourcegraphApplicationService getState() {
+    return this;
+  }
+
+  @Override
+  public void loadState(@NotNull SourcegraphApplicationService settings) {
+    this.instanceType = settings.instanceType;
+    this.url = settings.url;
+    this.accessToken = settings.accessToken;
+    this.customRequestHeaders = settings.customRequestHeaders;
+    this.defaultBranch = settings.defaultBranch;
+    this.remoteUrlReplacements = settings.remoteUrlReplacements;
+    this.anonymousUserId = settings.anonymousUserId;
+    this.isUrlNotificationDismissed = settings.isUrlNotificationDismissed;
+    this.authenticationFailedLastTime = settings.authenticationFailedLastTime;
+    this.lastUpdateNotificationPluginVersion = settings.lastUpdateNotificationPluginVersion;
+  }
 }

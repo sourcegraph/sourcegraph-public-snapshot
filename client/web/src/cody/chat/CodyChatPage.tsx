@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 
 import { mdiClose, mdiCogOutline, mdiDelete, mdiDotsVertical, mdiOpenInNew, mdiPlus, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
@@ -30,8 +31,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
 import { ChatUI } from '../components/ChatUI'
 import { HistoryList } from '../components/HistoryList'
-import { useChatStore } from '../stores/chat'
-import { useIsCodyEnabled } from '../useIsCodyEnabled'
+import { CodyChatStore, useCodyChat } from '../useCodyChat'
 
 import { CodyColorIcon } from './CodyPageIcon'
 
@@ -44,9 +44,55 @@ interface CodyChatPageProps {
 const onDownloadVSCodeClick = (): void => eventLogger.log(EventName.CODY_CHAT_DOWNLOAD_VSCODE)
 const onTryOnPublicCodeClick = (): void => eventLogger.log(EventName.CODY_CHAT_TRY_ON_PUBLIC_CODE)
 
+const transcriptIdFromUrl = (pathname: string): string | undefined => {
+    const serializedID = pathname.split('/').pop()
+    if (!serializedID) {
+        return
+    }
+
+    try {
+        return atob(serializedID)
+    } catch {
+        return
+    }
+}
+
+const onTranscriptHistoryLoad = (
+    loadTranscriptFromHistory: CodyChatStore['loadTranscriptFromHistory'],
+    transcriptHistory: CodyChatStore['transcriptHistory'],
+    initializeNewChat: CodyChatStore['initializeNewChat']
+): void => {
+    if (transcriptHistory.length > 0) {
+        const transcriptId = transcriptIdFromUrl(window.location.pathname)
+
+        if (transcriptId && transcriptHistory.find(({ id }) => id === transcriptId)) {
+            loadTranscriptFromHistory(transcriptId).catch(() => null)
+        } else {
+            loadTranscriptFromHistory(transcriptHistory[0].id).catch(() => null)
+        }
+    } else {
+        initializeNewChat()
+    }
+}
+
 export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authenticatedUser }) => {
-    const { reset, clearHistory } = useChatStore({ codebase: '' })
-    const codyEnabled = useIsCodyEnabled()
+    const { pathname } = useLocation()
+    const navigate = useNavigate()
+
+    const codyChatStore = useCodyChat({
+        onTranscriptHistoryLoad,
+        autoLoadTranscriptFromHistory: false,
+    })
+    const {
+        initializeNewChat,
+        clearHistory,
+        isCodyEnabled,
+        loaded,
+        transcript,
+        transcriptHistory,
+        loadTranscriptFromHistory,
+        deleteHistoryItem,
+    } = codyChatStore
     const [showVSCodeCTA] = useState<boolean>(Math.random() < 0.5 || true)
     const [isCTADismissed = true, setIsCTADismissed] = useTemporarySetting('cody.chatPageCta.dismissed', false)
     const onCTADismiss = (): void => setIsCTADismissed(true)
@@ -55,7 +101,24 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authe
         eventLogger.logPageView('CodyChat')
     }, [])
 
-    if (!codyEnabled.chat) {
+    const transcriptId = transcript?.id
+
+    useEffect(() => {
+        if (!loaded || !transcriptId) {
+            return
+        }
+        const idFromUrl = transcriptIdFromUrl(pathname)
+
+        if (transcriptId !== idFromUrl) {
+            navigate(`/cody/${btoa(transcriptId)}`)
+        }
+    }, [transcriptId, loaded, pathname, navigate])
+
+    if (!loaded) {
+        return null
+    }
+
+    if (!isCodyEnabled.chat) {
         return (
             <Page className="overflow-hidden">
                 <PageTitle title="Cody AI Chat" />
@@ -70,7 +133,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authe
             <PageHeader
                 actions={
                     <div className="d-flex">
-                        <Button variant="primary" onClick={reset}>
+                        <Button variant="primary" onClick={initializeNewChat}>
                             <Icon aria-hidden={true} svgPath={mdiPlus} />
                             New chat
                         </Button>
@@ -125,7 +188,13 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authe
                         </Menu>
                     </div>
                     <div className={classNames('h-100 mb-4', styles.sidebar)}>
-                        <HistoryList truncateMessageLength={60} />
+                        <HistoryList
+                            currentTranscript={transcript}
+                            transcriptHistory={transcriptHistory}
+                            truncateMessageLength={60}
+                            loadTranscriptFromHistory={loadTranscriptFromHistory}
+                            deleteHistoryItem={deleteHistoryItem}
+                        />
                     </div>
                     {!isCTADismissed &&
                         (showVSCodeCTA ? (
@@ -208,7 +277,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({ authe
                 </div>
 
                 <div className={classNames('d-flex flex-column col-sm-9 h-100', styles.chatMainWrapper)}>
-                    <ChatUI />
+                    <ChatUI codyChatStore={codyChatStore} />
                 </div>
             </div>
         </Page>

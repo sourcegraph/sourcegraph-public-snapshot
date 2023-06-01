@@ -3897,15 +3897,19 @@ CREATE TABLE product_subscriptions (
     archived_at timestamp with time zone,
     account_number text,
     llm_proxy_enabled boolean DEFAULT false NOT NULL,
-    llm_proxy_rate_limit integer,
-    llm_proxy_rate_interval_seconds integer
+    llm_proxy_chat_rate_limit integer,
+    llm_proxy_chat_rate_interval_seconds integer,
+    llm_proxy_chat_rate_limit_allowed_models text[],
+    llm_proxy_code_rate_limit integer,
+    llm_proxy_code_rate_interval_seconds integer,
+    llm_proxy_code_rate_limit_allowed_models text[]
 );
 
 COMMENT ON COLUMN product_subscriptions.llm_proxy_enabled IS 'Whether or not this subscription has access to LLM-proxy';
 
-COMMENT ON COLUMN product_subscriptions.llm_proxy_rate_limit IS 'Custom requests per time interval allowed for LLM-proxy';
+COMMENT ON COLUMN product_subscriptions.llm_proxy_chat_rate_limit IS 'Custom requests per time interval allowed for LLM-proxy';
 
-COMMENT ON COLUMN product_subscriptions.llm_proxy_rate_interval_seconds IS 'Custom time interval over which the for LLM-proxy rate limit is applied';
+COMMENT ON COLUMN product_subscriptions.llm_proxy_chat_rate_interval_seconds IS 'Custom time interval over which the for LLM-proxy rate limit is applied';
 
 CREATE TABLE query_runner_state (
     query text,
@@ -5562,6 +5566,8 @@ CREATE INDEX codeintel_initial_path_ranks_exported_upload_id ON codeintel_initia
 CREATE INDEX codeintel_initial_path_ranks_graph_key_id ON codeintel_initial_path_ranks USING btree (graph_key, id);
 
 CREATE UNIQUE INDEX codeintel_initial_path_ranks_processed_cgraph_key_codeintel_ini ON codeintel_initial_path_ranks_processed USING btree (graph_key, codeintel_initial_path_ranks_id);
+
+CREATE INDEX codeintel_initial_path_ranks_processed_codeintel_initial_path_r ON codeintel_initial_path_ranks_processed USING btree (codeintel_initial_path_ranks_id);
 
 CREATE UNIQUE INDEX codeintel_langugage_support_requests_user_id_language ON codeintel_langugage_support_requests USING btree (user_id, language_id);
 

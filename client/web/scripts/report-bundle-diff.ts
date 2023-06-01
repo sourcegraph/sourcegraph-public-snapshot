@@ -25,6 +25,35 @@ const STATOSCOPE_BIN = path.join(ROOT_PATH, 'node_modules/@statoscope/cli/bin/cl
 const MERGE_BASE = exec('git merge-base HEAD origin/main').toString().trim()
 let COMPARE_REV = ''
 
+async function findFile(root: string, filename: string): Promise<string> {
+    // file can be in one of 3 base paths
+    const parts: string[] = ['oss', 'enterprise', '']
+    const files = await Promise.all(
+        parts.flatMap(async (dir: string) => {
+            const filePath = path.join(root, dir, filename)
+            try {
+                await fs.access(filePath)
+                return filePath
+            } catch {
+                return ''
+            }
+        })
+    )
+
+    const foundFile = files.reduce((accumulator: string, possibleFile: string): string => {
+        if (possibleFile) {
+            return possibleFile
+        }
+        return accumulator
+    })
+
+    if (!foundFile) {
+        throw new Error(`"${filename} not found under root ${root}`)
+    }
+
+    return foundFile
+}
+
 /**
  * We may not have a stats.json file for the merge base commit as these are only
  * created for commits that touch frontend files. Instead, we scan for 20 commits
@@ -65,13 +94,10 @@ async function prepareStats(): Promise<{ commitFile: string; compareFile: string
         exec(`tar -xf ${tarPath} --strip-components=2 -C ${STATIC_ASSETS_PATH}`)
         exec(`ls -la ${STATIC_ASSETS_PATH}`)
 
-        const commitFile = path.join(STATIC_ASSETS_PATH, `stats-${BUILDKITE_COMMIT}.json`)
-        const compareFile = path.join(STATIC_ASSETS_PATH, `stats-${COMPARE_REV}.json`)
-        console.log({ commitFile, compareFile })
-
         try {
-            await fs.access(commitFile)
-            await fs.access(compareFile)
+            const commitFile = await findFile(STATIC_ASSETS_PATH, `stats-${BUILDKITE_COMMIT}.json`)
+            const compareFile = await findFile(STATIC_ASSETS_PATH, `stats-${COMPARE_REV}.json`)
+            console.log({ commitFile, compareFile })
 
             const compareReportPath = path.join(STATIC_ASSETS_PATH, 'compare-report.html')
 
