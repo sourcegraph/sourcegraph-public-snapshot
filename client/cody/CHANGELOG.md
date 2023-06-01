@@ -14,8 +14,6 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ## [0.2.1]
 
-### Added
-
 ### Fixed
 
 - Escape Windows path separator in fast file finder path pattern [pull/52754](https://github.com/sourcegraph/sourcegraph/pull/52754)
