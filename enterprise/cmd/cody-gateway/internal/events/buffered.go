@@ -27,6 +27,7 @@ type BufferedLogger struct {
 	bufferC chan bufferedEvent
 	// timeout is the max duration to wait to submit an event.
 	timeout time.Duration
+
 	// bufferClosed indicates if the buffer has been closed.
 	bufferClosed *atomic.Bool
 	// flushedC is a channel that is closed when the buffer is emptied.
@@ -39,14 +40,17 @@ var _ goroutine.BackgroundRoutine = &BufferedLogger{}
 // NewBufferedLogger wraps handler with a buffered logger that submits events
 // in the background instead of in the hot-path of a request. It implements
 // goroutine.BackgroundRoutine that must be started.
-func NewBufferedLogger(logger log.Logger, handler Logger, queueSize int) *BufferedLogger {
+func NewBufferedLogger(logger log.Logger, handler Logger, bufferSize int) *BufferedLogger {
 	return &BufferedLogger{
 		log: logger.Scoped("bufferedLogger", "buffered events logger"),
 
 		handler: handler,
 
-		bufferC:      make(chan bufferedEvent, queueSize),
-		timeout:      100 * time.Millisecond,
+		bufferC: make(chan bufferedEvent, bufferSize),
+		// don't block enough to become noticeable - bufferSize is generally quite
+		// large, so we should never hit timeout in a normal situation.
+		timeout: 150 * time.Millisecond,
+
 		bufferClosed: &atomic.Bool{},
 		flushedC:     make(chan struct{}),
 	}
