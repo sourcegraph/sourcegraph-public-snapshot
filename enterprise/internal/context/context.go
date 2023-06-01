@@ -254,7 +254,9 @@ func fileMatchToContextMatches(fm *result.FileMatch) []FileChunkContext {
 
 	sort.Ints(relevantLines)
 
-	// TODO: empirically, how many lines per chunk?
+	// Some quick numbers suggested that embeddings chunks are roughly 5-10
+	// lines per chunk. 4 lines in either direction gives us an 8-line chunk.
+	const expandLines = 4
 	var res []FileChunkContext
 	lastLine := -1
 	for _, line := range relevantLines {
@@ -269,11 +271,11 @@ func fileMatchToContextMatches(fm *result.FileMatch) []FileChunkContext {
 			CommitID: fm.CommitID,
 			Path:     fm.Path,
 			// Add three lines of context before and after
-			StartLine: max(0, lastLine, line-3),
-			EndLine:   line + 3,
+			StartLine: max(0, lastLine, line-expandLines),
+			EndLine:   line + expandLines,
 		})
 
-		lastLine = line + 3
+		lastLine = line + expandLines
 	}
 
 	return res
