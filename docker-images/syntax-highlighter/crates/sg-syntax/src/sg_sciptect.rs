@@ -519,7 +519,7 @@ fn new_occurence(range: Vec<i32>, syntax_kind: SyntaxKind, scope: Scope) -> Occu
         symbol,
         override_documentation: vec![],
         diagnostics: vec![],
-        special_fields: SpecialFields::default(),
+        ..Default::default()
     }
 }
 

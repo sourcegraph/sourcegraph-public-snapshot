@@ -25,6 +25,7 @@ pub enum EmitSymbol {
     None,
     Definitions,
     References,
+    Enclosing,
     Unqualified,
     #[default]
     All,
@@ -70,7 +71,14 @@ pub fn dump_document_with_config(
         result += "\n";
 
         while let Some(occ) = occurrences.pop_front() {
-            let range = match PackedRange::from_vec(&occ.range) {
+            // EmitSymbol::Enclosing means only do the enclosing range,
+            // rather than the range of the symbol itself.
+            let range = match &opts.emit_symbol {
+                EmitSymbol::Enclosing => &occ.enclosing_range,
+                _ => &occ.range,
+            };
+
+            let range = match PackedRange::from_vec(range) {
                 Some(range) => range,
                 None => continue,
             };
@@ -141,11 +149,25 @@ fn format_symbol(occ: &Occurrence, emit_symbol: &EmitSymbol) -> Option<String> {
 
     let is_definition = occ.symbol_roles == SymbolRole::Definition.value();
 
+    let symbol = match scip::symbol::parse_symbol(&occ.symbol) {
+        Ok(symbol) => scip::symbol::format_symbol_with(
+            symbol,
+            scip::symbol::SymbolFormatOptions {
+                include_scheme: true,
+                include_package_manager: false,
+                include_package_name: false,
+                include_package_version: false,
+                include_descriptor: true,
+            },
+        ),
+        Err(_) => occ.symbol.clone(),
+    };
+
     match emit_symbol {
         EmitSymbol::None => None,
         EmitSymbol::Definitions if !is_definition => None,
         EmitSymbol::References if is_definition => None,
-        EmitSymbol::Unqualified => Some(format!(" {}", occ.symbol)),
+        EmitSymbol::Unqualified => Some(format!(" {}", symbol)),
         _ => {
             let kind = if is_definition {
                 "definition"
@@ -153,7 +175,7 @@ fn format_symbol(occ: &Occurrence, emit_symbol: &EmitSymbol) -> Option<String> {
                 "reference"
             };
 
-            Some(format!(" {} {}", kind, occ.symbol))
+            Some(format!(" {} {}", kind, symbol))
         }
     }
 }

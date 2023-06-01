@@ -1,5 +1,5 @@
 {
-  "checksum": "a83e6ef20d1de75bea46dc774af1b413e4dfde7f02a62f8321ecbe812c120317",
+  "checksum": "4bfa765a044fc92f413e344aa867440354868963378db633f56c473e0d6ce36b",
   "crates": {
     "adler 1.0.2": {
       "name": "adler",
@@ -9535,7 +9535,7 @@
         "Git": {
           "remote": "https://github.com/sourcegraph/scip",
           "commitish": {
-            "Rev": "3856df76147ca4b86df7821a881594358d4ba870"
+            "Rev": "6b5114f74b063baf7bde5ede67dba79690f28fc0"
           },
           "strip_prefix": "bindings/rust"
         }
