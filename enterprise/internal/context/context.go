@@ -131,7 +131,6 @@ func (c *ContextClient) getEmbeddingsContext(ctx context.Context, args GetContex
 		Query:            args.Query,
 		CodeResultsCount: int(args.CodeResultsCount),
 		TextResultsCount: int(args.TextResultsCount),
-		UseDocumentRanks: false, // TODO: where should this come from?
 	})
 	if err != nil {
 		return nil, err
