@@ -5,24 +5,27 @@ import {logger} from '@sourcegraph/common'
 import {useQuery} from '@sourcegraph/http-client'
 import {TelemetryProps} from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {ErrorAlert, LoadingSpinner} from '@sourcegraph/wildcard'
-import {FetchOwnershipResult, FetchOwnershipVariables,} from '../../../graphql-operations'
-import {FETCH_OWNERS} from './grapqlQueries'
+import {
+    FetchTreeOwnershipResult,
+    FetchTreeOwnershipVariables,
+} from '../../../graphql-operations'
+import {FETCH_TREE_OWNERS} from './grapqlQueries'
 
 import styles from './FileOwnershipPanel.module.scss'
-import {OwnerList} from "./OwnerList";
+import {OwnerList} from './OwnerList';
 
-export const FileOwnershipPanel: React.FunctionComponent<
+export const TreeOwnershipPanel: React.FunctionComponent<
     {
         repoID: string
         revision?: string
         filePath: string
     } & TelemetryProps
-> = ({ repoID, revision, filePath, telemetryService }) => {
+    > = ({ repoID, revision, filePath, telemetryService }) => {
     useEffect(() => {
         telemetryService.log('OwnershipPanelOpened')
     }, [telemetryService])
 
-    const { data, loading, error } = useQuery<FetchOwnershipResult, FetchOwnershipVariables>(FETCH_OWNERS, {
+    const { data, loading, error } = useQuery<FetchTreeOwnershipResult, FetchTreeOwnershipVariables>(FETCH_TREE_OWNERS, {
         variables: {
             repo: repoID,
             revision: revision ?? '',
