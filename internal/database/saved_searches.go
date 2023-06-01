@@ -71,12 +71,10 @@ func (s *savedSearchStore) IsEmpty(ctx context.Context) (bool, error) {
 // user is an admin. It is the callers responsibility to ensure that only users
 // with the proper permissions can access the returned saved searches.
 func (s *savedSearchStore) ListAll(ctx context.Context) (savedSearches []api.SavedQuerySpecAndConfig, err error) {
-	tr, ctx := trace.New(ctx, "database.SavedSearches.ListAll", "")
-	defer func() {
-		tr.SetError(err)
-		tr.SetAttributes(attribute.Int("count", len(savedSearches)))
-		tr.Finish()
-	}()
+	tr, ctx := trace.New(ctx, "database.SavedSearches.ListAll", "",
+		attribute.Int("count", len(savedSearches)),
+	)
+	defer tr.FinishWithErr(&err)
 
 	q := sqlf.Sprintf(`SELECT
 		id,
@@ -322,10 +320,7 @@ func (s *savedSearchStore) Create(ctx context.Context, newSavedSearch *types.Sav
 	}
 
 	tr, ctx := trace.New(ctx, "database.SavedSearches.Create", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	defer tr.FinishWithErr(&err)
 
 	savedQuery = &types.SavedSearch{
 		Description: newSavedSearch.Description,
@@ -364,10 +359,7 @@ func (s *savedSearchStore) Create(ctx context.Context, newSavedSearch *types.Sav
 // proper permissions to perform the update.
 func (s *savedSearchStore) Update(ctx context.Context, savedSearch *types.SavedSearch) (savedQuery *types.SavedSearch, err error) {
 	tr, ctx := trace.New(ctx, "database.SavedSearches.Update", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	defer tr.FinishWithErr(&err)
 
 	savedQuery = &types.SavedSearch{
 		Description:     savedSearch.Description,
@@ -404,10 +396,7 @@ func (s *savedSearchStore) Update(ctx context.Context, savedSearch *types.SavedS
 // proper permissions to perform the delete.
 func (s *savedSearchStore) Delete(ctx context.Context, id int32) (err error) {
 	tr, ctx := trace.New(ctx, "database.SavedSearches.Delete", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	defer tr.FinishWithErr(&err)
 	_, err = s.Handle().ExecContext(ctx, `DELETE FROM saved_searches WHERE ID=$1`, id)
 	return err
 }

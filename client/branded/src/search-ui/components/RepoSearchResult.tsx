@@ -146,7 +146,6 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                     </div>
                     {enableRepositoryMetadata && !!result.metadata && (
                         <RepoMetadata
-                            small={true}
                             className="mt-1"
                             queryState={queryState}
                             buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}

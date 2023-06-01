@@ -31,6 +31,7 @@ go_library(
         "//internal/search/streaming/api",
         "//internal/search/streaming/client",
         "//internal/search/streaming/http",
+        "//internal/settings",
         "//internal/trace",
         "//internal/types",
         "//lib/errors",
@@ -51,7 +52,6 @@ go_test(
     ],
     embed = [":search"],
     deps = [
-        "//cmd/frontend/graphqlbackend",
         "//internal/api",
         "//internal/database",
         "//internal/search",
@@ -61,6 +61,7 @@ go_test(
         "//internal/search/streaming",
         "//internal/search/streaming/api",
         "//internal/search/streaming/http",
+        "//internal/settings",
         "//internal/types",
         "//schema",
         "@com_github_google_go_cmp//cmp",

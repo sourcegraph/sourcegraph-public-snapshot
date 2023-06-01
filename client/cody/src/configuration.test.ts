@@ -15,6 +15,7 @@ describe('getConfiguration', () => {
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
             experimentalInline: false,
+            experimentalNonStop: false,
             customHeaders: {},
             debugEnable: false,
             debugVerbose: false,
@@ -45,6 +46,8 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.inline':
                         return true
+                    case 'cody.experimental.nonStop':
+                        return true
                     case 'cody.debug.enable':
                         return true
                     case 'cody.debug.verbose':
@@ -68,6 +71,7 @@ describe('getConfiguration', () => {
             experimentalChatPredictions: true,
             experimentalGuardrails: true,
             experimentalInline: true,
+            experimentalNonStop: true,
             debugEnable: true,
             debugVerbose: true,
             debugFilter: /.*/,

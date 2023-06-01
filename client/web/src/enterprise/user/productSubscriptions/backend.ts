@@ -1,5 +1,7 @@
 import { gql } from '@sourcegraph/http-client'
 
+import { CODY_GATEWAY_ACCESS_FIELDS_FRAGMENT } from '../../site-admin/dotcom/productSubscriptions/backend'
+
 export const USER_PRODUCT_SUBSCRIPTION = gql`
     query UserProductSubscription($uuid: String!) {
         dotcom {
@@ -35,25 +37,10 @@ export const USER_PRODUCT_SUBSCRIPTION = gql`
         url
         urlForSiteAdmin
         currentSourcegraphAccessToken
-        llmProxyAccess {
-            ...LLMProxyAccessFields
+        codyGatewayAccess {
+            ...CodyGatewayAccessFields
         }
     }
 
-    fragment LLMProxyAccessFields on LLMProxyAccess {
-        enabled
-        rateLimit {
-            ...LLMProxyRateLimitFields
-        }
-        usage {
-            date
-            count
-        }
-    }
-
-    fragment LLMProxyRateLimitFields on LLMProxyRateLimit {
-        source
-        limit
-        intervalSeconds
-    }
+    ${CODY_GATEWAY_ACCESS_FIELDS_FRAGMENT}
 `

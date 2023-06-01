@@ -166,7 +166,7 @@ To perform a multi-version upgrade on a Sourcegraph instance running on Docker S
 
 1. Stop the running Sourcegraph container via `docker stop [CONTAINER]`.
 1. Start a temporary Postgres container on top of the Postgres data directory used by the old `sourcegraph/server` image. This Postgres instance will be used by the following upgrade migration. If using an [external database](../../external_services/postgres.md), the database is already accessible from the `migrator` so no action is needed. Otherwise, start the new Postgres container by following the steps [described below](#running-temporary-postgres-containers).
-1. Follow the instructions on [how to run the migrator job in Docker](../../how-to/manual_database_migrations.md#docker--docker-compose) to perform the upgrade migratiohn. For specific documentation on the `upgrade` command, see the [command documentation](../../how-to/manual_database_migrations.md#upgrade). The following specific steps are an easy way to run the upgrade command:
+2. Follow the instructions on [how to run the migrator job in Docker](../../updates/migrator/migrator-operations.md#docker-compose) to perform the upgrade migratiohn. For specific documentation on the `upgrade` command, see the [command documentation](../../updates/migrator/migrator-operations.md#upgrade). The following specific steps are an easy way to run the upgrade command:
 
 <p />
 

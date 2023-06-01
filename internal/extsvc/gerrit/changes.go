@@ -30,7 +30,6 @@ func (c *client) GetChange(ctx context.Context, changeID string) (*Change, error
 	if resp.StatusCode >= http.StatusBadRequest {
 		return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
-
 	return &change, nil
 }
 

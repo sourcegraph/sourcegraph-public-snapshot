@@ -149,7 +149,7 @@ func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *QueueAut
 	return r.autoIndexingRootResolver.QueueAutoIndexJobsForRepo(ctx, args)
 }
 
-func (r *Resolver) InferAutoIndexJobsForRepo(ctx context.Context, args *InferAutoIndexJobsForRepoArgs) (_ []AutoIndexJobDescriptionResolver, err error) {
+func (r *Resolver) InferAutoIndexJobsForRepo(ctx context.Context, args *InferAutoIndexJobsForRepoArgs) (_ InferAutoIndexJobsResultResolver, err error) {
 	return r.autoIndexingRootResolver.InferAutoIndexJobsForRepo(ctx, args)
 }
 

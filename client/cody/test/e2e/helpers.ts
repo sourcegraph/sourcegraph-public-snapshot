@@ -1,4 +1,4 @@
-import { mkdtempSync, rmdirSync } from 'fs'
+import { mkdir, mkdtempSync, rmdirSync, writeFile } from 'fs'
 import { tmpdir } from 'os'
 import * as path from 'path'
 
@@ -23,6 +23,8 @@ export const test = base
             const videoDirectory = path.join(codyRoot, '..', '..', 'playwright', escapeToPath(testInfo.title))
 
             const workspaceDirectory = path.join(codyRoot, 'test', 'fixtures', 'workspace')
+
+            await buildWorkSpaceSettings(workspaceDirectory)
 
             // See: https://github.com/microsoft/vscode-test/blob/main/lib/runTest.ts
             const app = await electron.launch({
@@ -113,7 +115,7 @@ export async function getCodySidebar(page: Page): Promise<Frame> {
         return null
     }
     await waitUntil(async () => (await findCodySidebarFrame()) !== null)
-    return (await findCodySidebarFrame())!
+    return (await findCodySidebarFrame()) || page.mainFrame()
 }
 
 async function waitUntil(predicate: () => boolean | Promise<boolean>): Promise<void> {
@@ -126,4 +128,24 @@ async function waitUntil(predicate: () => boolean | Promise<boolean>): Promise<v
 
 function escapeToPath(text: string): string {
     return text.replace(/\W/g, '_')
+}
+
+// Build a workspace settings file that enables the experimental inline mode
+export async function buildWorkSpaceSettings(workspaceDirectory: string): Promise<void> {
+    const settings = {
+        'cody.experimental.inline': true,
+    }
+    // create a temporary directory with settings.json and add to the workspaceDirectory
+    const workspaceSettingsPath = path.join(workspaceDirectory, '.vscode', 'settings.json')
+    const workspaceSettingsDirectory = path.join(workspaceDirectory, '.vscode')
+    mkdir(workspaceSettingsDirectory, { recursive: true }, () => {})
+    await new Promise<void>((resolve, reject) => {
+        writeFile(workspaceSettingsPath, JSON.stringify(settings), error => {
+            if (error) {
+                reject(error)
+            } else {
+                resolve()
+            }
+        })
+    })
 }

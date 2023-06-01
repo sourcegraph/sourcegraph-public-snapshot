@@ -9,6 +9,7 @@ import {
 
 import { Completion } from '.'
 import { ReferenceSnippet } from './context'
+import { truncateMultilineCompletion } from './multiline'
 import { messagesToText } from './prompts'
 
 export abstract class CompletionProvider {
@@ -20,6 +21,7 @@ export abstract class CompletionProvider {
         protected prefix: string,
         protected suffix: string,
         protected injectPrefix: string,
+        protected languageId: string,
         protected defaultN: number = 1
     ) {}
 
@@ -101,7 +103,7 @@ export abstract class CompletionProvider {
     public abstract generateCompletions(abortSignal: AbortSignal, n?: number): Promise<Completion[]>
 }
 
-export class MultilineCompletionProvider extends CompletionProvider {
+export class ManualCompletionProvider extends CompletionProvider {
     protected createPromptPrefix(): Message[] {
         // TODO(beyang): escape 'Human:' and 'Assistant:'
         const prefix = this.prefix.trim()
@@ -203,7 +205,7 @@ export class MultilineCompletionProvider extends CompletionProvider {
     }
 }
 
-export class EndOfLineCompletionProvider extends CompletionProvider {
+export class InlineCompletionProvider extends CompletionProvider {
     constructor(
         completionsClient: SourcegraphNodeCompletionsClient,
         promptChars: number,
@@ -212,10 +214,21 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
         prefix: string,
         suffix: string,
         injectPrefix: string,
+        languageId: string,
         defaultN: number = 1,
         protected multilineMode: null | 'block' | 'statement' = null
     ) {
-        super(completionsClient, promptChars, responseTokens, snippets, prefix, suffix, injectPrefix, defaultN)
+        super(
+            completionsClient,
+            promptChars,
+            responseTokens,
+            snippets,
+            prefix,
+            suffix,
+            injectPrefix,
+            languageId,
+            defaultN
+        )
     }
 
     protected createPromptPrefix(): Message[] {
@@ -265,7 +278,11 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
         // Extract a few common parts for the processing
         const currentLinePrefix = this.prefix.slice(this.prefix.lastIndexOf('\n') + 1)
         const firstNlInSuffix = this.suffix.indexOf('\n') + 1
-        const nextLine = this.suffix.slice(firstNlInSuffix, this.suffix.indexOf('\n', firstNlInSuffix))
+        const nextNonEmptyLine =
+            this.suffix
+                .slice(firstNlInSuffix)
+                .split('\n')
+                .find(line => line.trim().length > 0) ?? ''
 
         // Sometimes Claude emits an extra space
         let hasOddIndentation = false
@@ -273,7 +290,7 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
             completion.length > 0 &&
             completion.startsWith(' ') &&
             this.prefix.length > 0 &&
-            this.prefix.endsWith(' ')
+            (this.prefix.endsWith(' ') || this.prefix.endsWith('\t'))
         ) {
             completion = completion.slice(1)
             hasOddIndentation = true
@@ -290,63 +307,27 @@ export class EndOfLineCompletionProvider extends CompletionProvider {
         }
 
         if (this.multilineMode !== null) {
-            const lines = completion.split('\n')
-
-            // We use a whitespace counting approach to finding the end of the completion. To find
-            // an end, we look for the first line that is below the start scope of the completion (
-            // calculated by the number of leading spaces or tabs)
-
-            const prefixLastLineIndent = this.prefix.length - this.prefix.lastIndexOf('\n') - 1
-            const completionFirstLineIndent = indentation(completion)
-            const startIndent = prefixLastLineIndent + completionFirstLineIndent
-
-            // If odd indentation is detected (i.e Claude adds a space to every line),
-            // we fix it for the whole multiline block first.
-            //
-            // We can skip the first line as it was already corrected above
-            if (hasOddIndentation) {
-                for (let i = 1; i < lines.length; i++) {
-                    if (indentation(lines[i]) >= startIndent) {
-                        lines[i] = lines[i].replace(/^ /, '')
-                    }
-                }
-            }
-
-            let cutOffIndex = lines.length
-            for (let i = 0; i < lines.length; i++) {
-                const line = lines[i]
-
-                if (i === 0 || line === '' || line.trim().startsWith('} else')) {
-                    continue
-                }
-
-                if (indentation(line) < startIndent) {
-                    // When we find the first block below the start indentation, only include it if
-                    // it is an end block
-                    if (line.trim().startsWith('}')) {
-                        cutOffIndex = i + 1
-                    } else {
-                        cutOffIndex = i
-                    }
-                    break
-                }
-            }
-
-            completion = lines.slice(0, cutOffIndex).join('\n')
+            completion = truncateMultilineCompletion(
+                completion,
+                hasOddIndentation,
+                this.prefix,
+                nextNonEmptyLine,
+                this.languageId
+            )
         }
 
-        // If a completed line matches the next line of the suffix 1:1, we remove
+        // If a completed line matches the next non-empty line of the suffix 1:1, we remove
         const lines = completion.split('\n')
         const matchedLineIndex = lines.findIndex((line, index) => {
             if (index === 0) {
                 line = currentLinePrefix + line
             }
-            if (line.trim() !== '' && nextLine.trim() !== '') {
+            if (line.trim() !== '' && nextNonEmptyLine.trim() !== '') {
                 // We need a trimEnd here because the machine likes to add trailing whitespace.
                 //
                 // TODO: Fix this earlier in the post process run but this needs to be careful not
                 // to alter the meaning
-                return line.trimEnd() === nextLine
+                return line.trimEnd() === nextNonEmptyLine
             }
             return false
         })
@@ -462,12 +443,4 @@ export function sliceUntilFirstNLinesOfSuffixMatch(suggestion: string, suffix: s
     }
 
     return suggestion
-}
-
-/**
- * Counts space or tabs in the beginning of a line
- */
-function indentation(line: string): number {
-    const regex = line.match(/^[\t ]*/)
-    return regex ? regex[0].length : 0
 }

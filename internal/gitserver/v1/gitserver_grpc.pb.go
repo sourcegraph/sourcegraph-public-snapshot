@@ -351,6 +351,7 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _GitserverService_RepoClone_Handler,
 		},
 		{
+
 			MethodName: "ReposStats",
 			Handler:    _GitserverService_ReposStats_Handler,
 		},

@@ -1,18 +1,15 @@
-# Updating a Docker Compose Sourcegraph instance
+# Docker Compose Upgrade Notes
 
-This page lists the changes that are relevant for [upgrading Sourcegraph on Docker Compose](../deploy/docker-compose/upgrade.md). You can also view the [product changelog](../../../CHANGELOG.md).
+This page lists the changes that are relevant for upgrading Sourcegraph on **Docker Compose**. 
 
-## Upgrade procedure
+For upgrade procedures or general info about sourcegraph versioning see the links below:
+- [Docker Compose Upgrade Procedures](../deploy/docker-compose/upgrade.md)
+- [General Upgrade Info](./index.md)
+- [Product changelog](../../../CHANGELOG.md)
 
-1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
-1. Find the relevant entry for your update in the update notes on this page. **If the notes indicate a patch release exists, target the highest one.**
-1. After checking the relevant update notes, refer to the [standard upgrade procedure](../deploy/docker-compose/upgrade.md#standard-upgrades) to upgrade your instance.
-
-## Multi-version upgrade procedure
-
-1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
-1. Find the relevant entries for your update in the update notes on this page. **If the notes indicate a patch release exists, target the highest one.** These notes may contain relevant information about the infrastructure update such as resource requirement changes or versions of depencies (Docker, Docker Compse, externalized databases).
-1. After checking the relevant update notes, refer to the [multi-version upgrade procedure](../deploy/docker-compose/upgrade.md#multi-version-upgrades) to upgrade your instance.
+> ***Attention:** These notes may contain relevant information about the infrastructure update such as resource requirement changes or versions of depencies (Docker, Docker Compose, externalized databases).*
+>
+> ***If the notes indicate a patch release exists, target the highest one.***
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
@@ -166,7 +163,8 @@ Target the tag [`v3.37.0`](https://github.com/sourcegraph/deploy-sourcegraph-doc
 
 **Notes**:
 
-- This release adds a new container that runs database migrations (`migrator`) independently of the frontend container. Confirm the environment variables on this new container match your database settings.
+- This release adds a new container that runs database migrations (`migrator`) independently of the frontend container. Confirm the environment variables on this new container match your database settings. 
+- **If performing a multiversion upgrade from an instance prior to this version see our [upgrading early versions documentation](./migrator/upgrading-early-versions.md#before-v3370)**
 
 ## v3.35 ➔ v3.36
 
@@ -249,6 +247,7 @@ Target the tag [`v3.27.0`](https://github.com/sourcegraph/deploy-sourcegraph-doc
 **Notes**:
 
 - If you are using an external database, [upgrade your database](https://docs.sourcegraph.com/admin/postgres#upgrading-external-postgresql-instances) to Postgres 12 or above prior to upgrading Sourcegraph. No action is required if you are using the supplied supplied database images.
+- **If performing a multiversion upgrade from an instance prior to this version see our [upgrading early versions documentation](./migrator/upgrading-early-versions.md#before-v3270)**
 
 ## v3.25 ➔ v3.26
 

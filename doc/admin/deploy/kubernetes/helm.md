@@ -943,16 +943,13 @@ Now the deployment is complete, more information on configuring the Sourcegraph 
 
 ## Upgrading Sourcegraph
 
-A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) for release announcements.
+The following procedures describe the process to update a Helm Sourcegraph instance. If you are unfamiliar with sourcegraph versioning or releases see our [general concepts documentation](../../updates/index.md).
+
+> ***⚠️ Attention: Always consult the [release notes](../../updates/kubernetes.md) for the versions your upgrade will pass over and end on.***
 
 ### Standard upgrades
 
-A [standard upgrade](../../updates/index.md#standard-upgrades) occurs between two minor versions of Sourcegraph. If you are looking to jump forward several versions, you must perform a [multi-version upgrade](#multi-version-upgrades) instead.
-
-**Before upgrading:**
-
-- Read our [update policy](../../updates/index.md#update-policy) to learn about Sourcegraph updates.
-- Find the relevant entry for your update in the [update notes for Sourcegraph with Kubernetes](../../updates/kubernetes.md).
+A [standard upgrade](../../updates/index.md#upgrade-types) occurs between a Sourcegraph version and the minor or major version released immediately after it. If you would like to jump forward several versions, you must perform a [multi-version upgrade](#multi-version-upgrades) instead.
 
 1. Review [Helm Changelog] and [Sourcegraph Changelog] and select the most recent version compatible with your current Sourcegraph version.
 
@@ -982,22 +979,15 @@ When all pods have restarted and show as Running, you can browse to your Sourceg
 
 ### Multi-version upgrades
 
-A [multi-version upgrade](../../updates/index.md#multi-version-upgrades) is a downtime-incurring upgrade from version 3.20 or later to any future version. Multi-version upgrades will run both schema and data migrations to ensure the data available from the instance remains available post-upgrade.
-
-> NOTE: It is highly recommended to **take an up-to-date snapshot of your databases** prior to starting a multi-version upgrade. The upgrade process aggressively mutates the shape and contents of your database, and undiscovered errors in the migration process or unexpected environmental differences may cause an unusable instance or data loss.
->
-> We recommend performing the entire upgrade procedure on an idle clone of the production instance and switch traffic over on success, if possible. This may be low-effort for installations with a canary environment or a blue/green deployment strategy.
->
-> **If you do not feel confident running this process solo**, contact the customer support team to help guide you thorough the process.
-
-**Before performing a multi-version upgrade**:
-
-- Read our [update policy](../../updates/index.md#update-policy) to learn about Sourcegraph updates.
-- Find the entries that apply to the version range you're passing through in the [update notes for Sourcegraph with Kubernetes](../../updates/kubernetes.md#multi-version-upgrade-procedure).
+> **⚠️ Attention:** please see our [cautionary note](../../updates/index.md#best-practices) on upgrades, if you have any concerns about running a multiversion upgrade, please reach out to us at [support@sourcegraph.com](emailto:support@sourcegraph.com) for advisement.
 
 ### Multi-version upgrade procedure
 
-1. **Scale down `deployments` and `statefulSets` that access the database**, _this step prevents services from accessing the database while schema migrations are in process._ 
+1. **Check Upgrade Readiness**:
+   - Check the [upgrade notes](../../updates/kubernetes.md#kubernetes-upgrade-notes) for the version range you're passing through.
+   - Check the `Site Admin > Updates` page to determine [upgrade readiness](../../updates/index.md#upgrade-readiness).
+
+2. **Scale down `deployments` and `statefulSets` that access the database**, _this step prevents services from accessing the database while schema migrations are in process._ 
   The following services must have their replicas scaled to 0:
     - Deployments (e.g., `kubectl scale deployment <name> --replicas=0`)
       - precise-code-intel-worker
@@ -1023,15 +1013,31 @@ A [multi-version upgrade](../../updates/index.md#multi-version-upgrades) is a do
     ```
 
     > NOTE: The commands above use the `sourcegraph` namespace and are specific to the kubernetes-helm deployment.
-2. **Run the migrator `upgrade` command**
+3. **Run the migrator `upgrade` command**
   - The following command is the general template for running an upgrade
     ```
     helm upgrade --install -n <your namespace> --set "migrator.args={upgrade,--from=<current version>,--to=<version to upgrade to>}" sourcegraph-migrator sourcegraph/sourcegraph-migrator --version <migrator image version> 
     ```
     > NOTE: The command above is general and you'll need to substitute in your own namespace, target sourcegraph version, and desired migrator image version. In general run the most recent version of migrator.
 
-    You can learn more about running migrator operations in helm in the [migrator operations doc](../../how-to/manual_database_migrations.md#helm-kubernetes).
-3. **Upgrade your instance via `helm upgrade`**
+    **Example:**
+    ```bash
+    λ helm upgrade --install -n sourcegraph --set "migrator.args={upgrade,--from=3.41.0,--to=4.5.1}" sourcegraph-migrator sourcegraph/sourcegraph-migrator --version 4.5.1
+    Release "sourcegraph-migrator" has been upgraded. Happy Helming!
+    NAME: sourcegraph-migrator
+    LAST DEPLOYED: Tue Mar  7 18:23:56 2023
+    NAMESPACE: sourcegraph
+    STATUS: deployed
+    REVISION: 2
+    TEST SUITE: None
+    ✅ Out of band migrations complete
+    👉 Migrating to v4.5 (step 3 of 3)
+    👉 Running schema migrations
+    ✅ Schema migrations complete
+    ```
+
+    You can learn more about running migrator operations in helm in the [migrator operations doc](../../updates/migrator/migrator-operations.md#kubernetes-helm).
+4. **Upgrade your instance via `helm upgrade`**
   - Now that the databases have been migrated to the latest versions, services can be scaled up and upgrade via the [standard procedure](#standard-upgrades). For example:
     ```
     helm upgrade -n <your namespace> --install -f override.yaml --version <sourcegraph version> sourcegraph sourcegraph/sourcegraph

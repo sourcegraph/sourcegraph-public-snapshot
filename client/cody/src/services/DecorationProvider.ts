@@ -47,7 +47,7 @@ export class DecorationProvider {
         await vscode.window.showTextDocument(this.fileUri)
         if (this.status === CodyTaskState.done) {
             this.decorationTypePending.dispose()
-            this.decorations.push({ range, hoverMessage: 'Cody Task#' + this.id })
+            this.decorations.push({ range, hoverMessage: 'Cody Assist #' + this.id })
             this.decorationsForIcon.push({ range: getSingleLineRange(range.start.line) })
             vscode.window.activeTextEditor?.setDecorations(this.decorationTypeIcon, this.decorationsForIcon)
             vscode.window.activeTextEditor?.setDecorations(this.decorationTypeDiff, this.decorations)
