@@ -142,26 +142,49 @@ func (c *CommitStatus) Key() string {
 	return strconv.FormatInt(int64(fnv1.HashString64(key)), 16)
 }
 
-// A Commit in a Repository, from the REST API.
-type restCommit struct {
+// A single Commit reference in a Repository, from the REST API.
+type restCommitRef struct {
 	URL    string `json:"url"`
 	SHA    string `json:"sha"`
 	NodeID string `json:"node_id"`
 	Commit struct {
-		URL          string              `json:"url"`
-		Author       *restAuthorCommiter `json:"author"`
-		Committer    *restAuthorCommiter `json:"committer"`
-		Message      string              `json:"message"`
-		CommentCount int                 `json:"comment_count"`
-		Tree         struct {
+		URL       string              `json:"url"`
+		Author    *restAuthorCommiter `json:"author"`
+		Committer *restAuthorCommiter `json:"committer"`
+		Message   string              `json:"message"`
+		Tree      struct {
 			SHA string `json:"sha"`
 			URL string `json:"url"`
 		} `json:"tree"`
-	}
+	} `json:"commit"`
 	Parents []struct {
 		SHA string `json:"sha"`
 		URL string `json:"url"`
 	} `json:"parents"`
+}
+
+// A single Commit in a Repository, from the REST API.
+type restCommit struct {
+	URL       string              `json:"url"`
+	SHA       string              `json:"sha"`
+	NodeID    string              `json:"node_id"`
+	Author    *restAuthorCommiter `json:"author"`
+	Committer *restAuthorCommiter `json:"committer"`
+	Message   string              `json:"message"`
+	Tree      struct {
+		SHA string `json:"sha"`
+		URL string `json:"url"`
+	} `json:"tree"`
+	Parents []struct {
+		SHA string `json:"sha"`
+		URL string `json:"url"`
+	} `json:"parents"`
+	Verification struct {
+		Verified  bool   `json:"verified"`
+		Reason    string `json:"reason"`
+		Signature string `json:"signature"`
+		Payload   string `json:"payload"`
+	} `json:"verification"`
 }
 
 type restAuthorCommiter struct {

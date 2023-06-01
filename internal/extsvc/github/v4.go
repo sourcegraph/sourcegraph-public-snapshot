@@ -668,7 +668,7 @@ func (c *V4Client) DeleteBranch(ctx context.Context, owner, repo, branch string)
 // GetRef gets the contents of a single commit reference in a repository. The ref should
 // be supplied in a fully qualified format, such as `refs/heads/branch` or
 // `refs/tags/tag`.
-func (c *V4Client) GetRef(ctx context.Context, owner, repo, ref string) (*restCommit, error) {
+func (c *V4Client) GetRef(ctx context.Context, owner, repo, ref string) (*restCommitRef, error) {
 	logger := c.log.Scoped("GetRef", "temporary client for getting a ref on GitHub")
 	// We technically don't need to use the REST API for this but it's just a bit easier.
 	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).GetRef(ctx, owner, repo, ref)

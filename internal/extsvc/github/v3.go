@@ -824,8 +824,8 @@ func (c *V3Client) DeleteBranch(ctx context.Context, owner, repo, branch string)
 // GetRef gets the contents of a single commit reference in a repository. The ref should
 // be supplied in a fully qualified format, such as `refs/heads/branch` or
 // `refs/tags/tag`.
-func (c *V3Client) GetRef(ctx context.Context, owner, repo, ref string) (*restCommit, error) {
-	var commit restCommit
+func (c *V3Client) GetRef(ctx context.Context, owner, repo, ref string) (*restCommitRef, error) {
+	var commit restCommitRef
 	if _, err := c.get(ctx, "repos/"+owner+"/"+repo+"/commits/"+ref, &commit); err != nil {
 		return nil, err
 	}
