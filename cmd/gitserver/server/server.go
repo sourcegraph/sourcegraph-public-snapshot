@@ -2545,7 +2545,7 @@ func honeySampleRate(cmd string, actor *actor.Actor) uint {
 var headBranchPattern = lazyregexp.New(`HEAD branch: (.+?)\n`)
 
 func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec string) (err error) {
-	tr, ctx := trace.New(ctx, "server", "doRepoupdate",
+	tr, ctx := trace.New(ctx, "server", "doRepoUpdate",
 		attribute.String("repo", string(repo)))
 	defer tr.FinishWithErr(&err)
 
