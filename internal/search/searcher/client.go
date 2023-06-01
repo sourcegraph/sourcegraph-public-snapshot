@@ -11,8 +11,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
-
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -20,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -123,20 +120,14 @@ func Search(
 	return false, err
 }
 
-func textSearchStream(ctx context.Context, url string, body []byte, cb func([]*protocol.FileMatch)) (bool, error) {
-	req, err := http.NewRequest("GET", url, bytes.NewReader(body))
+func textSearchStream(ctx context.Context, url string, body []byte, cb func([]*protocol.FileMatch)) (_ bool, err error) {
+	tr, ctx := trace.New(ctx, "searcher", "textSearchStream")
+	defer tr.FinishWithErr(&err)
+
+	req, err := http.NewRequestWithContext(ctx, "GET", url, bytes.NewReader(body))
 	if err != nil {
 		return false, err
 	}
-	req = req.WithContext(ctx)
-
-	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), req, //nolint:staticcheck // Drop once we get rid of OpenTracing
-		nethttp.OperationName("Searcher Client"),
-		nethttp.ClientTrace(false))
-	defer ht.Finish()
-
-	// Do not lose the context returned by TraceRequest
-	ctx = req.Context()
 
 	resp, err := searchDoer.Do(req)
 	if err != nil {

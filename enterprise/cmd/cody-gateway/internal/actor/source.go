@@ -86,19 +86,21 @@ func (s Sources) Worker(obCtx *observation.Context, rmux *redsync.Mutex, rootInt
 		logger: logger.Scoped("redisLock", "distributed lock layer for sources sync"),
 		rmux:   rmux,
 
-		routine: goroutine.NewPeriodicGoroutineWithMetrics(
+		routine: goroutine.NewPeriodicGoroutine(
 			context.Background(),
-			"periodic.sourcesSync", "periodic sources sync worker",
-			rootInterval,
 			&sourcesSyncHandler{
 				logger:  logger.Scoped("handler", "handler for actor sources sync"),
 				rmux:    rmux,
 				sources: s,
 			},
-			obCtx.Operation(observation.Op{
-				Name:        "sourcesSync",
-				Description: "sync actor sources",
-			}),
+			goroutine.WithName("periodic.sourcesSync"),
+			goroutine.WithDescription("periodic sources sync worker"),
+			goroutine.WithInterval(rootInterval),
+			goroutine.WithOperation(
+				obCtx.Operation(observation.Op{
+					Name:        "sourcesSync",
+					Description: "sync actor sources",
+				})),
 		),
 	}
 }

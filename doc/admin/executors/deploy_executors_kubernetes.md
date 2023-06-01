@@ -35,7 +35,7 @@ Ensure you have the following tools installed:
 2. Run `cd deploy-sourcegraph-helm/charts/sourcegraph-executor`.
 3. Edit the `values.yaml` with any other customizations you may require.
 4. Run the following command:
-  1. `helm upgrade --install -f values.yaml --version 5.0.4 sg-executor sourcegraph/sourcegraph-executor`
+  1. `helm upgrade --install -f values.yaml --version 5.0.5 sg-executor sourcegraph/sourcegraph-executor`
 5. Confirm executors are working are working by checking the _Executors_ page under **Site admin > Executors > Instances** .
 
 
@@ -59,7 +59,7 @@ If you have security concerns, consider deploying via [terraform](deploy_executo
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
 </aside>
 
-> NOTE: This feature is available in Sourcegraph 5.0.4 and later.
+> NOTE: This feature is available in Sourcegraph 5.0.5 and later.
 
 [Kubernetes manifests](https://github.com/sourcegraph/deploy-sourcegraph) are provided to deploy Sourcegraph Executors
 on a running Kubernetes cluster. If you are deploying Sourcegraph with helm, charts are
@@ -74,7 +74,7 @@ Kubernetes.
 
 | API Groups | Resources          | Verbs                     | Reason                                                                                    |
 |------------|--------------------|---------------------------|-------------------------------------------------------------------------------------------|
-| `batch`    | `jobs`             | `create`, `delete`, `get`, `list`, `watch` | Executors create Job pods to run processes. Once Jobs are completed, they are cleaned up. |
+| `batch`    | `jobs`             | `create`, `delete`        | Executors create Job pods to run processes. Once Jobs are completed, they are cleaned up. |
 |            | `pods`, `pods/log` | `get`, `list`, `watch`    | Executors need to look up and steam logs from the Job Pods.                               |
 
 See
@@ -98,8 +98,8 @@ set on the Executor `Deployment` and will configure the `Job`s that it spawns.
 | EXECUTOR_KUBERNETES_NODE_SELECTOR                            | N/A               | A comma separated list of values to use as a node selector for Kubernetes Jobs. e.g. `foo=bar,app=my-app`                              |
 | EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_EXPRESSIONS | N/A               | The JSON encoded required affinity match expressions for Kubernetes Jobs. e.g. `[{"key": "foo", "operator": "In", "values": ["bar"]}]` |
 | EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_FIELDS      | N/A               | The JSON encoded required affinity match fields for Kubernetes Jobs. e.g. `[{"key": "foo", "operator": "In", "values": ["bar"]}]`      |
-| EXECUTOR_KUBERNETES_POD_AFFINITY                             | N/A               | The JSON encoded pod affinity for Kubernetes Jobs. e.g. {"requiredDuringSchedulingIgnoredDuringExecution": [{"labelSelector": {"matchExpressions": [{"key": "foo", "operator": "In", "values": ["bar"]}]}, "topologyKey": "kubernetes.io/hostname"}]} |
-| EXECUTOR_KUBERNETES_POD_ANTI_AFFINITY                        | N/A               | The JSON encoded pod anti-affinity for Kubernetes Jobs. e.g. {"requiredDuringSchedulingIgnoredDuringExecution": [{"labelSelector": {"matchExpressions": [{"key": "foo", "operator": "In", "values": ["bar"]}]}, "topologyKey": "kubernetes.io/hostname"}]} |
+| EXECUTOR_KUBERNETES_POD_AFFINITY                             | N/A               | The JSON encoded pod affinity for Kubernetes Jobs. e.g. [{"labelSelector": {"matchExpressions": [{"key": "foo", "operator": "In", "values": ["bar"]}]}, "topologyKey": "kubernetes.io/hostname"}] |
+| EXECUTOR_KUBERNETES_POD_ANTI_AFFINITY                        | N/A               | The JSON encoded pod anti-affinity for Kubernetes Jobs. e.g. [{"labelSelector": {"matchExpressions": [{"key": "foo", "operator": "In", "values": ["bar"]}]}, "topologyKey": "kubernetes.io/hostname"}] |
 | EXECUTOR_KUBERNETES_NODE_TOLERATIONS                         | N/A               | The JSON encoded tolerations for Kubernetes Jobs. e.g. [{"key": "foo", "operator": "Equal", "value": "bar", "effect": "NoSchedule"}]   |
 | EXECUTOR_KUBERNETES_NAMESPACE                                | `default`         | The namespace to create the Jobs in.                                                                                                   |
 | EXECUTOR_KUBERNETES_PERSISTENCE_VOLUME_NAME                  | `sg-executor-pvc` | The name of the Executor Persistence Volume. Must match the `PersistentVolumeClaim` configured for the instance.                       |
@@ -153,7 +153,7 @@ The following are Firewall rules that are _highly recommended_ when running Exec
 Environment.
 
 - Disable access to internal resources.
-- Disable access to `5.0.4.254` (AWS / GCP Instance Metadata Service).
+- Disable access to `169.254.169.254` (AWS / GCP Instance Metadata Service).
 
 ### Batch Changes
 

@@ -9,14 +9,13 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -142,12 +141,10 @@ func (client *HTTPClient) makeGetRequest(ctx context.Context, doer httpcli.Doer,
 		req.Header.Set("Authorization", "Bearer "+client.credentials)
 	}
 
-	do := func() (*http.Response, error) {
-		req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), //nolint:staticcheck // Drop once we get rid of OpenTracing
-			req.WithContext(ctx),
-			nethttp.OperationName("npm"),
-			nethttp.ClientTrace(false))
-		defer ht.Finish()
+	do := func() (_ *http.Response, err error) {
+		tr, ctx := trace.New(ctx, "npm", "")
+		defer tr.FinishWithErr(&err)
+		req = req.WithContext(ctx)
 
 		if err := client.limiter.Wait(ctx); err != nil {
 			return nil, err
