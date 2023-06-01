@@ -39,3 +39,6 @@ build --workspace_status_command=./dev/bazel_buildkite_stamp_vars.sh
 
 # temp
 build --test_env=INCLUDE_ADMIN_ONBOARDING=false
+
+# Enable Go race detector
+test --@io_bazel_rules_go//go/config:race
