@@ -3,7 +3,6 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "context",
     srcs = [
-        "config.go",
         "iface.go",
         "init.go",
         "observability.go",
@@ -13,11 +12,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/internal/codeintel/context/internal/scipstore",
-        "//enterprise/internal/codeintel/shared",
+        "//enterprise/internal/codeintel/context/internal/store",
         "//enterprise/internal/embeddings",
-        "//internal/codeintel/resolvers",
-        "//internal/env",
+        "//internal/database",
         "//internal/metrics",
         "//internal/observation",
     ],

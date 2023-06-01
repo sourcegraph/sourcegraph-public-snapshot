@@ -206,7 +206,8 @@ locked_exported_uploads AS (
 			FROM codeintel_ranking_progress crp
 			WHERE
 				crp.graph_key = %s AND
-				crp.reducer_completed_at IS NULL
+				crp.reducer_completed_at IS NULL AND
+				crp.mappers_started_at <= cre.deleted_at
 		)
 	ORDER BY cre.id
 	FOR UPDATE SKIP LOCKED
