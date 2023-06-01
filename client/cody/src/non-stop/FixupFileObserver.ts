@@ -12,8 +12,6 @@ export class FixupFileObserver {
 
     private n_ = 0 // cookie for generating new ids
 
-    constructor() {}
-
     // TODO: Design memory management. There's no protocol for throwing away a
     // FixupFile.
     // TODO: Consider tracking documents being closed.

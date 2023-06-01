@@ -22,7 +22,7 @@ export class FixupScheduler implements FixupIdleTaskRunner {
      * Schedules a callback which will run when the event loop is idle.
      * @param callback the callback to run.
      */
-    public async scheduleIdle<T>(callback: () => T): Promise<T> {
+    public scheduleIdle<T>(worker: () => T): Promise<T> {
         if (!this.work_.length) {
             // First work item, so schedule the window callback
             this.scheduleCallback()
@@ -30,7 +30,7 @@ export class FixupScheduler implements FixupIdleTaskRunner {
         return new Promise((resolve, reject) => {
             this.work_.push(() => {
                 try {
-                    resolve(callback())
+                    resolve(worker())
                 } catch (error: any) {
                     reject(error)
                 }

@@ -15,7 +15,7 @@ export class FixupDecorator implements vscode.Disposable {
             borderWidth: '1px',
             backgroundColor: 'lightorange',
             before: {
-                contentText: '\u{1f4a5}',
+                contentText: '\u{1F4A5}',
             },
         })
         this.decorationCodyConflicted_ = vscode.window.createTextEditorDecorationType({
