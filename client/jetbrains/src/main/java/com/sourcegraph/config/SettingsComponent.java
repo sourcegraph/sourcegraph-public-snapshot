@@ -148,6 +148,8 @@ public class SettingsComponent {
         FormBuilder.createFormBuilder()
             .addComponent(sourcegraphDotComRadioButton, 1)
             .addComponentToRightColumn(dotComComment, 2)
+            // TODO: add setting for access token dotcom, it can only be configured via
+            // SRC_ACCESS_TOKEN at the moment.
             .getPanel();
     JPanel enterprisePanelContent =
         FormBuilder.createFormBuilder()
