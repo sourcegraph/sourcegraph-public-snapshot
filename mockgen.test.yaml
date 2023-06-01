@@ -322,8 +322,8 @@
     - path: github.com/sourcegraph/sourcegraph/internal/conf/conftypes
       interfaces:
         - SiteConfigQuerier
-- filename: cmd/frontend/internal/auth/userpasswd/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd
+- filename: internal/auth/userpasswd/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/auth/userpasswd
   interfaces:
     - LockoutStore
 - filename: enterprise/internal/codeintel/uploads/transport/graphql/mocks_test.go

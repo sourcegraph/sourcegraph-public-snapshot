@@ -94,6 +94,7 @@ var highlightConfig = syntaxHighlightConfig{
 	Extensions: map[string]string{},
 	Patterns:   []languagePattern{},
 }
+
 var baseHighlightConfig = syntaxHighlightConfig{
 	Extensions: map[string]string{
 		"jsx":  "jsx", // default `getLanguage()` helper doesn't handle JSX
@@ -136,7 +137,7 @@ var baseEngineConfig = syntaxEngineConfig{
 	},
 }
 
-func init() {
+func Init() {
 	// Validation only: Do NOT set any values in the configuration in this function.
 	conf.ContributeValidator(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
 		highlights := c.SiteConfig().SyntaxHighlighting
