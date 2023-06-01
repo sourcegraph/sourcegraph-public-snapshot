@@ -57,7 +57,6 @@ def eslint_config_and_lint_root(name = "eslint_config", config_deps = [], root_j
 # ensures that depenencies' type are available at lint time.
 def _custom_eslint_impl(ctx):
     copied_srcs = copy_files_to_bin_actions(ctx, ctx.files.srcs)
-    print(ctx.files.srcs)
 
     inputs_depset = depset(
         copied_srcs + [ctx.executable.binary],
