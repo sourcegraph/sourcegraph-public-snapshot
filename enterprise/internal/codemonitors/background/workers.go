@@ -3,7 +3,6 @@ package background
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -371,25 +370,6 @@ type StatusCodeError struct {
 
 func (s StatusCodeError) Error() string {
 	return fmt.Sprintf("non-200 response %d %s with body %q", s.Code, s.Status, s.Body)
-}
-
-// newQueryWithAfterFilter constructs a new query which finds search results
-// introduced after the last time we queried.
-func newQueryWithAfterFilter(q *edb.QueryTrigger) string {
-	// For q.LatestResult = nil we return a query string without after: filter, which
-	// effectively triggers actions immediately provided the query returns any
-	// results.
-	if q.LatestResult == nil {
-		return q.QueryString
-	}
-	// ATTENTION: This is a stop gap. Add(time.Second) is necessary because currently
-	// the after: filter is implemented as "at OR after". If we didn't add a second
-	// here, we would send out emails for every run, always showing at least the last
-	// result. This means there is non-zero chance that we miss results whenever
-	// commits have a timestamp equal to the value of :after but arrive after this
-	// job has run.
-	afterTime := q.LatestResult.UTC().Add(time.Second).Format(time.RFC3339)
-	return strings.Join([]string{q.QueryString, fmt.Sprintf(`after:"%s"`, afterTime)}, " ")
 }
 
 func latestResultTime(previousLastResult *time.Time, results []*result.CommitMatch, searchErr error) time.Time {
