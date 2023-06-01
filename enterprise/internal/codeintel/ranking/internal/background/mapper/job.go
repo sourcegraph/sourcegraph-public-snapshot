@@ -60,7 +60,7 @@ func NewSeedMapper(
 
 func mapInitializerRankingGraph(
 	ctx context.Context,
-	store store.Store,
+	s store.Store,
 	batchSize int,
 ) (
 	numInitialPathsProcessed int,
@@ -71,25 +71,35 @@ func mapInitializerRankingGraph(
 		return 0, 0, nil
 	}
 
-	return store.InsertInitialPathCounts(
+	derivativeGraphKeyPrefix, err := store.DerivativeGraphKey(ctx, s)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return s.InsertInitialPathCounts(
 		ctx,
-		rankingshared.DerivativeGraphKeyFromTime(time.Now()),
+		rankingshared.DerivativeGraphKeyFromTime(derivativeGraphKeyPrefix, time.Now()),
 		batchSize,
 	)
 }
 
 func mapRankingGraph(
 	ctx context.Context,
-	store store.Store,
+	s store.Store,
 	batchSize int,
 ) (numReferenceRecordsProcessed int, numInputsInserted int, err error) {
 	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 		return 0, 0, nil
 	}
 
-	return store.InsertPathCountInputs(
+	derivativeGraphKeyPrefix, err := store.DerivativeGraphKey(ctx, s)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return s.InsertPathCountInputs(
 		ctx,
-		rankingshared.DerivativeGraphKeyFromTime(time.Now()),
+		rankingshared.DerivativeGraphKeyFromTime(derivativeGraphKeyPrefix, time.Now()),
 		batchSize,
 	)
 }

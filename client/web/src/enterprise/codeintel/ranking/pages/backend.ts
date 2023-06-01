@@ -47,3 +47,11 @@ export const useRankingSummary = (
         variables,
         fetchPolicy: 'cache-first',
     })
+
+export const BUMP_DERIVATIVE_GRAPH_KEY = gql`
+    mutation BumpDerivativeGraphKey {
+        bumpDerivativeGraphKey {
+            alwaysNil
+        }
+    }
+`

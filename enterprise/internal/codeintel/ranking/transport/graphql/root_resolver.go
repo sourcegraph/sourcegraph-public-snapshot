@@ -53,6 +53,18 @@ func (r *rootResolver) RankingSummary(ctx context.Context) (_ []resolverstubs.Ra
 	return resolvers, nil
 }
 
+// 🚨 SECURITY: Only site admins may modify ranking graph keys.
+func (r *rootResolver) BumpDerivativeGraphKey(ctx context.Context) (_ *resolverstubs.EmptyResponse, err error) {
+	ctx, _, endObservation := r.operations.rankingSummary.With(ctx, &err, observation.Args{})
+	endObservation.OnCancel(ctx, 1, observation.Args{})
+
+	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
+		return nil, err
+	}
+
+	return resolverstubs.Empty, r.rankingSvc.BumpDerivativeGraphKey(ctx)
+}
+
 type rankingSummaryResolver struct {
 	summary shared.Summary
 }

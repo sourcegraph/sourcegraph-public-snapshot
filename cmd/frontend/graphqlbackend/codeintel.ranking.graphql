@@ -5,6 +5,13 @@ extend type Query {
     rankingSummary: [RankingSummary!]!
 }
 
+extend type Mutation {
+    """
+    Effectively begins a new ranking map/reduce job.
+    """
+    bumpDerivativeGraphKey: EmptyResponse!
+}
+
 """
 Summary of one precise ranking job.
 """

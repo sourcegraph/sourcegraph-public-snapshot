@@ -33,16 +33,21 @@ func NewReducer(
 
 func reduceRankingGraph(
 	ctx context.Context,
-	store store.Store,
+	s store.Store,
 	batchSize int,
 ) (numPathRanksInserted int, numPathCountInputsProcessed int, err error) {
 	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 		return 0, 0, nil
 	}
 
-	return store.InsertPathRanks(
+	derivativeGraphKeyPrefix, err := store.DerivativeGraphKey(ctx, s)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return s.InsertPathRanks(
 		ctx,
-		rankingshared.DerivativeGraphKeyFromTime(time.Now()),
+		rankingshared.DerivativeGraphKeyFromTime(derivativeGraphKeyPrefix, time.Now()),
 		batchSize,
 	)
 }

@@ -236,7 +236,7 @@ func TestVacuumDeletedExportedUploads(t *testing.T) {
 	// records only soft-deleted
 	assertCounts(9 + 9)
 
-	_, err = store.VacuumDeletedExportedUploads(ctx, rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123))
+	_, err = store.VacuumDeletedExportedUploads(ctx, rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "", 123))
 	if err != nil {
 		t.Fatalf("unexpected error vacuuming deleted uploads: %s", err)
 	}

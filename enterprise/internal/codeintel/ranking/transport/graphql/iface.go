@@ -7,5 +7,6 @@ import (
 )
 
 type RankingService interface {
+	BumpDerivativeGraphKey(ctx context.Context) error
 	Summaries(ctx context.Context) ([]shared.Summary, error)
 }

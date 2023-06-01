@@ -29,7 +29,7 @@ func TestInsertPathRanks(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	key := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123)
+	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "", 123)
 
 	// Insert and export upload
 	insertUploads(t, db, uploadsshared.Upload{ID: 4})
@@ -144,10 +144,10 @@ func TestVacuumStaleRanks(t *testing.T) {
 		t.Fatalf("failed to insert repos: %s", err)
 	}
 
-	key1 := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123)
-	key2 := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 234)
-	key3 := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 345)
-	key4 := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 456)
+	key1 := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "", 123)
+	key2 := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "", 234)
+	key3 := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "", 345)
+	key4 := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "", 456)
 
 	// Insert metadata to rank progress by completion date
 	if _, err := db.ExecContext(ctx, `

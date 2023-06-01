@@ -13,7 +13,7 @@ import (
 
 func NewCoordinator(
 	observationCtx *observation.Context,
-	store store.Store,
+	s store.Store,
 	config *Config,
 ) goroutine.BackgroundRoutine {
 	name := "codeintel.ranking.file-reference-count-coordinator"
@@ -28,7 +28,12 @@ func NewCoordinator(
 				return nil
 			}
 
-			return store.Coordinate(ctx, rankingshared.DerivativeGraphKeyFromTime(time.Now()))
+			derivativeGraphKeyPrefix, err := store.DerivativeGraphKey(ctx, s)
+			if err != nil {
+				return err
+			}
+
+			return s.Coordinate(ctx, rankingshared.DerivativeGraphKeyFromTime(derivativeGraphKeyPrefix, time.Now()))
 		}),
 	)
 }
