@@ -1026,10 +1026,6 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := s.repoUpdate(&req)
-	if resp.Error != "" {
-		http.Error(w, resp.Error, http.StatusInternalServerError)
-		return
-	}
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
