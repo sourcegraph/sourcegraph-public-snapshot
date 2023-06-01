@@ -55,7 +55,7 @@ export const TreeOwnershipPanel: React.FunctionComponent<
     }
 
     if (data?.node?.__typename === 'Repository') {
-        return <OwnerList data={data?.node?.commit?.tree?.ownership} />
+        return <OwnerList data={data?.node?.commit?.tree?.ownership} isDirectory={true}/>
     }
     return <OwnerList />
 }

@@ -1,16 +1,15 @@
 import React, { useEffect } from 'react'
 
 import { mdiAccount } from '@mdi/js'
-import { Navigate, useLocation } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import { H1, Icon, Link, LoadingSpinner, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { H1, Icon, Link, LoadingSpinner, PageHeader, ProductStatusBadge, ButtonLink } from '@sourcegraph/wildcard'
 
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { TreeOwnershipPanel } from '../../repo/blob/own/TreeOwnershipPanel'
-import { parseBrowserRepoURL } from '../../util/url'
 
 import { RepositoryOwnAreaPageProps } from './RepositoryOwnEditPage'
 
@@ -26,7 +25,6 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
     // const { filePath = '' } = parseBrowserRepoURL(location.pathname) // empty string is root
     const queryParameters = new URLSearchParams(location.search)
     const path = queryParameters.get('path') ?? ''
-    console.log(path)
 
     useBreadcrumb(BREADCRUMB)
 
@@ -53,6 +51,13 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
     return (
         <Page>
             <PageTitle title={`Ownership for ${displayRepoName(repo.name)}`} />
+            <ButtonLink
+                aria-label="Navigate to edit ownership page"
+                style={{'float': 'right'}}
+                variant="secondary"
+                to={`${repo.url}/-/own/edit`}
+            >Edit Ownership</ButtonLink>
+
             <PageHeader
                 description={
                     <>
@@ -61,16 +66,15 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
                     </>
                 }
             >
-                <H1 as="h2" className="d-flex align-items-center">
+                  <H1 as="h2" className="d-flex align-items-center">
                     <Icon svgPath={mdiAccount} aria-hidden={true} />
                     <span className="ml-2">Ownership</span>
-                    <ProductStatusBadge status="experimental" className="ml-2" />
+                    <ProductStatusBadge status="beta" className="ml-2" />
                 </H1>
+
             </PageHeader>
 
             <TreeOwnershipPanel repoID={repo.id} filePath={path} telemetryService={telemetryService} />
-
-            {/*<RepositoryOwnPageContents repo={repo} authenticatedUser={authenticatedUser}/>*/}
         </Page>
     )
 }

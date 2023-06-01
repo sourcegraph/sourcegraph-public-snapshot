@@ -559,7 +559,6 @@ const Ownership: React.FC<OwnershipProps> = ({ repo, filePath }) => {
             : null
     return (
         <div>
-            <ButtonLink to={`${encodeURIPathComponent(filePath)}/-/own`}>CLICKME</ButtonLink>
             <ConnectionContainer>
                 {error && <ConnectionError errors={[error.message]} />}
                 {connection && connection.nodes.length > 0 && (

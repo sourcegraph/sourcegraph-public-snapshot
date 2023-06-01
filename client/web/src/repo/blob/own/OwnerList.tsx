@@ -86,9 +86,10 @@ const resolveOwnerSearchPredicate = (owners?: OwnerFields[]): string => {
 
 interface OwnerListProps {
     data?: OwnershipConnectionFields
+    isDirectory: boolean
 }
 
-export const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data }) => {
+export const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data, isDirectory = false }) => {
     if (data?.nodes && data.nodes.length) {
         const nodes = data.nodes
         const totalCount = data.totalOwners
@@ -107,7 +108,7 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data }) => 
                         <tr>
                             <th colSpan={3}>
                                 {totalCount === 0 ? (
-                                    <Alert variant="info">No ownership data for this file.</Alert>
+                                    <NoOwnershipAlert isDirectory={isDirectory}/>
                                 ) : (
                                     <H4 className="mb-3">Owners</H4>
                                 )}
@@ -172,7 +173,13 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data }) => 
     return (
         <div className={styles.contents}>
             <OwnExplanation />
-            <Alert variant="info">No ownership data for this file.</Alert>
+            <NoOwnershipAlert isDirectory={isDirectory}/>
         </div>
     )
 }
+
+const NoOwnershipAlert: React.FunctionComponent<{ isDirectory: boolean }> = ({ isDirectory }) => (
+    <Alert variant="info">
+        {isDirectory ? 'No ownership data for this path.' : 'No ownership data for this file.'}
+    </Alert>
+)
