@@ -1828,6 +1828,9 @@ func TestServerMaybeEnqueuePerforceChangelistMappingJob(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	repoName := api.RepoName("github.com/sourcegraph/sourcegraph")
+	// We can get away without having to setup a temp dir, because we only assert if the method was
+	// invoked in this test. And since we don't use "dir" in the mocks, it is okay to pass the
+	// repoName as the dir.
 	dir := common.GitDir(repoName)
 
 	db := database.NewMockDB()
