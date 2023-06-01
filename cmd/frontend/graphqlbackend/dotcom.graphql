@@ -121,6 +121,13 @@ type DotcomQuery {
         """
         productSubscriptionID: ID
     ): ProductLicenseConnection!
+
+    """
+    A user for purposes of connecting to the Cody Gateway.
+    Only Sourcegraph.com site admins may perform this query.
+    FOR INTERNAL USE ONLY.
+    """
+    dotcomCodyGatewayUserByToken(token: String!): DotcomCodyGatewayUser
 }
 
 extend type Mutation {
@@ -483,4 +490,9 @@ input UpdateCodyGatewayAccessInput {
     Override the set of allowed models for embeddings generation for this subscription.
     """
     embeddingsAllowedModels: [String!]
+}
+
+type DotcomCodyGatewayUser {
+    userName: String!
+    codyGatewayAccess: CodyGatewayAccess!
 }
