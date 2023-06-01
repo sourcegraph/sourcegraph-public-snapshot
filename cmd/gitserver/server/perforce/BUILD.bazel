@@ -32,6 +32,5 @@ go_library(
         "//internal/wrexec",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
-        "@org_golang_x_sync//errgroup",
     ],
 )
