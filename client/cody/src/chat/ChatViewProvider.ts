@@ -675,8 +675,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             return
         }
         const searchErrors = this.codebaseContext.getEmbeddingSearchErrors()
-        if (searchErrors) {
-            // Display error message as assistant response
+        // Display error message as assistant response for users with indexed codebase but getting search errors
+        if (this.codebaseContext.checkEmbeddingsConnection() && searchErrors) {
             this.transcript.addErrorAsAssistantResponse(searchErrors)
             debug('ChatViewProvider:onLogEmbeddingsErrors', '', { verbose: searchErrors })
         }
