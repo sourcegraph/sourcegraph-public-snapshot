@@ -131,7 +131,7 @@ const CodyVerifyEmailToast: React.FC<{ onNext: () => void; authenticatedUser: Au
                 <Icon svgPath={mdiEmail} className="mr-2" aria-hidden={true} />
                 Verify your email address
             </H3>
-            <Text>To use Cody, our AI Assistent, you'll need to verify your email address.</Text>
+            <Text>To use Cody, our AI Assistant, you'll need to verify your email address.</Text>
             <Text className="d-flex align-items-center">
                 <span className="mr-1">Didn't get an email?</span>
                 {sending ? (
