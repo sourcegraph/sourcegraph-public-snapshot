@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -53,10 +54,11 @@ func (r codyGatewayAccessResolver) ChatCompletionsRateLimit(ctx context.Context)
 	}
 
 	return &codyGatewayRateLimitResolver{
-		feature: types.CompletionsFeatureChat,
-		subUUID: r.sub.UUID(),
-		v:       rateLimit,
-		source:  source,
+		feature:     types.CompletionsFeatureChat,
+		actorID:     r.sub.UUID(),
+		actorSource: codygateway.ActorSourceProductSubscription,
+		v:           rateLimit,
+		source:      source,
 	}, nil
 }
 
@@ -96,10 +98,11 @@ func (r codyGatewayAccessResolver) CodeCompletionsRateLimit(ctx context.Context)
 	}
 
 	return &codyGatewayRateLimitResolver{
-		feature: types.CompletionsFeatureCode,
-		subUUID: r.sub.UUID(),
-		v:       rateLimit,
-		source:  source,
+		feature:     types.CompletionsFeatureCode,
+		actorID:     r.sub.UUID(),
+		actorSource: codygateway.ActorSourceProductSubscription,
+		v:           rateLimit,
+		source:      source,
 	}, nil
 }
 
@@ -139,17 +142,19 @@ func (r codyGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) (gra
 	}
 
 	return &codyGatewayRateLimitResolver{
-		subUUID: r.sub.UUID(),
-		v:       rateLimit,
-		source:  source,
+		actorID:     r.sub.UUID(),
+		actorSource: codygateway.ActorSourceProductSubscription,
+		v:           rateLimit,
+		source:      source,
 	}, nil
 }
 
 type codyGatewayRateLimitResolver struct {
-	subUUID string
-	feature types.CompletionsFeature
-	source  graphqlbackend.CodyGatewayRateLimitSource
-	v       licensing.CodyGatewayRateLimit
+	actorID     string
+	actorSource codygateway.ActorSource
+	feature     types.CompletionsFeature
+	source      graphqlbackend.CodyGatewayRateLimitSource
+	v           licensing.CodyGatewayRateLimit
 }
 
 func (r *codyGatewayRateLimitResolver) Source() graphqlbackend.CodyGatewayRateLimitSource {
@@ -168,12 +173,12 @@ func (r codyGatewayRateLimitResolver) Usage(ctx context.Context) ([]graphqlbacke
 		err   error
 	)
 	if r.feature != "" {
-		usage, err = NewCodyGatewayService().CompletionsUsageForSubscription(ctx, r.feature, r.subUUID)
+		usage, err = NewCodyGatewayService().CompletionsUsageForActor(ctx, r.feature, r.actorSource, r.actorID)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		usage, err = NewCodyGatewayService().EmbeddingsUsageForSubscription(ctx, r.subUUID)
+		usage, err = NewCodyGatewayService().EmbeddingsUsageForActor(ctx, r.actorSource, r.actorID)
 		if err != nil {
 			return nil, err
 		}
