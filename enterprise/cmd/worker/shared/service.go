@@ -21,6 +21,7 @@ func (svc) Configure() (env.Config, []debugserver.Endpoint) {
 
 func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config env.Config) error {
 	go setAuthzProviders(ctx, observationCtx)
+
 	return shared.Start(ctx, observationCtx, ready, config.(*shared.Config), getEnterpriseInit(observationCtx.Logger))
 }
 
