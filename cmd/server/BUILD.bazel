@@ -130,6 +130,7 @@ oci_image(
         ":tar_scip-ctags",
         ":tar_postgres_optimize",
         ":tar_prom-wrapper",
+        "//cmd/gitserver:tar_p4_fusion_wrappers",
     ] + dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS),
     workdir = "/",
 )
