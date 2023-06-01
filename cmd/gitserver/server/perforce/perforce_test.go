@@ -27,7 +27,7 @@ func setupTestRepo(t *testing.T) (common.GitDir, []types.PerforceChangelist) {
 
 [p4-fusion: depot-paths = "//test-perms/": change = %d]`
 
-	commitCommand := "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com git commit --allow-empty -m '%s'"
+	commitCommand := "GIT_AUTHOR_NAME=a GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com git commit --allow-empty -m '%s'"
 
 	gitCommands := []string{}
 	for cid := 1; cid < 6; cid++ {
