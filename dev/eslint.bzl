@@ -87,7 +87,7 @@ def _custom_eslint_impl(ctx):
     args.add_all(["--output-file", report.short_path])  # Specify the output file for the ESLint output.
 
     # Declare the output file for the exit code output.
-    exit_code_out = ctx.actions.declare_file("exit_code_out")
+    exit_code_out = ctx.actions.declare_file("exit_%s" % ctx.attr.report)
 
     env = {
         "BAZEL_BINDIR": ctx.bin_dir.path,
