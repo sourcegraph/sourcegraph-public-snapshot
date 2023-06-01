@@ -37,7 +37,7 @@ You only need to configure the `Cody: Codebase` (`cody.codebase`) setting if Cod
 
 Cody tries to connect to the correct codebase using Git at start-up, so manual configuration of `cody.codebase` is unnecessary.
 
-To enable Cody to connect to the codebase using Git, ensure that the `Cody: Codebase` (`cody.codebase`) configuration field is empty.
+To enable Cody to set the codebase config using `git remote get-url origin`, ensure that the `Cody: Codebase` (`cody.codebase`) configuration field is unset in your VS Code User and Workspace settings, and remote workspace and folder-level settings if applicable.
 
 If this attempt fails and you see `NOT INDEXED` below your Cody chatbox, you can manually specify the correct codebase for Cody using the `Cody: Codebase` (`cody.codebase`) configuration option.
 
@@ -48,8 +48,9 @@ Follow these steps to manually configure the `codebase` setting for Cody via the
 1. Open the VS Code workspace settings by clicking: 
    - Mac: `Code` > `Settings` > `Settings`
    - Windows & Linux: `File` > `Preferences (Settings)`
-2. Enter `Cody: Codebase` in the search bar
-3. Enter the repository name as listed on your Sourcegraph instance in the `Cody: Codebase` field
+2. Switch to the Workspace settings tab
+3. Enter `Cody: Codebase` in the search bar
+4. Enter the repository name as listed on your Sourcegraph instance in the `Cody: Codebase` field
 
 For example, the name for the [Sourcegraph repository on Sourcegraph.com](https://sourcegraph.com/github.com/sourcegraph/sourcegraph) is `github.com/sourcegraph/sourcegraph`, so we will enter it to the setting field without the https protocol as:
 
