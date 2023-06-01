@@ -293,7 +293,7 @@ func (c *Client) Symbols(ctx context.Context, q *SymbolsQuery) (*SymbolsResponse
 	req.Header.Set("Content-Type", "application/json")
 
 	// Perform the request.
-	resp, err := client.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("making request to %s", c.url("/")))
 	}

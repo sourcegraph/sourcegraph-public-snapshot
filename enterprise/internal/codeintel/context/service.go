@@ -8,8 +8,9 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	"github.com/sourcegraph/scip/bindings/go/scip"
+	//"github.com/sourcegraph/scip/bindings/go/scip"
 
+	"github.com/sourcegraph/scip/bindings/go/scip"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 
 	scipstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context/internal/scipstore"
@@ -25,7 +26,7 @@ type Service struct {
 }
 
 // var syntectClient *gosyntect.Client
-var contextConfigInst = &config{}
+//var contextConfigInst = &config{}
 
 func newService(
 	observationCtx *observation.Context,
