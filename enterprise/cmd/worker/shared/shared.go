@@ -5,8 +5,8 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/auth"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/own"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"

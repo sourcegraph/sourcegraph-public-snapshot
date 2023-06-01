@@ -20,6 +20,7 @@ go_library(
         "//internal/api",
         "//internal/collections",
         "//internal/extsvc",
+        "//internal/testutil",
         "//internal/types",
         "//lib/errors",
         "@com_github_prometheus_client_golang//prometheus",

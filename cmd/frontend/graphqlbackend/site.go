@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/drift"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
@@ -267,7 +268,8 @@ func (r *siteConfigurationResolver) History(ctx context.Context, args *graphqlut
 func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *struct {
 	LastID int32
 	Input  string
-}) (bool, error) {
+},
+) (bool, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
@@ -298,31 +300,6 @@ var siteConfigAllowEdits, _ = strconv.ParseBool(env.Get("SITE_CONFIG_ALLOW_EDITS
 
 func canUpdateSiteConfiguration() bool {
 	return os.Getenv("SITE_CONFIG_FILE") == "" || siteConfigAllowEdits || deploy.IsApp()
-}
-
-// IsCodeInsightsEnabled tells if code insights are enabled or not.
-func IsCodeInsightsEnabled() bool {
-	if envvar.SourcegraphDotComMode() {
-		return false
-	}
-	if v, _ := strconv.ParseBool(os.Getenv("DISABLE_CODE_INSIGHTS")); v {
-		// Code insights can always be disabled. This can be a helpful escape hatch if e.g. there
-		// are issues with (or connecting to) the codeinsights-db deployment and it is preventing
-		// the Sourcegraph frontend or repo-updater from starting.
-		//
-		// It is also useful in dev environments if you do not wish to spend resources running Code
-		// Insights.
-		return false
-	}
-	if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
-		// Code insights is not supported in single-container Docker demo deployments unless
-		// explicity allowed, (for example by backend integration tests.)
-		if v, _ := strconv.ParseBool(os.Getenv("ALLOW_SINGLE_DOCKER_CODE_INSIGHTS")); v {
-			return true
-		}
-		return false
-	}
-	return true
 }
 
 func (r *siteResolver) UpgradeReadiness(ctx context.Context) (*upgradeReadinessResolver, error) {
@@ -368,7 +345,7 @@ func (r *upgradeReadinessResolver) init(ctx context.Context) (_ cliutil.Runner, 
 		r.runner, r.version, r.schemaNames, r.initErr = func() (cliutil.Runner, string, []string, error) {
 			schemaNames := []string{schemas.Frontend.Name, schemas.CodeIntel.Name}
 			schemaList := []*schemas.Schema{schemas.Frontend, schemas.CodeIntel}
-			if IsCodeInsightsEnabled() {
+			if insights.IsCodeInsightsEnabled() {
 				schemaNames = append(schemaNames, schemas.CodeInsights.Name)
 				schemaList = append(schemaList, schemas.CodeInsights)
 			}
@@ -535,7 +512,8 @@ func (r *siteResolver) AutoUpgradeEnabled(ctx context.Context) (bool, error) {
 
 func (r *schemaResolver) SetAutoUpgrade(ctx context.Context, args *struct {
 	Enable bool
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins can set auto_upgrade readiness
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return &EmptyResponse{}, err

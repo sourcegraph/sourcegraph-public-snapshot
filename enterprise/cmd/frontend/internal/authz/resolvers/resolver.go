@@ -7,7 +7,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/permissions"
 	"golang.org/x/exp/maps"
 	"golang.org/x/exp/slices"
 
@@ -728,11 +727,13 @@ func (s permissionsSyncingStats) ReposWithNoPermissions(ctx context.Context) (in
 }
 
 func (s permissionsSyncingStats) UsersWithStalePermissions(ctx context.Context) (int32, error) {
-	count, err := s.db.Perms().CountUsersWithStalePerms(ctx, permissions.SyncUserBackoff())
+	count, err := s.db.Perms().CountUsersWithStalePerms(ctx, new(auth.Backoff).SyncUserBackoff())
+
 	return int32(count), err
 }
 
 func (s permissionsSyncingStats) ReposWithStalePermissions(ctx context.Context) (int32, error) {
-	count, err := s.db.Perms().CountReposWithStalePerms(ctx, permissions.SyncRepoBackoff())
+	count, err := s.db.Perms().CountReposWithStalePerms(ctx, new(auth.Backoff).SyncRepoBackoff())
+
 	return int32(count), err
 }

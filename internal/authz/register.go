@@ -1,12 +1,10 @@
 package authz
 
 import (
-	"os"
-	"path/filepath"
-	"strings"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
 var (
@@ -52,7 +50,7 @@ func SetProviders(authzAllowByDefault bool, z []Provider) {
 //
 // It blocks until SetProviders has been called at least once.
 func GetProviders() (authzAllowByDefault bool, providers []Provider) {
-	if !isTest {
+	if !testutil.IsTest {
 		<-authzProvidersReady
 	}
 	authzMu.Lock()
@@ -65,11 +63,3 @@ func GetProviders() (authzAllowByDefault bool, providers []Provider) {
 	copy(providers, authzProviders)
 	return allowAccessByDefault, providers
 }
-
-var isTest = (func() bool {
-	path, _ := os.Executable()
-	return strings.HasSuffix(filepath.Base(path), "_test") || // Test binary build by Bazel
-		filepath.Ext(path) == ".test" ||
-		strings.Contains(path, "/T/___") || // Test path used by GoLand
-		filepath.Base(path) == "__debug_bin" // Debug binary used by VSCode
-})()

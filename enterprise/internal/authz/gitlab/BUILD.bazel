@@ -10,9 +10,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/gitlab",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//cmd/frontend/auth/providers",
         "//enterprise/internal/authz/types",
         "//enterprise/internal/licensing",
+        "//internal/auth/providers",
         "//internal/authz",
         "//internal/database",
         "//internal/extsvc",
@@ -36,8 +36,8 @@ go_test(
     ],
     embed = [":gitlab"],
     deps = [
-        "//cmd/frontend/auth/providers",
         "//internal/api",
+        "//internal/auth/providers",
         "//internal/authz",
         "//internal/database",
         "//internal/extsvc",

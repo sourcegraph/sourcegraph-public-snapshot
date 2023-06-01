@@ -3,7 +3,7 @@ package auth
 import (
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session"
+	"github.com/sourcegraph/sourcegraph/internal/session"
 )
 
 const SignOutCookie = session.SignOutCookie

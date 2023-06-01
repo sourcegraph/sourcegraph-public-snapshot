@@ -35,10 +35,10 @@ go_test(
     ],
     embed = [":authz"],
     deps = [
-        "//cmd/frontend/auth/providers",
         "//cmd/frontend/globals",
         "//enterprise/internal/authz/gitlab",
         "//enterprise/internal/licensing",
+        "//internal/auth/providers",
         "//internal/authz",
         "//internal/conf",
         "//internal/database",

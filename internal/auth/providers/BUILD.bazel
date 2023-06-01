@@ -6,7 +6,7 @@ go_library(
         "mock_auth_provider.go",
         "providers.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers",
+    importpath = "github.com/sourcegraph/sourcegraph/internal/auth/providers",
     visibility = ["//visibility:public"],
     deps = [
         "//internal/extsvc",

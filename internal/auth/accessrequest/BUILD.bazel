@@ -3,11 +3,11 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "accessrequest",
     srcs = ["handlers.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/accessrequest",
-    visibility = ["//cmd/frontend:__subpackages__"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/auth/accessrequest",
+    visibility = ["//:__subpackages__"],
     deps = [
-        "//cmd/frontend/internal/auth/userpasswd",
         "//internal/actor",
+        "//internal/auth/userpasswd",
         "//internal/conf",
         "//internal/database",
         "//internal/deviceid",

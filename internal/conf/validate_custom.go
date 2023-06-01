@@ -40,7 +40,7 @@ func validateCustom(cfg Unified) (problems Problems) {
 	}
 
 	// Auth provider config validation is contributed by the
-	// github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/... packages (using
+	// github.com/sourcegraph/sourcegraph/internal/auth/... packages (using
 	// ContributeValidator).
 
 	{
@@ -83,7 +83,8 @@ func validateCustom(cfg Unified) (problems Problems) {
 func TestValidator(t interface {
 	Errorf(format string, args ...any)
 	Helper()
-}, c conftypes.UnifiedQuerier, f Validator, wantProblems Problems) {
+}, c conftypes.UnifiedQuerier, f Validator, wantProblems Problems,
+) {
 	t.Helper()
 	problems := f(c)
 	wantSet := make(map[string]problemKind, len(wantProblems))

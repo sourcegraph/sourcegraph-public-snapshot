@@ -6,7 +6,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/gerrit",
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
-        "//cmd/frontend/auth/providers",
+        "//internal/auth/providers",
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/extsvc",

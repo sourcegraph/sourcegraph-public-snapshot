@@ -6,17 +6,16 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold/v2"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/sourcegraphoperator"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	osssourcegraphoperator "github.com/sourcegraph/sourcegraph/internal/auth/sourcegraphoperator"
+	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -42,7 +41,7 @@ func TestAddSourcegraphOperatorExternalAccountBinding(t *testing.T) {
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
-	err := osssourcegraphoperator.AddSourcegraphOperatorExternalAccount(context.Background(), db, 1, "foo", "")
+	err := sourcegraphoperator.AddSourcegraphOperatorExternalAccount(context.Background(), db, 1, "foo", "")
 	assert.ErrorIs(t, err, auth.ErrMustBeSiteAdmin)
 }
 

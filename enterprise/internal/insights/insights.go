@@ -1,17 +1,17 @@
 package insights
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func IsEnabled() bool {
-	return graphqlbackend.IsCodeInsightsEnabled()
+	return insights.IsCodeInsightsEnabled()
 }
 
 // InitializeCodeInsightsDB connects to and initializes the Code Insights Postgres DB, running

@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/insights/httpapi"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/insights/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
-	internalinsights "github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -25,7 +25,7 @@ func Init(
 ) error {
 	enterpriseServices.InsightsAggregationResolver = resolvers.NewAggregationResolver(observationCtx, db, enterpriseServices.EnterpriseSearchJobs)
 
-	if !internalinsights.IsEnabled() {
+	if !insights.IsEnabled() {
 		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
 			enterpriseServices.InsightsResolver = resolvers.NewDisabledResolver("code insights are not available on single-container deployments")
 		} else {
@@ -33,7 +33,7 @@ func Init(
 		}
 		return nil
 	}
-	rawInsightsDB, err := internalinsights.InitializeCodeInsightsDB(observationCtx, "frontend")
+	rawInsightsDB, err := insights.InitializeCodeInsightsDB(observationCtx, "frontend")
 	if err != nil {
 		return err
 	}

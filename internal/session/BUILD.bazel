@@ -6,8 +6,8 @@ go_library(
         "session.go",
         "test_util.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/session",
-    visibility = ["//cmd/frontend:__subpackages__"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/session",
+    visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
         "//internal/conf",

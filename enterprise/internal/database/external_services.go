@@ -10,8 +10,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var ValidateExternalServiceConfig = database.MakeValidateExternalServiceConfigFunc([]func(*types.GitHubConnection) error{github.ValidateAuthz},
+var ValidateExternalServiceConfig = database.MakeValidateExternalServiceConfigFunc(
+	[]func(*types.GitHubConnection) error{github.ValidateAuthz},
 	[]func(*schema.GitLabConnection, []schema.AuthProviders) error{gitlab.ValidateAuthz},
 	[]func(*schema.BitbucketServerConnection) error{bitbucketserver.ValidateAuthz},
-	[]func(connection *schema.PerforceConnection) error{perforce.ValidateAuthz},
-	[]func(connection *schema.AzureDevOpsConnection) error{func(_ *schema.AzureDevOpsConnection) error { return nil }}) // TODO: @varsanojidan switch this with actual authz once its implemented.
+	[]func(*schema.PerforceConnection) error{perforce.ValidateAuthz},
+	[]func(*schema.AzureDevOpsConnection) error{func(_ *schema.AzureDevOpsConnection) error { return nil }},
+) // TODO: @varsanojidan switch this with actual authz once its implemented.
