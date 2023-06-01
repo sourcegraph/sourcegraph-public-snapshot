@@ -12,7 +12,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/lazyregexp",
-        "//internal/trace/ot",
+        "//internal/trace",
         "//lib/errors",
         "@com_github_grafana_regexp//:regexp",
         "@com_github_inconshreveable_log15//:log15",

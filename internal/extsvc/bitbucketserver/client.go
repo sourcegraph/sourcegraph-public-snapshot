@@ -18,7 +18,6 @@ import (
 	"github.com/RoaringBitmap/roaring"
 	"github.com/gomodule/oauth1/oauth"
 	"github.com/inconshreveable/log15"
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/segmentio/fasthash/fnv1"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -26,7 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -975,8 +974,11 @@ func (c *Client) send(ctx context.Context, method, path string, qry url.Values, 
 	return c.do(ctx, req, result)
 }
 
-func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.Response, error) {
-	var err error
+func (c *Client) do(ctx context.Context, req *http.Request, result any) (_ *http.Response, err error) {
+	tr, ctx := trace.New(ctx, "Bitbucket Server", "do")
+	defer tr.FinishWithErr(&err)
+	req = req.WithContext(ctx)
+
 	req.URL.Path, err = url.JoinPath(c.URL.Path, req.URL.Path) // First join paths so that base path is kept
 	if err != nil {
 		return nil, err
@@ -986,12 +988,6 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (*http.R
 	if req.Header.Get("Content-Type") == "" {
 		req.Header.Set("Content-Type", "application/json; charset=utf-8")
 	}
-
-	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), //nolint:staticcheck // Drop once we get rid of OpenTracing
-		req.WithContext(ctx),
-		nethttp.OperationName("Bitbucket Server"),
-		nethttp.ClientTrace(false))
-	defer ht.Finish()
 
 	if err := c.Auth.Authenticate(req); err != nil {
 		return nil, err

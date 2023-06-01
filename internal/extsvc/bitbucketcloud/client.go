@@ -12,8 +12,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
-
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -22,7 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -212,6 +210,10 @@ func (c *client) reqPage(ctx context.Context, url string, results any) (*PageTok
 }
 
 func (c *client) do(ctx context.Context, req *http.Request, result any) (code int, err error) {
+	tr, ctx := trace.New(ctx, "Bitbucket Cloud", "do")
+	defer tr.FinishWithErr(&err)
+	req = req.WithContext(ctx)
+
 	req.URL = c.URL.ResolveReference(req.URL)
 
 	// If the request doesn't expect a body, then including a content-type can
@@ -226,12 +228,6 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) (code in
 		}
 	}
 	req.Body = io.NopCloser(bytes.NewReader(reqBody))
-
-	req, ht := nethttp.TraceRequest(ot.GetTracer(ctx), //nolint:staticcheck // Drop once we get rid of OpenTracing
-		req.WithContext(ctx),
-		nethttp.OperationName("Bitbucket Cloud"),
-		nethttp.ClientTrace(false))
-	defer ht.Finish()
 
 	if err = c.rateLimit.Wait(ctx); err != nil {
 		return code, err

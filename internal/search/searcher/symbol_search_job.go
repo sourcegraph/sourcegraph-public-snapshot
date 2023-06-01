@@ -4,8 +4,6 @@ import (
 	"context"
 	"sort"
 
-	"github.com/opentracing/opentracing-go/ext"
-	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/conc/pool"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -18,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -90,18 +87,12 @@ func (s *SymbolSearchJob) Children() []job.Describer       { return nil }
 func (s *SymbolSearchJob) MapChildren(job.MapFunc) job.Job { return s }
 
 func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo") //nolint:staticcheck // OT is deprecated
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.LogFields(log.Error(err))
-		}
-		span.Finish()
-	}()
-	span.SetTag("repo", string(repoRevs.Repo.Name))
-
 	inputRev := repoRevs.Revs[0]
-	span.SetTag("rev", inputRev)
+	tr, ctx := trace.New(ctx, "symbols", "searchInRepo",
+		attribute.String("repo", string(repoRevs.Repo.Name)),
+		attribute.String("rev", inputRev))
+	defer tr.FinishWithErr(&err)
+
 	// Do not trigger a repo-updater lookup (e.g.,
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
@@ -110,7 +101,7 @@ func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, pat
 	if err != nil {
 		return nil, err
 	}
-	span.SetTag("commit", string(commitID))
+	tr.SetAttributes(attribute.String("commit", string(commitID)))
 
 	symbols, err := backend.Symbols.ListTags(ctx, search.SymbolsParameters{
 		Repo:            repoRevs.Repo.Name,

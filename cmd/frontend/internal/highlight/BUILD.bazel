@@ -21,7 +21,6 @@ go_library(
         "//internal/gosyntect",
         "//internal/honey",
         "//internal/observation",
-        "//internal/trace/ot",
         "//lib/codeintel/languages",
         "//lib/errors",
         "@com_github_alecthomas_chroma_v2//:chroma",

@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 )
 
 var Mocks MockServices
@@ -19,7 +18,6 @@ func testContext() context.Context {
 
 	ctx := context.Background()
 	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
-	_, ctx = ot.StartSpanFromContext(ctx, "dummy") //nolint:staticcheck // OT is deprecated
 
 	return ctx
 }

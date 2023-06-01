@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
@@ -25,7 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -196,11 +197,11 @@ func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 }
 
 func (r *GitTreeEntryResolver) url(ctx context.Context) *url.URL {
-	span, ctx := ot.StartSpanFromContext(ctx, "treeentry.URL") //nolint:staticcheck // OT is deprecated
-	defer span.Finish()
+	tr, ctx := trace.New(ctx, "GitTreeEntryResolver", "url")
+	defer tr.Finish()
 
 	if submodule := r.Submodule(); submodule != nil {
-		span.SetTag("Submodule", "true")
+		tr.SetAttributes(attribute.Bool("submodule", true))
 		submoduleURL := submodule.URL()
 		if strings.HasPrefix(submoduleURL, "../") {
 			submoduleURL = path.Join(r.Repository().Name(), submoduleURL)
@@ -260,9 +261,9 @@ func (r *GitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
 	return nil
 }
 
-func cloneURLToRepoName(ctx context.Context, db database.DB, cloneURL string) (string, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "cloneURLToRepoName") //nolint:staticcheck // OT is deprecated
-	defer span.Finish()
+func cloneURLToRepoName(ctx context.Context, db database.DB, cloneURL string) (_ string, err error) {
+	tr, ctx := trace.New(ctx, "gitTreeEntry", "cloneURLToRepoName")
+	defer tr.FinishWithErr(&err)
 
 	repoName, err := cloneurls.RepoSourceCloneURLToRepoName(ctx, db, cloneURL)
 	if err != nil {

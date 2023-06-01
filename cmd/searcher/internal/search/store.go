@@ -14,9 +14,9 @@ import (
 	"time"
 
 	"github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/ext"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/mountinfo"
@@ -29,7 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -142,16 +142,12 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 }
 
 func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (path string, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Store.prepareZip") //nolint:staticcheck // OT is deprecated
-	ext.Component.Set(span, "store")
+	tr, ctx := trace.New(ctx, "ArchiveStore", "PrepareZipPaths")
+	defer tr.FinishWithErr(&err)
+
 	var cacheHit bool
 	start := time.Now()
 	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
 		duration := time.Since(start).Seconds()
 		if cacheHit {
 			metricZipAccess.WithLabelValues("true").Observe(duration)
@@ -181,7 +177,7 @@ func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit a
 		_, _ = io.WriteString(h, p)
 	}
 	key := hex.EncodeToString(h.Sum(nil))
-	span.LogKV("key", key)
+	tr.AddEvent("calculated key", attribute.String("key", key))
 
 	// Our fetch can take a long time, and the frontend aggressively cancels
 	// requests. So we open in the background to give it extra time.
@@ -231,6 +227,10 @@ func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit a
 // not populate the in-memory cache. You should probably be calling
 // prepareZip.
 func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitID, filter *searchableFilter, paths []string) (rc io.ReadCloser, err error) {
+	tr, ctx := trace.New(ctx, "ArchiveStore", "fetch",
+		attribute.String("repo", string(repo)),
+		attribute.String("commit", string(commit)))
+
 	metricFetchQueueSize.Inc()
 	ctx, releaseFetchLimiter, err := s.fetchLimiter.Acquire(ctx) // Acquire concurrent fetches semaphore
 	if err != nil {
@@ -241,10 +241,6 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 	ctx, cancel := context.WithCancel(ctx)
 
 	metricFetching.Inc()
-	span, ctx := ot.StartSpanFromContext(ctx, "Store.fetch") //nolint:staticcheck // OT is deprecated
-	ext.Component.Set(span, "store")
-	span.SetTag("repo", repo)
-	span.SetTag("commit", commit)
 
 	// Done is called when the returned reader is closed, or if this function
 	// returns an error. It should always be called once.
@@ -258,12 +254,10 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 		releaseFetchLimiter() // Release concurrent fetches semaphore
 		cancel()              // Release context resources
 		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
 			metricFetchFailed.Inc()
 		}
 		metricFetching.Dec()
-		span.Finish()
+		defer tr.FinishWithErr(&err)
 	}
 	defer func() {
 		if rc == nil {

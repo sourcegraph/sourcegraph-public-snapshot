@@ -10,11 +10,9 @@ import (
 	"time"
 
 	"github.com/gobwas/glob"
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/opentracing/opentracing-go/ext"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -32,7 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -174,16 +172,10 @@ func (c *Client) listLanguageMappingsJSON(ctx context.Context, repository api.Re
 
 // Search performs a symbol search on the symbols service.
 func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (symbols result.Symbols, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "symbols.Client.Search") //nolint:staticcheck // OT is deprecated
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.LogFields(otlog.Error(err))
-		}
-		span.Finish()
-	}()
-	span.SetTag("Repo", string(args.Repo))
-	span.SetTag("CommitID", string(args.CommitID))
+	tr, ctx := trace.New(ctx, "symbols", "Search",
+		attribute.String("repo", string(args.Repo)),
+		attribute.String("commitID", string(args.CommitID)))
+	defer tr.FinishWithErr(&err)
 
 	var response search.SymbolsResponse
 
@@ -280,16 +272,10 @@ func (c *Client) searchJSON(ctx context.Context, args search.SymbolsParameters) 
 }
 
 func (c *Client) LocalCodeIntel(ctx context.Context, args types.RepoCommitPath) (result *types.LocalCodeIntelPayload, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "squirrel.Client.LocalCodeIntel") //nolint:staticcheck // OT is deprecated
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.LogFields(otlog.Error(err))
-		}
-		span.Finish()
-	}()
-	span.SetTag("Repo", args.Repo)
-	span.SetTag("CommitID", args.Commit)
+	tr, ctx := trace.New(ctx, "symbols", "LocalCodeIntel",
+		attribute.String("repo", string(args.Repo)),
+		attribute.String("commitID", string(args.Commit)))
+	defer tr.FinishWithErr(&err)
 
 	if internalgrpc.IsGRPCEnabled(ctx) {
 		return c.localCodeIntelGRPC(ctx, args)
@@ -351,16 +337,10 @@ func (c *Client) localCodeIntelJSON(ctx context.Context, args types.RepoCommitPa
 }
 
 func (c *Client) SymbolInfo(ctx context.Context, args types.RepoCommitPathPoint) (result *types.SymbolInfo, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "squirrel.Client.SymbolInfo") //nolint:staticcheck // OT is deprecated
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.LogFields(otlog.Error(err))
-		}
-		span.Finish()
-	}()
-	span.SetTag("Repo", args.Repo)
-	span.SetTag("CommitID", args.Commit)
+	tr, ctx := trace.New(ctx, "squirrel", "SymbolInfo",
+		attribute.String("repo", string(args.Repo)),
+		attribute.String("commitID", string(args.Commit)))
+	defer tr.FinishWithErr(&err)
 
 	if internalgrpc.IsGRPCEnabled(ctx) {
 		result, err = c.symbolInfoGRPC(ctx, args)
@@ -462,14 +442,10 @@ func (c *Client) httpPost(
 	repo api.RepoName,
 	payload any,
 ) (resp *http.Response, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "symbols.Client.httpPost") //nolint:staticcheck // OT is deprecated
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.LogFields(otlog.Error(err))
-		}
-		span.Finish()
-	}()
+	tr, ctx := trace.New(ctx, "symbols", "httpPost",
+		attribute.String("method", method),
+		attribute.String("repo", string(repo)))
+	defer tr.FinishWithErr(&err)
 
 	symbolsURL, err := c.url(repo)
 	if err != nil {
@@ -492,15 +468,10 @@ func (c *Client) httpPost(
 	req.Header.Set("Content-Type", "application/json")
 	req = req.WithContext(ctx)
 
-	span.LogKV("event", "Waiting on HTTP limiter")
+	tr.AddEvent("Waiting on HTTP limiter")
 	c.HTTPLimiter.Acquire()
 	defer c.HTTPLimiter.Release()
-	span.LogKV("event", "Acquired HTTP limiter")
-
-	req, ht := nethttp.TraceRequest(span.Tracer(), req,
-		nethttp.OperationName("Symbols Client"),
-		nethttp.ClientTrace(false))
-	defer ht.Finish()
+	tr.AddEvent("Acquired HTTP limiter")
 
 	return c.HTTPClient.Do(req)
 }

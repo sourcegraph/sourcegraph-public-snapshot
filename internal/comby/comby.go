@@ -15,7 +15,7 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/conc/pool"
 
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -200,9 +200,9 @@ func SetupCmdWithPipes(ctx context.Context, args Args) (cmd *exec.Cmd, stdin io.
 }
 
 // Matches returns all matches in all files for which comby finds matches.
-func Matches(ctx context.Context, args Args) ([]*FileMatch, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Matches") //nolint:staticcheck // OT is deprecated
-	defer span.Finish()
+func Matches(ctx context.Context, args Args) (_ []*FileMatch, err error) {
+	tr, ctx := trace.New(ctx, "comby", "matches")
+	defer tr.FinishWithErr(&err)
 
 	args.ResultKind = MatchOnly
 	results, err := Run(ctx, args, ToFileMatch)
@@ -217,9 +217,9 @@ func Matches(ctx context.Context, args Args) ([]*FileMatch, error) {
 }
 
 // Replacements performs in-place replacement for match and rewrite template.
-func Replacements(ctx context.Context, args Args) ([]*FileReplacement, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Replacements") //nolint:staticcheck // OT is deprecated
-	defer span.Finish()
+func Replacements(ctx context.Context, args Args) (_ []*FileReplacement, err error) {
+	tr, ctx := trace.New(ctx, "comby", "replacements")
+	defer tr.FinishWithErr(&err)
 
 	results, err := Run(ctx, args, toFileReplacement)
 	if err != nil {
@@ -234,9 +234,9 @@ func Replacements(ctx context.Context, args Args) ([]*FileReplacement, error) {
 
 // Outputs performs substitution of all variables captured in a match
 // pattern in a rewrite template and outputs the result, newline-sparated.
-func Outputs(ctx context.Context, args Args) (string, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Comby.Outputs") //nolint:staticcheck // OT is deprecated
-	defer span.Finish()
+func Outputs(ctx context.Context, args Args) (_ string, err error) {
+	tr, ctx := trace.New(ctx, "comby", "outputs")
+	defer tr.FinishWithErr(&err)
 
 	results, err := Run(ctx, args, toOutput)
 	if err != nil {

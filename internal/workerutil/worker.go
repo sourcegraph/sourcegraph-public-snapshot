@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -17,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -312,18 +310,18 @@ func (w *Worker[T]) dequeueAndHandle() (dequeued bool, err error) {
 	}
 
 	// Create context and span based on the root context
-	workerSpan, workerCtxWithSpan := ot.StartSpanFromContext( //nolint:staticcheck // OT is deprecated
+	workerSpan, workerCtxWithSpan := trace.New(
 		// TODO tail-based sampling once its a thing, until then, we can configure on a per-job basis
 		policy.WithShouldTrace(w.rootCtx, w.options.Metrics.traceSampler(record)),
 		w.options.Name,
+		"",
 	)
 	handleCtx, cancel := context.WithCancel(workerCtxWithSpan)
 	processLog := trace.Logger(workerCtxWithSpan, w.options.Metrics.logger)
 
 	// Register the record as running so it is included in heartbeat updates.
 	if !w.runningIDSet.Add(record.RecordUID(), cancel) {
-		workerSpan.LogFields(otlog.Error(ErrJobAlreadyExists))
-		workerSpan.Finish()
+		workerSpan.FinishWithErr(&ErrJobAlreadyExists)
 		return false, ErrJobAlreadyExists
 	}
 
