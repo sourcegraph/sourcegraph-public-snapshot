@@ -13,6 +13,7 @@ import (
 type RepoPathStore interface {
 	EnsureExist(ctx context.Context, repoID api.RepoID, paths []string) (map[string]int, error)
 	UpdateCounts(ctx context.Context, repoID api.RepoID, deepCounts FileWalkable[int]) (int, error)
+	TotalFiles(ctx context.Context, opts PathOpts) (int, error)
 }
 
 type FileWalkable[T any] interface {
@@ -94,4 +95,26 @@ func (r *repoPaths) UpdateCounts(ctx context.Context, repoID api.RepoID, deepCou
 		return nil
 	})
 	return updatedRows, err
+}
+
+type PathOpts struct {
+	RepoID api.RepoID // Repo ID zero means all repos
+	Path   string     // Path not set means repo root
+}
+
+var totalFilesFmtstr = `
+	SELECT SUM(p.deep_file_count)
+	FROM repo_paths AS p
+	WHERE p.absolute_path = %s
+`
+
+func (r *repoPaths) TotalFiles(ctx context.Context, opts PathOpts) (int, error) {
+	q := []*sqlf.Query{sqlf.Sprintf(totalFilesFmtstr, opts.Path)}
+	if repoID := opts.RepoID; repoID != 0 {
+		q = append(q, sqlf.Sprintf("AND p.repo_id = %s", repoID))
+	}
+	row := r.Store.QueryRow(ctx, sqlf.Join(q, "\n"))
+	var total int
+	err := row.Scan(&total)
+	return total, err
 }

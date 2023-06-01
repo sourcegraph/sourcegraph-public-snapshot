@@ -13,6 +13,8 @@ import (
 
 type OwnershipStatsStore interface {
 	UpdateCodeownersCounts(ctx context.Context, repoID api.RepoID, owners FileWalkable[map[string]int]) (int, error)
+	AggregateOwnership(ctx context.Context, opts OwnershipOpts, limitOffset *LimitOffset) ([]AggregateCodeowner, error)
+	CodeownedFilesCount(ctx context.Context, opts OwnershipOpts) (int, error)
 }
 
 type ownershipStats struct {
@@ -98,4 +100,66 @@ func (s *ownershipStats) UpdateCodeownersCounts(ctx context.Context, repoID api.
 		}
 		return nil
 	})
+}
+
+type OwnershipOpts struct {
+	RepoID api.RepoID // Repo ID zero means all repos
+	Path   string     // Path not set means repo root
+}
+
+type AggregateCodeowner struct {
+	Handle    string
+	Email     string
+	FileCount int
+}
+
+var aggregateOwnershipFmtstr = `
+	SELECT a.name, a.email, c.deep_file_count
+	FROM codeowners_stats AS c
+	INNER JOIN repo_paths AS p ON c.file_path_id = p.id
+	INNER JOIN commit_authors AS a ON a.id = c.codeowners_id
+	WHERE p.absolute_path = %s
+`
+
+func (s *ownershipStats) AggregateOwnership(ctx context.Context, opts OwnershipOpts, limitOffset *LimitOffset) ([]AggregateCodeowner, error) {
+	q := []*sqlf.Query{sqlf.Sprintf(aggregateOwnershipFmtstr, opts.Path)}
+	if repoID := opts.RepoID; repoID != 0 {
+		q = append(q, sqlf.Sprintf("AND p.repo_id = %s", repoID))
+	}
+	q = append(q, sqlf.Sprintf("ORDER BY 3"))
+	q = append(q, limitOffset.SQL())
+	rs, err := s.Store.Query(ctx, sqlf.Join(q, "\n"))
+	if err != nil {
+		return nil, err
+	}
+	var owners []AggregateCodeowner
+	for rs.Next() {
+		var o AggregateCodeowner
+		if err := rs.Scan(&o.Handle, &o.Email, &o.FileCount); err != nil {
+			return nil, err
+		}
+		owners = append(owners, o)
+	}
+	return owners, nil
+}
+
+var codeownedFilesCountFmtstr = `
+	SELECT SUM(s.deep_file_count)
+	FROM codeowners_aggregate_stats AS s
+	INNER JOIN repo_paths AS p ON s.file_path_id = p.id
+	WHERE p.absolute_path = %s
+`
+
+func (s *ownershipStats) CodeownedFilesCount(ctx context.Context, opts OwnershipOpts) (int, error) {
+	qs := []*sqlf.Query{sqlf.Sprintf(codeownedFilesCountFmtstr, opts.Path)}
+	if repoID := opts.RepoID; repoID != 0 {
+		qs = append(qs, sqlf.Sprintf("AND p.repo_id = %s", repoID))
+	}
+	q := sqlf.Join(qs, "\n")
+	r := s.Store.QueryRow(ctx, q)
+	var total int
+	if err := r.Scan(&total); err != nil {
+		return 0, errors.Wrapf(err, "Query: %s", q.Query(sqlf.PostgresBindVar))
+	}
+	return total, nil
 }

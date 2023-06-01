@@ -225,14 +225,15 @@ func (r *ownResolver) GitTreeOwnership(
 }
 
 func (r *ownResolver) GitTreeOwnershipStats(ctx context.Context, tree *graphqlbackend.GitTreeEntryResolver) (graphqlbackend.OwnershipStatsResolver, error) {
-	//stats, err := r.db.RepoPaths().StatsCount(ctx, tree.Repository().IDInt32(), tree.Path())
-	// if err != nil {
-	// 	return nil, err
-	// }
 	return &ownStatsResolver{
-		// totalFiles:         stats.TotalFiles,
-		// assignedOwnerFiles: stats.AssignedOwnerFiles,
+		db:     r.db,
+		repoID: tree.Repository().IDInt32(),
+		path:   tree.Path(),
 	}, nil
+}
+
+func (r *ownResolver) InstanceOwnershipStats(ctx context.Context) (graphqlbackend.OwnershipStatsResolver, error) {
+	return &ownStatsResolver{db: r.db}, nil
 }
 
 func (r *ownResolver) PersonOwnerField(_ *graphqlbackend.PersonResolver) string {
@@ -347,16 +348,25 @@ func (r *ownResolver) ownershipConnection(
 }
 
 type ownStatsResolver struct {
-	totalFiles         int32
-	assignedOwnerFiles int32
+	db     edb.EnterpriseDB
+	repoID api.RepoID
+	path   string
 }
 
-func (r *ownStatsResolver) TotalFiles(context.Context) (int32, error) {
-	return r.totalFiles, nil
+func (r *ownStatsResolver) TotalFiles(ctx context.Context) (int32, error) {
+	total, err := r.db.RepoPaths().TotalFiles(ctx, database.PathOpts{
+		RepoID: r.repoID,
+		Path:   r.path,
+	})
+	return int32(total), err
 }
 
-func (r *ownStatsResolver) AssignedOwnerFiles(context.Context) (int32, error) {
-	return r.assignedOwnerFiles, nil
+func (r *ownStatsResolver) TotalCodeownedFiles(ctx context.Context) (int32, error) {
+	total, err := r.db.OwnershipStats().CodeownedFilesCount(ctx, database.OwnershipOpts{
+		RepoID: r.repoID,
+		Path:   r.path,
+	})
+	return int32(total), err
 }
 
 type ownershipConnectionResolver struct {

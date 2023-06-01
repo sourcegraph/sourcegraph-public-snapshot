@@ -76,8 +76,11 @@ extend type GitCommit {
 }
 
 type OwnershipStats {
+    """
+    This should move to repo
+    """
     totalFiles: Int!
-    assignedOwnerFiles: Int!
+    totalCodeownedFiles: Int!
 }
 
 """
@@ -302,6 +305,8 @@ extend type Query {
     List all ownership signal configurations
     """
     ownSignalConfigurations: [OwnSignalConfiguration!]!
+
+    instanceOwnershipStats: OwnershipStats!
 }
 
 """
