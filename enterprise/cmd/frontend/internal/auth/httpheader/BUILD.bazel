@@ -11,9 +11,9 @@ go_library(
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/auth",
-        "//cmd/frontend/auth/providers",
         "//enterprise/internal/licensing",
         "//internal/actor",
+        "//internal/auth/providers",
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/database",
@@ -38,9 +38,9 @@ go_test(
     ],
     deps = [
         "//cmd/frontend/auth",
-        "//cmd/frontend/auth/providers",
         "//enterprise/internal/licensing",
         "//internal/actor",
+        "//internal/auth/providers",
         "//internal/conf",
         "//internal/database",
         "//internal/database/dbtest",

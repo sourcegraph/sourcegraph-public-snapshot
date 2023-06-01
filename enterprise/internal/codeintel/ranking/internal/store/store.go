@@ -37,6 +37,10 @@ type Store interface {
 	InsertReferencesForRanking(ctx context.Context, graphKey string, batchSize int, exportedUploadID int, references chan string) error
 	InsertInitialPathRanks(ctx context.Context, exportedUploadID int, documentPaths []string, batchSize int, graphKey string) error
 
+	// Graph keys
+	DerivativeGraphKey(ctx context.Context) (string, bool, error)
+	BumpDerivativeGraphKey(ctx context.Context) error
+
 	// Coordinates mapper+reducer phases
 	Coordinate(ctx context.Context, derivativeGraphKey string) error
 
