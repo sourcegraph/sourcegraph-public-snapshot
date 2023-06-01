@@ -109,7 +109,7 @@ export async function getAuthStatus(
         }
     }
     const currentUserID = await client.getCurrentUserId()
-    const instanceVersion = await client.getSiteVersion()
+    const siteVersion = await client.getSiteVersion()
     return {
         showInvalidAccessTokenError: isError(currentUserID),
         authenticated: !isError(currentUserID),

@@ -78,7 +78,8 @@ export function isSiteVersionSupported(version: string | Error): boolean {
     if (isError(version) || !version) {
         return false
     }
-    if (version.length > 10) {
+    const isInsiderBuild = version.length > 10
+    if (isInsiderBuild) {
         return true
     }
 
