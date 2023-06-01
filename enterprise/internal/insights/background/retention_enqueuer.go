@@ -12,10 +12,8 @@ import (
 )
 
 func newRetentionEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, insightStore store.DataSeriesStore) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(ctx,
-		"insights.retention.enqueuer",
-		"enqueues series retention jobs",
-		12*time.Hour,
+	return goroutine.NewPeriodicGoroutine(
+		ctx,
 		goroutine.HandlerFunc(
 			func(ctx context.Context) error {
 				seriesArgs := store.GetDataSeriesArgs{ExcludeJustInTime: true}
@@ -31,5 +29,9 @@ func newRetentionEnqueuer(ctx context.Context, workerBaseStore *basestore.Store,
 					}
 				}
 				return multi
-			}))
+			}),
+		goroutine.WithName("insights.retention.enqueuer"),
+		goroutine.WithDescription("enqueues series retention jobs"),
+		goroutine.WithInterval(12*time.Hour),
+	)
 }

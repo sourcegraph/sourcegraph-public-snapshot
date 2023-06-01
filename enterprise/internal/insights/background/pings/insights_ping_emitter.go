@@ -26,8 +26,11 @@ func NewInsightsPingEmitterJob(ctx context.Context, base database.DB, insights e
 	}
 
 	return goroutine.NewPeriodicGoroutine(
-		ctx, "insights.pings_emitter", "emits enterprise telemetry pings",
-		interval, goroutine.HandlerFunc(e.emit),
+		ctx,
+		goroutine.HandlerFunc(e.emit),
+		goroutine.WithName("insights.pings_emitter"),
+		goroutine.WithDescription("emits enterprise telemetry pings"),
+		goroutine.WithInterval(interval),
 	)
 }
 

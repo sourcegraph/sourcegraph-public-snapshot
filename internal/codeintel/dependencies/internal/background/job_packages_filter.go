@@ -32,9 +32,11 @@ func NewPackagesFilterApplicator(
 
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(context.Background()),
-		"codeintel.package-filter-applicator", "applies package repo filters to all package repo references to precompute their blocked status",
-		time.Second*5,
-		goroutine.HandlerFunc(job.handle))
+		goroutine.HandlerFunc(job.handle),
+		goroutine.WithName("codeintel.package-filter-applicator"),
+		goroutine.WithDescription("applies package repo filters to all package repo references to precompute their blocked status"),
+		goroutine.WithInterval(time.Second*5),
+	)
 }
 
 func (j *packagesFilterApplicatorJob) handle(ctx context.Context) (err error) {

@@ -14,8 +14,6 @@ func NewCVEMatcher(store store.Store, observationCtx *observation.Context, confi
 
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(context.Background()),
-		"codeintel.sentinel-cve-matcher", "Matches SCIP indexes against known vulnerabilities.",
-		config.MatcherInterval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			numReferencesScanned, numVulnerabilityMatches, err := store.ScanMatches(ctx, config.BatchSize)
 			if err != nil {
@@ -26,5 +24,8 @@ func NewCVEMatcher(store store.Store, observationCtx *observation.Context, confi
 			metrics.numVulnerabilityMatches.Add(float64(numVulnerabilityMatches))
 			return nil
 		}),
+		goroutine.WithName("codeintel.sentinel-cve-matcher"),
+		goroutine.WithDescription("Matches SCIP indexes against known vulnerabilities."),
+		goroutine.WithInterval(config.MatcherInterval),
 	)
 }

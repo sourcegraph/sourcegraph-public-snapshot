@@ -21,8 +21,6 @@ func NewCVEDownloader(store store.Store, observationCtx *observation.Context, co
 
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(context.Background()),
-		"codeintel.sentinel-cve-downloader", "Periodically syncs GitHub advisory records into Postgres.",
-		config.DownloaderInterval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			vulnerabilities, err := cveParser.handle(ctx)
 			if err != nil {
@@ -37,6 +35,9 @@ func NewCVEDownloader(store store.Store, observationCtx *observation.Context, co
 			metrics.numVulnerabilitiesInserted.Add(float64(numVulnerabilitiesInserted))
 			return nil
 		}),
+		goroutine.WithName("codeintel.sentinel-cve-downloader"),
+		goroutine.WithDescription("Periodically syncs GitHub advisory records into Postgres."),
+		goroutine.WithInterval(config.DownloaderInterval),
 	)
 }
 

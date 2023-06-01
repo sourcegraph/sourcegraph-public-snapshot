@@ -37,14 +37,18 @@ func NewOrphanedVMJanitor(
 	metrics *metrics,
 	cmdRunner util.CmdRunner,
 ) goroutine.BackgroundRoutine {
-	return goroutine.NewPeriodicGoroutine(context.Background(), "executors.orphaned-vm-janitor", "deletes VMs from a previous executor instance",
-		interval, newOrphanedVMJanitor(
+	return goroutine.NewPeriodicGoroutine(
+		context.Background(),
+		newOrphanedVMJanitor(
 			logger,
 			prefix,
 			names,
 			metrics,
 			cmdRunner,
 		),
+		goroutine.WithName("executors.orphaned-vm-janitor"),
+		goroutine.WithDescription("deletes VMs from a previous executor instance"),
+		goroutine.WithInterval(interval),
 	)
 }
 

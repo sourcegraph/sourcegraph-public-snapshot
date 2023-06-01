@@ -38,14 +38,16 @@ func initExternalMetricReporters[T workerutil.Record](queueName string, store st
 	}
 
 	ctx := context.Background()
-	return goroutine.NewPeriodicGoroutine(ctx,
-		"executors.autoscaler-metrics",
-		"emits metrics to GCP/AWS for auto-scaling",
-		5*time.Second, &externalEmitter[T]{
+	return goroutine.NewPeriodicGoroutine(
+		ctx,
+		&externalEmitter[T]{
 			queueName:  queueName,
 			store:      store,
 			reporters:  reporters,
 			allocation: metricsConfig.Allocations[queueName],
 		},
+		goroutine.WithName("executors.autoscaler-metrics"),
+		goroutine.WithDescription("emits metrics to GCP/AWS for auto-scaling"),
+		goroutine.WithInterval(5*time.Second),
 	), nil
 }

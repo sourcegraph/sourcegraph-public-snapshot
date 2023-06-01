@@ -22,9 +22,6 @@ func NewCoordinator(
 
 	return goroutine.NewPeriodicGoroutine(
 		context.Background(),
-		name,
-		"Coordinates the state of the file reference count map and reduce jobs.",
-		config.Interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 				return nil
@@ -54,5 +51,8 @@ func NewCoordinator(
 
 			return s.Coordinate(ctx, rankingshared.DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix))
 		}),
+		goroutine.WithName(name),
+		goroutine.WithDescription("Coordinates the state of the file reference count map and reduce jobs."),
+		goroutine.WithInterval(config.Interval),
 	)
 }

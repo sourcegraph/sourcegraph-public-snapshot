@@ -58,14 +58,15 @@ func NewScheduler(
 		)
 	})
 
-	return goroutine.NewPeriodicGoroutineWithMetrics(
+	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(context.Background()),
-		"codeintel.autoindexing-background-scheduler", "schedule autoindexing jobs in the background using defined or inferred configurations",
-		config.SchedulerInterval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			return job.handleScheduler(ctx, config.RepositoryProcessDelay, config.RepositoryBatchSize, config.PolicyBatchSize, config.InferenceConcurrency)
 		}),
-		observationCtx.Operation(observation.Op{
+		goroutine.WithName("codeintel.autoindexing-background-scheduler"),
+		goroutine.WithDescription("schedule autoindexing jobs in the background using defined or inferred configurations"),
+		goroutine.WithInterval(config.SchedulerInterval),
+		goroutine.WithOperation(observationCtx.Operation(observation.Op{
 			Name:              "codeintel.indexing.HandleIndexSchedule",
 			MetricLabelValues: []string{"HandleIndexSchedule"},
 			Metrics:           redMetrics,
@@ -75,7 +76,7 @@ func NewScheduler(
 				}
 				return observation.EmitForDefault
 			},
-		}),
+		})),
 	)
 }
 
@@ -205,8 +206,6 @@ func (b indexSchedulerJob) handleRepository(ctx context.Context, repositoryID, p
 func NewOnDemandScheduler(s store.Store, indexEnqueuer IndexEnqueuer, config *Config) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(context.Background()),
-		"codeintel.autoindexing-ondemand-scheduler", "schedule autoindexing jobs for explicitly requested repo+revhash combinations",
-		config.OnDemandSchedulerInterval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			if !autoIndexingEnabled() {
 				return nil
@@ -230,5 +229,8 @@ func NewOnDemandScheduler(s store.Store, indexEnqueuer IndexEnqueuer, config *Co
 				return tx.MarkRepoRevsAsProcessed(ctx, ids)
 			})
 		}),
+		goroutine.WithName("codeintel.autoindexing-ondemand-scheduler"),
+		goroutine.WithDescription("schedule autoindexing jobs for explicitly requested repo+revhash combinations"),
+		goroutine.WithInterval(config.OnDemandSchedulerInterval),
 	)
 }

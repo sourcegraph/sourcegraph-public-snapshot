@@ -84,13 +84,13 @@ func NewJanitorMetrics(
 func NewJanitorJob(ctx context.Context, opts JanitorOptions) goroutine.BackgroundRoutine {
 	janitor := &janitor{opts: opts}
 
-	return goroutine.NewPeriodicGoroutineWithMetricsAndDynamicInterval(
+	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
-		opts.Name,
-		opts.Description,
-		janitor.interval,
 		janitor,
-		opts.Metrics.op,
+		goroutine.WithName(opts.Name),
+		goroutine.WithDescription(opts.Description),
+		goroutine.WithIntervalFunc(janitor.interval),
+		goroutine.WithOperation(opts.Metrics.op),
 	)
 }
 

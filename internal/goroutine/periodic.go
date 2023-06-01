@@ -93,46 +93,68 @@ func (h *simpleHandler) OnShutdown() {
 	}
 }
 
+type Option func(*PeriodicGoroutine)
+
+func WithName(name string) Option {
+	return func(p *PeriodicGoroutine) { p.name = name }
+}
+
+func WithDescription(description string) Option {
+	return func(p *PeriodicGoroutine) { p.description = description }
+}
+
+func WithInterval(interval time.Duration) Option {
+	return WithIntervalFunc(func() time.Duration { return interval })
+}
+
+func WithIntervalFunc(getInterval getIntervalFunc) Option {
+	return func(p *PeriodicGoroutine) { p.getInterval = getInterval }
+}
+
+func WithOperation(operation *observation.Operation) Option {
+	return func(p *PeriodicGoroutine) { p.operation = operation }
+}
+
+func withClock(clock glock.Clock) Option {
+	return func(p *PeriodicGoroutine) { p.clock = clock }
+}
+
 // NewPeriodicGoroutine creates a new PeriodicGoroutine with the given handler. The context provided will propagate into
 // the executing goroutine and will terminate the goroutine if cancelled.
-func NewPeriodicGoroutine(ctx context.Context, name, description string, interval time.Duration, handler Handler) *PeriodicGoroutine {
-	return NewPeriodicGoroutineWithMetrics(ctx, name, description, interval, handler, nil)
-}
-
-// NewPeriodicGoroutineWithMetrics creates a new PeriodicGoroutine with the given handler. The context provided will propagate into
-// the executing goroutine and will terminate the goroutine if cancelled.
-func NewPeriodicGoroutineWithMetrics(ctx context.Context, name, description string, interval time.Duration, handler Handler, operation *observation.Operation) *PeriodicGoroutine {
-	return newPeriodicGoroutine(ctx, name, description, func() time.Duration { return interval }, handler, operation, glock.NewRealClock())
-}
-
-func NewPeriodicGoroutineWithMetricsAndDynamicInterval(ctx context.Context, name, description string, getInterval getIntervalFunc, handler Handler, operation *observation.Operation) *PeriodicGoroutine {
-	return newPeriodicGoroutine(ctx, name, description, getInterval, handler, operation, glock.NewRealClock())
-}
-
-func newPeriodicGoroutine(ctx context.Context, name, description string, getInterval getIntervalFunc, handler Handler, operation *observation.Operation, clock glock.Clock) *PeriodicGoroutine {
-	ctx, cancel := context.WithCancel(ctx)
-
-	var h unifiedHandler
-	if uh, ok := handler.(unifiedHandler); ok {
-		h = uh
-	} else {
-		h = &simpleHandler{
-			name:    name,
-			scope:   log.Scoped(name, description),
-			Handler: handler,
-		}
+func NewPeriodicGoroutine(ctx context.Context, handler Handler, options ...Option) *PeriodicGoroutine {
+	r := newDefaultPeriodicRoutine()
+	for _, o := range options {
+		o(r)
 	}
 
+	ctx, cancel := context.WithCancel(ctx)
+	r.ctx = ctx
+	r.cancel = cancel
+	r.finished = make(chan struct{})
+	r.handler = wrapHandler(handler, r.name, r.description)
+
+	return r
+}
+
+func newDefaultPeriodicRoutine() *PeriodicGoroutine {
 	return &PeriodicGoroutine{
-		name:        name,
-		description: description,
-		handler:     h,
-		getInterval: getInterval,
-		operation:   operation,
-		clock:       clock,
-		ctx:         ctx,
-		cancel:      cancel,
-		finished:    make(chan struct{}),
+		name:        "",
+		description: "",
+		getInterval: func() time.Duration { return time.Second },
+		operation:   nil,
+		clock:       glock.NewRealClock(),
+	}
+}
+
+func wrapHandler(handler Handler, name, description string) unifiedHandler {
+	if uh, ok := handler.(unifiedHandler); ok {
+		return uh
+	}
+
+	return &simpleHandler{
+		name:    name,
+		scope:   log.Scoped(name, description),
+		Handler: handler,
 	}
 }
 

@@ -95,13 +95,13 @@ func NewPipelineMetrics(observationCtx *observation.Context, name string) *Pipel
 func NewPipelineJob(ctx context.Context, opts PipelineOptions) goroutine.BackgroundRoutine {
 	pipeline := &pipeline{opts: opts}
 
-	return goroutine.NewPeriodicGoroutineWithMetricsAndDynamicInterval(
+	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
-		opts.Name,
-		opts.Description,
-		pipeline.interval,
 		pipeline,
-		opts.Metrics.op,
+		goroutine.WithName(opts.Name),
+		goroutine.WithDescription(opts.Description),
+		goroutine.WithIntervalFunc(pipeline.interval),
+		goroutine.WithOperation(opts.Metrics.op),
 	)
 }
 

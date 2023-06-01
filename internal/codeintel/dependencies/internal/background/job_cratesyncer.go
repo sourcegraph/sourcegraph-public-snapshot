@@ -77,11 +77,12 @@ func NewCrateSyncer(
 
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
-		"codeintel.crates-syncer", "syncs the crates list from the index to dependency repos table",
-		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			return job.handleCrateSyncer(ctx, interval)
 		}),
+		goroutine.WithName("codeintel.crates-syncer"),
+		goroutine.WithDescription("syncs the crates list from the index to dependency repos table"),
+		goroutine.WithInterval(interval),
 	)
 }
 

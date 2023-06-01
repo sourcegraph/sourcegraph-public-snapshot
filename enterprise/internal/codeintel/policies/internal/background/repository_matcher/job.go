@@ -24,11 +24,12 @@ func NewRepositoryMatcher(
 
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(context.Background()),
-		"codeintel.policies-matcher", "match repositories to autoindexing+retention policies",
-		interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			return repoMatcher.handleRepositoryMatcherBatch(ctx, configurationPolicyMembershipBatchSize)
 		}),
+		goroutine.WithName("codeintel.policies-matcher"),
+		goroutine.WithDescription("match repositories to autoindexing+retention policies"),
+		goroutine.WithInterval(interval),
 	)
 }
 

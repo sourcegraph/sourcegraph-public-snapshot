@@ -21,11 +21,12 @@ func NewCommittedAtBackfiller(store store.Store, gitserverClient gitserver.Clien
 	}
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(context.Background()),
-		"codeintel.committed-at-backfiller", "backfills the committed_at column for code-intel uploads",
-		config.Interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			return backfiller.BackfillCommittedAtBatch(ctx, config.BatchSize)
 		}),
+		goroutine.WithName("codeintel.committed-at-backfiller"),
+		goroutine.WithDescription("backfills the committed_at column for code-intel uploads"),
+		goroutine.WithInterval(config.Interval),
 	)
 }
 
