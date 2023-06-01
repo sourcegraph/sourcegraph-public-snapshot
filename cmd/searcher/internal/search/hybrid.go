@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/diff"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
+	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -162,10 +162,9 @@ func zoektSearchIgnorePaths(ctx context.Context, logger log.Logger, client zoekt
 		&zoektquery.Not{Child: zoektquery.NewFileNameSet(ignoredPaths...)},
 	))
 
-	opts := (&zoektutil.Options{
-		NumRepos:       1,
+	opts := (&search.ZoektParameters{
 		FileMatchLimit: int32(p.Limit),
-	}).ToSearch(ctx, logger)
+	}).ToSearchOptions(ctx, logger)
 	if deadline, ok := ctx.Deadline(); ok {
 		opts.MaxWallTime = time.Until(deadline) - 100*time.Millisecond
 	}

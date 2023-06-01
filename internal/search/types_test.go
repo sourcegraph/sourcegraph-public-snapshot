@@ -1,0 +1,199 @@
+package search
+
+import (
+	"context"
+	"testing"
+
+	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/zoekt"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
+	"github.com/sourcegraph/sourcegraph/schema"
+)
+
+func TestZoektParameters(t *testing.T) {
+	documentRanksWeight := 42.0
+
+	cases := []struct {
+		name            string
+		context         context.Context
+		params          *ZoektParameters
+		rankingFeatures *schema.Ranking
+		want            *zoekt.SearchOptions
+	}{
+		{
+			name:    "test defaults",
+			context: context.Background(),
+			params: &ZoektParameters{
+				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
+			},
+			want: &zoekt.SearchOptions{
+				ShardMaxMatchCount: 10000,
+				TotalMaxMatchCount: 100000,
+				MaxWallTime:        20000000000,
+				MaxDocDisplayCount: 500,
+				ChunkMatches:       true,
+			},
+		},
+		{
+			name:    "test defaults with ranking feature enabled",
+			context: context.Background(),
+			params: &ZoektParameters{
+				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
+				Features: Features{
+					Ranking: true,
+				},
+			},
+			want: &zoekt.SearchOptions{
+				ShardMaxMatchCount:  10000,
+				TotalMaxMatchCount:  100000,
+				MaxWallTime:         20000000000,
+				FlushWallTime:       500000000,
+				MaxDocDisplayCount:  500,
+				ChunkMatches:        true,
+				UseDocumentRanks:    true,
+				DocumentRanksWeight: 4500,
+			},
+		},
+		{
+			name:    "test repo search defaults",
+			context: context.Background(),
+			params: &ZoektParameters{
+				Select:         []string{filter.Repository},
+				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
+				Features: Features{
+					Ranking: true,
+				},
+			},
+			// Most important is ShardRepoMaxMatchCount=1. Otherwise we still
+			// want to set normal limits so we respect things like low file
+			// match limits.
+			want: &zoekt.SearchOptions{
+				ShardMaxMatchCount:     10_000,
+				TotalMaxMatchCount:     100_000,
+				ShardRepoMaxMatchCount: 1,
+				MaxWallTime:            20000000000,
+				MaxDocDisplayCount:     500,
+				ChunkMatches:           true,
+			},
+		},
+		{
+			name:    "test repo search low match count",
+			context: context.Background(),
+			params: &ZoektParameters{
+				Select:         []string{filter.Repository},
+				FileMatchLimit: 5,
+				Features: Features{
+					Ranking: true,
+				},
+			},
+			// This is like the above test, but we are testing
+			// MaxDocDisplayCount is adjusted to 5.
+			want: &zoekt.SearchOptions{
+				ShardMaxMatchCount:     10_000,
+				TotalMaxMatchCount:     100_000,
+				ShardRepoMaxMatchCount: 1,
+				MaxWallTime:            20000000000,
+				MaxDocDisplayCount:     5,
+				ChunkMatches:           true,
+			},
+		},
+		{
+			name:    "test large file match limit",
+			context: context.Background(),
+			params: &ZoektParameters{
+				FileMatchLimit: 100_000,
+			},
+			want: &zoekt.SearchOptions{
+				ShardMaxMatchCount: 100_000,
+				TotalMaxMatchCount: 100_000,
+				MaxWallTime:        20000000000,
+				MaxDocDisplayCount: 100_000,
+				ChunkMatches:       true,
+			},
+		},
+		{
+			name:    "test document ranks weight",
+			context: context.Background(),
+			rankingFeatures: &schema.Ranking{
+				DocumentRanksWeight: &documentRanksWeight,
+			},
+			params: &ZoektParameters{
+				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
+				Features: Features{
+					Ranking: true,
+				},
+			},
+			want: &zoekt.SearchOptions{
+				ShardMaxMatchCount:  10000,
+				TotalMaxMatchCount:  100000,
+				MaxWallTime:         20000000000,
+				FlushWallTime:       500000000,
+				MaxDocDisplayCount:  500,
+				ChunkMatches:        true,
+				UseDocumentRanks:    true,
+				DocumentRanksWeight: 42,
+			},
+		},
+		{
+			name:    "test flush wall time",
+			context: context.Background(),
+			rankingFeatures: &schema.Ranking{
+				FlushWallTimeMS: 3141,
+			},
+			params: &ZoektParameters{
+				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
+				Features: Features{
+					Ranking: true,
+				},
+			},
+			want: &zoekt.SearchOptions{
+				ShardMaxMatchCount:  10000,
+				TotalMaxMatchCount:  100000,
+				MaxWallTime:         20000000000,
+				FlushWallTime:       3141000000,
+				MaxDocDisplayCount:  500,
+				ChunkMatches:        true,
+				UseDocumentRanks:    true,
+				DocumentRanksWeight: 4500,
+			},
+		},
+		{
+			name:    "test keyword scoring",
+			context: context.Background(),
+			params: &ZoektParameters{
+				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
+				KeywordScoring: true,
+			},
+			want: &zoekt.SearchOptions{
+				ShardMaxMatchCount: 10000,
+				TotalMaxMatchCount: 100000,
+				MaxWallTime:        20000000000,
+				MaxDocDisplayCount: 500,
+				ChunkMatches:       true,
+				UseKeywordScoring:  true},
+		},
+	}
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.rankingFeatures != nil {
+				cfg := conf.Get()
+				cfg.ExperimentalFeatures.Ranking = tt.rankingFeatures
+				conf.Mock(cfg)
+
+				defer func() {
+					cfg.ExperimentalFeatures.Ranking = nil
+					conf.Mock(cfg)
+				}()
+			}
+
+			got := tt.params.ToSearchOptions(tt.context, logtest.Scoped(t))
+			if diff := cmp.Diff(tt.want, got); diff != "" {
+				t.Fatalf("search params mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
