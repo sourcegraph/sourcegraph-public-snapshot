@@ -78,18 +78,17 @@ func (l *BufferedLogger) LogEvent(spanCtx context.Context, event Event) error {
 	}
 }
 
-// Start starts buffered logger's background processing job.
+// Start begins working by procssing the logger's buffer, blocking until stop
+// is called and the backlog is cleared.
 func (l *BufferedLogger) Start() {
-	go func() {
-		for event := range l.bufferC {
-			if err := l.handler.LogEvent(event.spanCtx, event.Event); err != nil {
-				l.log.Error("failed to log buffered event", log.Error(err))
-			}
+	for event := range l.bufferC {
+		if err := l.handler.LogEvent(event.spanCtx, event.Event); err != nil {
+			l.log.Error("failed to log buffered event", log.Error(err))
 		}
+	}
 
-		l.log.Info("all events flushed")
-		close(l.flushedC)
-	}()
+	l.log.Info("all events flushed")
+	close(l.flushedC)
 }
 
 // Stop stops buffered logger's background processing job and flushes its buffer.
@@ -97,6 +96,7 @@ func (l *BufferedLogger) Stop() {
 	l.bufferClosed.Store(true)
 	close(l.bufferC)
 	l.log.Info("buffer closed - waiting for events to flush")
+
 	<-l.flushedC
 	l.log.Info("shutdown complete")
 }

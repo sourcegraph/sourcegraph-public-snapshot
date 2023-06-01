@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold/v2"
+	"github.com/sourcegraph/conc"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -23,14 +24,17 @@ func TestBufferedLogger(t *testing.T) {
 
 		handler := &mockLogger{}
 		b := events.NewBufferedLogger(logtest.Scoped(t), handler, 0)
-		b.Start()
-		t.Cleanup(b.Stop)
+		wg := conc.NewWaitGroup()
+		wg.Go(b.Start)
 
 		assert.NoError(t, b.LogEvent(ctx, events.Event{Identifier: "foo"}))
 		assert.NoError(t, b.LogEvent(ctx, events.Event{Identifier: "bar"}))
 		assert.NoError(t, b.LogEvent(ctx, events.Event{Identifier: "baz"}))
 
 		autogold.Expect([]string{"foo", "bar", "baz"}).Equal(t, asIdentifiersList(handler.Events))
+
+		b.Stop()
+		wg.Wait()
 	})
 
 	t.Run("buffers until full", func(t *testing.T) {
@@ -43,7 +47,8 @@ func TestBufferedLogger(t *testing.T) {
 
 		size := 3
 		b := events.NewBufferedLogger(logtest.Scoped(t), handler, size)
-		b.Start()
+		wg := conc.NewWaitGroup()
+		wg.Go(b.Start)
 
 		// Fill up the buffer
 		for i := 0; i <= size; i++ {
@@ -53,11 +58,12 @@ func TestBufferedLogger(t *testing.T) {
 		// Drop the next event
 		err := b.LogEvent(ctx, events.Event{Identifier: "blocked"})
 		require.Error(t, err)
-		autogold.Expect("failed to insert event in 100ms: buffer full: 3 items pending").Equal(t, err.Error())
+		autogold.Expect("failed to insert event in 150ms: buffer full: 3 items pending").Equal(t, err.Error())
 
 		// Indicate close
 		close(doneC)
 		b.Stop()
+		wg.Wait()
 
 		// All backlogged events get submitted, but the blocked event is dropped.
 		autogold.Expect([]string{"0", "1", "2", "3"}).Equal(t, asIdentifiersList(handler.Events))
@@ -69,10 +75,12 @@ func TestBufferedLogger(t *testing.T) {
 		handler := &mockLogger{}
 		l, exportLogs := logtest.Captured(t)
 		b := events.NewBufferedLogger(l, handler, 10)
-		b.Start()
+		wg := conc.NewWaitGroup()
+		wg.Go(b.Start)
 
 		assert.NoError(t, b.LogEvent(ctx, events.Event{Identifier: "foo"}))
 		b.Stop()
+		wg.Wait()
 		assert.NoError(t, b.LogEvent(ctx, events.Event{Identifier: "bar"}))
 
 		// Expect all events to still be logged
