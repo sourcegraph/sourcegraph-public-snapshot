@@ -53,10 +53,12 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
             <PageTitle title={`Ownership for ${displayRepoName(repo.name)}`} />
             <ButtonLink
                 aria-label="Navigate to edit ownership page"
-                style={{'float': 'right'}}
+                style={{ float: 'right' }}
                 variant="secondary"
                 to={`${repo.url}/-/own/edit`}
-            >Edit Ownership</ButtonLink>
+            >
+                Edit Ownership
+            </ButtonLink>
 
             <PageHeader
                 description={
@@ -66,12 +68,11 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
                     </>
                 }
             >
-                  <H1 as="h2" className="d-flex align-items-center">
+                <H1 as="h2" className="d-flex align-items-center">
                     <Icon svgPath={mdiAccount} aria-hidden={true} />
                     <span className="ml-2">Ownership</span>
                     <ProductStatusBadge status="beta" className="ml-2" />
                 </H1>
-
             </PageHeader>
 
             <TreeOwnershipPanel repoID={repo.id} filePath={path} telemetryService={telemetryService} />
