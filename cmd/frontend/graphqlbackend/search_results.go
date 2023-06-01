@@ -234,7 +234,7 @@ func (sf *searchFilterResolver) Kind() string {
 // blameFileMatch blames the specified file match to produce the time at which
 // the first line match inside of it was authored.
 func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.FileMatch) (t time.Time, err error) {
-	tr, ctx := trace.New(ctx, "SearchResultsResolver", "blamFileMatch")
+	tr, ctx := trace.New(ctx, "SearchResultsResolver", "blameFileMatch")
 	defer tr.FinishWithErr(&err)
 
 	// Blame the first line match.
