@@ -8,6 +8,7 @@ import (
 
 	logger "github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -52,7 +53,6 @@ func (r *filesBackfillIndexer) indexRepo(ctx context.Context, repoId api.RepoID)
 		r.logger.Error("ls-files failed", logger.String("msg", err.Error()))
 		return errors.Wrap(err, "LsFiles")
 	}
-	// DO it here:
 	ids, err := r.db.RepoPaths().EnsureExist(ctx, repo.ID, files)
 	if err != nil {
 		r.logger.Error("inserting backfill files failed", logger.String("msg", err.Error()))
@@ -68,5 +68,17 @@ func (r *filesBackfillIndexer) indexRepo(ctx context.Context, repoId api.RepoID)
 	}
 	r.logger.Info("files", logger.Int("total", len(files)), logger.Int("recounted", recounted), logger.String("repo_name", string(repo.Name)))
 	filesCounter.Add(float64(len(files)))
+	// Try to compute ownership stats
+	ownService := own.NewService(r.client, r.db)
+	commitID, err := r.client.ResolveRevision(ctx, repo.Name, "HEAD", gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+	if err != nil {
+		return errors.Wrap(err, "ReoslveRevision")
+	}
+	ruleset, err := ownService.RulesetForRepo(ctx, repo.Name, repo.ID, commitID)
+	if ruleset == nil || err != nil {
+		// TODO: Handle errors
+		return nil
+	}
+	r.logger.Info("CODEOWNERS", logger.String("repo", string(repo.Name)), logger.Int("rules", len(ruleset.GetFile().GetRule())))
 	return nil
 }

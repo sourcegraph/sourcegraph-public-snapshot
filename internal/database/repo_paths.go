@@ -16,11 +16,6 @@ type RepoPathStore interface {
 	UpdateCounts(ctx context.Context, repoID api.RepoID, root *RepoFileNode) (int, error)
 }
 
-type RepoPathStats struct {
-	TotalFiles         int32
-	AssignedOwnerFiles int32
-}
-
 type repoPaths struct {
 	*basestore.Store
 }
