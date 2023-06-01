@@ -364,7 +364,6 @@ func TestClient_MarkFailed(t *testing.T) {
 	}
 }
 
-// TODO: add test with string jobIDs when multi-queue is implemented.
 func TestHeartbeat(t *testing.T) {
 	spec := routeSpec{
 		expectedMethod:   "POST",
@@ -390,12 +389,12 @@ func TestHeartbeat(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *queue.Client) {
-		unknownIDs, cancelIDs, err := client.Heartbeat(context.Background(), []string{"1", "2", "3"})
+		knownIDs, cancelIDs, err := client.Heartbeat(context.Background(), []string{"1", "2", "3"})
 		if err != nil {
 			t.Fatalf("unexpected error performing heartbeat: %s", err)
 		}
 
-		if diff := cmp.Diff([]string{"1"}, unknownIDs); diff != "" {
+		if diff := cmp.Diff([]string{"1"}, knownIDs); diff != "" {
 			t.Errorf("unexpected unknown ids (-want +got):\n%s", diff)
 		}
 
@@ -405,7 +404,6 @@ func TestHeartbeat(t *testing.T) {
 	})
 }
 
-// TODO: add test with string jobIDs when multi-queue is implemented.
 func TestHeartbeatBadResponse(t *testing.T) {
 	spec := routeSpec{
 		expectedMethod:   "POST",
@@ -435,6 +433,136 @@ func TestHeartbeatBadResponse(t *testing.T) {
 			t.Fatalf("expected an error")
 		}
 	})
+}
+
+func TestMultiQueueHeartbeat(t *testing.T) {
+	spec := routeSpec{
+		expectedMethod:   "POST",
+		expectedPath:     "/.executors/queue/heartbeat",
+		expectedUsername: "test",
+		expectedToken:    "hunter2",
+		expectedPayload: `{
+			"executorName": "deadbeef",
+			"jobIdsByQueue": [
+				{
+					"queueName": "test_queue_one",
+					"jobIds": ["1", "3"]
+				},
+				{
+					"queueName": "test_queue_two",
+					"jobIds": ["2"]
+				}
+			],
+			"queueNames": ["test_queue_one", "test_queue_two"],
+			"os": "test-os",
+			"architecture": "test-architecture",
+			"dockerVersion": "test-docker-version",
+			"executorVersion": "test-executor-version",
+			"gitVersion": "test-git-version",
+			"igniteVersion": "test-ignite-version",
+			"srcCliVersion": "test-src-cli-version",
+
+			"prometheusMetrics": ""
+		}`,
+		responseStatus:  http.StatusOK,
+		responsePayload: `{"knownIDs": ["1-test_queue_one"], "cancelIDs": ["2-test_queue_two"]}`,
+		multiQueue:      true,
+	}
+
+	testRoute(t, spec, func(client *queue.Client) {
+		knownIDs, cancelIDs, err := client.Heartbeat(context.Background(), []string{"1-test_queue_one", "2-test_queue_two", "3-test_queue_one"})
+		if err != nil {
+			t.Fatalf("unexpected error performing heartbeat: %s", err)
+		}
+
+		if diff := cmp.Diff([]string{"1-test_queue_one"}, knownIDs); diff != "" {
+			t.Errorf("unexpected unknown ids (-want +got):\n%s", diff)
+		}
+
+		if diff := cmp.Diff([]string{"2-test_queue_two"}, cancelIDs); diff != "" {
+			t.Errorf("unexpected unknown cancel ids (-want +got):\n%s", diff)
+		}
+	})
+}
+
+func TestMultiQueueHeartbeatBadResponse(t *testing.T) {
+	spec := routeSpec{
+		expectedMethod:   "POST",
+		expectedPath:     "/.executors/queue/heartbeat",
+		expectedUsername: "test",
+		expectedToken:    "hunter2",
+		expectedPayload: `{
+			"executorName": "deadbeef",
+			"jobIdsByQueue": [
+				{
+					"queueName": "test_queue_one",
+					"jobIds": ["1", "3"]
+				},
+				{
+					"queueName": "test_queue_two",
+					"jobIds": ["2"]
+				}
+			],
+			"queueNames": ["test_queue_one", "test_queue_two"],
+			"os": "test-os",
+			"architecture": "test-architecture",
+			"dockerVersion": "test-docker-version",
+			"executorVersion": "test-executor-version",
+			"gitVersion": "test-git-version",
+			"igniteVersion": "test-ignite-version",
+			"srcCliVersion": "test-src-cli-version",
+
+			"prometheusMetrics": ""
+		}`,
+		responseStatus:  http.StatusInternalServerError,
+		responsePayload: ``,
+		multiQueue:      true,
+	}
+
+	testRoute(t, spec, func(client *queue.Client) {
+		if _, _, err := client.Heartbeat(context.Background(), []string{"1-test_queue_one", "2-test_queue_two", "3-test_queue_one"}); err == nil {
+			t.Fatalf("expected an error")
+		}
+	})
+}
+
+func Test_parseJobIDs(t *testing.T) {
+	tests := []struct {
+		name               string
+		jobIDs             []string
+		expected           []types.QueueJobIDs
+		expectedErrMessage string
+	}{
+		{
+			name:   "Successful parse",
+			jobIDs: []string{"1-foo", "2-foo", "3-bar", "44-foo"},
+			expected: []types.QueueJobIDs{
+				{
+					QueueName: "foo",
+					JobIDs:    []string{"1", "2", "44"},
+				},
+				{
+					QueueName: "bar",
+					JobIDs:    []string{"3"},
+				},
+			},
+		},
+		{
+			name:               "Invalid ID format",
+			jobIDs:             []string{"1+foo", "2--bar", "3baz"},
+			expected:           nil,
+			expectedErrMessage: "failed to parse one or more unexpected job ID formats: 1+foo, 3baz",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := queue.ParseJobIDs(tt.jobIDs)
+			if tt.expectedErrMessage != "" && tt.expectedErrMessage != err.Error() {
+				t.Fatalf("expected error message %s, got %s", tt.expectedErrMessage, err.Error())
+			}
+			assert.Equalf(t, tt.expected, got, "parseJobIDs(%v)", tt.jobIDs)
+		})
+	}
 }
 
 func TestAddExecutionLogEntry(t *testing.T) {

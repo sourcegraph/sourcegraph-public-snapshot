@@ -118,6 +118,7 @@ Available commands in `sg.config.yaml`:
 * jaeger
 * loki
 * monitoring-generator
+* multiqueue-executor
 * oss-frontend
 * oss-gitserver-0
 * oss-gitserver-1
