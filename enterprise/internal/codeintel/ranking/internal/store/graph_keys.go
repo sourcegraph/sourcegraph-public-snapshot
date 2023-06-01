@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
@@ -10,29 +11,43 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func DerivativeGraphKey(ctx context.Context, store Store) (string, error) {
-	if key, ok, err := store.DerivativeGraphKey(ctx); err != nil {
-		return "", err
+func DerivativeGraphKey(ctx context.Context, store Store) (string, time.Time, error) {
+	if key, createdAt, ok, err := store.DerivativeGraphKey(ctx); err != nil {
+		return "", time.Time{}, err
 	} else if ok {
-		return key, nil
+		return key, createdAt, nil
 	}
 
 	if err := store.BumpDerivativeGraphKey(ctx); err != nil {
-		return "", err
+		return "", time.Time{}, err
 	}
 
 	return DerivativeGraphKey(ctx, store)
 }
 
-func (s *store) DerivativeGraphKey(ctx context.Context) (_ string, _ bool, err error) {
+func (s *store) DerivativeGraphKey(ctx context.Context) (graphKey string, createdAt time.Time, _ bool, err error) {
 	ctx, _, endObservation := s.operations.derivativeGraphKey.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return basestore.ScanFirstString(s.db.Query(ctx, sqlf.Sprintf(derivativeGraphKeyQuery)))
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(derivativeGraphKeyQuery))
+	if err != nil {
+		return "", time.Time{}, false, err
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	if rows.Next() {
+		if err := rows.Scan(&graphKey, &createdAt); err != nil {
+			return "", time.Time{}, false, err
+		}
+
+		return graphKey, createdAt, true, nil
+	}
+
+	return "", time.Time{}, false, nil
 }
 
 const derivativeGraphKeyQuery = `
-SELECT graph_key
+SELECT graph_key, created_at
 FROM codeintel_ranking_graph_keys
 ORDER BY created_at DESC
 LIMIT 1

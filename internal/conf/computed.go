@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hashicorp/cronexpr"
+
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -278,6 +280,14 @@ func CodeIntelRankingDocumentReferenceCountsEnabled() bool {
 		return *enabled
 	}
 	return false
+}
+
+func CodeIntelRankingDocumentReferenceCountsCronExpression() (*cronexpr.Expression, error) {
+	if cronExpression := Get().CodeIntelRankingDocumentReferenceCountsCronExpression; cronExpression != nil {
+		return cronexpr.Parse(*cronExpression)
+	}
+
+	return cronexpr.Parse("@weekly")
 }
 
 func CodeIntelRankingDocumentReferenceCountsGraphKey() string {

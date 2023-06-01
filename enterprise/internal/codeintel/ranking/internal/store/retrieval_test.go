@@ -74,7 +74,7 @@ func TestDocumentRanks(t *testing.T) {
 	store := New(&observation.TestContext, db)
 	repoName := api.RepoName("foo")
 
-	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "", 123)
+	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
 
 	if _, err := db.ExecContext(ctx, `
 		INSERT INTO codeintel_ranking_progress(graph_key, max_export_id, mappers_started_at, reducer_completed_at)
@@ -130,7 +130,7 @@ func TestGetReferenceCountStatistics(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "", 123)
+	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
 
 	if _, err := db.ExecContext(ctx, `
 		INSERT INTO codeintel_ranking_progress(graph_key, max_export_id, mappers_started_at, reducer_completed_at)
@@ -175,7 +175,7 @@ func TestLastUpdatedAt(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "", 123)
+	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
 
 	if _, err := db.ExecContext(ctx, `
 		INSERT INTO codeintel_ranking_progress(graph_key, max_export_id, mappers_started_at, reducer_completed_at)

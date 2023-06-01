@@ -697,6 +697,15 @@
       "group": "Code intelligence",
       "default": false
     },
+    "codeIntelRanking.documentReferenceCountsCronExpression": {
+      "description": "A cron expression indicating when to run the document reference counts graph reduction job.",
+      "type": "string",
+      "!go": {
+        "pointer": true
+      },
+      "group": "Code intelligence",
+      "default": "@weekly"
+    },
     "codeIntelRanking.documentReferenceCountsGraphKey": {
       "description": "An arbitrary identifier used to group calculated rankings from SCIP data (including the SCIP export).",
       "type": "string",

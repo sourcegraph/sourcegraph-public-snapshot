@@ -2382,6 +2382,8 @@ type SiteConfiguration struct {
 	CodeIntelAutoIndexingIndexerMap map[string]string `json:"codeIntelAutoIndexing.indexerMap,omitempty"`
 	// CodeIntelAutoIndexingPolicyRepositoryMatchLimit description: The maximum number of repositories to which a single auto-indexing policy can apply. Default is -1, which is unlimited.
 	CodeIntelAutoIndexingPolicyRepositoryMatchLimit *int `json:"codeIntelAutoIndexing.policyRepositoryMatchLimit,omitempty"`
+	// CodeIntelRankingDocumentReferenceCountsCronExpression description: A cron expression indicating when to run the document reference counts graph reduction job.
+	CodeIntelRankingDocumentReferenceCountsCronExpression *string `json:"codeIntelRanking.documentReferenceCountsCronExpression,omitempty"`
 	// CodeIntelRankingDocumentReferenceCountsDerivativeGraphKeyPrefix description: An arbitrary identifier used to group calculated rankings from SCIP data (excluding the SCIP export).
 	CodeIntelRankingDocumentReferenceCountsDerivativeGraphKeyPrefix string `json:"codeIntelRanking.documentReferenceCountsDerivativeGraphKeyPrefix,omitempty"`
 	// CodeIntelRankingDocumentReferenceCountsEnabled description: Enables/disables the document reference counts feature. Currently experimental.
@@ -2635,6 +2637,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "codeIntelAutoIndexing.enabled")
 	delete(m, "codeIntelAutoIndexing.indexerMap")
 	delete(m, "codeIntelAutoIndexing.policyRepositoryMatchLimit")
+	delete(m, "codeIntelRanking.documentReferenceCountsCronExpression")
 	delete(m, "codeIntelRanking.documentReferenceCountsDerivativeGraphKeyPrefix")
 	delete(m, "codeIntelRanking.documentReferenceCountsEnabled")
 	delete(m, "codeIntelRanking.documentReferenceCountsGraphKey")

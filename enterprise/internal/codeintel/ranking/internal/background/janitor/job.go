@@ -2,7 +2,6 @@ package janitor
 
 import (
 	"context"
-	"time"
 
 	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store"
@@ -118,12 +117,12 @@ func vacuumDeletedExportedUploads(ctx context.Context, s store.Store) (int, erro
 		return 0, nil
 	}
 
-	derivativeGraphKeyPrefix, err := store.DerivativeGraphKey(ctx, s)
+	derivativeGraphKeyPrefix, _, err := store.DerivativeGraphKey(ctx, s)
 	if err != nil {
 		return 0, err
 	}
 
-	return s.VacuumDeletedExportedUploads(ctx, rankingshared.DerivativeGraphKeyFromTime(derivativeGraphKeyPrefix, time.Now()))
+	return s.VacuumDeletedExportedUploads(ctx, rankingshared.DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix))
 }
 
 const vacuumBatchSize = 100 // TODO - configure via envvar
@@ -141,12 +140,12 @@ func vacuumStaleGraphs(ctx context.Context, s store.Store) (int, error) {
 		return 0, nil
 	}
 
-	derivativeGraphKeyPrefix, err := store.DerivativeGraphKey(ctx, s)
+	derivativeGraphKeyPrefix, _, err := store.DerivativeGraphKey(ctx, s)
 	if err != nil {
 		return 0, err
 	}
 
-	return s.VacuumStaleGraphs(ctx, rankingshared.DerivativeGraphKeyFromTime(derivativeGraphKeyPrefix, time.Now()), vacuumBatchSize)
+	return s.VacuumStaleGraphs(ctx, rankingshared.DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix), vacuumBatchSize)
 }
 
 func vacuumStaleRanks(ctx context.Context, s store.Store) (int, int, error) {
@@ -154,10 +153,10 @@ func vacuumStaleRanks(ctx context.Context, s store.Store) (int, int, error) {
 		return 0, 0, nil
 	}
 
-	derivativeGraphKeyPrefix, err := store.DerivativeGraphKey(ctx, s)
+	derivativeGraphKeyPrefix, _, err := store.DerivativeGraphKey(ctx, s)
 	if err != nil {
 		return 0, 0, err
 	}
 
-	return s.VacuumStaleRanks(ctx, rankingshared.DerivativeGraphKeyFromTime(derivativeGraphKeyPrefix, time.Now()))
+	return s.VacuumStaleRanks(ctx, rankingshared.DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix))
 }
