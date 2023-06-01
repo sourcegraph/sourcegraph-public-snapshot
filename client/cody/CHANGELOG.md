@@ -10,6 +10,12 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Fixed
 
+### Changed
+
+## [0.2.1]
+
+### Fixed
+
 - Escape Windows path separator in fast file finder path pattern [pull/52754](https://github.com/sourcegraph/sourcegraph/pull/52754)
 - Only display errors from the embeddings clients for users connnected to an indexed codebase [pull/52780](https://github.com/sourcegraph/sourcegraph/pull/52780)
 
