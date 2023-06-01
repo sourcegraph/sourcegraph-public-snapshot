@@ -142,6 +142,34 @@ func (c *CommitStatus) Key() string {
 	return strconv.FormatInt(int64(fnv1.HashString64(key)), 16)
 }
 
+// A Commit in a Repository, from the REST API.
+type restCommit struct {
+	URL    string `json:"url"`
+	SHA    string `json:"sha"`
+	NodeID string `json:"node_id"`
+	Commit struct {
+		URL          string              `json:"url"`
+		Author       *restAuthorCommiter `json:"author"`
+		Committer    *restAuthorCommiter `json:"committer"`
+		Message      string              `json:"message"`
+		CommentCount int                 `json:"comment_count"`
+		Tree         struct {
+			SHA string `json:"sha"`
+			URL string `json:"url"`
+		} `json:"tree"`
+	}
+	Parents []struct {
+		SHA string `json:"sha"`
+		URL string `json:"url"`
+	} `json:"parents"`
+}
+
+type restAuthorCommiter struct {
+	Name  string `json:"name"`
+	Email string `json:"email"`
+	Date  string `json:"date"`
+}
+
 // Context represent the individual commit status context
 type Context struct {
 	ID          string
