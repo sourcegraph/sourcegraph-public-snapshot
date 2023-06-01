@@ -79,7 +79,7 @@ func (l *BufferedLogger) Start() {
 			}
 		}
 
-		l.log.Info("events buffer emptied")
+		l.log.Info("all events flushed")
 		close(l.flushedC)
 	}()
 }
