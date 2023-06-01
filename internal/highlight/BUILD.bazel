@@ -10,7 +10,7 @@ go_library(
         "mocks.go",
         "syntect_language_map.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight",
+    importpath = "github.com/sourcegraph/sourcegraph/internal/highlight",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = [
         "//internal/binary",

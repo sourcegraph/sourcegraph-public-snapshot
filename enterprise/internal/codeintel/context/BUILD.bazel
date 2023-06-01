@@ -12,11 +12,15 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/internal/codeintel/context/internal/store",
+        "//enterprise/internal/codeintel/context/internal/scipstore",
+        "//enterprise/internal/codeintel/shared",
         "//enterprise/internal/embeddings",
-        "//internal/database",
+        "//internal/codeintel/resolvers",
+        "//internal/gosyntect",
         "//internal/metrics",
         "//internal/observation",
+        "@com_github_sourcegraph_scip//bindings/go/scip",
+        "@org_golang_google_protobuf//proto",
     ],
 )
 
