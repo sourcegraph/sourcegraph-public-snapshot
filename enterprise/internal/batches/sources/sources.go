@@ -319,7 +319,7 @@ func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css Change
 	// support to their REST API for signing commits with a user access token, we should
 	// switch to using the user's token here.
 	// TODO: We don't save the installation ID for the app in the DB???
-	installationAuther := ghaauth.NewInstallationAccessToken(baseURL, 37543582, appAuther, keyring.Default().GitHubAppKey)
+	installationAuther := ghaauth.NewInstallationAccessToken(baseURL, 38137188, appAuther, keyring.Default().GitHubAppKey)
 
 	return css.WithAuthenticator(installationAuther)
 }

@@ -2,7 +2,6 @@ package sources
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -102,8 +101,8 @@ func (s GitHubSource) ValidateAuthenticator(ctx context.Context) error {
 // Due to limitations and feature-incompleteness of both the REST and GraphQL APIs today
 // (2023-05-26), we still take advantage of gitserver to push an initial commit based on
 // the changeset patch, then we look up the commit on the code host and duplicate it using
-// a REST endpoint in order to create a signed version of it. We then delete the original
-// unsigned commit.
+// a REST endpoint in order to create a signed version of it. We then update the branch
+// ref, orphaning the original commit.
 //
 // Using the REST API is necessary because the GraphQL API does not expose any mutations
 // for creating commits other than one which requires sending the entire file contents for
@@ -121,15 +120,30 @@ func (s GitHubSource) DuplicateCommit(ctx context.Context, opts protocol.CreateC
 		return errors.Wrap(err, "getting owner and repo name to duplicate commit")
 	}
 
-	fmt.Printf("Would get ref: owner=%s, repo=%s, rev=%s\n", owner, repoName, rev)
-	fmt.Printf("Would create commit with message: %s\n", message)
+	// Get the original, unsigned commit.
+	commit, err := s.client.GetRef(ctx, owner, repoName, rev)
+	if err != nil {
+		return errors.Wrap(err, "getting commit to duplicate")
+	}
 
-	// TODO: Implement me!!
-	// commitSHA, err := s.client.GetRef(ctx, owner, repoName, rev)
-	// commit, err := s.client.GetCommit(ctx, owner, repoName, commitSHA)
-	// s.client.CreateCommit(ctx, owner, repoName, message, commit.Tree, commit.Parents)
-	// s.client.DeleteRef(ctx, owner, repoName, commitSHA)
+	// Our new signed commit should have the same parents as the original commit.
+	parents := []string{}
+	for _, parent := range commit.Parents {
+		parents = append(parents, parent.SHA)
+	}
+	// Create the new commit using the tree SHA of the original and its parents. Author
+	// and committer will not be respected since we are authenticating as a GitHub App
+	// installation, so we just omit them.
+	newCommit, err := s.client.CreateCommit(ctx, owner, repoName, message, commit.Commit.Tree.SHA, parents, nil, nil)
+	if err != nil {
+		return errors.Wrap(err, "creating new commit")
+	}
 
+	// Update the branch ref to point to the new commit, orphaning the original.
+	err = s.client.UpdateRef(ctx, owner, repoName, rev, newCommit.SHA)
+	if err != nil {
+		return errors.Wrap(err, "updating ref to point to new commit")
+	}
 	return nil
 }
 

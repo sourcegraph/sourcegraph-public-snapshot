@@ -216,7 +216,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 		}
 	}
 	// If we're pushing to a GitHub code host, we should check if a GitHub App is
-	// configured for use in Batch Changes to sign the commit.
+	// configured for Batch Changes to sign commits on this code host with.
 	if _, ok := css.(*sources.GitHubSource); ok {
 		// Attempt to get a ChangesetSource authenticated with a GitHub App.
 		css, err = e.sourcer.ForChangeset(ctx, e.tx, e.ch, sources.AuthenticationStrategyGitHubApp)
@@ -224,7 +224,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 			switch err {
 			case sources.ErrNoGitHubAppConfigured:
 				// If we didn't find any GitHub Apps configured for this code host, it's a
-				// noop; commit signing has not been set up by the admin.
+				// noop; commit signing is not set up for this code host.
 				break
 			default:
 				// We shouldn't block on this error, but we should still log it.
@@ -232,17 +232,19 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 				break
 			}
 		} else {
-			// We found a GitHub App configured for signing commits on this code host, so
-			// we should try to use it to sign the commit.
+			// We found a GitHub App configured for Batch Changes; we should try to use it
+			// to sign the commit.
 			gcss, ok := css.(*sources.GitHubSource)
 			if !ok {
 				return afterDone, errors.Wrap(err, "got non-GitHubSource for ChangesetSource when using GitHub App authentication strategy")
 			}
 			// We use the existing commit as the basis for the new commit, duplicating it
-			// and deleting the original commit.
-			// TODO: Remove logging
-			fmt.Printf("WOULD DUPLICATE COMMIT HERE. REV: %s\n", rev)
-			gcss.DuplicateCommit(ctx, opts, remoteRepo, rev)
+			// over the REST API in order to produce a signed version of it and then
+			// deleting the original one.
+			err = gcss.DuplicateCommit(ctx, opts, remoteRepo, rev)
+			if err != nil {
+				return afterDone, errors.Wrap(err, "failed to duplicate commit")
+			}
 		}
 	}
 
