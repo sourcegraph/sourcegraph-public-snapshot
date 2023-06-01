@@ -62,6 +62,15 @@ pkg_tar(
     srcs = ["//cmd/server/rootfs:postgres-optimize.sh"],
 )
 
+# TODO(@jhchabran) prom-wrapper has to be in /bin while we're still
+# building the old and new images, because this path is fed to the procfile
+# by the server, and cannot be placed at two different places.
+pkg_tar(
+    name = "tar_prom-wrapper",
+    srcs = ["//docker-images/prometheus/cmd/prom-wrapper"],
+    package_dir = "/bin",
+)
+
 pkg_tar(
     name = "tar_monitoring_config",
     srcs = [
@@ -94,7 +103,6 @@ DEPS = [
     "//enterprise/cmd/repo-updater",
     "//enterprise/cmd/symbols",
     "//enterprise/cmd/worker",
-    "//docker-images/prometheus/cmd/prom-wrapper",
 ]
 
 ZOEKT_DEPS = [
@@ -147,6 +155,7 @@ oci_image(
         ":tar_syntax-highlighter",
         ":tar_scip-ctags",
         ":tar_postgres_optimize",
+        ":tar_prom-wrapper",
     ] + dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS),
     workdir = "/",
 )

@@ -6,9 +6,7 @@ import (
 	"github.com/inconshreveable/log15"
 )
 
-// TODO(@jhchabran) This is a temporary fix, while we're building both normal images and bazel oci/wolfi images.
-// This is caused by the new path for these binaries, to uniformize the server image build process.
-const prometheusProcLine = `prometheus: env STORAGE_PATH=/var/opt/sourcegraph/prometheus [ -x /usr/local/bin/prom-wrapper ] && /usr/local/bin/prom-wrapper || /bin/prom-wrapper >> /var/opt/sourcegraph/prometheus.log 2>&1`
+const prometheusProcLine = `prometheus: env STORAGE_PATH=/var/opt/sourcegraph/prometheus /bin/prom-wrapper >> /var/opt/sourcegraph/prometheus.log 2>&1`
 
 const grafanaProcLine = `grafana: /usr/share/grafana/bin/grafana-server -config /sg_config_grafana/grafana-single-container.ini -homepath /usr/share/grafana >> /var/opt/sourcegraph/grafana.log 2>&1`
 
