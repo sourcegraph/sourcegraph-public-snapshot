@@ -7,7 +7,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"io"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -21,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"golang.org/x/sync/errgroup"
 )
 
 type PerforceService interface {
@@ -206,7 +204,7 @@ func headCommitSHA(ctx context.Context, logger log.Logger, dir common.GitDir) (s
 // 4e5b9dbc6393b195688a93ea04b98fada50bfa03 [p4-fusion: depot-paths = "//rhia-depot-test/": change = 83733]
 // e2f6d6e306490831b0fdd908fdbee702d7074a66 [p4-fusion: depot-paths = "//rhia-depot-test/": change = 83732]
 // 90b9b9574517f30810346f0ab07f66c49c77ab0f [p4-fusion: depot-paths = "//rhia-depot-test/": change = 83731]
-var logFormatWithCommitSHAAndCommitBodyOnly = "--format=format:%H %b"
+var logFormatWithCommitSHAAndCommitBodyOnly = "--format=format:%H %b%x00"
 
 // newMappableCommits executes git log with "logFormatWithCommitSHAAndCommitBodyOnly" as the format
 // specifier and return a list of commitsSHA -> changelistID for each commit between the range
@@ -216,52 +214,31 @@ var logFormatWithCommitSHAAndCommitBodyOnly = "--format=format:%H %b"
 //
 // newMappableCommits will read the output one commit at a time to avoid an unbounded memory growth.
 func newMappableCommits(ctx context.Context, logger log.Logger, dir common.GitDir, lastMappedCommit, head string) ([]types.PerforceChangelist, error) {
-	cmd := exec.CommandContext(ctx, "git", "log")
+	// ensure we cleanup command when returning
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "git", "log", logFormatWithCommitSHAAndCommitBodyOnly)
 	// FIXME: When lastMappedCommit..head is an invalid range.
 	// TODO: Follow up in a separate PR.
 	if lastMappedCommit != "" {
 		cmd.Args = append(cmd.Args, fmt.Sprintf("%s..%s", lastMappedCommit, head))
 	}
-
-	cmd.Args = append(cmd.Args, logFormatWithCommitSHAAndCommitBodyOnly)
 	dir.Set(cmd)
 
-	progressReader, progressWriter := io.Pipe()
+	out, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, err
+	}
 
-	logLineResults := make(chan string)
-	g, ctx := errgroup.WithContext(ctx)
+	cmd.Start()
 
-	// Start reading the output of the command in a goroutine.
-	g.Go(func() error {
-		defer close(logLineResults)
-		return readGitLogOutput(ctx, progressReader, logLineResults)
-	})
+	scan := bufio.NewScanner(out)
+	scan.Split(scanNull)
 
-	// Run the command in a goroutine. It will start writing the output to progressWriter.
-	g.Go(func() error {
-		defer progressWriter.Close()
-
-		output, err := common.RunWith(ctx, wrexec.Wrap(ctx, logger, cmd), false, progressWriter)
-		if err != nil {
-			return &common.GitCommandError{Err: err, Output: string(output)}
-		}
-		return nil
-	})
-
-	go func() {
-		g.Wait()
-	}()
-
-	// Collect the results.
 	commitMaps := []types.PerforceChangelist{}
-	for line := range logLineResults {
-		// FIXME: Something about this is generating an empty newline after each log line in tests.
-		// Skip an empty newline for the next output.
-		if line == "" {
-			continue
-		}
-
-		c, err := parseGitLogLine(line)
+	for scan.Scan() {
+		c, err := parseGitLogLine(strings.TrimSpace(scan.Text()))
 		if err != nil {
 			return nil, err
 		}
@@ -269,25 +246,21 @@ func newMappableCommits(ctx context.Context, logger log.Logger, dir common.GitDi
 		commitMaps = append(commitMaps, *c)
 	}
 
-	// In case any of the goroutines failed, collect and return the error.
-	return commitMaps, errors.Wrap(g.Wait(), "command exeuction pipeline failed")
+	return commitMaps, errors.Wrap(cmd.Wait(), "command execution pipeline failed")
 }
 
-// readGitLogOutput scans one line at a time from the git log output.
-func readGitLogOutput(ctx context.Context, reader io.Reader, logLineResults chan<- string) error {
-	scan := bufio.NewScanner(reader)
-	scan.Split(bufio.ScanLines)
-	for scan.Scan() {
-		line := scan.Text()
-
-		select {
-		case logLineResults <- line:
-		case <-ctx.Done():
-			return ctx.Err()
-		}
+func scanNull(data []byte, atEOF bool) (advance int, token []byte, err error) {
+	if atEOF && len(data) == 0 {
+		return 0, nil, nil
 	}
-
-	return errors.Wrap(scan.Err(), "scanning git-log output failed")
+	if i := bytes.IndexByte(data, 0); i >= 0 {
+		return i + 1, data[0:i], nil
+	}
+	if atEOF {
+		return len(data), data, nil
+	}
+	// Request more data.
+	return 0, nil, nil
 }
 
 // parseGitLogLine will parse the a line from the git-log output and return the commitSHA and changelistID.

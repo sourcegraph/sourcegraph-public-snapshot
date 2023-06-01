@@ -27,7 +27,7 @@ func setupTestRepo(t *testing.T) (common.GitDir, []types.PerforceChangelist) {
 
 [p4-fusion: depot-paths = "//test-perms/": change = %d]`
 
-	commitCommand := "GIT_AUTHOR_NAME=a GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com git commit --allow-empty -m '%s'"
+	commitCommand := "GIT_AUTHOR_NAME=a GIT_AUTHOR_EMAIL=a@a.com GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com git commit --allow-empty -m '%s'"
 
 	gitCommands := []string{}
 	for cid := 1; cid < 6; cid++ {
@@ -158,60 +158,6 @@ func TestNewMappableCommits(t *testing.T) {
 	if diff := cmp.Diff(allCommitMaps, gotCommitMaps); diff != "" {
 		t.Fatalf("mismatched commit maps, (-want,+got)\n:%v", diff)
 	}
-}
-
-func TestReadGitLogOutput(t *testing.T) {
-	t.Run("clean exit, no error", func(t *testing.T) {
-		ctx := context.Background()
-
-		logLineResults := make(chan string)
-		reader := strings.NewReader("line1\nline2\nline3\n")
-
-		go func() {
-			err := readGitLogOutput(ctx, reader, logLineResults)
-			if err != nil {
-				panic(fmt.Sprintf("unexpected error from readGitLogOutput: %q", err.Error()))
-			}
-		}()
-
-		// Check that we received all gotLines before the timeout
-		var gotLines []string
-		for i := 0; i < 3; i++ {
-			l := <-logLineResults
-			gotLines = append(gotLines, l)
-		}
-
-		// If readGitLogOutput attempts to write more than the three expected items, this will cause a
-		// panic with "send on closed channel".
-		close(logLineResults)
-
-		wantLines := []string{"line1", "line2", "line3"}
-
-		if diff := cmp.Diff(wantLines, gotLines); diff != "" {
-			t.Fatalf("mismatched lines, (-want,+got)\n:%v", diff)
-		}
-
-		require.NoError(t, ctx.Err(), "unexpected error in context")
-	})
-
-	t.Run("early exit, with error", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.Background())
-		logLineResults := make(chan string)
-		reader := strings.NewReader("line1\nline2\nline3\n")
-
-		go func() {
-			err := readGitLogOutput(ctx, reader, logLineResults)
-			if err == nil {
-				panic("no error from readGitLogOutput, but should have received context cancelled")
-			}
-		}()
-
-		// Cancel the context without reading anything to trigger an error. This should cause the
-		// goroutine to exit early and return the error.
-		cancel()
-
-		require.Error(t, ctx.Err(), "no error in context")
-	})
 }
 
 func TestParseGitLogLine(t *testing.T) {
