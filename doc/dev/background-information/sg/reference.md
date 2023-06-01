@@ -34,6 +34,8 @@ Available comamndsets in `sg.config.yaml`:
 * batches 🦡
 * codeintel
 * codeintel-bazel
+* codeintel-multi-queue-commands
+* codeintel-single-queue-commands
 * cody-gateway
 * dotcom
 * embeddings
@@ -42,6 +44,7 @@ Available comamndsets in `sg.config.yaml`:
 * enterprise-codeinsights
 * enterprise-codeintel 🧠
 * enterprise-codeintel-bazel
+* enterprise-codeintel-multi-queue-executor
 * enterprise-e2e
 * iam
 * monitoring
