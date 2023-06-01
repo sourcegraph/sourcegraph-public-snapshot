@@ -34,9 +34,10 @@ func (i *instrumentedLogger) LogEvent(spanCtx context.Context, event Event) erro
 	return nil
 }
 
+// backgroundContextWithSpan extracts the span from the context and creates a new
+// context.Background() with the span attached. Using context.Background() is
+// desireable in Logger implementations because we still want to log the event
+// in the case of a request cancellation, but we want to retain the parent span.
 func backgroundContextWithSpan(ctx context.Context) context.Context {
-	// NOTE: Using context.Background() because we still want to log the event in the
-	// case of a request cancellation, we only want the parent span.
-	ctx = trace.ContextWithSpan(context.Background(), trace.SpanFromContext(ctx))
-	return ctx
+	return trace.ContextWithSpan(context.Background(), trace.SpanFromContext(ctx))
 }
