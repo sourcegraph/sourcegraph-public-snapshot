@@ -30,7 +30,7 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 		Key:           token,
 		AccessEnabled: s.allowAnonymous,
 		// Some basic defaults for chat and code completions.
-		RateLimits: map[types.CompletionsFeature]actor.RateLimit{
+		CompletionsRateLimits: map[types.CompletionsFeature]actor.RateLimit{
 			types.CompletionsFeatureChat: {
 				AllowedModels: []string{"claude-v1"},
 				Limit:         50,
@@ -41,6 +41,11 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 				Limit:         500,
 				Interval:      24 * time.Hour,
 			},
+		},
+		EmbeddingsRateLimit: actor.RateLimit{
+			AllowedModels: []string{"openai/text-embedding-ada-002"},
+			Limit:         100_000,
+			Interval:      24 * time.Hour,
 		},
 		Source: s,
 	}, nil

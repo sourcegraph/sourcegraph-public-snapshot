@@ -149,7 +149,7 @@ func (s *Source) checkAccessToken(ctx context.Context, token string) (*dotcom.Ch
 
 	for _, gqlerr := range gqlerrs {
 		if gqlerr.Extensions != nil && gqlerr.Extensions["code"] == codygateway.GQLErrCodeProductSubscriptionNotFound {
-			return nil, actor.ErrAccessTokenDenied{"associated product subscription not found"}
+			return nil, actor.ErrAccessTokenDenied{Reason: "associated product subscription not found"}
 		}
 	}
 	return nil, err
@@ -189,16 +189,16 @@ func NewActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 
 	now := time.Now()
 	a := &actor.Actor{
-		Key:           token,
-		ID:            s.Uuid,
-		AccessEnabled: !disallowedLicense && !s.IsArchived && s.CodyGatewayAccess.Enabled,
-		RateLimits:    map[types.CompletionsFeature]actor.RateLimit{},
-		LastUpdated:   &now,
-		Source:        source,
+		Key:                   token,
+		ID:                    s.Uuid,
+		AccessEnabled:         !disallowedLicense && !s.IsArchived && s.CodyGatewayAccess.Enabled,
+		CompletionsRateLimits: map[types.CompletionsFeature]actor.RateLimit{},
+		LastUpdated:           &now,
+		Source:                source,
 	}
 
 	if s.CodyGatewayAccess.ChatCompletionsRateLimit != nil {
-		a.RateLimits[types.CompletionsFeatureChat] = actor.RateLimit{
+		a.CompletionsRateLimits[types.CompletionsFeatureChat] = actor.RateLimit{
 			AllowedModels: s.CodyGatewayAccess.ChatCompletionsRateLimit.AllowedModels,
 			Limit:         s.CodyGatewayAccess.ChatCompletionsRateLimit.Limit,
 			Interval:      time.Duration(s.CodyGatewayAccess.ChatCompletionsRateLimit.IntervalSeconds) * time.Second,
@@ -206,10 +206,18 @@ func NewActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 	}
 
 	if s.CodyGatewayAccess.CodeCompletionsRateLimit != nil {
-		a.RateLimits[types.CompletionsFeatureCode] = actor.RateLimit{
+		a.CompletionsRateLimits[types.CompletionsFeatureCode] = actor.RateLimit{
 			AllowedModels: s.CodyGatewayAccess.CodeCompletionsRateLimit.AllowedModels,
 			Limit:         s.CodyGatewayAccess.CodeCompletionsRateLimit.Limit,
 			Interval:      time.Duration(s.CodyGatewayAccess.CodeCompletionsRateLimit.IntervalSeconds) * time.Second,
+		}
+	}
+
+	if s.CodyGatewayAccess.EmbeddingsRateLimit != nil {
+		a.EmbeddingsRateLimit = actor.RateLimit{
+			AllowedModels: s.CodyGatewayAccess.EmbeddingsRateLimit.AllowedModels,
+			Limit:         s.CodyGatewayAccess.EmbeddingsRateLimit.Limit,
+			Interval:      time.Duration(s.CodyGatewayAccess.EmbeddingsRateLimit.IntervalSeconds),
 		}
 	}
 

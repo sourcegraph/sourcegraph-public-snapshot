@@ -2328,7 +2328,7 @@
     "embeddings": {
       "description": "Configuration for embeddings service.",
       "type": "object",
-      "required": ["enabled", "dimensions", "model", "accessToken", "url"],
+      "required": ["enabled", "model", "accessToken"],
       "properties": {
         "enabled": {
           "description": "Toggles whether embedding service is enabled.",
@@ -2348,8 +2348,18 @@
           "description": "The access token used to authenticate with the external embedding API service.",
           "type": "string"
         },
+        "provider": {
+          "type": "string",
+          "description": "The provider to use for generating embeddings. Required field.",
+          "enum": ["openai", "sourcegraph"]
+        },
+        "endpoint": {
+          "type": "string",
+          "description": "The endpoint under which to reach the provider.",
+          "format": "uri"
+        },
         "url": {
-          "description": "The url to the external embedding API service.",
+          "description": "The url to the external embedding API service. Deprecated, use endpoint instead.",
           "type": "string",
           "format": "uri"
         },

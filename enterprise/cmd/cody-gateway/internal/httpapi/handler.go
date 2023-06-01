@@ -9,15 +9,18 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/completions"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/embeddings"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
 )
 
 type Config struct {
-	AnthropicAccessToken   string
-	AnthropicAllowedModels []string
-	OpenAIAccessToken      string
-	OpenAIOrgID            string
-	OpenAIAllowedModels    []string
+	AnthropicAccessToken    string
+	AnthropicAllowedModels  []string
+	OpenAIAccessToken       string
+	OpenAIOrgID             string
+	OpenAIAllowedModels     []string
+	EmbeddingsAllowedModels []string
 }
 
 func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisStore, authr *auth.Authenticator, config *Config) http.Handler {
@@ -27,21 +30,31 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 	v1router := r.PathPrefix("/v1").Subrouter()
 
 	if config.AnthropicAccessToken != "" {
-		v1router.Handle(
-			"/completions/anthropic",
+		v1router.Path("/completions/anthropic").Methods(http.MethodPost).Handler(
 			authr.Middleware(
-				newAnthropicHandler(logger, eventLogger, rs, config.AnthropicAccessToken, config.AnthropicAllowedModels),
+				completions.NewAnthropicHandler(logger, eventLogger, rs, config.AnthropicAccessToken, config.AnthropicAllowedModels),
 			),
-		).Methods(http.MethodPost)
+		)
 	}
 	if config.OpenAIAccessToken != "" {
-		v1router.Handle(
-			"/completions/openai",
+		v1router.Path("/completions/openai").Methods(http.MethodPost).Handler(
 			authr.Middleware(
-				newOpenAIHandler(logger, eventLogger, rs, config.OpenAIAccessToken, config.OpenAIOrgID, config.OpenAIAllowedModels),
+				completions.NewOpenAIHandler(logger, eventLogger, rs, config.OpenAIAccessToken, config.OpenAIOrgID, config.OpenAIAllowedModels),
 			),
-		).Methods(http.MethodPost)
+		)
 	}
+
+	v1router.Path("/embeddings/models").Methods(http.MethodGet).Handler(
+		authr.Middleware(
+			embeddings.NewListHandler(),
+		),
+	)
+
+	v1router.Path("/embeddings").Methods(http.MethodPost).Handler(
+		authr.Middleware(
+			embeddings.NewHandler(logger, eventLogger, rs, config.EmbeddingsAllowedModels),
+		),
+	)
 
 	return r
 }
