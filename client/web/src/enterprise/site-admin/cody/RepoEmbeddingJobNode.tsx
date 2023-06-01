@@ -25,7 +25,7 @@ interface RepoEmbeddingJobNodeProps {
     node: RepoEmbeddingJobFields
 }
 
-export const RepoEmbeddingJobNode: React.FunctionComponent<RepoEmbeddingJobNodeProps> = ({ node }) => {
+export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({ node }) => {
     const { state, repo, revision, finishedAt, queuedAt, startedAt, failureMessage } = node
     return (
         <>
