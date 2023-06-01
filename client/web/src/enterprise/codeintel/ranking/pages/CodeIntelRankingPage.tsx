@@ -5,9 +5,7 @@ import { formatDistance, format, parseISO } from 'date-fns'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, ErrorAlert, LoadingSpinner, PageHeader, H4, H3, Text } from '@sourcegraph/wildcard'
-
-import { Collapsible } from '../../../../components/Collapsible'
+import { Container, ErrorAlert, LoadingSpinner, PageHeader, H4, Text } from '@sourcegraph/wildcard'
 
 import { useRankingSummary as defaultUseRankingSummary } from './backend'
 
@@ -47,34 +45,18 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
                 className="mb-3"
             />
 
-            <Container className="mb-3">
-                {data &&
-                    (data.rankingSummary.length === 0 ? (
+            {data &&
+                (data.rankingSummary.length === 0 ? (
+                    <Container>
                         <>No data.</>
-                    ) : (
-                        <>
-                            <H3>Current ranking calculation ({data.rankingSummary[0].graphKey})</H3>
-
-                            <div className="p-2">
-                                <Summary
-                                    key={data.rankingSummary[0].graphKey}
-                                    summary={data.rankingSummary[0]}
-                                    displayGraphKey={false}
-                                />
-                            </div>
-                        </>
-                    ))}
-            </Container>
-
-            {data && data.rankingSummary.length > 1 && (
-                <Container>
-                    <Collapsible title="Historic ranking calculations" titleAtStart={true} titleClassName="h3">
-                        {data.rankingSummary.slice(1).map(summary => (
-                            <Summary key={summary.graphKey} summary={summary} displayGraphKey={true} />
-                        ))}
-                    </Collapsible>
-                </Container>
-            )}
+                    </Container>
+                ) : (
+                    data.rankingSummary.map(summary => (
+                        <Container key={summary.graphKey} className="mb-3">
+                            <Summary summary={summary} />
+                        </Container>
+                    ))
+                ))}
         </>
     )
 }
@@ -95,14 +77,13 @@ interface Progress {
 
 interface SummaryProps {
     summary: Summary
-    displayGraphKey: boolean
 }
 
-const Summary: FunctionComponent<SummaryProps> = ({ summary, displayGraphKey }) => (
-    <div className="py-2">
-        {displayGraphKey && <H4>Historic ranking calculation ({summary.graphKey})</H4>}
+const Summary: FunctionComponent<SummaryProps> = ({ summary }) => (
+    <div className="p-2">
+        <H4 className="mb-4">Ranking calculation ({summary.graphKey})</H4>
 
-        <div className={displayGraphKey ? 'px-4' : ''}>
+        <div>
             <Progress
                 title="Path mapper"
                 subtitle="Reads the paths of SCIP indexes exported for ranking and produce path/zero-count pairs consumed by the ranking phase."
