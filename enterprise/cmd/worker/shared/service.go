@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations"
+	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -21,6 +22,10 @@ func (svc) Configure() (env.Config, []debugserver.Endpoint) {
 
 func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config env.Config) error {
 	go setAuthzProviders(ctx, observationCtx)
+
+	// internal/auth/providers.{GetProviderByConfigID,GetProviderbyServiceType} are potentially in the call-graph in worker,
+	// so we init the built-in auth provider just in case.
+	userpasswd.Init()
 
 	return shared.Start(ctx, observationCtx, ready, config.(*shared.Config), getEnterpriseInit(observationCtx.Logger))
 }
