@@ -53,7 +53,6 @@ type TestClientSourceOptions struct {
 	Logger log.Logger
 }
 
-
 func NewTestClientSource(t *testing.T, addrs []string, options ...func(o *TestClientSourceOptions)) ClientSource {
 	logger := logtest.Scoped(t)
 	opts := TestClientSourceOptions{
