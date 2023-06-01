@@ -102,14 +102,15 @@ func EmbedRepo(
 	textIndex, textIndexStats, err := embedFiles(ctx, textFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, ranks)
 	if err != nil {
 		return nil, nil, nil, err
-
 	}
 
+	embeddingsModel := client.GetModel()
 	index := &embeddings.RepoEmbeddingIndex{
-		RepoName:  opts.RepoName,
-		Revision:  opts.Revision,
-		CodeIndex: codeIndex,
-		TextIndex: textIndex,
+		RepoName:        opts.RepoName,
+		Revision:        opts.Revision,
+		EmbeddingsModel: embeddingsModel,
+		CodeIndex:       codeIndex,
+		TextIndex:       textIndex,
 	}
 
 	stats := &embeddings.EmbedRepoStats{

@@ -10,6 +10,8 @@ type EmbeddingsClient interface {
 	GetEmbeddingsWithRetries(ctx context.Context, texts []string, maxRetries int) ([]float32, error)
 	// GetDimensions returns the dimensionality of the embedding space.
 	GetDimensions() (int, error)
+	// GetModel returns the model used to generate embeddings.
+	GetModel() string
 }
 
 func NewRateLimitExceededError(retryAfter time.Time) error {

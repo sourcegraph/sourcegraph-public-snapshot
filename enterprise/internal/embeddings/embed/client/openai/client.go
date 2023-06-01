@@ -65,6 +65,10 @@ func (c *openaiEmbeddingsClient) GetDimensions() (int, error) {
 	return c.dimensions, nil
 }
 
+func (c *openaiEmbeddingsClient) GetModel() string {
+	return c.model
+}
+
 // GetEmbeddingsWithRetries tries to embed the given texts using the external service specified in the config.
 // In case of failure, it retries the embedding procedure up to maxRetries. This due to the OpenAI API which
 // often hangs up when downloading large embedding responses.

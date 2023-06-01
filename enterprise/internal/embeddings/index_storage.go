@@ -13,6 +13,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// IndexFormatVersion is a version number that's increased every time the on-disk index format is
+// changed. Make sure to update CurrentFormatVersion whenever you add a new version.
+type IndexFormatVersion int
+
+const CurrentFormatVersion = EmbeddingModelVersion
+const (
+	InitialVersion        IndexFormatVersion = iota
+	EmbeddingModelVersion                    // Added the model name used to create embeddings
+)
+
 func DownloadIndex[T any](ctx context.Context, uploadStore uploadstore.Store, key string) (_ *T, err error) {
 	file, err := uploadStore.Get(ctx, key)
 	if err != nil {
@@ -45,8 +55,12 @@ func UploadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store
 	eg.Go(func() error {
 		defer pw.Close()
 
-		enc := gob.NewEncoder(pw)
-		return encodeRepoEmbeddingIndex(enc, index, embeddingsChunkSize)
+		encoder := indexEncoder{
+			enc:           gob.NewEncoder(pw),
+			formatVersion: CurrentFormatVersion,
+			chunkSize:     embeddingsChunkSize,
+		}
+		return encoder.encodeIndex(index)
 	})
 
 	eg.Go(func() error {
@@ -70,6 +84,8 @@ func UpdateRepoEmbeddingIndex(
 ) error {
 	// update revision
 	previous.Revision = new.Revision
+	// set the model (older indexes didn't include the model)
+	previous.EmbeddingsModel = new.EmbeddingsModel
 
 	// filter based on toRemove
 	toRemoveSet := make(map[string]struct{}, len(toRemove))
@@ -88,15 +104,14 @@ func UpdateRepoEmbeddingIndex(
 }
 
 func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store, key string) (*RepoEmbeddingIndex, error) {
-	file, err := uploadStore.Get(ctx, key)
+	decoder, err := createIndexDecoder(ctx, uploadStore, key)
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer decoder.close()
 
-	dec := gob.NewDecoder(file)
+	rei, err := decoder.decodeIndex()
 
-	rei, err := decodeRepoEmbeddingIndex(dec)
 	// If decoding fails, assume it is an old index and decode with a generic decoder.
 	if err != nil {
 		oldRei, err2 := DownloadIndex[OldRepoEmbeddingIndex](ctx, uploadStore, key)
@@ -109,88 +124,80 @@ func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Sto
 	return rei, nil
 }
 
-const embeddingsChunkSize = 10_000
-
-// encodeRepoEmbeddingIndex is a specialized encoder for repo embedding indexes. Instead of GOB-encoding
-// the entire RepoEmbeddingIndex, we encode each field separately, and we encode the embeddings array by chunks.
-// This way we avoid allocating a separate very large slice for the embeddings.
-func encodeRepoEmbeddingIndex(enc *gob.Encoder, rei *RepoEmbeddingIndex, chunkSize int) error {
-	if err := enc.Encode(rei.RepoName); err != nil {
-		return err
-	}
-
-	if err := enc.Encode(rei.Revision); err != nil {
-		return err
-	}
-
-	for _, ei := range []EmbeddingIndex{rei.CodeIndex, rei.TextIndex} {
-		if err := enc.Encode(ei.ColumnDimension); err != nil {
-			return err
-		}
-
-		if err := enc.Encode(ei.RowMetadata); err != nil {
-			return err
-		}
-
-		if err := enc.Encode(ei.Ranks); err != nil {
-			return err
-		}
-
-		numChunks := (len(ei.Embeddings) + chunkSize - 1) / chunkSize
-		if err := enc.Encode(numChunks); err != nil {
-			return err
-		}
-
-		for i := 0; i < numChunks; i++ {
-			start := i * chunkSize
-			end := start + chunkSize
-
-			if end > len(ei.Embeddings) {
-				end = len(ei.Embeddings)
-			}
-
-			if err := enc.Encode(Dequantize(ei.Embeddings[start:end])); err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
+type indexDecoder struct {
+	file          io.ReadCloser
+	dec           *gob.Decoder
+	formatVersion IndexFormatVersion
 }
 
-func decodeRepoEmbeddingIndex(dec *gob.Decoder) (*RepoEmbeddingIndex, error) {
-	rei := &RepoEmbeddingIndex{}
-
-	if err := dec.Decode(&rei.RepoName); err != nil {
+func createIndexDecoder(ctx context.Context, uploadStore uploadstore.Store, key string) (*indexDecoder, error) {
+	f, err := uploadStore.Get(ctx, key)
+	if err != nil {
 		return nil, err
 	}
 
-	if err := dec.Decode(&rei.Revision); err != nil {
+	dec := gob.NewDecoder(f)
+	var formatVersion IndexFormatVersion
+	if err := dec.Decode(&formatVersion); err != nil {
+		// If there's an error, assume this is an old index that doesn't encode the
+		// version. Open the file again to reset the reader.
+		if err := f.Close(); err != nil {
+			return nil, err
+		}
+
+		f, err = uploadStore.Get(ctx, key)
+		if err != nil {
+			return nil, err
+		}
+		dec = gob.NewDecoder(f)
+		return &indexDecoder{f, dec, InitialVersion}, nil
+	}
+
+	if formatVersion > CurrentFormatVersion {
+		return nil, errors.Newf("unrecognized index format version: %d", formatVersion)
+	}
+	return &indexDecoder{f, dec, formatVersion}, nil
+}
+
+func (d *indexDecoder) decodeIndex() (*RepoEmbeddingIndex, error) {
+	rei := &RepoEmbeddingIndex{}
+
+	if err := d.dec.Decode(&rei.RepoName); err != nil {
 		return nil, err
+	}
+
+	if err := d.dec.Decode(&rei.Revision); err != nil {
+		return nil, err
+	}
+
+	if d.formatVersion >= EmbeddingModelVersion {
+		if err := d.dec.Decode(&rei.EmbeddingsModel); err != nil {
+			return nil, err
+		}
 	}
 
 	for _, ei := range []*EmbeddingIndex{&rei.CodeIndex, &rei.TextIndex} {
-		if err := dec.Decode(&ei.ColumnDimension); err != nil {
+		if err := d.dec.Decode(&ei.ColumnDimension); err != nil {
 			return nil, err
 		}
 
-		if err := dec.Decode(&ei.RowMetadata); err != nil {
+		if err := d.dec.Decode(&ei.RowMetadata); err != nil {
 			return nil, err
 		}
 
-		if err := dec.Decode(&ei.Ranks); err != nil {
+		if err := d.dec.Decode(&ei.Ranks); err != nil {
 			return nil, err
 		}
 
 		var numChunks int
-		if err := dec.Decode(&numChunks); err != nil {
+		if err := d.dec.Decode(&numChunks); err != nil {
 			return nil, err
 		}
 
 		ei.Embeddings = make([]int8, 0, numChunks*ei.ColumnDimension)
 		for i := 0; i < numChunks; i++ {
 			var embeddingSlice []float32
-			if err := dec.Decode(&embeddingSlice); err != nil {
+			if err := d.dec.Decode(&embeddingSlice); err != nil {
 				return nil, err
 			}
 			ei.Embeddings = append(ei.Embeddings, Quantize(embeddingSlice)...)
@@ -198,4 +205,74 @@ func decodeRepoEmbeddingIndex(dec *gob.Decoder) (*RepoEmbeddingIndex, error) {
 	}
 
 	return rei, nil
+}
+
+func (d *indexDecoder) close() {
+	d.file.Close()
+}
+
+const embeddingsChunkSize = 10_000
+
+// indexEncoder is a specialized encoder for repo embedding indexes. Instead of GOB-encoding
+// the entire RepoEmbeddingIndex, we encode each field separately, and we encode the embeddings array by chunks.
+// This way we avoid allocating a separate very large slice for the embeddings.
+type indexEncoder struct {
+	enc           *gob.Encoder
+	formatVersion IndexFormatVersion
+	chunkSize     int
+}
+
+func (e *indexEncoder) encodeIndex(rei *RepoEmbeddingIndex) error {
+	// Always encode index format version first, as part of 'file header'
+	if err := e.enc.Encode(e.formatVersion); err != nil {
+		return err
+	}
+
+	if err := e.enc.Encode(rei.RepoName); err != nil {
+		return err
+	}
+
+	if err := e.enc.Encode(rei.Revision); err != nil {
+		return err
+	}
+
+	if e.formatVersion >= EmbeddingModelVersion {
+		if err := e.enc.Encode(rei.EmbeddingsModel); err != nil {
+			return err
+		}
+	}
+
+	for _, ei := range []EmbeddingIndex{rei.CodeIndex, rei.TextIndex} {
+		if err := e.enc.Encode(ei.ColumnDimension); err != nil {
+			return err
+		}
+
+		if err := e.enc.Encode(ei.RowMetadata); err != nil {
+			return err
+		}
+
+		if err := e.enc.Encode(ei.Ranks); err != nil {
+			return err
+		}
+
+		numChunks := (len(ei.Embeddings) + e.chunkSize - 1) / e.chunkSize
+		if err := e.enc.Encode(numChunks); err != nil {
+			return err
+		}
+
+		for i := 0; i < numChunks; i++ {
+			start := i * e.chunkSize
+			end := start + e.chunkSize
+
+			if end > len(ei.Embeddings) {
+				end = len(ei.Embeddings)
+			}
+
+			if err := e.enc.Encode(Dequantize(ei.Embeddings[start:end])); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
 }

@@ -270,6 +270,10 @@ func (c *mockEmbeddingsClient) GetDimensions() (int, error) {
 	return 3, nil
 }
 
+func (c *mockEmbeddingsClient) GetModel() string {
+	return "mock-model"
+}
+
 func (c *mockEmbeddingsClient) GetEmbeddingsWithRetries(_ context.Context, texts []string, _ int) ([]float32, error) {
 	dimensions, err := c.GetDimensions()
 	if err != nil {
