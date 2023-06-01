@@ -1221,17 +1221,17 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 	numPossibleShards := len(c.Addrs())
 
 	if internalgrpc.IsGRPCEnabled(ctx) {
-		shards := make(map[*grpc.ClientConn]*proto.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
+		shards := make(map[proto.GitserverServiceClient]*proto.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
 		for _, r := range repos {
-			conn, err := c.ConnForRepo(r)
+			client, err := c.ClientForRepo(r)
 			if err != nil {
 				return nil, err
 			}
 
-			shard := shards[conn]
+			shard := shards[client]
 			if shard == nil {
 				shard = new(proto.RepoCloneProgressRequest)
-				shards[conn] = shard
+				shards[client] = shard
 			}
 
 			shard.Repos = append(shard.Repos, string(r))
@@ -1239,10 +1239,9 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 
 		p := pool.NewWithResults[*proto.RepoCloneProgressResponse]().WithContext(ctx)
 
-		for conn, req := range shards {
+		for client, req := range shards {
 			fmt.Println("requesting", req)
-			client := proto.NewGitserverServiceClient(conn)
-			fmt.Printf("client: %+v\n", client)
+			client := client
 			req := req
 			p.Go(func(ctx context.Context) (*proto.RepoCloneProgressResponse, error) {
 				return client.RepoCloneProgress(ctx, req)
