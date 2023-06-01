@@ -97,20 +97,20 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
 		return -1, err
 	}
 
-	// TODO: Update past entries with this? (write migration)
 	baseURL, err := url.Parse(app.BaseURL)
 	baseURL = extsvc.NormalizeBaseURL(baseURL)
 	domain := app.Domain
 	if domain == "" {
 		domain = types.ReposDomain
 	}
+
+	// Check if a GitHub App already exists for GitHub instance if it's a batches domain App
 	if domain == types.BatchesDomain {
 		existingGHApp, err := s.GetByDomain(ctx, &domain, baseURL.String())
 		if err != nil {
 			fmt.Println(err)
 		}
 		if existingGHApp != nil {
-			// TODO: Error handle better (GH App gets stuck in Auth flow showing this message)
 			return -1, errors.New("GitHub App already exists for this GitHub instance")
 		}
 	}

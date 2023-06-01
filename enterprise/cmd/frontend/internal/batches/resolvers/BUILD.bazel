@@ -53,6 +53,8 @@ go_library(
         "//enterprise/internal/batches/syncer",
         "//enterprise/internal/batches/types",
         "//enterprise/internal/batches/types/scheduler/config",
+        "//enterprise/internal/github_apps/store",
+        "//enterprise/internal/github_apps/types",
         "//enterprise/internal/licensing",
         "//internal/actor",
         "//internal/api",
