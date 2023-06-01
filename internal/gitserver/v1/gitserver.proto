@@ -8,6 +8,7 @@ option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
 
 service GitserverService {
   rpc Exec(ExecRequest) returns (stream ExecResponse) {}
+  rpc IsRepoCloneable(IsRepoCloneableRequest) returns (IsRepoCloneableResponse) {}
   rpc Search(SearchRequest) returns (stream SearchResponse) {}
   rpc Archive(ArchiveRequest) returns (stream ArchiveResponse) {}
   rpc ReposStats(ReposStatsRequest) returns (ReposStatsResponse) {}
@@ -210,6 +211,22 @@ message ArchiveRequest {
 // ArchiveResponse is the response from the Archive RPC that returns a chunk of the archive.
 message ArchiveResponse {
   bytes data = 1;
+}
+
+// IsRepoCloneableRequest is a request to check if a repository is cloneable.
+message IsRepoCloneableRequest {
+  // repo is the name of the repo to check.
+  string repo = 1;
+}
+
+// IsRepoCloneableResponse is the response from the IsCloneable RPC.
+message IsRepoCloneableResponse {
+  // cloneable is true if the repository is cloneable.
+  bool cloneable = 1;
+  // cloned is true if the repository was cloned in the past.
+  bool cloned = 2;
+  // reason is why the repository is not cloneable.
+  string reason = 3;
 }
 
 // ReposStatsRequest is a empty request for the ReposStats RPC.

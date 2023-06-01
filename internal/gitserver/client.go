@@ -444,6 +444,7 @@ type Client interface {
 
 func (c *clientImplementor) Addrs() []string {
 	address := c.clientSource.Addresses()
+
 	addrs := make([]string, 0, len(address))
 	for _, addr := range address {
 		addrs = append(addrs, addr.Address())
@@ -1105,21 +1106,42 @@ func (c *clientImplementor) IsRepoCloneable(ctx context.Context, repo api.RepoNa
 		return MockIsRepoCloneable(repo)
 	}
 
-	req := &protocol.IsRepoCloneableRequest{
-		Repo: repo,
-	}
-	r, err := c.httpPost(ctx, repo, "is-repo-cloneable", req)
-	if err != nil {
-		return err
-	}
-	defer r.Body.Close()
-	if r.StatusCode != http.StatusOK {
-		return errors.Errorf("gitserver error (status code %d): %s", r.StatusCode, readResponseBody(r.Body))
-	}
-
 	var resp protocol.IsRepoCloneableResponse
-	if err := json.NewDecoder(r.Body).Decode(&resp); err != nil {
-		return err
+
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		client, err := c.ClientForRepo(repo)
+		if err != nil {
+			return err
+		}
+
+		req := &proto.IsRepoCloneableRequest{
+			Repo: string(repo),
+		}
+
+		r, err := client.IsRepoCloneable(ctx, req)
+		if err != nil {
+			return err
+		}
+
+		resp.FromProto(r)
+
+	} else {
+
+		req := &protocol.IsRepoCloneableRequest{
+			Repo: repo,
+		}
+		r, err := c.httpPost(ctx, repo, "is-repo-cloneable", req)
+		if err != nil {
+			return err
+		}
+		defer r.Body.Close()
+		if r.StatusCode != http.StatusOK {
+			return errors.Errorf("gitserver error (status code %d): %s", r.StatusCode, readResponseBody(r.Body))
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&resp); err != nil {
+			return err
+		}
 	}
 
 	if resp.Cloneable {
@@ -1260,6 +1282,7 @@ func (c *clientImplementor) ReposStats(ctx context.Context) (map[string]*protoco
 			} else {
 				stats[addr] = stat
 			}
+
 		}
 	}
 

@@ -184,3 +184,12 @@ func (gs *GRPCServer) ReposStats(ctx context.Context, req *proto.ReposStatsReque
 
 	return stats.ToProto(), nil
 }
+
+func (gs *GRPCServer) IsRepoCloneable(ctx context.Context, req *proto.IsRepoCloneableRequest) (*proto.IsRepoCloneableResponse, error) {
+	repo := api.RepoName(req.GetRepo())
+	resp, err := gs.Server.IsRepoCloneable(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
+	return resp.ToProto(), nil
+}

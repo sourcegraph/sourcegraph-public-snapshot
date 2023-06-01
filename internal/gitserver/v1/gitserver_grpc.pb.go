@@ -19,10 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	GitserverService_Exec_FullMethodName       = "/gitserver.v1.GitserverService/Exec"
-	GitserverService_Search_FullMethodName     = "/gitserver.v1.GitserverService/Search"
-	GitserverService_Archive_FullMethodName    = "/gitserver.v1.GitserverService/Archive"
-	GitserverService_ReposStats_FullMethodName = "/gitserver.v1.GitserverService/ReposStats"
+	GitserverService_Exec_FullMethodName            = "/gitserver.v1.GitserverService/Exec"
+	GitserverService_IsRepoCloneable_FullMethodName = "/gitserver.v1.GitserverService/IsRepoCloneable"
+	GitserverService_Search_FullMethodName          = "/gitserver.v1.GitserverService/Search"
+	GitserverService_Archive_FullMethodName         = "/gitserver.v1.GitserverService/Archive"
+	GitserverService_ReposStats_FullMethodName      = "/gitserver.v1.GitserverService/ReposStats"
 )
 
 // GitserverServiceClient is the client API for GitserverService service.
@@ -30,6 +31,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GitserverServiceClient interface {
 	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error)
+	IsRepoCloneable(ctx context.Context, in *IsRepoCloneableRequest, opts ...grpc.CallOption) (*IsRepoCloneableResponse, error)
 	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (GitserverService_SearchClient, error)
 	Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (GitserverService_ArchiveClient, error)
 	ReposStats(ctx context.Context, in *ReposStatsRequest, opts ...grpc.CallOption) (*ReposStatsResponse, error)
@@ -73,6 +75,15 @@ func (x *gitserverServiceExecClient) Recv() (*ExecResponse, error) {
 		return nil, err
 	}
 	return m, nil
+}
+
+func (c *gitserverServiceClient) IsRepoCloneable(ctx context.Context, in *IsRepoCloneableRequest, opts ...grpc.CallOption) (*IsRepoCloneableResponse, error) {
+	out := new(IsRepoCloneableResponse)
+	err := c.cc.Invoke(ctx, GitserverService_IsRepoCloneable_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *gitserverServiceClient) Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (GitserverService_SearchClient, error) {
@@ -153,6 +164,7 @@ func (c *gitserverServiceClient) ReposStats(ctx context.Context, in *ReposStatsR
 // for forward compatibility
 type GitserverServiceServer interface {
 	Exec(*ExecRequest, GitserverService_ExecServer) error
+	IsRepoCloneable(context.Context, *IsRepoCloneableRequest) (*IsRepoCloneableResponse, error)
 	Search(*SearchRequest, GitserverService_SearchServer) error
 	Archive(*ArchiveRequest, GitserverService_ArchiveServer) error
 	ReposStats(context.Context, *ReposStatsRequest) (*ReposStatsResponse, error)
@@ -165,6 +177,9 @@ type UnimplementedGitserverServiceServer struct {
 
 func (UnimplementedGitserverServiceServer) Exec(*ExecRequest, GitserverService_ExecServer) error {
 	return status.Errorf(codes.Unimplemented, "method Exec not implemented")
+}
+func (UnimplementedGitserverServiceServer) IsRepoCloneable(context.Context, *IsRepoCloneableRequest) (*IsRepoCloneableResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IsRepoCloneable not implemented")
 }
 func (UnimplementedGitserverServiceServer) Search(*SearchRequest, GitserverService_SearchServer) error {
 	return status.Errorf(codes.Unimplemented, "method Search not implemented")
@@ -207,6 +222,24 @@ type gitserverServiceExecServer struct {
 
 func (x *gitserverServiceExecServer) Send(m *ExecResponse) error {
 	return x.ServerStream.SendMsg(m)
+}
+
+func _GitserverService_IsRepoCloneable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(IsRepoCloneableRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).IsRepoCloneable(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_IsRepoCloneable_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).IsRepoCloneable(ctx, req.(*IsRepoCloneableRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _GitserverService_Search_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -276,6 +309,10 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "gitserver.v1.GitserverService",
 	HandlerType: (*GitserverServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "IsRepoCloneable",
+			Handler:    _GitserverService_IsRepoCloneable_Handler,
+		},
 		{
 			MethodName: "ReposStats",
 			Handler:    _GitserverService_ReposStats_Handler,
