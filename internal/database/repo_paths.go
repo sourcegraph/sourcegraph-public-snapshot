@@ -11,8 +11,7 @@ import (
 )
 
 type RepoPathStore interface {
-	EnsureExist(ctx context.Context, repoID api.RepoID, paths []string) (int, error)
-	StatsCount(context.Context, api.RepoID, string) (RepoPathStats, error)
+	EnsureExist(ctx context.Context, repoID api.RepoID, paths []string) (map[string]int, error)
 }
 
 type RepoPathStats struct {
@@ -26,26 +25,22 @@ type repoPaths struct {
 
 var _ RepoPathStore = &repoPaths{}
 
-// TODO we need to precompute this.
-func (r *repoPaths) StatsCount(context.Context, api.RepoID, string) (RepoPathStats, error) {
-	return RepoPathStats{}, nil
-}
-
 var findPathsFmtstr = `
 	WITH new_paths (absolute_path) AS (
 		%s
 	)
-	SELECT n.absolute_path
+	SELECT n.absolute_path, COALESCE(p.id, 0)
 	FROM new_paths AS n
 	LEFT JOIN repo_paths AS p
 	USING (absolute_path)
-	WHERE p.repo_id = %s
-	AND p.absolute_path IS NULL
+	WHERE p.repo_id IS NULL OR p.repo_id = %s
 `
 
 const ensureExistsBatchSize = 1000
 
-func (r *repoPaths) EnsureExist(ctx context.Context, repoID api.RepoID, paths []string) (int, error) {
+// TODO: Delete old paths
+func (r *repoPaths) EnsureExist(ctx context.Context, repoID api.RepoID, paths []string) (map[string]int, error) {
+	ids := map[string]int{}
 	var notExist []string
 	for i := 0; i < len(paths); i += ensureExistsBatchSize {
 		var params []*sqlf.Query
@@ -55,16 +50,27 @@ func (r *repoPaths) EnsureExist(ctx context.Context, repoID api.RepoID, paths []
 		q := sqlf.Sprintf(findPathsFmtstr, sqlf.Join(params, "UNION ALL"), repoID)
 		rs, err := r.Store.Query(ctx, q)
 		if err != nil {
-			return 0, errors.Wrapf(err, "query: %s", q.Query(sqlf.PostgresBindVar))
+			return nil, errors.Wrapf(err, "query: %s", q.Query(sqlf.PostgresBindVar))
 		}
 		for rs.Next() {
 			var path string
-			if err := rs.Scan(&path); err != nil {
-				return 0, err
+			var id int
+			if err := rs.Scan(&path, &id); err != nil {
+				return nil, err
 			}
-			notExist = append(notExist, path)
+			if id == 0 {
+				notExist = append(notExist, path)
+			} else {
+				ids[path] = id
+			}
 		}
 	}
-	_, err := ensureRepoPaths(ctx, r.Store, notExist, repoID)
-	return len(notExist), err
+	newIDs, err := ensureRepoPaths(ctx, r.Store, notExist, repoID)
+	if err != nil {
+		return nil, err
+	}
+	for i := 0; i < len(newIDs); i++ {
+		ids[notExist[i]] = newIDs[i]
+	}
+	return ids, err
 }

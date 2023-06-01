@@ -2,6 +2,8 @@ package background
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -11,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -46,17 +49,93 @@ func (r *filesBackfillIndexer) indexRepo(ctx context.Context, repoId api.RepoID)
 		return errors.Wrap(err, "repoStore.Get")
 	}
 	r.logger.Info("LsFines", logger.String("repo_name", string(repo.Name)))
+	// TODO: can shard by pathspecs here:
 	files, err := r.client.LsFiles(ctx, nil, repo.Name, "HEAD")
 	if err != nil {
 		r.logger.Error("ls-files failed", logger.String("msg", err.Error()))
 		return errors.Wrap(err, "LsFiles")
 	}
-	newlyInserted, err := r.db.RepoPaths().EnsureExist(ctx, repo.ID, files)
+	ids, err := r.db.RepoPaths().EnsureExist(ctx, repo.ID, files)
 	if err != nil {
 		r.logger.Error("inserting backfill files failed", logger.String("msg", err.Error()))
 		return errors.Wrap(err, "EnsureExist")
 	}
-	r.logger.Info("files", logger.Int("total", len(files)), logger.Int("diff", newlyInserted), logger.String("repo_name", string(repo.Name)))
+	root := &fileNode{}
+	for f, id := range ids {
+		root.add(f, id)
+	}
+	inserter := batch.NewInserterWithConflict(
+		ctx,
+		r.db.Handle(),
+		"repo_paths",
+		batch.MaxNumPostgresParameters,
+		"ON CONFLICT SET deep_file_count = EXCLUDED.deep_file_count",
+		"id",
+		"deep_file_count",
+	)
+	type file struct {
+		name string
+		node *fileNode
+	}
+	stack := []file{{name: "", node: root}}
+	pop := func() file {
+		lastIndex := len(stack) - 1
+		f := stack[lastIndex]
+		stack = stack[:lastIndex]
+		return f
+	}
+	push := func(f file) {
+		stack = append(stack, f)
+	}
+	for len(stack) > 0 {
+		f := pop()
+		if err := inserter.Insert(ctx, f.node.id, f.node.deepCount); err != nil {
+			return err
+		}
+		for _, n := range f.node.nodes {
+			push(file{name: fmt.Sprintf("%s/%s", f.name, n.baseName), node: n})
+		}
+	}
+	if err := inserter.Flush(ctx); err != nil {
+		return err
+	}
+	r.logger.Info("files", logger.Int("total", len(files)), logger.String("repo_name", string(repo.Name)))
 	filesCounter.Add(float64(len(files)))
 	return nil
+}
+
+type fileNode struct {
+	baseName  string
+	id        int
+	deepCount int
+	nodes     []*fileNode
+}
+
+func (t *fileNode) add(path string, id int) {
+	for path != "" {
+		sep := strings.Index(path, "/")
+		var base, rest string
+		if sep == -1 {
+			base = path
+		} else {
+			base = path[:sep]
+			rest = path[sep+1:]
+		}
+		var node *fileNode
+		for _, n := range t.nodes {
+			if node.baseName == base {
+				node = n
+				break
+			}
+		}
+		if node == nil {
+			node = &fileNode{baseName: base}
+			t.nodes = append(t.nodes, node)
+		}
+		t.deepCount++
+		// tail-recurse
+		t = node
+		path = rest
+	}
+	t.id = id
 }

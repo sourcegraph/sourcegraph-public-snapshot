@@ -225,13 +225,13 @@ func (r *ownResolver) GitTreeOwnership(
 }
 
 func (r *ownResolver) GitTreeOwnershipStats(ctx context.Context, tree *graphqlbackend.GitTreeEntryResolver) (graphqlbackend.OwnershipStatsResolver, error) {
-	stats, err := r.db.RepoPaths().StatsCount(ctx, tree.Repository().ID, tree.Path())
-	if err != nil {
-		return nil, err
-	}
+	//stats, err := r.db.RepoPaths().StatsCount(ctx, tree.Repository().IDInt32(), tree.Path())
+	// if err != nil {
+	// 	return nil, err
+	// }
 	return &ownStatsResolver{
-		totalFiles:         stats.TotalFiles,
-		assignedOwnerFiles: stats.AssignedOwnerFiles,
+		// totalFiles:         stats.TotalFiles,
+		// assignedOwnerFiles: stats.AssignedOwnerFiles,
 	}, nil
 }
 
