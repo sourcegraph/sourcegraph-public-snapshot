@@ -1,41 +1,15 @@
-// See vscode.Range
-interface TrackedRange<
-    Self extends TrackedRange<Self, PositionType>,
-    PositionType extends TrackedPosition<PositionType>
-> {
-    start: PositionType
-    end: PositionType
-    with(start: PositionType, end: PositionType): Self
-}
-
-// See vscode.Position
-interface TrackedPosition<Self extends TrackedPosition<Self>> {
-    character: number
-    line: number
-    isAfter(other: Self): boolean
-    isAfterOrEqual(other: Self): boolean
-    isBefore(other: Self): boolean
-    isBeforeOrEqual(other: Self): boolean
-    isEqual(other: Self): boolean
-    translate(lineDelta?: number, characterDelta?: number): Self
-}
+import * as vscode from 'vscode'
 
 // See vscode.TextDocumentContentChangeEvent
-interface TextChange<
-    RangeType extends TrackedRange<RangeType, PositionType>,
-    PositionType extends TrackedPosition<PositionType>
-> {
-    range: RangeType
+interface TextChange {
+    range: vscode.Range
     text: string
 }
 
 // Given a range and an edit, updates the range for the edit. Edits at the
 // start or end of the range shrink the range. If the range is deleted, returns
 // null.
-export function updateRange<
-    RangeType extends TrackedRange<RangeType, PositionType>,
-    PositionType extends TrackedPosition<PositionType>
->(range: RangeType, change: TextChange<RangeType, PositionType>): RangeType | null {
+export function updateRange(range: vscode.Range, change: TextChange): vscode.Range | null {
     const lines = change.text.split(/\r\n|\r|\n/m)
     const insertedLastLine = lines.at(-1)?.length
     if (typeof insertedLastLine === 'undefined') {

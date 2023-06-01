@@ -32,9 +32,9 @@ export class FixupDocumentEditObserver {
             }
         }
         // TODO: Update the selection ranges which were edited, see
-        // client/code-shared/src/non-stop/tracked-range or consider using
-        // simpler line-based ranges. Until this is implemented adding/deleting
-        // lines before fixups will cause conflicts.
+        // ./tracked-range or consider using simpler line-based
+        // ranges. Until this is implemented adding/deleting lines
+        // before fixups will cause conflicts.
         //
         // Need to clarify whether multi-range edits are progressive in the
         // sense that edit 2 refers to ranges updated after edit 1, or if

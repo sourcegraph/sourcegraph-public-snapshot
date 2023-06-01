@@ -1,56 +1,26 @@
 import assert from 'assert'
 
+import { Position, Range } from 'vscode'
 import { updateRange } from './tracked-range'
 
-// A position, a subset of vscode.Position, for testing tracked ranges.
-class SimplePosition {
-    constructor(public line: number, public character: number) {}
-    public isAfter(other: SimplePosition): boolean {
-        return other.line < this.line || (other.line === this.line && other.character < this.character)
-    }
-    public isAfterOrEqual(other: SimplePosition): boolean {
-        return this.isAfter(other) || this.isEqual(other)
-    }
-    public isBefore(other: SimplePosition): boolean {
-        return !this.isAfterOrEqual(other)
-    }
-    public isBeforeOrEqual(other: SimplePosition): boolean {
-        return !this.isAfter(other)
-    }
-    public isEqual(other: SimplePosition): boolean {
-        return this.line === other.line && this.character === other.character
-    }
-    public translate(lineDelta?: number, characterDelta?: number): SimplePosition {
-        return new SimplePosition(this.line + (lineDelta || 0), this.character + (characterDelta || 0))
-    }
-}
-
-// A range, a subset of vscode.Range, for testing tracked ranges.
-class SimpleRange {
-    constructor(public start: SimplePosition, public end: SimplePosition) {}
-    public with(start: SimplePosition, end: SimplePosition): SimpleRange {
-        return start.isEqual(this.start) && end.isEqual(this.end) ? this : new SimpleRange(start, end)
-    }
-}
-
 // Creates a position.
-function pos(line: number, character: number): SimplePosition {
-    return new SimplePosition(line, character)
+function pos(line: number, character: number): Position {
+    return new Position(line, character)
 }
 
 // Creates a range.
-function rng(start: SimplePosition, end: SimplePosition): SimpleRange {
-    return new SimpleRange(start, end)
+function rng(start: Position, end: Position): Range {
+    return new Range(start, end)
 }
 
 // Given some text and a range, serializes the range. Range is denoted with []s.
 // For example, "Hello, [world]!"
-function show(text: string, range: SimpleRange): string {
+function show(text: string, range: Range): string {
     const buffer = []
     let line = 0
     let beginningOfLine = 0
     for (let i = 0; i <= text.length; i++) {
-        const position = new SimplePosition(line, i - beginningOfLine)
+        const position = new Position(line, i - beginningOfLine)
         if (position.isEqual(range.start)) {
             buffer.push('[')
         }
@@ -85,7 +55,7 @@ function show(text: string, range: SimpleRange): string {
 // all mean the same thing: A tracked range "he[re]!" and an edited
 // range "here()!" It is up to the policy of the updater to decide
 // whether inserting at () extends the tracked range or not.
-function parse(spec: string): { tracked: SimpleRange; edited: SimpleRange; text: string } {
+function parse(spec: string): { tracked: Range; edited: Range; text: string } {
     const buffer = []
     let trackedStart
     let trackedEnd
@@ -135,7 +105,7 @@ function parse(spec: string): { tracked: SimpleRange; edited: SimpleRange; text:
 }
 
 // Replaces a range with the specified text.
-function edit(text: string, range: SimpleRange, replacement: string): string {
+function edit(text: string, range: Range, replacement: string): string {
     const buffer = []
     let line = 0
     let beginningOfLine = 0
