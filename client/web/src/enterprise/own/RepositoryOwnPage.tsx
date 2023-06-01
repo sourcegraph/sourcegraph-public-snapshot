@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 
 import { mdiAccount } from '@mdi/js'
-import { Navigate } from 'react-router-dom'
+import {Navigate, useLocation} from 'react-router-dom'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { H1, Icon, Link, LoadingSpinner, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
@@ -9,10 +9,10 @@ import { H1, Icon, Link, LoadingSpinner, PageHeader, ProductStatusBadge } from '
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
-import { FileOwnershipPanel } from '../../repo/blob/own/FileOwnershipPanel'
+import { TreeOwnershipPanel } from '../../repo/blob/own/TreeOwnershipPanel'
 
 import { RepositoryOwnAreaPageProps } from './RepositoryOwnEditPage'
-import { RepositoryOwnPageContents } from './RepositoryOwnPageContents'
+import {parseBrowserRepoURL} from "../../util/url";
 
 const BREADCRUMB = { key: 'own', element: 'Ownership' }
 
@@ -22,6 +22,10 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
     authenticatedUser,
     telemetryService,
 }) => {
+    const location = useLocation()
+    const { filePath = '' } = parseBrowserRepoURL(location.pathname) // empty string is root
+    console.log(filePath)
+
     useBreadcrumb(BREADCRUMB)
 
     const [ownEnabled, status] = useFeatureFlag('search-ownership')
@@ -62,7 +66,7 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
                 </H1>
             </PageHeader>
 
-            <FileOwnershipPanel repoID={repo.id} filePath={'/'} telemetryService={telemetryService} />
+            <TreeOwnershipPanel repoID={repo.id} filePath={filePath} telemetryService={telemetryService} />
 
             {/*<RepositoryOwnPageContents repo={repo} authenticatedUser={authenticatedUser}/>*/}
         </Page>

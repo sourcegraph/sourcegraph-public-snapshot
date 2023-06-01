@@ -22,6 +22,7 @@ import { RepositoryOwnPageContents } from './RepositoryOwnPageContents'
 export interface RepositoryOwnAreaPageProps extends Pick<BreadcrumbSetters, 'useBreadcrumb'>, TelemetryProps {
     /** The active repository. */
     repo: RepositoryFields
+    path: string
     authenticatedUser: Pick<AuthenticatedUser, 'siteAdmin'> | null
 }
 const BREADCRUMB = { key: 'own', element: 'Ownership' }

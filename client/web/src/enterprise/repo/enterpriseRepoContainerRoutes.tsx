@@ -44,7 +44,7 @@ export const enterpriseRepoContainerRoutes: readonly RepoContainerRoute[] = [
         render: context => <RepositoryBatchChangesArea {...context} />,
     },
     {
-        path: '/-/own',
+        path: '/-/own/*',
         condition: ({ isSourcegraphDotCom }) => !isSourcegraphDotCom,
         render: context => <RepositoryOwnPage {...context} />,
     },
