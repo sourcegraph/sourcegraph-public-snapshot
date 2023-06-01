@@ -36,9 +36,9 @@ pkg_tar(
         "p4-fusion-wrapper-detect-kill.sh",
         "process-stats-watcher.sh",
     ],
+    package_dir = "/usr/local/bin",
     remap_paths = {
-        "/p4-fusion-wrapper-detect-kill.sh": "/usr/local/bin/p4-fusion",
-        "/process-stats-watcher.sh": "/usr/local/bin/process-stats-watcher.sh",
+        "/p4-fusion-wrapper-detect-kill.sh": "/p4-fusion,
     },
     visibility = ["//visibility:public"],
 )
