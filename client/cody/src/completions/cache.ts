@@ -2,8 +2,14 @@ import { LRUCache } from 'lru-cache'
 
 import { Completion } from '.'
 
+interface CachedCompletion {
+    logId: string
+    isExactPrefix: boolean
+    completions: Completion[]
+}
+
 export class CompletionsCache {
-    private cache = new LRUCache<string, Completion[]>({
+    private cache = new LRUCache<string, CachedCompletion>({
         max: 500, // Maximum input prefixes in the cache.
     })
 
@@ -15,31 +21,38 @@ export class CompletionsCache {
     // account. We need to add additional information like file path or suffix
     // to make sure the cache does not return undesired results for other files
     // in the same project.
-    public get(prefix: string, trim: boolean = true): Completion[] | undefined {
+    public get(prefix: string, trim: boolean = true): CachedCompletion | undefined {
         const trimmedPrefix = trim ? trimEndAfterLastNewline(prefix) : prefix
-        const results = this.cache.get(trimmedPrefix)
-        if (results) {
-            return results.map(result => {
-                if (trimmedPrefix.length === trimEndAfterLastNewline(result.prefix).length) {
-                    return { ...result, prefix, content: result.content }
-                }
+        const result = this.cache.get(trimmedPrefix)
 
-                // Cached results can be created by appending characters from a
-                // recommendation from a smaller input prompt. If that's the
-                // case, we need to slightly change the content and remove
-                // characters that are now part of the prefix.
-                const sliceChars = prefix.length - result.prefix.length
-                return {
-                    ...result,
-                    prefix,
-                    content: result.content.slice(sliceChars),
-                }
-            })
+        if (!result) {
+            return undefined
         }
-        return undefined
+
+        const completions = result.completions.map(completion => {
+            if (trimmedPrefix.length === trimEndAfterLastNewline(completion.prefix).length) {
+                return { ...completion, prefix, content: completion.content }
+            }
+
+            // Cached results can be created by appending characters from a
+            // recommendation from a smaller input prompt. If that's the
+            // case, we need to slightly change the content and remove
+            // characters that are now part of the prefix.
+            const sliceChars = prefix.length - completion.prefix.length
+            return {
+                ...completion,
+                prefix,
+                content: completion.content.slice(sliceChars),
+            }
+        })
+
+        return {
+            ...result,
+            completions,
+        }
     }
 
-    public add(completions: Completion[]): void {
+    public add(logId: string, completions: Completion[]): void {
         for (const completion of completions) {
             // Cache the exact prefix first and then append characters from the
             // completion one after the other until the first line is exceeded.
@@ -54,23 +67,29 @@ export class CompletionsCache {
             // We also cache the completion with the exact (= untrimmed) prefix
             // for the separate lookup mode used for deletions
             if (trimEndAfterLastNewline(completion.prefix) !== completion.prefix) {
-                this.insertCompletion(completion.prefix, completion)
+                this.insertCompletion(completion.prefix, logId, completion, true)
             }
 
             for (let i = 0; i <= maxCharsAppended; i++) {
                 const key = trimEndAfterLastNewline(completion.prefix) + completion.content.slice(0, i)
-                this.insertCompletion(key, completion)
+                this.insertCompletion(key, logId, completion, key === completion.prefix)
             }
         }
     }
 
-    private insertCompletion(key: string, completion: Completion): void {
-        if (!this.cache.has(key)) {
-            this.cache.set(key, [completion])
-        } else {
-            const existingCompletions = this.cache.get(key)!
-            existingCompletions.push(completion)
+    private insertCompletion(key: string, logId: string, completion: Completion, isExactPrefix: boolean): void {
+        let existingCompletions: Completion[] = []
+        if (this.cache.has(key)) {
+            existingCompletions = this.cache.get(key)!.completions
         }
+
+        const cachedCompletion: CachedCompletion = {
+            logId,
+            isExactPrefix,
+            completions: existingCompletions.concat(completion),
+        }
+
+        this.cache.set(key, cachedCompletion)
     }
 }
 

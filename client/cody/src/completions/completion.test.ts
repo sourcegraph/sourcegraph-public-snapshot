@@ -397,6 +397,51 @@ describe('Cody completions', () => {
             `)
         })
 
+        it('does not support multi-line completion on unsupported languages', async () => {
+            const { requests } = await complete(`function looksLegit() {\n  ${CURSOR_MARKER}`, undefined, 'elixir')
+
+            expect(requests).toHaveLength(2)
+            expect(requests[0]!.stopSequences).toContain('\n')
+        })
+
+        it('requires an indentation to start a block', async () => {
+            const { requests } = await complete(`function bubbleSort() {\n${CURSOR_MARKER}`)
+
+            expect(requests).toHaveLength(2)
+            expect(requests[0]!.stopSequences).toContain('\n')
+        })
+
+        it('works with python', async () => {
+            const { completions, requests } = await complete(
+                `
+                for i in range(11):
+                    if i % 2 == 0:
+                        ${CURSOR_MARKER}`,
+                [
+                    createCompletionResponse(`
+                    print(i)
+                        elif i % 3 == 0:
+                            print(f"Multiple of 3: {i}")
+                        else:
+                            print(f"ODD {i}")
+
+                    for i in range(12):
+                        print("unrelated")`),
+                ],
+                'python'
+            )
+
+            expect(requests).toHaveLength(3)
+            expect(requests[0]!.stopSequences).not.toContain('\n')
+            expect(completions[0].insertText).toMatchInlineSnapshot(`
+                "print(i)
+                    elif i % 3 == 0:
+                        print(f\\"Multiple of 3: {i}\\")
+                    else:
+                        print(f\\"ODD {i}\\")"
+            `)
+        })
+
         it('skips over empty lines', async () => {
             const { completions } = await complete(
                 `

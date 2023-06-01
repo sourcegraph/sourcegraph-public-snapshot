@@ -15,8 +15,8 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -71,7 +71,6 @@ func Init() {
 	logger := log.Scoped(pkgName, "SAML config watch")
 	go func() {
 		conf.Watch(func() {
-
 			ps := getProviders()
 			if len(ps) == 0 {
 				providers.Update(pkgName, nil)

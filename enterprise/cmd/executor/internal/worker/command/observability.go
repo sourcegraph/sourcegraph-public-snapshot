@@ -18,10 +18,18 @@ type Operations struct {
 	SetupGitSparseCheckoutSet    *observation.Operation
 	SetupGitCheckout             *observation.Operation
 	SetupGitSetRemoteUrl         *observation.Operation
-	SetupFirecrackerStart        *observation.Operation
 	SetupStartupScript           *observation.Operation
-	TeardownFirecrackerRemove    *observation.Operation
-	Exec                         *observation.Operation
+
+	SetupFirecrackerStart     *observation.Operation
+	TeardownFirecrackerRemove *observation.Operation
+
+	Exec *observation.Operation
+
+	KubernetesCreateJob           *observation.Operation
+	KubernetesDeleteJob           *observation.Operation
+	KubernetesReadLogs            *observation.Operation
+	KubernetesFindPod             *observation.Operation
+	KubernetesWaitForPodToSucceed *observation.Operation
 
 	RunLockWaitTotal prometheus.Counter
 	RunLockHeldTotal prometheus.Counter
@@ -68,10 +76,18 @@ func NewOperations(observationCtx *observation.Context) *Operations {
 		SetupGitSparseCheckoutSet:    op("setup.git.sparse-checkout-set"),
 		SetupGitCheckout:             op("setup.git.checkout"),
 		SetupGitSetRemoteUrl:         op("setup.git.set-remote"),
-		SetupFirecrackerStart:        op("setup.firecracker.start"),
 		SetupStartupScript:           op("setup.startup-script"),
-		TeardownFirecrackerRemove:    op("teardown.firecracker.remove"),
-		Exec:                         op("exec"),
+
+		SetupFirecrackerStart:     op("setup.firecracker.start"),
+		TeardownFirecrackerRemove: op("teardown.firecracker.remove"),
+
+		Exec: op("exec"),
+
+		KubernetesCreateJob:           op("kubernetes.job.create"),
+		KubernetesDeleteJob:           op("kubernetes.job.delete"),
+		KubernetesReadLogs:            op("kubernetes.pod.logs"),
+		KubernetesFindPod:             op("kubernetes.pod.find"),
+		KubernetesWaitForPodToSucceed: op("kubernetes.pod.wait"),
 
 		RunLockWaitTotal: runLockWaitTotal,
 		RunLockHeldTotal: runLockHeldTotal,

@@ -25,4 +25,4 @@ paths:
     gid: 101
     permissions: 0o755
 
-# MANUAL REBUILD: 
+work-dir: /
