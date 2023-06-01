@@ -38,7 +38,7 @@ pkg_tar(
     ],
     package_dir = "/usr/local/bin",
     remap_paths = {
-        "/p4-fusion-wrapper-detect-kill.sh": "/p4-fusion,
+        "/p4-fusion-wrapper-detect-kill.sh": "/p4-fusion",
     },
     visibility = ["//visibility:public"],
 )
