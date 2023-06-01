@@ -101,7 +101,7 @@ export class DecorationProvider {
             borderWidth: '1px',
             borderStyle: 'solid',
             overviewRulerColor: type === 'pending' ? 'rgba(161, 18, 255, 0.33)' : 'rgb(0, 203, 236, 0.22)',
-            backgroundColor: type === 'pending' ? 'rgb(0, 203, 236, 0.22)' : 'rgba(161, 18, 255, 0.33)',
+            backgroundColor: type === 'pending' ? 'rgb(0, 203, 236, 0.1)' : 'rgba(161, 18, 255, 0.1)',
             overviewRulerLane: vscode.OverviewRulerLane.Right,
             light: {
                 borderColor: 'rgba(161, 18, 255, 0.33)',
