@@ -1,13 +1,16 @@
 import { FunctionComponent, useEffect } from 'react'
 
 import classNames from 'classnames'
-import { formatDistance, format, parseISO } from 'date-fns'
+import { format, formatDistance, parseISO } from 'date-fns'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { useMutation } from '@sourcegraph/http-client'
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, ErrorAlert, LoadingSpinner, PageHeader, H4, Text } from '@sourcegraph/wildcard'
+import { Button, Container, ErrorAlert, H4, LoadingSpinner, PageHeader, Text } from '@sourcegraph/wildcard'
 
-import { useRankingSummary as defaultUseRankingSummary } from './backend'
+import { BumpDerivativeGraphKeyResult, BumpDerivativeGraphKeyVariables } from '../../../../graphql-operations'
+
+import { BUMP_DERIVATIVE_GRAPH_KEY, useRankingSummary as defaultUseRankingSummary } from './backend'
 
 import styles from './CodeIntelRankingPage.module.scss'
 
@@ -23,6 +26,11 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
     useEffect(() => telemetryService.logViewEvent('CodeIntelRankingPage'), [telemetryService])
 
     const { data, loading, error } = useRankingSummary({})
+
+    const [bumpDerivativeGraphKey, { loading: bumping }] = useMutation<
+        BumpDerivativeGraphKeyResult,
+        BumpDerivativeGraphKeyVariables
+    >(BUMP_DERIVATIVE_GRAPH_KEY)
 
     if (loading && !data) {
         return <LoadingSpinner />
@@ -43,6 +51,11 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
                 ]}
                 description="View the history of ranking calculation."
                 className="mb-3"
+                actions={
+                    <Button onClick={() => bumpDerivativeGraphKey()} disabled={bumping} variant="secondary">
+                        Start new ranking map/reduce job
+                    </Button>
+                }
             />
 
             {data &&

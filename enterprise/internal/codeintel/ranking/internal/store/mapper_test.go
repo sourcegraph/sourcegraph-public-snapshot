@@ -27,7 +27,7 @@ func TestInsertPathCountInputs(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	key := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123)
+	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "", 123)
 
 	// Insert and export uploads
 	insertUploads(t, db,
@@ -200,7 +200,7 @@ func TestInsertInitialPathCounts(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	key := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123)
+	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "", 123)
 
 	// Insert and export upload
 	// N.B. This creates repository 50 implicitly
@@ -258,7 +258,7 @@ func TestVacuumStaleGraphs(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	key := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123)
+	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "", 123)
 
 	// Insert and export uploads
 	insertUploads(t, db,
@@ -303,8 +303,8 @@ func TestVacuumStaleGraphs(t *testing.T) {
 
 	for _, graphKey := range []string{
 		key,
-		rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 456),
-		rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 789),
+		rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "", 456),
+		rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "", 789),
 	} {
 		if _, err := db.ExecContext(ctx, `
 			INSERT INTO codeintel_ranking_references_processed (graph_key, codeintel_ranking_reference_id)
@@ -336,7 +336,7 @@ func TestVacuumStaleGraphs(t *testing.T) {
 	assertCounts(3 * 30)
 
 	// remove records associated with other ranking keys
-	if _, err := store.VacuumStaleGraphs(ctx, rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 456), 50); err != nil {
+	if _, err := store.VacuumStaleGraphs(ctx, rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "", 456), 50); err != nil {
 		t.Fatalf("unexpected error vacuuming stale graphs: %s", err)
 	}
 

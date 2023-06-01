@@ -1865,6 +1865,22 @@ CREATE SEQUENCE codeintel_ranking_exports_id_seq
 
 ALTER SEQUENCE codeintel_ranking_exports_id_seq OWNED BY codeintel_ranking_exports.id;
 
+CREATE TABLE codeintel_ranking_graph_keys (
+    id integer NOT NULL,
+    graph_key text NOT NULL,
+    created_at timestamp with time zone DEFAULT now()
+);
+
+CREATE SEQUENCE codeintel_ranking_graph_keys_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE codeintel_ranking_graph_keys_id_seq OWNED BY codeintel_ranking_graph_keys.id;
+
 CREATE TABLE codeintel_ranking_path_counts_inputs (
     id bigint NOT NULL,
     count integer NOT NULL,
@@ -4782,6 +4798,8 @@ ALTER TABLE ONLY codeintel_ranking_definitions ALTER COLUMN id SET DEFAULT nextv
 
 ALTER TABLE ONLY codeintel_ranking_exports ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_exports_id_seq'::regclass);
 
+ALTER TABLE ONLY codeintel_ranking_graph_keys ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_graph_keys_id_seq'::regclass);
+
 ALTER TABLE ONLY codeintel_ranking_path_counts_inputs ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_path_counts_inputs_id_seq'::regclass);
 
 ALTER TABLE ONLY codeintel_ranking_progress ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_progress_id_seq'::regclass);
@@ -5077,6 +5095,9 @@ ALTER TABLE ONLY codeintel_ranking_definitions
 
 ALTER TABLE ONLY codeintel_ranking_exports
     ADD CONSTRAINT codeintel_ranking_exports_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY codeintel_ranking_graph_keys
+    ADD CONSTRAINT codeintel_ranking_graph_keys_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY codeintel_ranking_path_counts_inputs
     ADD CONSTRAINT codeintel_ranking_path_counts_inputs_pkey PRIMARY KEY (id);
