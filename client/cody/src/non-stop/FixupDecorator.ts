@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { Diff } from '@sourcegraph/cody-shared/src/non-stop/concurrent-editing'
+import { Diff } from './diff'
 
 export class FixupDecorator implements vscode.Disposable {
     private decorationCodyConflictMarker_: vscode.TextEditorDecorationType

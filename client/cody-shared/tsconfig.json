@@ -6,7 +6,7 @@
     "sourceRoot": "src",
     "outDir": "out",
   },
-  "include": ["**/*", ".*", "package.json", "../cody/src/non-stop/fixup-document-edit-watcher.ts"],
+  "include": ["**/*", ".*", "package.json"],
   "exclude": ["out"],
   "references": [{ "path": "../common" }, { "path": "../http-client" }],
 }

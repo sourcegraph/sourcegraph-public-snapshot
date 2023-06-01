@@ -10,10 +10,6 @@ function time<T>(label: string, f: () => T): T {
     return result
 }
 
-function render(ch: string): string {
-    return ch === '\n' ? '@' : ch
-}
-
 function dumpProgram(program: Uint16Array, ops: Op[], a: string, b: string): void {
     const buffer = []
     buffer.push(`  ^${Array.prototype.map.call(a, render).join('')}\n`)
@@ -34,8 +30,13 @@ function dumpProgram(program: Uint16Array, ops: Op[], a: string, b: string): voi
     }
     console.log(buffer.join(''))
 }
+*/
 
-function dumpUse(use: Uint8Array, a: string, b: string): void {
+function render(ch: string): string {
+    return ch === '\n' ? '@' : ch
+}
+
+export function dumpUse(use: Uint8Array, a: string, b: string): void {
     const buffer = []
     buffer.push(`  ^${Array.prototype.map.call(a, render).join('')}\n`)
     for (let iB = 0; iB <= b.length; iB++) {
@@ -47,8 +48,6 @@ function dumpUse(use: Uint8Array, a: string, b: string): void {
     }
     console.log(buffer.join(''))
 }
-
-*/
 
 // * the root of the program at the start of the strings
 // I insert from B
@@ -63,7 +62,7 @@ type Op = '*' | 'I' | 'X' | '-' | 'R'
 // row-major format. The 0th row and column can be ignored. If
 // the program[i, j] is true then the longest common subsequence
 // of a and b uses b[i-1] and a[j-1].
-function longestCommonSubsequence(a: string, b: string): Uint8Array {
+export function longestCommonSubsequence(a: string, b: string): Uint8Array {
     // TODO: Diff should be higher quality in cases like this:
     //
     // I(// This )S(f)I(u)S(n)I(ction)S( frozzle)I(s widgets)
@@ -100,7 +99,7 @@ function longestCommonSubsequence(a: string, b: string): Uint8Array {
             const chA = a[iA - 1]
             const costDeleteA = program[iB * (lenA + 1) + iA - 1] + 1
             const costInsertB = program[(iB - 1) * (lenA + 1) + iA] + 1
-            const costSkipReplace = program[(iB - 1) * (lenA + 1) + iA - 1] + (chA === chB ? 0 : 1)
+            const costSkipReplace = program[(iB - 1) * (lenA + 1) + iA - 1] + (chA === chB ? 0 : 2)
             const cost = Math.min(costDeleteA, costInsertB, costSkipReplace)
             program[iB * (lenA + 1) + iA] = cost
             ops[iB * (lenA + 1) + iA] =
