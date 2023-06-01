@@ -31,12 +31,14 @@ func makeUpstreamHandler[ReqT any](
 	baseLogger log.Logger,
 	eventLogger events.Logger,
 	rs limiter.RedisStore,
+
 	upstreamName, upstreamAPIURL string,
 	allowedModels []string,
-	bodyTrans bodyTransformer[ReqT],
-	rmr requestMetadataRetriever[ReqT],
-	reqTrans requestTransformer,
-	respParser responseParser[ReqT],
+
+	transformBody bodyTransformer[ReqT],
+	getRequestMetadata requestMetadataRetriever[ReqT],
+	transformRequest requestTransformer,
+	parseResponse responseParser[ReqT],
 ) http.Handler {
 	baseLogger = baseLogger.Scoped(strings.ToLower(upstreamName), fmt.Sprintf("%s upstream handler", upstreamName))
 
@@ -66,7 +68,7 @@ func makeUpstreamHandler[ReqT any](
 			return
 		}
 
-		bodyTrans(&body)
+		transformBody(&body)
 
 		// Re-marshal the payload for upstream to unset metadata and remove any properties
 		// not known to us.
@@ -84,9 +86,10 @@ func makeUpstreamHandler[ReqT any](
 		}
 
 		// Run the request transformer.
-		reqTrans(req)
+		transformRequest(req)
 
-		promptCharacterCount, model, am := rmr(body)
+		// Retrieve metadata from the initial request.
+		promptCharacterCount, model, am := getRequestMetadata(body)
 
 		if !isAllowedModel(intersection(allowedModels, rateLimit.AllowedModels), model) {
 			response.JSONError(logger, w, http.StatusBadRequest, errors.Newf("model %q is not allowed", model))
@@ -167,7 +170,7 @@ func makeUpstreamHandler[ReqT any](
 
 		if upstreamStatusCode >= 200 && upstreamStatusCode < 300 {
 			// Pass reader to response transformer to capture token counts.
-			completionCharacterCount = respParser(body, &responseBuf)
+			completionCharacterCount = parseResponse(body, &responseBuf)
 
 		} else if upstreamStatusCode >= 500 {
 			logger.Error("error from upstream",
