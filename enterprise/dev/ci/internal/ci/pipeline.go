@@ -419,7 +419,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				publishOps.Append(publishExecutorDockerMirror(c))
 			}
 		}
-		publishOps.Append(bazelPushImagesCmd())
+		publishOps.Append(bazelPushImagesCmd(c.Version))
 		ops.Merge(publishOps)
 	}
 

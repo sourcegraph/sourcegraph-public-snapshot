@@ -38,12 +38,13 @@ func bazelCmd(args ...string) string {
 	return strings.Join(Cmd, " ")
 }
 
-func bazelPushImagesCmd() func(*bk.Pipeline) {
+func bazelPushImagesCmd(version string) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":bazel::docker: Push OCI/Wolfi",
 			bk.Agent("queue", "bazel"),
 			bk.DependsOn("bazel-tests"),
 			bk.Key("bazel-push-images"),
+			bk.Env("PUSH_VERSION", version),
 			bk.Cmd(bazelStampedCmd(`build $$(bazel query 'kind("oci_push rule", //...)')`)),
 			bk.Cmd("./enterprise/dev/ci/push_all.sh"),
 		)
