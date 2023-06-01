@@ -12,7 +12,6 @@ import (
 	"google.golang.org/api/iterator"
 	"google.golang.org/api/option"
 
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -194,7 +193,7 @@ func (s *gcsStore) create(ctx context.Context, bucket gcsBucketHandle) error {
 }
 
 func (s *gcsStore) deleteSources(ctx context.Context, bucket gcsBucketHandle, sources []string) error {
-	return goroutine.RunWorkersOverStrings(sources, func(index int, source string) error {
+	return ForEachString(sources, func(index int, source string) error {
 		if err := bucket.Object(source).Delete(ctx); err != nil {
 			return errors.Wrap(err, "failed to delete source object")
 		}

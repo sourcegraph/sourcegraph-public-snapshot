@@ -18,7 +18,6 @@ import (
 	sglog "github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -201,7 +200,7 @@ func (s *s3Store) Compose(ctx context.Context, destination string, sources ...st
 	var m sync.Mutex
 	etags := map[int]*string{}
 
-	if err := goroutine.RunWorkersOverStrings(sources, func(index int, source string) error {
+	if err := ForEachString(sources, func(index int, source string) error {
 		partNumber := index + 1
 
 		copyResult, err := s.client.UploadPartCopy(ctx, &s3.UploadPartCopyInput{
@@ -332,7 +331,7 @@ func (s *s3Store) create(ctx context.Context) error {
 }
 
 func (s *s3Store) deleteSources(ctx context.Context, bucket string, sources []string) error {
-	return goroutine.RunWorkersOverStrings(sources, func(index int, source string) error {
+	return ForEachString(sources, func(index int, source string) error {
 		if _, err := s.client.DeleteObject(ctx, &s3.DeleteObjectInput{
 			Bucket: aws.String(bucket),
 			Key:    aws.String(source),
