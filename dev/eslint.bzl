@@ -53,6 +53,17 @@ def eslint_config_and_lint_root(name = "eslint_config", config_deps = [], root_j
         ] + root_js_deps,
     )
 
+    eslint_test_with_types(
+        name = "stories_eslint",
+        srcs = native.glob(["src/**/*.story.tsx"]),
+        binary = "//:eslint",
+        config = ":eslint_config",
+        deps = [
+            "//:jest_config",  # required for import/extensions rule not to fail on the `jest.config.base` import.
+            "//:node_modules/@types/node",
+        ],
+    )
+
 # This private rule implementation wraps the ESLint binary.
 # It executes ESLint against the provided source files and
 # ensures that depenencies' type are available at lint time.
