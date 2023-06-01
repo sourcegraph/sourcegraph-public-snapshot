@@ -15,7 +15,6 @@ import { MarketingBlock } from '../../../components/MarketingBlock'
 import {
     FetchOwnershipResult,
     FetchOwnershipVariables,
-    FetchTreeOwnershipResult,
     OwnerFields,
     OwnershipConnectionFields,
     SearchPatternType,
@@ -62,7 +61,10 @@ export const FileOwnershipPanel: React.FunctionComponent<
         )
     }
 
-    return <OwnerList data={data?.node?.commit?.blob?.ownership} />
+    if (data?.node?.__typename === 'Repository') {
+        return <OwnerList data={data?.node?.commit?.blob?.ownership} />
+    }
+    return <OwnerList />
 }
 
 interface OwnExplanationProps {
@@ -141,10 +143,7 @@ interface OwnerListProps {
 }
 
 const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data }) => {
-    console.log(data)
-    if (!data) {
-    }
-    if (data && data.nodes && data.nodes.length > 0) {
+    if (data?.nodes && data.nodes.length) {
         const nodes = data.nodes
         const totalCount = data.totalOwners
         return (
