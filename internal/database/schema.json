@@ -7473,6 +7473,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX codeintel_initial_path_ranks_processed_pkey ON codeintel_initial_path_ranks_processed USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "codeintel_initial_path_ranks_processed_codeintel_initial_path_r",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_initial_path_ranks_processed_codeintel_initial_path_r ON codeintel_initial_path_ranks_processed USING btree (codeintel_initial_path_ranks_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [

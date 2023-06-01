@@ -351,7 +351,7 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store
   interfaces:
     - InsightPermissionStore
-- filename: enterprise/cmd/llm-proxy/internal/auth/mocks_test.go
+- filename: enterprise/cmd/cody-gateway/internal/auth/mocks_test.go
   sources:
     - path: github.com/gregjones/httpcache
       interfaces:

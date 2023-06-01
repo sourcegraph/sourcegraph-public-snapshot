@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/sourcegraphoperator"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
@@ -127,7 +128,7 @@ func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
 				//   - Upon creation of an account, the session lives for an hour.
 				//   - If the same operator signs out and signs back in again after 10 minutes,
 				//       the second session only lives for 50 minutes.
-				expiry = time.Until(result.User.CreatedAt.Add(p.lifecycleDuration()))
+				expiry = time.Until(result.User.CreatedAt.Add(sourcegraphoperator.LifecycleDuration(p.config.LifecycleDuration)))
 				if expiry <= 0 {
 					// Let's do a proactive hard delete since the background worker hasn't caught up
 

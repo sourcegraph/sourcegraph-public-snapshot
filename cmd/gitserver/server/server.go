@@ -200,50 +200,9 @@ type cloneJob struct {
 	options   *cloneOptions
 }
 
-// cloneQueue is a threadsafe list.List of cloneJobs that functions as a queue in practice.
-type cloneQueue struct {
-	mu   sync.Mutex
-	jobs *list.List
-
-	cmu  sync.Mutex
-	cond *sync.Cond
-}
-
-// push will queue the cloneJob to the end of the queue.
-func (c *cloneQueue) push(cj *cloneJob) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	c.jobs.PushBack(cj)
-	c.cond.Signal()
-}
-
-// pop will return the next cloneJob. If there's no next job available, it returns nil.
-func (c *cloneQueue) pop() *cloneJob {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	next := c.jobs.Front()
-	if next == nil {
-		return nil
-	}
-
-	return c.jobs.Remove(next).(*cloneJob)
-}
-
-func (c *cloneQueue) empty() bool {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	return c.jobs.Len() == 0
-}
-
 // NewCloneQueue initializes a new cloneQueue.
-func NewCloneQueue(jobs *list.List) *cloneQueue {
-	cq := cloneQueue{jobs: jobs}
-	cq.cond = sync.NewCond(&cq.cmu)
-
-	return &cq
+func NewCloneQueue(jobs *list.List) *common.Queue[cloneJob] {
+	return common.NewQueue[cloneJob](jobs)
 }
 
 // Server is a gitserver server.
@@ -289,7 +248,7 @@ type Server struct {
 
 	// CloneQueue is a threadsafe queue used by DoBackgroundClones to process incoming clone
 	// requests asynchronously.
-	CloneQueue *cloneQueue
+	CloneQueue *common.Queue[cloneJob]
 
 	// skipCloneForTests is set by tests to avoid clones.
 	skipCloneForTests bool
@@ -653,19 +612,19 @@ func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) {
 
 	for {
 		// Acquire the cond mutex lock and wait for a signal if the queue is empty.
-		s.CloneQueue.cmu.Lock()
-		if s.CloneQueue.empty() {
-			s.CloneQueue.cond.Wait()
+		s.CloneQueue.Mutex.Lock()
+		if s.CloneQueue.Empty() {
+			s.CloneQueue.Cond.Wait()
 		}
 
 		// The queue is not empty and we have a job to process! But don't forget to unlock the cond
 		// mutex here as we don't need to hold the lock beyond this point for now.
-		s.CloneQueue.cmu.Unlock()
+		s.CloneQueue.Mutex.Unlock()
 
 		// Keep popping from the queue until the queue is empty again, in which case we start all
 		// over again from the top.
 		for {
-			job := s.CloneQueue.pop()
+			job := s.CloneQueue.Pop()
 			if job == nil {
 				break
 			}
@@ -1008,42 +967,51 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "no Repo given", http.StatusBadRequest)
 		return
 	}
-
-	var syncer VCSSyncer
-	// We use an internal actor here as the repo may be private. It is safe since all
-	// we return is a bool indicating whether the repo is cloneable or not. Perhaps
-	// the only things that could leak here is whether a private repo exists although
-	// the endpoint is only available internally so it's low risk.
-	remoteURL, err := s.getRemoteURL(actor.WithInternalActor(r.Context()), req.Repo)
+	repo := api.RepoName(req.Repo)
+	resp, err := s.IsRepoCloneable(r.Context(), repo)
 	if err != nil {
-		// We use this endpoint to verify if a repo exists without consuming
-		// API rate limit, since many users visit private or bogus repos,
-		// so we deduce the unauthenticated clone URL from the repo name.
-		remoteURL, _ = vcs.ParseURL("https://" + string(req.Repo) + ".git")
-
-		// At this point we are assuming it's a git repo
-		syncer = &GitRepoSyncer{}
-	} else {
-		syncer, err = s.GetVCSSyncer(r.Context(), req.Repo)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	}
-
-	resp := protocol.IsRepoCloneableResponse{
-		Cloned: repoCloned(s.dir(req.Repo)),
-	}
-	if err := syncer.IsCloneable(r.Context(), remoteURL); err == nil {
-		resp.Cloneable = true
-	} else {
-		resp.Reason = err.Error()
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func (s *Server) IsRepoCloneable(ctx context.Context, repo api.RepoName) (protocol.IsRepoCloneableResponse, error) {
+	var syncer VCSSyncer
+	// We use an internal actor here as the repo may be private. It is safe since all
+	// we return is a bool indicating whether the repo is cloneable or not. Perhaps
+	// the only things that could leak here is whether a private repo exists although
+	// the endpoint is only available internally so it's low risk.
+	remoteURL, err := s.getRemoteURL(actor.WithInternalActor(ctx), repo)
+	if err != nil {
+		// We use this endpoint to verify if a repo exists without consuming
+		// API rate limit, since many users visit private or bogus repos,
+		// so we deduce the unauthenticated clone URL from the repo name.
+		remoteURL, _ = vcs.ParseURL("https://" + string(repo) + ".git")
+
+		// At this point we are assuming it's a git repo
+		syncer = &GitRepoSyncer{}
+	} else {
+		syncer, err = s.GetVCSSyncer(ctx, repo)
+		if err != nil {
+			return protocol.IsRepoCloneableResponse{}, err
+		}
+	}
+
+	resp := protocol.IsRepoCloneableResponse{
+		Cloned: repoCloned(s.dir(repo)),
+	}
+	if err := syncer.IsCloneable(ctx, remoteURL); err == nil {
+		resp.Cloneable = true
+	} else {
+		resp.Reason = err.Error()
+	}
+
+	return resp, nil
 }
 
 // handleRepoUpdate is a synchronous (waits for update to complete or
@@ -2239,7 +2207,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	// We push the cloneJob to a queue and let the producer-consumer pipeline take over from this
 	// point. See definitions of cloneJobProducer and cloneJobConsumer to understand how these jobs
 	// are processed.
-	s.CloneQueue.push(&cloneJob{
+	s.CloneQueue.Push(&cloneJob{
 		repo:      repo,
 		dir:       dir,
 		syncer:    syncer,

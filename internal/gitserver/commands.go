@@ -1448,12 +1448,55 @@ type blobReader struct {
 	rc     io.ReadCloser
 }
 
+func (c *clientImplementor) blobOID(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (string, error) {
+	// Note: when our git is new enough we can just use --object-only
+	out, err := c.gitCommand(repo, "ls-tree", string(commit), "--", name).Output(ctx)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to lookup blob OID")
+	}
+
+	out = bytes.TrimSpace(out)
+	if len(out) == 0 {
+		return "", &os.PathError{Op: "open", Path: name, Err: os.ErrNotExist}
+	}
+
+	// 100644 blob 3bad331187e39c05c78a9b5e443689f78f4365a7	README.md
+	fields := bytes.Fields(out)
+	if len(fields) < 3 {
+		return "", errors.Newf("unexpected output while parsing blob OID: %q", string(out))
+	}
+	return string(fields[2]), nil
+}
+
 func (c *clientImplementor) newBlobReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (*blobReader, error) {
 	if err := gitdomain.EnsureAbsoluteCommit(commit); err != nil {
 		return nil, err
 	}
 
-	cmd := c.gitCommand(repo, "show", string(commit)+":"+name)
+	var cmd GitCommand
+	if strings.Contains(name, "..") {
+		// We special case ".." in path to running a less efficient two
+		// commands. For other paths we can rely on the faster git show.
+		//
+		// git show will try and resolve revisions on anything containing
+		// "..". Depending on what branches/files exist, this can lead to:
+		//
+		//   - error: object $SHA is a tree, not a commit
+		//   - fatal: Invalid symmetric difference expression $SHA:$name
+		//   - outputting a diff instead of the file
+		//
+		// The last point is a security issue for repositories with sub-repo
+		// permissions since the diff will not be filtered.
+		blobOID, err := c.blobOID(ctx, repo, commit, name)
+		if err != nil {
+			return nil, err
+		}
+		cmd = c.gitCommand(repo, "cat-file", "-p", blobOID)
+	} else {
+		// Otherwise we can rely on a single command git show sha:name.
+		cmd = c.gitCommand(repo, "show", string(commit)+":"+name)
+	}
+
 	stdout, err := cmd.StdoutReader(ctx)
 	if err != nil {
 		return nil, err

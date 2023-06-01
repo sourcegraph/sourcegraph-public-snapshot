@@ -15,6 +15,7 @@ go_library(
     deps = [
         "//cmd/frontend/globals",
         "//cmd/frontend/internal/auth/userpasswd",
+        "//internal/conf",
         "//internal/conf/deploy",
         "//internal/database",
         "//internal/rbac",

@@ -26,6 +26,17 @@ New issues and feature requests can be filed through our [issue tracker](https:/
 - Run the plugin in a sandboxed IDE by running `./gradlew :runIde`. This will start the platform with the versions defined in `gradle.properties`, [here](https://github.com/sourcegraph/sourcegraph/blob/main/client/jetbrains/gradle.properties#L14-L16).
   - Note: 2021.3 or later is required for Macs with Apple Silicon chips.
 - Build a deployable plugin artifact by running `./gradlew buildPlugin`. The output file is `build/distributions/Sourcegraph.zip`.
+- Reformat the codebase with `./gradlew spotlessApply`.
+- Install the google-java-format plugin
+  https://plugins.jetbrains.com/plugin/8527-google-java-format and configure
+  IntelliJ's file save actions to format.
+- Set the environment variable `CODY_COMPLETIONS_ENABLED=true` to enable inline code completions.
+- Ensure `src login` is logged into your sourcegraph.com account. This avoids
+  the need to manually configure the access token in the UI every time you run
+  `./gradlew :runIde`.
+- If you are using an M1 MacBook and get a JCEF-related error using the "Find with Sourcegraph" command, try
+  running `./gradlew -PplatformVersion=221.5080.210 :runIde` instead.
+  See https://youtrack.jetbrains.com/issue/IDEA-291946 for more details.
 
 ## Publishing a new version
 

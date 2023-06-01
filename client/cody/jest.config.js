@@ -9,4 +9,5 @@ module.exports = {
   displayName: 'cody',
   rootDir: __dirname,
   testPathIgnorePatterns: ['test/integration', 'test/e2e'],
+  setupFilesAfterEnv: ['<rootDir>/src/testSetup/vscode.ts'],
 }

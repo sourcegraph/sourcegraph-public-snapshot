@@ -2,6 +2,11 @@
 
 VERSION="v13.0.0-8"
 
+# get first command line arg if it exists
+if [ -n "$1" ]; then
+  FILTER="$1"
+fi
+
 run() {
   RIPGREP_DIR="$(dirname "$(readlink -f "$0")")/../resources/bin"
   mkdir -p "${RIPGREP_DIR}"
@@ -9,6 +14,10 @@ run() {
   trap 'popd' EXIT
 
   for url in $(curl https://api.github.com/repos/microsoft/ripgrep-prebuilt/releases/tags/$VERSION 2>/dev/null | jq -r '.assets[] | .browser_download_url'); do
+    # filter out files that don't match the filter
+    if [ -n "$FILTER" ] && [[ "$url" != *"$FILTER"* ]]; then
+      continue
+    fi
 
     b=$(basename "$url")
     ext=${b##*.}
