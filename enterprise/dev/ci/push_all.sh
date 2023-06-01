@@ -32,7 +32,7 @@ for tag in "${tags[@]}"; do
     echo -e "\t ${registry}/\$IMAGE:${qa_prefix}-${tag}"
   done
 done
-echo "--- "
+echo "--- done"
 
 tags_args=""
 for t in "${tags[@]}"; do
@@ -75,7 +75,7 @@ done
 
 echo "-- jobfile"
 cat "$job_file"
-echo "--- "
+echo "--- done"
 
 echo "--- :bazel::docker: Pushing images..."
 log_file=$(mktemp)

@@ -51,4 +51,4 @@ echo '--- :two: integration test
 echo '--- :three: integration test ./dev/codeintel-qa/cmd/query'
 "$cmd_query" --index-dir="./dev/codeintel-qa/testdata/indexes"
 
-echo "--- "
+echo "--- done"

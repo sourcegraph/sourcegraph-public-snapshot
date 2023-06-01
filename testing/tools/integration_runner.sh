@@ -38,7 +38,7 @@ function ensure_clean_slate() {
   echo "Removing existing volumes, if any"
   # docker volume prune -f
 
-  echo "--- "
+  echo "--- done"
 }
 
 function is_present() {
@@ -200,7 +200,7 @@ function cleanup() {
 
   echo "--- dump server logs"
   docker logs --timestamps "$container"
-  echo "--- "
+  echo "--- done"
 
   echo "--- $container cleanup"
   docker container rm -f "$container"

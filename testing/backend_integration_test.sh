@@ -31,4 +31,4 @@ sleep 5
 echo "--- integration test ./dev/authtest -long"
 "$authtest" -long -base-url "$url" -email "gqltest@sourcegraph.com" -username "gqltest-admin"
 
-echo "--- "
+echo "--- done"
