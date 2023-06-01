@@ -24,7 +24,7 @@ import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './SetupSteps.module.scss'
 
-interface StepComponentProps extends TelemetryProps {
+export interface StepComponentProps extends TelemetryProps {
     baseURL: string
     className?: string
 }

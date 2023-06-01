@@ -204,7 +204,7 @@ func TestResolverTo(t *testing.T) {
 		&RepositoryResolver{db: db, logger: logtest.Scoped(t)},
 		&CommitSearchResultResolver{},
 		&gitRevSpec{},
-		&settingsSubject{},
+		&settingsSubjectResolver{},
 		&statusMessageResolver{db: db},
 	}
 	for _, r := range resolvers {

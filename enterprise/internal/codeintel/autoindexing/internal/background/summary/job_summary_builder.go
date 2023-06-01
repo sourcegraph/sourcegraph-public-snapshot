@@ -50,7 +50,7 @@ func NewSummaryBuilder(
 
 				if autoIndexingEnabled() {
 					commit := "HEAD"
-					indexJobs, err := jobSelector.InferIndexJobsFromRepositoryStructure(ctx, repositoryWithCount.RepositoryID, commit, "", false)
+					result, err := jobSelector.InferIndexJobsFromRepositoryStructure(ctx, repositoryWithCount.RepositoryID, commit, "", false)
 					if err != nil {
 						if errors.As(err, &inference.LimitError{}) {
 							continue
@@ -78,7 +78,7 @@ func NewSummaryBuilder(
 						blocklist[key] = struct{}{}
 					}
 
-					inferredAvailableIndexers = uploadsshared.PopulateInferredAvailableIndexers(indexJobs, blocklist, inferredAvailableIndexers)
+					inferredAvailableIndexers = uploadsshared.PopulateInferredAvailableIndexers(result.IndexJobs, blocklist, inferredAvailableIndexers)
 					// inferredAvailableIndexers = uploadsshared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
 				}
 

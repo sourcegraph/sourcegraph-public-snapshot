@@ -2,6 +2,8 @@ package search
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
@@ -120,6 +122,21 @@ type fileOwnershipData struct {
 	assignedOwners []database.AssignedOwnerSummary
 }
 
+func (d fileOwnershipData) References() []own.Reference {
+	var rs []own.Reference
+	for _, o := range d.rule.GetOwner() {
+		rs = append(rs, own.Reference{Handle: o.Handle, Email: o.Email})
+	}
+	for _, o := range d.assignedOwners {
+		rs = append(rs, own.Reference{UserID: o.OwnerUserID})
+	}
+	return rs
+}
+
+func (d fileOwnershipData) Empty() bool {
+	return !d.NonEmpty()
+}
+
 func (d fileOwnershipData) NonEmpty() bool {
 	if d.rule != nil && len(d.rule.Owner) > 0 {
 		return true
@@ -130,7 +147,7 @@ func (d fileOwnershipData) NonEmpty() bool {
 	return false
 }
 
-func (d fileOwnershipData) Contains(bag own.Bag) bool {
+func (d fileOwnershipData) IsWithin(bag own.Bag) bool {
 	for _, o := range d.rule.GetOwner() {
 		if bag.Contains(own.Reference{
 			Handle: o.Handle,
@@ -145,4 +162,20 @@ func (d fileOwnershipData) Contains(bag own.Bag) bool {
 		}
 	}
 	return false
+}
+
+func (d fileOwnershipData) String() string {
+	var references []string
+	for _, o := range d.rule.GetOwner() {
+		if h := o.GetHandle(); h != "" {
+			references = append(references, h)
+		}
+		if e := o.GetEmail(); e != "" {
+			references = append(references, e)
+		}
+	}
+	for _, o := range d.assignedOwners {
+		references = append(references, fmt.Sprintf("#%d", o.OwnerUserID))
+	}
+	return fmt.Sprintf("[%s]", strings.Join(references, ", "))
 }

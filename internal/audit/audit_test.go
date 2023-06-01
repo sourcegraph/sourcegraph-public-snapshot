@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -197,18 +198,19 @@ func TestIsEnabled(t *testing.T) {
 	}
 }
 
-func TestSwitchingSeverityLevel(t *testing.T) {
+// Remove when deprecated audit log schema.Log.AuditLog.SeverityLevel is removed.
+func TestSwitchingSeverityLevelDoesNothing(t *testing.T) {
 	useAuditLogLevel("INFO")
 	defer conf.Mock(nil)
 
 	logs := auditLogMessage(t)
 	assert.Equal(t, 1, len(logs))
-	assert.Equal(t, log.LevelInfo, logs[0].Level)
+	assert.Equal(t, log.Level(env.LogLevel), logs[0].Level)
 
 	useAuditLogLevel("WARN")
 	logs = auditLogMessage(t)
 	assert.Equal(t, 1, len(logs))
-	assert.Equal(t, log.LevelWarn, logs[0].Level)
+	assert.Equal(t, log.Level(env.LogLevel), logs[0].Level)
 }
 
 func useAuditLogLevel(level string) {

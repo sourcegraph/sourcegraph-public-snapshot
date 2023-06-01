@@ -26,8 +26,8 @@ func Init(
 ) error {
 	logger := log.Scoped("completions", "")
 
-	enterpriseServices.NewCompletionsStreamHandler = func() http.Handler {
-		completionsHandler := httpapi.NewCompletionsStreamHandler(logger, db)
+	enterpriseServices.NewChatCompletionsStreamHandler = func() http.Handler {
+		completionsHandler := httpapi.NewChatCompletionsStreamHandler(logger, db)
 		return requireVerifiedEmailMiddleware(db, observationCtx.Logger, completionsHandler)
 	}
 	enterpriseServices.NewCodeCompletionsHandler = func() http.Handler {

@@ -14,6 +14,10 @@ import (
 // for lazy mocking in tests
 var testNow = time.Now
 
+// MaxProgressRecords is the maximum number of progress records we'll track before pruning
+// older entries.
+const MaxProgressRecords = 10
+
 func (s *store) Coordinate(
 	ctx context.Context,
 	derivativeGraphKey string,
@@ -28,7 +32,13 @@ func (s *store) Coordinate(
 
 	now := testNow()
 
-	if err := s.db.Exec(ctx, sqlf.Sprintf(
+	tx, err := s.db.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	if err := tx.Exec(ctx, sqlf.Sprintf(
 		coordinateStartMapperQuery,
 		graphKey,
 		graphKey,
@@ -40,7 +50,11 @@ func (s *store) Coordinate(
 		return err
 	}
 
-	if err := s.db.Exec(ctx, sqlf.Sprintf(
+	if err := tx.Exec(ctx, sqlf.Sprintf(coordinatePruneQuery, derivativeGraphKey, MaxProgressRecords)); err != nil {
+		return err
+	}
+
+	if err := tx.Exec(ctx, sqlf.Sprintf(
 		coordinateStartReducerQuery,
 		derivativeGraphKey,
 		now,
@@ -103,21 +117,30 @@ SELECT * FROM values
 ON CONFLICT DO NOTHING
 `
 
+const coordinatePruneQuery = `
+DELETE FROM codeintel_ranking_progress WHERE id IN (
+	SELECT id
+	FROM codeintel_ranking_progress
+	WHERE graph_key != %s
+	ORDER BY mappers_started_at DESC
+	OFFSET %s
+)
+`
+
 const coordinateStartReducerQuery = `
 WITH
 processable_counts AS (
 	SELECT pci.id
 	FROM codeintel_ranking_path_counts_inputs pci
+	JOIN codeintel_ranking_definitions rd ON rd.id = pci.definition_id
+	JOIN codeintel_ranking_exports eu ON eu.id = rd.exported_upload_id
+	JOIN lsif_uploads u ON u.id = eu.upload_id
+	JOIN repo r ON r.id = u.repository_id
 	WHERE
 		pci.graph_key = %s AND
 		NOT pci.processed AND
-		EXISTS (
-			SELECT 1 FROM repo r
-			WHERE
-				r.id = pci.repository_id AND
-				r.deleted_at IS NULL AND
-				r.blocked IS NULL
-		)
+		r.deleted_at IS NULL AND
+		r.blocked IS NULL
 )
 UPDATE codeintel_ranking_progress
 SET

@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference/lua"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference/luatypes"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -40,6 +41,7 @@ type indexJobOrHint struct {
 
 type invocationContext struct {
 	sandbox    *luasandbox.Sandbox
+	printSink  io.Writer
 	gitService GitService
 	repo       api.RepoName
 	commit     string
@@ -82,7 +84,7 @@ func newService(
 // is assumed to be a table of recognizer instances. Keys conflicting with the default recognizers
 // will overwrite them (to disable or change default behavior). Each recognizer's generate function
 // is invoked and the resulting index jobs are combined into a flattened list.
-func (s *Service) InferIndexJobs(ctx context.Context, repo api.RepoName, commit, overrideScript string) (_ []config.IndexJob, err error) {
+func (s *Service) InferIndexJobs(ctx context.Context, repo api.RepoName, commit, overrideScript string) (_ *shared.InferenceResult, err error) {
 	ctx, _, endObservation := s.operations.inferIndexJobs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("repo", string(repo)),
 		attribute.String("commit", commit),
@@ -108,7 +110,7 @@ func (s *Service) InferIndexJobs(ctx context.Context, repo api.RepoName, commit,
 		},
 	}
 
-	jobOrHints, err := s.inferIndexJobOrHints(ctx, repo, commit, overrideScript, functionTable)
+	jobOrHints, logs, err := s.inferIndexJobOrHints(ctx, repo, commit, overrideScript, functionTable)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +124,10 @@ func (s *Service) InferIndexJobs(ctx context.Context, repo api.RepoName, commit,
 		jobs = append(jobs, *jobOrHint.indexJob)
 	}
 
-	return jobs, nil
+	return &shared.InferenceResult{
+		IndexJobs:       jobs,
+		InferenceOutput: logs,
+	}, nil
 }
 
 // InferIndexJobHints invokes the given script in a fresh Lua sandbox. The return value of this script
@@ -155,7 +160,7 @@ func (s *Service) InferIndexJobHints(ctx context.Context, repo api.RepoName, com
 		},
 	}
 
-	jobOrHints, err := s.inferIndexJobOrHints(ctx, repo, commit, overrideScript, functionTable)
+	jobOrHints, _, err := s.inferIndexJobOrHints(ctx, repo, commit, overrideScript, functionTable)
 	if err != nil {
 		return nil, err
 	}
@@ -183,26 +188,32 @@ func (s *Service) inferIndexJobOrHints(
 	commit string,
 	overrideScript string,
 	invocationContextMethods invocationFunctionTable,
-) ([]indexJobOrHint, error) {
+) (_ []indexJobOrHint, logs string, _ error) {
 	sandbox, err := s.createSandbox(ctx)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	defer sandbox.Close()
 
-	recognizers, err := s.setupRecognizers(ctx, sandbox, overrideScript)
-	if err != nil || len(recognizers) == 0 {
-		return nil, err
-	}
+	var buf bytes.Buffer
+	defer func() { logs = buf.String() }()
 
 	invocationContext := invocationContext{
 		sandbox:                 sandbox,
+		printSink:               &buf,
 		gitService:              s.gitService,
 		repo:                    repo,
 		commit:                  commit,
 		invocationFunctionTable: invocationContextMethods,
 	}
-	return s.invokeRecognizers(ctx, invocationContext, recognizers)
+
+	recognizers, err := s.setupRecognizers(ctx, invocationContext, overrideScript)
+	if err != nil || len(recognizers) == 0 {
+		return nil, logs, err
+	}
+
+	jobsOrHints, err := s.invokeRecognizers(ctx, invocationContext, recognizers)
+	return jobsOrHints, logs, err
 }
 
 // createSandbox creates a Lua sandbox wih the modules loaded for use with auto indexing inference.
@@ -232,12 +243,14 @@ func (s *Service) createSandbox(ctx context.Context) (_ *luasandbox.Sandbox, err
 
 // setupRecognizers runs the given default and override scripts in the given sandbox and converts the
 // script return values to a list of recognizer instances.
-func (s *Service) setupRecognizers(ctx context.Context, sandbox *luasandbox.Sandbox, overrideScript string) (_ []*luatypes.Recognizer, err error) {
+func (s *Service) setupRecognizers(ctx context.Context, invocationContext invocationContext, overrideScript string) (_ []*luatypes.Recognizer, err error) {
 	ctx, _, endObservation := s.operations.setupRecognizers.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	opts := luasandbox.RunOptions{}
-	rawRecognizers, err := sandbox.RunScriptNamed(ctx, opts, lua.Scripts, "recognizers.lua")
+	opts := luasandbox.RunOptions{
+		PrintSink: invocationContext.printSink,
+	}
+	rawRecognizers, err := invocationContext.sandbox.RunScriptNamed(ctx, opts, lua.Scripts, "recognizers.lua")
 	if err != nil {
 		return nil, err
 	}
@@ -248,7 +261,7 @@ func (s *Service) setupRecognizers(ctx context.Context, sandbox *luasandbox.Sand
 	}
 
 	if overrideScript != "" {
-		rawRecognizers, err := sandbox.RunScript(ctx, opts, overrideScript)
+		rawRecognizers, err := invocationContext.sandbox.RunScript(ctx, opts, overrideScript)
 		if err != nil {
 			return nil, err
 		}
@@ -533,7 +546,9 @@ func (s *Service) invokeLinearizedRecognizer(
 		return nil, nil
 	}
 
-	opts := luasandbox.RunOptions{}
+	opts := luasandbox.RunOptions{
+		PrintSink: invocationContext.printSink,
+	}
 	args := []any{registrationAPI, callPaths, callContentsByPath}
 	value, err := invocationContext.sandbox.Call(ctx, opts, invocationContext.callback(recognizer), args...)
 	if err != nil {

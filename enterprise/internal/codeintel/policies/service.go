@@ -107,12 +107,15 @@ func (s *Service) GetRetentionPolicyOverview(ctx context.Context, upload shared.
 	ctx, _, endObservation := s.operations.getRetentionPolicyOverview.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	policyMatcher := s.getPolicyMatcherFromFactory(RetentionExtractor, true, false)
+	var (
+		t             = true
+		policyMatcher = s.getPolicyMatcherFromFactory(RetentionExtractor, true, false)
+	)
 
 	configPolicies, _, err := s.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
 		RepositoryID:     upload.RepositoryID,
 		Term:             query,
-		ForDataRetention: true,
+		ForDataRetention: &t,
 		Limit:            first,
 		Offset:           int(after),
 	})

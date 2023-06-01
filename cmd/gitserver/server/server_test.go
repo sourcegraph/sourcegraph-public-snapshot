@@ -199,7 +199,7 @@ func TestExecRequest(t *testing.T) {
 	}
 	t.Cleanup(func() { testGitRepoExists = nil })
 
-	runCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
+	common.RunCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
 		switch cmd.Args[1] {
 		case "testcommand":
 			_, _ = cmd.Stdout.Write([]byte("teststdout"))
@@ -220,14 +220,14 @@ func TestExecRequest(t *testing.T) {
 			cmd.Dir = "" // the test doesn't setup the dir
 
 			// We run the real codepath cause we can in this case.
-			m := runCommandMock
-			runCommandMock = nil
-			defer func() { runCommandMock = m }()
-			return runCommand(ctx, wrexec.Wrap(ctx, logtest.Scoped(t), cmd))
+			m := common.RunCommandMock
+			common.RunCommandMock = nil
+			defer func() { common.RunCommandMock = m }()
+			return common.RunCommand(ctx, wrexec.Wrap(ctx, logtest.Scoped(t), cmd))
 		}
 		return 0, nil
 	}
-	t.Cleanup(func() { runCommandMock = nil })
+	t.Cleanup(func() { common.RunCommandMock = nil })
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
@@ -297,7 +297,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 	}
 	h := s.Handler()
 
-	runCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
+	common.RunCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
 		switch cmd.Args[1] {
 		case "users":
 			_, _ = cmd.Stdout.Write([]byte("admin <admin@joe-perforce-server> (admin) accessed 2021/01/31"))
@@ -306,7 +306,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 		}
 		return 0, nil
 	}
-	t.Cleanup(func() { runCommandMock = nil })
+	t.Cleanup(func() { common.RunCommandMock = nil })
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
@@ -1470,7 +1470,7 @@ func TestHandleBatchLog(t *testing.T) {
 	}
 	t.Cleanup(func() { repoCloned = originalRepoCloned })
 
-	runCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
+	common.RunCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
 		for _, v := range cmd.Args {
 			if strings.HasPrefix(v, "dumbmilk") {
 				return 128, errors.New("test error")
@@ -1480,7 +1480,7 @@ func TestHandleBatchLog(t *testing.T) {
 		cmd.Stdout.Write([]byte(fmt.Sprintf("stdout<%s:%s>", cmd.Dir, strings.Join(cmd.Args, " "))))
 		return 0, nil
 	}
-	t.Cleanup(func() { runCommandMock = nil })
+	t.Cleanup(func() { common.RunCommandMock = nil })
 
 	tests := []BatchLogTest{
 		{

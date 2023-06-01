@@ -8,12 +8,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -29,6 +31,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -38,6 +41,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func newMockDB() database.DB {
@@ -50,7 +54,7 @@ func newMockDB() database.DB {
 func TestProtoRoundTrip(t *testing.T) {
 	var diff string
 
-	f := func(original gitserver.ArchiveOptions) bool {
+	a := func(original gitserver.ArchiveOptions) bool {
 
 		var converted gitserver.ArchiveOptions
 		converted.FromProto(original.ToProto("test"))
@@ -62,8 +66,57 @@ func TestProtoRoundTrip(t *testing.T) {
 		return true
 	}
 
-	if err := quick.Check(f, nil); err != nil {
+	if err := quick.Check(a, nil); err != nil {
 		t.Errorf("ArchiveOptions proto roundtrip failed (-want +got):\n%s", diff)
+	}
+
+	c := func(original protocol.IsRepoCloneableResponse) bool {
+		var converted protocol.IsRepoCloneableResponse
+		converted.FromProto(original.ToProto())
+
+		if diff = cmp.Diff(original, converted); diff != "" {
+			return false
+		}
+
+		return true
+	}
+
+	if err := quick.Check(c, nil); err != nil {
+		t.Errorf("IsRepoCloneableResponse proto roundtrip failed (-want +got):\n%s", diff)
+	}
+
+	rs := func(updatedAt time.Time, gitDirBytes int64) bool {
+		original := protocol.ReposStats{
+			UpdatedAt:   updatedAt,
+			GitDirBytes: gitDirBytes,
+		}
+
+		var converted protocol.ReposStats
+		converted.FromProto(original.ToProto())
+
+		if diff = cmp.Diff(original, converted); diff != "" {
+			return false
+		}
+
+		return true
+	}
+
+	// Define the generator for time.Time values
+	timeGenerator := func(rand *rand.Rand, size int) reflect.Value {
+		min := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+		max := time.Now()
+		delta := max.Unix() - min.Unix()
+		sec := rand.Int63n(delta) + min.Unix()
+		return reflect.ValueOf(time.Unix(sec, 0))
+	}
+
+	if err := quick.Check(rs, &quick.Config{
+		Values: func(args []reflect.Value, rand *rand.Rand) {
+			args[0] = timeGenerator(rand, 0)
+			args[1] = reflect.ValueOf(rand.Int63())
+		},
+	}); err != nil {
+		t.Errorf("ReposStats proto roundtrip failed (-want +got):\n%s", diff)
 	}
 }
 
@@ -72,7 +125,7 @@ func TestClient_Remove(t *testing.T) {
 	addrs := []string{"172.16.8.1:8080", "172.16.8.2:8080"}
 
 	expected := "http://172.16.8.1:8080"
-	source := gitserver.NewTestClientSource(addrs)
+	source := gitserver.NewTestClientSource(t, addrs)
 
 	cli := gitserver.NewTestClient(
 		httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
@@ -253,7 +306,13 @@ func TestClient_ArchiveReader(t *testing.T) {
 	}
 
 	t.Run("grpc", func(t *testing.T) {
-		t.Setenv("SG_FEATURE_FLAG_GRPC", "true")
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{
+					EnableGRPC: true,
+				},
+			},
+		})
 		for _, test := range tests {
 			repoName := api.RepoName(test.name)
 
@@ -263,7 +322,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 
 				t.Helper()
 
-				source := gitserver.NewTestClientSource(addrs, func(o *gitserver.TestClientSourceOptions) {
+				source := gitserver.NewTestClientSource(t, addrs, func(o *gitserver.TestClientSourceOptions) {
 					o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 						spy.base = proto.NewGitserverServiceClient(cc)
 
@@ -283,7 +342,14 @@ func TestClient_ArchiveReader(t *testing.T) {
 	})
 
 	t.Run("http", func(t *testing.T) {
-		t.Setenv("SG_FEATURE_FLAG_GRPC", "false")
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{
+					EnableGRPC: false,
+				},
+			},
+		})
+
 		for _, test := range tests {
 			repoName := api.RepoName(test.name)
 
@@ -293,7 +359,7 @@ func TestClient_ArchiveReader(t *testing.T) {
 
 				spy := &spyGitserverServiceClient{}
 
-				source := gitserver.NewTestClientSource(addrs, func(o *gitserver.TestClientSourceOptions) {
+				source := gitserver.NewTestClientSource(t, addrs, func(o *gitserver.TestClientSourceOptions) {
 					o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
 						spy.base = proto.NewGitserverServiceClient(cc)
 
@@ -474,7 +540,7 @@ func TestClient_P4Exec(t *testing.T) {
 
 			u, _ := url.Parse(testServer.URL)
 			addrs := []string{u.Host}
-			source := gitserver.NewTestClientSource(addrs)
+			source := gitserver.NewTestClientSource(t, addrs)
 
 			cli := gitserver.NewTestClient(&http.Client{}, source)
 
@@ -558,7 +624,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 
 	u, _ := url.Parse(srv.URL)
 	addrs := []string{u.Host}
-	source := gitserver.NewTestClientSource(addrs)
+	source := gitserver.NewTestClientSource(t, addrs)
 
 	cli := gitserver.NewTestClient(&http.Client{}, source)
 
@@ -582,7 +648,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 
 func TestClient_BatchLog(t *testing.T) {
 	addrs := []string{"172.16.8.1:8080", "172.16.8.2:8080", "172.16.8.3:8080"}
-	source := gitserver.NewTestClientSource(addrs)
+	source := gitserver.NewTestClientSource(t, addrs)
 
 	cli := gitserver.NewTestClient(
 		httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
@@ -699,6 +765,15 @@ func TestLocalGitCommand(t *testing.T) {
 }
 
 func TestClient_ReposStats(t *testing.T) {
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				EnableGRPC: false,
+			},
+		},
+	})
+	defer conf.Mock(nil)
+
 	const gitserverAddr = "172.16.8.1:8080"
 	now := time.Now().UTC()
 	addrs := []string{gitserverAddr}
@@ -709,7 +784,7 @@ func TestClient_ReposStats(t *testing.T) {
 		GitDirBytes: 1337,
 	}
 
-	source := gitserver.NewTestClientSource(addrs)
+	source := gitserver.NewTestClientSource(t, addrs)
 	cli := gitserver.NewTestClient(
 		httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
 			switch r.URL.String() {
@@ -734,18 +809,207 @@ func TestClient_ReposStats(t *testing.T) {
 
 	assert.Equal(t, wantStats, *gotStatsMap[gitserverAddr])
 }
+func TestClient_ReposStatsGRPC(t *testing.T) {
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				EnableGRPC: true,
+			},
+		},
+	})
+
+	const gitserverAddr = "172.16.8.1:8080"
+	now := time.Now().UTC()
+	wantStats := protocol.ReposStats{
+		UpdatedAt:   now,
+		GitDirBytes: 1337,
+	}
+	called := false
+	source := gitserver.NewTestClientSource(t, []string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
+		o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+			mockRepoStats := func(ctx context.Context, in *proto.ReposStatsRequest, opts ...grpc.CallOption) (*proto.ReposStatsResponse, error) {
+				called = true
+				return wantStats.ToProto(), nil
+			}
+			return &mockClient{mockRepoStats: mockRepoStats}
+		}
+	})
+
+	cli := gitserver.NewTestClient(http.DefaultClient, source)
+
+	gotStatsMap, err := cli.ReposStats(context.Background())
+	if err != nil {
+		t.Fatalf("expected URL %q, but got err %q", wantStats, err)
+	}
+
+	if !called {
+		t.Fatal("ReposStats: grpc client not called")
+	}
+
+	assert.Equal(t, wantStats, *gotStatsMap[gitserverAddr])
+}
+
+func TestClient_IsRepoCloneableGRPC(t *testing.T) {
+
+	type test struct {
+		name          string
+		repo          api.RepoName
+		mockResponse  *protocol.IsRepoCloneableResponse
+		wantErr       bool
+		wantErrString string
+	}
+
+	const gitserverAddr = "172.16.8.1:8080"
+	testCases := []test{
+		{
+			name: "cloneable",
+			repo: "github.com/sourcegraph/sourcegraph",
+			mockResponse: &protocol.IsRepoCloneableResponse{
+				Cloneable: true,
+			},
+		},
+		{
+			name: "not found",
+			repo: "github.com/nonexistent/repo",
+			mockResponse: &protocol.IsRepoCloneableResponse{
+				Cloneable: false,
+				Reason:    "repository not found",
+			},
+			wantErr:       true,
+			wantErrString: "unable to clone repo (name=\"github.com/nonexistent/repo\" notfound=true) because repository not found",
+		},
+		{
+			name: "other error",
+			repo: "github.com/sourcegraph/sourcegraph",
+			mockResponse: &protocol.IsRepoCloneableResponse{
+				Cloneable: false,
+				Reason:    "some other error",
+			},
+			wantErr:       true,
+			wantErrString: "unable to clone repo (name=\"github.com/sourcegraph/sourcegraph\" notfound=false) because some other error",
+		},
+	}
+	runTests := func(t *testing.T, client gitserver.Client, tc test, called bool) {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+			err := client.IsRepoCloneable(ctx, tc.repo)
+			if tc.wantErr {
+				if err == nil {
+					t.Fatal("expected error but got nil")
+				}
+				if err.Error() != tc.wantErrString {
+					t.Errorf("got error %q, want %q", err.Error(), tc.wantErrString)
+				}
+			} else if err != nil {
+				t.Errorf("unexpected error: %s", err)
+			}
+		})
+
+	}
+
+	t.Run("GRPC", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{
+					EnableGRPC: true,
+				},
+			},
+		})
+
+		for _, tc := range testCases {
+
+			called := false
+			source := gitserver.NewTestClientSource(t, []string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
+				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+					mockIsRepoCloneable := func(ctx context.Context, in *proto.IsRepoCloneableRequest, opts ...grpc.CallOption) (*proto.IsRepoCloneableResponse, error) {
+						called = true
+						if api.RepoName(in.Repo) != tc.repo {
+							t.Errorf("got %q, want %q", in.Repo, tc.repo)
+						}
+						return tc.mockResponse.ToProto(), nil
+					}
+					return &mockClient{mockIsRepoCloneable: mockIsRepoCloneable}
+				}
+			})
+
+			client := gitserver.NewTestClient(http.DefaultClient, source)
+
+			runTests(t, client, tc, called)
+			if !called {
+				t.Fatal("IsRepoCloneable: grpc client not called")
+			}
+		}
+	})
+
+	t.Run("HTTP", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{
+					EnableGRPC: false,
+				},
+			},
+		})
+		expected := fmt.Sprintf("http://%s", gitserverAddr)
+
+		for _, tc := range testCases {
+
+			called := false
+			source := gitserver.NewTestClientSource(t, []string{gitserverAddr}, func(o *gitserver.TestClientSourceOptions) {
+				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+					mockIsRepoCloneable := func(ctx context.Context, in *proto.IsRepoCloneableRequest, opts ...grpc.CallOption) (*proto.IsRepoCloneableResponse, error) {
+						called = true
+						if api.RepoName(in.Repo) != tc.repo {
+							t.Errorf("got %q, want %q", in.Repo, tc.repo)
+						}
+						return tc.mockResponse.ToProto(), nil
+					}
+					return &mockClient{mockIsRepoCloneable: mockIsRepoCloneable}
+				}
+			})
+
+			client := gitserver.NewTestClient(
+				httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
+					switch r.URL.String() {
+					case expected + "/is-repo-cloneable":
+						encoded, _ := json.Marshal(tc.mockResponse)
+						body := io.NopCloser(strings.NewReader(strings.TrimSpace(string(encoded))))
+						return &http.Response{
+							StatusCode: 200,
+							Body:       body,
+						}, nil
+					default:
+						return nil, errors.Newf("unexpected URL: %q", r.URL.String())
+					}
+				}),
+				source,
+			)
+
+			runTests(t, client, tc, called)
+			if called {
+				t.Fatal("IsRepoCloneable: http client should be called")
+			}
+		}
+	})
+
+}
 
 type spyGitserverServiceClient struct {
-	execCalled    bool
-	searchCalled  bool
-	archiveCalled bool
-
-	base proto.GitserverServiceClient
+	execCalled       bool
+	isRepoCloneable  bool
+	searchCalled     bool
+	archiveCalled    bool
+	reposStatsCalled bool
+	base             proto.GitserverServiceClient
 }
 
 func (s *spyGitserverServiceClient) Exec(ctx context.Context, in *proto.ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_ExecClient, error) {
 	s.execCalled = true
 	return s.base.Exec(ctx, in, opts...)
+}
+
+func (s *spyGitserverServiceClient) IsRepoCloneable(ctx context.Context, in *proto.IsRepoCloneableRequest, opts ...grpc.CallOption) (*proto.IsRepoCloneableResponse, error) {
+	s.isRepoCloneable = true
+	return s.base.IsRepoCloneable(ctx, in, opts...)
 }
 
 func (s *spyGitserverServiceClient) Search(ctx context.Context, in *proto.SearchRequest, opts ...grpc.CallOption) (proto.GitserverService_SearchClient, error) {
@@ -758,4 +1022,42 @@ func (s *spyGitserverServiceClient) Archive(ctx context.Context, in *proto.Archi
 	return s.base.Archive(ctx, in, opts...)
 }
 
+func (s *spyGitserverServiceClient) ReposStats(ctx context.Context, in *proto.ReposStatsRequest, opts ...grpc.CallOption) (*proto.ReposStatsResponse, error) {
+	s.reposStatsCalled = true
+	return s.base.ReposStats(ctx, in, opts...)
+}
+
 var _ proto.GitserverServiceClient = &spyGitserverServiceClient{}
+
+type mockClient struct {
+	mockExec            func(ctx context.Context, in *proto.ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_ExecClient, error)
+	mockIsRepoCloneable func(ctx context.Context, in *proto.IsRepoCloneableRequest, opts ...grpc.CallOption) (*proto.IsRepoCloneableResponse, error)
+	mockRepoStats       func(ctx context.Context, in *proto.ReposStatsRequest, opts ...grpc.CallOption) (*proto.ReposStatsResponse, error)
+	mockArchive         func(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error)
+	mockSearch          func(ctx context.Context, in *proto.SearchRequest, opts ...grpc.CallOption) (proto.GitserverService_SearchClient, error)
+}
+
+// Exec implements v1.GitserverServiceClient
+func (mc *mockClient) Exec(ctx context.Context, in *proto.ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_ExecClient, error) {
+	return mc.mockExec(ctx, in, opts...)
+}
+
+func (ms *mockClient) IsRepoCloneable(ctx context.Context, in *proto.IsRepoCloneableRequest, opts ...grpc.CallOption) (*proto.IsRepoCloneableResponse, error) {
+	return ms.mockIsRepoCloneable(ctx, in, opts...)
+}
+
+// ReposStats implements v1.GitserverServiceClient
+func (ms *mockClient) ReposStats(ctx context.Context, in *proto.ReposStatsRequest, opts ...grpc.CallOption) (*proto.ReposStatsResponse, error) {
+	return ms.mockRepoStats(ctx, in, opts...)
+}
+
+// Search implements v1.GitserverServiceClient
+func (ms *mockClient) Search(ctx context.Context, in *proto.SearchRequest, opts ...grpc.CallOption) (proto.GitserverService_SearchClient, error) {
+	return ms.mockSearch(ctx, in, opts...)
+}
+
+func (mc *mockClient) Archive(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error) {
+	return mc.mockArchive(ctx, in, opts...)
+}
+
+var _ proto.GitserverServiceClient = &mockClient{}

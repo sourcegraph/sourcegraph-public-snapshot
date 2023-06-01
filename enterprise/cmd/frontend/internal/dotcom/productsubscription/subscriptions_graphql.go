@@ -133,8 +133,8 @@ func (r *productSubscription) ProductLicenses(ctx context.Context, args *graphql
 	return &productLicenseConnection{db: r.db, opt: opt}, nil
 }
 
-func (r *productSubscription) LLMProxyAccess() graphqlbackend.LLMProxyAccess {
-	return llmProxyAccessResolver{sub: r}
+func (r *productSubscription) CodyGatewayAccess() graphqlbackend.CodyGatewayAccess {
+	return codyGatewayAccessResolver{sub: r}
 }
 
 func (r *productSubscription) CurrentSourcegraphAccessToken(ctx context.Context) (*string, error) {
@@ -236,7 +236,7 @@ func (r ProductSubscriptionLicensingResolver) UpdateProductSubscription(ctx cont
 		return nil, err
 	}
 	if err := (dbSubscriptions{db: r.DB}).Update(ctx, sub.v.ID, dbSubscriptionUpdate{
-		llmProxyAccess: args.Update.LLMProxyAccess,
+		codyGatewayAccess: args.Update.CodyGatewayAccess,
 	}); err != nil {
 		return nil, err
 	}

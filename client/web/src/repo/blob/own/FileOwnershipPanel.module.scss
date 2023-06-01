@@ -14,18 +14,30 @@
 
     td {
         padding-bottom: 0.5rem;
-    }
-
-    td:nth-child(3) {
-        white-space: nowrap;
+        padding-top: 0.5rem;
+        overflow: hidden;
         text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
-    td:nth-child(1),
-    td:nth-child(2),
-    td:nth-child(3) {
-        width: 0; // This shrinks the cells to fit the content
+    // Email icon, and the user are tightly fitting the width.
+    td.fitting {
+        width: min-content;
     }
+
+    // While the badges column on the right-hand-side is expanding.
+    td.expanding {
+        width: 100%;
+    }
+
+    // Give a little bit more space to the owner display.
+    td.more-space {
+        padding-right: 3rem;
+    }
+}
+
+.bordered {
+    border-bottom: 1px solid var(--border-color-2);
 }
 
 .own-explanation {
@@ -42,4 +54,8 @@
     &-content {
         font-size: 0.75rem;
     }
+}
+
+.own-inference-explanation {
+    font-weight: 400;
 }

@@ -3,7 +3,8 @@
 1. Update your VS Code user setting to turn on debugging mode:
 
    ```json
-   "cody.debug": true,
+   "cody.debug.enable": true,
+   "cody.debug.verbose": true
    ```
 
 2. Run `pnpm install` from the **root** of this repository
@@ -32,28 +33,60 @@
 1. Unit tests:
 
    ```shell
-   $ cd client/cody
-   $ pnpm test:unit
+   cd client/cody
+   pnpm test:unit
    ```
 
 2. Integration tests:
 
    ```shell
-   $ cd client/cody
-   $ pnpm test:integration
+   cd client/cody
+   pnpm test:integration
+   ```
+
+3. E2E tests:
+
+   To run all the tests inside the `client/cody/test/e2e` directory:
+
+   ```shell
+   cd client/cody
+   pnpm test:e2e
+   ```
+
+   To run test individually, pass in the name of the test by replacing $TEST_NAME below.
+
+   ```sh
+   pnpm test:e2e $TEST_NAME
+   # Example: Run the inline-assist test only
+   pnpm test:e2e inline-assist
+   ```
+
+   Example: Run the inline-assist test only
+
+   ```sh
+   pnpm test:e2e --debug
+   # Example: Run the inline-assist test in debug mode
+   pnpm test:e2e inline-assist --debug
    ```
 
 ## Release Process
 
 Follow the steps below to package and publish the VS Code extension.
 
-> NOTE: Since the extension has already been bundled during build, we will need to add the `--no-dependencies` flag to the `vsce` step during the packaging step to exclude the npm dependencies ([source](https://github.com/microsoft/vscode-vsce/issues/421#issuecomment-1038911725))
+### Versioning
+
+Starting from `0.2.0`, Cody is using:
+
+- `major.EVEN_NUMBER.patch` for stable release versions
+- `major.ODD_NUMBER.patch` for nightly pre-release versions
+
+For example: 1.2._ for release and 1.3._ for pre-release.
 
 ### Prerequisite
 
 - Install the [VSCE CLI tool](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce)
 
-### Release Steps
+### Manual Release Steps
 
 1. Increment the `version` in [`package.json`](package.json) and then run:
 
@@ -61,6 +94,8 @@ Follow the steps below to package and publish the VS Code extension.
    $ cd client/cody
    $ pnpm run vsce:package
    ```
+
+> NOTE: Since the extension has already been bundled during build, we will need to add the `--no-dependencies` flag to the `vsce` step during the packaging step to exclude the npm dependencies ([source](https://github.com/microsoft/vscode-vsce/issues/421#issuecomment-1038911725))
 
 2. To try the packaged extension locally, disable any other installations of it and then run:
 
@@ -75,14 +110,25 @@ Follow the steps below to package and publish the VS Code extension.
    $ git push origin main:cody/release
    ```
 
-   - This will trigger the build pipeline for publishing the extension using the `pnpm release` command
-   - Publish release to [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
-   - Publish release to [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai)
+This will trigger the build pipeline for publishing the extension using the `pnpm release` command
 
-   4. Visit the [buildkite page for the vsce/release pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=cody%2Frelease) to watch the build process
+- Publish release to [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
+- Publish release to [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai)
+- Publish a pre-release version to [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
+  - Create a [pre-release version with minor version bump](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#prerelease-extensions) allow the Nightly build to patch the pre-release version at the correct version number through the [auto-incrementing the extension version feature from the VSCE API](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#autoincrementing-the-extension-version)
+
+### Build Status
+
+**For internal use only.**
+
+Visit the following pages to follow the build status for:
+
+- Stable: [Buildkite page for the cody/release pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=cody%2Frelease)
+- Nightly: [Buildkite page for the cody nightly build](https://buildkite.com/sourcegraph/sourcegraph/settings/schedules/337676ef-c8a3-4977-a0d9-7990cb0916d0)
 
 ## Resources
 
+- [VS Code Publishing Extensions](https://code.visualstudio.com/api/working-with-extensions/publishing-extension)
 - [VS Code UX Guidelines](https://code.visualstudio.com/api/ux-guidelines/webviews)
 - [VS Code Webview UI Toolkit](https://microsoft.github.io/vscode-webview-ui-toolkit)
 - [VS Code Icons - Codicons](https://microsoft.github.io/vscode-codicons/dist/codicon.html)

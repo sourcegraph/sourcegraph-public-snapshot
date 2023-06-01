@@ -36,7 +36,6 @@ go_library(
     deps = [
         "//cmd/gitserver/server/accesslog",
         "//cmd/gitserver/server/common",
-        "//cmd/gitserver/server/internal/cacert",
         "//internal/actor",
         "//internal/api",
         "//internal/codeintel/dependencies",
@@ -134,7 +133,6 @@ go_test(
         "//internal/actor",
         "//internal/api",
         "//internal/codeintel/dependencies",
-        "//internal/conf",
         "//internal/conf/reposource",
         "//internal/database",
         "//internal/database/dbtest",

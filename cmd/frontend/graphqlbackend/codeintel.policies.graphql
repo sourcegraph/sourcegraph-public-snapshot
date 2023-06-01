@@ -17,14 +17,22 @@ extend type Query {
         query: String
 
         """
-        If set to true, then only configuration policies with data retention enabled are returned.
+        If set to true, then only configuration policies with SCIP data retention enabled are returned.
+        If set to false, then configuration policies with SCIP data retention enabled are filtered out.
         """
         forDataRetention: Boolean
 
         """
         If set to true, then only configuration policies with indexing enabled are returned.
+        If set to false, then configuration policies with indexing enabled are filtered out.
         """
         forIndexing: Boolean
+
+        """
+        If set to true, then only configuration policies with embeddings enabled are returned.
+        If set to false, then configuration policies with embeddings enabled are filtered out.
+        """
+        forEmbeddings: Boolean
 
         """
         If set to true, then only protected configuration policies are returned.
@@ -72,6 +80,9 @@ extend type Mutation {
     """
     Creates a new configuration policy with the given attributes.
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     createCodeIntelligenceConfigurationPolicy(
         """
         If supplied, the repository to which this configuration policy applies. If not supplied,
@@ -94,11 +105,19 @@ extend type Mutation {
         indexingEnabled: Boolean!
         indexCommitMaxAgeHours: Int
         indexIntermediateCommits: Boolean!
+
+        """
+        embeddingsEnabled, if not provided, currently defaults to false.
+        """
+        embeddingsEnabled: Boolean
     ): CodeIntelligenceConfigurationPolicy!
 
     """
     Updates the attributes configuration policy with the given identifier.
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     updateCodeIntelligenceConfigurationPolicy(
         id: ID!
         repositoryPatterns: [String!]
@@ -111,11 +130,19 @@ extend type Mutation {
         indexingEnabled: Boolean!
         indexCommitMaxAgeHours: Int
         indexIntermediateCommits: Boolean!
+
+        """
+        embeddingsEnabled, if not provided, currently defaults to false.
+        """
+        embeddingsEnabled: Boolean
     ): EmptyResponse
 
     """
     Deletes the configuration policy with the given identifier.
     """
+    # 🚧 CLOUD: This mutation is used by Cloud automation - please do not
+    # introduce any breaking changes, and let new parameters be optional with
+    # reasonable defaults instead.
     deleteCodeIntelligenceConfigurationPolicy(policy: ID!): EmptyResponse
 }
 
@@ -244,6 +271,11 @@ type CodeIntelligenceConfigurationPolicy implements Node {
     only consider the tip of the branch.
     """
     indexIntermediateCommits: Boolean!
+
+    """
+    Whether or not this configuration policy affects embeddings.
+    """
+    embeddingsEnabled: Boolean!
 }
 
 """

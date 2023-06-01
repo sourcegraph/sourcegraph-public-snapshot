@@ -7,43 +7,66 @@ import (
 	"github.com/lib/pq"
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-func (s *store) InsertInitialPathRanks(ctx context.Context, exportedUploadID int, documentPaths chan string, batchSize int, graphKey string) (err error) {
+func (s *store) InsertInitialPathRanks(ctx context.Context, exportedUploadID int, documentPaths []string, batchSize int, graphKey string) (err error) {
 	ctx, _, endObservation := s.operations.insertInitialPathRanks.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("graphKey", graphKey),
 	}})
 	defer endObservation(1, observation.Args{})
 
 	return s.withTransaction(ctx, func(tx *store) error {
-		inserter := func(inserter *batch.Inserter) error {
-			for paths := range batchChannel(documentPaths, batchSize) {
-				if err := inserter.Insert(ctx, pq.Array(paths)); err != nil {
-					return err
+		pathDefinitions, err := func() (chan shared.RankingDefinitions, error) {
+			pathDefinitions := make(chan shared.RankingDefinitions, len(documentPaths))
+			defer close(pathDefinitions)
+
+			inserter := func(inserter *batch.Inserter) error {
+				for _, paths := range batchSlice(documentPaths, batchSize) {
+					if err := inserter.Insert(ctx, pq.Array(paths)); err != nil {
+						return err
+					}
+
+					for _, path := range paths {
+						pathDefinitions <- shared.RankingDefinitions{
+							ExportedUploadID: exportedUploadID,
+							SymbolName:       "$",
+							DocumentPath:     path,
+						}
+					}
 				}
+
+				return nil
 			}
 
-			return nil
-		}
+			if err := tx.db.Exec(ctx, sqlf.Sprintf(createInitialPathTemporaryTableQuery)); err != nil {
+				return nil, err
+			}
 
-		if err := tx.db.Exec(ctx, sqlf.Sprintf(createInitialPathTemporaryTableQuery)); err != nil {
+			if err := batch.WithInserter(
+				ctx,
+				tx.db.Handle(),
+				"t_codeintel_initial_path_ranks",
+				batch.MaxNumPostgresParameters,
+				[]string{"document_paths"},
+				inserter,
+			); err != nil {
+				return nil, err
+			}
+
+			if err = tx.db.Exec(ctx, sqlf.Sprintf(insertInitialPathRankCountsQuery, exportedUploadID, graphKey)); err != nil {
+				return nil, err
+			}
+
+			return pathDefinitions, nil
+		}()
+		if err != nil {
 			return err
 		}
 
-		if err := batch.WithInserter(
-			ctx,
-			tx.db.Handle(),
-			"t_codeintel_initial_path_ranks",
-			batch.MaxNumPostgresParameters,
-			[]string{"document_paths"},
-			inserter,
-		); err != nil {
-			return err
-		}
-
-		if err = tx.db.Exec(ctx, sqlf.Sprintf(insertInitialPathRankCountsQuery, exportedUploadID, graphKey)); err != nil {
+		if err := tx.InsertDefinitionsForRanking(ctx, graphKey, pathDefinitions); err != nil {
 			return err
 		}
 

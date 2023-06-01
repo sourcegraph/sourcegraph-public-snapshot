@@ -8,7 +8,7 @@
   },
   "engines": {
     "node": "^v16.18.1",
-    "pnpm": "^8.1.0"
+    "pnpm": "^8.3.0"
   },
   "scripts": {
     "format": "prettier '**/{*.{js?(on),ts?(x),graphql,md,scss},.*.js?(on)}' --list-different --config prettier.config.js --write",
@@ -498,7 +498,7 @@
     "yaml-ast-parser": "^0.0.43",
     "zustand": "^3.6.9"
   },
-  "packageManager": "pnpm@8.1.0",
+  "packageManager": "pnpm@8.3.0",
   "pnpm": {
     "packageExtensions": {
       "hnswlib-node": {
