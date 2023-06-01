@@ -32,6 +32,7 @@ go_library(
         "@io_k8s_utils//pointer",
         "@io_opentelemetry_go_otel//attribute",
         "@org_golang_x_sync//errgroup",
+        "@org_uber_go_zap//:zap",
     ],
 )
 
