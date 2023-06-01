@@ -97,6 +97,14 @@ func (r *RepositoryResolver) EmbeddingExists(ctx context.Context) (bool, error) 
 
 func MarshalRepositoryID(repo api.RepoID) graphql.ID { return relay.MarshalID("Repository", repo) }
 
+func MarshalRepositoryIDs(ids []api.RepoID) []graphql.ID {
+	res := make([]graphql.ID, len(ids))
+	for i, id := range ids {
+		res[i] = MarshalRepositoryID(id)
+	}
+	return res
+}
+
 func UnmarshalRepositoryID(id graphql.ID) (repo api.RepoID, err error) {
 	err = relay.UnmarshalSpec(id, &repo)
 	return

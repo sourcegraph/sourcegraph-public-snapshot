@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
-	backgroundrepo "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -23,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/settings"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type FileChunkContext struct {
@@ -104,18 +102,17 @@ func (c *ContextClient) GetContext(ctx context.Context, args GetContextArgs) ([]
 
 // partitionRepos splits a set of repos into repos with embeddings and repos without embeddings
 func (c *ContextClient) partitionRepos(ctx context.Context, input []types.RepoIDName) (embedded, notEmbedded []types.RepoIDName, err error) {
-	store := backgroundrepo.NewRepoEmbeddingJobsStore(c.db)
 	for _, repo := range input {
-		_, err := store.GetLastCompletedRepoEmbeddingJob(ctx, repo.ID)
+		exists, err := c.db.Repos().RepoEmbeddingExists(ctx, repo.ID)
 		if err != nil {
-			if v := (&backgroundrepo.RepoEmbeddingJobNotFoundErr{}); errors.As(err, &v) {
-				notEmbedded = append(notEmbedded, repo)
-				continue
-			}
 			return nil, nil, err
 		}
 
-		embedded = append(embedded, repo)
+		if exists {
+			embedded = append(embedded, repo)
+		} else {
+			notEmbedded = append(notEmbedded, repo)
+		}
 	}
 	return embedded, notEmbedded, nil
 }
@@ -242,7 +239,7 @@ func (c *ContextClient) getKeywordContext(ctx context.Context, args GetContextAr
 		)
 	}
 
-	return append(textResults, codeResults...), nil
+	return append(codeResults, textResults...), nil
 }
 
 func fileMatchToContextMatches(fm *result.FileMatch) []FileChunkContext {
