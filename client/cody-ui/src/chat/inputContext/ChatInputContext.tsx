@@ -49,7 +49,9 @@ export const ChatInputContext: React.FunctionComponent<{
                 </h3>
             ) : contextStatus.supportsKeyword ? (
                 <h3 title={warning} className={classNames(styles.badge, styles.indexMissing)}>
-                    <a href="https://docs.sourcegraph.com/cody/explanations/code_graph_context"><span className={styles.indexStatus}>⚠ Not Indexed</span></a>
+                    <a href="https://docs.sourcegraph.com/cody/explanations/code_graph_context">
+                        <span className={styles.indexStatus}>⚠ Not Indexed</span>
+                    </a>
                 </h3>
             ) : null}
 
