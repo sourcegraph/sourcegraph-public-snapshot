@@ -863,7 +863,6 @@ func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password str
 		attribute.StringSlice("args", args),
 	}})
 	defer endObservation(1, observation.Args{})
-	fmt.Print("P4Exec")
 	// Check that ctx is not expired.
 	if err := ctx.Err(); err != nil {
 		deadlineExceededCounter.Inc()
@@ -884,11 +883,14 @@ func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password str
 
 		ctx, cancel := context.WithCancel(ctx)
 
+		fmt.Printf("P4Exec: %v\n", req)
+
 		stream, err := client.P4Exec(ctx, req.ToProto())
 		if err != nil {
 			cancel()
 			return nil, nil, err
 		}
+		fmt.Printf("P4Exec: %v\n", stream)
 		r := streamio.NewReader(func() ([]byte, error) {
 			msg, err := stream.Recv()
 			if status.Code(err) == codes.Canceled {
