@@ -108,7 +108,7 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data, isDir
                         <tr>
                             <th colSpan={3}>
                                 {totalCount === 0 ? (
-                                    <NoOwnershipAlert isDirectory={isDirectory}/>
+                                    <NoOwnershipAlert isDirectory={isDirectory} />
                                 ) : (
                                     <H4 className="mb-3">Owners</H4>
                                 )}
@@ -173,7 +173,7 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data, isDir
     return (
         <div className={styles.contents}>
             <OwnExplanation />
-            <NoOwnershipAlert isDirectory={isDirectory}/>
+            <NoOwnershipAlert isDirectory={isDirectory} />
         </div>
     )
 }
