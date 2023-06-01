@@ -255,7 +255,7 @@ const register = async (
             },
         }
         disposables.push(
-            vscode.commands.registerCommand('cody.recipe.file-flow', () => executeRecipe('file-flow', false))
+            vscode.commands.registerCommand('cody.recipe.file-touch', () => executeRecipe('file-touch', false))
         )
     }
 

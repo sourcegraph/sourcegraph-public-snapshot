@@ -2,7 +2,7 @@ import { ChatQuestion } from '@sourcegraph/cody-shared/src/chat/recipes/chat-que
 import { ContextSearch } from '@sourcegraph/cody-shared/src/chat/recipes/context-search'
 import { ExplainCodeDetailed } from '@sourcegraph/cody-shared/src/chat/recipes/explain-code-detailed'
 import { ExplainCodeHighLevel } from '@sourcegraph/cody-shared/src/chat/recipes/explain-code-high-level'
-import { FileFlow } from '@sourcegraph/cody-shared/src/chat/recipes/file-flow'
+import { FileTouch } from '@sourcegraph/cody-shared/src/chat/recipes/file-touch'
 import { FindCodeSmells } from '@sourcegraph/cody-shared/src/chat/recipes/find-code-smells'
 import { Fixup } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
 import { GenerateDocstring } from '@sourcegraph/cody-shared/src/chat/recipes/generate-docstring'
@@ -39,14 +39,14 @@ function init(): void {
         new ContextSearch(),
         new ExplainCodeDetailed(),
         new ExplainCodeHighLevel(),
-        new FileFlow(),
+        new FileTouch(debug),
         new FindCodeSmells(),
         new Fixup(),
         new GenerateDocstring(),
         new GenerateTest(),
         new GitHistory(),
         new ImproveVariableNames(),
-        new InlineAssist(),
+        new InlineAssist(debug),
         new NextQuestions(),
         new NonStop(),
         new OptimizeCode(),

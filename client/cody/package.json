@@ -209,7 +209,7 @@
         "enablement": "config.cody.debug && config.cody.experimental.guardrails && editorHasSelection"
       },
       {
-        "command": "cody.recipe.file-flow",
+        "command": "cody.recipe.file-touch",
         "title": "Cody: Touch"
       },
       {
@@ -272,7 +272,7 @@
         "when": "cody.activated && editorHasSelection && !editorReadonly"
       },
       {
-        "command": "cody.recipe.file-flow",
+        "command": "cody.recipe.file-touch",
         "key": "ctrl+shift+t",
         "mac": "shift+cmd+t",
         "when": "cody.activated && editorTextFocus && !editorReadonly"
@@ -303,7 +303,7 @@
           "when": "cody.activated"
         },
         {
-          "command": "cody.recipe.file-flow",
+          "command": "cody.recipe.file-touch",
           "when": "cody.activated"
         },
         {
@@ -396,7 +396,7 @@
           "when": "cody.activated"
         },
         {
-          "command": "cody.recipe.file-flow",
+          "command": "cody.recipe.file-touch",
           "when": "cody.activated"
         },
         {
