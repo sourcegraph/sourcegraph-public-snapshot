@@ -40,7 +40,7 @@ func bazelCmd(args ...string) string {
 
 func bazelPushImagesCmd() func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":bazel::docker: Push",
+		pipeline.AddStep(":bazel::docker: Push OCI/Wolfi",
 			bk.Agent("queue", "bazel"),
 			bk.DependsOn("bazel-tests"),
 			bk.Key("bazel-push-images"),
