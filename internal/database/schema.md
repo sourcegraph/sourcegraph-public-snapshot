@@ -893,6 +893,7 @@ Referenced by:
 Indexes:
     "codeintel_initial_path_ranks_processed_pkey" PRIMARY KEY, btree (id)
     "codeintel_initial_path_ranks_processed_cgraph_key_codeintel_ini" UNIQUE, btree (graph_key, codeintel_initial_path_ranks_id)
+    "codeintel_initial_path_ranks_processed_codeintel_initial_path_r" btree (codeintel_initial_path_ranks_id)
 Foreign-key constraints:
     "fk_codeintel_initial_path_ranks" FOREIGN KEY (codeintel_initial_path_ranks_id) REFERENCES codeintel_initial_path_ranks(id) ON DELETE CASCADE
 
