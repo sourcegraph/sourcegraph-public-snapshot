@@ -63,18 +63,20 @@ export const commands = {
     // Get the latest release version number of the last release from VS Code Marketplace
     vscode_info: 'vsce show sourcegraph.cody-ai --json',
     // Stable: publish to VS Code Marketplace
+    vscode_package: 'pnpm run vsce:package',
     vscode_publish: 'vsce publish --packagePath dist/cody.vsix --pat $VSCODE_MARKETPLACE_TOKEN',
     // Nightly release: publish to VS Code Marketplace with today's date as patch number
-    vscode_nightly: `vsce publish ${tonightVersion} --pre-release --packagePath dist/cody.vsix --pat $VSCODE_MARKETPLACE_TOKEN`,
+    vscode_package_nightly: `pnpm --silent build && vsce package ${tonightVersion} --no-dependencies -o dist/cody.vsi`,
+    vscode_nightly: 'vsce publish --pre-release --packagePath dist/cody.vsix --pat $VSCODE_MARKETPLACE_TOKEN',
     // To publish to the open-vsx registry
     openvsx_publish: 'npx ovsx publish dist/cody.vsix --pat $VSCODE_OPENVSX_TOKEN',
 }
 
-if (releaseType !== 'dry-run') {
-    // Build and bundle the extension
-    childProcess.execSync('pnpm run download-rg', { stdio: 'inherit' })
-    childProcess.execSync('pnpm run vsce:package', { stdio: 'inherit' })
-}
+// Build and bundle the extension
+childProcess.execSync('pnpm run download-rg', { stdio: 'inherit' })
+childProcess.execSync(releaseType === 'nightly' ? commands.vscode_package_nightly : commands.vscode_package, {
+    stdio: 'inherit',
+})
 
 // Run the publish commands based on the release type
 switch (releaseType) {
