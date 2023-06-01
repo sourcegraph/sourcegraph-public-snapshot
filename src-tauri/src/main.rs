@@ -56,6 +56,11 @@ fn restart_app(app_handle: tauri::AppHandle) {
     app_handle.restart();
 }
 
+#[tauri::command]
+fn clear_all_data(app_handle: tauri::AppHandle) {
+    common::prompt_to_clear_all_data(&app_handle);
+}
+
 fn set_launch_path(url: String) {
     *LAUNCH_PATH.write().unwrap() = url;
 }
@@ -166,7 +171,8 @@ fn main() {
             show_main_window,
             reload_cody_window,
             show_logs,
-            restart_app
+            restart_app,
+            clear_all_data
         ])
         .run(context)
         .expect("error while running tauri application");
