@@ -6,11 +6,6 @@ import { dataOrThrowErrors, getDocumentNode, gql, useMutation } from '@sourcegra
 
 import { FilteredConnectionQueryArguments } from '../../../components/FilteredConnection'
 import {
-    useShowMorePagination,
-    UseShowMorePaginationResult,
-} from '../../../components/FilteredConnection/hooks/useShowMorePagination'
-import {
-    RepoEmbeddingJobFields,
     RepoEmbeddingJobsListResult,
     RepoEmbeddingJobsListVariables,
     RepoEmbeddingJobConnectionFields,
@@ -79,22 +74,6 @@ export function repoEmbeddingJobs(
         map(data => data.repoEmbeddingJobs)
     )
 }
-
-export const useRepoEmbeddingJobsConnection = (): UseShowMorePaginationResult<
-    RepoEmbeddingJobsListResult,
-    RepoEmbeddingJobFields
-> =>
-    useShowMorePagination<RepoEmbeddingJobsListResult, RepoEmbeddingJobsListVariables, RepoEmbeddingJobFields>({
-        query: REPO_EMBEDDING_JOBS_LIST_QUERY,
-        variables: {
-            after: null,
-            first: 10,
-        },
-        getConnection: result => {
-            const { repoEmbeddingJobs } = dataOrThrowErrors(result)
-            return repoEmbeddingJobs
-        },
-    })
 
 export const SCHEDULE_REPO_EMBEDDING_JOBS = gql`
     mutation ScheduleRepoEmbeddingJobs($repoNames: [String!]!) {
