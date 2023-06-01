@@ -7,6 +7,7 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class ExplainCodeHighLevel implements Recipe {
     public id: RecipeID = 'explain-code-high-level'
+    public title = 'Explain selected code (high level)'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()

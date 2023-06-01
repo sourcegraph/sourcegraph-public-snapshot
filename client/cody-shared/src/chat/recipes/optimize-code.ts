@@ -12,6 +12,7 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class OptimizeCode implements Recipe {
     public id: RecipeID = 'optimize-code'
+    public title = 'Optimize code'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()

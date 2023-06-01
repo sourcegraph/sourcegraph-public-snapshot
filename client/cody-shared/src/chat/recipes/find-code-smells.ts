@@ -7,6 +7,7 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class FindCodeSmells implements Recipe {
     public id: RecipeID = 'find-code-smells'
+    public title = 'Smell code'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()

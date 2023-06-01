@@ -22,6 +22,7 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 ====================================================== **/
 export class FileFlow implements Recipe {
     public id: RecipeID = 'file-flow'
+    public title = 'Generate a new file'
     private workspacePath = vscode.workspace.workspaceFolders?.[0].uri
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {

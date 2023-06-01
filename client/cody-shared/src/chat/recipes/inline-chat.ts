@@ -13,6 +13,7 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class InlineAssist implements Recipe {
     public id: RecipeID = 'inline-chat'
+    public title = 'Inline chat'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         // Check if this is a fix-up request

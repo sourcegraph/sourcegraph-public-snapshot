@@ -11,6 +11,7 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class NextQuestions implements Recipe {
     public id: RecipeID = 'next-questions'
+    public title = 'Chat predictions'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const promptPrefix = 'Assume I have an answer to the following request:'

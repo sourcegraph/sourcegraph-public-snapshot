@@ -10,6 +10,7 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class Fixup implements Recipe {
     public id: RecipeID = 'fixup'
+    public title = 'Fixup code from inline instructions'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         // TODO: Prompt the user for additional direction.

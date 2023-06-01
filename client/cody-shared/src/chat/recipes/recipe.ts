@@ -34,5 +34,6 @@ export type RecipeID =
 
 export interface Recipe {
     id: RecipeID
+    title: string
     getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null>
 }

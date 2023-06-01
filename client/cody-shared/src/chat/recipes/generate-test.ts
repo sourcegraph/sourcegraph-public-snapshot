@@ -12,6 +12,7 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class GenerateTest implements Recipe {
     public id: RecipeID = 'generate-unit-test'
+    public title = 'Generate a unit test'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()

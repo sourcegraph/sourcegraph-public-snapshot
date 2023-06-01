@@ -1,25 +1,22 @@
+import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
+
 import { MessageHandler } from './rpc'
 
-const server = new MessageHandler()
+;(async () => {
+    const server = new MessageHandler()
 
-server.registerRequest('recipes/list', async data => {
-    console.log(data)
-    return []
-})
-server.registerNotification('recipes/execute', async data => {})
+    server.registerRequest('recipes/list', async data => {
+        return Object.values(registeredRecipes).map(({ id, title }) => ({
+            id,
+            title,
+        }))
+    })
+    server.registerNotification('recipes/execute', async data => {})
 
-const client = new MessageHandler()
+    const client = new MessageHandler()
 
-client.messageEncoder.pipe(server.messageDecoder)
+    client.messageEncoder.pipe(server.messageDecoder)
+    server.messageEncoder.pipe(client.messageDecoder)
 
-client.messageEncoder.send({
-    id: 0,
-    method: 'recipes/list',
-    params: 'bruh',
-})
-
-client.messageEncoder.send({
-    id: 1,
-    method: 'recipes/list',
-    params: 'bruh222',
-})
+    console.log(await client.request('recipes/list', void {}))
+})()

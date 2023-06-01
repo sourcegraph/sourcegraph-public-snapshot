@@ -8,6 +8,7 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class ReleaseNotes implements Recipe {
     public id: RecipeID = 'release-notes'
+    public title = 'Generate release notes'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const dirPath = context.editor.getWorkspaceRootPath()

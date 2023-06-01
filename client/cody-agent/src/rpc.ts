@@ -3,18 +3,18 @@ import { Readable, Writable } from 'stream'
 
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 
-interface RecipeInfo {
+export interface RecipeInfo {
     id: RecipeID
-    name: string
+    title: string
 }
 
 // TODO: Add some version info to prevent version incompatibilities
 // TODO: Add capabilities so clients can announce what they can handle
-interface ClientInfo {
+export interface ClientInfo {
     name: string
 }
 
-interface ServerInfo {
+export interface ServerInfo {
     name: string
 }
 
@@ -181,9 +181,13 @@ export class MessageEncoder extends Readable {
     }
 
     send(data: any) {
+        this.pause()
+
         const content = Buffer.from(JSON.stringify(data), 'utf-8')
         const header = Buffer.from(`Content-Length: ${content.byteLength}\r\n\r\n`, 'utf-8')
         this.buffer = Buffer.concat([this.buffer, header, content])
+
+        this.resume()
     }
 
     _read(size: number) {
@@ -196,9 +200,12 @@ type RequestCallback<M extends RequestMethod> = (params: ParamsOf<M>) => Promise
 type NotificationCallback<M extends NotificationMethod> = (params: ParamsOf<M>) => Promise<void>
 
 export class MessageHandler {
+    private id: number = 0
     private requestHandlers: Map<RequestMethod, RequestCallback<any>> = new Map()
     private notificationHandlers: Map<NotificationMethod, NotificationCallback<any>> = new Map()
+    private responseHandlers: Map<Id, Function> = new Map()
 
+    // TODO: RPC error handling
     public messageDecoder: MessageDecoder = new MessageDecoder((err: Error | null, msg: Message | null) => {
         if (err) {
             console.error(`Error: ${err}`)
@@ -206,15 +213,32 @@ export class MessageHandler {
         if (!msg) return
 
         if (msg.id !== undefined && msg.method) {
+            if (typeof msg.id === 'number' && msg.id > this.id) {
+                this.id = msg.id + 1
+            }
+
             // Requests have ids and methods
             const cb = this.requestHandlers.get(msg.method)
             if (cb) {
-                cb(msg.params).then(res => {})
+                cb(msg.params).then(result => {
+                    this.messageEncoder.send({
+                        jsonrpc: '2.0',
+                        id: msg.id,
+                        result,
+                    } as ResponseMessage<any>)
+                })
             } else {
                 console.error(`No handler for request with method ${msg.method}`)
             }
         } else if (msg.id !== undefined) {
             // Responses have ids
+            const cb = this.responseHandlers.get(msg.id)
+            if (cb) {
+                cb(msg.result)
+                this.responseHandlers.delete(msg.id)
+            } else {
+                console.error(`No handler for response with id ${msg.id}`)
+            }
         } else if (msg.method) {
             // Notifications have methods
             const cb = this.notificationHandlers.get(msg.method)
@@ -234,5 +258,28 @@ export class MessageHandler {
 
     public registerNotification<M extends NotificationMethod>(method: M, callback: NotificationCallback<M>) {
         this.notificationHandlers.set(method, callback)
+    }
+
+    public request<M extends RequestMethod>(method: M, params: ParamsOf<M>): Promise<ResultOf<M>> {
+        const id = this.id++
+
+        this.messageEncoder.send({
+            jsonrpc: '2.0',
+            id,
+            method: method,
+            params,
+        } as RequestMessage<M>)
+
+        return new Promise(resolve => {
+            this.responseHandlers.set(id, resolve)
+        })
+    }
+
+    public notify<M extends NotificationMethod>(method: M, params: ParamsOf<M>) {
+        this.messageEncoder.send({
+            jsonrpc: '2.0',
+            method: method,
+            params,
+        } as NotificationMessage<M>)
     }
 }

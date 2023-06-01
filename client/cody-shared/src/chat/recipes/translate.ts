@@ -7,6 +7,7 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class TranslateToLanguage implements Recipe {
     public id: RecipeID = 'translate-to-language'
+    public title = 'Translate code'
 
     public static options = languageNames
 

@@ -10,6 +10,7 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 // TODO: Disconnect recipe from chat
 export class NonStop implements Recipe {
     public id: RecipeID = 'non-stop'
+    public title = 'Non-stop Cody'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const controllers = context.editor.controllers
