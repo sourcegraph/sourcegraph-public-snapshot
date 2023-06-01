@@ -1709,7 +1709,6 @@ func (*ReposStatsRequest) ProtoMessage() {}
 
 func (x *ReposStatsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_gitserver_proto_msgTypes[24]
-
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1723,7 +1722,6 @@ func (x *ReposStatsRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use ReposStatsRequest.ProtoReflect.Descriptor instead.
 func (*ReposStatsRequest) Descriptor() ([]byte, []int) {
 	return file_gitserver_proto_rawDescGZIP(), []int{24}
-
 }
 
 // ReposStats is an aggregation of statistics from a gitserver.
@@ -1744,7 +1742,6 @@ func (x *ReposStatsResponse) Reset() {
 	*x = ReposStatsResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_gitserver_proto_msgTypes[25]
-
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1758,7 +1755,6 @@ func (*ReposStatsResponse) ProtoMessage() {}
 
 func (x *ReposStatsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_gitserver_proto_msgTypes[25]
-
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1814,7 +1810,7 @@ func (x *CommitMatch_Signature) String() string {
 func (*CommitMatch_Signature) ProtoMessage() {}
 
 func (x *CommitMatch_Signature) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[24]
+	mi := &file_gitserver_proto_msgTypes[26]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1920,7 +1916,6 @@ func (x *CommitMatch_Range) Reset() {
 	*x = CommitMatch_Range{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_gitserver_proto_msgTypes[28]
-
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1934,7 +1929,6 @@ func (*CommitMatch_Range) ProtoMessage() {}
 
 func (x *CommitMatch_Range) ProtoReflect() protoreflect.Message {
 	mi := &file_gitserver_proto_msgTypes[28]
-
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1991,7 +1985,6 @@ func (*CommitMatch_Location) ProtoMessage() {}
 
 func (x *CommitMatch_Location) ProtoReflect() protoreflect.Message {
 	mi := &file_gitserver_proto_msgTypes[29]
-
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2300,7 +2293,6 @@ var file_gitserver_proto_rawDesc = []byte{
 	0x65, 0x67, 0x72, 0x61, 0x70, 0x68, 0x2f, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x67, 0x72, 0x61,
 	0x70, 0x68, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x67, 0x69, 0x74, 0x73,
 	0x65, 0x72, 0x76, 0x65, 0x72, 0x2f, 0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
-
 }
 
 var (
@@ -2317,7 +2309,6 @@ func file_gitserver_proto_rawDescGZIP() []byte {
 
 var file_gitserver_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_gitserver_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
-
 var file_gitserver_proto_goTypes = []interface{}{
 	(OperatorKind)(0),                 // 0: gitserver.v1.OperatorKind
 	(*ExecRequest)(nil),               // 1: gitserver.v1.ExecRequest
@@ -2351,14 +2342,12 @@ var file_gitserver_proto_goTypes = []interface{}{
 	(*CommitMatch_Range)(nil),         // 29: gitserver.v1.CommitMatch.Range
 	(*CommitMatch_Location)(nil),      // 30: gitserver.v1.CommitMatch.Location
 	(*timestamppb.Timestamp)(nil),     // 31: google.protobuf.Timestamp
-
 }
 var file_gitserver_proto_depIdxs = []int32{
 	6,  // 0: gitserver.v1.SearchRequest.revisions:type_name -> gitserver.v1.RevisionSpecifier
 	16, // 1: gitserver.v1.SearchRequest.query:type_name -> gitserver.v1.QueryNode
 	31, // 2: gitserver.v1.CommitBeforeNode.timestamp:type_name -> google.protobuf.Timestamp
 	31, // 3: gitserver.v1.CommitAfterNode.timestamp:type_name -> google.protobuf.Timestamp
-
 	0,  // 4: gitserver.v1.OperatorNode.kind:type_name -> gitserver.v1.OperatorKind
 	16, // 5: gitserver.v1.OperatorNode.operands:type_name -> gitserver.v1.QueryNode
 	7,  // 6: gitserver.v1.QueryNode.author_matches:type_name -> gitserver.v1.AuthorMatchesNode
@@ -2671,7 +2660,6 @@ func file_gitserver_proto_init() {
 		}
 		file_gitserver_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*RepoCloneRequest); i {
-
 			case 0:
 				return &v.state
 			case 1:
@@ -2684,6 +2672,7 @@ func file_gitserver_proto_init() {
 		}
 		file_gitserver_proto_msgTypes[23].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*RepoCloneResponse); i {
+			case 0:
 				return &v.state
 			case 1:
 				return &v.sizeCache
@@ -2695,7 +2684,6 @@ func file_gitserver_proto_init() {
 		}
 		file_gitserver_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*ReposStatsRequest); i {
-
 			case 0:
 				return &v.state
 			case 1:
@@ -2731,7 +2719,6 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[27].Exporter = func(v interface{}, i int) interface{} {
-
 			switch v := v.(*CommitMatch_MatchedString); i {
 			case 0:
 				return &v.state
@@ -2756,7 +2743,6 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[29].Exporter = func(v interface{}, i int) interface{} {
-
 			switch v := v.(*CommitMatch_Location); i {
 			case 0:
 				return &v.state
@@ -2791,7 +2777,6 @@ func file_gitserver_proto_init() {
 			RawDescriptor: file_gitserver_proto_rawDesc,
 			NumEnums:      1,
 			NumMessages:   30,
-
 			NumExtensions: 0,
 			NumServices:   1,
 		},
