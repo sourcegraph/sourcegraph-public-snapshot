@@ -35,6 +35,21 @@
         <projectService id="sourcegraph.findService" serviceImplementation="com.sourcegraph.find.FindService"/>
         <postStartupActivity implementation="com.sourcegraph.telemetry.PostStartupActivity"/>
         <postStartupActivity implementation="com.sourcegraph.config.NotificationActivity"/>
+
+        <!-- Cody -->
+        <toolWindow
+            id="Cody"
+            icon="/icons/codyLogo.svg"
+            anchor="left"
+            secondary="false"
+            factoryClass="com.sourcegraph.cody.CodyToolWindowFactory"/>
+        <notificationGroup id="Cody Sourcegraph access" displayType="BALLOON"/>
+
+
+        <!-- Code completions -->
+        <applicationService serviceImplementation="com.sourcegraph.cody.completions.CodyCompletionsManager"/>
+        <editorFactoryListener implementation="com.sourcegraph.cody.completions.CodyEditorFactoryListener"/>
+
     </extensions>
 
     <actions>
@@ -91,6 +106,12 @@
             text="Log in to Sourcegraph"
             description="Log in to Sourcegraph"
             icon="/icons/sourcegraphLogo.svg">
+        </action>
+
+        <!-- Code completions -->
+        <action id="cody.acceptCompletion" class="com.sourcegraph.cody.completions.AcceptCodyCompletionAction">
+            <keyboard-shortcut first-keystroke="TAB" keymap="$default"/>
+            <override-text place="MainMenu" text="Accept Completion"/>
         </action>
 
         <group id="SourcegraphEditor" icon="/icons/sourcegraphLogo.svg" popup="true" text="Sourcegraph"
