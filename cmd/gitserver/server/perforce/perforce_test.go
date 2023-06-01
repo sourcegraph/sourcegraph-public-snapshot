@@ -148,11 +148,10 @@ func TestHeadCommitSHA(t *testing.T) {
 
 func TestNewMappableCommits(t *testing.T) {
 	ctx := context.Background()
-	logger := logtest.NoOp(t)
 
 	dir, allCommitMaps := setupTestRepo(t)
 
-	gotCommitMaps, err := newMappableCommits(ctx, logger, dir, "", "")
+	gotCommitMaps, err := newMappableCommits(ctx, dir, "", "")
 	require.NoError(t, err, "unexpected error in newMapppableCommits")
 
 	if diff := cmp.Diff(allCommitMaps, gotCommitMaps); diff != "" {
