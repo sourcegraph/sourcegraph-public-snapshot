@@ -109,12 +109,14 @@ export async function getAuthStatus(
         }
     }
     const currentUserID = await client.getCurrentUserId()
-    const siteVersion = await client.getSiteVersion()
+    // TODO Replace this with "await client.getSiteVersion()" once 5.1.0 is released
+    // const siteVersion = await client.getSiteVersion()
+    const siteVersion = '5.1.0'
     return {
         showInvalidAccessTokenError: isError(currentUserID),
         authenticated: !isError(currentUserID),
         hasVerifiedEmail: false,
         requiresVerifiedEmail: false,
-        onSupportedSiteVersion: isSiteVersionSupported(instanceVersion),
+        onSupportedSiteVersion: isSiteVersionSupported(siteVersion),
     }
 }

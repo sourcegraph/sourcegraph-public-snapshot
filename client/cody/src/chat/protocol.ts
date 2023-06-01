@@ -82,7 +82,6 @@ export function isSiteVersionSupported(version: string | Error): boolean {
     if (isInsiderBuild) {
         return true
     }
-
     const [major, minor] = version.split('.').map(x => parseInt(x, 10))
     if (isNaN(major) || isNaN(minor)) {
         return false

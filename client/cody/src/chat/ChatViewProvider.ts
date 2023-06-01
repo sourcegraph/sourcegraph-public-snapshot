@@ -279,7 +279,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     this.editor.controllers.inline.reply(highlightedDisplayText)
                 }
                 void this.onCompletionEnd()
-                this.publishEmbeddingsError()
             },
         })
 
@@ -336,7 +335,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.sendTranscript()
         void this.saveTranscriptToChatHistory()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', false)
-        this.publishEmbeddingsError()
+        this.logEmbeddingsSearchErrors()
     }
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion'): Promise<void> {
@@ -691,12 +690,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     /**
-     * Publish embedding connections or results error to webview if any
+     * Send embedding connections or results error to output
      */
-    private publishEmbeddingsError(): void {
+    private logEmbeddingsSearchErrors(): void {
         const searchErrors = this.codebaseContext.getEmbeddingSearchErrors()
-        if (searchErrors && !this.codebaseContext.checkEmbeddingsConnection()) {
-            this.sendErrorToWebview(searchErrors)
+        if (searchErrors) {
+            debug('ChatViewProvider:onLogEmbeddingsErrors', '', { verbose: searchErrors })
         }
     }
 
