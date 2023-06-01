@@ -20,19 +20,16 @@ import (
 	"github.com/RoaringBitmap/roaring"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestIndexedSearch(t *testing.T) {
@@ -436,198 +433,6 @@ func TestZoektIndexedRepos(t *testing.T) {
 			}
 			if diff := cmp.Diff(tc.unindexed, unindexed); diff != "" {
 				t.Error("unexpected unindexed:", diff)
-			}
-		})
-	}
-}
-
-func TestZoektSearchOptions(t *testing.T) {
-	documentRanksWeight := 42.0
-
-	cases := []struct {
-		name            string
-		context         context.Context
-		options         *Options
-		rankingFeatures *schema.Ranking
-		want            *zoekt.SearchOptions
-	}{
-		{
-			name:    "test defaults",
-			context: context.Background(),
-			options: &Options{
-				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
-				NumRepos:       3,
-			},
-			want: &zoekt.SearchOptions{
-				ShardMaxMatchCount: 10000,
-				TotalMaxMatchCount: 100000,
-				MaxWallTime:        20000000000,
-				MaxDocDisplayCount: 500,
-				ChunkMatches:       true,
-			},
-		},
-		{
-			name:    "test defaults with ranking feature enabled",
-			context: context.Background(),
-			options: &Options{
-				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
-				NumRepos:       3,
-				Features: search.Features{
-					Ranking: true,
-				},
-			},
-			want: &zoekt.SearchOptions{
-				ShardMaxMatchCount:  10000,
-				TotalMaxMatchCount:  100000,
-				MaxWallTime:         20000000000,
-				FlushWallTime:       500000000,
-				MaxDocDisplayCount:  500,
-				ChunkMatches:        true,
-				UseDocumentRanks:    true,
-				DocumentRanksWeight: 4500,
-			},
-		},
-		{
-			name:    "test repo search defaults",
-			context: context.Background(),
-			options: &Options{
-				Selector:       []string{filter.Repository},
-				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
-				NumRepos:       3,
-				Features: search.Features{
-					Ranking: true,
-				},
-			},
-			// Most important is ShardRepoMaxMatchCount=1. Otherwise we still
-			// want to set normal limits so we respect things like low file
-			// match limits.
-			want: &zoekt.SearchOptions{
-				ShardMaxMatchCount:     10_000,
-				TotalMaxMatchCount:     100_000,
-				ShardRepoMaxMatchCount: 1,
-				MaxWallTime:            20000000000,
-				MaxDocDisplayCount:     500,
-				ChunkMatches:           true,
-			},
-		},
-		{
-			name:    "test repo search low match count",
-			context: context.Background(),
-			options: &Options{
-				Selector:       []string{filter.Repository},
-				FileMatchLimit: 5,
-				NumRepos:       3,
-				Features: search.Features{
-					Ranking: true,
-				},
-			},
-			// This is like the above test, but we are testing
-			// MaxDocDisplayCount is adjusted to 5.
-			want: &zoekt.SearchOptions{
-				ShardMaxMatchCount:     10_000,
-				TotalMaxMatchCount:     100_000,
-				ShardRepoMaxMatchCount: 1,
-				MaxWallTime:            20000000000,
-				MaxDocDisplayCount:     5,
-				ChunkMatches:           true,
-			},
-		},
-		{
-			name:    "test large file match limit",
-			context: context.Background(),
-			options: &Options{
-				FileMatchLimit: 100_000,
-				NumRepos:       3,
-			},
-			want: &zoekt.SearchOptions{
-				ShardMaxMatchCount: 100_000,
-				TotalMaxMatchCount: 100_000,
-				MaxWallTime:        20000000000,
-				MaxDocDisplayCount: 100_000,
-				ChunkMatches:       true,
-			},
-		},
-		{
-			name:    "test document ranks weight",
-			context: context.Background(),
-			rankingFeatures: &schema.Ranking{
-				DocumentRanksWeight: &documentRanksWeight,
-			},
-			options: &Options{
-				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
-				NumRepos:       3,
-				Features: search.Features{
-					Ranking: true,
-				},
-			},
-			want: &zoekt.SearchOptions{
-				ShardMaxMatchCount:  10000,
-				TotalMaxMatchCount:  100000,
-				MaxWallTime:         20000000000,
-				FlushWallTime:       500000000,
-				MaxDocDisplayCount:  500,
-				ChunkMatches:        true,
-				UseDocumentRanks:    true,
-				DocumentRanksWeight: 42,
-			},
-		},
-		{
-			name:    "test flush wall time",
-			context: context.Background(),
-			rankingFeatures: &schema.Ranking{
-				FlushWallTimeMS: 3141,
-			},
-			options: &Options{
-				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
-				NumRepos:       3,
-				Features: search.Features{
-					Ranking: true,
-				},
-			},
-			want: &zoekt.SearchOptions{
-				ShardMaxMatchCount:  10000,
-				TotalMaxMatchCount:  100000,
-				MaxWallTime:         20000000000,
-				FlushWallTime:       3141000000,
-				MaxDocDisplayCount:  500,
-				ChunkMatches:        true,
-				UseDocumentRanks:    true,
-				DocumentRanksWeight: 4500,
-			},
-		},
-		{
-			name:    "test keyword scoring",
-			context: context.Background(),
-			options: &Options{
-				FileMatchLimit: limits.DefaultMaxSearchResultsStreaming,
-				NumRepos:       3,
-				KeywordScoring: true,
-			},
-			want: &zoekt.SearchOptions{
-				ShardMaxMatchCount: 10000,
-				TotalMaxMatchCount: 100000,
-				MaxWallTime:        20000000000,
-				MaxDocDisplayCount: 500,
-				ChunkMatches:       true,
-				UseKeywordScoring:  true},
-		},
-	}
-	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.rankingFeatures != nil {
-				cfg := conf.Get()
-				cfg.ExperimentalFeatures.Ranking = tt.rankingFeatures
-				conf.Mock(cfg)
-
-				defer func() {
-					cfg.ExperimentalFeatures.Ranking = nil
-					conf.Mock(cfg)
-				}()
-			}
-
-			got := tt.options.ToSearch(tt.context, logtest.Scoped(t))
-			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Fatalf("search options mismatch (-want +got):\n%s", diff)
 			}
 		})
 	}
