@@ -3,7 +3,6 @@ package gerrit
 import (
 	"encoding/json"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"net/url"
 	"time"
@@ -164,18 +163,6 @@ type Pagination struct {
 	// Either Skip or Page should be set. If Skip is non-zero, it takes precedence.
 	Page int
 	Skip int
-}
-
-const (
-	changeIDCharset = "abcdef0123456789"
-)
-
-func GenerateRandomChangeID() string {
-	changeID := "I"
-	for i := 1; i < 41; i++ {
-		changeID = changeID + string(changeIDCharset[rand.Intn(len(changeIDCharset))])
-	}
-	return changeID
 }
 
 type httpError struct {

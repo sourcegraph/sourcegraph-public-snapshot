@@ -2,9 +2,14 @@ package sources
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"net/url"
+	"strings"
 
 	gerritbatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/gerrit"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
@@ -95,31 +100,47 @@ func (s GerritSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 // CreateChangeset will create the Changeset on the source. If it already
 // exists, *Changeset will be populated and the return value will be true.
 func (s GerritSource) CreateChangeset(ctx context.Context, cs *Changeset) (bool, error) {
+	changeID := ConvertChangesetToGerritChangeID(*cs.Changeset)
+
 	// For Gerrit, the Change is created at `git push` time, so we just load it here to verify it
 	// was created successfully.
-	err := s.LoadChangeset(ctx, cs)
+	pr, err := s.client.GetChange(ctx, changeID)
 	if err != nil {
-		return false, err
-	}
-	return true, nil
-}
-
-// CreateDraftChangeset creates the given changeset on the code host in draft mode.
-func (s GerritSource) CreateDraftChangeset(ctx context.Context, cs *Changeset) (bool, error) {
-	// For Gerrit, the Change is created at `git push` time, so we just API to mark it as WIP.
-	// We assume here, that the change is already made through `git push`, and we are just
-	// setting it to WIP.
-	if err := s.client.SetWIP(ctx, cs.ExternalID); err != nil {
 		if errcode.IsNotFound(err) {
 			return false, ChangesetNotFoundError{Changeset: cs}
 		}
 		return false, errors.Wrap(err, "getting change")
 	}
 
-	if err := s.LoadChangeset(ctx, cs); err != nil {
-		return false, err
+	// The Changeset technically "exists" at this point because it gets created at push time,
+	// therefore exists would always return true. However, we send false here because otherwise we would always
+	// enqueue a ChangesetUpdate webhook event instead of the regular publish event.
+	return false, errors.Wrap(s.setChangesetMetadata(ctx, pr, cs), "setting Gerrit changeset metadata")
+}
+
+// CreateDraftChangeset creates the given changeset on the code host in draft mode.
+func (s GerritSource) CreateDraftChangeset(ctx context.Context, cs *Changeset) (bool, error) {
+	changeID := ConvertChangesetToGerritChangeID(*cs.Changeset)
+
+	// For Gerrit, the Change is created at `git push` time, so we just call the API to mark it as WIP.
+	if err := s.client.SetWIP(ctx, changeID); err != nil {
+		if errcode.IsNotFound(err) {
+			return false, ChangesetNotFoundError{Changeset: cs}
+		}
+		return false, errors.Wrap(err, "getting change")
 	}
-	return true, nil
+
+	pr, err := s.client.GetChange(ctx, changeID)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			return false, ChangesetNotFoundError{Changeset: cs}
+		}
+		return false, errors.Wrap(err, "getting change")
+	}
+	// The Changeset technically "exists" at this point because it gets created at push time,
+	// therefore exists would always return true. However, we send false here because otherwise we would always
+	// enqueue a ChangesetUpdate webhook event instead of the regular publish event.
+	return false, errors.Wrap(s.setChangesetMetadata(ctx, pr, cs), "setting Gerrit changeset metadata")
 }
 
 // UndraftChangeset will update the Changeset on the source to be not in draft mode anymore.
@@ -211,4 +232,19 @@ func (s GerritSource) annotateChange(ctx context.Context, change *gerrit.Change)
 		Reviewers:   *reviewers,
 		CodeHostURL: *s.client.GetURL(),
 	}, nil
+}
+
+// ConvertChangesetToGerritChangeID deterministically generates a Gerrit Change ID from a Changeset object.
+// We do this because Gerrit Changes are required at commit time.
+func ConvertChangesetToGerritChangeID(cs btypes.Changeset) string {
+	jsonData, err := json.Marshal(cs)
+	if err != nil {
+		panic(err)
+	}
+
+	hash := sha256.Sum256(jsonData)
+	hexString := hex.EncodeToString(hash[:])
+	changeID := hexString[:40]
+
+	return "I" + strings.ToLower(changeID)
 }

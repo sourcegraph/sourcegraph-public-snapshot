@@ -18,7 +18,7 @@ import (
 
 var (
 	testGerritProjectName = "testrepo"
-	testGerritChangeID    = "42"
+	testGerritChangeID    = "I467fc6636bb40b5bf33e7e20cefd2c5fa52dae63"
 	testProject           = gerrit.Project{ID: "testrepoid", Name: testGerritProjectName}
 )
 
@@ -143,9 +143,10 @@ func TestGerritSource_CreateChangeset(t *testing.T) {
 	t.Run("error getting pull request", func(t *testing.T) {
 		cs, _ := mockGerritChangeset()
 		s, client := mockGerritSource()
+		testChangeID := ConvertChangesetToGerritChangeID(*cs.Changeset)
 		want := errors.New("error")
 		client.GetChangeFunc.SetDefaultHook(func(ctx context.Context, changeID string) (*gerrit.Change, error) {
-			assert.Equal(t, changeID, testGerritChangeID)
+			assert.Equal(t, changeID, testChangeID)
 			return &gerrit.Change{}, want
 		})
 
@@ -158,8 +159,9 @@ func TestGerritSource_CreateChangeset(t *testing.T) {
 	t.Run("change not found", func(t *testing.T) {
 		cs, _ := mockGerritChangeset()
 		s, client := mockGerritSource()
+		testChangeID := ConvertChangesetToGerritChangeID(*cs.Changeset)
 		client.GetChangeFunc.SetDefaultHook(func(ctx context.Context, changeID string) (*gerrit.Change, error) {
-			assert.Equal(t, changeID, testGerritChangeID)
+			assert.Equal(t, changeID, testChangeID)
 			return &gerrit.Change{}, &notFoundError{}
 		})
 
@@ -177,15 +179,16 @@ func TestGerritSource_CreateChangeset(t *testing.T) {
 
 		change := mockGerritChange(&testProject)
 		client.GetURLFunc.SetDefaultReturn(&url.URL{})
+		testChangeID := ConvertChangesetToGerritChangeID(*cs.Changeset)
 		client.GetChangeFunc.SetDefaultHook(func(ctx context.Context, changeID string) (*gerrit.Change, error) {
-			assert.Equal(t, changeID, testGerritChangeID)
+			assert.Equal(t, changeID, testChangeID)
 			return change, nil
 		})
 		client.GetChangeReviewsFunc.SetDefaultReturn(&[]gerrit.Reviewer{}, nil)
 
 		b, err := s.CreateChangeset(ctx, cs)
 		assert.Nil(t, err)
-		assert.True(t, b)
+		assert.False(t, b)
 	})
 }
 
@@ -196,8 +199,9 @@ func TestGerritSource_CreateDraftChangeset(t *testing.T) {
 		cs, _ := mockGerritChangeset()
 		s, client := mockGerritSource()
 		want := errors.New("error")
+		testChangeID := ConvertChangesetToGerritChangeID(*cs.Changeset)
 		client.SetWIPFunc.SetDefaultHook(func(ctx context.Context, changeID string) error {
-			assert.Equal(t, changeID, testGerritChangeID)
+			assert.Equal(t, changeID, testChangeID)
 			return want
 		})
 
@@ -210,8 +214,9 @@ func TestGerritSource_CreateDraftChangeset(t *testing.T) {
 	t.Run("change not found", func(t *testing.T) {
 		cs, _ := mockGerritChangeset()
 		s, client := mockGerritSource()
+		testChangeID := ConvertChangesetToGerritChangeID(*cs.Changeset)
 		client.SetWIPFunc.SetDefaultHook(func(ctx context.Context, changeID string) error {
-			assert.Equal(t, changeID, testGerritChangeID)
+			assert.Equal(t, changeID, testChangeID)
 			return &notFoundError{}
 		})
 
@@ -227,14 +232,15 @@ func TestGerritSource_CreateDraftChangeset(t *testing.T) {
 		cs, _ := mockGerritChangeset()
 		s, client := mockGerritSource()
 		want := errors.New("error")
+		testChangeID := ConvertChangesetToGerritChangeID(*cs.Changeset)
 
 		client.GetURLFunc.SetDefaultReturn(&url.URL{})
 		client.SetWIPFunc.SetDefaultHook(func(ctx context.Context, changeID string) error {
-			assert.Equal(t, changeID, testGerritChangeID)
+			assert.Equal(t, changeID, testChangeID)
 			return nil
 		})
 		client.GetChangeFunc.SetDefaultHook(func(ctx context.Context, changeID string) (*gerrit.Change, error) {
-			assert.Equal(t, changeID, testGerritChangeID)
+			assert.Equal(t, changeID, testChangeID)
 			return &gerrit.Change{}, want
 		})
 		client.GetChangeReviewsFunc.SetDefaultReturn(&[]gerrit.Reviewer{}, nil)
@@ -248,22 +254,23 @@ func TestGerritSource_CreateDraftChangeset(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		cs, _ := mockGerritChangeset()
 		s, client := mockGerritSource()
+		testChangeID := ConvertChangesetToGerritChangeID(*cs.Changeset)
 
 		change := mockGerritChange(&testProject)
 		client.GetURLFunc.SetDefaultReturn(&url.URL{})
 		client.SetWIPFunc.SetDefaultHook(func(ctx context.Context, changeID string) error {
-			assert.Equal(t, changeID, testGerritChangeID)
+			assert.Equal(t, changeID, testChangeID)
 			return nil
 		})
 		client.GetChangeFunc.SetDefaultHook(func(ctx context.Context, changeID string) (*gerrit.Change, error) {
-			assert.Equal(t, changeID, testGerritChangeID)
+			assert.Equal(t, changeID, testChangeID)
 			return change, nil
 		})
 		client.GetChangeReviewsFunc.SetDefaultReturn(&[]gerrit.Reviewer{}, nil)
 
 		b, err := s.CreateDraftChangeset(ctx, cs)
 		assert.Nil(t, err)
-		assert.True(t, b)
+		assert.False(t, b)
 	})
 }
 
@@ -495,15 +502,15 @@ func assertGerritChangesetMatchesPullRequest(t *testing.T, cs *Changeset, pr *ge
 func mockGerritChangeset() (*Changeset, *types.Repo) {
 	repo := &types.Repo{Metadata: &testProject}
 	cs := &Changeset{
-		Title: "title",
-		Body:  "description",
-		Changeset: &btypes.Changeset{
-			ExternalID: testPRID,
-		},
+		Title:      "title",
+		Body:       "description",
+		Changeset:  &btypes.Changeset{},
 		RemoteRepo: repo,
 		TargetRepo: repo,
 		BaseRef:    "refs/heads/targetbranch",
 	}
+
+	cs.Changeset.ExternalID = ConvertChangesetToGerritChangeID(*cs.Changeset)
 
 	return cs, repo
 }
@@ -512,7 +519,7 @@ func mockGerritChangeset() (*Changeset, *types.Repo) {
 // returned from Bitbucket Cloud for a non-forked changeset.
 func mockGerritChange(project *gerrit.Project) *gerrit.Change {
 	return &gerrit.Change{
-		ChangeID: "42",
+		ChangeID: testGerritChangeID,
 		Project:  project.Name,
 	}
 }
