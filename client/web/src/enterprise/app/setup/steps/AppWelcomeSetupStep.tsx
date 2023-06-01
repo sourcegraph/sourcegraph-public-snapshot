@@ -18,15 +18,7 @@ export const AppWelcomeSetupStep: FC<StepComponentProps> = ({ className }) => {
                 <div className={styles.description}>
                     <H1 className={styles.descriptionHeading}>Welcome</H1>
                     <Text className={styles.descriptionText}>
-                        The Sourcegraph app now includes our AI coding assistant <b>Cody</b>, which helps you read,
-                        write, and understand code 10x faster.
-                    </Text>
-
-                    <Text className={styles.descriptionFooter}>
-                        <Link to="https://docs.sourcegraph.com/cody/quickstart" rel="noopener" target="_blank">
-                            Learn more
-                        </Link>{' '}
-                        about how Cody works.
+                        Cody is an AI coding assistant that helps you read, write, and understand code 10x faster.
                     </Text>
                 </div>
 
@@ -53,7 +45,12 @@ export const AppWelcomeSetupStep: FC<StepComponentProps> = ({ className }) => {
                         </div>
 
                         <Text className={styles.actionsFooter}>
-                            By signing in, you’re connecting Cody to your app and agreeing to{' '}
+                            <Text>
+                                Cody will send your code to Sourcegraph servers and our LLM provider, but we won’t
+                                retain your code and we won’t use it to train Cody either.
+                            </Text>
+                            By signing in, you’re connecting Cody to your app and agreeing to Sourcegraph’s Cody Usage
+                            Privacy Notice.{' '}
                             <Link
                                 to="https://about.sourcegraph.com/terms/cody-notice"
                                 target="_blank"
