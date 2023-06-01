@@ -46,8 +46,12 @@ class Range {
         if (typeof startLine !== 'number' && typeof startCharacter !== 'number') {
             this.start = startLine
             this.end = startCharacter
-        } else if (typeof startLine === 'number' && typeof startCharacter === 'number' &&
-	           typeof endLine === 'number' && typeof endCharacter === 'number') {
+        } else if (
+            typeof startLine === 'number' &&
+            typeof startCharacter === 'number' &&
+            typeof endLine === 'number' &&
+            typeof endCharacter === 'number'
+        ) {
             this.start = new Position(startLine, startCharacter)
             this.end = new Position(endLine, endCharacter)
         } else {
@@ -59,16 +63,16 @@ class Range {
         return start.isEqual(this.start) && end.isEqual(this.end) ? this : new Range(start, end)
     }
     public get startLine(): number {
-	return this.start.line
+        return this.start.line
     }
     public get startCharacter(): number {
-	return this.start.character
+        return this.start.character
     }
     public get endLine(): number {
-	return this.end.line
+        return this.end.line
     }
     public get endCharacter(): number {
-	return this.end.character
+        return this.end.character
     }
 }
 

@@ -2,6 +2,7 @@ import * as vscode from 'vscode'
 
 import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 
+import { computeDiff } from './diff'
 import { FixupDecorator } from './FixupDecorator'
 import { FixupDocumentEditObserver } from './FixupDocumentEditObserver'
 import { FixupFile } from './FixupFile'
@@ -10,7 +11,6 @@ import { FixupScheduler } from './FixupScheduler'
 import { FixupTask } from './FixupTask'
 import { FixupFileCollection, FixupIdleTaskRunner, FixupTextChanged } from './roles'
 import { TaskViewProvider, FixupTaskTreeItem } from './TaskViewProvider'
-import { computeDiff } from './diff'
 import { CodyTaskState } from './utils'
 
 type taskID = string

@@ -1,6 +1,7 @@
 import assert from 'assert'
 
 import { Position, Range } from 'vscode'
+
 import { updateRange } from './tracked-range'
 
 // Creates a position.
