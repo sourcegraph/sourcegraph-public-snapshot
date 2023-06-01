@@ -10,12 +10,12 @@ import (
 	"path"
 	"syscall"
 
-	"github.com/opentracing/opentracing-go/ext"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/internal/cacert"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot" //nolint:staticcheck // OT is deprecated
+	"github.com/sourcegraph/sourcegraph/internal/trace" //nolint:staticcheck // OT is deprecated
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // UnsetExitStatus is a sentinel value for an unknown/unset exit status.
@@ -31,17 +31,15 @@ func RunCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error)
 	if RunCommandMock != nil {
 		return RunCommandMock(ctx, cmd.Unwrap())
 	}
-	span, _ := ot.StartSpanFromContext(ctx, "runCommand") //nolint:staticcheck // OT is deprecated
-	span.SetTag("path", cmd.Unwrap().Path)
-	span.SetTag("args", cmd.Unwrap().Args)
-	span.SetTag("dir", cmd.Unwrap().Dir)
+	tr, _ := trace.New(ctx, "gitserver", "runCommand",
+		attribute.String("path", cmd.Unwrap().Path),
+		attribute.StringSlice("args", cmd.Unwrap().Args),
+		attribute.String("dir", cmd.Unwrap().Dir))
 	defer func() {
 		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-			span.SetTag("exitCode", exitCode)
+			tr.SetAttributes(attribute.Int("exitCode", exitCode))
 		}
-		span.Finish()
+		tr.FinishWithErr(&err)
 	}()
 
 	err = cmd.Run()

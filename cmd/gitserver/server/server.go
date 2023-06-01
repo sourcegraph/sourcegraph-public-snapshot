@@ -25,8 +25,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/opentracing/opentracing-go/ext"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel/attribute"
@@ -59,7 +57,6 @@ import (
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
@@ -105,18 +102,16 @@ func init() {
 // allow it to gracefully shutdown. All clients of this function should pass in a
 // command *without* a context.
 func runCommandGraceful(ctx context.Context, logger log.Logger, cmd wrexec.Cmder) (exitCode int, err error) {
-	span, _ := ot.StartSpanFromContext(ctx, "runCommandGraceful") //nolint:staticcheck // OT is deprecated
 	c := cmd.Unwrap()
-	span.SetTag("path", c.Path)
-	span.SetTag("args", c.Args)
-	span.SetTag("dir", c.Dir)
+	tr, ctx := trace.New(ctx, "gitserver", "runCommandGraceful",
+		attribute.String("path", c.Path),
+		attribute.StringSlice("args", c.Args),
+		attribute.String("dir", c.Dir))
 	defer func() {
 		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-			span.SetTag("exitCode", exitCode)
+			tr.SetAttributes(attribute.Int("exitCode", exitCode))
 		}
-		span.Finish()
+		tr.FinishWithErr(&err)
 	}()
 
 	exitCode = common.UnsetExitStatus
@@ -529,12 +524,13 @@ func (s *Server) Handler() http.Handler {
 		RevParse:      gitAdapter.RevParse,
 		GetObjectType: gitAdapter.GetObjectType,
 	}
-	getObjectFunc := gitdomain.GetObjectFunc(func(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
+	getObjectFunc := gitdomain.GetObjectFunc(func(ctx context.Context, repo api.RepoName, objectName string) (_ *gitdomain.GitObject, err error) {
 		// Tracing is server concern, so add it here. Once generics lands we should be
 		// able to create some simple wrappers
-		span, ctx := ot.StartSpanFromContext(ctx, "Git: GetObject") //nolint:staticcheck // OT is deprecated
-		span.SetTag("objectName", objectName)
-		defer span.Finish()
+		tr, ctx := trace.New(ctx, "git", "GetObject",
+			attribute.String("objectName", objectName))
+		defer tr.FinishWithErr(&err)
+
 		return getObjectService.GetObject(ctx, repo, objectName)
 	})
 
@@ -2557,10 +2553,10 @@ func honeySampleRate(cmd string, actor *actor.Actor) uint {
 
 var headBranchPattern = lazyregexp.New(`HEAD branch: (.+?)\n`)
 
-func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec string) error {
-	span, ctx := ot.StartSpanFromContext(ctx, "Server.doRepoUpdate") //nolint:staticcheck // OT is deprecated
-	span.SetTag("repo", repo)
-	defer span.Finish()
+func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec string) (err error) {
+	tr, ctx := trace.New(ctx, "server", "doRepoUpdate",
+		attribute.String("repo", string(repo)))
+	defer tr.FinishWithErr(&err)
 
 	s.repoUpdateLocksMu.Lock()
 	l, ok := s.repoUpdateLocks[repo]
@@ -2579,7 +2575,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 	// close when its done. We can return when either done is closed or our
 	// deadline has passed.
 	done := make(chan struct{})
-	err := errors.New("another operation is already in progress")
+	err = errors.New("another operation is already in progress")
 	go func() {
 		defer close(done)
 		once.Do(func() {
@@ -2612,7 +2608,6 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 	case <-done:
 		return errors.Wrapf(err, "repo %s:", repo)
 	case <-ctx.Done():
-		span.LogFields(otlog.String("event", "context canceled"))
 		return ctx.Err()
 	}
 }
