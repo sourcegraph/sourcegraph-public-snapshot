@@ -2,10 +2,7 @@ package command_test
 
 import (
 	"context"
-	"io"
-	"net/http"
 	"os"
-	"strings"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
@@ -18,13 +15,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/kubernetes/fake"
-	"k8s.io/client-go/kubernetes/scheme"
-	"k8s.io/client-go/rest"
-	fakerest "k8s.io/client-go/rest/fake"
 	k8stesting "k8s.io/client-go/testing"
 	"k8s.io/utils/pointer"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -32,8 +27,9 @@ func TestKubernetesCommand_CreateJob(t *testing.T) {
 	clientset := fake.NewSimpleClientset()
 
 	cmd := &command.KubernetesCommand{
-		Logger:    logtest.Scoped(t),
-		Clientset: clientset,
+		Logger:     logtest.Scoped(t),
+		Clientset:  clientset,
+		Operations: command.NewOperations(&observation.TestContext),
 	}
 
 	job := &batchv1.Job{}
@@ -51,8 +47,9 @@ func TestKubernetesCommand_DeleteJob(t *testing.T) {
 	clientset := fake.NewSimpleClientset()
 
 	cmd := &command.KubernetesCommand{
-		Logger:    logtest.Scoped(t),
-		Clientset: clientset,
+		Logger:     logtest.Scoped(t),
+		Clientset:  clientset,
+		Operations: command.NewOperations(&observation.TestContext),
 	}
 
 	job := &batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: "my-job"}}
@@ -73,8 +70,8 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 	tests := []struct {
 		name           string
 		pod            *corev1.Pod
-		mockFunc       func(clientset *fake.Clientset, logger *command.MockLogger, logEntry *command.MockLogEntry)
-		mockAssertFunc func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger, logEntry *command.MockLogEntry)
+		mockFunc       func(clientset *fake.Clientset, logEntry *command.MockLogEntry)
+		mockAssertFunc func(t *testing.T, actions []k8stesting.Action, logEntry *command.MockLogEntry)
 		expectedErr    error
 	}{
 		{
@@ -96,7 +93,7 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 					},
 				},
 			},
-			mockFunc: func(clientset *fake.Clientset, logger *command.MockLogger, logEntry *command.MockLogEntry) {
+			mockFunc: func(clientset *fake.Clientset, logEntry *command.MockLogEntry) {
 				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
 					return true, &corev1.PodList{Items: []corev1.Pod{
 						{ObjectMeta: metav1.ObjectMeta{
@@ -106,24 +103,18 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 					}, nil
 				})
 			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger, logEntry *command.MockLogEntry) {
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logEntry *command.MockLogEntry) {
 				require.Len(t, actions, 1)
 				assert.Equal(t, "get", actions[0].GetVerb())
 				assert.Equal(t, "pods", actions[0].GetResource().Resource)
 				assert.Equal(t, "log", actions[0].GetSubresource())
 				assert.Equal(t, "sg-executor-job-container", actions[0].(k8stesting.GenericAction).GetValue().(*corev1.PodLogOptions).Container)
 
-				require.Len(t, logger.LogEntryFunc.History(), 1)
-				assert.Equal(t, "my-key", logger.LogEntryFunc.History()[0].Arg0)
-				assert.Equal(t, []string{"echo", "hello"}, logger.LogEntryFunc.History()[0].Arg1)
-
 				require.Len(t, logEntry.WriteFunc.History(), 1)
 				assert.Equal(t, "stdout: fake logs\n", string(logEntry.WriteFunc.History()[0].Arg0))
 
 				require.Len(t, logEntry.FinalizeFunc.History(), 1)
 				assert.Equal(t, 0, logEntry.FinalizeFunc.History()[0].Arg0)
-
-				require.Len(t, logEntry.CloseFunc.History(), 1)
 			},
 		},
 		{
@@ -136,17 +127,13 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 					Phase: corev1.PodFailed,
 				},
 			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger, logEntry *command.MockLogEntry) {
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logEntry *command.MockLogEntry) {
 				require.Len(t, actions, 0)
-
-				require.Len(t, logger.LogEntryFunc.History(), 1)
 
 				require.Len(t, logEntry.WriteFunc.History(), 0)
 
 				require.Len(t, logEntry.FinalizeFunc.History(), 1)
 				assert.Equal(t, 1, logEntry.FinalizeFunc.History()[0].Arg0)
-
-				require.Len(t, logEntry.CloseFunc.History(), 1)
 			},
 		},
 		{
@@ -168,7 +155,7 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 					},
 				},
 			},
-			mockFunc: func(clientset *fake.Clientset, logger *command.MockLogger, logEntry *command.MockLogEntry) {
+			mockFunc: func(clientset *fake.Clientset, logEntry *command.MockLogEntry) {
 				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
 					return true, &corev1.PodList{Items: []corev1.Pod{
 						{ObjectMeta: metav1.ObjectMeta{
@@ -178,17 +165,13 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 					}, nil
 				})
 			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger, logEntry *command.MockLogEntry) {
+			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logEntry *command.MockLogEntry) {
 				require.Len(t, actions, 1)
-
-				require.Len(t, logger.LogEntryFunc.History(), 1)
 
 				require.Len(t, logEntry.WriteFunc.History(), 1)
 
 				require.Len(t, logEntry.FinalizeFunc.History(), 1)
 				assert.Equal(t, 128, logEntry.FinalizeFunc.History()[0].Arg0)
-
-				require.Len(t, logEntry.CloseFunc.History(), 1)
 			},
 		},
 	}
@@ -200,12 +183,13 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 			logger.LogEntryFunc.PushReturn(logEntry)
 
 			if test.mockFunc != nil {
-				test.mockFunc(clientset, logger, logEntry)
+				test.mockFunc(clientset, logEntry)
 			}
 
 			cmd := &command.KubernetesCommand{
-				Logger:    logtest.Scoped(t),
-				Clientset: clientset,
+				Logger:     logtest.Scoped(t),
+				Clientset:  clientset,
+				Operations: command.NewOperations(&observation.TestContext),
 			}
 
 			err := cmd.ReadLogs(
@@ -213,9 +197,7 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 				"my-namespace",
 				test.pod,
 				command.KubernetesJobContainerName,
-				logger,
-				"my-key",
-				[]string{"echo", "hello"},
+				logEntry,
 			)
 			if test.expectedErr != nil {
 				require.Error(t, err)
@@ -225,27 +207,13 @@ func TestKubernetesCommand_ReadLogs(t *testing.T) {
 			}
 
 			if test.mockAssertFunc != nil {
-				test.mockAssertFunc(t, clientset.Actions(), logger, logEntry)
+				test.mockAssertFunc(t, clientset.Actions(), logEntry)
 			}
 		})
 	}
 }
 
-func fakeRequest(status int, body string) *rest.Request {
-	fakeClient := &fakerest.RESTClient{
-		Client: fakerest.CreateHTTPClient(func(request *http.Request) (*http.Response, error) {
-			resp := &http.Response{
-				StatusCode: status,
-				Body:       io.NopCloser(strings.NewReader(body)),
-			}
-			return resp, nil
-		}),
-		NegotiatedSerializer: scheme.Codecs.WithoutConversion(),
-	}
-	return fakeClient.Request()
-}
-
-func TestKubernetesCommand_FindPod(t *testing.T) {
+func TestKubernetesCommand_WaitForPodToSucceed(t *testing.T) {
 	tests := []struct {
 		name           string
 		mockFunc       func(clientset *fake.Clientset)
@@ -253,144 +221,82 @@ func TestKubernetesCommand_FindPod(t *testing.T) {
 		expectedErr    error
 	}{
 		{
-			name: "Pod found",
-			mockFunc: func(clientset *fake.Clientset) {
-				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, &corev1.PodList{Items: []corev1.Pod{
-						{ObjectMeta: metav1.ObjectMeta{
-							Name:   "my-pod",
-							Labels: map[string]string{"job-name": "my-pod"},
-						}}},
-					}, nil
-				})
-			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
-				require.Len(t, actions, 1)
-
-				assert.Equal(t, "list", actions[0].GetVerb())
-				assert.Equal(t, "pods", actions[0].GetResource().Resource)
-				assert.Equal(t, "job-name=my-pod", actions[0].(k8stesting.ListAction).GetListRestrictions().Labels.String())
-			},
-		},
-		{
-			name: "Pod not found",
-			mockFunc: func(clientset *fake.Clientset) {
-				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, &corev1.PodList{}, nil
-				})
-			},
-			expectedErr: errors.New("no pods found for job my-pod"),
-		},
-		{
-			name: "Error occurred",
-			mockFunc: func(clientset *fake.Clientset) {
-				clientset.PrependReactor("list", "pods", func(action k8stesting.Action) (handled bool, ret runtime.Object, err error) {
-					return true, nil, errors.New("failed")
-				})
-			},
-			expectedErr: errors.New("finding pod: failed"),
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			clientset := fake.NewSimpleClientset()
-
-			if test.mockFunc != nil {
-				test.mockFunc(clientset)
-			}
-
-			cmd := &command.KubernetesCommand{
-				Logger:    logtest.Scoped(t),
-				Clientset: clientset,
-			}
-
-			_, err := cmd.FindPod(context.Background(), "my-namespace", "my-pod")
-			if test.expectedErr != nil {
-				require.Error(t, err)
-				assert.EqualError(t, err, test.expectedErr.Error())
-			} else {
-				require.NoError(t, err)
-			}
-
-			if test.mockAssertFunc != nil {
-				test.mockAssertFunc(t, clientset.Actions())
-			}
-		})
-	}
-}
-
-func TestKubernetesCommand_WaitForJobToComplete(t *testing.T) {
-	tests := []struct {
-		name           string
-		mockFunc       func(clientset *fake.Clientset)
-		mockAssertFunc func(t *testing.T, actions []k8stesting.Action)
-		expectedErr    error
-	}{
-		{
-			name: "Job succeeded",
+			name: "Pod succeeded",
 			mockFunc: func(clientset *fake.Clientset) {
 				watcher := watch.NewFakeWithChanSize(10, false)
-				watcher.Add(&batchv1.Job{
+				watcher.Add(&corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "my-job",
+						Name: "my-pod",
+						Labels: map[string]string{
+							"job-name": "my-job",
+						},
 					},
-					Status: batchv1.JobStatus{
-						Succeeded: 1,
+					Status: corev1.PodStatus{
+						Phase: corev1.PodSucceeded,
 					},
 				})
-				clientset.PrependWatchReactor("jobs", k8stesting.DefaultWatchReactor(watcher, nil))
+				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(watcher, nil))
 			},
 			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
 				require.Len(t, actions, 1)
 				assert.Equal(t, "watch", actions[0].GetVerb())
-				assert.Equal(t, "jobs", actions[0].GetResource().Resource)
-				assert.Equal(t, "metadata.name=my-job", actions[0].(k8stesting.WatchActionImpl).GetWatchRestrictions().Fields.String())
+				assert.Equal(t, "pods", actions[0].GetResource().Resource)
+				assert.Equal(t, "job-name=my-job", actions[0].(k8stesting.WatchActionImpl).GetWatchRestrictions().Labels.String())
 			},
 		},
 		{
-			name: "Job failed",
+			name: "Pod failed",
 			mockFunc: func(clientset *fake.Clientset) {
 				watcher := watch.NewFakeWithChanSize(10, false)
-				watcher.Add(&batchv1.Job{
+				watcher.Add(&corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "my-job",
+						Name: "my-pod",
+						Labels: map[string]string{
+							"job-name": "my-job",
+						},
 					},
-					Status: batchv1.JobStatus{
-						Failed: 1,
+					Status: corev1.PodStatus{
+						Phase: corev1.PodFailed,
 					},
 				})
-				clientset.PrependWatchReactor("jobs", k8stesting.DefaultWatchReactor(watcher, nil))
+				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(watcher, nil))
 			},
-			expectedErr: errors.New("job failed"),
+			expectedErr: errors.New("pod failed"),
 		},
 		{
 			name: "Error occurred",
 			mockFunc: func(clientset *fake.Clientset) {
-				clientset.PrependWatchReactor("jobs", k8stesting.DefaultWatchReactor(nil, errors.New("failed")))
+				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(nil, errors.New("failed")))
 			},
-			expectedErr: errors.New("watching job: failed"),
+			expectedErr: errors.New("watching pod: failed"),
 		},
 		{
-			name: "Job succeeded second try",
+			name: "Pod succeeded second try",
 			mockFunc: func(clientset *fake.Clientset) {
 				watcher := watch.NewFakeWithChanSize(10, false)
-				watcher.Add(&batchv1.Job{
+				watcher.Add(&corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "my-job",
+						Name: "my-pod",
+						Labels: map[string]string{
+							"job-name": "my-job",
+						},
 					},
-					Status: batchv1.JobStatus{
-						Active: 1,
+					Status: corev1.PodStatus{
+						Phase: corev1.PodRunning,
 					},
 				})
-				watcher.Add(&batchv1.Job{
+				watcher.Add(&corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
-						Name: "my-job",
+						Name: "my-pod",
+						Labels: map[string]string{
+							"job-name": "my-job",
+						},
 					},
-					Status: batchv1.JobStatus{
-						Succeeded: 1,
+					Status: corev1.PodStatus{
+						Phase: corev1.PodSucceeded,
 					},
 				})
-				clientset.PrependWatchReactor("jobs", k8stesting.DefaultWatchReactor(watcher, nil))
+				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(watcher, nil))
 			},
 			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action) {
 				require.Len(t, actions, 1)
@@ -406,11 +312,12 @@ func TestKubernetesCommand_WaitForJobToComplete(t *testing.T) {
 			}
 
 			cmd := &command.KubernetesCommand{
-				Logger:    logtest.Scoped(t),
-				Clientset: clientset,
+				Logger:     logtest.Scoped(t),
+				Clientset:  clientset,
+				Operations: command.NewOperations(&observation.TestContext),
 			}
 
-			err := cmd.WaitForJobToComplete(
+			pod, err := cmd.WaitForPodToSucceed(
 				context.Background(),
 				"my-namespace",
 				"my-job",
@@ -420,6 +327,7 @@ func TestKubernetesCommand_WaitForJobToComplete(t *testing.T) {
 				assert.EqualError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
+				require.NotNil(t, pod)
 			}
 
 			if test.mockAssertFunc != nil {

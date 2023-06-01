@@ -45,6 +45,8 @@ type Config struct {
 		ProjectID string
 		Dataset   string
 		Table     string
+
+		EventBufferSize int
 	}
 
 	Trace TraceConfig
@@ -57,7 +59,7 @@ type TraceConfig struct {
 
 func (c *Config) Load() {
 	c.InsecureDev = env.InsecureDev
-	c.Address = c.Get("CODY_GATEWAY_ADDR", ":9992", "Address to serve LLM proxy on.")
+	c.Address = c.Get("CODY_GATEWAY_ADDR", ":9992", "Address to serve Cody Gateway on.")
 	c.DiagnosticsSecret = c.GetOptional("CODY_GATEWAY_DIAGNOSTICS_SECRET", "Secret for accessing diagnostics - "+
 		"should be used as 'Authorization: Bearer $secret' header when accessing diagnostics endpoints.")
 
@@ -73,12 +75,13 @@ func (c *Config) Load() {
 	c.OpenAI.OrgID = c.GetOptional("CODY_GATEWAY_OPENAI_ORG_ID", "The OpenAI organization to count billing towards. Setting this ensures we always use the correct negotiated terms.")
 	c.OpenAI.AllowedModels = splitMaybe(c.Get("CODY_GATEWAY_OPENAI_ALLOWED_MODELS", "gpt-4,gpt-3.5-turbo", "The Anthropic access token to be used."))
 
-	c.AllowAnonymous = c.GetBool("CODY_GATEWAY_ALLOW_ANONYMOUS", "false", "Allow anonymous access to LLM proxy.")
+	c.AllowAnonymous = c.GetBool("CODY_GATEWAY_ALLOW_ANONYMOUS", "false", "Allow anonymous access to Cody Gateway.")
 	c.SourcesSyncInterval = c.GetInterval("CODY_GATEWAY_SOURCES_SYNC_INTERVAL", "2m", "The interval at which to sync actor sources.")
 
 	c.BigQuery.ProjectID = c.Get("CODY_GATEWAY_BIGQUERY_PROJECT_ID", os.Getenv("GOOGLE_CLOUD_PROJECT"), "The project ID for the BigQuery events.")
 	c.BigQuery.Dataset = c.Get("CODY_GATEWAY_BIGQUERY_DATASET", "CODY_GATEWAY", "The dataset for the BigQuery events.")
 	c.BigQuery.Table = c.Get("CODY_GATEWAY_BIGQUERY_TABLE", "events", "The table for the BigQuery events.")
+	c.BigQuery.EventBufferSize = c.GetInt("CODY_GATEWAY_BIGQUERY_EVENT_BUFFER_SIZE", "100", "The number of events allowed to buffer when submitting BigQuery events - set to 0 to disable.")
 
 	c.Trace.Policy = policy.TracePolicy(c.Get("CODY_GATEWAY_TRACE_POLICY", "all", "Trace policy, one of 'all', 'selective', 'none'."))
 	c.Trace.GCPProjectID = c.Get("CODY_GATEWAY_TRACE_GCP_PROJECT_ID", os.Getenv("GOOGLE_CLOUD_PROJECT"), "Google Cloud Traces project ID.")

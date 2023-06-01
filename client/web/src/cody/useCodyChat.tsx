@@ -116,6 +116,7 @@ export const useCodyChat = ({
         },
         scope: initialScope,
         onEvent,
+        web: true,
     })
 
     const loadTranscriptFromHistory = useCallback(

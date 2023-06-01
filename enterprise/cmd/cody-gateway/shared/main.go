@@ -3,6 +3,7 @@ package shared
 import (
 	"context"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/go-redsync/redsync/v4"
@@ -34,7 +35,7 @@ import (
 
 func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFunc, config *Config) error {
 	// Enable tracing, at this point tracing wouldn't have been enabled yet because
-	// we run LLM-proxy without conf which means Sourcegraph tracing is not enabled.
+	// we run Cody Gateway without conf which means Sourcegraph tracing is not enabled.
 	shutdownTracing, err := maybeEnableTracing(ctx,
 		obctx.Logger.Scoped("tracing", "tracing configuration"),
 		config.Trace)
@@ -47,10 +48,24 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	if config.BigQuery.ProjectID != "" {
 		eventLogger, err = events.NewBigQueryLogger(config.BigQuery.ProjectID, config.BigQuery.Dataset, config.BigQuery.Table)
 		if err != nil {
-			return errors.Wrap(err, "create event logger")
+			return errors.Wrap(err, "create BigQuery event logger")
+		}
+
+		// If a buffer is configured, wrap in events.BufferedLogger
+		if config.BigQuery.EventBufferSize > 0 {
+			eventLogger = events.NewBufferedLogger(obctx.Logger, eventLogger, config.BigQuery.EventBufferSize)
 		}
 	} else {
 		eventLogger = events.NewStdoutLogger(obctx.Logger)
+
+		// Useful for testing event logging in a way that has latency that is
+		// somewhat similar to BigQuery.
+		if os.Getenv("CODY_GATEWAY_BUFFERED_LAGGY_EVENT_LOGGING_FUN_TIMES_MODE") == "true" {
+			eventLogger = events.NewBufferedLogger(
+				obctx.Logger,
+				events.NewDelayedLogger(eventLogger),
+				config.BigQuery.EventBufferSize)
+		}
 	}
 
 	// Supported actor/auth sources
@@ -95,7 +110,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	handler = instrumentation.HTTPMiddleware("cody-gateway", handler, otelhttpOpts...)
 
 	// Collect request client for downstream handlers. Outside of dev, we always set up
-	// Cloudflare in from of LLM-proxy. This comes first.
+	// Cloudflare in from of Cody Gateway. This comes first.
 	hasCloudflare := !config.InsecureDev
 	handler = requestclient.ExternalHTTPMiddleware(handler, hasCloudflare)
 
@@ -125,11 +140,17 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	ready()
 	obctx.Logger.Info("service ready", log.String("address", config.Address))
 
-	// Block until done
-	goroutine.MonitorBackgroundRoutines(ctx,
+	// Collect background routines
+	backgroundRoutines := []goroutine.BackgroundRoutine{
 		server,
 		sources.Worker(obctx, sourceWorkerMutex, config.SourcesSyncInterval),
-	)
+	}
+	if w, ok := eventLogger.(goroutine.BackgroundRoutine); ok {
+		// eventLogger is events.BufferedLogger
+		backgroundRoutines = append(backgroundRoutines, w)
+	}
+	// Block until done
+	goroutine.MonitorBackgroundRoutines(ctx, backgroundRoutines...)
 
 	return nil
 }

@@ -1865,6 +1865,22 @@ CREATE SEQUENCE codeintel_ranking_exports_id_seq
 
 ALTER SEQUENCE codeintel_ranking_exports_id_seq OWNED BY codeintel_ranking_exports.id;
 
+CREATE TABLE codeintel_ranking_graph_keys (
+    id integer NOT NULL,
+    graph_key text NOT NULL,
+    created_at timestamp with time zone DEFAULT now()
+);
+
+CREATE SEQUENCE codeintel_ranking_graph_keys_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE codeintel_ranking_graph_keys_id_seq OWNED BY codeintel_ranking_graph_keys.id;
+
 CREATE TABLE codeintel_ranking_path_counts_inputs (
     id bigint NOT NULL,
     count integer NOT NULL,
@@ -3895,20 +3911,14 @@ CREATE TABLE product_subscriptions (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     archived_at timestamp with time zone,
     account_number text,
-    llm_proxy_enabled boolean DEFAULT false NOT NULL,
-    llm_proxy_chat_rate_limit integer,
-    llm_proxy_chat_rate_interval_seconds integer,
-    llm_proxy_chat_rate_limit_allowed_models text[],
-    llm_proxy_code_rate_limit integer,
-    llm_proxy_code_rate_interval_seconds integer,
-    llm_proxy_code_rate_limit_allowed_models text[]
+    cody_gateway_enabled boolean DEFAULT false NOT NULL,
+    cody_gateway_chat_rate_limit integer,
+    cody_gateway_chat_rate_interval_seconds integer,
+    cody_gateway_chat_rate_limit_allowed_models text[],
+    cody_gateway_code_rate_limit integer,
+    cody_gateway_code_rate_interval_seconds integer,
+    cody_gateway_code_rate_limit_allowed_models text[]
 );
-
-COMMENT ON COLUMN product_subscriptions.llm_proxy_enabled IS 'Whether or not this subscription has access to LLM-proxy';
-
-COMMENT ON COLUMN product_subscriptions.llm_proxy_chat_rate_limit IS 'Custom requests per time interval allowed for LLM-proxy';
-
-COMMENT ON COLUMN product_subscriptions.llm_proxy_chat_rate_interval_seconds IS 'Custom time interval over which the for LLM-proxy rate limit is applied';
 
 CREATE TABLE query_runner_state (
     query text,
@@ -4782,6 +4792,8 @@ ALTER TABLE ONLY codeintel_ranking_definitions ALTER COLUMN id SET DEFAULT nextv
 
 ALTER TABLE ONLY codeintel_ranking_exports ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_exports_id_seq'::regclass);
 
+ALTER TABLE ONLY codeintel_ranking_graph_keys ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_graph_keys_id_seq'::regclass);
+
 ALTER TABLE ONLY codeintel_ranking_path_counts_inputs ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_path_counts_inputs_id_seq'::regclass);
 
 ALTER TABLE ONLY codeintel_ranking_progress ALTER COLUMN id SET DEFAULT nextval('codeintel_ranking_progress_id_seq'::regclass);
@@ -5077,6 +5089,9 @@ ALTER TABLE ONLY codeintel_ranking_definitions
 
 ALTER TABLE ONLY codeintel_ranking_exports
     ADD CONSTRAINT codeintel_ranking_exports_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY codeintel_ranking_graph_keys
+    ADD CONSTRAINT codeintel_ranking_graph_keys_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY codeintel_ranking_path_counts_inputs
     ADD CONSTRAINT codeintel_ranking_path_counts_inputs_pkey PRIMARY KEY (id);
@@ -5565,6 +5580,8 @@ CREATE INDEX codeintel_initial_path_ranks_exported_upload_id ON codeintel_initia
 CREATE INDEX codeintel_initial_path_ranks_graph_key_id ON codeintel_initial_path_ranks USING btree (graph_key, id);
 
 CREATE UNIQUE INDEX codeintel_initial_path_ranks_processed_cgraph_key_codeintel_ini ON codeintel_initial_path_ranks_processed USING btree (graph_key, codeintel_initial_path_ranks_id);
+
+CREATE INDEX codeintel_initial_path_ranks_processed_codeintel_initial_path_r ON codeintel_initial_path_ranks_processed USING btree (codeintel_initial_path_ranks_id);
 
 CREATE UNIQUE INDEX codeintel_langugage_support_requests_user_id_language ON codeintel_langugage_support_requests USING btree (user_id, language_id);
 

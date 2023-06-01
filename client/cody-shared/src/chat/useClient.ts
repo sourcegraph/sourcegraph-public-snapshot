@@ -67,6 +67,7 @@ interface CodyClientProps {
     scope?: CodyClientScope
     initialTranscript?: Transcript | null
     onEvent?: (event: CodyClientEvent) => void
+    web?: boolean
 }
 
 export const useClient = ({
@@ -78,6 +79,7 @@ export const useClient = ({
         editor: new NoopEditor(),
     },
     onEvent,
+    web = false,
 }: CodyClientProps): CodyClient => {
     const [transcript, setTranscriptState] = useState<Transcript | null>(initialTranscript)
     const [chatMessages, setChatMessagesState] = useState<ChatMessage[]>([])
@@ -169,7 +171,7 @@ export const useClient = ({
             }
 
             const repoId = await codebaseId
-            const embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId) : null
+            const embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId, web) : null
             const codebaseContext = new CodebaseContext(config, codebase || undefined, embeddingsSearch, null)
 
             const { humanChatInput = '', prefilledOptions } = options ?? {}
@@ -250,6 +252,7 @@ export const useClient = ({
             chatClient,
             isMessageInProgress,
             onEvent,
+            web,
         ]
     )
 

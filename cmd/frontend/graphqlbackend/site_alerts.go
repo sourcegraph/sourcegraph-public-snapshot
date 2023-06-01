@@ -195,7 +195,7 @@ func init() {
 }
 
 func storageLimitReachedAlert(args AlertFuncArgs) []*Alert {
-	licenseInfo := hooks.GetLicenseInfo(args.IsSiteAdmin)
+	licenseInfo := hooks.GetLicenseInfo()
 	if licenseInfo == nil {
 		return nil
 	}

@@ -293,6 +293,16 @@ describe('Cody completions', () => {
         `)
     })
 
+    it('should not trigger a request if there is text in the suffix for the same line', async () => {
+        const { requests } = await complete(`foo: ${CURSOR_MARKER} = 123;`)
+        expect(requests).toHaveLength(0)
+    })
+
+    it('should trigger a request if the suffix of the same line is only special tags', async () => {
+        const { requests } = await complete(`if(${CURSOR_MARKER}) {`)
+        expect(requests).toHaveLength(3)
+    })
+
     describe('odd indentation', () => {
         it('filters our odd indentation in single-line completions', async () => {
             const { completions } = await complete(`const foo = ${CURSOR_MARKER}`, [createCompletionResponse(' 1')])
@@ -384,6 +394,51 @@ describe('Cody completions', () => {
                     "insertText": "",
                   },
                 ]
+            `)
+        })
+
+        it('does not support multi-line completion on unsupported languages', async () => {
+            const { requests } = await complete(`function looksLegit() {\n  ${CURSOR_MARKER}`, undefined, 'elixir')
+
+            expect(requests).toHaveLength(2)
+            expect(requests[0]!.stopSequences).toContain('\n')
+        })
+
+        it('requires an indentation to start a block', async () => {
+            const { requests } = await complete(`function bubbleSort() {\n${CURSOR_MARKER}`)
+
+            expect(requests).toHaveLength(2)
+            expect(requests[0]!.stopSequences).toContain('\n')
+        })
+
+        it('works with python', async () => {
+            const { completions, requests } = await complete(
+                `
+                for i in range(11):
+                    if i % 2 == 0:
+                        ${CURSOR_MARKER}`,
+                [
+                    createCompletionResponse(`
+                    print(i)
+                        elif i % 3 == 0:
+                            print(f"Multiple of 3: {i}")
+                        else:
+                            print(f"ODD {i}")
+
+                    for i in range(12):
+                        print("unrelated")`),
+                ],
+                'python'
+            )
+
+            expect(requests).toHaveLength(3)
+            expect(requests[0]!.stopSequences).not.toContain('\n')
+            expect(completions[0].insertText).toMatchInlineSnapshot(`
+                "print(i)
+                    elif i % 3 == 0:
+                        print(f\\"Multiple of 3: {i}\\")
+                    else:
+                        print(f\\"ODD {i}\\")"
             `)
         })
 
@@ -554,6 +609,27 @@ describe('Cody completions', () => {
                 \t\t    sure()
                 \t\t}
                 \t}"
+            `)
+        })
+
+        it('does not include block end character if there is already content in the block', async () => {
+            const { completions } = await complete(
+                `
+                if (check) {
+                    ${CURSOR_MARKER}
+                    console.log('two')
+                `,
+                [
+                    createCompletionResponse(`
+                    console.log('one')
+                    }`),
+                ]
+            )
+
+            expect(completions[0]).toMatchInlineSnapshot(`
+                InlineCompletionItem {
+                  "insertText": "console.log('one')",
+                }
             `)
         })
 

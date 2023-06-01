@@ -129,8 +129,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				"blobstore",
 				"bundled-executor",
 				"cadvisor",
-				"codeinsights-db",
-				"codeintel-db",
+				// "codeinsights-db",
+				// "codeintel-db",
 				"embeddings",
 				"executor",
 				"executor-kubernetes",
@@ -145,7 +145,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				"migrator",
 				"node-exporter",
 				"opentelemetry-collector",
-				"postgres-12-alpine",
+				// "postgres-12-alpine",
 				"postgres_exporter",
 				"precise-code-intel-worker",
 				"prometheus",
@@ -225,7 +225,15 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addClientLintersForAllFiles,
 			addCodyExtensionTests,
 			wait,
-			addCodyReleaseSteps)
+			addCodyReleaseSteps("stable"))
+
+	case runtype.CodyNightly:
+		// If this is a Cody VS Code extension nightly build, run the Cody tests and release
+		ops = operations.NewSet(
+			addClientLintersForAllFiles,
+			addCodyExtensionTests,
+			wait,
+			addCodyReleaseSteps("nightly"))
 
 	case runtype.BextNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and

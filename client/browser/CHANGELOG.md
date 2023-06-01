@@ -13,6 +13,8 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
+- add ability to remove saved sg url from suggestion list [pull/52555](https://github.com/sourcegraph/sourcegraph/pull/52555)
+
 - Fix code-intel tooltips for pull request pages on Bitbucket: https://github.com/sourcegraph/sourcegraph/pull/52609
 
 ## Chrome & Firefox 23.4.14.1343, Safari 1.24

@@ -70,7 +70,7 @@ func GetCompletionsConfig() *schema.Completions {
 			Enabled:     len(appConfig.DotcomAuthToken) > 0,
 			Provider:    dotcom.ProviderName,
 			// TODO: These are not required right now as upstream overwrites this,
-			// but should we switch to LLM Proxy they will be.
+			// but should we switch to Cody Gateway they will be.
 			ChatModel:       "claude-v1",
 			CompletionModel: "claude-instant-v1",
 		}
