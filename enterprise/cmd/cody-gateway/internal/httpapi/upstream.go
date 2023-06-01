@@ -165,18 +165,23 @@ func makeUpstreamHandler[ReqT any](
 			}
 		}
 
-		// Forward status code.
+		// Record upstream's status code and decide what we want to send to
+		// the client. By default, we just send upstream's status code.
 		upstreamStatusCode = resp.StatusCode
+		resolvedStatusCode = upstreamStatusCode
 		if upstreamStatusCode == http.StatusTooManyRequests {
 			// Rewrite 429 to 503 because we share a quota when talking to upstream,
 			// and a 429 from upstream should NOT indicate to the client that they
-			// should retry.
-			logger.Warn("upstream returned 429, rewriting to 503")
+			// should retry. To ensure we are notified when this happens, log this
+			// as an error and record the headers that are provided to us.
+			var headers bytes.Buffer
+			_ = resp.Header.Write(&headers)
+			logger.Error("upstream returned 429, rewriting to 503",
+				log.String("resp.headers", headers.String()))
 			resolvedStatusCode = http.StatusServiceUnavailable
-		} else {
-			// Otherwise, write the upstream's status code back as-is.
-			resolvedStatusCode = upstreamStatusCode
 		}
+
+		// Write the resolved status code.
 		w.WriteHeader(resolvedStatusCode)
 
 		// Set up a buffer to capture the response as it's streamed and sent to the client.
