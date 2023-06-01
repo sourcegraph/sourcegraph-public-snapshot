@@ -108,7 +108,6 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 		command.KubernetesJobContainerName,
 		logEntry,
 	)
-	defer r.deletePod(ctx, pod.Name)
 	// Now handle the wait error.
 	if podWaitErr != nil {
 		var errMessage string
@@ -125,15 +124,4 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 	}
 	r.internalLogger.Debug("Job completed successfully", log.Int("jobID", spec.JobID))
 	return readLogErr
-}
-
-func (r *kubernetesRunner) deletePod(ctx context.Context, podName string) {
-	r.internalLogger.Debug("Deleting kubernetes pod", log.String("name", podName))
-	if err := r.cmd.DeletePod(ctx, r.options.Namespace, podName); err != nil {
-		r.internalLogger.Error(
-			"Failed to delete kubernetes pod",
-			log.String("podName", podName),
-			log.Error(err),
-		)
-	}
 }
