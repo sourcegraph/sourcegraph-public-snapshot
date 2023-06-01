@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
@@ -57,8 +56,7 @@ func (a *dotcomClient) Complete(
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
-		return nil, errors.Errorf("API failed with status %d: %s", resp.StatusCode, string(respBody))
+		return nil, types.NewErrStatusNotOK("Sourcegraph.com", resp)
 	}
 
 	var result types.CompletionResponse
@@ -91,8 +89,7 @@ func (a *dotcomClient) Stream(
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
-		return errors.Errorf("API failed with status %d: %s", resp.StatusCode, string(respBody))
+		return types.NewErrStatusNotOK("sourcegraph.com", resp)
 	}
 
 	dec := streamhttp.NewDecoder(resp.Body)

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
@@ -149,9 +148,7 @@ func (a *anthropicClient) makeRequest(ctx context.Context, requestParams types.C
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		defer resp.Body.Close()
-		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
-		return nil, errors.Errorf("Anthropic API failed with status %d: %s", resp.StatusCode, string(respBody))
+		return nil, types.NewErrStatusNotOK("Anthropic", resp)
 	}
 
 	return resp, nil
