@@ -24,16 +24,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// TODO: Add comment
+// ErrExternalServiceNotGitHub is returned when authenticating a ChangesetSource for a
+// changeset if the method is invoked with AuthenticationStrategyGitHubApp, but the
+// external service that is loaded for the changeset repo is not a GitHub connection.
 var ErrExternalServiceNotGitHub = errors.New("cannot use GitHub App authentication with non-GitHub external service")
 
-// TODO: Add comment
+// ErrNoGitHubAppConfigured is returned when authenticating a ChangesetSource for a
+// changeset if the method is invoked with AuthenticationStrategyGitHubApp and the code
+// host is GitHub, but there is no GitHub App configured for it for Batch Changes.
 var ErrNoGitHubAppConfigured = errors.New("no batches GitHub App found that can authenticate to this code host")
 
-// ErrMissingCredentials is returned by WithAuthenticatorForUser,
-// if the user that applied the last batch change/changeset spec doesn't have
-// UserCredentials for the given repository and is not a site-admin (so no
-// fallback to the global credentials is possible).
+// ErrMissingCredentials is returned when authenticating a ChangesetSource for a changeset
+// or a user, if no user or site credential can be found that can authenticate to the code
+// host.
 var ErrMissingCredentials = errors.New("no credential found that can authenticate to the code host")
 
 // ErrNoPushCredentials is returned by gitserverPushConfig if the
@@ -54,8 +57,13 @@ var ErrNoSSHCredential = errors.New("authenticator doesn't support SSH")
 type AuthenticationStrategy string
 
 const (
+	// Authenticate using a traditional PAT configured by the user or site admin. This
+	// should be used for all code host interactions unless another authentication
+	// strategy is explicitly required.
 	AuthenticationStrategyUserCredential AuthenticationStrategy = "USER_CREDENTIAL"
-	AuthenticationStrategyGitHubApp      AuthenticationStrategy = "GITHUB_APP"
+	// Authenticate using a GitHub App. This should only be used for GitHub code hosts for
+	// commit signing interactions.
+	AuthenticationStrategyGitHubApp AuthenticationStrategy = "GITHUB_APP"
 )
 
 type SourcerStore interface {
@@ -284,7 +292,12 @@ func loadBatchChange(ctx context.Context, tx getBatchChanger, id int64) (*btypes
 	return batchChange, nil
 }
 
-// TODO: Comment
+// withGitHubAppAuthenticator authenticates the given ChangesetSource with a GitHub App
+// installation token, if the external service is a GitHub connection and a GitHub App has
+// been configured for it for use with Batch Changes. If the external service is not a
+// GitHub connection, ErrExternalServiceNotGitHub is returned. If the external service is
+// a GitHub connection, but no batches domain GitHub App has been configured for it,
+// ErrNoGitHubAppConfigured is returned.
 func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSource, extSvc *types.ExternalService) (ChangesetSource, error) {
 	if extSvc.Kind != extsvc.KindGitHub {
 		return nil, ErrExternalServiceNotGitHub
