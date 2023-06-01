@@ -274,7 +274,6 @@ js_library(
 eslint_test_with_types(
     name = "eslint_test",
     srcs = glob(["*.js"]),
-    binary = "//:eslint",
     config = ":eslint_config",
     deps = [
         ":node_modules/@types/node",

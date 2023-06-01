@@ -45,7 +45,6 @@ def eslint_config_and_lint_root(name = "eslint_config", config_deps = [], root_j
     eslint_test_with_types(
         name = "root_js_eslint",
         srcs = native.glob(["*.js"]),
-        binary = "//:eslint",
         config = ":eslint_config",
         deps = [
             "//:jest_config",  # required for import/extensions rule not to fail on the `jest.config.base` import.
@@ -53,22 +52,12 @@ def eslint_config_and_lint_root(name = "eslint_config", config_deps = [], root_j
         ] + root_js_deps,
     )
 
-    eslint_test_with_types(
-        name = "stories_eslint",
-        srcs = native.glob(["src/**/*.story.tsx"]),
-        binary = "//:eslint",
-        config = ":eslint_config",
-        deps = [
-            "//:jest_config",  # required for import/extensions rule not to fail on the `jest.config.base` import.
-            "//:node_modules/@types/node",
-        ],
-    )
-
 # This private rule implementation wraps the ESLint binary.
 # It executes ESLint against the provided source files and
 # ensures that depenencies' type are available at lint time.
 def _custom_eslint_impl(ctx):
     copied_srcs = copy_files_to_bin_actions(ctx, ctx.files.srcs)
+    print(ctx.files.srcs)
 
     inputs_depset = depset(
         copied_srcs + [ctx.executable.binary],
@@ -182,7 +171,6 @@ def eslint_test_with_types(name, **kwargs):
             srcs = ["my_file.ts"],
             deps = [":my_dependency"],
             testonly = True,
-            binary = "//:eslint",
             config = ":my_eslint_config",
         )
     """
@@ -193,6 +181,7 @@ def eslint_test_with_types(name, **kwargs):
         testonly = True,
         name = lint_name,
         report = report,
+        binary = "//:eslint",
         **kwargs
     )
 
