@@ -92,6 +92,9 @@ func (r *filesBackfillIndexer) indexRepo(ctx context.Context, repoId api.RepoID)
 					owners = append(owners, "@"+o.GetHandle())
 				}
 			}
+			if len(owners) > 0 {
+				owners = append(owners, "") // empty string for general ownership count
+			}
 			root.AssignOwner(f, owners)
 		}
 	}

@@ -47,6 +47,17 @@ var upsertCount = `
 	SET deep_file_count = EXCLUDED.deep_file_count
 `
 
+var upsertTotalCount = `
+INSERT INTO codeowners_aggregate_stats (file_path_id, deep_file_count)
+SELECT p.id, %s
+FROM repo_paths AS p
+WHERE p.repo_id = %s
+AND p.absolute_path = %s
+ON CONFLICT (file_path_id)
+DO UPDATE
+SET deep_file_count = EXCLUDED.deep_file_count
+`
+
 // Note: owners FileWalkable passes in a map from string to int. The string is the owner in codeowners. If it's a handle, it has @ in front, otherwise email.
 func (s *ownershipStats) UpdateCodeownersCounts(ctx context.Context, repoID api.RepoID, owners FileWalkable[map[string]int]) (int, error) {
 	// TODO: Updates count
@@ -54,6 +65,9 @@ func (s *ownershipStats) UpdateCodeownersCounts(ctx context.Context, repoID api.
 	// Note: probably don't want use commit authors table here.
 	return 0, owners.Walk(func(path string, ownedFileCountByOwner map[string]int) error {
 		for identifier, count := range ownedFileCountByOwner {
+			if identifier == "" {
+				continue
+			}
 			var id int
 			id = codeownerIDs[identifier]
 			if id == 0 {
@@ -74,6 +88,12 @@ func (s *ownershipStats) UpdateCodeownersCounts(ctx context.Context, repoID api.
 			q := sqlf.Sprintf(upsertCount, id, count, repoID, path)
 			if err := s.Store.Exec(ctx, q); err != nil {
 				return errors.Wrapf(err, q.Query(sqlf.PostgresBindVar))
+			}
+		}
+		if totalFilesWithOwnership := ownedFileCountByOwner[""]; totalFilesWithOwnership > 0 {
+			q := sqlf.Sprintf(upsertTotalCount, totalFilesWithOwnership, repoID, path)
+			if err := s.Store.Exec(ctx, q); err != nil {
+				return err
 			}
 		}
 		return nil
