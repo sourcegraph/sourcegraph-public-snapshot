@@ -9,6 +9,7 @@ import (
 	"github.com/Khan/genqlient/graphql"
 	"github.com/gregjones/httpcache"
 	"github.com/sourcegraph/log"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
@@ -134,9 +135,29 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 	return seen, errs
 }
 
+func (s *Source) checkAccessToken(ctx context.Context, token string) (*dotcom.CheckAccessTokenResponse, error) {
+	resp, err := dotcom.CheckAccessToken(ctx, s.dotcom, token)
+	if err == nil {
+		return resp, nil
+	}
+
+	// Inspect the error to see if it's a list of GraphQL errors.
+	gqlerrs, ok := err.(gqlerror.List)
+	if !ok {
+		return nil, err
+	}
+
+	for _, gqlerr := range gqlerrs {
+		if gqlerr.Extensions != nil && gqlerr.Extensions["code"] == codygateway.GQLErrCodeProductSubscriptionNotFound {
+			return nil, actor.ErrAccessTokenDenied{"associated product subscription not found"}
+		}
+	}
+	return nil, err
+}
+
 func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor, error) {
 	var act *actor.Actor
-	resp, checkErr := dotcom.CheckAccessToken(ctx, s.dotcom, token)
+	resp, checkErr := s.checkAccessToken(ctx, token)
 	if checkErr != nil {
 		// Generate a stateless actor so that we aren't constantly hitting the dotcom API
 		act = NewActor(s, token, dotcom.ProductSubscriptionState{}, s.internalMode)

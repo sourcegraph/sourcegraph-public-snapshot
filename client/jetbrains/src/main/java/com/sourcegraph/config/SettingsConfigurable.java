@@ -61,7 +61,7 @@ public class SettingsConfigurable implements Configurable {
         bus.syncPublisher(PluginSettingChangeActionNotifier.TOPIC);
 
     SourcegraphApplicationService aSettings = SourcegraphApplicationService.getInstance();
-    SourcegraphProjectService pSettings = SourcegraphProjectService.getInstance(project);
+    SourcegraphProjectService pSettings = SourcegraphService.getInstance(project);
 
     String oldUrl = ConfigUtil.getSourcegraphUrl(project);
     String oldAccessToken = ConfigUtil.getAccessToken(project);
