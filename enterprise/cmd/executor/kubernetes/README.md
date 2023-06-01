@@ -39,7 +39,7 @@ sg start batches-kubernetes
 sg start codeintel-kubernetes
 ```
 
-Any changes to Executor code with cause `sg` to rebuild the Executor image and restart the Executor pod.
+Any changes to Executor code will cause `sg` to rebuild the Executor image and restart the Executor pod.
 
 ## Building Images
 
