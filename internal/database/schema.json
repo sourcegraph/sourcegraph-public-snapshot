@@ -8592,6 +8592,90 @@
       "Triggers": []
     },
     {
+      "Name": "codeowners_stats",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "codeowners_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "deep_file_count",
+          "Index": 3,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "file_path_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "codeowners_stats_file_owner",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeowners_stats_file_owner ON codeowners_stats USING btree (file_path_id, codeowners_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "codeowners_stats_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeowners_stats_pkey ON codeowners_stats USING btree (file_path_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (file_path_id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "codeowners_stats_codeowners_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "commit_authors",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (codeowners_id) REFERENCES commit_authors(id)"
+        },
+        {
+          "Name": "codeowners_stats_file_path_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "repo_paths",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (file_path_id) REFERENCES repo_paths(id) ON DELETE CASCADE DEFERRABLE"
+        }
+      ],
+      "Triggers": []
+    },
+    {
       "Name": "commit_authors",
       "Comment": "",
       "Columns": [
@@ -22353,6 +22437,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "Absolute path does not start or end with forward slash. Example: \"a/b/c\". Root directory is empty path \"\"."
+        },
+        {
+          "Name": "deep_file_count",
+          "Index": 5,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
         },
         {
           "Name": "id",

@@ -1960,6 +1960,12 @@ CREATE SEQUENCE codeowners_id_seq
 
 ALTER SEQUENCE codeowners_id_seq OWNED BY codeowners.id;
 
+CREATE TABLE codeowners_stats (
+    file_path_id integer NOT NULL,
+    codeowners_id integer NOT NULL,
+    deep_file_count integer
+);
+
 CREATE TABLE commit_authors (
     id integer NOT NULL,
     email text NOT NULL,
@@ -4112,7 +4118,8 @@ CREATE TABLE repo_paths (
     id integer NOT NULL,
     repo_id integer NOT NULL,
     absolute_path text NOT NULL,
-    parent_id integer
+    parent_id integer,
+    deep_file_count integer
 );
 
 COMMENT ON COLUMN repo_paths.absolute_path IS 'Absolute path does not start or end with forward slash. Example: "a/b/c". Root directory is empty path "".';
@@ -5099,6 +5106,9 @@ ALTER TABLE ONLY codeowners
 ALTER TABLE ONLY codeowners
     ADD CONSTRAINT codeowners_repo_id_key UNIQUE (repo_id);
 
+ALTER TABLE ONLY codeowners_stats
+    ADD CONSTRAINT codeowners_stats_pkey PRIMARY KEY (file_path_id);
+
 ALTER TABLE ONLY commit_authors
     ADD CONSTRAINT commit_authors_pkey PRIMARY KEY (id);
 
@@ -5597,6 +5607,8 @@ CREATE INDEX codeintel_ranking_references_graph_key_id ON codeintel_ranking_refe
 CREATE UNIQUE INDEX codeintel_ranking_references_processed_graph_key_codeintel_rank ON codeintel_ranking_references_processed USING btree (graph_key, codeintel_ranking_reference_id);
 
 CREATE INDEX codeintel_ranking_references_processed_reference_id ON codeintel_ranking_references_processed USING btree (codeintel_ranking_reference_id);
+
+CREATE UNIQUE INDEX codeowners_stats_file_owner ON codeowners_stats USING btree (file_path_id, codeowners_id);
 
 CREATE UNIQUE INDEX commit_authors_email_name ON commit_authors USING btree (email, name);
 
@@ -6212,6 +6224,12 @@ ALTER TABLE ONLY codeintel_ranking_references
 
 ALTER TABLE ONLY codeowners
     ADD CONSTRAINT codeowners_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY codeowners_stats
+    ADD CONSTRAINT codeowners_stats_codeowners_id_fkey FOREIGN KEY (codeowners_id) REFERENCES commit_authors(id);
+
+ALTER TABLE ONLY codeowners_stats
+    ADD CONSTRAINT codeowners_stats_file_path_id_fkey FOREIGN KEY (file_path_id) REFERENCES repo_paths(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY discussion_comments
     ADD CONSTRAINT discussion_comments_author_user_id_fkey FOREIGN KEY (author_user_id) REFERENCES users(id) ON DELETE RESTRICT;

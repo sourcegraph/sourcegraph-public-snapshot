@@ -5382,6 +5382,9 @@ type MockDB struct {
 	// OwnSignalConfigurationsFunc is an instance of a mock function object
 	// controlling the behavior of the method OwnSignalConfigurations.
 	OwnSignalConfigurationsFunc *DBOwnSignalConfigurationsFunc
+	// OwnershipStatsFunc is an instance of a mock function object
+	// controlling the behavior of the method OwnershipStats.
+	OwnershipStatsFunc *DBOwnershipStatsFunc
 	// PermissionSyncJobsFunc is an instance of a mock function object
 	// controlling the behavior of the method PermissionSyncJobs.
 	PermissionSyncJobsFunc *DBPermissionSyncJobsFunc
@@ -5611,6 +5614,11 @@ func NewMockDB() *MockDB {
 		},
 		OwnSignalConfigurationsFunc: &DBOwnSignalConfigurationsFunc{
 			defaultHook: func() (r0 SignalConfigurationStore) {
+				return
+			},
+		},
+		OwnershipStatsFunc: &DBOwnershipStatsFunc{
+			defaultHook: func() (r0 OwnershipStatsStore) {
 				return
 			},
 		},
@@ -5906,6 +5914,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.OwnSignalConfigurations")
 			},
 		},
+		OwnershipStatsFunc: &DBOwnershipStatsFunc{
+			defaultHook: func() OwnershipStatsStore {
+				panic("unexpected invocation of MockDB.OwnershipStats")
+			},
+		},
 		PermissionSyncJobsFunc: &DBPermissionSyncJobsFunc{
 			defaultHook: func() PermissionSyncJobStore {
 				panic("unexpected invocation of MockDB.PermissionSyncJobs")
@@ -6143,6 +6156,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		OwnSignalConfigurationsFunc: &DBOwnSignalConfigurationsFunc{
 			defaultHook: i.OwnSignalConfigurations,
+		},
+		OwnershipStatsFunc: &DBOwnershipStatsFunc{
+			defaultHook: i.OwnershipStats,
 		},
 		PermissionSyncJobsFunc: &DBPermissionSyncJobsFunc{
 			defaultHook: i.PermissionSyncJobs,
@@ -8928,6 +8944,105 @@ func (c DBOwnSignalConfigurationsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBOwnSignalConfigurationsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBOwnershipStatsFunc describes the behavior when the OwnershipStats
+// method of the parent MockDB instance is invoked.
+type DBOwnershipStatsFunc struct {
+	defaultHook func() OwnershipStatsStore
+	hooks       []func() OwnershipStatsStore
+	history     []DBOwnershipStatsFuncCall
+	mutex       sync.Mutex
+}
+
+// OwnershipStats delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) OwnershipStats() OwnershipStatsStore {
+	r0 := m.OwnershipStatsFunc.nextHook()()
+	m.OwnershipStatsFunc.appendCall(DBOwnershipStatsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the OwnershipStats
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBOwnershipStatsFunc) SetDefaultHook(hook func() OwnershipStatsStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// OwnershipStats method of the parent MockDB instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *DBOwnershipStatsFunc) PushHook(hook func() OwnershipStatsStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBOwnershipStatsFunc) SetDefaultReturn(r0 OwnershipStatsStore) {
+	f.SetDefaultHook(func() OwnershipStatsStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBOwnershipStatsFunc) PushReturn(r0 OwnershipStatsStore) {
+	f.PushHook(func() OwnershipStatsStore {
+		return r0
+	})
+}
+
+func (f *DBOwnershipStatsFunc) nextHook() func() OwnershipStatsStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBOwnershipStatsFunc) appendCall(r0 DBOwnershipStatsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBOwnershipStatsFuncCall objects describing
+// the invocations of this function.
+func (f *DBOwnershipStatsFunc) History() []DBOwnershipStatsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBOwnershipStatsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBOwnershipStatsFuncCall is an object that describes an invocation of
+// method OwnershipStats on an instance of MockDB.
+type DBOwnershipStatsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 OwnershipStatsStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBOwnershipStatsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBOwnershipStatsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

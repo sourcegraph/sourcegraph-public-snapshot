@@ -1072,6 +1072,22 @@ Foreign-key constraints:
 
 ```
 
+# Table "public.codeowners_stats"
+```
+     Column      |  Type   | Collation | Nullable | Default 
+-----------------+---------+-----------+----------+---------
+ file_path_id    | integer |           | not null | 
+ codeowners_id   | integer |           | not null | 
+ deep_file_count | integer |           |          | 
+Indexes:
+    "codeowners_stats_pkey" PRIMARY KEY, btree (file_path_id)
+    "codeowners_stats_file_owner" UNIQUE, btree (file_path_id, codeowners_id)
+Foreign-key constraints:
+    "codeowners_stats_codeowners_id_fkey" FOREIGN KEY (codeowners_id) REFERENCES commit_authors(id)
+    "codeowners_stats_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
 # Table "public.commit_authors"
 ```
  Column |  Type   | Collation | Nullable |                  Default                   
@@ -1083,6 +1099,7 @@ Indexes:
     "commit_authors_pkey" PRIMARY KEY, btree (id)
     "commit_authors_email_name" UNIQUE, btree (email, name)
 Referenced by:
+    TABLE "codeowners_stats" CONSTRAINT "codeowners_stats_codeowners_id_fkey" FOREIGN KEY (codeowners_id) REFERENCES commit_authors(id)
     TABLE "own_aggregate_recent_contribution" CONSTRAINT "own_aggregate_recent_contribution_commit_author_id_fkey" FOREIGN KEY (commit_author_id) REFERENCES commit_authors(id)
     TABLE "own_signal_recent_contribution" CONSTRAINT "own_signal_recent_contribution_commit_author_id_fkey" FOREIGN KEY (commit_author_id) REFERENCES commit_authors(id)
 
@@ -3365,12 +3382,13 @@ Foreign-key constraints:
 
 # Table "public.repo_paths"
 ```
-    Column     |  Type   | Collation | Nullable |                Default                 
----------------+---------+-----------+----------+----------------------------------------
- id            | integer |           | not null | nextval('repo_paths_id_seq'::regclass)
- repo_id       | integer |           | not null | 
- absolute_path | text    |           | not null | 
- parent_id     | integer |           |          | 
+     Column      |  Type   | Collation | Nullable |                Default                 
+-----------------+---------+-----------+----------+----------------------------------------
+ id              | integer |           | not null | nextval('repo_paths_id_seq'::regclass)
+ repo_id         | integer |           | not null | 
+ absolute_path   | text    |           | not null | 
+ parent_id       | integer |           |          | 
+ deep_file_count | integer |           |          | 
 Indexes:
     "repo_paths_pkey" PRIMARY KEY, btree (id)
     "repo_paths_index_absolute_path" UNIQUE, btree (repo_id, absolute_path)
@@ -3379,6 +3397,7 @@ Foreign-key constraints:
     "repo_paths_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
     TABLE "assigned_owners" CONSTRAINT "assigned_owners_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
+    TABLE "codeowners_stats" CONSTRAINT "codeowners_stats_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id) ON DELETE CASCADE DEFERRABLE
     TABLE "own_aggregate_recent_contribution" CONSTRAINT "own_aggregate_recent_contribution_changed_file_path_id_fkey" FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id)
     TABLE "own_aggregate_recent_view" CONSTRAINT "own_aggregate_recent_view_viewed_file_path_id_fkey" FOREIGN KEY (viewed_file_path_id) REFERENCES repo_paths(id)
     TABLE "own_signal_recent_contribution" CONSTRAINT "own_signal_recent_contribution_changed_file_path_id_fkey" FOREIGN KEY (changed_file_path_id) REFERENCES repo_paths(id)

@@ -47,6 +47,7 @@ type DB interface {
 	RedisKeyValue() RedisKeyValueStore
 	Repos() RepoStore
 	RepoPaths() RepoPathStore
+	OwnershipStats() OwnershipStatsStore
 	RepoCommitsChangelists() RepoCommitsChangelistsStore
 	RepoKVPs() RepoKVPStore
 	RolePermissions() RolePermissionStore
@@ -212,6 +213,10 @@ func (d *db) RecentContributionSignals() RecentContributionSignalStore {
 
 func (d *db) RepoPaths() RepoPathStore {
 	return &repoPaths{d.Store}
+}
+
+func (d *db) OwnershipStats() OwnershipStatsStore {
+	return &ownershipStats{d.Store}
 }
 
 func (d *db) Permissions() PermissionStore {
