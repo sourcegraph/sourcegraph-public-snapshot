@@ -38,3 +38,23 @@ export function getIconPath(speaker: string, extPath: string): vscode.Uri {
     const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist')
     return vscode.Uri.joinPath(webviewPath, speaker === 'cody' ? 'cody.png' : 'sourcegraph.png')
 }
+
+/**
+ * To Edit a document by its Uri
+ * Returns the range of the section with the content replaced by Cody
+ */
+export async function editDocByUri(
+    uri: vscode.Uri,
+    lines: { start: number; end: number },
+    content: string
+): Promise<vscode.Range> {
+    // Highlight from the start line to the length of the replacement content
+    const lineDiff = content.split('\n').length - 2
+    const document = await vscode.workspace.openTextDocument(uri)
+    const edit = new vscode.WorkspaceEdit()
+    const range = new vscode.Range(lines.start, 0, lines.end + 1, 0)
+    edit.delete(document.uri, range)
+    edit.insert(document.uri, new vscode.Position(lines.start, 0), content)
+    await vscode.workspace.applyEdit(edit)
+    return new vscode.Range(lines.start, 0, lines.start + lineDiff, 0)
+}

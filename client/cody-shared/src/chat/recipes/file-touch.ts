@@ -191,9 +191,7 @@ export class FileTouch implements Recipe {
             const truncatedContent = truncateText(fileContent.getText(), MAX_CURRENT_FILE_TOKENS)
             const contextMessage = getContextMessageWithResponse(
                 populateCurrentEditorContextTemplate(truncatedContent, fileName),
-                {
-                    fileName,
-                }
+                { fileName }
             )
             contextMessages.push(...contextMessage)
         }
