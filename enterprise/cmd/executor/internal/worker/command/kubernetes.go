@@ -191,9 +191,10 @@ func (c *KubernetesCommand) WaitForPodToSucceed(ctx context.Context, namespace s
 			return pod, ErrKubernetesPodFailed
 		case corev1.PodSucceeded:
 			return pod, nil
-		}
-		if pod.DeletionTimestamp != nil {
-			return nil, ErrKubernetesPodNotScheduled
+		case corev1.PodPending:
+			if pod.DeletionTimestamp != nil {
+				return nil, ErrKubernetesPodNotScheduled
+			}
 		}
 	}
 	return nil, errors.New("unexpected end of watch")
