@@ -1123,10 +1123,6 @@ func (c *clientImplementor) IsRepoCloneable(ctx context.Context, repo api.RepoNa
 			return err
 		}
 
-		if resp.Cloneable {
-			return nil
-		}
-
 		resp.FromProto(r)
 
 	} else {
