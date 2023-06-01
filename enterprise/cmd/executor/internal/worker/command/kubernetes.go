@@ -2,6 +2,7 @@ package command
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"path/filepath"
 	"strings"
@@ -176,7 +177,8 @@ func (c *KubernetesCommand) WaitForPodToSucceed(ctx context.Context, namespace s
 	for event := range watch.ResultChan() {
 		pod, ok := event.Object.(*corev1.Pod)
 		if !ok {
-			return nil, errors.New("unexpected object type")
+			c.Logger.Warn("Unexpected object type", log.String("type", fmt.Sprintf("%T", event.Object)))
+			continue
 		}
 		c.Logger.Debug(
 			"Watching pod",
