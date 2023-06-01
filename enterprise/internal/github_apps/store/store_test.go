@@ -30,6 +30,7 @@ func TestCreateGitHubApp(t *testing.T) {
 		AppID:        1,
 		Name:         "Test App",
 		Domain:       "repos",
+		BaseURL:      "https://github.com/",
 		Slug:         "test-app",
 		ClientID:     "abc123",
 		ClientSecret: "secret",
@@ -109,7 +110,7 @@ func TestUpdateGitHubApp(t *testing.T) {
 		Name:         "Test App",
 		Domain:       "repos",
 		Slug:         "test-app",
-		BaseURL:      "https://example.com",
+		BaseURL:      "https://example.com/",
 		AppURL:       "https://example.com/apps/testapp",
 		ClientID:     "abc123",
 		ClientSecret: "secret",
@@ -127,7 +128,7 @@ func TestUpdateGitHubApp(t *testing.T) {
 		Name:         "Updated Name",
 		Domain:       "repos",
 		Slug:         "updated-slug",
-		BaseURL:      "https://updated-example.com",
+		BaseURL:      "https://updated-example.com/",
 		AppURL:       "https://updated-example.com/apps/updated-app",
 		ClientID:     "def456",
 		ClientSecret: "updated-secret",
@@ -168,7 +169,7 @@ func TestGetByID(t *testing.T) {
 		Name:         "Test App 1",
 		Domain:       "repos",
 		Slug:         "test-app-1",
-		BaseURL:      "https://github.com",
+		BaseURL:      "https://github.com/",
 		AppURL:       "https://github.com/apps/testapp",
 		ClientID:     "abc123",
 		ClientSecret: "secret",
@@ -181,7 +182,7 @@ func TestGetByID(t *testing.T) {
 		Name:         "Test App 2",
 		Domain:       "repos",
 		Slug:         "test-app-2",
-		BaseURL:      "https://enterprise.github.com",
+		BaseURL:      "https://enterprise.github.com/",
 		AppURL:       "https://enterprise.github.com/apps/testapp",
 		ClientID:     "abc123",
 		ClientSecret: "secret",
@@ -231,7 +232,7 @@ func TestGetByAppID(t *testing.T) {
 		Name:         "Test App 1",
 		Domain:       "repos",
 		Slug:         "test-app-1",
-		BaseURL:      "https://github.com",
+		BaseURL:      "https://github.com/",
 		ClientID:     "abc123",
 		ClientSecret: "secret",
 		PrivateKey:   "private-key",
@@ -243,7 +244,7 @@ func TestGetByAppID(t *testing.T) {
 		Name:         "Test App 2",
 		Domain:       "repos",
 		Slug:         "test-app-2",
-		BaseURL:      "https://enterprise.github.com",
+		BaseURL:      "https://enterprise.github.com/",
 		ClientID:     "abc123",
 		ClientSecret: "secret",
 		PrivateKey:   "private-key",
@@ -255,7 +256,7 @@ func TestGetByAppID(t *testing.T) {
 	_, err = store.Create(ctx, app2)
 	require.NoError(t, err)
 
-	fetched, err := store.GetByAppID(ctx, 1234, "https://github.com")
+	fetched, err := store.GetByAppID(ctx, 1234, "https://github.com/")
 	require.NoError(t, err)
 	require.Equal(t, app1.AppID, fetched.AppID)
 	require.Equal(t, app1.Name, fetched.Name)
@@ -269,13 +270,13 @@ func TestGetByAppID(t *testing.T) {
 	require.NotZero(t, fetched.CreatedAt)
 	require.NotZero(t, fetched.UpdatedAt)
 
-	fetched, err = store.GetByAppID(ctx, 1234, "https://enterprise.github.com")
+	fetched, err = store.GetByAppID(ctx, 1234, "https://enterprise.github.com/")
 	require.NoError(t, err)
 	require.Equal(t, app2.AppID, fetched.AppID)
 	require.Equal(t, app2.Slug, fetched.Slug)
 
 	// does not exist
-	_, err = store.GetByAppID(ctx, 3456, "https://github.com")
+	_, err = store.GetByAppID(ctx, 3456, "https://github.com/")
 	require.Error(t, err)
 }
 
@@ -293,7 +294,7 @@ func TestGetBySlug(t *testing.T) {
 		Name:         "Test App 1",
 		Domain:       "repos",
 		Slug:         "test-app",
-		BaseURL:      "https://github.com",
+		BaseURL:      "https://github.com/",
 		AppURL:       "https://github.com/apps/testapp1",
 		ClientID:     "abc123",
 		ClientSecret: "secret",
@@ -306,7 +307,7 @@ func TestGetBySlug(t *testing.T) {
 		Name:         "Test App",
 		Domain:       "repos",
 		Slug:         "test-app",
-		BaseURL:      "https://enterprise.github.com",
+		BaseURL:      "https://enterprise.github.com/",
 		AppURL:       "https://enterprise.github.com/apps/testapp",
 		ClientID:     "abc123",
 		ClientSecret: "secret",
@@ -319,7 +320,7 @@ func TestGetBySlug(t *testing.T) {
 	_, err = store.Create(ctx, app2)
 	require.NoError(t, err)
 
-	fetched, err := store.GetBySlug(ctx, "test-app", "https://github.com")
+	fetched, err := store.GetBySlug(ctx, "test-app", "https://github.com/")
 	require.NoError(t, err)
 	require.Equal(t, app1.AppID, fetched.AppID)
 	require.Equal(t, app1.Name, fetched.Name)
@@ -333,13 +334,78 @@ func TestGetBySlug(t *testing.T) {
 	require.NotZero(t, fetched.CreatedAt)
 	require.NotZero(t, fetched.UpdatedAt)
 
-	fetched, err = store.GetBySlug(ctx, "test-app", "https://enterprise.github.com")
+	fetched, err = store.GetBySlug(ctx, "test-app", "https://enterprise.github.com/")
 	require.NoError(t, err)
 	require.Equal(t, app2.AppID, fetched.AppID)
 
 	// does not exist
 	_, err = store.GetBySlug(ctx, "foo", "bar")
 	require.Error(t, err)
+}
+
+func TestGetByDomain(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := &gitHubAppsStore{Store: basestore.NewWithHandle(db.Handle())}
+	ctx := context.Background()
+
+	repoApp := &ghtypes.GitHubApp{
+		AppID:        1234,
+		Name:         "Repo App",
+		Domain:       "repos",
+		Slug:         "repos-app",
+		BaseURL:      "https://github.com/",
+		AppURL:       "https://github.com/apps/test-repos-app",
+		ClientID:     "abc123",
+		ClientSecret: "secret",
+		PrivateKey:   "private-key",
+		Logo:         "logo.png",
+	}
+
+	batchesApp := &ghtypes.GitHubApp{
+		AppID:        5678,
+		Name:         "Batches App",
+		Domain:       "batches",
+		Slug:         "batches-app",
+		BaseURL:      "https://github.com/",
+		AppURL:       "https://github.com/apps/test-batches-app",
+		ClientID:     "abc123",
+		ClientSecret: "secret",
+		PrivateKey:   "private-key",
+		Logo:         "logo.png",
+	}
+
+	_, err := store.Create(ctx, repoApp)
+	require.NoError(t, err)
+	_, err = store.Create(ctx, batchesApp)
+	require.NoError(t, err)
+
+	domain := types.ReposDomain
+	fetched, err := store.GetByDomain(ctx, &domain, "https://github.com/")
+	require.NoError(t, err)
+	require.Equal(t, repoApp.AppID, fetched.AppID)
+	require.Equal(t, repoApp.Name, fetched.Name)
+	require.Equal(t, repoApp.Domain, fetched.Domain)
+	require.Equal(t, repoApp.Slug, fetched.Slug)
+	require.Equal(t, repoApp.BaseURL, fetched.BaseURL)
+	require.Equal(t, repoApp.ClientID, fetched.ClientID)
+	require.Equal(t, repoApp.ClientSecret, fetched.ClientSecret)
+	require.Equal(t, repoApp.PrivateKey, fetched.PrivateKey)
+	require.Equal(t, repoApp.Logo, fetched.Logo)
+	require.NotZero(t, fetched.CreatedAt)
+	require.NotZero(t, fetched.UpdatedAt)
+
+	// does not exist
+	// _, err = store.GetByDomain(ctx, &domain, "bar")
+	// require.Error(t, err)
+
+	domain = types.BatchesDomain
+	fetched, err = store.GetByDomain(ctx, &domain, "https://github.com/")
+	require.NoError(t, err)
+	require.Equal(t, batchesApp.AppID, fetched.AppID)
 }
 
 func TestListGitHubApp(t *testing.T) {
@@ -356,7 +422,7 @@ func TestListGitHubApp(t *testing.T) {
 		Name:         "Test App 1",
 		Domain:       types.ReposDomain,
 		Slug:         "test-app-1",
-		BaseURL:      "https://github.com",
+		BaseURL:      "https://github.com/",
 		AppURL:       "https://github.com/apps/testapp",
 		ClientID:     "abc123",
 		ClientSecret: "secret",
@@ -369,7 +435,7 @@ func TestListGitHubApp(t *testing.T) {
 		Name:         "Test App 2",
 		Domain:       types.BatchesDomain,
 		Slug:         "test-app-2",
-		BaseURL:      "https://enterprise.github.com",
+		BaseURL:      "https://enterprise.github.com/",
 		AppURL:       "https://enterprise.github.com/apps/testapp",
 		ClientID:     "abc123",
 		ClientSecret: "secret",
