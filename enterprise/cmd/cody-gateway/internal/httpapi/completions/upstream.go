@@ -1,4 +1,4 @@
-package httpapi
+package completions
 
 import (
 	"bytes"
@@ -56,7 +56,7 @@ func makeUpstreamHandler[ReqT any](
 		// This will never be nil as the rate limiter middleware checks this before.
 		// TODO: Should we read the rate limit from context, and store it in the rate
 		// limiter to make this less dependent on these two logics to remain the same?
-		rateLimit, ok := act.RateLimits[feature]
+		rateLimit, ok := act.CompletionsRateLimits[feature]
 		if !ok {
 			response.JSONError(logger, w, http.StatusInternalServerError, errors.Wrapf(err, "rate limit for %q not found", string(feature)))
 			return

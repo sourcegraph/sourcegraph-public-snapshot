@@ -1,4 +1,4 @@
-package httpapi
+package completions
 
 import (
 	"bytes"
@@ -15,7 +15,7 @@ import (
 
 const openAIURL = "https://api.openai.com/v1/chat/completions"
 
-func newOpenAIHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisStore, accessToken string, orgID string, allowedModels []string) http.Handler {
+func NewOpenAIHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisStore, accessToken string, orgID string, allowedModels []string) http.Handler {
 	return makeUpstreamHandler(
 		logger,
 		eventLogger,

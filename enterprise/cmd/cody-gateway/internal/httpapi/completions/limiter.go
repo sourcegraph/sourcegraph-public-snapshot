@@ -1,4 +1,4 @@
-package httpapi
+package completions
 
 import (
 	"net/http"
@@ -29,7 +29,7 @@ func rateLimit(baseLogger log.Logger, eventLogger events.Logger, cache limiter.R
 			return
 		}
 
-		l, ok := act.Limiter(cache, feature)
+		l, ok := act.CompletionsLimiter(cache, feature)
 		if !ok {
 			response.JSONError(logger, w, http.StatusForbidden, errors.Newf("no access to feature %s", feature))
 			return
@@ -71,7 +71,7 @@ func rateLimit(baseLogger log.Logger, eventLogger events.Logger, cache limiter.R
 		next.ServeHTTP(responseRecorder, r)
 
 		// If response is healthy, consume the rate limit
-		if responseRecorder.StatusCode >= 200 || responseRecorder.StatusCode < 300 {
+		if responseRecorder.StatusCode >= 200 && responseRecorder.StatusCode < 300 {
 			if err := commit(); err != nil {
 				logger.Error("failed to commit rate limit consumption", log.Error(err))
 			}
