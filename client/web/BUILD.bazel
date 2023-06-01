@@ -33,6 +33,8 @@ eslint_config_and_lint_root(
     ],
 )
 
+# Temporary ESLint target to lint stories. This will be removed once we have a
+# custom gazelle targets. E.g., `gazelle:custom_js_files stories src/**/*.story.tsx`
 eslint_test_with_types(
     name = "stories_eslint",
     srcs = glob([
