@@ -3135,22 +3135,22 @@ Foreign-key constraints:
 
 # Table "public.product_subscriptions"
 ```
-                  Column                  |           Type           | Collation | Nullable | Default 
-------------------------------------------+--------------------------+-----------+----------+---------
- id                                       | uuid                     |           | not null | 
- user_id                                  | integer                  |           | not null | 
- billing_subscription_id                  | text                     |           |          | 
- created_at                               | timestamp with time zone |           | not null | now()
- updated_at                               | timestamp with time zone |           | not null | now()
- archived_at                              | timestamp with time zone |           |          | 
- account_number                           | text                     |           |          | 
- llm_proxy_enabled                        | boolean                  |           | not null | false
- llm_proxy_chat_rate_limit                | integer                  |           |          | 
- llm_proxy_chat_rate_interval_seconds     | integer                  |           |          | 
- llm_proxy_chat_rate_limit_allowed_models | text[]                   |           |          | 
- llm_proxy_code_rate_limit                | integer                  |           |          | 
- llm_proxy_code_rate_interval_seconds     | integer                  |           |          | 
- llm_proxy_code_rate_limit_allowed_models | text[]                   |           |          | 
+                   Column                    |           Type           | Collation | Nullable | Default 
+---------------------------------------------+--------------------------+-----------+----------+---------
+ id                                          | uuid                     |           | not null | 
+ user_id                                     | integer                  |           | not null | 
+ billing_subscription_id                     | text                     |           |          | 
+ created_at                                  | timestamp with time zone |           | not null | now()
+ updated_at                                  | timestamp with time zone |           | not null | now()
+ archived_at                                 | timestamp with time zone |           |          | 
+ account_number                              | text                     |           |          | 
+ cody_gateway_enabled                        | boolean                  |           | not null | false
+ cody_gateway_chat_rate_limit                | integer                  |           |          | 
+ cody_gateway_chat_rate_interval_seconds     | integer                  |           |          | 
+ cody_gateway_chat_rate_limit_allowed_models | text[]                   |           |          | 
+ cody_gateway_code_rate_limit                | integer                  |           |          | 
+ cody_gateway_code_rate_interval_seconds     | integer                  |           |          | 
+ cody_gateway_code_rate_limit_allowed_models | text[]                   |           |          | 
 Indexes:
     "product_subscriptions_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -3159,12 +3159,6 @@ Referenced by:
     TABLE "product_licenses" CONSTRAINT "product_licenses_product_subscription_id_fkey" FOREIGN KEY (product_subscription_id) REFERENCES product_subscriptions(id)
 
 ```
-
-**llm_proxy_chat_rate_interval_seconds**: Custom time interval over which the for LLM-proxy rate limit is applied
-
-**llm_proxy_chat_rate_limit**: Custom requests per time interval allowed for LLM-proxy
-
-**llm_proxy_enabled**: Whether or not this subscription has access to LLM-proxy
 
 # Table "public.query_runner_state"
 ```
