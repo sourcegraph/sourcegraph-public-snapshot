@@ -1,0 +1,23 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+
+go_library(
+    name = "cody-gateway_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//enterprise/cmd/cody-gateway/shared",
+        "//internal/conf",
+        "//internal/env",
+        "//internal/sanitycheck",
+        "//internal/service/svcmain",
+        "@com_github_getsentry_sentry_go//:sentry-go",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_binary(
+    name = "cody-gateway",
+    embed = [":cody-gateway_lib"],
+    visibility = ["//visibility:public"],
+)

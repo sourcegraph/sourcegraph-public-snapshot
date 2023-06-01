@@ -893,6 +893,7 @@ Referenced by:
 Indexes:
     "codeintel_initial_path_ranks_processed_pkey" PRIMARY KEY, btree (id)
     "codeintel_initial_path_ranks_processed_cgraph_key_codeintel_ini" UNIQUE, btree (graph_key, codeintel_initial_path_ranks_id)
+    "codeintel_initial_path_ranks_processed_codeintel_initial_path_r" btree (codeintel_initial_path_ranks_id)
 Foreign-key constraints:
     "fk_codeintel_initial_path_ranks" FOREIGN KEY (codeintel_initial_path_ranks_id) REFERENCES codeintel_initial_path_ranks(id) ON DELETE CASCADE
 
@@ -973,6 +974,18 @@ Referenced by:
     TABLE "codeintel_initial_path_ranks" CONSTRAINT "codeintel_initial_path_ranks_exported_upload_id_fkey" FOREIGN KEY (exported_upload_id) REFERENCES codeintel_ranking_exports(id) ON DELETE CASCADE
     TABLE "codeintel_ranking_definitions" CONSTRAINT "codeintel_ranking_definitions_exported_upload_id_fkey" FOREIGN KEY (exported_upload_id) REFERENCES codeintel_ranking_exports(id) ON DELETE CASCADE
     TABLE "codeintel_ranking_references" CONSTRAINT "codeintel_ranking_references_exported_upload_id_fkey" FOREIGN KEY (exported_upload_id) REFERENCES codeintel_ranking_exports(id) ON DELETE CASCADE
+
+```
+
+# Table "public.codeintel_ranking_graph_keys"
+```
+   Column   |           Type           | Collation | Nullable |                         Default                          
+------------+--------------------------+-----------+----------+----------------------------------------------------------
+ id         | integer                  |           | not null | nextval('codeintel_ranking_graph_keys_id_seq'::regclass)
+ graph_key  | text                     |           | not null | 
+ created_at | timestamp with time zone |           |          | now()
+Indexes:
+    "codeintel_ranking_graph_keys_pkey" PRIMARY KEY, btree (id)
 
 ```
 
@@ -1644,6 +1657,23 @@ Referenced by:
 
 **rollout**: Rollout only defined when flag_type is rollout. Increments of 0.01%
 
+# Table "public.github_app_installs"
+```
+     Column      |           Type           | Collation | Nullable |                     Default                     
+-----------------+--------------------------+-----------+----------+-------------------------------------------------
+ id              | integer                  |           | not null | nextval('github_app_installs_id_seq'::regclass)
+ app_id          | integer                  |           | not null | 
+ installation_id | integer                  |           | not null | 
+ created_at      | timestamp with time zone |           | not null | now()
+Indexes:
+    "github_app_installs_pkey" PRIMARY KEY, btree (id)
+    "app_id_idx" btree (app_id)
+    "installation_id_idx" btree (installation_id)
+Foreign-key constraints:
+    "github_app_installs_app_id_fkey" FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE
+
+```
+
 # Table "public.github_apps"
 ```
       Column       |           Type           | Collation | Nullable |                 Default                 
@@ -1668,6 +1698,8 @@ Indexes:
     "github_apps_app_id_slug_base_url_unique" UNIQUE, btree (app_id, slug, base_url)
 Foreign-key constraints:
     "github_apps_webhook_id_fkey" FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE SET NULL
+Referenced by:
+    TABLE "github_app_installs" CONSTRAINT "github_app_installs_app_id_fkey" FOREIGN KEY (app_id) REFERENCES github_apps(id) ON DELETE CASCADE
 
 ```
 
@@ -3123,18 +3155,22 @@ Foreign-key constraints:
 
 # Table "public.product_subscriptions"
 ```
-             Column              |           Type           | Collation | Nullable | Default 
----------------------------------+--------------------------+-----------+----------+---------
- id                              | uuid                     |           | not null | 
- user_id                         | integer                  |           | not null | 
- billing_subscription_id         | text                     |           |          | 
- created_at                      | timestamp with time zone |           | not null | now()
- updated_at                      | timestamp with time zone |           | not null | now()
- archived_at                     | timestamp with time zone |           |          | 
- account_number                  | text                     |           |          | 
- llm_proxy_enabled               | boolean                  |           | not null | false
- llm_proxy_rate_limit            | integer                  |           |          | 
- llm_proxy_rate_interval_seconds | integer                  |           |          | 
+                   Column                    |           Type           | Collation | Nullable | Default 
+---------------------------------------------+--------------------------+-----------+----------+---------
+ id                                          | uuid                     |           | not null | 
+ user_id                                     | integer                  |           | not null | 
+ billing_subscription_id                     | text                     |           |          | 
+ created_at                                  | timestamp with time zone |           | not null | now()
+ updated_at                                  | timestamp with time zone |           | not null | now()
+ archived_at                                 | timestamp with time zone |           |          | 
+ account_number                              | text                     |           |          | 
+ cody_gateway_enabled                        | boolean                  |           | not null | false
+ cody_gateway_chat_rate_limit                | integer                  |           |          | 
+ cody_gateway_chat_rate_interval_seconds     | integer                  |           |          | 
+ cody_gateway_chat_rate_limit_allowed_models | text[]                   |           |          | 
+ cody_gateway_code_rate_limit                | integer                  |           |          | 
+ cody_gateway_code_rate_interval_seconds     | integer                  |           |          | 
+ cody_gateway_code_rate_limit_allowed_models | text[]                   |           |          | 
 Indexes:
     "product_subscriptions_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -3143,12 +3179,6 @@ Referenced by:
     TABLE "product_licenses" CONSTRAINT "product_licenses_product_subscription_id_fkey" FOREIGN KEY (product_subscription_id) REFERENCES product_subscriptions(id)
 
 ```
-
-**llm_proxy_enabled**: Whether or not this subscription has access to LLM-proxy
-
-**llm_proxy_rate_interval_seconds**: Custom time interval over which the for LLM-proxy rate limit is applied
-
-**llm_proxy_rate_limit**: Custom requests per time interval allowed for LLM-proxy
 
 # Table "public.query_runner_state"
 ```

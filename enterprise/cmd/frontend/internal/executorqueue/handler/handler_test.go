@@ -831,6 +831,20 @@ func TestHandler_HandleHeartbeat(t *testing.T) {
 		assertionFunc        func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord])
 	}{
 		{
+			name: "V2 Heartbeat number IDs",
+			body: `{"version":"V2", "executorName": "test-executor", "jobIds": [42, 7], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
+				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
+				mockStore.HeartbeatFunc.PushReturn([]string{"42", "7"}, nil, nil)
+			},
+			expectedStatusCode:   http.StatusOK,
+			expectedResponseBody: `{"knownIds":["42","7"],"cancelIds":null}`,
+			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {
+				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
+				require.Len(t, mockStore.HeartbeatFunc.History(), 1)
+			},
+		},
+		{
 			name: "V2 Heartbeat",
 			body: `{"version":"V2", "executorName": "test-executor", "jobIds": ["42", "7"], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
 			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, mockStore *dbworkerstoremocks.MockStore[testRecord]) {

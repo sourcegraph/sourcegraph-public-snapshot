@@ -1,49 +1,102 @@
-{ nixpkgs, lib, utils }:
+{ pkgs
+, lib
+, autoreconfHook
+, perl
+, pkg-config
+, coreutils
+, pkgsStatic
+, fetchFromGitHub
+, buildPackages
+}:
 let
-  inherit (import ./util.nix { inherit (nixpkgs) lib; }) makeStatic unNixifyDylibs;
+  inherit (import ./util.nix { inherit lib; }) mkStatic unNixifyDylibs;
+  pcre2 = mkStatic pkgsStatic.pcre2;
+  libyaml = mkStatic pkgsStatic.libyaml;
+  jansson = pkgsStatic.jansson.overrideAttrs (oldAttrs: {
+    cmakeFlags = [ "-DJANSSON_BUILD_SHARED_LIBS=OFF" ];
+  });
+  stdenv = pkgsStatic.stdenv;
 in
-rec {
-  overlay = self: super: rec {
-    universal-ctags = super.universal-ctags.overrideAttrs (old: {
-      version = "5.9.20220403.0";
-      src = super.fetchFromGitHub {
-        owner = "universal-ctags";
-        repo = "ctags";
-        rev = "f95bb3497f53748c2b6afc7f298cff218103ab90";
-        sha256 = "sha256-pd89KERQj6K11Nue3YFNO+NLOJGqcMnHkeqtWvMFk38=";
-      };
-      # disable checks, else we get `make[1]: *** No rule to make target 'optlib/cmake.c'.  Stop.`
-      doCheck = false;
-      checkFlags = [ ];
-    });
+# yoinked from github.com/nixos/nixpkgs
+unNixifyDylibs pkgs (stdenv.mkDerivation rec {
+  pname = "universal-ctags";
+  version = "5.9.20220403.0";
+
+  src = fetchFromGitHub {
+    owner = "universal-ctags";
+    repo = "ctags";
+    rev = "p${version}";
+    sha256 = "sha256-pd89KERQj6K11Nue3YFNO+NLOJGqcMnHkeqtWvMFk38=";
   };
-  packages = lib.genAttrs utils.lib.defaultSystems
-    (system:
-      let
-        isMacOS = nixpkgs.legacyPackages.${system}.hostPlatform.isMacOS;
-        pkg = if isMacOS then "pkgs" else "pkgsStatic";
-        pkgs = (import nixpkgs { inherit system; overlays = [ overlay ]; }).${pkg};
-        pkgOverrides = rec {
-          pcre2 = if isMacOS then (makeStatic pkgs.pcre2) else pkgs.pcre2;
-          libyaml = if isMacOS then (makeStatic pkgs.libyaml) else pkgs.libyaml;
-          jansson =
-            if isMacOS then
-              pkgs.jansson.overrideAttrs
-                (oldAttrs: {
-                  cmakeFlags = [ "-DJANSSON_BUILD_SHARED_LIBS=OFF" ];
-                }) else pkgs.jansson;
-        };
-      in
-      {
-        ctags = unNixifyDylibs pkgs ((pkgs.universal-ctags.override {
-          # static python is a hassle, and its only used for docs here so we dont care about
-          # it being static or not
-          python3 = nixpkgs.legacyPackages.${system}.python3;
-          inherit (pkgOverrides) pcre2 libyaml jansson;
-        }).overrideAttrs (_: {
-          # don't include libintl/gettext
-          dontAddExtraLibs = true;
-        }));
-      }
-    );
-}
+
+  depsBuildBuild = [
+    buildPackages.stdenv.cc
+  ];
+
+  nativeBuildInputs = [
+    autoreconfHook
+    perl
+    pkg-config
+  ];
+
+  buildInputs = [
+    libyaml
+    pcre2
+    jansson
+    pkgsStatic.libxml2
+  ]
+  ++ lib.optional stdenv.isDarwin pkgsStatic.libiconv;
+
+  configureFlags = [ "--enable-tmpdir=/tmp" ];
+
+  dontAddExtraLibs = true;
+
+  patches = [
+    "${pkgs.path}/pkgs/development/tools/misc/universal-ctags/000-nixos-specific.patch"
+  ];
+
+  postPatch = ''
+    substituteInPlace Tmain/utils.sh \
+      --replace /bin/echo ${coreutils}/bin/echo
+
+    patchShebangs misc/*
+  '';
+
+  postFixup = ''
+    ln -s $out/bin/ctags $out/bin/universal-ctags
+  '';
+
+  doCheck = true;
+
+  checkTarget = [
+    "tlib"
+    "tmain"
+    "units"
+  ];
+  # disable check-genfile, this attempts to run some git commands
+  # which arent supported as we dont have/include .git
+  checkFlags = [
+    "-o"
+    "check-genfile"
+  ];
+
+  # must be enabled on a per-package basis
+  enableParallelBuilding = true;
+  enableParallelChecking = true;
+
+  meta = with lib; {
+    homepage = "https://docs.ctags.io/en/latest/";
+    description = "A maintained ctags implementation";
+    longDescription = ''
+      Universal Ctags (abbreviated as u-ctags) is a maintained implementation of
+      ctags. ctags generates an index (or tag) file of language objects found in
+      source files for programming languages. This index makes it easy for text
+      editors and other tools to locate the indexed items.
+    '';
+    license = licenses.gpl2Plus;
+    maintainers = [ maintainers.AndersonTorres ];
+    platforms = platforms.all;
+    mainProgram = "ctags";
+    priority = 1; # over the emacs implementation
+  };
+})

@@ -25,8 +25,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/opentracing/opentracing-go/ext"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"go.opentelemetry.io/otel/attribute"
@@ -59,7 +57,6 @@ import (
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
@@ -72,9 +69,6 @@ const tempDirName = ".tmp"
 // P4HomeName is the name used for the directory that git p4 will use as $HOME
 // and where it will store cache data.
 const P4HomeName = ".p4home"
-
-// UnsetExitStatus is a sentinel value for an unknown/unset exit status.
-const UnsetExitStatus = -10810
 
 // traceLogs is controlled via the env SRC_GITSERVER_TRACE. If true we trace
 // logs to stderr
@@ -103,57 +97,24 @@ func init() {
 	traceLogs, _ = strconv.ParseBool(env.Get("SRC_GITSERVER_TRACE", "false", "Toggles trace logging to stderr"))
 }
 
-// runCommandMock is set by tests. When non-nil it is run instead of
-// runCommand
-var runCommandMock func(context.Context, *exec.Cmd) (int, error)
-
-// runCommand runs the command and returns the exit status. All clients of this function should set the context
-// in cmd themselves, but we have to pass the context separately here for the sake of tracing.
-func runCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error) {
-	if runCommandMock != nil {
-		return runCommandMock(ctx, cmd.Unwrap())
-	}
-	span, _ := ot.StartSpanFromContext(ctx, "runCommand") //nolint:staticcheck // OT is deprecated
-	span.SetTag("path", cmd.Unwrap().Path)
-	span.SetTag("args", cmd.Unwrap().Args)
-	span.SetTag("dir", cmd.Unwrap().Dir)
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-			span.SetTag("exitCode", exitCode)
-		}
-		span.Finish()
-	}()
-
-	err = cmd.Run()
-	exitStatus := UnsetExitStatus
-	if cmd.Unwrap().ProcessState != nil { // is nil if process failed to start
-		exitStatus = cmd.Unwrap().ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
-	}
-	return exitStatus, err
-}
-
 // runCommandGraceful runs the command and returns the exit status. If the
 // supplied context is cancelled we attempt to send SIGINT to the command to
 // allow it to gracefully shutdown. All clients of this function should pass in a
 // command *without* a context.
 func runCommandGraceful(ctx context.Context, logger log.Logger, cmd wrexec.Cmder) (exitCode int, err error) {
-	span, _ := ot.StartSpanFromContext(ctx, "runCommandGraceful") //nolint:staticcheck // OT is deprecated
 	c := cmd.Unwrap()
-	span.SetTag("path", c.Path)
-	span.SetTag("args", c.Args)
-	span.SetTag("dir", c.Dir)
+	tr, ctx := trace.New(ctx, "gitserver", "runCommandGraceful",
+		attribute.String("path", c.Path),
+		attribute.StringSlice("args", c.Args),
+		attribute.String("dir", c.Dir))
 	defer func() {
 		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-			span.SetTag("exitCode", exitCode)
+			tr.SetAttributes(attribute.Int("exitCode", exitCode))
 		}
-		span.Finish()
+		tr.FinishWithErr(&err)
 	}()
 
-	exitCode = UnsetExitStatus
+	exitCode = common.UnsetExitStatus
 	err = cmd.Start()
 	if err != nil {
 		return exitCode, err
@@ -234,50 +195,9 @@ type cloneJob struct {
 	options   *cloneOptions
 }
 
-// cloneQueue is a threadsafe list.List of cloneJobs that functions as a queue in practice.
-type cloneQueue struct {
-	mu   sync.Mutex
-	jobs *list.List
-
-	cmu  sync.Mutex
-	cond *sync.Cond
-}
-
-// push will queue the cloneJob to the end of the queue.
-func (c *cloneQueue) push(cj *cloneJob) {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	c.jobs.PushBack(cj)
-	c.cond.Signal()
-}
-
-// pop will return the next cloneJob. If there's no next job available, it returns nil.
-func (c *cloneQueue) pop() *cloneJob {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	next := c.jobs.Front()
-	if next == nil {
-		return nil
-	}
-
-	return c.jobs.Remove(next).(*cloneJob)
-}
-
-func (c *cloneQueue) empty() bool {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	return c.jobs.Len() == 0
-}
-
 // NewCloneQueue initializes a new cloneQueue.
-func NewCloneQueue(jobs *list.List) *cloneQueue {
-	cq := cloneQueue{jobs: jobs}
-	cq.cond = sync.NewCond(&cq.cmu)
-
-	return &cq
+func NewCloneQueue(jobs *list.List) *common.Queue[cloneJob] {
+	return common.NewQueue[cloneJob](jobs)
 }
 
 // Server is a gitserver server.
@@ -323,7 +243,7 @@ type Server struct {
 
 	// CloneQueue is a threadsafe queue used by DoBackgroundClones to process incoming clone
 	// requests asynchronously.
-	CloneQueue *cloneQueue
+	CloneQueue *common.Queue[cloneJob]
 
 	// skipCloneForTests is set by tests to avoid clones.
 	skipCloneForTests bool
@@ -604,12 +524,13 @@ func (s *Server) Handler() http.Handler {
 		RevParse:      gitAdapter.RevParse,
 		GetObjectType: gitAdapter.GetObjectType,
 	}
-	getObjectFunc := gitdomain.GetObjectFunc(func(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
+	getObjectFunc := gitdomain.GetObjectFunc(func(ctx context.Context, repo api.RepoName, objectName string) (_ *gitdomain.GitObject, err error) {
 		// Tracing is server concern, so add it here. Once generics lands we should be
 		// able to create some simple wrappers
-		span, ctx := ot.StartSpanFromContext(ctx, "Git: GetObject") //nolint:staticcheck // OT is deprecated
-		span.SetTag("objectName", objectName)
-		defer span.Finish()
+		tr, ctx := trace.New(ctx, "git", "GetObject",
+			attribute.String("objectName", objectName))
+		defer tr.FinishWithErr(&err)
+
 		return getObjectService.GetObject(ctx, repo, objectName)
 	})
 
@@ -687,19 +608,19 @@ func (s *Server) cloneJobProducer(ctx context.Context, jobs chan<- *cloneJob) {
 
 	for {
 		// Acquire the cond mutex lock and wait for a signal if the queue is empty.
-		s.CloneQueue.cmu.Lock()
-		if s.CloneQueue.empty() {
-			s.CloneQueue.cond.Wait()
+		s.CloneQueue.Mutex.Lock()
+		if s.CloneQueue.Empty() {
+			s.CloneQueue.Cond.Wait()
 		}
 
 		// The queue is not empty and we have a job to process! But don't forget to unlock the cond
 		// mutex here as we don't need to hold the lock beyond this point for now.
-		s.CloneQueue.cmu.Unlock()
+		s.CloneQueue.Mutex.Unlock()
 
 		// Keep popping from the queue until the queue is empty again, in which case we start all
 		// over again from the top.
 		for {
-			job := s.CloneQueue.pop()
+			job := s.CloneQueue.Pop()
 			if job == nil {
 				break
 			}
@@ -926,6 +847,12 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitserverAddresses, batc
 	return nil
 }
 
+// repoCloned checks if dir or `${dir}/.git` is a valid GIT_DIR.
+var repoCloned = func(dir common.GitDir) bool {
+	_, err := os.Stat(dir.Path("HEAD"))
+	return !os.IsNotExist(err)
+}
+
 // Stop cancels the running background jobs and returns when done.
 func (s *Server) Stop() {
 	// idempotent so we can just always set and cancel
@@ -1036,42 +963,51 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "no Repo given", http.StatusBadRequest)
 		return
 	}
-
-	var syncer VCSSyncer
-	// We use an internal actor here as the repo may be private. It is safe since all
-	// we return is a bool indicating whether the repo is cloneable or not. Perhaps
-	// the only things that could leak here is whether a private repo exists although
-	// the endpoint is only available internally so it's low risk.
-	remoteURL, err := s.getRemoteURL(actor.WithInternalActor(r.Context()), req.Repo)
+	repo := api.RepoName(req.Repo)
+	resp, err := s.IsRepoCloneable(r.Context(), repo)
 	if err != nil {
-		// We use this endpoint to verify if a repo exists without consuming
-		// API rate limit, since many users visit private or bogus repos,
-		// so we deduce the unauthenticated clone URL from the repo name.
-		remoteURL, _ = vcs.ParseURL("https://" + string(req.Repo) + ".git")
-
-		// At this point we are assuming it's a git repo
-		syncer = &GitRepoSyncer{}
-	} else {
-		syncer, err = s.GetVCSSyncer(r.Context(), req.Repo)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	}
-
-	resp := protocol.IsRepoCloneableResponse{
-		Cloned: repoCloned(s.dir(req.Repo)),
-	}
-	if err := syncer.IsCloneable(r.Context(), remoteURL); err == nil {
-		resp.Cloneable = true
-	} else {
-		resp.Reason = err.Error()
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func (s *Server) IsRepoCloneable(ctx context.Context, repo api.RepoName) (protocol.IsRepoCloneableResponse, error) {
+	var syncer VCSSyncer
+	// We use an internal actor here as the repo may be private. It is safe since all
+	// we return is a bool indicating whether the repo is cloneable or not. Perhaps
+	// the only things that could leak here is whether a private repo exists although
+	// the endpoint is only available internally so it's low risk.
+	remoteURL, err := s.getRemoteURL(actor.WithInternalActor(ctx), repo)
+	if err != nil {
+		// We use this endpoint to verify if a repo exists without consuming
+		// API rate limit, since many users visit private or bogus repos,
+		// so we deduce the unauthenticated clone URL from the repo name.
+		remoteURL, _ = vcs.ParseURL("https://" + string(repo) + ".git")
+
+		// At this point we are assuming it's a git repo
+		syncer = &GitRepoSyncer{}
+	} else {
+		syncer, err = s.GetVCSSyncer(ctx, repo)
+		if err != nil {
+			return protocol.IsRepoCloneableResponse{}, err
+		}
+	}
+
+	resp := protocol.IsRepoCloneableResponse{
+		Cloned: repoCloned(s.dir(repo)),
+	}
+	if err := syncer.IsCloneable(ctx, remoteURL); err == nil {
+		resp.Cloneable = true
+	} else {
+		resp.Reason = err.Error()
+	}
+
+	return resp, nil
 }
 
 // handleRepoUpdate is a synchronous (waits for update to complete or
@@ -1522,7 +1458,7 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 		dir.Set(cmd.Unwrap())
 		cmd.Unwrap().Stdout = &buf
 
-		if _, err := runCommand(ctx, cmd); err != nil {
+		if _, err := common.RunCommand(ctx, cmd); err != nil {
 			return "", true, err
 		}
 
@@ -1697,7 +1633,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 
 	start := time.Now()
 	var cmdStart time.Time // set once we have ensured commit
-	exitStatus := UnsetExitStatus
+	exitStatus := common.UnsetExitStatus
 	var stdoutN, stderrN int64
 	var status string
 	var execErr error
@@ -1839,7 +1775,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	cmd.Unwrap().Stderr = stderrW
 	cmd.Unwrap().Stdin = bytes.NewReader(req.Stdin)
 
-	exitStatus, execErr = runCommand(ctx, cmd)
+	exitStatus, execErr = common.RunCommand(ctx, cmd)
 
 	status = strconv.Itoa(exitStatus)
 	stdoutN = stdoutW.n
@@ -1958,7 +1894,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 
 	start := time.Now()
 	var cmdStart time.Time // set once we have ensured commit
-	exitStatus := UnsetExitStatus
+	exitStatus := common.UnsetExitStatus
 	var stdoutN, stderrN int64
 	var status string
 	var execErr error
@@ -2053,7 +1989,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 	cmd.Stdout = stdoutW
 	cmd.Stderr = stderrW
 
-	exitStatus, execErr = runCommand(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd))
+	exitStatus, execErr = common.RunCommand(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd))
 
 	status = strconv.Itoa(exitStatus)
 	stdoutN = stdoutW.n
@@ -2267,7 +2203,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	// We push the cloneJob to a queue and let the producer-consumer pipeline take over from this
 	// point. See definitions of cloneJobProducer and cloneJobConsumer to understand how these jobs
 	// are processed.
-	s.CloneQueue.push(&cloneJob{
+	s.CloneQueue.Push(&cloneJob{
 		repo:      repo,
 		dir:       dir,
 		syncer:    syncer,
@@ -2343,7 +2279,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 
 	go readCloneProgress(bgCtx, s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
 
-	if output, err := runWith(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, pw); err != nil {
+	if output, err := common.RunWith(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, pw); err != nil {
 		return errors.Wrapf(err, "clone failed. Output: %s", string(output))
 	}
 
@@ -2617,10 +2553,10 @@ func honeySampleRate(cmd string, actor *actor.Actor) uint {
 
 var headBranchPattern = lazyregexp.New(`HEAD branch: (.+?)\n`)
 
-func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec string) error {
-	span, ctx := ot.StartSpanFromContext(ctx, "Server.doRepoUpdate") //nolint:staticcheck // OT is deprecated
-	span.SetTag("repo", repo)
-	defer span.Finish()
+func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec string) (err error) {
+	tr, ctx := trace.New(ctx, "server", "doRepoUpdate",
+		attribute.String("repo", string(repo)))
+	defer tr.FinishWithErr(&err)
 
 	s.repoUpdateLocksMu.Lock()
 	l, ok := s.repoUpdateLocks[repo]
@@ -2639,7 +2575,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 	// close when its done. We can return when either done is closed or our
 	// deadline has passed.
 	done := make(chan struct{})
-	err := errors.New("another operation is already in progress")
+	err = errors.New("another operation is already in progress")
 	go func() {
 		defer close(done)
 		once.Do(func() {
@@ -2659,7 +2595,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 				}
 
 				// The repo update might have failed due to the repo being corrupt
-				var gitErr *GitCommandError
+				var gitErr *common.GitCommandError
 				if errors.As(err, &gitErr) {
 					s.logIfCorrupt(ctx, repo, s.dir(repo), gitErr.Output)
 				}
@@ -2672,7 +2608,6 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 	case <-done:
 		return errors.Wrapf(err, "repo %s:", repo)
 	case <-ctx.Done():
-		span.LogFields(otlog.String("event", "context canceled"))
 		return ctx.Err()
 	}
 }
@@ -2826,7 +2761,7 @@ func setHEAD(ctx context.Context, logger log.Logger, rf *wrexec.RecordingCommand
 		return errors.Wrap(err, "get remote show command")
 	}
 	dir.Set(cmd)
-	output, err := runWith(ctx, rf.Wrap(ctx, logger, cmd), true, nil)
+	output, err := common.RunWith(ctx, rf.Wrap(ctx, logger, cmd), true, nil)
 	if err != nil {
 		logger.Error("Failed to fetch remote info", log.Error(err), log.String("output", string(output)))
 		return errors.Wrap(err, "failed to fetch remote info")

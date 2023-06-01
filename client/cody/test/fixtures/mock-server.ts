@@ -1,5 +1,17 @@
 import express from 'express'
 
+// create interface for the request
+interface MockRequest {
+    headers: {
+        authorization: string
+    }
+    body: {
+        messages: {
+            text: string
+        }[]
+    }
+}
+
 const SERVER_PORT = 49300
 
 export const SERVER_URL = 'http://localhost:49300'
@@ -17,7 +29,11 @@ export async function run<T>(around: () => Promise<T>): Promise<T> {
 
     app.post('/.api/completions/stream', (req, res) => {
         // TODO: Filter streaming response
-        const response = req.body.messages[2].text.includes('<selection>') ? responses.fixup : responses.chat
+        // TODO: Handle multiple messages
+        // Ideas from Dom - see if we could put something in the test request itself where we tell it what to respond with
+        // or have a method on the server to send a set response the next time it sees a trigger word in the request.
+        const request = req as MockRequest
+        const response = request.body.messages[2].text.includes('<selection>') ? responses.fixup : responses.chat
         res.send(`event: completion\ndata: {"completion": ${JSON.stringify(response)}}\n\nevent: done\ndata: {}\n\n`)
     })
 

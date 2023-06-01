@@ -9,18 +9,18 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/suspiciousnames"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -498,7 +498,7 @@ func (r *UserResolver) CompletionsQuotaOverride(ctx context.Context) (*int32, er
 		return nil, err
 	}
 
-	v, err := r.db.Users().GetCompletionsQuota(ctx, r.user.ID)
+	v, err := r.db.Users().GetChatCompletionsQuota(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -634,7 +634,7 @@ func (r *schemaResolver) SetUserCompletionsQuota(ctx context.Context, args SetUs
 		i := int(*args.Quota)
 		quota = &i
 	}
-	if err := r.db.Users().SetCompletionsQuota(ctx, user.ID, quota); err != nil {
+	if err := r.db.Users().SetChatCompletionsQuota(ctx, user.ID, quota); err != nil {
 		return nil, err
 	}
 
