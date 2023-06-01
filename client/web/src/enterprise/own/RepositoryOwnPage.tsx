@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 
 import { mdiAccount } from '@mdi/js'
-import {Navigate, useLocation} from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { H1, Icon, Link, LoadingSpinner, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
@@ -10,9 +10,9 @@ import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { TreeOwnershipPanel } from '../../repo/blob/own/TreeOwnershipPanel'
+import { parseBrowserRepoURL } from '../../util/url'
 
 import { RepositoryOwnAreaPageProps } from './RepositoryOwnEditPage'
-import {parseBrowserRepoURL} from "../../util/url";
 
 const BREADCRUMB = { key: 'own', element: 'Ownership' }
 
@@ -22,9 +22,11 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
     authenticatedUser,
     telemetryService,
 }) => {
-    const location = useLocation()
-    const { filePath = '' } = parseBrowserRepoURL(location.pathname) // empty string is root
-    console.log(filePath)
+    // const location = useLocation()
+    // const { filePath = '' } = parseBrowserRepoURL(location.pathname) // empty string is root
+    const queryParameters = new URLSearchParams(location.search)
+    const path = queryParameters.get('path') ?? ''
+    console.log(path)
 
     useBreadcrumb(BREADCRUMB)
 
@@ -66,7 +68,7 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
                 </H1>
             </PageHeader>
 
-            <TreeOwnershipPanel repoID={repo.id} filePath={filePath} telemetryService={telemetryService} />
+            <TreeOwnershipPanel repoID={repo.id} filePath={path} telemetryService={telemetryService} />
 
             {/*<RepositoryOwnPageContents repo={repo} authenticatedUser={authenticatedUser}/>*/}
         </Page>

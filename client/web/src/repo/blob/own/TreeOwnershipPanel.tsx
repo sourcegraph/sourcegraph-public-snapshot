@@ -1,18 +1,19 @@
 import * as React from 'react'
-import {useEffect} from 'react'
+import { useEffect } from 'react'
+
 import classNames from 'classnames'
-import {logger} from '@sourcegraph/common'
-import {useQuery} from '@sourcegraph/http-client'
-import {TelemetryProps} from '@sourcegraph/shared/src/telemetry/telemetryService'
-import {ErrorAlert, LoadingSpinner} from '@sourcegraph/wildcard'
-import {
-    FetchTreeOwnershipResult,
-    FetchTreeOwnershipVariables,
-} from '../../../graphql-operations'
-import {FETCH_TREE_OWNERS} from './grapqlQueries'
+
+import { logger } from '@sourcegraph/common'
+import { useQuery } from '@sourcegraph/http-client'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
+
+import { FetchTreeOwnershipResult, FetchTreeOwnershipVariables } from '../../../graphql-operations'
+
+import { FETCH_TREE_OWNERS } from './grapqlQueries'
+import { OwnerList } from './OwnerList'
 
 import styles from './FileOwnershipPanel.module.scss'
-import {OwnerList} from './OwnerList';
 
 export const TreeOwnershipPanel: React.FunctionComponent<
     {
@@ -20,18 +21,21 @@ export const TreeOwnershipPanel: React.FunctionComponent<
         revision?: string
         filePath: string
     } & TelemetryProps
-    > = ({ repoID, revision, filePath, telemetryService }) => {
+> = ({ repoID, revision, filePath, telemetryService }) => {
     useEffect(() => {
         telemetryService.log('OwnershipPanelOpened')
     }, [telemetryService])
 
-    const { data, loading, error } = useQuery<FetchTreeOwnershipResult, FetchTreeOwnershipVariables>(FETCH_TREE_OWNERS, {
-        variables: {
-            repo: repoID,
-            revision: revision ?? '',
-            currentPath: filePath,
-        },
-    })
+    const { data, loading, error } = useQuery<FetchTreeOwnershipResult, FetchTreeOwnershipVariables>(
+        FETCH_TREE_OWNERS,
+        {
+            variables: {
+                repo: repoID,
+                revision: revision ?? '',
+                currentPath: filePath,
+            },
+        }
+    )
 
     if (loading) {
         return (
@@ -55,4 +59,3 @@ export const TreeOwnershipPanel: React.FunctionComponent<
     }
     return <OwnerList />
 }
-

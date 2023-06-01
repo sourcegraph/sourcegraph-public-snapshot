@@ -1,15 +1,19 @@
 import * as React from 'react'
-import {useEffect} from 'react'
+import { useEffect } from 'react'
+
 import classNames from 'classnames'
-import {logger} from '@sourcegraph/common'
-import {useQuery} from '@sourcegraph/http-client'
-import {TelemetryProps} from '@sourcegraph/shared/src/telemetry/telemetryService'
-import {ErrorAlert, LoadingSpinner} from '@sourcegraph/wildcard'
-import {FetchOwnershipResult, FetchOwnershipVariables,} from '../../../graphql-operations'
-import {FETCH_OWNERS} from './grapqlQueries'
+
+import { logger } from '@sourcegraph/common'
+import { useQuery } from '@sourcegraph/http-client'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
+
+import { FetchOwnershipResult, FetchOwnershipVariables } from '../../../graphql-operations'
+
+import { FETCH_OWNERS } from './grapqlQueries'
+import { OwnerList } from './OwnerList'
 
 import styles from './FileOwnershipPanel.module.scss'
-import {OwnerList} from "./OwnerList";
 
 export const FileOwnershipPanel: React.FunctionComponent<
     {
@@ -52,4 +56,3 @@ export const FileOwnershipPanel: React.FunctionComponent<
     }
     return <OwnerList />
 }
-
