@@ -132,7 +132,7 @@ sg ci build wolfi
 Base pipeline (more steps might be included based on branch changes):
 
 - **Metadata**: Pipeline metadata
-- **Wolfi image builds**: Build Wolfi-based batcheshelper, Build Wolfi-based blobstore, Build Wolfi-based bundled-executor, Build Wolfi-based cadvisor, Build Wolfi-based codeinsights-db, Build Wolfi-based codeintel-db, Build Wolfi-based embeddings, Build Wolfi-based executor, Build Wolfi-based executor-kubernetes, Build Wolfi-based frontend, Build Wolfi-based github-proxy, Build Wolfi-based gitserver, Build Wolfi-based indexed-searcher, Build Wolfi-based jaeger-agent, Build Wolfi-based jaeger-all-in-one, Build Wolfi-based cody-gateway, Build Wolfi-based loadtest, Build Wolfi-based migrator, Build Wolfi-based node-exporter, Build Wolfi-based opentelemetry-collector, Build Wolfi-based postgres-12-alpine, Build Wolfi-based postgres_exporter, Build Wolfi-based precise-code-intel-worker, Build Wolfi-based prometheus, Build Wolfi-based prometheus-gcp, Build Wolfi-based redis-cache, Build Wolfi-based redis-store, Build Wolfi-based redis_exporter, Build Wolfi-based repo-updater, Build Wolfi-based search-indexer, Build Wolfi-based searcher, Build Wolfi-based server, Build Wolfi-based sg, Build Wolfi-based symbols, Build Wolfi-based syntax-highlighter, Build Wolfi-based worker
+- **Wolfi image builds**: Build Wolfi-based batcheshelper, Build Wolfi-based blobstore, Build Wolfi-based bundled-executor, Build Wolfi-based cadvisor, Build Wolfi-based embeddings, Build Wolfi-based executor, Build Wolfi-based executor-kubernetes, Build Wolfi-based frontend, Build Wolfi-based github-proxy, Build Wolfi-based gitserver, Build Wolfi-based indexed-searcher, Build Wolfi-based jaeger-agent, Build Wolfi-based jaeger-all-in-one, Build Wolfi-based cody-gateway, Build Wolfi-based loadtest, Build Wolfi-based migrator, Build Wolfi-based node-exporter, Build Wolfi-based opentelemetry-collector, Build Wolfi-based postgres_exporter, Build Wolfi-based precise-code-intel-worker, Build Wolfi-based prometheus, Build Wolfi-based prometheus-gcp, Build Wolfi-based redis-cache, Build Wolfi-based redis-store, Build Wolfi-based redis_exporter, Build Wolfi-based repo-updater, Build Wolfi-based search-indexer, Build Wolfi-based searcher, Build Wolfi-based server, Build Wolfi-based sg, Build Wolfi-based symbols, Build Wolfi-based syntax-highlighter, Build Wolfi-based worker
 
 ### Release branch nightly healthcheck build
 
@@ -175,9 +175,9 @@ The run type for environment including `{"CODY_NIGHTLY":"true"}`.
 
 Base pipeline (more steps might be included based on branch changes):
 
+- Stylelint (all)
 - ESLint (all)
 - ESLint (web)
-- Stylelint (all)
 - Unit, integration, and E2E tests for the Cody VS Code extension
 - Cody release
 
