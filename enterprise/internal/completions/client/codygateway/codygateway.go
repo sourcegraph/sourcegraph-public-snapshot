@@ -60,6 +60,8 @@ func (c *codyGatewayClient) Complete(ctx context.Context, feature types.Completi
 	if err != nil {
 		return nil, err
 	}
+	// Passthrough error directly, ErrStatusNotOK should be implemented by the
+	// underlying client.
 	return cc.Complete(ctx, feature, requestParams)
 }
 
