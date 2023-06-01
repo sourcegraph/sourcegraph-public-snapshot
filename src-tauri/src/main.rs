@@ -227,11 +227,21 @@ fn start_embedded_services(handle: &tauri::AppHandle) {
                 }
                 CommandEvent::Error(err) => {
                     show_error_screen(&app);
-                    log::error!("Command Error: {:#?}", err)
+                    log::error!("Error running the Sourcegraph app backend: {:#?}", err)
                 }
                 CommandEvent::Terminated(payload) => {
                     show_error_screen(&app);
-                    log::error!("Command Terminated: {:#?}", payload)
+
+                    if let Some(code) = payload.code {
+                        log::error!("Sourcegraph app backend terminated with exit code {}", code);
+                    }
+
+                    if let Some(signal) = payload.signal {
+                        log::error!(
+                            "Sourcegraph app backend terminated due to signal {}",
+                            signal
+                        );
+                    }
                 }
                 _ => continue,
             };
