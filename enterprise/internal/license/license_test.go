@@ -71,13 +71,34 @@ mSXt7lUbEmiQep700eM7YlgrOxUVqHsjf1QMrNfq05Ajr8uDfHim
 }
 
 var (
-	timeFixture = time.Date(2018, time.September, 22, 21, 33, 44, 0, time.UTC)
-	infoFixture = Info{Tags: []string{"a"}, UserCount: 123, ExpiresAt: timeFixture}
+	timeFixture   = time.Date(2018, time.September, 22, 21, 33, 44, 0, time.UTC)
+	infoV1Fixture = Info{Tags: []string{"a"}, UserCount: 123, ExpiresAt: timeFixture}
+
+	sfSubID       = "AE0002412312"
+	sfOpID        = "EA890000813"
+	infoV2Fixture = Info{Tags: []string{"a"}, UserCount: 123, ExpiresAt: timeFixture, SalesforceSubscriptionID: &sfSubID, SalesforceOpportunityID: &sfOpID}
 )
 
 func TestInfo_EncodeDecode(t *testing.T) {
-	t.Run("ok", func(t *testing.T) {
-		want := infoFixture
+	t.Run("v1 ok", func(t *testing.T) {
+		want := infoV1Fixture
+		data, err := want.encode()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		var got Info
+		if err := got.decode(data); err != nil {
+			t.Fatal(err)
+		}
+
+		if !reflect.DeepEqual(got, want) {
+			t.Errorf("got %+v, want %+v", got, want)
+		}
+	})
+
+	t.Run("v2 ok", func(t *testing.T) {
+		want := infoV2Fixture
 		data, err := want.encode()
 		if err != nil {
 			t.Fatal(err)
@@ -102,8 +123,25 @@ func TestInfo_EncodeDecode(t *testing.T) {
 }
 
 func TestGenerateParseSignedKey(t *testing.T) {
-	t.Run("ok", func(t *testing.T) {
-		want := infoFixture
+	t.Run("v1 ok", func(t *testing.T) {
+		want := infoV1Fixture
+		text, _, err := GenerateSignedKey(want, privateKey)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		got, _, err := ParseSignedKey(text, publicKey)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !reflect.DeepEqual(got, &want) {
+			t.Errorf("got %+v, want %+v", got, &want)
+		}
+	})
+
+	t.Run("v2 ok", func(t *testing.T) {
+		want := infoV2Fixture
 		text, _, err := GenerateSignedKey(want, privateKey)
 		if err != nil {
 			t.Fatal(err)
@@ -120,7 +158,7 @@ func TestGenerateParseSignedKey(t *testing.T) {
 	})
 
 	t.Run("ignores whitespace", func(t *testing.T) {
-		want := infoFixture
+		want := infoV1Fixture
 		text, _, err := GenerateSignedKey(want, privateKey)
 		if err != nil {
 			t.Fatal(err)
