@@ -37,6 +37,12 @@ type BufferedLogger struct {
 var _ Logger = &BufferedLogger{}
 var _ goroutine.BackgroundRoutine = &BufferedLogger{}
 
+// defaultTimeout is the default timeout to wait for an event to be submitted,
+// configured on NewBufferedLogger. The goal is to never block for long enough
+// for the delay to become noticeable to the user - bufferSize is generally
+// quite large, so we should never hit timeout in a normal situation.
+var defaultTimeout = 150 * time.Millisecond
+
 // NewBufferedLogger wraps handler with a buffered logger that submits events
 // in the background instead of in the hot-path of a request. It implements
 // goroutine.BackgroundRoutine that must be started.
@@ -47,9 +53,7 @@ func NewBufferedLogger(logger log.Logger, handler Logger, bufferSize int) *Buffe
 		handler: handler,
 
 		bufferC: make(chan bufferedEvent, bufferSize),
-		// don't block enough to become noticeable - bufferSize is generally quite
-		// large, so we should never hit timeout in a normal situation.
-		timeout: 150 * time.Millisecond,
+		timeout: defaultTimeout,
 
 		bufferClosed: &atomic.Bool{},
 		flushedC:     make(chan struct{}),
