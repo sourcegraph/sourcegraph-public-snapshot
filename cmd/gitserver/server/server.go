@@ -967,42 +967,51 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "no Repo given", http.StatusBadRequest)
 		return
 	}
-
-	var syncer VCSSyncer
-	// We use an internal actor here as the repo may be private. It is safe since all
-	// we return is a bool indicating whether the repo is cloneable or not. Perhaps
-	// the only things that could leak here is whether a private repo exists although
-	// the endpoint is only available internally so it's low risk.
-	remoteURL, err := s.getRemoteURL(actor.WithInternalActor(r.Context()), req.Repo)
+	repo := api.RepoName(req.Repo)
+	resp, err := s.IsRepoCloneable(r.Context(), repo)
 	if err != nil {
-		// We use this endpoint to verify if a repo exists without consuming
-		// API rate limit, since many users visit private or bogus repos,
-		// so we deduce the unauthenticated clone URL from the repo name.
-		remoteURL, _ = vcs.ParseURL("https://" + string(req.Repo) + ".git")
-
-		// At this point we are assuming it's a git repo
-		syncer = &GitRepoSyncer{}
-	} else {
-		syncer, err = s.GetVCSSyncer(r.Context(), req.Repo)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-	}
-
-	resp := protocol.IsRepoCloneableResponse{
-		Cloned: repoCloned(s.dir(req.Repo)),
-	}
-	if err := syncer.IsCloneable(r.Context(), remoteURL); err == nil {
-		resp.Cloneable = true
-	} else {
-		resp.Reason = err.Error()
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+}
+
+func (s *Server) IsRepoCloneable(ctx context.Context, repo api.RepoName) (protocol.IsRepoCloneableResponse, error) {
+	var syncer VCSSyncer
+	// We use an internal actor here as the repo may be private. It is safe since all
+	// we return is a bool indicating whether the repo is cloneable or not. Perhaps
+	// the only things that could leak here is whether a private repo exists although
+	// the endpoint is only available internally so it's low risk.
+	remoteURL, err := s.getRemoteURL(actor.WithInternalActor(ctx), repo)
+	if err != nil {
+		// We use this endpoint to verify if a repo exists without consuming
+		// API rate limit, since many users visit private or bogus repos,
+		// so we deduce the unauthenticated clone URL from the repo name.
+		remoteURL, _ = vcs.ParseURL("https://" + string(repo) + ".git")
+
+		// At this point we are assuming it's a git repo
+		syncer = &GitRepoSyncer{}
+	} else {
+		syncer, err = s.GetVCSSyncer(ctx, repo)
+		if err != nil {
+			return protocol.IsRepoCloneableResponse{}, err
+		}
+	}
+
+	resp := protocol.IsRepoCloneableResponse{
+		Cloned: repoCloned(s.dir(repo)),
+	}
+	if err := syncer.IsCloneable(ctx, remoteURL); err == nil {
+		resp.Cloneable = true
+	} else {
+		resp.Reason = err.Error()
+	}
+
+	return resp, nil
 }
 
 // handleRepoUpdate is a synchronous (waits for update to complete or
