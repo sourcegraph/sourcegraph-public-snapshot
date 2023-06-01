@@ -172,7 +172,7 @@ fn main() {
             reload_cody_window,
             show_logs,
             restart_app,
-            prompt_to_clear_all_data
+            clear_all_data
         ])
         .run(context)
         .expect("error while running tauri application");
