@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-func TestProductLicensesAccessToken(t *testing.T) {
+func TestLookupProductSubscriptionIDByAccessToken(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
@@ -42,7 +42,7 @@ func TestProductLicensesAccessToken(t *testing.T) {
 		rawToken := defaultRawAccessToken([]byte(license.LicenseKey))
 		accessToken := defaultAccessToken(rawToken)
 
-		gotPS, err := newDBTokens(db).LookupAccessToken(ctx, accessToken)
+		gotPS, err := newDBTokens(db).LookupProductSubscriptionIDByAccessToken(ctx, accessToken)
 		require.NoError(t, err)
 		assert.Equal(t, gotPS, ps)
 	})

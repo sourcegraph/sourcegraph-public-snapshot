@@ -3,8 +3,11 @@ package productsubscription
 import (
 	"context"
 	"encoding/hex"
+	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
 
 // productSubscriptionAccessTokenPrefix is the prefix used for identifying tokens
@@ -16,6 +19,21 @@ func defaultAccessToken(rawToken []byte) string {
 	return productSubscriptionAccessTokenPrefix + hex.EncodeToString(rawToken)
 }
 
+type ErrProductSubscriptionNotFound struct {
+	err error
+}
+
+func (e ErrProductSubscriptionNotFound) Error() string {
+	if e.err == nil {
+		return "product subscription not found"
+	}
+	return fmt.Sprintf("product subscription not found: %v", e.err)
+}
+
+func (e ErrProductSubscriptionNotFound) Extensions() map[string]any {
+	return map[string]any{"code": codygateway.GQLErrCodeProductSubscriptionNotFound}
+}
+
 // ProductSubscriptionByAccessToken retrieves the subscription corresponding to the
 // given access token.
 func (r ProductSubscriptionLicensingResolver) ProductSubscriptionByAccessToken(ctx context.Context, args *graphqlbackend.ProductSubscriptionByAccessTokenArgs) (graphqlbackend.ProductSubscription, error) {
@@ -24,12 +42,19 @@ func (r ProductSubscriptionLicensingResolver) ProductSubscriptionByAccessToken(c
 		return nil, err
 	}
 
-	subID, err := newDBTokens(r.DB).LookupAccessToken(ctx, args.AccessToken)
+	subID, err := newDBTokens(r.DB).LookupProductSubscriptionIDByAccessToken(ctx, args.AccessToken)
 	if err != nil {
+		if errcode.IsNotFound(err) {
+			return nil, ErrProductSubscriptionNotFound{err}
+		}
 		return nil, err
 	}
+
 	v, err := dbSubscriptions{db: r.DB}.GetByID(ctx, subID)
 	if err != nil {
+		if err == errSubscriptionNotFound {
+			return nil, ErrProductSubscriptionNotFound{err}
+		}
 		return nil, err
 	}
 	return &productSubscription{v: v, db: r.DB}, nil

@@ -63,6 +63,7 @@ go_test(
         "subscriptions_db_test.go",
         "subscriptions_graphql_test.go",
         "tokens_db_test.go",
+        "tokens_graphql_test.go",
     ],
     embed = [":productsubscription"],
     tags = [
