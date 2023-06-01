@@ -68,7 +68,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
             ])
             refresh.next()
         },
-        [scheduleContextDetectionEmbeddingJob, scheduleRepoEmbeddingJobs]
+        [refresh, scheduleContextDetectionEmbeddingJob, scheduleRepoEmbeddingJobs]
     )
 
     const form = useForm<RepoEmbeddingJobsFormValues>({
@@ -86,10 +86,8 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
     const apolloClient = useApolloClient()
 
     const queryConnection = useCallback(
-        (args: FilteredConnectionQueryArguments) => {
-            return repoEmbeddingJobs(args, apolloClient)
-        },
-        [repoEmbeddingJobs, apolloClient]
+        (args: FilteredConnectionQueryArguments) => repoEmbeddingJobs(args, apolloClient),
+        [apolloClient]
     )
 
     return (
