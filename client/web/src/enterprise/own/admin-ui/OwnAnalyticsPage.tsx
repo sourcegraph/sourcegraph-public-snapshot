@@ -1,8 +1,9 @@
 import { FC } from 'react'
 
+import { useQuery } from '@sourcegraph/http-client'
 import { BarChart, Card, H2, Text } from '@sourcegraph/wildcard'
 
-import { AnalyticsDateRange } from '../../../graphql-operations'
+import { AnalyticsDateRange, GetInstanceOwnStatsResult } from '../../../graphql-operations'
 import { AnalyticsPageTitle } from '../../../site-admin/analytics/components/AnalyticsPageTitle'
 import { ChartContainer } from '../../../site-admin/analytics/components/ChartContainer'
 import {
@@ -11,8 +12,10 @@ import {
 } from '../../../site-admin/analytics/components/TimeSavedCalculatorGroup'
 import { ValueLegendList, ValueLegendListProps } from '../../../site-admin/analytics/components/ValueLegendList'
 
+import { GET_INSTANCE_OWN_STATS } from './query'
+
 interface OwnUsageDatum {
-    ownershipReasonType: 'ASSIGNED_OWNER' | 'RECENT_CONTRIBUTOR_OWNERSHIP_SIGNAL' | 'RECENT_VIEW_OWNERSHIP_SIGNAL'
+    ownershipReasonType: string
     entriesCount: number
     fill: string
 }
@@ -21,26 +24,17 @@ export const OwnAnalyticsPage: FC = () => {
     // const [localData, setLocalData] = useState<OwnSignalConfig[]>([])
     // const [saveError] = useState<Error | null>()
 
-    // const { loading, error } = useQuery<GetOwnSignalConfigurationsResult>(GET_OWN_JOB_CONFIGURATIONS, {
-    //     onCompleted: data => {
-    //         setLocalData(data.ownSignalConfigurations)
-    //     },
-    // })
+    const { data } = useQuery<GetInstanceOwnStatsResult>(GET_INSTANCE_OWN_STATS, {})
 
     const ownSignalsData: OwnUsageDatum[] = [
         {
-            ownershipReasonType: 'ASSIGNED_OWNER',
-            entriesCount: 4,
-            fill: 'var(--merged)',
-        },
-        {
-            ownershipReasonType: 'RECENT_CONTRIBUTOR_OWNERSHIP_SIGNAL',
-            entriesCount: 34,
+            ownershipReasonType: 'Codeowned files',
+            entriesCount: data?.instanceOwnershipStats?.totalCodeownedFiles || 0,
             fill: 'var(--info)',
         },
         {
-            ownershipReasonType: 'RECENT_VIEW_OWNERSHIP_SIGNAL',
-            entriesCount: 430,
+            ownershipReasonType: 'Total files',
+            entriesCount: data?.instanceOwnershipStats?.totalFiles || 0,
             fill: 'var(--text-muted)',
         },
     ]
