@@ -2,7 +2,6 @@ package reducer
 
 import (
 	"context"
-	"time"
 
 	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store"
@@ -47,7 +46,7 @@ func reduceRankingGraph(
 
 	return s.InsertPathRanks(
 		ctx,
-		rankingshared.DerivativeGraphKeyFromTime(derivativeGraphKeyPrefix, time.Now()),
+		rankingshared.DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix),
 		batchSize,
 	)
 }

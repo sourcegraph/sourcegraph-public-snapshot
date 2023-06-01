@@ -52,7 +52,7 @@ func NewCoordinator(
 				return err
 			}
 
-			return s.Coordinate(ctx, rankingshared.DerivativeGraphKeyFromTime(derivativeGraphKeyPrefix, time.Now()))
+			return s.Coordinate(ctx, rankingshared.DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix))
 		}),
 	)
 }
