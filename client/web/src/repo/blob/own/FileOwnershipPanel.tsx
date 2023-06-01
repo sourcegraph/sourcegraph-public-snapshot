@@ -139,7 +139,7 @@ const resolveOwnerSearchPredicate = (owners?: OwnerFields[]): string => {
 }
 
 interface OwnerListProps {
-    data?: OwnershipConnectionFields | undefined
+    data?: OwnershipConnectionFields
 }
 
 const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data }) => {
