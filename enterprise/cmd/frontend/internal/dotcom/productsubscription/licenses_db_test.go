@@ -63,14 +63,15 @@ func TestProductLicenses_Create(t *testing.T) {
 	for v, info := range []license.Info{licenseV1, licenseV2} {
 		t.Run(fmt.Sprintf("Test v%d", v+1), func(t *testing.T) {
 			version := v + 1
-			pl, err := dbLicenses{db: db}.Create(ctx, ps, "k2", version, info)
+			key := fmt.Sprintf("key%d", version)
+			pl, err := dbLicenses{db: db}.Create(ctx, ps, key, version, info)
 			require.NoError(t, err)
 
 			got, err := dbLicenses{db: db}.GetByID(ctx, pl)
 			require.NoError(t, err)
 			assert.Equal(t, pl, got.ID)
 			assert.Equal(t, ps, got.ProductSubscriptionID)
-			assert.Equal(t, "k2", got.LicenseKey)
+			assert.Equal(t, key, got.LicenseKey)
 
 			require.NotNil(t, got.LicenseVersion)
 			assert.Equal(t, version, *got.LicenseVersion)
