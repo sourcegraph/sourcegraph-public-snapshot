@@ -86,7 +86,8 @@ func TestProductLicenses_Create(t *testing.T) {
 			require.NoError(t, err)
 			assert.Len(t, ts, version)
 
-			ts, err = dbLicenses{db: db}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: "69da12d5-323c-4e42-9d44-cc7951639bca" /* invalid */})
+			// Invalid subscription ID.
+			ts, err = dbLicenses{db: db}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: "69da12d5-323c-4e42-9d44-cc7951639bca"})
 			require.NoError(t, err)
 			assert.Len(t, ts, 0)
 		})
