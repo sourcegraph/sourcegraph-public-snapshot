@@ -71,19 +71,22 @@
 
 ## Release Process
 
-Starting from 0.2.0, Cody is using `major.EVEN_NUMBER.patch` for release versions and `major.ODD_NUMBER.patch` for pre-release versions.
-
-- For example: 1.2._ for release and 1.3._ for pre-release.
-
 Follow the steps below to package and publish the VS Code extension.
 
-> NOTE: Since the extension has already been bundled during build, we will need to add the `--no-dependencies` flag to the `vsce` step during the packaging step to exclude the npm dependencies ([source](https://github.com/microsoft/vscode-vsce/issues/421#issuecomment-1038911725))
+### Versioning
+
+Starting from `0.2.0`, Cody is using:
+
+- `major.EVEN_NUMBER.patch` for stable release versions
+- `major.ODD_NUMBER.patch` for nightly pre-release versions
+
+For example: 1.2._ for release and 1.3._ for pre-release.
 
 ### Prerequisite
 
 - Install the [VSCE CLI tool](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce)
 
-### Release Steps
+### Manual Release Steps
 
 1. Increment the `version` in [`package.json`](package.json) and then run:
 
@@ -91,6 +94,8 @@ Follow the steps below to package and publish the VS Code extension.
    $ cd client/cody
    $ pnpm run vsce:package
    ```
+
+> NOTE: Since the extension has already been bundled during build, we will need to add the `--no-dependencies` flag to the `vsce` step during the packaging step to exclude the npm dependencies ([source](https://github.com/microsoft/vscode-vsce/issues/421#issuecomment-1038911725))
 
 2. To try the packaged extension locally, disable any other installations of it and then run:
 
@@ -112,7 +117,14 @@ This will trigger the build pipeline for publishing the extension using the `pnp
 - Publish a pre-release version to [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
   - Create a [pre-release version with minor version bump](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#prerelease-extensions) allow the Nightly build to patch the pre-release version at the correct version number through the [auto-incrementing the extension version feature from the VSCE API](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#autoincrementing-the-extension-version)
 
-* Visit the [buildkite page for the vsce/release pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=cody%2Frelease) to watch the build process
+### Build Status
+
+**For internal use only.**
+
+Visit the following pages to follow the build status for:
+
+- Stable: [Buildkite page for the cody/release pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=cody%2Frelease)
+- Nightly: [Buildkite page for the cody nightly build](https://buildkite.com/sourcegraph/sourcegraph/settings/schedules/337676ef-c8a3-4977-a0d9-7990cb0916d0)
 
 ## Resources
 
