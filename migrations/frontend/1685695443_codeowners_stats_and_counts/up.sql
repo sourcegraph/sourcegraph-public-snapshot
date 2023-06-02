@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS codeowners_owners (
     reference TEXT NOT NULL
 );
 
-COMMENT ON TABLE codeowners_owners IS 'Text reference in CODEOWNERS entry to use in codeowners_individual_stats. Reference is either email or handle withouth @ in front.';
+COMMENT ON TABLE codeowners_owners IS 'Text reference in CODEOWNERS entry to use in codeowners_individual_stats. Reference is either email or handle without @ in front.';
 COMMENT ON COLUMN codeowners_owners.reference IS 'We just keep the reference as opposed to splitting it to handle or email
 since the distinction is not relevant for query, and this makes indexing way easier.';
 
