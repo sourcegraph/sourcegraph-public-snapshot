@@ -1807,6 +1807,16 @@
       ],
       "Indexes": [
         {
+          "Name": "assigned_owners_file_path_owner",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX assigned_owners_file_path_owner ON assigned_owners USING btree (file_path_id, owner_user_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "assigned_owners_pkey",
           "IsPrimaryKey": true,
           "IsUnique": true,
@@ -1815,16 +1825,6 @@
           "IndexDefinition": "CREATE UNIQUE INDEX assigned_owners_pkey ON assigned_owners USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
-        },
-        {
-          "Name": "assigned_owners_file_path",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX assigned_owners_file_path ON assigned_owners USING btree (file_path_id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
@@ -20851,6 +20851,19 @@
           "Comment": ""
         },
         {
+          "Name": "license_check_token",
+          "Index": 11,
+          "TypeName": "bytea",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "license_expires_at",
           "Index": 8,
           "TypeName": "timestamp with time zone",
@@ -20927,9 +20940,71 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
+        },
+        {
+          "Name": "revoked_at",
+          "Index": 12,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "salesforce_opp_id",
+          "Index": 14,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "salesforce_sub_id",
+          "Index": 13,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "site_id",
+          "Index": 10,
+          "TypeName": "uuid",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
         }
       ],
       "Indexes": [
+        {
+          "Name": "product_licenses_license_check_token_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX product_licenses_license_check_token_idx ON product_licenses USING btree (license_check_token)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
         {
           "Name": "product_licenses_pkey",
           "IsPrimaryKey": true,

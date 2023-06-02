@@ -915,6 +915,7 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 			bk.Env("VULNERABILITY_EXIT_CODE", fmt.Sprintf("%d", vulnerabilityExitCode)),
 			bk.ArtifactPaths("./*-security-report.html"),
 			bk.SoftFail(vulnerabilityExitCode),
+			bk.AutomaticRetryStatus(1, 1), // exit status 1 is what happens this flakes on container pulling
 
 			bk.AnnotatedCmd("./dev/ci/trivy/trivy-scan-high-critical.sh", bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{

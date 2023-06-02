@@ -31,9 +31,9 @@ func TestCoordinateAndSummaries(t *testing.T) {
 	now3 := now2.Add(time.Hour * 5)
 	now4 := now2.Add(time.Hour * 7)
 
-	key1 := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "", 123)
-	key2 := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "", 234)
-	key3 := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "", 345)
+	key1 := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
+	key2 := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "234")
+	key3 := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "345")
 
 	//
 	// Insert data
