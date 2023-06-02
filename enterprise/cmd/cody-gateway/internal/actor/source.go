@@ -22,9 +22,14 @@ import (
 
 var tracer = otel.GetTracerProvider().Tracer("cody-gateway/internal/actor")
 
-type ErrNotFromSource struct{}
+type ErrNotFromSource struct{ Reason string }
 
-func (ErrNotFromSource) Error() string { return "token not from source" }
+func (e ErrNotFromSource) Error() string {
+	if e.Reason == "" {
+		return "token not from source"
+	}
+	return fmt.Sprintf("token not from source: %s", e.Reason)
+}
 
 // Source is the interface for actor sources.
 type Source interface {
