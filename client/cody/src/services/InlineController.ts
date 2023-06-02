@@ -4,9 +4,10 @@ import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
 import { logEvent } from '../event-logger'
+import { CodyTaskState } from '../non-stop/utils'
 
 import { CodeLensProvider } from './CodeLensProvider'
-import { CodyTaskState, editDocByUri, getIconPath, updateRangeOnDocChange } from './InlineAssist'
+import { editDocByUri, getIconPath, updateRangeOnDocChange } from './InlineAssist'
 
 const initPost = new vscode.Position(0, 0)
 const initRange = new vscode.Range(initPost, initPost)
@@ -143,6 +144,11 @@ export class InlineController {
         this.selectionRange = initRange
         this.thread = null
     }
+
+    public async error(): Promise<void> {
+        await this.stopFixMode(true)
+        this.isInProgress = false
+    }
     /**
      * Create code lense and initiate decorators for fix mode
      */
@@ -156,6 +162,27 @@ export class InlineController {
         await lens.decorator.decorate(thread.range)
         this.codeLenses.set(comment.id, lens)
         this.currentTaskId = comment.id
+    }
+    /**
+     * Reset the selection range once replacement started by fixup has been completed
+     * Then inform the dependents (eg. Code Lenses and Decorators) about the new range
+     * so that they could update accordingly
+     */
+    private async stopFixMode(error = false, newRange?: vscode.Range): Promise<void> {
+        this.isInProgress = false
+        if (!this.currentTaskId) {
+            return
+        }
+        const range = newRange || this.selectionRange
+        const status = error ? CodyTaskState.error : CodyTaskState.done
+        const lens = this.codeLenses.get(this.currentTaskId)
+        lens?.updateState(status, range)
+        lens?.decorator.setState(status, range)
+        await lens?.decorator.decorate(range)
+        if (this.thread) {
+            this.thread.range = range
+        }
+        this.currentTaskId = ''
     }
     /**
      * Get current selected lines from the comment thread.
@@ -207,7 +234,6 @@ export class InlineController {
     }
     /**
      * Do replacement in document
-     * TODO: Add codelens and decorations
      */
     public async replace(fileName: string, replacement: string): Promise<void> {
         if (!this.workspacePath) {
@@ -221,26 +247,8 @@ export class InlineController {
         // const documentUri = vscode.Uri.file(docFsPath)
         const range = new vscode.Selection(chatSelection.start, new vscode.Position(chatSelection.end.line + 1, 0))
         const newRange = await editDocByUri(documentUri, { start: range.start.line, end: range.end.line }, replacement)
-        await this.setReplacementRange(newRange)
+        await this.stopFixMode(false, newRange)
         logEvent('CodyVSCodeExtension:inline-assist:replaced')
-    }
-    /**
-     * Reset the selection range once replacement started by fixup has been completed
-     * Then inform the dependents (eg. Code Lenses and Decorators) about the new range
-     * so that they could update accordingly
-     */
-    private async setReplacementRange(newRange: vscode.Range): Promise<void> {
-        this.selectionRange = newRange
-        if (this.currentTaskId) {
-            const lens = this.codeLenses.get(this.currentTaskId)
-            lens?.updateState(CodyTaskState.done, newRange)
-            lens?.decorator.setState(CodyTaskState.done, newRange)
-            await lens?.decorator.decorate(newRange)
-        }
-        if (this.thread) {
-            this.thread.range = newRange
-        }
-        this.currentTaskId = ''
     }
     /**
      * Return latest selection

@@ -24,7 +24,7 @@ export class InlineAssist implements Recipe {
 
         // Check if this is a fixup request
         if (commandRegex.fix.test(humanChatInput)) {
-            return new Fixup().getInteraction(humanChatInput.replace(/^\/f(ix)?\s/i, ''), context)
+            return new Fixup().getInteraction(humanChatInput.replace(commandRegex.fix, ''), context)
         }
 
         const selection = context.editor.controllers?.inline.selection

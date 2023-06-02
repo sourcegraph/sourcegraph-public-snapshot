@@ -23,6 +23,7 @@ export interface ActiveTextEditorVisibleContent {
 
 interface VsCodeInlineController {
     selection: ActiveTextEditorSelection | null
+    error(): Promise<void>
 }
 
 interface VsCodeTaskContoller {

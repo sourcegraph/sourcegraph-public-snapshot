@@ -1,6 +1,8 @@
 import * as vscode from 'vscode'
 
-import { CodyTaskState, getIconPath, getSingleLineRange } from './InlineAssist'
+import { CodyTaskState } from '../non-stop/utils'
+
+import { getIconPath, getSingleLineRange } from './InlineAssist'
 
 const initDecorationType = vscode.window.createTextEditorDecorationType({})
 
@@ -15,6 +17,7 @@ export class DecorationProvider {
 
     private decorationTypePending = this.makeDecorationType('pending')
     private decorationTypeDiff = this.makeDecorationType('diff')
+    private decorationTypeError = this.makeDecorationType('error')
     private decorationTypeIcon = initDecorationType
 
     private _disposables: vscode.Disposable[] = []
@@ -25,7 +28,12 @@ export class DecorationProvider {
         // set up icon and register decoration types
         this.iconPath = getIconPath('cody', this.extPath)
         this.decorationTypeIcon = this.makeDecorationType('icon')
-        this._disposables.push(this.decorationTypeIcon, this.decorationTypeDiff, this.decorationTypePending)
+        this._disposables.push(
+            this.decorationTypeIcon,
+            this.decorationTypeDiff,
+            this.decorationTypePending,
+            this.decorationTypeError
+        )
     }
     /**
      * Getter
@@ -45,12 +53,22 @@ export class DecorationProvider {
             return
         }
         await vscode.window.showTextDocument(this.fileUri)
+        const rangeStartLine = getSingleLineRange(range.start.line)
+        if (this.status === CodyTaskState.error) {
+            this.decorationTypePending.dispose()
+            this.decorations.push({ range, hoverMessage: 'Failed Cody Assist #' + this.id })
+            this.decorationsForIcon.push({ range: rangeStartLine })
+            vscode.window.activeTextEditor?.setDecorations(this.decorationTypeError, this.decorations)
+            await vscode.window.showTextDocument(this.fileUri, { selection: rangeStartLine })
+            return
+        }
         if (this.status === CodyTaskState.done) {
             this.decorationTypePending.dispose()
             this.decorations.push({ range, hoverMessage: 'Cody Assist #' + this.id })
-            this.decorationsForIcon.push({ range: getSingleLineRange(range.start.line) })
+            this.decorationsForIcon.push({ range: rangeStartLine })
             vscode.window.activeTextEditor?.setDecorations(this.decorationTypeIcon, this.decorationsForIcon)
             vscode.window.activeTextEditor?.setDecorations(this.decorationTypeDiff, this.decorations)
+            await vscode.window.showTextDocument(this.fileUri, { selection: rangeStartLine })
             return
         }
         vscode.window.activeTextEditor?.setDecorations(this.decorationTypePending, [
@@ -68,6 +86,7 @@ export class DecorationProvider {
         this.decorationTypePending.dispose()
         this.decorationTypeIcon.dispose()
         this.decorationTypeDiff.dispose()
+        this.decorationTypeError.dispose()
     }
     public setFileUri(uri: vscode.Uri): void {
         this.fileUri = uri
@@ -76,6 +95,10 @@ export class DecorationProvider {
      * Define Current States
      */
     public setState(status: CodyTaskState, newRange: vscode.Range): void {
+        // Don't change the status again once it's errored
+        if (this.status === CodyTaskState.error) {
+            return
+        }
         this.status = status
         vscode.window.activeTextEditor?.setDecorations(this.decorationTypePending, [newRange])
         this._onDidChange.fire()
@@ -95,6 +118,9 @@ export class DecorationProvider {
                 gutterIconPath: this.iconPath,
                 gutterIconSize: 'contain',
             })
+        }
+        if (type === 'error') {
+            return errorDecorationType
         }
         return vscode.window.createTextEditorDecorationType({
             isWholeLine: true,
@@ -121,3 +147,9 @@ export class DecorationProvider {
         this._disposables = []
     }
 }
+
+const errorDecorationType = vscode.window.createTextEditorDecorationType({
+    isWholeLine: true,
+    overviewRulerColor: 'rgba(255, 38, 86, 0.3)',
+    backgroundColor: 'rgba(255, 38, 86, 0.3)',
+})

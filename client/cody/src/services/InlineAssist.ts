@@ -1,11 +1,5 @@
 import * as vscode from 'vscode'
 
-// HELPER FUNCTIONS FOR INLINE ASSIST
-export enum CodyTaskState {
-    'idle' = 0,
-    'pending' = 1,
-    'done' = 2,
-}
 /**
  * Calculate new range based on changes in the document
  */
