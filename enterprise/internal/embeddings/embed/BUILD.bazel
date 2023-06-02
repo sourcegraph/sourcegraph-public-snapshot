@@ -12,6 +12,7 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/context",
+        "//enterprise/internal/codygateway",
         "//enterprise/internal/embeddings",
         "//enterprise/internal/paths",
         "//internal/api",
