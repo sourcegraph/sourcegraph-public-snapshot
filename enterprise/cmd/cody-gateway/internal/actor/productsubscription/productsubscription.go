@@ -17,11 +17,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/productsubscription"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// product subscription tokens are always a prefix of 4 characters (sgs_)
+// product subscription tokens are always a prefix of 4 characters (sgs_ or slk_)
 // followed by a 64-character hex-encoded SHA256 hash
 const tokenLength = 4 + 64
 
@@ -58,9 +59,12 @@ func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Cl
 func (s *Source) Name() string { return codygateway.ProductSubscriptionActorSourceName }
 
 func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
-	// "sgs_" is productSubscriptionAccessTokenPrefix
-	if token == "" || !strings.HasPrefix(token, "sgs_") {
+	if token == "" {
 		return nil, actor.ErrNotFromSource{}
+	}
+	if !strings.HasPrefix(token, productsubscription.AccessTokenPrefix) &&
+		!strings.HasPrefix(token, licensing.LicenseKeyBasedAccessTokenPrefix) {
+		return nil, actor.ErrNotFromSource{Reason: "unknown token prefix"}
 	}
 
 	if len(token) != tokenLength {
@@ -149,7 +153,7 @@ func (s *Source) checkAccessToken(ctx context.Context, token string) (*dotcom.Ch
 
 	for _, gqlerr := range gqlerrs {
 		if gqlerr.Extensions != nil && gqlerr.Extensions["code"] == codygateway.GQLErrCodeProductSubscriptionNotFound {
-			return nil, actor.ErrAccessTokenDenied{"associated product subscription not found"}
+			return nil, actor.ErrAccessTokenDenied{Reason: "associated product subscription not found"}
 		}
 	}
 	return nil, err
