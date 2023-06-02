@@ -28,6 +28,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor/anonymous"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor/dotcomuser"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor/productsubscription"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi"
@@ -76,6 +77,10 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			rcache.New("product-subscriptions"),
 			dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken),
 			config.Dotcom.InternalMode),
+		dotcomuser.NewSource(obctx.Logger,
+			rcache.New("dotcom-users"),
+			dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken),
+		),
 	}
 
 	authr := &auth.Authenticator{
