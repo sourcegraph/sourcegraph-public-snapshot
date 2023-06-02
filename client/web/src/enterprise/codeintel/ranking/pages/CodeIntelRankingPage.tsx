@@ -34,6 +34,11 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
         BumpDerivativeGraphKeyVariables
     >(BUMP_DERIVATIVE_GRAPH_KEY)
 
+    const onDelete = (): Promise<void> => {
+        alert('DELETE!!!')
+        return Promise.resolve()
+    }
+
     if (loading && !data) {
         return <LoadingSpinner />
     }
@@ -71,7 +76,13 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
                     </Container>
                 ) : (
                     data.rankingSummary.map((summary, index) => (
-                        <Summary key={summary.graphKey} summary={summary} historic={index > 0} className="mb-3" />
+                        <Summary
+                            key={summary.graphKey}
+                            summary={summary}
+                            onDelete={onDelete}
+                            expanded={index === 0}
+                            className="mb-3"
+                        />
                     ))
                 ))}
         </>
@@ -94,11 +105,12 @@ interface Progress {
 
 interface SummaryProps {
     summary: Summary
-    historic?: boolean
+    onDelete?: () => Promise<void>
+    expanded?: boolean
     className?: string
 }
 
-const Summary: FunctionComponent<SummaryProps> = ({ summary, historic = false, className = '' }) => (
+const Summary: FunctionComponent<SummaryProps> = ({ summary, onDelete, historic: expanded = true, className = '' }) => (
     <Container className={className}>
         <Collapsible
             title={
@@ -107,7 +119,7 @@ const Summary: FunctionComponent<SummaryProps> = ({ summary, historic = false, c
                 </>
             }
             titleAtStart={true}
-            defaultExpanded={!historic}
+            defaultExpanded={expanded}
         >
             <div className="pt-4">
                 <Progress
@@ -132,8 +144,8 @@ const Summary: FunctionComponent<SummaryProps> = ({ summary, historic = false, c
                     />
                 )}
 
-                {historic && (
-                    <Button variant="danger" className="p-2 mt-4">
+                {onDelete && (
+                    <Button variant="danger" className="p-2 mt-4" onClick={() => onDelete()}>
                         <Icon aria-hidden={true} svgPath={mdiTrashCan} /> Delete
                     </Button>
                 )}
