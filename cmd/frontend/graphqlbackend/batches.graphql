@@ -3480,7 +3480,7 @@ Commit signing configuration for a code host. Ie. GitHubApp or SSHKey
 union CommitSigningConfiguration = GitHubAppConfiguration
 
 """
-Today, the only supported form of commit signing is via a GitHub App.
+The configuration for a GitHubApp created for Batch Changes commit signing.
 """
 type GitHubAppConfiguration {
     """
