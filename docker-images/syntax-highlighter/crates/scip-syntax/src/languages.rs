@@ -8,56 +8,31 @@ pub struct TagConfiguration {
     pub query: Query,
 }
 
-pub fn c() -> &'static TagConfiguration {
-    static INSTANCE: OnceCell<TagConfiguration> = OnceCell::new();
+macro_rules! create_tags_configuration {
+    ($name:tt, $parser:path, $file:tt) => {
+        pub fn $name() -> &'static TagConfiguration {
+            static INSTANCE: OnceCell<TagConfiguration> = OnceCell::new();
 
-    INSTANCE.get_or_init(|| {
-        let language = BundledParser::C.get_language();
-        let query = include_scip_query!("c", "scip-tags");
+            INSTANCE.get_or_init(|| {
+                let language = $parser.get_language();
+                let query = include_scip_query!($file, "scip-tags");
 
-        let mut parser = Parser::new();
-        parser.set_language(language).unwrap();
+                let mut parser = Parser::new();
+                parser.set_language(language).unwrap();
 
-        TagConfiguration {
-            language,
-            query: Query::new(language, query).unwrap(),
+                TagConfiguration {
+                    language,
+                    query: Query::new(language, query).unwrap(),
+                }
+            })
         }
-    })
+    };
 }
 
-pub fn javascript() -> &'static TagConfiguration {
-    static INSTANCE: OnceCell<TagConfiguration> = OnceCell::new();
-
-    INSTANCE.get_or_init(|| {
-        let language = BundledParser::Javascript.get_language();
-        let query = include_scip_query!("javascript", "scip-tags");
-
-        let mut parser = Parser::new();
-        parser.set_language(language).unwrap();
-
-        TagConfiguration {
-            language,
-            query: Query::new(language, query).unwrap(),
-        }
-    })
-}
-
-pub fn kotlin() -> &'static TagConfiguration {
-    static INSTANCE: OnceCell<TagConfiguration> = OnceCell::new();
-
-    INSTANCE.get_or_init(|| {
-        let language = BundledParser::Kotlin.get_language();
-        let query = include_scip_query!("kotlin", "scip-tags");
-
-        let mut parser = Parser::new();
-        parser.set_language(language).unwrap();
-
-        TagConfiguration {
-            language,
-            query: Query::new(language, query).unwrap(),
-        }
-    })
-}
+create_tags_configuration!(c, BundledParser::C, "c");
+create_tags_configuration!(javascript, BundledParser::Javascript, "javascript");
+create_tags_configuration!(kotlin, BundledParser::Kotlin, "kotlin");
+create_tags_configuration!(ruby, BundledParser::Ruby, "ruby");
 
 pub fn ruby() -> &'static TagConfiguration {
     static INSTANCE: OnceCell<TagConfiguration> = OnceCell::new();
