@@ -15,7 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	gitAdapter "github.com/sourcegraph/sourcegraph/internal/gitserver/adapters"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/adapters"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -24,9 +24,7 @@ import (
 )
 
 type GRPCServer struct {
-	Server           *Server
-	git              gitAdapter.Git
-	getObjectService gitdomain.GetObjectService
+	Server *Server
 	proto.UnimplementedGitserverServiceServer
 }
 
@@ -159,16 +157,20 @@ func (gs *GRPCServer) doExec(ctx context.Context, logger log.Logger, req *protoc
 }
 
 func (gs *GRPCServer) GetObject(ctx context.Context, req *proto.GetObjectRequest) (*proto.GetObjectResponse, error) {
-	gs.getObjectService = gitdomain.GetObjectService{
-		RevParse:      gs.git.RevParse,
-		GetObjectType: gs.git.GetObjectType,
+	gitAdapter := &adapters.Git{
+		ReposDir: gs.Server.ReposDir,
 	}
+
+	getObjectService := gitdomain.GetObjectService{
+		RevParse:      gitAdapter.RevParse,
+		GetObjectType: gitAdapter.GetObjectType,
+	}
+
 	var internalReq protocol.GetObjectRequest
 	internalReq.FromProto(req)
-
 	accesslog.Record(ctx, string(req.Repo), log.String("objectname", internalReq.ObjectName))
 
-	obj, err := gs.getObjectService.GetObject(ctx, internalReq.Repo, internalReq.ObjectName)
+	obj, err := getObjectService.GetObject(ctx, internalReq.Repo, internalReq.ObjectName)
 	if err != nil {
 		gs.Server.Logger.Error("getting object", log.Error(err))
 		return nil, err
