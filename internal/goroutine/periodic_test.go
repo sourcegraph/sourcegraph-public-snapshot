@@ -52,7 +52,7 @@ func TestPeriodicGoroutineReinvoke(t *testing.T) {
 	})
 
 	witnessHandler := func() {
-		for i := 0; i < MaxConsecutiveReinvocations; i++ {
+		for i := 0; i < maxConsecutiveReinvocations; i++ {
 			<-called
 		}
 	}
@@ -74,8 +74,8 @@ func TestPeriodicGoroutineReinvoke(t *testing.T) {
 	witnessHandler()
 	goroutine.Stop()
 
-	if calls := len(handler.HandleFunc.History()); calls != 4*MaxConsecutiveReinvocations {
-		t.Errorf("unexpected number of handler invocations. want=%d have=%d", 4*MaxConsecutiveReinvocations, calls)
+	if calls := len(handler.HandleFunc.History()); calls != 4*maxConsecutiveReinvocations {
+		t.Errorf("unexpected number of handler invocations. want=%d have=%d", 4*maxConsecutiveReinvocations, calls)
 	}
 }
 
