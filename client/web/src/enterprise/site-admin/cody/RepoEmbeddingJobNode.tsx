@@ -69,7 +69,13 @@ export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
             <div className="d-flex align-items-center">
                 {state === RepoEmbeddingJobState.QUEUED || state === RepoEmbeddingJobState.PROCESSING ? (
                     <Tooltip content="Cancel repository embedding job">
-                        <Button aria-label="Cancel" onClick={() => onCancel(id)} variant="secondary" size="sm">
+                        <Button
+                            aria-label="Cancel"
+                            onClick={() => onCancel(id)}
+                            variant="secondary"
+                            size="sm"
+                            disabled={cancel}
+                        >
                             <Icon aria-hidden={true} svgPath={mdiCancel} />
                             {' Cancel'}
                         </Button>
