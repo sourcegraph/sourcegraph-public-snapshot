@@ -274,3 +274,23 @@ func TestFileContainsFilterJob(t *testing.T) {
 		})
 	}
 }
+
+func TestPatternsInTree(t *testing.T) {
+	cases := []struct {
+		q    query.Node
+		want []string
+	}{{
+		q:    query.Pattern{Value: `test.*literal`, Annotation: query.Annotation{Labels: query.Literal}},
+		want: []string{`test\.\*literal`},
+	}, {
+		q:    query.Pattern{Value: `test.*literal`, Annotation: query.Annotation{Labels: query.Regexp}},
+		want: []string{`test.*literal`},
+	}}
+
+	for _, tc := range cases {
+		t.Run("", func(t *testing.T) {
+			got := patternsInTreeAsRegex(tc.q)
+			require.Equal(t, tc.want, got)
+		})
+	}
+}
