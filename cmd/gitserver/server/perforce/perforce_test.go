@@ -136,11 +136,9 @@ func TestGetCommitsToInsert(t *testing.T) {
 
 func TestHeadCommitSHA(t *testing.T) {
 	dir, allCommitMaps := setupTestRepo(t)
-
 	ctx := context.Background()
-	logger := logtest.NoOp(t)
 
-	commitSHA, err := headCommitSHA(ctx, logger, dir)
+	commitSHA, err := headCommitSHA(ctx, dir)
 
 	require.NoError(t, err)
 	require.Equal(t, string(allCommitMaps[0].CommitSHA), commitSHA)

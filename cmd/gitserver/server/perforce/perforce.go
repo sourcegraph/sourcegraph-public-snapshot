@@ -164,7 +164,7 @@ func (s *Service) getCommitsToInsert(ctx context.Context, logger log.Logger, rep
 		return nil, errors.Wrap(err, "RepoCommits.GetLatestForRepo")
 	}
 
-	head, err := headCommitSHA(ctx, logger, dir)
+	head, err := headCommitSHA(ctx, dir)
 	if err != nil {
 		return nil, errors.Wrap(err, "headCommitSHA")
 	}
@@ -183,7 +183,7 @@ func (s *Service) getCommitsToInsert(ctx context.Context, logger log.Logger, rep
 }
 
 // headCommitSHA returns the commitSHA at HEAD of the repo.
-func headCommitSHA(ctx context.Context, logger log.Logger, dir common.GitDir) (string, error) {
+func headCommitSHA(ctx context.Context, dir common.GitDir) (string, error) {
 	cmd := exec.CommandContext(ctx, "git", "rev-parse", "HEAD")
 	dir.Set(cmd)
 
