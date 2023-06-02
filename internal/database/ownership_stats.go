@@ -77,7 +77,7 @@ var codeownerQueryFmtstr = `
 `
 
 var codeownerUpsertCountsFmtstr = `
-	INSERT INTO codeowners_individual_stats (file_path_id, owner_id, tree_owned_files_count, last_updated_at)
+	INSERT INTO codeowners_individual_stats (file_path_id, owner_id, tree_owned_files_count, updated_at)
 	SELECT p.id, %s, %s, %s
 	FROM repo_paths AS p
 	WHERE p.repo_id = %s
@@ -85,7 +85,7 @@ var codeownerUpsertCountsFmtstr = `
 	ON CONFLICT (file_path_id, owner_id)
 	DO UPDATE SET
 		tree_owned_files_count = EXCLUDED.tree_owned_files_count,
-		last_updated_at = EXCLUDED.last_updated_at
+		updated_at = EXCLUDED.updated_at
 `
 
 func (s *ownershipStats) UpdateIndividualCounts(ctx context.Context, repoID api.RepoID, data FileOwnershipAggregate, timestamp time.Time) (int, error) {
