@@ -39,7 +39,7 @@ message BatchLogResponse {
   repeated BatchLogResult results = 1;
 }
 
-// BatchLogResult is the rusult that associates a repository and commit pair from the input of a BatchLog
+// BatchLogResult is the result that associates a repository and commit pair from the input of a BatchLog
 // request with the result of the associated git log command.
 message BatchLogResult {
   // repo_commit is the repository and commit pair from the input of a BatchLog request.
