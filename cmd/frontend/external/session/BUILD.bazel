@@ -5,5 +5,5 @@ go_library(
     srcs = ["session.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/external/session",
     visibility = ["//visibility:public"],
-    deps = ["//cmd/frontend/internal/session"],
+    deps = ["//internal/session"],
 )

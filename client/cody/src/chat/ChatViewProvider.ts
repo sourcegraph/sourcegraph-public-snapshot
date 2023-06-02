@@ -320,7 +320,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     this.editor.controllers.inline.reply(highlightedDisplayText)
                 }
                 void this.onCompletionEnd()
-                this.publishEmbeddingsError()
             },
         })
 
@@ -375,13 +374,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.sendTranscript()
         void this.saveTranscriptToChatHistory()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', false)
-        if (!this.codebaseContext.checkEmbeddingsConnection()) {
-            this.publishEmbeddingsError()
-            this.sendErrorToWebview(
-                'Error while establishing embeddings server connection. Please try after sometime! If the issue still persists contact support'
-            )
-            return
-        }
+        this.logEmbeddingsSearchErrors()
     }
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion'): Promise<void> {
@@ -675,13 +668,17 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     /**
-     * Publish embedding connections or results error to webview
+     * Send embedding connections or results error to output
      */
-    private publishEmbeddingsError(): void {
-        const searchErrors = this.codebaseContext.getEmbeddingSearchErrors()
-        if (searchErrors.length) {
-            this.sendErrorToWebview(searchErrors)
+    private logEmbeddingsSearchErrors(): void {
+        if (this.config.useContext !== 'embeddings') {
             return
+        }
+        const searchErrors = this.codebaseContext.getEmbeddingSearchErrors()
+        // Display error message as assistant response for users with indexed codebase but getting search errors
+        if (this.codebaseContext.checkEmbeddingsConnection() && searchErrors) {
+            this.transcript.addErrorAsAssistantResponse(searchErrors)
+            debug('ChatViewProvider:onLogEmbeddingsErrors', '', { verbose: searchErrors })
         }
     }
 

@@ -18,6 +18,10 @@ go_test(
         "site_config_test.go",
         "sub_repo_permissions_test.go",
     ],
+    visibility = [
+        "//testing:__pkg__",
+        "//testing:__subpackages__",
+    ],
     deps = [
         "//internal/extsvc",
         "//internal/gqltestutil",

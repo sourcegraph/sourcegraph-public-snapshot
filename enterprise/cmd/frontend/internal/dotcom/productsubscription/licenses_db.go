@@ -2,6 +2,7 @@ package productsubscription
 
 import (
 	"context"
+	"crypto/sha256"
 	"time"
 
 	"github.com/google/uuid"
@@ -11,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -36,6 +38,11 @@ type dbLicenses struct {
 	db database.DB
 }
 
+const createLicenseQuery = `
+INSERT INTO product_licenses(id, product_subscription_id, license_key, license_version, license_tags, license_user_count, license_expires_at, license_check_token, salesforce_sub_id, salesforce_opp_id)
+VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id
+`
+
 // Create creates a new product license entry for the given subscription.
 func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey string, version int, info license.Info) (id string, err error) {
 	if mocks.licenses.Create != nil {
@@ -47,14 +54,13 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 		return "", errors.Wrap(err, "new UUID")
 	}
 
+	keyHash := sha256.Sum256([]byte(licenseKey))
+
 	var expiresAt *time.Time
 	if !info.ExpiresAt.IsZero() {
 		expiresAt = &info.ExpiresAt
 	}
-	if err = s.db.QueryRowContext(ctx, `
-INSERT INTO product_licenses(id, product_subscription_id, license_key, license_version, license_tags, license_user_count, license_expires_at)
-VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id
-`,
+	if err = s.db.QueryRowContext(ctx, createLicenseQuery,
 		newUUID,
 		subscriptionID,
 		licenseKey,
@@ -62,6 +68,9 @@ VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id
 		pq.Array(info.Tags),
 		dbutil.NewNullInt64(int64(info.UserCount)),
 		dbutil.NullTime{Time: expiresAt},
+		hashutil.ToSHA256Bytes(keyHash[:]),
+		info.SalesforceSubscriptionID,
+		info.SalesforceOpportunityID,
 	).Scan(&id); err != nil {
 		return "", errors.Wrap(err, "insert")
 	}

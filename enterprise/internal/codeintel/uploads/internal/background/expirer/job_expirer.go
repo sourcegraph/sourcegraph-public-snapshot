@@ -34,11 +34,12 @@ func NewUploadExpirer(
 	}
 	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(context.Background()),
-		"codeintel.upload-expirer", "marks uploads as expired based on retention policies",
-		config.ExpirerInterval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			return expirer.HandleExpiredUploadsBatch(ctx, NewExpirationMetrics(observationCtx), config)
 		}),
+		goroutine.WithName("codeintel.upload-expirer"),
+		goroutine.WithDescription("marks uploads as expired based on retention policies"),
+		goroutine.WithInterval(config.ExpirerInterval),
 	)
 }
 

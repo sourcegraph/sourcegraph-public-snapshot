@@ -22,10 +22,9 @@ import (
 // e.g. by adding flags, and not as a condition for adding steps or commands.
 type CoreTestOperationsOptions struct {
 	// for clientChromaticTests
-	ChromaticShouldAutoAccept  bool
-	MinimumUpgradeableVersion  string
-	ClientLintOnlyChangedFiles bool
-	ForceReadyForReview        bool
+	ChromaticShouldAutoAccept bool
+	MinimumUpgradeableVersion string
+	ForceReadyForReview       bool
 	// for addWebAppOSSBuild
 	CacheBundleSize      bool
 	CreateBundleSizeDiff bool
@@ -80,6 +79,8 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 				// addTypescriptCheck is now covered by Bazel
 				addVsceTests,          // ~3.0m
 				addCodyExtensionTests, // ~2.5m
+				// addESLint,
+				addStylelint,
 			)
 		} else {
 			// If there are any Graphql changes, they are impacting the client as well.
@@ -94,13 +95,9 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 				addTypescriptCheck,           // ~4m
 				addVsceTests,                 // ~3.0m
 				addCodyExtensionTests,        // ~2.5m
+				addESLint,
+				addStylelint,
 			)
-		}
-
-		if opts.ClientLintOnlyChangedFiles {
-			clientChecks.Append(addClientLintersForChangedFiles)
-		} else {
-			clientChecks.Append(addClientLintersForAllFiles)
 		}
 
 		ops.Merge(clientChecks)
@@ -169,8 +166,13 @@ func addTypescriptCheck(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/pnpm-run.sh build-ts"))
 }
 
-// Adds client linters to check all files.
-func addClientLintersForAllFiles(pipeline *bk.Pipeline) {
+func addStylelint(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":stylelint: Stylelint (all)",
+		withPnpmCache(),
+		bk.Cmd("dev/ci/pnpm-run.sh lint:css:all"))
+}
+
+func addESLint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":eslint: ESLint (all)",
 		withPnpmCache(),
 		bk.Cmd("dev/ci/pnpm-run.sh lint:js:all"))
@@ -178,21 +180,11 @@ func addClientLintersForAllFiles(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":eslint: ESLint (web)",
 		withPnpmCache(),
 		bk.Cmd("dev/ci/pnpm-run.sh lint:js:web"))
-
-	pipeline.AddStep(":stylelint: Stylelint (all)",
-		withPnpmCache(),
-		bk.Cmd("dev/ci/pnpm-run.sh lint:css:all"))
 }
 
-// Adds client linters to check changed in PR files.
-func addClientLintersForChangedFiles(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":eslint: ESLint (changed)",
-		withPnpmCache(),
-		bk.Cmd("dev/ci/pnpm-run.sh lint:js:changed"))
-
-	pipeline.AddStep(":stylelint: Stylelint (changed)",
-		withPnpmCache(),
-		bk.Cmd("dev/ci/pnpm-run.sh lint:css:changed"))
+func addClientLintersForAllFiles(pipeline *bk.Pipeline) {
+	addStylelint(pipeline)
+	addESLint(pipeline)
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
@@ -677,7 +669,7 @@ func codeIntelQA(candidateTag string) operations.Operation {
 				},
 			}),
 			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("symbols")),
+			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Agent("queue", "bazel"),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
@@ -694,7 +686,7 @@ func executorsE2E(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":bazel::docker::packer: Executors E2E",
 			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("symbols")),
+			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Agent("queue", "bazel"),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
@@ -715,7 +707,7 @@ func serverE2E(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":chromium: Sourcegraph E2E",
 			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("symbols")),
+			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("DISPLAY", ":99"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
@@ -734,7 +726,7 @@ func serverQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::chromium: Sourcegraph QA",
 			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("symbols")),
+			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("DISPLAY", ":99"),
 			bk.Env("LOG_STATUS_MESSAGES", "true"),
@@ -755,7 +747,7 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::arrow_double_up: Sourcegraph Upgrade",
 			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("symbols")),
+			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("MINIMUM_UPGRADEABLE_VERSION", minimumUpgradeableVersion),
 			bk.Env("DISPLAY", ":99"),
@@ -904,7 +896,7 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: :mag: Scan %s", app),
 			// These are the first images in the arrays we use to build images
 			bk.DependsOn(candidateImageStepKey("alpine-3.14")),
-			bk.DependsOn(candidateImageStepKey("symbols")),
+			bk.DependsOn(candidateImageStepKey("server")),
 			bk.DependsOn(candidateImageStepKey("batcheshelper")),
 			bk.Cmd(fmt.Sprintf("docker pull %s", image)),
 

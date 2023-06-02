@@ -104,8 +104,7 @@ public class SettingsComponent {
     addValidation(
         accessTokenTextField,
         () ->
-            (accessTokenTextField.getText().length() > 0
-                    && accessTokenTextField.getText().length() != 40)
+            !isValidAccessToken(accessTokenTextField.getText())
                 ? new ValidationInfo("Invalid access token", accessTokenTextField)
                 : null);
 
@@ -148,6 +147,8 @@ public class SettingsComponent {
         FormBuilder.createFormBuilder()
             .addComponent(sourcegraphDotComRadioButton, 1)
             .addComponentToRightColumn(dotComComment, 2)
+            // TODO: add setting for access token dotcom, it can only be configured via
+            // SRC_ACCESS_TOKEN at the moment.
             .getPanel();
     JPanel enterprisePanelContent =
         FormBuilder.createFormBuilder()
@@ -323,6 +324,12 @@ public class SettingsComponent {
 
   private boolean isUrlValid(@NotNull String url) {
     return JsonSchemaConfigurable.isValidURL(url);
+  }
+
+  private boolean isValidAccessToken(@NotNull String accessToken) {
+    return accessToken.isEmpty()
+        || accessToken.length() == 40
+        || (accessToken.startsWith("sgp_") && accessToken.length() == 44);
   }
 
   @NotNull
