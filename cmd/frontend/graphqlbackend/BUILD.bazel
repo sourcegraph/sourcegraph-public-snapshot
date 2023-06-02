@@ -212,6 +212,7 @@ go_library(
         "rbac.graphql",
         "schema.graphql",
         "search_contexts.graphql",
+        "cody_context.graphql",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend",
     deps = [
