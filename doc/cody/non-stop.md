@@ -2,7 +2,7 @@
 
 <aside class="experimental">
 <p>
-<span class="badge badge-experimental">Experimental</span> This feature is experimental and might change or be removed in the future. We've released it as an experimental feature to provide a preview of functionality we're working on.
+<span class="badge badge-experimental">Experimental</span> This is an experimental feature that is currently only available on **VS Code**. Functionality and feature set might change or be removed in the future.
 </p>
 </aside>
 
