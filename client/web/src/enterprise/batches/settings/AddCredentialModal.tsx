@@ -59,10 +59,7 @@ const scopeRequirements: Record<ExternalServiceKind, JSX.Element> = {
             permissions.
         </span>
     ),
-    [ExternalServiceKind.GERRIT]: (
-        <span>
-        </span>
-    ),
+    [ExternalServiceKind.GERRIT]: <span></span>,
     // These are just for type completeness and serve as placeholders for a bright future.
     [ExternalServiceKind.GITOLITE]: <span>Unsupported</span>,
     [ExternalServiceKind.GOMODULES]: <span>Unsupported</span>,
