@@ -8,9 +8,10 @@ This is \`/some/hallucinated/file/path\`. Hosted on github.com/sourcegraph.
 
 Quoted "file/path.js". Unquoted hallucinated file/path/Class.java file.
 
-This is a cool/awesome test. this/is/a/directory and so/is/this/ btw this/is/a/directory/ and so/is/this
+This file is awesome cool/awesome. So is this this/is/a/directory and so/is/this and include the file "file/path.js".
 
-The best file is file/path.js. The best directories are this/is/a/directory and this/is/a/directory/ and so/is/this. Another one: so/is/this/.
+The best part is that this files are  \`/some/hallucinated/file/path\`. And also have the files this/is/a/directory and so/is/this with "file/path.js".
+
 
 \`\`\`
 /file/path.go -- should be ignored
@@ -23,9 +24,10 @@ This is  <span class="token-file token-hallucinated" title="Hallucination detect
 
 Quoted  <span class="token-file token-not-hallucinated" title="Open file">"file/path.js"</span> . Unquoted hallucinated <span class="token-file token-hallucinated" title="Hallucination detected: file does not exist">file/path/Class.java</span> file.
 
-This is a cool/awesome test. <span class="token-file token-not-hallucinated" title="Open file">this/is/a/directory</span> and <span class="token-file token-not-hallucinated" title="Open file">so/is/this/</span> btw <span class="token-file token-not-hallucinated" title="Open file">this/is/a/directory/</span> and <span class="token-file token-not-hallucinated" title="Open file">so/is/this</span>
+This file is awesome cool/awesome. So is this <span class="token-file token-not-hallucinated" title="Open file">this/is/a/directory</span> and <span class="token-file token-not-hallucinated" title="Open file">so/is/this</span> and include the file  <span class="token-file token-not-hallucinated" title="Open file">"file/path.js"</span> .
 
-The best file is file/path.js. The best directories are <span class="token-file token-not-hallucinated" title="Open file">this/is/a/directory</span> and <span class="token-file token-not-hallucinated" title="Open file">this/is/a/directory/</span> and <span class="token-file token-not-hallucinated" title="Open file">so/is/this</span> . Another one: <span class="token-file token-not-hallucinated" title="Open file">so/is/this</span> /.
+The best part is that this files are   <span class="token-file token-hallucinated" title="Hallucination detected: file does not exist">\`/some/hallucinated/file/path\`</span> . And also have the files <span class="token-file token-not-hallucinated" title="Open file">this/is/a/directory</span> and <span class="token-file token-not-hallucinated" title="Open file">so/is/this</span> with  <span class="token-file token-not-hallucinated" title="Open file">"file/path.js"</span> .
+
 
 \`\`\`
 /file/path.go -- should be ignored
