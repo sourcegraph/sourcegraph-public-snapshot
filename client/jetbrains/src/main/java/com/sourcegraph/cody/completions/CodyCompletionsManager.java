@@ -183,8 +183,6 @@ public class CodyCompletionsManager {
     if (accessToken == null) {
       throw new IllegalArgumentException("ACCESS_TOKEN is null");
     }
-    System.out.println("ENDPOINT " + srcEndpoint);
-    System.out.println("ACCESS_TOKEN " + accessToken);
     return new CompletionsService(instanceUrl, accessToken);
   }
 

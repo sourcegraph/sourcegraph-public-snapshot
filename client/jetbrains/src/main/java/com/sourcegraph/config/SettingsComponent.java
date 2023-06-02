@@ -104,8 +104,7 @@ public class SettingsComponent {
     addValidation(
         accessTokenTextField,
         () ->
-            (accessTokenTextField.getText().length() > 0
-                    && accessTokenTextField.getText().length() != 40)
+            !isValidAccessToken(accessTokenTextField.getText())
                 ? new ValidationInfo("Invalid access token", accessTokenTextField)
                 : null);
 
@@ -325,6 +324,12 @@ public class SettingsComponent {
 
   private boolean isUrlValid(@NotNull String url) {
     return JsonSchemaConfigurable.isValidURL(url);
+  }
+
+  private boolean isValidAccessToken(@NotNull String accessToken) {
+    return accessToken.isEmpty()
+        || accessToken.length() == 40
+        || (accessToken.startsWith("sgp_") && accessToken.length() == 44);
   }
 
   @NotNull
