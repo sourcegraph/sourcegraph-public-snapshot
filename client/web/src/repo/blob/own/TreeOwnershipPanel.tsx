@@ -15,12 +15,14 @@ import { OwnerList } from './OwnerList'
 
 import styles from './FileOwnershipPanel.module.scss'
 
+export interface OwnershipPanelProps {
+    repoID: string;
+    revision?: string;
+    filePath: string;
+}
+
 export const TreeOwnershipPanel: React.FunctionComponent<
-    {
-        repoID: string
-        revision?: string
-        filePath: string
-    } & TelemetryProps
+    OwnershipPanelProps & TelemetryProps
 > = ({ repoID, revision, filePath, telemetryService }) => {
     useEffect(() => {
         telemetryService.log('OwnershipPanelOpened')

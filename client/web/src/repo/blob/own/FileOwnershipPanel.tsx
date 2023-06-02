@@ -14,13 +14,10 @@ import { FETCH_OWNERS } from './grapqlQueries'
 import { OwnerList } from './OwnerList'
 
 import styles from './FileOwnershipPanel.module.scss'
+import {OwnershipPanelProps} from "./TreeOwnershipPanel";
 
 export const FileOwnershipPanel: React.FunctionComponent<
-    {
-        repoID: string
-        revision?: string
-        filePath: string
-    } & TelemetryProps
+    OwnershipPanelProps & TelemetryProps
 > = ({ repoID, revision, filePath, telemetryService }) => {
     useEffect(() => {
         telemetryService.log('OwnershipPanelOpened')
