@@ -38,8 +38,8 @@ func InstallCNI(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, c
 	return installCNIPlugins(cliCtx)
 }
 
-func InstallSrc(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
-	return installSrc(cliCtx, runner, logger, config)
+func InstallSrc(cliCtx *cli.Context, _ util.CmdRunner, logger log.Logger, config *config.Config) error {
+	return installSrc(cliCtx, logger, config)
 }
 
 func InstallIPTablesRules(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
@@ -69,7 +69,7 @@ func InstallAll(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, c
 	}
 
 	logger.Info("Running executor install src-cli")
-	if err := installSrc(cliCtx, runner, logger, config); err != nil {
+	if err := installSrc(cliCtx, logger, config); err != nil {
 		return err
 	}
 
@@ -293,7 +293,7 @@ func installCNIPlugins(cliCtx *cli.Context) error {
 	return nil
 }
 
-func installSrc(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
+func installSrc(cliCtx *cli.Context, logger log.Logger, config *config.Config) error {
 	binDir := cliCtx.Path("bin-dir")
 	if binDir == "" {
 		binDir = "/usr/local/bin"
