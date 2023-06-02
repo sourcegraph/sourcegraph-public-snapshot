@@ -58,28 +58,93 @@ func TestUpdateIndividualCountsSuccess(t *testing.T) {
 	if got, want := updatedRows, 5; got != want {
 		t.Errorf("UpdateIndividualCounts, updated rows, got %d, want %d", got, want)
 	}
-	// 3. Query back counts for file:
-	opts := TreeLocationOpts{
-		RepoID: repo.ID,
-		Path:   "file1",
+}
+
+func TestQueryIndividualCountsAggregation(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
 	}
-	var limitOffset *LimitOffset
-	got, err := d.OwnershipStats().QueryIndividualCounts(ctx, opts, limitOffset)
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	d := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	// 1. Setup repos and paths:
+	repo1 := mustCreate(ctx, t, d, &types.Repo{Name: "a/b"})
+	_, err := ensureRepoPaths(ctx, d.(*db).Store, []string{"file1", "file2"}, repo1.ID)
 	require.NoError(t, err)
-	want := []TreeCounts{
-		{CodeownersReference: "ownerA", CodeownedFileCount: 1},
-		{CodeownersReference: "ownerB", CodeownedFileCount: 1},
-	}
-	assert.DeepEqual(t, want, got)
-	// 4. Query back counts for repo root:
-	opts = TreeLocationOpts{
-		RepoID: repo.ID,
-	}
-	got, err = d.OwnershipStats().QueryIndividualCounts(ctx, opts, limitOffset)
+	repo2 := mustCreate(ctx, t, d, &types.Repo{Name: "a/c"})
+	_, err = ensureRepoPaths(ctx, d.(*db).Store, []string{"file3", "file4"}, repo2.ID)
 	require.NoError(t, err)
-	want = []TreeCounts{
-		{CodeownersReference: "ownerA", CodeownedFileCount: 2},
-		{CodeownersReference: "ownerB", CodeownedFileCount: 1},
+	// 2. Insert counts:
+	timestamp := time.Now()
+	walk1 := fakeCodeownersWalk{
+		"": {
+			{CodeownersReference: "ownerA", CodeownedFileCount: 2},
+			{CodeownersReference: "ownerB", CodeownedFileCount: 1},
+		},
+		"file1": {
+			{CodeownersReference: "ownerA", CodeownedFileCount: 1},
+			{CodeownersReference: "ownerB", CodeownedFileCount: 1},
+		},
+		"file2": {
+			{CodeownersReference: "ownerA", CodeownedFileCount: 1},
+		},
 	}
-	assert.DeepEqual(t, want, got)
+	_, err = d.OwnershipStats().UpdateIndividualCounts(ctx, repo1.ID, walk1, timestamp)
+	require.NoError(t, err)
+	walk2 := fakeCodeownersWalk{
+		"": {
+			{CodeownersReference: "ownerA", CodeownedFileCount: 20},
+			{CodeownersReference: "ownerC", CodeownedFileCount: 10},
+		},
+		"file3": {
+			{CodeownersReference: "ownerA", CodeownedFileCount: 10},
+			{CodeownersReference: "ownerC", CodeownedFileCount: 10},
+		},
+		"file4": {
+			{CodeownersReference: "ownerC", CodeownedFileCount: 10},
+		},
+	}
+	_, err = d.OwnershipStats().UpdateIndividualCounts(ctx, repo2.ID, walk2, timestamp)
+	require.NoError(t, err)
+	// 3. Query with or without aggregation:
+	t.Run("query single file", func(t *testing.T) {
+		opts := TreeLocationOpts{
+			RepoID: repo1.ID,
+			Path:   "file1",
+		}
+		var limitOffset *LimitOffset
+		got, err := d.OwnershipStats().QueryIndividualCounts(ctx, opts, limitOffset)
+		require.NoError(t, err)
+		want := []TreeCounts{
+			{CodeownersReference: "ownerA", CodeownedFileCount: 1},
+			{CodeownersReference: "ownerB", CodeownedFileCount: 1},
+		}
+		assert.DeepEqual(t, want, got)
+	})
+	t.Run("query single repo", func(t *testing.T) {
+		opts := TreeLocationOpts{
+			RepoID: repo1.ID,
+		}
+		var limitOffset *LimitOffset
+		got, err := d.OwnershipStats().QueryIndividualCounts(ctx, opts, limitOffset)
+		require.NoError(t, err)
+		want := []TreeCounts{
+			{CodeownersReference: "ownerA", CodeownedFileCount: 2},
+			{CodeownersReference: "ownerB", CodeownedFileCount: 1},
+		}
+		assert.DeepEqual(t, want, got)
+	})
+	t.Run("query whole instance", func(t *testing.T) {
+		opts := TreeLocationOpts{}
+		var limitOffset *LimitOffset
+		got, err := d.OwnershipStats().QueryIndividualCounts(ctx, opts, limitOffset)
+		require.NoError(t, err)
+		want := []TreeCounts{
+			{CodeownersReference: "ownerA", CodeownedFileCount: 22}, // from both repos
+			{CodeownersReference: "ownerC", CodeownedFileCount: 10}, // only repo2
+			{CodeownersReference: "ownerB", CodeownedFileCount: 1},  // only repo1
+		}
+		assert.DeepEqual(t, want, got)
+	})
 }

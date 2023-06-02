@@ -88,7 +88,6 @@ var codeownerUpsertCountsFmtstr = `
 		last_updated_at = EXCLUDED.last_updated_at
 `
 
-// TODO: Introduce batch inserter.
 func (s *ownershipStats) UpdateIndividualCounts(ctx context.Context, repoID api.RepoID, data FileOwnershipAggregate, timestamp time.Time) (int, error) {
 	codeownersCache := map[string]int{} // Cache codeowner ID by reference
 	var totalRows int
