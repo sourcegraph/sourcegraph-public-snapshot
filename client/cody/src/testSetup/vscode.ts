@@ -60,7 +60,7 @@ class InlineCompletionItem {
     }
 }
 
-// TODO: Implement delete and insert mocks
+// TODO(abeatrix): Implement delete and insert mocks
 class WorkspaceEdit {
     public delete(uri: Uri, range: Range): Range {
         return range
