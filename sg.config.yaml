@@ -1184,7 +1184,6 @@ commandsets:
       - gitserver-0
       - gitserver-1
       - searcher
-      - symbols
       - syntax-highlighter
       - github-proxy
     commands:
@@ -1211,7 +1210,6 @@ commandsets:
       - gitserver-0
       - gitserver-1
       - searcher
-      - symbols
       - caddy
       - docsite
       - syntax-highlighter
@@ -1245,7 +1243,6 @@ commandsets:
       - gitserver-0
       - gitserver-1
       - searcher
-      - symbols
       - caddy
       - docsite
       - syntax-highlighter
@@ -1276,7 +1273,6 @@ commandsets:
       - gitserver-0
       - gitserver-1
       - searcher
-      - symbols
       - syntax-highlighter
       - github-proxy
       - codeintel-worker
@@ -1308,7 +1304,6 @@ commandsets:
       - gitserver-0
       - gitserver-1
       - searcher
-      - symbols
       - caddy
       - docsite
       - syntax-highlighter
@@ -1377,7 +1372,6 @@ commandsets:
       - gitserver-0
       - gitserver-1
       - searcher
-      - symbols
       - caddy
       - docsite
       - syntax-highlighter
@@ -1405,7 +1399,6 @@ commandsets:
       - gitserver-0
       - gitserver-1
       - searcher
-      - symbols
       - github-proxy
       - zoekt-index-0
       - zoekt-index-1
@@ -1428,7 +1421,6 @@ commandsets:
       - gitserver-0
       - gitserver-1
       - searcher
-      - symbols
       - caddy
       - docsite
       - syntax-highlighter
@@ -1485,7 +1477,6 @@ commandsets:
       - gitserver-0
       - gitserver-1
       - searcher
-      - symbols
       - caddy
       - docsite
       - syntax-highlighter
