@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
@@ -26,7 +25,7 @@ func NewGitoliteLister(cli httpcli.Doer) *GitoliteLister {
 	return &GitoliteLister{
 		httpClient: cli,
 		addrs: func() []string {
-			return conf.Get().ServiceConnections().GitServers
+			return conns.get().Addresses
 		},
 		grpcClient: conns,
 		userAgent:  filepath.Base(os.Args[0]),
@@ -56,7 +55,7 @@ func (c *GitoliteLister) ListRepos(ctx context.Context, gitoliteHost string) (li
 		for i, r := range grpcResp.GetRepos() {
 			list[i] = &gitolite.Repo{
 				Name: r.GetName(),
-				URL:  r.GetURL(),
+				URL:  r.GetUrl(),
 			}
 		}
 		return list, nil
