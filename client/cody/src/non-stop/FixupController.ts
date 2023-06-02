@@ -211,7 +211,14 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
 
     public didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
         const task = this.tasks.get(id)
-        if (!task || task.state !== CodyTaskState.pending) {
+        if (!task) {
+            return Promise.resolve()
+        }
+        if (task.state !== CodyTaskState.pending) {
+            // TODO: Update this when we re-spin tasks with conflicts so that
+            // we store the new text but can also display something reasonably
+            // stable in the editor
+            task.state = CodyTaskState.error
             return Promise.resolve()
         }
 

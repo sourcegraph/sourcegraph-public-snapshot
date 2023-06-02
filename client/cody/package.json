@@ -220,7 +220,7 @@
         "command": "cody.recipe.non-stop",
         "title": "Cody: Fixup (Experimental)",
         "icon": "resources/cody.png",
-        "enablement": "cody.nonstop.fixups.enabled"
+        "enablement": "cody.nonstop.fixups.enabled && editorHasSelection"
       },
       {
         "command": "cody.fixup.open",
