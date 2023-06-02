@@ -358,6 +358,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     void this.clearAndRestartSession()
                 }
                 this.onCompletionEnd()
+                void this.editor.controllers.inline.error()
                 console.error(`Completion request failed: ${err}`)
             },
         })
