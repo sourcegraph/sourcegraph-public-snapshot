@@ -173,7 +173,7 @@ func (s dbLicenses) Active(ctx context.Context, subscriptionID string) (*dbLicen
 }
 
 // AssignSiteID marks the existing license as used by a specific siteID
-func (s dbLicenses) AssignSiteID(ctx context.Context, id string, siteID string) error {
+func (s dbLicenses) AssignSiteID(ctx context.Context, id, siteID string) error {
 	q := sqlf.Sprintf(`
 UPDATE product_licenses
 SET site_id = %s
