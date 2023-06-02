@@ -31,6 +31,7 @@ interface RepoEmbeddingJobNodeProps extends RepoEmbeddingJobFields {
 export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
     id,
     state,
+    cancel,
     repo,
     revision,
     finishedAt,
@@ -56,6 +57,7 @@ export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
                     <div className="mt-1">
                         <RepoEmbeddingJobExecutionInfo
                             state={state}
+                            cancel={cancel}
                             finishedAt={finishedAt}
                             queuedAt={queuedAt}
                             startedAt={startedAt}
@@ -79,8 +81,8 @@ export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
 )
 
 const RepoEmbeddingJobExecutionInfo: FC<
-    Pick<RepoEmbeddingJobFields, 'state' | 'finishedAt' | 'failureMessage' | 'queuedAt' | 'startedAt'>
-> = ({ state, finishedAt, queuedAt, startedAt, failureMessage }) => {
+    Pick<RepoEmbeddingJobFields, 'state' | 'cancel' | 'finishedAt' | 'failureMessage' | 'queuedAt' | 'startedAt'>
+> = ({ state, cancel, finishedAt, queuedAt, startedAt, failureMessage }) => {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false)
     return (
         <>
@@ -92,12 +94,24 @@ const RepoEmbeddingJobExecutionInfo: FC<
             {state === RepoEmbeddingJobState.CANCELED && <small>Embedding was canceled.</small>}
             {state === RepoEmbeddingJobState.QUEUED && (
                 <small>
-                    Embedding was queued <Timestamp date={queuedAt} />.
+                    {cancel ? (
+                        'Cancelling ...'
+                    ) : (
+                        <>
+                            Embedding was queued <Timestamp date={queuedAt} />.
+                        </>
+                    )}
                 </small>
             )}
             {state === RepoEmbeddingJobState.PROCESSING && startedAt && (
                 <small>
-                    Embedding started processing <Timestamp date={startedAt} />.
+                    {cancel ? (
+                        'Cancelling ...'
+                    ) : (
+                        <>
+                            Embedding started processing <Timestamp date={startedAt} />.
+                        </>
+                    )}
                 </small>
             )}
             {(state === RepoEmbeddingJobState.ERRORED || state === RepoEmbeddingJobState.FAILED) && failureMessage && (

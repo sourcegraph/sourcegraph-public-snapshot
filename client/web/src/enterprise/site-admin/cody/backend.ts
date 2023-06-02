@@ -26,6 +26,7 @@ const REPO_EMBEDDING_JOB_FRAGMENT = gql`
         finishedAt
         queuedAt
         startedAt
+        cancel
         repo {
             name
             url
