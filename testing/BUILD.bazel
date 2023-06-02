@@ -1,0 +1,138 @@
+# This test target runs the container on port=7080
+sh_test(
+    name = "e2e_test",
+    srcs = [":e2e_test.sh"],
+    args = [
+        "$(location //enterprise/cmd/server:image_tarball)",  # image we're testing against
+        "server:candidate",
+        "$(location //client/web/src/end-to-end:e2e)",  # actual test
+        "$(rootpath //:mocha_config)",
+        "'$(rootpath //client/web/src/end-to-end:testing_e2e_bundle)/**/*.test.js'",
+    ],
+    data = [
+        "//:mocha_config",
+        "//client/web/src/end-to-end:e2e",
+        "//client/web/src/end-to-end:testing_e2e_bundle",
+        "//enterprise/cmd/server:image_tarball",
+    ],
+    env = {
+        "SG_FEATURE_FLAG_GRPC": "false",
+        "TEST_USER_EMAIL": "test@sourcegraph.com",
+        "TEST_USER_PASSWORD": "supersecurepassword",
+        "SOURCEGRAPH_SUDO_TOKEN": "fake-sg-token",
+        "NO_CLEANUP": "false",
+        "KEEP_BROWSER": "false",
+        "DEVTOOLS": "false",
+        "BROWSER": "chrome",
+        "WINDOW_WIDTH": "1280",
+        "WINDOW_HEIGHT": "1024",
+        "LOG_BROWSER_CONSOLE": "false",
+        # Enable findDom on CodeMirror
+        "INTEGRATION_TESTS": "true",
+    },
+    env_inherit = [
+        "DISPLAY",
+        "E2E_HEADLESS",
+        "E2E_SOURCEGRAPH_BASE_URL",
+        "GHE_GITHUB_TOKEN",
+        "GH_TOKEN",
+        "SOURCEGRAPH_LICENSE_GENERATION_KEY",
+        "SOURCEGRAPH_LICENSE_KEY",
+    ],
+    tags = ["requires-network"],
+    deps = ["//testing/tools:integration_runner"],
+)
+
+# This test target runs the container on port=7081
+sh_test(
+    name = "backend_integration_test",
+    srcs = [":backend_integration_test.sh"],
+    args = [
+        "$(location //enterprise/cmd/server:image_tarball)",  # image we're testing against
+        "server:candidate",
+        "$(location //dev/gqltest:gqltest_test)",  # actual test
+        "$(location //dev/authtest:authtest_test)",  # actual test
+    ],
+    data = [
+        "//dev/authtest:authtest_test",
+        "//dev/gqltest:gqltest_test",
+        "//enterprise/cmd/server:image_tarball",
+    ],
+    env = {
+        "SG_FEATURE_FLAG_GRPC": "false",
+    },
+    env_inherit = [
+        "AWS_ACCESS_KEY_ID",
+        "AWS_CODE_COMMIT_PASSWORD",
+        "AWS_CODE_COMMIT_USERNAME",
+        "AWS_SECRET_ACCESS_KEY",
+        "AZURE_DEVOPS_TOKEN",
+        "AZURE_DEVOPS_USERNAME",
+        "BITBUCKET_SERVER_TOKEN",
+        "BITBUCKET_SERVER_URL",
+        "BITBUCKET_SERVER_USERNAME",
+        "GHE_GITHUB_TOKEN",
+        "PERFORCE_PASSWORD",
+        "PERFORCE_PORT",
+        "PERFORCE_USER",
+        "SOURCEGRAPH_LICENSE_GENERATION_KEY",
+        "SOURCEGRAPH_LICENSE_KEY",
+    ],
+    tags = ["requires-network"],
+    deps = ["//testing/tools:integration_runner"],
+)
+
+# This test target runs the container on port=7082
+sh_test(
+    name = "codeintel_integration_test",
+    srcs = [":codeintel_integration_test.sh"],
+    args = [
+        "$(location //enterprise/cmd/server:image_tarball)",  # image we're testing against
+        "server:candidate",
+        "$(location //internal/cmd/init-sg)",
+        "$(rlocationpath @src-cli-linux-amd64//:src-cli-linux-amd64)",
+        "$(location //dev/codeintel-qa/cmd/download)",
+        "$(location //dev/codeintel-qa/cmd/clear)",
+        "$(location //dev/codeintel-qa/cmd/upload)",
+        "$(location //dev/codeintel-qa/cmd/query)",
+        "$(location //dev/ci/integration/code-intel:repos.json)",
+    ],
+    data = [
+        "//dev/ci/integration/code-intel:repos.json",
+        "//dev/codeintel-qa/cmd/clear",
+        "//dev/codeintel-qa/cmd/download",
+        "//dev/codeintel-qa/cmd/query",
+        "//dev/codeintel-qa/cmd/upload",
+        "//enterprise/cmd/server:image_tarball",
+        "//internal/cmd/init-sg",
+        "@src-cli-linux-amd64//:src-cli-linux-amd64",
+    ],
+    env = {
+        "SG_FEATURE_FLAG_GRPC": "false",
+        "TEST_USER_EMAIL": "test@sourcegraph.com",
+        "TEST_USER_PASSWORD": "supersecurepassword",
+        "SOURCEGRAPH_SUDO_USER": "admin",
+    },
+    env_inherit = [
+        "AWS_ACCESS_KEY_ID",
+        "AWS_CODE_COMMIT_PASSWORD",
+        "AWS_CODE_COMMIT_USERNAME",
+        "AWS_SECRET_ACCESS_KEY",
+        "AZURE_DEVOPS_TOKEN",
+        "AZURE_DEVOPS_USERNAME",
+        "BITBUCKET_SERVER_TOKEN",
+        "BITBUCKET_SERVER_URL",
+        "BITBUCKET_SERVER_USERNAME",
+        "GITHUB_TOKEN",
+        "PERFORCE_PASSWORD",
+        "PERFORCE_PORT",
+        "PERFORCE_USER",
+        "SOURCEGRAPH_LICENSE_GENERATION_KEY",
+        "SOURCEGRAPH_LICENSE_KEY",
+    ],
+    tags = [
+        "manual",
+        "requires-network",
+    ],
+    deps = ["//testing/tools:integration_runner"],
+)

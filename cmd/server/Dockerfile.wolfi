@@ -61,10 +61,7 @@ RUN env SANITY_CHECK=true /usr/local/bin/symbols
 
 WORKDIR /
 
-# TODO: Nginx expects these directories but doesn't create them by default, figure out why
-RUN mkdir /var/lib/nginx/tmp /var/run
-
-# TODO: Check all paths in script still line up
 ENV GO111MODULES=on
-# ENV LANG=en_US.utf8 # TODO: Not setting this seems to fix a postgres startup issue
+ENV LANG=en_US.utf8
+ENV PGHOST=/var/run/postgresql
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/server"]

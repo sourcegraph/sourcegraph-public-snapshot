@@ -10,6 +10,13 @@ LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
+ENV \
+    # Firecracker doesn't work in docker, so disable it by default
+    EXECUTOR_USE_FIRECRACKER=false \
+    # Preconfigure bundled-executor to take 1 parallel job and restart afterwards, this is to keep the environment clean-ish
+    EXECUTOR_MAXIMUM_NUM_JOBS=1 \
+    EXECUTOR_NUM_TOTAL_JOBS=1
+
 # Install src-cli.
 ARG SRC_CLI_VERSION
 RUN set -ex && \

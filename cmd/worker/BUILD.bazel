@@ -1,4 +1,7 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
 
 go_library(
     name = "worker_lib",
@@ -20,4 +23,35 @@ go_binary(
         "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
         "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
     },
+)
+
+pkg_tar(
+    name = "tar_worker",
+    srcs = [":worker"],
+)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_base",
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+        "/worker",
+    ],
+    tars = [":tar_worker"],
+    user = "sourcegraph",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["worker:candidate"],
+)
+
+container_structure_test(
+    name = "image_test",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = ["requires-network"],
 )

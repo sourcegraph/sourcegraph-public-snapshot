@@ -1,0 +1,16 @@
+schemaVersion: "2.0.0"
+
+commandTests:
+  - name: "binary is runnable"
+    command: "/loadtest"
+    envVars:
+      - key: "SANITY_CHECK"
+        value: "true"
+
+  # TODO(security): This container should not be running as root
+  # - name: "not running as root"
+  #   command: "/usr/bin/id"
+  #   args:
+  #     - -u
+  #   excludedOutput: ["^0"]
+  #   exitCode: 0

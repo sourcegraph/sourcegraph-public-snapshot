@@ -10,6 +10,9 @@ LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
+# Firecracker doesn't work in docker, so disable it by default.
+ENV EXECUTOR_USE_FIRECRACKER=false
+
 # Install src-cli
 # TODO: Replace with a bazel-built binary
 ARG SRC_CLI_VERSION

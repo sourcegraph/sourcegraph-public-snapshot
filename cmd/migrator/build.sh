@@ -47,6 +47,7 @@ gcs_filenames=(
 
 function download_gcs() {
   outfile="${OUTPUT}/schema-descriptions/${1}-${2}"
+  echo "${outfile}"
   if ! curl -fsSL "https://storage.googleapis.com/sourcegraph-assets/migrations/drift/${1}-${2}" 2>/dev/null >"${outfile}"; then
     rm "${outfile}"
   fi

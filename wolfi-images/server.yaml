@@ -7,32 +7,30 @@ contents:
 
     ## server packages
     - bash
-    - ca-certificates # TODO: Required?
+    - ca-certificates
     - git
     - git-lfs
     - git-p4
     - glibc-locale-en
     - libev
-    - libstdc++ # TODO: Is this still required?
+    - libstdc++
     - nginx
     - openjdk-11
     - openjdk-11-default-jvm
     - openssh-client
     - pcre
+    - posix-libc-utils # Adds locale, used by server postgres init scripts
     - postgresql-12
     - postgresql-12-contrib
     - prometheus-postgres-exporter=0.12.0-r1 # IMPORTANT: Pinned version for managed updates
+    - prometheus-alertmanager
+    - python3
     - posix-libc-utils # Locales
     - prometheus
     - prometheus-alertmanager
-    - python3 # TODO: Missing python2; required?
     - redis-6.2
     - sqlite-libs
     - su-exec
-
-    ## Missing packages
-    #- python2
-    #- libc6-compat - musl-glibc compat library, I think not needed
 
     - comby@sourcegraph
     - ctags@sourcegraph
@@ -72,4 +70,12 @@ accounts:
       uid: 103
       gid: 104
 
-# MANUAL REBUILD: 
+paths:
+  - path: /var/lib/nginx/tmp
+    type: directory
+    permissions: 0o755
+  - path: /var/run
+    type: directory
+    permissions: 0o755
+
+# MANUAL REBUILD:

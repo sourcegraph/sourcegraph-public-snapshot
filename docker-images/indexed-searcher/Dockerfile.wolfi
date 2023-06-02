@@ -15,8 +15,6 @@ LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 
 ENV DATA_DIR /data/index
-RUN mkdir -p ${DATA_DIR}
-RUN chown -R sourcegraph:sourcegraph /data
 
 USER sourcegraph
 WORKDIR /home/sourcegraph

@@ -13,17 +13,6 @@ FROM us.gcr.io/sourcegraph-dev/wolfi-postgresql-12-base:latest
 # To remain compatibility with codeinsights-db and codeintel-db, user and group
 # IDs are set here, rather than in the base image
 
-ARG PING_UID=99
-ARG POSTGRES_UID=999
-
-# We modify the postgres user/group to reconcile with our previous debian based images
-# and avoid issues with customers migrating.
-RUN addgroup -g $PING_UID ping &&\
-    adduser -D -u $POSTGRES_UID postgres postgres &&\
-    mkdir -p /data/pgdata-12 && chown -R postgres:postgres /data &&\
-    mkdir -p /var/lib/postgresql && chown -R postgres:postgres /var/lib/postgresql &&\
-    mkdir -p /var/run/postgresql && chown -R postgres:postgres /var/run/postgresql
-
 COPY rootfs /
 # Overwrite default postgresql.conf.sample
 COPY config/postgresql.conf.sample /usr/share/postgresql/postgresql.conf.sample

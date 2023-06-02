@@ -17,6 +17,7 @@ var (
 	verbose              bool
 	pollInterval         time.Duration
 	timeout              time.Duration
+	srcPath              string
 
 	start = time.Now()
 )
@@ -28,6 +29,7 @@ func init() {
 	flag.BoolVar(&verbose, "verbose", false, "Display full state from graphql")
 	flag.DurationVar(&pollInterval, "poll-interval", time.Second*5, "The time to wait between graphql requests")
 	flag.DurationVar(&timeout, "timeout", 0, "The time it should take to upload and process all targets")
+	flag.StringVar(&srcPath, "src-path", "src", "Path to src-cli binary")
 }
 
 func main() {

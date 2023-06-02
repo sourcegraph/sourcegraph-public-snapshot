@@ -8,3 +8,5 @@ contents:
 
     ## redis_exporter packages
     - redis_exporter@sourcegraph
+
+# MANUAL REBUILD: 

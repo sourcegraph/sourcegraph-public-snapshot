@@ -1,4 +1,8 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//dev:oci_defs.bzl", "image_repository")
 
 go_library(
     name = "batcheshelper_lib",
@@ -32,4 +36,42 @@ go_test(
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
     ],
+)
+
+pkg_tar(
+    name = "tar_batcheshelper",
+    srcs = [":batcheshelper"],
+)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_batcheshelper_base",
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+        "/batcheshelper",
+    ],
+    tars = [":tar_batcheshelper"],
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["batcheshelper:candidate"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = ["requires-network"],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    remote_tags = "//:tags",
+    repository = image_repository("batcheshelper"),
 )

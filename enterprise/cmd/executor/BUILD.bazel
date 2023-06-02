@@ -1,4 +1,8 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//dev:oci_defs.bzl", "image_repository")
 
 go_library(
     name = "executor_lib",
@@ -23,4 +27,55 @@ go_binary(
     name = "executor",
     embed = [":executor_lib"],
     visibility = ["//visibility:public"],
+)
+
+pkg_tar(
+    name = "tar_executor",
+    srcs = [":executor"],
+)
+
+pkg_tar(
+    name = "tar_src-cli",
+    srcs = ["@src-cli-linux-amd64//:src-cli-linux-amd64"],
+    package_dir = "/usr/local/bin",
+)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_executor_base",
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+        "/executor",
+    ],
+    env = {
+        "EXECUTOR_USE_FIRECRACKER": "false",  # Firecracker doesn't work in docker, so disable it by default
+    },
+    tars = [
+        ":tar_executor",
+        ":tar_src-cli",
+    ],
+    user = "sourcegraph",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["executor:candidate"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = ["requires-network"],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    remote_tags = "//:tags",
+    repository = image_repository("executor"),
 )

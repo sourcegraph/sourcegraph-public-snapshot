@@ -63,5 +63,14 @@ mocha_test(
         "requires-network",
     ],
     tests = [test.replace(".ts", ".js") for test in glob(["**/*.test.ts"])],
+    visibility = ["//testing:__pkg__"],
     deps = [":end-to-end_tests"],
+)
+
+# For some reason, we can't explicitly set a visibility on the target itself,
+# it seems the esbuild rule doesn't pass along the visibility attribute properly.
+alias(
+    name = "testing_e2e_bundle",
+    actual = ":e2e_bundle",
+    visibility = ["//testing:__pkg__"],
 )

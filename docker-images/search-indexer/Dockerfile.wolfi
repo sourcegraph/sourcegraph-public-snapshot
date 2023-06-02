@@ -14,10 +14,10 @@ LABEL org.opencontainers.image.revision=${COMMIT_SHA}
 LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 
+# DONE
 ENV SRC_FRONTEND_INTERNAL http://sourcegraph-frontend-internal
+# DONE
 ENV DATA_DIR /data/index
-RUN mkdir -p ${DATA_DIR}
-RUN chown -R sourcegraph:sourcegraph /data
 
 USER sourcegraph
 WORKDIR /home/sourcegraph

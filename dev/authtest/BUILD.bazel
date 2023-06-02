@@ -10,6 +10,7 @@ go_test(
         "repository_test.go",
         "site_admin_test.go",
     ],
+    visibility = ["//testing:__subpackages__"],
     deps = [
         "//internal/auth",
         "//internal/extsvc",

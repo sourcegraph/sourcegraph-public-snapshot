@@ -7,6 +7,10 @@ root_dir=$(pwd)
 
 set -ex
 
+# Install dependencies for upgrade test script
+pnpm install --frozen-lockfile
+pnpm generate
+
 dev/ci/integration/setup-deps.sh
 dev/ci/integration/setup-display.sh
 

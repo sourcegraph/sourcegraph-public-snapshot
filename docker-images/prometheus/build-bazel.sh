@@ -15,10 +15,10 @@ cleanup() {
 }
 trap cleanup EXIT
 
-./dev/ci/bazel.sh build //docker-images/prometheus/cmd/prom-wrapper //monitoring:generate_config
+./dev/ci/bazel.sh build //docker-images/prometheus/cmd/prom-wrapper //monitoring:generate_config_zip
 out=$(./dev/ci/bazel.sh cquery //docker-images/prometheus/cmd/prom-wrapper --output=files)
 cp "$out" "$BUILDDIR"
-monitoring_cfg=$(./dev/ci/bazel.sh cquery //monitoring:generate_config --output=files)
+monitoring_cfg=$(./dev/ci/bazel.sh cquery //monitoring:generate_config_zip --output=files)
 cp "$monitoring_cfg" "$TMP/"
 pushd "$TMP"
 unzip "monitoring.zip"
