@@ -42,20 +42,24 @@ export class EventLogger {
             serverEndpoint: this.serverEndpoint,
             extensionDetails: this.extensionDetails,
         }
-        try {
-            this.gqlAPIClient
-                .logEvent({
-                    event: eventName,
-                    userCookieID: anonymousUserID,
-                    source: 'IDEEXTENSION',
-                    url: '',
-                    argument: JSON.stringify(argument),
-                    publicArgument: JSON.stringify(publicArgument),
-                })
-                .then(() => {})
-                .catch(() => {})
-        } catch (error) {
-            console.log(error)
+        if (!process.env['CODY_TESTING']) {
+            try {
+                this.gqlAPIClient
+                    .logEvent({
+                        event: eventName,
+                        userCookieID: anonymousUserID,
+                        source: 'IDEEXTENSION',
+                        url: '',
+                        argument: JSON.stringify(argument),
+                        publicArgument: JSON.stringify(publicArgument),
+                    })
+                    .then(() => {})
+                    .catch(() => {})
+            } catch (error) {
+                console.error(error)
+            }
+        } else {
+            console.debug("Event logged: " + eventName)
         }
     }
 }
