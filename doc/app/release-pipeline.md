@@ -1,6 +1,6 @@
 # Sourcegraph App release pipeline
 
-The Sourcegraph App release pipeline utilizes buildkite to build and bundle Sourcegraph App for all current [supported platforms]. The primary definition of the buildkite pipeline can be found at `.buildkite/pipeline.app.yml` in the Sourcegraph mono repo.
+The Sourcegraph App release pipeline utilizes buildkite to build and bundle Sourcegraph App for all current [supported platforms](#supported-platforms). The primary definition of the buildkite pipeline can be found at `.buildkite/pipeline.app.yml` in the Sourcegraph mono repo.
 
 ## Branches that trigger the release pipeline
 
