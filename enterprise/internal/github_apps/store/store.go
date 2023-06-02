@@ -111,7 +111,7 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
 			fmt.Println(err)
 		}
 		if existingGHApp != nil {
-			return -1, errors.New("GitHub App already exists for this GitHub instance")
+			return -1, errors.New("GitHub App already exists for this GitHub instance in the batches domain")
 		}
 	}
 
