@@ -37,7 +37,6 @@ func (gs *GRPCServer) BatchLog(ctx context.Context, req *proto.BatchLogRequest) 
 	internalReq.FromProto(req)
 	// Validate request parameters
 	if len(req.RepoCommits) == 0 {
-		// Early exit: implicitly writes 200 OK
 		return resp.ToProto(), nil
 	}
 	if !strings.HasPrefix(req.Format, "--format=") {
