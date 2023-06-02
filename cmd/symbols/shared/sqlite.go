@@ -59,7 +59,7 @@ func SetupSqlite(observationCtx *observation.Context, db database.DB, gitserverC
 		return symbolparser.SpawnCtags(logger, config.Ctags, source)
 	}
 
-	parserPool, err := symbolparser.NewParserPool(parserFactory, config.NumCtagsProcesses, parserTypesForDeployment()...)
+	parserPool, err := symbolparser.NewParserPool(parserFactory, config.NumCtagsProcesses, parserTypesForDeployment())
 	if err != nil {
 		logger.Fatal("failed to create parser pool", log.Error(err))
 	}

@@ -18,7 +18,7 @@ type parserPool struct {
 
 var DefaultParserTypes = []ctags_config.ParserType{ctags_config.UniversalCtags, ctags_config.ScipCtags}
 
-func NewParserPool(newParser ParserFactory, numParserProcesses int, parserTypes ...ctags_config.ParserType) (*parserPool, error) {
+func NewParserPool(newParser ParserFactory, numParserProcesses int, parserTypes []ctags_config.ParserType) (*parserPool, error) {
 	pool := make(map[ctags_config.ParserType]chan ctags.Parser)
 
 	if len(parserTypes) == 0 {
