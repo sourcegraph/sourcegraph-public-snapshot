@@ -1,7 +1,7 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "npm_package")
-load("//dev:eslint.bzl", "eslint_config")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
 # Disable gazelle for the js/dts-only package
 # gazelle:js disabled
@@ -11,7 +11,18 @@ package(default_visibility = ["//visibility:public"])
 
 npm_link_all_packages(name = "node_modules")
 
-eslint_config()
+eslint_config_and_lint_root(
+    config_deps = [":tsconfig-eslint"],
+)
+
+ts_config(
+    name = "tsconfig-eslint",
+    src = "tsconfig.eslint.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//:tsconfig",
+    ],
+)
 
 ts_config(
     name = "tsconfig",
