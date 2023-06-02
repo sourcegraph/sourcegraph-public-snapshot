@@ -53,7 +53,6 @@ dev_tags=(
   "${BUILDKITE_COMMIT:0:12}_${BUILDKITE_BUILD_NUMBER}"
 )
 prod_tags=(
-  # This doesn't quite match the current setup - it's missing the version e.g. 223350_2023-06-01_5.0-70b5f582fccd
   "${PUSH_VERSION}"
 )
 
@@ -89,11 +88,7 @@ if $push_prod; then
   done
 fi
 
-echo "Dev args: $dev_tags_args"
-echo "Prod args: $prod_tags_args"
-
-# images=$(bazel query 'kind("oci_push rule", //...)')
-images=(gitserver:image searcher:image)
+images=$(bazel query 'kind("oci_push rule", //...)')
 
 job_file=$(mktemp)
 # shellcheck disable=SC2064
