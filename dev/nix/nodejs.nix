@@ -6,10 +6,11 @@ pkgs.nodejs-16_x.overrideAttrs (oldAttrs: {
 
   passthru.pkgs = oldAttrs.passthru.pkgs // {
     pnpm = oldAttrs.passthru.pkgs.pnpm.override rec {
+      # PLEASE UPDATE THE SHA512 BELOW OR NOTIFY ONE OF THE NIX USERS BEFORE MERGING A CHANGE TO THESE FILES
       version = "8.3.0";
       src = fetchurl {
         url = "https://registry.npmjs.org/pnpm/-/pnpm-${version}.tgz";
-        sha512 = "sha512-e2H73wTRxmc5fWF/6QJqbuwU6O3NRVZC1G1WFXG8EqfN/+ZBu8XVHJZwPH6Xh0DxbEoZgw8/wy2utgCDwPu4Sg==";
+        sha512 = "sha512-wRS8ap/SPxBqbUMzcUNkoA0suLqk9BqMlvi8dM2FRuhwUDgqVGYLc5jQ6Ww3uqVc+84zJvN2GYmTWCubaoWPtQ==";
       };
     };
     typescript = oldAttrs.passthru.pkgs.typescript.override rec {
