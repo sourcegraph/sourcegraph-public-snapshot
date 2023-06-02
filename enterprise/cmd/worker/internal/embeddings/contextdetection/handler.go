@@ -32,7 +32,10 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, _ *contextdetec
 		return errors.New("embeddings are not configured or disabled")
 	}
 
-	embeddingsClient := embed.NewEmbeddingsClient()
+	embeddingsClient, err := embed.NewEmbeddingsClient(MAX_EMBEDDINGS_RETRIES)
+	if err != nil {
+		return err
+	}
 
 	messagesWithAdditionalContextMeanEmbedding, err := getContextDetectionMessagesMeanEmbedding(ctx, MESSAGES_WITH_ADDITIONAL_CONTEXT, embeddingsClient)
 	if err != nil {
@@ -53,7 +56,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, _ *contextdetec
 }
 
 func getContextDetectionMessagesMeanEmbedding(ctx context.Context, messages []string, client embed.EmbeddingsClient) ([]float32, error) {
-	messagesEmbeddings, err := client.GetEmbeddingsWithRetries(ctx, messages, MAX_EMBEDDINGS_RETRIES)
+	messagesEmbeddings, err := client.GetEmbeddings(ctx, messages)
 	if err != nil {
 		return nil, err
 	}

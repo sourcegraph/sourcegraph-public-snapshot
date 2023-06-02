@@ -22,8 +22,11 @@ func getCachedQueryEmbeddingFn() (getQueryEmbeddingFn, error) {
 		if cachedQueryEmbedding, ok := cache.Get(query); ok {
 			queryEmbedding = cachedQueryEmbedding
 		} else {
-			client := embed.NewEmbeddingsClient()
-			queryEmbedding, err = client.GetEmbeddingsWithRetries(ctx, []string{query}, QUERY_EMBEDDING_RETRIES)
+			client, err := embed.NewEmbeddingsClient(QUERY_EMBEDDING_RETRIES)
+			if err != nil {
+				return nil, err
+			}
+			queryEmbedding, err = client.GetEmbeddings(ctx, []string{query})
 			if err != nil {
 				return nil, err
 			}

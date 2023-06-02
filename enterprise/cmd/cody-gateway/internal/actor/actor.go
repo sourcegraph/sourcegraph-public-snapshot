@@ -40,8 +40,12 @@ type Actor struct {
 	// For example, for product subscriptions it is based on whether the subscription is
 	// archived, if access is enabled, and if any rate limits are set.
 	AccessEnabled bool `json:"accessEnabled"`
-	// RateLimits holds the rate limits for Cody Gateway access for this actor.
-	RateLimits map[types.CompletionsFeature]RateLimit `json:"rateLimits"`
+	// CompletionsAccessEnabled holds the rate limits for Cody Gateway access to completions
+	// for this actor.
+	CompletionsRateLimits map[types.CompletionsFeature]RateLimit `json:"completionsRateLimits"`
+	// EmbeddingsRateLimit holds the rate limit for Cody Gateway access to embeddings
+	// for this actor.
+	EmbeddingsRateLimit RateLimit `json:"embeddingsRateLimit"`
 	// LastUpdated indicates when this actor's state was last updated.
 	LastUpdated *time.Time `json:"lastUpdated"`
 	// Source is a reference to the source of this actor's state.
@@ -93,19 +97,42 @@ func WithActor(ctx context.Context, a *Actor) context.Context {
 	return context.WithValue(ctx, actorKey, a)
 }
 
-func (a *Actor) Limiter(redis limiter.RedisStore, feature types.CompletionsFeature) (limiter.Limiter, bool) {
+func (a *Actor) CompletionsLimiter(redis limiter.RedisStore, feature types.CompletionsFeature) (limiter.Limiter, bool) {
 	if a == nil {
 		// Not logged in, no limit applicable.
 		return nil, false
 	}
-	limit, ok := a.RateLimits[feature]
+	limit, ok := a.CompletionsRateLimits[feature]
 	if !ok {
+		return nil, false
+	}
+	if !limit.IsValid() {
+		// No valid limit, cannot provide limiter.
 		return nil, false
 	}
 	// The redis store has to use a prefix for the given feature because we need
 	// to rate limit by feature.
 	rs := limiter.NewPrefixRedisStore(fmt.Sprintf("%s:", string(feature)), redis)
 	return updateOnFailureLimiter{Redis: rs, RateLimit: limit, Actor: a}, true
+}
+
+func (a *Actor) EmbeddingsLimiter(redis limiter.RedisStore) (limiter.Limiter, bool) {
+	if a == nil {
+		// Not logged in, no limit applicable.
+		return nil, false
+	}
+	if !a.EmbeddingsRateLimit.IsValid() {
+		// No valid limit, cannot provide limiter.
+		return nil, false
+	}
+	// The redis store should use a prefix so the embeddings rate limits are guaranteed
+	// to be unique in the global namespace.
+	rs := limiter.NewPrefixRedisStore(fmt.Sprintf("%s:", "embeddings"), redis)
+	return updateOnFailureLimiter{
+		Redis:     rs,
+		Actor:     a,
+		RateLimit: a.EmbeddingsRateLimit,
+	}, true
 }
 
 type updateOnFailureLimiter struct {

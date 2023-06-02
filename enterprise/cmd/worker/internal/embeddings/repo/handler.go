@@ -21,6 +21,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const GET_EMBEDDINGS_MAX_RETRIES = 5
+
 type handler struct {
 	db                     edb.EnterpriseDB
 	uploadStore            uploadstore.Store
@@ -78,7 +80,10 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		}
 	}
 
-	embeddingsClient := embed.NewEmbeddingsClient()
+	embeddingsClient, err := embed.NewEmbeddingsClient(GET_EMBEDDINGS_MAX_RETRIES)
+	if err != nil {
+		return err
+	}
 	fetcher := &revisionFetcher{
 		repo:      repo.Name,
 		revision:  record.Revision,

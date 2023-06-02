@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const GET_EMBEDDINGS_MAX_RETRIES = 5
 const EMBEDDING_BATCH_SIZE = 512
 const maxFileSize = 1000000 // 1MB
 
@@ -156,7 +155,7 @@ func embedFiles(
 			index.Ranks = append(index.Ranks, float32(repoPathRanks.Paths[chunk.FileName]))
 		}
 
-		batchEmbeddings, err := client.GetEmbeddingsWithRetries(ctx, batchChunks, GET_EMBEDDINGS_MAX_RETRIES)
+		batchEmbeddings, err := client.GetEmbeddings(ctx, batchChunks)
 		if err != nil {
 			return errors.Wrap(err, "error while getting embeddings")
 		}
