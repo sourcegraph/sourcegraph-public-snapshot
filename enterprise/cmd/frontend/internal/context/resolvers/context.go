@@ -4,14 +4,14 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	internalcontext "github.com/sourcegraph/sourcegraph/enterprise/internal/context"
+	codycontext "github.com/sourcegraph/sourcegraph/enterprise/internal/codycontext"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func NewResolver(db database.DB, gitserverClient gitserver.Client, contextClient *internalcontext.ContextClient) graphqlbackend.ContextResolver {
+func NewResolver(db database.DB, gitserverClient gitserver.Client, contextClient *codycontext.ContextClient) graphqlbackend.CodyContextResolver {
 	return &Resolver{
 		db:              db,
 		gitserverClient: gitserverClient,
@@ -22,10 +22,10 @@ func NewResolver(db database.DB, gitserverClient gitserver.Client, contextClient
 type Resolver struct {
 	db              database.DB
 	gitserverClient gitserver.Client
-	contextClient   *internalcontext.ContextClient
+	contextClient   *codycontext.ContextClient
 }
 
-func (r *Resolver) GetContext(ctx context.Context, args graphqlbackend.GetContextArgs) ([]graphqlbackend.ContextResultResolver, error) {
+func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetContextArgs) ([]graphqlbackend.ContextResultResolver, error) {
 	repoIDs, err := graphqlbackend.UnmarshalRepositoryIDs(args.Repos)
 	if err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func (r *Resolver) GetContext(ctx context.Context, args graphqlbackend.GetContex
 		repoNameIDs[i] = types.RepoIDName{ID: repoID, Name: repos[repoID].Name}
 	}
 
-	fileChunks, err := r.contextClient.GetContext(ctx, internalcontext.GetContextArgs{
+	fileChunks, err := r.contextClient.GetContext(ctx, codycontext.GetContextArgs{
 		Repos:            repoNameIDs,
 		Query:            args.Query,
 		CodeResultsCount: args.CodeResultsCount,
@@ -62,7 +62,7 @@ func (r *Resolver) GetContext(ctx context.Context, args graphqlbackend.GetContex
 	return resolvers, nil
 }
 
-func (r *Resolver) fileChunkToResolver(ctx context.Context, chunk internalcontext.FileChunkContext) (graphqlbackend.ContextResultResolver, error) {
+func (r *Resolver) fileChunkToResolver(ctx context.Context, chunk codycontext.FileChunkContext) (graphqlbackend.ContextResultResolver, error) {
 	repoResolver := graphqlbackend.NewRepositoryResolver(r.db, r.gitserverClient, &types.Repo{
 		ID:   chunk.RepoID,
 		Name: chunk.RepoName,

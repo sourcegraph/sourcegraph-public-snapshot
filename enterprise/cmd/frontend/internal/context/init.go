@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/context/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
-	internalcontext "github.com/sourcegraph/sourcegraph/enterprise/internal/context"
+	codycontext "github.com/sourcegraph/sourcegraph/enterprise/internal/codycontext"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -33,13 +33,13 @@ func Init(
 		search.SearcherGRPCConnectionCache(),
 		enterpriseServices.EnterpriseSearchJobs,
 	)
-	contextClient := internalcontext.NewContextClient(
+	contextClient := codycontext.NewContextClient(
 		observationCtx.Logger,
 		edb.NewEnterpriseDB(db),
 		embeddingsClient,
 		searchClient,
 	)
-	enterpriseServices.ContextResolver = resolvers.NewResolver(
+	enterpriseServices.CodyContextResolver = resolvers.NewResolver(
 		db,
 		services.GitserverClient,
 		contextClient,

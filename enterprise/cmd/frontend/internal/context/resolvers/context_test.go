@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	internalcontext "github.com/sourcegraph/sourcegraph/enterprise/internal/context"
+	codycontext "github.com/sourcegraph/sourcegraph/enterprise/internal/codycontext"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -119,7 +119,7 @@ func TestContextResolver(t *testing.T) {
 		return nil, nil
 	})
 
-	contextClient := internalcontext.NewContextClient(
+	contextClient := codycontext.NewContextClient(
 		logger,
 		db,
 		mockEmbeddingsClient,
@@ -143,7 +143,7 @@ func TestContextResolver(t *testing.T) {
 	ffs := featureflag.NewMemoryStore(map[string]bool{"cody-experimental": true}, nil, nil)
 	ctx = featureflag.WithFlags(ctx, ffs)
 
-	results, err := resolver.GetContext(ctx, graphqlbackend.GetContextArgs{
+	results, err := resolver.GetCodyContext(ctx, graphqlbackend.GetContextArgs{
 		Repos:            graphqlbackend.MarshalRepositoryIDs([]api.RepoID{1, 2}),
 		Query:            "my test query",
 		TextResultsCount: 2,

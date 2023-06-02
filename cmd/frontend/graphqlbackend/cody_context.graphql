@@ -2,7 +2,7 @@ extend type Query {
     """
     EXPERIMENTAL: Get pieces of context related to the query from a set of repositories.
     """
-    getContext(
+    getCodyContext(
         """
         The repositories to search.
         """
@@ -19,7 +19,7 @@ extend type Query {
         The number of text results to return. Text results contain Markdown files and similar file types primarily used for writing documentation.
         """
         textResultsCount: Int!
-    ): [ContextResult!]!
+    ): [CodyContextResult!]!
 }
 
 """
@@ -27,7 +27,7 @@ EXPERIMENTAL: A single piece of context. It's defined as a union so we can
 return other types of context in the future (think code intel definition
 or wiki page).
 """
-union ContextResult = FileChunkContext
+union CodyContextResult = FileChunkContext
 
 """
 A piece of context that represents a chunk of a file in a git repository

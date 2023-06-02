@@ -3,7 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "context",
     srcs = ["context.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/context",
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codycontext",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//cmd/frontend/envvar",

@@ -6,8 +6,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 )
 
-type ContextResolver interface {
-	GetContext(ctx context.Context, args GetContextArgs) ([]ContextResultResolver, error)
+type CodyContextResolver interface {
+	GetCodyContext(ctx context.Context, args GetContextArgs) ([]ContextResultResolver, error)
 }
 
 type GetContextArgs struct {
