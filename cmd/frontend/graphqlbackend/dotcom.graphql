@@ -178,6 +178,14 @@ input ProductLicenseInput {
     The expiration date of this product license, expressed as the number of seconds since the epoch.
     """
     expiresAt: Int!
+    """
+    The Salesforce subscription ID associated with this product license.
+    """
+    salesforceSubscriptionID: String
+    """
+    The Salesforce opportunity ID associated with this product license.
+    """
+    salesforceOpportunityID: String
 }
 
 """
