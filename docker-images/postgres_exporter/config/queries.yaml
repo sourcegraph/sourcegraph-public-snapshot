@@ -1,5 +1,78 @@
 # In this file:
 #
+# | name                                    | type    | description                                              |
+# | --------------------------------------- | ------- | -------------------------------------------------------- |
+# | pg_invalid_index_count{datname,relname} | COUNTER | Non-zero value used to tag existence of an invalid index |
+
+pg_invalid_index:
+  query: |
+    SELECT
+        current_database() AS datname,
+        pc.relname AS relname,
+        1 AS count
+    FROM pg_class pc
+    JOIN pg_index pi ON pi.indexrelid = pc.oid
+    WHERE
+        NOT indisvalid AND
+        NOT EXISTS (SELECT 1 FROM pg_stat_progress_create_index pci WHERE pci.index_relid = pi.indexrelid)
+  metrics:
+    - datname:
+        usage: "LABEL"
+        description: "Name of current database"
+    - relname:
+        usage: "LABEL"
+        description: "Name of the index"
+    - count:
+        usage: "COUNTER"
+        description: "Non-zero value used to tag existence of an invalid index"
+
+# In this file:
+#
+# | name                                     | type  | description                                                    |
+# | --------------------------------- ------ | ----- | -------------------------------------------------------------- |
+# | pg_table_size_bytes{datname,relname}     | GAUGE | Total size of this table (including toast, index, toast index) |
+# | pg_table_size_indexsize{datname,relname} | GAUGE | Size of all related indexes                                    |
+# | pg_table_size_relsize{datname,relname}   | GAUGE | Size of this table itself (main, vm, fsm)                      |
+# | pg_table_size_toastsize{datname,relname} | GAUGE | Size of corresponding toast tables                             |
+#
+# Contents of this file are loosely based off of:
+# https://github.com/Vonng/pg_exporter/blob/f682b06630db8e4585aa52df150d0a653bbde07e/conf/810-pg_table_size.yaml
+
+pg_table_size:
+  query: |
+    SELECT
+        CURRENT_CATALOG AS datname,
+        r.relname AS relname,
+        pg_total_relation_size(r.oid) AS bytes,
+        pg_relation_size(r.oid) AS relsize,
+        pg_indexes_size(r.oid) AS indexsize,
+        pg_total_relation_size(r.reltoastrelid) AS toastsize
+    FROM pg_class r
+    JOIN pg_namespace n ON n.oid = r.relnamespace
+    WHERE
+        r.relkind = 'r' AND n.nspname NOT IN ('pg_catalog', 'information_schema');
+  metrics:
+    - datname:
+        usage: 'LABEL'
+        description: 'Name of current database'
+    - relname:
+        usage: 'LABEL'
+        description: 'Name of the table'
+    - bytes:
+        usage: 'GAUGE'
+        description: 'Total size of this table (including toast, index, toast index)'
+    - indexsize:
+        usage: 'GAUGE'
+        description: 'Size of all related indexes'
+    - relsize:
+        usage: 'GAUGE'
+        description: 'Size of this table itself (main, vm, fsm)'
+    - toastsize:
+        usage: 'GAUGE'
+        description: 'Size of corresponding toast tables'
+
+# In this file:
+#
 # | name                                  | type  | description                              |
 # | ------------------------------------- | ----- | ---------------------------------------- |
 # | pg_index_bloat_ratio{datname,relname} | GAUGE | Estimated bloat ratio of this index, 0~1 |
@@ -123,3 +196,31 @@ pg_table_bloat:
     - ratio:
         usage: 'GAUGE'
         description: 'Estimated bloat ratio of this table, 0~1'
+
+# In this file:
+#
+# | name                   | type    | description                                |
+# | ---------------------- | ------- | ------------------------------------------ |
+# | pg_sg_migration_status | GAUGE   | Whether the migration applied successfully |
+# |                        |         | This only applies to the frontend db.      |
+
+pg_sg_migration:
+  query: |
+    WITH ranked_migration_logs AS (
+      SELECT
+        migration_logs.*,
+        ROW_NUMBER() OVER (PARTITION BY version ORDER BY finished_at DESC) AS row_number
+      FROM migration_logs
+      WHERE schema = 'schema_migrations'
+    )
+    SELECT EXISTS (
+      SELECT 1
+      FROM ranked_migration_logs
+      WHERE row_number = 1
+      AND NOT success
+    )::int;
+  master: true
+  metrics:
+    - status:
+        usage: "GAUGE"
+        description: Whether the migration applied successfully

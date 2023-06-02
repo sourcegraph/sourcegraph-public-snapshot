@@ -1,0 +1,28 @@
+schemaVersion: "2.0.0"
+
+commandTests:
+  - name: "binary is runnable"
+    command: "/frontend"
+    envVars:
+      - key: "SANITY_CHECK"
+        value: "true"
+
+  - name: "not running as root"
+    command: "/usr/bin/id"
+    args:
+      - -u
+    excludedOutput: ["^0"]
+    exitCode: 0
+
+fileExistenceTests:
+- name: '/mnt/cache/frontend'
+  path: '/mnt/cache/frontend'
+  shouldExist: true
+  uid: 100
+  gid: 101
+
+metadataTest:
+  envVars:
+    - key: PGHOST
+      value: .+
+      isRegex: true
