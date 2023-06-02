@@ -38,7 +38,6 @@ func (c *batchChangesCodeHostResolver) CommitSigningConfiguration(ctx context.Co
 	case extsvc.TypeGitHub:
 		gstore := ghstore.GitHubAppsWith(c.store.Store)
 		domain := types.BatchesDomain
-		fmt.Println("externalServiceID:", c.codeHost.ExternalServiceID, "domain:", domain)
 		ghapp, err := gstore.GetByDomain(ctx, &domain, c.codeHost.ExternalServiceID)
 		if err != nil {
 			return nil, err
