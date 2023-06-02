@@ -1,15 +1,12 @@
 package adminanalytics
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -19,6 +16,7 @@ var (
 	LastWeek        = "LAST_WEEK"
 	Daily           = "DAILY"
 	Weekly          = "WEEKLY"
+	timeNow         = time.Now
 )
 
 func makeDateParameters(dateRange string, grouping string, dateColumnName string) (*sqlf.Query, *sqlf.Query, error) {
@@ -37,7 +35,7 @@ func makeDateParameters(dateRange string, grouping string, dateColumnName string
 		return nil, nil, errors.New("Invalid groupBy")
 	}
 
-	return sqlf.Sprintf(fmt.Sprintf(`DATE_TRUNC('%s', %s::date)`, groupBy, dateColumnName)), sqlf.Sprintf(`BETWEEN %s AND %s`, from.Format(time.RFC3339), now.Format(time.RFC3339)), nil
+	return sqlf.Sprintf(fmt.Sprintf(`DATE_TRUNC('%s', TIMEZONE('UTC', %s::date))`, groupBy, dateColumnName)), sqlf.Sprintf(`BETWEEN %s AND %s`, from.Format(time.RFC3339), now.Format(time.RFC3339)), nil
 }
 
 func getFromDate(dateRange string, now time.Time) (time.Time, error) {
@@ -52,61 +50,6 @@ func getFromDate(dateRange string, now time.Time) (time.Time, error) {
 	return now, errors.New("Invalid date range")
 }
 
-// find sourcegraph employee user ids to exclude (usually CEs)
-var sgEmpUserIdsQuery = `
-SELECT
-  DISTINCT users.id AS user_id
-FROM
-  users INNER JOIN user_emails ON user_emails.user_id = users.id
-WHERE
-  (
-    users.username ILIKE 'managed-%%'
-		OR users.username ILIKE 'sourcegraph-management-%%'
-		OR users.username = 'sourcegraph-admin'
-  )
-	AND user_emails.email ILIKE '%%@sourcegraph.com'
-`
-
-const employeeUserIdsCacheExpirySeconds = 300
-const employeeUserIdsCacheKey = "sourcegraph_employee_user_ids"
-
-func getSgEmpUserIDs(ctx context.Context, db database.DB, cache bool) ([]*int32, error) {
-	if cache {
-		if ids, err := getArrayFromCache[int32](employeeUserIdsCacheKey); err == nil {
-			return ids, nil
-		}
-	}
-
-	query := sqlf.Sprintf(sgEmpUserIdsQuery)
-	rows, err := db.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
-	if err != nil {
-		return []*int32{}, err
-	}
-	defer rows.Close()
-
-	ids := make([]*int32, 0)
-	for rows.Next() {
-		var id int32
-
-		if err := rows.Scan(&id); err != nil {
-			return ids, err
-		}
-
-		ids = append(ids, &id)
-	}
-
-	cacheData, err := json.Marshal(ids)
-	if err != nil {
-		return ids, err
-	}
-
-	if err := setDataToCache(employeeUserIdsCacheKey, string(cacheData), employeeUserIdsCacheExpirySeconds); err != nil {
-		return ids, err
-	}
-
-	return ids, nil
-}
-
 const eventLogsNodesQuery = `
 SELECT
 	%s AS date,
@@ -115,6 +58,7 @@ SELECT
 	COUNT(DISTINCT user_id) FILTER (WHERE user_id != 0) AS registered_users
 FROM
 	event_logs
+LEFT OUTER JOIN users ON users.id = event_logs.user_id
 %s
 GROUP BY date
 `
@@ -126,50 +70,28 @@ SELECT
 	COUNT(DISTINCT user_id) FILTER (WHERE user_id != 0) AS registered_users
 FROM
 	event_logs
+LEFT OUTER JOIN users ON users.id = event_logs.user_id
 %s
 `
 
-func getDefaultConds(ctx context.Context, db database.DB, cache bool) ([]*sqlf.Query, error) {
-	nonActiveUserEvents := []*sqlf.Query{}
-	for _, name := range eventlogger.NonActiveUserEvents {
-		nonActiveUserEvents = append(nonActiveUserEvents, sqlf.Sprintf("%s", name))
-	}
+func getDefaultConds() []*sqlf.Query {
+	commonConds := database.BuildCommonUsageConds(&database.CommonUsageOptions{
+		ExcludeSystemUsers:          true,
+		ExcludeNonActiveUsers:       true,
+		ExcludeSourcegraphAdmins:    true,
+		ExcludeSourcegraphOperators: true,
+	}, []*sqlf.Query{})
 
-	conds := []*sqlf.Query{
-		sqlf.Sprintf("anonymous_user_id <> 'backend'"),
-		sqlf.Sprintf("name NOT IN (%s)", sqlf.Join(nonActiveUserEvents, ", ")),
-		sqlf.Sprintf(fmt.Sprintf(`NOT public_argument @> '{"%s": true}'`, database.EventLogsSourcegraphOperatorKey)), // Exclude Sourcegraph Operator user accounts
-	}
-
-	sgEmpUserIds, err := getSgEmpUserIDs(ctx, db, cache)
-	if err != nil {
-		return []*sqlf.Query{}, err
-	}
-
-	if len(sgEmpUserIds) > 0 {
-		excludeUserIDs := []*sqlf.Query{}
-		for _, userId := range sgEmpUserIds {
-			excludeUserIDs = append(excludeUserIDs, sqlf.Sprintf("%d", userId))
-		}
-
-		conds = append(conds, sqlf.Sprintf("user_id NOT IN (%s)", sqlf.Join(excludeUserIDs, ", ")))
-	}
-
-	return conds, nil
+	return append(commonConds, sqlf.Sprintf("anonymous_user_id != 'backend'"))
 }
 
-func makeEventLogsQueries(ctx context.Context, db database.DB, cache bool, dateRange string, grouping string, events []string, conditions ...*sqlf.Query) (*sqlf.Query, *sqlf.Query, error) {
+func makeEventLogsQueries(dateRange string, grouping string, events []string, conditions ...*sqlf.Query) (*sqlf.Query, *sqlf.Query, error) {
 	dateTruncExp, dateBetweenCond, err := makeDateParameters(dateRange, grouping, "timestamp")
 	if err != nil {
 		return nil, nil, err
 	}
 
-	defaultConds, err := getDefaultConds(ctx, db, cache)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	conds := append(defaultConds, sqlf.Sprintf("timestamp %s", dateBetweenCond))
+	conds := append(getDefaultConds(), sqlf.Sprintf("timestamp %s", dateBetweenCond))
 
 	if len(conditions) > 0 {
 		conds = append(conds, conditions...)
@@ -183,8 +105,18 @@ func makeEventLogsQueries(ctx context.Context, db database.DB, cache bool, dateR
 		conds = append(conds, sqlf.Sprintf("name IN (%s)", sqlf.Join(eventNames, ",")))
 	}
 
-	nodesQuery := sqlf.Sprintf(eventLogsNodesQuery, dateTruncExp, sqlf.Sprintf("WHERE %s", sqlf.Join(conds, " AND ")))
-	summaryQuery := sqlf.Sprintf(eventLogsSummaryQuery, sqlf.Sprintf("WHERE %s", sqlf.Join(conds, " AND ")))
+	nodesQuery := sqlf.Sprintf(eventLogsNodesQuery, dateTruncExp, sqlf.Sprintf("WHERE (%s)", sqlf.Join(conds, ") AND (")))
+	summaryQuery := sqlf.Sprintf(eventLogsSummaryQuery, sqlf.Sprintf("WHERE (%s)", sqlf.Join(conds, ") AND (")))
 
 	return nodesQuery, summaryQuery, nil
+}
+
+// getTimestamps returns the start and end timestamps for the given number of months.
+func getTimestamps(months int) (string, string) {
+	now := timeNow().UTC()
+	to := now.Format(time.RFC3339)
+	prevMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, -months, 0)
+	from := prevMonth.Format(time.RFC3339)
+
+	return from, to
 }

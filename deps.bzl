@@ -6356,8 +6356,8 @@ def go_dependencies():
             "//third_party/com_github_sourcegraph_zoekt:zoekt_webserver.patch",
             "//third_party/com_github_sourcegraph_zoekt:zoekt_indexserver.patch",
         ],
-        sum = "h1:/5s1HW1DdlGpgr9PkOIgLcdFMHR1IHAJibXqT2Op5fk=",
-        version = "v0.0.0-20230523175034-5250e0e52a1b",
+        sum = "h1:BNbBGAoGT2+nSzad7cXmQ2OC6tpWZXBcNFlk7YIQljU=",
+        version = "v0.0.0-20230524133412-579a9a1eb19b",
     )
 
     go_repository(

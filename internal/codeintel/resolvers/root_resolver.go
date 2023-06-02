@@ -212,3 +212,7 @@ func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, ar
 func (r *Resolver) RankingSummary(ctx context.Context) (_ []RankingSummaryResolver, err error) {
 	return r.rankingServiceResolver.RankingSummary(ctx)
 }
+
+func (r *Resolver) BumpDerivativeGraphKey(ctx context.Context) (_ *EmptyResponse, err error) {
+	return r.rankingServiceResolver.BumpDerivativeGraphKey(ctx)
+}

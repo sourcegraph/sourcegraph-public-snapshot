@@ -2,8 +2,6 @@ package singleprogram
 
 import (
 	"bufio"
-	"context"
-	"fmt"
 	"io"
 	"os"
 	"os/user"
@@ -16,9 +14,12 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+type StopPostgresFunc func() error
+
+var noopStop = func() error { return nil }
 
 var useEmbeddedPostgreSQL = env.MustGetBool("USE_EMBEDDED_POSTGRESQL", true, "use an embedded PostgreSQL server (to use an existing PostgreSQL server and database, set the PG* env vars)")
 
@@ -26,13 +27,14 @@ type postgresqlEnvVars struct {
 	PGPORT, PGHOST, PGUSER, PGPASSWORD, PGDATABASE, PGSSLMODE, PGDATASOURCE string
 }
 
-func initPostgreSQL(logger log.Logger, embeddedPostgreSQLRootDir string) error {
+func initPostgreSQL(logger log.Logger, embeddedPostgreSQLRootDir string) (StopPostgresFunc, error) {
 	var vars *postgresqlEnvVars
+	var stop StopPostgresFunc
 	if useEmbeddedPostgreSQL {
 		var err error
-		vars, err = startEmbeddedPostgreSQL(logger, embeddedPostgreSQLRootDir)
+		stop, vars, err = startEmbeddedPostgreSQL(logger, embeddedPostgreSQLRootDir)
 		if err != nil {
-			return errors.Wrap(err, "Failed to download or start embedded postgresql. Please start your own postgres instance then configure the PG* environment variables to connect to it as well as setting USE_EMBEDDED_POSTGRESQL=0")
+			return stop, errors.Wrap(err, "Failed to download or start embedded postgresql. Please start your own postgres instance then configure the PG* environment variables to connect to it as well as setting USE_EMBEDDED_POSTGRESQL=0")
 		}
 		os.Setenv("PGPORT", vars.PGPORT)
 		os.Setenv("PGHOST", vars.PGHOST)
@@ -61,10 +63,10 @@ func initPostgreSQL(logger log.Logger, embeddedPostgreSQLRootDir string) error {
 	// TODO(sqs): TODO(single-binary): make this behavior more official and not just for "dev"
 	setDefaultEnv(logger, "SG_DEV_MIGRATE_ON_APPLICATION_STARTUP", "1")
 
-	return nil
+	return stop, nil
 }
 
-func startEmbeddedPostgreSQL(logger log.Logger, pgRootDir string) (*postgresqlEnvVars, error) {
+func startEmbeddedPostgreSQL(logger log.Logger, pgRootDir string) (StopPostgresFunc, *postgresqlEnvVars, error) {
 	// Note: some linux distributions (eg NixOS) do not ship with the dynamic
 	// linker at the "standard" location which the embedded postgres
 	// executables rely on. Give a nice error instead of the confusing "file
@@ -75,14 +77,14 @@ func startEmbeddedPostgreSQL(logger log.Logger, pgRootDir string) (*postgresqlEn
 	if runtime.GOOS == "linux" && runtime.GOARCH == "amd64" {
 		ldso := "/lib64/ld-linux-x86-64.so.2"
 		if _, err := os.Stat(ldso); err != nil {
-			return nil, errors.Errorf("could not use embedded-postgres since %q is missing - see https://github.com/sourcegraph/sourcegraph/issues/52360 for more details", ldso)
+			return noopStop, nil, errors.Errorf("could not use embedded-postgres since %q is missing - see https://github.com/sourcegraph/sourcegraph/issues/52360 for more details", ldso)
 		}
 	}
 
 	// Note: on macOS unix socket paths must be <103 bytes, so we place them in the home directory.
 	current, err := user.Current()
 	if err != nil {
-		return nil, errors.Wrap(err, "user.Current")
+		return noopStop, nil, errors.Wrap(err, "user.Current")
 	}
 	unixSocketDir := filepath.Join(current.HomeDir, ".sourcegraph-psql")
 	err = os.RemoveAll(unixSocketDir)
@@ -91,7 +93,7 @@ func startEmbeddedPostgreSQL(logger log.Logger, pgRootDir string) (*postgresqlEn
 	}
 	err = os.MkdirAll(unixSocketDir, os.ModePerm)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating unix socket dir")
+		return noopStop, nil, errors.Wrap(err, "creating unix socket dir")
 	}
 
 	vars := &postgresqlEnvVars{
@@ -117,26 +119,10 @@ func startEmbeddedPostgreSQL(logger log.Logger, pgRootDir string) (*postgresqlEn
 			Logger(debugLogLinesWriter(logger, "postgres output line")),
 	)
 	if err := db.Start(); err != nil {
-		return nil, err
+		return noopStop, nil, err
 	}
-	go goroutine.MonitorBackgroundRoutines(context.Background(), &embeddedPostgreSQLBackgroundJob{db})
-	return vars, nil
-}
 
-type embeddedPostgreSQLBackgroundJob struct {
-	db *embeddedpostgres.EmbeddedPostgres // must be already started
-}
-
-func (db *embeddedPostgreSQLBackgroundJob) Start() {
-	// Noop. We start it synchronously on purpose because everything else following it requires it.
-}
-
-func (db *embeddedPostgreSQLBackgroundJob) Stop() {
-	// Sleep a short amount of time to give other services time to write to the database during their cleanup.
-	time.Sleep(1000 * time.Millisecond)
-	if err := db.db.Stop(); err != nil {
-		fmt.Fprintln(os.Stderr, "error stopping embedded PostgreSQL:", err)
-	}
+	return db.Stop, vars, nil
 }
 
 func useSinglePostgreSQLDatabase(logger log.Logger, vars *postgresqlEnvVars) {

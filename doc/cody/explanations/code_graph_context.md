@@ -98,7 +98,7 @@ If you would like to allow your Sourcegraph instance to control the creation and
 
 ### Environment variables for the `embeddings` service
 
-- `EMBEDDINGS_REPO_INDEX_CACHE_SIZE`: Number of repository embedding indexes to cache in memory (the default cache size is 5). Increasing the cache size will improve the search performance but require more memory resources.
+- `EMBEDDINGS_CACHE_SIZE`: The maximum size of the in-memory cache (in bytes) that holds the embeddings for commonly-searched repos. If embeddings for a repo are larger than this size, the repo will not be held in the cache and must be re-fetched for each embeddings search. Defaults to `6442450944` (6 GiB).
 
 ### Incremental embeddings
 
@@ -117,6 +117,26 @@ Incremental embeddings are disabled by default.
   "embeddings": {
     // [...]
     "incremental": true
+  }
+}
+```
+
+### Adjust the minimum time interval between automatically scheduled embeddings
+
+If you configure a repository for automated embeddings, the repository will be scheduled for embedding with every new
+commit. By default, there is a 24-hour time interval that must pass between two embeddings. For example, if a repository
+is scheduled for embedding at 10:00 AM and a new commit happens at 11:00 AM, the next embedding will be scheduled
+earliest for 10:00 AM the next day.
+
+You can configure the minimum time interval by setting the minimumInterval property in the embeddings configuration.
+Supported time units are h (hours), m ( minutes), and s (seconds).
+
+```json
+{
+  // [...]
+  "embeddings": {
+    // [...]
+    "minimumInterval": "24h"
   }
 }
 ```

@@ -41,7 +41,6 @@ func (r repoEmbeddingSchedulerJob) Routines(_ context.Context, observationCtx *o
 	return []goroutine.BackgroundRoutine{
 		newRepoEmbeddingScheduler(ctx, gitserver.NewClient(), db, repo.NewRepoEmbeddingJobsStore(db)),
 	}, nil
-
 }
 
 func newRepoEmbeddingScheduler(
@@ -52,7 +51,8 @@ func newRepoEmbeddingScheduler(
 ) goroutine.BackgroundRoutine {
 	enqueueActive := goroutine.HandlerFunc(
 		func(ctx context.Context) error {
-			embeddableRepos, err := repoEmbeddingJobsStore.GetEmbeddableRepos(ctx)
+			opts := repo.GetEmbeddableRepoOpts()
+			embeddableRepos, err := repoEmbeddingJobsStore.GetEmbeddableRepos(ctx, opts)
 			if err != nil {
 				return err
 			}
@@ -73,9 +73,11 @@ func newRepoEmbeddingScheduler(
 
 			return embeddings.ScheduleRepositoriesForEmbedding(ctx, repoNames, db, repoEmbeddingJobsStore, gitserverClient)
 		})
-	return goroutine.NewPeriodicGoroutine(ctx,
-		"repoEmbeddingSchedulerJob",
-		"resolves embedding policies and schedules jobs to embed repos",
-		1*time.Minute,
-		enqueueActive)
+	return goroutine.NewPeriodicGoroutine(
+		ctx,
+		enqueueActive,
+		goroutine.WithName("repoEmbeddingSchedulerJob"),
+		goroutine.WithDescription("resolves embedding policies and schedules jobs to embed repos"),
+		goroutine.WithInterval(1*time.Minute),
+	)
 }

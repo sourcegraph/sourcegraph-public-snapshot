@@ -14,6 +14,7 @@ export interface ContextSearchOptions {
 }
 
 export class CodebaseContext {
+    private embeddingResultsError = ''
     constructor(
         private config: Pick<Configuration, 'useContext' | 'serverEndpoint'>,
         private codebase: string | undefined,
@@ -44,6 +45,10 @@ export class CodebaseContext {
 
     public checkEmbeddingsConnection(): boolean {
         return !!this.embeddings
+    }
+
+    public getEmbeddingSearchErrors(): string {
+        return this.embeddingResultsError
     }
 
     public async getSearchResults(
@@ -90,11 +95,13 @@ export class CodebaseContext {
             options.numCodeResults,
             options.numTextResults
         )
+
         if (isError(embeddingsSearchResults)) {
             console.error('Error retrieving embeddings:', embeddingsSearchResults)
+            this.embeddingResultsError = `Error retrieving embeddings: ${embeddingsSearchResults}`
             return []
         }
-
+        this.embeddingResultsError = ''
         return embeddingsSearchResults.codeResults.concat(embeddingsSearchResults.textResults)
     }
 

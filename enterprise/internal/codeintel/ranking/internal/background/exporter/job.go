@@ -96,13 +96,7 @@ func exportRankingGraph(
 					return err
 				}
 
-				paths := make(chan string, len(documentPaths))
-				for _, path := range documentPaths {
-					paths <- path
-				}
-				close(paths)
-
-				if err := tx.InsertInitialPathRanks(ctx, upload.ExportedUploadID, paths, writeBatchSize, graphKey); err != nil {
+				if err := tx.InsertInitialPathRanks(ctx, upload.ExportedUploadID, documentPaths, writeBatchSize, graphKey); err != nil {
 					logger.Error(
 						"Failed to insert initial path counts",
 						log.Int("id", upload.UploadID),

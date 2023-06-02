@@ -10,6 +10,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
@@ -26,7 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -209,10 +210,10 @@ type RepositoryCommitArgs struct {
 	InputRevspec *string
 }
 
-func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitArgs) (*GitCommitResolver, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "repository.commit") //nolint:staticcheck // OT is deprecated
-	defer span.Finish()
-	span.SetTag("commit", args.Rev)
+func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitArgs) (_ *GitCommitResolver, err error) {
+	tr, ctx := trace.New(ctx, "RepositoryResolver", "Commit",
+		attribute.String("commit", args.Rev))
+	defer tr.FinishWithErr(&err)
 
 	repo, err := r.repo(ctx)
 	if err != nil {
@@ -230,9 +231,9 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 	return r.CommitFromID(ctx, args, commitID)
 }
 
-func (r *RepositoryResolver) FirstEverCommit(ctx context.Context) (*GitCommitResolver, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "repository.firstEverCommit") //nolint:staticcheck // OT is deprecated
-	defer span.Finish()
+func (r *RepositoryResolver) FirstEverCommit(ctx context.Context) (_ *GitCommitResolver, err error) {
+	tr, ctx := trace.New(ctx, "RepositoryResolver", "FirstEverCommit")
+	defer tr.FinishWithErr(&err)
 
 	repo, err := r.repo(ctx)
 	if err != nil {

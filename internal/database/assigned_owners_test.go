@@ -47,6 +47,8 @@ func TestAssignedOwnersStore_ListAssignedOwnersForRepo(t *testing.T) {
 	require.NoError(t, err)
 	err = store.Insert(ctx, user2.ID, 1, "src/def", user1.ID)
 	require.NoError(t, err)
+	err = store.Insert(ctx, user2.ID, 1, "", user1.ID)
+	require.NoError(t, err)
 
 	// Getting assigned owners for a non-existent repo.
 	owners, err := store.ListAssignedOwnersForRepo(ctx, 1337)
@@ -61,17 +63,19 @@ func TestAssignedOwnersStore_ListAssignedOwnersForRepo(t *testing.T) {
 	// Getting assigned owners for a given repo.
 	owners, err = store.ListAssignedOwnersForRepo(ctx, 1)
 	require.NoError(t, err)
-	assert.Len(t, owners, 3)
+	assert.Len(t, owners, 4)
 	sort.Slice(owners, func(i, j int) bool {
 		return owners[i].FilePath < owners[j].FilePath
 	})
 	// We are checking everything except timestamps, non-zero check is sufficient for them.
-	assert.Equal(t, owners[0], &AssignedOwnerSummary{OwnerUserID: 1, RepoID: 1, FilePath: "src", WhoAssignedUserID: 2, AssignedAt: owners[0].AssignedAt})
+	assert.Equal(t, owners[0], &AssignedOwnerSummary{OwnerUserID: 2, RepoID: 1, FilePath: "", WhoAssignedUserID: 1, AssignedAt: owners[0].AssignedAt})
 	assert.NotZero(t, owners[0].AssignedAt)
-	assert.Equal(t, owners[1], &AssignedOwnerSummary{OwnerUserID: 2, RepoID: 1, FilePath: "src/abc", WhoAssignedUserID: 1, AssignedAt: owners[1].AssignedAt})
+	assert.Equal(t, owners[1], &AssignedOwnerSummary{OwnerUserID: 1, RepoID: 1, FilePath: "src", WhoAssignedUserID: 2, AssignedAt: owners[1].AssignedAt})
 	assert.NotZero(t, owners[1].AssignedAt)
-	assert.Equal(t, owners[2], &AssignedOwnerSummary{OwnerUserID: 2, RepoID: 1, FilePath: "src/def", WhoAssignedUserID: 1, AssignedAt: owners[2].AssignedAt})
+	assert.Equal(t, owners[2], &AssignedOwnerSummary{OwnerUserID: 2, RepoID: 1, FilePath: "src/abc", WhoAssignedUserID: 1, AssignedAt: owners[2].AssignedAt})
 	assert.NotZero(t, owners[2].AssignedAt)
+	assert.Equal(t, owners[3], &AssignedOwnerSummary{OwnerUserID: 2, RepoID: 1, FilePath: "src/def", WhoAssignedUserID: 1, AssignedAt: owners[3].AssignedAt})
+	assert.NotZero(t, owners[3].AssignedAt)
 }
 
 func TestAssignedOwnersStore_Insert(t *testing.T) {

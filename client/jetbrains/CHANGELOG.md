@@ -14,6 +14,39 @@
 
 ### Security
 
+## [3.0.0-alpha.2]
+
+<!-- Document changes here -->
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [3.0.0-alpha.1]
+
+### Added
+
+- Alpha-quality Cody chat, not ready yet for internal dogfooding.
+- Alpha-quality Cody code completions, not ready yet for internal dogfooding.
+
+## [2.1.4]
+
+### Added
+
+- Add `extensionDetails` to `public_argument` on logger [#51321](https://github.com/sourcegraph/sourcegraph/pull/51321)
+
+### Fixed
+
+- Handle case when remote for local branch != sourcegraph remote [#52172](https://github.com/sourcegraph/sourcegraph/pull/52172)
+
 ## [2.1.3]
 
 ### Added

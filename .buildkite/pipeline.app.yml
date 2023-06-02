@@ -1,5 +1,6 @@
 steps:
-  - group: "Sourcegraph App"
+  - group: ":bazel::go:Build backend for different platforms"
+    key: "backend-builds"
     steps:
       - label: ':bazel::linux: Build for Linux'
         key: 'build-sourcegraph-app-linux'
@@ -25,8 +26,10 @@ steps:
         command:
           - './dev/ci/pnpm-install-with-retry.sh'
           - './enterprise/dev/app/build-backend.sh'
-      - label: 'Wait for builds to complete'
-        wait: ~
+  - group: ":tauri: Bundle and sign using Tauri"
+    key: "tauri-bundles"
+    depends_on: "backend-builds"
+    steps:
       - label: ':linux::tauri: Bundle with Tauri'
         key: 'linux-build-tauri-sourcegraph-app'
         agents: { queue: stateless }
@@ -52,8 +55,8 @@ steps:
               profile: buildkite
               region: us-central1
             tarball: {}
-      - label: ':macos::tauri: Bundle and sign with Tauri'
-        key: 'mac-build-tauri-sourcegraph-app'
+      - label: ':macos::tauri: (arm64) Bundle and sign with Tauri'
+        key: 'mac-build-arm64-tauri-sourcegraph-app'
         agents: { queue: macos }
         env:
           CODESIGNING: 1
@@ -61,8 +64,20 @@ steps:
         command:
           - './dev/ci/pnpm-install-with-retry.sh'
           - './enterprise/dev/app/tauri-build.sh'
-      - label: "wait for bundles to complete"
-        wait: ~
+      - label: ':macos::tauri: (intel x86_64) Bundle and sign with Tauri'
+        depends_on: 'mac-build-arm64-tauri-sourcegraph-app'
+        key: 'mac-build-x86_64-tauri-sourcegraph-app'
+        agents: { queue: macos }
+        env:
+          PLATFORM_OVERRIDE: "x86_64-apple-darwin"
+          CODESIGNING: 1
+          SRC_APP_UPDATER_BUILD: 1
+        command:
+          - './dev/ci/pnpm-install-with-retry.sh'
+          - './enterprise/dev/app/tauri-build.sh'
+  - group: ":github: Create release and update manifest"
+    depends_on: "tauri-bundles"
+    steps:
       - label: ':github: Create GitHub release'
         agents: { queue: stateless }
         key: create-github-release

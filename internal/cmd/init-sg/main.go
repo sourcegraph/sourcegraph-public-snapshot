@@ -26,6 +26,7 @@ var (
 	email    = initSG.String("email", os.Getenv("TEST_USER_EMAIL"), "The email of the admin user. (Required)")
 	username = initSG.String("username", os.Getenv("SOURCEGRAPH_SUDO_USER"), "The username of the admin user. (Required)")
 	password = initSG.String("password", os.Getenv("TEST_USER_PASSWORD"), "The password of the admin user. (Required)")
+	sgenvrc  = initSG.String("sg_envrc", os.Getenv("SG_ENVRC"), "Location of the sg_envrc file to write down the sudo token to")
 
 	githubToken    = addRepos.String("githubtoken", os.Getenv("GITHUB_TOKEN"), "The github access token that will be used to authenticate an external service. (Required)")
 	addReposConfig = addRepos.String("config", "", "Path to the external service config. (Required)")
@@ -110,6 +111,9 @@ func initSourcegraph() {
 	}
 
 	envvar := "export SOURCEGRAPH_SUDO_TOKEN=" + token
+	if *sgenvrc != "" {
+		profile = *sgenvrc
+	}
 	file, err := os.Create(profile)
 	if err != nil {
 		log.Fatal(err)

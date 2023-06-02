@@ -7,6 +7,8 @@ import {
     UseShowMorePaginationResult,
 } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
+    CancelRepoEmbeddingJobResult,
+    CancelRepoEmbeddingJobVariables,
     RepoEmbeddingJobFields,
     RepoEmbeddingJobsListResult,
     RepoEmbeddingJobsListVariables,
@@ -24,6 +26,7 @@ const REPO_EMBEDDING_JOB_FRAGMENT = gql`
         finishedAt
         queuedAt
         startedAt
+        cancel
         repo {
             name
             url
@@ -100,4 +103,19 @@ export function useScheduleContextDetectionEmbeddingJob(): MutationTuple<
     return useMutation<ScheduleContextDetectionEmbeddingJobResult, ScheduleContextDetectionEmbeddingJobVariables>(
         SCHEDULE_CONTEXT_DETECTION_EMBEDDING_JOB
     )
+}
+
+export const CANCEL_REPO_EMBEDDING_JOB = gql`
+    mutation CancelRepoEmbeddingJob($id: ID!) {
+        cancelRepoEmbeddingJob(job: $id) {
+            alwaysNil
+        }
+    }
+`
+
+export function useCancelRepoEmbeddingJob(): MutationTuple<
+    CancelRepoEmbeddingJobResult,
+    CancelRepoEmbeddingJobVariables
+> {
+    return useMutation<CancelRepoEmbeddingJobResult, CancelRepoEmbeddingJobVariables>(CANCEL_REPO_EMBEDDING_JOB)
 }

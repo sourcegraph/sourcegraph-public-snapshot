@@ -18,7 +18,7 @@ else
   exit 1
 fi
 
-VERSION=$(./enterprise/dev/app/app_version.sh)
+VERSION=$(./enterprise/dev/app/app-version.sh)
 echo "--- :github: Creating GitHub release for Sourcegraph App (${VERSION})"
 echo "Release will have to following assets:"
 ls -al ./dist

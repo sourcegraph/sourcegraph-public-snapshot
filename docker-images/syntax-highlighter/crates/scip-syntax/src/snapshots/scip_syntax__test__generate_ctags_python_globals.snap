@@ -1,0 +1,10 @@
+---
+source: crates/scip-syntax/src/lib.rs
+expression: "String::from_utf8_lossy(buf_writer.buffer())"
+---
+{"_type":"tag","name":"Bruh","path":"globals.py","language":"python","line":6,"kind":"type","scope":null}
+{"_type":"tag","name":"dab","path":"globals.py","language":"python","line":11,"kind":"method","scope":"Bruh"}
+{"_type":"tag","name":"__init__","path":"globals.py","language":"python","line":8,"kind":"method","scope":"Bruh"}
+{"_type":"tag","name":"a","path":"globals.py","language":"python","line":6,"kind":"variable","scope":"Bruh"}
+{"_type":"tag","name":"bruh","path":"globals.py","language":"python","line":3,"kind":"variable","scope":null}
+

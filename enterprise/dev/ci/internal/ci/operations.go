@@ -132,6 +132,7 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 			"BEXT_NIGHTLY":    os.Getenv("BEXT_NIGHTLY"),
 			"RELEASE_NIGHTLY": os.Getenv("RELEASE_NIGHTLY"),
 			"VSCE_NIGHTLY":    os.Getenv("VSCE_NIGHTLY"),
+			"CODY_NIGHTLY":    os.Getenv("CODY_NIGHTLY"),
 		})
 	)
 
@@ -272,6 +273,7 @@ func addCodyExtensionTests(pipeline *bk.Pipeline) {
 		":vscode::robot_face: Unit, integration, and E2E tests for the Cody VS Code extension",
 		withPnpmCache(),
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
+		bk.Cmd("client/cody/scripts/download-rg.sh x86_64-unknown-linux"),
 		bk.Cmd("pnpm --filter cody-ai run test:unit"),
 		bk.Cmd("pnpm --filter cody-shared run test"),
 		bk.Cmd("pnpm --filter cody-ai run test:integration"),
@@ -580,12 +582,14 @@ func addVsceReleaseSteps(pipeline *bk.Pipeline) {
 }
 
 // Release the Cody extension.
-func addCodyReleaseSteps(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":vscode::robot_face: Cody release",
-		withPnpmCache(),
-		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
-		bk.Cmd("pnpm generate"),
-		bk.Cmd("pnpm --filter cody-ai run release"))
+func addCodyReleaseSteps(releaseType string) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(":vscode::robot_face: Cody release",
+			withPnpmCache(),
+			bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
+			bk.Env("CODY_RELEASE_TYPE", releaseType),
+			bk.Cmd("pnpm --filter cody-ai run release"))
+	}
 }
 
 // Release a snapshot of App.
@@ -673,7 +677,7 @@ func codeIntelQA(candidateTag string) operations.Operation {
 				},
 			}),
 			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("symbols")),
+			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Agent("queue", "bazel"),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
@@ -690,7 +694,7 @@ func executorsE2E(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":bazel::docker::packer: Executors E2E",
 			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("symbols")),
+			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Agent("queue", "bazel"),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
@@ -711,7 +715,7 @@ func serverE2E(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":chromium: Sourcegraph E2E",
 			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("symbols")),
+			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("DISPLAY", ":99"),
 			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
@@ -730,7 +734,7 @@ func serverQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::chromium: Sourcegraph QA",
 			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("symbols")),
+			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("DISPLAY", ":99"),
 			bk.Env("LOG_STATUS_MESSAGES", "true"),
@@ -751,7 +755,7 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::arrow_double_up: Sourcegraph Upgrade",
 			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("symbols")),
+			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
 			bk.Env("MINIMUM_UPGRADEABLE_VERSION", minimumUpgradeableVersion),
 			bk.Env("DISPLAY", ":99"),
@@ -900,7 +904,7 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 		pipeline.AddStep(fmt.Sprintf(":trivy: :docker: :mag: Scan %s", app),
 			// These are the first images in the arrays we use to build images
 			bk.DependsOn(candidateImageStepKey("alpine-3.14")),
-			bk.DependsOn(candidateImageStepKey("symbols")),
+			bk.DependsOn(candidateImageStepKey("server")),
 			bk.DependsOn(candidateImageStepKey("batcheshelper")),
 			bk.Cmd(fmt.Sprintf("docker pull %s", image)),
 
@@ -911,6 +915,7 @@ func trivyScanCandidateImage(app, tag string) operations.Operation {
 			bk.Env("VULNERABILITY_EXIT_CODE", fmt.Sprintf("%d", vulnerabilityExitCode)),
 			bk.ArtifactPaths("./*-security-report.html"),
 			bk.SoftFail(vulnerabilityExitCode),
+			bk.AutomaticRetryStatus(1, 1), // exit status 1 is what happens this flakes on container pulling
 
 			bk.AnnotatedCmd("./dev/ci/trivy/trivy-scan-high-critical.sh", bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{

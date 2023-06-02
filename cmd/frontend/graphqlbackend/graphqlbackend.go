@@ -540,7 +540,7 @@ func NewSchema(
 	}
 
 	if insightsAggregation := optional.InsightsAggregationResolver; insightsAggregation != nil {
-		EnterpriseResolvers.InsightsAggregationResolver = insightsAggregation
+		EnterpriseResolvers.insightsAggregationResolver = insightsAggregation
 		resolver.InsightsAggregationResolver = insightsAggregation
 		schemas = append(schemas, insightsAggregationsSchema)
 	}
@@ -625,24 +625,24 @@ type schemaResolver struct {
 // OptionalResolver are the resolvers that do not have to be set. If a field
 // is non-nil, NewSchema will register the corresponding graphql schema.
 type OptionalResolver struct {
-	BatchChangesResolver
-	AuthzResolver
-	CodeIntelResolver
-	ComputeResolver
-	InsightsResolver
-	CodeMonitorsResolver
-	LicenseResolver
-	DotcomRootResolver
-	SearchContextsResolver
-	NotebooksResolver
-	InsightsAggregationResolver
-	WebhooksResolver
-	EmbeddingsResolver
-	RBACResolver
-	OwnResolver
 	AppResolver
+	AuthzResolver
+	BatchChangesResolver
+	CodeIntelResolver
+	CodeMonitorsResolver
 	CompletionsResolver
+	ComputeResolver
+	DotcomRootResolver
+	EmbeddingsResolver
 	GitHubAppsResolver
+	InsightsAggregationResolver
+	InsightsResolver
+	LicenseResolver
+	NotebooksResolver
+	OwnResolver
+	RBACResolver
+	SearchContextsResolver
+	WebhooksResolver
 }
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
@@ -736,23 +736,23 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client, enterpr
 // EnterpriseResolvers holds the instances of resolvers which are enabled only
 // in enterprise mode. These resolver instances are nil when running as OSS.
 var EnterpriseResolvers = struct {
-	codeIntelResolver           CodeIntelResolver
-	computeResolver             ComputeResolver
-	insightsResolver            InsightsResolver
 	authzResolver               AuthzResolver
 	batchChangesResolver        BatchChangesResolver
+	codeIntelResolver           CodeIntelResolver
 	codeMonitorsResolver        CodeMonitorsResolver
-	licenseResolver             LicenseResolver
-	dotcomResolver              DotcomRootResolver
-	searchContextsResolver      SearchContextsResolver
-	notebooksResolver           NotebooksResolver
-	InsightsAggregationResolver InsightsAggregationResolver
-	webhooksResolver            WebhooksResolver
-	embeddingsResolver          EmbeddingsResolver
-	rbacResolver                RBACResolver
-	ownResolver                 OwnResolver
 	completionsResolver         CompletionsResolver
+	computeResolver             ComputeResolver
+	dotcomResolver              DotcomRootResolver
+	embeddingsResolver          EmbeddingsResolver
 	gitHubAppsResolver          GitHubAppsResolver
+	insightsResolver            InsightsResolver
+	licenseResolver             LicenseResolver
+	notebooksResolver           NotebooksResolver
+	ownResolver                 OwnResolver
+	rbacResolver                RBACResolver
+	searchContextsResolver      SearchContextsResolver
+	webhooksResolver            WebhooksResolver
+	insightsAggregationResolver InsightsAggregationResolver
 }{}
 
 // Root returns a new schemaResolver.
