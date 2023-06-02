@@ -66,7 +66,7 @@ export const commands = {
     vscode_package: 'pnpm run vsce:package',
     vscode_publish: 'vsce publish --packagePath dist/cody.vsix --pat $VSCODE_MARKETPLACE_TOKEN',
     // Nightly release: publish to VS Code Marketplace with today's date as patch number
-    vscode_package_nightly: `pnpm --silent build && vsce package ${tonightVersion} --no-dependencies -o dist/cody.vsix`,
+    vscode_package_nightly: `pnpm --silent build && vsce package ${tonightVersion} --pre-release --no-dependencies -o dist/cody.vsix`,
     vscode_nightly: 'vsce publish --pre-release --packagePath dist/cody.vsix --pat $VSCODE_MARKETPLACE_TOKEN',
     // To publish to the open-vsx registry
     openvsx_publish: 'npx ovsx publish dist/cody.vsix --pat $VSCODE_OPENVSX_TOKEN',
