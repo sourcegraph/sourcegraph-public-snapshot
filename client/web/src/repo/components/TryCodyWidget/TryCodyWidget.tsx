@@ -66,7 +66,7 @@ function useTryCodyWidget(telemetryService: TelemetryProps['telemetryService']):
 }
 
 const NoAuthWidgetContent: React.FC<NonAuthWidgetContentProps> = ({ type, telemetryService, context }) => {
-    const logEvent = (provider: AuthProvider['serviceType']) => {
+    const logEvent = (provider: AuthProvider['serviceType']): void => {
         const eventType = provider === 'builtin' ? 'form' : provider
         const eventPage = type === 'blob' ? 'Blobview' : 'RepositoryPage'
         const eventArguments = {
@@ -77,7 +77,7 @@ const NoAuthWidgetContent: React.FC<NonAuthWidgetContentProps> = ({ type, teleme
         telemetryService.log(EventName.TRY_CODY_SIGNUP_INITIATED, eventArguments, eventArguments)
     }
 
-    const title = type === 'blob' ? 'Sign up to get Cody, our AI assistant, free.' : 'Meet Cody, your AI assistant'
+    const title = type === 'blob' ? 'Sign up to get Cody, our AI assistant, free' : 'Meet Cody, your AI assistant'
 
     return (
         <>
