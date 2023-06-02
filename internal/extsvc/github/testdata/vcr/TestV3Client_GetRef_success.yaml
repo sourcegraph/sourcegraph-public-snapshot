@@ -35,7 +35,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 01 Jun 2023 23:35:19 GMT
+      - Fri, 02 Jun 2023 00:49:01 GMT
       Etag:
       - W/"78ef7c948a5a9bc3a3a13cf4c18f41e5fcb2d6e441d854cd6339b92a92445b4f"
       Last-Modified:
@@ -59,17 +59,17 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - E3F5:1C8B:304E364:31D9A77:64792B37
+      - E9BD:02CA:67481D:D33991:64793C7D
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4982"
+      - "4957"
       X-Ratelimit-Reset:
-      - "1685664959"
+      - "1685668692"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "18"
+      - "43"
       X-Varied-Accept:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       X-Xss-Protection:

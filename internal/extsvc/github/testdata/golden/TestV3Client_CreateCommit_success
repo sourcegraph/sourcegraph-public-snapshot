@@ -14,13 +14,13 @@
   },
   "message": "I'm a new commit from a VCR test!",
   "tree": {
-   "sha": "851e666a00cd0cf74f1558ac5664fe431d3b1935",
-   "url": "https://api.github.com/repos/sourcegraph/automation-testing/git/trees/851e666a00cd0cf74f1558ac5664fe431d3b1935"
+   "url": "https://api.github.com/repos/sourcegraph/automation-testing/git/trees/851e666a00cd0cf74f1558ac5664fe431d3b1935",
+   "sha": "851e666a00cd0cf74f1558ac5664fe431d3b1935"
   },
   "parents": [
    {
-    "sha": "9d04a0d8733dafbb5d75e594a9ec525c49dfc975",
-    "url": "https://api.github.com/repos/sourcegraph/automation-testing/git/commits/9d04a0d8733dafbb5d75e594a9ec525c49dfc975"
+    "url": "https://api.github.com/repos/sourcegraph/automation-testing/git/commits/9d04a0d8733dafbb5d75e594a9ec525c49dfc975",
+    "sha": "9d04a0d8733dafbb5d75e594a9ec525c49dfc975"
    }
   ],
   "verification": {
