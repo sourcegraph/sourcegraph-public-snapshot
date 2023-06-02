@@ -1,0 +1,15 @@
+schemaVersion: "2.0.0"
+
+commandTests:
+  - name: "cadvisor is runnable"
+    command: "cadvisor"
+    args:
+      - --version
+
+# TODO(security): Image runs as root
+  # - name: "not running as root"
+  #   command: "/usr/bin/id"
+  #   args:
+  #     - -u
+  #   excludedOutput: ["^0"]
+  #   exitCode: 0
