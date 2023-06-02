@@ -11,6 +11,7 @@ go_library(
         "//enterprise/internal/codygateway",
         "//enterprise/internal/completions/types",
         "//enterprise/internal/licensing",
+        "//enterprise/internal/productsubscription",
         "//internal/trace",
         "//lib/errors",
         "@com_github_gregjones_httpcache//:httpcache",

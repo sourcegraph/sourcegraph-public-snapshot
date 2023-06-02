@@ -2,22 +2,12 @@ package productsubscription
 
 import (
 	"context"
-	"encoding/hex"
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 )
-
-// productSubscriptionAccessTokenPrefix is the prefix used for identifying tokens
-// generated for product subscriptions.
-const productSubscriptionAccessTokenPrefix = "sgs_"
-
-// defaultAccessToken creates a prefixed, encoded token for users to use from raw token contents.
-func defaultAccessToken(rawToken []byte) string {
-	return productSubscriptionAccessTokenPrefix + hex.EncodeToString(rawToken)
-}
 
 type ErrProductSubscriptionNotFound struct {
 	err error
