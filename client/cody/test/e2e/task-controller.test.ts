@@ -19,10 +19,8 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
     // Expand the task tree view
     await page.getByRole('button', { name: 'Fixups Section' }).click()
 
-    // Open the command palette by clicking on the Cody Icon
-    // Expect to see fail to start because no text was selected
-    await page.getByRole('button', { name: /Cody: Fixup.*/ }).click()
-    await expect(page.getByText(/^Cody Fixups: Failed to start.*/)).toBeVisible()
+    // Cody Fixup button should not be enabled if no text is selected.
+    await expect(page.getByRole('button', { name: /Cody: Fixup.*/, disabled: true })).toBeVisible()
 
     // Find the text hello cody, and then highlight the text
     await page.getByText('<title>Hello Cody</title>').click()
@@ -33,6 +31,9 @@ test('task tree view for non-stop cody', async ({ page, sidebar }) => {
 
     // Open the command palette by clicking on the Cody Icon
     await page.getByRole('button', { name: /Cody: Fixup.*/ }).click()
+
+    // Wait for the input box to appear
+    await page.getByPlaceholder('Ask Cody to edit your code, or use /chat to ask a question.').click()
     // Type in the instruction for fixup
     await page.keyboard.type('replace hello with goodbye')
     // Press enter to submit the fixup

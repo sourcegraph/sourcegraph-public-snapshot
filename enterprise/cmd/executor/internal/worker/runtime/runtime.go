@@ -101,8 +101,9 @@ func New(
 			return nil, err
 		}
 		kubeCmd := &command.KubernetesCommand{
-			Logger:    logger,
-			Clientset: clientset,
+			Logger:     logger,
+			Clientset:  clientset,
+			Operations: ops,
 		}
 		logger.Info("using runtime 'kubernetes'")
 		return &kubernetesRuntime{

@@ -1,7 +1,7 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "ts_project")
-load("//dev:eslint.bzl", "eslint_config")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
 # gazelle:js_resolve vscode //:node_modules/@vscode
 # gazelle:js_files src/**/*.{ts,tsx}
@@ -10,8 +10,8 @@ load("//dev:eslint.bzl", "eslint_config")
 
 npm_link_all_packages(name = "node_modules")
 
-eslint_config(
-    deps = [
+eslint_config_and_lint_root(
+    config_deps = [
         "//client/cody/scripts:tsconfig",
         "//client/cody/test/integration:tsconfig",
     ],
@@ -42,6 +42,8 @@ ts_project(
         "src/completions/docprovider.ts",
         "src/completions/history.ts",
         "src/completions/index.ts",
+        "src/completions/logger.ts",
+        "src/completions/multiline.ts",
         "src/completions/prompts.ts",
         "src/completions/provider.ts",
         "src/configuration.ts",
@@ -54,9 +56,17 @@ ts_project(
         "src/local-app-detector.ts",
         "src/log.ts",
         "src/main.ts",
+        "src/non-stop/FixupController.ts",
+        "src/non-stop/FixupDecorator.ts",
+        "src/non-stop/FixupDocumentEditObserver.ts",
+        "src/non-stop/FixupFile.ts",
+        "src/non-stop/FixupFileObserver.ts",
+        "src/non-stop/FixupScheduler.ts",
         "src/non-stop/FixupTask.ts",
-        "src/non-stop/TaskController.ts",
         "src/non-stop/TaskViewProvider.ts",
+        "src/non-stop/diff.ts",
+        "src/non-stop/roles.ts",
+        "src/non-stop/tracked-range.ts",
         "src/non-stop/utils.ts",
         "src/rg.ts",
         "src/services/CodeLensProvider.ts",
@@ -128,6 +138,8 @@ ts_project(
         "src/completions/provider.test.ts",
         "src/configuration.test.ts",
         "src/keyword-context/local-keyword-context-fetcher.test.ts",
+        "src/non-stop/diff.test.ts",
+        "src/non-stop/tracked-range.test.ts",
         "src/non-stop/utils.test.ts",
         "src/services/InlineAssist.test.ts",
         "test/fixtures/mock-server.ts",

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"io"
 	"net/http"
 	"strings"
 
@@ -166,9 +165,7 @@ func (c *openAIChatCompletionStreamClient) makeRequest(ctx context.Context, requ
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		defer resp.Body.Close()
-		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
-		return nil, errors.Errorf("OpenAI API failed with status %d: %s", resp.StatusCode, string(respBody))
+		return nil, types.NewErrStatusNotOK("OpenAI", resp)
 	}
 
 	return resp, nil

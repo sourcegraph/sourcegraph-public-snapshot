@@ -121,7 +121,6 @@ go_library(
         "//internal/temporarysettings",
         "//internal/timeutil",
         "//internal/trace",
-        "//internal/trace/ot",
         "//internal/types",
         "//internal/version",
         "//lib/errors",

@@ -10,12 +10,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/productsubscription"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
-func TestProductLicensesAccessToken(t *testing.T) {
+func TestLookupProductSubscriptionIDByAccessToken(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
@@ -39,10 +41,21 @@ func TestProductLicensesAccessToken(t *testing.T) {
 		license, err := dbLicenses{db: db}.GetByID(ctx, pl)
 		require.NoError(t, err)
 
-		rawToken := defaultRawAccessToken([]byte(license.LicenseKey))
-		accessToken := defaultAccessToken(rawToken)
+		accessToken := licensing.GenerateLicenseKeyBasedAccessToken(license.LicenseKey)
 
-		gotPS, err := newDBTokens(db).LookupAccessToken(ctx, accessToken)
+		gotPS, err := newDBTokens(db).LookupProductSubscriptionIDByAccessToken(ctx, accessToken)
+		require.NoError(t, err)
+		assert.Equal(t, gotPS, ps)
+	})
+
+	t.Run("legacy token prefix", func(t *testing.T) {
+		license, err := dbLicenses{db: db}.GetByID(ctx, pl)
+		require.NoError(t, err)
+
+		accessToken := licensing.GenerateLicenseKeyBasedAccessToken(license.LicenseKey)
+		accessToken = productsubscription.AccessTokenPrefix + accessToken[len(licensing.LicenseKeyBasedAccessTokenPrefix):]
+
+		gotPS, err := newDBTokens(db).LookupProductSubscriptionIDByAccessToken(ctx, accessToken)
 		require.NoError(t, err)
 		assert.Equal(t, gotPS, ps)
 	})

@@ -2,6 +2,7 @@ package productsubscription
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
@@ -42,36 +43,56 @@ func TestProductLicenses_Create(t *testing.T) {
 	require.NoError(t, err)
 
 	now := timeutil.Now()
-	info := license.Info{
+	licenseV1 := license.Info{
 		Tags:      []string{"true-up"},
 		UserCount: 10,
 		ExpiresAt: now,
 	}
-	pl, err := dbLicenses{db: db}.Create(ctx, ps, "k2", 1, info)
-	require.NoError(t, err)
 
-	got, err := dbLicenses{db: db}.GetByID(ctx, pl)
-	require.NoError(t, err)
-	assert.Equal(t, pl, got.ID)
-	assert.Equal(t, ps, got.ProductSubscriptionID)
-	assert.Equal(t, "k2", got.LicenseKey)
+	sfSubID := "AE9108431908421"
+	sfOpID := "0A8908908A800F"
 
-	require.NotNil(t, got.LicenseVersion)
-	assert.Equal(t, 1, *got.LicenseVersion)
-	require.NotNil(t, got.LicenseTags)
-	assert.Equal(t, info.Tags, got.LicenseTags)
-	require.NotNil(t, got.LicenseUserCount)
-	assert.Equal(t, int(info.UserCount), *got.LicenseUserCount)
-	require.NotNil(t, got.LicenseExpiresAt)
-	assert.Equal(t, info.ExpiresAt, *got.LicenseExpiresAt)
+	licenseV2 := license.Info{
+		Tags:                     []string{"true-up"},
+		UserCount:                10,
+		ExpiresAt:                now,
+		SalesforceSubscriptionID: &sfSubID,
+		SalesforceOpportunityID:  &sfOpID,
+	}
 
-	ts, err := dbLicenses{db: db}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: ps})
-	require.NoError(t, err)
-	assert.Len(t, ts, 1)
+	for v, info := range []license.Info{licenseV1, licenseV2} {
+		t.Run(fmt.Sprintf("Test v%d", v+1), func(t *testing.T) {
+			version := v + 1
+			key := fmt.Sprintf("key%d", version)
+			pl, err := dbLicenses{db: db}.Create(ctx, ps, key, version, info)
+			require.NoError(t, err)
 
-	ts, err = dbLicenses{db: db}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: "69da12d5-323c-4e42-9d44-cc7951639bca" /* invalid */})
-	require.NoError(t, err)
-	assert.Len(t, ts, 0)
+			got, err := dbLicenses{db: db}.GetByID(ctx, pl)
+			require.NoError(t, err)
+			assert.Equal(t, pl, got.ID)
+			assert.Equal(t, ps, got.ProductSubscriptionID)
+			assert.Equal(t, key, got.LicenseKey)
+
+			require.NotNil(t, got.LicenseVersion)
+			assert.Equal(t, version, *got.LicenseVersion)
+			require.NotNil(t, got.LicenseTags)
+			assert.Equal(t, info.Tags, got.LicenseTags)
+			require.NotNil(t, got.LicenseUserCount)
+			assert.Equal(t, int(info.UserCount), *got.LicenseUserCount)
+			require.NotNil(t, got.LicenseExpiresAt)
+			assert.Equal(t, info.ExpiresAt, *got.LicenseExpiresAt)
+
+			ts, err := dbLicenses{db: db}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: ps})
+			require.NoError(t, err)
+			assert.Len(t, ts, version)
+
+			// Invalid subscription ID.
+			ts, err = dbLicenses{db: db}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: "69da12d5-323c-4e42-9d44-cc7951639bca"})
+			require.NoError(t, err)
+			assert.Len(t, ts, 0)
+		})
+	}
+
 }
 
 func TestProductLicenses_List(t *testing.T) {

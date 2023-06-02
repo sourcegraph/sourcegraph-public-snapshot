@@ -19,8 +19,9 @@ type FeatureBatchChanges struct {
 	MaxNumChangesets int `json:"maxNumChangesets"`
 }
 
-// LicenseInfo contains information about the legitimate usage of the current
-// license on the instance.
+// LicenseInfo contains non-sensitive information about the legitimate usage of the
+// current license on the instance. It is technically accessible to all users, so only
+// include information that is safe to be seen by others.
 type LicenseInfo struct {
 	CurrentPlan string `json:"currentPlan"`
 
@@ -31,4 +32,4 @@ type LicenseInfo struct {
 	BatchChanges           *FeatureBatchChanges `json:"batchChanges"`
 }
 
-var GetLicenseInfo = func(isSiteAdmin bool) *LicenseInfo { return nil }
+var GetLicenseInfo = func() *LicenseInfo { return nil }

@@ -17,6 +17,10 @@ For upgrade procedures or general info about sourcegraph versioning see the link
 
 <!-- Add changes changes to this section before release. -->
 
+## v5.0.4 ➔ v5.0.5
+
+#### Notes:
+
 ## v5.0.3 ➔ v5.0.4
 
 #### Notes:
