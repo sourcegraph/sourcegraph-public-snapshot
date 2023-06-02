@@ -114,7 +114,7 @@ func runCommandGraceful(ctx context.Context, logger log.Logger, cmd wrexec.Cmder
 		tr.FinishWithErr(&err)
 	}()
 
-	exitCode = common.UnsetExitStatus
+	exitCode = unsetExitStatus
 	err = cmd.Start()
 	if err != nil {
 		return exitCode, err
@@ -1458,7 +1458,7 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 		dir.Set(cmd.Unwrap())
 		cmd.Unwrap().Stdout = &buf
 
-		if _, err := common.RunCommand(ctx, cmd); err != nil {
+		if _, err := runCommand(ctx, cmd); err != nil {
 			return "", true, err
 		}
 
@@ -1633,7 +1633,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 
 	start := time.Now()
 	var cmdStart time.Time // set once we have ensured commit
-	exitStatus := common.UnsetExitStatus
+	exitStatus := unsetExitStatus
 	var stdoutN, stderrN int64
 	var status string
 	var execErr error
@@ -1775,7 +1775,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	cmd.Unwrap().Stderr = stderrW
 	cmd.Unwrap().Stdin = bytes.NewReader(req.Stdin)
 
-	exitStatus, execErr = common.RunCommand(ctx, cmd)
+	exitStatus, execErr = runCommand(ctx, cmd)
 
 	status = strconv.Itoa(exitStatus)
 	stdoutN = stdoutW.n
@@ -1894,7 +1894,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 
 	start := time.Now()
 	var cmdStart time.Time // set once we have ensured commit
-	exitStatus := common.UnsetExitStatus
+	exitStatus := unsetExitStatus
 	var stdoutN, stderrN int64
 	var status string
 	var execErr error
@@ -1989,7 +1989,7 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 	cmd.Stdout = stdoutW
 	cmd.Stderr = stderrW
 
-	exitStatus, execErr = common.RunCommand(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd))
+	exitStatus, execErr = runCommand(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd))
 
 	status = strconv.Itoa(exitStatus)
 	stdoutN = stdoutW.n
@@ -2279,7 +2279,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 
 	go readCloneProgress(bgCtx, s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
 
-	if output, err := common.RunWith(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, pw); err != nil {
+	if output, err := runWith(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, pw); err != nil {
 		return errors.Wrapf(err, "clone failed. Output: %s", string(output))
 	}
 
@@ -2761,7 +2761,7 @@ func setHEAD(ctx context.Context, logger log.Logger, rf *wrexec.RecordingCommand
 		return errors.Wrap(err, "get remote show command")
 	}
 	dir.Set(cmd)
-	output, err := common.RunWith(ctx, rf.Wrap(ctx, logger, cmd), true, nil)
+	output, err := runWith(ctx, rf.Wrap(ctx, logger, cmd), true, nil)
 	if err != nil {
 		logger.Error("Failed to fetch remote info", log.Error(err), log.String("output", string(output)))
 		return errors.Wrap(err, "failed to fetch remote info")

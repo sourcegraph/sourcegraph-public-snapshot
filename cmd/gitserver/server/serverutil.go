@@ -118,7 +118,7 @@ var repoRemoteRefs = func(ctx context.Context, remoteURL *vcs.URL, prefix string
 	var stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
-	_, err := common.RunCommand(ctx, wrexec.Wrap(ctx, nil, cmd))
+	_, err := runCommand(ctx, wrexec.Wrap(ctx, nil, cmd))
 	if err != nil {
 		stderr := stderr.Bytes()
 		if len(stderr) > 200 {

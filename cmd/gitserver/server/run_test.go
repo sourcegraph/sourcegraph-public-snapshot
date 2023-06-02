@@ -1,4 +1,4 @@
-package common
+package server
 
 import (
 	"os"

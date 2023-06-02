@@ -175,7 +175,7 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 	cmd.Env = s.p4CommandEnv(host, username, password)
 	dir.Set(cmd.Cmd)
 
-	output, err := common.RunWith(ctx, cmd, false, nil)
+	output, err := runWith(ctx, cmd, false, nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to update with output %q", newURLRedactor(remoteURL).redact(string(output)))
 	}
@@ -189,7 +189,7 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir
 			"P4PASSWD="+password,
 		)
 		dir.Set(cmd.Cmd)
-		if output, err := common.RunWith(ctx, cmd, false, nil); err != nil {
+		if output, err := runWith(ctx, cmd, false, nil); err != nil {
 			return nil, errors.Wrapf(err, "failed to force update branch with output %q", string(output))
 		}
 	}
@@ -254,7 +254,7 @@ func p4trust(ctx context.Context, host string) error {
 		"P4PORT="+host,
 	)
 
-	out, err := common.RunWith(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd), false, nil)
+	out, err := runWith(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd), false, nil)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr
@@ -283,7 +283,7 @@ func p4test(ctx context.Context, host, username, password string) error {
 		"P4PASSWD="+password,
 	)
 
-	out, err := common.RunWith(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd), false, nil)
+	out, err := runWith(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd), false, nil)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr
@@ -315,7 +315,7 @@ func p4depots(ctx context.Context, host, username, password, nameFilter string) 
 		"P4PASSWD="+password,
 	)
 
-	out, err := common.RunWith(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd), false, nil)
+	out, err := runWith(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd), false, nil)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr
