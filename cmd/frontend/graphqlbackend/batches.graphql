@@ -3475,7 +3475,8 @@ type BatchChangesCodeHost {
 }
 
 """
-Commit signing configuration for a code host. Ie. GitHubApp or SSHKey
+Commit signing configuration for a code host, e.g. GitHubApp or SSHKey. Today, the
+only supported form of commit signing is via a GitHub App.
 """
 union CommitSigningConfiguration = GitHubAppConfiguration
 
