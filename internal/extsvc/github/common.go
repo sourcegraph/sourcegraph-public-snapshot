@@ -175,6 +175,7 @@ type restCommit struct {
 	} `json:"verification"`
 }
 
+// An updated reference in a Repository, returned from the REST API `update-ref` endpoint.
 type restUpdatedRef struct {
 	Ref    string `json:"ref"`
 	NodeID string `json:"node_id"`
