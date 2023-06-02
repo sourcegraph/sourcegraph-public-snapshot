@@ -1481,8 +1481,7 @@ func (s *Server) instrumentedHandler(ctx context.Context, req protocol.BatchLogR
 	results := make([]protocol.BatchLogResult, len(req.RepoCommits))
 
 	if s.GlobalBatchLogSemaphore == nil {
-		err = errors.New("s.GlobalBatchLogSemaphore not initialized")
-		return
+		return nil, errors.New("s.GlobalBatchLogSemaphore not initialized")
 	}
 
 	for i, repoCommit := range req.RepoCommits {
