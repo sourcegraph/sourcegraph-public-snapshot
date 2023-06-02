@@ -47,6 +47,7 @@ func (s *Server) handleCreateCommitFromPatchBinary(w http.ResponseWriter, r *htt
 }
 
 func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse) {
+	fmt.Printf("Req: %+v\n", req)
 	logger := s.Logger.Scoped("createCommitFromPatch", "").
 		With(
 			log.String("repo", string(req.Repo)),
@@ -196,9 +197,9 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		return http.StatusBadRequest, resp
 	}
 
-	message := req.CommitInfo.Message
-	if message == "" {
-		message = "<Sourcegraph> Creating commit from patch"
+	message := req.CommitInfo.Messages
+	if len(message) == 0 {
+		message = []string{"<Sourcegraph> Creating commit from patch"}
 	}
 	authorName := req.CommitInfo.AuthorName
 	if authorName == "" {
@@ -217,11 +218,12 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		committerEmail = authorEmail
 	}
 
-	cmd = exec.CommandContext(ctx, "git", "commit", "-m", fmt.Sprintf("%q", message))
-	if req.Gerrit != nil {
-		// The Change ID needs to be the footer of the commit for Gerrit.
-		cmd = exec.CommandContext(ctx, "git", "commit", "-m", fmt.Sprintf("%q", message), "-m", fmt.Sprintf("Change-Id: %s", req.Gerrit.ChangeID))
+	formattedMessages := []string{"commit"}
+	for _, m := range req.CommitInfo.Messages {
+		formattedMessages = append(formattedMessages, "-m", m)
 	}
+	cmd = exec.CommandContext(ctx, "git", formattedMessages...)
+
 	cmd.Dir = tmpRepoDir
 	cmd.Env = append(os.Environ(), []string{
 		tmpGitPathEnv,
@@ -282,8 +284,8 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	if req.Push != nil {
 		pushRef := ref
 		// If the push is to a Gerrit project,we need to push to a magic ref.
-		if req.Gerrit != nil {
-			pushRef = req.Gerrit.PushMagicRef
+		if req.PushRef != nil && *req.PushRef != "" {
+			pushRef = *req.PushRef
 		}
 		cmd = exec.CommandContext(ctx, "git", "push", "--force", remoteURL.String(), fmt.Sprintf("%s:%s", cmtHash, pushRef))
 		cmd.Dir = repoGitDir

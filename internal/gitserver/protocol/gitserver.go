@@ -437,14 +437,13 @@ type CreateCommitFromPatchRequest struct {
 	// GitApplyArgs are the arguments that will be passed to `git apply` along
 	// with `--cached`.
 	GitApplyArgs []string
-	// Gerrit is an optional config to specify the patch is intended for a Gerrit code host, if exists, it
-	// contains information needed to successfully create the change through the git CLI.
-	Gerrit *GerritConfig
+	// If specified, the changes will be pushed to this ref as opposed to TargetRef.
+	PushRef *string
 }
 
 // PatchCommitInfo will be used for commit information when creating a commit from a patch
 type PatchCommitInfo struct {
-	Message        string
+	Messages       []string
 	AuthorName     string
 	AuthorEmail    string
 	CommitterName  string
