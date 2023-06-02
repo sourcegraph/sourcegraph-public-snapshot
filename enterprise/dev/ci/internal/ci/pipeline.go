@@ -177,10 +177,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ForceBazel:                !c.MessageFlags.NoBazel,
 		}))
 
-		// At this stage, we don't break builds because of a Bazel failure.
-		// TODO(JH) Disabled until re-enabled with flag
-		// ops.Merge(BazelOperations(true))
-
 		// Now we set up conditional operations that only apply to pull requests.
 		if c.Diff.Has(changed.Client) {
 			// triggers a slow pipeline, currently only affects web. It's optional so we
@@ -429,6 +425,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				publishOps.Append(publishExecutorDockerMirror(c))
 			}
 		}
+		publishOps.Append(bazelPushImagesCmd(c.Version))
 		ops.Merge(publishOps)
 	}
 
