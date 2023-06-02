@@ -214,7 +214,7 @@ func (gs *GRPCServer) ListGitolite(ctx context.Context, req *proto.ListGitoliteR
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	var protoRepos []*proto.GitoliteRepo
+	protoRepos := make([]*proto.GitoliteRepo, 0, len(repos))
 
 	for _, repo := range repos {
 		protoRepos = append(protoRepos, repo.ToProto())
