@@ -1267,8 +1267,11 @@ $ sg app update-manifest
 # Update the updater manifest based on a particular github release
 $ sg app update-manifest --release-tag app-v2023.07.07
 
-# Do a dry run of updating the manifest
-$ sg app update-manifest --dry-run
+# Do everything except upload the updated manifest
+$ sg app update-manifest --no-upload
+
+# Update the manifest but don't update the signatures from the release - useful if the release comes from the same build
+$ sg app update-manifest --update-signatures
 ```
 
 ### sg app update-manifest
