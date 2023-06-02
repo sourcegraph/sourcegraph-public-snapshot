@@ -331,10 +331,13 @@ func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css Change
 		return nil, errors.Wrap(err, "parsing GitHub App base URL")
 	}
 	// Unfortunately as of today (2023-05-26), the GitHub REST API only supports signing
-	// commits via an installation access token (which will author the commits as the
-	// GitHub App bot, rather than the user who created the batch change). If GitHub adds
-	// support to their REST API for signing commits with a user access token, we should
-	// switch to using the user's token here.
+	// commits with a GitHub App when it authenticates as an installation, rather than
+	// when it authenticates on behalf of a user. This means that commits will be authored
+	// by the GitHub App installation bot account, rather than by the user who authored
+	// the batch change. If GitHub adds support to their REST API for signing commits with
+	// a GitHub App authenticated on behalf of a user, we should switch to using that
+	// access token here. See here for more details:
+	// https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/about-authentication-with-a-github-app
 	installationAuther := ghaauth.NewInstallationAccessToken(baseURL, installID, appAuther, keyring.Default().GitHubAppKey)
 
 	return css.WithAuthenticator(installationAuther)
