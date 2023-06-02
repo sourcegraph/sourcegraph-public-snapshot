@@ -1,0 +1,123 @@
+:root {
+    --email-icon-color: #dadada;
+}
+:global(.theme-dark) {
+    --cody-bg-gradient: linear-gradient(45deg, #15171e 0%, #49169d 100%, #1e212e 100%, #ffffff 100%);
+    --cody-auth-bg-gradient: var(--cody-bg-gradient);
+    --cody-link-color: var(--white);
+    --cody-border-color: var(--gray-09);
+}
+
+:global(.theme-light) {
+    --cody-bg-gradient: linear-gradient(90deg, #ffffff 50%, #c7adf16f);
+    --cody-auth-bg-gradient: linear-gradient(0deg, #ebe1fa, #ffffff 64.6%);
+    --cody-link-color: var(--gray-08);
+    --cody-border-color: #d7c0f6;
+}
+
+.close-button {
+    top: 0;
+    right: 0;
+}
+
+.card-wrapper {
+    padding: 0.065rem !important;
+    background: var(--cody-border-color);
+}
+
+.card {
+    padding-top: 2.9375rem;
+    padding-bottom: 0;
+    gap: 1rem;
+    justify-content: space-between;
+    background: var(--cody-auth-bg-gradient);
+}
+
+.card-title {
+    color: var(--body-color);
+    font-weight: 600;
+    font-size: 1.25rem;
+    line-height: 1.5rem;
+    letter-spacing: -0.25px;
+    margin-bottom: 0;
+}
+
+.card-list {
+    font-size: 1rem;
+    line-height: 1.25rem;
+    color: var(--body-color);
+    width: max-content;
+    margin-top: 0.688rem !important;
+}
+
+.no-auth-card {
+    align-items: center;
+    justify-content: flex-start;
+    background: var(--cody-bg-gradient);
+    padding: 0.75rem;
+    padding-top: 1.25rem;
+    padding-bottom: 1rem;
+    gap: 1rem;
+}
+
+.card-description {
+    margin-bottom: 0.75rem;
+    margin-top: 0.125rem;
+}
+.auth-buttons-wrap {
+    display: flex;
+    gap: 0.813rem;
+}
+
+.button-icon {
+    margin-right: 0.065rem !important;
+}
+
+.signUp-link {
+    color: var(--cody-link-color);
+    text-decoration: underline;
+}
+
+.auth-button,
+.email-auth-button {
+    text-align: center;
+    border: none;
+    width: 11.938rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.188rem;
+    margin-bottom: 5px;
+    margin-top: 0;
+}
+
+.email-auth-button {
+    background-color: var(--white);
+    color: var(--body-color) !important;
+    border: 1px solid var(--border-color);
+
+    svg {
+        color: var(--email-icon-color);
+        height: 1.125rem;
+    }
+
+    :global(.theme-dark) & {
+        color: var(--gray-08) !important;
+    }
+}
+
+.auth-blob-button {
+    background-color: var(--blue) !important;
+    color: var(--white) !important;
+}
+
+.auth-repo-button {
+    :global(.theme-dark) & {
+        background-color: var(--blue) !important;
+        color: var(--white) !important;
+    }
+
+    :global(.theme-light) & {
+        background-color: var(--white);
+        color: var(--body-color);
+        border: 1px solid var(--gray-04);
+    }
+}
