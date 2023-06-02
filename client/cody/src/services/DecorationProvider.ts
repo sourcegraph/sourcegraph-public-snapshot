@@ -95,10 +95,6 @@ export class DecorationProvider {
      * Define Current States
      */
     public setState(status: CodyTaskState, newRange: vscode.Range): void {
-        // Don't change the status again once it's errored
-        if (this.status === CodyTaskState.error) {
-            return
-        }
         this.status = status
         vscode.window.activeTextEditor?.setDecorations(this.decorationTypePending, [newRange])
         this._onDidChange.fire()
@@ -151,5 +147,5 @@ export class DecorationProvider {
 const errorDecorationType = vscode.window.createTextEditorDecorationType({
     isWholeLine: true,
     overviewRulerColor: 'rgba(255, 38, 86, 0.3)',
-    backgroundColor: 'rgba(255, 38, 86, 0.3)',
+    backgroundColor: 'rgba(255, 38, 86, 0.1)',
 })

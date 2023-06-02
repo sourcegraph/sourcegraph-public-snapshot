@@ -72,6 +72,9 @@ export class InlineController {
                 this.selectionRange = updateRangeOnDocChange(this.selectionRange, change.range, change.text)
             }
         })
+        this._disposables.push(
+            vscode.commands.registerCommand('cody.inline.decorations.remove', id => this.removeLens(id))
+        )
     }
     /**
      * Getter to return instance
@@ -114,11 +117,11 @@ export class InlineController {
     /**
      * List response from Cody as comment
      */
-    public reply(text: string): void {
+    public reply(replyText = 'There was an error.'): void {
         if (!this.thread) {
             return
         }
-        const codyReply = new Comment(text, 'Cody', this.codyIcon, false, this.thread, undefined)
+        const codyReply = new Comment(replyText, 'Cody', this.codyIcon, false, this.thread, undefined)
         this.thread.comments = [...this.thread.comments, codyReply]
         this.thread.canReply = true
         void vscode.commands.executeCommand('setContext', 'cody.replied', true)
@@ -146,8 +149,10 @@ export class InlineController {
     }
 
     public async error(): Promise<void> {
+        if (!this.currentTaskId) {
+            return this.reply()
+        }
         await this.stopFixMode(true)
-        this.isInProgress = false
     }
     /**
      * Create code lense and initiate decorators for fix mode
@@ -183,6 +188,7 @@ export class InlineController {
             this.thread.range = range
         }
         this.currentTaskId = ''
+        logEvent('CodyVSCodeExtension:inline-assist:error')
     }
     /**
      * Get current selected lines from the comment thread.
@@ -232,12 +238,18 @@ export class InlineController {
         vscode.languages.registerCodeLensProvider('*', lens)
         return lens
     }
+
+    public removeLens(id: string): void {
+        this.codeLenses.get(id)?.remove()
+        this.codeLenses.delete(id)
+    }
     /**
      * Do replacement in document
      */
-    public async replace(fileName: string, replacement: string): Promise<void> {
-        if (!this.workspacePath) {
-            this.currentTaskId = ''
+    public async replace(fileName: string, replacement: string, original: string): Promise<void> {
+        const diff = original.trim() !== replacement.trim()
+        if (!this.workspacePath || !replacement.trim() || !diff) {
+            await this.stopFixMode(true)
             return
         }
         // Stop tracking for file changes to perfotm replacement

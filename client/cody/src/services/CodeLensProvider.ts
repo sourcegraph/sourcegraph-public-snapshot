@@ -40,7 +40,6 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
         })
         vscode.workspace.onDidCloseTextDocument(e => this.removeOnFSPath(e.uri))
         vscode.workspace.onDidSaveTextDocument(e => this.removeOnFSPath(e.uri))
-        this._disposables.push(vscode.commands.registerCommand('cody.inline.decorations.remove', () => this.remove()))
     }
     /**
      * Getter
@@ -92,7 +91,7 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
         }
         const codeLensRange = getSingleLineRange(range.start.line)
         return this.status === CodyTaskState.error
-            ? getErrorLenses(codeLensRange)
+            ? getErrorLenses(codeLensRange, this.id)
             : getLenses(codeLensRange, this.isPending())
     }
     /**
@@ -138,10 +137,10 @@ function getLenses(codeLensRange: vscode.Range, isPending: boolean): vscode.Code
     return isPending ? [codeLensTitle] : [codeLensTitle, codeLensSave]
 }
 
-function getErrorLenses(codeLensRange: vscode.Range): vscode.CodeLens[] {
+function getErrorLenses(codeLensRange: vscode.Range, id: string): vscode.CodeLens[] {
     const codeLensError = new vscode.CodeLens(codeLensRange)
     codeLensError.command = {
-        title: '⛔️ Cody did not make any suggestions',
+        title: '⛔️ Not Edited by Cody',
         tooltip: 'Open Cody chat view',
         command: 'cody.focus',
     }
@@ -150,6 +149,7 @@ function getErrorLenses(codeLensRange: vscode.Range): vscode.CodeLens[] {
         title: 'Close',
         tooltip: 'Click to remove decorations',
         command: 'cody.inline.decorations.remove',
+        arguments: [id],
     }
     return [codeLensError, codeLensClose]
 }

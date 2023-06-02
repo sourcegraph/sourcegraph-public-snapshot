@@ -46,7 +46,7 @@ export async function editDocByUri(
     const lineDiff = content.split('\n').length - 2
     const document = await vscode.workspace.openTextDocument(uri)
     const edit = new vscode.WorkspaceEdit()
-    const range = new vscode.Range(lines.start, 0, lines.end + 1, 0)
+    const range = new vscode.Range(lines.start, 0, lines.end, 0)
     edit.delete(document.uri, range)
     edit.insert(document.uri, new vscode.Position(lines.start, 0), content)
     await vscode.workspace.applyEdit(edit)

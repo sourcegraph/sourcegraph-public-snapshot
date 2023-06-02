@@ -98,7 +98,7 @@ export class Fixup implements Recipe {
     \`\`\`
 
     Additional Instruction:
-    - {responseMultiplexerPrompt}
     - {humanInput}
+    - {responseMultiplexerPrompt}
 `
 }

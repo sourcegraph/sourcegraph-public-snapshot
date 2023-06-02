@@ -157,7 +157,7 @@ const register = async (
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
             const isFixMode = /^\/f(ix)?\s/i.test(comment.text.trimStart())
             await commentController.chat(comment, isFixMode)
-            await chatProvider.executeRecipe(isFixMode ? 'fixup' : 'inline-chat', comment.text, false)
+            await chatProvider.executeRecipe('inline-chat', comment.text.trimStart(), false)
             logEvent(`CodyVSCodeExtension:inline-assist:${isFixMode ? 'fixup' : 'chat'}`)
         }),
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
