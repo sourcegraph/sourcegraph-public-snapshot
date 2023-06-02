@@ -217,41 +217,41 @@
         "title": "Cody: Insert text at the current cursor position"
       },
       {
-				"command": "cody.recipe.non-stop",
-				"title": "Cody: Fixup (Experimental)",
+        "command": "cody.recipe.non-stop",
+        "title": "Cody: Fixup (Experimental)",
         "icon": "resources/cody.png",
-        "enablement": "cody.nonstop.fixups.enabled"
-			},
+        "enablement": "cody.nonstop.fixups.enabled && editorHasSelection"
+      },
       {
-				"command": "cody.fixup.open",
-				"title": "Cody: Go to Fixup",
+        "command": "cody.fixup.open",
+        "title": "Cody: Go to Fixup",
         "enablement": "cody.nonstop.fixups.enabled",
         "icon": "$(file-code)"
-			},
+      },
       {
-				"command": "cody.fixup.apply",
-				"title": "Cody: Apply fixup",
+        "command": "cody.fixup.apply",
+        "title": "Cody: Apply fixup",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(check)"
-			},
+      },
       {
-				"command": "cody.fixup.apply-all",
-				"title": "Cody: Apply all fixups",
+        "command": "cody.fixup.apply-all",
+        "title": "Cody: Apply all fixups",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(check-all)"
-			},
+      },
       {
-				"command": "cody.fixup.apply-by-file",
-				"title": "Cody: Apply fixups to selected directory",
+        "command": "cody.fixup.apply-by-file",
+        "title": "Cody: Apply fixups to selected directory",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(check-all)"
-			},
+      },
       {
-				"command": "cody.fixup.diff",
-				"title": "Cody: Show diff for fixup",
+        "command": "cody.fixup.diff",
+        "title": "Cody: Show diff for fixup",
         "enablement": "!cody.fixup.view.isEmpty",
         "icon": "$(diff)"
-			}
+      }
     ],
     "keybindings": [
       {
@@ -261,8 +261,6 @@
       },
       {
         "command": "cody.recipe.fixup",
-        "key": "ctrl+alt+/",
-        "mac": "ctrl+alt+/",
         "when": "cody.activated && editorTextFocus && !editorReadonly"
       },
       {
@@ -374,7 +372,7 @@
         {
           "command": "cody.inline.insert",
           "when": "false"
-        }
+	}
       ],
       "editor/context": [
         {

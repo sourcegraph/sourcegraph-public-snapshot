@@ -4,26 +4,36 @@ import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
 
 import { debug } from '../log'
 
+import { FixupFile } from './FixupFile'
 import { CodyTaskState } from './utils'
 
 // TODO(bee): Create CodeLens for each task
 // TODO(bee): Create decorator for each task
-// TODO(dpc): Add listener for document change to track range
 export class FixupTask {
     public id: string
     private outputChannel = debug
+    // TODO: Consider switching to line-based ranges like inline assist
+    // In that case we probably *also* need a "point" to feed the LLM
+    // because people write instructions like "replace the keys in this hash"
+    // and the LLM needs to know where the cursor is.
     public selectionRange: vscode.Range
     public state = CodyTaskState.idle
-    public readonly documentUri: vscode.Uri
+    // The original text that we're working on updating
+    public readonly original: string
+    // The text of the streaming turn of the LLM, if any
+    public inProgressReplacement: string | undefined
+    // The text of the last completed turn of the LLM, if any
+    public replacement: string | undefined
 
     constructor(
+        public readonly fixupFile: FixupFile,
         public readonly instruction: string,
         public selection: ActiveTextEditorSelection,
         public readonly editor: vscode.TextEditor
     ) {
         this.id = Date.now().toString(36).replace(/\d+/g, '')
         this.selectionRange = editor.selection
-        this.documentUri = editor.document.uri
+        this.original = selection.selectedText
         this.queue()
     }
     /**

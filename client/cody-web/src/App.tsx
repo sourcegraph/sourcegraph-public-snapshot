@@ -44,6 +44,9 @@ const editor: Editor = {
         // TODO: Use a proper UI element
         return window.prompt(prompt || 'Enter here...') || undefined
     },
+    didReceiveFixupText(_id: string, _text: string, _state: 'streaming' | 'complete'): Promise<void> {
+        return Promise.resolve()
+    },
 }
 /* eslint-enable @typescript-eslint/require-await */
 
