@@ -152,33 +152,21 @@ type restCommitRef struct {
 		Author    *restAuthorCommiter `json:"author"`
 		Committer *restAuthorCommiter `json:"committer"`
 		Message   string              `json:"message"`
-		Tree      struct {
-			SHA string `json:"sha"`
-			URL string `json:"url"`
-		} `json:"tree"`
+		Tree      restCommitTree      `json:"tree"`
 	} `json:"commit"`
-	Parents []struct {
-		SHA string `json:"sha"`
-		URL string `json:"url"`
-	} `json:"parents"`
+	Parents []restCommitParent `json:"parents"`
 }
 
 // A single Commit in a Repository, from the REST API.
 type restCommit struct {
-	URL       string              `json:"url"`
-	SHA       string              `json:"sha"`
-	NodeID    string              `json:"node_id"`
-	Author    *restAuthorCommiter `json:"author"`
-	Committer *restAuthorCommiter `json:"committer"`
-	Message   string              `json:"message"`
-	Tree      struct {
-		SHA string `json:"sha"`
-		URL string `json:"url"`
-	} `json:"tree"`
-	Parents []struct {
-		SHA string `json:"sha"`
-		URL string `json:"url"`
-	} `json:"parents"`
+	URL          string              `json:"url"`
+	SHA          string              `json:"sha"`
+	NodeID       string              `json:"node_id"`
+	Author       *restAuthorCommiter `json:"author"`
+	Committer    *restAuthorCommiter `json:"committer"`
+	Message      string              `json:"message"`
+	Tree         restCommitTree      `json:"tree"`
+	Parents      []restCommitParent  `json:"parents"`
 	Verification struct {
 		Verified  bool   `json:"verified"`
 		Reason    string `json:"reason"`
@@ -187,10 +175,31 @@ type restCommit struct {
 	} `json:"verification"`
 }
 
+type restUpdatedRef struct {
+	Ref    string `json:"ref"`
+	NodeID string `json:"node_id"`
+	URL    string `json:"url"`
+	Object struct {
+		Type string `json:"type"`
+		SHA  string `json:"sha"`
+		URL  string `json:"url"`
+	} `json:"object"`
+}
+
 type restAuthorCommiter struct {
 	Name  string `json:"name"`
 	Email string `json:"email"`
 	Date  string `json:"date"`
+}
+
+type restCommitTree struct {
+	URL string `json:"url"`
+	SHA string `json:"sha"`
+}
+
+type restCommitParent struct {
+	URL string `json:"url"`
+	SHA string `json:"sha"`
 }
 
 // Context represent the individual commit status context
