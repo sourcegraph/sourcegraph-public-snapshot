@@ -173,8 +173,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
-			CreateBundleSizeDiff:      true,
-			ForceBazel:                !c.MessageFlags.NoBazel,
+			// TODO: (@umpox, @valerybugakov) Figure out if we can reliably enable this in PRs.
+			ClientLintOnlyChangedFiles: false,
+			CreateBundleSizeDiff:       true,
+			ForceBazel:                 !c.MessageFlags.NoBazel,
 		}))
 
 		// Now we set up conditional operations that only apply to pull requests.

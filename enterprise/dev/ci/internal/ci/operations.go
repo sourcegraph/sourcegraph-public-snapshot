@@ -22,9 +22,10 @@ import (
 // e.g. by adding flags, and not as a condition for adding steps or commands.
 type CoreTestOperationsOptions struct {
 	// for clientChromaticTests
-	ChromaticShouldAutoAccept bool
-	MinimumUpgradeableVersion string
-	ForceReadyForReview       bool
+	ChromaticShouldAutoAccept  bool
+	MinimumUpgradeableVersion  string
+	ClientLintOnlyChangedFiles bool
+	ForceReadyForReview        bool
 	// for addWebAppOSSBuild
 	CacheBundleSize      bool
 	CreateBundleSizeDiff bool
@@ -79,8 +80,6 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 				// addTypescriptCheck is now covered by Bazel
 				addVsceTests,          // ~3.0m
 				addCodyExtensionTests, // ~2.5m
-				// addESLint,
-				addStylelint,
 			)
 		} else {
 			// If there are any Graphql changes, they are impacting the client as well.
@@ -95,9 +94,13 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 				addTypescriptCheck,           // ~4m
 				addVsceTests,                 // ~3.0m
 				addCodyExtensionTests,        // ~2.5m
-				addESLint,
-				addStylelint,
 			)
+		}
+
+		if opts.ClientLintOnlyChangedFiles {
+			clientChecks.Append(addClientLintersForChangedFiles)
+		} else {
+			clientChecks.Append(addClientLintersForAllFiles)
 		}
 
 		ops.Merge(clientChecks)
@@ -166,13 +169,8 @@ func addTypescriptCheck(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/pnpm-run.sh build-ts"))
 }
 
-func addStylelint(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":stylelint: Stylelint (all)",
-		withPnpmCache(),
-		bk.Cmd("dev/ci/pnpm-run.sh lint:css:all"))
-}
-
-func addESLint(pipeline *bk.Pipeline) {
+// Adds client linters to check all files.
+func addClientLintersForAllFiles(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":eslint: ESLint (all)",
 		withPnpmCache(),
 		bk.Cmd("dev/ci/pnpm-run.sh lint:js:all"))
@@ -180,11 +178,21 @@ func addESLint(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":eslint: ESLint (web)",
 		withPnpmCache(),
 		bk.Cmd("dev/ci/pnpm-run.sh lint:js:web"))
+
+	pipeline.AddStep(":stylelint: Stylelint (all)",
+		withPnpmCache(),
+		bk.Cmd("dev/ci/pnpm-run.sh lint:css:all"))
 }
 
-func addClientLintersForAllFiles(pipeline *bk.Pipeline) {
-	addStylelint(pipeline)
-	addESLint(pipeline)
+// Adds client linters to check changed in PR files.
+func addClientLintersForChangedFiles(pipeline *bk.Pipeline) {
+	pipeline.AddStep(":eslint: ESLint (changed)",
+		withPnpmCache(),
+		bk.Cmd("dev/ci/pnpm-run.sh lint:js:changed"))
+
+	pipeline.AddStep(":stylelint: Stylelint (changed)",
+		withPnpmCache(),
+		bk.Cmd("dev/ci/pnpm-run.sh lint:css:changed"))
 }
 
 // Adds steps for the OSS and Enterprise web app builds. Runs the web app tests.
