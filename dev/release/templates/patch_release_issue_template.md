@@ -61,11 +61,7 @@ Create and test the first release candidate:
 - [ ] [Sourcegraph pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH-rc.1)
 - [ ] File any failures and regressions in the pipelines as `release-blocker` issues and assign the appropriate teams.
 
-**Note**: You will need to re-check the above pipelines for any subsequent release candidates. You can see the Buildkite logs by tweaking the "branch" query parameter in the URLs to point to the desired release candidate. In general, the URL scheme looks like the following (replacing `N` in the URL):
-
-- Sourcegraph: `https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH-rc.N`
-- QA: `https://buildkite.com/sourcegraph/qa/builds?branch=v$MAJOR.$MINOR.$PATCH-rc.N`
-- E2E: `https://buildkite.com/sourcegraph/qa/builds?branch=v$MAJOR.$MINOR.$PATCH-rc.N`
+**Note**: You will need to re-check the above pipelines for any subsequent release candidates. You can see the Buildkite logs by tweaking the "branch" query parameter in the URLs to point to the desired release candidate. In general, the URL scheme looks like the following (replacing `N` in the URL): `https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH-rc.N`
 
 ## Stage release
 
