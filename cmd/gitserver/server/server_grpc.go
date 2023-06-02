@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"path/filepath"
+	"strings"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -26,6 +27,30 @@ import (
 type GRPCServer struct {
 	Server *Server
 	proto.UnimplementedGitserverServiceServer
+}
+
+func (gs *GRPCServer) BatchLog(ctx context.Context, req *proto.BatchLogRequest) (*proto.BatchLogResponse, error) {
+	gs.Server.operations = gs.Server.ensureOperations()
+
+	var internalReq protocol.BatchLogRequest
+	var resp protocol.BatchLogResponse
+	internalReq.FromProto(req)
+	// Validate request parameters
+	if len(req.RepoCommits) == 0 {
+		// Early exit: implicitly writes 200 OK
+		return resp.ToProto(), nil
+	}
+	if !strings.HasPrefix(req.Format, "--format=") {
+		return nil, status.Error(codes.InvalidArgument, "format parameter expected to be of the form `--format=<git log format>`")
+	}
+
+	// Handle unexpected error conditions
+	resp, err := gs.Server.instrumentedHandler(ctx, internalReq)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	return resp.ToProto(), nil
 }
 
 func (gs *GRPCServer) CreateCommitFromPatchBinary(ctx context.Context, req *proto.CreateCommitFromPatchBinaryRequest) (*proto.CreateCommitFromPatchBinaryResponse, error) {
