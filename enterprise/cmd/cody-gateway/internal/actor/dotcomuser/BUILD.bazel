@@ -1,0 +1,19 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "dotcomuser",
+    srcs = ["dotcomuser.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor/dotcomuser",
+    visibility = ["//enterprise/cmd/cody-gateway:__subpackages__"],
+    deps = [
+        "//enterprise/cmd/cody-gateway/internal/actor",
+        "//enterprise/cmd/cody-gateway/internal/dotcom",
+        "//enterprise/internal/codygateway",
+        "//enterprise/internal/completions/types",
+        "//internal/hashutil",
+        "//lib/errors",
+        "@com_github_gregjones_httpcache//:httpcache",
+        "@com_github_khan_genqlient//graphql",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

@@ -4,6 +4,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "productsubscription",
     srcs = [
+        "codygateway_dotcom_user.go",
         "codygateway_graphql.go",
         "codygateway_service.go",
         "doc.go",
@@ -41,6 +42,7 @@ go_library(
         "//internal/gqlutil",
         "//internal/redispool",
         "//internal/slack",
+        "//internal/types",
         "//lib/errors",
         "@com_github_derision_test_glock//:glock",
         "@com_github_gomodule_redigo//redis",
