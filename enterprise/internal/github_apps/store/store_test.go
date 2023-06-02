@@ -399,8 +399,8 @@ func TestGetByDomain(t *testing.T) {
 	require.NotZero(t, fetched.UpdatedAt)
 
 	// does not exist
-	// _, err = store.GetByDomain(ctx, &domain, "bar")
-	// require.Error(t, err)
+	_, err = store.GetByDomain(ctx, &domain, "https://myCompany.github.com/")
+	require.Error(t, err)
 
 	domain = types.BatchesDomain
 	fetched, err = store.GetByDomain(ctx, &domain, "https://github.com/")
