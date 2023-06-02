@@ -22,6 +22,7 @@ public class SourcegraphApplicationService
   @Nullable public String anonymousUserId;
   public boolean isInstallEventLogged;
   public boolean isUrlNotificationDismissed;
+  public boolean isAccessTokenNotificationDismissed;
   @Nullable public Boolean authenticationFailedLastTime;
 
   @Nullable
@@ -104,6 +105,10 @@ public class SourcegraphApplicationService
     return isUrlNotificationDismissed;
   }
 
+  public boolean isAccessTokenNotificationDismissed() {
+    return isAccessTokenNotificationDismissed;
+  }
+
   @Nullable
   public Boolean getAuthenticationFailedLastTime() {
     return authenticationFailedLastTime;
@@ -129,6 +134,7 @@ public class SourcegraphApplicationService
     this.remoteUrlReplacements = settings.remoteUrlReplacements;
     this.anonymousUserId = settings.anonymousUserId;
     this.isUrlNotificationDismissed = settings.isUrlNotificationDismissed;
+    this.isAccessTokenNotificationDismissed = settings.isAccessTokenNotificationDismissed;
     this.authenticationFailedLastTime = settings.authenticationFailedLastTime;
     this.lastUpdateNotificationPluginVersion = settings.lastUpdateNotificationPluginVersion;
   }

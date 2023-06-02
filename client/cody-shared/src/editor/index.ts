@@ -23,16 +23,19 @@ export interface ActiveTextEditorVisibleContent {
 
 interface VsCodeInlineController {
     selection: ActiveTextEditorSelection | null
+    error(): Promise<void>
 }
 
-interface VsCodeTaskContoller {
+// TODO: Move this interface to client/cody
+interface VsCodeTaskController {
     add(input: string, selection: ActiveTextEditorSelection): string | null
     stop(taskID: string): void
 }
 
 export interface ActiveTextEditorViewControllers {
     inline: VsCodeInlineController
-    task: VsCodeTaskContoller
+    // TODO: Remove this field once the fixup task view moves to client/cody
+    task: VsCodeTaskController
 }
 
 export interface Editor {
@@ -51,6 +54,10 @@ export interface Editor {
     showQuickPick(labels: string[]): Promise<string | undefined>
     showWarningMessage(message: string): Promise<void>
     showInputBox(prompt?: string): Promise<string | undefined>
+
+    // TODO: When Non-Stop Fixup doesn't depend directly on the chat view,
+    // move the recipe to client/cody and remove this entrypoint.
+    didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void>
 }
 
 export class NoopEditor implements Editor {
@@ -88,5 +95,9 @@ export class NoopEditor implements Editor {
 
     public showInputBox(_prompt?: string): Promise<string | undefined> {
         return Promise.resolve(undefined)
+    }
+
+    public didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
+        return Promise.resolve()
     }
 }
