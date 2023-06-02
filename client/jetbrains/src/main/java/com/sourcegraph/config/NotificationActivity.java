@@ -15,10 +15,20 @@ import com.sourcegraph.common.BrowserOpener;
 import com.sourcegraph.find.FindService;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.util.Optional;
 import javax.swing.*;
 import org.jetbrains.annotations.NotNull;
 
 public class NotificationActivity implements StartupActivity.DumbAware {
+  private static AnAction dumbAwareAction(String text, Runnable action) {
+    return new DumbAwareAction(text) {
+      @Override
+      public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
+        action.run();
+      }
+    };
+  }
+
   @Override
   public void runActivity(@NotNull Project project) {
     String latestReleaseMilestoneVersion = "2.0.0";
@@ -102,5 +112,27 @@ public class NotificationActivity implements StartupActivity.DumbAware {
     Notifications.Bus.notify(notification);
 
     ConfigUtil.setLastUpdateNotificationPluginVersionToCurrent();
+  }
+
+  public static void notifyAboutSourcegraphAccessToken(Optional<String> instanceUrl) {
+    String content =
+        instanceUrl
+                .map(url -> "A Sourcegraph Access Token for " + url + " has not been set.")
+                .orElse("A Sourcegraph Access Token has not been set.")
+            + " It is not possible to use Sourcegraph API and Cody without it.";
+    Notification notification =
+        new Notification(
+            "Sourcegraph access", "Sourcegraph", content, NotificationType.INFORMATION);
+    notification.setIcon(Icons.SourcegraphLogo);
+    notification.addAction(new OpenPluginSettingsAction("Set Access Token"));
+    notification.addAction(dumbAwareAction("Do Not Set", notification::expire));
+    notification.addAction(
+        dumbAwareAction(
+            "Never Show Again",
+            () -> {
+              notification.expire();
+              ConfigUtil.setAccessTokenNotificationDismissed(true);
+            }));
+    Notifications.Bus.notify(notification);
   }
 }

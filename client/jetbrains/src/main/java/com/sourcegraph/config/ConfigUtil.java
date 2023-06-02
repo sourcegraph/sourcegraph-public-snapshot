@@ -202,8 +202,16 @@ public class ConfigUtil {
     return getApplicationLevelConfig().isUrlNotificationDismissed();
   }
 
+  public static boolean isAccessTokenNotificationDismissed() {
+    return getApplicationLevelConfig().isAccessTokenNotificationDismissed();
+  }
+
   public static void setUrlNotificationDismissed(boolean value) {
     getApplicationLevelConfig().isUrlNotificationDismissed = value;
+  }
+
+  public static void setAccessTokenNotificationDismissed(boolean value) {
+    getApplicationLevelConfig().isAccessTokenNotificationDismissed = value;
   }
 
   @NotNull
