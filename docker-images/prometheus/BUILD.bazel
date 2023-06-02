@@ -22,6 +22,7 @@ pkg_tar(
         "//monitoring:generate_config",
     ],
     remap_paths = {
+        # TODO: This underscore is required - fix
         "/cmd/prom-wrapper/prom-wrapper_/prom-wrapper": "/bin/prom-wrapper",
         "monitoring/outputs/prometheus": "/sg_config_prometheus",
         "/dev/prometheus/linux": "/sg_prometheus_add_ons",
