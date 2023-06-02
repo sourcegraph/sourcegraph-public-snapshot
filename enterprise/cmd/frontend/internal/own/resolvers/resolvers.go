@@ -354,19 +354,11 @@ type ownStatsResolver struct {
 }
 
 func (r *ownStatsResolver) TotalFiles(ctx context.Context) (int32, error) {
-	total, err := r.db.RepoPaths().TotalFiles(ctx, database.PathOpts{
-		RepoID: r.repoID,
-		Path:   r.path,
-	})
-	return int32(total), err
+	return 0, nil // TODO(#52826): Implement graphQL resolver with db lookup.
 }
 
 func (r *ownStatsResolver) TotalCodeownedFiles(ctx context.Context) (int32, error) {
-	total, err := r.db.OwnershipStats().CodeownedFilesCount(ctx, database.OwnershipOpts{
-		RepoID: r.repoID,
-		Path:   r.path,
-	})
-	return int32(total), err
+	return 0, nil // TODO(#52826): Implement graphQL resolver with db lookup.
 }
 
 type ownershipConnectionResolver struct {
