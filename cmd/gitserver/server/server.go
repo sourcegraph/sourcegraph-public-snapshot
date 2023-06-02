@@ -1522,8 +1522,7 @@ func (s *Server) instrumentedHandler(ctx context.Context, req protocol.BatchLogR
 	if err = g.Wait(); err != nil {
 		return
 	}
-	resp = protocol.BatchLogResponse{Results: results}
-	return resp, nil
+	return protocol.BatchLogResponse{Results: results}, nil
 }
 
 func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
