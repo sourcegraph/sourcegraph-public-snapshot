@@ -396,13 +396,13 @@ message P4ExecResponse {
 
 // ListGitoliteRequest is a request to list all repositories in gitolite.
 message ListGitoliteRequest {
-    // host is the hostname of the gitolite instance
+  // host is the hostname of the gitolite instance
   string gitolite_host = 1;
 }
 
 // GitoliteRepo is a repository in gitolite.
 message GitoliteRepo {
-    // name is the name of the repository
+  // name is the name of the repository
   string name = 1;
   // url is the URL of the repository
   string url = 2;
