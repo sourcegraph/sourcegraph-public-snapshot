@@ -181,7 +181,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                         <H4 className={styles.learnMoreItemTitle}>Documentation</H4>
                         <Text className="mb-0">
                             Learn about Cody’s use cases, recipes, and FAQs on the{' '}
-                            <Link to="https://docs.sourcegraph.com/cody" target="_blank" rel="noopener">
+                            <Link to="/help/cody" target="_blank" rel="noopener">
                                 documentation page
                             </Link>
                             .
