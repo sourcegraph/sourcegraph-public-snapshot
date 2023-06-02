@@ -167,13 +167,13 @@ func TestProductSubscriptions_Update(t *testing.T) {
 			require.NoError(t, err)
 			got, err := subscriptions.GetByID(ctx, sub0)
 			require.NoError(t, err)
-			autogold.Expect(dbLLMProxyAccess{
+			autogold.Expect(dbCodyGatewayAccess{
 				Enabled: true,
 				ChatRateLimit: dbRateLimit{
 					RateLimit:           valast.Addr(int32(12)).(*int32),
 					RateIntervalSeconds: valast.Addr(int32(3600)).(*int32),
 				},
-			}).Equal(t, got.LLMProxyAccess)
+			}).Equal(t, got.CodyGatewayAccess)
 		})
 
 		t.Run("set to zero/null values", func(t *testing.T) {
@@ -187,7 +187,7 @@ func TestProductSubscriptions_Update(t *testing.T) {
 			require.NoError(t, err)
 			got, err := subscriptions.GetByID(ctx, sub0)
 			require.NoError(t, err)
-			autogold.Expect(dbLLMProxyAccess{}).Equal(t, got.LLMProxyAccess)
+			autogold.Expect(dbCodyGatewayAccess{}).Equal(t, got.CodyGatewayAccess)
 		})
 	})
 }

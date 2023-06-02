@@ -7,15 +7,11 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/productsubscription"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 )
-
-// defaultRawAccessToken is currently just a hash of the license key.
-func defaultRawAccessToken(licenseKey []byte) []byte {
-	return hashutil.ToSHA256Bytes(licenseKey)
-}
 
 type dbTokens struct {
 	store *basestore.Store
@@ -40,11 +36,15 @@ func (e productSubscriptionNotFoundError) NotFound() bool {
 // LookupProductSubscriptionIDByAccessToken returns the subscription ID
 // corresponding to a token, trimming token prefixes if there are any.
 func (t dbTokens) LookupProductSubscriptionIDByAccessToken(ctx context.Context, token string) (string, error) {
-	if !strings.HasPrefix(token, productSubscriptionAccessTokenPrefix) {
+	if !strings.HasPrefix(token, productsubscription.AccessTokenPrefix) &&
+		!strings.HasPrefix(token, licensing.LicenseKeyBasedAccessTokenPrefix) {
 		return "", productSubscriptionNotFoundError{reason: "invalid token with unknown prefix"}
 	}
 
-	decoded, err := hex.DecodeString(strings.TrimPrefix(token, productSubscriptionAccessTokenPrefix))
+	// Extract the raw token and decode it. Right now the prefix doesn't mean
+	// much, we only track 'license_key' and check the that the raw token value
+	// matches the license key. Note that all prefixes have the same length.
+	decoded, err := hex.DecodeString(token[len(licensing.LicenseKeyBasedAccessTokenPrefix):])
 	if err != nil {
 		return "", productSubscriptionNotFoundError{reason: "invalid token with unknown encoding"}
 	}

@@ -195,6 +195,7 @@ func (gs *GRPCServer) RepoCloneProgress(ctx context.Context, req *proto.RepoClon
 	return resp.ToProto(), nil
 }
 
+
 func (gs *GRPCServer) ReposStats(ctx context.Context, req *proto.ReposStatsRequest) (*proto.ReposStatsResponse, error) {
 	b, err := gs.Server.readReposStatsFile(filepath.Join(gs.Server.ReposDir, reposStatsName))
 	if err != nil {

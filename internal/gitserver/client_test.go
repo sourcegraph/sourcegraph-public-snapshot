@@ -1006,8 +1006,6 @@ func TestGitserverClient_RepoClone(t *testing.T) {
 		},
 	})
 
-	defer conf.Mock(nil)
-
 	db := newMockDB()
 	s := server.Server{
 		Logger:   logtest.Scoped(t),

@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/sourcegraphoperator"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -52,13 +52,13 @@ func (j *sourcegraphOperatorCleaner) Routines(_ context.Context, observationCtx 
 	return []goroutine.BackgroundRoutine{
 		goroutine.NewPeriodicGoroutine(
 			context.Background(),
-			"auth.expired-soap-cleaner",
-			"deletes expired SOAP operator user accounts",
-			time.Minute,
 			&sourcegraphOperatorCleanHandler{
 				db:                db,
 				lifecycleDuration: sourcegraphoperator.LifecycleDuration(cloudSiteConfig.AuthProviders.SourcegraphOperator.LifecycleDuration),
 			},
+			goroutine.WithName("auth.expired-soap-cleaner"),
+			goroutine.WithDescription("deletes expired SOAP operator user accounts"),
+			goroutine.WithInterval(time.Minute),
 		),
 	}, nil
 }
