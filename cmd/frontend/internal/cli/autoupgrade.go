@@ -40,40 +40,52 @@ var buffer strings.Builder // :)
 var shouldAutoUpgade = env.MustGetBool("SRC_AUTOUPGRADE", false, "blahblahblah")
 
 func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db database.DB, hook store.RegisterMigratorsUsingConfAndStoreFactoryFunc) (err error) {
-	// locker := locker.NewWith(db, "autoupgrade")
-	// _, unlock, err := locker.Lock(ctx, 1, true)
-	// if err != nil {
-	// 	return errors.Wrap(err, "locker.Lock")
-	// }
-	// defer func() {
-	// 	err = unlock(err)
-	// }()
-
-	toVersion, _, ok := oobmigration.NewVersionAndPatchFromString(version.Version())
+	toVersion, ok := oobmigration.NewVersionFromString(version.Version())
 	if !ok {
 		return nil
 	}
-	currentVersionStr, doAutoUpgrade, err := upgradestore.New(db).GetAutoUpgrade(ctx)
+	var currentVersion oobmigration.Version
+
+	upgradestore := upgradestore.New(db)
+
+	_, doAutoUpgrade, err := upgradestore.GetAutoUpgrade(ctx)
 	if err != nil {
 		return errors.Wrap(err, "autoupgradestore.GetAutoUpgrade")
 	}
 	if !doAutoUpgrade && !shouldAutoUpgade {
-		fmt.Println("------------------ DO NOT AUTO UPGRADE ------------------------")
 		return nil
-	} else {
-		fmt.Println("-----------------------AUTO UPGRADING-------------------------")
 	}
 
-	fmt.Println("CURRENT VERSION STRING", currentVersionStr)
-	currentVersion, _, ok := oobmigration.NewVersionAndPatchFromString(currentVersionStr)
-	if !ok {
-		return errors.Newf("VERSION STRING BAD %s", currentVersion)
+	if err := upgradestore.EnsureUpgradeTable(ctx); err != nil {
+		return errors.Wrap(err, "autoupgradestore.EnsureUpgradeTable")
 	}
-	fmt.Printf("CURRENT VERSION %+v\n", currentVersion)
 
-	if cmp := oobmigration.CompareVersions(currentVersion, toVersion); cmp == oobmigration.VersionOrderAfter || cmp == oobmigration.VersionOrderEqual {
-		fmt.Println("CURRENT >= TO, SNOOZE")
-		return nil
+	// try to claim
+	for {
+		currentVersionStr, _, err := upgradestore.GetServiceVersion(ctx)
+		if err != nil {
+			return errors.Wrap(err, "autoupgradestore.GetServiceVersion")
+		}
+
+		currentVersion, ok = oobmigration.NewVersionFromString(currentVersionStr)
+		if !ok {
+			return errors.Newf("VERSION STRING BAD %s", currentVersion)
+		}
+
+		if cmp := oobmigration.CompareVersions(currentVersion, toVersion); cmp == oobmigration.VersionOrderAfter || cmp == oobmigration.VersionOrderEqual {
+			return nil
+		}
+
+		claimed, err := upgradestore.ClaimAutoUpgrade(ctx, currentVersionStr, version.Version())
+		if err != nil {
+			return errors.Wrap(err, "autoupgradstore.ClaimAutoUpgrade")
+		}
+
+		if claimed {
+			break
+		}
+
+		time.Sleep(time.Second * 10)
 	}
 
 	stopFunc, err := serveConfigurationServer(ctx, obsvCtx)
@@ -84,6 +96,10 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db databa
 
 	if err := runMigration(ctx, obsvCtx, currentVersion, toVersion, db, hook); err != nil {
 		return err
+	}
+
+	if err := upgradestore.SetServiceVersion(ctx, toVersion.GitTag()); err != nil {
+		return errors.Wrap(err, "autoupgradstore.SetServiceVersion")
 	}
 
 	return errors.New("MIGRATION SUCCEEDED, RESTARTING")
