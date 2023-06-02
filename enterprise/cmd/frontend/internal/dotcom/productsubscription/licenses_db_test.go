@@ -206,65 +206,39 @@ func TestProductLicenses_List(t *testing.T) {
 	store := dbLicenses{db: db}
 
 	u1, err := db.Users().Create(ctx, database.NewUser{Username: "u1"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	ps0, err := subscriptionStore.Create(ctx, u1.ID, "")
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	ps1, err := subscriptionStore.Create(ctx, u1.ID, "")
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	_, err = store.Create(ctx, ps0, "k1", 1, license.Info{})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 	_, err = store.Create(ctx, ps0, "n1", 1, license.Info{})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	{
 		// List all product licenses.
 		ts, err := store.List(ctx, dbLicensesListOptions{})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := 2; len(ts) != want {
-			t.Errorf("got %d product licenses, want %d", len(ts), want)
-		}
+		require.NoError(t, err)
+		assert.Equalf(t, 2, len(ts), "got %d product licenses, want 2", len(ts))
 		count, err := store.Count(ctx, dbLicensesListOptions{})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := 2; count != want {
-			t.Errorf("got %d, want %d", count, want)
-		}
+		require.NoError(t, err)
+		assert.Equal(t, 2, count)
 	}
 
 	{
 		// List ps0's product licenses.
 		ts, err := store.List(ctx, dbLicensesListOptions{ProductSubscriptionID: ps0})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := 2; len(ts) != want {
-			t.Errorf("got %d product licenses, want %d", len(ts), want)
-		}
+		require.NoError(t, err)
+		assert.Equalf(t, 2, len(ts), "got %d product licenses, want 2", len(ts))
 	}
 
 	{
 		// List ps1's product licenses.
 		ts, err := store.List(ctx, dbLicensesListOptions{ProductSubscriptionID: ps1})
-		if err != nil {
-			t.Fatal(err)
-		}
-		if want := 0; len(ts) != want {
-			t.Errorf("got %d product licenses, want %d", len(ts), want)
-		}
+		require.NoError(t, err)
+		assert.Equalf(t, 0, len(ts), "got %d product licenses, want 0", len(ts))
 	}
 }
