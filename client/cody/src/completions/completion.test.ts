@@ -239,10 +239,10 @@ describe('Cody completions', () => {
         expect(completions).toMatchInlineSnapshot(`
             Array [
               InlineCompletionItem {
-                "content": "'bar'",
+                "insertText": "'bar'",
               },
               InlineCompletionItem {
-                "content": "'baz'",
+                "insertText": "'baz'",
               },
             ]
         `)
@@ -257,10 +257,10 @@ describe('Cody completions', () => {
         expect(completions).toMatchInlineSnapshot(`
             Array [
               InlineCompletionItem {
-                "content": "array) {",
+                "insertText": "array) {",
               },
               InlineCompletionItem {
-                "content": "items) {",
+                "insertText": "items) {",
               },
             ]
         `)
@@ -287,10 +287,20 @@ describe('Cody completions', () => {
         expect(completions).toMatchInlineSnapshot(`
             Array [
               InlineCompletionItem {
-                "content": "items) {",
+                "insertText": "items) {",
               },
             ]
         `)
+    })
+
+    it('should not trigger a request if there is text in the suffix for the same line', async () => {
+        const { requests } = await complete(`foo: ${CURSOR_MARKER} = 123;`)
+        expect(requests).toHaveLength(0)
+    })
+
+    it('should trigger a request if the suffix of the same line is only special tags', async () => {
+        const { requests } = await complete(`if(${CURSOR_MARKER}) {`)
+        expect(requests).toHaveLength(3)
     })
 
     describe('odd indentation', () => {
@@ -300,17 +310,38 @@ describe('Cody completions', () => {
             expect(completions).toMatchInlineSnapshot(`
                 Array [
                   InlineCompletionItem {
-                    "content": "1",
+                    "insertText": "1",
                   },
                   InlineCompletionItem {
-                    "content": "",
+                    "insertText": "",
                   },
                 ]
             `)
         })
 
-        it.todo('removes odd indentation in multi-line completions')
-        it.todo('handles \t in multi-line completions')
+        it('removes odd indentation in multi-line completions', async () => {
+            const { completions } = await complete(
+                `
+                function test() {
+                    ${CURSOR_MARKER}
+                }`,
+                [createCompletionResponse(' foo()\n     bar()')]
+            )
+
+            expect(completions[0].insertText).toBe('foo()\n    bar()')
+        })
+
+        it('handles \t in multi-line completions', async () => {
+            const { completions } = await complete(
+                `
+                function test() {
+                \t${CURSOR_MARKER}
+                }`,
+                [createCompletionResponse(' foo()\n\t bar()')]
+            )
+
+            expect(completions[0].insertText).toBe('foo()\n\tbar()')
+        })
     })
 
     describe('multi-line completions', () => {
@@ -352,17 +383,62 @@ describe('Cody completions', () => {
             expect(completions).toMatchInlineSnapshot(`
                 Array [
                   InlineCompletionItem {
-                    "content": "if (foo) {
+                    "insertText": "if (foo) {
                             console.log('foo1');
                         }",
                   },
                   InlineCompletionItem {
-                    "content": "console.log('foo')",
+                    "insertText": "console.log('foo')",
                   },
                   InlineCompletionItem {
-                    "content": "",
+                    "insertText": "",
                   },
                 ]
+            `)
+        })
+
+        it('does not support multi-line completion on unsupported languages', async () => {
+            const { requests } = await complete(`function looksLegit() {\n  ${CURSOR_MARKER}`, undefined, 'elixir')
+
+            expect(requests).toHaveLength(2)
+            expect(requests[0]!.stopSequences).toContain('\n')
+        })
+
+        it('requires an indentation to start a block', async () => {
+            const { requests } = await complete(`function bubbleSort() {\n${CURSOR_MARKER}`)
+
+            expect(requests).toHaveLength(2)
+            expect(requests[0]!.stopSequences).toContain('\n')
+        })
+
+        it('works with python', async () => {
+            const { completions, requests } = await complete(
+                `
+                for i in range(11):
+                    if i % 2 == 0:
+                        ${CURSOR_MARKER}`,
+                [
+                    createCompletionResponse(`
+                    print(i)
+                        elif i % 3 == 0:
+                            print(f"Multiple of 3: {i}")
+                        else:
+                            print(f"ODD {i}")
+
+                    for i in range(12):
+                        print("unrelated")`),
+                ],
+                'python'
+            )
+
+            expect(requests).toHaveLength(3)
+            expect(requests[0]!.stopSequences).not.toContain('\n')
+            expect(completions[0].insertText).toMatchInlineSnapshot(`
+                "print(i)
+                    elif i % 3 == 0:
+                        print(f\\"Multiple of 3: {i}\\")
+                    else:
+                        print(f\\"ODD {i}\\")"
             `)
         })
 
@@ -386,7 +462,7 @@ describe('Cody completions', () => {
 
             expect(completions[0]).toMatchInlineSnapshot(`
                 InlineCompletionItem {
-                  "content": "console.log('foo')
+                  "insertText": "console.log('foo')
 
                         console.log('bar')
 
@@ -412,7 +488,7 @@ describe('Cody completions', () => {
 
             expect(completions[0]).toMatchInlineSnapshot(`
                 InlineCompletionItem {
-                  "content": "console.log('one')
+                  "insertText": "console.log('one')
                 } else {
                     console.log('two')",
                 }
@@ -434,7 +510,7 @@ describe('Cody completions', () => {
 
             expect(completions[0]).toMatchInlineSnapshot(`
                 InlineCompletionItem {
-                  "content": "console.log('one')
+                  "insertText": "console.log('one')
                 }",
                 }
             `)
@@ -460,7 +536,7 @@ describe('Cody completions', () => {
 
             expect(completions[0]).toMatchInlineSnapshot(`
                 InlineCompletionItem {
-                  "content": "console.log('one')
+                  "insertText": "console.log('one')
                     console.log('two')",
                 }
             `)
@@ -491,22 +567,80 @@ describe('Cody completions', () => {
             expect(completions).toMatchInlineSnapshot(`
                 Array [
                   InlineCompletionItem {
-                    "content": "console.log('foo')
+                    "insertText": "console.log('foo')
                     console.log('foo')
                     console.log('foo')
                     console.log('foo')
                     console.log('foo')",
                   },
                   InlineCompletionItem {
-                    "content": "console.log('foo')",
+                    "insertText": "console.log('foo')",
                   },
                   InlineCompletionItem {
-                    "content": "console.log('foo')",
+                    "insertText": "console.log('foo')",
                   },
                 ]
             `)
         })
 
-        it.todo('handles tab/newline interop in completion truncation')
+        it('handles tab/newline interop in completion truncation', async () => {
+            const { completions } = await complete(
+                `
+                class Foo {
+                    constructor() {
+                        ${CURSOR_MARKER}`,
+                [
+                    createCompletionResponse(`
+                    console.log('foo')
+                    \t\tif (yes) {
+                    \t\t    sure()
+                    \t\t}
+                    \t}
+
+                    \tadd() {
+                        \tconsole.log('bar')
+                        }`),
+                ]
+            )
+
+            expect(completions[0].insertText).toMatchInlineSnapshot(`
+                "console.log('foo')
+                \t\tif (yes) {
+                \t\t    sure()
+                \t\t}
+                \t}"
+            `)
+        })
+
+        it('does not include block end character if there is already content in the block', async () => {
+            const { completions } = await complete(
+                `
+                if (check) {
+                    ${CURSOR_MARKER}
+                    console.log('two')
+                `,
+                [
+                    createCompletionResponse(`
+                    console.log('one')
+                    }`),
+                ]
+            )
+
+            expect(completions[0]).toMatchInlineSnapshot(`
+                InlineCompletionItem {
+                  "insertText": "console.log('one')",
+                }
+            `)
+        })
+
+        it('normalizes Cody responses starting with an empty line and following the exact same indentation as the start line', async () => {
+            const { completions } = await complete(
+                `function test() {
+                    ${CURSOR_MARKER}`,
+                [createCompletionResponse("\n    console.log('foo')")]
+            )
+
+            expect(completions[0].insertText).toBe("console.log('foo')")
+        })
     })
 })

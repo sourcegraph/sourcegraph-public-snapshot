@@ -23,7 +23,7 @@ type dbRateLimit struct {
 	RateIntervalSeconds *int32
 }
 
-type dbLLMProxyAccess struct {
+type dbCodyGatewayAccess struct {
 	Enabled       bool
 	ChatRateLimit dbRateLimit
 	CodeRateLimit dbRateLimit
@@ -38,7 +38,8 @@ type dbSubscription struct {
 	CreatedAt             time.Time
 	ArchivedAt            *time.Time
 	AccountNumber         *string
-	LLMProxyAccess        dbLLMProxyAccess
+
+	CodyGatewayAccess dbCodyGatewayAccess
 }
 
 var emailQueries = sqlf.Sprintf(`all_primary_emails AS (
@@ -142,13 +143,13 @@ SELECT
 	product_subscriptions.created_at,
 	product_subscriptions.archived_at,
 	product_subscriptions.account_number,
-	product_subscriptions.llm_proxy_enabled,
-	product_subscriptions.llm_proxy_chat_rate_limit,
-	product_subscriptions.llm_proxy_chat_rate_interval_seconds,
-	llm_proxy_chat_rate_limit_allowed_models,
-	product_subscriptions.llm_proxy_code_rate_limit,
-	product_subscriptions.llm_proxy_code_rate_interval_seconds,
-	llm_proxy_code_rate_limit_allowed_models
+	product_subscriptions.cody_gateway_enabled,
+	product_subscriptions.cody_gateway_chat_rate_limit,
+	product_subscriptions.cody_gateway_chat_rate_interval_seconds,
+	cody_gateway_chat_rate_limit_allowed_models,
+	product_subscriptions.cody_gateway_code_rate_limit,
+	product_subscriptions.cody_gateway_code_rate_interval_seconds,
+	cody_gateway_code_rate_limit_allowed_models
 FROM product_subscriptions
 LEFT OUTER JOIN users ON product_subscriptions.user_id = users.id
 LEFT OUTER JOIN primary_emails ON users.id = primary_emails.user_id
@@ -176,13 +177,13 @@ ORDER BY archived_at DESC NULLS FIRST, created_at DESC
 			&v.CreatedAt,
 			&v.ArchivedAt,
 			&v.AccountNumber,
-			&v.LLMProxyAccess.Enabled,
-			&v.LLMProxyAccess.ChatRateLimit.RateLimit,
-			&v.LLMProxyAccess.ChatRateLimit.RateIntervalSeconds,
-			pq.Array(&v.LLMProxyAccess.ChatRateLimit.AllowedModels),
-			&v.LLMProxyAccess.CodeRateLimit.RateLimit,
-			&v.LLMProxyAccess.CodeRateLimit.RateIntervalSeconds,
-			pq.Array(&v.LLMProxyAccess.CodeRateLimit.AllowedModels),
+			&v.CodyGatewayAccess.Enabled,
+			&v.CodyGatewayAccess.ChatRateLimit.RateLimit,
+			&v.CodyGatewayAccess.ChatRateLimit.RateIntervalSeconds,
+			pq.Array(&v.CodyGatewayAccess.ChatRateLimit.AllowedModels),
+			&v.CodyGatewayAccess.CodeRateLimit.RateLimit,
+			&v.CodyGatewayAccess.CodeRateLimit.RateIntervalSeconds,
+			pq.Array(&v.CodyGatewayAccess.CodeRateLimit.AllowedModels),
 		); err != nil {
 			return nil, err
 		}
@@ -212,7 +213,7 @@ WHERE (%s)`, emailQueries, sqlf.Join(opt.sqlConditions(), ") AND ("))
 // value is nil, the field remains unchanged in the database.
 type dbSubscriptionUpdate struct {
 	billingSubscriptionID *sql.NullString
-	llmProxyAccess        *graphqlbackend.UpdateLLMProxyAccessInput
+	codyGatewayAccess     *graphqlbackend.UpdateCodyGatewayAccessInput
 }
 
 // Update updates a product subscription.
@@ -223,27 +224,27 @@ func (s dbSubscriptions) Update(ctx context.Context, id string, update dbSubscri
 	if v := update.billingSubscriptionID; v != nil {
 		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("billing_subscription_id=%s", *v))
 	}
-	if access := update.llmProxyAccess; access != nil {
+	if access := update.codyGatewayAccess; access != nil {
 		if v := access.Enabled; v != nil {
-			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("llm_proxy_enabled=%s", *v))
+			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("cody_gateway_enabled=%s", *v))
 		}
 		if v := access.ChatCompletionsRateLimit; v != nil {
-			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("llm_proxy_chat_rate_limit=%s", dbutil.NewNullInt32(*v)))
+			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("cody_gateway_chat_rate_limit=%s", dbutil.NewNullInt32(*v)))
 		}
 		if v := access.ChatCompletionsRateLimitIntervalSeconds; v != nil {
-			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("llm_proxy_chat_rate_interval_seconds=%s", dbutil.NewNullInt32(*v)))
+			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("cody_gateway_chat_rate_interval_seconds=%s", dbutil.NewNullInt32(*v)))
 		}
 		if v := access.ChatCompletionsAllowedModels; v != nil {
-			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("llm_proxy_chat_rate_limit_allowed_models=%s", nullStringSlice(*v)))
+			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("cody_gateway_chat_rate_limit_allowed_models=%s", nullStringSlice(*v)))
 		}
 		if v := access.CodeCompletionsRateLimit; v != nil {
-			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("llm_proxy_code_rate_limit=%s", dbutil.NewNullInt32(*v)))
+			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("cody_gateway_code_rate_limit=%s", dbutil.NewNullInt32(*v)))
 		}
 		if v := access.CodeCompletionsRateLimitIntervalSeconds; v != nil {
-			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("llm_proxy_code_rate_interval_seconds=%s", dbutil.NewNullInt32(*v)))
+			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("cody_gateway_code_rate_interval_seconds=%s", dbutil.NewNullInt32(*v)))
 		}
 		if v := access.CodeCompletionsAllowedModels; v != nil {
-			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("llm_proxy_code_rate_limit_allowed_models=%s", nullStringSlice(*v)))
+			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("cody_gateway_code_rate_limit_allowed_models=%s", nullStringSlice(*v)))
 		}
 	}
 

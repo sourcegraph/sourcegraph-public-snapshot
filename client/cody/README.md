@@ -3,13 +3,14 @@
 Cody for VS Code is an AI code assistant that can write code and answers questions across your entire codebase. It combines the power of large language models with Sourcegraph’s Code Graph API, generating deep knowledge of all of your code (and not just your open files). Large monorepos, multiple languages, and complex codebases are no problem for Cody.
 
 For example, you can ask Cody:
+
 - Where is the CI config for the web integration tests?
 - Write a new GraphQL resolver for the AuditLog
 - Why is the UserConnectionResolver giving an error "unknown user", and how do I fix it?
 - Add helpful debug log statements
 - Make this work _(seriously, it often works—try it!)_
 
- **Cody AI is in beta, and we’d love your [feedback](#feedback)**!
+  **Cody AI is in beta, and we’d love your [feedback](#feedback)**!
 
 ## Features
 
@@ -55,7 +56,7 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## Other Extensions by Sourcegraph
 
-* [Sourcegraph Search Extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph)
+- [Sourcegraph Search Extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph)
 
 ## License
 

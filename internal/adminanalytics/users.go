@@ -3,7 +3,6 @@ package adminanalytics
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -89,7 +88,6 @@ func (f *Users) Frequencies(ctx context.Context) ([]*UsersFrequencyNode, error) 
 	}
 
 	query := sqlf.Sprintf(frequencyQuery, dateRangeCond, sqlf.Join(getDefaultConds(), ") AND ("))
-	fmt.Printf("Query %v", query)
 
 	rows, err := f.DB.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 
@@ -156,10 +154,7 @@ func (f *Users) MonthlyActiveUsers(ctx context.Context) ([]*MonthlyActiveUsersRo
 		}
 	}
 
-	now := time.Now()
-	to := now.Format(time.RFC3339)
-	prevMonth := now.AddDate(0, -2, 0) // going back 2 months
-	from := time.Date(prevMonth.Year(), prevMonth.Month(), 1, 0, 0, 0, 0, now.Location()).Format(time.RFC3339)
+	from, to := getTimestamps(2) // go back 2 months
 
 	query := sqlf.Sprintf(mauQuery, from, to, sqlf.Join(getDefaultConds(), ") AND ("))
 
