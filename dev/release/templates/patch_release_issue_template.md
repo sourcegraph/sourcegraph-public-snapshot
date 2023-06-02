@@ -68,6 +68,7 @@ Create and test the first release candidate:
 <!-- Keep in sync with release_issue_template's "Stage release" section -->
 
 - [ ] Verify the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) on `main` and `$MAJOR.$MINOR` are accurate.
+- [ ] Ensure security has approved the `Security release approval issue` you created.
 - [ ] Promote a release candidate to the final release build. You will need to provide the tag of the release candidate which you would like to promote as an argument. To get a list of available release candidates, you can use:
   ```shell
   pnpm run release release:check-candidate
