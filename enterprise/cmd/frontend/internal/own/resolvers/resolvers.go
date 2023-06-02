@@ -8,6 +8,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/internal/rbac"
 
 	owntypes "github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
@@ -223,6 +224,18 @@ func (r *ownResolver) GitTreeOwnership(
 	return r.ownershipConnection(args, ownerships)
 }
 
+func (r *ownResolver) GitTreeOwnershipStats(ctx context.Context, tree *graphqlbackend.GitTreeEntryResolver) (graphqlbackend.OwnershipStatsResolver, error) {
+	return &ownStatsResolver{
+		db:     r.db,
+		repoID: tree.Repository().IDInt32(),
+		path:   tree.Path(),
+	}, nil
+}
+
+func (r *ownResolver) InstanceOwnershipStats(ctx context.Context) (graphqlbackend.OwnershipStatsResolver, error) {
+	return &ownStatsResolver{db: r.db}, nil
+}
+
 func (r *ownResolver) PersonOwnerField(_ *graphqlbackend.PersonResolver) string {
 	return "owner"
 }
@@ -332,6 +345,28 @@ func (r *ownResolver) ownershipConnection(
 		next:       next,
 		ownerships: ownerships,
 	}, nil
+}
+
+type ownStatsResolver struct {
+	db     edb.EnterpriseDB
+	repoID api.RepoID
+	path   string
+}
+
+func (r *ownStatsResolver) TotalFiles(ctx context.Context) (int32, error) {
+	total, err := r.db.RepoPaths().TotalFiles(ctx, database.PathOpts{
+		RepoID: r.repoID,
+		Path:   r.path,
+	})
+	return int32(total), err
+}
+
+func (r *ownStatsResolver) TotalCodeownedFiles(ctx context.Context) (int32, error) {
+	total, err := r.db.OwnershipStats().CodeownedFilesCount(ctx, database.OwnershipOpts{
+		RepoID: r.repoID,
+		Path:   r.path,
+	})
+	return int32(total), err
 }
 
 type ownershipConnectionResolver struct {
