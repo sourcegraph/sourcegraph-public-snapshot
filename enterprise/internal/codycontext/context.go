@@ -4,7 +4,7 @@ import (
 	"context"
 	"math"
 	"regexp"
-	"sort"
+	"strings"
 	"sync"
 
 	"github.com/sourcegraph/conc/pool"
@@ -155,6 +155,14 @@ func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetCo
 	return res, nil
 }
 
+var textFileFilter = func() string {
+	var extensions []string
+	for extension := range embed.TextFileExtensions {
+		extensions = append(extensions, extension)
+	}
+	return `file:(` + strings.Join(extensions, "|") + `)$`
+}()
+
 // getKeywordContext uses keyword search to find relevant bits of context for Cody
 func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetContextArgs) (_ []FileChunkContext, err error) {
 	settings, err := settings.CurrentUserFinal(ctx, c.db)
@@ -169,116 +177,98 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 	for i, repo := range args.Repos {
 		regexEscapedRepoNames[i] = regexp.QuoteMeta(string(repo.Name))
 	}
-	query := "repo:^" + query.UnionRegExps(regexEscapedRepoNames) + "$ " + args.Query
 
-	patternTypeKeyword := "keyword"
-	plan, err := c.searchClient.Plan(
-		ctx,
-		"V3",
-		&patternTypeKeyword,
-		query,
-		search.Precise,
-		search.Streaming,
-		settings,
-		envvar.SourcegraphDotComMode(),
-	)
-	if err != nil {
-		return nil, err
-	}
+	textQuery := "repo:^" + query.UnionRegExps(regexEscapedRepoNames) + "$ " + textFileFilter + " " + args.Query
+	codeQuery := "repo:^" + query.UnionRegExps(regexEscapedRepoNames) + "$ -" + textFileFilter + " " + args.Query
 
-	// Create a cancellable context to exit early once we have enough results
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	doSearch := func(ctx context.Context, query string, limit int) ([]FileChunkContext, error) {
+		ctx, cancel := context.WithCancel(ctx)
+		defer cancel()
 
-	var (
-		mux         sync.Mutex
-		textResults []FileChunkContext
-		codeResults []FileChunkContext
-	)
-	collectFileMatch := func(fm *result.FileMatch) {
-		mux.Lock()
-		defer mux.Unlock()
-
-		if embed.IsValidTextFile(fm.Path) {
-			if len(textResults) < int(args.TextResultsCount) {
-				textResults = append(textResults, fileMatchToContextMatches(fm)...)
-				textResults = truncate(textResults, int(args.TextResultsCount))
-			}
-		} else {
-			if len(codeResults) < int(args.CodeResultsCount) {
-				codeResults = append(codeResults, fileMatchToContextMatches(fm)...)
-				codeResults = truncate(codeResults, int(args.CodeResultsCount))
-			}
-		}
-
-		if len(textResults) >= int(args.TextResultsCount) && len(codeResults) >= int(args.CodeResultsCount) {
-			cancel()
-		}
-	}
-
-	s := streaming.StreamFunc(func(e streaming.SearchEvent) {
-		for _, res := range e.Results {
-			fm, ok := res.(*result.FileMatch)
-			if !ok {
-				continue
-			}
-
-			collectFileMatch(fm)
-		}
-	})
-
-	alert, err := c.searchClient.Execute(ctx, s, plan)
-	if err != nil {
-		return nil, err
-	}
-	if alert != nil {
-		c.logger.Warn("received alert from keyword search execution",
-			log.String("title", alert.Title),
-			log.String("description", alert.Description),
+		patternTypeKeyword := "keyword"
+		plan, err := c.searchClient.Plan(
+			ctx,
+			"V3",
+			&patternTypeKeyword,
+			query,
+			search.Precise,
+			search.Streaming,
+			settings,
+			envvar.SourcegraphDotComMode(),
 		)
+		if err != nil {
+			return nil, err
+		}
+
+		var (
+			mu        sync.Mutex
+			collected []FileChunkContext
+		)
+		stream := streaming.StreamFunc(func(e streaming.SearchEvent) {
+			mu.Lock()
+			defer mu.Unlock()
+
+			for _, res := range e.Results {
+				if fm, ok := res.(*result.FileMatch); ok {
+					collected = append(collected, fileMatchToContextMatches(fm)...)
+					if len(collected) >= limit {
+						cancel()
+						return
+					}
+				}
+			}
+		})
+
+		alert, err := c.searchClient.Execute(ctx, stream, plan)
+		if err != nil {
+			return nil, err
+		}
+		if alert != nil {
+			c.logger.Warn("received alert from keyword search execution",
+				log.String("title", alert.Title),
+				log.String("description", alert.Description),
+			)
+		}
+
+		return collected, nil
 	}
 
-	return append(codeResults, textResults...), nil
+	p := pool.NewWithResults[[]FileChunkContext]().WithContext(ctx)
+	p.Go(func(ctx context.Context) ([]FileChunkContext, error) {
+		return doSearch(ctx, codeQuery, int(args.CodeResultsCount))
+	})
+	p.Go(func(ctx context.Context) ([]FileChunkContext, error) {
+		return doSearch(ctx, textQuery, int(args.TextResultsCount))
+	})
+	results, err := p.Wait()
+	if err != nil {
+		return nil, err
+	}
+
+	return append(results[0], results[1]...), nil
 }
 
 func fileMatchToContextMatches(fm *result.FileMatch) []FileChunkContext {
-	var relevantLines []int
-	for _, chunk := range fm.ChunkMatches {
-		for _, chunkRange := range chunk.Ranges {
-			// Assume that all matches are just a single line.
-			// We add context in both directions, so this is
-			// probably a pretty decent assumption.
-			relevantLines = append(relevantLines, chunkRange.Start.Line)
-		}
+	if len(fm.ChunkMatches) == 0 {
+		return nil
 	}
 
-	sort.Ints(relevantLines)
+	// To provide some context variety, we just use the top-ranked
+	// chunk (the first chunk) from each file
 
-	// Some quick numbers suggested that embeddings chunks are roughly 5-10
-	// lines per chunk. 4 lines in either direction gives us an 8-line chunk.
-	const expandLines = 4
-	var res []FileChunkContext
-	lastLine := -1
-	for _, line := range relevantLines {
-		// Skip any lines that have already been included
-		if line <= lastLine {
-			continue
-		}
+	// 4 lines of leading context, clamped to zero
+	startLine := min(0, fm.ChunkMatches[0].ContentStart.Line-4)
+	// depend on content fetching to trim to the end of the file
+	endLine := startLine + 8
 
-		res = append(res, FileChunkContext{
-			RepoName: fm.Repo.Name,
-			RepoID:   fm.Repo.ID,
-			CommitID: fm.CommitID,
-			Path:     fm.Path,
-			// Add three lines of context before and after
-			StartLine: max(0, lastLine, line-expandLines),
-			EndLine:   line + expandLines,
-		})
-
-		lastLine = line + expandLines
-	}
-
-	return res
+	return []FileChunkContext{{
+		RepoName:  fm.Repo.Name,
+		RepoID:    fm.Repo.ID,
+		CommitID:  fm.CommitID,
+		Path:      fm.Path,
+		StartLine: startLine,
+		EndLine:   endLine,
+	}}
 }
 
 func max(vals ...int) int {

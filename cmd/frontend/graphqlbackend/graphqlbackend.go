@@ -563,7 +563,7 @@ func NewSchema(
 	if contextResolver := optional.CodyContextResolver; contextResolver != nil {
 		EnterpriseResolvers.contextResolver = contextResolver
 		resolver.CodyContextResolver = contextResolver
-		schemas = append(schemas, contextSchema)
+		schemas = append(schemas, codyContextSchema)
 	}
 
 	if rbacResolver := optional.RBACResolver; rbacResolver != nil {
