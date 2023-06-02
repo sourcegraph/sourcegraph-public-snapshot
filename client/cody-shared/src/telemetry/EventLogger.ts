@@ -1,21 +1,44 @@
+import { get } from 'lodash'
 import * as vscode from 'vscode'
 
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 
-function _getServerEndpointFromConfig(config: vscode.WorkspaceConfiguration): string {
+function getServerEndpointFromConfig(config: vscode.WorkspaceConfiguration): string {
     return config.get<string>('cody.serverEndpoint', '')
 }
 
-function _getUseContextFromConfig(config: vscode.WorkspaceConfiguration): string {
+function getUseContextFromConfig(config: vscode.WorkspaceConfiguration): string {
     return config.get<string>('cody.useContext', '')
+}
+
+function getchatPredictionsFromConfig(config: vscode.WorkspaceConfiguration): boolean {
+    return config.get<boolean>('cody.experimental.chatPredictions', false)
+}
+
+function getinlineFromConfig(config: vscode.WorkspaceConfiguration): boolean {
+    return config.get<boolean>('cody.experimental.inline', false)
+}
+
+function getnonStopFromConfig(config: vscode.WorkspaceConfiguration): boolean {
+    return config.get<boolean>('cody.experimental.nonStop', false)
+}
+
+function getsuggestionsFromConfig(config: vscode.WorkspaceConfiguration): boolean {
+    return config.get<boolean>('cody.experimental.suggestions', false)
 }
 
 const config = vscode.workspace.getConfiguration()
 
 export class EventLogger {
-    private serverEndpoint = _getServerEndpointFromConfig(config)
+    private serverEndpoint = getServerEndpointFromConfig(config)
     private extensionDetails = { ide: 'VSCode', ideExtensionType: 'Cody' }
-    private useContext = _getUseContextFromConfig(config)
+    private configurationDetails = {
+        contextSelection: getUseContextFromConfig(config),
+        chatPredictions: getchatPredictionsFromConfig(config),
+        inline: getinlineFromConfig(config),
+        nonStop: getnonStopFromConfig(config),
+        suggestions: getsuggestionsFromConfig(config),
+    }
 
     private constructor(private gqlAPIClient: SourcegraphGraphQLAPIClient) {}
 
@@ -41,13 +64,13 @@ export class EventLogger {
             ...eventProperties,
             serverEndpoint: this.serverEndpoint,
             extensionDetails: this.extensionDetails,
-            useContext: this.useContext,
+            configurationDetails: this.configurationDetails,
         }
         const publicArgument = {
             ...publicProperties,
             serverEndpoint: this.serverEndpoint,
             extensionDetails: this.extensionDetails,
-            useContext: this.useContext,
+            configurationDetails: this.configurationDetails,
         }
         try {
             this.gqlAPIClient
