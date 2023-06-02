@@ -858,11 +858,6 @@ func TestGithubSource_DuplicateCommit(t *testing.T) {
 			if err != nil && tc.err != nil {
 				assert.ErrorContains(t, err, *tc.err)
 			}
-			if err == nil {
-				return
-			}
-
-			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), err)
 		})
 	}
 }

@@ -31,7 +31,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 02 Jun 2023 03:56:21 GMT
+      - Fri, 02 Jun 2023 04:07:24 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -50,11 +50,11 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - FE7A:292D:9863A3:137965B:64796865
+      - CAA8:7271:2B134C:58337D:64796AFC
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "27"
+      - "41"
       X-Xss-Protection:
       - "0"
     status: 422 Unprocessable Entity
