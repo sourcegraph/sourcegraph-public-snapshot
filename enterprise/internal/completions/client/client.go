@@ -21,7 +21,7 @@ func Get(endpoint, provider, accessToken string) (types.CompletionsClient, error
 		return openai.NewClient(httpcli.ExternalDoer, endpoint, accessToken), nil
 	case dotcom.ProviderName:
 		return dotcom.NewClient(httpcli.ExternalDoer, accessToken), nil
-	case codygateway.ProviderName, "llmproxy": // temporary back-compat
+	case codygateway.ProviderName:
 		return codygateway.NewClient(httpcli.ExternalDoer, endpoint, accessToken)
 	default:
 		return nil, errors.Newf("unknown completion stream provider: %s", provider)
