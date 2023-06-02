@@ -26,7 +26,6 @@ const (
 	GitserverService_RepoClone_FullMethodName         = "/gitserver.v1.GitserverService/RepoClone"
 	GitserverService_RepoCloneProgress_FullMethodName = "/gitserver.v1.GitserverService/RepoCloneProgress"
 	GitserverService_ReposStats_FullMethodName        = "/gitserver.v1.GitserverService/ReposStats"
-
 )
 
 // GitserverServiceClient is the client API for GitserverService service.
@@ -39,7 +38,6 @@ type GitserverServiceClient interface {
 	Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (GitserverService_ArchiveClient, error)
 	RepoClone(ctx context.Context, in *RepoCloneRequest, opts ...grpc.CallOption) (*RepoCloneResponse, error)
 	RepoCloneProgress(ctx context.Context, in *RepoCloneProgressRequest, opts ...grpc.CallOption) (*RepoCloneProgressResponse, error)
-
 	ReposStats(ctx context.Context, in *ReposStatsRequest, opts ...grpc.CallOption) (*ReposStatsResponse, error)
 }
 
@@ -193,7 +191,6 @@ type GitserverServiceServer interface {
 	Archive(*ArchiveRequest, GitserverService_ArchiveServer) error
 	RepoClone(context.Context, *RepoCloneRequest) (*RepoCloneResponse, error)
 	RepoCloneProgress(context.Context, *RepoCloneProgressRequest) (*RepoCloneProgressResponse, error)
-
 	ReposStats(context.Context, *ReposStatsRequest) (*ReposStatsResponse, error)
 	mustEmbedUnimplementedGitserverServiceServer()
 }
@@ -220,7 +217,6 @@ func (UnimplementedGitserverServiceServer) RepoClone(context.Context, *RepoClone
 func (UnimplementedGitserverServiceServer) RepoCloneProgress(context.Context, *RepoCloneProgressRequest) (*RepoCloneProgressResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RepoCloneProgress not implemented")
 }
-
 func (UnimplementedGitserverServiceServer) ReposStats(context.Context, *ReposStatsRequest) (*ReposStatsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReposStats not implemented")
 }
@@ -353,7 +349,7 @@ func _GitserverService_RepoCloneProgress_Handler(srv interface{}, ctx context.Co
 	}
 	return interceptor(ctx, in, info, handler)
 }
-n
+
 func _GitserverService_ReposStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ReposStatsRequest)
 	if err := dec(in); err != nil {
@@ -392,7 +388,6 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _GitserverService_RepoCloneProgress_Handler,
 		},
 		{
-
 			MethodName: "ReposStats",
 			Handler:    _GitserverService_ReposStats_Handler,
 		},

@@ -1685,6 +1685,171 @@ func (x *RepoCloneResponse) GetError() string {
 	return ""
 }
 
+// RepoCloneProgressRequest is a request for information about the clone progress of multiple
+// repositories on gitserver.
+type RepoCloneProgressRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Repos []string `protobuf:"bytes,1,rep,name=repos,proto3" json:"repos,omitempty"`
+}
+
+func (x *RepoCloneProgressRequest) Reset() {
+	*x = RepoCloneProgressRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_gitserver_proto_msgTypes[24]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RepoCloneProgressRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RepoCloneProgressRequest) ProtoMessage() {}
+
+func (x *RepoCloneProgressRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_gitserver_proto_msgTypes[24]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RepoCloneProgressRequest.ProtoReflect.Descriptor instead.
+func (*RepoCloneProgressRequest) Descriptor() ([]byte, []int) {
+	return file_gitserver_proto_rawDescGZIP(), []int{24}
+}
+
+func (x *RepoCloneProgressRequest) GetRepos() []string {
+	if x != nil {
+		return x.Repos
+	}
+	return nil
+}
+
+// RepoCloneProgress is information about the clone progress of a repo
+type RepoCloneProgress struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// clone_in_progress is whether the repository is currently being cloned
+	CloneInProgress bool `protobuf:"varint,1,opt,name=clone_in_progress,json=cloneInProgress,proto3" json:"clone_in_progress,omitempty"`
+	// clone_progress is a progress message from the running clone command.
+	CloneProgress string `protobuf:"bytes,2,opt,name=clone_progress,json=cloneProgress,proto3" json:"clone_progress,omitempty"`
+	// cloned is whether the repository has been cloned successfully
+	Cloned bool `protobuf:"varint,3,opt,name=cloned,proto3" json:"cloned,omitempty"`
+}
+
+func (x *RepoCloneProgress) Reset() {
+	*x = RepoCloneProgress{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_gitserver_proto_msgTypes[25]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RepoCloneProgress) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RepoCloneProgress) ProtoMessage() {}
+
+func (x *RepoCloneProgress) ProtoReflect() protoreflect.Message {
+	mi := &file_gitserver_proto_msgTypes[25]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RepoCloneProgress.ProtoReflect.Descriptor instead.
+func (*RepoCloneProgress) Descriptor() ([]byte, []int) {
+	return file_gitserver_proto_rawDescGZIP(), []int{25}
+}
+
+func (x *RepoCloneProgress) GetCloneInProgress() bool {
+	if x != nil {
+		return x.CloneInProgress
+	}
+	return false
+}
+
+func (x *RepoCloneProgress) GetCloneProgress() string {
+	if x != nil {
+		return x.CloneProgress
+	}
+	return ""
+}
+
+func (x *RepoCloneProgress) GetCloned() bool {
+	if x != nil {
+		return x.Cloned
+	}
+	return false
+}
+
+// RepoCloneProgressResponse is the response to a repository clone progress request
+// for multiple repositories at the same time.
+type RepoCloneProgressResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// results is a map from repository name to clone progress information
+	Results map[string]*RepoCloneProgress `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+}
+
+func (x *RepoCloneProgressResponse) Reset() {
+	*x = RepoCloneProgressResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_gitserver_proto_msgTypes[26]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RepoCloneProgressResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RepoCloneProgressResponse) ProtoMessage() {}
+
+func (x *RepoCloneProgressResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_gitserver_proto_msgTypes[26]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RepoCloneProgressResponse.ProtoReflect.Descriptor instead.
+func (*RepoCloneProgressResponse) Descriptor() ([]byte, []int) {
+	return file_gitserver_proto_rawDescGZIP(), []int{26}
+}
+
+func (x *RepoCloneProgressResponse) GetResults() map[string]*RepoCloneProgress {
+	if x != nil {
+		return x.Results
+	}
+	return nil
+}
 
 // ReposStatsRequest is a empty request for the ReposStats RPC.
 type ReposStatsRequest struct {
@@ -1696,7 +1861,7 @@ type ReposStatsRequest struct {
 func (x *ReposStatsRequest) Reset() {
 	*x = ReposStatsRequest{}
 	if protoimpl.UnsafeEnabled {
-
+		mi := &file_gitserver_proto_msgTypes[27]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1710,7 +1875,6 @@ func (*ReposStatsRequest) ProtoMessage() {}
 
 func (x *ReposStatsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_gitserver_proto_msgTypes[27]
-
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1724,7 +1888,7 @@ func (x *ReposStatsRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use ReposStatsRequest.ProtoReflect.Descriptor instead.
 func (*ReposStatsRequest) Descriptor() ([]byte, []int) {
 	return file_gitserver_proto_rawDescGZIP(), []int{27}
-
+}
 
 // ReposStats is an aggregation of statistics from a gitserver.
 type ReposStatsResponse struct {
@@ -1744,7 +1908,6 @@ func (x *ReposStatsResponse) Reset() {
 	*x = ReposStatsResponse{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_gitserver_proto_msgTypes[28]
-
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1758,7 +1921,6 @@ func (*ReposStatsResponse) ProtoMessage() {}
 
 func (x *ReposStatsResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_gitserver_proto_msgTypes[28]
-
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1772,7 +1934,6 @@ func (x *ReposStatsResponse) ProtoReflect() protoreflect.Message {
 // Deprecated: Use ReposStatsResponse.ProtoReflect.Descriptor instead.
 func (*ReposStatsResponse) Descriptor() ([]byte, []int) {
 	return file_gitserver_proto_rawDescGZIP(), []int{28}
-
 }
 
 func (x *ReposStatsResponse) GetGitDirBytes() uint64 {
@@ -1803,7 +1964,6 @@ func (x *CommitMatch_Signature) Reset() {
 	*x = CommitMatch_Signature{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_gitserver_proto_msgTypes[29]
-
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1817,7 +1977,6 @@ func (*CommitMatch_Signature) ProtoMessage() {}
 
 func (x *CommitMatch_Signature) ProtoReflect() protoreflect.Message {
 	mi := &file_gitserver_proto_msgTypes[29]
-
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1867,7 +2026,6 @@ func (x *CommitMatch_MatchedString) Reset() {
 	*x = CommitMatch_MatchedString{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_gitserver_proto_msgTypes[30]
-
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1881,7 +2039,6 @@ func (*CommitMatch_MatchedString) ProtoMessage() {}
 
 func (x *CommitMatch_MatchedString) ProtoReflect() protoreflect.Message {
 	mi := &file_gitserver_proto_msgTypes[30]
-
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1925,7 +2082,6 @@ func (x *CommitMatch_Range) Reset() {
 	*x = CommitMatch_Range{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_gitserver_proto_msgTypes[31]
-
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1939,7 +2095,6 @@ func (*CommitMatch_Range) ProtoMessage() {}
 
 func (x *CommitMatch_Range) ProtoReflect() protoreflect.Message {
 	mi := &file_gitserver_proto_msgTypes[31]
-
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1983,7 +2138,6 @@ func (x *CommitMatch_Location) Reset() {
 	*x = CommitMatch_Location{}
 	if protoimpl.UnsafeEnabled {
 		mi := &file_gitserver_proto_msgTypes[32]
-
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1997,7 +2151,6 @@ func (*CommitMatch_Location) ProtoMessage() {}
 
 func (x *CommitMatch_Location) ProtoReflect() protoreflect.Message {
 	mi := &file_gitserver_proto_msgTypes[32]
-
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2337,7 +2490,6 @@ var file_gitserver_proto_rawDesc = []byte{
 	0x63, 0x65, 0x67, 0x72, 0x61, 0x70, 0x68, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e, 0x61, 0x6c,
 	0x2f, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2f, 0x76, 0x31, 0x62, 0x06, 0x70,
 	0x72, 0x6f, 0x74, 0x6f, 0x33,
-
 }
 
 var (
@@ -2354,7 +2506,6 @@ func file_gitserver_proto_rawDescGZIP() []byte {
 
 var file_gitserver_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_gitserver_proto_msgTypes = make([]protoimpl.MessageInfo, 34)
-
 var file_gitserver_proto_goTypes = []interface{}{
 	(OperatorKind)(0),                 // 0: gitserver.v1.OperatorKind
 	(*ExecRequest)(nil),               // 1: gitserver.v1.ExecRequest
@@ -2392,14 +2543,12 @@ var file_gitserver_proto_goTypes = []interface{}{
 	(*CommitMatch_Location)(nil),      // 33: gitserver.v1.CommitMatch.Location
 	nil,                               // 34: gitserver.v1.RepoCloneProgressResponse.ResultsEntry
 	(*timestamppb.Timestamp)(nil),     // 35: google.protobuf.Timestamp
-
 }
 var file_gitserver_proto_depIdxs = []int32{
 	6,  // 0: gitserver.v1.SearchRequest.revisions:type_name -> gitserver.v1.RevisionSpecifier
 	16, // 1: gitserver.v1.SearchRequest.query:type_name -> gitserver.v1.QueryNode
 	35, // 2: gitserver.v1.CommitBeforeNode.timestamp:type_name -> google.protobuf.Timestamp
 	35, // 3: gitserver.v1.CommitAfterNode.timestamp:type_name -> google.protobuf.Timestamp
-
 	0,  // 4: gitserver.v1.OperatorNode.kind:type_name -> gitserver.v1.OperatorKind
 	16, // 5: gitserver.v1.OperatorNode.operands:type_name -> gitserver.v1.QueryNode
 	7,  // 6: gitserver.v1.QueryNode.author_matches:type_name -> gitserver.v1.AuthorMatchesNode
@@ -2442,7 +2591,6 @@ var file_gitserver_proto_depIdxs = []int32{
 	27, // [27:27] is the sub-list for extension type_name
 	27, // [27:27] is the sub-list for extension extendee
 	0,  // [0:27] is the sub-list for field type_name
-
 }
 
 func init() { file_gitserver_proto_init() }
@@ -2741,7 +2889,6 @@ func file_gitserver_proto_init() {
 		}
 		file_gitserver_proto_msgTypes[24].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*RepoCloneProgressRequest); i {
-
 			case 0:
 				return &v.state
 			case 1:
@@ -2754,7 +2901,6 @@ func file_gitserver_proto_init() {
 		}
 		file_gitserver_proto_msgTypes[25].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*RepoCloneProgress); i {
-
 			case 0:
 				return &v.state
 			case 1:
@@ -2767,7 +2913,6 @@ func file_gitserver_proto_init() {
 		}
 		file_gitserver_proto_msgTypes[26].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*RepoCloneProgressResponse); i {
-
 			case 0:
 				return &v.state
 			case 1:
@@ -2815,7 +2960,6 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[30].Exporter = func(v interface{}, i int) interface{} {
-
 			switch v := v.(*CommitMatch_MatchedString); i {
 			case 0:
 				return &v.state
@@ -2828,7 +2972,6 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[31].Exporter = func(v interface{}, i int) interface{} {
-		file_gitserver_proto_msgTypes[28].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*CommitMatch_Range); i {
 			case 0:
 				return &v.state
@@ -2841,8 +2984,6 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[32].Exporter = func(v interface{}, i int) interface{} {
-
-		file_gitserver_proto_msgTypes[29].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*CommitMatch_Location); i {
 			case 0:
 				return &v.state
@@ -2877,7 +3018,6 @@ func file_gitserver_proto_init() {
 			RawDescriptor: file_gitserver_proto_rawDesc,
 			NumEnums:      1,
 			NumMessages:   34,
-
 			NumExtensions: 0,
 			NumServices:   1,
 		},
