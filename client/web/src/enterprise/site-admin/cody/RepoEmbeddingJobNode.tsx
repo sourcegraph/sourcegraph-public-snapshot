@@ -37,7 +37,7 @@ export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
     queuedAt,
     startedAt,
     failureMessage,
-    onCancel: onCancel,
+    onCancel,
 }) => (
     <li className="list-group-item p-2">
         <div className="d-flex justify-content-between">
