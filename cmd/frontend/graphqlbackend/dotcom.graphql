@@ -492,7 +492,17 @@ input UpdateCodyGatewayAccessInput {
     embeddingsAllowedModels: [String!]
 }
 
+"""
+A dotcom user allowed to access the Cody Gateway
+FOR INTERNAL USE ONLY.
+"""
 type DotcomCodyGatewayUser {
+    """
+    The user name of the user
+    """
     userName: String!
+    """
+    Cody Gateway access granted to this user. Properties may be inferred from dotcom site config, or be defined in overrides on the user.
+    """
     codyGatewayAccess: CodyGatewayAccess!
 }
