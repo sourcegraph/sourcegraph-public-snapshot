@@ -11,6 +11,7 @@ go_library(
         "//enterprise/internal/completions/client/dotcom",
         "//enterprise/internal/completions/client/openai",
         "//enterprise/internal/completions/types",
+        "//enterprise/internal/licensing",
         "//internal/conf",
         "//internal/conf/deploy",
         "//internal/httpcli",
