@@ -287,6 +287,7 @@ func downloadSignatureContent(url string) ([]byte, error) {
 
 	buf := bytes.NewBuffer(nil)
 	_, err = io.Copy(buf, resp.Body)
+	defer resp.Body.Close()
 	if err != nil {
 		return nil, err
 	}
