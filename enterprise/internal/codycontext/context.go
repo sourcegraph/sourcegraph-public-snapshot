@@ -155,7 +155,7 @@ func (c *ContextClient) getEmbeddingsContext(ctx context.Context, args GetContex
 	return res, nil
 }
 
-// getKeywordContext uses keyword search to populate
+// getKeywordContext uses keyword search to find relevant bits of context for Cody
 func (c *ContextClient) getKeywordContext(ctx context.Context, args GetContextArgs) (_ []FileChunkContext, err error) {
 	settings, err := settings.CurrentUserFinal(ctx, c.db)
 	if err != nil {
