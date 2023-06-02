@@ -417,29 +417,29 @@ message ListGitoliteResponse {
 
 // GetObjectRequest is a request to get a git object.
 message GetObjectRequest {
-    // repo is the name of the repo to get the object from.
-    string repo = 1;
-    // object_name is the name of the object to get.
-    string object_name = 2;
-  }
+  // repo is the name of the repo to get the object from.
+  string repo = 1;
+  // object_name is the name of the object to get.
+  string object_name = 2;
+}
 
-  // GetObjectResponse is the response from the GetObject RPC.
-  message GetObjectResponse {
-    // object is the git object.
-    GitObject object = 1;
-  }
+// GetObjectResponse is the response from the GetObject RPC.
+message GetObjectResponse {
+  // object is the git object.
+  GitObject object = 1;
+}
 
-  // GitObject is a git object.
-  message GitObject {
-    enum ObjectType {
-        OBJECT_TYPE_UNSPECIFIED = 0;
-        OBJECT_TYPE_COMMIT = 1;
-        OBJECT_TYPE_TAG = 2;
-        OBJECT_TYPE_TREE = 3;
-        OBJECT_TYPE_BLOB = 4;
-      }
-    // oid is the object id.
-    bytes oid = 1;
-    // type is the type of the object.
-    ObjectType type = 2;
+// GitObject is a git object.
+message GitObject {
+  enum ObjectType {
+    OBJECT_TYPE_UNSPECIFIED = 0;
+    OBJECT_TYPE_COMMIT = 1;
+    OBJECT_TYPE_TAG = 2;
+    OBJECT_TYPE_TREE = 3;
+    OBJECT_TYPE_BLOB = 4;
   }
+  // oid is the object id.
+  bytes oid = 1;
+  // type is the type of the object.
+  ObjectType type = 2;
+}
