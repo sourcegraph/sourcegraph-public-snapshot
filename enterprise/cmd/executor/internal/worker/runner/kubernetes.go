@@ -21,6 +21,7 @@ type kubernetesRunner struct {
 	internalLogger log.Logger
 	commandLogger  command.Logger
 	cmd            *command.KubernetesCommand
+	jobNames       []string
 	dir            string
 	options        command.KubernetesContainerOptions
 	// tmpDir is used to store temporary files used for k8s execution.
@@ -55,6 +56,19 @@ func (r *kubernetesRunner) TempDir() string {
 }
 
 func (r *kubernetesRunner) Teardown(ctx context.Context) error {
+	if !r.options.KeepJobs {
+		for _, name := range r.jobNames {
+			r.internalLogger.Debug("Deleting kubernetes job", log.String("name", name))
+			if err := r.cmd.DeleteJob(ctx, r.options.Namespace, name); err != nil {
+				r.internalLogger.Error(
+					"Failed to delete kubernetes job",
+					log.String("jobName", name),
+					log.Error(err),
+				)
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -70,7 +84,7 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 	if _, err := r.cmd.CreateJob(ctx, r.options.Namespace, job); err != nil {
 		return errors.Wrap(err, "creating job")
 	}
-	defer r.deleteJob(ctx, job.Name)
+	r.jobNames = append(r.jobNames, job.Name)
 
 	// Start the log entry for the command.
 	logEntry := r.commandLogger.LogEntry(spec.CommandSpec.Key, spec.CommandSpec.Command)
@@ -81,6 +95,8 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 	pod, podWaitErr := r.cmd.WaitForPodToSucceed(ctx, r.options.Namespace, job.Name)
 	// Handle when the wait failed to do the things.
 	if podWaitErr != nil && pod == nil {
+		// There is no pod to read the logs of. Finalize the log entry and return the error.
+		logEntry.Finalize(1)
 		return errors.Wrapf(podWaitErr, "waiting for job %s to complete", job.Name)
 	}
 	// Always read the logs, even if the job fails.
@@ -108,17 +124,4 @@ func (r *kubernetesRunner) Run(ctx context.Context, spec Spec) error {
 	}
 	r.internalLogger.Debug("Job completed successfully", log.Int("jobID", spec.JobID))
 	return readLogErr
-}
-
-func (r *kubernetesRunner) deleteJob(ctx context.Context, jobName string) {
-	if !r.options.KeepJobs {
-		r.internalLogger.Debug("Deleting kubernetes job", log.String("jobName", jobName))
-		if err := r.cmd.DeleteJob(ctx, r.options.Namespace, jobName); err != nil {
-			r.internalLogger.Error(
-				"Failed to delete kubernetes job",
-				log.String("jobName", jobName),
-				log.Error(err),
-			)
-		}
-	}
 }

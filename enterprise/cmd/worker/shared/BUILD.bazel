@@ -28,6 +28,7 @@ go_library(
         "//enterprise/internal/authz/subrepoperms",
         "//enterprise/internal/database",
         "//enterprise/internal/oobmigration/migrations",
+        "//internal/auth/userpasswd",
         "//internal/authz",
         "//internal/conf",
         "//internal/database",

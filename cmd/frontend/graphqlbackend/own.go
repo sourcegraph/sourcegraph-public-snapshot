@@ -64,6 +64,7 @@ type OwnResolver interface {
 
 	// Assigned ownership mutations.
 	AssignOwner(context.Context, *AssignOwnerArgs) (*EmptyResponse, error)
+	RemoveAssignedOwner(context.Context, *AssignOwnerArgs) (*EmptyResponse, error)
 
 	// Config.
 	OwnSignalConfigurations(ctx context.Context) ([]SignalConfigurationResolver, error)

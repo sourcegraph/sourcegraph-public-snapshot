@@ -61,8 +61,14 @@ func GetOwnIndexSchedulerRoutines(db database.DB, observationCtx *observation.Co
 	}
 
 	makeRoutine := func(jobType IndexJobType, op *observation.Operation, handler goroutine.Handler) goroutine.BackgroundRoutine {
-		ffw := newFeatureFlagWrapper(db, jobType, op, handler)
-		return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), jobType.Name, "", jobType.RefreshInterval, ffw, op)
+		return goroutine.NewPeriodicGoroutine(
+			context.Background(),
+			newFeatureFlagWrapper(db, jobType, op, handler),
+			goroutine.WithName(jobType.Name),
+			goroutine.WithDescription(""),
+			goroutine.WithInterval(jobType.RefreshInterval),
+			goroutine.WithOperation(op),
+		)
 	}
 
 	for _, jobType := range QueuePerRepoIndexJobs {
