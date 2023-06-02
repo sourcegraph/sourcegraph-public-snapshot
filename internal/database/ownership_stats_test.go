@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
+	"gotest.tools/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -14,11 +15,10 @@ import (
 
 type fakeCodeownersWalk map[string][]TreeCounts
 
-func (w fakeCodeownersWalk) Iterate(f func(counts TreeCounts) error) error {
+func (w fakeCodeownersWalk) Iterate(f func(string, TreeCounts) error) error {
 	for path, owners := range w {
 		for _, o := range owners {
-			o.Path = path
-			if err := f(o); err != nil {
+			if err := f(path, o); err != nil {
 				return err
 			}
 		}
@@ -58,6 +58,28 @@ func TestUpdateIndividualCountsSuccess(t *testing.T) {
 	if got, want := updatedRows, 5; got != want {
 		t.Errorf("UpdateIndividualCounts, updated rows, got %d, want %d", got, want)
 	}
-	// 3. Query counts back:
-	
+	// 3. Query back counts for file:
+	opts := TreeLocationOpts{
+		RepoID: repo.ID,
+		Path:   "file1",
+	}
+	var limitOffset *LimitOffset
+	got, err := d.OwnershipStats().QueryIndividualCounts(ctx, opts, limitOffset)
+	require.NoError(t, err)
+	want := []TreeCounts{
+		{CodeownersReference: "ownerA", CodeownedFileCount: 1},
+		{CodeownersReference: "ownerB", CodeownedFileCount: 1},
+	}
+	assert.DeepEqual(t, want, got)
+	// 4. Query back counts for repo root:
+	opts = TreeLocationOpts{
+		RepoID: repo.ID,
+	}
+	got, err = d.OwnershipStats().QueryIndividualCounts(ctx, opts, limitOffset)
+	require.NoError(t, err)
+	want = []TreeCounts{
+		{CodeownersReference: "ownerA", CodeownedFileCount: 2},
+		{CodeownersReference: "ownerB", CodeownedFileCount: 1},
+	}
+	assert.DeepEqual(t, want, got)
 }
