@@ -129,16 +129,64 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         void vscode.window.showTextDocument(task.fixupFile.uri, { selection: task.selectionRange })
     }
 
-    // TODO: Add support for applying fixup
-    // Placeholder function for applying fixup
+    // TODO: Rename these items which take tree nodes to reflect that.
     private applyFixup(treeItem?: FixupTaskTreeItem): void {
-        void vscode.window.showInformationMessage(`Applying fixup for task #${treeItem?.id} is not implemented yet...`)
-
-        if (treeItem?.contextValue === 'task' && treeItem?.id) {
-            const task = this.tasks.get(treeItem.id)
-            task?.apply()
+        if (treeItem?.contextValue !== 'task' || !treeItem?.id) {
             return
         }
+        const task = this.tasks.get(treeItem.id)
+        if (!task) {
+            return
+        }
+        task.apply() // Marks the task as being applied.
+        void this.applyTask(task)
+    }
+
+    private async applyTask(task: FixupTask): Promise<void> {
+        let editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === task.fixupFile.uri)
+        if (!editor) {
+            editor = await vscode.window.showTextDocument(task.fixupFile.uri)
+        }
+
+        const diff = task.diff
+        if (!diff?.clean) {
+            // TODO: If diff is missing, sychronously produce the diff; then apply it.
+            // If diff has conflicts we should try to re-spin.
+            vscode.window.showWarningMessage('applying fixup with incomplete/conflict diff is not yet implemented')
+            return
+        }
+
+        await editor.revealRange(task.selectionRange)
+        // TODO: Record a version of the source text so we know if the diff is
+        // applicable without recomputing it. DON'T apply edits if the diff is
+        // stale; it may not be clean.
+        const editOk = await editor.edit(editBuilder => {
+            for (const edit of diff.edits) {
+                // TODO: This edit-range-to-vscode-range is duplicated, de-duplicate it
+                editBuilder.replace(
+                    new vscode.Range(
+                        new vscode.Position(edit.range.start.line, edit.range.start.character),
+                        new vscode.Position(edit.range.end.line, edit.range.end.character)
+                    ),
+                    edit.text
+                )
+            }
+        })
+
+        if (!editOk) {
+            // TODO: Try to recover, for example by respinning
+            vscode.window.showWarningMessage('edit did not apply')
+            return
+        }
+
+        task.stop() // TODO: is this the right state for being all finished?
+        // TODO: Delete finished tasks at some point. Maybe here; later if we
+        // want to let people undo or highlight where the edit happened.
+        // Localize the code in one place. This could also be the time to
+        // disdain interest in FixupFiles if there are no other tasks.
+        this.decorator.didCompleteTask(task)
+        this.needsDiffUpdate_.delete(task)
+        this.tasks.delete(task.id)
     }
 
     // TODO: Add support for applying fixup to all tasks in a directory
