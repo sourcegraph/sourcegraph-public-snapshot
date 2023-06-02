@@ -211,6 +211,9 @@ func (b bag) FindResolved(ref Reference) (codeowners.ResolvedOwner, bool) {
 		if refCtx, ok := b.references[k]; ok {
 			if id := refCtx.resolvedUserID; id != 0 {
 				userRefs := b.resolvedUsers[id]
+				if userRefs == nil {
+					continue
+				}
 				// TODO: Email resolution here is best effort,
 				// we do not know if this is primary email.
 				var email *string
