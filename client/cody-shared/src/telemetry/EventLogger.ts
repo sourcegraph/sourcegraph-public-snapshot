@@ -1,4 +1,3 @@
-import { get } from 'lodash'
 import * as vscode from 'vscode'
 
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
