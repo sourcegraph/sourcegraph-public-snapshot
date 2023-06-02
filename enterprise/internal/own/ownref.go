@@ -301,12 +301,12 @@ func (b *bag) Resolve(ctx context.Context, db edb.EnterpriseDB) error {
 			// Team resolved
 			if teamRefs != nil {
 				id := teamRefs.team.ID
-				refCtx.resolvedTeamID = id
 				if _, ok := b.resolvedTeams[id]; !ok {
 					b.resolvedTeams[id] = teamRefs
 				}
 				// Team was referred to either by ID or by name, need to link back.
 				teamRefs.linkBack(b)
+				refCtx.resolvedTeamID = id
 			}
 		}
 	}
