@@ -56,6 +56,9 @@ extend type GitTree {
         after: String
     ): OwnershipConnection!
 
+    """
+    Ownership statistics for all the files (deeply) contained in this tree.
+    """
     ownershipStats: OwnershipStats!
 }
 
@@ -77,9 +80,13 @@ extend type GitCommit {
 
 type OwnershipStats {
     """
-    This should move to repo
+    Total files considered for ownership statistics (owned + unowned).
     """
     totalFiles: Int!
+
+    """
+    Total files with ownership assigned by CODEOWNERS.
+    """
     totalCodeownedFiles: Int!
 }
 
@@ -310,6 +317,9 @@ extend type Query {
     """
     ownSignalConfigurations: [OwnSignalConfiguration!]!
 
+    """
+    Returns ownership stats for the whole Sourcegraph instance
+    """
     instanceOwnershipStats: OwnershipStats!
 }
 
