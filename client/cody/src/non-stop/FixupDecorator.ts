@@ -5,37 +5,33 @@ import { Diff } from './diff'
 export class FixupDecorator implements vscode.Disposable {
     private decorationCodyConflictMarker_: vscode.TextEditorDecorationType
     private decorationCodyConflicted_: vscode.TextEditorDecorationType
-    private decorationCodyEdited_: vscode.TextEditorDecorationType
+    private decorationCodyIncoming_: vscode.TextEditorDecorationType
 
     constructor() {
-        // TODO: Switch colors depending on the theme
         this.decorationCodyConflictMarker_ = vscode.window.createTextEditorDecorationType({
-            borderColor: 'orange',
+            backgroundColor: new vscode.ThemeColor('cody.fixup.conflictBackground'),
+            borderColor: new vscode.ThemeColor('cody.fixup.conflictBorder'),
             borderStyle: 'solid',
             borderWidth: '1px',
-            backgroundColor: 'lightorange',
-            before: {
-                contentText: '\u{1F4A5}',
-            },
         })
         this.decorationCodyConflicted_ = vscode.window.createTextEditorDecorationType({
-            borderColor: '#FBBF77',
-            backgroundColor: '#F17829',
+            backgroundColor: new vscode.ThemeColor('cody.fixup.conflictedBackground'),
+            borderColor: new vscode.ThemeColor('cody.fixup.conflictedBorder'),
             borderStyle: 'solid',
             borderWidth: '1px',
         })
-        this.decorationCodyEdited_ = vscode.window.createTextEditorDecorationType({
-            borderColor: '#9CDCFE',
+        this.decorationCodyIncoming_ = vscode.window.createTextEditorDecorationType({
+            backgroundColor: new vscode.ThemeColor('cody.fixup.incomingBackground'),
+            borderColor: new vscode.ThemeColor('cody.fixup.incomingBorder'),
             borderStyle: 'solid',
             borderWidth: '1px',
-            backgroundColor: '#569CD6',
         })
     }
 
     public dispose(): void {
         this.decorationCodyConflictMarker_.dispose()
         this.decorationCodyConflicted_.dispose()
-        this.decorationCodyEdited_.dispose()
+        this.decorationCodyIncoming_.dispose()
     }
 
     public decorate(editor: vscode.TextEditor, diff: Diff): void {
@@ -44,10 +40,10 @@ export class FixupDecorator implements vscode.Disposable {
             editor.setDecorations(this.decorationCodyConflicted_, [])
             editor.setDecorations(this.decorationCodyConflictMarker_, [])
         } else {
-            editor.setDecorations(this.decorationCodyEdited_, [])
+            editor.setDecorations(this.decorationCodyIncoming_, [])
         }
         editor.setDecorations(
-            diff.clean ? this.decorationCodyEdited_ : this.decorationCodyConflicted_,
+            diff.clean ? this.decorationCodyIncoming_ : this.decorationCodyConflicted_,
             diff.edits.map(
                 edit =>
                     new vscode.Range(

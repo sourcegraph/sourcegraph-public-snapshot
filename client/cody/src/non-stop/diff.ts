@@ -282,7 +282,7 @@ export function computeDiff(original: string, a: string, b: string, bStart: Posi
             mergedPos = updatedPosition(mergedPos, chunk[2])
         } else {
             // Conflict! chunk[0]/chunk[2]`
-            conflicts.push({ start: originalPos, end: originalPos })
+            conflicts.push({ start: originalPos, end: originalEnd })
             clean = false
             // We give up on tracking positions.
         }

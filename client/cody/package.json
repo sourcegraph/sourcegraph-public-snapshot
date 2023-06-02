@@ -75,6 +75,56 @@
     "onStartupFinished"
   ],
   "contributes": {
+    "colors": [
+      {
+        "id": "cody.fixup.conflictBackground",
+        "description": "The background of text Cody will edit where there is a specific conflict with your changes.",
+        "defaults": {
+          "light": "mergeEditor.conflictingLines.background",
+          "dark": "mergeEditor.conflictingLines.background"
+        }
+      },
+      {
+        "id": "cody.fixup.conflictBorder",
+        "description": "The border of text Cody will edit, if there is a conflict with your changes.",
+        "defaults": {
+          "light": "mergeEditor.conflict.unhandledFocused.border",
+          "dark": "mergeEditor.conflict.unhandledFocused.border"
+        }
+      },
+      {
+        "id": "cody.fixup.conflictedBackground",
+        "description": "The background of text Cody will edit, if there is a conflict with your changes.",
+        "defaults": {
+          "light": "#ffffff00",
+          "dark": "#00000000"
+        }
+      },
+      {
+        "id": "cody.fixup.conflictedBorder",
+        "description": "The border of text Cody will edit, if there is a conflict with your changes.",
+        "defaults": {
+          "light": "mergeEditor.conflict.unhandledUnfocused.border",
+          "dark": "mergeEditor.conflict.unhandledUnfocused.border"
+        }
+      },
+      {
+        "id": "cody.fixup.incomingBackground",
+        "description": "The background of text Cody will edit.",
+        "defaults": {
+          "light": "merge.incomingContentBackground",
+          "dark": "merge.incomingContentBackground"
+        }
+      },
+      {
+        "id": "cody.fixup.incomingBorder",
+        "description": "The border around text Cody will edit.",
+        "defaults": {
+          "light": "#436EB1",
+          "dark": "#436EB1"
+        }
+      }
+    ],
     "viewsContainers": {
       "activitybar": [
         {
