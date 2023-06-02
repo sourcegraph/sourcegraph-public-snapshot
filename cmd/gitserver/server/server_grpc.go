@@ -171,6 +171,18 @@ func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 	})
 }
 
+func (gs *GRPCServer) RepoClone(ctx context.Context, in *proto.RepoCloneRequest) (*proto.RepoCloneResponse, error) {
+
+	repo := protocol.NormalizeRepo(api.RepoName(in.GetRepo()))
+
+	if _, err := gs.Server.cloneRepo(ctx, repo, &cloneOptions{Block: false}); err != nil {
+
+		return &proto.RepoCloneResponse{Error: err.Error()}, nil
+	}
+
+	return &proto.RepoCloneResponse{Error: ""}, nil
+}
+
 func (gs *GRPCServer) ReposStats(ctx context.Context, req *proto.ReposStatsRequest) (*proto.ReposStatsResponse, error) {
 	b, err := gs.Server.readReposStatsFile(filepath.Join(gs.Server.ReposDir, reposStatsName))
 	if err != nil {

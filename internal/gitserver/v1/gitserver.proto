@@ -11,6 +11,7 @@ service GitserverService {
   rpc IsRepoCloneable(IsRepoCloneableRequest) returns (IsRepoCloneableResponse) {}
   rpc Search(SearchRequest) returns (stream SearchResponse) {}
   rpc Archive(ArchiveRequest) returns (stream ArchiveResponse) {}
+  rpc RepoClone(RepoCloneRequest) returns (RepoCloneResponse) {}
   rpc ReposStats(ReposStatsRequest) returns (ReposStatsResponse) {}
 }
 
@@ -227,6 +228,17 @@ message IsRepoCloneableResponse {
   bool cloned = 2;
   // reason is why the repository is not cloneable.
   string reason = 3;
+}
+
+// RepoCloneRequest is a request to clone a repository.
+message RepoCloneRequest {
+  // repo is the name of the repo to clone.
+  string repo = 1;
+}
+
+message RepoCloneResponse {
+  // error is the error that occurred during cloning.
+  string error = 1;
 }
 
 // ReposStatsRequest is a empty request for the ReposStats RPC.
