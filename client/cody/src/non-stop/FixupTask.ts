@@ -67,7 +67,6 @@ export class FixupTask {
 
     public apply(): void {
         this.setState(CodyTaskState.applying)
-        this.output(`Task #${this.id} is being applied...`)
     }
 
     private queue(): void {

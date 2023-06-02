@@ -3,6 +3,7 @@ import * as vscode from 'vscode'
 import { Diff } from './diff'
 import { FixupFile } from './FixupFile'
 import { FixupTask } from './FixupTask'
+import { CodyTaskState } from './utils'
 
 type TaskDecorations = {
     edits: vscode.Range[]
