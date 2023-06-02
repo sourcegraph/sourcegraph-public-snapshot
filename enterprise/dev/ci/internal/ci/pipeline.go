@@ -404,7 +404,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Temporary: on main branches, we build images with bazel binaries based on their toolchain and/or purpose. This step key is the first image in the array.
 		// This will be removed once we build images with wolfi.
 		ops.Merge(operations.NewNamedSet("Integration tests",
-			backendIntegrationTests(c.candidateImageTag(), "symbols"),
+			backendIntegrationTests(c.candidateImageTag(), "server"),
 			codeIntelQA(c.candidateImageTag()),
 		))
 		// End-to-end tests
