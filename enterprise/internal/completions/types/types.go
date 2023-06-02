@@ -75,6 +75,10 @@ func (b CompletionsFeature) IsValid() bool {
 }
 
 type CompletionsClient interface {
+	// Stream executions a completions request, streaming results to the callback.
+	// Callers should check for ErrStatusNotOK and handle the error appropriately.
 	Stream(context.Context, CompletionsFeature, CompletionRequestParameters, SendCompletionEvent) error
+	// Complete executions a completions request until done. Callers should check
+	// for ErrStatusNotOK and handle the error appropriately.
 	Complete(context.Context, CompletionsFeature, CompletionRequestParameters) (*CompletionResponse, error)
 }

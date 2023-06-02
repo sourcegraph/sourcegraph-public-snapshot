@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/service/svcmain"
 )
 
-var sentryDSN = env.Get("LLM_PROXY_SENTRY_DSN", "", "Sentry DSN")
+var sentryDSN = env.Get("CODY_GATEWAY_SENTRY_DSN", "", "Sentry DSN")
 
 func main() {
 	sanitycheck.Pass()

@@ -22,16 +22,16 @@ func TestNewActor(t *testing.T) {
 			name: "not dev only",
 			args: args{
 				dotcom.ProductSubscriptionState{
-					LlmProxyAccess: dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccess{
-						LLMProxyAccessFields: dotcom.LLMProxyAccessFields{
+					CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
+						CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
 							Enabled: true,
-							ChatCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit{
+							ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
 								RateLimitFields: dotcom.RateLimitFields{
 									Limit:           10,
 									IntervalSeconds: 10,
 								},
 							},
-							CodeCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit{
+							CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
 								RateLimitFields: dotcom.RateLimitFields{
 									Limit:           10,
 									IntervalSeconds: 10,
@@ -48,16 +48,16 @@ func TestNewActor(t *testing.T) {
 			name: "dev only, not a dev license",
 			args: args{
 				dotcom.ProductSubscriptionState{
-					LlmProxyAccess: dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccess{
-						LLMProxyAccessFields: dotcom.LLMProxyAccessFields{
+					CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
+						CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
 							Enabled: true,
-							ChatCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit{
+							ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
 								RateLimitFields: dotcom.RateLimitFields{
 									Limit:           10,
 									IntervalSeconds: 10,
 								},
 							},
-							CodeCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit{
+							CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
 								RateLimitFields: dotcom.RateLimitFields{
 									Limit:           10,
 									IntervalSeconds: 10,
@@ -74,16 +74,16 @@ func TestNewActor(t *testing.T) {
 			name: "dev only, is a dev license",
 			args: args{
 				dotcom.ProductSubscriptionState{
-					LlmProxyAccess: dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccess{
-						LLMProxyAccessFields: dotcom.LLMProxyAccessFields{
+					CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
+						CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
 							Enabled: true,
-							ChatCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit{
+							ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
 								RateLimitFields: dotcom.RateLimitFields{
 									Limit:           10,
 									IntervalSeconds: 10,
 								},
 							},
-							CodeCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit{
+							CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
 								RateLimitFields: dotcom.RateLimitFields{
 									Limit:           10,
 									IntervalSeconds: 10,

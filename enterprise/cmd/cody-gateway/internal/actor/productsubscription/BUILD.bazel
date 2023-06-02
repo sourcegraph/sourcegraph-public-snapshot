@@ -11,11 +11,13 @@ go_library(
         "//enterprise/internal/codygateway",
         "//enterprise/internal/completions/types",
         "//enterprise/internal/licensing",
+        "//enterprise/internal/productsubscription",
         "//internal/trace",
         "//lib/errors",
         "@com_github_gregjones_httpcache//:httpcache",
         "@com_github_khan_genqlient//graphql",
         "@com_github_sourcegraph_log//:log",
+        "@com_github_vektah_gqlparser_v2//gqlerror",
         "@org_golang_x_exp//slices",
     ],
 )

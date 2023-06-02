@@ -8,6 +8,7 @@ import (
 
 type RankingServiceResolver interface {
 	RankingSummary(ctx context.Context) ([]RankingSummaryResolver, error)
+	BumpDerivativeGraphKey(ctx context.Context) (*EmptyResponse, error)
 }
 
 type RankingSummaryResolver interface {

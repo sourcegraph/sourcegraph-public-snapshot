@@ -68,12 +68,13 @@ var SourcegraphDockerImagesMisc = []string{
 	"jaeger-all-in-one",
 	"cody-gateway",
 	"sg",
-	"cody-slack"}
+	"cody-slack",
+}
 
 // These are images that use the musl build chain for bazel, and break the cache if built
 // on a system with glibc. They are built on a separate pipeline. They're also the images current e2e/integration
 // tests require so we want to build them as quickly as possible.
-var SourcegraphDockerImagesTestDeps = []string{"symbols", "server", "executor"}
+var SourcegraphDockerImagesTestDeps = []string{"server", "executor"}
 
 // DeploySourcegraphDockerImages denotes all Docker images that are included in a typical
 // deploy-sourcegraph installation.
@@ -107,6 +108,7 @@ var DeploySourcegraphDockerImages = []string{
 	"searcher",
 	"syntax-highlighter",
 	"worker",
+	"symbols",
 }
 
 // CandidateImageTag provides the tag for a candidate image built for this Buildkite run.

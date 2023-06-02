@@ -29,6 +29,7 @@ import { LocalStorage } from '../services/LocalStorageProvider'
 import { CODY_ACCESS_TOKEN_SECRET, SecretStorage } from '../services/SecretStorageProvider'
 import { TestSupport } from '../test-support'
 
+import { fastFilesExist } from './fastFileFinder'
 import {
     AuthStatus,
     ConfigurationSubsetForWebview,
@@ -39,7 +40,7 @@ import {
     isLoggedIn,
 } from './protocol'
 import { getRecipe } from './recipes'
-import { filesExist, getCodebaseContext } from './utils'
+import { getCodebaseContext } from './utils'
 
 export async function getAuthStatus(
     config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
@@ -305,14 +306,20 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 const lastInteraction = this.transcript.getLastInteraction()
                 if (lastInteraction) {
                     const displayText = reformatBotMessage(text, responsePrefix)
-                    let { text: highlightedDisplayText } = await highlightTokens(displayText || '', filesExist)
+                    const fileExistFunc = (filePaths: string[]): Promise<{ [filePath: string]: boolean }> => {
+                        const rootPath = this.editor.getWorkspaceRootPath()
+                        if (!rootPath) {
+                            return Promise.resolve({})
+                        }
+                        return fastFilesExist(this.rgPath, rootPath, filePaths)
+                    }
+                    let { text: highlightedDisplayText } = await highlightTokens(displayText || '', fileExistFunc)
                     // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
                     highlightedDisplayText = await this.guardrailsAnnotateAttributions(highlightedDisplayText)
                     this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
                     this.editor.controllers.inline.reply(highlightedDisplayText)
                 }
                 void this.onCompletionEnd()
-                this.publishEmbeddingsError()
             },
         })
 
@@ -367,13 +374,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.sendTranscript()
         void this.saveTranscriptToChatHistory()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', false)
-        if (!this.codebaseContext.checkEmbeddingsConnection()) {
-            this.publishEmbeddingsError()
-            this.sendErrorToWebview(
-                'Error while establishing embeddings server connection. Please try after sometime! If the issue still persists contact support'
-            )
-            return
-        }
+        this.logEmbeddingsSearchErrors()
     }
 
     private async onHumanMessageSubmitted(text: string, submitType: 'user' | 'suggestion'): Promise<void> {
@@ -667,13 +668,17 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     /**
-     * Publish embedding connections or results error to webview
+     * Send embedding connections or results error to output
      */
-    private publishEmbeddingsError(): void {
-        const searchErrors = this.codebaseContext.getEmbeddingSearchErrors()
-        if (searchErrors.length) {
-            this.sendErrorToWebview(searchErrors)
+    private logEmbeddingsSearchErrors(): void {
+        if (this.config.useContext !== 'embeddings') {
             return
+        }
+        const searchErrors = this.codebaseContext.getEmbeddingSearchErrors()
+        // Display error message as assistant response for users with indexed codebase but getting search errors
+        if (this.codebaseContext.checkEmbeddingsConnection() && searchErrors) {
+            this.transcript.addErrorAsAssistantResponse(searchErrors)
+            debug('ChatViewProvider:onLogEmbeddingsErrors', '', { verbose: searchErrors })
         }
     }
 

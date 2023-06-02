@@ -12,13 +12,16 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor/anonymous"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor/productsubscription"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // TODO(@bobheadxi): Try to rewrite this as a table-driven test for less copy-pasta.
@@ -58,16 +61,16 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 						Id:         "UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==",
 						Uuid:       "6452a8fc-e650-45a7-a0a2-357f776b3b46",
 						IsArchived: false,
-						LlmProxyAccess: dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccess{
-							LLMProxyAccessFields: dotcom.LLMProxyAccessFields{
+						CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
+							CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
 								Enabled: true,
-								ChatCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit{
+								ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
 									RateLimitFields: dotcom.RateLimitFields{
 										Limit:           10,
 										IntervalSeconds: 10,
 									},
 								},
-								CodeCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit{
+								CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
 									RateLimitFields: dotcom.RateLimitFields{
 										Limit:           10,
 										IntervalSeconds: 10,
@@ -140,6 +143,47 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 		assert.Equal(t, http.StatusForbidden, w.Code)
 	})
 
+	t.Run("access token denied from sources", func(t *testing.T) {
+		cache := NewMockCache()
+		client := NewMockClient()
+		client.MakeRequestFunc.SetDefaultHook(func(_ context.Context, _ *graphql.Request, resp *graphql.Response) error {
+			return gqlerror.List{
+				{
+					Message:    "access denied",
+					Extensions: map[string]any{"code": codygateway.GQLErrCodeProductSubscriptionNotFound},
+				},
+			}
+		})
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
+		r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
+		(&Authenticator{
+			Logger:      logger,
+			EventLogger: events.NewStdoutLogger(logger),
+			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client, true)},
+		}).Middleware(next).ServeHTTP(w, r)
+		assert.Equal(t, http.StatusUnauthorized, w.Code)
+	})
+
+	t.Run("server error from sources", func(t *testing.T) {
+		cache := NewMockCache()
+		client := NewMockClient()
+		client.MakeRequestFunc.SetDefaultHook(func(_ context.Context, _ *graphql.Request, resp *graphql.Response) error {
+			return errors.New("server error")
+		})
+
+		w := httptest.NewRecorder()
+		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
+		r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
+		(&Authenticator{
+			Logger:      logger,
+			EventLogger: events.NewStdoutLogger(logger),
+			Sources:     actor.Sources{productsubscription.NewSource(logger, cache, client, true)},
+		}).Middleware(next).ServeHTTP(w, r)
+		assert.Equal(t, http.StatusServiceUnavailable, w.Code)
+	})
+
 	t.Run("internal mode, authenticated but not dev license", func(t *testing.T) {
 		cache := NewMockCache()
 		client := NewMockClient()
@@ -150,16 +194,16 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 						Id:         "UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==",
 						Uuid:       "6452a8fc-e650-45a7-a0a2-357f776b3b46",
 						IsArchived: false,
-						LlmProxyAccess: dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccess{
-							LLMProxyAccessFields: dotcom.LLMProxyAccessFields{
+						CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
+							CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
 								Enabled: true,
-								ChatCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit{
+								ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
 									RateLimitFields: dotcom.RateLimitFields{
 										Limit:           10,
 										IntervalSeconds: 10,
 									},
 								},
-								CodeCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit{
+								CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
 									RateLimitFields: dotcom.RateLimitFields{
 										Limit:           10,
 										IntervalSeconds: 10,
@@ -199,16 +243,16 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 						Id:         "UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==",
 						Uuid:       "6452a8fc-e650-45a7-a0a2-357f776b3b46",
 						IsArchived: false,
-						LlmProxyAccess: dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccess{
-							LLMProxyAccessFields: dotcom.LLMProxyAccessFields{
+						CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
+							CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
 								Enabled: true,
-								ChatCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit{
+								ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
 									RateLimitFields: dotcom.RateLimitFields{
 										Limit:           10,
 										IntervalSeconds: 10,
 									},
 								},
-								CodeCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit{
+								CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
 									RateLimitFields: dotcom.RateLimitFields{
 										Limit:           10,
 										IntervalSeconds: 10,
@@ -248,16 +292,16 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 						Id:         "UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==",
 						Uuid:       "6452a8fc-e650-45a7-a0a2-357f776b3b46",
 						IsArchived: false,
-						LlmProxyAccess: dotcom.ProductSubscriptionStateLlmProxyAccessLLMProxyAccess{
-							LLMProxyAccessFields: dotcom.LLMProxyAccessFields{
+						CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
+							CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
 								Enabled: true,
-								ChatCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsChatCompletionsRateLimitLLMProxyRateLimit{
+								ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
 									RateLimitFields: dotcom.RateLimitFields{
 										Limit:           10,
 										IntervalSeconds: 10,
 									},
 								},
-								CodeCompletionsRateLimit: &dotcom.LLMProxyAccessFieldsCodeCompletionsRateLimitLLMProxyRateLimit{
+								CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
 									RateLimitFields: dotcom.RateLimitFields{
 										Limit:           10,
 										IntervalSeconds: 10,

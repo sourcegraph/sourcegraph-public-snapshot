@@ -1,11 +1,11 @@
-fragment RateLimitFields on LLMProxyRateLimit {
+fragment RateLimitFields on CodyGatewayRateLimit {
     allowedModels
     source
     limit
     intervalSeconds
 }
 
-fragment LLMProxyAccessFields on LLMProxyAccess {
+fragment CodyGatewayAccessFields on CodyGatewayAccess {
     enabled
     chatCompletionsRateLimit {
         ...RateLimitFields
@@ -19,8 +19,8 @@ fragment ProductSubscriptionState on ProductSubscription {
     id
     uuid
     isArchived
-    llmProxyAccess {
-        ...LLMProxyAccessFields
+    codyGatewayAccess {
+        ...CodyGatewayAccessFields
     }
     activeLicense {
         info {
