@@ -1,13 +1,15 @@
-import { FunctionComponent, useEffect } from 'react'
+import React, { FunctionComponent, useEffect } from 'react'
 
+import { mdiTrashCan } from '@mdi/js'
 import classNames from 'classnames'
 import { format, formatDistance, parseISO } from 'date-fns'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useMutation } from '@sourcegraph/http-client'
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Container, ErrorAlert, H4, LoadingSpinner, PageHeader, Text } from '@sourcegraph/wildcard'
+import { Button, Container, ErrorAlert, H4, Icon, LoadingSpinner, PageHeader, Text } from '@sourcegraph/wildcard'
 
+import { Collapsible } from '../../../../components/Collapsible'
 import { BumpDerivativeGraphKeyResult, BumpDerivativeGraphKeyVariables } from '../../../../graphql-operations'
 
 import { BUMP_DERIVATIVE_GRAPH_KEY, useRankingSummary as defaultUseRankingSummary } from './backend'
@@ -58,16 +60,18 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
                 }
             />
 
+            <Text size="small" className="text-right">
+                Next job will begin in TODO.
+            </Text>
+
             {data &&
                 (data.rankingSummary.length === 0 ? (
                     <Container>
                         <>No data.</>
                     </Container>
                 ) : (
-                    data.rankingSummary.map(summary => (
-                        <Container key={summary.graphKey} className="mb-3">
-                            <Summary summary={summary} />
-                        </Container>
+                    data.rankingSummary.map((summary, index) => (
+                        <Summary key={summary.graphKey} summary={summary} historic={index > 0} className="mb-3" />
                     ))
                 ))}
         </>
@@ -90,36 +94,52 @@ interface Progress {
 
 interface SummaryProps {
     summary: Summary
+    historic?: boolean
+    className?: string
 }
 
-const Summary: FunctionComponent<SummaryProps> = ({ summary }) => (
-    <div className="p-2">
-        <H4 className="mb-4">Ranking calculation ({summary.graphKey})</H4>
-
-        <div>
-            <Progress
-                title="Path mapper"
-                subtitle="Reads the paths of SCIP indexes exported for ranking and produce path/zero-count pairs consumed by the ranking phase."
-                progress={summary.pathMapperProgress}
-            />
-
-            <Progress
-                title="Reference count mapper"
-                subtitle="Reads the symbol references of SCIP indexes exported for ranking, join them to exported definitions, and produce definition path/count pairs consumed by the ranking phase."
-                progress={summary.referenceMapperProgress}
-                className="mt-4"
-            />
-
-            {summary.reducerProgress && (
+const Summary: FunctionComponent<SummaryProps> = ({ summary, historic = false, className = '' }) => (
+    <Container className={className}>
+        <Collapsible
+            title={
+                <>
+                    <code>{summary.graphKey}</code>
+                </>
+            }
+            titleAtStart={true}
+            defaultExpanded={!historic}
+        >
+            <div className="pt-4">
                 <Progress
-                    title="Reference count reducer"
-                    subtitle="Sums the references for each definition path produced by the mapping phases and groups them by repository."
-                    progress={summary.reducerProgress}
+                    title="Path mapper"
+                    subtitle="Reads the paths of SCIP indexes exported for ranking and produce path/zero-count pairs consumed by the ranking phase."
+                    progress={summary.pathMapperProgress}
+                />
+
+                <Progress
+                    title="Reference count mapper"
+                    subtitle="Reads the symbol references of SCIP indexes exported for ranking, join them to exported definitions, and produce definition path/count pairs consumed by the ranking phase."
+                    progress={summary.referenceMapperProgress}
                     className="mt-4"
                 />
-            )}
-        </div>
-    </div>
+
+                {summary.reducerProgress && (
+                    <Progress
+                        title="Reference count reducer"
+                        subtitle="Sums the references for each definition path produced by the mapping phases and groups them by repository."
+                        progress={summary.reducerProgress}
+                        className="mt-4"
+                    />
+                )}
+
+                {historic && (
+                    <Button variant="danger" className="p-2 mt-4">
+                        <Icon aria-hidden={true} svgPath={mdiTrashCan} /> Delete
+                    </Button>
+                )}
+            </div>
+        </Collapsible>
+    </Container>
 )
 
 interface ProgressProps {
