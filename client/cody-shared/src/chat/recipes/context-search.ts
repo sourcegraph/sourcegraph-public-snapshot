@@ -1,3 +1,5 @@
+import path from 'path'
+
 import * as vscode from 'vscode'
 
 import { CodebaseContext } from '../../codebase-context'
@@ -71,10 +73,8 @@ export class ContextSearch implements Recipe {
             }
             let uri = new URL(`/search?q=context:global+file:${file.fileName}`, endpointUri).href
 
-            // TODO: Open file in editor (the uri is currently being stripped by the chat component)
-            // This current does not work hence the wsRootPath === uri
-            if (wsRootPath === uri) {
-                const vsceUri = vscode.Uri.parse('vscode://file:' + wsRootPath + '/' + file.fileName).toString()
+            if (wsRootPath != null) {
+                const vsceUri = vscode.Uri.parse('vscode://file:' + path.join(wsRootPath, file.fileName)).toString()
                 uri = new URL(vsceUri).href
             }
 
