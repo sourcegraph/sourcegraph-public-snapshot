@@ -6,7 +6,7 @@ import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
 import { ChatQuestion } from './chat-question'
-import { FileFlow } from './file-flow'
+import { FileTouch } from './file-touch'
 import { Fixup } from './fixup'
 import { commandRegex } from './helpers'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
@@ -14,13 +14,15 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 export class InlineAssist implements Recipe {
     public id: RecipeID = 'inline-chat'
 
+    constructor(private debug: (filterLabel: string, text: string, ...args: unknown[]) => void) {}
+
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        // Check if this is a fix-up request
+        // Check if this is a touch request
         if (commandRegex.touch.test(humanChatInput)) {
-            return new FileFlow().getInteraction(humanChatInput.replace(commandRegex.touch, ''), context)
+            return new FileTouch(this.debug).getInteraction(humanChatInput.replace(commandRegex.touch, ''), context)
         }
 
-        // Check if this is a fix-up request
+        // Check if this is a fixup request
         if (commandRegex.fix.test(humanChatInput)) {
             return new Fixup().getInteraction(humanChatInput.replace(commandRegex.fix, ''), context)
         }
@@ -29,10 +31,6 @@ export class InlineAssist implements Recipe {
         if (!humanChatInput || !selection) {
             await context.editor.showWarningMessage('Failed to start Inline Chat: empty input or selection.')
             return null
-        }
-        // Check if this is a fix-up request
-        if (/^\/f(ix)?\s/i.test(humanChatInput)) {
-            return new Fixup().getInteraction(humanChatInput.replace(/^\/f(ix)?\s/i, ''), context)
         }
 
         const truncatedText = truncateText(humanChatInput, MAX_HUMAN_INPUT_TOKENS)
