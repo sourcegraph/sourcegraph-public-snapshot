@@ -6,11 +6,16 @@ function _getServerEndpointFromConfig(config: vscode.WorkspaceConfiguration): st
     return config.get<string>('cody.serverEndpoint', '')
 }
 
+function _getUseContextFromConfig(config: vscode.WorkspaceConfiguration): string {
+    return config.get<string>('cody.useContext', '')
+}
+
 const config = vscode.workspace.getConfiguration()
 
 export class EventLogger {
     private serverEndpoint = _getServerEndpointFromConfig(config)
     private extensionDetails = { ide: 'VSCode', ideExtensionType: 'Cody' }
+    private useContext = _getUseContextFromConfig(config)
 
     private constructor(private gqlAPIClient: SourcegraphGraphQLAPIClient) {}
 
@@ -31,13 +36,14 @@ export class EventLogger {
             ...eventProperties,
             serverEndpoint: this.serverEndpoint,
             extensionDetails: this.extensionDetails,
+            useContext: this.useContext,
         }
         const publicArgument = {
             ...publicProperties,
             serverEndpoint: this.serverEndpoint,
             extensionDetails: this.extensionDetails,
+            useContext: this.useContext,
         }
-        console.log('api requqest for anonID: ' + anonymousUserID)
         try {
             await this.gqlAPIClient.logEvent({
                 event: eventName,

@@ -23,17 +23,14 @@ export async function updateEventLogger(
         eventLoggerGQLClient.onConfigurationChange(config)
     }
 }
-
 export function logEvent(eventName: string, eventProperties?: any, publicProperties?: any): void {
     if (!eventLogger || !anonymousUserID) {
         return
     }
-
     const argument = {
         ...eventProperties,
         version: packageVersion,
     }
-
     const publicArgument = {
         ...publicProperties,
         version: packageVersion,
