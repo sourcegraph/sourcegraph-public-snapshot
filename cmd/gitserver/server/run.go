@@ -1,4 +1,4 @@
-package common
+package server
 
 import (
 	"bytes"
@@ -18,18 +18,18 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 )
 
-// UnsetExitStatus is a sentinel value for an unknown/unset exit status.
-const UnsetExitStatus = -10810
+// unsetExitStatus is a sentinel value for an unknown/unset exit status.
+const unsetExitStatus = -10810
 
-// RunCommandMock is set by tests. When non-nil it is run instead of
+// runCommandMock is set by tests. When non-nil it is run instead of
 // runCommand
-var RunCommandMock func(context.Context, *exec.Cmd) (int, error)
+var runCommandMock func(context.Context, *exec.Cmd) (int, error)
 
-// RunCommand runs the command and returns the exit status. All clients of this function should set the context
+// runCommand runs the command and returns the exit status. All clients of this function should set the context
 // in cmd themselves, but we have to pass the context separately here for the sake of tracing.
-func RunCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error) {
-	if RunCommandMock != nil {
-		return RunCommandMock(ctx, cmd.Unwrap())
+func runCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error) {
+	if runCommandMock != nil {
+		return runCommandMock(ctx, cmd.Unwrap())
 	}
 	tr, _ := trace.New(ctx, "gitserver", "runCommand",
 		attribute.String("path", cmd.Unwrap().Path),
@@ -43,16 +43,16 @@ func RunCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error)
 	}()
 
 	err = cmd.Run()
-	exitStatus := UnsetExitStatus
+	exitStatus := unsetExitStatus
 	if cmd.Unwrap().ProcessState != nil { // is nil if process failed to start
 		exitStatus = cmd.Unwrap().ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 	}
 	return exitStatus, err
 }
 
-// RunWith runs the command after applying the remote options. If progress is not
+// runWith runs the command after applying the remote options. If progress is not
 // nil, all output is written to it in a separate goroutine.
-func RunWith(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
+func runWith(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
 	if configRemoteOpts {
 		// Inherit process environment. This allows admins to configure
 		// variables like http_proxy/etc.
@@ -88,7 +88,7 @@ func RunWith(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts bool, progr
 		b = &buf
 	}
 
-	_, err := RunCommand(ctx, cmd) // TODO
+	_, err := runCommand(ctx, cmd) // TODO
 
 	return b.Bytes(), err
 }
