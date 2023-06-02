@@ -76,4 +76,9 @@ mod test {
     fn test_generate_ctags_ruby_globals() {
         generate_tags_and_snapshot!("../testdata/globals.rb");
     }
+
+    #[test]
+    fn test_generate_ctags_c_sharp_globals() {
+        generate_tags_and_snapshot!("../testdata/globals.cs");
+    }
 }
