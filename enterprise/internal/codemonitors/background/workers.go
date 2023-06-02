@@ -3,7 +3,6 @@ package background
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -56,8 +55,11 @@ func newTriggerQueryEnqueuer(ctx context.Context, store edb.CodeMonitorStore) go
 			return err
 		})
 	return goroutine.NewPeriodicGoroutine(
-		ctx, "code_monitors.trigger_query_enqueuer", "enqueues code monitor trigger query jobs",
-		1*time.Minute, enqueueActive,
+		ctx,
+		enqueueActive,
+		goroutine.WithName("code_monitors.trigger_query_enqueuer"),
+		goroutine.WithDescription("enqueues code monitor trigger query jobs"),
+		goroutine.WithInterval(1*time.Minute),
 	)
 }
 
@@ -81,7 +83,13 @@ func newTriggerJobsLogDeleter(ctx context.Context, store edb.CodeMonitorStore) g
 		func(ctx context.Context) error {
 			return store.DeleteOldTriggerJobs(ctx, eventRetentionInDays)
 		})
-	return goroutine.NewPeriodicGoroutine(ctx, "code_monitors.trigger_jobs_log_deleter", "deletes code job logs from code monitor triggers", 60*time.Minute, deleteLogs)
+	return goroutine.NewPeriodicGoroutine(
+		ctx,
+		deleteLogs,
+		goroutine.WithName("code_monitors.trigger_jobs_log_deleter"),
+		goroutine.WithDescription("deletes code job logs from code monitor triggers"),
+		goroutine.WithInterval(60*time.Minute),
+	)
 }
 
 func newActionRunner(ctx context.Context, observationCtx *observation.Context, s edb.CodeMonitorStore, metrics codeMonitorsMetrics) *workerutil.Worker[*edb.ActionJob] {
@@ -371,25 +379,6 @@ type StatusCodeError struct {
 
 func (s StatusCodeError) Error() string {
 	return fmt.Sprintf("non-200 response %d %s with body %q", s.Code, s.Status, s.Body)
-}
-
-// newQueryWithAfterFilter constructs a new query which finds search results
-// introduced after the last time we queried.
-func newQueryWithAfterFilter(q *edb.QueryTrigger) string {
-	// For q.LatestResult = nil we return a query string without after: filter, which
-	// effectively triggers actions immediately provided the query returns any
-	// results.
-	if q.LatestResult == nil {
-		return q.QueryString
-	}
-	// ATTENTION: This is a stop gap. Add(time.Second) is necessary because currently
-	// the after: filter is implemented as "at OR after". If we didn't add a second
-	// here, we would send out emails for every run, always showing at least the last
-	// result. This means there is non-zero chance that we miss results whenever
-	// commits have a timestamp equal to the value of :after but arrive after this
-	// job has run.
-	afterTime := q.LatestResult.UTC().Add(time.Second).Format(time.RFC3339)
-	return strings.Join([]string{q.QueryString, fmt.Sprintf(`after:"%s"`, afterTime)}, " ")
 }
 
 func latestResultTime(previousLastResult *time.Time, results []*result.CommitMatch, searchErr error) time.Time {

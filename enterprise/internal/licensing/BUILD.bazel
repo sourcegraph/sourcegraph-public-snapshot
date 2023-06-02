@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 go_library(
     name = "licensing",
     srcs = [
+        "access_token.go",
         "codygateway.go",
         "conf.go",
         "data.go",
@@ -21,6 +22,7 @@ go_library(
         "//internal/conf/conftypes",
         "//internal/env",
         "//internal/errcode",
+        "//internal/hashutil",
         "//internal/redispool",
         "//lib/errors",
         "@com_github_gomodule_redigo//redis",

@@ -34,6 +34,7 @@ go_library(
         "//internal/adminanalytics",
         "//internal/api",
         "//internal/auth",
+        "//internal/auth/userpasswd",
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/conf/deploy",

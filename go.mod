@@ -265,6 +265,7 @@ require (
 
 require (
 	github.com/go-redsync/redsync/v4 v4.8.1
+	github.com/hashicorp/cronexpr v1.1.1
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
 	github.com/vektah/gqlparser/v2 v2.4.5
 )

@@ -4,7 +4,7 @@ load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "sass", "ts_project")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
-load("//dev:eslint.bzl", "eslint_config")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
 # TODO(bazel): webpack workers?
 # gazelle:js_ignore_imports **/*.worker.ts
@@ -14,7 +14,7 @@ load("//dev:eslint.bzl", "eslint_config")
 
 npm_link_all_packages(name = "node_modules")
 
-eslint_config()
+eslint_config_and_lint_root()
 
 ts_config(
     name = "tsconfig",
