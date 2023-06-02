@@ -438,8 +438,8 @@ message GitObject {
     OBJECT_TYPE_TREE = 3;
     OBJECT_TYPE_BLOB = 4;
   }
-  // oid is the object id.
-  bytes oid = 1;
+  // id is the object id.
+  bytes id = 1;
   // type is the type of the object.
   ObjectType type = 2;
 }

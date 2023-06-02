@@ -9,6 +9,8 @@ import (
 
 	"github.com/gobwas/glob"
 
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -61,6 +63,60 @@ type ObjectInfo interface {
 type GitObject struct {
 	ID   OID
 	Type ObjectType
+}
+
+func (o *GitObject) ToProto() *proto.GitObject {
+	var id []byte
+	if o.ID != (OID{}) {
+		id = o.ID[:]
+	}
+
+	var t proto.GitObject_ObjectType
+	switch o.Type {
+	case ObjectTypeCommit:
+		t = proto.GitObject_OBJECT_TYPE_COMMIT
+	case ObjectTypeTag:
+		t = proto.GitObject_OBJECT_TYPE_TAG
+	case ObjectTypeTree:
+		t = proto.GitObject_OBJECT_TYPE_TREE
+	case ObjectTypeBlob:
+		t = proto.GitObject_OBJECT_TYPE_BLOB
+
+	default:
+		t = proto.GitObject_OBJECT_TYPE_UNSPECIFIED
+	}
+
+	return &proto.GitObject{
+		Id:   id,
+		Type: t,
+	}
+}
+
+func (o *GitObject) FromProto(proto *proto.GitObject) {
+	id := proto.GetId()
+	var oid OID
+	if len(id) == 20 {
+		copy(oid[:], id)
+	}
+
+	var t ObjectType
+	switch proto.GetType() {
+	case 1:
+		t = ObjectTypeCommit
+	case 2:
+		t = ObjectTypeTag
+	case 3:
+		t = ObjectTypeTree
+	case 4:
+		t = ObjectTypeBlob
+
+	}
+
+	*o = GitObject{
+		ID:   oid,
+		Type: t,
+	}
+
 }
 
 // IsAbsoluteRevision checks if the revision is a git OID SHA string.

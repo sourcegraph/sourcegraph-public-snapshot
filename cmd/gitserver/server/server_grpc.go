@@ -15,15 +15,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	gitAdapter "github.com/sourcegraph/sourcegraph/internal/gitserver/adapters"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
+	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type GRPCServer struct {
-	Server *Server
+	Server           *Server
+	git              gitAdapter.Git
+	getObjectService gitdomain.GetObjectService
 	proto.UnimplementedGitserverServiceServer
 }
 
@@ -153,6 +157,48 @@ func (gs *GRPCServer) doExec(ctx context.Context, logger log.Logger, req *protoc
 	}
 	return nil
 
+}
+
+func (gs *GRPCServer) GetObject(ctx context.Context, req *proto.GetObjectRequest) (*proto.GetObjectResponse, error) {
+	gs.getObjectService = gitdomain.GetObjectService{
+		RevParse:      gs.git.RevParse,
+		GetObjectType: gs.git.GetObjectType,
+	}
+	var internal protocol.GetObjectRequest
+	internal.FromProto(req)
+
+	getObjectFunc := gitdomain.GetObjectFunc(func(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
+		// Tracing is server concern, so add it here. Once generics lands we should be
+		// able to create some simple wrappers
+
+		span, ctx := ot.StartSpanFromContext(ctx, "Git: GetObject") //nolint:staticcheck // OT is deprecated
+		span.SetTag("objectName", objectName)
+		defer span.Finish()
+
+		return gs.getObjectService.GetObject(ctx, repo, objectName)
+	})
+
+	resp, err := gs.doGetObject(ctx, internal, gs.Server.Logger, getObjectFunc)
+
+	return resp.ToProto(), err
+
+}
+
+func (gs *GRPCServer) doGetObject(ctx context.Context, req protocol.GetObjectRequest, logger log.Logger, getObject gitdomain.GetObjectFunc) (*protocol.GetObjectResponse, error) {
+	// Log which actor is accessing the repo.
+	accesslog.Record(ctx, string(req.Repo), log.String("objectname", req.ObjectName))
+
+	obj, err := getObject(ctx, req.Repo, req.ObjectName)
+	if err != nil {
+		logger.Error("getting object", log.Error(err))
+		return nil, err
+	}
+
+	resp := protocol.GetObjectResponse{
+		Object: *obj,
+	}
+
+	return &resp, nil
 }
 
 func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService_P4ExecServer) error {

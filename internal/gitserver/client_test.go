@@ -1305,6 +1305,7 @@ func TestGitserverClient_RepoClone(t *testing.T) {
 type spyGitserverServiceClient struct {
 	createCommitFromPatchBinaryCalled bool
 	execCalled                        bool
+	getObjectCalled                   bool
 	isRepoCloneable                   bool
 	searchCalled                      bool
 	archiveCalled                     bool
@@ -1316,6 +1317,12 @@ type spyGitserverServiceClient struct {
 	reposStatsCalled                  bool
 	p4ExecCalled                      bool
 	base                              proto.GitserverServiceClient
+}
+
+// GetObject implements v1.GitserverServiceClient.
+func (s *spyGitserverServiceClient) GetObject(ctx context.Context, in *proto.GetObjectRequest, opts ...grpc.CallOption) (*proto.GetObjectResponse, error) {
+	s.getObjectCalled = true
+	return s.base.GetObject(ctx, in, opts...)
 }
 
 // ListGitolite implements v1.GitserverServiceClient.
@@ -1388,6 +1395,7 @@ var _ proto.GitserverServiceClient = &spyGitserverServiceClient{}
 type mockClient struct {
 	mockCreateCommitFromPatchBinary func(ctx context.Context, in *proto.CreateCommitFromPatchBinaryRequest, opts ...grpc.CallOption) (*proto.CreateCommitFromPatchBinaryResponse, error)
 	mockExec                        func(ctx context.Context, in *proto.ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_ExecClient, error)
+	mockGetObject                   func(ctx context.Context, in *proto.GetObjectRequest, opts ...grpc.CallOption) (*proto.GetObjectResponse, error)
 	mockIsRepoCloneable             func(ctx context.Context, in *proto.IsRepoCloneableRequest, opts ...grpc.CallOption) (*proto.IsRepoCloneableResponse, error)
 	mockListGitolite                func(ctx context.Context, in *proto.ListGitoliteRequest, opts ...grpc.CallOption) (*proto.ListGitoliteResponse, error)
 	mockRepoClone                   func(ctx context.Context, in *proto.RepoCloneRequest, opts ...grpc.CallOption) (*proto.RepoCloneResponse, error)
@@ -1398,6 +1406,11 @@ type mockClient struct {
 	mockArchive                     func(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error)
 	mockSearch                      func(ctx context.Context, in *proto.SearchRequest, opts ...grpc.CallOption) (proto.GitserverService_SearchClient, error)
 	mockP4Exec                      func(ctx context.Context, in *proto.P4ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_P4ExecClient, error)
+}
+
+// GetObject implements v1.GitserverServiceClient.
+func (mc *mockClient) GetObject(ctx context.Context, in *proto.GetObjectRequest, opts ...grpc.CallOption) (*proto.GetObjectResponse, error) {
+	return mc.mockGetObject(ctx, in, opts...)
 }
 
 // ListGitolite implements v1.GitserverServiceClient.
