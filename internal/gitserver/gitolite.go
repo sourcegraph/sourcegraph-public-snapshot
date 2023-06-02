@@ -53,10 +53,10 @@ func (c *GitoliteLister) ListRepos(ctx context.Context, gitoliteHost string) (li
 		}
 
 		list = make([]*gitolite.Repo, len(grpcResp.Repos))
-		for i, r := range grpcResp.Repos {
+		for i, r := range grpcResp.GetRepos() {
 			list[i] = &gitolite.Repo{
-				Name: r.Name,
-				URL:  r.Url,
+				Name: r.GetName(),
+				URL:  r.GetURL(),
 			}
 		}
 		return list, nil
