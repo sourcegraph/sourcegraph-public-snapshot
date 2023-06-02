@@ -167,7 +167,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
 
                 <div className={styles.learnMoreItemsWrapper}>
                     <div className={styles.learnMoreItems}>
-                        <H4 className={styles.learnMoreItemTitle}>Overview</H4>
+                        <H4 className={styles.learnMoreItemsTitle}>Overview</H4>
                         <Text className="mb-0">
                             Visit the{' '}
                             <Link to="https://about.sourcegraph.com/cody" target="_blank" rel="noopener">
@@ -178,7 +178,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                     </div>
 
                     <div className={styles.learnMoreItems}>
-                        <H4 className={styles.learnMoreItemTitle}>Documentation</H4>
+                        <H4 className={styles.learnMoreItemsTitle}>Documentation</H4>
                         <Text className="mb-0">
                             Learn about Cody’s use cases, recipes, and FAQs on the{' '}
                             <Link to="/help/cody" target="_blank" rel="noopener">
