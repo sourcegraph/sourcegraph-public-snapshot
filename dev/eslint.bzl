@@ -125,6 +125,7 @@ def _custom_eslint_impl(ctx):
         command = command,
         arguments = [args],
         mnemonic = "ESLint",
+        tools = ctx.attr.binary[DefaultInfo].default_runfiles.files,
     )
 
     return [
