@@ -43,7 +43,7 @@ prod_registries=(
   "index.docker.io/sourcegraph"
 )
 
-date_fragment="$(date +%y-%m-%d)"
+date_fragment="$(date +%Y-%m-%d)"
 
 qa_prefix="bazel"
 
