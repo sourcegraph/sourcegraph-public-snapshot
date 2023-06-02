@@ -173,10 +173,15 @@ const register = async (
             await chatProvider.logout()
         }),
         // Commands
-        vscode.commands.registerCommand('cody.welcome', () => vscode.commands.executeCommand('workbench.action.openWalkthrough', 'sourcegraph.cody-ai#welcome', false)),
+        vscode.commands.registerCommand('cody.welcome', () =>
+            vscode.commands.executeCommand('workbench.action.openWalkthrough', 'sourcegraph.cody-ai#welcome', false)
+        ),
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
+        vscode.commands.registerCommand('cody.login', () => chatProvider.setWebviewView('login')),
+        vscode.commands.registerCommand('cody.chat', () => chatProvider.setWebviewView('chat')),
         vscode.commands.registerCommand('cody.settings', () => chatProvider.setWebviewView('settings')),
         vscode.commands.registerCommand('cody.history', () => chatProvider.setWebviewView('history')),
+        vscode.commands.registerCommand('cody.recipes', () => chatProvider.setWebviewView('recipes')),
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
             await chatProvider.clearAndRestartSession()
             chatProvider.setWebviewView('chat')

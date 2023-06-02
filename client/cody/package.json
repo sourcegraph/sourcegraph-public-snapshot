@@ -78,13 +78,13 @@
     "walkthroughs": [
       {
         "id": "welcome",
-        "title": "Getting Started with Cody AI",
-        "description": "Discover the features of Cody AI and how it can help your write code faster.",
+        "title": "Getting Started with Cody",
+        "description": "Discover how Cody can help you write and understand code faster.",
         "steps": [
           {
             "id": "setup",
             "title": "Setup Cody",
-            "description": "Get started by logging into Sourcegraph and setting up Cody. If you’re wanting to use Cody with local, private code you’ll also want to download the [Cody App](https://about.sourcegraph.com/app).\n[Setup Cody](command:cody.setup)",
+            "description": "Get started by logging into Sourcegraph and setting up Cody.\n[Setup Cody](command:cody.login)",
             "media": {
               "markdown": "walkthroughs/setup.md"
             },
@@ -93,43 +93,43 @@
             ]
           },
           {
-            "id": "completions",
-            "title": "Enable Automatic Completions",
-            "description": "Cody’s automatic completions can write code for you, with single and multi-line completions.\n[Enable Completions](command:TODO)",
-            "media": {
-              "markdown": "walkthroughs/completions.md"
-            }
-          },
-          {
-            "id": "recipes",
-            "title": "Run a Recipe",
-            "description": "Open a file and run one of the built-in recipes.\n[Open Recipes](command:TODO)\n__Try 'Summarize recent code changes'__",
-            "media": {
-              "markdown": "walkthroughs/recipes.md"
-            }
-          },
-          {
             "id": "chat",
-            "title": "Ask Cody a Question",
-            "description": "Chat with Cody to know more about your codebase\n[Open Chat](command:cody.chat.focus)\n__Try asking 'Where is user authorisation handled?'__",
+            "title": "Ask Cody a question",
+            "description": "Cody writes code and answers questions using your own code graph as context.\n[Open Chat](command:cody.chat)",
             "media": {
               "markdown": "walkthroughs/chat.md"
             }
           },
           {
+            "id": "explain",
+            "title": "Explain code",
+            "description": "Cody can help explain code. Select some lines and use the \"Explain selected code\" recipe.\n[Open Recipes](command:cody.recipes)",
+            "media": {
+              "markdown": "walkthroughs/explain.md"
+            }
+          },
+          {
             "id": "fixup",
-            "title": "Inline Chat & Editing",
-            "description": "Ask Cody to edit your code inline using fixups.\n\n__Open a file and click the + button next to any line number.__'",
+            "title": "Fixup code",
+            "description": "Cody can edit and improve code using inline instructions. Type what you want Cody to do above or below a block of code and use the \"Fixup code from inline instructions\" recipe.\n[Open Recipes](command:cody.recipes)",
             "media": {
               "markdown": "walkthroughs/fixup.md"
             }
           },
           {
-            "id": "learn-more",
-            "title": "Documentation & Support",
-            "description": "TODO.\n[See the documentation](https://docs.sourcegraph.com/cody)",
+            "id": "inline-assist",
+            "title": "Inline Assist",
+            "description": "Chat with Cody without leaving your file. Click the + button next to any line number in a file to bring up Inline Assist.\n[Enable in Settings](command:cody.settings)",
             "media": {
-              "markdown": "walkthroughs/learn-more.md"
+              "markdown": "walkthroughs/inline-assist.md"
+            }
+          },
+          {
+            "id": "completions",
+            "title": "Automatic code completion",
+            "description": "Start writing code or write a comment and Cody will suggest the next few lines for you. Choose to accept it, or open the command palette and click \"Cody: View Suggestions\" to see various code snippets Cody suggests using.\n[Enable in Settings](command:cody.settings)",
+            "media": {
+              "markdown": "walkthroughs/completions.md"
             }
           }
         ]
@@ -244,10 +244,25 @@
         "icon": "$(add)"
       },
       {
+        "command": "cody.login",
+        "title": "Cody: Show login",
+        "group": "Cody"
+      },
+      {
+        "command": "cody.chat",
+        "title": "Cody: Show chat",
+        "group": "Cody"
+      },
+      {
         "command": "cody.history",
-        "title": "Cody: Chat History",
+        "title": "Cody: Show chat history",
         "group": "Cody",
         "icon": "$(list-unordered)"
+      },
+      {
+        "command": "cody.recipes",
+        "title": "Cody: Show recipes",
+        "group": "Cody"
       },
       {
         "command": "cody.comment.add",
