@@ -114,7 +114,7 @@ const NoAuthWidgetContent: React.FC<NonAuthWidgetContentProps> = ({ type, teleme
                     By registering, you agree to our{' '}
                     <Link
                         to="https://about.sourcegraph.com/terms"
-                        className={styles.signUpLink}
+                        className={styles.termsLink}
                         target="_blank"
                         rel="noopener"
                     >
@@ -123,7 +123,7 @@ const NoAuthWidgetContent: React.FC<NonAuthWidgetContentProps> = ({ type, teleme
                     and{' '}
                     <Link
                         to="https://about.sourcegraph.com/terms/privacy"
-                        className={styles.signUpLink}
+                        className={styles.termsLink}
                         target="_blank"
                         rel="noopener"
                     >

@@ -5,11 +5,11 @@
 }
 
 :global(.theme-light) {
-    ---marketing-block-shadow: 0px 4px 24px rgba(0, 0, 0, 0.08);
+    --marketing-block-shadow: 0px 4px 24px rgba(0, 0, 0, 0.08);
 }
 
 :global(.theme-dark) {
-    ---marketing-block-shadow: 0px 4px 16px -6px rgba(46, 34, 119, 0.1);
+    --marketing-block-shadow: 0px 4px 16px -6px rgba(46, 34, 119, 0.1);
 }
 
 .page-header {
@@ -54,7 +54,7 @@
     }
 
     .cody-sign-up-panel-wrapper {
-        box-shadow: var(---marketing-block-shadow);
+        box-shadow: var(--marketing-block-shadow);
         height: fit-content;
     }
 
@@ -67,14 +67,14 @@
         margin-bottom: 1.26rem;
     }
 
-    .sign-up-button {
+    .auth-button {
         text-align: center;
         background-color: var(--blue);
         color: var(--white);
         padding: 0.375rem 3.875rem;
         border-radius: 3px;
         width: fit-content;
-        margin: 0rem;
+        margin: 0;
     }
 
     .button-icon {

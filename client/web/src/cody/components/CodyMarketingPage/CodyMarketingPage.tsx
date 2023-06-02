@@ -116,7 +116,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                             gitlabLabel="Gitlab"
                             withCenteredText={true}
                             onClick={onClickCTAButton}
-                            ctaClassName={styles.signUpButton}
+                            ctaClassName={styles.authButton}
                             iconClassName={styles.buttonIcon}
                         />
                     </div>
