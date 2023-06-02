@@ -25,7 +25,7 @@ export interface RepositoryOwnAreaPageProps extends Pick<BreadcrumbSetters, 'use
     path: string
     authenticatedUser: Pick<AuthenticatedUser, 'siteAdmin'> | null
 }
-const BREADCRUMB = { key: 'own', element: 'Ownership' }
+const BREADCRUMB = { key: 'edit-own', element: 'Edit ownership' }
 
 export const RepositoryOwnEditPage: React.FunctionComponent<RepositoryOwnAreaPageProps> = ({
     useBreadcrumb,
@@ -69,7 +69,7 @@ export const RepositoryOwnEditPage: React.FunctionComponent<RepositoryOwnAreaPag
                 <H1 as="h2" className="d-flex align-items-center">
                     <Icon svgPath={mdiAccount} aria-hidden={true} />
                     <span className="ml-2">Ownership</span>
-                    <ProductStatusBadge status="experimental" className="ml-2" />
+                    <ProductStatusBadge status="beta" className="ml-2" />
                 </H1>
             </PageHeader>
 

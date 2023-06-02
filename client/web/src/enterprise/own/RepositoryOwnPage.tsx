@@ -18,11 +18,8 @@ const BREADCRUMB = { key: 'own', element: 'Ownership' }
 export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPageProps> = ({
     useBreadcrumb,
     repo,
-    authenticatedUser,
     telemetryService,
 }) => {
-    // const location = useLocation()
-    // const { filePath = '' } = parseBrowserRepoURL(location.pathname) // empty string is root
     const queryParameters = new URLSearchParams(location.search)
     const path = queryParameters.get('path') ?? ''
 
