@@ -1,21 +1,15 @@
 import { FC } from 'react'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { BarChart, Card, H2, Text } from '@sourcegraph/wildcard'
+import { BarChart, Card, Text } from '@sourcegraph/wildcard'
 
 import {
-    AnalyticsDateRange,
     GetInstanceOwnStatsResult,
     GetOwnSignalConfigurationsResult,
     OwnSignalConfig,
 } from '../../../graphql-operations'
 import { AnalyticsPageTitle } from '../../../site-admin/analytics/components/AnalyticsPageTitle'
 import { ChartContainer } from '../../../site-admin/analytics/components/ChartContainer'
-import {
-    TimeSavedCalculator,
-    TimeSavedCalculatorProps,
-} from '../../../site-admin/analytics/components/TimeSavedCalculatorGroup'
-import { ValueLegendList, ValueLegendListProps } from '../../../site-admin/analytics/components/ValueLegendList'
 
 import { GET_INSTANCE_OWN_STATS, GET_OWN_JOB_CONFIGURATIONS } from './query'
 
