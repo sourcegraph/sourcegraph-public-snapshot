@@ -124,7 +124,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		log.Object("stats", stats.ToFields()...),
 	)
 
-	if stats.IsDelta {
+	if stats.IsIncremental {
 		return embeddings.UpdateRepoEmbeddingIndex(ctx, h.uploadStore, string(embeddings.GetRepoEmbeddingIndexName(repo.Name)), repoEmbeddingIndex, toRemove, ranks)
 	} else {
 		return embeddings.UploadRepoEmbeddingIndex(ctx, h.uploadStore, string(embeddings.GetRepoEmbeddingIndexName(repo.Name)), repoEmbeddingIndex)

@@ -13,6 +13,7 @@ import (
 func ScheduleRepositoriesForEmbedding(
 	ctx context.Context,
 	repoNames []api.RepoName,
+	forceReindex bool,
 	db database.DB,
 	repoEmbeddingJobsStore repo.RepoEmbeddingJobsStore,
 	gitserverClient gitserver.Client,
@@ -40,11 +41,13 @@ func ScheduleRepositoriesForEmbedding(
 				return errors.Newf("could not get latest commit for repo %s", r.Name)
 			}
 
-			job, _ := tx.GetLastRepoEmbeddingJobForRevision(ctx, r.ID, latestRevision)
-			// Skip creating a repo embedding job for a repo at revision, if there already exists
-			// an identical job that has been completed, cancelled or is scheduled to run (processing or queued).
-			if job.IsRepoEmbeddingJobScheduledOrCompleted() {
-				return nil
+			// If the user has forced a reindex, then we always start a new job. Otherwise, we skip creating a job for
+			// a revision if there's already an identical job that's completed or scheduled to run.
+			if !forceReindex {
+				job, _ := tx.GetLastRepoEmbeddingJobForRevision(ctx, r.ID, latestRevision)
+				if job.IsRepoEmbeddingJobScheduledOrCompleted() {
+					return nil
+				}
 			}
 
 			_, err = tx.CreateRepoEmbeddingJob(ctx, r.ID, latestRevision)
