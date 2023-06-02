@@ -43,7 +43,7 @@ func NewFileContainsFilterJob(includePatterns []string, originalPattern query.No
 		includeMatchers = append(includeMatchers, regexp.MustCompile(pattern))
 	}
 
-	originalPatternStrings := patternsInTree(originalPattern)
+	originalPatternStrings := patternsInTreeAsRegex(originalPattern)
 	originalPatternMatchers := make([]*regexp.Regexp, 0, len(originalPatternStrings))
 	for _, originalPatternString := range originalPatternStrings {
 		if !caseSensitive {
@@ -308,14 +308,14 @@ func (j *fileContainsFilterJob) Name() string {
 	return "FileContainsFilterJob"
 }
 
-func patternsInTree(originalPattern query.Node) (res []string) {
+func patternsInTreeAsRegex(originalPattern query.Node) (res []string) {
 	if originalPattern == nil {
 		return nil
 	}
 	switch v := originalPattern.(type) {
 	case query.Operator:
 		for _, operand := range v.Operands {
-			res = append(res, patternsInTree(operand)...)
+			res = append(res, patternsInTreeAsRegex(operand)...)
 		}
 	case query.Pattern:
 		if v.Annotation.Labels.IsSet(query.Regexp) {
