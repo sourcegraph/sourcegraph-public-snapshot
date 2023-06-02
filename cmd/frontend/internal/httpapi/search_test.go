@@ -194,9 +194,9 @@ func TestServeConfiguration(t *testing.T) {
 		// This is a very fragile test since it will depend on changes to
 		// searchbackend.GetIndexOptions. If this becomes a problem we can make it
 		// more robust by shifting around responsibilities.
-		want := `{"Name":"","RepoID":1,"Public":false,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":false,"Error":"repo not found: id=1"}
-{"Name":"5","RepoID":5,"Public":true,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":true,"Branches":[{"Name":"HEAD","Version":"!HEAD"}],"Priority":5}
-{"Name":"6","RepoID":6,"Public":true,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":true,"Branches":[{"Name":"HEAD","Version":"!HEAD"},{"Name":"a","Version":"!a"},{"Name":"b","Version":"!b"}],"Priority":6}`
+		want := `{"Name":"","RepoID":1,"Public":false,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":false,"Error":"repo not found: id=1","LanguageMap":null}
+		{"Name":"5","RepoID":5,"Public":true,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":true,"Branches":[{"Name":"HEAD","Version":"!HEAD"}],"Priority":5,"LanguageMap":[{"language":"Zig","ctags":3}]}
+		{"Name":"6","RepoID":6,"Public":true,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":true,"Branches":[{"Name":"HEAD","Version":"!HEAD"},{"Name":"a","Version":"!a"},{"Name":"b","Version":"!b"}],"Priority":6,"LanguageMap":[{"language":"Zig","ctags":3}]}`
 
 		if d := cmp.Diff(want, string(body)); d != "" {
 			t.Fatalf("mismatch (-want, +got):\n%s", d)
@@ -221,7 +221,7 @@ func TestServeConfiguration(t *testing.T) {
 		// This is a very fragile test since it will depend on changes to
 		// searchbackend.GetIndexOptions. If this becomes a problem we can make it
 		// more robust by shifting around responsibilities.
-		want = `{"Name":"5","RepoID":5,"Public":true,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":true,"Branches":[{"Name":"HEAD","Version":"!HEAD"}],"Priority":5}`
+		want = `{"Name":"5","RepoID":5,"Public":true,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":true,"Branches":[{"Name":"HEAD","Version":"!HEAD"}],"Priority":5,"LanguageMap":[{"language":"Zig","ctags":3}]}`
 
 		if d := cmp.Diff(want, string(body)); d != "" {
 			t.Fatalf("mismatch (-want, +got):\n%s", d)
