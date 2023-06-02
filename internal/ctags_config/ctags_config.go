@@ -11,6 +11,19 @@ const (
 	ScipCtags
 )
 
+func ParserTypeToName(pType ParserType) string {
+	switch pType {
+	case NoCtags:
+		return "off"
+	case UniversalCtags:
+		return "universal-ctags"
+	case ScipCtags:
+		return "scip-ctags"
+	default:
+		return "unknown-ctags-type"
+	}
+}
+
 func ParserNameToParserType(name string) (ParserType, error) {
 	switch name {
 	case "off":

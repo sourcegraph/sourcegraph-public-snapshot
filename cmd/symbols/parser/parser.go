@@ -295,7 +295,7 @@ func SpawnCtags(logger log.Logger, ctagsConfig types.CtagsConfig, source ctags_c
 
 	parser, err := ctags.New(options)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create new ctags parser")
+		return nil, errors.Wrapf(err, "failed to create new ctags parser %q using bin path %q ", ctags_config.ParserTypeToName(source), options.Bin)
 	}
 
 	return NewFilteringParser(parser, ctagsConfig.MaxFileSize, ctagsConfig.MaxSymbols), nil
