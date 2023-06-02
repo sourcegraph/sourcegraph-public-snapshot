@@ -687,7 +687,7 @@ func (c *V4Client) CreateCommit(ctx context.Context, owner, repo, message, tree 
 
 // UpdateRef updates the ref of a branch to point to the given commit. The ref should be
 // supplied in a fully qualified format, such as `refs/heads/branch` or `refs/tags/tag`.
-func (c *V4Client) UpdateRef(ctx context.Context, owner, repo, ref, commit string) error {
+func (c *V4Client) UpdateRef(ctx context.Context, owner, repo, ref, commit string) (*restUpdatedRef, error) {
 	logger := c.log.Scoped("UpdateRef", "temporary client for updating a ref on GitHub")
 	// We technically don't need to use the REST API for this but it's just a bit easier.
 	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).UpdateRef(ctx, owner, repo, ref, commit)

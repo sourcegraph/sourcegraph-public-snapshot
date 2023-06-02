@@ -851,14 +851,15 @@ func (c *V3Client) CreateCommit(ctx context.Context, owner, repo, message, tree 
 
 // UpdateRef updates the ref of a branch to point to the given commit. The ref should be
 // supplied in a fully qualified format, such as `refs/heads/branch` or `refs/tags/tag`.
-func (c *V3Client) UpdateRef(ctx context.Context, owner, repo, ref, commit string) error {
+func (c *V3Client) UpdateRef(ctx context.Context, owner, repo, ref, commit string) (*restUpdatedRef, error) {
+	var updatedRef restUpdatedRef
 	if _, err := c.patch(ctx, "repos/"+owner+"/"+repo+"/git/"+ref, struct {
 		SHA   string `json:"sha"`
 		Force bool   `json:"force"`
-	}{SHA: commit, Force: true}, nil); err != nil {
-		return err
+	}{SHA: commit, Force: true}, &updatedRef); err != nil {
+		return nil, err
 	}
-	return nil
+	return &updatedRef, nil
 }
 
 // GetAppInstallation gets information of a GitHub App installation.
