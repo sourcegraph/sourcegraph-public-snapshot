@@ -1,3 +1,9 @@
+// TODO: Refine these states.
+// - "done" means (presumably?) the LLM is done, not the whole task is done,
+//   so use a clearer name
+// - tasks can be both "done" (LLM turns completed) and turning if we are
+//   running the task again
+// - these states don't capture whether the diff (probably) applies cleanly
 export enum CodyTaskState {
     'idle' = 0,
     'queued' = 1,
