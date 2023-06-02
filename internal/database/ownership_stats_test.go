@@ -12,12 +12,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-type fakeCodeownersWalk map[string][]CodeownedTreeCounts
+type fakeCodeownersWalk map[string][]TreeCounts
 
-func (w fakeCodeownersWalk) Walk(f func(path string, ownerCounts []CodeownedTreeCounts) error) error {
+func (w fakeCodeownersWalk) Iterate(f func(counts TreeCounts) error) error {
 	for path, owners := range w {
-		if err := f(path, owners); err != nil {
-			return err
+		for _, o := range owners {
+			o.Path = path
+			if err := f(o); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -31,20 +34,22 @@ func TestUpdateIndividualCountsSuccess(t *testing.T) {
 	logger := logtest.Scoped(t)
 	d := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
+	// 1. Setup repo and paths:
 	repo := mustCreate(ctx, t, d, &types.Repo{Name: "a/b"})
 	_, err := ensureRepoPaths(ctx, d.(*db).Store, []string{"file1", "file2"}, repo.ID)
 	require.NoError(t, err)
+	// 2. Insert counts:
 	walk := fakeCodeownersWalk{
-		"": []CodeownedTreeCounts{
-			{Reference: "ownerA", FileCount: 2},
-			{Reference: "ownerB", FileCount: 1},
+		"": {
+			{CodeownersReference: "ownerA", CodeownedFileCount: 2},
+			{CodeownersReference: "ownerB", CodeownedFileCount: 1},
 		},
-		"file1": []CodeownedTreeCounts{
-			{Reference: "ownerA", FileCount: 1},
-			{Reference: "ownerB", FileCount: 1},
+		"file1": {
+			{CodeownersReference: "ownerA", CodeownedFileCount: 1},
+			{CodeownersReference: "ownerB", CodeownedFileCount: 1},
 		},
-		"file2": []CodeownedTreeCounts{
-			{Reference: "ownerA", FileCount: 1},
+		"file2": {
+			{CodeownersReference: "ownerA", CodeownedFileCount: 1},
 		},
 	}
 	timestamp := time.Now()
@@ -53,4 +58,6 @@ func TestUpdateIndividualCountsSuccess(t *testing.T) {
 	if got, want := updatedRows, 5; got != want {
 		t.Errorf("UpdateIndividualCounts, updated rows, got %d, want %d", got, want)
 	}
+	// 3. Query counts back:
+	
 }

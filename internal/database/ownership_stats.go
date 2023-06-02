@@ -11,20 +11,28 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type CodeownedTreeWalk interface {
-	Walk(func(path string, ownerCounts []CodeownedTreeCounts) error) error
+// FileOwnershipAggregate allows iterating through the file tree
+// of a repository, providing ownership counts for every owner
+// and every directory.
+type FileOwnershipAggregate interface {
+	Iterate(func(counts TreeCounts) error) error
 }
 
-type CodeownedTreeCounts struct {
-	Reference string
-	FileCount int
+// TreeCounts represents the aggregate ownership by given owner for given file tree.
+type TreeCounts struct {
+	// Path which is the root of the file tree the counts are for (relative to repository root).
+	Path string
+	// CodeownersReference is the text found in CODEOWNERS files that matched the counted files in this file tree.
+	CodeownersReference string
+	// CodeownedFileCount is the number of files that matched given owner in this file tree
+	CodeownedFileCount int
 }
 
 type OwnershipStatsStore interface {
 	// UpdateIndividualCounts walks a representation of a repo file tree
 	// that yields ownership information for each file and directory, and persists
 	// that in the database.
-	UpdateIndividualCounts(ctx context.Context, repoID api.RepoID, data CodeownedTreeWalk, timestamp time.Time) (int, error)
+	UpdateIndividualCounts(ctx context.Context, repoID api.RepoID, data FileOwnershipAggregate, timestamp time.Time) (int, error)
 }
 
 var _ OwnershipStatsStore = &ownershipStats{}
@@ -61,32 +69,30 @@ var codeownerUpsertCountsFmtstr = `
 		last_updated_at = EXCLUDED.last_updated_at
 `
 
-func (s *ownershipStats) UpdateIndividualCounts(ctx context.Context, repoID api.RepoID, data CodeownedTreeWalk, timestamp time.Time) (int, error) {
+func (s *ownershipStats) UpdateIndividualCounts(ctx context.Context, repoID api.RepoID, data FileOwnershipAggregate, timestamp time.Time) (int, error) {
 	codeownersCache := map[string]int{} // Cache codeowner ID by reference
 	var totalRows int
-	err := data.Walk(func(path string, ownerCounts []CodeownedTreeCounts) error {
-		for _, owner := range ownerCounts {
-			id := codeownersCache[owner.Reference]
-			if id == 0 {
-				q := sqlf.Sprintf(codeownerQueryFmtstr, owner.Reference, owner.Reference)
-				r := s.Store.QueryRow(ctx, q)
-				if err := r.Scan(&id); err != nil {
-					return errors.Wrapf(err, "querying/adding owner %q failed, query: %s", owner.Reference, q.Query(sqlf.PostgresBindVar))
-				}
-				codeownersCache[owner.Reference] = id
+	err := data.Iterate(func(counts TreeCounts) error {
+		id := codeownersCache[counts.CodeownersReference]
+		if id == 0 {
+			q := sqlf.Sprintf(codeownerQueryFmtstr, counts.CodeownersReference, counts.CodeownersReference)
+			r := s.Store.QueryRow(ctx, q)
+			if err := r.Scan(&id); err != nil {
+				return errors.Wrapf(err, "querying/adding owner %q failed, query: %s", counts.CodeownersReference, q.Query(sqlf.PostgresBindVar))
 			}
-			// At this point we assume paths exists in repo_paths, otherwise we will not update.
-			q := sqlf.Sprintf(codeownerUpsertCountsFmtstr, id, owner.FileCount, timestamp, repoID, path)
-			res, err := s.Store.ExecResult(ctx, q)
-			if err != nil {
-				return errors.Wrapf(err, "updating counts for %q at repoID=%d path=%s failed, query: %s", owner.Reference, repoID, path, q.Query(sqlf.PostgresBindVar))
-			}
-			rows, err := res.RowsAffected()
-			if err != nil {
-				return errors.Wrapf(err, "updating counts for %q at repoID=%d path=%s failed, query: %s", owner.Reference, repoID, path, q.Query(sqlf.PostgresBindVar))
-			}
-			totalRows += int(rows)
+			codeownersCache[counts.CodeownersReference] = id
 		}
+		// At this point we assume paths exists in repo_paths, otherwise we will not update.
+		q := sqlf.Sprintf(codeownerUpsertCountsFmtstr, id, counts.CodeownedFileCount, timestamp, repoID, counts.Path)
+		res, err := s.Store.ExecResult(ctx, q)
+		if err != nil {
+			return errors.Wrapf(err, "updating counts for %q at repoID=%d path=%s failed, query: %s", counts.CodeownersReference, repoID, counts.Path, q.Query(sqlf.PostgresBindVar))
+		}
+		rows, err := res.RowsAffected()
+		if err != nil {
+			return errors.Wrapf(err, "updating counts for %q at repoID=%d path=%s failed, query: %s", counts.CodeownersReference, repoID, counts.Path, q.Query(sqlf.PostgresBindVar))
+		}
+		totalRows += int(rows)
 		return nil
 	})
 	if err != nil {
