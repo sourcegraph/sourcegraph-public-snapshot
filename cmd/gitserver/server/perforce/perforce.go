@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -187,7 +186,8 @@ func (s *Service) getCommitsToInsert(ctx context.Context, logger log.Logger, rep
 func headCommitSHA(ctx context.Context, logger log.Logger, dir common.GitDir) (string, error) {
 	cmd := exec.CommandContext(ctx, "git", "rev-parse", "HEAD")
 	dir.Set(cmd)
-	output, err := common.RunWith(ctx, wrexec.Wrap(ctx, logger, cmd), false, nil)
+
+	output, err := cmd.Output()
 	if err != nil {
 		return "", &common.GitCommandError{Err: err, Output: string(output)}
 	}
