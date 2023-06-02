@@ -318,7 +318,11 @@ func patternsInTree(originalPattern query.Node) (res []string) {
 			res = append(res, patternsInTree(operand)...)
 		}
 	case query.Pattern:
-		res = append(res, v.Value)
+		if v.Annotation.Labels.IsSet(query.Regexp) {
+			res = append(res, v.Value)
+		} else {
+			res = append(res, regexp.QuoteMeta(v.Value))
+		}
 	default:
 		panic(fmt.Sprintf("unknown pattern node type %T", originalPattern))
 	}
