@@ -49,12 +49,12 @@ func TestRepoEmbeddingJobsStore(t *testing.T) {
 	id2, err := store.CreateRepoEmbeddingJob(ctx, createdRepo.ID, "coffee")
 	require.NoError(t, err)
 
-	count, err := store.CountRepoEmbeddingJobs(ctx)
+	count, err := store.CountRepoEmbeddingJobs(ctx, ListOpts{})
 	require.NoError(t, err)
 	require.Equal(t, 2, count)
 
 	first := 10
-	jobs, err := store.ListRepoEmbeddingJobs(ctx, &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true})
+	jobs, err := store.ListRepoEmbeddingJobs(ctx, ListOpts{PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}})
 	require.NoError(t, err)
 
 	// only queued job exists
@@ -118,7 +118,7 @@ func TestCancelRepoEmbeddingJob(t *testing.T) {
 	require.NoError(t, err)
 
 	first := 10
-	jobs, err := store.ListRepoEmbeddingJobs(ctx, &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true})
+	jobs, err := store.ListRepoEmbeddingJobs(ctx, ListOpts{PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}})
 	require.NoError(t, err)
 
 	// Expect to get the two repo embedding jobs in the list.
