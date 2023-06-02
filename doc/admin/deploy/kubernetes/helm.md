@@ -1022,7 +1022,7 @@ When all pods have restarted and show as Running, you can browse to your Sourceg
 
     **Example:**
     ```bash
-    λ helm upgrade --install -n sourcegraph --set "migrator.args={upgrade,--from=3.41.0,--to=4.5.1}" sourcegraph-migrator sourcegraph/sourcegraph-migrator --version 5.0.5
+    λ helm upgrade --install -n sourcegraph --set "migrator.args={upgrade,--from=3.41.0,--to=4.5.1}" sourcegraph-migrator sourcegraph/sourcegraph-migrator --version 4.5.1
     Release "sourcegraph-migrator" has been upgraded. Happy Helming!
     NAME: sourcegraph-migrator
     LAST DEPLOYED: Tue Mar  7 18:23:56 2023
