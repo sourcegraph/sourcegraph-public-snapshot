@@ -71,4 +71,9 @@ mod test {
     fn test_generate_ctags_typescript_globals() {
         generate_tags_and_snapshot!("../testdata/globals.ts");
     }
+
+    #[test]
+    fn test_generate_ctags_ruby_globals() {
+        generate_tags_and_snapshot!("../testdata/globals.rb");
+    }
 }
