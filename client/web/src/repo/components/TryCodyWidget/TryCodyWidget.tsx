@@ -81,10 +81,10 @@ const NoAuthWidgetContent: React.FC<NonAuthWidgetContentProps> = ({ type, teleme
 
     return (
         <>
-            <MeetCodySVG className="flex-shrink-0 pb-2" />
+            <MeetCodySVG />
             <div>
                 <H2 className={styles.cardTitle}>{title}</H2>
-                <Text className={classNames('text-nowrap', styles.cardDescription)}>
+                <Text className={styles.cardDescription}>
                     Cody combines an LLM with the context of Sourcegraph's code graph on public code or your code at
                     work.{' '}
                 </Text>
@@ -95,10 +95,7 @@ const NoAuthWidgetContent: React.FC<NonAuthWidgetContentProps> = ({ type, teleme
                         gitlabLabel="Gitlab"
                         withCenteredText={true}
                         onClick={logEvent}
-                        ctaClassName={classNames(
-                            styles.authButton,
-                            type === 'blob' ? styles.authBlobButton : styles.authRepoButton
-                        )}
+                        ctaClassName={styles.authButton}
                         iconClassName={styles.buttonIcon}
                     />
                     <Link
@@ -110,7 +107,7 @@ const NoAuthWidgetContent: React.FC<NonAuthWidgetContentProps> = ({ type, teleme
                         Email
                     </Link>
                 </div>
-                <Text className="text-nowrap mb-0 mt-2">
+                <Text className="mb-0 mt-2">
                     By registering, you agree to our{' '}
                     <Link
                         to="https://about.sourcegraph.com/terms"
@@ -202,7 +199,7 @@ export const TryCodyWidget: React.FC<
         <MarketingBlock
             wrapperClassName={classNames(className, styles.cardWrapper)}
             contentClassName={classNames(
-                'd-flex position-relative overflow-auto',
+                'd-flex position-relative',
                 styles.card,
                 !authenticatedUser && styles.noAuthCard
             )}
