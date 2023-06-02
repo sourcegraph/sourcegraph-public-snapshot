@@ -229,7 +229,6 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 			default:
 				// We shouldn't block on this error, but we should still log it.
 				log15.Error("Failed to get GitHub App authenticated ChangesetSource", "err", err)
-				break
 			}
 		} else {
 			// We found a GitHub App configured for Batch Changes; we should try to use it
