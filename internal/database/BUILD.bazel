@@ -269,5 +269,6 @@ go_test(
         "@com_github_tidwall_gjson//:gjson",
         "@org_golang_x_exp//maps",
         "@org_golang_x_sync//errgroup",
+        "@tools_gotest//assert",
     ],
 )

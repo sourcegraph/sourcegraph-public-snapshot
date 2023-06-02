@@ -38574,6 +38574,9 @@ func (c OutboundWebhookStoreWithFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/internal/database) used for unit
 // testing.
 type MockOwnershipStatsStore struct {
+	// QueryIndividualCountsFunc is an instance of a mock function object
+	// controlling the behavior of the method QueryIndividualCounts.
+	QueryIndividualCountsFunc *OwnershipStatsStoreQueryIndividualCountsFunc
 	// UpdateIndividualCountsFunc is an instance of a mock function object
 	// controlling the behavior of the method UpdateIndividualCounts.
 	UpdateIndividualCountsFunc *OwnershipStatsStoreUpdateIndividualCountsFunc
@@ -38584,6 +38587,11 @@ type MockOwnershipStatsStore struct {
 // overwritten.
 func NewMockOwnershipStatsStore() *MockOwnershipStatsStore {
 	return &MockOwnershipStatsStore{
+		QueryIndividualCountsFunc: &OwnershipStatsStoreQueryIndividualCountsFunc{
+			defaultHook: func(context.Context, TreeLocationOpts, *LimitOffset) (r0 []TreeCounts, r1 error) {
+				return
+			},
+		},
 		UpdateIndividualCountsFunc: &OwnershipStatsStoreUpdateIndividualCountsFunc{
 			defaultHook: func(context.Context, api.RepoID, FileOwnershipAggregate, time.Time) (r0 int, r1 error) {
 				return
@@ -38597,6 +38605,11 @@ func NewMockOwnershipStatsStore() *MockOwnershipStatsStore {
 // overwritten.
 func NewStrictMockOwnershipStatsStore() *MockOwnershipStatsStore {
 	return &MockOwnershipStatsStore{
+		QueryIndividualCountsFunc: &OwnershipStatsStoreQueryIndividualCountsFunc{
+			defaultHook: func(context.Context, TreeLocationOpts, *LimitOffset) ([]TreeCounts, error) {
+				panic("unexpected invocation of MockOwnershipStatsStore.QueryIndividualCounts")
+			},
+		},
 		UpdateIndividualCountsFunc: &OwnershipStatsStoreUpdateIndividualCountsFunc{
 			defaultHook: func(context.Context, api.RepoID, FileOwnershipAggregate, time.Time) (int, error) {
 				panic("unexpected invocation of MockOwnershipStatsStore.UpdateIndividualCounts")
@@ -38610,10 +38623,128 @@ func NewStrictMockOwnershipStatsStore() *MockOwnershipStatsStore {
 // implementation, unless overwritten.
 func NewMockOwnershipStatsStoreFrom(i OwnershipStatsStore) *MockOwnershipStatsStore {
 	return &MockOwnershipStatsStore{
+		QueryIndividualCountsFunc: &OwnershipStatsStoreQueryIndividualCountsFunc{
+			defaultHook: i.QueryIndividualCounts,
+		},
 		UpdateIndividualCountsFunc: &OwnershipStatsStoreUpdateIndividualCountsFunc{
 			defaultHook: i.UpdateIndividualCounts,
 		},
 	}
+}
+
+// OwnershipStatsStoreQueryIndividualCountsFunc describes the behavior when
+// the QueryIndividualCounts method of the parent MockOwnershipStatsStore
+// instance is invoked.
+type OwnershipStatsStoreQueryIndividualCountsFunc struct {
+	defaultHook func(context.Context, TreeLocationOpts, *LimitOffset) ([]TreeCounts, error)
+	hooks       []func(context.Context, TreeLocationOpts, *LimitOffset) ([]TreeCounts, error)
+	history     []OwnershipStatsStoreQueryIndividualCountsFuncCall
+	mutex       sync.Mutex
+}
+
+// QueryIndividualCounts delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockOwnershipStatsStore) QueryIndividualCounts(v0 context.Context, v1 TreeLocationOpts, v2 *LimitOffset) ([]TreeCounts, error) {
+	r0, r1 := m.QueryIndividualCountsFunc.nextHook()(v0, v1, v2)
+	m.QueryIndividualCountsFunc.appendCall(OwnershipStatsStoreQueryIndividualCountsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// QueryIndividualCounts method of the parent MockOwnershipStatsStore
+// instance is invoked and the hook queue is empty.
+func (f *OwnershipStatsStoreQueryIndividualCountsFunc) SetDefaultHook(hook func(context.Context, TreeLocationOpts, *LimitOffset) ([]TreeCounts, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// QueryIndividualCounts method of the parent MockOwnershipStatsStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *OwnershipStatsStoreQueryIndividualCountsFunc) PushHook(hook func(context.Context, TreeLocationOpts, *LimitOffset) ([]TreeCounts, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *OwnershipStatsStoreQueryIndividualCountsFunc) SetDefaultReturn(r0 []TreeCounts, r1 error) {
+	f.SetDefaultHook(func(context.Context, TreeLocationOpts, *LimitOffset) ([]TreeCounts, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *OwnershipStatsStoreQueryIndividualCountsFunc) PushReturn(r0 []TreeCounts, r1 error) {
+	f.PushHook(func(context.Context, TreeLocationOpts, *LimitOffset) ([]TreeCounts, error) {
+		return r0, r1
+	})
+}
+
+func (f *OwnershipStatsStoreQueryIndividualCountsFunc) nextHook() func(context.Context, TreeLocationOpts, *LimitOffset) ([]TreeCounts, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *OwnershipStatsStoreQueryIndividualCountsFunc) appendCall(r0 OwnershipStatsStoreQueryIndividualCountsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// OwnershipStatsStoreQueryIndividualCountsFuncCall objects describing the
+// invocations of this function.
+func (f *OwnershipStatsStoreQueryIndividualCountsFunc) History() []OwnershipStatsStoreQueryIndividualCountsFuncCall {
+	f.mutex.Lock()
+	history := make([]OwnershipStatsStoreQueryIndividualCountsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// OwnershipStatsStoreQueryIndividualCountsFuncCall is an object that
+// describes an invocation of method QueryIndividualCounts on an instance of
+// MockOwnershipStatsStore.
+type OwnershipStatsStoreQueryIndividualCountsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 TreeLocationOpts
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *LimitOffset
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []TreeCounts
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c OwnershipStatsStoreQueryIndividualCountsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c OwnershipStatsStoreQueryIndividualCountsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // OwnershipStatsStoreUpdateIndividualCountsFunc describes the behavior when
