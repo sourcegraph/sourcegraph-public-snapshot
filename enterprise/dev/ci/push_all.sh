@@ -100,11 +100,10 @@ for target in ${images[@]}; do
   name="${BASH_REMATCH[1]}"
   # Append push commands for dev registries
   create_push_command "${dev_registries[*]}" "$name" "$target" "$dev_tags_args" >>"$job_file"
-  # TODO: Pushing to prod is currently disabled
   # Append push commands for prod registries
-  # if $push_prod; then
-  #   create_push_command "${prod_registries[*]}" "$name" "$target" "$prod_tags_args" >>"$job_file"
-  # fi
+  if $push_prod; then
+    create_push_command "${prod_registries[*]}" "$name" "$target" "$prod_tags_args" >>"$job_file"
+  fi
 done
 
 echo "-- jobfile"
