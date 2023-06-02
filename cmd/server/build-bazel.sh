@@ -47,7 +47,6 @@ ENTERPRISE_TARGETS=(
   //enterprise/cmd/repo-updater
   //enterprise/cmd/precise-code-intel-worker
   //enterprise/cmd/server
-  //docker-images/syntax-highlighter:scip-ctags
 )
 
 MUSL_TARGETS=(
