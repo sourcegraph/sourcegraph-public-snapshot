@@ -11,11 +11,11 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	osssourcegraphoperator "github.com/sourcegraph/sourcegraph/internal/auth/sourcegraphoperator"
+	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -41,7 +41,7 @@ func TestAddSourcegraphOperatorExternalAccountBinding(t *testing.T) {
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
-	err := osssourcegraphoperator.AddSourcegraphOperatorExternalAccount(context.Background(), db, 1, "foo", "")
+	err := sourcegraphoperator.AddSourcegraphOperatorExternalAccount(context.Background(), db, 1, "foo", "")
 	assert.ErrorIs(t, err, auth.ErrMustBeSiteAdmin)
 }
 
@@ -84,7 +84,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 			accountDetails: &accountDetailsBody{
 				ClientID:  "foobar",
 				AccountID: "bob",
-				ExternalAccountData: ExternalAccountData{
+				ExternalAccountData: sourcegraphoperator.ExternalAccountData{
 					ServiceAccount: true,
 				},
 			},
@@ -109,7 +109,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 			accountDetails: &accountDetailsBody{
 				ClientID:  "foobar",
 				AccountID: "bob",
-				ExternalAccountData: ExternalAccountData{
+				ExternalAccountData: sourcegraphoperator.ExternalAccountData{
 					ServiceAccount: true,
 				},
 			},
@@ -149,7 +149,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 			accountDetails: &accountDetailsBody{
 				ClientID:  "soap_client",
 				AccountID: "bob",
-				ExternalAccountData: ExternalAccountData{
+				ExternalAccountData: sourcegraphoperator.ExternalAccountData{
 					ServiceAccount: true,
 				},
 			},
@@ -165,7 +165,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 				assert.Equal(t, "soap_client", accts[0].ClientID)
 				assert.Equal(t, serviceID, accts[0].ServiceID)
 
-				data, err := GetAccountData(ctx, accts[0].AccountData)
+				data, err := sourcegraphoperator.GetAccountData(ctx, accts[0].AccountData)
 				require.NoError(t, err)
 				assert.True(t, data.ServiceAccount)
 			},
@@ -209,7 +209,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 			accountDetails: &accountDetailsBody{
 				ClientID:  "soap_client",
 				AccountID: "bob", // trying to change account ID
-				ExternalAccountData: ExternalAccountData{
+				ExternalAccountData: sourcegraphoperator.ExternalAccountData{
 					ServiceAccount: true, // trying to promote themselves to service account
 				},
 			},
@@ -225,7 +225,7 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 				assert.Equal(t, "soap_client", accts[0].ClientID)
 				assert.Equal(t, serviceID, accts[0].ServiceID)
 
-				data, err := GetAccountData(ctx, accts[0].AccountData)
+				data, err := sourcegraphoperator.GetAccountData(ctx, accts[0].AccountData)
 				require.NoError(t, err)
 				assert.False(t, data.ServiceAccount) // still not a service account
 			},

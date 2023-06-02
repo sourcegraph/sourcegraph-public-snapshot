@@ -18,11 +18,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const appDirectory = "sourcegraph"
 
-func Init(logger log.Logger) {
+type CleanupFunc func() error
+
+func Init(logger log.Logger) CleanupFunc {
 	if deploy.IsApp() {
 		fmt.Fprintln(os.Stderr, "✱ Sourcegraph App version:", version.Version())
 	}
@@ -43,6 +46,7 @@ func Init(logger log.Logger) {
 	setDefaultEnv(logger, "SYMBOLS_URL", "http://127.0.0.1:3184")
 	setDefaultEnv(logger, "SEARCHER_URL", "http://127.0.0.1:3181")
 	setDefaultEnv(logger, "BLOBSTORE_URL", "http://127.0.0.1:9000")
+	setDefaultEnv(logger, "EMBEDDINGS_URL", "http://127.0.0.1:9991")
 
 	// The syntax-highlighter might not be running, but this is a better default than an internal
 	// hostname.
@@ -84,8 +88,13 @@ func Init(logger log.Logger) {
 		os.Exit(1)
 	}
 
+	if err := removeLegacyDirs(); err != nil {
+		logger.Warn("failed to remove legacy dirs", log.Error(err))
+	}
+
 	embeddedPostgreSQLRootDir := filepath.Join(configDir, "postgresql")
-	if err := initPostgreSQL(logger, embeddedPostgreSQLRootDir); err != nil {
+	postgresCleanup, err := initPostgreSQL(logger, embeddedPostgreSQLRootDir)
+	if err != nil {
 		fmt.Fprintln(os.Stderr, "unable to set up PostgreSQL:", err)
 		os.Exit(1)
 	}
@@ -170,6 +179,9 @@ func Init(logger log.Logger) {
 			setDefaultEnv(logger, "CTAGS_COMMAND", ctagsPath)
 		}
 	}
+	return func() error {
+		return postgresCleanup()
+	}
 }
 
 func printStatusCheckError(title, description string, details ...string) {
@@ -246,6 +258,34 @@ func setupAppDir(root string, defaultDirFn func() (string, error)) (string, erro
 
 	path := filepath.Join(base, dir)
 	return path, os.MkdirAll(path, 0700)
+}
+
+// Effectively runs:
+//
+// rm -rf $HOME/.cache/sourcegraph-sp
+// rm -rf $HOME/.config/sourcegraph-sp
+// rm -rf $HOME/Library/Application\ Support/sourcegraph-sp
+// rm -rf $HOME/Library/Caches/sourcegraph-sp
+//
+// This deletes data from old Sourcegraph app directories, which came from before we switched to
+// Tauri - so that users don't have to. In theory, these directories have no impact and can't conflict,
+// but just for our own sanity we get rid of them.
+func removeLegacyDirs() error {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return errors.Wrap(err, "UserConfigDir")
+	}
+	cacheDir, err := os.UserCacheDir()
+	if err != nil {
+		return errors.Wrap(err, "UserCacheDir")
+	}
+	if err := os.RemoveAll(filepath.Join(cacheDir, "sourcegraph-sp")); err != nil {
+		return errors.Wrap(err, "RemoveAll cacheDir")
+	}
+	if err := os.RemoveAll(filepath.Join(configDir, "sourcegraph-sp")); err != nil {
+		return errors.Wrap(err, "RemoveAll configDir")
+	}
+	return nil
 }
 
 // setDefaultEnv will set the environment variable if it is not set.

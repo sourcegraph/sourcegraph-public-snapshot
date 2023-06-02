@@ -3,7 +3,7 @@
 # NOTE: Check the README before updating
 # hadolint ignore=DL3007
 FROM us.gcr.io/sourcegraph-dev/wolfi-cadvisor-base:latest
-LABEL com.sourcegraph.cadvisor.version=v0.47.0
+LABEL com.sourcegraph.cadvisor.version=v0.47.1
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"

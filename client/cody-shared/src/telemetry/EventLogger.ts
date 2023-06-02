@@ -24,14 +24,19 @@ export class EventLogger {
     }
 
     /**
-     * @param eventName The ID of the action executed.
+     * Logs an event.
+     *
+     * PRIVACY: Do NOT include any potentially private information in this
+     * field. These properties get sent to our analytics tools for Cloud, so
+     * must not include private information, such as search queries or
+     * repository names.
+     *
+     * @param eventName The name of the event.
+     * @param anonymousUserID The randomly generated unique user ID.
+     * @param eventProperties The additional argument information.
+     * @param publicProperties Public argument information.
      */
-    public async log(
-        eventName: string,
-        anonymousUserID: string,
-        eventProperties?: any,
-        publicProperties?: any
-    ): Promise<void> {
+    public log(eventName: string, anonymousUserID: string, eventProperties?: any, publicProperties?: any): void {
         const argument = {
             ...eventProperties,
             serverEndpoint: this.serverEndpoint,
@@ -45,14 +50,17 @@ export class EventLogger {
             useContext: this.useContext,
         }
         try {
-            await this.gqlAPIClient.logEvent({
-                event: eventName,
-                userCookieID: anonymousUserID,
-                source: 'IDEEXTENSION',
-                url: '',
-                argument: JSON.stringify(argument),
-                publicArgument: JSON.stringify(publicArgument),
-            })
+            this.gqlAPIClient
+                .logEvent({
+                    event: eventName,
+                    userCookieID: anonymousUserID,
+                    source: 'IDEEXTENSION',
+                    url: '',
+                    argument: JSON.stringify(argument),
+                    publicArgument: JSON.stringify(publicArgument),
+                })
+                .then(() => {})
+                .catch(() => {})
         } catch (error) {
             console.log(error)
         }

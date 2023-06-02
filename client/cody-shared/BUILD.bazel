@@ -1,10 +1,13 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "npm_package", "ts_project")
+load("//dev:eslint.bzl", "eslint_config")
+
+# gazelle:js_resolve vscode //:node_modules/@vscode
 
 npm_link_all_packages(name = "node_modules")
 
-# gazelle:js_resolve vscode //:node_modules/@vscode
+eslint_config()
 
 ts_config(
     name = "tsconfig",
@@ -31,6 +34,7 @@ ts_project(
         "src/chat/recipes/context-search.ts",
         "src/chat/recipes/explain-code-detailed.ts",
         "src/chat/recipes/explain-code-high-level.ts",
+        "src/chat/recipes/file-flow.ts",
         "src/chat/recipes/find-code-smells.ts",
         "src/chat/recipes/fixup.ts",
         "src/chat/recipes/generate-docstring.ts",
@@ -42,12 +46,14 @@ ts_project(
         "src/chat/recipes/inline-chat.ts",
         "src/chat/recipes/langs.ts",
         "src/chat/recipes/next-questions.ts",
+        "src/chat/recipes/non-stop.ts",
+        "src/chat/recipes/optimize-code.ts",
         "src/chat/recipes/recipe.ts",
         "src/chat/recipes/translate.ts",
-        "src/chat/recipes/vscode-recipes.ts",
         "src/chat/transcript/index.ts",
         "src/chat/transcript/interaction.ts",
         "src/chat/transcript/messages.ts",
+        "src/chat/useClient.ts",
         "src/chat/viewHelpers.ts",
         "src/codebase-context/index.ts",
         "src/codebase-context/messages.ts",
@@ -56,6 +62,8 @@ ts_project(
         "src/editor/withPreselectedOptions.ts",
         "src/embeddings/client.ts",
         "src/embeddings/index.ts",
+        "src/guardrails/client.ts",
+        "src/guardrails/index.ts",
         "src/hallucinations-detector/index.ts",
         "src/intent-detector/client.ts",
         "src/intent-detector/index.ts",
@@ -86,10 +94,12 @@ ts_project(
         "//:node_modules/@types/isomorphic-fetch",
         "//:node_modules/@types/marked",
         "//:node_modules/@types/node",
+        "//:node_modules/@types/react",
         "//:node_modules/@types/vscode",  #keep
         "//:node_modules/@vscode",
         "//:node_modules/isomorphic-fetch",
         "//:node_modules/marked",
+        "//:node_modules/react",
     ],
 )
 
@@ -107,6 +117,7 @@ ts_project(
     srcs = [
         "src/chat/bot-response-multiplexer.test.ts",
         "src/chat/transcript/transcript.test.ts",
+        "src/guardrails/index.test.ts",
         "src/hallucinations-detector/index.test.ts",
         "src/sourcegraph-api/utils.test.ts",
         "src/test/mocks.ts",

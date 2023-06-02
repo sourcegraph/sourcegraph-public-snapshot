@@ -7957,6 +7957,9 @@ type MockEnterpriseDB struct {
 	// RedisKeyValueFunc is an instance of a mock function object
 	// controlling the behavior of the method RedisKeyValue.
 	RedisKeyValueFunc *EnterpriseDBRedisKeyValueFunc
+	// RepoCommitsChangelistsFunc is an instance of a mock function object
+	// controlling the behavior of the method RepoCommitsChangelists.
+	RepoCommitsChangelistsFunc *EnterpriseDBRepoCommitsChangelistsFunc
 	// RepoKVPsFunc is an instance of a mock function object controlling the
 	// behavior of the method RepoKVPs.
 	RepoKVPsFunc *EnterpriseDBRepoKVPsFunc
@@ -8218,6 +8221,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		RedisKeyValueFunc: &EnterpriseDBRedisKeyValueFunc{
 			defaultHook: func() (r0 database.RedisKeyValueStore) {
+				return
+			},
+		},
+		RepoCommitsChangelistsFunc: &EnterpriseDBRepoCommitsChangelistsFunc{
+			defaultHook: func() (r0 database.RepoCommitsChangelistsStore) {
 				return
 			},
 		},
@@ -8528,6 +8536,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.RedisKeyValue")
 			},
 		},
+		RepoCommitsChangelistsFunc: &EnterpriseDBRepoCommitsChangelistsFunc{
+			defaultHook: func() database.RepoCommitsChangelistsStore {
+				panic("unexpected invocation of MockEnterpriseDB.RepoCommitsChangelists")
+			},
+		},
 		RepoKVPsFunc: &EnterpriseDBRepoKVPsFunc{
 			defaultHook: func() database.RepoKVPStore {
 				panic("unexpected invocation of MockEnterpriseDB.RepoKVPs")
@@ -8757,6 +8770,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		RedisKeyValueFunc: &EnterpriseDBRedisKeyValueFunc{
 			defaultHook: i.RedisKeyValue,
+		},
+		RepoCommitsChangelistsFunc: &EnterpriseDBRepoCommitsChangelistsFunc{
+			defaultHook: i.RepoCommitsChangelists,
 		},
 		RepoKVPsFunc: &EnterpriseDBRepoKVPsFunc{
 			defaultHook: i.RepoKVPs,
@@ -12780,6 +12796,108 @@ func (c EnterpriseDBRedisKeyValueFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBRedisKeyValueFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBRepoCommitsChangelistsFunc describes the behavior when the
+// RepoCommitsChangelists method of the parent MockEnterpriseDB instance is
+// invoked.
+type EnterpriseDBRepoCommitsChangelistsFunc struct {
+	defaultHook func() database.RepoCommitsChangelistsStore
+	hooks       []func() database.RepoCommitsChangelistsStore
+	history     []EnterpriseDBRepoCommitsChangelistsFuncCall
+	mutex       sync.Mutex
+}
+
+// RepoCommitsChangelists delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) RepoCommitsChangelists() database.RepoCommitsChangelistsStore {
+	r0 := m.RepoCommitsChangelistsFunc.nextHook()()
+	m.RepoCommitsChangelistsFunc.appendCall(EnterpriseDBRepoCommitsChangelistsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// RepoCommitsChangelists method of the parent MockEnterpriseDB instance is
+// invoked and the hook queue is empty.
+func (f *EnterpriseDBRepoCommitsChangelistsFunc) SetDefaultHook(hook func() database.RepoCommitsChangelistsStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepoCommitsChangelists method of the parent MockEnterpriseDB instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *EnterpriseDBRepoCommitsChangelistsFunc) PushHook(hook func() database.RepoCommitsChangelistsStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBRepoCommitsChangelistsFunc) SetDefaultReturn(r0 database.RepoCommitsChangelistsStore) {
+	f.SetDefaultHook(func() database.RepoCommitsChangelistsStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBRepoCommitsChangelistsFunc) PushReturn(r0 database.RepoCommitsChangelistsStore) {
+	f.PushHook(func() database.RepoCommitsChangelistsStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBRepoCommitsChangelistsFunc) nextHook() func() database.RepoCommitsChangelistsStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBRepoCommitsChangelistsFunc) appendCall(r0 EnterpriseDBRepoCommitsChangelistsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBRepoCommitsChangelistsFuncCall
+// objects describing the invocations of this function.
+func (f *EnterpriseDBRepoCommitsChangelistsFunc) History() []EnterpriseDBRepoCommitsChangelistsFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBRepoCommitsChangelistsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBRepoCommitsChangelistsFuncCall is an object that describes an
+// invocation of method RepoCommitsChangelists on an instance of
+// MockEnterpriseDB.
+type EnterpriseDBRepoCommitsChangelistsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.RepoCommitsChangelistsStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBRepoCommitsChangelistsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBRepoCommitsChangelistsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

@@ -40,15 +40,6 @@ func TestSetupRoutes(t *testing.T) {
 			},
 		},
 		{
-			name:               "CanceledJobs",
-			method:             http.MethodPost,
-			path:               "/test/canceledJobs",
-			expectedStatusCode: http.StatusOK,
-			expectationsFunc: func(h *testExecutorHandler) {
-				h.On("HandleCanceledJobs").Once()
-			},
-		},
-		{
 			name:               "Invalid root",
 			method:             http.MethodPost,
 			path:               "/test1/dequeue",

@@ -10,6 +10,7 @@ load("//dev:mocha.bzl", "mocha_test")
 ts_config(
     name = "tsconfig",
     src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
     deps = [
         "//client/shared/src/testing:tsconfig",
         "//client/web:tsconfig",
@@ -114,6 +115,7 @@ mocha_test(
     flaky = True,
     is_percy_enabled = True,
     tags = [
+        "manual",
         "no-sandbox",
         "requires-network",
     ],

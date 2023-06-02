@@ -9,17 +9,58 @@ import {
 
 import { getConfiguration } from './configuration'
 
-let outputChannel: null | vscode.OutputChannel = null
+const outputChannel: vscode.OutputChannel = vscode.window.createOutputChannel('Cody AI by Sourcegraph', 'json')
 
 const workspaceConfig = vscode.workspace.getConfiguration()
 const config = getConfiguration(workspaceConfig)
-if (config.debug) {
-    outputChannel = vscode.window.createOutputChannel('Cody AI by Sourcegraph', 'json')
+
+/**
+ * Logs text for debugging purposes to the "Cody AI by Sourcegraph" output channel.
+ *
+ * There are three config settings that alter the behavior of this function.
+ * A window refresh may be needed if these settings are changed for the behavior
+ * change to take effect.
+ * - cody.debug.enabled: toggles debug logging on or off
+ * - cody.debug.filter: sets a regex filter that opts-in messages with labels matching the regex
+ * - cody.debug.verbose: prints out the text in the `verbose` field of the last argument
+ *
+ * Usage:
+ * debug('label', 'this is a message')
+ * debug('label', 'this is a message', 'some', 'args')
+ * debug('label', 'this is a message', 'some', 'args', { verbose: 'verbose info goes here' })
+ */
+export function debug(filterLabel: string, text: string, ...args: unknown[]): void {
+    if (!outputChannel || !config.debugEnable) {
+        return
+    }
+
+    if (config.debugFilter && !config.debugFilter.test(filterLabel)) {
+        return
+    }
+
+    if (args.length === 0) {
+        outputChannel.appendLine(`${filterLabel}: ${text}`)
+        return
+    }
+
+    const lastArg = args[args.length - 1]
+    if (lastArg && typeof lastArg === 'object' && 'verbose' in lastArg) {
+        if (config.debugVerbose) {
+            outputChannel.appendLine(
+                `${filterLabel}: ${text} ${args.slice(0, -1).join(' ')} ${JSON.stringify(lastArg.verbose)}`
+            )
+        } else {
+            outputChannel.appendLine(`${filterLabel}: ${text} ${args.slice(0, -1).join(' ')}`)
+        }
+        return
+    }
+
+    outputChannel.appendLine(`${filterLabel}: ${text} ${args.join(' ')}`)
 }
 
 export const logger: CompletionLogger = {
     startCompletion(params: CompletionParameters) {
-        if (!outputChannel) {
+        if (!config.debugEnable) {
             return undefined
         }
 
@@ -33,17 +74,16 @@ export const logger: CompletionLogger = {
                 return
             }
             hasFinished = true
-
-            outputChannel!.appendLine(
+            debug(
+                'CompletionLogger:onError',
                 JSON.stringify({
                     type,
                     status: 'error',
                     duration: Date.now() - start,
-                    params,
                     error,
-                })
+                }),
+                { verbose: { params } }
             )
-            outputChannel!.appendLine('')
         }
 
         function onComplete(result: string | CompletionResponse): void {
@@ -52,16 +92,15 @@ export const logger: CompletionLogger = {
             }
             hasFinished = true
 
-            outputChannel!.appendLine(
+            debug(
+                'CompletionLogger:onComplete',
                 JSON.stringify({
                     type,
                     status: 'success',
                     duration: Date.now() - start,
-                    params,
-                    result,
-                })
+                }),
+                { verbose: { result, params } }
             )
-            outputChannel!.appendLine('')
         }
 
         function onEvents(events: Event[]): void {

@@ -62,6 +62,7 @@ func (s *repoEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 			uploadStore,
 			gitserver.NewClient(),
 			services.ContextService,
+			repoembeddingsbg.NewRepoEmbeddingJobsStore(db),
 		),
 	}, nil
 }
@@ -74,12 +75,14 @@ func newRepoEmbeddingJobWorker(
 	uploadStore uploadstore.Store,
 	gitserverClient gitserver.Client,
 	contextService embed.ContextService,
+	repoEmbeddingJobsStore repoembeddingsbg.RepoEmbeddingJobsStore,
 ) *workerutil.Worker[*repoembeddingsbg.RepoEmbeddingJob] {
 	handler := &handler{
-		db:              db,
-		uploadStore:     uploadStore,
-		gitserverClient: gitserverClient,
-		contextService:  contextService,
+		db:                     db,
+		uploadStore:            uploadStore,
+		gitserverClient:        gitserverClient,
+		contextService:         contextService,
+		repoEmbeddingJobsStore: repoEmbeddingJobsStore,
 	}
 	return dbworker.NewWorker[*repoembeddingsbg.RepoEmbeddingJob](ctx, workerStore, handler, workerutil.WorkerOptions{
 		Name:              "repo_embedding_job_worker",

@@ -1,11 +1,14 @@
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
+load("//dev:eslint.bzl", "eslint_config")
 
 # dts-only done manually
 # gazelle:js disabled
 
 npm_link_all_packages(name = "node_modules")
+
+eslint_config()
 
 ts_config(
     name = "tsconfig",

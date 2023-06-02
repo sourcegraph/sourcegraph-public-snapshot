@@ -13,6 +13,7 @@ import {
     LEGACY_SEARCH_EMBEDDINGS_QUERY,
     LOG_EVENT_MUTATION,
     REPOSITORY_EMBEDDING_EXISTS_QUERY,
+    SEARCH_TYPE_REPO_QUERY,
     CURRENT_USER_ID_AND_VERIFIED_EMAIL_QUERY,
 } from './queries'
 
@@ -45,6 +46,15 @@ interface EmbeddingsMultiSearchResponse {
     embeddingsMultiSearch: EmbeddingsSearchResults
 }
 
+interface SearchTypeRepoResponse {
+    search: {
+        results: {
+            limitHit: boolean
+            results: { name: string }[]
+        }
+    }
+}
+
 interface LogEventResponse {}
 
 export interface EmbeddingsSearchResult {
@@ -59,6 +69,11 @@ export interface EmbeddingsSearchResult {
 export interface EmbeddingsSearchResults {
     codeResults: EmbeddingsSearchResult[]
     textResults: EmbeddingsSearchResult[]
+}
+
+export interface SearchTypeRepoResults {
+    limitHit: boolean
+    repositories: { name: string }[]
 }
 
 interface IsContextRequiredForChatQueryResponse {
@@ -85,7 +100,9 @@ export class SourcegraphGraphQLAPIClient {
         private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
     ) {}
 
-    public onConfigurationChange(newConfig: typeof this.config): void {
+    public onConfigurationChange(
+        newConfig: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
+    ): void {
         this.config = newConfig
     }
 
@@ -194,6 +211,17 @@ export class SourcegraphGraphQLAPIClient {
             codeResultsCount,
             textResultsCount,
         }).then(response => extractDataOrError(response, data => data.embeddingsSearch))
+    }
+
+    public async searchTypeRepo(query: string): Promise<SearchTypeRepoResults | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<SearchTypeRepoResponse>>(SEARCH_TYPE_REPO_QUERY, {
+            query,
+        }).then(response =>
+            extractDataOrError(response, data => ({
+                limitHit: data.search.results.limitHit,
+                repositories: data.search.results.results,
+            }))
+        )
     }
 
     public async isContextRequiredForQuery(query: string): Promise<boolean | Error> {

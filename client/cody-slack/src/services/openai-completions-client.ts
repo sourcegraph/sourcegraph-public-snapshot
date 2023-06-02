@@ -12,10 +12,11 @@ import {
 export class OpenAICompletionsClient implements Pick<SourcegraphCompletionsClient, 'stream'> {
     private openai: OpenAIApi
 
-    constructor(private apiKey: string) {
+    constructor(protected apiKey: string) {
         const configuration = new Configuration({
             apiKey: this.apiKey,
         })
+
         this.openai = new OpenAIApi(configuration)
     }
 
@@ -23,7 +24,8 @@ export class OpenAICompletionsClient implements Pick<SourcegraphCompletionsClien
         this.openai
             .createChatCompletion(
                 {
-                    model: 'gpt-3.5-turbo',
+                    // TODO: manage prompt length
+                    model: 'gpt-4',
                     messages: params.messages
                         .filter(
                             (message): message is Omit<Message, 'text'> & Required<Pick<Message, 'text'>> =>
@@ -43,10 +45,12 @@ export class OpenAICompletionsClient implements Pick<SourcegraphCompletionsClien
                 const stream = response.data as unknown as IncomingMessage
 
                 let modelResponseText = ''
+                let buffer = ''
 
                 stream.on('data', (chunk: Buffer) => {
                     // Split messages in the event stream.
-                    const payloads = chunk.toString().split('\n\n')
+                    buffer += chunk.toString()
+                    const payloads = buffer.split('\n\n')
 
                     for (const payload of payloads) {
                         if (payload.includes('[DONE]')) {
@@ -64,17 +68,27 @@ export class OpenAICompletionsClient implements Pick<SourcegraphCompletionsClien
                                     modelResponseText += newTextChunk
                                     cb.onChange(modelResponseText)
                                 }
+
+                                buffer = buffer.slice(Math.max(0, buffer.indexOf(payload) + payload.length))
                             } catch (error) {
-                                console.log(
-                                    `Error with JSON.parse: ${chunk.toString()}\nPayload: ${payload};\nError: ${error}`
-                                )
-                                cb.onError(error)
+                                if (error instanceof SyntaxError && buffer.length > 0) {
+                                    // Incomplete JSON string, wait for more data
+                                    continue
+                                } else {
+                                    console.log(
+                                        `Error with JSON.parse: ${chunk.toString()}\nPayload: ${payload};\nError: ${error}`
+                                    )
+                                    cb.onError(error)
+                                }
                             }
                         }
                     }
                 })
 
-                stream.on('error', e => cb.onError(e.message))
+                stream.on('error', e => {
+                    console.error('OpenAI stream failed', e)
+                    cb.onError(e.message)
+                })
                 stream.on('end', () => cb.onComplete())
             })
             .catch(console.error)

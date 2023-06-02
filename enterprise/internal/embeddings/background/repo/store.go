@@ -10,12 +10,15 @@ import (
 	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type RepoEmbeddingJobNotFoundErr struct {
@@ -100,12 +103,132 @@ type RepoEmbeddingJobsStore interface {
 	GetLastRepoEmbeddingJobForRevision(ctx context.Context, repoID api.RepoID, revision api.CommitID) (*RepoEmbeddingJob, error)
 	ListRepoEmbeddingJobs(ctx context.Context, args *database.PaginationArgs) ([]*RepoEmbeddingJob, error)
 	CountRepoEmbeddingJobs(ctx context.Context) (int, error)
+	GetEmbeddableRepos(ctx context.Context, opts EmbeddableRepoOpts) ([]EmbeddableRepo, error)
+	CancelRepoEmbeddingJob(ctx context.Context, job int) error
 }
 
 var _ basestore.ShareableStore = &repoEmbeddingJobsStore{}
 
 type repoEmbeddingJobsStore struct {
 	*basestore.Store
+}
+
+type EmbeddableRepo struct {
+	ID          api.RepoID
+	lastChanged time.Time
+}
+
+var scanEmbeddableRepos = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (r EmbeddableRepo, _ error) {
+	err := scanner.Scan(&r.ID, &r.lastChanged)
+	return r, err
+})
+
+const getEmbeddableReposFmtStr = `
+WITH
+global_policy_descriptor AS MATERIALIZED (
+	SELECT 1
+	FROM codeintel_configuration_policies p
+	WHERE
+		p.embeddings_enabled AND
+		p.repository_id IS NULL AND
+		p.repository_patterns IS NULL
+	LIMIT 1
+),
+last_successful_jobs AS (
+	SELECT DISTINCT ON (repo_id) repo_id, finished_at
+	FROM repo_embedding_jobs
+	WHERE
+		state = 'completed' AND
+		failure_message IS NULL
+	ORDER BY repo_id, finished_at DESC
+),
+repositories_matching_policy AS (
+    (
+        SELECT r.id, gr.last_changed
+        FROM repo r
+        JOIN gitserver_repos gr ON gr.repo_id = r.id
+        JOIN global_policy_descriptor gpd ON TRUE
+        WHERE
+            r.deleted_at IS NULL AND
+            r.blocked IS NULL AND
+            gr.clone_status = 'cloned'
+        ORDER BY stars DESC NULLS LAST, id
+        LIMIT 5000 -- Some repository match limit to stop you from returning all of dotcom
+    ) UNION ALL (
+        SELECT r.id, gr.last_changed
+        FROM repo r
+        JOIN gitserver_repos gr ON gr.repo_id = r.id
+        JOIN codeintel_configuration_policies p ON p.repository_id = r.id
+        WHERE
+            r.deleted_at IS NULL AND
+            r.blocked IS NULL AND
+            p.embeddings_enabled AND
+            gr.clone_status = 'cloned'
+    ) UNION ALL (
+        SELECT r.id, gr.last_changed
+        FROM repo r
+        JOIN gitserver_repos gr ON gr.repo_id = r.id
+        JOIN codeintel_configuration_policies_repository_pattern_lookup rpl ON rpl.repo_id = r.id
+        JOIN codeintel_configuration_policies p ON p.id = rpl.policy_id
+        WHERE
+            r.deleted_at IS NULL AND
+            r.blocked IS NULL AND
+            p.embeddings_enabled AND
+            gr.clone_status = 'cloned'
+    )
+)
+--
+SELECT DISTINCT ON (rmp.id) rmp.id, rmp.last_changed
+FROM repositories_matching_policy rmp
+LEFT JOIN last_successful_jobs lsj ON lsj.repo_id = rmp.id
+WHERE lsj.finished_at IS NULL OR lsj.finished_at < current_timestamp - (%s * '1 second'::interval);
+`
+
+type EmbeddableRepoOpts struct {
+	// MinimumInterval is the minimum amount of time that must have passed since the last
+	// successful embedding job.
+	MinimumInterval time.Duration
+}
+
+func init() {
+	conf.ContributeValidator(embeddingConfigValidator)
+}
+
+func embeddingConfigValidator(q conftypes.SiteConfigQuerier) conf.Problems {
+	embeddingsConf := q.SiteConfig().Embeddings
+	if embeddingsConf == nil {
+		return nil
+	}
+
+	minimumIntervalString := embeddingsConf.MinimumInterval
+	_, err := time.ParseDuration(minimumIntervalString)
+	if err != nil && minimumIntervalString != "" {
+		return conf.NewSiteProblems(fmt.Sprintf("Could not parse \"embeddings.minimumInterval: %s\". %s", minimumIntervalString, err))
+	}
+
+	return nil
+}
+
+func GetEmbeddableRepoOpts() EmbeddableRepoOpts {
+	defaultMinimumInterval := 24 * time.Hour
+
+	embeddingsConf := conf.Get().Embeddings
+	if embeddingsConf == nil {
+		return EmbeddableRepoOpts{MinimumInterval: defaultMinimumInterval}
+	}
+
+	minimumIntervalString := embeddingsConf.MinimumInterval
+	d, err := time.ParseDuration(minimumIntervalString)
+	if err != nil {
+		return EmbeddableRepoOpts{MinimumInterval: defaultMinimumInterval}
+	}
+
+	return EmbeddableRepoOpts{MinimumInterval: d}
+}
+
+func (s *repoEmbeddingJobsStore) GetEmbeddableRepos(ctx context.Context, opts EmbeddableRepoOpts) ([]EmbeddableRepo, error) {
+	q := sqlf.Sprintf(getEmbeddableReposFmtStr, opts.MinimumInterval.Seconds())
+	return scanEmbeddableRepos(s.Query(ctx, q))
 }
 
 func NewRepoEmbeddingJobsStore(other basestore.ShareableStore) RepoEmbeddingJobsStore {
@@ -217,3 +340,36 @@ func (s *repoEmbeddingJobsStore) ListRepoEmbeddingJobs(ctx context.Context, pagi
 	}
 	return jobs, nil
 }
+
+func (s *repoEmbeddingJobsStore) CancelRepoEmbeddingJob(ctx context.Context, jobID int) error {
+	now := time.Now()
+	q := sqlf.Sprintf(cancelRepoEmbeddingJobQueryFmtstr, now, jobID)
+
+	res, err := s.ExecResult(ctx, q)
+	if err != nil {
+		return err
+	}
+	nrows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if nrows == 0 {
+		return errors.Newf("could not find cancellable embedding job: jobID=%d", jobID)
+	}
+	return nil
+}
+
+const cancelRepoEmbeddingJobQueryFmtstr = `
+UPDATE
+	repo_embedding_jobs
+SET
+    cancel = TRUE,
+    -- If the embeddings job is still queued, we directly abort, otherwise we keep the
+    -- state, so the worker can do teardown and later mark it failed.
+    state = CASE WHEN repo_embedding_jobs.state = 'processing' THEN repo_embedding_jobs.state ELSE 'canceled' END,
+    finished_at = CASE WHEN repo_embedding_jobs.state = 'processing' THEN repo_embedding_jobs.finished_at ELSE %s END
+WHERE
+	id = %d
+	AND
+	state IN ('queued', 'processing')
+`

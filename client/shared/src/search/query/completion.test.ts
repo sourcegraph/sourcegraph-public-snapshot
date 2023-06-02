@@ -407,9 +407,7 @@ describe('getCompletionItems()', () => {
               "has.topic(\${1}) ",
               "has.commit.after(\${1:1 month ago}) ",
               "has.description(\${1}) ",
-              "has.tag(\${1}) ",
-              "has(\${1:key}:\${2:value}) ",
-              "has.key(\${1}) ",
+              "has.meta(\${1:key}:\${2:value}) ",
               "^repo/with\\\\ a\\\\ space$ "
             ]
         `)
@@ -433,9 +431,7 @@ describe('getCompletionItems()', () => {
               "has.topic(\${1}) ",
               "has.commit.after(\${1:1 month ago}) ",
               "has.description(\${1}) ",
-              "has.tag(\${1}) ",
-              "has(\${1:key}:\${2:value}) ",
-              "has.key(\${1}) "
+              "has.meta(\${1:key}:\${2:value}) "
             ]
         `)
     })

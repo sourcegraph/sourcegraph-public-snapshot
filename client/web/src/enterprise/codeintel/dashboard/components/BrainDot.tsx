@@ -100,13 +100,14 @@ export const BrainDot: React.FunctionComponent<BrainDotProps> = ({ repoName, com
     return forNerds ? (
         <Menu>
             <>
-                <MenuButton
-                    className={classNames('text-decoration-none', styles.braindot, dotStyle)}
-                    aria-label="Code graph"
-                >
-                    <Icon aria-hidden={true} svgPath={mdiBrain} />
-                </MenuButton>
-
+                <Tooltip content="View code intelligence summary">
+                    <MenuButton
+                        className={classNames('text-decoration-none', styles.braindot, dotStyle)}
+                        aria-label="Code graph"
+                    >
+                        <Icon aria-hidden={true} svgPath={mdiBrain} />
+                    </MenuButton>
+                </Tooltip>
                 <MenuList position={Position.bottomEnd} className={styles.dropdownMenu}>
                     <MenuHeader>
                         Click to view code intelligence summary

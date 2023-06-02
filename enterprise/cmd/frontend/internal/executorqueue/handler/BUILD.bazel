@@ -48,7 +48,6 @@ go_test(
         "//internal/database",
         "//internal/executor",
         "//internal/metrics/store",
-        "//internal/types",
         "//internal/workerutil",
         "//internal/workerutil/dbworker/store",
         "//internal/workerutil/dbworker/store/mocks",

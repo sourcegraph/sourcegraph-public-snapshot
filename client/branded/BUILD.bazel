@@ -1,6 +1,7 @@
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "jest_test", "npm_package", "sass", "ts_project")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
+load("//dev:eslint.bzl", "eslint_config")
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
@@ -10,6 +11,8 @@ load("//client/shared/dev:tools.bzl", "module_style_typings")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 
 npm_link_all_packages(name = "node_modules")
+
+eslint_config()
 
 ts_config(
     name = "tsconfig",

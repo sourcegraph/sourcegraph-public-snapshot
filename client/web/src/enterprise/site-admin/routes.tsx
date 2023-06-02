@@ -5,6 +5,7 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { otherSiteAdminRoutes, UsersManagement } from '../../site-admin/routes'
 import { SiteAdminAreaRoute } from '../../site-admin/SiteAdminArea'
 import { BatchSpecsPageProps } from '../batches/BatchSpecsPage'
+import { CodeIntelConfigurationPolicyPage } from '../codeintel/configuration/pages/CodeIntelConfigurationPolicyPage'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
 import { SiteAdminRolesPageProps } from '../rbac/SiteAdminRolesPage'
 
@@ -74,6 +75,10 @@ const CodeInsightsJobsPage = lazyComponent(() => import('../insights/admin-ui/Co
 const OwnStatusPage = lazyComponent(() => import('../own/admin-ui/OwnStatusPage'), 'OwnStatusPage')
 
 const SiteAdminCodyPage = lazyComponent(() => import('./cody/SiteAdminCodyPage'), 'SiteAdminCodyPage')
+const CodyConfigurationPage = lazyComponent(
+    () => import('../cody/configuration/pages/CodyConfigurationPage'),
+    'CodyConfigurationPage'
+)
 
 export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
     [
@@ -184,10 +189,29 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
 
         // Cody configuration
         {
+            exact: true,
             path: '/cody',
+            render: () => <Navigate to="/site-admin/embeddings" />,
+            condition: () => Boolean(window.context?.embeddingsEnabled),
+        },
+        {
+            exact: true,
+            path: '/embeddings',
             render: props => <SiteAdminCodyPage {...props} />,
             condition: () => Boolean(window.context?.embeddingsEnabled),
         },
+        {
+            exact: true,
+            path: '/embeddings/configuration',
+            render: props => <CodyConfigurationPage {...props} />,
+            condition: () => Boolean(window.context?.embeddingsEnabled),
+        },
+        {
+            path: '/embeddings/configuration/:id',
+            render: props => <CodeIntelConfigurationPolicyPage {...props} domain="embeddings" />,
+            condition: () => Boolean(window.context?.embeddingsEnabled),
+        },
+
         // rbac-related routes
         {
             path: '/roles',

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log"
@@ -25,8 +26,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/drift"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
@@ -48,7 +51,7 @@ func (r *schemaResolver) siteByGQLID(_ context.Context, id graphql.ID) (Node, er
 	if siteGQLID != singletonSiteGQLID {
 		return nil, errors.Errorf("site not found: %q", siteGQLID)
 	}
-	return newSiteResolver(r.logger, r.db), nil
+	return NewSiteResolver(r.logger, r.db), nil
 }
 
 func marshalSiteGQLID(siteID string) graphql.ID { return relay.MarshalID("Site", siteID) }
@@ -63,14 +66,10 @@ func unmarshalSiteGQLID(id graphql.ID) (siteID string, err error) {
 }
 
 func (r *schemaResolver) Site() *siteResolver {
-	return newSiteResolver(r.logger, r.db)
+	return NewSiteResolver(r.logger, r.db)
 }
 
 func NewSiteResolver(logger log.Logger, db database.DB) *siteResolver {
-	return newSiteResolver(logger, db)
-}
-
-func newSiteResolver(logger log.Logger, db database.DB) *siteResolver {
 	return &siteResolver{
 		logger: logger,
 		db:     db,
@@ -118,11 +117,11 @@ func (r *siteResolver) LatestSettings(ctx context.Context) (*settingsResolver, e
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{r.db, &settingsSubject{site: r}, settings, nil}, nil
+	return &settingsResolver{r.db, &settingsSubjectResolver{site: r}, settings, nil}, nil
 }
 
 func (r *siteResolver) SettingsCascade() *settingsCascade {
-	return &settingsCascade{db: r.db, subject: &settingsSubject{site: r}}
+	return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{site: r}}
 }
 
 func (r *siteResolver) ConfigurationCascade() *settingsCascade { return r.SettingsCascade() }
@@ -269,7 +268,8 @@ func (r *siteConfigurationResolver) History(ctx context.Context, args *graphqlut
 func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *struct {
 	LastID int32
 	Input  string
-}) (bool, error) {
+},
+) (bool, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
@@ -300,31 +300,6 @@ var siteConfigAllowEdits, _ = strconv.ParseBool(env.Get("SITE_CONFIG_ALLOW_EDITS
 
 func canUpdateSiteConfiguration() bool {
 	return os.Getenv("SITE_CONFIG_FILE") == "" || siteConfigAllowEdits || deploy.IsApp()
-}
-
-// IsCodeInsightsEnabled tells if code insights are enabled or not.
-func IsCodeInsightsEnabled() bool {
-	if envvar.SourcegraphDotComMode() {
-		return false
-	}
-	if v, _ := strconv.ParseBool(os.Getenv("DISABLE_CODE_INSIGHTS")); v {
-		// Code insights can always be disabled. This can be a helpful escape hatch if e.g. there
-		// are issues with (or connecting to) the codeinsights-db deployment and it is preventing
-		// the Sourcegraph frontend or repo-updater from starting.
-		//
-		// It is also useful in dev environments if you do not wish to spend resources running Code
-		// Insights.
-		return false
-	}
-	if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
-		// Code insights is not supported in single-container Docker demo deployments unless
-		// explicity allowed, (for example by backend integration tests.)
-		if v, _ := strconv.ParseBool(os.Getenv("ALLOW_SINGLE_DOCKER_CODE_INSIGHTS")); v {
-			return true
-		}
-		return false
-	}
-	return true
 }
 
 func (r *siteResolver) UpgradeReadiness(ctx context.Context) (*upgradeReadinessResolver, error) {
@@ -370,7 +345,7 @@ func (r *upgradeReadinessResolver) init(ctx context.Context) (_ cliutil.Runner, 
 		r.runner, r.version, r.schemaNames, r.initErr = func() (cliutil.Runner, string, []string, error) {
 			schemaNames := []string{schemas.Frontend.Name, schemas.CodeIntel.Name}
 			schemaList := []*schemas.Schema{schemas.Frontend, schemas.CodeIntel}
-			if IsCodeInsightsEnabled() {
+			if insights.IsCodeInsightsEnabled() {
 				schemaNames = append(schemaNames, schemas.CodeInsights.Name)
 				schemaList = append(schemaList, schemas.CodeInsights)
 			}
@@ -408,22 +383,82 @@ func (r *upgradeReadinessResolver) init(ctx context.Context) (_ cliutil.Runner, 
 	return r.runner, r.version, r.schemaNames, r.initErr
 }
 
-func (r *upgradeReadinessResolver) SchemaDrift(ctx context.Context) (string, error) {
+type schemaDriftResolver struct {
+	summary drift.Summary
+}
+
+func (r *schemaDriftResolver) Name() string {
+	return r.summary.Name()
+}
+
+func (r *schemaDriftResolver) Problem() string {
+	return r.summary.Problem()
+}
+
+func (r *schemaDriftResolver) Solution() string {
+	return r.summary.Solution()
+}
+
+func (r *schemaDriftResolver) Diff() *string {
+	if a, b, ok := r.summary.Diff(); ok {
+		v := cmp.Diff(a, b)
+		return &v
+	}
+
+	return nil
+}
+
+func (r *schemaDriftResolver) Statements() *[]string {
+	if statements, ok := r.summary.Statements(); ok {
+		return &statements
+	}
+
+	return nil
+}
+
+func (r *schemaDriftResolver) URLHint() *string {
+	if urlHint, ok := r.summary.URLHint(); ok {
+		return &urlHint
+	}
+
+	return nil
+}
+
+func (r *upgradeReadinessResolver) SchemaDrift(ctx context.Context) ([]*schemaDriftResolver, error) {
 	runner, version, schemaNames, err := r.init(ctx)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	r.logger.Debug("schema drift", log.String("version", version))
 
-	var drift bytes.Buffer
-	out := output.NewOutput(&drift, output.OutputOpts{Verbose: true})
-	err = cliutil.CheckDrift(ctx, runner, version, out, true, schemaNames, schemaFactories)
-	if err == cliutil.ErrDatabaseDriftDetected {
-		return drift.String(), nil
-	} else if err != nil {
-		return "", errors.Wrap(err, "check drift")
+	var resolvers []*schemaDriftResolver
+	for _, schemaName := range schemaNames {
+		store, err := runner.Store(ctx, schemaName)
+		if err != nil {
+			return nil, errors.Wrap(err, "get migration store")
+		}
+		schemaDescriptions, err := store.Describe(ctx)
+		if err != nil {
+			return nil, err
+		}
+		schema := schemaDescriptions["public"]
+
+		var buf bytes.Buffer
+		driftOut := output.NewOutput(&buf, output.OutputOpts{})
+
+		expectedSchema, err := cliutil.FetchExpectedSchema(ctx, schemaName, version, driftOut, schemaFactories)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, summary := range drift.CompareSchemaDescriptions(schemaName, version, cliutil.Canonicalize(schema), cliutil.Canonicalize(expectedSchema)) {
+			resolvers = append(resolvers, &schemaDriftResolver{
+				summary: summary,
+			})
+		}
 	}
-	return "", nil
+
+	return resolvers, nil
 }
 
 // isRequiredOutOfBandMigration returns true if a OOB migration is deprecated not
@@ -477,7 +512,8 @@ func (r *siteResolver) AutoUpgradeEnabled(ctx context.Context) (bool, error) {
 
 func (r *schemaResolver) SetAutoUpgrade(ctx context.Context, args *struct {
 	Enable bool
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins can set auto_upgrade readiness
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return &EmptyResponse{}, err
@@ -505,6 +541,15 @@ func (r *siteResolver) PerUserCodeCompletionsQuota() *int32 {
 }
 
 func (r *siteResolver) RequiresVerifiedEmailForCody(ctx context.Context) bool {
+	// App is typically forwarding Cody requests to dotcom.
+	// This section can be removed if dotcom stops requiring verified emails
+	if deploy.IsApp() {
+		// App users can specify their own keys
+		// if they use their own keys requests are not forwarded to dotcom
+		// which means a verified email is not needed
+		return conf.Get().Completions == nil
+	}
+
 	// We only require this on dotcom
 	if !envvar.SourcegraphDotComMode() {
 		return false

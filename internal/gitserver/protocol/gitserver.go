@@ -363,6 +363,22 @@ type IsRepoCloneableResponse struct {
 	Reason    string // if not cloneable, the reason why not
 }
 
+func (i *IsRepoCloneableResponse) ToProto() *proto.IsRepoCloneableResponse {
+	return &proto.IsRepoCloneableResponse{
+		Cloneable: i.Cloneable,
+		Cloned:    i.Cloned,
+		Reason:    i.Reason,
+	}
+}
+
+func (i *IsRepoCloneableResponse) FromProto(p *proto.IsRepoCloneableResponse) {
+	*i = IsRepoCloneableResponse{
+		Cloneable: p.GetCloneable(),
+		Cloned:    p.GetCloned(),
+		Reason:    p.GetReason(),
+	}
+}
+
 // RepoDeleteRequest is a request to delete a repository clone on gitserver
 type RepoDeleteRequest struct {
 	// Repo is the repository to delete.
@@ -378,6 +394,23 @@ type ReposStats struct {
 
 	// GitDirBytes is the amount of bytes stored in .git directories.
 	GitDirBytes int64
+}
+
+func (rs *ReposStats) FromProto(x *proto.ReposStatsResponse) {
+	protoGitDirBytes := x.GetGitDirBytes()
+	protoUpdatedAt := x.GetUpdatedAt().AsTime()
+
+	*rs = ReposStats{
+		UpdatedAt:   protoUpdatedAt,
+		GitDirBytes: int64(protoGitDirBytes),
+	}
+}
+
+func (rs *ReposStats) ToProto() *proto.ReposStatsResponse {
+	return &proto.ReposStatsResponse{
+		GitDirBytes: uint64(rs.GitDirBytes),
+		UpdatedAt:   timestamppb.New(rs.UpdatedAt),
+	}
 }
 
 // RepoCloneProgressRequest is a request for information about the clone progress of multiple

@@ -1,10 +1,10 @@
 import * as vscode from 'vscode'
 
 import { DecorationProvider } from './DecorationProvider'
-import { CodyTaskState, singleLineRange } from './InlineController'
+import { CodyTaskState, getSingleLineRange, updateRangeOnDocChange } from './InlineAssist'
 
 export class CodeLensProvider implements vscode.CodeLensProvider {
-    private ranges: vscode.Range | null = null
+    private selectionRange: vscode.Range | null = null
     private static lenses: CodeLensProvider
 
     private status = CodyTaskState.idle
@@ -21,25 +21,18 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
                 return
             }
             for (const change of e.contentChanges) {
-                if (!this.ranges || (change.range.end.line > this.ranges.start.line && this.isPending())) {
+                if (
+                    !this.selectionRange ||
+                    (change.range.end.line > this.selectionRange.start.line && this.isPending())
+                ) {
                     return
                 }
-                if (change.range.start.line === this.ranges?.start.line && !this.isPending()) {
+                if (change.range.start.line === this.selectionRange?.start.line && !this.isPending()) {
                     this.remove()
                     return
                 }
-                let addedLines = 0
-                if (change.text.includes('\n')) {
-                    addedLines = change.text.split('\n').length - 1
-                } else if (change.range.end.line - change.range.start.line > 0) {
-                    addedLines -= change.range.end.line - change.range.start.line
-                }
-                const newRange = new vscode.Range(
-                    new vscode.Position(this.ranges.start.line + addedLines, 0),
-                    new vscode.Position(this.ranges.end.line + addedLines, 0)
-                )
-                this.ranges = newRange
-                this.decorator.setState(this.status, newRange)
+                this.selectionRange = updateRangeOnDocChange(this.selectionRange, change.range, change.text)
+                this.decorator.setState(this.status, this.selectionRange)
             }
             this._onDidChangeCodeLenses.fire()
         })
@@ -59,7 +52,7 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
         this.status = state
         this.decorator.setState(state, newRange)
         void this.decorator.decorate(newRange)
-        this.ranges = newRange
+        this.selectionRange = newRange
         this._onDidChangeCodeLenses.fire()
     }
     /**
@@ -67,7 +60,7 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
      */
     public remove(): void {
         this.decorator.remove()
-        this.ranges = null
+        this.selectionRange = null
         this.status = CodyTaskState.idle
         this.dispose()
         this._onDidChangeCodeLenses.fire()
@@ -90,12 +83,12 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
      * Lenses to display above the code that Cody edited
      */
     private createCodeLenses(): vscode.CodeLens[] {
-        const range = this.ranges
+        const range = this.selectionRange
         const codeLenses: vscode.CodeLens[] = []
         if (!range) {
             return codeLenses
         }
-        const codeLensRange = singleLineRange(range.start.line)
+        const codeLensRange = getSingleLineRange(range.start.line)
         const codeLensTitle = new vscode.CodeLens(codeLensRange)
         // Open Chat View
         codeLensTitle.command = {

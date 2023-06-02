@@ -38,7 +38,6 @@ interface MetaProps {
         omitRepoFilter?: boolean
     }
     onDelete?: (item: RepoMetadataItem) => void
-    small?: boolean
 }
 
 const Meta: React.FC<MetaProps> = ({
@@ -46,7 +45,6 @@ const Meta: React.FC<MetaProps> = ({
     queryState,
     buildSearchURLQueryFromQueryState,
     onDelete,
-    small,
     queryBuildOptions,
 }) => {
     const filterLink = useMemo(() => {
@@ -58,12 +56,16 @@ const Meta: React.FC<MetaProps> = ({
         // omit repo: filter if omitRepoFilter is true
         if (queryBuildOptions?.omitRepoFilter) {
             const repoFilter = findFilter(queryState.query, 'repo', FilterKind.Global)
-            if (repoFilter && !repoFilter.value?.value.startsWith('has')) {
+            if (repoFilter && !repoFilter.value?.value.startsWith('has.meta')) {
                 query = omitFilter(query, repoFilter)
             }
         }
         // append metadata filter
-        query = appendFilter(query, 'repo', meta.value ? `has(${meta.key}:${meta.value})` : `has.key(${meta.key})`)
+        query = appendFilter(
+            query,
+            'repo',
+            meta.value ? `has.meta(${meta.key}:${meta.value})` : `has.meta(${meta.key})`
+        )
 
         const searchParams = buildSearchURLQueryFromQueryState({ query })
         return `/search?${searchParams}`
@@ -71,13 +73,12 @@ const Meta: React.FC<MetaProps> = ({
 
     if (onDelete) {
         return (
-            <Tooltip content="Delete metadata">
+            <Tooltip content="Remove from this repository">
                 <Badge
-                    variant="secondary"
-                    small={small}
+                    variant="outlineSecondary"
                     as={Button}
                     onClick={() => onDelete(meta)}
-                    aria-label="Delete metadata"
+                    aria-label="Remove from this repository"
                     className={styles.badgeButton}
                 >
                     <Icon svgPath={mdiDelete} aria-hidden={true} className="mr-1" />
@@ -89,24 +90,21 @@ const Meta: React.FC<MetaProps> = ({
 
     if (filterLink) {
         return (
-            <Badge variant="secondary" small={small} as={Link} to={filterLink}>
+            <Badge variant="outlineSecondary" as={Link} to={filterLink}>
                 <MetaContent meta={meta} highlight={true} />
             </Badge>
         )
     }
 
     return (
-        <Badge variant="secondary" small={small}>
+        <Badge variant="outlineSecondary">
             <MetaContent meta={meta} />
         </Badge>
     )
 }
 
 interface RepoMetadataProps
-    extends Pick<
-        MetaProps,
-        'buildSearchURLQueryFromQueryState' | 'queryState' | 'onDelete' | 'small' | 'queryBuildOptions'
-    > {
+    extends Pick<MetaProps, 'buildSearchURLQueryFromQueryState' | 'queryState' | 'onDelete' | 'queryBuildOptions'> {
     items: RepoMetadataItem[]
     className?: string
 }

@@ -1,6 +1,8 @@
 import { listen, Event } from '@tauri-apps/api/event'
 import { invoke } from '@tauri-apps/api/tauri'
 
+import { logger } from '@sourcegraph/common'
+
 // Sourcegraph desktop app entrypoint. There are two:
 //
 // * app-shell.tsx: before the Go backend has started, this is served. If the Go backend crashes,
@@ -21,7 +23,7 @@ async function getLaunchPathFromTauri(): Promise<string> {
 async function launchWithSignInUrl(url: string): Promise<void> {
     const launchPath = await getLaunchPathFromTauri()
     if (launchPath) {
-        console.log('Using launch path:', launchPath)
+        logger.log('Using launch path:', launchPath)
         url = addRedirectParamToSignInUrl(url, launchPath)
     }
     window.location.href = url
@@ -35,16 +37,16 @@ const appShellReady = (payload: AppShellReadyPayload): void => {
     if (!payload) {
         return
     }
-    console.log('app-shell-ready', payload)
+    logger.log('app-shell-ready', payload)
     launchWithSignInUrl(payload.sign_in_url).catch(error =>
         console.error(`failed to launch with sign-in URL: ${error}`)
     )
 }
 
 listen('app-shell-ready', (event: Event<AppShellReadyPayload>) => appShellReady(event.payload))
-    .then(() => console.log('registered app-shell-ready handler'))
-    .catch(error => console.error(`failed to register app-shell-ready handler: ${error}`))
+    .then(() => logger.log('registered app-shell-ready handler'))
+    .catch(error => logger.error(`failed to register app-shell-ready handler: ${error}`))
 
 await invoke('app_shell_loaded')
     .then(payload => appShellReady(payload as AppShellReadyPayload))
-    .catch(error => console.error(`failed to inform Tauri app_shell_loaded: ${error}`))
+    .catch(error => logger.error(`failed to inform Tauri app_shell_loaded: ${error}`))

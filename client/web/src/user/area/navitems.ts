@@ -10,7 +10,7 @@ import { UserAreaHeaderNavItem } from './UserAreaHeader'
 export const userAreaHeaderNavItems: readonly UserAreaHeaderNavItem[] = [
     {
         to: '/app-settings',
-        label: 'Cody settings',
+        label: 'Repositories',
         icon: CodyIcon,
         condition: ({ isSourcegraphApp }) => isSourcegraphApp,
     },

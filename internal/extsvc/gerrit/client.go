@@ -34,12 +34,14 @@ type client struct {
 type Client interface {
 	GetURL() *url.URL
 	WithAuthenticator(a auth.Authenticator) (Client, error)
+	Authenticator() auth.Authenticator
 	GetAuthenticatedUserAccount(ctx context.Context) (*Account, error)
 	GetGroup(ctx context.Context, groupName string) (Group, error)
 	ListProjects(ctx context.Context, opts ListProjectsArgs) (projects ListProjectsResponse, nextPage bool, err error)
 	GetChange(ctx context.Context, changeID string) (*Change, error)
 	AbandonChange(ctx context.Context, changeID string) (*Change, error)
 	SubmitChange(ctx context.Context, changeID string) (*Change, error)
+	RestoreChange(ctx context.Context, changeID string) (*Change, error)
 	WriteReviewComment(ctx context.Context, changeID string, comment ChangeReviewComment) error
 }
 
@@ -78,6 +80,10 @@ func (c *client) WithAuthenticator(a auth.Authenticator) (Client, error) {
 		rateLimit:  c.rateLimit,
 		auther:     a,
 	}, nil
+}
+
+func (c *client) Authenticator() auth.Authenticator {
+	return c.auther
 }
 
 func (c *client) GetAuthenticatedUserAccount(ctx context.Context) (*Account, error) {

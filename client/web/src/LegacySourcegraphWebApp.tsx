@@ -217,6 +217,7 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                             telemetryService={eventLogger}
                             isSourcegraphDotCom={window.context.sourcegraphDotComMode}
                             isSourcegraphApp={window.context.sourcegraphAppMode}
+                            isSearchContextSpecAvailable={isSearchContextSpecAvailable}
                             searchContextsEnabled={this.props.searchContextsEnabled}
                             getUserSearchContextNamespaces={getUserSearchContextNamespaces}
                             fetchSearchContexts={fetchSearchContexts}
@@ -225,7 +226,6 @@ export class LegacySourcegraphWebApp extends React.Component<StaticAppConfig, Le
                             createSearchContext={createSearchContext}
                             updateSearchContext={updateSearchContext}
                             deleteSearchContext={deleteSearchContext}
-                            isSearchContextSpecAvailable={isSearchContextSpecAvailable}
                             streamSearch={aggregateStreamingSearch}
                         />
                     }

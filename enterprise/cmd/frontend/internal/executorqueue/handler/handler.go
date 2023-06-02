@@ -44,8 +44,6 @@ type ExecutorHandler interface {
 	HandleMarkFailed(w http.ResponseWriter, r *http.Request)
 	// HandleHeartbeat handles the heartbeat of an executor.
 	HandleHeartbeat(w http.ResponseWriter, r *http.Request)
-	// HandleCanceledJobs cancels the specified executor.Jobs.
-	HandleCanceledJobs(w http.ResponseWriter, r *http.Request)
 }
 
 var _ ExecutorHandler = &handler[workerutil.Record]{}
@@ -377,16 +375,11 @@ func (h *handler[T]) HandleHeartbeat(w http.ResponseWriter, r *http.Request) {
 
 		knownIDs, cancelIDs, err := h.heartbeat(r.Context(), e, payload.JobIDs)
 
-		if payload.Version == executortypes.ExecutorAPIVersion2 {
-			return http.StatusOK, executortypes.HeartbeatResponse{KnownIDs: knownIDs, CancelIDs: cancelIDs}, err
-		}
-
-		// TODO: Remove in Sourcegraph 4.4.
-		return http.StatusOK, knownIDs, err
+		return http.StatusOK, executortypes.HeartbeatResponse{KnownIDs: knownIDs, CancelIDs: cancelIDs}, err
 	})
 }
 
-func (h *handler[T]) heartbeat(ctx context.Context, executor types.Executor, ids []int) ([]int, []int, error) {
+func (h *handler[T]) heartbeat(ctx context.Context, executor types.Executor, ids []string) ([]string, []string, error) {
 	if err := validateWorkerHostname(executor.Hostname); err != nil {
 		return nil, nil, err
 	}
@@ -405,16 +398,6 @@ func (h *handler[T]) heartbeat(ctx context.Context, executor types.Executor, ids
 		WorkerHostname: executor.Hostname,
 	})
 	return knownIDs, cancelIDs, errors.Wrap(err, "dbworkerstore.UpsertHeartbeat")
-}
-
-// TODO: This handler can be removed in Sourcegraph 4.4.
-func (h *handler[T]) HandleCanceledJobs(w http.ResponseWriter, r *http.Request) {
-	var payload executortypes.CanceledJobsRequest
-
-	wrapHandler(w, r, &payload, h.logger, func() (int, any, error) {
-		canceledIDs, err := h.cancelJobs(r.Context(), payload.ExecutorName, payload.KnownJobIDs)
-		return http.StatusOK, canceledIDs, err
-	})
 }
 
 // wrapHandler decodes the request body into the given payload pointer, then calls the given
@@ -503,23 +486,6 @@ func decodeAndLabelMetrics(encodedMetrics, instanceName string) ([]*dto.MetricFa
 
 type errorResponse struct {
 	Error string `json:"error"`
-}
-
-// cancelJobs reaches to the queueHandlers.FetchCanceled to determine jobs that need to be canceled.
-// This endpoint is deprecated and should be removed in Sourcegraph 4.4.
-func (h *handler[T]) cancelJobs(ctx context.Context, executorName string, knownIDs []int) ([]int, error) {
-	if err := validateWorkerHostname(executorName); err != nil {
-		return nil, err
-	}
-	// The Heartbeat method now handles both heartbeats and cancellation. For backcompat,
-	// we fall back to this method.
-	_, canceledIDs, err := h.queueHandler.Store.Heartbeat(ctx, knownIDs, store.HeartbeatOptions{
-		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
-		// the previous executor didn't report heartbeats anymore, but is still alive and reporting state,
-		// both executors that ever got the job would be writing to the same record. This prevents it.
-		WorkerHostname: executorName,
-	})
-	return canceledIDs, errors.Wrap(err, "dbworkerstore.CanceledJobs")
 }
 
 // validateWorkerHostname validates the WorkerHostname field sent for all the endpoints.

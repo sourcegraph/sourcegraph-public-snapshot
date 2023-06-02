@@ -74,12 +74,12 @@ func TestDocumentRanks(t *testing.T) {
 	store := New(&observation.TestContext, db)
 	repoName := api.RepoName("foo")
 
-	key := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123)
+	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
 
 	if _, err := db.ExecContext(ctx, `
-		INSERT INTO codeintel_ranking_progress(graph_key, max_definition_id, max_reference_id, max_path_id, mappers_started_at, reducer_completed_at)
+		INSERT INTO codeintel_ranking_progress(graph_key, max_export_id, mappers_started_at, reducer_completed_at)
 		VALUES
-			($1,  1000, 1000, 1000, NOW(), NOW())
+			($1, 1000, NOW(), NOW())
 	`,
 		key,
 	); err != nil {
@@ -130,12 +130,12 @@ func TestGetReferenceCountStatistics(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	key := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123)
+	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
 
 	if _, err := db.ExecContext(ctx, `
-		INSERT INTO codeintel_ranking_progress(graph_key, max_definition_id, max_reference_id, max_path_id, mappers_started_at, reducer_completed_at)
+		INSERT INTO codeintel_ranking_progress(graph_key, max_export_id, mappers_started_at, reducer_completed_at)
 		VALUES
-			($1,  1000, 1000, 1000, NOW(), NOW())
+			($1, 1000, NOW(), NOW())
 	`,
 		key,
 	); err != nil {
@@ -175,12 +175,12 @@ func TestLastUpdatedAt(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, db)
 
-	key := rankingshared.NewDerivativeGraphKeyKey(mockRankingGraphKey, "", 123)
+	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
 
 	if _, err := db.ExecContext(ctx, `
-		INSERT INTO codeintel_ranking_progress(graph_key, max_definition_id, max_reference_id, max_path_id, mappers_started_at, reducer_completed_at)
+		INSERT INTO codeintel_ranking_progress(graph_key, max_export_id, mappers_started_at, reducer_completed_at)
 		VALUES
-			($1,  1000, 1000, 1000, NOW(), NOW())
+			($1, 1000, NOW(), NOW())
 	`,
 		key,
 	); err != nil {

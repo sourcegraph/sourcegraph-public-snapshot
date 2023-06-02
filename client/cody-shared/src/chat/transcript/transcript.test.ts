@@ -19,7 +19,7 @@ async function generateLongTranscript(): Promise<{ transcript: Transcript; token
     const numInteractions = 100
     const transcript = new Transcript()
     for (let i = 0; i < numInteractions; i++) {
-        const interaction = await new ChatQuestion().getInteraction(
+        const interaction = await new ChatQuestion(() => {}).getInteraction(
             'ABCD'.repeat(256), // 256 tokens, 1 token is ~4 chars
             newRecipeContext()
         )
@@ -43,7 +43,7 @@ describe('Transcript', () => {
     })
 
     it('generates a prompt without context for a chat question', async () => {
-        const interaction = await new ChatQuestion().getInteraction(
+        const interaction = await new ChatQuestion(() => {}).getInteraction(
             'how do access tokens work in sourcegraph',
             newRecipeContext()
         )
@@ -68,7 +68,7 @@ describe('Transcript', () => {
                 }),
         })
 
-        const interaction = await new ChatQuestion().getInteraction(
+        const interaction = await new ChatQuestion(() => {}).getInteraction(
             'how do access tokens work in sourcegraph',
             newRecipeContext({
                 intentDetector: new MockIntentDetector({
@@ -80,6 +80,43 @@ describe('Transcript', () => {
                     embeddings,
                     defaultKeywordContextFetcher
                 ),
+            })
+        )
+
+        const transcript = new Transcript()
+        transcript.addInteraction(interaction)
+
+        const prompt = await transcript.toPrompt()
+        const expectedPrompt = [
+            { speaker: 'human', text: 'Use the following text from file `docs/README.md`:\n# Main' },
+            { speaker: 'assistant', text: 'Ok.' },
+            { speaker: 'human', text: 'Use following code snippet from file `src/main.go`:\n```go\npackage main\n```' },
+            { speaker: 'assistant', text: 'Ok.' },
+            { speaker: 'human', text: 'how do access tokens work in sourcegraph' },
+            { speaker: 'assistant', text: undefined },
+        ]
+        assert.deepStrictEqual(prompt, expectedPrompt)
+    })
+
+    it('generates a prompt with context for a chat question for first interaction', async () => {
+        const embeddings = new MockEmbeddingsClient({
+            search: async () =>
+                Promise.resolve({
+                    codeResults: [{ fileName: 'src/main.go', startLine: 0, endLine: 1, content: 'package main' }],
+                    textResults: [{ fileName: 'docs/README.md', startLine: 0, endLine: 1, content: '# Main' }],
+                }),
+        })
+
+        const interaction = await new ChatQuestion(() => {}).getInteraction(
+            'how do access tokens work in sourcegraph',
+            newRecipeContext({
+                codebaseContext: new CodebaseContext(
+                    { useContext: 'embeddings', serverEndpoint: 'https://example.com' },
+                    'dummy-codebase',
+                    embeddings,
+                    defaultKeywordContextFetcher
+                ),
+                firstInteraction: true,
             })
         )
 
@@ -114,7 +151,7 @@ describe('Transcript', () => {
             defaultKeywordContextFetcher
         )
 
-        const chatQuestionRecipe = new ChatQuestion()
+        const chatQuestionRecipe = new ChatQuestion(() => {})
         const transcript = new Transcript()
 
         const firstInteraction = await chatQuestionRecipe.getInteraction(
@@ -199,7 +236,7 @@ describe('Transcript', () => {
             defaultKeywordContextFetcher
         )
 
-        const chatQuestionRecipe = new ChatQuestion()
+        const chatQuestionRecipe = new ChatQuestion(() => {})
         const transcript = new Transcript()
 
         const interaction = await chatQuestionRecipe.getInteraction(
@@ -242,7 +279,7 @@ describe('Transcript', () => {
         const intentDetector = new MockIntentDetector({ isCodebaseContextRequired: async () => Promise.resolve(false) })
 
         const transcript = new Transcript()
-        const interaction = await new ChatQuestion().getInteraction(
+        const interaction = await new ChatQuestion(() => {}).getInteraction(
             'how do access tokens work in sourcegraph',
             newRecipeContext({
                 editor,
@@ -275,7 +312,7 @@ describe('Transcript', () => {
             defaultKeywordContextFetcher
         )
 
-        const chatQuestionRecipe = new ChatQuestion()
+        const chatQuestionRecipe = new ChatQuestion(() => {})
         const transcript = new Transcript()
 
         const firstInteraction = await chatQuestionRecipe.getInteraction(

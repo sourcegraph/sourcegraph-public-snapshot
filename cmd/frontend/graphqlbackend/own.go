@@ -13,7 +13,30 @@ import (
 type ListOwnershipArgs struct {
 	First   *int32
 	After   *string
-	Reasons *[]string
+	Reasons *[]OwnershipReasonType
+}
+
+type OwnershipReasonType string
+
+const (
+	CodeownersFileEntry              OwnershipReasonType = "CODEOWNERS_FILE_ENTRY"
+	RecentContributorOwnershipSignal OwnershipReasonType = "RECENT_CONTRIBUTOR_OWNERSHIP_SIGNAL"
+	RecentViewOwnershipSignal        OwnershipReasonType = "RECENT_VIEW_OWNERSHIP_SIGNAL"
+)
+
+func (args *ListOwnershipArgs) IncludeReason(reason OwnershipReasonType) bool {
+	rs := args.Reasons
+	// When the reasons list is empty, we do not filter - the result
+	// contains all the reasons, so for every reason we return true.
+	if rs == nil || len(*rs) == 0 {
+		return true
+	}
+	for _, r := range *rs {
+		if r == reason {
+			return true
+		}
+	}
+	return false
 }
 
 type OwnResolver interface {
@@ -27,16 +50,20 @@ type OwnResolver interface {
 
 	NodeResolvers() map[string]NodeByIDFunc
 
-	// Codeowners queries
+	// Codeowners queries.
 	CodeownersIngestedFiles(context.Context, *CodeownersIngestedFilesArgs) (CodeownersIngestedFileConnectionResolver, error)
 	RepoIngestedCodeowners(context.Context, api.RepoID) (CodeownersIngestedFileResolver, error)
 
-	// Codeowners mutations
+	// Codeowners mutations.
 	AddCodeownersFile(context.Context, *CodeownersFileArgs) (CodeownersIngestedFileResolver, error)
 	UpdateCodeownersFile(context.Context, *CodeownersFileArgs) (CodeownersIngestedFileResolver, error)
 	DeleteCodeownersFiles(context.Context, *DeleteCodeownersFileArgs) (*EmptyResponse, error)
 
-	// config
+	// Assigned ownership mutations.
+	AssignOwner(context.Context, *AssignOwnerArgs) (*EmptyResponse, error)
+	RemoveAssignedOwner(context.Context, *AssignOwnerArgs) (*EmptyResponse, error)
+
+	// Config.
 	OwnSignalConfigurations(ctx context.Context) ([]SignalConfigurationResolver, error)
 	UpdateOwnSignalConfigurations(ctx context.Context, configurationsArgs UpdateSignalConfigurationsArgs) ([]SignalConfigurationResolver, error)
 }
@@ -69,6 +96,7 @@ type OwnershipReasonResolver interface {
 	ToCodeownersFileEntry() (CodeownersFileEntryResolver, bool)
 	ToRecentContributorOwnershipSignal() (RecentContributorOwnershipSignalResolver, bool)
 	ToRecentViewOwnershipSignal() (RecentViewOwnershipSignalResolver, bool)
+	ToAssignedOwner() (AssignedOwnerResolver, bool)
 }
 
 type SimpleOwnReasonResolver interface {
@@ -93,6 +121,11 @@ type RecentViewOwnershipSignalResolver interface {
 	Description() (string, error)
 }
 
+type AssignedOwnerResolver interface {
+	Title() (string, error)
+	Description() (string, error)
+}
+
 type CodeownersFileArgs struct {
 	Input CodeownersFileInput
 }
@@ -106,6 +139,17 @@ type CodeownersFileInput struct {
 type DeleteCodeownersFilesInput struct {
 	RepoID   *graphql.ID
 	RepoName *string
+}
+
+type AssignOwnerArgs struct {
+	Input AssignOwnerInput
+}
+
+type AssignOwnerInput struct {
+	// AssignedOwnerID is an ID of a user who is assigned as an owner.
+	AssignedOwnerID graphql.ID
+	RepoID          graphql.ID
+	AbsolutePath    string
 }
 
 type DeleteCodeownersFileArgs struct {

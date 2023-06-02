@@ -37,8 +37,6 @@ Examples of the kinds of questions Cody can handle:
 
 Cody tells you which code files it read to generate its response. (If Cody gives a wrong answer, please share feedback so we can improve it.)
 
-**Note:** For full codebase awareness, you must set the `cody.codebase` setting to the name of the repository on the connected Sourcegraph instance.
-
 ### ✨ Fixup code
 
 [**📽️ Demo**](https://twitter.com/sqs/status/1647673013343780864)

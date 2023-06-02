@@ -11,6 +11,7 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/compute",
+        "//enterprise/internal/insights/types",
         "//internal/search/client",
         "//internal/search/query",
         "//internal/search/repos",

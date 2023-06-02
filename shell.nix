@@ -5,29 +5,24 @@
 #
 # - Runs postgres under ~/.sourcegraph with a unix socket. No need to manage a
 #   service. Must remember to run "pg_ctl stop" if you want to stop it.
-# - Builds bazel statically (on linux) and configures it to use toolchains for nodejs
-#   and rust to use the ones provided by rules_nixpkgs
 #
 # Status: everything works on linux & darwin.
-{ pkgs }:
+{ pkgs
+, buildFHSEnv
+, mkShell
+, hostPlatform
+, lib
+, writeShellScriptBin
+}:
 let
-  # pkgs.universal-ctags installs the binary as "ctags", not "universal-ctags"
-  # like zoekt expects.
-  universal-ctags = pkgs.writeShellScriptBin "universal-ctags" ''
-    exec ${pkgs.universal-ctags}/bin/ctags "$@"
-  '';
-
   # On darwin, we let bazelisk manage the bazel version since we actually need to run two
   # different versions thanks to aspect. Additionally bazelisk allows us to do
   # things like "bazel configure". So we just install a script called bazel
   # which calls bazelisk.
   #
-  # On linux, we use a from-source statically built bazel (due to libstdc++ woes) for all commands
-  # besides 'configure', where we transparently defer to bazelisk (which defers to aspect cli).
-  #
   # Additionally bazel seems to break when CC and CXX is set to a nix managed
   # compiler on darwin. So the script unsets those.
-  bazel-wrapper = pkgs.writeShellScriptBin "bazel" (if pkgs.hostPlatform.isMacOS then ''
+  bazel-wrapper = writeShellScriptBin "bazel" (if hostPlatform.isMacOS then ''
     unset CC CXX
     exec ${pkgs.bazelisk}/bin/bazelisk "$@"
   '' else ''
@@ -36,77 +31,68 @@ let
     fi
     exec ${pkgs.bazel_6}/bin/bazel "$@"
   '');
-  bazel-watcher = pkgs.writeShellScriptBin "ibazel" ''
-    ${pkgs.lib.optionalString pkgs.hostPlatform.isMacOS "unset CC CXX"}
+  bazel-watcher = writeShellScriptBin "ibazel" ''
+    ${lib.optionalString hostPlatform.isMacOS "unset CC CXX"}
     exec ${pkgs.bazel-watcher}/bin/ibazel \
-      ${pkgs.lib.optionalString pkgs.hostPlatform.isLinux "-bazel_path=${pkgs.bazel_6}/bin/bazel"} "$@"
+      ${lib.optionalString hostPlatform.isLinux "-bazel_path=${bazel-fhs}/bin/bazel"} "$@"
   '';
-  # custom cargo-bazel so we can pass down LD_LIBRARY_PATH, see definition of LD_LIBRARY_PATH below
-  # for more info.
-  cargo-bazel = pkgs.rustPlatform.buildRustPackage {
-    pname = "cargo-bazel";
-    version = "0.8.0";
-    sourceRoot = "source/crate_universe";
-    doCheck = false;
-
-    buildInputs = [ ] ++ pkgs.lib.optional pkgs.hostPlatform.isMacOS [
-      pkgs.darwin.Security
-    ];
-
-    src = pkgs.fetchFromGitHub {
-      owner = "bazelbuild";
-      repo = "rules_rust";
-      rev = "0.19.0";
-      sha256 = "sha256-+tYfw12oELy+x7V8jtGWK0EiNElTwOteO6aUEMlWXio=";
-    };
-
-    patches = [
-      ./dev/nix/001-rules-rust-cargo-bazel-env.patch
-    ];
-
-    cargoSha256 = "sha256-3zFqJrxkHM8MbYkEoThzOJGeFXj9ggTaI+zIL+Hy44I=";
+  bazel-fhs = buildFHSEnv {
+    name = "bazel";
+    runScript = "bazel";
+    targetPkgs = pkgs: (with pkgs; [
+      bazel-wrapper
+      zlib.dev
+    ]);
+    # unsharePid required to preserve bazel server between bazel invocations,
+    # the rest are disabled just in case
+    unsharePid = false;
+    unshareUser = false;
+    unshareIpc = false;
+    unshareNet = false;
+    unshareUts = false;
+    unshareCgroup = false;
   };
+
+  # We have scripts which use gsed on darwin since that is what homebrew calls
+  # the binary for GNU sed.
+  gsed = pkgs.writeShellScriptBin "gsed" ''exec ${pkgs.gnused}/bin/sed "$@"'';
 in
-pkgs.mkShell {
+mkShell {
   name = "sourcegraph-dev";
 
   # The packages in the `buildInputs` list will be added to the PATH in our shell
   nativeBuildInputs = with pkgs; [
-    # nix language server
+    # nix language server.
     nil
 
     # Our core DB.
     postgresql_13
 
-    # Cache and some store data
+    # Cache and some store data.
     redis
 
     # Used by symbols and zoekt-git-index to extract symbols from sourcecode.
     universal-ctags
 
-    # Build our backend.
+    # Build our backend. Sometimes newer :^)
     go_1_20
 
     # Lots of our tooling and go tests rely on git et al.
+    comby
     git
     git-lfs
-    parallel
+    gsed
     nssTools
+    parallel
 
-    # CI lint tools you need locally
+    # CI lint tools you need locally.
     shfmt
     shellcheck
 
-    # Web tools. Need node 16.7 so we use unstable. Yarn should also be built against it.
+    # Web tools.
     nodejs-16_x
-    (nodejs-16_x.pkgs.pnpm.override {
-      version = "8.1.0";
-      src = fetchurl {
-        url = "https://registry.npmjs.org/pnpm/-/pnpm-8.1.0.tgz";
-        sha512 = "sha512-e2H73wTRxmc5fWF/6QJqbuwU6O3NRVZC1G1WFXG8EqfN/+ZBu8XVHJZwPH6Xh0DxbEoZgw8/wy2utgCDwPu4Sg==";
-      };
-    })
-    nodePackages.typescript
+    nodejs-16_x.pkgs.pnpm
+    nodejs-16_x.pkgs.typescript
 
     # Rust utils for syntax-highlighter service, currently not pinned to the same versions.
     cargo
@@ -116,11 +102,11 @@ pkgs.mkShell {
     clippy
 
     # special sauce bazel stuff.
-    bazelisk
-    bazel-wrapper
+    bazelisk # needed to please sg, but not used directly by us
+    (if hostPlatform.isLinux then bazel-fhs else bazel-wrapper)
     bazel-watcher
     bazel-buildtools
-  ];
+  ] ++ lib.optional (hostPlatform.system != "aarch64-linux") p4-fusion;
 
   # Startup postgres, redis & set nixos specific stuff
   shellHook = ''
@@ -133,27 +119,20 @@ pkgs.mkShell {
 
   # By explicitly setting this environment variable we avoid starting up
   # universal-ctags via docker.
-  CTAGS_COMMAND = "${universal-ctags}/bin/universal-ctags";
+  CTAGS_COMMAND = "${pkgs.universal-ctags}/bin/universal-ctags";
 
   RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
 
   DEV_WEB_BUILDER = "esbuild";
 
-  # Needed for rules_rust provisioned rust tools when running `bazel(isk) configure`, still need
-  # nixpkgs_rust_configure for actual compilation step
-  LD_LIBRARY_PATH = pkgs.lib.makeLibraryPath [ pkgs.stdenv.cc.cc.lib pkgs.zlib ];
-
-  # Tell rules_rust to use our custom cargo-bazel.
-  CARGO_BAZEL_GENERATOR_URL = "file://${cargo-bazel}/bin/cargo-bazel";
-
   # Some of the bazel actions require some tools assumed to be in the PATH defined by the "strict action env" that we enable
   # through --incompatible_strict_action_env. We can poke a custom PATH through with --action_env=PATH=$BAZEL_ACTION_PATH.
   # See https://sourcegraph.com/github.com/bazelbuild/bazel@6.1.2/-/blob/src/main/java/com/google/devtools/build/lib/bazel/rules/BazelRuleClassProvider.java?L532-547
-  BAZEL_ACTION_PATH = with pkgs; lib.makeBinPath [ bash stdenv.cc coreutils unzip zip curl ];
+  BAZEL_ACTION_PATH = with pkgs; lib.makeBinPath [ bash stdenv.cc coreutils unzip zip curl gzip gnutar git patch openssh ];
 
   # bazel complains when the bazel version differs even by a patch version to whats defined in .bazelversion,
   # so we tell it to h*ck off here.
   # https://sourcegraph.com/github.com/bazelbuild/bazel@1a4da7f331c753c92e2c91efcad434dc29d10d43/-/blob/scripts/packages/bazel.sh?L23-28
   USE_BAZEL_VERSION =
-    if pkgs.hostPlatform.isMacOS then "" else pkgs.bazel_6.version;
+    if hostPlatform.isMacOS then "" else pkgs.bazel_6.version;
 }

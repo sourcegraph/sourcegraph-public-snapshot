@@ -22,6 +22,7 @@ export type WebviewMessage =
     | { command: 'links'; value: string }
     | { command: 'openFile'; filePath: string }
     | { command: 'edit'; text: string }
+    | { command: 'insert'; text: string }
 
 /**
  * A message sent from the extension host to the webview.
@@ -42,7 +43,7 @@ export type ExtensionMessage =
 /**
  * The subset of configuration that is visible to the webview.
  */
-export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debug' | 'serverEndpoint'> {}
+export interface ConfigurationSubsetForWebview extends Pick<Configuration, 'debugEnable' | 'serverEndpoint'> {}
 
 export const DOTCOM_URL = new URL('https://sourcegraph.com')
 export const LOCAL_APP_URL = new URL('http://localhost:3080')
