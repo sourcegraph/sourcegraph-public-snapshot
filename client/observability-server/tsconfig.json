@@ -7,7 +7,7 @@
     "outDir": "./out",
     "baseUrl": "./src",
   },
-  "include": ["src", "*.js"],
+  "include": ["./src/**/*", "./*.ts"],
   "references": [
     {
       "path": "../build-config",

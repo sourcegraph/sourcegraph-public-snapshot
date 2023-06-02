@@ -253,6 +253,7 @@ export const updateUpgradeGuides = (previous: string, next: string): EditFunc =>
             const updateFunc = getUpgradeGuide(mode)
             if (updateFunc === undefined) {
                 console.log(`Skipping upgrade file: ${file} due to missing content generator`)
+                continue
             }
             const guide = getUpgradeGuide(mode)(previous, next)
 
