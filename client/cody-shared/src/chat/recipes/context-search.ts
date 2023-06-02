@@ -1,5 +1,3 @@
-import path from 'path'
-
 import * as vscode from 'vscode'
 
 import { CodebaseContext } from '../../codebase-context'
@@ -73,9 +71,9 @@ export class ContextSearch implements Recipe {
             }
             let uri = new URL(`/search?q=context:global+file:${file.fileName}`, endpointUri).href
 
-            if (wsRootPath != null) {
-                const vsceUri = vscode.Uri.parse('vscode://file:' + path.join(wsRootPath, file.fileName)).toString()
-                uri = new URL(vsceUri).href
+            if (wsRootPath) {
+                const fileUri = vscode.Uri.joinPath(vscode.Uri.file(wsRootPath), file.fileName)
+                uri = vscode.Uri.parse(`vscode://file${fileUri.path}`).toString()
             }
 
             snippets +=
