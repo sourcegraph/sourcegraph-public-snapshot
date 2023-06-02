@@ -197,9 +197,9 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		return http.StatusBadRequest, resp
 	}
 
-	message := req.CommitInfo.Messages
-	if len(message) == 0 {
-		message = []string{"<Sourcegraph> Creating commit from patch"}
+	messages := req.CommitInfo.Messages
+	if len(messages) == 0 {
+		messages = []string{"<Sourcegraph> Creating commit from patch"}
 	}
 	authorName := req.CommitInfo.AuthorName
 	if authorName == "" {
@@ -219,7 +219,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 
 	formattedMessages := []string{"commit"}
-	for _, m := range req.CommitInfo.Messages {
+	for _, m := range messages {
 		formattedMessages = append(formattedMessages, "-m", m)
 	}
 	cmd = exec.CommandContext(ctx, "git", formattedMessages...)

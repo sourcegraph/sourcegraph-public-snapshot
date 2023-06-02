@@ -27,6 +27,9 @@ import (
 // github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources)
 // used for unit testing.
 type MockChangesetSource struct {
+	// BuildCommitOptsFunc is an instance of a mock function object
+	// controlling the behavior of the method BuildCommitOpts.
+	BuildCommitOptsFunc *ChangesetSourceBuildCommitOptsFunc
 	// CloseChangesetFunc is an instance of a mock function object
 	// controlling the behavior of the method CloseChangeset.
 	CloseChangesetFunc *ChangesetSourceCloseChangesetFunc
@@ -64,6 +67,11 @@ type MockChangesetSource struct {
 // overwritten.
 func NewMockChangesetSource() *MockChangesetSource {
 	return &MockChangesetSource{
+		BuildCommitOptsFunc: &ChangesetSourceBuildCommitOptsFunc{
+			defaultHook: func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) (r0 protocol.CreateCommitFromPatchRequest) {
+				return
+			},
+		},
 		CloseChangesetFunc: &ChangesetSourceCloseChangesetFunc{
 			defaultHook: func(context.Context, *Changeset) (r0 error) {
 				return
@@ -121,6 +129,11 @@ func NewMockChangesetSource() *MockChangesetSource {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockChangesetSource() *MockChangesetSource {
 	return &MockChangesetSource{
+		BuildCommitOptsFunc: &ChangesetSourceBuildCommitOptsFunc{
+			defaultHook: func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+				panic("unexpected invocation of MockChangesetSource.BuildCommitOpts")
+			},
+		},
 		CloseChangesetFunc: &ChangesetSourceCloseChangesetFunc{
 			defaultHook: func(context.Context, *Changeset) error {
 				panic("unexpected invocation of MockChangesetSource.CloseChangeset")
@@ -179,6 +192,9 @@ func NewStrictMockChangesetSource() *MockChangesetSource {
 // overwritten.
 func NewMockChangesetSourceFrom(i ChangesetSource) *MockChangesetSource {
 	return &MockChangesetSource{
+		BuildCommitOptsFunc: &ChangesetSourceBuildCommitOptsFunc{
+			defaultHook: i.BuildCommitOpts,
+		},
 		CloseChangesetFunc: &ChangesetSourceCloseChangesetFunc{
 			defaultHook: i.CloseChangeset,
 		},
@@ -210,6 +226,119 @@ func NewMockChangesetSourceFrom(i ChangesetSource) *MockChangesetSource {
 			defaultHook: i.WithAuthenticator,
 		},
 	}
+}
+
+// ChangesetSourceBuildCommitOptsFunc describes the behavior when the
+// BuildCommitOpts method of the parent MockChangesetSource instance is
+// invoked.
+type ChangesetSourceBuildCommitOptsFunc struct {
+	defaultHook func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest
+	hooks       []func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest
+	history     []ChangesetSourceBuildCommitOptsFuncCall
+	mutex       sync.Mutex
+}
+
+// BuildCommitOpts delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockChangesetSource) BuildCommitOpts(v0 *types.Repo, v1 *types1.Changeset, v2 *types1.ChangesetSpec, v3 *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+	r0 := m.BuildCommitOptsFunc.nextHook()(v0, v1, v2, v3)
+	m.BuildCommitOptsFunc.appendCall(ChangesetSourceBuildCommitOptsFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the BuildCommitOpts
+// method of the parent MockChangesetSource instance is invoked and the hook
+// queue is empty.
+func (f *ChangesetSourceBuildCommitOptsFunc) SetDefaultHook(hook func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// BuildCommitOpts method of the parent MockChangesetSource instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *ChangesetSourceBuildCommitOptsFunc) PushHook(hook func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ChangesetSourceBuildCommitOptsFunc) SetDefaultReturn(r0 protocol.CreateCommitFromPatchRequest) {
+	f.SetDefaultHook(func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ChangesetSourceBuildCommitOptsFunc) PushReturn(r0 protocol.CreateCommitFromPatchRequest) {
+	f.PushHook(func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+		return r0
+	})
+}
+
+func (f *ChangesetSourceBuildCommitOptsFunc) nextHook() func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ChangesetSourceBuildCommitOptsFunc) appendCall(r0 ChangesetSourceBuildCommitOptsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ChangesetSourceBuildCommitOptsFuncCall
+// objects describing the invocations of this function.
+func (f *ChangesetSourceBuildCommitOptsFunc) History() []ChangesetSourceBuildCommitOptsFuncCall {
+	f.mutex.Lock()
+	history := make([]ChangesetSourceBuildCommitOptsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ChangesetSourceBuildCommitOptsFuncCall is an object that describes an
+// invocation of method BuildCommitOpts on an instance of
+// MockChangesetSource.
+type ChangesetSourceBuildCommitOptsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 *types.Repo
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *types1.Changeset
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *types1.ChangesetSpec
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 *protocol.PushConfig
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 protocol.CreateCommitFromPatchRequest
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ChangesetSourceBuildCommitOptsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ChangesetSourceBuildCommitOptsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // ChangesetSourceCloseChangesetFunc describes the behavior when the
@@ -1295,6 +1424,9 @@ func (c ChangesetSourceWithAuthenticatorFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources)
 // used for unit testing.
 type MockForkableChangesetSource struct {
+	// BuildCommitOptsFunc is an instance of a mock function object
+	// controlling the behavior of the method BuildCommitOpts.
+	BuildCommitOptsFunc *ForkableChangesetSourceBuildCommitOptsFunc
 	// CloseChangesetFunc is an instance of a mock function object
 	// controlling the behavior of the method CloseChangeset.
 	CloseChangesetFunc *ForkableChangesetSourceCloseChangesetFunc
@@ -1335,6 +1467,11 @@ type MockForkableChangesetSource struct {
 // results, unless overwritten.
 func NewMockForkableChangesetSource() *MockForkableChangesetSource {
 	return &MockForkableChangesetSource{
+		BuildCommitOptsFunc: &ForkableChangesetSourceBuildCommitOptsFunc{
+			defaultHook: func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) (r0 protocol.CreateCommitFromPatchRequest) {
+				return
+			},
+		},
 		CloseChangesetFunc: &ForkableChangesetSourceCloseChangesetFunc{
 			defaultHook: func(context.Context, *Changeset) (r0 error) {
 				return
@@ -1398,6 +1535,11 @@ func NewMockForkableChangesetSource() *MockForkableChangesetSource {
 // unless overwritten.
 func NewStrictMockForkableChangesetSource() *MockForkableChangesetSource {
 	return &MockForkableChangesetSource{
+		BuildCommitOptsFunc: &ForkableChangesetSourceBuildCommitOptsFunc{
+			defaultHook: func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+				panic("unexpected invocation of MockForkableChangesetSource.BuildCommitOpts")
+			},
+		},
 		CloseChangesetFunc: &ForkableChangesetSourceCloseChangesetFunc{
 			defaultHook: func(context.Context, *Changeset) error {
 				panic("unexpected invocation of MockForkableChangesetSource.CloseChangeset")
@@ -1461,6 +1603,9 @@ func NewStrictMockForkableChangesetSource() *MockForkableChangesetSource {
 // implementation, unless overwritten.
 func NewMockForkableChangesetSourceFrom(i ForkableChangesetSource) *MockForkableChangesetSource {
 	return &MockForkableChangesetSource{
+		BuildCommitOptsFunc: &ForkableChangesetSourceBuildCommitOptsFunc{
+			defaultHook: i.BuildCommitOpts,
+		},
 		CloseChangesetFunc: &ForkableChangesetSourceCloseChangesetFunc{
 			defaultHook: i.CloseChangeset,
 		},
@@ -1495,6 +1640,121 @@ func NewMockForkableChangesetSourceFrom(i ForkableChangesetSource) *MockForkable
 			defaultHook: i.WithAuthenticator,
 		},
 	}
+}
+
+// ForkableChangesetSourceBuildCommitOptsFunc describes the behavior when
+// the BuildCommitOpts method of the parent MockForkableChangesetSource
+// instance is invoked.
+type ForkableChangesetSourceBuildCommitOptsFunc struct {
+	defaultHook func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest
+	hooks       []func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest
+	history     []ForkableChangesetSourceBuildCommitOptsFuncCall
+	mutex       sync.Mutex
+}
+
+// BuildCommitOpts delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockForkableChangesetSource) BuildCommitOpts(v0 *types.Repo, v1 *types1.Changeset, v2 *types1.ChangesetSpec, v3 *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+	r0 := m.BuildCommitOptsFunc.nextHook()(v0, v1, v2, v3)
+	m.BuildCommitOptsFunc.appendCall(ForkableChangesetSourceBuildCommitOptsFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the BuildCommitOpts
+// method of the parent MockForkableChangesetSource instance is invoked and
+// the hook queue is empty.
+func (f *ForkableChangesetSourceBuildCommitOptsFunc) SetDefaultHook(hook func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// BuildCommitOpts method of the parent MockForkableChangesetSource instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ForkableChangesetSourceBuildCommitOptsFunc) PushHook(hook func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ForkableChangesetSourceBuildCommitOptsFunc) SetDefaultReturn(r0 protocol.CreateCommitFromPatchRequest) {
+	f.SetDefaultHook(func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ForkableChangesetSourceBuildCommitOptsFunc) PushReturn(r0 protocol.CreateCommitFromPatchRequest) {
+	f.PushHook(func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+		return r0
+	})
+}
+
+func (f *ForkableChangesetSourceBuildCommitOptsFunc) nextHook() func(*types.Repo, *types1.Changeset, *types1.ChangesetSpec, *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ForkableChangesetSourceBuildCommitOptsFunc) appendCall(r0 ForkableChangesetSourceBuildCommitOptsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ForkableChangesetSourceBuildCommitOptsFuncCall objects describing the
+// invocations of this function.
+func (f *ForkableChangesetSourceBuildCommitOptsFunc) History() []ForkableChangesetSourceBuildCommitOptsFuncCall {
+	f.mutex.Lock()
+	history := make([]ForkableChangesetSourceBuildCommitOptsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ForkableChangesetSourceBuildCommitOptsFuncCall is an object that
+// describes an invocation of method BuildCommitOpts on an instance of
+// MockForkableChangesetSource.
+type ForkableChangesetSourceBuildCommitOptsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 *types.Repo
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *types1.Changeset
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *types1.ChangesetSpec
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 *protocol.PushConfig
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 protocol.CreateCommitFromPatchRequest
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ForkableChangesetSourceBuildCommitOptsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ForkableChangesetSourceBuildCommitOptsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // ForkableChangesetSourceCloseChangesetFunc describes the behavior when the
