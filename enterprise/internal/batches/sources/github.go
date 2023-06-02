@@ -140,7 +140,7 @@ func (s GitHubSource) DuplicateCommit(ctx context.Context, opts protocol.CreateC
 	}
 
 	// Update the branch ref to point to the new commit, orphaning the original.
-	err = s.client.UpdateRef(ctx, owner, repoName, rev, newCommit.SHA)
+	_, err = s.client.UpdateRef(ctx, owner, repoName, rev, newCommit.SHA)
 	if err != nil {
 		return errors.Wrap(err, "updating ref to point to new commit")
 	}
