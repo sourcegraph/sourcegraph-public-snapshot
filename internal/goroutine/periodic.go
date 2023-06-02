@@ -132,6 +132,10 @@ func withClock(clock glock.Clock) Option {
 	return func(p *PeriodicGoroutine) { p.clock = clock }
 }
 
+func withConcurrencyClock(clock glock.Clock) Option {
+	return func(p *PeriodicGoroutine) { p.concurrencyClock = clock }
+}
+
 // NewPeriodicGoroutine creates a new PeriodicGoroutine with the given handler. The context provided will propagate into
 // the executing goroutine and will terminate the goroutine if cancelled.
 func NewPeriodicGoroutine(ctx context.Context, handler Handler, options ...Option) *PeriodicGoroutine {
@@ -228,23 +232,28 @@ const concurrencyRecheckInterval = time.Second * 30
 func (r *PeriodicGoroutine) concurrencyUpdates() <-chan int {
 	var (
 		ch        = make(chan int, 1)
-		prevValue = 0
+		prevValue = r.getConcurrency()
 	)
+
+	ch <- prevValue
 
 	go func() {
 		defer close(ch)
 
 		for {
-			if newValue := r.getConcurrency(); newValue != prevValue {
-				prevValue = newValue
-				forciblyWriteToBufferedChannel(ch, newValue)
-			}
-
 			select {
 			case <-r.concurrencyClock.After(concurrencyRecheckInterval):
 			case <-r.ctx.Done():
 				return
 			}
+
+			newValue := r.getConcurrency()
+			if newValue == prevValue {
+				continue
+			}
+
+			prevValue = newValue
+			forciblyWriteToBufferedChannel(ch, newValue)
 		}
 	}()
 
