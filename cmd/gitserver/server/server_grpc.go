@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -164,33 +163,14 @@ func (gs *GRPCServer) GetObject(ctx context.Context, req *proto.GetObjectRequest
 		RevParse:      gs.git.RevParse,
 		GetObjectType: gs.git.GetObjectType,
 	}
-	var internal protocol.GetObjectRequest
-	internal.FromProto(req)
+	var internalReq protocol.GetObjectRequest
+	internalReq.FromProto(req)
 
-	getObjectFunc := gitdomain.GetObjectFunc(func(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
-		// Tracing is server concern, so add it here. Once generics lands we should be
-		// able to create some simple wrappers
+	accesslog.Record(ctx, string(req.Repo), log.String("objectname", internalReq.ObjectName))
 
-		span, ctx := ot.StartSpanFromContext(ctx, "Git: GetObject") //nolint:staticcheck // OT is deprecated
-		span.SetTag("objectName", objectName)
-		defer span.Finish()
-
-		return gs.getObjectService.GetObject(ctx, repo, objectName)
-	})
-
-	resp, err := gs.doGetObject(ctx, internal, gs.Server.Logger, getObjectFunc)
-
-	return resp.ToProto(), err
-
-}
-
-func (gs *GRPCServer) doGetObject(ctx context.Context, req protocol.GetObjectRequest, logger log.Logger, getObject gitdomain.GetObjectFunc) (*protocol.GetObjectResponse, error) {
-	// Log which actor is accessing the repo.
-	accesslog.Record(ctx, string(req.Repo), log.String("objectname", req.ObjectName))
-
-	obj, err := getObject(ctx, req.Repo, req.ObjectName)
+	obj, err := gs.getObjectService.GetObject(ctx, internalReq.Repo, internalReq.ObjectName)
 	if err != nil {
-		logger.Error("getting object", log.Error(err))
+		gs.Server.Logger.Error("getting object", log.Error(err))
 		return nil, err
 	}
 
@@ -198,7 +178,7 @@ func (gs *GRPCServer) doGetObject(ctx context.Context, req protocol.GetObjectReq
 		Object: *obj,
 	}
 
-	return &resp, nil
+	return resp.ToProto(), nil
 }
 
 func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService_P4ExecServer) error {
