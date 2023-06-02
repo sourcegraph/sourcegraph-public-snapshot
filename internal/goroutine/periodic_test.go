@@ -158,8 +158,6 @@ func TestPeriodicGoroutineConcurrency(t *testing.T) {
 }
 
 func TestPeriodicGoroutineWithDynamicConcurrency(t *testing.T) {
-	// TODO
-
 	clock := glock.NewMockClock()
 	concurrencyClock := glock.NewMockClock()
 	handler := NewMockHandler()
