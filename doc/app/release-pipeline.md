@@ -1,6 +1,6 @@
 # Sourcegraph App release pipeline
 
-The Sourcegraph App release pipeline utilizes buildkite to build and bundle Sourcegraph App for all out current [supported platforms]. The primary definition of the buildkite pipeline can be found at `.buildkite/pipeline.app.yml` in the Sourcegraph mono repo.
+The Sourcegraph App release pipeline utilizes buildkite to build and bundle Sourcegraph App for all current [supported platforms]. The primary definition of the buildkite pipeline can be found at `.buildkite/pipeline.app.yml` in the Sourcegraph mono repo.
 
 ## Branches that trigger the release pipeline
 
@@ -20,7 +20,7 @@ Sourcegraph App currently supports the following platforms:
 
 - `x86_64-linux`
 - `x86_64-darwin` (also known as Intel Mac)
-- `aarch64-darwin` (also known as Apple Sillicon)
+- `aarch64-darwin` (also known as Apple Silicon)
 
 ## Broad overview of the pipeline
 
@@ -38,7 +38,7 @@ The above stages are accomplished by utilizing hosts across two cloud providers 
   - Performing the GitHub release.
 - We use AWS to host a MacOS host, which we utilize for all Apple specific tooling and processes.
   - Code Signing.
-  - Compiling and bundling of Sourcegraph App for Intel and Apple Sillicon Mac.
+  - Compiling and bundling of Sourcegraph App for Intel Mac and Apple Silicon.
     - We use Bazel to compile the Sourcegraph Backend for `aarch64-darwin`.
     - We use Go to compile the Sourcegraph Backend for `x86_64-darwin`.
 
