@@ -857,6 +857,7 @@ type RateLimitFields struct {
 	// The source of the rate limit configuration.
 	Source CodyGatewayRateLimitSource `json:"source"`
 	// Requests per time interval.
+	// TODO: This needs to become BigInt, the limits for embeddings can exceed int32.
 	Limit int `json:"limit"`
 	// Interval for rate limiting.
 	IntervalSeconds int `json:"intervalSeconds"`

@@ -83,7 +83,7 @@ func (c *Config) Load() {
 	c.SourcesSyncInterval = c.GetInterval("CODY_GATEWAY_SOURCES_SYNC_INTERVAL", "2m", "The interval at which to sync actor sources.")
 
 	c.BigQuery.ProjectID = c.Get("CODY_GATEWAY_BIGQUERY_PROJECT_ID", os.Getenv("GOOGLE_CLOUD_PROJECT"), "The project ID for the BigQuery events.")
-	c.BigQuery.Dataset = c.Get("CODY_GATEWAY_BIGQUERY_DATASET", "CODY_GATEWAY", "The dataset for the BigQuery events.")
+	c.BigQuery.Dataset = c.Get("CODY_GATEWAY_BIGQUERY_DATASET", "cody_gateway", "The dataset for the BigQuery events.")
 	c.BigQuery.Table = c.Get("CODY_GATEWAY_BIGQUERY_TABLE", "events", "The table for the BigQuery events.")
 	c.BigQuery.EventBufferSize = c.GetInt("CODY_GATEWAY_BIGQUERY_EVENT_BUFFER_SIZE", "100", "The number of events allowed to buffer when submitting BigQuery events - set to 0 to disable.")
 

@@ -28,6 +28,9 @@ function modelBadgeVariant(model: string): 'secondary' | 'danger' {
         // allow list the models on the Cody Gateway side.
         case 'gpt-4':
         case 'gpt-3.5-turbo':
+
+        // Embeddings models:
+        case 'openai/text-embedding-ada-002':
             return 'secondary'
         default:
             return 'danger'

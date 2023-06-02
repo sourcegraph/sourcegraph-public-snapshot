@@ -153,7 +153,7 @@ SELECT
 	product_subscriptions.cody_gateway_code_rate_limit_allowed_models,
 	product_subscriptions.cody_gateway_embeddings_api_rate_limit,
 	product_subscriptions.cody_gateway_embeddings_api_rate_interval_seconds,
-	product_subscriptions.cody_gateway_embeddings_api_rate_limit_allowed_models
+	product_subscriptions.cody_gateway_embeddings_api_allowed_models
 FROM product_subscriptions
 LEFT OUTER JOIN users ON product_subscriptions.user_id = users.id
 LEFT OUTER JOIN primary_emails ON users.id = primary_emails.user_id
@@ -260,7 +260,7 @@ func (s dbSubscriptions) Update(ctx context.Context, id string, update dbSubscri
 			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("cody_gateway_embeddings_api_rate_interval_seconds=%s", dbutil.NewNullInt32(*v)))
 		}
 		if v := access.EmbeddingsAllowedModels; v != nil {
-			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("cody_gateway_embeddings_api_rate_limit_allowed_models=%s", nullStringSlice(*v)))
+			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("cody_gateway_embeddings_api_allowed_models=%s", nullStringSlice(*v)))
 		}
 	}
 

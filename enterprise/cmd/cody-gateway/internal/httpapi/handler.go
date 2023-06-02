@@ -52,7 +52,10 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 
 	v1router.Path("/embeddings").Methods(http.MethodPost).Handler(
 		authr.Middleware(
-			embeddings.NewHandler(logger, eventLogger, rs, config.EmbeddingsAllowedModels),
+			embeddings.NewHandler(logger, eventLogger, rs, embeddings.ModelFactoryMap{
+				// TODO: Access token could be empty.
+				"openai/text-embedding-ada-002": embeddings.NewOpenAIClient(config.OpenAIAccessToken),
+			}, config.EmbeddingsAllowedModels),
 		),
 	)
 

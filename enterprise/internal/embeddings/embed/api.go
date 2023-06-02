@@ -220,6 +220,9 @@ func (c *openaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []stri
 	if url == "" {
 		url = config.Url
 	}
+	if url == "" {
+		url = "https://api.openai.com/v1/embeddings"
+	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(bodyBytes))
 	if err != nil {
