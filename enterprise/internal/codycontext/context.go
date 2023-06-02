@@ -68,7 +68,6 @@ func (c *ContextClient) GetContext(ctx context.Context, args GetContextArgs) ([]
 	// embeddings results. We can't easily compare the scores between embeddings
 	// and keyword search.
 	embeddingsResultRatio := float32(len(embeddingRepos)) / float32(len(args.Repos))
-	keywordResultRatio := 1.0 - embeddingsResultRatio
 
 	embeddingsArgs := GetContextArgs{
 		Repos:            embeddingRepos,
@@ -77,10 +76,11 @@ func (c *ContextClient) GetContext(ctx context.Context, args GetContextArgs) ([]
 		TextResultsCount: int32(float32(args.TextResultsCount) * embeddingsResultRatio),
 	}
 	keywordArgs := GetContextArgs{
-		Repos:            keywordRepos,
-		Query:            args.Query,
-		CodeResultsCount: int32(float32(args.CodeResultsCount) * keywordResultRatio),
-		TextResultsCount: int32(float32(args.TextResultsCount) * keywordResultRatio),
+		Repos: keywordRepos,
+		Query: args.Query,
+		// Assign the remaining result budget to keyword search
+		CodeResultsCount: args.CodeResultsCount - embeddingsArgs.CodeResultsCount,
+		TextResultsCount: args.TextResultsCount - embeddingsArgs.TextResultsCount,
 	}
 
 	// Fetch keyword results and embeddings results concurrently
