@@ -258,7 +258,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		CreateCommitFromPatchFunc: &ClientCreateCommitFromPatchFunc{
-			defaultHook: func(context.Context, protocol.CreateCommitFromPatchRequest) (r0 string, r1 error) {
+			defaultHook: func(context.Context, protocol.CreateCommitFromPatchRequest) (r0 *protocol.CreateCommitFromPatchResponse, r1 error) {
 				return
 			},
 		},
@@ -525,7 +525,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		CreateCommitFromPatchFunc: &ClientCreateCommitFromPatchFunc{
-			defaultHook: func(context.Context, protocol.CreateCommitFromPatchRequest) (string, error) {
+			defaultHook: func(context.Context, protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error) {
 				panic("unexpected invocation of MockClient.CreateCommitFromPatch")
 			},
 		},
@@ -2440,15 +2440,15 @@ func (c ClientContributorCountFuncCall) Results() []interface{} {
 // CreateCommitFromPatch method of the parent MockClient instance is
 // invoked.
 type ClientCreateCommitFromPatchFunc struct {
-	defaultHook func(context.Context, protocol.CreateCommitFromPatchRequest) (string, error)
-	hooks       []func(context.Context, protocol.CreateCommitFromPatchRequest) (string, error)
+	defaultHook func(context.Context, protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error)
+	hooks       []func(context.Context, protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error)
 	history     []ClientCreateCommitFromPatchFuncCall
 	mutex       sync.Mutex
 }
 
 // CreateCommitFromPatch delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockClient) CreateCommitFromPatch(v0 context.Context, v1 protocol.CreateCommitFromPatchRequest) (string, error) {
+func (m *MockClient) CreateCommitFromPatch(v0 context.Context, v1 protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error) {
 	r0, r1 := m.CreateCommitFromPatchFunc.nextHook()(v0, v1)
 	m.CreateCommitFromPatchFunc.appendCall(ClientCreateCommitFromPatchFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -2457,7 +2457,7 @@ func (m *MockClient) CreateCommitFromPatch(v0 context.Context, v1 protocol.Creat
 // SetDefaultHook sets function that is called when the
 // CreateCommitFromPatch method of the parent MockClient instance is invoked
 // and the hook queue is empty.
-func (f *ClientCreateCommitFromPatchFunc) SetDefaultHook(hook func(context.Context, protocol.CreateCommitFromPatchRequest) (string, error)) {
+func (f *ClientCreateCommitFromPatchFunc) SetDefaultHook(hook func(context.Context, protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error)) {
 	f.defaultHook = hook
 }
 
@@ -2465,7 +2465,7 @@ func (f *ClientCreateCommitFromPatchFunc) SetDefaultHook(hook func(context.Conte
 // CreateCommitFromPatch method of the parent MockClient instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *ClientCreateCommitFromPatchFunc) PushHook(hook func(context.Context, protocol.CreateCommitFromPatchRequest) (string, error)) {
+func (f *ClientCreateCommitFromPatchFunc) PushHook(hook func(context.Context, protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2473,20 +2473,20 @@ func (f *ClientCreateCommitFromPatchFunc) PushHook(hook func(context.Context, pr
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ClientCreateCommitFromPatchFunc) SetDefaultReturn(r0 string, r1 error) {
-	f.SetDefaultHook(func(context.Context, protocol.CreateCommitFromPatchRequest) (string, error) {
+func (f *ClientCreateCommitFromPatchFunc) SetDefaultReturn(r0 *protocol.CreateCommitFromPatchResponse, r1 error) {
+	f.SetDefaultHook(func(context.Context, protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientCreateCommitFromPatchFunc) PushReturn(r0 string, r1 error) {
-	f.PushHook(func(context.Context, protocol.CreateCommitFromPatchRequest) (string, error) {
+func (f *ClientCreateCommitFromPatchFunc) PushReturn(r0 *protocol.CreateCommitFromPatchResponse, r1 error) {
+	f.PushHook(func(context.Context, protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientCreateCommitFromPatchFunc) nextHook() func(context.Context, protocol.CreateCommitFromPatchRequest) (string, error) {
+func (f *ClientCreateCommitFromPatchFunc) nextHook() func(context.Context, protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2527,7 +2527,7 @@ type ClientCreateCommitFromPatchFuncCall struct {
 	Arg1 protocol.CreateCommitFromPatchRequest
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 string
+	Result0 *protocol.CreateCommitFromPatchResponse
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

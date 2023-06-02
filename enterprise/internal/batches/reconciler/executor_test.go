@@ -649,12 +649,13 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			}
 			changeset := bt.CreateChangeset(t, ctx, bstore, changesetOpts)
 
-			var response string
+			var response *gitprotocol.CreateCommitFromPatchResponse
 			var createCommitFromPatchCalled bool
-			state.MockClient.CreateCommitFromPatchFunc.SetDefaultHook(func(_ context.Context, req gitprotocol.CreateCommitFromPatchRequest) (string, error) {
+			state.MockClient.CreateCommitFromPatchFunc.SetDefaultHook(func(_ context.Context, req gitprotocol.CreateCommitFromPatchRequest) (*gitprotocol.CreateCommitFromPatchResponse, error) {
 				createCommitFromPatchCalled = true
 				if changesetSpec != nil {
-					response = changesetSpec.HeadRef
+					response = new(gitprotocol.CreateCommitFromPatchResponse)
+					response.Rev = changesetSpec.HeadRef
 				}
 				return response, tc.gitClientErr
 			})
@@ -1124,9 +1125,9 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 
 			gitserverClient := gitserver.NewMockClient()
 			createCommitFromPatchReq := &gitprotocol.CreateCommitFromPatchRequest{}
-			gitserverClient.CreateCommitFromPatchFunc.SetDefaultHook(func(_ context.Context, req gitprotocol.CreateCommitFromPatchRequest) (string, error) {
+			gitserverClient.CreateCommitFromPatchFunc.SetDefaultHook(func(_ context.Context, req gitprotocol.CreateCommitFromPatchRequest) (*gitprotocol.CreateCommitFromPatchResponse, error) {
 				createCommitFromPatchReq = &req
-				return "", nil
+				return new(gitprotocol.CreateCommitFromPatchResponse), nil
 			})
 
 			_, err := executePlan(
