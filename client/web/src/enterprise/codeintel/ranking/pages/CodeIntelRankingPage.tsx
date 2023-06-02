@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useEffect } from 'react'
+import { FunctionComponent, useCallback, useEffect } from 'react'
 
 import { mdiTrashCan } from '@mdi/js'
 import classNames from 'classnames'
@@ -10,9 +10,18 @@ import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/teleme
 import { Button, Container, ErrorAlert, H4, Icon, LoadingSpinner, PageHeader, Text } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../../../components/Collapsible'
-import { BumpDerivativeGraphKeyResult, BumpDerivativeGraphKeyVariables } from '../../../../graphql-operations'
+import {
+    BumpDerivativeGraphKeyResult,
+    BumpDerivativeGraphKeyVariables,
+    DeleteRankingProgressResult,
+    DeleteRankingProgressVariables,
+} from '../../../../graphql-operations'
 
-import { BUMP_DERIVATIVE_GRAPH_KEY, useRankingSummary as defaultUseRankingSummary } from './backend'
+import {
+    BUMP_DERIVATIVE_GRAPH_KEY,
+    DELETE_RANKING_PROGRESS,
+    useRankingSummary as defaultUseRankingSummary,
+} from './backend'
 
 import styles from './CodeIntelRankingPage.module.scss'
 
@@ -34,12 +43,25 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
         BumpDerivativeGraphKeyVariables
     >(BUMP_DERIVATIVE_GRAPH_KEY)
 
-    const onDelete = (): Promise<void> => {
-        alert('DELETE!!!')
-        return Promise.resolve()
-    }
+    const [deleteProgressEntry, { loading: deleting }] = useMutation<
+        DeleteRankingProgressResult,
+        DeleteRankingProgressVariables
+    >(DELETE_RANKING_PROGRESS)
 
-    if (loading && !data) {
+    const onEnqueue = useCallback(async () => {
+        // TODO - should refresh ranking summary
+        await bumpDerivativeGraphKey()
+    }, [bumpDerivativeGraphKey])
+
+    const onDelete = useCallback(
+        async (graphKey: string) => {
+            // TODO - should refresh ranking summary
+            await deleteProgressEntry({ variables: { graphKey } })
+        },
+        [deleteProgressEntry]
+    )
+
+    if (loading) {
         return <LoadingSpinner />
     }
 
@@ -59,32 +81,37 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
                 description="View the history of ranking calculation."
                 className="mb-3"
                 actions={
-                    <Button onClick={() => bumpDerivativeGraphKey()} disabled={bumping} variant="secondary">
+                    <Button onClick={() => onEnqueue()} disabled={bumping || deleting} variant="secondary">
                         Start new ranking map/reduce job
                     </Button>
                 }
             />
 
-            <Text size="small" className="text-right">
-                Next job will begin in TODO.
-            </Text>
+            {data && data.rankingSummary && (
+                <>
+                    {data.rankingSummary.nextJobStartsAt && (
+                        <Text size="small" className="text-right">
+                            Next job will begin <Timestamp date={data.rankingSummary.nextJobStartsAt} />.
+                        </Text>
+                    )}
 
-            {data &&
-                (data.rankingSummary.length === 0 ? (
-                    <Container>
-                        <>No data.</>
-                    </Container>
-                ) : (
-                    data.rankingSummary.map((summary, index) => (
-                        <Summary
-                            key={summary.graphKey}
-                            summary={summary}
-                            onDelete={onDelete}
-                            expanded={index === 0}
-                            className="mb-3"
-                        />
-                    ))
-                ))}
+                    {data.rankingSummary.rankingSummary.length === 0 ? (
+                        <Container>
+                            <>No data.</>
+                        </Container>
+                    ) : (
+                        data.rankingSummary.rankingSummary.map((summary, index) => (
+                            <Summary
+                                key={summary.graphKey}
+                                summary={summary}
+                                onDelete={index > 0 ? () => onDelete(summary.graphKey) : undefined}
+                                expanded={index === 0}
+                                className="mb-3"
+                            />
+                        ))
+                    )}
+                </>
+            )}
         </>
     )
 }
@@ -110,7 +137,7 @@ interface SummaryProps {
     className?: string
 }
 
-const Summary: FunctionComponent<SummaryProps> = ({ summary, onDelete, historic: expanded = true, className = '' }) => (
+const Summary: FunctionComponent<SummaryProps> = ({ summary, onDelete, expanded = true, className = '' }) => (
     <Container className={className}>
         <Collapsible
             title={

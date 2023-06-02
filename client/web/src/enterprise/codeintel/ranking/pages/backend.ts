@@ -29,7 +29,10 @@ export const RankingSummaryFieldsFragment = gql`
 export const RANKING_SUMMARY = gql`
     query RankingSummary {
         rankingSummary {
-            ...RankingSummaryFields
+            rankingSummary {
+                ...RankingSummaryFields
+            }
+            nextJobStartsAt
         }
     }
 
@@ -46,11 +49,20 @@ export const useRankingSummary = (
     useQuery<RankingSummaryResult, RankingSummaryVariables>(RANKING_SUMMARY, {
         variables,
         fetchPolicy: 'cache-first',
+        pollInterval: 5000,
     })
 
 export const BUMP_DERIVATIVE_GRAPH_KEY = gql`
     mutation BumpDerivativeGraphKey {
         bumpDerivativeGraphKey {
+            alwaysNil
+        }
+    }
+`
+
+export const DELETE_RANKING_PROGRESS = gql`
+    mutation DeleteRankingProgress($graphKey: String!) {
+        deleteRankingProgress(graphKey: $graphKey) {
             alwaysNil
         }
     }
