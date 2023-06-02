@@ -28,6 +28,10 @@ type GitHubAppsStore interface {
 	// Install creates a new GitHub App installation in the database.
 	Install(ctx context.Context, id, installationID int) error
 
+	// GetLatestInstallID retrieves the latest GitHub App installation ID from the
+	// database for the GitHub App with the provided appID.
+	GetLatestInstallID(ctx context.Context, appID int) (int, error)
+
 	// GetByID retrieves a GitHub App from the database by ID.
 	GetByID(ctx context.Context, id int) (*ghtypes.GitHubApp, error)
 
@@ -199,6 +203,18 @@ func (s *gitHubAppsStore) Install(ctx context.Context, id, installationID int) e
 		RETURNING id`,
 		id, installationID)
 	return s.Exec(ctx, query)
+}
+
+func (s *gitHubAppsStore) GetLatestInstallID(ctx context.Context, appID int) (int, error) {
+	query := sqlf.Sprintf(`
+		SELECT installation_id
+		FROM github_app_installs
+		JOIN github_apps ON github_app_installs.app_id = github_apps.id
+		WHERE github_apps.app_id = %s
+		ORDER BY github_app_installs.id DESC LIMIT 1
+		`, appID)
+	installID, _, err := basestore.ScanFirstInt(s.Query(ctx, query))
+	return installID, err
 }
 
 func (s *gitHubAppsStore) get(ctx context.Context, where *sqlf.Query) (*ghtypes.GitHubApp, error) {

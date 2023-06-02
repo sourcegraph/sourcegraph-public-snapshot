@@ -497,6 +497,10 @@ func TestSourcer_ForChangeset(t *testing.T) {
 				}
 				return ghApp, nil
 			})
+			ghaStore.GetLatestInstallIDFunc.SetDefaultHook(func(ctx context.Context, appId int) (int, error) {
+				assert.EqualValues(t, 1234, appId)
+				return 5678, nil
+			})
 			extsvcStore := database.NewMockExternalServiceStore()
 			extsvcStore.ListFunc.SetDefaultReturn([]*types.ExternalService{es}, nil)
 
@@ -514,10 +518,11 @@ func TestSourcer_ForChangeset(t *testing.T) {
 			css := NewMockChangesetSource()
 			want := NewMockChangesetSource()
 			css.WithAuthenticatorFunc.SetDefaultHook(func(a auth.Authenticator) (ChangesetSource, error) {
-				_, ok := a.(*ghaauth.InstallationAuthenticator)
+				au, ok := a.(*ghaauth.InstallationAuthenticator)
 				if !ok {
 					t.Fatalf("unexpected authenticator type: %T", a)
 				}
+				assert.EqualValues(t, 5678, au.InstallationID())
 				return want, nil
 			})
 

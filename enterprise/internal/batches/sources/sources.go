@@ -316,6 +316,10 @@ func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css Change
 	if err != nil {
 		return nil, ErrNoGitHubAppConfigured
 	}
+	installID, err := tx.GitHubAppsStore().GetLatestInstallID(ctx, app.AppID)
+	if err != nil {
+		return nil, ErrNoGitHubAppConfigured
+	}
 
 	appAuther, err := ghaauth.NewGitHubAppAuthenticator(app.AppID, []byte(app.PrivateKey))
 	if err != nil {
@@ -331,8 +335,7 @@ func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css Change
 	// GitHub App bot, rather than the user who created the batch change). If GitHub adds
 	// support to their REST API for signing commits with a user access token, we should
 	// switch to using the user's token here.
-	// TODO: We don't save the installation ID for the app in the DB???
-	installationAuther := ghaauth.NewInstallationAccessToken(baseURL, 38137188, appAuther, keyring.Default().GitHubAppKey)
+	installationAuther := ghaauth.NewInstallationAccessToken(baseURL, installID, appAuther, keyring.Default().GitHubAppKey)
 
 	return css.WithAuthenticator(installationAuther)
 }

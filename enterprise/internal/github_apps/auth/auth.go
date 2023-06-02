@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -287,4 +288,8 @@ func (t *InstallationAuthenticator) SetURLUser(u *url.URL) {
 
 func (a *InstallationAuthenticator) GetToken() InstallationAccessToken {
 	return InstallationAccessToken(a.installationAccessToken)
+}
+
+func (a *InstallationAuthenticator) InstallationID() int {
+	return a.installationID
 }
