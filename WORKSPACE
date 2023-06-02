@@ -91,11 +91,11 @@ http_archive(
     ],
 )
 
-SRC_CLI_VERSION = "5.0.3"
+SRC_CLI_REV="7fc662748f8813cd6b66f0f3ed0d79dcefba9f90"
 http_archive(
     name = "src-cli-linux-amd64",
-    sha256 = "d125d732ad4c47ae6977c49574b01cc1b3c943b2a2108142267438e829538aa3",
-    url = "https://github.com/sourcegraph/src-cli/releases/download/{0}/src-cli_{0}_linux_amd64.tar.gz".format(SRC_CLI_VERSION),
+    sha256 = "a460c7aaa9dbbabe0ae70ed693d280df33c16bf97a168e255fe163d29ff15cb4",
+    url = "https://storage.googleapis.com/buildkite_public_assets/src-cli-{}.tar.gz".format(SRC_CLI_REV),
     build_file_content = """
 filegroup(
     name = "src-cli-linux-amd64",
@@ -104,7 +104,6 @@ filegroup(
 )
     """
 )
-
 
 http_archive(
     name = "container_structure_test",
@@ -379,3 +378,16 @@ embbedings_assets_deps()
 
 load("@container_structure_test//:repositories.bzl", "container_structure_test_register_toolchain")
 container_structure_test_register_toolchain(name = "cst")
+
+# go_repository(
+#     name = "com_github_sourcegraph_src_cli",
+#     build_file_proto_mode = "disable_global",
+#     importpath = "github.com/sourcegraph/src-cli",
+#     sum = "h1:iDZg5qSec00Tp4Mr0gFnQZKyf6XezabwpZO2OiQUFyE=",
+#     version = "v0.0.0-20230531190445-7fc662748f88",
+#     build_file_generation = "on",
+#     build_directives = [
+#         "gazelle:resolve go github.com/sourcegraph/sourcegraph/lib/errors @//lib/errors",
+#     ],
+# )
+
