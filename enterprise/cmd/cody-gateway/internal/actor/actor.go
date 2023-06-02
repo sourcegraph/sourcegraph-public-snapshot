@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -93,7 +94,11 @@ func WithActor(ctx context.Context, a *Actor) context.Context {
 	return context.WithValue(ctx, actorKey, a)
 }
 
-func (a *Actor) Limiter(redis limiter.RedisStore, feature types.CompletionsFeature) (limiter.Limiter, bool) {
+func (a *Actor) Limiter(
+	redis limiter.RedisStore,
+	feature types.CompletionsFeature,
+	concurrentLimitConfig codygateway.ConcurrentLimitConfig,
+) (limiter.Limiter, bool) {
 	if a == nil {
 		// Not logged in, no limit applicable.
 		return nil, false
@@ -102,10 +107,91 @@ func (a *Actor) Limiter(redis limiter.RedisStore, feature types.CompletionsFeatu
 	if !ok {
 		return nil, false
 	}
-	// The redis store has to use a prefix for the given feature because we need
-	// to rate limit by feature.
-	rs := limiter.NewPrefixRedisStore(fmt.Sprintf("%s:", string(feature)), redis)
-	return updateOnFailureLimiter{Redis: rs, RateLimit: limit, Actor: a}, true
+
+	// The actual type of time.Duration is int64, so we can use it to compute the
+	// ratio of the rate limit interval to a day (24 hours).
+	ratioToDay := float32(limit.Interval / (24 * time.Hour))
+	// Then use the ratio to compute the rate limit for a day.
+	dailyLimit := float32(limit.Limit) / ratioToDay
+	// Finally, compute the concurrent limit with the given percentage of the daily limit.
+	concurrentLimit := int(dailyLimit * concurrentLimitConfig.Percentage)
+
+	// The redis store has to use a prefix for the given feature because we need to
+	// rate limit by feature.
+	featurePrefix := fmt.Sprintf("%s:", feature)
+	concurrentLimiter := &concurrentLimiter{
+		actor:   a,
+		feature: feature,
+		redis:   limiter.NewPrefixRedisStore(fmt.Sprintf("concurrent:%s", featurePrefix), redis),
+		rateLimit: RateLimit{
+			Limit:    concurrentLimit,
+			Interval: concurrentLimitConfig.Interval,
+		},
+		featureLimiter: updateOnFailureLimiter{
+			Redis:     limiter.NewPrefixRedisStore(featurePrefix, redis),
+			RateLimit: limit,
+			Actor:     a,
+		},
+	}
+	return concurrentLimiter, true
+}
+
+type concurrentLimiter struct {
+	actor          *Actor
+	feature        types.CompletionsFeature
+	redis          limiter.RedisStore
+	rateLimit      RateLimit
+	featureLimiter limiter.Limiter
+
+	// Optional stub for current time. Used for testing.
+	nowFunc func() time.Time
+}
+
+func (l *concurrentLimiter) TryAcquire(ctx context.Context) (func() error, error) {
+	commit, err := (limiter.StaticLimiter{
+		Identifier: l.actor.ID,
+		Redis:      l.redis,
+		Limit:      l.rateLimit.Limit,
+		Interval:   l.rateLimit.Interval,
+		// Only update rate limit TTL if the actor has been updated recently.
+		UpdateRateLimitTTL: l.actor.LastUpdated != nil && time.Since(*l.actor.LastUpdated) < 5*time.Minute,
+	}).TryAcquire(ctx)
+	if err != nil {
+		if errors.HasType(err, limiter.NoAccessError{}) || errors.HasType(err, limiter.RateLimitExceededError{}) {
+			retryAfter, err := limiter.RetryAfterWithTTL(l.redis, l.nowFunc, l.actor.ID)
+			if err != nil {
+				return nil, errors.Wrap(err, "failed to get TTL for rate limit counter")
+			}
+			return nil, ErrConcurrentLimitExceeded{
+				feature:    l.feature,
+				limit:      l.rateLimit.Limit,
+				retryAfter: retryAfter,
+			}
+		}
+		return nil, errors.Wrap(err, "check concurrent limit")
+	}
+
+	featureCommit, err := l.featureLimiter.TryAcquire(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "check feature rate limit")
+	}
+	return func() error {
+		if err := featureCommit(); err != nil {
+			return err
+		}
+		return commit()
+	}, nil
+}
+
+type ErrConcurrentLimitExceeded struct {
+	feature    types.CompletionsFeature
+	limit      int
+	retryAfter time.Time
+}
+
+func (e ErrConcurrentLimitExceeded) Error() string {
+	return fmt.Sprintf("you exceeded the concurrent limit %d for %q. Retry after %s",
+		e.limit, e.feature, e.retryAfter.Truncate(time.Second))
 }
 
 type updateOnFailureLimiter struct {
@@ -124,7 +210,7 @@ func (u updateOnFailureLimiter) TryAcquire(ctx context.Context) (func() error, e
 		UpdateRateLimitTTL: u.LastUpdated != nil && time.Since(*u.LastUpdated) < 5*time.Minute,
 	}).TryAcquire(ctx)
 
-	if errors.Is(err, limiter.NoAccessError{}) || errors.Is(err, limiter.RateLimitExceededError{}) {
+	if errors.HasType(err, limiter.NoAccessError{}) || errors.HasType(err, limiter.RateLimitExceededError{}) {
 		u.Actor.Update(ctx) // TODO: run this in goroutine+background context maybe?
 	}
 

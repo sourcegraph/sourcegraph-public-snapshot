@@ -16,7 +16,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func rateLimit(baseLogger log.Logger, eventLogger events.Logger, cache limiter.RedisStore, next http.Handler) http.Handler {
+func rateLimit(
+	baseLogger log.Logger,
+	eventLogger events.Logger,
+	cache limiter.RedisStore,
+	concurrentLimitConfig codygateway.ConcurrentLimitConfig,
+	next http.Handler,
+) http.Handler {
 	baseLogger = baseLogger.Scoped("rateLimit", "rate limit handler")
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -29,7 +35,7 @@ func rateLimit(baseLogger log.Logger, eventLogger events.Logger, cache limiter.R
 			return
 		}
 
-		l, ok := act.Limiter(cache, feature)
+		l, ok := act.Limiter(cache, feature, concurrentLimitConfig)
 		if !ok {
 			response.JSONError(logger, w, http.StatusForbidden, errors.Newf("no access to feature %s", feature))
 			return

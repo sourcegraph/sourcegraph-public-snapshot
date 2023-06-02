@@ -10,6 +10,7 @@ go_library(
     visibility = ["//enterprise/cmd/cody-gateway:__subpackages__"],
     deps = [
         "//enterprise/cmd/cody-gateway/internal/limiter",
+        "//enterprise/internal/codygateway",
         "//enterprise/internal/completions/types",
         "//internal/goroutine",
         "//internal/observation",
