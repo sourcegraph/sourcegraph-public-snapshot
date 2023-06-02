@@ -266,7 +266,8 @@ func TestFileContainsFilterJob(t *testing.T) {
 			streamCollector := streaming.StreamFunc(func(ev streaming.SearchEvent) {
 				resultEvent = ev
 			})
-			j := NewFileContainsFilterJob(tc.includePatterns, tc.originalPattern, tc.caseSensitive, childJob)
+			j, err := NewFileContainsFilterJob(tc.includePatterns, tc.originalPattern, tc.caseSensitive, childJob)
+			require.NoError(t, err)
 			alert, err := j.Run(context.Background(), job.RuntimeClients{}, streamCollector)
 			require.Nil(t, alert)
 			require.NoError(t, err)
