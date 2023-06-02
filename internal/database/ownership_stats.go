@@ -28,11 +28,29 @@ type TreeCounts struct {
 	CodeownedFileCount int
 }
 
+// TreeLocationOpts allows locating and aggregating statistics on file trees.
+type TreeLocationOpts struct {
+	// RepoID locates a file tree for given repo.
+	// If 0 then all repos all considered.
+	RepoID api.RepoID
+
+	// Path locates a file tree within a given repo.
+	// Empty path "" represents repo root.
+	// Paths do not contain leading /.
+	Path string
+}
+
 type OwnershipStatsStore interface {
 	// UpdateIndividualCounts walks a representation of a repo file tree
 	// that yields ownership information for each file and directory, and persists
 	// that in the database.
 	UpdateIndividualCounts(ctx context.Context, repoID api.RepoID, data FileOwnershipAggregate, timestamp time.Time) (int, error)
+
+	// QueryIndividualCounts looks up and aggregates data for individual stats of located file trees.
+	// To find ownership for the whole instance, use empty TreeLocationOpts.
+	// To find ownership for the repo root, only specify RepoID in TreeLocationOpts.
+	// To find ownership for specific file tree, specify RepoID and Path in TreeLocationOpts.
+	QueryIndividualCounts(ctx context.Context, opts TreeLocationOpts) ([]TreeCounts, error)
 }
 
 var _ OwnershipStatsStore = &ownershipStats{}
@@ -99,4 +117,8 @@ func (s *ownershipStats) UpdateIndividualCounts(ctx context.Context, repoID api.
 		return 0, err
 	}
 	return totalRows, nil
+}
+
+func (s *ownershipStats) QueryIndividualCounts(ctx context.Context, opts TreeLocationOpts) ([]TreeCounts, error) {
+	return nil, nil
 }

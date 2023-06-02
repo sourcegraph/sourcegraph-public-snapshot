@@ -38,7 +38,7 @@ func TestUpdateIndividualCountsSuccess(t *testing.T) {
 	repo := mustCreate(ctx, t, d, &types.Repo{Name: "a/b"})
 	_, err := ensureRepoPaths(ctx, d.(*db).Store, []string{"file1", "file2"}, repo.ID)
 	require.NoError(t, err)
-	// 2. Insert counts:
+	// 2. Insert countsg:
 	walk := fakeCodeownersWalk{
 		"": {
 			{CodeownersReference: "ownerA", CodeownedFileCount: 2},
