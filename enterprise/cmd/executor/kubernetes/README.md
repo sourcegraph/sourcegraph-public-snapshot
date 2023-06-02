@@ -27,7 +27,21 @@ If you run `codeintel`, you may need to tinker with the `EXECUTOR_KUBERNETES_RES
 and `EXECUTOR_MAXIMUM_NUM_JOBS` to ensure that each Job has enough memory to run and that the node does not run out of
 memory.
 
-## Build Images
+## Local Development
+
+You can use `sg` to run Executors with either `batches` or `codeintel`.
+
+```bash
+sg start batches-kubernetes
+```
+
+```bash
+sg start codeintel-kubernetes
+```
+
+Any changes to Executor code will cause `sg` to rebuild the Executor image and restart the Executor pod.
+
+## Building Images
 
 To run Executors in Kubernetes you will need to build the `executor-kubernetes` image. If you are running Server Side
 Batch Changes, you will also need to build the `batcheshelper` image.

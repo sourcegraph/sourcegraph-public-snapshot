@@ -17,8 +17,6 @@ const changesetCleanInterval = 24 * time.Hour
 func NewChangesetDetachedCleaner(ctx context.Context, s *store.Store) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
-		"batchchanges.detached-cleaner", "cleaning detached changeset entries",
-		changesetCleanInterval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			// get the configuration value when the handler runs to get the latest value
 			retention := conf.Get().BatchChangesChangesetsRetention
@@ -32,5 +30,8 @@ func NewChangesetDetachedCleaner(ctx context.Context, s *store.Store) goroutine.
 			// nothing to do
 			return nil
 		}),
+		goroutine.WithName("batchchanges.detached-cleaner"),
+		goroutine.WithDescription("cleaning detached changeset entries"),
+		goroutine.WithInterval(changesetCleanInterval),
 	)
 }

@@ -33,11 +33,12 @@ func (j *janitorJob) Routines(_ context.Context, observationCtx *observation.Con
 	routines := []goroutine.BackgroundRoutine{
 		goroutine.NewPeriodicGoroutine(
 			context.Background(),
-			"executor.heartbeat-janitor", "clean up executor heartbeat records for presumed dead executors",
-			janitorConfigInst.CleanupTaskInterval,
 			goroutine.HandlerFunc(func(ctx context.Context) error {
 				return db.Executors().DeleteInactiveHeartbeats(ctx, janitorConfigInst.HeartbeatRecordsMaxAge)
 			}),
+			goroutine.WithName("executor.heartbeat-janitor"),
+			goroutine.WithDescription("clean up executor heartbeat records for presumed dead executors"),
+			goroutine.WithInterval(janitorConfigInst.CleanupTaskInterval),
 		),
 	}
 
