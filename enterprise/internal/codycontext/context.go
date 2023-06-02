@@ -33,8 +33,8 @@ type FileChunkContext struct {
 	EndLine   int
 }
 
-func NewContextClient(logger log.Logger, db edb.EnterpriseDB, embeddingsClient embeddings.Client, searchClient client.SearchClient) *ContextClient {
-	return &ContextClient{
+func NewCodyContextClient(logger log.Logger, db edb.EnterpriseDB, embeddingsClient embeddings.Client, searchClient client.SearchClient) *CodyContextClient {
+	return &CodyContextClient{
 		logger:           logger,
 		db:               db,
 		embeddingsClient: embeddingsClient,
@@ -42,7 +42,7 @@ func NewContextClient(logger log.Logger, db edb.EnterpriseDB, embeddingsClient e
 	}
 }
 
-type ContextClient struct {
+type CodyContextClient struct {
 	logger           log.Logger
 	db               edb.EnterpriseDB
 	embeddingsClient embeddings.Client
@@ -56,7 +56,7 @@ type GetContextArgs struct {
 	TextResultsCount int32
 }
 
-func (c *ContextClient) GetContext(ctx context.Context, args GetContextArgs) ([]FileChunkContext, error) {
+func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextArgs) ([]FileChunkContext, error) {
 	embeddingRepos, keywordRepos, err := c.partitionRepos(ctx, args.Repos)
 	if err != nil {
 		return nil, err
@@ -101,7 +101,7 @@ func (c *ContextClient) GetContext(ctx context.Context, args GetContextArgs) ([]
 }
 
 // partitionRepos splits a set of repos into repos with embeddings and repos without embeddings
-func (c *ContextClient) partitionRepos(ctx context.Context, input []types.RepoIDName) (embedded, notEmbedded []types.RepoIDName, err error) {
+func (c *CodyContextClient) partitionRepos(ctx context.Context, input []types.RepoIDName) (embedded, notEmbedded []types.RepoIDName, err error) {
 	for _, repo := range input {
 		exists, err := c.db.Repos().RepoEmbeddingExists(ctx, repo.ID)
 		if err != nil {
@@ -117,7 +117,7 @@ func (c *ContextClient) partitionRepos(ctx context.Context, input []types.RepoID
 	return embedded, notEmbedded, nil
 }
 
-func (c *ContextClient) getEmbeddingsContext(ctx context.Context, args GetContextArgs) (_ []FileChunkContext, err error) {
+func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetContextArgs) (_ []FileChunkContext, err error) {
 	repoNames := make([]api.RepoName, len(args.Repos))
 	repoIDs := make([]api.RepoID, len(args.Repos))
 	for i, repo := range args.Repos {
@@ -156,7 +156,7 @@ func (c *ContextClient) getEmbeddingsContext(ctx context.Context, args GetContex
 }
 
 // getKeywordContext uses keyword search to find relevant bits of context for Cody
-func (c *ContextClient) getKeywordContext(ctx context.Context, args GetContextArgs) (_ []FileChunkContext, err error) {
+func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetContextArgs) (_ []FileChunkContext, err error) {
 	settings, err := settings.CurrentUserFinal(ctx, c.db)
 	if err != nil {
 		return nil, err

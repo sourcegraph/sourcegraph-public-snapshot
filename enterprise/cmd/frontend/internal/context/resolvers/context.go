@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func NewResolver(db database.DB, gitserverClient gitserver.Client, contextClient *codycontext.ContextClient) graphqlbackend.CodyContextResolver {
+func NewResolver(db database.DB, gitserverClient gitserver.Client, contextClient *codycontext.CodyContextClient) graphqlbackend.CodyContextResolver {
 	return &Resolver{
 		db:              db,
 		gitserverClient: gitserverClient,
@@ -22,7 +22,7 @@ func NewResolver(db database.DB, gitserverClient gitserver.Client, contextClient
 type Resolver struct {
 	db              database.DB
 	gitserverClient gitserver.Client
-	contextClient   *codycontext.ContextClient
+	contextClient   *codycontext.CodyContextClient
 }
 
 func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetContextArgs) ([]graphqlbackend.ContextResultResolver, error) {
@@ -41,7 +41,7 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 		repoNameIDs[i] = types.RepoIDName{ID: repoID, Name: repos[repoID].Name}
 	}
 
-	fileChunks, err := r.contextClient.GetContext(ctx, codycontext.GetContextArgs{
+	fileChunks, err := r.contextClient.GetCodyContext(ctx, codycontext.GetContextArgs{
 		Repos:            repoNameIDs,
 		Query:            args.Query,
 		CodeResultsCount: args.CodeResultsCount,

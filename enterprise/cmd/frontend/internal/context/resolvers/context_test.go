@@ -119,7 +119,7 @@ func TestContextResolver(t *testing.T) {
 		return nil, nil
 	})
 
-	contextClient := codycontext.NewContextClient(
+	contextClient := codycontext.NewCodyContextClient(
 		logger,
 		db,
 		mockEmbeddingsClient,

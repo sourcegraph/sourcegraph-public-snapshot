@@ -33,7 +33,7 @@ func Init(
 		search.SearcherGRPCConnectionCache(),
 		enterpriseServices.EnterpriseSearchJobs,
 	)
-	contextClient := codycontext.NewContextClient(
+	contextClient := codycontext.NewCodyContextClient(
 		observationCtx.Logger,
 		edb.NewEnterpriseDB(db),
 		embeddingsClient,
