@@ -343,6 +343,18 @@ type RepoCloneResponse struct {
 	Error string `json:",omitempty"`
 }
 
+func (r *RepoCloneResponse) ToProto() *proto.RepoCloneResponse {
+	return &proto.RepoCloneResponse{
+		Error: r.Error,
+	}
+}
+
+func (r *RepoCloneResponse) FromProto(p *proto.RepoCloneResponse) {
+	*r = RepoCloneResponse{
+		Error: p.GetError(),
+	}
+}
+
 type NotFoundPayload struct {
 	CloneInProgress bool `json:"cloneInProgress"` // If true, exec returned with noop because clone is in progress.
 

@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestMain(m *testing.M) {
@@ -104,6 +105,10 @@ func TestRecloneRepository(t *testing.T) {
 	conf.Mock(&conf.Unified{
 		ServiceConnectionConfig: conftypes.ServiceConnections{
 			GitServers: []string{serverURL.Host},
+		}, SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				EnableGRPC: false,
+			},
 		},
 	})
 	defer conf.Mock(nil)

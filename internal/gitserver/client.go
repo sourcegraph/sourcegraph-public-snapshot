@@ -1077,25 +1077,47 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 
 // RequestRepoClone requests that the gitserver does an asynchronous clone of the repository.
 func (c *clientImplementor) RequestRepoClone(ctx context.Context, repo api.RepoName) (*protocol.RepoCloneResponse, error) {
-	req := &protocol.RepoCloneRequest{
-		Repo: repo,
-	}
-	resp, err := c.httpPost(ctx, repo, "repo-clone", req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, &url.Error{
-			URL: resp.Request.URL.String(),
-			Op:  "RepoInfo",
-			Err: errors.Errorf("RepoInfo: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		client, err := c.ClientForRepo(repo)
+		if err != nil {
+			return nil, err
 		}
-	}
 
-	var info *protocol.RepoCloneResponse
-	err = json.NewDecoder(resp.Body).Decode(&info)
-	return info, err
+		req := proto.RepoCloneRequest{
+			Repo: string(repo),
+		}
+
+		resp, err := client.RepoClone(ctx, &req)
+		if err != nil {
+			return nil, err
+		}
+
+		var info protocol.RepoCloneResponse
+		info.FromProto(resp)
+		return &info, nil
+
+	} else {
+
+		req := &protocol.RepoCloneRequest{
+			Repo: repo,
+		}
+		resp, err := c.httpPost(ctx, repo, "repo-clone", req)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			return nil, &url.Error{
+				URL: resp.Request.URL.String(),
+				Op:  "RepoInfo",
+				Err: errors.Errorf("RepoInfo: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+			}
+		}
+
+		var info *protocol.RepoCloneResponse
+		err = json.NewDecoder(resp.Body).Decode(&info)
+		return info, err
+	}
 }
 
 // MockIsRepoCloneable mocks (*Client).IsRepoCloneable for tests.

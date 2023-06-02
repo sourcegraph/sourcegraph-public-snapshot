@@ -23,6 +23,7 @@ const (
 	GitserverService_IsRepoCloneable_FullMethodName = "/gitserver.v1.GitserverService/IsRepoCloneable"
 	GitserverService_Search_FullMethodName          = "/gitserver.v1.GitserverService/Search"
 	GitserverService_Archive_FullMethodName         = "/gitserver.v1.GitserverService/Archive"
+	GitserverService_RepoClone_FullMethodName       = "/gitserver.v1.GitserverService/RepoClone"
 	GitserverService_ReposStats_FullMethodName      = "/gitserver.v1.GitserverService/ReposStats"
 )
 
@@ -34,6 +35,7 @@ type GitserverServiceClient interface {
 	IsRepoCloneable(ctx context.Context, in *IsRepoCloneableRequest, opts ...grpc.CallOption) (*IsRepoCloneableResponse, error)
 	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (GitserverService_SearchClient, error)
 	Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (GitserverService_ArchiveClient, error)
+	RepoClone(ctx context.Context, in *RepoCloneRequest, opts ...grpc.CallOption) (*RepoCloneResponse, error)
 	ReposStats(ctx context.Context, in *ReposStatsRequest, opts ...grpc.CallOption) (*ReposStatsResponse, error)
 }
 
@@ -150,6 +152,15 @@ func (x *gitserverServiceArchiveClient) Recv() (*ArchiveResponse, error) {
 	return m, nil
 }
 
+func (c *gitserverServiceClient) RepoClone(ctx context.Context, in *RepoCloneRequest, opts ...grpc.CallOption) (*RepoCloneResponse, error) {
+	out := new(RepoCloneResponse)
+	err := c.cc.Invoke(ctx, GitserverService_RepoClone_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *gitserverServiceClient) ReposStats(ctx context.Context, in *ReposStatsRequest, opts ...grpc.CallOption) (*ReposStatsResponse, error) {
 	out := new(ReposStatsResponse)
 	err := c.cc.Invoke(ctx, GitserverService_ReposStats_FullMethodName, in, out, opts...)
@@ -167,6 +178,7 @@ type GitserverServiceServer interface {
 	IsRepoCloneable(context.Context, *IsRepoCloneableRequest) (*IsRepoCloneableResponse, error)
 	Search(*SearchRequest, GitserverService_SearchServer) error
 	Archive(*ArchiveRequest, GitserverService_ArchiveServer) error
+	RepoClone(context.Context, *RepoCloneRequest) (*RepoCloneResponse, error)
 	ReposStats(context.Context, *ReposStatsRequest) (*ReposStatsResponse, error)
 	mustEmbedUnimplementedGitserverServiceServer()
 }
@@ -186,6 +198,9 @@ func (UnimplementedGitserverServiceServer) Search(*SearchRequest, GitserverServi
 }
 func (UnimplementedGitserverServiceServer) Archive(*ArchiveRequest, GitserverService_ArchiveServer) error {
 	return status.Errorf(codes.Unimplemented, "method Archive not implemented")
+}
+func (UnimplementedGitserverServiceServer) RepoClone(context.Context, *RepoCloneRequest) (*RepoCloneResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RepoClone not implemented")
 }
 func (UnimplementedGitserverServiceServer) ReposStats(context.Context, *ReposStatsRequest) (*ReposStatsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReposStats not implemented")
@@ -284,6 +299,24 @@ func (x *gitserverServiceArchiveServer) Send(m *ArchiveResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
+func _GitserverService_RepoClone_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RepoCloneRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).RepoClone(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_RepoClone_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).RepoClone(ctx, req.(*RepoCloneRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _GitserverService_ReposStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ReposStatsRequest)
 	if err := dec(in); err != nil {
@@ -312,6 +345,10 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "IsRepoCloneable",
 			Handler:    _GitserverService_IsRepoCloneable_Handler,
+		},
+		{
+			MethodName: "RepoClone",
+			Handler:    _GitserverService_RepoClone_Handler,
 		},
 		{
 			MethodName: "ReposStats",
