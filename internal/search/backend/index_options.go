@@ -213,8 +213,6 @@ func getIndexOptions(
 		languageMap = append(languageMap, &proto.LanguageMapping{Language: language, Ctags: proto.CTagsParserType(engine)})
 	}
 
-	println(languageMap)
-
 	o := ZoektIndexOptions{
 		Name:       opts.Name,
 		RepoID:     opts.RepoID,
