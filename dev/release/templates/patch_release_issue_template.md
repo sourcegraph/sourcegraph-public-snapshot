@@ -13,15 +13,7 @@ Arguments:
 
 This release is scheduled for **$RELEASE_DATE**.
 
-> **Attention developers:** to get your commits in `main` included in this patch release, please file a [patch request](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=team%2Fdistribution&template=request_patch_release.md&title=$MAJOR.$MINOR.$PATCH%3A+) for review.
->
-> Only check off items if relevant commits across the following repositories have been cherry-picked into the relevant `$MAJOR.$MINOR` branch by the release captain:
->
-> - `sourcegraph/sourcegraph`
-> - `sourcegraph/deploy-sourcegraph`
-> - `sourcegraph/deploy-sourcegraph-docker`
-
-- [ ] TODO: Add [patch request issues](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc+label%3Apatch-release-request) and their associated commits here
+> **Attention developers:** to get your commits in `main` included in this patch release add the `backport-$MAJOR.$MINOR` to the PR to `main`.
 
 ## Setup
 
