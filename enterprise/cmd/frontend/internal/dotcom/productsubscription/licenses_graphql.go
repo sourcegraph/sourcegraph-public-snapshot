@@ -101,9 +101,11 @@ func (r *productLicense) CreatedAt() gqlutil.DateTime {
 
 func generateProductLicenseForSubscription(ctx context.Context, db database.DB, subscriptionID string, input *graphqlbackend.ProductLicenseInput) (id string, err error) {
 	info := license.Info{
-		Tags:      license.SanitizeTagsList(input.Tags),
-		UserCount: uint(input.UserCount),
-		ExpiresAt: time.Unix(int64(input.ExpiresAt), 0),
+		Tags:                     license.SanitizeTagsList(input.Tags),
+		UserCount:                uint(input.UserCount),
+		ExpiresAt:                time.Unix(int64(input.ExpiresAt), 0),
+		SalesforceSubscriptionID: input.SalesforceSubscriptionID,
+		SalesforceOpportunityID:  input.SalesforceOpportunityID,
 	}
 	licenseKey, version, err := licensing.GenerateProductLicenseKey(info)
 	if err != nil {

@@ -98,9 +98,11 @@ type ProductLicense interface {
 
 // ProductLicenseInput implements the GraphQL type ProductLicenseInput.
 type ProductLicenseInput struct {
-	Tags      []string
-	UserCount int32
-	ExpiresAt int32
+	Tags                     []string
+	UserCount                int32
+	ExpiresAt                int32
+	SalesforceSubscriptionID *string
+	SalesforceOpportunityID  *string
 }
 
 type ProductLicensesArgs struct {

@@ -27,12 +27,21 @@ import (
 //
 // NOTE: If you change these fields, you MUST handle backward compatibility. Existing licenses that
 // were generated with the old fields must still work until all customers have added the new
-// license. Increment (encodedInfo).Version and formatVersion when you make backward-incompatbile
-// changes.
+// license. Increment (encodedInfo).Version and modify version() implementation when you make
+// backward-incompatbile changes.
 type Info struct {
-	Tags      []string  `json:"t"` // tags that denote features/restrictions (e.g., "starter" or "dev")
-	UserCount uint      `json:"u"` // the number of users that this license is valid for
-	ExpiresAt time.Time `json:"e"` // the date when this license expires
+	// Tags denote features/restrictions (e.g., "starter" or "dev")
+	Tags []string `json:"t"`
+	// UserCount is the number of users that this license is valid for
+	UserCount uint `json:"u"`
+	// ExpiresAt is the date when this license expires
+	ExpiresAt time.Time `json:"e"`
+	// SalesforceSubscriptionID is the optional Salesforce subscription ID to link licenses
+	// to Salesforce subscriptions
+	SalesforceSubscriptionID *string `json:"sf_sub_id,omitempty"`
+	// SalesforceOpportunityID is the optional Salesforce opportunity ID to link licenses
+	// to Salesforce opportunities
+	SalesforceOpportunityID *string `json:"sf_opp_id,omitempty"`
 }
 
 // IsExpired reports whether the license has expired.
@@ -92,10 +101,15 @@ type encodedInfo struct {
 	Info
 }
 
-const formatVersion = 1 // (encodedInfo).Version value
+func (l Info) version() int {
+	if l.SalesforceSubscriptionID == nil {
+		return 1
+	}
+	return 2
+}
 
 func (l Info) encode() ([]byte, error) {
-	e := encodedInfo{Version: formatVersion, Info: l}
+	e := encodedInfo{Version: l.version(), Info: l}
 	if _, err := rand.Read(e.Nonce[:8]); err != nil {
 		return nil, err
 	}
@@ -107,8 +121,8 @@ func (l *Info) decode(data []byte) error {
 	if err := json.Unmarshal(data, &e); err != nil {
 		return err
 	}
-	if e.Version != formatVersion {
-		return errors.Errorf("license key format is version %d, expected version %d", e.Version, formatVersion)
+	if e.Version != e.Info.version() {
+		return errors.Errorf("license key format is version %d, expected version %d", e.Version, e.Info.version())
 	}
 	*l = e.Info
 	return nil
@@ -134,7 +148,7 @@ func GenerateSignedKey(info Info, privateKey ssh.Signer) (licenseKey string, ver
 	if err != nil {
 		return "", 0, errors.Wrap(err, "marshal")
 	}
-	return base64.RawURLEncoding.EncodeToString(signedKeyData), formatVersion, nil
+	return base64.RawURLEncoding.EncodeToString(signedKeyData), info.version(), nil
 }
 
 // ParseSignedKey parses and verifies the signed license key. If parsing or verification fails, a
