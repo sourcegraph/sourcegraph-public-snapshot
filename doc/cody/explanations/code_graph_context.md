@@ -8,6 +8,8 @@ Cody reads relevant code files to increase the accuracy and quality of the respo
 
 ### Embeddings
 
+> **Community users:** If you want to enable embeddings for an open source project, please [join our Discord server](https://discord.gg/sourcegraph-969688426372825169) and request them in the `#cody-embeddings` channel.
+
 Embeddings are a semantic representation of text that allow us to create a search index over an entire codebase. The process of creating embeddings involves us splitting the entire codebase into searchable chunks and sending them to the external service specified in the site config for embedding. The final embedding index is stored in a managed object storage service.
 
 Embeddings for relevant code files must be enabled for each repository that you'd like Cody to have context on.
