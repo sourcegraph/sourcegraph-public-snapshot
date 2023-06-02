@@ -1,7 +1,7 @@
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev:defs.bzl", "ts_project")
-load("//dev:eslint.bzl", "eslint_config_and_lint_root")
+load("//dev:eslint.bzl", "eslint_config")
 
 # gazelle:js_resolve vscode //:node_modules/@vscode
 # gazelle:js_files src/**/*.{ts,tsx}
@@ -10,8 +10,8 @@ load("//dev:eslint.bzl", "eslint_config_and_lint_root")
 
 npm_link_all_packages(name = "node_modules")
 
-eslint_config_and_lint_root(
-    config_deps = [
+eslint_config(
+    deps = [
         "//client/cody/scripts:tsconfig",
         "//client/cody/test/integration:tsconfig",
     ],

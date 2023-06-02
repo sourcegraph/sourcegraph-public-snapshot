@@ -133,10 +133,3 @@ If you want to run tests for a specific package, replace `//...` with the packag
 bazel test `bazel query 'attr("name", ".*_typecheck_test", //client/vscode...)'`
 ```
 
-### How do I run ESLint on a client package?
-
-Similar to the above, we can use bazel query to find all target names ending with `_eslint` and test them:
-
-```sh
-bazel test `bazel query 'attr("name", ".*_eslint$", //client/wildcard/...)'`
-```
