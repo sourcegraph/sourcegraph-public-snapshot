@@ -1,6 +1,5 @@
 import { FC, useState } from 'react'
 
-import { mdiCancel } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
@@ -17,7 +16,6 @@ import {
     H4,
     Alert,
     Tooltip,
-    Icon,
 } from '@sourcegraph/wildcard'
 
 import { RepoEmbeddingJobFields, RepoEmbeddingJobState } from '../../../graphql-operations'
@@ -76,8 +74,7 @@ export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
                             size="sm"
                             disabled={cancel}
                         >
-                            <Icon aria-hidden={true} svgPath={mdiCancel} />
-                            {' Cancel'}
+                            Cancel
                         </Button>
                     </Tooltip>
                 ) : null}
