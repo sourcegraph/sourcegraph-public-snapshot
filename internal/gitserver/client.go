@@ -1092,10 +1092,6 @@ func (c *clientImplementor) RequestRepoClone(ctx context.Context, repo api.RepoN
 			return nil, err
 		}
 
-		if resp == nil {
-			return nil, nil
-		}
-
 		var info protocol.RepoCloneResponse
 		info.FromProto(resp)
 		return &info, nil
