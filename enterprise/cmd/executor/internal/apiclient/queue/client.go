@@ -177,9 +177,8 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, canc
 	var queueAttr attribute.KeyValue
 	var endpoint string
 	var payload any
-	// If queueName is empty (but queueNames is set), then we are using the newer multi-queue API. It is safe to send
-	// jobIds as strings in that case.
-	if c.options.QueueName == "" {
+	// We are using the newer multi-queue API. It is safe to send jobIds as strings in that case.
+	if len(c.options.QueueNames) > 0 {
 		queueAttr = attribute.StringSlice("queueNames", c.options.QueueNames)
 		queueJobIDs, parseErr := ParseJobIDs(jobIDs)
 		if parseErr != nil {
