@@ -41,6 +41,7 @@ import (
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/randstring"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -119,6 +120,60 @@ func TestProtoRoundTrip(t *testing.T) {
 	}); err != nil {
 		t.Errorf("ReposStats proto roundtrip failed (-want +got):\n%s", diff)
 	}
+	durationGenerator := func(rand *rand.Rand, size int) reflect.Value {
+		return reflect.ValueOf(time.Duration(rand.Int63()))
+	}
+
+	ruReq := func(original protocol.RepoUpdateRequest) bool {
+		var converted protocol.RepoUpdateRequest
+		converted.FromProto(original.ToProto())
+
+		if diff = cmp.Diff(original, converted); diff != "" {
+			return false
+		}
+
+		return true
+	}
+
+	if err := quick.Check(ruReq, &quick.Config{
+		Values: func(args []reflect.Value, rand *rand.Rand) {
+			args[0] = reflect.ValueOf(protocol.RepoUpdateRequest{
+				Repo:           api.RepoName(fmt.Sprintf("repo-%d", rand.Int())),
+				Since:          durationGenerator(rand, 0).Interface().(time.Duration),
+				CloneFromShard: randstring.NewLen(10),
+			})
+		},
+	}); err != nil {
+		t.Errorf("RepoUpdateRequest proto roundtrip failed (-want +got):\n%s", diff)
+	}
+
+	ruRes := func(original protocol.RepoUpdateResponse) bool {
+		var converted protocol.RepoUpdateResponse
+		converted.FromProto(original.ToProto())
+
+		if diff = cmp.Diff(original, converted); diff != "" {
+			return false
+		}
+
+		return true
+	}
+
+	if err := quick.Check(ruRes, &quick.Config{
+		Values: func(args []reflect.Value, rand *rand.Rand) {
+
+			lastFetched := timeGenerator(rand, 0).Interface().(time.Time)
+			lastChangedAt := timeGenerator(rand, 0).Interface().(time.Time)
+
+			args[0] = reflect.ValueOf(protocol.RepoUpdateResponse{
+				LastFetched: &lastFetched,
+				LastChanged: &lastChangedAt,
+				Error:       randstring.NewLen(10),
+			})
+		},
+	}); err != nil {
+		t.Errorf("RepoUpdateResponse proto roundtrip failed (-want +got):\n%s", diff)
+	}
+
 }
 
 func TestClient_Remove(t *testing.T) {
@@ -1108,8 +1163,15 @@ type spyGitserverServiceClient struct {
 	repoClone         bool
 	repoCloneProgress bool
 	repoDelete        bool
+	repoUpdate        bool
 	reposStatsCalled  bool
 	base              proto.GitserverServiceClient
+}
+
+// RepoUpdate implements v1.GitserverServiceClient
+func (s *spyGitserverServiceClient) RepoUpdate(ctx context.Context, in *proto.RepoUpdateRequest, opts ...grpc.CallOption) (*proto.RepoUpdateResponse, error) {
+	s.repoUpdate = true
+	return s.base.RepoUpdate(ctx, in, opts...)
 }
 
 // RepoDelete implements v1.GitserverServiceClient
@@ -1162,8 +1224,14 @@ type mockClient struct {
 	mockRepoCloneProgress func(ctx context.Context, in *proto.RepoCloneProgressRequest, opts ...grpc.CallOption) (*proto.RepoCloneProgressResponse, error)
 	mockRepoDelete        func(ctx context.Context, in *proto.RepoDeleteRequest, opts ...grpc.CallOption) (*proto.RepoDeleteResponse, error)
 	mockRepoStats         func(ctx context.Context, in *proto.ReposStatsRequest, opts ...grpc.CallOption) (*proto.ReposStatsResponse, error)
+	mockRepoUpdate        func(ctx context.Context, in *proto.RepoUpdateRequest, opts ...grpc.CallOption) (*proto.RepoUpdateResponse, error)
 	mockArchive           func(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error)
 	mockSearch            func(ctx context.Context, in *proto.SearchRequest, opts ...grpc.CallOption) (proto.GitserverService_SearchClient, error)
+}
+
+// RepoUpdate implements v1.GitserverServiceClient
+func (mc *mockClient) RepoUpdate(ctx context.Context, in *proto.RepoUpdateRequest, opts ...grpc.CallOption) (*proto.RepoUpdateResponse, error) {
+	return mc.mockRepoUpdate(ctx, in, opts...)
 }
 
 // RepoDelete implements v1.GitserverServiceClient

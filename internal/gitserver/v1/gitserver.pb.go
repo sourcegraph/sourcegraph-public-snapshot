@@ -9,6 +9,7 @@ package v1
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	durationpb "google.golang.org/protobuf/types/known/durationpb"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
@@ -1939,6 +1940,142 @@ func (*RepoDeleteResponse) Descriptor() ([]byte, []int) {
 	return file_gitserver_proto_rawDescGZIP(), []int{28}
 }
 
+// RepoUpdateRequest is a request to update a repository.
+type RepoUpdateRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// repo is the name of the repo to update.
+	Repo string `protobuf:"bytes,1,opt,name=repo,proto3" json:"repo,omitempty"`
+	// since is the debounce interval for queries, used only with request-repo-update
+	Since *durationpb.Duration `protobuf:"bytes,2,opt,name=since,proto3" json:"since,omitempty"`
+	// clone_from_shard is the hostname of the gitserver instance that is the current owner of the
+	// repository. If this is set, then the RepoUpdateRequest is to migrate the repo from
+	// that gitserver instance to the new home of the repo.
+	CloneFromShard string `protobuf:"bytes,3,opt,name=clone_from_shard,json=cloneFromShard,proto3" json:"clone_from_shard,omitempty"`
+}
+
+func (x *RepoUpdateRequest) Reset() {
+	*x = RepoUpdateRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_gitserver_proto_msgTypes[29]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RepoUpdateRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RepoUpdateRequest) ProtoMessage() {}
+
+func (x *RepoUpdateRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_gitserver_proto_msgTypes[29]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RepoUpdateRequest.ProtoReflect.Descriptor instead.
+func (*RepoUpdateRequest) Descriptor() ([]byte, []int) {
+	return file_gitserver_proto_rawDescGZIP(), []int{29}
+}
+
+func (x *RepoUpdateRequest) GetRepo() string {
+	if x != nil {
+		return x.Repo
+	}
+	return ""
+}
+
+func (x *RepoUpdateRequest) GetSince() *durationpb.Duration {
+	if x != nil {
+		return x.Since
+	}
+	return nil
+}
+
+func (x *RepoUpdateRequest) GetCloneFromShard() string {
+	if x != nil {
+		return x.CloneFromShard
+	}
+	return ""
+}
+
+// RepoUpdateResponse is the response from the RepoUpdate RPC.
+type RepoUpdateResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	// last_fetched is the time the repository was last fetched.
+	LastFetched *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=last_fetched,json=lastFetched,proto3" json:"last_fetched,omitempty"`
+	// last_changed is the time the repository was last changed.
+	LastChanged *timestamppb.Timestamp `protobuf:"bytes,2,opt,name=last_changed,json=lastChanged,proto3" json:"last_changed,omitempty"`
+	// error is the error that occurred during the update.
+	Error string `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`
+}
+
+func (x *RepoUpdateResponse) Reset() {
+	*x = RepoUpdateResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_gitserver_proto_msgTypes[30]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RepoUpdateResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RepoUpdateResponse) ProtoMessage() {}
+
+func (x *RepoUpdateResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_gitserver_proto_msgTypes[30]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RepoUpdateResponse.ProtoReflect.Descriptor instead.
+func (*RepoUpdateResponse) Descriptor() ([]byte, []int) {
+	return file_gitserver_proto_rawDescGZIP(), []int{30}
+}
+
+func (x *RepoUpdateResponse) GetLastFetched() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastFetched
+	}
+	return nil
+}
+
+func (x *RepoUpdateResponse) GetLastChanged() *timestamppb.Timestamp {
+	if x != nil {
+		return x.LastChanged
+	}
+	return nil
+}
+
+func (x *RepoUpdateResponse) GetError() string {
+	if x != nil {
+		return x.Error
+	}
+	return ""
+}
+
 // ReposStatsRequest is a empty request for the ReposStats RPC.
 type ReposStatsRequest struct {
 	state         protoimpl.MessageState
@@ -1949,7 +2086,7 @@ type ReposStatsRequest struct {
 func (x *ReposStatsRequest) Reset() {
 	*x = ReposStatsRequest{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[29]
+		mi := &file_gitserver_proto_msgTypes[31]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1962,7 +2099,7 @@ func (x *ReposStatsRequest) String() string {
 func (*ReposStatsRequest) ProtoMessage() {}
 
 func (x *ReposStatsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[29]
+	mi := &file_gitserver_proto_msgTypes[31]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1975,7 +2112,7 @@ func (x *ReposStatsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReposStatsRequest.ProtoReflect.Descriptor instead.
 func (*ReposStatsRequest) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{29}
+	return file_gitserver_proto_rawDescGZIP(), []int{31}
 }
 
 // ReposStats is an aggregation of statistics from a gitserver.
@@ -1995,7 +2132,7 @@ type ReposStatsResponse struct {
 func (x *ReposStatsResponse) Reset() {
 	*x = ReposStatsResponse{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[30]
+		mi := &file_gitserver_proto_msgTypes[32]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2008,7 +2145,7 @@ func (x *ReposStatsResponse) String() string {
 func (*ReposStatsResponse) ProtoMessage() {}
 
 func (x *ReposStatsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[30]
+	mi := &file_gitserver_proto_msgTypes[32]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2021,7 +2158,7 @@ func (x *ReposStatsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReposStatsResponse.ProtoReflect.Descriptor instead.
 func (*ReposStatsResponse) Descriptor() ([]byte, []int) {
-	return file_gitserver_proto_rawDescGZIP(), []int{30}
+	return file_gitserver_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *ReposStatsResponse) GetGitDirBytes() uint64 {
@@ -2051,7 +2188,7 @@ type CommitMatch_Signature struct {
 func (x *CommitMatch_Signature) Reset() {
 	*x = CommitMatch_Signature{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[31]
+		mi := &file_gitserver_proto_msgTypes[33]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2064,7 +2201,7 @@ func (x *CommitMatch_Signature) String() string {
 func (*CommitMatch_Signature) ProtoMessage() {}
 
 func (x *CommitMatch_Signature) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[31]
+	mi := &file_gitserver_proto_msgTypes[33]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2113,7 +2250,7 @@ type CommitMatch_MatchedString struct {
 func (x *CommitMatch_MatchedString) Reset() {
 	*x = CommitMatch_MatchedString{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[32]
+		mi := &file_gitserver_proto_msgTypes[34]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2126,7 +2263,7 @@ func (x *CommitMatch_MatchedString) String() string {
 func (*CommitMatch_MatchedString) ProtoMessage() {}
 
 func (x *CommitMatch_MatchedString) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[32]
+	mi := &file_gitserver_proto_msgTypes[34]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2169,7 +2306,7 @@ type CommitMatch_Range struct {
 func (x *CommitMatch_Range) Reset() {
 	*x = CommitMatch_Range{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[33]
+		mi := &file_gitserver_proto_msgTypes[35]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2182,7 +2319,7 @@ func (x *CommitMatch_Range) String() string {
 func (*CommitMatch_Range) ProtoMessage() {}
 
 func (x *CommitMatch_Range) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[33]
+	mi := &file_gitserver_proto_msgTypes[35]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2225,7 +2362,7 @@ type CommitMatch_Location struct {
 func (x *CommitMatch_Location) Reset() {
 	*x = CommitMatch_Location{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_gitserver_proto_msgTypes[34]
+		mi := &file_gitserver_proto_msgTypes[36]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -2238,7 +2375,7 @@ func (x *CommitMatch_Location) String() string {
 func (*CommitMatch_Location) ProtoMessage() {}
 
 func (x *CommitMatch_Location) ProtoReflect() protoreflect.Message {
-	mi := &file_gitserver_proto_msgTypes[34]
+	mi := &file_gitserver_proto_msgTypes[36]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2280,6 +2417,8 @@ var File_gitserver_proto protoreflect.FileDescriptor
 var file_gitserver_proto_rawDesc = []byte{
 	0x0a, 0x0f, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e, 0x70, 0x72, 0x6f, 0x74,
 	0x6f, 0x12, 0x0c, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x1a,
+	0x1e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66,
+	0x2f, 0x64, 0x75, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x1a,
 	0x1f, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2f, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66,
 	0x2f, 0x74, 0x69, 0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f,
 	0x22, 0x93, 0x01, 0x0a, 0x0b, 0x45, 0x78, 0x65, 0x63, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
@@ -2523,7 +2662,26 @@ var file_gitserver_proto_rawDesc = []byte{
 	0x70, 0x6f, 0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12,
 	0x12, 0x0a, 0x04, 0x72, 0x65, 0x70, 0x6f, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x72,
 	0x65, 0x70, 0x6f, 0x22, 0x14, 0x0a, 0x12, 0x52, 0x65, 0x70, 0x6f, 0x44, 0x65, 0x6c, 0x65, 0x74,
-	0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x13, 0x0a, 0x11, 0x52, 0x65, 0x70,
+	0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x82, 0x01, 0x0a, 0x11, 0x52, 0x65,
+	0x70, 0x6f, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12,
+	0x12, 0x0a, 0x04, 0x72, 0x65, 0x70, 0x6f, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x72,
+	0x65, 0x70, 0x6f, 0x12, 0x2f, 0x0a, 0x05, 0x73, 0x69, 0x6e, 0x63, 0x65, 0x18, 0x02, 0x20, 0x01,
+	0x28, 0x0b, 0x32, 0x19, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x62, 0x75, 0x66, 0x2e, 0x44, 0x75, 0x72, 0x61, 0x74, 0x69, 0x6f, 0x6e, 0x52, 0x05, 0x73,
+	0x69, 0x6e, 0x63, 0x65, 0x12, 0x28, 0x0a, 0x10, 0x63, 0x6c, 0x6f, 0x6e, 0x65, 0x5f, 0x66, 0x72,
+	0x6f, 0x6d, 0x5f, 0x73, 0x68, 0x61, 0x72, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x0e,
+	0x63, 0x6c, 0x6f, 0x6e, 0x65, 0x46, 0x72, 0x6f, 0x6d, 0x53, 0x68, 0x61, 0x72, 0x64, 0x22, 0xa8,
+	0x01, 0x0a, 0x12, 0x52, 0x65, 0x70, 0x6f, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x3d, 0x0a, 0x0c, 0x6c, 0x61, 0x73, 0x74, 0x5f, 0x66, 0x65,
+	0x74, 0x63, 0x68, 0x65, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f,
+	0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69,
+	0x6d, 0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x0b, 0x6c, 0x61, 0x73, 0x74, 0x46, 0x65, 0x74,
+	0x63, 0x68, 0x65, 0x64, 0x12, 0x3d, 0x0a, 0x0c, 0x6c, 0x61, 0x73, 0x74, 0x5f, 0x63, 0x68, 0x61,
+	0x6e, 0x67, 0x65, 0x64, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x1a, 0x2e, 0x67, 0x6f, 0x6f,
+	0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75, 0x66, 0x2e, 0x54, 0x69, 0x6d,
+	0x65, 0x73, 0x74, 0x61, 0x6d, 0x70, 0x52, 0x0b, 0x6c, 0x61, 0x73, 0x74, 0x43, 0x68, 0x61, 0x6e,
+	0x67, 0x65, 0x64, 0x12, 0x14, 0x0a, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x18, 0x03, 0x20, 0x01,
+	0x28, 0x09, 0x52, 0x05, 0x65, 0x72, 0x72, 0x6f, 0x72, 0x22, 0x13, 0x0a, 0x11, 0x52, 0x65, 0x70,
 	0x6f, 0x73, 0x53, 0x74, 0x61, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x22, 0x73,
 	0x0a, 0x12, 0x52, 0x65, 0x70, 0x6f, 0x73, 0x53, 0x74, 0x61, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70,
 	0x6f, 0x6e, 0x73, 0x65, 0x12, 0x22, 0x0a, 0x0d, 0x67, 0x69, 0x74, 0x5f, 0x64, 0x69, 0x72, 0x5f,
@@ -2539,7 +2697,7 @@ var file_gitserver_proto_rawDesc = []byte{
 	0x49, 0x4e, 0x44, 0x5f, 0x41, 0x4e, 0x44, 0x10, 0x01, 0x12, 0x14, 0x0a, 0x10, 0x4f, 0x50, 0x45,
 	0x52, 0x41, 0x54, 0x4f, 0x52, 0x5f, 0x4b, 0x49, 0x4e, 0x44, 0x5f, 0x4f, 0x52, 0x10, 0x02, 0x12,
 	0x15, 0x0a, 0x11, 0x4f, 0x50, 0x45, 0x52, 0x41, 0x54, 0x4f, 0x52, 0x5f, 0x4b, 0x49, 0x4e, 0x44,
-	0x5f, 0x4e, 0x4f, 0x54, 0x10, 0x03, 0x32, 0xaa, 0x05, 0x0a, 0x10, 0x47, 0x69, 0x74, 0x73, 0x65,
+	0x5f, 0x4e, 0x4f, 0x54, 0x10, 0x03, 0x32, 0xfd, 0x05, 0x0a, 0x10, 0x47, 0x69, 0x74, 0x73, 0x65,
 	0x72, 0x76, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x41, 0x0a, 0x04, 0x45,
 	0x78, 0x65, 0x63, 0x12, 0x19, 0x2e, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e,
 	0x76, 0x31, 0x2e, 0x45, 0x78, 0x65, 0x63, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1a,
@@ -2577,16 +2735,21 @@ var file_gitserver_proto_rawDesc = []byte{
 	0x65, 0x6c, 0x65, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x20, 0x2e, 0x67,
 	0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65, 0x70, 0x6f,
 	0x44, 0x65, 0x6c, 0x65, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00,
-	0x12, 0x51, 0x0a, 0x0a, 0x52, 0x65, 0x70, 0x6f, 0x73, 0x53, 0x74, 0x61, 0x74, 0x73, 0x12, 0x1f,
+	0x12, 0x51, 0x0a, 0x0a, 0x52, 0x65, 0x70, 0x6f, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x12, 0x1f,
 	0x2e, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x52, 0x65,
-	0x70, 0x6f, 0x73, 0x53, 0x74, 0x61, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
+	0x70, 0x6f, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a,
 	0x20, 0x2e, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e, 0x76, 0x31, 0x2e, 0x52,
-	0x65, 0x70, 0x6f, 0x73, 0x53, 0x74, 0x61, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
-	0x65, 0x22, 0x00, 0x42, 0x3a, 0x5a, 0x38, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f,
-	0x6d, 0x2f, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x67, 0x72, 0x61, 0x70, 0x68, 0x2f, 0x73, 0x6f,
-	0x75, 0x72, 0x63, 0x65, 0x67, 0x72, 0x61, 0x70, 0x68, 0x2f, 0x69, 0x6e, 0x74, 0x65, 0x72, 0x6e,
-	0x61, 0x6c, 0x2f, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2f, 0x76, 0x31, 0x62,
-	0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x65, 0x70, 0x6f, 0x55, 0x70, 0x64, 0x61, 0x74, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73,
+	0x65, 0x22, 0x00, 0x12, 0x51, 0x0a, 0x0a, 0x52, 0x65, 0x70, 0x6f, 0x73, 0x53, 0x74, 0x61, 0x74,
+	0x73, 0x12, 0x1f, 0x2e, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e, 0x76, 0x31,
+	0x2e, 0x52, 0x65, 0x70, 0x6f, 0x73, 0x53, 0x74, 0x61, 0x74, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65,
+	0x73, 0x74, 0x1a, 0x20, 0x2e, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2e, 0x76,
+	0x31, 0x2e, 0x52, 0x65, 0x70, 0x6f, 0x73, 0x53, 0x74, 0x61, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x3a, 0x5a, 0x38, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62,
+	0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x67, 0x72, 0x61, 0x70, 0x68,
+	0x2f, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x67, 0x72, 0x61, 0x70, 0x68, 0x2f, 0x69, 0x6e, 0x74,
+	0x65, 0x72, 0x6e, 0x61, 0x6c, 0x2f, 0x67, 0x69, 0x74, 0x73, 0x65, 0x72, 0x76, 0x65, 0x72, 0x2f,
+	0x76, 0x31, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -2602,7 +2765,7 @@ func file_gitserver_proto_rawDescGZIP() []byte {
 }
 
 var file_gitserver_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_gitserver_proto_msgTypes = make([]protoimpl.MessageInfo, 36)
+var file_gitserver_proto_msgTypes = make([]protoimpl.MessageInfo, 38)
 var file_gitserver_proto_goTypes = []interface{}{
 	(OperatorKind)(0),                 // 0: gitserver.v1.OperatorKind
 	(*ExecRequest)(nil),               // 1: gitserver.v1.ExecRequest
@@ -2634,20 +2797,23 @@ var file_gitserver_proto_goTypes = []interface{}{
 	(*RepoCloneProgressResponse)(nil), // 27: gitserver.v1.RepoCloneProgressResponse
 	(*RepoDeleteRequest)(nil),         // 28: gitserver.v1.RepoDeleteRequest
 	(*RepoDeleteResponse)(nil),        // 29: gitserver.v1.RepoDeleteResponse
-	(*ReposStatsRequest)(nil),         // 30: gitserver.v1.ReposStatsRequest
-	(*ReposStatsResponse)(nil),        // 31: gitserver.v1.ReposStatsResponse
-	(*CommitMatch_Signature)(nil),     // 32: gitserver.v1.CommitMatch.Signature
-	(*CommitMatch_MatchedString)(nil), // 33: gitserver.v1.CommitMatch.MatchedString
-	(*CommitMatch_Range)(nil),         // 34: gitserver.v1.CommitMatch.Range
-	(*CommitMatch_Location)(nil),      // 35: gitserver.v1.CommitMatch.Location
-	nil,                               // 36: gitserver.v1.RepoCloneProgressResponse.ResultsEntry
-	(*timestamppb.Timestamp)(nil),     // 37: google.protobuf.Timestamp
+	(*RepoUpdateRequest)(nil),         // 30: gitserver.v1.RepoUpdateRequest
+	(*RepoUpdateResponse)(nil),        // 31: gitserver.v1.RepoUpdateResponse
+	(*ReposStatsRequest)(nil),         // 32: gitserver.v1.ReposStatsRequest
+	(*ReposStatsResponse)(nil),        // 33: gitserver.v1.ReposStatsResponse
+	(*CommitMatch_Signature)(nil),     // 34: gitserver.v1.CommitMatch.Signature
+	(*CommitMatch_MatchedString)(nil), // 35: gitserver.v1.CommitMatch.MatchedString
+	(*CommitMatch_Range)(nil),         // 36: gitserver.v1.CommitMatch.Range
+	(*CommitMatch_Location)(nil),      // 37: gitserver.v1.CommitMatch.Location
+	nil,                               // 38: gitserver.v1.RepoCloneProgressResponse.ResultsEntry
+	(*timestamppb.Timestamp)(nil),     // 39: google.protobuf.Timestamp
+	(*durationpb.Duration)(nil),       // 40: google.protobuf.Duration
 }
 var file_gitserver_proto_depIdxs = []int32{
 	6,  // 0: gitserver.v1.SearchRequest.revisions:type_name -> gitserver.v1.RevisionSpecifier
 	16, // 1: gitserver.v1.SearchRequest.query:type_name -> gitserver.v1.QueryNode
-	37, // 2: gitserver.v1.CommitBeforeNode.timestamp:type_name -> google.protobuf.Timestamp
-	37, // 3: gitserver.v1.CommitAfterNode.timestamp:type_name -> google.protobuf.Timestamp
+	39, // 2: gitserver.v1.CommitBeforeNode.timestamp:type_name -> google.protobuf.Timestamp
+	39, // 3: gitserver.v1.CommitAfterNode.timestamp:type_name -> google.protobuf.Timestamp
 	0,  // 4: gitserver.v1.OperatorNode.kind:type_name -> gitserver.v1.OperatorKind
 	16, // 5: gitserver.v1.OperatorNode.operands:type_name -> gitserver.v1.QueryNode
 	7,  // 6: gitserver.v1.QueryNode.author_matches:type_name -> gitserver.v1.AuthorMatchesNode
@@ -2660,38 +2826,43 @@ var file_gitserver_proto_depIdxs = []int32{
 	14, // 13: gitserver.v1.QueryNode.boolean:type_name -> gitserver.v1.BooleanNode
 	15, // 14: gitserver.v1.QueryNode.operator:type_name -> gitserver.v1.OperatorNode
 	18, // 15: gitserver.v1.SearchResponse.match:type_name -> gitserver.v1.CommitMatch
-	32, // 16: gitserver.v1.CommitMatch.author:type_name -> gitserver.v1.CommitMatch.Signature
-	32, // 17: gitserver.v1.CommitMatch.committer:type_name -> gitserver.v1.CommitMatch.Signature
-	33, // 18: gitserver.v1.CommitMatch.message:type_name -> gitserver.v1.CommitMatch.MatchedString
-	33, // 19: gitserver.v1.CommitMatch.diff:type_name -> gitserver.v1.CommitMatch.MatchedString
-	36, // 20: gitserver.v1.RepoCloneProgressResponse.results:type_name -> gitserver.v1.RepoCloneProgressResponse.ResultsEntry
-	37, // 21: gitserver.v1.ReposStatsResponse.updated_at:type_name -> google.protobuf.Timestamp
-	37, // 22: gitserver.v1.CommitMatch.Signature.date:type_name -> google.protobuf.Timestamp
-	34, // 23: gitserver.v1.CommitMatch.MatchedString.ranges:type_name -> gitserver.v1.CommitMatch.Range
-	35, // 24: gitserver.v1.CommitMatch.Range.start:type_name -> gitserver.v1.CommitMatch.Location
-	35, // 25: gitserver.v1.CommitMatch.Range.end:type_name -> gitserver.v1.CommitMatch.Location
-	26, // 26: gitserver.v1.RepoCloneProgressResponse.ResultsEntry.value:type_name -> gitserver.v1.RepoCloneProgress
-	1,  // 27: gitserver.v1.GitserverService.Exec:input_type -> gitserver.v1.ExecRequest
-	21, // 28: gitserver.v1.GitserverService.IsRepoCloneable:input_type -> gitserver.v1.IsRepoCloneableRequest
-	5,  // 29: gitserver.v1.GitserverService.Search:input_type -> gitserver.v1.SearchRequest
-	19, // 30: gitserver.v1.GitserverService.Archive:input_type -> gitserver.v1.ArchiveRequest
-	23, // 31: gitserver.v1.GitserverService.RepoClone:input_type -> gitserver.v1.RepoCloneRequest
-	25, // 32: gitserver.v1.GitserverService.RepoCloneProgress:input_type -> gitserver.v1.RepoCloneProgressRequest
-	28, // 33: gitserver.v1.GitserverService.RepoDelete:input_type -> gitserver.v1.RepoDeleteRequest
-	30, // 34: gitserver.v1.GitserverService.ReposStats:input_type -> gitserver.v1.ReposStatsRequest
-	2,  // 35: gitserver.v1.GitserverService.Exec:output_type -> gitserver.v1.ExecResponse
-	22, // 36: gitserver.v1.GitserverService.IsRepoCloneable:output_type -> gitserver.v1.IsRepoCloneableResponse
-	17, // 37: gitserver.v1.GitserverService.Search:output_type -> gitserver.v1.SearchResponse
-	20, // 38: gitserver.v1.GitserverService.Archive:output_type -> gitserver.v1.ArchiveResponse
-	24, // 39: gitserver.v1.GitserverService.RepoClone:output_type -> gitserver.v1.RepoCloneResponse
-	27, // 40: gitserver.v1.GitserverService.RepoCloneProgress:output_type -> gitserver.v1.RepoCloneProgressResponse
-	29, // 41: gitserver.v1.GitserverService.RepoDelete:output_type -> gitserver.v1.RepoDeleteResponse
-	31, // 42: gitserver.v1.GitserverService.ReposStats:output_type -> gitserver.v1.ReposStatsResponse
-	35, // [35:43] is the sub-list for method output_type
-	27, // [27:35] is the sub-list for method input_type
-	27, // [27:27] is the sub-list for extension type_name
-	27, // [27:27] is the sub-list for extension extendee
-	0,  // [0:27] is the sub-list for field type_name
+	34, // 16: gitserver.v1.CommitMatch.author:type_name -> gitserver.v1.CommitMatch.Signature
+	34, // 17: gitserver.v1.CommitMatch.committer:type_name -> gitserver.v1.CommitMatch.Signature
+	35, // 18: gitserver.v1.CommitMatch.message:type_name -> gitserver.v1.CommitMatch.MatchedString
+	35, // 19: gitserver.v1.CommitMatch.diff:type_name -> gitserver.v1.CommitMatch.MatchedString
+	38, // 20: gitserver.v1.RepoCloneProgressResponse.results:type_name -> gitserver.v1.RepoCloneProgressResponse.ResultsEntry
+	40, // 21: gitserver.v1.RepoUpdateRequest.since:type_name -> google.protobuf.Duration
+	39, // 22: gitserver.v1.RepoUpdateResponse.last_fetched:type_name -> google.protobuf.Timestamp
+	39, // 23: gitserver.v1.RepoUpdateResponse.last_changed:type_name -> google.protobuf.Timestamp
+	39, // 24: gitserver.v1.ReposStatsResponse.updated_at:type_name -> google.protobuf.Timestamp
+	39, // 25: gitserver.v1.CommitMatch.Signature.date:type_name -> google.protobuf.Timestamp
+	36, // 26: gitserver.v1.CommitMatch.MatchedString.ranges:type_name -> gitserver.v1.CommitMatch.Range
+	37, // 27: gitserver.v1.CommitMatch.Range.start:type_name -> gitserver.v1.CommitMatch.Location
+	37, // 28: gitserver.v1.CommitMatch.Range.end:type_name -> gitserver.v1.CommitMatch.Location
+	26, // 29: gitserver.v1.RepoCloneProgressResponse.ResultsEntry.value:type_name -> gitserver.v1.RepoCloneProgress
+	1,  // 30: gitserver.v1.GitserverService.Exec:input_type -> gitserver.v1.ExecRequest
+	21, // 31: gitserver.v1.GitserverService.IsRepoCloneable:input_type -> gitserver.v1.IsRepoCloneableRequest
+	5,  // 32: gitserver.v1.GitserverService.Search:input_type -> gitserver.v1.SearchRequest
+	19, // 33: gitserver.v1.GitserverService.Archive:input_type -> gitserver.v1.ArchiveRequest
+	23, // 34: gitserver.v1.GitserverService.RepoClone:input_type -> gitserver.v1.RepoCloneRequest
+	25, // 35: gitserver.v1.GitserverService.RepoCloneProgress:input_type -> gitserver.v1.RepoCloneProgressRequest
+	28, // 36: gitserver.v1.GitserverService.RepoDelete:input_type -> gitserver.v1.RepoDeleteRequest
+	30, // 37: gitserver.v1.GitserverService.RepoUpdate:input_type -> gitserver.v1.RepoUpdateRequest
+	32, // 38: gitserver.v1.GitserverService.ReposStats:input_type -> gitserver.v1.ReposStatsRequest
+	2,  // 39: gitserver.v1.GitserverService.Exec:output_type -> gitserver.v1.ExecResponse
+	22, // 40: gitserver.v1.GitserverService.IsRepoCloneable:output_type -> gitserver.v1.IsRepoCloneableResponse
+	17, // 41: gitserver.v1.GitserverService.Search:output_type -> gitserver.v1.SearchResponse
+	20, // 42: gitserver.v1.GitserverService.Archive:output_type -> gitserver.v1.ArchiveResponse
+	24, // 43: gitserver.v1.GitserverService.RepoClone:output_type -> gitserver.v1.RepoCloneResponse
+	27, // 44: gitserver.v1.GitserverService.RepoCloneProgress:output_type -> gitserver.v1.RepoCloneProgressResponse
+	29, // 45: gitserver.v1.GitserverService.RepoDelete:output_type -> gitserver.v1.RepoDeleteResponse
+	31, // 46: gitserver.v1.GitserverService.RepoUpdate:output_type -> gitserver.v1.RepoUpdateResponse
+	33, // 47: gitserver.v1.GitserverService.ReposStats:output_type -> gitserver.v1.ReposStatsResponse
+	39, // [39:48] is the sub-list for method output_type
+	30, // [30:39] is the sub-list for method input_type
+	30, // [30:30] is the sub-list for extension type_name
+	30, // [30:30] is the sub-list for extension extendee
+	0,  // [0:30] is the sub-list for field type_name
 }
 
 func init() { file_gitserver_proto_init() }
@@ -3049,7 +3220,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[29].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ReposStatsRequest); i {
+			switch v := v.(*RepoUpdateRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3061,7 +3232,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[30].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*ReposStatsResponse); i {
+			switch v := v.(*RepoUpdateResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3073,7 +3244,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[31].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CommitMatch_Signature); i {
+			switch v := v.(*ReposStatsRequest); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3085,7 +3256,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[32].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CommitMatch_MatchedString); i {
+			switch v := v.(*ReposStatsResponse); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3097,7 +3268,7 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[33].Exporter = func(v interface{}, i int) interface{} {
-			switch v := v.(*CommitMatch_Range); i {
+			switch v := v.(*CommitMatch_Signature); i {
 			case 0:
 				return &v.state
 			case 1:
@@ -3109,6 +3280,30 @@ func file_gitserver_proto_init() {
 			}
 		}
 		file_gitserver_proto_msgTypes[34].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CommitMatch_MatchedString); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_gitserver_proto_msgTypes[35].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*CommitMatch_Range); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_gitserver_proto_msgTypes[36].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*CommitMatch_Location); i {
 			case 0:
 				return &v.state
@@ -3142,7 +3337,7 @@ func file_gitserver_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_gitserver_proto_rawDesc,
 			NumEnums:      1,
-			NumMessages:   36,
+			NumMessages:   38,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

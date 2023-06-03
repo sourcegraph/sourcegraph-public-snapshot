@@ -6,6 +6,7 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
+	"google.golang.org/protobuf/types/known/durationpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -324,6 +325,22 @@ type RepoUpdateRequest struct {
 	CloneFromShard string `json:"cloneFromShard"`
 }
 
+func (r *RepoUpdateRequest) ToProto() *proto.RepoUpdateRequest {
+	return &proto.RepoUpdateRequest{
+		Repo:           string(r.Repo),
+		Since:          durationpb.New(r.Since),
+		CloneFromShard: r.CloneFromShard,
+	}
+}
+
+func (r *RepoUpdateRequest) FromProto(p *proto.RepoUpdateRequest) {
+	*r = RepoUpdateRequest{
+		Repo:           api.RepoName(p.GetRepo()),
+		Since:          p.GetSince().AsDuration(),
+		CloneFromShard: p.GetCloneFromShard(),
+	}
+}
+
 // RepoUpdateResponse returns meta information of the repo enqueued for update.
 type RepoUpdateResponse struct {
 	LastFetched *time.Time `json:",omitempty"`
@@ -331,6 +348,46 @@ type RepoUpdateResponse struct {
 
 	// Error is an error reported by the update operation, and not a network protocol error.
 	Error string `json:",omitempty"`
+}
+
+func (r *RepoUpdateResponse) ToProto() *proto.RepoUpdateResponse {
+	var lastFetched, lastChanged *timestamppb.Timestamp
+	if r.LastFetched != nil {
+		lastFetched = timestamppb.New(*r.LastFetched)
+	}
+
+	if r.LastChanged != nil {
+		lastChanged = timestamppb.New(*r.LastChanged)
+	}
+
+	return &proto.RepoUpdateResponse{
+		LastFetched: timestamppb.New(lastFetched.AsTime()),
+		LastChanged: timestamppb.New(lastChanged.AsTime()),
+		Error:       r.Error,
+	}
+}
+
+func (r *RepoUpdateResponse) FromProto(p *proto.RepoUpdateResponse) {
+	var lastFetched, lastChanged time.Time
+	if p.GetLastFetched() != nil {
+		lf := p.GetLastFetched().AsTime()
+		lastFetched = lf
+	} else {
+		lastFetched = time.Time{}
+	}
+
+	if p.GetLastChanged() != nil {
+		lc := p.GetLastChanged().AsTime()
+		lastChanged = lc
+	} else {
+		lastChanged = time.Time{}
+	}
+
+	*r = RepoUpdateResponse{
+		LastFetched: &lastFetched,
+		LastChanged: &lastChanged,
+		Error:       p.GetError(),
+	}
 }
 
 // RepoCloneRequest is a request to clone a repository asynchronously.

@@ -2,6 +2,7 @@ syntax = "proto3";
 
 package gitserver.v1;
 
+import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
@@ -14,6 +15,7 @@ service GitserverService {
   rpc RepoClone(RepoCloneRequest) returns (RepoCloneResponse) {}
   rpc RepoCloneProgress(RepoCloneProgressRequest) returns (RepoCloneProgressResponse) {}
   rpc RepoDelete(RepoDeleteRequest) returns (RepoDeleteResponse) {}
+  rpc RepoUpdate(RepoUpdateRequest) returns (RepoUpdateResponse) {}
   rpc ReposStats(ReposStatsRequest) returns (ReposStatsResponse) {}
 }
 
@@ -274,6 +276,28 @@ message RepoDeleteRequest {
 
 // RepoDeleteResponse is the response from the RepoDelete RPC.
 message RepoDeleteResponse {}
+
+// RepoUpdateRequest is a request to update a repository.
+message RepoUpdateRequest {
+  // repo is the name of the repo to update.
+  string repo = 1;
+  // since is the debounce interval for queries, used only with request-repo-update
+  google.protobuf.Duration since = 2;
+  // clone_from_shard is the hostname of the gitserver instance that is the current owner of the
+  // repository. If this is set, then the RepoUpdateRequest is to migrate the repo from
+  // that gitserver instance to the new home of the repo.
+  string clone_from_shard = 3;
+}
+
+// RepoUpdateResponse is the response from the RepoUpdate RPC.
+message RepoUpdateResponse {
+  // last_fetched is the time the repository was last fetched.
+  google.protobuf.Timestamp last_fetched = 1;
+  // last_changed is the time the repository was last changed.
+  google.protobuf.Timestamp last_changed = 2;
+  // error is the error that occurred during the update.
+  string error = 3;
+}
 
 // ReposStatsRequest is a empty request for the ReposStats RPC.
 message ReposStatsRequest {}
