@@ -1,9 +1,0 @@
-{
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "allowJs": true,
-    "outDir": "out",
-    "rootDir": "src",
-  },
-  "include": ["src", "*.js"],
-}

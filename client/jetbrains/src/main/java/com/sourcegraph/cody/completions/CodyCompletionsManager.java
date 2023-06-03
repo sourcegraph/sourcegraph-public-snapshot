@@ -17,9 +17,11 @@ import com.sourcegraph.cody.api.CompletionsService;
 import com.sourcegraph.cody.completions.prompt_library.*;
 import com.sourcegraph.cody.vscode.*;
 import com.sourcegraph.config.ConfigUtil;
+import com.sourcegraph.config.NotificationActivity;
 import com.sourcegraph.config.SettingsComponent;
 import java.util.Optional;
 import java.util.concurrent.*;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 /** Responsible for triggering and clearing inline code completions. */
@@ -180,8 +182,10 @@ public class CodyCompletionsManager {
     if (accessToken == null) {
       accessToken = System.getenv("SRC_ACCESS_TOKEN");
     }
-    if (accessToken == null) {
-      throw new IllegalArgumentException("ACCESS_TOKEN is null");
+    if (StringUtils.isEmpty(accessToken)) {
+      if (!ConfigUtil.isAccessTokenNotificationDismissed())
+        NotificationActivity.notifyAboutSourcegraphAccessToken(Optional.of(instanceUrl));
+      return null;
     }
     return new CompletionsService(instanceUrl, accessToken);
   }
