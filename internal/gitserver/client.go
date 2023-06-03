@@ -244,7 +244,7 @@ type Client interface {
 
 	// CreateCommitFromPatch will attempt to create a commit from a patch
 	// If possible, the error returned will be of type protocol.CreateCommitFromPatchError
-	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest) (string, error)
+	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error)
 
 	// GetDefaultBranch returns the name of the default branch and the commit it's
 	// currently at from the given repository. If short is true, then `main` instead
@@ -1078,7 +1078,10 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 		if err != nil {
 			return nil, err
 		}
+
+		var info protocol.RepoUpdateResponse
 		info.FromProto(resp)
+    
 		return &info, nil
 
 	} else {
@@ -1094,6 +1097,8 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 				Err: errors.Errorf("RepoUpdate: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
 			}
 		}
+
+		var info protocol.RepoUpdateResponse
 		err = json.NewDecoder(resp.Body).Decode(&info)
 		return &info, err
 	}
@@ -1114,10 +1119,6 @@ func (c *clientImplementor) RequestRepoClone(ctx context.Context, repo api.RepoN
 		resp, err := client.RepoClone(ctx, &req)
 		if err != nil {
 			return nil, err
-		}
-
-		if resp == nil {
-			return nil, nil
 		}
 
 		var info protocol.RepoCloneResponse
@@ -1256,7 +1257,6 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 		p := pool.NewWithResults[*proto.RepoCloneProgressResponse]().WithContext(ctx)
 
 		for client, req := range shards {
-			fmt.Println("requesting", req)
 			client := client
 			req := req
 			p.Go(func(ctx context.Context) (*proto.RepoCloneProgressResponse, error) {

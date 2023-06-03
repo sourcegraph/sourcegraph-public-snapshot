@@ -56,6 +56,11 @@ fn restart_app(app_handle: tauri::AppHandle) {
     app_handle.restart();
 }
 
+#[tauri::command]
+fn clear_all_data(app_handle: tauri::AppHandle) {
+    common::prompt_to_clear_all_data(&app_handle);
+}
+
 fn set_launch_path(url: String) {
     *LAUNCH_PATH.write().unwrap() = url;
 }
@@ -166,7 +171,8 @@ fn main() {
             show_main_window,
             reload_cody_window,
             show_logs,
-            restart_app
+            restart_app,
+            clear_all_data
         ])
         .run(context)
         .expect("error while running tauri application");
@@ -221,11 +227,21 @@ fn start_embedded_services(handle: &tauri::AppHandle) {
                 }
                 CommandEvent::Error(err) => {
                     show_error_screen(&app);
-                    log::error!("Command Error: {:#?}", err)
+                    log::error!("Error running the Sourcegraph app backend: {:#?}", err)
                 }
                 CommandEvent::Terminated(payload) => {
                     show_error_screen(&app);
-                    log::error!("Command Terminated: {:#?}", payload)
+
+                    if let Some(code) = payload.code {
+                        log::error!("Sourcegraph app backend terminated with exit code {}", code);
+                    }
+
+                    if let Some(signal) = payload.signal {
+                        log::error!(
+                            "Sourcegraph app backend terminated due to signal {}",
+                            signal
+                        );
+                    }
                 }
                 _ => continue,
             };

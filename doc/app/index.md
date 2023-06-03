@@ -146,5 +146,10 @@ rm -rf $HOME/.cache/sourcegraph-sp
 rm -rf $HOME/.config/sourcegraph-sp
 ```
 
+## Release pipeline
+
+See [Sourcegraph App releasee pipeline](release-pipeline.md)
+
 ## Troubleshooting
 See [App troubleshooting guide](troubleshooting.md)
+

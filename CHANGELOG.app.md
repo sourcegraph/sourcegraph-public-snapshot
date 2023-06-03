@@ -15,6 +15,8 @@ All notable changes to the Cody app are documented in this file.
 
 ## Unreleased
 
+## v2023.5.30
+
 - Users upgrading from the old Sourcegraph app version no longer need to delete directories / manually migrate.
 - Fixed issues around Postgres, improved error messages, fixed issues with Postgres on startup, etc.
 - The Cody chat window now shows a helpful error message if you aren’t signed in yet. https://github.com/sourcegraph/sourcegraph/pull/52344

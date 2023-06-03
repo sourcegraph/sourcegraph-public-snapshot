@@ -20,23 +20,6 @@ func GetTracer(ctx context.Context) opentracing.Tracer {
 	return getTracer(ctx, opentracing.GlobalTracer())
 }
 
-// Deprecated: Use otel.Tracer(...).Start() from go.opentelemetry.io/otel or trace.New(...)
-// from github.com/sourcegraph/sourcegraph/internal/trace instead.
-//
-// StartSpanFromContext starts a span using the tracer returned by GetTracer.
-func StartSpanFromContext(ctx context.Context, operationName string, opts ...opentracing.StartSpanOption) (opentracing.Span, context.Context) {
-	return StartSpanFromContextWithTracer(ctx, opentracing.GlobalTracer(), operationName, opts...)
-}
-
-// Deprecated: Use otel.Tracer(...).Start() from go.opentelemetry.io/otel or trace.New(...)
-// from github.com/sourcegraph/sourcegraph/internal/trace instead.
-//
-// StartSpanFromContextWithTracer starts a span using the tracer returned by invoking getTracer with the
-// passed-in tracer.
-func StartSpanFromContextWithTracer(ctx context.Context, tracer opentracing.Tracer, operationName string, opts ...opentracing.StartSpanOption) (opentracing.Span, context.Context) {
-	return opentracing.StartSpanFromContextWithTracer(ctx, getTracer(ctx, tracer), operationName, opts...)
-}
-
 // getTracer is like GetTracer, but accepts a tracer as an argument. If ShouldTrace returns false,
 // it returns the NoopTracer. If it returns true and the passed-in tracer is not nil, it returns the
 // passed-in tracer. Otherwise, it returns the global tracer.
