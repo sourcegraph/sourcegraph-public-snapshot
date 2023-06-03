@@ -10,6 +10,7 @@ option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
 service GitserverService {
   rpc CreateCommitFromPatchBinary(CreateCommitFromPatchBinaryRequest) returns (CreateCommitFromPatchBinaryResponse) {}
   rpc Exec(ExecRequest) returns (stream ExecResponse) {}
+  rpc GetObject(GetObjectRequest) returns (GetObjectResponse) {}
   rpc IsRepoCloneable(IsRepoCloneableRequest) returns (IsRepoCloneableResponse) {}
   rpc ListGitolite(ListGitoliteRequest) returns (ListGitoliteResponse) {}
   rpc Search(SearchRequest) returns (stream SearchResponse) {}
@@ -412,4 +413,33 @@ message GitoliteRepo {
 message ListGitoliteResponse {
   // repos is the list of repositories in gitolite
   repeated GitoliteRepo repos = 1;
+}
+
+// GetObjectRequest is a request to get a git object.
+message GetObjectRequest {
+  // repo is the name of the repo to get the object from.
+  string repo = 1;
+  // object_name is the name of the object to get.
+  string object_name = 2;
+}
+
+// GetObjectResponse is the response from the GetObject RPC.
+message GetObjectResponse {
+  // object is the git object.
+  GitObject object = 1;
+}
+
+// GitObject is a git object.
+message GitObject {
+  enum ObjectType {
+    OBJECT_TYPE_UNSPECIFIED = 0;
+    OBJECT_TYPE_COMMIT = 1;
+    OBJECT_TYPE_TAG = 2;
+    OBJECT_TYPE_TREE = 3;
+    OBJECT_TYPE_BLOB = 4;
+  }
+  // id is the object id.
+  bytes id = 1;
+  // type is the type of the object.
+  ObjectType type = 2;
 }

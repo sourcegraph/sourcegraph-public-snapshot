@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 const (
 	GitserverService_CreateCommitFromPatchBinary_FullMethodName = "/gitserver.v1.GitserverService/CreateCommitFromPatchBinary"
 	GitserverService_Exec_FullMethodName                        = "/gitserver.v1.GitserverService/Exec"
+	GitserverService_GetObject_FullMethodName                   = "/gitserver.v1.GitserverService/GetObject"
 	GitserverService_IsRepoCloneable_FullMethodName             = "/gitserver.v1.GitserverService/IsRepoCloneable"
 	GitserverService_ListGitolite_FullMethodName                = "/gitserver.v1.GitserverService/ListGitolite"
 	GitserverService_Search_FullMethodName                      = "/gitserver.v1.GitserverService/Search"
@@ -39,6 +40,7 @@ const (
 type GitserverServiceClient interface {
 	CreateCommitFromPatchBinary(ctx context.Context, in *CreateCommitFromPatchBinaryRequest, opts ...grpc.CallOption) (*CreateCommitFromPatchBinaryResponse, error)
 	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error)
+	GetObject(ctx context.Context, in *GetObjectRequest, opts ...grpc.CallOption) (*GetObjectResponse, error)
 	IsRepoCloneable(ctx context.Context, in *IsRepoCloneableRequest, opts ...grpc.CallOption) (*IsRepoCloneableResponse, error)
 	ListGitolite(ctx context.Context, in *ListGitoliteRequest, opts ...grpc.CallOption) (*ListGitoliteResponse, error)
 	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (GitserverService_SearchClient, error)
@@ -98,6 +100,15 @@ func (x *gitserverServiceExecClient) Recv() (*ExecResponse, error) {
 		return nil, err
 	}
 	return m, nil
+}
+
+func (c *gitserverServiceClient) GetObject(ctx context.Context, in *GetObjectRequest, opts ...grpc.CallOption) (*GetObjectResponse, error) {
+	out := new(GetObjectResponse)
+	err := c.cc.Invoke(ctx, GitserverService_GetObject_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *gitserverServiceClient) IsRepoCloneable(ctx context.Context, in *IsRepoCloneableRequest, opts ...grpc.CallOption) (*IsRepoCloneableResponse, error) {
@@ -265,6 +276,7 @@ func (c *gitserverServiceClient) ReposStats(ctx context.Context, in *ReposStatsR
 type GitserverServiceServer interface {
 	CreateCommitFromPatchBinary(context.Context, *CreateCommitFromPatchBinaryRequest) (*CreateCommitFromPatchBinaryResponse, error)
 	Exec(*ExecRequest, GitserverService_ExecServer) error
+	GetObject(context.Context, *GetObjectRequest) (*GetObjectResponse, error)
 	IsRepoCloneable(context.Context, *IsRepoCloneableRequest) (*IsRepoCloneableResponse, error)
 	ListGitolite(context.Context, *ListGitoliteRequest) (*ListGitoliteResponse, error)
 	Search(*SearchRequest, GitserverService_SearchServer) error
@@ -287,6 +299,9 @@ func (UnimplementedGitserverServiceServer) CreateCommitFromPatchBinary(context.C
 }
 func (UnimplementedGitserverServiceServer) Exec(*ExecRequest, GitserverService_ExecServer) error {
 	return status.Errorf(codes.Unimplemented, "method Exec not implemented")
+}
+func (UnimplementedGitserverServiceServer) GetObject(context.Context, *GetObjectRequest) (*GetObjectResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetObject not implemented")
 }
 func (UnimplementedGitserverServiceServer) IsRepoCloneable(context.Context, *IsRepoCloneableRequest) (*IsRepoCloneableResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsRepoCloneable not implemented")
@@ -368,6 +383,24 @@ type gitserverServiceExecServer struct {
 
 func (x *gitserverServiceExecServer) Send(m *ExecResponse) error {
 	return x.ServerStream.SendMsg(m)
+}
+
+func _GitserverService_GetObject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetObjectRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).GetObject(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_GetObject_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).GetObject(ctx, req.(*GetObjectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _GitserverService_IsRepoCloneable_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -569,6 +602,10 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateCommitFromPatchBinary",
 			Handler:    _GitserverService_CreateCommitFromPatchBinary_Handler,
+		},
+		{
+			MethodName: "GetObject",
+			Handler:    _GitserverService_GetObject_Handler,
 		},
 		{
 			MethodName: "IsRepoCloneable",

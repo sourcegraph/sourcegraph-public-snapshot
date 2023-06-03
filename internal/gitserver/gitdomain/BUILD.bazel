@@ -14,6 +14,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
+        "//internal/gitserver/v1:gitserver",
         "//internal/lazyregexp",
         "//lib/errors",
         "@com_github_gobwas_glob//:glob",
