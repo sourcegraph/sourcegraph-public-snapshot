@@ -82,5 +82,5 @@ const OwnAnalyticsPanel: FC = () => {
 }
 
 const OwnEnableAnalytics: FC = () => {
-    return <Text>Analytics is not enabled, please enable Own analytics job first to see own stats.</Text>
+    return <Text>Analytics is not enabled, please enable Own analytics job first to see Own stats.</Text>
 }
