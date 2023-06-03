@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { mdiEmail } from '@mdi/js'
+import { mdiEmail, mdiPlus } from '@mdi/js'
 
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
@@ -85,7 +85,14 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reas
                 {reasons.map(reason => (
                     <OwnershipBadge key={reason.title} reason={reason} />
                 ))}
-                {displayAssignOwner && <Button>Assign owner</Button>}
+            </td>
+            <td className={containerStyles.fitting}>
+                {displayAssignOwner && (
+                    <Button variant={'primary'} outline={true} size={'sm'}>
+                        <Icon svgPath={mdiPlus} />
+                        Make owner
+                    </Button>
+                )}
             </td>
         </tr>
     )

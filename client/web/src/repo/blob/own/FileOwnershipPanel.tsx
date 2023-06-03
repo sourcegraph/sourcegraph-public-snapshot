@@ -161,6 +161,7 @@ const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data, displayAssig
                             <th>Contact</th>
                             <th>Owner</th>
                             <th>Reason</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
