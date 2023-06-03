@@ -178,8 +178,6 @@ func TestProtoRoundTrip(t *testing.T) {
 
 	createCommit := func(original protocol.CreateCommitFromPatchResponse) bool {
 		var converted protocol.CreateCommitFromPatchResponse
-		fmt.Printf("Orginal: %+v\n", original)
-		fmt.Println(original.ToProto())
 
 		converted.FromProto(original.ToProto())
 
