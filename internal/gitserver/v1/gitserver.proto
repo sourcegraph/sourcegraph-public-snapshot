@@ -8,6 +8,7 @@ import "google/protobuf/timestamp.proto";
 option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
 
 service GitserverService {
+  rpc CreateCommitFromPatchBinary(CreateCommitFromPatchBinaryRequest) returns (CreateCommitFromPatchBinaryResponse) {}
   rpc Exec(ExecRequest) returns (stream ExecResponse) {}
   rpc IsRepoCloneable(IsRepoCloneableRequest) returns (IsRepoCloneableResponse) {}
   rpc Search(SearchRequest) returns (stream SearchResponse) {}
@@ -19,6 +20,74 @@ service GitserverService {
   rpc ReposStats(ReposStatsRequest) returns (ReposStatsResponse) {}
 }
 
+message PatchCommitInfo {
+  // message is the commit message to be used for the commit
+  string message = 1;
+  // author_name is the name of the author to be used for the commit
+  string author_name = 2;
+  // author_email is the email of the author to be used for the commit
+  string author_email = 3;
+  // committer_name is the name of the committer to be used for the commit
+  string committer_name = 4;
+  // committer_email is the email of the committer to be used for the commit
+  string committer_email = 5;
+  // author_date is the date of the author to be used for the commit
+  google.protobuf.Timestamp date = 6;
+}
+
+message PushConfig {
+  // remote_url is the git remote URL to which to push the commits.
+  // The URL needs to include HTTP basic auth credentials if no
+  // unauthenticated requests are allowed by the remote host.
+  string remote_url = 1;
+  // private_key is used when the remote URL uses scheme `ssh`. If set,
+  // this value is used as the content of the private key. Needs to be
+  // set in conjunction with a passphrase.
+  string private_key = 2;
+  // passphrase is the passphrase to decrypt the private key. It is required
+  // when passing PrivateKey.
+  string passphrase = 3;
+}
+
+// CreateCommitFromPatchBinaryRequest is the request information needed for creating
+// the simulated staging area git object for a repo.
+message CreateCommitFromPatchBinaryRequest {
+  // repo is the name of the repo to be updated
+  string repo = 1;
+  // base_commit is the revision that the staging area object is based on
+  string base_commit = 2;
+  // patch is the diff contents to be used to create the staging area revision
+  bytes patch = 3;
+  // target_ref is the ref that will be created for this patch
+  string target_ref = 4;
+  // unique_ref is a boolean that indicates whether a unique number will be appended to the end (ie TargetRef-{#}). The generated ref will be returned.
+  bool unique_ref = 5;
+  // commit_info is the information to be used for the commit
+  PatchCommitInfo commit_info = 6;
+  // push_config is the configuration to be used for pushing the commit
+  PushConfig push = 7;
+  repeated string git_apply_args = 8;
+}
+
+message CreateCommitFromPatchError {
+  // repository_name is the name of the repository that the error occurred on
+  string repository_name = 1;
+  // internal_error is the error that occurred on the server
+  string internal_error = 2;
+  // command is th git command that was attempted
+  string command = 3;
+  // combined_output is the combined stderr and stdout from running the command
+  string combined_output = 4;
+}
+
+// CreateCommitFromPatchBinaryResponse is the response type returned after creating
+// a commit from a patch
+message CreateCommitFromPatchBinaryResponse {
+  // rev is the tag that the staging object can be found at
+  string rev = 1;
+  // error is populated only on error
+  CreateCommitFromPatchError error = 2;
+}
 message ExecRequest {
   string repo = 1;
   string ensure_revision = 2;
