@@ -22,8 +22,8 @@ export const AddLocalRepositoriesSetupPage: FC<StepComponentProps> = ({ classNam
                 </Text>
 
                 <Text className={classNames(styles.descriptionText, styles.descriptionTextSmall)}>
-                    <b>Tip — </b> Consider adding the latest project you're working on, or all the repos you edit
-                    regularly.
+                    Consider adding your most recent projects, or the repositories you edit the most. You can always add
+                    more later.
                 </Text>
 
                 <Button variant="primary" size="lg" className={styles.descriptionNext} onClick={onNextStep}>

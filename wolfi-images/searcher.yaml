@@ -11,3 +11,12 @@ contents:
     - pcre
     - sqlite-libs
     - comby@sourcegraph
+
+paths:
+  - path: /mnt/cache/searcher
+    type: directory
+    uid: 100
+    gid: 101
+    permissions: 0o755
+
+# MANUAL REBUILD: 

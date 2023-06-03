@@ -32,7 +32,6 @@ intellij {
 
 dependencies {
     implementation("org.commonmark:commonmark:0.21.0")
-    implementation(project(":jetbrains-shared", "instrumentedJar"))
     testImplementation(platform("org.junit:junit-bom:5.7.2"))
     testImplementation("org.junit.jupiter:junit-jupiter")
 }
@@ -97,6 +96,7 @@ tasks {
 
     runIde {
         jvmArgs("-Djdk.module.illegalAccess.silent=true")
+        systemProperty("cody.completions.enabled", "true")
     }
 
     // Configure UI tests plugin

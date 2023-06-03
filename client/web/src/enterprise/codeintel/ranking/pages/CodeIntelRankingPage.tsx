@@ -1,15 +1,16 @@
 import { FunctionComponent, useEffect } from 'react'
 
 import classNames from 'classnames'
-import { formatDistance, format, parseISO } from 'date-fns'
+import { format, formatDistance, parseISO } from 'date-fns'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
+import { useMutation } from '@sourcegraph/http-client'
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, ErrorAlert, LoadingSpinner, PageHeader, H4, H3, Text } from '@sourcegraph/wildcard'
+import { Button, Container, ErrorAlert, H4, LoadingSpinner, PageHeader, Text } from '@sourcegraph/wildcard'
 
-import { Collapsible } from '../../../../components/Collapsible'
+import { BumpDerivativeGraphKeyResult, BumpDerivativeGraphKeyVariables } from '../../../../graphql-operations'
 
-import { useRankingSummary as defaultUseRankingSummary } from './backend'
+import { BUMP_DERIVATIVE_GRAPH_KEY, useRankingSummary as defaultUseRankingSummary } from './backend'
 
 import styles from './CodeIntelRankingPage.module.scss'
 
@@ -25,6 +26,11 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
     useEffect(() => telemetryService.logViewEvent('CodeIntelRankingPage'), [telemetryService])
 
     const { data, loading, error } = useRankingSummary({})
+
+    const [bumpDerivativeGraphKey, { loading: bumping }] = useMutation<
+        BumpDerivativeGraphKeyResult,
+        BumpDerivativeGraphKeyVariables
+    >(BUMP_DERIVATIVE_GRAPH_KEY)
 
     if (loading && !data) {
         return <LoadingSpinner />
@@ -45,36 +51,25 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
                 ]}
                 description="View the history of ranking calculation."
                 className="mb-3"
+                actions={
+                    <Button onClick={() => bumpDerivativeGraphKey()} disabled={bumping} variant="secondary">
+                        Start new ranking map/reduce job
+                    </Button>
+                }
             />
 
-            <Container className="mb-3">
-                {data &&
-                    (data.rankingSummary.length === 0 ? (
+            {data &&
+                (data.rankingSummary.length === 0 ? (
+                    <Container>
                         <>No data.</>
-                    ) : (
-                        <>
-                            <H3>Current ranking calculation ({data.rankingSummary[0].graphKey})</H3>
-
-                            <div className="p-2">
-                                <Summary
-                                    key={data.rankingSummary[0].graphKey}
-                                    summary={data.rankingSummary[0]}
-                                    displayGraphKey={false}
-                                />
-                            </div>
-                        </>
-                    ))}
-            </Container>
-
-            {data && data.rankingSummary.length > 1 && (
-                <Container>
-                    <Collapsible title="Historic ranking calculations" titleAtStart={true} titleClassName="h3">
-                        {data.rankingSummary.slice(1).map(summary => (
-                            <Summary key={summary.graphKey} summary={summary} displayGraphKey={true} />
-                        ))}
-                    </Collapsible>
-                </Container>
-            )}
+                    </Container>
+                ) : (
+                    data.rankingSummary.map(summary => (
+                        <Container key={summary.graphKey} className="mb-3">
+                            <Summary summary={summary} />
+                        </Container>
+                    ))
+                ))}
         </>
     )
 }
@@ -95,14 +90,13 @@ interface Progress {
 
 interface SummaryProps {
     summary: Summary
-    displayGraphKey: boolean
 }
 
-const Summary: FunctionComponent<SummaryProps> = ({ summary, displayGraphKey }) => (
-    <div className="py-2">
-        {displayGraphKey && <H4>Historic ranking calculation ({summary.graphKey})</H4>}
+const Summary: FunctionComponent<SummaryProps> = ({ summary }) => (
+    <div className="p-2">
+        <H4 className="mb-4">Ranking calculation ({summary.graphKey})</H4>
 
-        <div className={displayGraphKey ? 'px-4' : ''}>
+        <div>
             <Progress
                 title="Path mapper"
                 subtitle="Reads the paths of SCIP indexes exported for ranking and produce path/zero-count pairs consumed by the ranking phase."
@@ -138,7 +132,7 @@ interface ProgressProps {
 const Progress: FunctionComponent<ProgressProps> = ({ title, subtitle, progress, className }) => (
     <div>
         <div className={classNames(styles.tableContainer, className)}>
-            <H4 className="p-0 m-0">{title}</H4>
+            <H4 className="m-0">{title}</H4>
             {subtitle && <Text size="small">{subtitle}</Text>}
 
             <div className={styles.row}>
