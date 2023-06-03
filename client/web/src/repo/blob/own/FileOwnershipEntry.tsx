@@ -42,9 +42,6 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reas
     }
 
     const email = findEmail()
-    if (owner.__typename === 'Team') {
-        console.log(owner.id)
-    }
 
     return (
         <tr>
