@@ -1453,7 +1453,7 @@ func (s *Server) performGitLogCommand(ctx context.Context, repoCommit api.RepoCo
 	dir.Set(cmd.Unwrap())
 	cmd.Unwrap().Stdout = &buf
 
-	if _, err := common.RunCommand(ctx, cmd); err != nil {
+	if _, err := runCommand(ctx, cmd); err != nil {
 		return "", true, err
 	}
 
