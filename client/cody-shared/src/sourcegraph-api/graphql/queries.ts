@@ -5,10 +5,27 @@ query CurrentUser {
     }
 }`
 
+export const SITE_GRAPHQL_FIELDS_QUERY = `
+query SiteGraphQLFields {
+    __type(name: "Site") {
+        fields{
+            name
+        }
+    }
+}
+`
+
 export const CURRENT_SITE_VERSION_QUERY = `
 query SiteProductVersion {
     site {
         productVersion
+    }
+}`
+
+export const CURRENT_SITE_HAS_CODY_ENABLED_QUERY = `
+query SiteHasCodyEnabled {
+    site {
+        isCodyEnabled
     }
 }`
 

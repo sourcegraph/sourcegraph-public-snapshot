@@ -99,8 +99,9 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
 }
 
 const ERROR_MESSAGES = {
+    DISABLED: 'Cody is not available on your instance. Please reach out to your site admin to enable Cody.',
     VERSION:
-        'You are trying to connect to a Sourcegraph instance that is not compatible with Cody. Please reach out to your site admin to upgrade your Sourcegraph instance to a compatible version: 5.1.0 or above.',
+        'Your Sourcegraph instance is not fully compatible with Cody. Please reach out to your site admin to upgrade instance to a compatible version: 5.1.0 or above.',
     INVALID: 'Invalid credentials. Please check the Sourcegraph instance URL and access token.',
     EMAIL: 'Email not verified. Please add a verified email to your Sourcegraph.com account.',
 }
@@ -108,20 +109,30 @@ const ERROR_MESSAGES = {
 const ErrorContainer: React.FunctionComponent<{ authStatus: AuthStatus }> = ({ authStatus }) => {
     const {
         authenticated,
-        onSupportedSiteVersion,
+        siteHasCodyEnabled,
         showInvalidAccessTokenError,
         requiresVerifiedEmail,
         hasVerifiedEmail,
+        siteVersion,
     } = authStatus
-
+    const isInsiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
+    // Version is compatible if it is an insider build or if version is 5.0.0 or above
+    const isVersionCompatible = isInsiderBuild && siteVersion >= '5.0.0'
+    // When doesn't have a valid token
     if (showInvalidAccessTokenError) {
         return <p className={styles.error}>{ERROR_MESSAGES.INVALID}</p>
     }
-    if (authenticated && !onSupportedSiteVersion) {
-        return <p className={styles.error}>{ERROR_MESSAGES.VERSION}</p>
-    }
+    // When authenticated but doesn't have a verified email
     if (authenticated && requiresVerifiedEmail && !hasVerifiedEmail) {
         return <p className={styles.error}>{ERROR_MESSAGES.EMAIL}</p>
+    }
+    // When version is compatible but Cody is not enabled
+    if (isVersionCompatible && !siteHasCodyEnabled) {
+        return <p className={styles.error}>{ERROR_MESSAGES.DISABLED}</p>
+    }
+    // When version is lower than 5.0.0
+    if (!siteHasCodyEnabled && !isVersionCompatible) {
+        return <p className={styles.error}>{ERROR_MESSAGES.VERSION}</p>
     }
     return null
 }

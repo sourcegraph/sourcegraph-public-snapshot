@@ -34,6 +34,7 @@ import {
     DOTCOM_URL,
     ExtensionMessage,
     WebviewMessage,
+    authStatusInit,
     isLoggedIn,
 } from './protocol'
 import { getRecipe } from './recipes'
@@ -295,27 +296,20 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 void this.multiplexer.notifyTurnComplete()
             },
             onError: (err, statusCode) => {
+                const hasCompletionsClient = err !== 'no route'
                 // Display error message as assistant response
                 this.transcript.addErrorAsAssistantResponse(err)
                 // Log users out on unauth error
                 if (statusCode && statusCode >= 400 && statusCode <= 410) {
+                    const authStatus = { ...authStatusInit }
                     if (statusCode === 403) {
-                        void this.sendLogin({
-                            showInvalidAccessTokenError: false,
-                            authenticated: true,
-                            hasVerifiedEmail: false,
-                            requiresVerifiedEmail: true,
-                            onSupportedSiteVersion: true,
-                        })
+                        authStatus.authenticated = true
+                        authStatus.requiresVerifiedEmail = true
                     } else {
-                        void this.sendLogin({
-                            showInvalidAccessTokenError: true,
-                            authenticated: false,
-                            hasVerifiedEmail: false,
-                            requiresVerifiedEmail: false,
-                            onSupportedSiteVersion: true,
-                        })
+                        authStatus.showInvalidAccessTokenError = true
                     }
+                    authStatus.siteHasCodyEnabled = hasCompletionsClient
+                    void this.sendLogin(authStatus)
                     void this.clearAndRestartSession()
                 }
                 this.onCompletionEnd()

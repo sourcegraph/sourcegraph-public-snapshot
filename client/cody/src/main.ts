@@ -116,9 +116,11 @@ const register = async (
     disposables.push(
         vscode.window.registerWebviewViewProvider('cody.chat', chatProvider, {
             webviewOptions: { retainContextWhenHidden: true },
-        }),
-        { dispose: () => vscode.commands.executeCommand('setContext', 'cody.activated', false) }
+        })
     )
+
+    const authStatus = await getAuthStatus(initialConfig)
+    await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn(authStatus))
 
     const executeRecipe = async (recipe: RecipeID, showTab = true): Promise<void> => {
         if (showTab) {

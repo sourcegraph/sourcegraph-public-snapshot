@@ -10,7 +10,7 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 import { LocalKeywordContextFetcher } from '../keyword-context/local-keyword-context-fetcher'
 
 import { Config } from './ChatViewProvider'
-import { AuthStatus, isLocalApp, isSiteVersionSupported } from './protocol'
+import { AuthStatus, authStatusInit, isLocalApp } from './protocol'
 
 // Converts a git clone URL to the codebase name that includes the slash-separated code host, owner, and repository name
 // This should captures:
@@ -84,39 +84,75 @@ export async function getCodebaseContext(
     return new CodebaseContext(config, codebase, embeddingsSearch, new LocalKeywordContextFetcher(rgPath, editor))
 }
 
+let client: SourcegraphGraphQLAPIClient
+let configWithToken: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
+
+/*
+ * Gets the authentication status for a user.
+ *
+ * @returns The user's authentication status.
+ */
 export async function getAuthStatus(
     config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
 ): Promise<AuthStatus> {
+    // Cache the config and the GraphQL client
+    if (config !== configWithToken) {
+        configWithToken = config
+        client = new SourcegraphGraphQLAPIClient(config)
+    }
+    // Early return if no access token
     if (!config.accessToken) {
-        return {
-            showInvalidAccessTokenError: false,
-            authenticated: false,
-            hasVerifiedEmail: false,
-            requiresVerifiedEmail: false,
-            onSupportedSiteVersion: false,
+        return authStatusInit
+    }
+    const { enabled, version } = await client.isCodyEnabled()
+    // Use early returns to avoid nested if-else
+    const isEnterprise = !(client.isDotCom() || isLocalApp(config.serverEndpoint))
+    if (!isEnterprise) {
+        const userInfo = await client.getCurrentUserIdAndVerifiedEmail()
+        if (isError(userInfo)) {
+            return authStatusInit
         }
+        return validateAuthStatus(isEnterprise, userInfo.id, userInfo.hasVerifiedEmail, true, version)
     }
-    const client = new SourcegraphGraphQLAPIClient(config)
-    if (client.isDotCom() || isLocalApp(config.serverEndpoint)) {
-        const data = await client.getCurrentUserIdAndVerifiedEmail()
-        return {
-            showInvalidAccessTokenError: isError(data),
-            authenticated: !isError(data),
-            hasVerifiedEmail: !isError(data) && data?.hasVerifiedEmail,
-            // on sourcegraph.com this is always true
-            requiresVerifiedEmail: true,
-            onSupportedSiteVersion: true,
-        }
+    const userId = await client.getCurrentUserId()
+    if (!userId || isError(userId)) {
+        return authStatusInit
     }
-    const currentUserID = await client.getCurrentUserId()
-    // TODO Replace this with "await client.getSiteVersion()" once 5.1.0 is released
-    // const siteVersion = await client.getSiteVersion()
-    const siteVersion = '5.1.0'
-    return {
-        showInvalidAccessTokenError: isError(currentUserID),
-        authenticated: !isError(currentUserID),
-        hasVerifiedEmail: false,
-        requiresVerifiedEmail: false,
-        onSupportedSiteVersion: isSiteVersionSupported(siteVersion),
+
+    return validateAuthStatus(isEnterprise, userId, false, enabled, version)
+}
+
+/*
+ * Checks a user's authentication status.
+ *
+ * @param isEnterprise Whether the user is on an enterprise Sourcegraph instance.
+ * @param userId The user's ID.
+ * @param isEmailVerified Whether the user has verified their email. Default to true for non-enterprise instances.
+ * @param isCodyEnabled Whether Cody is enabled on the Sourcegraph instance. Default to true for non-enterprise instances.
+ * @returns The user's authentication status.
+ */
+export function validateAuthStatus(
+    isEnterprise: boolean,
+    userId: string,
+    isEmailVerified: boolean,
+    isCodyEnabled: boolean,
+    version: string
+): AuthStatus {
+    const authStatus = { ...authStatusInit }
+    // Cache isEnterprise check
+    const enterprise = isEnterprise
+    // Early return for invalid user ID
+    if (!userId) {
+        return authStatus
     }
+    // Set values and return early
+    authStatus.authenticated = !!userId
+    authStatus.showInvalidAccessTokenError = !userId
+    authStatus.requiresVerifiedEmail = !enterprise
+    authStatus.hasVerifiedEmail = !enterprise && isEmailVerified
+    // Set remaining values for enterprise instances
+    authStatus.siteHasCodyEnabled = enterprise ? isCodyEnabled : true
+    // Version is for frontend to check if Cody is not enabled due to unsupported version when siteHasCodyEnabled is false
+    authStatus.siteVersion = version
+    return authStatus
 }

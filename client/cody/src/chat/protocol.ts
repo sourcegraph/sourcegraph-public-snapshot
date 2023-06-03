@@ -2,7 +2,6 @@ import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
-import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { View } from '../../webviews/NavBar'
 
@@ -56,11 +55,21 @@ export interface AuthStatus {
     authenticated: boolean
     hasVerifiedEmail: boolean
     requiresVerifiedEmail: boolean
-    onSupportedSiteVersion: boolean
+    siteHasCodyEnabled: boolean
+    siteVersion: string
+}
+
+export const authStatusInit = {
+    showInvalidAccessTokenError: false,
+    authenticated: false,
+    hasVerifiedEmail: false,
+    requiresVerifiedEmail: false,
+    siteHasCodyEnabled: false,
+    siteVersion: '',
 }
 
 export function isLoggedIn(authStatus: AuthStatus): boolean {
-    if (!authStatus.onSupportedSiteVersion) {
+    if (!authStatus.siteHasCodyEnabled) {
         return false
     }
     return authStatus.authenticated && (authStatus.requiresVerifiedEmail ? authStatus.hasVerifiedEmail : true)
@@ -68,30 +77,4 @@ export function isLoggedIn(authStatus: AuthStatus): boolean {
 
 export function isLocalApp(url: string): boolean {
     return new URL(url).origin === LOCAL_APP_URL.origin
-}
-
-// if version is below 5.1.0, it is not supported
-// the version number will be in this format "222587_2023-05-30_5.0-39cbcf1a50f0" for insider builds
-export function isSiteVersionSupported(version: string | Error): boolean {
-    const MAJOR_VERSION = 5
-    const MINOR_VERSION = 1
-    if (isError(version) || !version) {
-        return false
-    }
-    const isInsiderBuild = version.length > 10
-    if (isInsiderBuild) {
-        return true
-    }
-    const [major, minor] = version.split('.').map(x => parseInt(x, 10))
-    if (isNaN(major) || isNaN(minor)) {
-        return false
-    }
-    if (major > MAJOR_VERSION) {
-        return true
-    }
-    if (major === MAJOR_VERSION && minor >= MINOR_VERSION) {
-        return true
-    }
-
-    return false
 }
