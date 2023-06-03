@@ -20,9 +20,11 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/go-diff/diff"
 	sglog "github.com/sourcegraph/log"
 
@@ -70,6 +72,8 @@ var _ Client = &clientImplementor{}
 type ClientSource interface {
 	// ClientForRepo returns a Client for the given repo.
 	ClientForRepo(userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error)
+	// ConnForRepo returns a grpc.ClientConn for the given repo.
+	ConnForRepo(userAgent string, repo api.RepoName) (*grpc.ClientConn, error)
 	// AddrForRepo returns the address of the gitserver for the given repo.
 	AddrForRepo(userAgent string, repo api.RepoName) string
 	// Address the current list of gitserver addresses.
@@ -458,6 +462,10 @@ func (c *clientImplementor) AddrForRepo(repo api.RepoName) string {
 
 func (c *clientImplementor) ClientForRepo(repo api.RepoName) (proto.GitserverServiceClient, error) {
 	return c.clientSource.ClientForRepo(c.userAgent, repo)
+}
+
+func (c *clientImplementor) ConnForRepo(repo api.RepoName) (*grpc.ClientConn, error) {
+	return c.clientSource.ConnForRepo(c.userAgent, repo)
 }
 
 // ArchiveOptions contains options for the Archive func.
@@ -1207,72 +1215,124 @@ func (e *RepoNotCloneableErr) Error() string {
 
 func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
 	numPossibleShards := len(c.Addrs())
-	shards := make(map[string]*protocol.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
 
-	for _, r := range repos {
-		addr := c.AddrForRepo(r)
-		shard := shards[addr]
-
-		if shard == nil {
-			shard = new(protocol.RepoCloneProgressRequest)
-			shards[addr] = shard
-		}
-
-		shard.Repos = append(shard.Repos, r)
-	}
-
-	type op struct {
-		req *protocol.RepoCloneProgressRequest
-		res *protocol.RepoCloneProgressResponse
-		err error
-	}
-
-	ch := make(chan op, len(shards))
-	for _, req := range shards {
-		go func(o op) {
-			var resp *http.Response
-			resp, o.err = c.httpPost(ctx, o.req.Repos[0], "repo-clone-progress", o.req)
-			if o.err != nil {
-				ch <- o
-				return
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		shards := make(map[proto.GitserverServiceClient]*proto.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
+		for _, r := range repos {
+			client, err := c.ClientForRepo(r)
+			if err != nil {
+				return nil, err
 			}
 
-			defer resp.Body.Close()
-			if resp.StatusCode != http.StatusOK {
-				o.err = &url.Error{
-					URL: resp.Request.URL.String(),
-					Op:  "RepoCloneProgress",
-					Err: errors.Errorf("RepoCloneProgress: http status %d", resp.StatusCode),
+			shard := shards[client]
+			if shard == nil {
+				shard = new(proto.RepoCloneProgressRequest)
+				shards[client] = shard
+			}
+
+			shard.Repos = append(shard.Repos, string(r))
+		}
+
+		p := pool.NewWithResults[*proto.RepoCloneProgressResponse]().WithContext(ctx)
+
+		for client, req := range shards {
+			client := client
+			req := req
+			p.Go(func(ctx context.Context) (*proto.RepoCloneProgressResponse, error) {
+				return client.RepoCloneProgress(ctx, req)
+
+			})
+		}
+
+		res, err := p.Wait()
+		if err != nil {
+			return nil, err
+		}
+
+		result := &protocol.RepoCloneProgressResponse{
+			Results: make(map[api.RepoName]*protocol.RepoCloneProgress),
+		}
+		for _, r := range res {
+
+			for repo, info := range r.Results {
+				var rp protocol.RepoCloneProgress
+				rp.FromProto(info)
+				result.Results[api.RepoName(repo)] = &rp
+			}
+
+		}
+
+		return result, nil
+
+	} else {
+
+		shards := make(map[string]*protocol.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
+
+		for _, r := range repos {
+			addr := c.AddrForRepo(r)
+			shard := shards[addr]
+
+			if shard == nil {
+				shard = new(protocol.RepoCloneProgressRequest)
+				shards[addr] = shard
+			}
+
+			shard.Repos = append(shard.Repos, r)
+		}
+
+		type op struct {
+			req *protocol.RepoCloneProgressRequest
+			res *protocol.RepoCloneProgressResponse
+			err error
+		}
+
+		ch := make(chan op, len(shards))
+		for _, req := range shards {
+			go func(o op) {
+				var resp *http.Response
+				resp, o.err = c.httpPost(ctx, o.req.Repos[0], "repo-clone-progress", o.req)
+				if o.err != nil {
+					ch <- o
+					return
 				}
+
+				defer resp.Body.Close()
+				if resp.StatusCode != http.StatusOK {
+					o.err = &url.Error{
+						URL: resp.Request.URL.String(),
+						Op:  "RepoCloneProgress",
+						Err: errors.Errorf("RepoCloneProgress: http status %d", resp.StatusCode),
+					}
+					ch <- o
+					return // we never get an error status code AND result
+				}
+
+				o.res = new(protocol.RepoCloneProgressResponse)
+				o.err = json.NewDecoder(resp.Body).Decode(o.res)
 				ch <- o
-				return // we never get an error status code AND result
+			}(op{req: req})
+		}
+
+		var err error
+		res := protocol.RepoCloneProgressResponse{
+			Results: make(map[api.RepoName]*protocol.RepoCloneProgress),
+		}
+
+		for i := 0; i < cap(ch); i++ {
+			o := <-ch
+
+			if o.err != nil {
+				err = errors.Append(err, o.err)
+				continue
 			}
 
-			o.res = new(protocol.RepoCloneProgressResponse)
-			o.err = json.NewDecoder(resp.Body).Decode(o.res)
-			ch <- o
-		}(op{req: req})
-	}
-
-	var err error
-	res := protocol.RepoCloneProgressResponse{
-		Results: make(map[api.RepoName]*protocol.RepoCloneProgress),
-	}
-
-	for i := 0; i < cap(ch); i++ {
-		o := <-ch
-
-		if o.err != nil {
-			err = errors.Append(err, o.err)
-			continue
+			for repo, info := range o.res.Results {
+				res.Results[repo] = info
+			}
 		}
 
-		for repo, info := range o.res.Results {
-			res.Results[repo] = info
-		}
+		return &res, err
 	}
-
-	return &res, err
 }
 
 func (c *clientImplementor) ReposStats(ctx context.Context) (map[string]*protocol.ReposStats, error) {

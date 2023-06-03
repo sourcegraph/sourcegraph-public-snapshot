@@ -12,6 +12,7 @@ service GitserverService {
   rpc Search(SearchRequest) returns (stream SearchResponse) {}
   rpc Archive(ArchiveRequest) returns (stream ArchiveResponse) {}
   rpc RepoClone(RepoCloneRequest) returns (RepoCloneResponse) {}
+  rpc RepoCloneProgress(RepoCloneProgressRequest) returns (RepoCloneProgressResponse) {}
   rpc ReposStats(ReposStatsRequest) returns (ReposStatsResponse) {}
 }
 
@@ -239,6 +240,29 @@ message RepoCloneRequest {
 message RepoCloneResponse {
   // error is the error that occurred during cloning.
   string error = 1;
+}
+
+// RepoCloneProgressRequest is a request for information about the clone progress of multiple
+// repositories on gitserver.
+message RepoCloneProgressRequest {
+  repeated string repos = 1;
+}
+
+// RepoCloneProgress is information about the clone progress of a repo
+message RepoCloneProgress {
+  // clone_in_progress is whether the repository is currently being cloned
+  bool clone_in_progress = 1;
+  // clone_progress is a progress message from the running clone command.
+  string clone_progress = 2;
+  // cloned is whether the repository has been cloned successfully
+  bool cloned = 3;
+}
+
+// RepoCloneProgressResponse is the response to a repository clone progress request
+// for multiple repositories at the same time.
+message RepoCloneProgressResponse {
+  // results is a map from repository name to clone progress information
+  map<string, RepoCloneProgress> results = 1;
 }
 
 // ReposStatsRequest is a empty request for the ReposStats RPC.

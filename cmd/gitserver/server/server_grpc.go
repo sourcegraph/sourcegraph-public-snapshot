@@ -183,6 +183,18 @@ func (gs *GRPCServer) RepoClone(ctx context.Context, in *proto.RepoCloneRequest)
 	return &proto.RepoCloneResponse{Error: ""}, nil
 }
 
+func (gs *GRPCServer) RepoCloneProgress(ctx context.Context, req *proto.RepoCloneProgressRequest) (*proto.RepoCloneProgressResponse, error) {
+	resp := protocol.RepoCloneProgressResponse{
+		Results: make(map[api.RepoName]*protocol.RepoCloneProgress, len(req.Repos)),
+	}
+	for _, repo := range req.Repos {
+		repoName := api.RepoName(repo)
+		result := gs.Server.repoCloneProgress(repoName)
+		resp.Results[repoName] = result
+	}
+	return resp.ToProto(), nil
+}
+
 func (gs *GRPCServer) ReposStats(ctx context.Context, req *proto.ReposStatsRequest) (*proto.ReposStatsResponse, error) {
 	b, err := gs.Server.readReposStatsFile(filepath.Join(gs.Server.ReposDir, reposStatsName))
 	if err != nil {

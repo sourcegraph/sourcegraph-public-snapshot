@@ -438,10 +438,46 @@ type RepoCloneProgress struct {
 	Cloned          bool   // whether the repository has been cloned successfully
 }
 
+func (r *RepoCloneProgress) FromProto(p *proto.RepoCloneProgress) {
+	*r = RepoCloneProgress{
+		CloneInProgress: p.GetCloneInProgress(),
+		CloneProgress:   p.GetCloneProgress(),
+		Cloned:          p.GetCloned(),
+	}
+}
+
 // RepoCloneProgressResponse is the response to a repository clone progress request
 // for multiple repositories at the same time.
 type RepoCloneProgressResponse struct {
 	Results map[api.RepoName]*RepoCloneProgress
+}
+
+func (r *RepoCloneProgressResponse) ToProto() *proto.RepoCloneProgressResponse {
+	results := make(map[string]*proto.RepoCloneProgress, len(r.Results))
+	for k, v := range r.Results {
+		results[string(k)] = &proto.RepoCloneProgress{
+			CloneInProgress: v.CloneInProgress,
+			CloneProgress:   v.CloneProgress,
+			Cloned:          v.Cloned,
+		}
+	}
+	return &proto.RepoCloneProgressResponse{
+		Results: results,
+	}
+}
+
+func (r *RepoCloneProgressResponse) FromProto(p *proto.RepoCloneProgressResponse) {
+	results := make(map[api.RepoName]*RepoCloneProgress, len(p.GetResults()))
+	for k, v := range p.GetResults() {
+		results[api.RepoName(k)] = &RepoCloneProgress{
+			CloneInProgress: v.GetCloneInProgress(),
+			CloneProgress:   v.GetCloneProgress(),
+			Cloned:          v.GetCloned(),
+		}
+	}
+	*r = RepoCloneProgressResponse{
+		Results: results,
+	}
 }
 
 // CreateCommitFromPatchRequest is the request information needed for creating
