@@ -13,10 +13,11 @@ import { ChartContainer } from '../../../site-admin/analytics/components/ChartCo
 
 import { GET_INSTANCE_OWN_STATS, GET_OWN_JOB_CONFIGURATIONS } from './query'
 
-interface OwnUsageDatum {
-    ownershipReasonType: string
-    entriesCount: number
+interface OwnCovaerateDatum {
+    name: string
+    count: number
     fill: string
+    tooltip: string
 }
 
 export const OwnAnalyticsPage: FC = () => {
@@ -37,22 +38,20 @@ export const OwnAnalyticsPage: FC = () => {
 const OwnAnalyticsPanel: FC = () => {
     const { data, loading, error } = useQuery<GetInstanceOwnStatsResult>(GET_INSTANCE_OWN_STATS, {})
 
-    const ownSignalsData: OwnUsageDatum[] = [
+    const ownSignalsData: OwnCovaerateDatum[] = [
         {
-            ownershipReasonType: 'Codeowned files',
-            entriesCount: data?.instanceOwnershipStats?.totalCodeownedFiles || 0,
+            name: 'CODEOWNERS',
+            count: data?.instanceOwnershipStats?.totalCodeownedFiles || 0,
             fill: 'var(--info)',
+            tooltip: 'Total number of files owned through CODEOWNERS',
         },
         {
-            ownershipReasonType: 'Total files',
-            entriesCount: data?.instanceOwnershipStats?.totalFiles || 0,
+            name: 'All files',
+            count: data?.instanceOwnershipStats?.totalFiles || 0,
             fill: 'var(--text-muted)',
+            tooltip: 'Total number of files',
         },
     ]
-    const getValue = (datum: OwnUsageDatum) => datum.entriesCount
-    const getColor = (datum: OwnUsageDatum) => datum.fill
-    const getLink = (datum: OwnUsageDatum) => ''
-    const getName = (datum: OwnUsageDatum) => datum.ownershipReasonType
 
     return (
         <>
@@ -60,20 +59,21 @@ const OwnAnalyticsPanel: FC = () => {
             {error && <ErrorAlert prefix="Error finding out if own analytics are enabled" error={error} />}
             {!loading && !error && (
                 <>
+                    {/* TODO(#52826): If only partial data is available - make that clear to the user. */}
                     <Card className="p-3 position-relative">
                         {ownSignalsData && (
                             <div>
-                                <ChartContainer title="Title" labelX="Time" labelY="LabelY">
+                                <ChartContainer title="Ownership coverage" labelX="Status" labelY="Count">
                                     {width => (
                                         <BarChart
                                             width={width}
                                             height={300}
                                             data={ownSignalsData}
-                                            getDatumName={getName}
-                                            getDatumValue={getValue}
-                                            getDatumColor={getColor}
-                                            getDatumLink={getLink}
-                                            getDatumHover={datum => `custom text for ${datum.ownershipReasonType}`}
+                                            getDatumName={datum => datum.name}
+                                            getDatumValue={datum => datum.count}
+                                            getDatumColor={datum => datum.fill}
+                                            getDatumLink={datum => ''}
+                                            getDatumHover={datum => datum.tooltip}
                                         />
                                     )}
                                 </ChartContainer>
@@ -81,7 +81,8 @@ const OwnAnalyticsPanel: FC = () => {
                         )}
                     </Card>
                     <Text className="font-italic text-center mt-2">
-                        All events are generated from entries in the event logs table and are updated every 24 hours.
+                        {/* TODO(#52826): Provide more precise information about how stale data is, and how often it refreshes. */}
+                        Data is generated periodically from CODEOWNERS files and repository contents.
                     </Text>
                 </>
             )}
