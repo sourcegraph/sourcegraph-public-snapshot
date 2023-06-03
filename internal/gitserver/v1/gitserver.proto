@@ -413,4 +413,3 @@ message ListGitoliteResponse {
   // repos is the list of repositories in gitolite
   repeated GitoliteRepo repos = 1;
 }
-
