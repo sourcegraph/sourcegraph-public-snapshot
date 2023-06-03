@@ -19,21 +19,23 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	GitserverService_Exec_FullMethodName              = "/gitserver.v1.GitserverService/Exec"
-	GitserverService_IsRepoCloneable_FullMethodName   = "/gitserver.v1.GitserverService/IsRepoCloneable"
-	GitserverService_Search_FullMethodName            = "/gitserver.v1.GitserverService/Search"
-	GitserverService_Archive_FullMethodName           = "/gitserver.v1.GitserverService/Archive"
-	GitserverService_RepoClone_FullMethodName         = "/gitserver.v1.GitserverService/RepoClone"
-	GitserverService_RepoCloneProgress_FullMethodName = "/gitserver.v1.GitserverService/RepoCloneProgress"
-	GitserverService_RepoDelete_FullMethodName        = "/gitserver.v1.GitserverService/RepoDelete"
-	GitserverService_RepoUpdate_FullMethodName        = "/gitserver.v1.GitserverService/RepoUpdate"
-	GitserverService_ReposStats_FullMethodName        = "/gitserver.v1.GitserverService/ReposStats"
+	GitserverService_CreateCommitFromPatchBinary_FullMethodName = "/gitserver.v1.GitserverService/CreateCommitFromPatchBinary"
+	GitserverService_Exec_FullMethodName                        = "/gitserver.v1.GitserverService/Exec"
+	GitserverService_IsRepoCloneable_FullMethodName             = "/gitserver.v1.GitserverService/IsRepoCloneable"
+	GitserverService_Search_FullMethodName                      = "/gitserver.v1.GitserverService/Search"
+	GitserverService_Archive_FullMethodName                     = "/gitserver.v1.GitserverService/Archive"
+	GitserverService_RepoClone_FullMethodName                   = "/gitserver.v1.GitserverService/RepoClone"
+	GitserverService_RepoCloneProgress_FullMethodName           = "/gitserver.v1.GitserverService/RepoCloneProgress"
+	GitserverService_RepoDelete_FullMethodName                  = "/gitserver.v1.GitserverService/RepoDelete"
+	GitserverService_RepoUpdate_FullMethodName                  = "/gitserver.v1.GitserverService/RepoUpdate"
+	GitserverService_ReposStats_FullMethodName                  = "/gitserver.v1.GitserverService/ReposStats"
 )
 
 // GitserverServiceClient is the client API for GitserverService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GitserverServiceClient interface {
+	CreateCommitFromPatchBinary(ctx context.Context, in *CreateCommitFromPatchBinaryRequest, opts ...grpc.CallOption) (*CreateCommitFromPatchBinaryResponse, error)
 	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error)
 	IsRepoCloneable(ctx context.Context, in *IsRepoCloneableRequest, opts ...grpc.CallOption) (*IsRepoCloneableResponse, error)
 	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (GitserverService_SearchClient, error)
@@ -51,6 +53,15 @@ type gitserverServiceClient struct {
 
 func NewGitserverServiceClient(cc grpc.ClientConnInterface) GitserverServiceClient {
 	return &gitserverServiceClient{cc}
+}
+
+func (c *gitserverServiceClient) CreateCommitFromPatchBinary(ctx context.Context, in *CreateCommitFromPatchBinaryRequest, opts ...grpc.CallOption) (*CreateCommitFromPatchBinaryResponse, error) {
+	out := new(CreateCommitFromPatchBinaryResponse)
+	err := c.cc.Invoke(ctx, GitserverService_CreateCommitFromPatchBinary_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *gitserverServiceClient) Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error) {
@@ -207,6 +218,7 @@ func (c *gitserverServiceClient) ReposStats(ctx context.Context, in *ReposStatsR
 // All implementations must embed UnimplementedGitserverServiceServer
 // for forward compatibility
 type GitserverServiceServer interface {
+	CreateCommitFromPatchBinary(context.Context, *CreateCommitFromPatchBinaryRequest) (*CreateCommitFromPatchBinaryResponse, error)
 	Exec(*ExecRequest, GitserverService_ExecServer) error
 	IsRepoCloneable(context.Context, *IsRepoCloneableRequest) (*IsRepoCloneableResponse, error)
 	Search(*SearchRequest, GitserverService_SearchServer) error
@@ -223,6 +235,9 @@ type GitserverServiceServer interface {
 type UnimplementedGitserverServiceServer struct {
 }
 
+func (UnimplementedGitserverServiceServer) CreateCommitFromPatchBinary(context.Context, *CreateCommitFromPatchBinaryRequest) (*CreateCommitFromPatchBinaryResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateCommitFromPatchBinary not implemented")
+}
 func (UnimplementedGitserverServiceServer) Exec(*ExecRequest, GitserverService_ExecServer) error {
 	return status.Errorf(codes.Unimplemented, "method Exec not implemented")
 }
@@ -261,6 +276,24 @@ type UnsafeGitserverServiceServer interface {
 
 func RegisterGitserverServiceServer(s grpc.ServiceRegistrar, srv GitserverServiceServer) {
 	s.RegisterService(&GitserverService_ServiceDesc, srv)
+}
+
+func _GitserverService_CreateCommitFromPatchBinary_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateCommitFromPatchBinaryRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).CreateCommitFromPatchBinary(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_CreateCommitFromPatchBinary_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).CreateCommitFromPatchBinary(ctx, req.(*CreateCommitFromPatchBinaryRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _GitserverService_Exec_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -441,6 +474,10 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "gitserver.v1.GitserverService",
 	HandlerType: (*GitserverServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CreateCommitFromPatchBinary",
+			Handler:    _GitserverService_CreateCommitFromPatchBinary_Handler,
+		},
 		{
 			MethodName: "IsRepoCloneable",
 			Handler:    _GitserverService_IsRepoCloneable_Handler,

@@ -560,6 +560,32 @@ type CreateCommitFromPatchRequest struct {
 	GitApplyArgs []string
 }
 
+func (c *CreateCommitFromPatchRequest) ToProto() *proto.CreateCommitFromPatchBinaryRequest {
+	return &proto.CreateCommitFromPatchBinaryRequest{
+		Repo:         string(c.Repo),
+		BaseCommit:   string(c.BaseCommit),
+		Patch:        c.Patch,
+		TargetRef:    c.TargetRef,
+		UniqueRef:    c.UniqueRef,
+		CommitInfo:   c.CommitInfo.ToProto(),
+		Push:         c.Push.ToProto(),
+		GitApplyArgs: c.GitApplyArgs,
+	}
+}
+
+func (c *CreateCommitFromPatchRequest) FromProto(p *proto.CreateCommitFromPatchBinaryRequest) {
+	*c = CreateCommitFromPatchRequest{
+		Repo:         api.RepoName(p.GetRepo()),
+		BaseCommit:   api.CommitID(p.GetBaseCommit()),
+		Patch:        p.GetPatch(),
+		TargetRef:    p.GetTargetRef(),
+		UniqueRef:    p.GetUniqueRef(),
+		CommitInfo:   PatchCommitInfoFromProto(p.GetCommitInfo()),
+		Push:         PushConfigFromProto(p.GetPush()),
+		GitApplyArgs: p.GetGitApplyArgs(),
+	}
+}
+
 // PatchCommitInfo will be used for commit information when creating a commit from a patch
 type PatchCommitInfo struct {
 	Message        string
@@ -568,6 +594,28 @@ type PatchCommitInfo struct {
 	CommitterName  string
 	CommitterEmail string
 	Date           time.Time
+}
+
+func (p *PatchCommitInfo) ToProto() *proto.PatchCommitInfo {
+	return &proto.PatchCommitInfo{
+		Message:        p.Message,
+		AuthorName:     p.AuthorName,
+		AuthorEmail:    p.AuthorEmail,
+		CommitterName:  p.CommitterName,
+		CommitterEmail: p.CommitterEmail,
+		Date:           timestamppb.New(p.Date),
+	}
+}
+
+func PatchCommitInfoFromProto(p *proto.PatchCommitInfo) PatchCommitInfo {
+	return PatchCommitInfo{
+		Message:        p.GetMessage(),
+		AuthorName:     p.GetAuthorName(),
+		AuthorEmail:    p.GetAuthorEmail(),
+		CommitterName:  p.GetCommitterName(),
+		CommitterEmail: p.GetCommitterEmail(),
+		Date:           p.GetDate().AsTime(),
+	}
 }
 
 // PushConfig provides the configuration required to push one or more commits to
@@ -588,6 +636,25 @@ type PushConfig struct {
 	Passphrase string
 }
 
+func (p *PushConfig) ToProto() *proto.PushConfig {
+	return &proto.PushConfig{
+		RemoteUrl:  p.RemoteURL,
+		PrivateKey: p.PrivateKey,
+		Passphrase: p.Passphrase,
+	}
+}
+
+func PushConfigFromProto(p *proto.PushConfig) *PushConfig {
+	if p == nil {
+		return nil
+	}
+	return &PushConfig{
+		RemoteURL:  p.GetRemoteUrl(),
+		PrivateKey: p.GetPrivateKey(),
+		Passphrase: p.GetPassphrase(),
+	}
+}
+
 // CreateCommitFromPatchResponse is the response type returned after creating
 // a commit from a patch
 type CreateCommitFromPatchResponse struct {
@@ -596,6 +663,20 @@ type CreateCommitFromPatchResponse struct {
 
 	// Error is populated only on error
 	Error *CreateCommitFromPatchError
+}
+
+func (r *CreateCommitFromPatchResponse) ToProto() *proto.CreateCommitFromPatchBinaryResponse {
+	return &proto.CreateCommitFromPatchBinaryResponse{
+		Rev:   r.Rev,
+		Error: r.Error.ToProto(),
+	}
+}
+
+func (r *CreateCommitFromPatchResponse) FromProto(p *proto.CreateCommitFromPatchBinaryResponse) {
+	*r = CreateCommitFromPatchResponse{
+		Rev:   p.GetRev(),
+		Error: CreateCommitFromPatchErrorFromProto(p.GetError()),
+	}
 }
 
 // SetError adds the supplied error related details to e.
@@ -622,6 +703,27 @@ type CreateCommitFromPatchError struct {
 	Command string
 	// CombinedOutput is the combined stderr and stdout from running the command
 	CombinedOutput string
+}
+
+func (e *CreateCommitFromPatchError) ToProto() *proto.CreateCommitFromPatchError {
+	return &proto.CreateCommitFromPatchError{
+		RepositoryName: e.RepositoryName,
+		InternalError:  e.InternalError,
+		Command:        e.Command,
+		CombinedOutput: e.CombinedOutput,
+	}
+}
+
+func CreateCommitFromPatchErrorFromProto(p *proto.CreateCommitFromPatchError) *CreateCommitFromPatchError {
+	if p == nil {
+		return nil
+	}
+	return &CreateCommitFromPatchError{
+		RepositoryName: p.GetRepositoryName(),
+		InternalError:  p.GetInternalError(),
+		Command:        p.GetCommand(),
+		CombinedOutput: p.GetCombinedOutput(),
+	}
 }
 
 // Error returns a detailed error conforming to the error interface

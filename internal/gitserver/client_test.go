@@ -1155,17 +1155,23 @@ func TestGitserverClient_RepoClone(t *testing.T) {
 }
 
 type spyGitserverServiceClient struct {
-	execCalled      bool
-	isRepoCloneable bool
+	createCommitFromPatchBinaryCalled bool
+	execCalled                        bool
+	isRepoCloneable                   bool
+	searchCalled                      bool
+	archiveCalled                     bool
+	repoClone                         bool
+	repoCloneProgress                 bool
+	repoDelete                        bool
+	repoUpdate                        bool
+	reposStatsCalled                  bool
+	base                              proto.GitserverServiceClient
+}
 
-	searchCalled      bool
-	archiveCalled     bool
-	repoClone         bool
-	repoCloneProgress bool
-	repoDelete        bool
-	repoUpdate        bool
-	reposStatsCalled  bool
-	base              proto.GitserverServiceClient
+// CreateCommitFromPatchBinary implements v1.GitserverServiceClient.
+func (s *spyGitserverServiceClient) CreateCommitFromPatchBinary(ctx context.Context, in *proto.CreateCommitFromPatchBinaryRequest, opts ...grpc.CallOption) (*proto.CreateCommitFromPatchBinaryResponse, error) {
+	s.createCommitFromPatchBinaryCalled = true
+	return s.base.CreateCommitFromPatchBinary(ctx, in, opts...)
 }
 
 // RepoUpdate implements v1.GitserverServiceClient
@@ -1218,15 +1224,21 @@ func (s *spyGitserverServiceClient) ReposStats(ctx context.Context, in *proto.Re
 var _ proto.GitserverServiceClient = &spyGitserverServiceClient{}
 
 type mockClient struct {
-	mockExec              func(ctx context.Context, in *proto.ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_ExecClient, error)
-	mockIsRepoCloneable   func(ctx context.Context, in *proto.IsRepoCloneableRequest, opts ...grpc.CallOption) (*proto.IsRepoCloneableResponse, error)
-	mockRepoClone         func(ctx context.Context, in *proto.RepoCloneRequest, opts ...grpc.CallOption) (*proto.RepoCloneResponse, error)
-	mockRepoCloneProgress func(ctx context.Context, in *proto.RepoCloneProgressRequest, opts ...grpc.CallOption) (*proto.RepoCloneProgressResponse, error)
-	mockRepoDelete        func(ctx context.Context, in *proto.RepoDeleteRequest, opts ...grpc.CallOption) (*proto.RepoDeleteResponse, error)
-	mockRepoStats         func(ctx context.Context, in *proto.ReposStatsRequest, opts ...grpc.CallOption) (*proto.ReposStatsResponse, error)
-	mockRepoUpdate        func(ctx context.Context, in *proto.RepoUpdateRequest, opts ...grpc.CallOption) (*proto.RepoUpdateResponse, error)
-	mockArchive           func(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error)
-	mockSearch            func(ctx context.Context, in *proto.SearchRequest, opts ...grpc.CallOption) (proto.GitserverService_SearchClient, error)
+	mockCreateCommitFromPatchBinary func(ctx context.Context, in *proto.CreateCommitFromPatchBinaryRequest, opts ...grpc.CallOption) (*proto.CreateCommitFromPatchBinaryResponse, error)
+	mockExec                        func(ctx context.Context, in *proto.ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_ExecClient, error)
+	mockIsRepoCloneable             func(ctx context.Context, in *proto.IsRepoCloneableRequest, opts ...grpc.CallOption) (*proto.IsRepoCloneableResponse, error)
+	mockRepoClone                   func(ctx context.Context, in *proto.RepoCloneRequest, opts ...grpc.CallOption) (*proto.RepoCloneResponse, error)
+	mockRepoCloneProgress           func(ctx context.Context, in *proto.RepoCloneProgressRequest, opts ...grpc.CallOption) (*proto.RepoCloneProgressResponse, error)
+	mockRepoDelete                  func(ctx context.Context, in *proto.RepoDeleteRequest, opts ...grpc.CallOption) (*proto.RepoDeleteResponse, error)
+	mockRepoStats                   func(ctx context.Context, in *proto.ReposStatsRequest, opts ...grpc.CallOption) (*proto.ReposStatsResponse, error)
+	mockRepoUpdate                  func(ctx context.Context, in *proto.RepoUpdateRequest, opts ...grpc.CallOption) (*proto.RepoUpdateResponse, error)
+	mockArchive                     func(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error)
+	mockSearch                      func(ctx context.Context, in *proto.SearchRequest, opts ...grpc.CallOption) (proto.GitserverService_SearchClient, error)
+}
+
+// CreateCommitFromPatchBinary implements v1.GitserverServiceClient.
+func (mc *mockClient) CreateCommitFromPatchBinary(ctx context.Context, in *proto.CreateCommitFromPatchBinaryRequest, opts ...grpc.CallOption) (*proto.CreateCommitFromPatchBinaryResponse, error) {
+	return mc.mockCreateCommitFromPatchBinary(ctx, in, opts...)
 }
 
 // RepoUpdate implements v1.GitserverServiceClient

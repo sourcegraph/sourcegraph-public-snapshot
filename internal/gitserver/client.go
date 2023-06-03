@@ -1079,6 +1079,7 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 
 		var info protocol.RepoUpdateResponse
 		info.FromProto(resp)
+
 		return &info, nil
 
 	} else {
@@ -1094,6 +1095,7 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 				Err: errors.Errorf("RepoUpdate: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
 			}
 		}
+
 		var info protocol.RepoUpdateResponse
 		err = json.NewDecoder(resp.Body).Decode(&info)
 		return &info, err
@@ -1499,30 +1501,50 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 }
 
 func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error) {
-	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch-binary", req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to read response body")
-	}
-	res := new(protocol.CreateCommitFromPatchResponse)
-	if err := json.Unmarshal(body, res); err != nil {
-		c.logger.Warn("decoding gitserver create-commit-from-patch response", sglog.Error(err))
-		return nil, &url.Error{
-			URL: resp.Request.URL.String(),
-			Op:  "CreateCommitFromPatch",
-			Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.StatusCode, string(body)),
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		client, err := c.ClientForRepo(req.Repo)
+		if err != nil {
+			return nil, err
 		}
-	}
+		resp, err := client.CreateCommitFromPatchBinary(ctx, req.ToProto())
+		if err != nil {
+			return nil, err
+		}
 
-	if res.Error != nil {
-		return res, res.Error
+		var res protocol.CreateCommitFromPatchResponse
+		res.FromProto(resp)
+
+		if resp.GetError() != nil {
+			return &res, errors.New(resp.GetError().String())
+		}
+
+		return &res, nil
+	} else {
+		resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch-binary", req)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read response body")
+		}
+		var res protocol.CreateCommitFromPatchResponse
+		if err := json.Unmarshal(body, &res); err != nil {
+			c.logger.Warn("decoding gitserver create-commit-from-patch response", sglog.Error(err))
+			return nil, &url.Error{
+				URL: resp.Request.URL.String(),
+				Op:  "CreateCommitFromPatch",
+				Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.StatusCode, string(body)),
+			}
+		}
+
+		if res.Error != nil {
+			return &res, res.Error
+		}
+		return &res, nil
 	}
-	return res, nil
 }
 
 func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
