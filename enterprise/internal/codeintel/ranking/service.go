@@ -119,8 +119,12 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 	}, nil
 }
 
-func (s *Service) Summaries(ctx context.Context) (_ []shared.Summary, err error) {
+func (s *Service) Summaries(ctx context.Context) ([]shared.Summary, error) {
 	return s.store.Summaries(ctx)
+}
+
+func (s *Service) BumpDerivativeGraphKey(ctx context.Context) error {
+	return s.store.BumpDerivativeGraphKey(ctx)
 }
 
 func (s *Service) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error) {

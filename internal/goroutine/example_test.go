@@ -50,7 +50,13 @@ func ExamplePeriodicGoroutine() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	r := NewPeriodicGoroutine(ctx, "example.background", "example background routine", 200*time.Millisecond, h)
+	r := NewPeriodicGoroutine(
+		ctx,
+		h,
+		WithName("example.background"),
+		WithDescription("example background routine"),
+		WithInterval(200*time.Millisecond),
+	)
 
 	go MonitorBackgroundRoutines(ctx, r)
 

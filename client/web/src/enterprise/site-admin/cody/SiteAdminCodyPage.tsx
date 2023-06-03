@@ -28,6 +28,7 @@ import { PageTitle } from '../../../components/PageTitle'
 import { RepositoriesField } from '../../insights/components'
 
 import {
+    useCancelRepoEmbeddingJob,
     useRepoEmbeddingJobsConnection,
     useScheduleContextDetectionEmbeddingJob,
     useScheduleRepoEmbeddingJobs,
@@ -89,6 +90,16 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
         validators: { sync: repositoriesValidator },
     })
 
+    const [cancelRepoEmbeddingJob, { error: cancelRepoEmbeddingJobError }] = useCancelRepoEmbeddingJob()
+
+    const onCancel = useCallback(
+        async (id: string) => {
+            await cancelRepoEmbeddingJob({ variables: { id } })
+            refetchAll()
+        },
+        [cancelRepoEmbeddingJob, refetchAll]
+    )
+
     return (
         <>
             <PageTitle title="Cody" />
@@ -121,11 +132,15 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                         </div>
                     </div>
                 </Form>
-                {(repoEmbeddingJobsError || contextDetectionEmbeddingJobError) && (
+                {(repoEmbeddingJobsError || contextDetectionEmbeddingJobError || cancelRepoEmbeddingJobError) && (
                     <div className="mt-1">
                         <ErrorAlert
                             prefix="Error scheduling embedding jobs"
-                            error={repoEmbeddingJobsError || contextDetectionEmbeddingJobError}
+                            error={
+                                repoEmbeddingJobsError ||
+                                contextDetectionEmbeddingJobError ||
+                                cancelRepoEmbeddingJobError
+                            }
                         />
                     </div>
                 )}
@@ -135,7 +150,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                     {loading && !connection && <ConnectionLoading />}
                     <ConnectionList as="ul" className="list-group" aria-label="Repository embedding jobs">
                         {connection?.nodes?.map(node => (
-                            <RepoEmbeddingJobNode key={node.id} {...node} />
+                            <RepoEmbeddingJobNode key={node.id} {...node} onCancel={onCancel} />
                         ))}
                     </ConnectionList>
                     {connection && (

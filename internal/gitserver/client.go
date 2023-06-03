@@ -244,7 +244,7 @@ type Client interface {
 
 	// CreateCommitFromPatch will attempt to create a commit from a patch
 	// If possible, the error returned will be of type protocol.CreateCommitFromPatchError
-	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest) (string, error)
+	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error)
 
 	// GetDefaultBranch returns the name of the default branch and the commit it's
 	// currently at from the given repository. If short is true, then `main` instead
@@ -1106,7 +1106,10 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 		if err != nil {
 			return nil, err
 		}
+
+		var info protocol.RepoUpdateResponse
 		info.FromProto(resp)
+
 		return &info, nil
 
 	} else {
@@ -1122,6 +1125,8 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 				Err: errors.Errorf("RepoUpdate: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
 			}
 		}
+
+		var info protocol.RepoUpdateResponse
 		err = json.NewDecoder(resp.Body).Decode(&info)
 		return &info, err
 	}
@@ -1142,10 +1147,6 @@ func (c *clientImplementor) RequestRepoClone(ctx context.Context, repo api.RepoN
 		resp, err := client.RepoClone(ctx, &req)
 		if err != nil {
 			return nil, err
-		}
-
-		if resp == nil {
-			return nil, nil
 		}
 
 		var info protocol.RepoCloneResponse
@@ -1284,7 +1285,6 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 		p := pool.NewWithResults[*proto.RepoCloneProgressResponse]().WithContext(ctx)
 
 		for client, req := range shards {
-			fmt.Println("requesting", req)
 			client := client
 			req := req
 			p.Go(func(ctx context.Context) (*proto.RepoCloneProgressResponse, error) {
@@ -1379,7 +1379,6 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 				res.Results[repo] = info
 			}
 		}
-
 		return &res, err
 	}
 }
@@ -1530,39 +1529,40 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 	return c.httpClient.Do(req)
 }
 
-func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
-	var res protocol.CreateCommitFromPatchResponse
-
+func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error) {
 	if internalgrpc.IsGRPCEnabled(ctx) {
 		client, err := c.ClientForRepo(req.Repo)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		resp, err := client.CreateCommitFromPatchBinary(ctx, req.ToProto())
 		if err != nil {
-			return "", err
+			return nil, err
 		}
+
+		var res protocol.CreateCommitFromPatchResponse
+		res.FromProto(resp)
 
 		if resp.GetError() != nil {
-			return resp.Rev, errors.New(resp.GetError().String())
+			return &res, errors.New(resp.GetError().String())
 		}
 
-		res.FromProto(resp)
-		return res.Rev, nil
+		return &res, nil
 	} else {
 		resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch-binary", req)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		defer resp.Body.Close()
 
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return "", errors.Wrap(err, "failed to read response body")
+			return nil, errors.Wrap(err, "failed to read response body")
 		}
+		var res protocol.CreateCommitFromPatchResponse
 		if err := json.Unmarshal(body, &res); err != nil {
 			c.logger.Warn("decoding gitserver create-commit-from-patch response", sglog.Error(err))
-			return "", &url.Error{
+			return nil, &url.Error{
 				URL: resp.Request.URL.String(),
 				Op:  "CreateCommitFromPatch",
 				Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.StatusCode, string(body)),
@@ -1570,9 +1570,9 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 		}
 
 		if res.Error != nil {
-			return res.Rev, res.Error
+			return &res, res.Error
 		}
-		return res.Rev, nil
+		return &res, nil
 	}
 }
 

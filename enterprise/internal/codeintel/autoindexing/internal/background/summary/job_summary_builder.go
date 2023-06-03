@@ -28,8 +28,6 @@ func NewSummaryBuilder(
 	return goroutine.NewPeriodicGoroutine(
 		// We should use an internal actor when doing cross service calls.
 		actor.WithInternalActor(context.Background()),
-		"codeintel.autoindexing-summary-builder", "build an auto-indexing summary over repositories with high search activity",
-		config.Interval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			repositoryWithCounts, err := store.TopRepositoriesToConfigure(ctx, config.NumRepositoriesToConfigure)
 			if err != nil {
@@ -93,5 +91,8 @@ func NewSummaryBuilder(
 
 			return nil
 		}),
+		goroutine.WithName("codeintel.autoindexing-summary-builder"),
+		goroutine.WithDescription("build an auto-indexing summary over repositories with high search activity"),
+		goroutine.WithInterval(config.Interval),
 	)
 }
