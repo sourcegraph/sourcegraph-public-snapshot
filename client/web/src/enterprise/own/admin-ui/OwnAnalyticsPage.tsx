@@ -92,7 +92,7 @@ const OwnAnalyticsPanel: FC = () => {
 
 const OwnEnableAnalytics: FC = () => (
     <Alert variant="info">
-        Analytics is not enabled, please <Link to={'/site-admin/own-signal-page'}>enable Own analytics</Link> first to
-        see own stats.
+        Analytics is not enabled, please <Link to={'/site-admin/own-signal-page'}>enable Own analytics</Link> job first
+        to see Own stats.
     </Alert>
 )
