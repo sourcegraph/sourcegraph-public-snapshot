@@ -27,17 +27,42 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
     setView,
     vscodeAPI,
 }) => {
+    const onDeleteHistoryClick = useCallback(
+        (chatID: string): void => {
+            if (userHistory) {
+                delete userHistory[chatID]
+                setUserHistory({ ...userHistory })
+                vscodeAPI.postMessage({ command: 'deleteHistory', chatID })
+            }
+        },
+        [userHistory, setUserHistory, vscodeAPI]
+    )
+
     const onRemoveHistoryClick = useCallback(() => {
         if (userHistory) {
             vscodeAPI.postMessage({ command: 'removeHistory' })
             setUserHistory(null)
             setInputHistory([])
         }
-    }, [setInputHistory, setUserHistory, userHistory, vscodeAPI])
+    }, [setInputHistory, userHistory, setUserHistory, vscodeAPI])
 
     function restoreMetadata(chatID: string): void {
         vscodeAPI.postMessage({ command: 'restoreHistory', chatID })
         setView('chat')
+    }
+
+    // Fix this funcction
+
+    const findTimeDifference = (interactionTime: string): string => {
+        const date = new Date(interactionTime)
+        const now = new Date()
+        const diff = now.getTime() - date.getTime()
+
+        const hours = Math.floor(diff / (60 * 60 * 1000))
+        const minutes = Math.floor(diff / (60 * 1000)) % 60
+        const seconds = Math.floor(diff / 1000) % 60
+
+        return `${hours}h ${minutes}m ${seconds}s`
     }
 
     return (
@@ -64,8 +89,7 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
                                     +new Date(b[1].lastInteractionTimestamp) - +new Date(a[1].lastInteractionTimestamp)
                             )
                             .map(chat => {
-                                const lastMessage =
-                                    chat[1].interactions[chat[1].interactions.length - 1].assistantMessage
+                                const lastMessage = chat[1].interactions[chat[1].interactions.length - 1].humanMessage
                                 if (!lastMessage?.displayText) {
                                     return null
                                 }
@@ -78,7 +102,23 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
                                         type="button"
                                     >
                                         <div className={styles.itemButtonInnerContainer}>
-                                            <div className={styles.itemDate}>{new Date(chat[0]).toLocaleString()}</div>
+                                            <div className={styles.historyItem}>
+                                                <div className={styles.itemDate}>
+                                                    {findTimeDifference(new Date(chat[0]).toLocaleString())}
+                                                </div>
+                                                <div className={styles.itemDelete}>
+                                                    <VSCodeButton
+                                                        appearance="icon"
+                                                        type="button"
+                                                        onClick={event => {
+                                                            onDeleteHistoryClick(chat[0])
+                                                            event.stopPropagation()
+                                                        }}
+                                                    >
+                                                        <i className="codicon codicon-trash" />
+                                                    </VSCodeButton>
+                                                </div>
+                                            </div>
                                             <div className={styles.itemLastMessage}>{lastMessage.displayText}</div>
                                         </div>
                                     </VSCodeButton>

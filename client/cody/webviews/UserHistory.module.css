@@ -37,6 +37,18 @@
     margin-bottom: .25rem;
 }
 
+.history-item {
+    display: flex;
+    flex-direction: row;
+    row-gap: 10rem;
+    justify-content: space-between;
+}
+
+.item-delete {
+    margin-top: -0.5rem;
+    float: right;
+}
+
 .item-last-message {
     /* Show a few lines of text and then an ellipsis */
     display: -webkit-box;
