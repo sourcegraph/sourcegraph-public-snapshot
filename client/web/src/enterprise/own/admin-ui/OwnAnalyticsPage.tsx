@@ -1,7 +1,7 @@
 import { FC } from 'react'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { BarChart, Card, Text } from '@sourcegraph/wildcard'
+import { Alert, BarChart, Card, ErrorAlert, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import {
     GetInstanceOwnStatsResult,
@@ -26,12 +26,16 @@ export const OwnAnalyticsPage: FC = () => {
         data?.ownSignalConfigurations.some(
             (config: OwnSignalConfig) => config.name === 'analytics' && config.isEnabled
         ) || false
-    return enabled ? <OwnAnalyticsPanel /> : <OwnEnableAnalytics />
+    return (
+        <>
+            <AnalyticsPageTitle>Own</AnalyticsPageTitle>
+            {enabled ? <OwnAnalyticsPanel /> : <OwnEnableAnalytics />}
+        </>
+    )
 }
 
 const OwnAnalyticsPanel: FC = () => {
-    // TODO: Error handling and loading
-    const { data } = useQuery<GetInstanceOwnStatsResult>(GET_INSTANCE_OWN_STATS, {})
+    const { data, loading, error } = useQuery<GetInstanceOwnStatsResult>(GET_INSTANCE_OWN_STATS, {})
 
     const ownSignalsData: OwnUsageDatum[] = [
         {
@@ -52,35 +56,42 @@ const OwnAnalyticsPanel: FC = () => {
 
     return (
         <>
-            <AnalyticsPageTitle>Own</AnalyticsPageTitle>
-
-            <Card className="p-3 position-relative">
-                {ownSignalsData && (
-                    <div>
-                        <ChartContainer title="Title" labelX="Time" labelY="LabelY">
-                            {width => (
-                                <BarChart
-                                    width={width}
-                                    height={300}
-                                    data={ownSignalsData}
-                                    getDatumName={getName}
-                                    getDatumValue={getValue}
-                                    getDatumColor={getColor}
-                                    getDatumLink={getLink}
-                                    getDatumHover={datum => `custom text for ${datum.ownershipReasonType}`}
-                                />
-                            )}
-                        </ChartContainer>
-                    </div>
-                )}
-            </Card>
-            <Text className="font-italic text-center mt-2">
-                All events are generated from entries in the event logs table and are updated every 24 hours.
-            </Text>
+            {loading && <LoadingSpinner />}
+            {error && <ErrorAlert prefix="Error finding out if own analytics are enabled" error={error} />}
+            {!loading && !error && (
+                <>
+                    <Card className="p-3 position-relative">
+                        {ownSignalsData && (
+                            <div>
+                                <ChartContainer title="Title" labelX="Time" labelY="LabelY">
+                                    {width => (
+                                        <BarChart
+                                            width={width}
+                                            height={300}
+                                            data={ownSignalsData}
+                                            getDatumName={getName}
+                                            getDatumValue={getValue}
+                                            getDatumColor={getColor}
+                                            getDatumLink={getLink}
+                                            getDatumHover={datum => `custom text for ${datum.ownershipReasonType}`}
+                                        />
+                                    )}
+                                </ChartContainer>
+                            </div>
+                        )}
+                    </Card>
+                    <Text className="font-italic text-center mt-2">
+                        All events are generated from entries in the event logs table and are updated every 24 hours.
+                    </Text>
+                </>
+            )}
         </>
     )
 }
 
-const OwnEnableAnalytics: FC = () => {
-    return <Text>Analytics is not enabled, please enable Own analytics job first to see own stats.</Text>
-}
+const OwnEnableAnalytics: FC = () => (
+    <Alert variant="info">
+        Analytics is not enabled, please <Link to={'/site-admin/own-signal-page'}>enable Own analytics</Link> first to
+        see own stats.
+    </Alert>
+)
