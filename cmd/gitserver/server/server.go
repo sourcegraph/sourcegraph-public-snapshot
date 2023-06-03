@@ -1557,7 +1557,6 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 
 	// Write payload to client: implicitly writes 200 OK
 	_ = json.NewEncoder(w).Encode(resp)
-	return
 }
 
 // ensureOperations returns the non-nil operations value supplied to this server
