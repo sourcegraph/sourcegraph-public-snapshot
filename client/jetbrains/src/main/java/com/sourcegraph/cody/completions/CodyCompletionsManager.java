@@ -21,6 +21,8 @@ import com.sourcegraph.config.NotificationActivity;
 import com.sourcegraph.config.SettingsComponent;
 import java.util.Optional;
 import java.util.concurrent.*;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -28,6 +30,7 @@ import org.jetbrains.annotations.NotNull;
 public class CodyCompletionsManager {
   private static final Key<Boolean> KEY_EDITOR_SUPPORTED = Key.create("cody.editorSupported");
   private final ExecutorService executor = Executors.newSingleThreadExecutor();
+  private static final Logger logger = LogManager.getLogger(CodyCompletionsManager.class);
   // TODO: figure out how to avoid the ugly nested `Future<CompletableFuture<T>>` type.
   private final ConcurrentLinkedQueue<Future<CompletableFuture<Void>>> jobs =
       new ConcurrentLinkedQueue<>();
@@ -127,6 +130,8 @@ public class CodyCompletionsManager {
                           this.clearCompletions(editor);
                           inlayModel.addInlineElement(offset, true, renderer);
                         });
+              } catch (IllegalArgumentException argException) {
+                  logger.error("access token is not configured : " + argException.getMessage(), argException);
               } catch (Exception e) {
                 // TODO: do something smarter with unexpected errors.
                 e.printStackTrace();
