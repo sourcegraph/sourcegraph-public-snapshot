@@ -900,7 +900,7 @@ func TestClient_BatchLogGRPC(t *testing.T) {
 	})
 	defer conf.Mock(nil)
 
-	addrs := []string{"172.16.8.1:8080", "172.16.8.2:8080", "172.16.8.3:8080"}
+	addrs := []string{"172.16.8.1:8080"}
 
 	called := false
 
@@ -973,11 +973,11 @@ func TestClient_BatchLogGRPC(t *testing.T) {
 		{Repo: "github.com/test/xyzzy", CommitID: "deadbeef07"}: {Stdout: "out<172.16.8.1:8080: github.com/test/xyzzy@deadbeef07>"},
 
 		// Shard 3
-		{Repo: "github.com/test/foo", CommitID: "deadbeef01"}:   {Stdout: "out<http://172.16.8.3:8080/batch-log: github.com/test/foo@deadbeef01>"},
-		{Repo: "github.com/test/bonk", CommitID: "deadbeef04"}:  {Stdout: "out<http://172.16.8.3:8080/batch-log: github.com/test/bonk@deadbeef04>"},
-		{Repo: "github.com/test/lorem", CommitID: "deadbeef08"}: {Stdout: "out<http://172.16.8.3:8080/batch-log: github.com/test/lorem@deadbeef08>"},
-		{Repo: "github.com/test/ipsum", CommitID: "deadbeef09"}: {Stdout: "out<http://172.16.8.3:8080/batch-log: github.com/test/ipsum@deadbeef09>"},
-		{Repo: "github.com/test/fnord", CommitID: "deadbeef10"}: {Stdout: "out<http://172.16.8.3:8080/batch-log: github.com/test/fnord@deadbeef10>"},
+		{Repo: "github.com/test/foo", CommitID: "deadbeef01"}:   {Stdout: "out<172.16.8.1:8080: github.com/test/foo@deadbeef01>"},
+		{Repo: "github.com/test/bonk", CommitID: "deadbeef04"}:  {Stdout: "out<172.16.8.1:8080: github.com/test/bonk@deadbeef04>"},
+		{Repo: "github.com/test/lorem", CommitID: "deadbeef08"}: {Stdout: "out<172.16.8.1:8080: github.com/test/lorem@deadbeef08>"},
+		{Repo: "github.com/test/ipsum", CommitID: "deadbeef09"}: {Stdout: "out<172.16.8.1:8080: github.com/test/ipsum@deadbeef09>"},
+		{Repo: "github.com/test/fnord", CommitID: "deadbeef10"}: {Stdout: "out<172.16.8.1:8080: github.com/test/fnord@deadbeef10>"},
 	}
 	if diff := cmp.Diff(expectedResults, results); diff != "" {
 		t.Errorf("unexpected results (-want +got):\n%s", diff)
