@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/adapters"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -152,6 +153,33 @@ func (gs *GRPCServer) doExec(ctx context.Context, logger log.Logger, req *protoc
 	}
 	return nil
 
+}
+
+func (gs *GRPCServer) GetObject(ctx context.Context, req *proto.GetObjectRequest) (*proto.GetObjectResponse, error) {
+	gitAdapter := &adapters.Git{
+		ReposDir: gs.Server.ReposDir,
+	}
+
+	getObjectService := gitdomain.GetObjectService{
+		RevParse:      gitAdapter.RevParse,
+		GetObjectType: gitAdapter.GetObjectType,
+	}
+
+	var internalReq protocol.GetObjectRequest
+	internalReq.FromProto(req)
+	accesslog.Record(ctx, string(req.Repo), log.String("objectname", internalReq.ObjectName))
+
+	obj, err := getObjectService.GetObject(ctx, internalReq.Repo, internalReq.ObjectName)
+	if err != nil {
+		gs.Server.Logger.Error("getting object", log.Error(err))
+		return nil, err
+	}
+
+	resp := protocol.GetObjectResponse{
+		Object: *obj,
+	}
+
+	return resp.ToProto(), nil
 }
 
 func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService_P4ExecServer) error {

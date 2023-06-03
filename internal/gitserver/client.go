@@ -1583,32 +1583,51 @@ func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 		Repo:       repo,
 		ObjectName: objectName,
 	}
-	resp, err := c.httpPost(ctx, req.Repo, "commands/get-object", req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		c.logger.Warn("reading gitserver get-object response", sglog.Error(err))
-		return nil, &url.Error{
-			URL: resp.Request.URL.String(),
-			Op:  "GetObject",
-			Err: errors.Errorf("GetObject: http status %d, %s", resp.StatusCode, readResponseBody(resp.Body)),
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		client, err := c.ClientForRepo(req.Repo)
+		if err != nil {
+			return nil, err
 		}
-	}
 
-	var res protocol.GetObjectResponse
-	if err = json.NewDecoder(resp.Body).Decode(&res); err != nil {
-		c.logger.Warn("decoding gitserver get-object response", sglog.Error(err))
-		return nil, &url.Error{
-			URL: resp.Request.URL.String(),
-			Op:  "GetObject",
-			Err: errors.Errorf("GetObject: http status %d, failed to decode response body: %v", resp.StatusCode, err),
+		grpcResp, err := client.GetObject(ctx, req.ToProto())
+		if err != nil {
+
+			return nil, err
 		}
-	}
 
-	return &res.Object, nil
+		var res protocol.GetObjectResponse
+		res.FromProto(grpcResp)
+
+		return &res.Object, nil
+
+	} else {
+		resp, err := c.httpPost(ctx, req.Repo, "commands/get-object", req)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			c.logger.Warn("reading gitserver get-object response", sglog.Error(err))
+			return nil, &url.Error{
+				URL: resp.Request.URL.String(),
+				Op:  "GetObject",
+				Err: errors.Errorf("GetObject: http status %d, %s", resp.StatusCode, readResponseBody(resp.Body)),
+			}
+		}
+
+		var res protocol.GetObjectResponse
+		if err = json.NewDecoder(resp.Body).Decode(&res); err != nil {
+			c.logger.Warn("decoding gitserver get-object response", sglog.Error(err))
+			return nil, &url.Error{
+				URL: resp.Request.URL.String(),
+				Op:  "GetObject",
+				Err: errors.Errorf("GetObject: http status %d, failed to decode response body: %v", resp.StatusCode, err),
+			}
+		}
+
+		return &res.Object, nil
+	}
 }
 
 var ambiguousArgPattern = lazyregexp.New(`ambiguous argument '([^']+)'`)

@@ -754,6 +754,37 @@ type GetObjectRequest struct {
 	ObjectName string
 }
 
+func (r *GetObjectRequest) ToProto() *proto.GetObjectRequest {
+	return &proto.GetObjectRequest{
+		Repo:       string(r.Repo),
+		ObjectName: r.ObjectName,
+	}
+}
+
+func (r *GetObjectRequest) FromProto(p *proto.GetObjectRequest) {
+	*r = GetObjectRequest{
+		Repo:       api.RepoName(p.GetRepo()),
+		ObjectName: p.GetObjectName(),
+	}
+}
+
 type GetObjectResponse struct {
 	Object gitdomain.GitObject
+}
+
+func (r *GetObjectResponse) ToProto() *proto.GetObjectResponse {
+	return &proto.GetObjectResponse{
+		Object: r.Object.ToProto(),
+	}
+}
+
+func (r *GetObjectResponse) FromProto(p *proto.GetObjectResponse) {
+	obj := p.GetObject()
+
+	var gitObj gitdomain.GitObject
+	gitObj.FromProto(obj)
+	*r = GetObjectResponse{
+		Object: gitObj,
+	}
+
 }
