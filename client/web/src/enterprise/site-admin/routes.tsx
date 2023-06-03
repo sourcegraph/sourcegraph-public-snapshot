@@ -165,11 +165,6 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             path: '/own-signal-page',
             render: () => <OwnStatusPage />,
         },
-        {
-            exact: true,
-            path: '/analytics/own',
-            render: () => <OwnAnalyticsPage />,
-        },
 
         // Code intelligence redirect
         {
@@ -223,6 +218,13 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             path: '/roles',
             exact: true,
             render: props => <SiteAdminRolesPage {...props} />,
+        },
+
+        // Own analytics
+        {
+            exact: true,
+            path: '/analytics/own',
+            render: () => <OwnAnalyticsPage />,
         },
     ] as readonly (SiteAdminAreaRoute | undefined)[]
 ).filter(Boolean) as readonly SiteAdminAreaRoute[]
