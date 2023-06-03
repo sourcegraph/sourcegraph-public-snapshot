@@ -122,40 +122,82 @@ func TestProtoRoundTrip(t *testing.T) {
 }
 
 func TestClient_Remove(t *testing.T) {
-	repo := api.RepoName("github.com/sourcegraph/sourcegraph")
-	addrs := []string{"172.16.8.1:8080", "172.16.8.2:8080"}
+	test := func(t *testing.T, called *bool) {
+		repo := api.RepoName("github.com/sourcegraph/sourcegraph")
+		addrs := []string{"172.16.8.1:8080", "172.16.8.2:8080"}
 
-	expected := "http://172.16.8.1:8080"
-	source := gitserver.NewTestClientSource(t, addrs)
+		expected := "http://172.16.8.1:8080"
 
-	cli := gitserver.NewTestClient(
-		httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
-			switch r.URL.String() {
-			// Ensure that the request was received by the "expected" gitserver instance - where
-			// expected is the gitserver instance according to the Rendezvous hashing scheme.
-			// For anything else apart from this we return an error.
-			case expected + "/delete":
-				return &http.Response{
-					StatusCode: 200,
-					Body:       io.NopCloser(bytes.NewBufferString("{}")),
-				}, nil
-			default:
-				return nil, errors.Newf("unexpected URL: %q", r.URL.String())
+		source := gitserver.NewTestClientSource(t, addrs, func(o *gitserver.TestClientSourceOptions) {
+			o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+				mockRepoDelete := func(ctx context.Context, in *proto.RepoDeleteRequest, opts ...grpc.CallOption) (*proto.RepoDeleteResponse, error) {
+					*called = true
+					return nil, nil
+				}
+				return &mockClient{
+					mockRepoDelete: mockRepoDelete,
+				}
 			}
-		}),
+		})
+		cli := gitserver.NewTestClient(
+			httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
+				switch r.URL.String() {
+				// Ensure that the request was received by the "expected" gitserver instance - where
+				// expected is the gitserver instance according to the Rendezvous hashing scheme.
+				// For anything else apart from this we return an error.
+				case expected + "/delete":
+					return &http.Response{
+						StatusCode: 200,
+						Body:       io.NopCloser(bytes.NewBufferString("{}")),
+					}, nil
+				default:
+					return nil, errors.Newf("unexpected URL: %q", r.URL.String())
+				}
+			}),
 
-		source,
-	)
+			source,
+		)
 
-	err := cli.Remove(context.Background(), repo)
-	if err != nil {
-		t.Fatalf("expected URL %q, but got err %q", expected, err)
+		err := cli.Remove(context.Background(), repo)
+		if err != nil {
+			t.Fatalf("expected URL %q, but got err %q", expected, err)
+		}
+
+		err = cli.RemoveFrom(context.Background(), repo, "172.16.8.1:8080")
+		if err != nil {
+			t.Fatalf("expected URL %q, but got err %q", expected, err)
+		}
 	}
 
-	err = cli.RemoveFrom(context.Background(), repo, "172.16.8.1:8080")
-	if err != nil {
-		t.Fatalf("expected URL %q, but got err %q", expected, err)
-	}
+	t.Run("GRPC", func(t *testing.T) {
+		called := false
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{
+					EnableGRPC: true,
+				},
+			},
+		})
+		test(t, &called)
+		if !called {
+			t.Fatal("grpc client not called")
+		}
+	})
+	t.Run("HTTP", func(t *testing.T) {
+		called := false
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{
+					EnableGRPC: false,
+				},
+			},
+		})
+		test(t, &called)
+		if called {
+			t.Fatal("grpc client called")
+		}
+	})
+
 }
 
 func TestClient_ArchiveReader(t *testing.T) {
@@ -1065,8 +1107,14 @@ type spyGitserverServiceClient struct {
 	archiveCalled     bool
 	repoClone         bool
 	repoCloneProgress bool
+	repoDelete        bool
 	reposStatsCalled  bool
 	base              proto.GitserverServiceClient
+}
+
+// RepoDelete implements v1.GitserverServiceClient
+func (s *spyGitserverServiceClient) RepoDelete(ctx context.Context, in *proto.RepoDeleteRequest, opts ...grpc.CallOption) (*proto.RepoDeleteResponse, error) {
+	return s.base.RepoDelete(ctx, in, opts...)
 }
 
 // RepoCloneProgress implements v1.GitserverServiceClient
@@ -1112,9 +1160,15 @@ type mockClient struct {
 	mockIsRepoCloneable   func(ctx context.Context, in *proto.IsRepoCloneableRequest, opts ...grpc.CallOption) (*proto.IsRepoCloneableResponse, error)
 	mockRepoClone         func(ctx context.Context, in *proto.RepoCloneRequest, opts ...grpc.CallOption) (*proto.RepoCloneResponse, error)
 	mockRepoCloneProgress func(ctx context.Context, in *proto.RepoCloneProgressRequest, opts ...grpc.CallOption) (*proto.RepoCloneProgressResponse, error)
+	mockRepoDelete        func(ctx context.Context, in *proto.RepoDeleteRequest, opts ...grpc.CallOption) (*proto.RepoDeleteResponse, error)
 	mockRepoStats         func(ctx context.Context, in *proto.ReposStatsRequest, opts ...grpc.CallOption) (*proto.ReposStatsResponse, error)
 	mockArchive           func(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error)
 	mockSearch            func(ctx context.Context, in *proto.SearchRequest, opts ...grpc.CallOption) (proto.GitserverService_SearchClient, error)
+}
+
+// RepoDelete implements v1.GitserverServiceClient
+func (mc *mockClient) RepoDelete(ctx context.Context, in *proto.RepoDeleteRequest, opts ...grpc.CallOption) (*proto.RepoDeleteResponse, error) {
+	return mc.mockRepoDelete(ctx, in, opts...)
 }
 
 // RepoCloneProgress implements v1.GitserverServiceClient

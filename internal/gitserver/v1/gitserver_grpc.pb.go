@@ -25,6 +25,7 @@ const (
 	GitserverService_Archive_FullMethodName           = "/gitserver.v1.GitserverService/Archive"
 	GitserverService_RepoClone_FullMethodName         = "/gitserver.v1.GitserverService/RepoClone"
 	GitserverService_RepoCloneProgress_FullMethodName = "/gitserver.v1.GitserverService/RepoCloneProgress"
+	GitserverService_RepoDelete_FullMethodName        = "/gitserver.v1.GitserverService/RepoDelete"
 	GitserverService_ReposStats_FullMethodName        = "/gitserver.v1.GitserverService/ReposStats"
 )
 
@@ -38,6 +39,7 @@ type GitserverServiceClient interface {
 	Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (GitserverService_ArchiveClient, error)
 	RepoClone(ctx context.Context, in *RepoCloneRequest, opts ...grpc.CallOption) (*RepoCloneResponse, error)
 	RepoCloneProgress(ctx context.Context, in *RepoCloneProgressRequest, opts ...grpc.CallOption) (*RepoCloneProgressResponse, error)
+	RepoDelete(ctx context.Context, in *RepoDeleteRequest, opts ...grpc.CallOption) (*RepoDeleteResponse, error)
 	ReposStats(ctx context.Context, in *ReposStatsRequest, opts ...grpc.CallOption) (*ReposStatsResponse, error)
 }
 
@@ -172,6 +174,15 @@ func (c *gitserverServiceClient) RepoCloneProgress(ctx context.Context, in *Repo
 	return out, nil
 }
 
+func (c *gitserverServiceClient) RepoDelete(ctx context.Context, in *RepoDeleteRequest, opts ...grpc.CallOption) (*RepoDeleteResponse, error) {
+	out := new(RepoDeleteResponse)
+	err := c.cc.Invoke(ctx, GitserverService_RepoDelete_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *gitserverServiceClient) ReposStats(ctx context.Context, in *ReposStatsRequest, opts ...grpc.CallOption) (*ReposStatsResponse, error) {
 	out := new(ReposStatsResponse)
 	err := c.cc.Invoke(ctx, GitserverService_ReposStats_FullMethodName, in, out, opts...)
@@ -191,6 +202,7 @@ type GitserverServiceServer interface {
 	Archive(*ArchiveRequest, GitserverService_ArchiveServer) error
 	RepoClone(context.Context, *RepoCloneRequest) (*RepoCloneResponse, error)
 	RepoCloneProgress(context.Context, *RepoCloneProgressRequest) (*RepoCloneProgressResponse, error)
+	RepoDelete(context.Context, *RepoDeleteRequest) (*RepoDeleteResponse, error)
 	ReposStats(context.Context, *ReposStatsRequest) (*ReposStatsResponse, error)
 	mustEmbedUnimplementedGitserverServiceServer()
 }
@@ -216,6 +228,9 @@ func (UnimplementedGitserverServiceServer) RepoClone(context.Context, *RepoClone
 }
 func (UnimplementedGitserverServiceServer) RepoCloneProgress(context.Context, *RepoCloneProgressRequest) (*RepoCloneProgressResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RepoCloneProgress not implemented")
+}
+func (UnimplementedGitserverServiceServer) RepoDelete(context.Context, *RepoDeleteRequest) (*RepoDeleteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RepoDelete not implemented")
 }
 func (UnimplementedGitserverServiceServer) ReposStats(context.Context, *ReposStatsRequest) (*ReposStatsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ReposStats not implemented")
@@ -350,6 +365,24 @@ func _GitserverService_RepoCloneProgress_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _GitserverService_RepoDelete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RepoDeleteRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).RepoDelete(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_RepoDelete_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).RepoDelete(ctx, req.(*RepoDeleteRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _GitserverService_ReposStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ReposStatsRequest)
 	if err := dec(in); err != nil {
@@ -386,6 +419,10 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RepoCloneProgress",
 			Handler:    _GitserverService_RepoCloneProgress_Handler,
+		},
+		{
+			MethodName: "RepoDelete",
+			Handler:    _GitserverService_RepoDelete_Handler,
 		},
 		{
 			MethodName: "ReposStats",

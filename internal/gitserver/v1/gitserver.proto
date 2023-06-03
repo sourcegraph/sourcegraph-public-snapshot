@@ -13,6 +13,7 @@ service GitserverService {
   rpc Archive(ArchiveRequest) returns (stream ArchiveResponse) {}
   rpc RepoClone(RepoCloneRequest) returns (RepoCloneResponse) {}
   rpc RepoCloneProgress(RepoCloneProgressRequest) returns (RepoCloneProgressResponse) {}
+  rpc RepoDelete(RepoDeleteRequest) returns (RepoDeleteResponse) {}
   rpc ReposStats(ReposStatsRequest) returns (ReposStatsResponse) {}
 }
 
@@ -264,6 +265,15 @@ message RepoCloneProgressResponse {
   // results is a map from repository name to clone progress information
   map<string, RepoCloneProgress> results = 1;
 }
+
+// RepoDeleteRequest is a request to delete a repository.
+message RepoDeleteRequest {
+  // repo is the name of the repo to delete.
+  string repo = 1;
+}
+
+// RepoDeleteResponse is the response from the RepoDelete RPC.
+message RepoDeleteResponse {}
 
 // ReposStatsRequest is a empty request for the ReposStats RPC.
 message ReposStatsRequest {}

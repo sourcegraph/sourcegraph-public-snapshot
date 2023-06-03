@@ -195,6 +195,17 @@ func (gs *GRPCServer) RepoCloneProgress(ctx context.Context, req *proto.RepoClon
 	return resp.ToProto(), nil
 }
 
+func (gs *GRPCServer) RepoDelete(ctx context.Context, req *proto.RepoDeleteRequest) (*proto.RepoDeleteResponse, error) {
+	repo := req.GetRepo()
+
+	if err := gs.Server.deleteRepo(ctx, api.UndeletedRepoName(api.RepoName(repo))); err != nil {
+		gs.Server.Logger.Error("failed to delete repository", log.String("repo", string(repo)), log.Error(err))
+		return &proto.RepoDeleteResponse{}, status.Errorf(codes.Internal, "failed to delete repository %s: %s", repo, err)
+	}
+	gs.Server.Logger.Info("deleted repository", log.String("repo", string(repo)))
+	return &proto.RepoDeleteResponse{}, nil
+}
+
 func (gs *GRPCServer) ReposStats(ctx context.Context, req *proto.ReposStatsRequest) (*proto.ReposStatsResponse, error) {
 	b, err := gs.Server.readReposStatsFile(filepath.Join(gs.Server.ReposDir, reposStatsName))
 	if err != nil {
