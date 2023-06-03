@@ -1389,9 +1389,21 @@ func (c *clientImplementor) doReposStats(ctx context.Context, addr string) (*pro
 
 func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) error {
 	// In case the repo has already been deleted from the database we need to pass
-	// the old name in order to land on the correct gitserver instance.
-	addr := c.AddrForRepo(api.UndeletedRepoName(repo))
-	return c.RemoveFrom(ctx, repo, addr)
+	// the old name in order to land on the correct gitserver instance
+	repo = api.UndeletedRepoName(repo)
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		client, err := c.ClientForRepo(repo)
+		if err != nil {
+			return err
+		}
+		_, err = client.RepoDelete(ctx, &proto.RepoDeleteRequest{
+			Repo: string(repo),
+		})
+		return err
+	} else {
+		addr := c.AddrForRepo(repo)
+		return c.RemoveFrom(ctx, repo, addr)
+	}
 }
 
 func (c *clientImplementor) RemoveFrom(ctx context.Context, repo api.RepoName, from string) error {
