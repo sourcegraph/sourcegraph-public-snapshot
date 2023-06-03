@@ -1061,8 +1061,6 @@ func (c *clientImplementor) gitCommand(repo api.RepoName, arg ...string) GitComm
 }
 
 func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.RepoName, since time.Duration) (*protocol.RepoUpdateResponse, error) {
-	var info protocol.RepoUpdateResponse
-
 	req := &protocol.RepoUpdateRequest{
 		Repo:  repo,
 		Since: since,
@@ -1078,6 +1076,8 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 		if err != nil {
 			return nil, err
 		}
+
+		var info protocol.RepoUpdateResponse
 		info.FromProto(resp)
 		return &info, nil
 
@@ -1094,6 +1094,7 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 				Err: errors.Errorf("RepoUpdate: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
 			}
 		}
+		var info protocol.RepoUpdateResponse
 		err = json.NewDecoder(resp.Body).Decode(&info)
 		return &info, err
 	}
