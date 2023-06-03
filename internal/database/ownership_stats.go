@@ -26,7 +26,7 @@ type FileOwnershipAggregate interface {
 type TreeCounts struct {
 	// CodeownersReference is the text found in CODEOWNERS files that matched the counted files in this file tree.
 	CodeownersReference string
-	// CodeownedFileCount is the number of files that matched given owner in this file tree
+	// CodeownedFileCount is the number of files that matched given owner in this file tree.
 	CodeownedFileCount int
 }
 
