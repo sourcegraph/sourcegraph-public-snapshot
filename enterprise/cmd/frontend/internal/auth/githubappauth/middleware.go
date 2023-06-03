@@ -409,7 +409,12 @@ func getAPIUrl(req *http.Request, code string) (string, error) {
 	return u, nil
 }
 
+var MockCreateGitHubApp func(conversionURL string, domain types.GitHubAppDomain) (*ghtypes.GitHubApp, error)
+
 func createGitHubApp(conversionURL string, domain types.GitHubAppDomain) (*ghtypes.GitHubApp, error) {
+	if MockCreateGitHubApp != nil {
+		return MockCreateGitHubApp(conversionURL, domain)
+	}
 	r, err := http.NewRequest("POST", conversionURL, http.NoBody)
 	if err != nil {
 		return nil, err
