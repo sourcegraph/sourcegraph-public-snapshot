@@ -890,6 +890,104 @@ func TestClient_ResolveRevisions(t *testing.T) {
 
 }
 
+func TestClient_BatchLogGRPC(t *testing.T) {
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				EnableGRPC: true,
+			},
+		},
+	})
+	defer conf.Mock(nil)
+
+	addrs := []string{"172.16.8.1:8080"}
+
+	called := false
+
+	source := gitserver.NewTestClientSource(t, addrs, func(o *gitserver.TestClientSourceOptions) {
+		o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+			mockBatchLog := func(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (*proto.BatchLogResponse, error) {
+				called = true
+
+				var req protocol.BatchLogRequest
+				req.FromProto(in)
+
+				var results []protocol.BatchLogResult
+				for _, repoCommit := range req.RepoCommits {
+					results = append(results, protocol.BatchLogResult{
+						RepoCommit:    repoCommit,
+						CommandOutput: fmt.Sprintf("out<%s: %s@%s>", addrs[0], repoCommit.Repo, repoCommit.CommitID),
+						CommandError:  "",
+					})
+
+				}
+
+				var resp protocol.BatchLogResponse
+				resp.Results = results
+				return resp.ToProto(), nil
+			}
+
+			return &mockClient{mockBatchLog: mockBatchLog}
+		}
+	})
+
+	cli := gitserver.NewTestClient(&http.Client{}, source)
+
+	opts := gitserver.BatchLogOptions{
+		RepoCommits: []api.RepoCommit{
+			{Repo: api.RepoName("github.com/test/foo"), CommitID: api.CommitID("deadbeef01")},
+			{Repo: api.RepoName("github.com/test/bar"), CommitID: api.CommitID("deadbeef02")},
+			{Repo: api.RepoName("github.com/test/baz"), CommitID: api.CommitID("deadbeef03")},
+			{Repo: api.RepoName("github.com/test/bonk"), CommitID: api.CommitID("deadbeef04")},
+			{Repo: api.RepoName("github.com/test/quux"), CommitID: api.CommitID("deadbeef05")},
+			{Repo: api.RepoName("github.com/test/honk"), CommitID: api.CommitID("deadbeef06")},
+			{Repo: api.RepoName("github.com/test/xyzzy"), CommitID: api.CommitID("deadbeef07")},
+			{Repo: api.RepoName("github.com/test/lorem"), CommitID: api.CommitID("deadbeef08")},
+			{Repo: api.RepoName("github.com/test/ipsum"), CommitID: api.CommitID("deadbeef09")},
+			{Repo: api.RepoName("github.com/test/fnord"), CommitID: api.CommitID("deadbeef10")},
+		},
+		Format: "--format=test",
+	}
+
+	results := map[api.RepoCommit]gitserver.RawBatchLogResult{}
+	var mu sync.Mutex
+
+	if err := cli.BatchLog(context.Background(), opts, func(repoCommit api.RepoCommit, gitLogResult gitserver.RawBatchLogResult) error {
+		mu.Lock()
+		defer mu.Unlock()
+
+		results[repoCommit] = gitLogResult
+		return nil
+	}); err != nil {
+		t.Fatalf("unexpected error performing batch log: %s", err)
+	}
+
+	expectedResults := map[api.RepoCommit]gitserver.RawBatchLogResult{
+		// Shard 1
+		{Repo: "github.com/test/baz", CommitID: "deadbeef03"}:  {Stdout: "out<172.16.8.1:8080: github.com/test/baz@deadbeef03>"},
+		{Repo: "github.com/test/quux", CommitID: "deadbeef05"}: {Stdout: "out<172.16.8.1:8080: github.com/test/quux@deadbeef05>"},
+		{Repo: "github.com/test/honk", CommitID: "deadbeef06"}: {Stdout: "out<172.16.8.1:8080: github.com/test/honk@deadbeef06>"},
+
+		// Shard 2
+		{Repo: "github.com/test/bar", CommitID: "deadbeef02"}:   {Stdout: "out<172.16.8.1:8080: github.com/test/bar@deadbeef02>"},
+		{Repo: "github.com/test/xyzzy", CommitID: "deadbeef07"}: {Stdout: "out<172.16.8.1:8080: github.com/test/xyzzy@deadbeef07>"},
+
+		// Shard 3
+		{Repo: "github.com/test/foo", CommitID: "deadbeef01"}:   {Stdout: "out<172.16.8.1:8080: github.com/test/foo@deadbeef01>"},
+		{Repo: "github.com/test/bonk", CommitID: "deadbeef04"}:  {Stdout: "out<172.16.8.1:8080: github.com/test/bonk@deadbeef04>"},
+		{Repo: "github.com/test/lorem", CommitID: "deadbeef08"}: {Stdout: "out<172.16.8.1:8080: github.com/test/lorem@deadbeef08>"},
+		{Repo: "github.com/test/ipsum", CommitID: "deadbeef09"}: {Stdout: "out<172.16.8.1:8080: github.com/test/ipsum@deadbeef09>"},
+		{Repo: "github.com/test/fnord", CommitID: "deadbeef10"}: {Stdout: "out<172.16.8.1:8080: github.com/test/fnord@deadbeef10>"},
+	}
+	if diff := cmp.Diff(expectedResults, results); diff != "" {
+		t.Errorf("unexpected results (-want +got):\n%s", diff)
+	}
+
+	if !called {
+		t.Error("expected mockBatchLog to be called")
+	}
+}
+
 func TestClient_BatchLog(t *testing.T) {
 	addrs := []string{"172.16.8.1:8080", "172.16.8.2:8080", "172.16.8.3:8080"}
 	source := gitserver.NewTestClientSource(t, addrs)
@@ -1301,6 +1399,7 @@ func TestGitserverClient_RepoClone(t *testing.T) {
 }
 
 type spyGitserverServiceClient struct {
+	batchlogCalled                    bool
 	createCommitFromPatchBinaryCalled bool
 	execCalled                        bool
 	getObjectCalled                   bool
@@ -1315,6 +1414,11 @@ type spyGitserverServiceClient struct {
 	reposStatsCalled                  bool
 	p4ExecCalled                      bool
 	base                              proto.GitserverServiceClient
+}
+
+// BatchLog implements v1.GitserverServiceClient.
+func (s *spyGitserverServiceClient) BatchLog(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (*proto.BatchLogResponse, error) {
+	return s.base.BatchLog(ctx, in, opts...)
 }
 
 // GetObject implements v1.GitserverServiceClient.
@@ -1391,6 +1495,7 @@ func (s *spyGitserverServiceClient) ReposStats(ctx context.Context, in *proto.Re
 var _ proto.GitserverServiceClient = &spyGitserverServiceClient{}
 
 type mockClient struct {
+	mockBatchLog                    func(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (*proto.BatchLogResponse, error)
 	mockCreateCommitFromPatchBinary func(ctx context.Context, in *proto.CreateCommitFromPatchBinaryRequest, opts ...grpc.CallOption) (*proto.CreateCommitFromPatchBinaryResponse, error)
 	mockExec                        func(ctx context.Context, in *proto.ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_ExecClient, error)
 	mockGetObject                   func(ctx context.Context, in *proto.GetObjectRequest, opts ...grpc.CallOption) (*proto.GetObjectResponse, error)
@@ -1404,6 +1509,11 @@ type mockClient struct {
 	mockArchive                     func(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error)
 	mockSearch                      func(ctx context.Context, in *proto.SearchRequest, opts ...grpc.CallOption) (proto.GitserverService_SearchClient, error)
 	mockP4Exec                      func(ctx context.Context, in *proto.P4ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_P4ExecClient, error)
+}
+
+// BatchLog implements v1.GitserverServiceClient.
+func (mc *mockClient) BatchLog(ctx context.Context, in *proto.BatchLogRequest, opts ...grpc.CallOption) (*proto.BatchLogResponse, error) {
+	return mc.mockBatchLog(ctx, in, opts...)
 }
 
 // GetObject implements v1.GitserverServiceClient.

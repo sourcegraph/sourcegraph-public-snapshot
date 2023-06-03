@@ -10,6 +10,8 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
@@ -56,6 +58,20 @@ type RevSpec string
 type RepoCommit struct {
 	Repo     RepoName
 	CommitID CommitID
+}
+
+func (rc *RepoCommit) ToProto() *proto.RepoCommit {
+	return &proto.RepoCommit{
+		Repo:   string(rc.Repo),
+		Commit: string(rc.CommitID),
+	}
+}
+
+func (rc *RepoCommit) FromProto(p *proto.RepoCommit) {
+	*rc = RepoCommit{
+		Repo:     RepoName(p.GetRepo()),
+		CommitID: CommitID(p.GetCommit()),
+	}
 }
 
 func (rc RepoCommit) Attrs() []attribute.KeyValue {

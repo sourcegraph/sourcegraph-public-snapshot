@@ -1421,6 +1421,106 @@ func matchCount(cm *protocol.CommitMatch) int {
 	return 1
 }
 
+func (s *Server) performGitLogCommand(ctx context.Context, repoCommit api.RepoCommit, format string) (output string, isRepoCloned bool, err error) {
+	ctx, _, endObservation := s.operations.batchLogSingle.With(ctx, &err, observation.Args{
+		Attrs: append(
+			[]attribute.KeyValue{
+				attribute.String("format", format),
+			},
+			repoCommit.Attrs()...,
+		),
+	})
+	defer func() {
+		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
+			attribute.Bool("isRepoCloned", isRepoCloned),
+		}})
+	}()
+
+	dir := s.dir(repoCommit.Repo)
+	if !repoCloned(dir) {
+		return "", false, nil
+	}
+
+	var buf bytes.Buffer
+
+	commitId := string(repoCommit.CommitID)
+	// make sure CommitID is not an arg
+	if commitId[0] == '-' {
+		return "", true, errors.New("commit ID starting with - is not allowed")
+	}
+
+	cmd := s.recordingCommandFactory.Command(ctx, s.Logger, "git", "log", "-n", "1", "--name-only", format, commitId)
+	dir.Set(cmd.Unwrap())
+	cmd.Unwrap().Stdout = &buf
+
+	if _, err := runCommand(ctx, cmd); err != nil {
+		return "", true, err
+	}
+
+	return buf.String(), true, nil
+}
+
+func (s *Server) batchGitLogInstrumentedHandler(ctx context.Context, req protocol.BatchLogRequest) (resp protocol.BatchLogResponse, err error) {
+	ctx, _, endObservation := s.operations.batchLog.With(ctx, &err, observation.Args{})
+	defer func() {
+		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
+			attribute.String("results", fmt.Sprintf("%+v", resp.Results)),
+		}})
+	}()
+
+	// Perform requests in each repository in the input batch. We perform these commands
+	// concurrently, but only allow for so many commands to be in-flight at a time so that
+	// we don't overwhelm a shard with either a large request or too many concurrent batch
+	// requests.
+
+	g, ctx := errgroup.WithContext(ctx)
+	results := make([]protocol.BatchLogResult, len(req.RepoCommits))
+
+	if s.GlobalBatchLogSemaphore == nil {
+		return protocol.BatchLogResponse{}, errors.New("s.GlobalBatchLogSemaphore not initialized")
+	}
+
+	for i, repoCommit := range req.RepoCommits {
+		// Avoid capture of loop variables
+		i, repoCommit := i, repoCommit
+
+		start := time.Now()
+		if err := s.GlobalBatchLogSemaphore.Acquire(ctx, 1); err != nil {
+			return resp, err
+		}
+		s.operations.batchLogSemaphoreWait.Observe(time.Since(start).Seconds())
+
+		g.Go(func() error {
+			defer s.GlobalBatchLogSemaphore.Release(1)
+
+			output, isRepoCloned, gitLogErr := s.performGitLogCommand(ctx, repoCommit, req.Format)
+			if gitLogErr == nil && !isRepoCloned {
+				gitLogErr = errors.Newf("repo not found")
+			}
+			var errMessage string
+			if gitLogErr != nil {
+				errMessage = gitLogErr.Error()
+			}
+
+			// Concurrently write results to shared slice. This slice is already properly
+			// sized, and each goroutine writes to a unique index exactly once. There should
+			// be no data race conditions possible here.
+
+			results[i] = protocol.BatchLogResult{
+				RepoCommit:    repoCommit,
+				CommandOutput: output,
+				CommandError:  errMessage,
+			}
+			return nil
+		})
+	}
+
+	if err = g.Wait(); err != nil {
+		return
+	}
+	return protocol.BatchLogResponse{Results: results}, nil
+}
+
 func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 	// 🚨 SECURITY: Only allow POST requests.
 	if strings.ToUpper(r.Method) != http.MethodPost {
@@ -1428,137 +1528,35 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	operations := s.ensureOperations()
+	s.operations = s.ensureOperations()
 
-	// Run git log for a single repository.
-	// Invoked multiple times from the handler defined below.
-	performGitLogCommand := func(ctx context.Context, repoCommit api.RepoCommit, format string) (output string, isRepoCloned bool, err error) {
-		ctx, _, endObservation := operations.batchLogSingle.With(ctx, &err, observation.Args{
-			Attrs: append(
-				[]attribute.KeyValue{
-					attribute.String("format", format),
-				},
-				repoCommit.Attrs()...,
-			),
-		})
-		defer func() {
-			endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
-				attribute.Bool("isRepoCloned", isRepoCloned),
-			}})
-		}()
-
-		dir := s.dir(repoCommit.Repo)
-		if !repoCloned(dir) {
-			return "", false, nil
-		}
-
-		var buf bytes.Buffer
-
-		commitId := string(repoCommit.CommitID)
-		// make sure CommitID is not an arg
-		if commitId[0] == '-' {
-			return "", true, errors.New("commit ID starting with - is not allowed")
-		}
-
-		cmd := s.recordingCommandFactory.Command(ctx, s.Logger, "git", "log", "-n", "1", "--name-only", format, commitId)
-		dir.Set(cmd.Unwrap())
-		cmd.Unwrap().Stdout = &buf
-
-		if _, err := runCommand(ctx, cmd); err != nil {
-			return "", true, err
-		}
-
-		return buf.String(), true, nil
-	}
-
-	// Handles the /batch-log route
-	instrumentedHandler := func(ctx context.Context) (statusCodeOnError int, err error) {
-		ctx, logger, endObservation := operations.batchLog.With(ctx, &err, observation.Args{})
-		defer func() {
-			endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
-				attribute.Int("statusCodeOnError", statusCodeOnError),
-			}})
-		}()
-
-		// Read request body
-		var req protocol.BatchLogRequest
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			return http.StatusBadRequest, err
-		}
-		logger.AddEvent("read request.body", req.SpanAttributes()...)
-
-		// Validate request parameters
-		if len(req.RepoCommits) == 0 {
-			// Early exit: implicitly writes 200 OK
-			_ = json.NewEncoder(w).Encode(protocol.BatchLogResponse{Results: []protocol.BatchLogResult{}})
-			return 0, nil
-		}
-		if !strings.HasPrefix(req.Format, "--format=") {
-			return http.StatusUnprocessableEntity, errors.New("format parameter expected to be of the form `--format=<git log format>`")
-		}
-
-		// Perform requests in each repository in the input batch. We perform these commands
-		// concurrently, but only allow for so many commands to be in-flight at a time so that
-		// we don't overwhelm a shard with either a large request or too many concurrent batch
-		// requests.
-
-		g, ctx := errgroup.WithContext(ctx)
-		results := make([]protocol.BatchLogResult, len(req.RepoCommits))
-
-		if s.GlobalBatchLogSemaphore == nil {
-			return http.StatusInternalServerError, errors.New("s.GlobalBatchLogSemaphore not initialized")
-		}
-
-		for i, repoCommit := range req.RepoCommits {
-			// Avoid capture of loop variables
-			i, repoCommit := i, repoCommit
-
-			start := time.Now()
-			if err := s.GlobalBatchLogSemaphore.Acquire(ctx, 1); err != nil {
-				return http.StatusInternalServerError, err
-			}
-			s.operations.batchLogSemaphoreWait.Observe(time.Since(start).Seconds())
-
-			g.Go(func() error {
-				defer s.GlobalBatchLogSemaphore.Release(1)
-
-				output, isRepoCloned, err := performGitLogCommand(ctx, repoCommit, req.Format)
-				if err == nil && !isRepoCloned {
-					err = errors.Newf("repo not found")
-				}
-				var errMessage string
-				if err != nil {
-					errMessage = err.Error()
-				}
-
-				// Concurrently write results to shared slice. This slice is already properly
-				// sized, and each goroutine writes to a unique index exactly once. There should
-				// be no data race conditions possible here.
-
-				results[i] = protocol.BatchLogResult{
-					RepoCommit:    repoCommit,
-					CommandOutput: output,
-					CommandError:  errMessage,
-				}
-				return nil
-			})
-		}
-
-		if err := g.Wait(); err != nil {
-			return http.StatusInternalServerError, err
-		}
-
-		// Write payload to client: implicitly writes 200 OK
-		_ = json.NewEncoder(w).Encode(protocol.BatchLogResponse{Results: results})
-		return 0, nil
-	}
-
-	// Handle unexpected error conditions. We expect the instrumented handler to not
-	// have written the status code or any of the body if this error value is non-nil.
-	if statusCodeOnError, err := instrumentedHandler(r.Context()); err != nil {
-		http.Error(w, err.Error(), statusCodeOnError)
+	// Read request body
+	var req protocol.BatchLogRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	// Validate request parameters
+	if len(req.RepoCommits) == 0 {
+		// Early exit: implicitly writes 200 OK
+		_ = json.NewEncoder(w).Encode(protocol.BatchLogResponse{Results: []protocol.BatchLogResult{}})
+		return
+	}
+	if !strings.HasPrefix(req.Format, "--format=") {
+		http.Error(w, "format parameter expected to be of the form `--format=<git log format>`", http.StatusUnprocessableEntity)
+		return
+	}
+
+	// Handle unexpected error conditions
+	resp, err := s.batchGitLogInstrumentedHandler(r.Context(), req)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Write payload to client: implicitly writes 200 OK
+	_ = json.NewEncoder(w).Encode(resp)
 }
 
 // ensureOperations returns the non-nil operations value supplied to this server

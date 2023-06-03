@@ -276,6 +276,28 @@ type BatchLogRequest struct {
 	Format string `json:"format"`
 }
 
+func (bl *BatchLogRequest) ToProto() *proto.BatchLogRequest {
+	repoCommits := make([]*proto.RepoCommit, 0, len(bl.RepoCommits))
+	for _, rc := range bl.RepoCommits {
+		repoCommits = append(repoCommits, rc.ToProto())
+	}
+	return &proto.BatchLogRequest{
+		RepoCommits: repoCommits,
+		Format:      bl.Format,
+	}
+}
+
+func (bl *BatchLogRequest) FromProto(p *proto.BatchLogRequest) {
+	repoCommits := make([]api.RepoCommit, 0, len(p.GetRepoCommits()))
+	for _, protoRc := range p.GetRepoCommits() {
+		var rc api.RepoCommit
+		rc.FromProto(protoRc)
+		repoCommits = append(repoCommits, rc)
+	}
+	bl.RepoCommits = repoCommits
+	bl.Format = p.GetFormat()
+}
+
 func (req BatchLogRequest) LogFields() []log.Field {
 	return []log.Field{
 		log.Int("numRepoCommits", len(req.RepoCommits)),
@@ -294,12 +316,53 @@ type BatchLogResponse struct {
 	Results []BatchLogResult `json:"results"`
 }
 
+func (bl *BatchLogResponse) ToProto() *proto.BatchLogResponse {
+	results := make([]*proto.BatchLogResult, 0, len(bl.Results))
+	for _, r := range bl.Results {
+		results = append(results, r.ToProto())
+	}
+	return &proto.BatchLogResponse{
+		Results: results,
+	}
+}
+
+func (bl *BatchLogResponse) FromProto(p *proto.BatchLogResponse) {
+	results := make([]BatchLogResult, 0, len(p.GetResults()))
+	for _, protoR := range p.GetResults() {
+		var r BatchLogResult
+		r.FromProto(protoR)
+		results = append(results, r)
+	}
+	*bl = BatchLogResponse{
+		Results: results,
+	}
+}
+
 // BatchLogResult associates a repository and commit pair from the input of a BatchLog
 // request with the result of the associated git log command.
 type BatchLogResult struct {
 	RepoCommit    api.RepoCommit `json:"repoCommit"`
 	CommandOutput string         `json:"output"`
 	CommandError  string         `json:"error,omitempty"`
+}
+
+func (bl *BatchLogResult) ToProto() *proto.BatchLogResult {
+	return &proto.BatchLogResult{
+		RepoCommit:    bl.RepoCommit.ToProto(),
+		CommandOutput: bl.CommandOutput,
+		CommandError:  &bl.CommandError,
+	}
+}
+
+func (bl *BatchLogResult) FromProto(p *proto.BatchLogResult) {
+	var rc api.RepoCommit
+	rc.FromProto(p.GetRepoCommit())
+
+	*bl = BatchLogResult{
+		RepoCommit:    rc,
+		CommandOutput: p.GetCommandOutput(),
+		CommandError:  p.GetCommandError(),
+	}
 }
 
 // P4ExecRequest is a request to execute a p4 command with given arguments.
