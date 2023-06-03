@@ -1248,7 +1248,6 @@ func TestGitserverClient_RepoClone(t *testing.T) {
 			},
 		},
 	})
-
 	db := newMockDB()
 	s := server.Server{
 		Logger:   logtest.Scoped(t),
@@ -1306,6 +1305,7 @@ type spyGitserverServiceClient struct {
 	isRepoCloneable                   bool
 	searchCalled                      bool
 	archiveCalled                     bool
+	listGitoliteCalled                bool
 	repoClone                         bool
 	repoCloneProgress                 bool
 	repoDelete                        bool
@@ -1313,6 +1313,12 @@ type spyGitserverServiceClient struct {
 	reposStatsCalled                  bool
 	p4ExecCalled                      bool
 	base                              proto.GitserverServiceClient
+}
+
+// ListGitolite implements v1.GitserverServiceClient.
+func (s *spyGitserverServiceClient) ListGitolite(ctx context.Context, in *proto.ListGitoliteRequest, opts ...grpc.CallOption) (*proto.ListGitoliteResponse, error) {
+	s.listGitoliteCalled = true
+	return s.base.ListGitolite(ctx, in, opts...)
 }
 
 // P4Exec implements v1.GitserverServiceClient.
@@ -1380,6 +1386,7 @@ type mockClient struct {
 	mockCreateCommitFromPatchBinary func(ctx context.Context, in *proto.CreateCommitFromPatchBinaryRequest, opts ...grpc.CallOption) (*proto.CreateCommitFromPatchBinaryResponse, error)
 	mockExec                        func(ctx context.Context, in *proto.ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_ExecClient, error)
 	mockIsRepoCloneable             func(ctx context.Context, in *proto.IsRepoCloneableRequest, opts ...grpc.CallOption) (*proto.IsRepoCloneableResponse, error)
+	mockListGitolite                func(ctx context.Context, in *proto.ListGitoliteRequest, opts ...grpc.CallOption) (*proto.ListGitoliteResponse, error)
 	mockRepoClone                   func(ctx context.Context, in *proto.RepoCloneRequest, opts ...grpc.CallOption) (*proto.RepoCloneResponse, error)
 	mockRepoCloneProgress           func(ctx context.Context, in *proto.RepoCloneProgressRequest, opts ...grpc.CallOption) (*proto.RepoCloneProgressResponse, error)
 	mockRepoDelete                  func(ctx context.Context, in *proto.RepoDeleteRequest, opts ...grpc.CallOption) (*proto.RepoDeleteResponse, error)
@@ -1388,6 +1395,11 @@ type mockClient struct {
 	mockArchive                     func(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error)
 	mockSearch                      func(ctx context.Context, in *proto.SearchRequest, opts ...grpc.CallOption) (proto.GitserverService_SearchClient, error)
 	mockP4Exec                      func(ctx context.Context, in *proto.P4ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_P4ExecClient, error)
+}
+
+// ListGitolite implements v1.GitserverServiceClient.
+func (mc *mockClient) ListGitolite(ctx context.Context, in *proto.ListGitoliteRequest, opts ...grpc.CallOption) (*proto.ListGitoliteResponse, error) {
+	return mc.mockListGitolite(ctx, in, opts...)
 }
 
 // P4Exec implements v1.GitserverServiceClient.

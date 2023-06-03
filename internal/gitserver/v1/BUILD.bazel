@@ -33,6 +33,7 @@ go_library(
     visibility = [
         "//cmd/gitserver/server:__pkg__",
         "//cmd/gitserver/shared:__pkg__",
+        "//internal/extsvc/gitolite:__pkg__",
         "//internal/gitserver:__pkg__",
         "//internal/gitserver/integration_tests:__pkg__",
         "//internal/gitserver/protocol:__pkg__",
