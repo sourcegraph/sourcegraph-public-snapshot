@@ -13,6 +13,7 @@ service GitserverService {
   rpc IsRepoCloneable(IsRepoCloneableRequest) returns (IsRepoCloneableResponse) {}
   rpc Search(SearchRequest) returns (stream SearchResponse) {}
   rpc Archive(ArchiveRequest) returns (stream ArchiveResponse) {}
+  rpc P4Exec(P4ExecRequest) returns (stream P4ExecResponse) {}
   rpc RepoClone(RepoCloneRequest) returns (RepoCloneResponse) {}
   rpc RepoCloneProgress(RepoCloneProgressRequest) returns (RepoCloneProgressResponse) {}
   rpc RepoDelete(RepoDeleteRequest) returns (RepoDeleteResponse) {}
@@ -379,4 +380,15 @@ message ReposStatsResponse {
   // zero, the statistics have not yet been computed. This can happen on a
   // new gitserver.
   google.protobuf.Timestamp updated_at = 2;
+}
+
+message P4ExecRequest {
+  string p4port = 1;
+  string p4user = 2;
+  string p4passwd = 3;
+  repeated string args = 4;
+}
+
+message P4ExecResponse {
+  bytes data = 1;
 }

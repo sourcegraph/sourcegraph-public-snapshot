@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"path/filepath"
 
@@ -151,6 +152,58 @@ func (gs *GRPCServer) doExec(ctx context.Context, logger log.Logger, req *protoc
 	}
 	return nil
 
+}
+
+func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService_P4ExecServer) error {
+	var internalReq protocol.P4ExecRequest
+	internalReq.FromProto(req)
+
+	if len(req.Args) < 1 {
+		return status.Error(codes.InvalidArgument, "args must be greater than or equal to 1")
+	}
+
+	// Make sure the subcommand is explicitly allowed
+	allowlist := []string{"protects", "groups", "users", "group"}
+	allowed := false
+	for _, arg := range allowlist {
+		if req.Args[0] == arg {
+			allowed = true
+			break
+		}
+	}
+	if !allowed {
+		return status.Error(codes.InvalidArgument, fmt.Sprintf("subcommand %q is not allowed", req.Args[0]))
+	}
+
+	// Log which actor is accessing p4-exec.
+	//
+	// p4-exec is currently only used for fetching user based permissions information
+	// so, we don't have a repo name.
+	accesslog.Record(ss.Context(), "<no-repo>",
+		log.String("p4user", req.P4User),
+		log.String("p4port", req.P4Port),
+		log.Strings("args", req.Args),
+	)
+
+	// Make sure credentials are valid before heavier operation
+	err := p4testWithTrust(ss.Context(), req.P4Port, req.P4User, req.P4Passwd)
+	if err != nil {
+		return status.Error(codes.InvalidArgument, fmt.Sprint(err))
+	}
+
+	w := streamio.NewWriter(func(p []byte) error {
+		return ss.Send(&proto.P4ExecResponse{
+			Data: p,
+		})
+	})
+
+	return gs.doP4Exec(ss.Context(), gs.Server.Logger, &internalReq, "unknown-grpc-client", w)
+
+}
+
+func (gs *GRPCServer) doP4Exec(ctx context.Context, logger log.Logger, req *protocol.P4ExecRequest, userAgent string, w io.Writer) error {
+	execStatus := gs.Server.p4Exec(ctx, logger, req, userAgent, w)
+	return execStatus.Err
 }
 
 func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService_SearchServer) error {
