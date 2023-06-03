@@ -1236,7 +1236,6 @@ func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.
 		p := pool.NewWithResults[*proto.RepoCloneProgressResponse]().WithContext(ctx)
 
 		for client, req := range shards {
-			fmt.Println("requesting", req)
 			client := client
 			req := req
 			p.Go(func(ctx context.Context) (*proto.RepoCloneProgressResponse, error) {
