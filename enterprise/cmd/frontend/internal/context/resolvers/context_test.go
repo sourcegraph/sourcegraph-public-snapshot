@@ -4,6 +4,7 @@ import (
 	"context"
 	"io/fs"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
@@ -94,28 +95,34 @@ func TestContextResolver(t *testing.T) {
 		return &search.Inputs{OriginalQuery: query}, nil
 	})
 	mockSearchClient.ExecuteFunc.SetDefaultHook(func(_ context.Context, stream streaming.Sender, inputs *search.Inputs) (*search.Alert, error) {
-		require.Equal(t, inputs.OriginalQuery, "repo:^"+string(repo2.Name)+"$ my test query")
-		stream.Send(streaming.SearchEvent{
-			Results: result.Matches{&result.FileMatch{
-				File: result.File{
-					Path: "testcode2.go",
-					Repo: types.MinimalRepo{ID: repo2.ID, Name: repo2.Name},
-				},
-				ChunkMatches: lineRange(0, 4),
-			}, &result.FileMatch{
-				File: result.File{
-					Path: "testcode2again.go",
-					Repo: types.MinimalRepo{ID: repo2.ID, Name: repo2.Name},
-				},
-				ChunkMatches: lineRange(0, 4),
-			}, &result.FileMatch{
-				File: result.File{
-					Path: "testtext2.md",
-					Repo: types.MinimalRepo{ID: repo2.ID, Name: repo2.Name},
-				},
-				ChunkMatches: lineRange(0, 4),
-			}},
-		})
+		if strings.Contains(inputs.OriginalQuery, "-file") {
+			stream.Send(streaming.SearchEvent{
+				Results: result.Matches{&result.FileMatch{
+					File: result.File{
+						Path: "testcode2.go",
+						Repo: types.MinimalRepo{ID: repo2.ID, Name: repo2.Name},
+					},
+					ChunkMatches: lineRange(0, 4),
+				}, &result.FileMatch{
+					File: result.File{
+						Path: "testcode2again.go",
+						Repo: types.MinimalRepo{ID: repo2.ID, Name: repo2.Name},
+					},
+					ChunkMatches: lineRange(0, 4),
+				}},
+			})
+		} else {
+			stream.Send(streaming.SearchEvent{
+				Results: result.Matches{&result.FileMatch{
+					File: result.File{
+						Path: "testtext2.md",
+						Repo: types.MinimalRepo{ID: repo2.ID, Name: repo2.Name},
+					},
+					ChunkMatches: lineRange(0, 4),
+				}},
+			})
+
+		}
 		return nil, nil
 	})
 
