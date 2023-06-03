@@ -1464,7 +1464,7 @@ func (s *Server) performGitLogCommand(ctx context.Context, repoCommit api.RepoCo
 	return buf.String(), true, nil
 }
 
-func (s *Server) instrumentedHandler(ctx context.Context, req protocol.BatchLogRequest) (resp protocol.BatchLogResponse, err error) {
+func (s *Server) batchGitLogInstrumentedHandler(ctx context.Context, req protocol.BatchLogRequest) (resp protocol.BatchLogResponse, err error) {
 	ctx, _, endObservation := s.operations.batchLog.With(ctx, &err, observation.Args{})
 	defer func() {
 		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
@@ -1481,7 +1481,7 @@ func (s *Server) instrumentedHandler(ctx context.Context, req protocol.BatchLogR
 	results := make([]protocol.BatchLogResult, len(req.RepoCommits))
 
 	if s.GlobalBatchLogSemaphore == nil {
-		return nil, errors.New("s.GlobalBatchLogSemaphore not initialized")
+		return protocol.BatchLogResponse{}, errors.New("s.GlobalBatchLogSemaphore not initialized")
 	}
 
 	for i, repoCommit := range req.RepoCommits {
@@ -1553,7 +1553,7 @@ func (s *Server) handleBatchLog(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Handle unexpected error conditions
-	resp, err := s.instrumentedHandler(r.Context(), req)
+	resp, err := s.batchGitLogInstrumentedHandler(r.Context(), req)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

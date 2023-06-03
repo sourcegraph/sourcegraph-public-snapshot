@@ -33,18 +33,17 @@ func (gs *GRPCServer) BatchLog(ctx context.Context, req *proto.BatchLogRequest) 
 	gs.Server.operations = gs.Server.ensureOperations()
 
 	var internalReq protocol.BatchLogRequest
-	var resp protocol.BatchLogResponse
 	internalReq.FromProto(req)
 	// Validate request parameters
 	if len(req.RepoCommits) == 0 {
-		return resp.ToProto(), nil
+		return &proto.BatchLogResponse{}, nil
 	}
 	if !strings.HasPrefix(req.Format, "--format=") {
 		return nil, status.Error(codes.InvalidArgument, "format parameter expected to be of the form `--format=<git log format>`")
 	}
 
 	// Handle unexpected error conditions
-	resp, err := gs.Server.instrumentedHandler(ctx, internalReq)
+	resp, err := gs.Server.batchGitLogInstrumentedHandler(ctx, internalReq)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
