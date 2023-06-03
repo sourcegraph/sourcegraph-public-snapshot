@@ -1980,21 +1980,28 @@ CREATE TABLE codeowners_individual_stats (
     file_path_id integer NOT NULL,
     owner_id integer NOT NULL,
     tree_owned_files_count integer NOT NULL,
-    last_updated_at timestamp without time zone NOT NULL
+    updated_at timestamp without time zone NOT NULL
 );
 
-COMMENT ON TABLE codeowners_individual_stats IS 'Data on how many files in given tree are owned by given owner.';
+COMMENT ON TABLE codeowners_individual_stats IS 'Data on how many files in given tree are owned by given owner.
+
+As opposed to ownership-general `ownership_path_stats` table, the individual <path x owner> stats
+are stored in CODEOWNERS-specific table `codeowners_individual_stats`. The reason for that is that
+we are also indexing on owner_id which is CODEOWNERS-specific.';
 
 COMMENT ON COLUMN codeowners_individual_stats.tree_owned_files_count IS 'Total owned file count by given owner at given file tree.';
 
-COMMENT ON COLUMN codeowners_individual_stats.last_updated_at IS 'When the last background job updating counts run.';
+COMMENT ON COLUMN codeowners_individual_stats.updated_at IS 'When the last background job updating counts run.';
 
 CREATE TABLE codeowners_owners (
     id integer NOT NULL,
     reference text NOT NULL
 );
 
-COMMENT ON TABLE codeowners_owners IS 'Text reference in CODEOWNERS entry to use in codeowners_individual_stats. Reference is either email or handle withouth @ in front.';
+COMMENT ON TABLE codeowners_owners IS 'Text reference in CODEOWNERS entry to use in codeowners_individual_stats. Reference is either email or handle without @ in front.';
+
+COMMENT ON COLUMN codeowners_owners.reference IS 'We just keep the reference as opposed to splitting it to handle or email
+since the distinction is not relevant for query, and this makes indexing way easier.';
 
 CREATE SEQUENCE codeowners_owners_id_seq
     AS integer
@@ -3800,7 +3807,12 @@ CREATE TABLE ownership_path_stats (
     last_updated_at timestamp without time zone NOT NULL
 );
 
-COMMENT ON TABLE ownership_path_stats IS 'Data on how many files in given tree are owned by anyone.';
+COMMENT ON TABLE ownership_path_stats IS 'Data on how many files in given tree are owned by anyone.
+
+We choose to have a table for `ownership_path_stats` - more general than for CODEOWNERS,
+with a specific tree_codeowned_files_count CODEOWNERS column. The reason for that
+is that we aim at expanding path stats by including total owned files (via CODEOWNERS
+or assigned ownership), and perhaps files count by assigned ownership only.';
 
 COMMENT ON COLUMN ownership_path_stats.last_updated_at IS 'When the last background job updating counts run.';
 

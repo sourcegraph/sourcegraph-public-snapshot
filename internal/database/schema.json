@@ -8670,7 +8670,7 @@
     },
     {
       "Name": "codeowners_individual_stats",
-      "Comment": "Data on how many files in given tree are owned by given owner.",
+      "Comment": "Data on how many files in given tree are owned by given owner.\n\nAs opposed to ownership-general `ownership_path_stats` table, the individual \u003cpath x owner\u003e stats\nare stored in CODEOWNERS-specific table `codeowners_individual_stats`. The reason for that is that\nwe are also indexing on owner_id which is CODEOWNERS-specific.",
       "Columns": [
         {
           "Name": "file_path_id",
@@ -8684,19 +8684,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
-        },
-        {
-          "Name": "last_updated_at",
-          "Index": 4,
-          "TypeName": "timestamp without time zone",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": "When the last background job updating counts run."
         },
         {
           "Name": "owner_id",
@@ -8723,6 +8710,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "Total owned file count by given owner at given file tree."
+        },
+        {
+          "Name": "updated_at",
+          "Index": 4,
+          "TypeName": "timestamp without time zone",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "When the last background job updating counts run."
         }
       ],
       "Indexes": [
@@ -8757,7 +8757,7 @@
     },
     {
       "Name": "codeowners_owners",
-      "Comment": "Text reference in CODEOWNERS entry to use in codeowners_individual_stats. Reference is either email or handle withouth @ in front.",
+      "Comment": "Text reference in CODEOWNERS entry to use in codeowners_individual_stats. Reference is either email or handle without @ in front.",
       "Columns": [
         {
           "Name": "id",
@@ -8783,7 +8783,7 @@
           "IdentityGeneration": "",
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
-          "Comment": ""
+          "Comment": "We just keep the reference as opposed to splitting it to handle or email\nsince the distinction is not relevant for query, and this makes indexing way easier."
         }
       ],
       "Indexes": [
@@ -19926,7 +19926,7 @@
     },
     {
       "Name": "ownership_path_stats",
-      "Comment": "Data on how many files in given tree are owned by anyone.",
+      "Comment": "Data on how many files in given tree are owned by anyone.\n\nWe choose to have a table for `ownership_path_stats` - more general than for CODEOWNERS,\nwith a specific tree_codeowned_files_count CODEOWNERS column. The reason for that\nis that we aim at expanding path stats by including total owned files (via CODEOWNERS\nor assigned ownership), and perhaps files count by assigned ownership only.",
       "Columns": [
         {
           "Name": "file_path_id",

@@ -1091,7 +1091,7 @@ Foreign-key constraints:
  file_path_id           | integer                     |           | not null | 
  owner_id               | integer                     |           | not null | 
  tree_owned_files_count | integer                     |           | not null | 
- last_updated_at        | timestamp without time zone |           | not null | 
+ updated_at             | timestamp without time zone |           | not null | 
 Indexes:
     "codeowners_individual_stats_pkey" PRIMARY KEY, btree (file_path_id, owner_id)
 Foreign-key constraints:
@@ -1102,9 +1102,13 @@ Foreign-key constraints:
 
 Data on how many files in given tree are owned by given owner.
 
-**last_updated_at**: When the last background job updating counts run.
+As opposed to ownership-general `ownership_path_stats` table, the individual &lt;path x owner&gt; stats
+are stored in CODEOWNERS-specific table `codeowners_individual_stats`. The reason for that is that
+we are also indexing on owner_id which is CODEOWNERS-specific.
 
 **tree_owned_files_count**: Total owned file count by given owner at given file tree.
+
+**updated_at**: When the last background job updating counts run.
 
 # Table "public.codeowners_owners"
 ```
@@ -1120,7 +1124,10 @@ Referenced by:
 
 ```
 
-Text reference in CODEOWNERS entry to use in codeowners_individual_stats. Reference is either email or handle withouth @ in front.
+Text reference in CODEOWNERS entry to use in codeowners_individual_stats. Reference is either email or handle without @ in front.
+
+**reference**: We just keep the reference as opposed to splitting it to handle or email
+since the distinction is not relevant for query, and this makes indexing way easier.
 
 # Table "public.commit_authors"
 ```
@@ -3033,6 +3040,11 @@ Foreign-key constraints:
 ```
 
 Data on how many files in given tree are owned by anyone.
+
+We choose to have a table for `ownership_path_stats` - more general than for CODEOWNERS,
+with a specific tree_codeowned_files_count CODEOWNERS column. The reason for that
+is that we aim at expanding path stats by including total owned files (via CODEOWNERS
+or assigned ownership), and perhaps files count by assigned ownership only.
 
 **last_updated_at**: When the last background job updating counts run.
 
