@@ -1527,7 +1527,6 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 	return c.httpClient.Do(req)
 }
 
-
 func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error) {
 	if internalgrpc.IsGRPCEnabled(ctx) {
 		client, err := c.ClientForRepo(req.Repo)

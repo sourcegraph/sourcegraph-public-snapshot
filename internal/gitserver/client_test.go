@@ -1411,7 +1411,6 @@ func (mc *mockClient) GetObject(ctx context.Context, in *proto.GetObjectRequest,
 	return mc.mockGetObject(ctx, in, opts...)
 }
 
-
 // ListGitolite implements v1.GitserverServiceClient.
 func (mc *mockClient) ListGitolite(ctx context.Context, in *proto.ListGitoliteRequest, opts ...grpc.CallOption) (*proto.ListGitoliteResponse, error) {
 	return mc.mockListGitolite(ctx, in, opts...)
