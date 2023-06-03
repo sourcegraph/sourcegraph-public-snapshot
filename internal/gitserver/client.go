@@ -1061,8 +1061,6 @@ func (c *clientImplementor) gitCommand(repo api.RepoName, arg ...string) GitComm
 }
 
 func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.RepoName, since time.Duration) (*protocol.RepoUpdateResponse, error) {
-	var info protocol.RepoUpdateResponse
-
 	req := &protocol.RepoUpdateRequest{
 		Repo:  repo,
 		Since: since,
@@ -1502,39 +1500,40 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 	return c.httpClient.Do(req)
 }
 
-func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
+func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error) {
 	if internalgrpc.IsGRPCEnabled(ctx) {
 		client, err := c.ClientForRepo(req.Repo)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		resp, err := client.CreateCommitFromPatchBinary(ctx, req.ToProto())
 		if err != nil {
-			return "", err
-		}
-
-		if resp.GetError() != nil {
-			return resp.Rev, errors.New(resp.GetError().String())
+			return nil, err
 		}
 
 		var res protocol.CreateCommitFromPatchResponse
 		res.FromProto(resp)
-		return res.Rev, nil
+
+		if resp.GetError() != nil {
+			return &res, errors.New(resp.GetError().String())
+		}
+
+		return &res, nil
 	} else {
 		resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch-binary", req)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		defer resp.Body.Close()
 
 		body, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return "", errors.Wrap(err, "failed to read response body")
+			return nil, errors.Wrap(err, "failed to read response body")
 		}
 		var res protocol.CreateCommitFromPatchResponse
 		if err := json.Unmarshal(body, &res); err != nil {
 			c.logger.Warn("decoding gitserver create-commit-from-patch response", sglog.Error(err))
-			return "", &url.Error{
+			return nil, &url.Error{
 				URL: resp.Request.URL.String(),
 				Op:  "CreateCommitFromPatch",
 				Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.StatusCode, string(body)),
@@ -1542,9 +1541,9 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 		}
 
 		if res.Error != nil {
-			return res.Rev, res.Error
+			return &res, res.Error
 		}
-		return res.Rev, nil
+		return &res, nil
 	}
 }
 
