@@ -443,4 +443,3 @@ message GitObject {
   // type is the type of the object.
   ObjectType type = 2;
 }
-
