@@ -1081,7 +1081,7 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 
 		var info protocol.RepoUpdateResponse
 		info.FromProto(resp)
-    
+
 		return &info, nil
 
 	} else {
@@ -1503,8 +1503,6 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 }
 
 func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
-	var res protocol.CreateCommitFromPatchResponse
-
 	if internalgrpc.IsGRPCEnabled(ctx) {
 		client, err := c.ClientForRepo(req.Repo)
 		if err != nil {
@@ -1519,6 +1517,7 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 			return resp.Rev, errors.New(resp.GetError().String())
 		}
 
+		var res protocol.CreateCommitFromPatchResponse
 		res.FromProto(resp)
 		return res.Rev, nil
 	} else {
@@ -1532,6 +1531,7 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 		if err != nil {
 			return "", errors.Wrap(err, "failed to read response body")
 		}
+		var res protocol.CreateCommitFromPatchResponse
 		if err := json.Unmarshal(body, &res); err != nil {
 			c.logger.Warn("decoding gitserver create-commit-from-patch response", sglog.Error(err))
 			return "", &url.Error{
