@@ -63,7 +63,7 @@ const OwnAnalyticsPanel: FC = () => {
                     <Card className="p-3 position-relative">
                         {ownSignalsData && (
                             <div>
-                                <ChartContainer title="Ownership coverage" labelX="Status" labelY="Count">
+                                <ChartContainer title="Ownership coverage" labelX="Status" labelY="File count">
                                     {width => (
                                         <BarChart
                                             width={width}
