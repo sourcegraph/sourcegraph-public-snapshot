@@ -257,7 +257,7 @@ func fileMatchToContextMatches(fm *result.FileMatch) []FileChunkContext {
 	// chunk (the first chunk) from each file
 
 	// 4 lines of leading context, clamped to zero
-	startLine := min(0, fm.ChunkMatches[0].ContentStart.Line-4)
+	startLine := max(0, fm.ChunkMatches[0].ContentStart.Line-4)
 	// depend on content fetching to trim to the end of the file
 	endLine := startLine + 8
 

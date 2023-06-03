@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 
+	"github.com/sourcegraph/conc/iter"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	codycontext "github.com/sourcegraph/sourcegraph/enterprise/internal/codycontext"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -51,18 +52,12 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 		return nil, err
 	}
 
-	resolvers := make([]graphqlbackend.ContextResultResolver, len(fileChunks))
-	for i, fileChunk := range fileChunks {
-		resolvers[i], err = r.fileChunkToResolver(ctx, fileChunk)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return resolvers, nil
+	return iter.MapErr(fileChunks, func(fileChunk *codycontext.FileChunkContext) (graphqlbackend.ContextResultResolver, error) {
+		return r.fileChunkToResolver(ctx, fileChunk)
+	})
 }
 
-func (r *Resolver) fileChunkToResolver(ctx context.Context, chunk codycontext.FileChunkContext) (graphqlbackend.ContextResultResolver, error) {
+func (r *Resolver) fileChunkToResolver(ctx context.Context, chunk *codycontext.FileChunkContext) (graphqlbackend.ContextResultResolver, error) {
 	repoResolver := graphqlbackend.NewRepositoryResolver(r.db, r.gitserverClient, &types.Repo{
 		ID:   chunk.RepoID,
 		Name: chunk.RepoName,
@@ -78,5 +73,8 @@ func (r *Resolver) fileChunkToResolver(ctx context.Context, chunk codycontext.Fi
 		Commit: commitResolver,
 		Stat:   stat,
 	})
+
+	// Populate content ahead of time so we can do it concurrently
+	gitTreeEntryResolver.Content(ctx, &graphqlbackend.GitTreeContentPageArgs{})
 	return graphqlbackend.NewFileChunkContextResolver(gitTreeEntryResolver, chunk.StartLine, chunk.EndLine), nil
 }
