@@ -36,8 +36,6 @@ func TestUpdateIndividualCountsSuccess(t *testing.T) {
 	ctx := context.Background()
 	// 1. Setup repo and paths:
 	repo := mustCreate(ctx, t, d, &types.Repo{Name: "a/b"})
-	_, err := ensureRepoPaths(ctx, d.(*db).Store, []string{"file1", "file2"}, repo.ID)
-	require.NoError(t, err)
 	// 2. Insert countsg:
 	walk := fakeCodeownersWalk{
 		"": {
@@ -70,11 +68,7 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 	ctx := context.Background()
 	// 1. Setup repos and paths:
 	repo1 := mustCreate(ctx, t, d, &types.Repo{Name: "a/b"})
-	_, err := ensureRepoPaths(ctx, d.(*db).Store, []string{"file1", "file2"}, repo1.ID)
-	require.NoError(t, err)
 	repo2 := mustCreate(ctx, t, d, &types.Repo{Name: "a/c"})
-	_, err = ensureRepoPaths(ctx, d.(*db).Store, []string{"file3", "file4"}, repo2.ID)
-	require.NoError(t, err)
 	// 2. Insert counts:
 	timestamp := time.Now()
 	walk1 := fakeCodeownersWalk{
@@ -90,7 +84,7 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 			{CodeownersReference: "ownerA", CodeownedFileCount: 1},
 		},
 	}
-	_, err = d.OwnershipStats().UpdateIndividualCounts(ctx, repo1.ID, walk1, timestamp)
+	_, err := d.OwnershipStats().UpdateIndividualCounts(ctx, repo1.ID, walk1, timestamp)
 	require.NoError(t, err)
 	walk2 := fakeCodeownersWalk{
 		"": {

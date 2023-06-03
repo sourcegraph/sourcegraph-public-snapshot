@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -78,10 +79,7 @@ var codeownerQueryFmtstr = `
 
 var codeownerUpsertCountsFmtstr = `
 	INSERT INTO codeowners_individual_stats (file_path_id, owner_id, tree_owned_files_count, updated_at)
-	SELECT p.id, %s, %s, %s
-	FROM repo_paths AS p
-	WHERE p.repo_id = %s
-	AND p.absolute_path = %s
+	VALUES (%s, %s, %s, %s)
 	ON CONFLICT (file_path_id, owner_id)
 	DO UPDATE SET
 		tree_owned_files_count = EXCLUDED.tree_owned_files_count,
@@ -92,17 +90,24 @@ func (s *ownershipStats) UpdateIndividualCounts(ctx context.Context, repoID api.
 	codeownersCache := map[string]int{} // Cache codeowner ID by reference
 	var totalRows int
 	err := data.Iterate(func(path string, counts TreeCounts) error {
-		id := codeownersCache[counts.CodeownersReference]
-		if id == 0 {
+		ownerID := codeownersCache[counts.CodeownersReference]
+		if ownerID == 0 {
 			q := sqlf.Sprintf(codeownerQueryFmtstr, counts.CodeownersReference, counts.CodeownersReference)
 			r := s.Store.QueryRow(ctx, q)
-			if err := r.Scan(&id); err != nil {
+			if err := r.Scan(&ownerID); err != nil {
 				return errors.Wrapf(err, "querying/adding owner %q failed, query: %s", counts.CodeownersReference, q.Query(sqlf.PostgresBindVar))
 			}
-			codeownersCache[counts.CodeownersReference] = id
+			codeownersCache[counts.CodeownersReference] = ownerID
+		}
+		pathIDs, err := ensureRepoPaths(ctx, s.Store, []string{path}, repoID)
+		if err != nil {
+			return err
+		}
+		if got, want := len(pathIDs), 1; got != want {
+			return errors.Newf("want exactly 1 repo path, got %d", got)
 		}
 		// At this point we assume paths exists in repo_paths, otherwise we will not update.
-		q := sqlf.Sprintf(codeownerUpsertCountsFmtstr, id, counts.CodeownedFileCount, timestamp, repoID, path)
+		q := sqlf.Sprintf(codeownerUpsertCountsFmtstr, pathIDs[0], ownerID, counts.CodeownedFileCount, timestamp)
 		res, err := s.Store.ExecResult(ctx, q)
 		if err != nil {
 			return errors.Wrapf(err, "updating counts for %q at repoID=%d path=%s failed, query: %s", counts.CodeownersReference, repoID, path, q.Query(sqlf.PostgresBindVar))
@@ -127,6 +132,11 @@ var aggregateOwnershipFmtstr = `
 	INNER JOIN codeowners_owners AS o ON o.id = s.owner_id
 	WHERE p.absolute_path = %s
 `
+var treeCountsScanner = basestore.NewSliceScanner(func(s dbutil.Scanner) (TreeCounts, error) {
+	var cs TreeCounts
+	err := s.Scan(&cs.CodeownersReference, &cs.CodeownedFileCount)
+	return cs, err
+})
 
 func (s *ownershipStats) QueryIndividualCounts(ctx context.Context, opts TreeLocationOpts, limitOffset *LimitOffset) ([]TreeCounts, error) {
 	qs := []*sqlf.Query{sqlf.Sprintf(aggregateOwnershipFmtstr, opts.Path)}
@@ -135,17 +145,5 @@ func (s *ownershipStats) QueryIndividualCounts(ctx context.Context, opts TreeLoc
 	}
 	qs = append(qs, sqlf.Sprintf("GROUP BY 1 ORDER BY 2 DESC, 1 ASC"))
 	qs = append(qs, limitOffset.SQL())
-	rs, err := s.Store.Query(ctx, sqlf.Join(qs, "\n"))
-	if err != nil {
-		return nil, err
-	}
-	var owners []TreeCounts
-	for rs.Next() {
-		var o TreeCounts
-		if err := rs.Scan(&o.CodeownersReference, &o.CodeownedFileCount); err != nil {
-			return nil, err
-		}
-		owners = append(owners, o)
-	}
-	return owners, nil
+	return treeCountsScanner(s.Store.Query(ctx, sqlf.Join(qs, "\n")))
 }
