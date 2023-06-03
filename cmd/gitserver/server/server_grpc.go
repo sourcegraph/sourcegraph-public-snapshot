@@ -206,6 +206,24 @@ func (gs *GRPCServer) doP4Exec(ctx context.Context, logger log.Logger, req *prot
 	return execStatus.Err
 }
 
+func (gs *GRPCServer) ListGitolite(ctx context.Context, req *proto.ListGitoliteRequest) (*proto.ListGitoliteResponse, error) {
+	host := req.GetGitoliteHost()
+	repos, err := defaultGitolite.listRepos(ctx, host)
+	if err != nil {
+		return nil, status.Error(codes.Internal, err.Error())
+	}
+
+	protoRepos := make([]*proto.GitoliteRepo, 0, len(repos))
+
+	for _, repo := range repos {
+		protoRepos = append(protoRepos, repo.ToProto())
+	}
+
+	return &proto.ListGitoliteResponse{
+		Repos: protoRepos,
+	}, nil
+}
+
 func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService_SearchServer) error {
 	args, err := protocol.SearchRequestFromProto(req)
 	if err != nil {

@@ -11,6 +11,7 @@ service GitserverService {
   rpc CreateCommitFromPatchBinary(CreateCommitFromPatchBinaryRequest) returns (CreateCommitFromPatchBinaryResponse) {}
   rpc Exec(ExecRequest) returns (stream ExecResponse) {}
   rpc IsRepoCloneable(IsRepoCloneableRequest) returns (IsRepoCloneableResponse) {}
+  rpc ListGitolite(ListGitoliteRequest) returns (ListGitoliteResponse) {}
   rpc Search(SearchRequest) returns (stream SearchResponse) {}
   rpc Archive(ArchiveRequest) returns (stream ArchiveResponse) {}
   rpc P4Exec(P4ExecRequest) returns (stream P4ExecResponse) {}
@@ -391,4 +392,24 @@ message P4ExecRequest {
 
 message P4ExecResponse {
   bytes data = 1;
+}
+
+// ListGitoliteRequest is a request to list all repositories in gitolite.
+message ListGitoliteRequest {
+  // host is the hostname of the gitolite instance
+  string gitolite_host = 1;
+}
+
+// GitoliteRepo is a repository in gitolite.
+message GitoliteRepo {
+  // name is the name of the repository
+  string name = 1;
+  // url is the URL of the repository
+  string url = 2;
+}
+
+// ListGitoliteResponse is the response from the ListGitolite RPC.
+message ListGitoliteResponse {
+  // repos is the list of repositories in gitolite
+  repeated GitoliteRepo repos = 1;
 }

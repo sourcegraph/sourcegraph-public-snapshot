@@ -22,6 +22,7 @@ const (
 	GitserverService_CreateCommitFromPatchBinary_FullMethodName = "/gitserver.v1.GitserverService/CreateCommitFromPatchBinary"
 	GitserverService_Exec_FullMethodName                        = "/gitserver.v1.GitserverService/Exec"
 	GitserverService_IsRepoCloneable_FullMethodName             = "/gitserver.v1.GitserverService/IsRepoCloneable"
+	GitserverService_ListGitolite_FullMethodName                = "/gitserver.v1.GitserverService/ListGitolite"
 	GitserverService_Search_FullMethodName                      = "/gitserver.v1.GitserverService/Search"
 	GitserverService_Archive_FullMethodName                     = "/gitserver.v1.GitserverService/Archive"
 	GitserverService_P4Exec_FullMethodName                      = "/gitserver.v1.GitserverService/P4Exec"
@@ -39,6 +40,7 @@ type GitserverServiceClient interface {
 	CreateCommitFromPatchBinary(ctx context.Context, in *CreateCommitFromPatchBinaryRequest, opts ...grpc.CallOption) (*CreateCommitFromPatchBinaryResponse, error)
 	Exec(ctx context.Context, in *ExecRequest, opts ...grpc.CallOption) (GitserverService_ExecClient, error)
 	IsRepoCloneable(ctx context.Context, in *IsRepoCloneableRequest, opts ...grpc.CallOption) (*IsRepoCloneableResponse, error)
+	ListGitolite(ctx context.Context, in *ListGitoliteRequest, opts ...grpc.CallOption) (*ListGitoliteResponse, error)
 	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (GitserverService_SearchClient, error)
 	Archive(ctx context.Context, in *ArchiveRequest, opts ...grpc.CallOption) (GitserverService_ArchiveClient, error)
 	P4Exec(ctx context.Context, in *P4ExecRequest, opts ...grpc.CallOption) (GitserverService_P4ExecClient, error)
@@ -101,6 +103,15 @@ func (x *gitserverServiceExecClient) Recv() (*ExecResponse, error) {
 func (c *gitserverServiceClient) IsRepoCloneable(ctx context.Context, in *IsRepoCloneableRequest, opts ...grpc.CallOption) (*IsRepoCloneableResponse, error) {
 	out := new(IsRepoCloneableResponse)
 	err := c.cc.Invoke(ctx, GitserverService_IsRepoCloneable_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *gitserverServiceClient) ListGitolite(ctx context.Context, in *ListGitoliteRequest, opts ...grpc.CallOption) (*ListGitoliteResponse, error) {
+	out := new(ListGitoliteResponse)
+	err := c.cc.Invoke(ctx, GitserverService_ListGitolite_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -255,6 +266,7 @@ type GitserverServiceServer interface {
 	CreateCommitFromPatchBinary(context.Context, *CreateCommitFromPatchBinaryRequest) (*CreateCommitFromPatchBinaryResponse, error)
 	Exec(*ExecRequest, GitserverService_ExecServer) error
 	IsRepoCloneable(context.Context, *IsRepoCloneableRequest) (*IsRepoCloneableResponse, error)
+	ListGitolite(context.Context, *ListGitoliteRequest) (*ListGitoliteResponse, error)
 	Search(*SearchRequest, GitserverService_SearchServer) error
 	Archive(*ArchiveRequest, GitserverService_ArchiveServer) error
 	P4Exec(*P4ExecRequest, GitserverService_P4ExecServer) error
@@ -278,6 +290,9 @@ func (UnimplementedGitserverServiceServer) Exec(*ExecRequest, GitserverService_E
 }
 func (UnimplementedGitserverServiceServer) IsRepoCloneable(context.Context, *IsRepoCloneableRequest) (*IsRepoCloneableResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method IsRepoCloneable not implemented")
+}
+func (UnimplementedGitserverServiceServer) ListGitolite(context.Context, *ListGitoliteRequest) (*ListGitoliteResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListGitolite not implemented")
 }
 func (UnimplementedGitserverServiceServer) Search(*SearchRequest, GitserverService_SearchServer) error {
 	return status.Errorf(codes.Unimplemented, "method Search not implemented")
@@ -369,6 +384,24 @@ func _GitserverService_IsRepoCloneable_Handler(srv interface{}, ctx context.Cont
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(GitserverServiceServer).IsRepoCloneable(ctx, req.(*IsRepoCloneableRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _GitserverService_ListGitolite_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListGitoliteRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GitserverServiceServer).ListGitolite(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: GitserverService_ListGitolite_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GitserverServiceServer).ListGitolite(ctx, req.(*ListGitoliteRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -540,6 +573,10 @@ var GitserverService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "IsRepoCloneable",
 			Handler:    _GitserverService_IsRepoCloneable_Handler,
+		},
+		{
+			MethodName: "ListGitolite",
+			Handler:    _GitserverService_ListGitolite_Handler,
 		},
 		{
 			MethodName: "RepoClone",

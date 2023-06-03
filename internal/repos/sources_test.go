@@ -37,6 +37,10 @@ func TestSources_ListRepos(t *testing.T) {
 	conf.Mock(&conf.Unified{
 		ServiceConnectionConfig: conftypes.ServiceConnections{
 			GitServers: []string{"127.0.0.1:3178"},
+		}, SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				EnableGRPC: false,
+			},
 		},
 	})
 	defer conf.Mock(nil)
