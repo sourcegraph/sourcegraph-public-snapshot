@@ -1015,12 +1015,22 @@ func (s *Server) IsRepoCloneable(ctx context.Context, repo api.RepoName) (protoc
 // unconditional; we debounce them based on the provided
 // interval, to avoid spam.
 func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
-	logger := s.Logger.Scoped("handleRepoUpdate", "synchronous http handler for repo updates")
 	var req protocol.RepoUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	resp := s.repoUpdate(&req)
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (s *Server) repoUpdate(req *protocol.RepoUpdateRequest) protocol.RepoUpdateResponse {
+	logger := s.Logger.Scoped("handleRepoUpdate", "synchronous http handler for repo updates")
 	var resp protocol.RepoUpdateResponse
 	req.Repo = protocol.NormalizeRepo(req.Repo)
 	dir := s.dir(req.Repo)
@@ -1077,11 +1087,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 			resp.Error = updateErr.Error()
 		}
 	}
-
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	return resp
 }
 
 // handleRepoClone is an asynchronous (does not wait for update to complete or

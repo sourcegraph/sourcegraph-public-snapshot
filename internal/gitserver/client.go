@@ -1065,22 +1065,39 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 		Repo:  repo,
 		Since: since,
 	}
-	resp, err := c.httpPost(ctx, repo, "repo-update", req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, &url.Error{
-			URL: resp.Request.URL.String(),
-			Op:  "RepoInfo",
-			Err: errors.Errorf("RepoInfo: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
-		}
-	}
 
-	var info *protocol.RepoUpdateResponse
-	err = json.NewDecoder(resp.Body).Decode(&info)
-	return info, err
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		client, err := c.ClientForRepo(repo)
+		if err != nil {
+			return nil, err
+		}
+
+		resp, err := client.RepoUpdate(ctx, req.ToProto())
+		if err != nil {
+			return nil, err
+		}
+
+		var info protocol.RepoUpdateResponse
+		info.FromProto(resp)
+		return &info, nil
+
+	} else {
+		resp, err := c.httpPost(ctx, repo, "repo-update", req)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			return nil, &url.Error{
+				URL: resp.Request.URL.String(),
+				Op:  "RepoUpdate",
+				Err: errors.Errorf("RepoUpdate: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+			}
+		}
+		var info protocol.RepoUpdateResponse
+		err = json.NewDecoder(resp.Body).Decode(&info)
+		return &info, err
+	}
 }
 
 // RequestRepoClone requests that the gitserver does an asynchronous clone of the repository.
