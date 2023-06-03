@@ -130,7 +130,15 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 
 		gqlID := req.URL.Query().Get("id")
 		if gqlID == "" {
-			cache.Set(s, []byte{1})
+			stateDetails := gitHubAppStateDetails{}
+			// we marshal an empty `gitHubAppStateDetails` struct because we want the values saved in the cache
+			// to always conform to the same structure.
+			stateDeets, err := json.Marshal(stateDetails)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("unexpected error when marshalling state: %s", err.Error()), http.StatusInternalServerError)
+				return
+			}
+			cache.Set(s, stateDeets)
 
 			_, _ = w.Write([]byte(s))
 			return
@@ -141,9 +149,17 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			http.Error(w, fmt.Sprintf("Unexpected error while unmarshalling App ID: %s", err.Error()), http.StatusBadRequest)
 			return
 		}
-		id := int(id64)
 
-		cache.Set(s, []byte(strconv.Itoa(id)))
+		stateDetails := gitHubAppStateDetails{
+			AppID: int(id64),
+		}
+		stateDeets, err := json.Marshal(stateDetails)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("unexpected error when marshalling state: %s", err.Error()), http.StatusInternalServerError)
+			return
+		}
+
+		cache.Set(s, stateDeets)
 
 		_, _ = w.Write([]byte(s))
 	})
@@ -367,7 +383,7 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 func generateRedirectURL(domain *string, installationID, appID int) (string, error) {
 	parsedDomain, err := parseDomain(domain)
 	if err != nil {
-		return "", errors.Errorf("invalid domain: %s", domain)
+		return "", errors.Errorf("invalid domain: %s", *domain)
 	}
 
 	switch *parsedDomain {
