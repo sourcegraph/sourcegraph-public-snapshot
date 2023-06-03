@@ -47,7 +47,7 @@ func TestGenerateRedirectURL(t *testing.T) {
 			domain:         &batchesDomain,
 			installationID: 1,
 			appID:          2,
-			expectedURL:    "/site-admin/batch-changes/github-apps/R2l0SHViQXBwOjI=?installation_id=1",
+			expectedURL:    "/site-admin/batch-changes",
 		},
 		{
 			name:          "invalid domain",
