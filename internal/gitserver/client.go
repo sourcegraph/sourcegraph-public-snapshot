@@ -240,7 +240,7 @@ type Client interface {
 
 	// CreateCommitFromPatch will attempt to create a commit from a patch
 	// If possible, the error returned will be of type protocol.CreateCommitFromPatchError
-	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest) (string, error)
+	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error)
 
 	// GetDefaultBranch returns the name of the default branch and the commit it's
 	// currently at from the given repository. If short is true, then `main` instead
@@ -1077,25 +1077,47 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 
 // RequestRepoClone requests that the gitserver does an asynchronous clone of the repository.
 func (c *clientImplementor) RequestRepoClone(ctx context.Context, repo api.RepoName) (*protocol.RepoCloneResponse, error) {
-	req := &protocol.RepoCloneRequest{
-		Repo: repo,
-	}
-	resp, err := c.httpPost(ctx, repo, "repo-clone", req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		return nil, &url.Error{
-			URL: resp.Request.URL.String(),
-			Op:  "RepoInfo",
-			Err: errors.Errorf("RepoInfo: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		client, err := c.ClientForRepo(repo)
+		if err != nil {
+			return nil, err
 		}
-	}
 
-	var info *protocol.RepoCloneResponse
-	err = json.NewDecoder(resp.Body).Decode(&info)
-	return info, err
+		req := proto.RepoCloneRequest{
+			Repo: string(repo),
+		}
+
+		resp, err := client.RepoClone(ctx, &req)
+		if err != nil {
+			return nil, err
+		}
+
+		var info protocol.RepoCloneResponse
+		info.FromProto(resp)
+		return &info, nil
+
+	} else {
+
+		req := &protocol.RepoCloneRequest{
+			Repo: repo,
+		}
+		resp, err := c.httpPost(ctx, repo, "repo-clone", req)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			return nil, &url.Error{
+				URL: resp.Request.URL.String(),
+				Op:  "RepoInfo",
+				Err: errors.Errorf("RepoInfo: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
+			}
+		}
+
+		var info *protocol.RepoCloneResponse
+		err = json.NewDecoder(resp.Body).Decode(&info)
+		return info, err
+	}
 }
 
 // MockIsRepoCloneable mocks (*Client).IsRepoCloneable for tests.
@@ -1387,21 +1409,21 @@ func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 	return c.httpClient.Do(req)
 }
 
-func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
+func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error) {
 	resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch-binary", req)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to read response body")
+		return nil, errors.Wrap(err, "failed to read response body")
 	}
-	var res protocol.CreateCommitFromPatchResponse
-	if err := json.Unmarshal(body, &res); err != nil {
+	res := new(protocol.CreateCommitFromPatchResponse)
+	if err := json.Unmarshal(body, res); err != nil {
 		c.logger.Warn("decoding gitserver create-commit-from-patch response", sglog.Error(err))
-		return "", &url.Error{
+		return nil, &url.Error{
 			URL: resp.Request.URL.String(),
 			Op:  "CreateCommitFromPatch",
 			Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.StatusCode, string(body)),
@@ -1409,9 +1431,9 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 	}
 
 	if res.Error != nil {
-		return res.Rev, res.Error
+		return res, res.Error
 	}
-	return res.Rev, nil
+	return res, nil
 }
 
 func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {

@@ -58,7 +58,8 @@ func SetupSqlite(observationCtx *observation.Context, db database.DB, gitserverC
 	parserFactory := func(source ctags_config.ParserType) (ctags.Parser, error) {
 		return symbolparser.SpawnCtags(logger, config.Ctags, source)
 	}
-	parserPool, err := symbolparser.NewParserPool(parserFactory, config.NumCtagsProcesses)
+
+	parserPool, err := symbolparser.NewParserPool(parserFactory, config.NumCtagsProcesses, parserTypesForDeployment())
 	if err != nil {
 		logger.Fatal("failed to create parser pool", log.Error(err))
 	}
@@ -78,4 +79,14 @@ func SetupSqlite(observationCtx *observation.Context, db database.DB, gitserverC
 	cacheEvicter := janitor.NewCacheEvicter(evictionInterval, cache, cacheSizeBytes, janitor.NewMetrics(observationCtx))
 
 	return searchFunc, nil, []goroutine.BackgroundRoutine{cacheEvicter}, config.Ctags.UniversalCommand, nil
+}
+
+func parserTypesForDeployment() []ctags_config.ParserType {
+	if deploy.IsSingleBinary() {
+		// ScipCtags is not available
+		// TODO(burmudar): make it available
+		return []ctags_config.ParserType{ctags_config.UniversalCtags}
+	}
+
+	return symbolparser.DefaultParserTypes
 }

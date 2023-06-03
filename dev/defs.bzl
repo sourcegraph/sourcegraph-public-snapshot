@@ -32,6 +32,8 @@ def ts_project(name, srcs = [], deps = [], use_preset_env = True, **kwargs):
         name = "%s_eslint" % name,
         srcs = srcs,
         deps = deps,
+        testonly = True,
+        binary = "//:eslint",
         config = "//{}:eslint_config".format(get_client_package_path()),
     )
 
