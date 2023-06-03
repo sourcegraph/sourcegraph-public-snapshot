@@ -691,10 +691,13 @@ func (r *CreateCommitFromPatchResponse) ToProto() *proto.CreateCommitFromPatchBi
 }
 
 func (r *CreateCommitFromPatchResponse) FromProto(p *proto.CreateCommitFromPatchBinaryResponse) {
-	*r = CreateCommitFromPatchResponse{
-		Rev:   p.GetRev(),
-		Error: CreateCommitFromPatchErrorFromProto(p.GetError()),
+	if p.GetError() == nil {
+		r.Error = &CreateCommitFromPatchError{}
+	} else {
+		r.Error = &CreateCommitFromPatchError{}
+		r.Error.FromProto(p.GetError())
 	}
+	r.Rev = p.GetRev()
 }
 
 // SetError adds the supplied error related details to e.
@@ -732,11 +735,8 @@ func (e *CreateCommitFromPatchError) ToProto() *proto.CreateCommitFromPatchError
 	}
 }
 
-func CreateCommitFromPatchErrorFromProto(p *proto.CreateCommitFromPatchError) *CreateCommitFromPatchError {
-	if p == nil {
-		return nil
-	}
-	return &CreateCommitFromPatchError{
+func (e *CreateCommitFromPatchError) FromProto(p *proto.CreateCommitFromPatchError) {
+	*e = CreateCommitFromPatchError{
 		RepositoryName: p.GetRepositoryName(),
 		InternalError:  p.GetInternalError(),
 		Command:        p.GetCommand(),
