@@ -23,7 +23,7 @@ import { OwnershipAssignPermission } from '../../../rbac/constants'
 
 import { FileOwnershipEntry } from './FileOwnershipEntry'
 import { FETCH_OWNERS } from './grapqlQueries'
-import { MakeOwnerButtonProps } from './MakeOwnerButton'
+import { MakeOwnerButton, MakeOwnerButtonProps } from './MakeOwnerButton'
 
 import styles from './FileOwnershipPanel.module.scss'
 
@@ -66,12 +66,20 @@ export const FileOwnershipPanel: React.FunctionComponent<
     const canAssignOwners = (data?.currentUser?.permissions?.nodes || []).some(
         permission => permission.displayName === OwnershipAssignPermission
     )
-    const makeOwnerProps: MakeOwnerButtonProps | undefined = canAssignOwners
-        ? ({ onSuccess: refetch } as MakeOwnerButtonProps)
+    const makeOwnerButton = canAssignOwners
+        ? (userId: string | undefined) => (
+              <MakeOwnerButton
+                  onSuccess={refetch}
+                  onError={(e: Error) => {}} //TODO
+                  repoId={repoID}
+                  path={filePath}
+                  userId={userId}
+              />
+          )
         : undefined
 
     if (data?.node?.__typename === 'Repository') {
-        return <OwnerList data={data?.node?.commit?.blob?.ownership} makeOwnerProps={makeOwnerProps} />
+        return <OwnerList data={data?.node?.commit?.blob?.ownership} makeOwnerButton={makeOwnerButton} />
     }
     return <OwnerList />
 }
@@ -149,10 +157,10 @@ const resolveOwnerSearchPredicate = (owners?: OwnerFields[]): string => {
 
 interface OwnerListProps {
     data?: OwnershipConnectionFields
-    makeOwnerProps?: MakeOwnerButtonProps
+    makeOwnerButton?: (userId: string | undefined) => React.ReactElement
 }
 
-const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data, makeOwnerProps }) => {
+const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data, makeOwnerButton }) => {
     if (data?.nodes && data.nodes.length) {
         const nodes = data.nodes
         const totalCount = data.totalOwners
@@ -220,18 +228,25 @@ const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data, makeOwnerPro
                                             reason.__typename === 'AssignedOwner'
                                     )
                             )
-                            .map((ownership, index) => (
+                            .map((ownership, index) => {
+                                const userId =
+                                    ownership.owner.__typename === 'Person' &&
+                                    ownership.owner.user?.__typename === 'User'
+                                        ? ownership.owner.user.id
+                                        : undefined
                                 // This list is not expected to change, so it's safe to use the index as a key.
                                 // eslint-disable-next-line react/no-array-index-key
-                                <React.Fragment key={index}>
-                                    {index > 0 && <tr className={styles.bordered} />}
-                                    <FileOwnershipEntry
-                                        owner={ownership.owner}
-                                        reasons={ownership.reasons}
-                                        makeOwnerProps={makeOwnerProps}
-                                    />
-                                </React.Fragment>
-                            ))}
+                                return (
+                                    <React.Fragment key={index}>
+                                        {index > 0 && <tr className={styles.bordered} />}
+                                        <FileOwnershipEntry
+                                            owner={ownership.owner}
+                                            reasons={ownership.reasons}
+                                            makeOwnerButton={makeOwnerButton && makeOwnerButton(userId)}
+                                        />
+                                    </React.Fragment>
+                                )
+                            })}
                     </tbody>
                 </table>
             </div>

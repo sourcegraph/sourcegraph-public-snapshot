@@ -15,7 +15,6 @@ import {
 } from '../../../graphql-operations'
 import { PersonLink } from '../../../person/PersonLink'
 
-import { MakeOwnerButton, MakeOwnerButtonProps } from './MakeOwnerButton'
 import { OwnershipBadge } from './OwnershipBadge'
 
 import containerStyles from './FileOwnershipPanel.module.scss'
@@ -23,7 +22,7 @@ import containerStyles from './FileOwnershipPanel.module.scss'
 interface Props {
     owner: OwnerFields
     reasons: OwnershipReason[]
-    makeOwnerProps?: MakeOwnerButtonProps
+    makeOwnerButton?: React.ReactElement
 }
 
 type OwnershipReason =
@@ -32,7 +31,7 @@ type OwnershipReason =
     | RecentViewOwnershipSignalFields
     | AssignedOwnerFields
 
-export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reasons, makeOwnerProps }) => {
+export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reasons, makeOwnerButton }) => {
     const findEmail = (): string | undefined => {
         if (owner.__typename !== 'Person') {
             return undefined
@@ -87,7 +86,7 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reas
                     <OwnershipBadge key={reason.title} reason={reason} />
                 ))}
             </td>
-            <td className={containerStyles.fitting}>{makeOwnerProps && <MakeOwnerButton {...makeOwnerProps} />}</td>
+            <td className={containerStyles.fitting}>{makeOwnerButton}</td>
         </tr>
     )
 }
