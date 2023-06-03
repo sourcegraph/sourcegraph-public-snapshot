@@ -86,6 +86,13 @@ export const FETCH_OWNERS = gql`
                 }
             }
         }
+        currentUser {
+            permissions {
+                nodes {
+                    displayName
+                }
+            }
+        }
     }
 `
 

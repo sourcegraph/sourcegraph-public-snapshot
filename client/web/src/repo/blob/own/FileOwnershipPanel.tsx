@@ -19,6 +19,7 @@ import {
     OwnershipConnectionFields,
     SearchPatternType,
 } from '../../../graphql-operations'
+import { OwnershipAssignPermission } from '../../../rbac/constants'
 
 import { FileOwnershipEntry } from './FileOwnershipEntry'
 import { FETCH_OWNERS } from './grapqlQueries'
@@ -61,8 +62,12 @@ export const FileOwnershipPanel: React.FunctionComponent<
         )
     }
 
+    const canAssignOwners = (data?.currentUser?.permissions?.nodes || []).some(
+        permission => permission.displayName === OwnershipAssignPermission
+    )
+
     if (data?.node?.__typename === 'Repository') {
-        return <OwnerList data={data?.node?.commit?.blob?.ownership} />
+        return <OwnerList data={data?.node?.commit?.blob?.ownership} displayAssignOwner={canAssignOwners} />
     }
     return <OwnerList />
 }
@@ -140,9 +145,10 @@ const resolveOwnerSearchPredicate = (owners?: OwnerFields[]): string => {
 
 interface OwnerListProps {
     data?: OwnershipConnectionFields
+    displayAssignOwner?: Boolean
 }
 
-const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data }) => {
+const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data, displayAssignOwner }) => {
     if (data?.nodes && data.nodes.length) {
         const nodes = data.nodes
         const totalCount = data.totalOwners
@@ -180,7 +186,11 @@ const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data }) => {
                                 // eslint-disable-next-line react/no-array-index-key
                                 <React.Fragment key={index}>
                                     {index > 0 && <tr className={styles.bordered} />}
-                                    <FileOwnershipEntry owner={ownership.owner} reasons={ownership.reasons} />
+                                    <FileOwnershipEntry
+                                        owner={ownership.owner}
+                                        reasons={ownership.reasons}
+                                        displayAssignOwner={false}
+                                    />
                                 </React.Fragment>
                             ))}
                         {
@@ -214,7 +224,11 @@ const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data }) => {
                                 // eslint-disable-next-line react/no-array-index-key
                                 <React.Fragment key={index}>
                                     {index > 0 && <tr className={styles.bordered} />}
-                                    <FileOwnershipEntry owner={ownership.owner} reasons={ownership.reasons} />
+                                    <FileOwnershipEntry
+                                        owner={ownership.owner}
+                                        reasons={ownership.reasons}
+                                        displayAssignOwner={displayAssignOwner || false}
+                                    />
                                 </React.Fragment>
                             ))}
                     </tbody>
