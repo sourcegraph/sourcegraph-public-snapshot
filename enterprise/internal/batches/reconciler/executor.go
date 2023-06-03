@@ -203,7 +203,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 	}
 	opts := buildCommitOpts(e.targetRepo, e.spec, pushConf)
 
-	rev, err := e.pushCommit(ctx, opts)
+	resp, err := e.pushCommit(ctx, opts)
 	var pce pushCommitError
 	if errors.As(err, &pce) {
 		if acss, ok := css.(sources.ArchivableChangesetSource); ok {
@@ -216,7 +216,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 		}
 	}
 
-	if err = e.runAfterCommit(ctx, css, rev, remoteRepo, opts); err != nil {
+	if err = e.runAfterCommit(ctx, css, resp, remoteRepo, opts); err != nil {
 		return afterDone, errors.Wrap(err, "running after commit routine")
 	}
 
@@ -616,25 +616,25 @@ func (e pushCommitError) Error() string {
 		e.RepositoryName, e.InternalError, e.Command, strings.TrimSpace(e.CombinedOutput))
 }
 
-func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) (rev string, err error) {
-	rev, err = e.client.CreateCommitFromPatch(ctx, opts)
+func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error) {
+	res, err := e.client.CreateCommitFromPatch(ctx, opts)
 	if err != nil {
 		var e *protocol.CreateCommitFromPatchError
 		if errors.As(err, &e) {
 			// Make "patch does not apply" errors a fatal error. Retrying the changeset
 			// rollout won't help here and just causes noise.
 			if strings.Contains(e.CombinedOutput, "patch does not apply") {
-				return "", errcode.MakeNonRetryable(pushCommitError{e})
+				return nil, errcode.MakeNonRetryable(pushCommitError{e})
 			}
-			return "", pushCommitError{e}
+			return nil, pushCommitError{e}
 		}
-		return "", err
+		return nil, err
 	}
 
-	return rev, nil
+	return res, nil
 }
 
-func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSource, rev string, remoteRepo *types.Repo, opts protocol.CreateCommitFromPatchRequest) (err error) {
+func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSource, resp *protocol.CreateCommitFromPatchResponse, remoteRepo *types.Repo, opts protocol.CreateCommitFromPatchRequest) (err error) {
 	// If we're pushing to a GitHub code host, we should check if a GitHub App is
 	// configured for Batch Changes to sign commits on this code host with.
 	if _, ok := css.(*sources.GitHubSource); ok {
@@ -657,6 +657,11 @@ func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSour
 			if !ok {
 				return errors.Wrap(err, "got non-GitHubSource for ChangesetSource when using GitHub App authentication strategy")
 			}
+			// Find the revision from the response from CreateCommitFromPatch.
+			if resp == nil {
+				return errors.New("no response from CreateCommitFromPatch")
+			}
+			rev := resp.Rev
 			// We use the existing commit as the basis for the new commit, duplicating it
 			// over the REST API in order to produce a signed version of it and then
 			// deleting the original one.
