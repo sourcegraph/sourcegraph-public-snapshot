@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { mdiEmail, mdiPlus } from '@mdi/js'
+import { mdiEmail } from '@mdi/js'
 
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
@@ -15,6 +15,7 @@ import {
 } from '../../../graphql-operations'
 import { PersonLink } from '../../../person/PersonLink'
 
+import { MakeOwnerButton, MakeOwnerButtonProps } from './MakeOwnerButton'
 import { OwnershipBadge } from './OwnershipBadge'
 
 import containerStyles from './FileOwnershipPanel.module.scss'
@@ -22,7 +23,7 @@ import containerStyles from './FileOwnershipPanel.module.scss'
 interface Props {
     owner: OwnerFields
     reasons: OwnershipReason[]
-    displayAssignOwner: Boolean
+    makeOwnerProps?: MakeOwnerButtonProps
 }
 
 type OwnershipReason =
@@ -31,7 +32,7 @@ type OwnershipReason =
     | RecentViewOwnershipSignalFields
     | AssignedOwnerFields
 
-export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reasons, displayAssignOwner }) => {
+export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reasons, makeOwnerProps }) => {
     const findEmail = (): string | undefined => {
         if (owner.__typename !== 'Person') {
             return undefined
@@ -86,14 +87,7 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reas
                     <OwnershipBadge key={reason.title} reason={reason} />
                 ))}
             </td>
-            <td className={containerStyles.fitting}>
-                {displayAssignOwner && (
-                    <Button variant={'primary'} outline={true} size={'sm'}>
-                        <Icon svgPath={mdiPlus} />
-                        Make owner
-                    </Button>
-                )}
-            </td>
+            <td className={containerStyles.fitting}>{makeOwnerProps && <MakeOwnerButton {...makeOwnerProps} />}</td>
         </tr>
     )
 }

@@ -23,6 +23,7 @@ import { OwnershipAssignPermission } from '../../../rbac/constants'
 
 import { FileOwnershipEntry } from './FileOwnershipEntry'
 import { FETCH_OWNERS } from './grapqlQueries'
+import { MakeOwnerButtonProps } from './MakeOwnerButton'
 
 import styles from './FileOwnershipPanel.module.scss'
 
@@ -37,7 +38,7 @@ export const FileOwnershipPanel: React.FunctionComponent<
         telemetryService.log('OwnershipPanelOpened')
     }, [telemetryService])
 
-    const { data, loading, error } = useQuery<FetchOwnershipResult, FetchOwnershipVariables>(FETCH_OWNERS, {
+    const { data, loading, error, refetch } = useQuery<FetchOwnershipResult, FetchOwnershipVariables>(FETCH_OWNERS, {
         variables: {
             repo: repoID,
             revision: revision ?? '',
@@ -65,9 +66,12 @@ export const FileOwnershipPanel: React.FunctionComponent<
     const canAssignOwners = (data?.currentUser?.permissions?.nodes || []).some(
         permission => permission.displayName === OwnershipAssignPermission
     )
+    const makeOwnerProps: MakeOwnerButtonProps | undefined = canAssignOwners
+        ? ({ onSuccess: refetch } as MakeOwnerButtonProps)
+        : undefined
 
     if (data?.node?.__typename === 'Repository') {
-        return <OwnerList data={data?.node?.commit?.blob?.ownership} displayAssignOwner={canAssignOwners} />
+        return <OwnerList data={data?.node?.commit?.blob?.ownership} makeOwnerProps={makeOwnerProps} />
     }
     return <OwnerList />
 }
@@ -145,10 +149,10 @@ const resolveOwnerSearchPredicate = (owners?: OwnerFields[]): string => {
 
 interface OwnerListProps {
     data?: OwnershipConnectionFields
-    displayAssignOwner?: Boolean
+    makeOwnerProps?: MakeOwnerButtonProps
 }
 
-const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data, displayAssignOwner }) => {
+const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data, makeOwnerProps }) => {
     if (data?.nodes && data.nodes.length) {
         const nodes = data.nodes
         const totalCount = data.totalOwners
@@ -187,11 +191,7 @@ const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data, displayAssig
                                 // eslint-disable-next-line react/no-array-index-key
                                 <React.Fragment key={index}>
                                     {index > 0 && <tr className={styles.bordered} />}
-                                    <FileOwnershipEntry
-                                        owner={ownership.owner}
-                                        reasons={ownership.reasons}
-                                        displayAssignOwner={false}
-                                    />
+                                    <FileOwnershipEntry owner={ownership.owner} reasons={ownership.reasons} />
                                 </React.Fragment>
                             ))}
                         {
@@ -228,7 +228,7 @@ const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data, displayAssig
                                     <FileOwnershipEntry
                                         owner={ownership.owner}
                                         reasons={ownership.reasons}
-                                        displayAssignOwner={displayAssignOwner || false}
+                                        makeOwnerProps={makeOwnerProps}
                                     />
                                 </React.Fragment>
                             ))}
