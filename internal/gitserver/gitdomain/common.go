@@ -92,22 +92,24 @@ func (o *GitObject) ToProto() *proto.GitObject {
 	}
 }
 
-func (o *GitObject) FromProto(proto *proto.GitObject) {
-	id := proto.GetId()
+
+func (o *GitObject) FromProto(p *proto.GitObject) {
+	id := p.GetId()
 	var oid OID
 	if len(id) == 20 {
 		copy(oid[:], id)
 	}
 
 	var t ObjectType
-	switch proto.GetType() {
-	case 1:
+  
+	switch p.GetType() {
+	case proto.GitObject_OBJECT_TYPE_COMMIT:
 		t = ObjectTypeCommit
-	case 2:
+	case proto.GitObject_OBJECT_TYPE_TAG:
 		t = ObjectTypeTag
-	case 3:
+	case proto.GitObject_OBJECT_TYPE_TREE:
 		t = ObjectTypeTree
-	case 4:
+	case proto.GitObject_OBJECT_TYPE_BLOB:
 		t = ObjectTypeBlob
 
 	}

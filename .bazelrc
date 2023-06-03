@@ -30,3 +30,8 @@ try-import %workspace%/user.bazelrc
 
 # Some special sauce for the special NixOS users in your life :) set by dev-shell shell-hook
 try-import %workspace%/.bazelrc-nix
+
+# Used to locally cross compile, when targeting docker images
+build:darwin-docker --incompatible_enable_cc_toolchain_resolution
+build:darwin-docker --platforms @zig_sdk//platform:linux_amd64
+build:darwin-docker --extra_toolchains @zig_sdk//toolchain:linux_amd64_gnu.2.31

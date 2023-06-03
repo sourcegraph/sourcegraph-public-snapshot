@@ -499,3 +499,10 @@
     :why:
     :versions: []
     :when: 2023-01-12 01:20:17.504279000 Z
+- - :license
+  - github.com/hashicorp/cronexpr
+  - Apache 2.0
+  - :who:
+    :why:
+    :versions: []
+    :when: 2023-06-02 13:33:29.979046000 Z

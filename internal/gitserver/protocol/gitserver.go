@@ -760,16 +760,6 @@ func (r *CreateCommitFromPatchResponse) FromProto(p *proto.CreateCommitFromPatch
 	}
 }
 
-// func CreateCommitFromPatchResponseFromProto(p *proto.CreateCommitFromPatchBinaryResponse) *CreateCommitFromPatchResponse {
-// 	if p == nil {
-// 		return nil
-// 	}
-// 	return &CreateCommitFromPatchResponse{
-// 		Rev:   p.GetRev(),
-// 		Error: CreateCommitFromPatchErrorFromProto(p.GetError()),
-// 	}
-// }
-
 // SetError adds the supplied error related details to e.
 func (e *CreateCommitFromPatchResponse) SetError(repo, command, out string, err error) {
 	if e.Error == nil {

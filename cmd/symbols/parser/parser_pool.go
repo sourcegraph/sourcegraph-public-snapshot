@@ -16,11 +16,17 @@ type parserPool struct {
 	pool      map[ctags_config.ParserType]chan ctags.Parser
 }
 
-func NewParserPool(newParser ParserFactory, numParserProcesses int) (*parserPool, error) {
+var DefaultParserTypes = []ctags_config.ParserType{ctags_config.UniversalCtags, ctags_config.ScipCtags}
+
+func NewParserPool(newParser ParserFactory, numParserProcesses int, parserTypes []ctags_config.ParserType) (*parserPool, error) {
 	pool := make(map[ctags_config.ParserType]chan ctags.Parser)
 
+	if len(parserTypes) == 0 {
+		parserTypes = DefaultParserTypes
+	}
+
 	// NOTE: We obviously don't make `NoCtags` available in the pool.
-	for _, parserType := range []ctags_config.ParserType{ctags_config.UniversalCtags, ctags_config.ScipCtags} {
+	for _, parserType := range parserTypes {
 		pool[parserType] = make(chan ctags.Parser, numParserProcesses)
 		for i := 0; i < numParserProcesses; i++ {
 			parser, err := newParser(parserType)

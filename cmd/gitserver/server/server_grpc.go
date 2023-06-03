@@ -53,9 +53,8 @@ func (gs *GRPCServer) BatchLog(ctx context.Context, req *proto.BatchLogRequest) 
 
 func (gs *GRPCServer) CreateCommitFromPatchBinary(ctx context.Context, req *proto.CreateCommitFromPatchBinaryRequest) (*proto.CreateCommitFromPatchBinaryResponse, error) {
 	var r protocol.CreateCommitFromPatchRequest
-	var resp protocol.CreateCommitFromPatchResponse
 	r.FromProto(req)
-	_, resp = gs.Server.createCommitFromPatch(ctx, r)
+	_, resp := gs.Server.createCommitFromPatch(ctx, r)
 
 	if resp.Error != nil {
 		return resp.ToProto(), resp.Error
@@ -265,7 +264,7 @@ func (gs *GRPCServer) ListGitolite(ctx context.Context, req *proto.ListGitoliteR
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	var protoRepos []*proto.GitoliteRepo
+	protoRepos := make([]*proto.GitoliteRepo, 0, len(repos))
 
 	for _, repo := range repos {
 		protoRepos = append(protoRepos, repo.ToProto())

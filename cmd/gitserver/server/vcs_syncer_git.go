@@ -34,7 +34,7 @@ func (s *GitRepoSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) err
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "git", args...)
-	out, err := common.RunWith(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd), true, nil)
+	out, err := runWith(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd), true, nil)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr
@@ -68,7 +68,7 @@ func (s *GitRepoSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, tm
 func (s *GitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir common.GitDir, revspec string) ([]byte, error) {
 	cmd, configRemoteOpts := s.fetchCommand(ctx, remoteURL)
 	dir.Set(cmd)
-	if output, err := common.RunWith(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd), configRemoteOpts, nil); err != nil {
+	if output, err := runWith(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd), configRemoteOpts, nil); err != nil {
 		return nil, &common.GitCommandError{Err: err, Output: newURLRedactor(remoteURL).redact(string(output))}
 	}
 	return nil, nil
