@@ -158,6 +158,10 @@ export class SourcegraphGraphQLAPIClient {
         argument?: string | {}
         publicArgument?: string | {}
     }): Promise<void | Error> {
+        if (process.env.CODY_TESTING === 'true') {
+            console.log(`not logging ${event.event} in test mode`)
+            return
+        }
         try {
             if (this.config.serverEndpoint === this.dotcomUrl) {
                 await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(

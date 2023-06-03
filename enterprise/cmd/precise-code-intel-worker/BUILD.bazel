@@ -1,4 +1,8 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//dev:oci_defs.bzl", "image_repository")
 
 go_library(
     name = "precise-code-intel-worker_lib",
@@ -20,4 +24,43 @@ go_binary(
     name = "precise-code-intel-worker",
     embed = [":precise-code-intel-worker_lib"],
     visibility = ["//visibility:public"],
+)
+
+pkg_tar(
+    name = "tar_precise-code-intel-worker",
+    srcs = [":precise-code-intel-worker"],
+)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_base",
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+        "/precise-code-intel-worker",
+    ],
+    tars = [":tar_precise-code-intel-worker"],
+    user = "sourcegraph",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["precise-code-intel-worker:candidate"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = ["requires-network"],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    remote_tags = "//:tags",
+    repository = image_repository("precise-code-intel-worker"),
 )

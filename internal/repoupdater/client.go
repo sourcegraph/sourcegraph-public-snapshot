@@ -10,9 +10,8 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/opentracing-contrib/go-stdlib/nethttp"
-	"github.com/opentracing/opentracing-go/ext"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -24,7 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
 	"github.com/sourcegraph/sourcegraph/internal/syncx"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -128,20 +127,14 @@ func (c *Client) RepoLookup(
 		return MockRepoLookup(args)
 	}
 
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.RepoLookup") //nolint:staticcheck // OT is deprecated
+	tr, ctx := trace.New(ctx, "repoupdater", "RepoLookup",
+		attribute.String("repo", string(args.Repo)))
 	defer func() {
 		if result != nil {
-			span.SetTag("found", result.Repo != nil)
+			tr.SetAttributes(attribute.Bool("found", result.Repo != nil))
 		}
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
+		tr.FinishWithErr(&err)
 	}()
-	if args.Repo != "" {
-		span.SetTag("Repo", string(args.Repo))
-	}
 
 	if internalgrpc.IsGRPCEnabled(ctx) {
 		client, err := c.grpcClient()
@@ -448,22 +441,12 @@ func (c *Client) httpPost(ctx context.Context, method string, payload any) (resp
 }
 
 func (c *Client) do(ctx context.Context, req *http.Request) (_ *http.Response, err error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "Client.do") //nolint:staticcheck // OT is deprecated
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
-	}()
+	tr, ctx := trace.New(ctx, "repoupdater", "do")
+	defer tr.FinishWithErr(&err)
 
 	req.Header.Set("Content-Type", "application/json")
 
 	req = req.WithContext(ctx)
-	req, ht := nethttp.TraceRequest(span.Tracer(), req,
-		nethttp.OperationName("RepoUpdater Client"),
-		nethttp.ClientTrace(false))
-	defer ht.Finish()
 
 	if c.HTTPClient != nil {
 		return c.HTTPClient.Do(req)

@@ -20,16 +20,14 @@ import (
 	"golang.org/x/net/html/atom"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/sourcegraph/sourcegraph/internal/binary"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
-
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
+	"github.com/sourcegraph/sourcegraph/internal/binary"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
+	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -419,7 +417,6 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		Code:             code,
 		Filepath:         p.Filepath,
 		StabilizeTimeout: stabilizeTimeout,
-		Tracer:           ot.GetTracer(ctx), //nolint:staticcheck // Drop once we get rid of OpenTracing
 		LineLengthLimit:  maxLineLength,
 		CSS:              true,
 		Engine:           getEngineParameter(filetypeQuery.Engine),

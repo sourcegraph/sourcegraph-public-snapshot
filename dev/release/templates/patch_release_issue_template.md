@@ -13,15 +13,7 @@ Arguments:
 
 This release is scheduled for **$RELEASE_DATE**.
 
-> **Attention developers:** to get your commits in `main` included in this patch release, please file a [patch request](https://github.com/sourcegraph/sourcegraph/issues/new?assignees=&labels=team%2Fdistribution&template=request_patch_release.md&title=$MAJOR.$MINOR.$PATCH%3A+) for review.
->
-> Only check off items if relevant commits across the following repositories have been cherry-picked into the relevant `$MAJOR.$MINOR` branch by the release captain:
->
-> - `sourcegraph/sourcegraph`
-> - `sourcegraph/deploy-sourcegraph`
-> - `sourcegraph/deploy-sourcegraph-docker`
-
-- [ ] TODO: Add [patch request issues](https://github.com/sourcegraph/sourcegraph/issues?q=is%3Aissue+is%3Aopen+sort%3Aupdated-desc+label%3Apatch-release-request) and their associated commits here
+> **Attention developers:** to get your commits in `main` included in this patch release add the `backport-$MAJOR.$MINOR` to the PR to `main`.
 
 ## Setup
 
@@ -45,7 +37,7 @@ For each of the following repositories you have made changes to, cherry-pick (se
 - [ ] `sourcegraph/sourcegraph` ([`$MAJOR.$MINOR` release branch](https://github.com/sourcegraph/sourcegraph/tree/$MAJOR.$MINOR) [CI](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=$MAJOR.$MINOR))
 - [ ] `sourcegraph/deploy-sourcegraph` ([`$MAJOR.$MINOR` release branch](https://github.com/sourcegraph/deploy-sourcegraph/tree/$MAJOR.$MINOR) [CI](https://buildkite.com/sourcegraph/deploy-sourcegraph/builds?branch=$MAJOR.$MINOR))
 - [ ] `sourcegraph/deploy-sourcegraph-docker` ([`$MAJOR.$MINOR` release branch](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/$MAJOR.$MINOR) [CI](https://buildkite.com/sourcegraph/deploy-sourcegraph-docker/builds?branch=$MAJOR.$MINOR))
-- [ ] `sourcegraph/deploy-sourcegraph-helm` ([`$MAJOR.$MINOR` release branch](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/release/$MAJOR.$MINOR) [CI](https://buildkite.com/sourcegraph/deploy-sourcegraph-helm/builds?branch=$MAJOR.$MINOR))
+- [ ] `sourcegraph/deploy-sourcegraph-helm` ([`$MAJOR.$MINOR` release branch](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/release/$MAJOR.$MINOR) [CI](https://buildkite.com/sourcegraph/deploy-sourcegraph-helm/builds?branch=release/$MAJOR.$MINOR))
 
 ```sh
 git checkout $MAJOR.$MINOR
@@ -69,17 +61,14 @@ Create and test the first release candidate:
 - [ ] [Sourcegraph pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH-rc.1)
 - [ ] File any failures and regressions in the pipelines as `release-blocker` issues and assign the appropriate teams.
 
-**Note**: You will need to re-check the above pipelines for any subsequent release candidates. You can see the Buildkite logs by tweaking the "branch" query parameter in the URLs to point to the desired release candidate. In general, the URL scheme looks like the following (replacing `N` in the URL):
-
-- Sourcegraph: `https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH-rc.N`
-- QA: `https://buildkite.com/sourcegraph/qa/builds?branch=v$MAJOR.$MINOR.$PATCH-rc.N`
-- E2E: `https://buildkite.com/sourcegraph/qa/builds?branch=v$MAJOR.$MINOR.$PATCH-rc.N`
+**Note**: You will need to re-check the above pipelines for any subsequent release candidates. You can see the Buildkite logs by tweaking the "branch" query parameter in the URLs to point to the desired release candidate. In general, the URL scheme looks like the following (replacing `N` in the URL): `https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH-rc.N`
 
 ## Stage release
 
 <!-- Keep in sync with release_issue_template's "Stage release" section -->
 
 - [ ] Verify the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) on `main` and `$MAJOR.$MINOR` are accurate.
+- [ ] Ensure security has approved the `Security release approval issue` you created.
 - [ ] Promote a release candidate to the final release build. You will need to provide the tag of the release candidate which you would like to promote as an argument. To get a list of available release candidates, you can use:
   ```shell
   pnpm run release release:check-candidate
@@ -88,8 +77,7 @@ Create and test the first release candidate:
   ```sh
   pnpm run release release:promote-candidate tag
   ```
-- [ ] Ensure that the following pipelines all pass for the `v$MAJOR.$MINOR.$PATCH` tag:
-- [ ] [Sourcegraph pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH)
+- [ ] Ensure that the pipeline for the `v$MAJOR.$MINOR.$PATCH` tag has passed: [Sourcegraph pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH)
 - [ ] Wait for the `v$MAJOR.$MINOR.$PATCH` release Docker images to be available in [Docker Hub](https://hub.docker.com/r/sourcegraph/server/tags)
 - [ ] Open PRs that publish the new release and address any action items required to finalize draft PRs (track PR status via the [generated release batch change](https://k8s.sgdev.org/organizations/sourcegraph/batch-changes)):
   ```sh

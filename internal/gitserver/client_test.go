@@ -1249,8 +1249,6 @@ func TestGitserverClient_RepoClone(t *testing.T) {
 		},
 	})
 
-	defer conf.Mock(nil)
-
 	db := newMockDB()
 	s := server.Server{
 		Logger:   logtest.Scoped(t),
@@ -1412,6 +1410,7 @@ type mockClient struct {
 func (mc *mockClient) GetObject(ctx context.Context, in *proto.GetObjectRequest, opts ...grpc.CallOption) (*proto.GetObjectResponse, error) {
 	return mc.mockGetObject(ctx, in, opts...)
 }
+
 
 // ListGitolite implements v1.GitserverServiceClient.
 func (mc *mockClient) ListGitolite(ctx context.Context, in *proto.ListGitoliteRequest, opts ...grpc.CallOption) (*proto.ListGitoliteResponse, error) {
