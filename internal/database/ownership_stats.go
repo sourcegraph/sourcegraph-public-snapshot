@@ -95,7 +95,7 @@ func (s *ownershipStats) UpdateIndividualCounts(ctx context.Context, repoID api.
 			q := sqlf.Sprintf(codeownerQueryFmtstr, counts.CodeownersReference, counts.CodeownersReference)
 			r := s.Store.QueryRow(ctx, q)
 			if err := r.Scan(&ownerID); err != nil {
-				return errors.Wrapf(err, "querying/adding owner %q failed, query: %s", counts.CodeownersReference, q.Query(sqlf.PostgresBindVar))
+				return errors.Wrapf(err, "querying/adding owner %q failed", counts.CodeownersReference)
 			}
 			codeownersCache[counts.CodeownersReference] = ownerID
 		}
@@ -110,11 +110,11 @@ func (s *ownershipStats) UpdateIndividualCounts(ctx context.Context, repoID api.
 		q := sqlf.Sprintf(codeownerUpsertCountsFmtstr, pathIDs[0], ownerID, counts.CodeownedFileCount, timestamp)
 		res, err := s.Store.ExecResult(ctx, q)
 		if err != nil {
-			return errors.Wrapf(err, "updating counts for %q at repoID=%d path=%s failed, query: %s", counts.CodeownersReference, repoID, path, q.Query(sqlf.PostgresBindVar))
+			return errors.Wrapf(err, "updating counts for %q at repoID=%d path=%s failed", counts.CodeownersReference, repoID, path)
 		}
 		rows, err := res.RowsAffected()
 		if err != nil {
-			return errors.Wrapf(err, "updating counts for %q at repoID=%d path=%s failed, query: %s", counts.CodeownersReference, repoID, path, q.Query(sqlf.PostgresBindVar))
+			return errors.Wrapf(err, "updating counts for %q at repoID=%d path=%s failed", counts.CodeownersReference, repoID, path)
 		}
 		totalRows += int(rows)
 		return nil
