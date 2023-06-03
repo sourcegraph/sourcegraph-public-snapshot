@@ -27,6 +27,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -573,9 +575,131 @@ func createSimpleGitRepo(t *testing.T, root string) string {
 	return dir
 }
 
+type mockP4ExecClient struct {
+	isEndOfStream bool
+	Err           string
+	grpc.ClientStream
+}
+
+func (m *mockP4ExecClient) Recv() (*proto.P4ExecResponse, error) {
+	if m.isEndOfStream {
+		return nil, io.EOF
+	}
+
+	if m.Err != "" {
+		return nil, status.Error(codes.Unknown, m.Err)
+	}
+
+	response := &proto.P4ExecResponse{
+		Data: []byte("example output"),
+	}
+
+	// Set the end-of-stream condition
+	m.isEndOfStream = true
+
+	return response, nil
+}
+
+func TestClient_P4ExecGRPC(t *testing.T) {
+	_ = gitserver.CreateRepoDir(t)
+	type test struct {
+		name     string
+		host     string
+		user     string
+		password string
+		args     []string
+		err      string
+		wantBody string
+		wantErr  string
+	}
+	tests := []test{
+		{
+			name:     "check request body",
+			host:     "ssl:111.222.333.444:1666",
+			user:     "admin",
+			password: "pa$$word",
+			args:     []string{"protects"},
+			wantBody: "example output",
+			wantErr:  "<nil>",
+		},
+		{
+			name:    "error response",
+			err:     "example error",
+			wantErr: "rpc error: code = Unknown desc = example error",
+		},
+	}
+
+	ctx := context.Background()
+	runTest := func(t *testing.T, test test, cli gitserver.Client, called bool) {
+		t.Run(test.name, func(t *testing.T) {
+			t.Log(test.name)
+
+			rc, _, _ := cli.P4Exec(ctx, test.host, test.user, test.password, test.args...)
+
+			var body []byte
+			var err error
+			if rc != nil {
+				defer func() { _ = rc.Close() }()
+
+				body, err = io.ReadAll(rc)
+				if err != nil {
+					if diff := cmp.Diff(test.wantErr, fmt.Sprintf("%v", err)); diff != "" {
+						t.Fatalf("Mismatch (-want +got):\n%s", diff)
+					}
+				}
+			}
+
+			if diff := cmp.Diff(test.wantBody, string(body)); diff != "" {
+				t.Fatalf("Mismatch (-want +got):\n%s", diff)
+			}
+		})
+
+	}
+
+	t.Run("GRPC", func(t *testing.T) {
+		for _, test := range tests {
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					ExperimentalFeatures: &schema.ExperimentalFeatures{
+						EnableGRPC: true,
+					},
+				},
+			})
+
+			defer conf.Mock(nil)
+
+			const gitserverAddr = "172.16.8.1:8080"
+			addrs := []string{gitserverAddr}
+			called := false
+
+			source := gitserver.NewTestClientSource(t, addrs, func(o *gitserver.TestClientSourceOptions) {
+				o.ClientFunc = func(cc *grpc.ClientConn) proto.GitserverServiceClient {
+					mockP4Exec := func(ctx context.Context, in *proto.P4ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_P4ExecClient, error) {
+						called = true
+						return &mockP4ExecClient{
+							Err: test.err,
+						}, nil
+					}
+
+					return &mockClient{mockP4Exec: mockP4Exec}
+				}
+			})
+
+			cli := gitserver.NewTestClient(&http.Client{}, source)
+			runTest(t, test, cli, called)
+
+			if !called {
+				t.Fatal("GRPC should be called")
+			}
+		}
+
+	})
+
+}
+
 func TestClient_P4Exec(t *testing.T) {
 	_ = gitserver.CreateRepoDir(t)
-	tests := []struct {
+	type test struct {
 		name     string
 		host     string
 		user     string
@@ -584,7 +708,8 @@ func TestClient_P4Exec(t *testing.T) {
 		handler  http.HandlerFunc
 		wantBody string
 		wantErr  string
-	}{
+	}
+	tests := []test{
 		{
 			name:     "check request body",
 			host:     "ssl:111.222.333.444:1666",
@@ -631,16 +756,9 @@ func TestClient_P4Exec(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	for _, test := range tests {
+	runTest := func(t *testing.T, test test, cli gitserver.Client, called bool) {
 		t.Run(test.name, func(t *testing.T) {
-			testServer := httptest.NewServer(test.handler)
-			defer testServer.Close()
-
-			u, _ := url.Parse(testServer.URL)
-			addrs := []string{u.Host}
-			source := gitserver.NewTestClientSource(t, addrs)
-
-			cli := gitserver.NewTestClient(&http.Client{}, source)
+			t.Log(test.name)
 
 			rc, _, err := cli.P4Exec(ctx, test.host, test.user, test.password, test.args...)
 			if diff := cmp.Diff(test.wantErr, fmt.Sprintf("%v", err)); diff != "" {
@@ -661,7 +779,35 @@ func TestClient_P4Exec(t *testing.T) {
 				t.Fatalf("Mismatch (-want +got):\n%s", diff)
 			}
 		})
+
 	}
+	t.Run("HTTP", func(t *testing.T) {
+		for _, test := range tests {
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					ExperimentalFeatures: &schema.ExperimentalFeatures{
+						EnableGRPC: false,
+					},
+				},
+			})
+			defer conf.Mock(nil)
+			testServer := httptest.NewServer(test.handler)
+			defer testServer.Close()
+
+			u, _ := url.Parse(testServer.URL)
+			addrs := []string{u.Host}
+			source := gitserver.NewTestClientSource(t, addrs)
+			called := false
+
+			cli := gitserver.NewTestClient(&http.Client{}, source)
+			runTest(t, test, cli, called)
+
+			if called {
+				t.Fatal("handler shoulde be called")
+			}
+		}
+
+	})
 }
 
 func TestClient_ResolveRevisions(t *testing.T) {
@@ -1165,7 +1311,14 @@ type spyGitserverServiceClient struct {
 	repoDelete                        bool
 	repoUpdate                        bool
 	reposStatsCalled                  bool
+	p4ExecCalled                      bool
 	base                              proto.GitserverServiceClient
+}
+
+// P4Exec implements v1.GitserverServiceClient.
+func (s *spyGitserverServiceClient) P4Exec(ctx context.Context, in *proto.P4ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_P4ExecClient, error) {
+	s.p4ExecCalled = true
+	return s.base.P4Exec(ctx, in, opts...)
 }
 
 // CreateCommitFromPatchBinary implements v1.GitserverServiceClient.
@@ -1234,6 +1387,12 @@ type mockClient struct {
 	mockRepoUpdate                  func(ctx context.Context, in *proto.RepoUpdateRequest, opts ...grpc.CallOption) (*proto.RepoUpdateResponse, error)
 	mockArchive                     func(ctx context.Context, in *proto.ArchiveRequest, opts ...grpc.CallOption) (proto.GitserverService_ArchiveClient, error)
 	mockSearch                      func(ctx context.Context, in *proto.SearchRequest, opts ...grpc.CallOption) (proto.GitserverService_SearchClient, error)
+	mockP4Exec                      func(ctx context.Context, in *proto.P4ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_P4ExecClient, error)
+}
+
+// P4Exec implements v1.GitserverServiceClient.
+func (mc *mockClient) P4Exec(ctx context.Context, in *proto.P4ExecRequest, opts ...grpc.CallOption) (proto.GitserverService_P4ExecClient, error) {
+	return mc.mockP4Exec(ctx, in, opts...)
 }
 
 // CreateCommitFromPatchBinary implements v1.GitserverServiceClient.
@@ -1285,3 +1444,5 @@ func (mc *mockClient) Archive(ctx context.Context, in *proto.ArchiveRequest, opt
 }
 
 var _ proto.GitserverServiceClient = &mockClient{}
+
+var _ proto.GitserverService_P4ExecClient = &mockP4ExecClient{}

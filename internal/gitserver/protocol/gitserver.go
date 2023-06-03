@@ -314,6 +314,24 @@ type P4ExecRequest struct {
 	Args     []string `json:"args"`
 }
 
+func (r *P4ExecRequest) ToProto() *proto.P4ExecRequest {
+	return &proto.P4ExecRequest{
+		P4Port:   r.P4Port,
+		P4User:   r.P4User,
+		P4Passwd: r.P4Passwd,
+		Args:     r.Args,
+	}
+}
+
+func (r *P4ExecRequest) FromProto(p *proto.P4ExecRequest) {
+	*r = P4ExecRequest{
+		P4Port:   p.GetP4Port(),
+		P4User:   p.GetP4User(),
+		P4Passwd: p.GetP4Passwd(),
+		Args:     p.GetArgs(),
+	}
+}
+
 // RepoUpdateRequest is a request to update the contents of a given repo, or clone it if it doesn't exist.
 type RepoUpdateRequest struct {
 	Repo  api.RepoName  `json:"repo"`  // identifying URL for repo
