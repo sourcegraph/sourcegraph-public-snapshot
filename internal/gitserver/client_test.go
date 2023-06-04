@@ -176,6 +176,22 @@ func TestProtoRoundTrip(t *testing.T) {
 		t.Errorf("RepoUpdateResponse proto roundtrip failed (-want +got):\n%s", diff)
 	}
 
+	createCommit := func(original protocol.CreateCommitFromPatchResponse) bool {
+		var converted protocol.CreateCommitFromPatchResponse
+
+		converted.FromProto(original.ToProto())
+
+		if diff = cmp.Diff(original, converted); diff != "" {
+			return false
+		}
+
+		return true
+	}
+
+	if err := quick.Check(createCommit, nil); err != nil {
+		t.Errorf("CreateCommitFromPatchRequest proto roundtrip failed (-want +got):\n%s", diff)
+	}
+
 }
 
 func TestClient_Remove(t *testing.T) {
