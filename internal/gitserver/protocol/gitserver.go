@@ -2,6 +2,7 @@ package protocol
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/opentracing/opentracing-go/log"
@@ -681,7 +682,7 @@ type PatchCommitInfo struct {
 
 func (p *PatchCommitInfo) ToProto() *proto.PatchCommitInfo {
 	return &proto.PatchCommitInfo{
-		Message:        p.Message,
+		Message:        strings.Join(p.Messages, "\n"),
 		AuthorName:     p.AuthorName,
 		AuthorEmail:    p.AuthorEmail,
 		CommitterName:  p.CommitterName,
@@ -692,7 +693,7 @@ func (p *PatchCommitInfo) ToProto() *proto.PatchCommitInfo {
 
 func PatchCommitInfoFromProto(p *proto.PatchCommitInfo) PatchCommitInfo {
 	return PatchCommitInfo{
-		Message:        p.GetMessage(),
+		Messages:       []string{p.GetMessage()}, //TODO: @varsanojidan fix this
 		AuthorName:     p.GetAuthorName(),
 		AuthorEmail:    p.GetAuthorEmail(),
 		CommitterName:  p.GetCommitterName(),
