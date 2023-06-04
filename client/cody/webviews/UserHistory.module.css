@@ -22,6 +22,7 @@
 
 .item-button {
     display: block;
+    position: relative;
     padding-top: .5rem;
     padding-bottom: .5rem;
 }
@@ -37,16 +38,15 @@
     margin-bottom: .25rem;
 }
 
-.history-item {
-    display: flex;
-    flex-direction: row;
-    row-gap: 10rem;
-    justify-content: space-between;
+.item-delete {
+    position: absolute;
+    right: 0.25rem;
+    top: 0.25rem;
+    visibility: hidden;
 }
 
-.item-delete {
-    margin-top: -0.5rem;
-    float: right;
+.item-button:hover .item-delete {
+    visibility: visible;
 }
 
 .item-last-message {

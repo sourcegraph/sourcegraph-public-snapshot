@@ -51,20 +51,6 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
         setView('chat')
     }
 
-    // Fix this funcction
-
-    const findTimeDifference = (interactionTime: string): string => {
-        const date = new Date(interactionTime)
-        const now = new Date()
-        const diff = now.getTime() - date.getTime()
-
-        const hours = Math.floor(diff / (60 * 60 * 1000))
-        const minutes = Math.floor(diff / (60 * 1000)) % 60
-        const seconds = Math.floor(diff / 1000) % 60
-
-        return `${hours}h ${minutes}m ${seconds}s`
-    }
-
     return (
         <div className={chatStyles.innerContainer}>
             <div className={chatStyles.nonTranscriptContainer}>
@@ -102,22 +88,18 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
                                         type="button"
                                     >
                                         <div className={styles.itemButtonInnerContainer}>
-                                            <div className={styles.historyItem}>
-                                                <div className={styles.itemDate}>
-                                                    {findTimeDifference(new Date(chat[0]).toLocaleString())}
-                                                </div>
-                                                <div className={styles.itemDelete}>
-                                                    <VSCodeButton
-                                                        appearance="icon"
-                                                        type="button"
-                                                        onClick={event => {
-                                                            onDeleteHistoryClick(chat[0])
-                                                            event.stopPropagation()
-                                                        }}
-                                                    >
-                                                        <i className="codicon codicon-trash" />
-                                                    </VSCodeButton>
-                                                </div>
+                                            <div className={styles.itemDate}>{new Date(chat[0]).toLocaleString()}</div>
+                                            <div className={styles.itemDelete}>
+                                                <VSCodeButton
+                                                    appearance="icon"
+                                                    type="button"
+                                                    onClick={event => {
+                                                        onDeleteHistoryClick(chat[0])
+                                                        event.stopPropagation()
+                                                    }}
+                                                >
+                                                    <i className="codicon codicon-trash" />
+                                                </VSCodeButton>
                                             </div>
                                             <div className={styles.itemLastMessage}>{lastMessage.displayText}</div>
                                         </div>
