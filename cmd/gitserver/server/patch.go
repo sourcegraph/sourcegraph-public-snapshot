@@ -47,7 +47,6 @@ func (s *Server) handleCreateCommitFromPatchBinary(w http.ResponseWriter, r *htt
 }
 
 func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (int, protocol.CreateCommitFromPatchResponse) {
-	fmt.Printf("Req: %+v\n", req)
 	logger := s.Logger.Scoped("createCommitFromPatch", "").
 		With(
 			log.String("repo", string(req.Repo)),
@@ -68,7 +67,11 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 
 	ref := req.TargetRef
-
+	pushRef := ref
+	// If the push is to a Gerrit project,we need to push to a magic ref.
+	if req.PushRef != nil && *req.PushRef != "" {
+		pushRef = *req.PushRef
+	}
 	var (
 		remoteURL *vcs.URL
 		err       error
@@ -218,11 +221,11 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		committerEmail = authorEmail
 	}
 
-	formattedMessages := []string{"commit"}
+	var formattedMessages []string
 	for _, m := range messages {
-		formattedMessages = append(formattedMessages, "-m", m)
+		formattedMessages = append(formattedMessages, "-m", fmt.Sprintf("%q", m))
 	}
-	cmd = exec.CommandContext(ctx, "git", formattedMessages...)
+	cmd = exec.CommandContext(ctx, "git", append([]string{"commit"}, formattedMessages...)...)
 
 	cmd.Dir = tmpRepoDir
 	cmd.Env = append(os.Environ(), []string{
@@ -282,11 +285,6 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 
 	if req.Push != nil {
-		pushRef := ref
-		// If the push is to a Gerrit project,we need to push to a magic ref.
-		if req.PushRef != nil && *req.PushRef != "" {
-			pushRef = *req.PushRef
-		}
 		cmd = exec.CommandContext(ctx, "git", "push", "--force", remoteURL.String(), fmt.Sprintf("%s:%s", cmtHash, pushRef))
 		cmd.Dir = repoGitDir
 

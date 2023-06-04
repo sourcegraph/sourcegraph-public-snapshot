@@ -97,7 +97,7 @@ type ChangesetSource interface {
 	// merge. If the changeset cannot be merged, because it is in an unmergeable
 	// state, ChangesetNotMergeableError must be returned.
 	MergeChangeset(ctx context.Context, ch *Changeset, squash bool) error
-	// BuildCommitOpts builds the options needed to push the change to the code host based on the specific ChangesetSource.
+	// BuildCommitOpts builds the CreateCommitFromPatchRequest needed to commit and push the change to the code host.
 	BuildCommitOpts(repo *types.Repo, changeset *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest
 }
 
