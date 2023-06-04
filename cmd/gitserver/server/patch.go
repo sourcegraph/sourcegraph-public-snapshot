@@ -66,12 +66,6 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		}
 	}
 
-	ref := req.TargetRef
-	pushRef := ref
-	// If the push is to a Gerrit project,we need to push to a magic ref.
-	if req.PushRef != nil && *req.PushRef != "" {
-		pushRef = *req.PushRef
-	}
 	var (
 		remoteURL *vcs.URL
 		err       error
@@ -81,6 +75,36 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		remoteURL, err = vcs.ParseURL(req.Push.RemoteURL)
 	} else {
 		remoteURL, err = s.getRemoteURL(ctx, req.Repo)
+	}
+
+	ref := req.TargetRef
+	pushRef := ref
+	// If the push is to a Gerrit project,we need to push to a magic ref.
+	if req.PushRef != nil && *req.PushRef != "" {
+		pushRef = *req.PushRef
+	}
+	if req.UniqueRef {
+		refs, err := repoRemoteRefs(ctx, remoteURL, pushRef)
+		if err != nil {
+			logger.Error("Failed to get remote refs", log.Error(err))
+			resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteRefs"))
+			return http.StatusInternalServerError, resp
+		}
+
+		retry := 1
+		tmp := ref
+		for {
+			if _, ok := refs[tmp]; !ok {
+				break
+			}
+			tmp = ref + "-" + strconv.Itoa(retry)
+			retry++
+		}
+		pushRef = tmp
+	}
+
+	if req.Push != nil && req.PushRef == nil {
+		pushRef = ensureRefPrefix(ref)
 	}
 
 	if err != nil {
@@ -136,30 +160,6 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 			logger.Info("command ran successfully")
 		}
 		return out, err
-	}
-
-	if req.UniqueRef {
-		refs, err := repoRemoteRefs(ctx, remoteURL, ref)
-		if err != nil {
-			logger.Error("Failed to get remote refs", log.Error(err))
-			resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteRefs"))
-			return http.StatusInternalServerError, resp
-		}
-
-		retry := 1
-		tmp := ref
-		for {
-			if _, ok := refs[tmp]; !ok {
-				break
-			}
-			tmp = ref + "-" + strconv.Itoa(retry)
-			retry++
-		}
-		ref = tmp
-	}
-
-	if req.Push != nil {
-		ref = ensureRefPrefix(ref)
 	}
 
 	tmpGitPathEnv := "GIT_DIR=" + filepath.Join(tmpRepoDir, ".git")

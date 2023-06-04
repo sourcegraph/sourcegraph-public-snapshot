@@ -128,7 +128,7 @@ func (s GerritSource) CreateDraftChangeset(ctx context.Context, cs *Changeset) (
 		if errcode.IsNotFound(err) {
 			return false, ChangesetNotFoundError{Changeset: cs}
 		}
-		return false, errors.Wrap(err, "getting change")
+		return false, errors.Wrap(err, "making change WIP")
 	}
 
 	pr, err := s.client.GetChange(ctx, changeID)
