@@ -198,6 +198,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.cancelCompletion()
         this.currentChatID = chatID
         this.transcript = Transcript.fromJSON(this.chatHistory[chatID])
+        await this.transcript.toJSON()
         this.sendTranscript()
         this.sendChatHistory()
     }
