@@ -1,0 +1,44 @@
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//dev:oci_defs.bzl", "image_repository")
+
+oci_image(
+    name = "image",
+    base = "@wolfi_cadvisor_base",
+    cmd = ["--sampling.strategies-file=/etc/jaeger/sampling_strategies.json"],
+    entrypoint = [
+        "/usr/bin/cadvisor",
+        "-logtostderr",
+        "-port=48080",
+        "-enable_metrics=cpu,diskIO,memory,network",
+        "-docker_only",
+        "-housekeeping_interval=10s",
+        "-max_housekeeping_interval=15s",
+        "-event_storage_event_limit=default=0",
+        "-v=3",
+        "-event_storage_age_limit=default=0",
+        "-containerd=/var/run/containerd/containerd.sock",
+    ],
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["cadvdisor:candidate"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = ["requires-network"],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    remote_tags = "//:tags",
+    repository = image_repository("cadvisor"),
+)

@@ -1,0 +1,16 @@
+schemaVersion: "2.0.0"
+
+commandTests:
+  - name: "not running as root"
+    command: "/usr/bin/id"
+    args:
+      - -u
+    excludedOutput: ["^0"]
+    exitCode: 0
+
+fileExistenceTests:
+- name: 'Test for run-docker-container.sh'
+  path: '/opt/s3proxy/run-docker-container.sh'
+  shouldExist: true
+  uid: 0
+  gid: 0

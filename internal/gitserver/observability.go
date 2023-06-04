@@ -5,6 +5,8 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -65,6 +67,20 @@ func newOperations(observationCtx *observation.Context) *operations {
 		})
 	}
 
+	// We don't want to send errors to sentry for `gitdomain.RevisionNotFoundError`
+	// errors, as they should be actionable on the call site.
+	resolveRevisionOperation := observationCtx.Operation(observation.Op{
+		Name:              fmt.Sprintf("gitserver.client.%s", "ResolveRevision"),
+		MetricLabelValues: []string{"ResolveRevision"},
+		Metrics:           redMetrics,
+		ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+				return observation.EmitForMetrics
+			}
+			return observation.EmitForSentry
+		},
+	})
+
 	return &operations{
 		archiveReader:    op("ArchiveReader"),
 		batchLog:         op("BatchLog"),
@@ -88,7 +104,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 		p4Exec:           op("P4Exec"),
 		readDir:          op("ReadDir"),
 		readFile:         op("ReadFile"),
-		resolveRevision:  op("ResolveRevision"),
+		resolveRevision:  resolveRevisionOperation,
 		revList:          op("RevList"),
 		search:           op("Search"),
 		stat:             op("Stat"),

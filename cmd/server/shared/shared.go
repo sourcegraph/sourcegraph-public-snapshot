@@ -149,7 +149,7 @@ func Main() {
 		log.Fatal("Failed to setup nginx:", err)
 	}
 
-	postgresExporterLine := fmt.Sprintf(`postgres_exporter: env DATA_SOURCE_NAME="%s" postgres_exporter --log.level=%s`, postgresdsn.New("", "postgres", os.Getenv), convertLogLevel(os.Getenv("SRC_LOG_LEVEL")))
+	postgresExporterLine := fmt.Sprintf(`postgres_exporter: env DATA_SOURCE_NAME="%s" postgres_exporter --config.file="/postgres_exporter.yaml" --log.level=%s`, postgresdsn.New("", "postgres", os.Getenv), convertLogLevel(os.Getenv("SRC_LOG_LEVEL")))
 
 	// TODO: This should be fixed properly.
 	// Tell `gitserver` that its `hostname` is what the others think of as gitserver hostnames.
