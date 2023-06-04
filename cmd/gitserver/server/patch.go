@@ -221,11 +221,11 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		committerEmail = authorEmail
 	}
 
-	var formattedMessages []string
+	gitCommitArgs := []string{"commit"}
 	for _, m := range messages {
-		formattedMessages = append(formattedMessages, "-m", fmt.Sprintf("%q", m))
+		gitCommitArgs = append(gitCommitArgs, "-m", fmt.Sprintf("%q", m))
 	}
-	cmd = exec.CommandContext(ctx, "git", append([]string{"commit"}, formattedMessages...)...)
+	cmd = exec.CommandContext(ctx, "git", gitCommitArgs...)
 
 	cmd.Dir = tmpRepoDir
 	cmd.Env = append(os.Environ(), []string{
