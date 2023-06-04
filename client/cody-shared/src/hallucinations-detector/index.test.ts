@@ -22,11 +22,11 @@ const expectedHighlightedTokensText = `# Title
 
 This is  <span class="token-file token-hallucinated" title="Hallucination detected: file does not exist">\`/some/hallucinated/file/path\`</span> . Hosted on github.com/sourcegraph.
 
-Quoted  <span class="token-file token-not-hallucinated" title="Open file">"file/path.js"</span> . Unquoted hallucinated <span class="token-file token-hallucinated" title="Hallucination detected: file does not exist">file/path/Class.java</span> file.
+Quoted  <span class="token-file token-not-hallucinated" title="No hallucination detected: file exists">"file/path.js"</span> . Unquoted hallucinated <span class="token-file token-hallucinated" title="Hallucination detected: file does not exist">file/path/Class.java</span> file.
 
-This file is awesome cool/awesome. So is this <span class="token-file token-not-hallucinated" title="Open file">this/is/a/directory</span> and <span class="token-file token-not-hallucinated" title="Open file">so/is/this</span> and include the file  <span class="token-file token-not-hallucinated" title="Open file">"file/path.js"</span> .
+This file is awesome cool/awesome. So is this <span class="token-file token-not-hallucinated" title="No hallucination detected: file exists">this/is/a/directory</span> and <span class="token-file token-not-hallucinated" title="No hallucination detected: file exists">so/is/this</span> and include the file  <span class="token-file token-not-hallucinated" title="No hallucination detected: file exists">"file/path.js"</span> .
 
-The best part is that this files are   <span class="token-file token-hallucinated" title="Hallucination detected: file does not exist">\`/some/hallucinated/file/path\`</span> . And also have the files <span class="token-file token-not-hallucinated" title="Open file">this/is/a/directory</span> and <span class="token-file token-not-hallucinated" title="Open file">so/is/this</span> with  <span class="token-file token-not-hallucinated" title="Open file">"file/path.js"</span> .
+The best part is that this files are   <span class="token-file token-hallucinated" title="Hallucination detected: file does not exist">\`/some/hallucinated/file/path\`</span> . And also have the files <span class="token-file token-not-hallucinated" title="No hallucination detected: file exists">this/is/a/directory</span> and <span class="token-file token-not-hallucinated" title="No hallucination detected: file exists">so/is/this</span> with  <span class="token-file token-not-hallucinated" title="No hallucination detected: file exists">"file/path.js"</span> .
 
 
 \`\`\`

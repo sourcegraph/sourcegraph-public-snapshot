@@ -88,7 +88,9 @@ function highlightLine(line: string, tokens: HighlightedToken[]): string {
 
 function getHighlightedTokenHTML(token: HighlightedToken): string {
     const isHallucinatedClassName = token.isHallucinated ? 'hallucinated' : 'not-hallucinated'
-    const title = token.isHallucinated ? 'Hallucination detected: file does not exist' : 'Open file'
+    const title = token.isHallucinated
+        ? 'Hallucination detected: file does not exist'
+        : 'No hallucination detected: file exists'
     return ` <span class="token-${
         token.type
     } token-${isHallucinatedClassName}" title="${title}">${token.outerValue.trim()}</span> `
