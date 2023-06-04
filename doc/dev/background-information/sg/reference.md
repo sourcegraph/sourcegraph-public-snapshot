@@ -99,6 +99,8 @@ Available commands in `sg.config.yaml`:
 * batches-executor-firecracker
 * batches-executor-kubernetes
 * batcheshelper-builder
+* bext
+* blobstore
 * caddy
 * codeintel-executor
 * codeintel-executor-firecracker
@@ -107,6 +109,7 @@ Available commands in `sg.config.yaml`:
 * cody-gateway
 * cody-slack-dev: Start Cody-Slack dev locally
 * cody-slack-docker: Start Cody-Slack locally prod in Docker
+* debug-env: Debug env vars
 * docsite: Docsite instance serving the docs
 * embeddings
 * executor-kubernetes-template
@@ -117,6 +120,11 @@ Available commands in `sg.config.yaml`:
 * gitserver-0
 * gitserver-1
 * gitserver-template
+* grafana
+* jaeger
+* loki
+* monitoring-generator
+* multiqueue-executor
 * oss-frontend
 * oss-gitserver-0
 * oss-gitserver-1
@@ -125,11 +133,19 @@ Available commands in `sg.config.yaml`:
 * oss-symbols
 * oss-web: Open source version of the web app
 * oss-worker
+* otel-collector: OpenTelemetry collector
+* postgres_exporter
+* prometheus
+* redis-postgres: Dockerized version of redis and postgres
 * repo-updater
 * searcher
 * server: Run an all-in-one sourcegraph/server image
+* sourcegraph-oss: Single program (Go static binary) distribution, OSS variant
+* sourcegraph: Single program (Go static binary) distribution
+* storybook
 * symbols
 * syntax-highlighter
+* tauri: App shell (Tauri)
 * web-integration-build-prod: Build production web application for integration tests
 * web-integration-build: Build development web application for integration tests
 * web-standalone-http-prod: Standalone web frontend (production) with API proxy to a configurable URL

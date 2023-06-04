@@ -624,8 +624,7 @@ commands:
       - enterprise/internal
       - enterprise/cmd/executor
 
-  executor-kubernetes-template:
-    &executor_kubernetes_template
+  executor-kubernetes-template: &executor_kubernetes_template
     cmd: |
       cd $MANIFEST_PATH
       cleanup() {
@@ -711,280 +710,280 @@ commands:
       - lib/batches
     continueWatchOnExit: true
 
-multiqueue-executor:
-  <<: *executor_template
-  cmd: |
-    env TMPDIR="$HOME/.sourcegraph/multiqueue-executor-temp" .bin/executor
-  env:
-    EXECUTOR_QUEUE_NAME: ""
-    EXECUTOR_QUEUE_NAMES: "codeintel,batches"
-    EXECUTOR_MAXIMUM_NUM_JOBS: 8
+  multiqueue-executor:
+    <<: *executor_template
+    cmd: |
+      env TMPDIR="$HOME/.sourcegraph/multiqueue-executor-temp" .bin/executor
+    env:
+      EXECUTOR_QUEUE_NAME: ""
+      EXECUTOR_QUEUE_NAMES: "codeintel,batches"
+      EXECUTOR_MAXIMUM_NUM_JOBS: 8
 
-blobstore:
-  cmd: .bin/blobstore
-  install: |
-    # Ensure the old blobstore Docker container is not running
-    docker rm -f blobstore
-    if [ -n "$DELVE" ]; then
-      export GCFLAGS='-N -l'
-    fi
-    go build -gcflags="$GCFLAGS" -o .bin/blobstore github.com/sourcegraph/sourcegraph/cmd/blobstore
-  checkBinary: .bin/blobstore
-  watch:
-    - lib
-    - internal
-    - cmd/blobstore
-  env:
-    BLOBSTORE_DATA_DIR: $HOME/.sourcegraph-dev/data/blobstore-go
+  blobstore:
+    cmd: .bin/blobstore
+    install: |
+      # Ensure the old blobstore Docker container is not running
+      docker rm -f blobstore
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -o .bin/blobstore github.com/sourcegraph/sourcegraph/cmd/blobstore
+    checkBinary: .bin/blobstore
+    watch:
+      - lib
+      - internal
+      - cmd/blobstore
+    env:
+      BLOBSTORE_DATA_DIR: $HOME/.sourcegraph-dev/data/blobstore-go
 
-redis-postgres:
-  # Add the following overwrites to your sg.config.overwrite.yaml to use the docker-compose
-  # database:
-  #
-  #   env:
-  #       PGHOST: localhost
-  #       PGPASSWORD: sourcegraph
-  #       PGUSER: sourcegraph
-  #
-  # You could also add an overwrite to add `redis-postgres` to the relevant command set(s).
-  description: Dockerized version of redis and postgres
-  cmd: docker-compose -f dev/redis-postgres.yml up $COMPOSE_ARGS
-  env:
-    COMPOSE_ARGS: --force-recreate
+  redis-postgres:
+    # Add the following overwrites to your sg.config.overwrite.yaml to use the docker-compose
+    # database:
+    #
+    #   env:
+    #       PGHOST: localhost
+    #       PGPASSWORD: sourcegraph
+    #       PGUSER: sourcegraph
+    #
+    # You could also add an overwrite to add `redis-postgres` to the relevant command set(s).
+    description: Dockerized version of redis and postgres
+    cmd: docker-compose -f dev/redis-postgres.yml up $COMPOSE_ARGS
+    env:
+      COMPOSE_ARGS: --force-recreate
 
-jaeger:
-  cmd: |
-    echo "Jaeger will be available on http://localhost:16686/-/debug/jaeger/search"
-    .bin/jaeger-all-in-one-${JAEGER_VERSION} --log-level ${JAEGER_LOG_LEVEL}
-  install_func: installJaeger
-  env:
-    JAEGER_VERSION: 1.36.0
-    JAEGER_DISK: $HOME/.sourcegraph-dev/data/jaeger
-    JAEGER_LOG_LEVEL: error
-    QUERY_BASE_PATH: /-/debug/jaeger
+  jaeger:
+    cmd: |
+      echo "Jaeger will be available on http://localhost:16686/-/debug/jaeger/search"
+      .bin/jaeger-all-in-one-${JAEGER_VERSION} --log-level ${JAEGER_LOG_LEVEL}
+    install_func: installJaeger
+    env:
+      JAEGER_VERSION: 1.36.0
+      JAEGER_DISK: $HOME/.sourcegraph-dev/data/jaeger
+      JAEGER_LOG_LEVEL: error
+      QUERY_BASE_PATH: /-/debug/jaeger
 
-grafana:
-  cmd: |
-    if [[ $(uname) == "Linux" ]]; then
-      # Linux needs an extra arg to support host.internal.docker, which is how grafana connects
-      # to the prometheus backend.
-      ADD_HOST_FLAG="--add-host=host.docker.internal:host-gateway"
+  grafana:
+    cmd: |
+      if [[ $(uname) == "Linux" ]]; then
+        # Linux needs an extra arg to support host.internal.docker, which is how grafana connects
+        # to the prometheus backend.
+        ADD_HOST_FLAG="--add-host=host.docker.internal:host-gateway"
 
-      # Docker users on Linux will generally be using direct user mapping, which
-      # means that they'll want the data in the volume mount to be owned by the
-      # same user as is running this script. Fortunately, the Grafana container
-      # doesn't really care what user it runs as, so long as it can write to
-      # /var/lib/grafana.
-      DOCKER_USER="--user=$UID"
-    fi
+        # Docker users on Linux will generally be using direct user mapping, which
+        # means that they'll want the data in the volume mount to be owned by the
+        # same user as is running this script. Fortunately, the Grafana container
+        # doesn't really care what user it runs as, so long as it can write to
+        # /var/lib/grafana.
+        DOCKER_USER="--user=$UID"
+      fi
 
-    echo "Grafana: serving on http://localhost:${PORT}"
-    echo "Grafana: note that logs are piped to ${GRAFANA_LOG_FILE}"
-    docker run --rm ${DOCKER_USER} \
-      --name=${CONTAINER} \
-      --cpus=1 \
-      --memory=1g \
-      -p 0.0.0.0:3370:3370 ${ADD_HOST_FLAG} \
-      -v "${GRAFANA_DISK}":/var/lib/grafana \
-      -v "$(pwd)"/dev/grafana/all:/sg_config_grafana/provisioning/datasources \
-      sourcegraph/grafana:dev >"${GRAFANA_LOG_FILE}" 2>&1
-  install: |
-    mkdir -p "${GRAFANA_DISK}"
-    mkdir -p "$(dirname ${GRAFANA_LOG_FILE})"
-    export CACHE=true
-    docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
-    ./docker-images/grafana/build.sh
-  env:
-    GRAFANA_DISK: $HOME/.sourcegraph-dev/data/grafana
-    # Log file location: since we log outside of the Docker container, we should
-    # log somewhere that's _not_ ~/.sourcegraph-dev/data/grafana, since that gets
-    # volume mounted into the container and therefore has its own ownership
-    # semantics.
-    # Now for the actual logging. Grafana's output gets sent to stdout and stderr.
-    # We want to capture that output, but because it's fairly noisy, don't want to
-    # display it in the normal case.
-    GRAFANA_LOG_FILE: $HOME/.sourcegraph-dev/logs/grafana/grafana.log
-    IMAGE: sourcegraph/grafana:dev
-    CONTAINER: grafana
-    PORT: 3370
-    # docker containers must access things via docker host on non-linux platforms
-    DOCKER_USER: ""
-    ADD_HOST_FLAG: ""
-    CACHE: false
+      echo "Grafana: serving on http://localhost:${PORT}"
+      echo "Grafana: note that logs are piped to ${GRAFANA_LOG_FILE}"
+      docker run --rm ${DOCKER_USER} \
+        --name=${CONTAINER} \
+        --cpus=1 \
+        --memory=1g \
+        -p 0.0.0.0:3370:3370 ${ADD_HOST_FLAG} \
+        -v "${GRAFANA_DISK}":/var/lib/grafana \
+        -v "$(pwd)"/dev/grafana/all:/sg_config_grafana/provisioning/datasources \
+        sourcegraph/grafana:dev >"${GRAFANA_LOG_FILE}" 2>&1
+    install: |
+      mkdir -p "${GRAFANA_DISK}"
+      mkdir -p "$(dirname ${GRAFANA_LOG_FILE})"
+      export CACHE=true
+      docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
+      ./docker-images/grafana/build.sh
+    env:
+      GRAFANA_DISK: $HOME/.sourcegraph-dev/data/grafana
+      # Log file location: since we log outside of the Docker container, we should
+      # log somewhere that's _not_ ~/.sourcegraph-dev/data/grafana, since that gets
+      # volume mounted into the container and therefore has its own ownership
+      # semantics.
+      # Now for the actual logging. Grafana's output gets sent to stdout and stderr.
+      # We want to capture that output, but because it's fairly noisy, don't want to
+      # display it in the normal case.
+      GRAFANA_LOG_FILE: $HOME/.sourcegraph-dev/logs/grafana/grafana.log
+      IMAGE: sourcegraph/grafana:dev
+      CONTAINER: grafana
+      PORT: 3370
+      # docker containers must access things via docker host on non-linux platforms
+      DOCKER_USER: ""
+      ADD_HOST_FLAG: ""
+      CACHE: false
 
-prometheus:
-  cmd: |
-    if [[ $(uname) == "Linux" ]]; then
-      DOCKER_USER="--user=$UID"
+  prometheus:
+    cmd: |
+      if [[ $(uname) == "Linux" ]]; then
+        DOCKER_USER="--user=$UID"
 
-      # Frontend generally runs outside of Docker, so to access it we need to be
-      # able to access ports on the host. --net=host is a very dirty way of
-      # enabling this.
-      DOCKER_NET="--net=host"
-      SRC_FRONTEND_INTERNAL="localhost:3090"
-    fi
+        # Frontend generally runs outside of Docker, so to access it we need to be
+        # able to access ports on the host. --net=host is a very dirty way of
+        # enabling this.
+        DOCKER_NET="--net=host"
+        SRC_FRONTEND_INTERNAL="localhost:3090"
+      fi
 
-    echo "Prometheus: serving on http://localhost:${PORT}"
-    echo "Prometheus: note that logs are piped to ${PROMETHEUS_LOG_FILE}"
-    docker run --rm ${DOCKER_NET} ${DOCKER_USER} \
-      --name=${CONTAINER} \
-      --cpus=1 \
-      --memory=4g \
-      -p 0.0.0.0:9090:9090 \
-      -v "${PROMETHEUS_DISK}":/prometheus \
-      -v "$(pwd)/${CONFIG_DIR}":/sg_prometheus_add_ons \
-      -e SRC_FRONTEND_INTERNAL="${SRC_FRONTEND_INTERNAL}" \
-      -e DISABLE_SOURCEGRAPH_CONFIG="${DISABLE_SOURCEGRAPH_CONFIG:-""}" \
-      -e DISABLE_ALERTMANAGER="${DISABLE_ALERTMANAGER:-""}" \
-      -e PROMETHEUS_ADDITIONAL_FLAGS="--web.enable-lifecycle --web.enable-admin-api" \
-      ${IMAGE} >"${PROMETHEUS_LOG_FILE}" 2>&1
-  install: |
-    mkdir -p "${PROMETHEUS_DISK}"
-    mkdir -p "$(dirname ${PROMETHEUS_LOG_FILE})"
+      echo "Prometheus: serving on http://localhost:${PORT}"
+      echo "Prometheus: note that logs are piped to ${PROMETHEUS_LOG_FILE}"
+      docker run --rm ${DOCKER_NET} ${DOCKER_USER} \
+        --name=${CONTAINER} \
+        --cpus=1 \
+        --memory=4g \
+        -p 0.0.0.0:9090:9090 \
+        -v "${PROMETHEUS_DISK}":/prometheus \
+        -v "$(pwd)/${CONFIG_DIR}":/sg_prometheus_add_ons \
+        -e SRC_FRONTEND_INTERNAL="${SRC_FRONTEND_INTERNAL}" \
+        -e DISABLE_SOURCEGRAPH_CONFIG="${DISABLE_SOURCEGRAPH_CONFIG:-""}" \
+        -e DISABLE_ALERTMANAGER="${DISABLE_ALERTMANAGER:-""}" \
+        -e PROMETHEUS_ADDITIONAL_FLAGS="--web.enable-lifecycle --web.enable-admin-api" \
+        ${IMAGE} >"${PROMETHEUS_LOG_FILE}" 2>&1
+    install: |
+      mkdir -p "${PROMETHEUS_DISK}"
+      mkdir -p "$(dirname ${PROMETHEUS_LOG_FILE})"
 
-    docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
+      docker inspect $CONTAINER >/dev/null 2>&1 && docker rm -f $CONTAINER
 
-    if [[ $(uname) == "Linux" ]]; then
-      PROM_TARGETS="dev/prometheus/linux/prometheus_targets.yml"
-    fi
+      if [[ $(uname) == "Linux" ]]; then
+        PROM_TARGETS="dev/prometheus/linux/prometheus_targets.yml"
+      fi
 
-    cp ${PROM_TARGETS} "${CONFIG_DIR}"/prometheus_targets.yml
-    CACHE=true ./docker-images/prometheus/build.sh
-  env:
-    PROMETHEUS_DISK: $HOME/.sourcegraph-dev/data/prometheus
-    # See comment above for `grafana`
-    PROMETHEUS_LOG_FILE: $HOME/.sourcegraph-dev/logs/prometheus/prometheus.log
-    IMAGE: sourcegraph/prometheus:dev
-    CONTAINER: prometheus
-    PORT: 9090
-    CONFIG_DIR: docker-images/prometheus/config
-    DOCKER_USER: ""
-    DOCKER_NET: ""
-    PROM_TARGETS: dev/prometheus/all/prometheus_targets.yml
-    SRC_FRONTEND_INTERNAL: host.docker.internal:3090
-    ADD_HOST_FLAG: ""
-    DISABLE_SOURCEGRAPH_CONFIG: false
+      cp ${PROM_TARGETS} "${CONFIG_DIR}"/prometheus_targets.yml
+      CACHE=true ./docker-images/prometheus/build.sh
+    env:
+      PROMETHEUS_DISK: $HOME/.sourcegraph-dev/data/prometheus
+      # See comment above for `grafana`
+      PROMETHEUS_LOG_FILE: $HOME/.sourcegraph-dev/logs/prometheus/prometheus.log
+      IMAGE: sourcegraph/prometheus:dev
+      CONTAINER: prometheus
+      PORT: 9090
+      CONFIG_DIR: docker-images/prometheus/config
+      DOCKER_USER: ""
+      DOCKER_NET: ""
+      PROM_TARGETS: dev/prometheus/all/prometheus_targets.yml
+      SRC_FRONTEND_INTERNAL: host.docker.internal:3090
+      ADD_HOST_FLAG: ""
+      DISABLE_SOURCEGRAPH_CONFIG: false
 
-postgres_exporter:
-  cmd: ./dev/postgres_exporter.sh
+  postgres_exporter:
+    cmd: ./dev/postgres_exporter.sh
 
-monitoring-generator:
-  cmd: (cd monitoring/ && go generate ./... )
-  env:
-    RELOAD: true
-  watch:
-    - monitoring
-  continueWatchOnExit: true
+  monitoring-generator:
+    cmd: (cd monitoring/ && go generate ./... )
+    env:
+      RELOAD: true
+    watch:
+      - monitoring
+    continueWatchOnExit: true
 
-loki:
-  cmd: |
-    echo "Loki: serving on http://localhost:3100"
-    echo "Loki: note that logs are piped to ${LOKI_LOG_FILE}"
-    docker run --rm --name=loki \
-      -p 3100:3100 -v $LOKI_DISK:/loki \
-      index.docker.io/grafana/loki:$LOKI_VERSION >"${LOKI_LOG_FILE}" 2>&1
-  install: |
-    mkdir -p "${LOKI_DISK}"
-    mkdir -p "$(dirname ${LOKI_LOG_FILE})"
-    docker pull index.docker.io/grafana/loki:$LOKI_VERSION
-  env:
-    LOKI_DISK: $HOME/.sourcegraph-dev/data/loki
-    LOKI_VERSION: "2.3.0"
-    LOKI_LOG_FILE: $HOME/.sourcegraph-dev/logs/loki/loki.log
+  loki:
+    cmd: |
+      echo "Loki: serving on http://localhost:3100"
+      echo "Loki: note that logs are piped to ${LOKI_LOG_FILE}"
+      docker run --rm --name=loki \
+        -p 3100:3100 -v $LOKI_DISK:/loki \
+        index.docker.io/grafana/loki:$LOKI_VERSION >"${LOKI_LOG_FILE}" 2>&1
+    install: |
+      mkdir -p "${LOKI_DISK}"
+      mkdir -p "$(dirname ${LOKI_LOG_FILE})"
+      docker pull index.docker.io/grafana/loki:$LOKI_VERSION
+    env:
+      LOKI_DISK: $HOME/.sourcegraph-dev/data/loki
+      LOKI_VERSION: "2.3.0"
+      LOKI_LOG_FILE: $HOME/.sourcegraph-dev/logs/loki/loki.log
 
-otel-collector:
-  install: docker-images/opentelemetry-collector/build.sh
-  description: OpenTelemetry collector
-  cmd: |
-    JAEGER_HOST='host.docker.internal'
-    if [[ $(uname) == "Linux" ]]; then
-      # Jaeger generally runs outside of Docker, so to access it we need to be
-      # able to access ports on the host, because the Docker host only exists on
-      # MacOS. --net=host is a very dirty way of enabling this.
-      DOCKER_NET="--net=host"
-      JAEGER_HOST="localhost"
-    fi
+  otel-collector:
+    install: docker-images/opentelemetry-collector/build.sh
+    description: OpenTelemetry collector
+    cmd: |
+      JAEGER_HOST='host.docker.internal'
+      if [[ $(uname) == "Linux" ]]; then
+        # Jaeger generally runs outside of Docker, so to access it we need to be
+        # able to access ports on the host, because the Docker host only exists on
+        # MacOS. --net=host is a very dirty way of enabling this.
+        DOCKER_NET="--net=host"
+        JAEGER_HOST="localhost"
+      fi
 
-    docker container rm otel-collector
-    docker run --rm --name=otel-collector $DOCKER_NET $DOCKER_ARGS \
-      -p 4317:4317 -p 4318:4318 -p 55679:55679 -p 55670:55670 \
-      -p 8888:8888 \
-      -e JAEGER_HOST=$JAEGER_HOST \
-      -e HONEYCOMB_API_KEY=$HONEYCOMB_API_KEY \
-      -e HONEYCOMB_DATASET=$HONEYCOMB_DATASET \
-      $IMAGE --config "/etc/otel-collector/$CONFIGURATION_FILE"
-  env:
-    IMAGE: sourcegraph/opentelemetry-collector:dev
-    # Overwrite the following in sg.config.overwrite.yaml, based on which collector
-    # config you are using - see docker-images/opentelemetry-collector for more details.
-    CONFIGURATION_FILE: "configs/jaeger.yaml"
-    # HONEYCOMB_API_KEY: ''
-    # HONEYCOMB_DATASET: ''
+      docker container rm otel-collector
+      docker run --rm --name=otel-collector $DOCKER_NET $DOCKER_ARGS \
+        -p 4317:4317 -p 4318:4318 -p 55679:55679 -p 55670:55670 \
+        -p 8888:8888 \
+        -e JAEGER_HOST=$JAEGER_HOST \
+        -e HONEYCOMB_API_KEY=$HONEYCOMB_API_KEY \
+        -e HONEYCOMB_DATASET=$HONEYCOMB_DATASET \
+        $IMAGE --config "/etc/otel-collector/$CONFIGURATION_FILE"
+    env:
+      IMAGE: sourcegraph/opentelemetry-collector:dev
+      # Overwrite the following in sg.config.overwrite.yaml, based on which collector
+      # config you are using - see docker-images/opentelemetry-collector for more details.
+      CONFIGURATION_FILE: "configs/jaeger.yaml"
+      # HONEYCOMB_API_KEY: ''
+      # HONEYCOMB_DATASET: ''
 
-storybook:
-  cmd: pnpm storybook
-  install: pnpm install
+  storybook:
+    cmd: pnpm storybook
+    install: pnpm install
 
-# This will execute `env`, a utility to print the process environment. Can
-# be used to debug which global vars `sg` uses.
-debug-env:
-  description: Debug env vars
-  cmd: env
+  # This will execute `env`, a utility to print the process environment. Can
+  # be used to debug which global vars `sg` uses.
+  debug-env:
+    description: Debug env vars
+    cmd: env
 
-bext:
-  cmd: pnpm --filter @sourcegraph/browser dev
-  install: pnpm install
+  bext:
+    cmd: pnpm --filter @sourcegraph/browser dev
+    install: pnpm install
 
-sourcegraph:
-  description: Single program (Go static binary) distribution
-  cmd: |
-    unset SRC_GIT_SERVERS INDEXED_SEARCH_SERVERS REDIS_ENDPOINT
+  sourcegraph:
+    description: Single program (Go static binary) distribution
+    cmd: |
+      unset SRC_GIT_SERVERS INDEXED_SEARCH_SERVERS REDIS_ENDPOINT
 
-    # TODO: This should be fixed
-    export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
-    # If EXTSVC_CONFIG_FILE is *unset*, set a default.
-    export EXTSVC_CONFIG_FILE=${EXTSVC_CONFIG_FILE-'../dev-private/enterprise/dev/external-services-config.json'}
+      # TODO: This should be fixed
+      export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
+      # If EXTSVC_CONFIG_FILE is *unset*, set a default.
+      export EXTSVC_CONFIG_FILE=${EXTSVC_CONFIG_FILE-'../dev-private/enterprise/dev/external-services-config.json'}
 
-    .bin/sourcegraph
-  install: |
-    if [ -n "$DELVE" ]; then
-      export GCFLAGS='-N -l'
-    fi
-    go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=app" -o .bin/sourcegraph github.com/sourcegraph/sourcegraph/enterprise/cmd/sourcegraph
-  checkBinary: .bin/sourcegraph
-  env:
-    ENTERPRISE: 1
-    SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
-    SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
-    WEBPACK_DEV_SERVER: 1
-  watch:
-    - cmd
-    - enterprise
-    - internal
-    - lib
-    - schema
+      .bin/sourcegraph
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=app" -o .bin/sourcegraph github.com/sourcegraph/sourcegraph/enterprise/cmd/sourcegraph
+    checkBinary: .bin/sourcegraph
+    env:
+      ENTERPRISE: 1
+      SITE_CONFIG_FILE: "../dev-private/enterprise/dev/site-config.json"
+      SITE_CONFIG_ESCAPE_HATCH_PATH: "$HOME/.sourcegraph/site-config.json"
+      WEBPACK_DEV_SERVER: 1
+    watch:
+      - cmd
+      - enterprise
+      - internal
+      - lib
+      - schema
 
-tauri:
-  description: App shell (Tauri)
-  cmd: pnpm tauri dev --config src-tauri/tauri.dev.conf.json
+  tauri:
+    description: App shell (Tauri)
+    cmd: pnpm tauri dev --config src-tauri/tauri.dev.conf.json
 
-sourcegraph-oss:
-  description: Single program (Go static binary) distribution, OSS variant
-  cmd: |
-    unset SRC_GIT_SERVERS INDEXED_SEARCH_SERVERS
-    .bin/sourcegraph-oss
-  install: |
-    if [ -n "$DELVE" ]; then
-      export GCFLAGS='-N -l'
-    fi
-    go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=app" -o .bin/sourcegraph-oss github.com/sourcegraph/sourcegraph/cmd/sourcegraph-oss
-  checkBinary: .bin/sourcegraph-oss
-  env:
-    WEBPACK_DEV_SERVER: 1
-  watch:
-    - cmd
-    - internal
-    - schema
+  sourcegraph-oss:
+    description: Single program (Go static binary) distribution, OSS variant
+    cmd: |
+      unset SRC_GIT_SERVERS INDEXED_SEARCH_SERVERS
+      .bin/sourcegraph-oss
+    install: |
+      if [ -n "$DELVE" ]; then
+        export GCFLAGS='-N -l'
+      fi
+      go build -gcflags="$GCFLAGS" -ldflags="-X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=app" -o .bin/sourcegraph-oss github.com/sourcegraph/sourcegraph/cmd/sourcegraph-oss
+    checkBinary: .bin/sourcegraph-oss
+    env:
+      WEBPACK_DEV_SERVER: 1
+    watch:
+      - cmd
+      - internal
+      - schema
 
 bazelCommands:
   oss-frontend:
@@ -1030,13 +1029,13 @@ bazelCommands:
     ignoreStderr: true
     env:
       # Environment copied from Dockerfile
-      WORKERS: '1'
-      ROCKET_ENV: 'production'
-      ROCKET_LIMITS: '{json=10485760}'
-      ROCKET_SECRET_KEY: 'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='
-      ROCKET_KEEP_ALIVE: '0'
-      ROCKET_PORT: '9238'
-      QUIET: 'true'
+      WORKERS: "1"
+      ROCKET_ENV: "production"
+      ROCKET_LIMITS: "{json=10485760}"
+      ROCKET_SECRET_KEY: "SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA="
+      ROCKET_KEEP_ALIVE: "0"
+      ROCKET_PORT: "9238"
+      QUIET: "true"
   github-proxy:
     target: //cmd/github-proxy
   frontend:
