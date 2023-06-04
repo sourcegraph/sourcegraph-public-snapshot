@@ -6,8 +6,10 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -134,6 +136,7 @@ SELECT
 	h.id,
 	h.hostname,
 	h.queue_name,
+	h.queue_names,
 	h.os,
 	h.architecture,
 	h.docker_version,
@@ -190,6 +193,7 @@ SELECT
 	h.id,
 	h.hostname,
 	h.queue_name,
+	h.queue_names,
 	h.os,
 	h.architecture,
 	h.docker_version,
@@ -214,7 +218,8 @@ func (s *executorStore) upsertHeartbeat(ctx context.Context, executor types.Exec
 		executorStoreUpsertHeartbeatQuery,
 
 		executor.Hostname,
-		executor.QueueName,
+		dbutil.NullStringColumn(executor.QueueName),
+		pq.Array(executor.QueueNames),
 		executor.OS,
 		executor.Architecture,
 		executor.DockerVersion,
@@ -231,6 +236,7 @@ const executorStoreUpsertHeartbeatQuery = `
 INSERT INTO executor_heartbeats (
 	hostname,
 	queue_name,
+	queue_names,
 	os,
 	architecture,
 	docker_version,
@@ -241,10 +247,11 @@ INSERT INTO executor_heartbeats (
 	first_seen_at,
 	last_seen_at
 )
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 ON CONFLICT (hostname) DO UPDATE
 SET
 	queue_name = EXCLUDED.queue_name,
+	queue_names = EXCLUDED.queue_names,
 	os = EXCLUDED.os,
 	architecture = EXCLUDED.architecture,
 	docker_version = EXCLUDED.docker_version,
@@ -278,10 +285,13 @@ func scanExecutors(rows *sql.Rows, queryErr error) (_ []types.Executor, err erro
 	var executors []types.Executor
 	for rows.Next() {
 		var executor types.Executor
+		var sqlQueueName *string
+		var sqlQueueNames pq.StringArray
 		if err := rows.Scan(
 			&executor.ID,
 			&executor.Hostname,
-			&executor.QueueName,
+			&sqlQueueName,
+			&sqlQueueNames,
 			&executor.OS,
 			&executor.Architecture,
 			&executor.DockerVersion,
@@ -294,6 +304,16 @@ func scanExecutors(rows *sql.Rows, queryErr error) (_ []types.Executor, err erro
 		); err != nil {
 			return nil, err
 		}
+
+		if sqlQueueName != nil {
+			executor.QueueName = *sqlQueueName
+		}
+
+		var queueNames []string
+		for _, name := range sqlQueueNames {
+			queueNames = append(queueNames, name)
+		}
+		executor.QueueNames = queueNames
 
 		executors = append(executors, executor)
 	}

@@ -2231,7 +2231,7 @@ ALTER SEQUENCE event_logs_scrape_state_own_id_seq OWNED BY event_logs_scrape_sta
 CREATE TABLE executor_heartbeats (
     id integer NOT NULL,
     hostname text NOT NULL,
-    queue_name text NOT NULL,
+    queue_name text,
     os text NOT NULL,
     architecture text NOT NULL,
     docker_version text NOT NULL,
@@ -2240,7 +2240,9 @@ CREATE TABLE executor_heartbeats (
     ignite_version text NOT NULL,
     src_cli_version text NOT NULL,
     first_seen_at timestamp with time zone DEFAULT now() NOT NULL,
-    last_seen_at timestamp with time zone DEFAULT now() NOT NULL
+    last_seen_at timestamp with time zone DEFAULT now() NOT NULL,
+    queue_names text[],
+    CONSTRAINT one_of_queue_name_queue_names CHECK ((((queue_name IS NOT NULL) AND (queue_names IS NULL)) OR ((queue_names IS NOT NULL) AND (queue_name IS NULL))))
 );
 
 COMMENT ON TABLE executor_heartbeats IS 'Tracks the most recent activity of executors attached to this Sourcegraph instance.';
@@ -2266,6 +2268,8 @@ COMMENT ON COLUMN executor_heartbeats.src_cli_version IS 'The version of src-cli
 COMMENT ON COLUMN executor_heartbeats.first_seen_at IS 'The first time a heartbeat from the executor was received.';
 
 COMMENT ON COLUMN executor_heartbeats.last_seen_at IS 'The last time a heartbeat from the executor was received.';
+
+COMMENT ON COLUMN executor_heartbeats.queue_names IS 'The list of queue names that the executor polls for work.';
 
 CREATE SEQUENCE executor_heartbeats_id_seq
     AS integer

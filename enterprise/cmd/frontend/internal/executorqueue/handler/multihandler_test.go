@@ -17,6 +17,9 @@ import (
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	executorstore "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
 	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	dbworkerstoremocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
@@ -193,6 +196,16 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 1)
 				require.Len(t, batchesMockStore.DequeueFunc.History(), 1)
+				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
+			},
+			expectedStatusCode: http.StatusNoContent,
+		},
+		{
+			name: "No queue names provided",
+			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": []}`,
+			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				require.Len(t, codeintelMockStore.DequeueFunc.History(), 0)
+				require.Len(t, batchesMockStore.DequeueFunc.History(), 0)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
 			},
 			expectedStatusCode: http.StatusNoContent,
@@ -430,7 +443,9 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			batchesMockStore := dbworkerstoremocks.NewMockStore[*btypes.BatchSpecWorkspaceExecutionJob]()
 
 			mh := handler.NewMultiHandler(
+				database.NewMockExecutorStore(),
 				jobTokenStore,
+				metricsstore.NewMockDistributedStore(),
 				handler.QueueHandler[uploadsshared.Index]{Name: "codeintel", Store: codeIntelMockStore, RecordTransformer: transformerFunc[uploadsshared.Index]},
 				handler.QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]{Name: "batches", Store: batchesMockStore, RecordTransformer: transformerFunc[*btypes.BatchSpecWorkspaceExecutionJob]},
 			)
@@ -447,7 +462,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			mh.RandomGenerator = &MockRandom{IntnResults: intnResults}
 
 			router := mux.NewRouter()
-			router.HandleFunc("/dequeue", mh.ServeHTTP)
+			router.HandleFunc("/dequeue", mh.HandleDequeue)
 
 			if test.mockFunc != nil {
 				test.mockFunc(codeIntelMockStore, batchesMockStore, jobTokenStore)
@@ -475,6 +490,342 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 				if test.assertionFunc != nil {
 					test.assertionFunc(t, codeIntelMockStore, batchesMockStore, jobTokenStore)
 				}
+			}
+		})
+	}
+}
+
+func TestMultiHandler_HandleHeartbeat(t *testing.T) {
+	tests := []struct {
+		name                 string
+		body                 string
+		mockFunc             func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob])
+		expectedStatusCode   int
+		expectedResponseBody string
+		assertionFunc        func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob])
+	}{
+		{
+			name: "Heartbeat for multiple queues",
+			body: `{"executorName": "test-executor", "queueNames": ["codeintel", "batches"], "jobIdsByQueue": [{"queueName": "codeintel", "jobIds": ["42", "7"]}, {"queueName": "batches", "jobIds": ["43", "8"]}], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
+				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
+				codeintelMockStore.HeartbeatFunc.PushReturn([]string{"42", "7"}, nil, nil)
+				batchesMockStore.HeartbeatFunc.PushReturn([]string{"43", "8"}, nil, nil)
+			},
+			expectedStatusCode:   http.StatusOK,
+			expectedResponseBody: `{"knownIds":["42-codeintel", "7-codeintel", "43-batches", "8-batches"],"cancelIds":null}`,
+			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
+				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
+
+				assert.Equal(
+					t,
+					types.Executor{
+						Hostname:        "test-executor",
+						QueueNames:      []string{"codeintel", "batches"},
+						OS:              "test-os",
+						Architecture:    "test-arch",
+						DockerVersion:   "1.0",
+						ExecutorVersion: "2.0",
+						GitVersion:      "3.0",
+						IgniteVersion:   "4.0",
+						SrcCliVersion:   "5.0",
+					},
+					executorStore.UpsertHeartbeatFunc.History()[0].Arg1,
+				)
+				require.Len(t, codeintelMockStore.HeartbeatFunc.History(), 1)
+				assert.Equal(t, []string{"42", "7"}, codeintelMockStore.HeartbeatFunc.History()[0].Arg1)
+				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, codeintelMockStore.HeartbeatFunc.History()[0].Arg2)
+
+				require.Len(t, batchesMockStore.HeartbeatFunc.History(), 1)
+				assert.Equal(t, []string{"43", "8"}, batchesMockStore.HeartbeatFunc.History()[0].Arg1)
+				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, batchesMockStore.HeartbeatFunc.History()[0].Arg2)
+			},
+		},
+		{
+			name: "Heartbeat for single queue",
+			body: `{"executorName": "test-executor", "queueNames": ["codeintel"], "jobIdsByQueue": [{"queueName": "codeintel", "jobIds": ["42", "7"]}], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
+				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
+				codeintelMockStore.HeartbeatFunc.PushReturn([]string{"42", "7"}, nil, nil)
+			},
+			expectedStatusCode:   http.StatusOK,
+			expectedResponseBody: `{"knownIds":["42-codeintel", "7-codeintel"],"cancelIds":null}`,
+			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
+				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
+
+				assert.Equal(
+					t,
+					types.Executor{
+						Hostname:        "test-executor",
+						QueueNames:      []string{"codeintel"},
+						OS:              "test-os",
+						Architecture:    "test-arch",
+						DockerVersion:   "1.0",
+						ExecutorVersion: "2.0",
+						GitVersion:      "3.0",
+						IgniteVersion:   "4.0",
+						SrcCliVersion:   "5.0",
+					},
+					executorStore.UpsertHeartbeatFunc.History()[0].Arg1,
+				)
+				require.Len(t, codeintelMockStore.HeartbeatFunc.History(), 1)
+				assert.Equal(t, []string{"42", "7"}, codeintelMockStore.HeartbeatFunc.History()[0].Arg1)
+				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, codeintelMockStore.HeartbeatFunc.History()[0].Arg2)
+
+				require.Len(t, batchesMockStore.HeartbeatFunc.History(), 0)
+			},
+		},
+		{
+			name: "No running jobs",
+			body: `{"executorName": "test-executor", "queueNames": ["codeintel", "batches"], "jobIdsByQueue": [], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
+				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
+			},
+			expectedStatusCode:   http.StatusOK,
+			expectedResponseBody: `{"knownIds":null,"cancelIds":null}`,
+			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
+				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
+
+				assert.Equal(
+					t,
+					types.Executor{
+						Hostname:        "test-executor",
+						QueueNames:      []string{"codeintel", "batches"},
+						OS:              "test-os",
+						Architecture:    "test-arch",
+						DockerVersion:   "1.0",
+						ExecutorVersion: "2.0",
+						GitVersion:      "3.0",
+						IgniteVersion:   "4.0",
+						SrcCliVersion:   "5.0",
+					},
+					executorStore.UpsertHeartbeatFunc.History()[0].Arg1,
+				)
+				require.Len(t, codeintelMockStore.HeartbeatFunc.History(), 0)
+				require.Len(t, batchesMockStore.HeartbeatFunc.History(), 0)
+			},
+		},
+		{
+			name: "Known and canceled IDs",
+			body: `{"executorName": "test-executor", "queueNames": ["codeintel", "batches"], "jobIdsByQueue": [{"queueName": "codeintel", "jobIds": ["42", "7"]}, {"queueName": "batches", "jobIds": ["43", "8"]}], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
+				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
+				codeintelMockStore.HeartbeatFunc.PushReturn([]string{"42"}, []string{"7"}, nil)
+				batchesMockStore.HeartbeatFunc.PushReturn([]string{"43"}, []string{"8"}, nil)
+			},
+			expectedStatusCode:   http.StatusOK,
+			expectedResponseBody: `{"knownIds":["42-codeintel", "43-batches"],"cancelIds":["7-codeintel", "8-batches"]}`,
+			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
+				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
+
+				assert.Equal(
+					t,
+					types.Executor{
+						Hostname:        "test-executor",
+						QueueNames:      []string{"codeintel", "batches"},
+						OS:              "test-os",
+						Architecture:    "test-arch",
+						DockerVersion:   "1.0",
+						ExecutorVersion: "2.0",
+						GitVersion:      "3.0",
+						IgniteVersion:   "4.0",
+						SrcCliVersion:   "5.0",
+					},
+					executorStore.UpsertHeartbeatFunc.History()[0].Arg1,
+				)
+				require.Len(t, codeintelMockStore.HeartbeatFunc.History(), 1)
+				assert.Equal(t, []string{"42", "7"}, codeintelMockStore.HeartbeatFunc.History()[0].Arg1)
+				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, codeintelMockStore.HeartbeatFunc.History()[0].Arg2)
+
+				require.Len(t, batchesMockStore.HeartbeatFunc.History(), 1)
+				assert.Equal(t, []string{"43", "8"}, batchesMockStore.HeartbeatFunc.History()[0].Arg1)
+				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, batchesMockStore.HeartbeatFunc.History()[0].Arg2)
+			},
+		},
+		{
+			name:                 "Invalid worker hostname",
+			body:                 `{"executorName": "", "queueNames": ["codeintel", "batches"], "jobIdsByQueue": [{"queueName": "codeintel", "jobIds": ["42", "7"]}, {"queueName": "batches", "jobIds": ["43", "8"]}], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			expectedStatusCode:   http.StatusInternalServerError,
+			expectedResponseBody: `{"error":"worker hostname cannot be empty"}`,
+			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
+				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 0)
+				require.Len(t, codeintelMockStore.HeartbeatFunc.History(), 0)
+				require.Len(t, batchesMockStore.HeartbeatFunc.History(), 0)
+			},
+		},
+		{
+			name:                 "Job IDs by queue contains name not in queue names",
+			body:                 `{"executorName": "test-executor", "queueNames": ["codeintel", "batches"], "jobIdsByQueue": [{"queueName": "foo", "jobIds": ["42"]}, {"queueName": "bar", "jobIds": ["43"]}], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			expectedStatusCode:   http.StatusInternalServerError,
+			expectedResponseBody: `{"error":"unsupported queue name(s) 'foo, bar' submitted in queueJobIds, executor is configured for queues 'codeintel, batches'"}`,
+			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
+				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 0)
+				require.Len(t, codeintelMockStore.HeartbeatFunc.History(), 0)
+				require.Len(t, batchesMockStore.HeartbeatFunc.History(), 0)
+			},
+		},
+		{
+			name:                 "Queue names missing",
+			body:                 `{"executorName": "test-executor", "jobIdsByQueue": [{"queueName": "codeintel", "jobIds": ["42"]}, {"queueName": "batches", "jobIds": ["43"]}], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			expectedStatusCode:   http.StatusInternalServerError,
+			expectedResponseBody: `{"error":"queueNames must be set for multi-queue heartbeats"}`,
+			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
+				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 0)
+				require.Len(t, codeintelMockStore.HeartbeatFunc.History(), 0)
+				require.Len(t, batchesMockStore.HeartbeatFunc.History(), 0)
+			},
+		},
+		{
+			name: "Failed to upsert heartbeat",
+			body: `{"executorName": "test-executor", "queueNames": ["codeintel", "batches"], "jobIdsByQueue": [{"queueName": "codeintel", "jobIds": ["42", "7"]}, {"queueName": "batches", "jobIds": ["43", "8"]}], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
+				executorStore.UpsertHeartbeatFunc.PushReturn(errors.Newf("failed"))
+				codeintelMockStore.HeartbeatFunc.PushReturn([]string{"42", "7"}, nil, nil)
+				batchesMockStore.HeartbeatFunc.PushReturn([]string{"43", "8"}, nil, nil)
+			},
+			expectedStatusCode:   http.StatusOK,
+			expectedResponseBody: `{"knownIds":["42-codeintel", "7-codeintel", "43-batches", "8-batches"],"cancelIds":null}`,
+			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
+				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
+				assert.Equal(
+					t,
+					types.Executor{
+						Hostname:        "test-executor",
+						QueueNames:      []string{"codeintel", "batches"},
+						OS:              "test-os",
+						Architecture:    "test-arch",
+						DockerVersion:   "1.0",
+						ExecutorVersion: "2.0",
+						GitVersion:      "3.0",
+						IgniteVersion:   "4.0",
+						SrcCliVersion:   "5.0",
+					},
+					executorStore.UpsertHeartbeatFunc.History()[0].Arg1,
+				)
+				require.Len(t, codeintelMockStore.HeartbeatFunc.History(), 1)
+				assert.Equal(t, []string{"42", "7"}, codeintelMockStore.HeartbeatFunc.History()[0].Arg1)
+				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, codeintelMockStore.HeartbeatFunc.History()[0].Arg2)
+
+				require.Len(t, batchesMockStore.HeartbeatFunc.History(), 1)
+				assert.Equal(t, []string{"43", "8"}, batchesMockStore.HeartbeatFunc.History()[0].Arg1)
+				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, batchesMockStore.HeartbeatFunc.History()[0].Arg2)
+			},
+		},
+		{
+			name: "Failed to heartbeat first queue, second is ignored",
+			body: `{"executorName": "test-executor", "queueNames": ["codeintel", "batches"], "jobIdsByQueue": [{"queueName": "batches", "jobIds": ["43", "8"]}, {"queueName": "codeintel", "jobIds": ["42", "7"]}], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
+				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
+				codeintelMockStore.HeartbeatFunc.PushReturn([]string{"42", "7"}, nil, nil)
+				batchesMockStore.HeartbeatFunc.PushReturn(nil, nil, errors.New("failed"))
+			},
+			expectedStatusCode:   http.StatusInternalServerError,
+			expectedResponseBody: `{"error":"multiqueue.UpsertHeartbeat: failed"}`,
+			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
+				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
+				assert.Equal(
+					t,
+					types.Executor{
+						Hostname:        "test-executor",
+						QueueNames:      []string{"codeintel", "batches"},
+						OS:              "test-os",
+						Architecture:    "test-arch",
+						DockerVersion:   "1.0",
+						ExecutorVersion: "2.0",
+						GitVersion:      "3.0",
+						IgniteVersion:   "4.0",
+						SrcCliVersion:   "5.0",
+					},
+					executorStore.UpsertHeartbeatFunc.History()[0].Arg1,
+				)
+				// switch statement in MultiHandler.heartbeat starts with batches, which is first in `jobIdsByQueue`, so not called
+				require.Len(t, codeintelMockStore.HeartbeatFunc.History(), 0)
+
+				require.Len(t, batchesMockStore.HeartbeatFunc.History(), 1)
+				assert.Equal(t, []string{"43", "8"}, batchesMockStore.HeartbeatFunc.History()[0].Arg1)
+				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, batchesMockStore.HeartbeatFunc.History()[0].Arg2)
+			},
+		},
+		{
+			name: "First queue successful heartbeat, failed to heartbeat second queue",
+			body: `{"executorName": "test-executor", "queueNames": ["codeintel", "batches"], "jobIdsByQueue": [{"queueName": "codeintel", "jobIds": ["42", "7"]}, {"queueName": "batches", "jobIds": ["43", "8"]}], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
+				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
+				codeintelMockStore.HeartbeatFunc.PushReturn([]string{"42", "7"}, nil, nil)
+				batchesMockStore.HeartbeatFunc.PushReturn(nil, nil, errors.New("failed"))
+			},
+			expectedStatusCode:   http.StatusInternalServerError,
+			expectedResponseBody: `{"error":"multiqueue.UpsertHeartbeat: failed"}`,
+			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *database.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
+				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
+				assert.Equal(
+					t,
+					types.Executor{
+						Hostname:        "test-executor",
+						QueueNames:      []string{"codeintel", "batches"},
+						OS:              "test-os",
+						Architecture:    "test-arch",
+						DockerVersion:   "1.0",
+						ExecutorVersion: "2.0",
+						GitVersion:      "3.0",
+						IgniteVersion:   "4.0",
+						SrcCliVersion:   "5.0",
+					},
+					executorStore.UpsertHeartbeatFunc.History()[0].Arg1,
+				)
+				// switch statement in MultiHandler.heartbeat starts with batches, which is first in `jobIdsByQueue`, so not called
+				require.Len(t, codeintelMockStore.HeartbeatFunc.History(), 1)
+				assert.Equal(t, []string{"42", "7"}, codeintelMockStore.HeartbeatFunc.History()[0].Arg1)
+				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, codeintelMockStore.HeartbeatFunc.History()[0].Arg2)
+
+				require.Len(t, batchesMockStore.HeartbeatFunc.History(), 1)
+				assert.Equal(t, []string{"43", "8"}, batchesMockStore.HeartbeatFunc.History()[0].Arg1)
+				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, batchesMockStore.HeartbeatFunc.History()[0].Arg2)
+			},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			executorStore := database.NewMockExecutorStore()
+			metricsStore := metricsstore.NewMockDistributedStore()
+			codeIntelMockStore := dbworkerstoremocks.NewMockStore[uploadsshared.Index]()
+			batchesMockStore := dbworkerstoremocks.NewMockStore[*btypes.BatchSpecWorkspaceExecutionJob]()
+
+			mh := handler.NewMultiHandler(
+				executorStore,
+				executorstore.NewMockJobTokenStore(),
+				metricsStore,
+				handler.QueueHandler[uploadsshared.Index]{Name: "codeintel", Store: codeIntelMockStore},
+				handler.QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]{Name: "batches", Store: batchesMockStore},
+			)
+
+			router := mux.NewRouter()
+			router.HandleFunc("/heartbeat", mh.HandleHeartbeat)
+
+			req, err := http.NewRequest(http.MethodPost, "/heartbeat", strings.NewReader(test.body))
+			require.NoError(t, err)
+
+			rw := httptest.NewRecorder()
+
+			if test.mockFunc != nil {
+				test.mockFunc(metricsStore, executorStore, codeIntelMockStore, batchesMockStore)
+			}
+
+			router.ServeHTTP(rw, req)
+
+			assert.Equal(t, test.expectedStatusCode, rw.Code)
+
+			b, err := io.ReadAll(rw.Body)
+			require.NoError(t, err)
+
+			if len(test.expectedResponseBody) > 0 {
+				assert.JSONEq(t, test.expectedResponseBody, string(b))
+			} else {
+				assert.Empty(t, string(b))
+			}
+
+			if test.assertionFunc != nil {
+				test.assertionFunc(t, metricsStore, executorStore, codeIntelMockStore, batchesMockStore)
 			}
 		})
 	}

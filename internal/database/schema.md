@@ -1349,7 +1349,7 @@ Contains state for own jobs that scrape events if enabled.
 ------------------+--------------------------+-----------+----------+-------------------------------------------------
  id               | integer                  |           | not null | nextval('executor_heartbeats_id_seq'::regclass)
  hostname         | text                     |           | not null | 
- queue_name       | text                     |           | not null | 
+ queue_name       | text                     |           |          | 
  os               | text                     |           | not null | 
  architecture     | text                     |           | not null | 
  docker_version   | text                     |           | not null | 
@@ -1359,9 +1359,12 @@ Contains state for own jobs that scrape events if enabled.
  src_cli_version  | text                     |           | not null | 
  first_seen_at    | timestamp with time zone |           | not null | now()
  last_seen_at     | timestamp with time zone |           | not null | now()
+ queue_names      | text[]                   |           |          | 
 Indexes:
     "executor_heartbeats_pkey" PRIMARY KEY, btree (id)
     "executor_heartbeats_hostname_key" UNIQUE CONSTRAINT, btree (hostname)
+Check constraints:
+    "one_of_queue_name_queue_names" CHECK (queue_name IS NOT NULL AND queue_names IS NULL OR queue_names IS NOT NULL AND queue_name IS NULL)
 
 ```
 
@@ -1386,6 +1389,8 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
 **os**: The operating system running the executor.
 
 **queue_name**: The queue name that the executor polls for work.
+
+**queue_names**: The list of queue names that the executor polls for work.
 
 **src_cli_version**: The version of src-cli used by the executor.
 

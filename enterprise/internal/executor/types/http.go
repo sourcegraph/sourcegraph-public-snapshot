@@ -42,10 +42,19 @@ type MarkErroredRequest struct {
 	ErrorMessage string `json:"errorMessage"`
 }
 
+type QueueJobIDs struct {
+	QueueName string   `json:"queueName"`
+	JobIDs    []string `json:"jobIds"`
+}
+
 // HeartbeatRequest is the payload sent by executors to the executor service to indicate that they are still alive.
 type HeartbeatRequest struct {
-	ExecutorName string   `json:"executorName"`
-	JobIDs       []string `json:"jobIds"`
+	ExecutorName string `json:"executorName"`
+
+	JobIDs []string `json:"jobIds,omitempty"`
+	// Used by multi-queue executors. One of (JobIDsByQueue and QueueNames) or JobIDs must be set.
+	JobIDsByQueue []QueueJobIDs `json:"jobIdsByQueue,omitempty"`
+	QueueNames    []string      `json:"queueNames,omitempty"`
 
 	// Telemetry data.
 	OS              string `json:"os"`
@@ -79,8 +88,10 @@ type HeartbeatRequestV1 struct {
 }
 
 type heartbeatRequestUnmarshaller struct {
-	ExecutorName string `json:"executorName"`
-	JobIDs       []any  `json:"jobIds"`
+	ExecutorName  string        `json:"executorName"`
+	JobIDs        []any         `json:"jobIds"`
+	JobIDsByQueue []QueueJobIDs `json:"jobIdsByQueue"`
+	QueueNames    []string      `json:"queueNames"`
 
 	// Telemetry data.
 	OS              string `json:"os"`
@@ -102,6 +113,8 @@ func (h *HeartbeatRequest) UnmarshalJSON(b []byte) error {
 	if err := json.Unmarshal(b, &req); err != nil {
 		return err
 	}
+	h.JobIDsByQueue = req.JobIDsByQueue
+	h.QueueNames = req.QueueNames
 	h.ExecutorName = req.ExecutorName
 	h.OS = req.OS
 	h.Architecture = req.Architecture
@@ -132,10 +145,4 @@ func (h *HeartbeatRequest) UnmarshalJSON(b []byte) error {
 type HeartbeatResponse struct {
 	KnownIDs  []string `json:"knownIds"`
 	CancelIDs []string `json:"cancelIds"`
-}
-
-// TODO: Deprecated. Can be removed in Sourcegraph 4.4.
-type CanceledJobsRequest struct {
-	KnownJobIDs  []string `json:"knownJobIds"`
-	ExecutorName string   `json:"executorName"`
 }

@@ -63,6 +63,7 @@ func apiWorkerOptions(c *config.Config, queueTelemetryOptions queue.TelemetryOpt
 	return apiworker.Options{
 		VMPrefix:      c.VMPrefix,
 		QueueName:     c.QueueName,
+		QueueNames:    c.QueueNames,
 		WorkerOptions: workerOptions(c),
 		RunnerOptions: runner.Options{
 			DockerOptions:      dockerOptions(c),
@@ -84,12 +85,19 @@ func apiWorkerOptions(c *config.Config, queueTelemetryOptions queue.TelemetryOpt
 }
 
 func workerOptions(c *config.Config) workerutil.WorkerOptions {
+	var identity string
+	if len(c.QueueNames) > 0 {
+		identity = strings.Replace(c.QueueNamesStr, ",", "_", -1)
+	} else {
+		identity = c.QueueName
+	}
+
 	return workerutil.WorkerOptions{
-		Name:                 fmt.Sprintf("executor_%s_worker", c.QueueName),
+		Name:                 fmt.Sprintf("executor_%s_worker", identity),
 		NumHandlers:          c.MaximumNumJobs,
 		Interval:             c.QueuePollInterval,
 		HeartbeatInterval:    5 * time.Second,
-		Metrics:              makeWorkerMetrics(c.QueueName),
+		Metrics:              makeWorkerMetrics(identity),
 		NumTotalJobs:         c.NumTotalJobs,
 		MaxActiveTime:        c.MaxActiveTime,
 		WorkerHostname:       c.WorkerHostname,
@@ -137,6 +145,7 @@ func queueOptions(c *config.Config, telemetryOptions queue.TelemetryOptions) que
 	return queue.Options{
 		ExecutorName:      c.WorkerHostname,
 		QueueName:         c.QueueName,
+		QueueNames:        c.QueueNames,
 		BaseClientOptions: baseClientOptions(c, "/.executors/queue"),
 		TelemetryOptions:  telemetryOptions,
 		ResourceOptions: queue.ResourceOptions{

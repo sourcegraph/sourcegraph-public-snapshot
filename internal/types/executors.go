@@ -7,6 +7,7 @@ type Executor struct {
 	ID              int
 	Hostname        string
 	QueueName       string
+	QueueNames      []string
 	OS              string
 	Architecture    string
 	DockerVersion   string
