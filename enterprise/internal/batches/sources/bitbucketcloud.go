@@ -270,7 +270,7 @@ func (s BitbucketCloudSource) GetFork(ctx context.Context, targetRepo *types.Rep
 }
 
 func (s BitbucketCloudSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
-	return buildCommitOptsCommon(repo, spec, pushOpts)
+	return BuildCommitOptsCommon(repo, spec, pushOpts)
 }
 
 func (s BitbucketCloudSource) checkAndCopy(targetRepo *types.Repo, fork *bitbucketcloud.Repo) (*types.Repo, error) {

@@ -166,7 +166,7 @@ func (c *Changeset) IsOutdated() (bool, error) {
 	return false, nil
 }
 
-func buildCommitOptsCommon(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+func BuildCommitOptsCommon(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
 	// IMPORTANT: We add a trailing newline here, otherwise `git apply`
 	// will fail with "corrupt patch at line <N>" where N is the last line.
 	patch := append([]byte{}, spec.Diff...)

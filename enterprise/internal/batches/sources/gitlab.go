@@ -572,7 +572,7 @@ func (s GitLabSource) GetFork(ctx context.Context, targetRepo *types.Repo, names
 }
 
 func (s GitLabSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
-	return buildCommitOptsCommon(repo, spec, pushOpts)
+	return BuildCommitOptsCommon(repo, spec, pushOpts)
 }
 
 type gitlabClientFork interface {

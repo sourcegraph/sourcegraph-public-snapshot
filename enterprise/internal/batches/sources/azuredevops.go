@@ -368,7 +368,7 @@ func (s AzureDevOpsSource) GetFork(ctx context.Context, targetRepo *types.Repo, 
 }
 
 func (s AzureDevOpsSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
-	return buildCommitOptsCommon(repo, spec, pushOpts)
+	return BuildCommitOptsCommon(repo, spec, pushOpts)
 }
 
 // checkAndCopy creates a types.Repo representation of the forked repository useing the original repo (targetRepo).

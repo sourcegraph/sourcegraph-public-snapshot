@@ -320,7 +320,7 @@ func (s *FakeChangesetSource) IsArchivedPushError(output string) bool {
 	return s.IsArchivedPushErrorTrue
 }
 
-func (s *FakeChangesetSource) BuildCommitOpts(_ *types.Repo, _ *btypes.Changeset, _ *btypes.ChangesetSpec, _ *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+func (s *FakeChangesetSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Changeset, spec *btypes.ChangesetSpec, cfg *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
 	s.BuildCommitOptsCalled = true
-	return protocol.CreateCommitFromPatchRequest{}
+	return sources.BuildCommitOptsCommon(repo, spec, cfg)
 }
