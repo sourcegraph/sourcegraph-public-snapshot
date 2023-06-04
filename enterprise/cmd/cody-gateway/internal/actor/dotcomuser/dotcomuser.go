@@ -29,7 +29,7 @@ var (
 
 type Source struct {
 	log    log.Logger
-	cache  httpcache.Cache // TODO: add something to regularly clean up the cache
+	cache  httpcache.Cache
 	dotcom graphql.Client
 }
 
@@ -86,10 +86,10 @@ func (s *Source) fetchAndCache(ctx context.Context, token, cacheKey string) (*ac
 	resp, checkErr := dotcom.CheckDotcomUserAccessToken(ctx, s.dotcom, token)
 	if checkErr != nil {
 		// Generate a stateless actor so that we aren't constantly hitting the dotcom API
-		act = NewActor(s, cacheKey, dotcom.CheckDotcomUserAccessTokenDotcomDotcomQueryDotcomCodyGatewayUserByTokenDotcomCodyGatewayUser{})
+		act = NewActor(s, cacheKey, dotcom.DotcomUserState{})
 	} else {
 		act = NewActor(s, cacheKey,
-			*resp.Dotcom.DotcomCodyGatewayUserByToken)
+			resp.Dotcom.DotcomCodyGatewayUserByToken.DotcomUserState)
 	}
 
 	if data, err := json.Marshal(act); err != nil {
@@ -106,7 +106,7 @@ func (s *Source) fetchAndCache(ctx context.Context, token, cacheKey string) (*ac
 }
 
 // NewActor creates an actor from Sourcegraph.com user.
-func NewActor(source *Source, cacheKey string, user dotcom.CheckDotcomUserAccessTokenDotcomDotcomQueryDotcomCodyGatewayUserByTokenDotcomCodyGatewayUser) *actor.Actor {
+func NewActor(source *Source, cacheKey string, user dotcom.DotcomUserState) *actor.Actor {
 	now := time.Now()
 	a := &actor.Actor{
 		Key:           cacheKey,

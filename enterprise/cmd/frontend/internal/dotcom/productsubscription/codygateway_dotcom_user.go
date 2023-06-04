@@ -76,7 +76,7 @@ func (r codyUserGatewayAccessResolver) ChatCompletionsRateLimit(ctx context.Cont
 	if !r.Enabled() {
 		return nil, nil
 	}
-	rateLimit, rateLimitSource, err := getRateLimt(ctx, r.db, r.user.ID, types.CompletionsFeatureChat)
+	rateLimit, rateLimitSource, err := getRateLimit(ctx, r.db, r.user.ID, types.CompletionsFeatureChat)
 	if err != nil {
 		return nil, err
 	}
@@ -95,7 +95,7 @@ func (r codyUserGatewayAccessResolver) CodeCompletionsRateLimit(ctx context.Cont
 		return nil, nil
 	}
 
-	rateLimit, rateLimitSource, err := getRateLimt(ctx, r.db, r.user.ID, types.CompletionsFeatureCode)
+	rateLimit, rateLimitSource, err := getRateLimit(ctx, r.db, r.user.ID, types.CompletionsFeatureCode)
 	if err != nil {
 		return nil, err
 	}
@@ -109,7 +109,7 @@ func (r codyUserGatewayAccessResolver) CodeCompletionsRateLimit(ctx context.Cont
 	}, nil
 }
 
-func getRateLimt(ctx context.Context, db database.DB, userID int32, scope types.CompletionsFeature) (licensing.CodyGatewayRateLimit, graphqlbackend.CodyGatewayRateLimitSource, error) {
+func getRateLimit(ctx context.Context, db database.DB, userID int32, scope types.CompletionsFeature) (licensing.CodyGatewayRateLimit, graphqlbackend.CodyGatewayRateLimitSource, error) {
 	var limit *int
 	var err error
 	source := graphqlbackend.CodyGatewayRateLimitSourceOverride

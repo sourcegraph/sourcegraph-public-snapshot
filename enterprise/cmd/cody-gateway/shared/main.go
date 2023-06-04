@@ -69,17 +69,19 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		}
 	}
 
+	dotcomClient := dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken)
+
 	// Supported actor/auth sources
 	sources := actor.Sources{
 		anonymous.NewSource(config.AllowAnonymous),
 		productsubscription.NewSource(
 			obctx.Logger,
 			rcache.New("product-subscriptions"),
-			dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken),
+			dotcomClient,
 			config.Dotcom.InternalMode),
 		dotcomuser.NewSource(obctx.Logger,
 			rcache.New("dotcom-users"),
-			dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken),
+			dotcomClient,
 		),
 	}
 
