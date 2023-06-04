@@ -9,7 +9,14 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 ### Added
 
 - Hover tooltips to intent-detection underlines. [pull/52029](https://github.com/sourcegraph/sourcegraph/pull/52029)
+- Open context search results links as workspace file [pull/52856](https://github.com/sourcegraph/sourcegraph/pull/52856)
+- Cody Inline Assist: Decorations for `/fix` errors [pull/52796](https://github.com/sourcegraph/sourcegraph/pull/52796)
+
 ### Fixed
+
+- Cody Inline Assist: Decorations for `/fix` on light theme [pull/52796](https://github.com/sourcegraph/sourcegraph/pull/52796)
+- Cody Inline Assist: Fixs cody processing indefinitely isse [pull/52796](https://github.com/sourcegraph/sourcegraph/pull/52796)
+- Cody Inline Assist: Use more than 1 context file for `/touch` [pull/52796](https://github.com/sourcegraph/sourcegraph/pull/52796)
 
 ### Changed
 
