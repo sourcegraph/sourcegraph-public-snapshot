@@ -100,6 +100,7 @@ func (o *GitObject) FromProto(p *proto.GitObject) {
 	}
 
 	var t ObjectType
+
 	switch p.GetType() {
 	case proto.GitObject_OBJECT_TYPE_COMMIT:
 		t = ObjectTypeCommit
