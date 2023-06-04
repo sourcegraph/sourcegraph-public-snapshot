@@ -959,27 +959,45 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 			Format:      opts.Format,
 		}
 
-		var buf bytes.Buffer
-		if err := json.NewEncoder(&buf).Encode(request); err != nil {
-			return err
-		}
-
-		resp, err := c.do(ctx, repoName, "POST", uri, buf.Bytes())
-		if err != nil {
-			return err
-		}
-		defer resp.Body.Close()
-		logger.AddEvent("POST", attribute.Int("resp.StatusCode", resp.StatusCode))
-
-		if resp.StatusCode != http.StatusOK {
-			return errors.Newf("http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200)))
-		}
-
 		var response protocol.BatchLogResponse
-		if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-			return err
+
+		if internalgrpc.IsGRPCEnabled(ctx) {
+			client, err := c.ClientForRepo(repoName)
+			if err != nil {
+				return err
+			}
+
+			resp, err := client.BatchLog(ctx, request.ToProto())
+			if err != nil {
+				return err
+			}
+
+			response.FromProto(resp)
+			logger.AddEvent("read response", attribute.Int("numResults", len(response.Results)))
+
+		} else {
+
+			var buf bytes.Buffer
+			if err := json.NewEncoder(&buf).Encode(request); err != nil {
+				return err
+			}
+
+			resp, err := c.do(ctx, repoName, "POST", uri, buf.Bytes())
+			if err != nil {
+				return err
+			}
+			defer resp.Body.Close()
+			logger.AddEvent("POST", attribute.Int("resp.StatusCode", resp.StatusCode))
+
+			if resp.StatusCode != http.StatusOK {
+				return errors.Newf("http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200)))
+			}
+
+			if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+				return err
+			}
+			logger.AddEvent("read response", attribute.Int("numResults", len(response.Results)))
 		}
-		logger.AddEvent("read response", attribute.Int("numResults", len(response.Results)))
 
 		for _, result := range response.Results {
 			var err error
@@ -1615,7 +1633,6 @@ func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 				Err: errors.Errorf("GetObject: http status %d, %s", resp.StatusCode, readResponseBody(resp.Body)),
 			}
 		}
-
 		var res protocol.GetObjectResponse
 		if err = json.NewDecoder(resp.Body).Decode(&res); err != nil {
 			c.logger.Warn("decoding gitserver get-object response", sglog.Error(err))
