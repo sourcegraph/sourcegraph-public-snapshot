@@ -211,6 +211,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.publishConfig()
                 this.sendTranscript()
                 this.sendChatHistory()
+                await this.loadRecentChat()
                 break
             case 'submit':
                 await this.onHumanMessageSubmitted(message.text, message.submitType)
@@ -641,6 +642,21 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         if (localHistory) {
             this.chatHistory = localHistory?.chat
             this.inputHistory = localHistory.input
+        }
+    }
+
+    /**
+     * Loads the most recent chat
+     */
+    private async loadRecentChat(): Promise<void> {
+        const localHistory = this.localStorage.getChatHistory()
+        if (localHistory) {
+            const chats = localHistory.chat
+            const sortedChats = Object.entries(chats).sort(
+                (a, b) => +new Date(b[1].lastInteractionTimestamp) - +new Date(a[1].lastInteractionTimestamp)
+            )
+            const chatID = sortedChats[0][0]
+            await this.restoreSession(chatID)
         }
     }
 
