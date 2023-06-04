@@ -327,6 +327,7 @@ export const mockWorkspace = (
         os: 'darwin',
         compatibility: ExecutorCompatibility.UP_TO_DATE,
         queueName: 'batches',
+        queueNames: null,
         srcCliVersion: '3.38.0',
         __typename: 'Executor',
         ...workspace?.executor,

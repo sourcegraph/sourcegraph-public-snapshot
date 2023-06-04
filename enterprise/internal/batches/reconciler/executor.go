@@ -201,7 +201,7 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 	}
 	opts := css.BuildCommitOpts(e.targetRepo, e.ch, e.spec, pushConf)
 
-	err = e.pushCommit(ctx, opts)
+	_, err = e.pushCommit(ctx, opts)
 	var pce pushCommitError
 	if errors.As(err, &pce) {
 		if acss, ok := css.(sources.ArchivableChangesetSource); ok {
@@ -610,22 +610,22 @@ func (e pushCommitError) Error() string {
 		e.RepositoryName, e.InternalError, e.Command, strings.TrimSpace(e.CombinedOutput))
 }
 
-func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) error {
-	_, err := e.client.CreateCommitFromPatch(ctx, opts)
+func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error) {
+	res, err := e.client.CreateCommitFromPatch(ctx, opts)
 	if err != nil {
 		var e *protocol.CreateCommitFromPatchError
 		if errors.As(err, &e) {
 			// Make "patch does not apply" errors a fatal error. Retrying the changeset
 			// rollout won't help here and just causes noise.
 			if strings.Contains(e.CombinedOutput, "patch does not apply") {
-				return errcode.MakeNonRetryable(pushCommitError{e})
+				return nil, errcode.MakeNonRetryable(pushCommitError{e})
 			}
-			return pushCommitError{e}
+			return nil, pushCommitError{e}
 		}
-		return err
+		return nil, err
 	}
 
-	return nil
+	return res, nil
 }
 
 // handleArchivedRepo updates the changeset and repo once it has been

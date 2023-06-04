@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -59,18 +60,31 @@ func (c *Client) QueuedCount(ctx context.Context) (int, error) {
 }
 
 func (c *Client) Dequeue(ctx context.Context, workerHostname string, extraArguments any) (job types.Job, _ bool, err error) {
-	ctx, _, endObservation := c.operations.dequeue.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("queueName", c.options.QueueName),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/dequeue", c.options.QueueName), types.DequeueRequest{
+	var queueAttr attribute.KeyValue
+	var endpoint string
+	dequeueRequest := types.DequeueRequest{
 		Version:      version.Version(),
 		ExecutorName: c.options.ExecutorName,
 		NumCPUs:      c.options.ResourceOptions.NumCPUs,
 		Memory:       c.options.ResourceOptions.Memory,
 		DiskSpace:    c.options.ResourceOptions.DiskSpace,
-	})
+	}
+
+	if len(c.options.QueueNames) > 0 {
+		queueAttr = attribute.StringSlice("queueNames", c.options.QueueNames)
+		endpoint = "/dequeue"
+		dequeueRequest.Queues = c.options.QueueNames
+	} else {
+		queueAttr = attribute.String("queueName", c.options.QueueName)
+		endpoint = fmt.Sprintf("%s/dequeue", c.options.QueueName)
+	}
+
+	ctx, _, endObservation := c.operations.dequeue.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		queueAttr,
+	}})
+	defer endObservation(1, observation.Args{})
+
+	req, err := c.client.NewJSONRequest(http.MethodPost, endpoint, dequeueRequest)
 	if err != nil {
 		return job, false, err
 	}
@@ -80,13 +94,14 @@ func (c *Client) Dequeue(ctx context.Context, workerHostname string, extraArgume
 }
 
 func (c *Client) MarkComplete(ctx context.Context, job types.Job) (_ bool, err error) {
+	queue := c.inferQueueName(job)
 	ctx, _, endObservation := c.operations.markComplete.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("queueName", c.options.QueueName),
+		attribute.String("queueName", queue),
 		attribute.Int("jobID", job.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/markComplete", c.options.QueueName), job.Token, types.MarkCompleteRequest{
+	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/markComplete", queue), job.Token, types.MarkCompleteRequest{
 		JobOperationRequest: types.JobOperationRequest{
 			ExecutorName: c.options.ExecutorName,
 			JobID:        job.ID,
@@ -103,13 +118,14 @@ func (c *Client) MarkComplete(ctx context.Context, job types.Job) (_ bool, err e
 }
 
 func (c *Client) MarkErrored(ctx context.Context, job types.Job, failureMessage string) (_ bool, err error) {
+	queue := c.inferQueueName(job)
 	ctx, _, endObservation := c.operations.markErrored.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("queueName", c.options.QueueName),
+		attribute.String("queueName", queue),
 		attribute.Int("jobID", job.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/markErrored", c.options.QueueName), job.Token, types.MarkErroredRequest{
+	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/markErrored", queue), job.Token, types.MarkErroredRequest{
 		JobOperationRequest: types.JobOperationRequest{
 			ExecutorName: c.options.ExecutorName,
 			JobID:        job.ID,
@@ -127,13 +143,14 @@ func (c *Client) MarkErrored(ctx context.Context, job types.Job, failureMessage 
 }
 
 func (c *Client) MarkFailed(ctx context.Context, job types.Job, failureMessage string) (_ bool, err error) {
+	queue := c.inferQueueName(job)
 	ctx, _, endObservation := c.operations.markFailed.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("queueName", c.options.QueueName),
+		attribute.String("queueName", queue),
 		attribute.Int("jobID", job.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/markFailed", c.options.QueueName), job.Token, types.MarkErroredRequest{
+	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/markFailed", queue), job.Token, types.MarkErroredRequest{
 		JobOperationRequest: types.JobOperationRequest{
 			ExecutorName: c.options.ExecutorName,
 			JobID:        job.ID,
@@ -151,27 +168,28 @@ func (c *Client) MarkFailed(ctx context.Context, job types.Job, failureMessage s
 }
 
 func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, cancelIDs []string, err error) {
-	ctx, _, endObservation := c.operations.heartbeat.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("queueName", c.options.QueueName),
-		attribute.StringSlice("jobIDs", jobIDs),
-	}})
-	defer endObservation(1, observation.Args{})
-
 	metrics, err := gatherMetrics(c.logger, c.metricsGatherer)
 	if err != nil {
 		c.logger.Error("Failed to collect prometheus metrics for heartbeat", log.Error(err))
 		// Continue, no metric errors should prevent heartbeats.
 	}
 
-	var req *http.Request
-	var reqErr error
-	// If queueName is empty (but queueNames is set), then we are using the newer multi-queue API. It is safe to send
-	// jobIds as strings in that case.
-	if c.options.QueueName == "" {
-		req, reqErr = c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", c.options.QueueName), types.HeartbeatRequest{
-			ExecutorName: c.options.ExecutorName,
-			JobIDs:       jobIDs,
-
+	var queueAttr attribute.KeyValue
+	var endpoint string
+	var payload any
+	// We are using the newer multi-queue API. It is safe to send jobIds as strings in that case.
+	if len(c.options.QueueNames) > 0 {
+		queueAttr = attribute.StringSlice("queueNames", c.options.QueueNames)
+		queueJobIDs, parseErr := ParseJobIDs(jobIDs)
+		if parseErr != nil {
+			c.logger.Error("failed to parse job IDs", log.Error(parseErr))
+			return nil, nil, err
+		}
+		endpoint = "/heartbeat"
+		payload = types.HeartbeatRequest{
+			ExecutorName:    c.options.ExecutorName,
+			QueueNames:      c.options.QueueNames,
+			JobIDsByQueue:   queueJobIDs,
 			OS:              c.options.TelemetryOptions.OS,
 			Architecture:    c.options.TelemetryOptions.Architecture,
 			DockerVersion:   c.options.TelemetryOptions.DockerVersion,
@@ -179,9 +197,7 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, canc
 			GitVersion:      c.options.TelemetryOptions.GitVersion,
 			IgniteVersion:   c.options.TelemetryOptions.IgniteVersion,
 			SrcCliVersion:   c.options.TelemetryOptions.SrcCliVersion,
-
-			PrometheusMetrics: metrics,
-		})
+		}
 	} else {
 		// If queueName is set, then we cannot be sure whether Sourcegraph is new enough (since Heartbeat can't provide
 		// that context). So to be safe, we send jobIds as ints. If Sourcegraph is older, it expects ints anyway. If
@@ -189,13 +205,17 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, canc
 		// TODO remove in Sourcegraph 5.2.
 		var jobIDsInt []int
 		for _, jobID := range jobIDs {
-			jobIDInt, err := strconv.Atoi(jobID)
-			if err != nil {
+			jobIDInt, convErr := strconv.Atoi(jobID)
+			if convErr != nil {
+				c.logger.Error("failed to convert job ID to int", log.String("jobID", jobID), log.Error(convErr))
 				return nil, nil, err
 			}
 			jobIDsInt = append(jobIDsInt, jobIDInt)
 		}
-		req, reqErr = c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", c.options.QueueName), types.HeartbeatRequestV1{
+
+		queueAttr = attribute.String("queueName", c.options.QueueName)
+		endpoint = fmt.Sprintf("%s/heartbeat", c.options.QueueName)
+		payload = types.HeartbeatRequestV1{
 			ExecutorName: c.options.ExecutorName,
 			JobIDs:       jobIDsInt,
 
@@ -208,9 +228,18 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, canc
 			SrcCliVersion:   c.options.TelemetryOptions.SrcCliVersion,
 
 			PrometheusMetrics: metrics,
-		})
+		}
 	}
-	if reqErr != nil {
+
+	ctx, _, endObservation := c.operations.heartbeat.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		queueAttr,
+		attribute.StringSlice("jobIDs", jobIDs),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	req, err := c.client.NewJSONRequest(http.MethodPost, endpoint, payload)
+
+	if err != nil {
 		return nil, nil, err
 	}
 
@@ -230,11 +259,45 @@ func (c *Client) Heartbeat(ctx context.Context, jobIDs []string) (knownIDs, canc
 
 	// First, try to unmarshal the response into a V2 response object.
 	var respV2 types.HeartbeatResponse
-	if err := json.Unmarshal(bodyBytes, &respV2); err == nil {
+	if unmarshalErr := json.Unmarshal(bodyBytes, &respV2); unmarshalErr == nil {
 		// If that works, we can return the data.
 		return respV2.KnownIDs, respV2.CancelIDs, nil
 	}
 	return nil, nil, err
+}
+
+type JobIDsParseError struct {
+	JobIDs []string
+}
+
+func (e JobIDsParseError) Error() string {
+	return fmt.Sprintf("failed to parse one or more unexpected job ID formats: %s", strings.Join(e.JobIDs, ", "))
+}
+
+// ParseJobIDs attempts to split the job IDs on a separator character in order to categorize them by queue
+// name, returning a list of types.QueueJobIDs.
+// The expected format is <job id>-<queue name>, e.g. "42-batches".
+func ParseJobIDs(jobIDs []string) ([]types.QueueJobIDs, error) {
+	var queueJobIDs []types.QueueJobIDs
+	queueIds := map[string][]string{}
+	var invalidIds []string
+
+	for _, stringID := range jobIDs {
+		id, queueName, found := strings.Cut(stringID, "-")
+		if !found {
+			invalidIds = append(invalidIds, stringID)
+		} else {
+			queueIds[queueName] = append(queueIds[queueName], id)
+		}
+	}
+	if len(invalidIds) > 0 {
+		return nil, JobIDsParseError{JobIDs: invalidIds}
+	}
+
+	for q, ids := range queueIds {
+		queueJobIDs = append(queueJobIDs, types.QueueJobIDs{QueueName: q, JobIDs: ids})
+	}
+	return queueJobIDs, nil
 }
 
 func gatherMetrics(logger log.Logger, gatherer prometheus.Gatherer) (string, error) {
@@ -262,9 +325,17 @@ func gatherMetrics(logger log.Logger, gatherer prometheus.Gatherer) (string, err
 }
 
 func (c *Client) Ping(ctx context.Context) (err error) {
-	req, err := c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", c.options.QueueName), types.HeartbeatRequest{
-		ExecutorName: c.options.ExecutorName,
-	})
+	var req *http.Request
+	if len(c.options.QueueNames) > 0 {
+		req, err = c.client.NewJSONRequest(http.MethodPost, "/heartbeat", types.HeartbeatRequest{
+			ExecutorName: c.options.ExecutorName,
+			QueueNames:   c.options.QueueNames,
+		})
+	} else {
+		req, err = c.client.NewJSONRequest(http.MethodPost, fmt.Sprintf("%s/heartbeat", c.options.QueueName), types.HeartbeatRequest{
+			ExecutorName: c.options.ExecutorName,
+		})
+	}
 	if err != nil {
 		return err
 	}
@@ -273,13 +344,15 @@ func (c *Client) Ping(ctx context.Context) (err error) {
 }
 
 func (c *Client) AddExecutionLogEntry(ctx context.Context, job types.Job, entry internalexecutor.ExecutionLogEntry) (entryID int, err error) {
+	queue := c.inferQueueName(job)
+
 	ctx, _, endObservation := c.operations.addExecutionLogEntry.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("queueName", c.options.QueueName),
+		attribute.String("queueName", queue),
 		attribute.Int("jobID", job.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/addExecutionLogEntry", c.options.QueueName), job.Token, types.AddExecutionLogEntryRequest{
+	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/addExecutionLogEntry", queue), job.Token, types.AddExecutionLogEntryRequest{
 		JobOperationRequest: types.JobOperationRequest{
 			ExecutorName: c.options.ExecutorName,
 			JobID:        job.ID,
@@ -295,14 +368,16 @@ func (c *Client) AddExecutionLogEntry(ctx context.Context, job types.Job, entry 
 }
 
 func (c *Client) UpdateExecutionLogEntry(ctx context.Context, job types.Job, entryID int, entry internalexecutor.ExecutionLogEntry) (err error) {
+	queue := c.inferQueueName(job)
+
 	ctx, _, endObservation := c.operations.updateExecutionLogEntry.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("queueName", c.options.QueueName),
+		attribute.String("queueName", queue),
 		attribute.Int("jobID", job.ID),
 		attribute.Int("entryID", entryID),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/updateExecutionLogEntry", c.options.QueueName), job.Token, types.UpdateExecutionLogEntryRequest{
+	req, err := c.client.NewJSONJobRequest(job.ID, http.MethodPost, fmt.Sprintf("%s/updateExecutionLogEntry", queue), job.Token, types.UpdateExecutionLogEntryRequest{
 		JobOperationRequest: types.JobOperationRequest{
 			ExecutorName: c.options.ExecutorName,
 			JobID:        job.ID,
@@ -315,4 +390,15 @@ func (c *Client) UpdateExecutionLogEntry(ctx context.Context, job types.Job, ent
 	}
 
 	return c.client.DoAndDrop(ctx, req)
+}
+
+// inferQueueName returns the queue name if it is specified on the job, which is the case
+// when an executor is configured to listen to multiple queues. If the queue name is empty,
+// return the specific queue that is configured.
+func (c *Client) inferQueueName(job types.Job) string {
+	if job.Queue != "" {
+		return job.Queue
+	} else {
+		return c.options.QueueName
+	}
 }
