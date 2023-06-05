@@ -33,7 +33,6 @@ func TestSearchFilteringExample(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
 	logger := logtest.Scoped(t)
 	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 	ctx := context.Background()
@@ -134,7 +133,6 @@ func TestBagNoUser(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
 	logger := logtest.Scoped(t)
 	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 	ctx := context.Background()
@@ -188,7 +186,6 @@ func TestBagUserFoundNoMatches(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
 	logger := logtest.Scoped(t)
 	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 	ctx := context.Background()
@@ -263,7 +260,6 @@ func TestBagUnverifiedEmailOnlyMatchesWithItself(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
 	logger := logtest.Scoped(t)
 	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 	ctx := context.Background()
@@ -309,7 +305,6 @@ func TestBagRetrievesTeamsByName(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
 	logger := logtest.Scoped(t)
 	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 	ctx := context.Background()
@@ -326,7 +321,6 @@ func TestBagManyUsers(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
 	logger := logtest.Scoped(t)
 	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 	ctx := context.Background()
