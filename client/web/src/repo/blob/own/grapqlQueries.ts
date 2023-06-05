@@ -174,11 +174,3 @@ export const FETCH_OWNERS_AND_HISTORY = gql`
         }
     }
 `
-
-export const ASSIGN_OWNER = gql`
-    mutation AssignOwner($input: AssignOwnerInput!) {
-        assignOwner(input: $input) {
-            alwaysNil
-        }
-    }
-`
