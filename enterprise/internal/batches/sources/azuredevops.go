@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 
@@ -364,6 +365,10 @@ func (s AzureDevOpsSource) GetFork(ctx context.Context, targetRepo *types.Repo, 
 	}
 
 	return s.checkAndCopy(targetRepo, &fork)
+}
+
+func (s AzureDevOpsSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+	return BuildCommitOptsCommon(repo, spec, pushOpts)
 }
 
 // checkAndCopy creates a types.Repo representation of the forked repository useing the original repo (targetRepo).

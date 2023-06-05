@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -96,6 +97,8 @@ type ChangesetSource interface {
 	// merge. If the changeset cannot be merged, because it is in an unmergeable
 	// state, ChangesetNotMergeableError must be returned.
 	MergeChangeset(ctx context.Context, ch *Changeset, squash bool) error
+	// BuildCommitOpts builds the CreateCommitFromPatchRequest needed to commit and push the change to the code host.
+	BuildCommitOpts(repo *types.Repo, changeset *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest
 }
 
 // ChangesetNotMergeableError is returned by MergeChangeset if the changeset
@@ -161,4 +164,36 @@ func (c *Changeset) IsOutdated() (bool, error) {
 	}
 
 	return false, nil
+}
+
+func BuildCommitOptsCommon(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+	// IMPORTANT: We add a trailing newline here, otherwise `git apply`
+	// will fail with "corrupt patch at line <N>" where N is the last line.
+	patch := append([]byte{}, spec.Diff...)
+	patch = append(patch, []byte("\n")...)
+	opts := protocol.CreateCommitFromPatchRequest{
+		Repo:       repo.Name,
+		BaseCommit: api.CommitID(spec.BaseRev),
+		Patch:      patch,
+		TargetRef:  spec.HeadRef,
+
+		// CAUTION: `UniqueRef` means that we'll push to a generated branch if it
+		// already exists.
+		// So when we retry publishing a changeset, this will overwrite what we
+		// pushed before.
+		UniqueRef: false,
+
+		CommitInfo: protocol.PatchCommitInfo{
+			Messages:    []string{spec.CommitMessage},
+			AuthorName:  spec.CommitAuthorName,
+			AuthorEmail: spec.CommitAuthorEmail,
+			Date:        spec.CreatedAt,
+		},
+		// We use unified diffs, not git diffs, which means they're missing the
+		// `a/` and `b/` filename prefixes. `-p0` tells `git apply` to not
+		// expect and strip prefixes.
+		GitApplyArgs: []string{"-p0"},
+		Push:         pushOpts,
+	}
+	return opts
 }

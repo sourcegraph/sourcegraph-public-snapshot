@@ -22,6 +22,7 @@ go_library(
         "//enterprise/internal/batches/sources/gerrit",
         "//enterprise/internal/batches/store",
         "//enterprise/internal/batches/types",
+        "//internal/api",
         "//internal/conf",
         "//internal/database",
         "//internal/errcode",

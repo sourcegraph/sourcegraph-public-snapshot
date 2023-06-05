@@ -2,12 +2,18 @@ package sources
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"net/url"
+	"strings"
 
 	gerritbatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/gerrit"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -89,30 +95,67 @@ func (s GerritSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 		return errors.Wrap(err, "getting change")
 	}
 
-	return errors.Wrap(s.setChangesetMetadata(pr, cs), "setting Gerrit changeset metadata")
+	return errors.Wrap(s.setChangesetMetadata(ctx, pr, cs), "setting Gerrit changeset metadata")
 }
 
 // CreateChangeset will create the Changeset on the source. If it already
 // exists, *Changeset will be populated and the return value will be true.
 func (s GerritSource) CreateChangeset(ctx context.Context, cs *Changeset) (bool, error) {
+	changeID := GenerateGerritChangeID(*cs.Changeset)
+
 	// For Gerrit, the Change is created at `git push` time, so we just load it here to verify it
 	// was created successfully.
-	err := s.LoadChangeset(ctx, cs)
+	pr, err := s.client.GetChange(ctx, changeID)
 	if err != nil {
-		return false, err
+		if errcode.IsNotFound(err) {
+			return false, ChangesetNotFoundError{Changeset: cs}
+		}
+		return false, errors.Wrap(err, "getting change")
 	}
-	return true, nil
+
+	// The Changeset technically "exists" at this point because it gets created at push time,
+	// therefore exists would always return true. However, we send false here because otherwise we would always
+	// enqueue a ChangesetUpdate webhook event instead of the regular publish event.
+	return false, errors.Wrap(s.setChangesetMetadata(ctx, pr, cs), "setting Gerrit changeset metadata")
 }
 
 // CreateDraftChangeset creates the given changeset on the code host in draft mode.
-// Noop, Gerrit creates changes through commits directly
-func (s GerritSource) CreateDraftChangeset(context.Context, *Changeset) (bool, error) {
-	return true, nil
+func (s GerritSource) CreateDraftChangeset(ctx context.Context, cs *Changeset) (bool, error) {
+	changeID := GenerateGerritChangeID(*cs.Changeset)
+
+	// For Gerrit, the Change is created at `git push` time, so we just call the API to mark it as WIP.
+	if err := s.client.SetWIP(ctx, changeID); err != nil {
+		if errcode.IsNotFound(err) {
+			return false, ChangesetNotFoundError{Changeset: cs}
+		}
+		return false, errors.Wrap(err, "making change WIP")
+	}
+
+	pr, err := s.client.GetChange(ctx, changeID)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			return false, ChangesetNotFoundError{Changeset: cs}
+		}
+		return false, errors.Wrap(err, "getting change")
+	}
+	// The Changeset technically "exists" at this point because it gets created at push time,
+	// therefore exists would always return true. However, we send false here because otherwise we would always
+	// enqueue a ChangesetUpdate webhook event instead of the regular publish event.
+	return false, errors.Wrap(s.setChangesetMetadata(ctx, pr, cs), "setting Gerrit changeset metadata")
 }
 
 // UndraftChangeset will update the Changeset on the source to be not in draft mode anymore.
-// Noop, Gerrit creates changes through commits directly
-func (s GerritSource) UndraftChangeset(context.Context, *Changeset) error {
+func (s GerritSource) UndraftChangeset(ctx context.Context, cs *Changeset) error {
+	if err := s.client.SetReadyForReview(ctx, cs.ExternalID); err != nil {
+		if errcode.IsNotFound(err) {
+			return ChangesetNotFoundError{Changeset: cs}
+		}
+		return errors.Wrap(err, "setting change as ready")
+	}
+
+	if err := s.LoadChangeset(ctx, cs); err != nil {
+		return errors.Wrap(err, "getting change")
+	}
 	return nil
 }
 
@@ -125,13 +168,13 @@ func (s GerritSource) CloseChangeset(ctx context.Context, cs *Changeset) error {
 		return errors.Wrap(err, "abandoning change")
 	}
 
-	return errors.Wrap(s.setChangesetMetadata(updated, cs), "setting Gerrit changeset metadata")
+	return errors.Wrap(s.setChangesetMetadata(ctx, updated, cs), "setting Gerrit changeset metadata")
 }
 
 // UpdateChangeset can update Changesets.
 // Noop, Gerrit updates changes through git push directly
-func (s GerritSource) UpdateChangeset(context.Context, *Changeset) error {
-	return nil
+func (s GerritSource) UpdateChangeset(ctx context.Context, cs *Changeset) error {
+	return s.LoadChangeset(ctx, cs)
 }
 
 // ReopenChangeset will reopen the Changeset on the source, if it's closed.
@@ -142,7 +185,7 @@ func (s GerritSource) ReopenChangeset(ctx context.Context, cs *Changeset) error 
 		return errors.Wrap(err, "restoring change")
 	}
 
-	return errors.Wrap(s.setChangesetMetadata(updated, cs), "setting Gerrit changeset metadata")
+	return errors.Wrap(s.setChangesetMetadata(ctx, updated, cs), "setting Gerrit changeset metadata")
 }
 
 // CreateComment posts a comment on the Changeset.
@@ -166,21 +209,56 @@ func (s GerritSource) MergeChangeset(ctx context.Context, cs *Changeset, _ bool)
 		}
 		return ChangesetNotMergeableError{ErrorMsg: err.Error()}
 	}
-
-	return errors.Wrap(s.setChangesetMetadata(updated, cs), "setting Gerrit changeset metadata")
+	return errors.Wrap(s.setChangesetMetadata(ctx, updated, cs), "setting Gerrit changeset metadata")
 }
 
-func (s GerritSource) setChangesetMetadata(change *gerrit.Change, cs *Changeset) error {
-	apr := s.annotatePullRequest(change)
-	if err := cs.SetMetadata(apr); err != nil {
+func (s GerritSource) BuildCommitOpts(repo *types.Repo, changeset *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+	opts := BuildCommitOptsCommon(repo, spec, pushOpts)
+	pushRef := strings.Replace(gitdomain.EnsureRefPrefix(spec.BaseRef), "refs/heads", "refs/for", 1) //Magical Gerrit ref for pushing changes.
+	opts.PushRef = &pushRef
+	changeID := changeset.ExternalID
+	if changeID == "" {
+		changeID = GenerateGerritChangeID(*changeset)
+	}
+	opts.CommitInfo.Messages = append(opts.CommitInfo.Messages, "Change-Id: "+changeID)
+	return opts
+}
+
+func (s GerritSource) setChangesetMetadata(ctx context.Context, change *gerrit.Change, cs *Changeset) error {
+	apr, err := s.annotateChange(ctx, change)
+	if err != nil {
+		return errors.Wrap(err, "annotating Change")
+	}
+	if err = cs.SetMetadata(apr); err != nil {
 		return errors.Wrap(err, "setting changeset metadata")
 	}
 	return nil
 }
 
-func (s GerritSource) annotatePullRequest(change *gerrit.Change) *gerritbatches.AnnotatedChange {
+func (s GerritSource) annotateChange(ctx context.Context, change *gerrit.Change) (*gerritbatches.AnnotatedChange, error) {
+	reviewers, err := s.client.GetChangeReviews(ctx, change.ChangeID)
+	if err != nil {
+		return nil, err
+	}
 	return &gerritbatches.AnnotatedChange{
 		Change:      change,
-		CodeHostURL: s.client.GetURL(),
+		Reviewers:   *reviewers,
+		CodeHostURL: *s.client.GetURL(),
+	}, nil
+}
+
+// GenerateGerritChangeID deterministically generates a Gerrit Change ID from a Changeset object.
+// We do this because Gerrit Change IDs are required at commit time, and deterministically generating
+// the Change IDs allows us to locate and track a Change once it's created.
+func GenerateGerritChangeID(cs btypes.Changeset) string {
+	jsonData, err := json.Marshal(cs)
+	if err != nil {
+		panic(err)
 	}
+
+	hash := sha256.Sum256(jsonData)
+	hexString := hex.EncodeToString(hash[:])
+	changeID := hexString[:40]
+
+	return "I" + strings.ToLower(changeID)
 }

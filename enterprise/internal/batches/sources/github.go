@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -313,6 +314,10 @@ func (GitHubSource) IsPushResponseArchived(s string) bool {
 
 func (s GitHubSource) GetFork(ctx context.Context, targetRepo *types.Repo, namespace, n *string) (*types.Repo, error) {
 	return getGitHubForkInternal(ctx, targetRepo, s.client, namespace, n)
+}
+
+func (s GitHubSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+	return BuildCommitOptsCommon(repo, spec, pushOpts)
 }
 
 type githubClientFork interface {

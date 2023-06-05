@@ -96,15 +96,15 @@ Tier 1 code hosts are our highest level of support for code hosts. When leveragi
         <td class="indexer-implemented-y">✓</td> <!-- Batch Changes -->
       </tr>
       <tr>
-        <td>Gerrit <span class="badge badge-beta">Beta</span></td>
-        <td>Tier 2 (Working on Tier 1)</td>
+        <td>Gerrit</td>
+        <td>Tier 1</td>
         <td class="indexer-implemented-y">✓</td> <!-- Repository Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Permissions Syncing -->
         <td class="indexer-implemented-y">✓</td> <!-- Authentication -->
         <td class="indexer-implemented-y">✓</td> <!-- Code Search -->
         <td class="indexer-implemented-y">✓</td> <!-- Code Monitors -->
         <td class="indexer-implemented-y">✓</td> <!-- Code Insights -->
-        <td class="indexer-implemented-y">✗</td> <!-- Batch Changes -->
+        <td class="indexer-implemented-y">✓</td> <!-- Batch Changes -->
       </tr>
       <tr>
         <td>Azure DevOps</td>
@@ -165,7 +165,7 @@ We recognize there are other code hosts including CVS, SVN, and many more. Today
 - [Bitbucket Cloud](bitbucket_cloud.md)
 - [Bitbucket Server / Bitbucket Data Center](bitbucket_server.md)
 - [Azure DevOps](azuredevops.md)
-- [Gerrit](gerrit.md) <span class="badge badge-beta">Beta</span>
+- [Gerrit](gerrit.md)
 - [Other Git code hosts (using a Git URL)](other.md)
 - [Non-Git code hosts](non-git.md)
   - [Perforce](../repo/perforce.md)

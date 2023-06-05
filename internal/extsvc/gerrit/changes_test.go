@@ -46,7 +46,6 @@ func TestClient_AbandonChange(t *testing.T) {
 		t.Fatal(err)
 	}
 	testutil.AssertGolden(t, "testdata/golden/AbandonChange.json", *update, resp)
-
 }
 
 func TestClient_SubmitChange(t *testing.T) {
@@ -73,4 +72,42 @@ func TestClient_RestoreChange(t *testing.T) {
 		t.Fatal(err)
 	}
 	testutil.AssertGolden(t, "testdata/golden/RestoreChange.json", *update, resp)
+}
+
+func TestClient_SetReadyForReview(t *testing.T) {
+	cli, save := NewTestClient(t, "SetReadyForReview", *update)
+	defer save()
+
+	ctx := context.Background()
+
+	err := cli.SetReadyForReview(ctx, "Ibcbfdbb6e19cec62feabfec5da47251820947067")
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestClient_SetWIP(t *testing.T) {
+	cli, save := NewTestClient(t, "SetWIP", *update)
+	defer save()
+
+	ctx := context.Background()
+
+	err := cli.SetWIP(ctx, "Ibcbfdbb6e19cec62feabfec5da47251820947067")
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestClient_GetChangeReviews(t *testing.T) {
+	cli, save := NewTestClient(t, "GetChangeReviews", *update)
+	defer save()
+
+	ctx := context.Background()
+
+	resp, err := cli.GetChangeReviews(ctx, "Ic433e1f2e4edfebe4cf75b23ded032bb790d872a")
+	if err != nil {
+		t.Fatal(err)
+	}
+	testutil.AssertGolden(t, "testdata/golden/GetChangeReviews.json", *update, resp)
+
 }

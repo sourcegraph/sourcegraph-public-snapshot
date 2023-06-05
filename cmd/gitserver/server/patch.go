@@ -66,8 +66,6 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		}
 	}
 
-	ref := req.TargetRef
-
 	var (
 		remoteURL *vcs.URL
 		err       error
@@ -77,6 +75,35 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		remoteURL, err = vcs.ParseURL(req.Push.RemoteURL)
 	} else {
 		remoteURL, err = s.getRemoteURL(ctx, req.Repo)
+	}
+
+	ref := req.TargetRef
+	// If the push is to a Gerrit project,we need to push to a magic ref.
+	if req.PushRef != nil && *req.PushRef != "" {
+		ref = *req.PushRef
+	}
+	if req.UniqueRef {
+		refs, err := repoRemoteRefs(ctx, remoteURL, ref)
+		if err != nil {
+			logger.Error("Failed to get remote refs", log.Error(err))
+			resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteRefs"))
+			return http.StatusInternalServerError, resp
+		}
+
+		retry := 1
+		tmp := ref
+		for {
+			if _, ok := refs[tmp]; !ok {
+				break
+			}
+			tmp = ref + "-" + strconv.Itoa(retry)
+			retry++
+		}
+		ref = tmp
+	}
+
+	if req.Push != nil && req.PushRef == nil {
+		ref = ensureRefPrefix(ref)
 	}
 
 	if err != nil {
@@ -134,30 +161,6 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		return out, err
 	}
 
-	if req.UniqueRef {
-		refs, err := repoRemoteRefs(ctx, remoteURL, ref)
-		if err != nil {
-			logger.Error("Failed to get remote refs", log.Error(err))
-			resp.SetError(repo, "", "", errors.Wrap(err, "repoRemoteRefs"))
-			return http.StatusInternalServerError, resp
-		}
-
-		retry := 1
-		tmp := ref
-		for {
-			if _, ok := refs[tmp]; !ok {
-				break
-			}
-			tmp = ref + "-" + strconv.Itoa(retry)
-			retry++
-		}
-		ref = tmp
-	}
-
-	if req.Push != nil {
-		ref = ensureRefPrefix(ref)
-	}
-
 	tmpGitPathEnv := "GIT_DIR=" + filepath.Join(tmpRepoDir, ".git")
 
 	tmpObjectsDir := filepath.Join(tmpRepoDir, ".git", "objects")
@@ -196,9 +199,9 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		return http.StatusBadRequest, resp
 	}
 
-	message := req.CommitInfo.Message
-	if message == "" {
-		message = "<Sourcegraph> Creating commit from patch"
+	messages := req.CommitInfo.Messages
+	if len(messages) == 0 {
+		messages = []string{"<Sourcegraph> Creating commit from patch"}
 	}
 	authorName := req.CommitInfo.AuthorName
 	if authorName == "" {
@@ -217,7 +220,12 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		committerEmail = authorEmail
 	}
 
-	cmd = exec.CommandContext(ctx, "git", "commit", "-m", fmt.Sprintf("%q", message))
+	gitCommitArgs := []string{"commit"}
+	for _, m := range messages {
+		gitCommitArgs = append(gitCommitArgs, "-m", stylizeCommitMessage(m))
+	}
+	cmd = exec.CommandContext(ctx, "git", gitCommitArgs...)
+
 	cmd.Dir = tmpRepoDir
 	cmd.Env = append(os.Environ(), []string{
 		tmpGitPathEnv,
@@ -309,18 +317,30 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 			return http.StatusInternalServerError, resp
 		}
 	}
-
 	resp.Rev = "refs/" + strings.TrimPrefix(ref, "refs/")
 
-	cmd = exec.CommandContext(ctx, "git", "update-ref", "--", ref, cmtHash)
-	cmd.Dir = repoGitDir
+	if req.PushRef == nil {
+		cmd = exec.CommandContext(ctx, "git", "update-ref", "--", ref, cmtHash)
+		cmd.Dir = repoGitDir
 
-	if out, err = run(cmd, "creating ref"); err != nil {
-		logger.Error("Failed to create ref for commit.", log.String("commit", cmtHash), log.String("output", string(out)))
-		return http.StatusInternalServerError, resp
+		if out, err = run(cmd, "creating ref"); err != nil {
+			logger.Error("Failed to create ref for commit.", log.String("commit", cmtHash), log.String("output", string(out)))
+			return http.StatusInternalServerError, resp
+		}
 	}
 
 	return http.StatusOK, resp
+}
+
+func stylizeCommitMessage(message string) string {
+	if styleMessage(message) {
+		return fmt.Sprintf("%q", message)
+	}
+	return message
+}
+
+func styleMessage(message string) bool {
+	return !strings.HasPrefix(message, "Change-Id: I")
 }
 
 func cleanUpTmpRepo(logger log.Logger, path string) {

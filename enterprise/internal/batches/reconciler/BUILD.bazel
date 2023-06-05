@@ -18,7 +18,6 @@ go_library(
         "//enterprise/internal/batches/store",
         "//enterprise/internal/batches/types",
         "//enterprise/internal/batches/webhooks",
-        "//internal/api",
         "//internal/database",
         "//internal/errcode",
         "//internal/gitserver",
