@@ -16,11 +16,14 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 6.0.2
       - name: Get current date
         id: date
         run: echo "::set-output name=date::$(date +'%Y-%m-%dT%H:%M:%S')"
       - name: Install dependencies
-        run: npm install --save --legacy-peer-deps
+        run: pnpm install 
       - name: Compile Javascript
         run: tsc src/index.ts --outDir build
       - name: check output
