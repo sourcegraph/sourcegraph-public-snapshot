@@ -39,7 +39,7 @@ func TestProductLicenses_Create(t *testing.T) {
 
 		got, err := store.GetByID(ctx, pl)
 		require.NoError(t, err)
-		assert.Nil(t, got.LicenseVersion)
+		assert.Zero(t, got.LicenseVersion)
 		assert.Nil(t, got.LicenseTags)
 		assert.Nil(t, got.LicenseUserCount)
 		assert.Nil(t, got.LicenseExpiresAt)
@@ -79,8 +79,7 @@ func TestProductLicenses_Create(t *testing.T) {
 			assert.Equal(t, ps, got.ProductSubscriptionID)
 			assert.Equal(t, key, got.LicenseKey)
 
-			require.NotNil(t, got.LicenseVersion)
-			assert.Equal(t, version, *got.LicenseVersion)
+			assert.Equal(t, version, got.LicenseVersion)
 			require.NotNil(t, got.LicenseTags)
 			assert.Equal(t, info.Tags, got.LicenseTags)
 			require.NotNil(t, got.LicenseUserCount)
