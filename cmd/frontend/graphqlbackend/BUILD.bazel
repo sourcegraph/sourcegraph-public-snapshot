@@ -245,6 +245,7 @@ go_library(
         "//internal/codeintel/dependencies",
         "//internal/codeintel/dependencies/shared",
         "//internal/codeintel/resolvers",
+        "//internal/cody",
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/conf/deploy",
