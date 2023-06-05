@@ -9042,7 +9042,12 @@ type Executor implements Node {
     """
     The queue name that the executor polls for work.
     """
-    queueName: String!
+    queueName: String
+
+    """
+    The queue name that the executor polls for work.
+    """
+    queueNames: [String!]
 
     """
     Active is true, if a heartbeat from the executor has been received at most three heartbeat intervals ago.

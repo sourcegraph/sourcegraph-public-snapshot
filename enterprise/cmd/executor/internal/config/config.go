@@ -27,6 +27,8 @@ type Config struct {
 	FrontendURL                                    string
 	FrontendAuthorizationToken                     string
 	QueueName                                      string
+	QueueNamesStr                                  string
+	QueueNames                                     []string
 	QueuePollInterval                              time.Duration
 	MaximumNumJobs                                 int
 	FirecrackerImage                               string
@@ -97,7 +99,8 @@ func NewAppConfig() *Config {
 func (c *Config) Load() {
 	c.FrontendURL = c.Get("EXECUTOR_FRONTEND_URL", "", "The external URL of the sourcegraph instance.")
 	c.FrontendAuthorizationToken = c.Get("EXECUTOR_FRONTEND_PASSWORD", c.defaultFrontendPassword, "The authorization token supplied to the frontend.")
-	c.QueueName = c.Get("EXECUTOR_QUEUE_NAME", "", "The name of the queue to listen to.")
+	c.QueueName = c.GetOptional("EXECUTOR_QUEUE_NAME", "The name of the queue to listen to.")
+	c.QueueNamesStr = c.GetOptional("EXECUTOR_QUEUE_NAMES", "The names of multiple queues to listen to, comma-separated.")
 	c.QueuePollInterval = c.GetInterval("EXECUTOR_QUEUE_POLL_INTERVAL", "1s", "Interval between dequeue requests.")
 	c.MaximumNumJobs = c.GetInt("EXECUTOR_MAXIMUM_NUM_JOBS", "1", "Number of virtual machines or containers that can be running at once.")
 	c.UseFirecracker = c.GetBool("EXECUTOR_USE_FIRECRACKER", strconv.FormatBool(runtime.GOOS == "linux" && !IsKubernetes()), "Whether to isolate commands in virtual machines. Requires ignite and firecracker. Linux hosts only. Kubernetes is not supported.")
@@ -142,6 +145,10 @@ func (c *Config) Load() {
 	c.KubernetesSecurityContextRunAsGroup = c.GetInt("KUBERNETES_RUN_AS_GROUP", "-1", "The group ID to run Kubernetes jobs as.")
 	c.KubernetesSecurityContextFSGroup = c.GetInt("KUBERNETES_FS_GROUP", "1000", "The group ID to run all containers in the Kubernetes jobs as. Defaults to 1000, the group ID of the docker group in the executor container.")
 
+	if c.QueueNamesStr != "" {
+		c.QueueNames = strings.Split(c.QueueNamesStr, ",")
+	}
+
 	if c.dockerAuthConfigStr != "" {
 		c.dockerAuthConfigUnmarshalError = json.Unmarshal([]byte(c.dockerAuthConfigStr), &c.DockerAuthConfig)
 	}
@@ -179,8 +186,18 @@ func getKubeConfigPath() string {
 }
 
 func (c *Config) Validate() error {
-	if c.QueueName != "" && c.QueueName != "batches" && c.QueueName != "codeintel" {
+	if c.QueueName == "" && c.QueueNamesStr == "" {
+		c.AddError(errors.New("neither EXECUTOR_QUEUE_NAME or EXECUTOR_QUEUE_NAMES is set"))
+	} else if c.QueueName != "" && c.QueueNamesStr != "" {
+		c.AddError(errors.New("both EXECUTOR_QUEUE_NAME and EXECUTOR_QUEUE_NAMES are set"))
+	} else if c.QueueName != "" && c.QueueName != "batches" && c.QueueName != "codeintel" {
 		c.AddError(errors.New("EXECUTOR_QUEUE_NAME must be set to 'batches' or 'codeintel'"))
+	} else {
+		for _, queueName := range c.QueueNames {
+			if queueName != "batches" && queueName != "codeintel" {
+				c.AddError(errors.Newf("EXECUTOR_QUEUE_NAMES contains invalid queue name '%s'", queueName))
+			}
+		}
 	}
 
 	u, err := url.Parse(c.FrontendURL)
