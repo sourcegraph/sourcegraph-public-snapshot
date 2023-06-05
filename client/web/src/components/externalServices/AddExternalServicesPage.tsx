@@ -7,6 +7,7 @@ import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useLocalStorage, Button, Link, Alert, H2, H3, Icon, Text, Container } from '@sourcegraph/wildcard'
 
+import { LimitedAccessBanner } from '../LimitedAccessBanner'
 import { PageTitle } from '../PageTitle'
 
 import { AddExternalServicePage } from './AddExternalServicePage'
@@ -29,6 +30,7 @@ export interface AddExternalServicesPageProps extends TelemetryProps {
 
     externalServicesFromFile: boolean
     allowEditExternalServicesWithFile: boolean
+    isSourcegraphApp: boolean
 
     /** For testing only. */
     autoFocusForm?: boolean
@@ -44,6 +46,7 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
     autoFocusForm,
     externalServicesFromFile,
     allowEditExternalServicesWithFile,
+    isSourcegraphApp,
 }) => {
     const { search } = useLocation()
     const [hasDismissedPrivacyWarning, setHasDismissedPrivacyWarning] = useLocalStorage(
@@ -99,6 +102,17 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
         <>
             <PageTitle title="Add code host connection" />
             <H2>Add code host connection</H2>
+
+            {isSourcegraphApp && (
+                <LimitedAccessBanner
+                    storageKey="app.manage-repositories-with-new-settings"
+                    badgeText="Repositories"
+                    className="mb-3"
+                >
+                    Manage your local repositories in your settings. Go to{' '}
+                    <Link to="/user/app-settings">Settings → Repositories → Local/Remote repositories</Link>
+                </LimitedAccessBanner>
+            )}
             <Container>
                 <Text>Add code host connection to one of the supported code hosts.</Text>
                 {hasDismissedPrivacyWarning && (

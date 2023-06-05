@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "highlight",
@@ -21,7 +22,6 @@ go_library(
         "//internal/gosyntect",
         "//internal/honey",
         "//internal/observation",
-        "//internal/trace/ot",
         "//lib/codeintel/languages",
         "//lib/errors",
         "@com_github_alecthomas_chroma_v2//:chroma",

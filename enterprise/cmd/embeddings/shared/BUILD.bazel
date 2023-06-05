@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("@bazel_skylib//rules:copy_file.bzl", "copy_file")
 
 go_library(
@@ -74,7 +75,7 @@ copy_file(
 # gazelle:exclude testdata
 go_test(
     name = "shared_test",
-    timeout = "short",
+    timeout = "moderate",
     srcs = [
         "context_detection_test.go",
         "context_qa_test.go",

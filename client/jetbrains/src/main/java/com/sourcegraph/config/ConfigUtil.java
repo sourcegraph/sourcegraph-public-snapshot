@@ -202,8 +202,16 @@ public class ConfigUtil {
     return getApplicationLevelConfig().isUrlNotificationDismissed();
   }
 
+  public static boolean isAccessTokenNotificationDismissed() {
+    return getApplicationLevelConfig().isAccessTokenNotificationDismissed();
+  }
+
   public static void setUrlNotificationDismissed(boolean value) {
     getApplicationLevelConfig().isUrlNotificationDismissed = value;
+  }
+
+  public static void setAccessTokenNotificationDismissed(boolean value) {
+    getApplicationLevelConfig().isAccessTokenNotificationDismissed = value;
   }
 
   @NotNull
@@ -236,6 +244,14 @@ public class ConfigUtil {
 
   @NotNull
   private static SourcegraphProjectService getProjectLevelConfig(@NotNull Project project) {
-    return Objects.requireNonNull(SourcegraphProjectService.getInstance(project));
+    return Objects.requireNonNull(SourcegraphService.getInstance(project));
+  }
+
+  public static String getEnterpriseAccessToken(Project project) {
+    return getAccessToken(project);
+  }
+
+  public static String getDotcomAccessToken(Project project) {
+    return getAccessToken(project);
   }
 }

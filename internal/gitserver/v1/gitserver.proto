@@ -2,17 +2,128 @@ syntax = "proto3";
 
 package gitserver.v1;
 
+import "google/protobuf/duration.proto";
 import "google/protobuf/timestamp.proto";
 
 option go_package = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1";
 
 service GitserverService {
+  rpc BatchLog(BatchLogRequest) returns (BatchLogResponse) {}
+  rpc CreateCommitFromPatchBinary(CreateCommitFromPatchBinaryRequest) returns (CreateCommitFromPatchBinaryResponse) {}
   rpc Exec(ExecRequest) returns (stream ExecResponse) {}
+  rpc GetObject(GetObjectRequest) returns (GetObjectResponse) {}
+  rpc IsRepoCloneable(IsRepoCloneableRequest) returns (IsRepoCloneableResponse) {}
+  rpc ListGitolite(ListGitoliteRequest) returns (ListGitoliteResponse) {}
   rpc Search(SearchRequest) returns (stream SearchResponse) {}
   rpc Archive(ArchiveRequest) returns (stream ArchiveResponse) {}
+  rpc P4Exec(P4ExecRequest) returns (stream P4ExecResponse) {}
+  rpc RepoClone(RepoCloneRequest) returns (RepoCloneResponse) {}
+  rpc RepoCloneProgress(RepoCloneProgressRequest) returns (RepoCloneProgressResponse) {}
+  rpc RepoDelete(RepoDeleteRequest) returns (RepoDeleteResponse) {}
+  rpc RepoUpdate(RepoUpdateRequest) returns (RepoUpdateResponse) {}
   rpc ReposStats(ReposStatsRequest) returns (ReposStatsResponse) {}
 }
 
+// BatchLogRequest is a request to execute a `git log` command inside a set of
+// git repositories present on the target shard.
+message BatchLogRequest {
+  // repo_commits is the list of repositories and commits to run the git log command on.
+  repeated RepoCommit repo_commits = 1;
+  // format is the entire `--format=<format>` argument to git log. This value is expected to be non-empty.
+  string format = 2;
+}
+
+// BatchLogResponse contains the results of the BatchLog request.
+message BatchLogResponse {
+  // results is the list of results for each repository and commit pair from the input of a BatchLog request.
+  repeated BatchLogResult results = 1;
+}
+
+// BatchLogResult is the result that associates a repository and commit pair from the input of a BatchLog
+// request with the result of the associated git log command.
+message BatchLogResult {
+  // repo_commit is the repository and commit pair from the input of a BatchLog request.
+  RepoCommit repo_commit = 1;
+  // command_output is the output of the git log command.
+  string command_output = 2;
+  // command_error is an optional error message if the git log command encountered an error.
+  optional string command_error = 3;
+}
+
+// RepoCommit is the represention of a repository and commit pair.
+message RepoCommit {
+  string repo = 1;
+  string commit = 2;
+}
+
+message PatchCommitInfo {
+  // message is the commit message to be used for the commit
+  string message = 1;
+  // author_name is the name of the author to be used for the commit
+  string author_name = 2;
+  // author_email is the email of the author to be used for the commit
+  string author_email = 3;
+  // committer_name is the name of the committer to be used for the commit
+  string committer_name = 4;
+  // committer_email is the email of the committer to be used for the commit
+  string committer_email = 5;
+  // author_date is the date of the author to be used for the commit
+  google.protobuf.Timestamp date = 6;
+}
+
+message PushConfig {
+  // remote_url is the git remote URL to which to push the commits.
+  // The URL needs to include HTTP basic auth credentials if no
+  // unauthenticated requests are allowed by the remote host.
+  string remote_url = 1;
+  // private_key is used when the remote URL uses scheme `ssh`. If set,
+  // this value is used as the content of the private key. Needs to be
+  // set in conjunction with a passphrase.
+  string private_key = 2;
+  // passphrase is the passphrase to decrypt the private key. It is required
+  // when passing PrivateKey.
+  string passphrase = 3;
+}
+
+// CreateCommitFromPatchBinaryRequest is the request information needed for creating
+// the simulated staging area git object for a repo.
+message CreateCommitFromPatchBinaryRequest {
+  // repo is the name of the repo to be updated
+  string repo = 1;
+  // base_commit is the revision that the staging area object is based on
+  string base_commit = 2;
+  // patch is the diff contents to be used to create the staging area revision
+  bytes patch = 3;
+  // target_ref is the ref that will be created for this patch
+  string target_ref = 4;
+  // unique_ref is a boolean that indicates whether a unique number will be appended to the end (ie TargetRef-{#}). The generated ref will be returned.
+  bool unique_ref = 5;
+  // commit_info is the information to be used for the commit
+  PatchCommitInfo commit_info = 6;
+  // push_config is the configuration to be used for pushing the commit
+  PushConfig push = 7;
+  repeated string git_apply_args = 8;
+}
+
+message CreateCommitFromPatchError {
+  // repository_name is the name of the repository that the error occurred on
+  string repository_name = 1;
+  // internal_error is the error that occurred on the server
+  string internal_error = 2;
+  // command is th git command that was attempted
+  string command = 3;
+  // combined_output is the combined stderr and stdout from running the command
+  string combined_output = 4;
+}
+
+// CreateCommitFromPatchBinaryResponse is the response type returned after creating
+// a commit from a patch
+message CreateCommitFromPatchBinaryResponse {
+  // rev is the tag that the staging object can be found at
+  string rev = 1;
+  // error is populated only on error
+  CreateCommitFromPatchError error = 2;
+}
 message ExecRequest {
   string repo = 1;
   string ensure_revision = 2;
@@ -212,6 +323,87 @@ message ArchiveResponse {
   bytes data = 1;
 }
 
+// IsRepoCloneableRequest is a request to check if a repository is cloneable.
+message IsRepoCloneableRequest {
+  // repo is the name of the repo to check.
+  string repo = 1;
+}
+
+// IsRepoCloneableResponse is the response from the IsCloneable RPC.
+message IsRepoCloneableResponse {
+  // cloneable is true if the repository is cloneable.
+  bool cloneable = 1;
+  // cloned is true if the repository was cloned in the past.
+  bool cloned = 2;
+  // reason is why the repository is not cloneable.
+  string reason = 3;
+}
+
+// RepoCloneRequest is a request to clone a repository.
+message RepoCloneRequest {
+  // repo is the name of the repo to clone.
+  string repo = 1;
+}
+
+message RepoCloneResponse {
+  // error is the error that occurred during cloning.
+  string error = 1;
+}
+
+// RepoCloneProgressRequest is a request for information about the clone progress of multiple
+// repositories on gitserver.
+message RepoCloneProgressRequest {
+  repeated string repos = 1;
+}
+
+// RepoCloneProgress is information about the clone progress of a repo
+message RepoCloneProgress {
+  // clone_in_progress is whether the repository is currently being cloned
+  bool clone_in_progress = 1;
+  // clone_progress is a progress message from the running clone command.
+  string clone_progress = 2;
+  // cloned is whether the repository has been cloned successfully
+  bool cloned = 3;
+}
+
+// RepoCloneProgressResponse is the response to a repository clone progress request
+// for multiple repositories at the same time.
+message RepoCloneProgressResponse {
+  // results is a map from repository name to clone progress information
+  map<string, RepoCloneProgress> results = 1;
+}
+
+// RepoDeleteRequest is a request to delete a repository.
+message RepoDeleteRequest {
+  // repo is the name of the repo to delete.
+  string repo = 1;
+}
+
+// RepoDeleteResponse is the response from the RepoDelete RPC.
+message RepoDeleteResponse {}
+
+// RepoUpdateRequest is a request to update a repository.
+message RepoUpdateRequest {
+  // repo is the name of the repo to update.
+  string repo = 1;
+  // since is the debounce interval for queries, used only with request-repo-update
+  google.protobuf.Duration since = 2;
+  // clone_from_shard is the hostname of the gitserver instance that is the current owner of the
+  // repository. If this is set, then the RepoUpdateRequest is to migrate the repo from
+  // that gitserver instance to the new home of the repo.
+  string clone_from_shard = 3;
+}
+
+// RepoUpdateResponse is the response from the RepoUpdate RPC.
+message RepoUpdateResponse {
+  // last_fetched is the time the repository was last fetched.
+  google.protobuf.Timestamp last_fetched = 1;
+  // last_changed is the time the repository was last changed.
+  google.protobuf.Timestamp last_changed = 2;
+  // error is the error that occurred during the update.
+  string error = 3;
+}
+
 // ReposStatsRequest is a empty request for the ReposStats RPC.
 message ReposStatsRequest {}
 
@@ -223,4 +415,64 @@ message ReposStatsResponse {
   // zero, the statistics have not yet been computed. This can happen on a
   // new gitserver.
   google.protobuf.Timestamp updated_at = 2;
+}
+
+message P4ExecRequest {
+  string p4port = 1;
+  string p4user = 2;
+  string p4passwd = 3;
+  repeated string args = 4;
+}
+
+message P4ExecResponse {
+  bytes data = 1;
+}
+
+// ListGitoliteRequest is a request to list all repositories in gitolite.
+message ListGitoliteRequest {
+  // host is the hostname of the gitolite instance
+  string gitolite_host = 1;
+}
+
+// GitoliteRepo is a repository in gitolite.
+message GitoliteRepo {
+  // name is the name of the repository
+  string name = 1;
+  // url is the URL of the repository
+  string url = 2;
+}
+
+// ListGitoliteResponse is the response from the ListGitolite RPC.
+message ListGitoliteResponse {
+  // repos is the list of repositories in gitolite
+  repeated GitoliteRepo repos = 1;
+}
+
+// GetObjectRequest is a request to get a git object.
+message GetObjectRequest {
+  // repo is the name of the repo to get the object from.
+  string repo = 1;
+  // object_name is the name of the object to get.
+  string object_name = 2;
+}
+
+// GetObjectResponse is the response from the GetObject RPC.
+message GetObjectResponse {
+  // object is the git object.
+  GitObject object = 1;
+}
+
+// GitObject is a git object.
+message GitObject {
+  enum ObjectType {
+    OBJECT_TYPE_UNSPECIFIED = 0;
+    OBJECT_TYPE_COMMIT = 1;
+    OBJECT_TYPE_TAG = 2;
+    OBJECT_TYPE_TREE = 3;
+    OBJECT_TYPE_BLOB = 4;
+  }
+  // id is the object id.
+  bytes id = 1;
+  // type is the type of the object.
+  ObjectType type = 2;
 }

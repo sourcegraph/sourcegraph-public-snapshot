@@ -86,6 +86,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
     const [isSourcegraphOperatorSiteAdminHideMaintenance] = useFeatureFlag(
         'sourcegraph-operator-site-admin-hide-maintenance'
     )
+    const [ownAnalyticsEnabled] = useFeatureFlag('own-analytics', false)
 
     const adminSideBarGroups = useMemo(
         () =>
@@ -146,6 +147,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
                 <SiteAdminSidebar
                     className={classNames('flex-0 mr-3 mb-4', styles.sidebar)}
                     groups={adminSideBarGroups}
+                    ownAnalyticsEnabled={ownAnalyticsEnabled}
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                     isSourcegraphApp={props.isSourcegraphApp}
                     batchChangesEnabled={props.batchChangesEnabled}

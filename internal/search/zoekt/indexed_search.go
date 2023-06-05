@@ -272,13 +272,7 @@ func PartitionRepos(
 }
 
 func DoZoektSearchGlobal(ctx context.Context, logger log.Logger, client zoekt.Streamer, params *search.ZoektParameters, pathRegexps []*regexp.Regexp, c streaming.Sender) error {
-	searchOpts := (&Options{
-		Selector:       params.Select,
-		FileMatchLimit: params.FileMatchLimit,
-		Features:       params.Features,
-		KeywordScoring: params.KeywordScoring,
-		GlobalSearch:   true,
-	}).ToSearch(ctx, logger)
+	searchOpts := params.ToSearchOptions(ctx, logger)
 
 	if deadline, ok := ctx.Deadline(); ok {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
@@ -320,14 +314,7 @@ func zoektSearch(ctx context.Context, logger log.Logger, repos *IndexedRepoRevs,
 	brs := repos.BranchRepos()
 
 	finalQuery := zoektquery.NewAnd(&zoektquery.BranchesRepos{List: brs}, q)
-
-	searchOpts := (&Options{
-		Selector:       zoektParams.Select,
-		NumRepos:       len(repos.RepoRevs),
-		FileMatchLimit: zoektParams.FileMatchLimit,
-		Features:       zoektParams.Features,
-		KeywordScoring: zoektParams.KeywordScoring,
-	}).ToSearch(ctx, logger)
+	searchOpts := zoektParams.ToSearchOptions(ctx, logger)
 
 	// Start event stream.
 	t0 := time.Now()

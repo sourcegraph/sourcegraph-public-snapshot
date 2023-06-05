@@ -4,6 +4,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
+import com.sourcegraph.find.Search;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -11,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
     name = "ApplicationConfig",
     storages = {@Storage("sourcegraph.xml")})
 public class SourcegraphApplicationService
-    implements PersistentStateComponent<SourcegraphApplicationService> {
+    implements PersistentStateComponent<SourcegraphApplicationService>, SourcegraphService {
   @Nullable public String instanceType;
   @Nullable public String url;
   @Nullable public String accessToken;
@@ -21,6 +22,7 @@ public class SourcegraphApplicationService
   @Nullable public String anonymousUserId;
   public boolean isInstallEventLogged;
   public boolean isUrlNotificationDismissed;
+  public boolean isAccessTokenNotificationDismissed;
   @Nullable public Boolean authenticationFailedLastTime;
 
   @Nullable
@@ -61,7 +63,33 @@ public class SourcegraphApplicationService
 
   @Nullable
   public String getRemoteUrlReplacements() {
+
     return remoteUrlReplacements;
+  }
+
+  @Override
+  @Nullable
+  public Search getLastSearch() {
+    // TODO
+    return null;
+  }
+
+  @Override
+  public String getEnterpriseAccessToken() {
+    // TODO
+    return null;
+  }
+
+  @Override
+  public boolean areChatPredictionsEnabled() {
+    // TODO
+    return false;
+  }
+
+  @Override
+  public String getCodebase() {
+    // TODO
+    return null;
   }
 
   @Nullable
@@ -77,6 +105,10 @@ public class SourcegraphApplicationService
     return isUrlNotificationDismissed;
   }
 
+  public boolean isAccessTokenNotificationDismissed() {
+    return isAccessTokenNotificationDismissed;
+  }
+
   @Nullable
   public Boolean getAuthenticationFailedLastTime() {
     return authenticationFailedLastTime;
@@ -88,7 +120,6 @@ public class SourcegraphApplicationService
   }
 
   @Nullable
-  @Override
   public SourcegraphApplicationService getState() {
     return this;
   }
@@ -103,6 +134,7 @@ public class SourcegraphApplicationService
     this.remoteUrlReplacements = settings.remoteUrlReplacements;
     this.anonymousUserId = settings.anonymousUserId;
     this.isUrlNotificationDismissed = settings.isUrlNotificationDismissed;
+    this.isAccessTokenNotificationDismissed = settings.isAccessTokenNotificationDismissed;
     this.authenticationFailedLastTime = settings.authenticationFailedLastTime;
     this.lastUpdateNotificationPluginVersion = settings.lastUpdateNotificationPluginVersion;
   }

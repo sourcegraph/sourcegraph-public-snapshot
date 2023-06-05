@@ -9,6 +9,8 @@ load("@io_bazel_rules_go//proto/wkt:well_known_types.bzl", "WELL_KNOWN_TYPES_API
 load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev/linters/staticcheck:analyzers.bzl", "STATIC_CHECK_ANALYZERS")
 load("@npm//:eslint/package_json.bzl", eslint_bin = "bin")
+load("//:stamp_tags.bzl", "stamp_tags")
+load("//dev:eslint.bzl", "eslint_test_with_types")
 
 # Gazelle config
 #
@@ -21,6 +23,9 @@ load("@npm//:eslint/package_json.bzl", eslint_bin = "bin")
 
 # Enable: Aspect javascript, standard go
 # gazelle:lang js,go,proto
+
+# Enable race detection for all go_test rules.
+# gazelle:map_kind go_test go_test //dev:go_defs.bzl
 
 package(default_visibility = ["//visibility:public"])
 
@@ -243,6 +248,7 @@ js_library(
     ],
     data = [
         ".eslintignore",
+        "package.json",
         ":eslint-relative-formatter",
     ],
     deps = [
@@ -267,6 +273,15 @@ js_library(
         ":node_modules/react",  # required to resolve the react version for eslint-plugin-react
         ":tsconfig-eslint",
         "//:node_modules/tslib",
+    ],
+)
+
+eslint_test_with_types(
+    name = "eslint_test",
+    srcs = glob(["*.js"]),
+    config = ":eslint_config",
+    deps = [
+        ":node_modules/@types/node",
     ],
 )
 
@@ -312,3 +327,8 @@ exports_files([
     # under certain conditions. See //ui/assets/...
     "CHANGELOG.md",
 ])
+
+stamp_tags(
+    name = "tags",
+    remote_tags = ["""($stamp.STABLE_VERSION // "0.0.0")"""],
+)

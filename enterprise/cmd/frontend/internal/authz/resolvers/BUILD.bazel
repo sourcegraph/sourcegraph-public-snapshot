@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "resolvers",
@@ -17,7 +18,6 @@ go_library(
         "//cmd/frontend/globals",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",
-        "//enterprise/cmd/worker/shared/permissions",
         "//enterprise/internal/database",
         "//enterprise/internal/licensing",
         "//internal/actor",
