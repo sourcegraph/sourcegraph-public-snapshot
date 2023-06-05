@@ -302,10 +302,7 @@ func (r *ownResolver) computeCodeowners(ctx context.Context, blob *graphqlbacken
 			ruleToRefs[rule] = append(ruleToRefs[rule], ref)
 		}
 	}
-	err = bag.Resolve(ctx, r.db)
-	if err != nil {
-		return nil, err
-	}
+	bag.Resolve(ctx, r.db)
 	for rule, refs := range ruleToRefs {
 		for _, ref := range refs {
 			resolvedOwner, found := bag.FindResolved(ref)

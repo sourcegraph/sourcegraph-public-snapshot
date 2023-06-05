@@ -124,7 +124,7 @@ type Bag interface {
 	// Resolve retrieves all users it can find that are associated
 	// with references that are in the Bag by means of Add or ByTextReference
 	// constructor.
-	Resolve(context.Context, edb.EnterpriseDB) error
+	Resolve(context.Context, edb.EnterpriseDB)
 }
 
 func EmptyBag() *bag {
@@ -141,7 +141,7 @@ func EmptyBag() *bag {
 // that the database reveals.
 // TODO(#52141): Search by code host handle.
 // TODO(#52246): ByTextReference uses fewer queries.
-func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text ...string) (Bag, error) {
+func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text ...string) Bag {
 	b := EmptyBag()
 	for _, t := range text {
 		// Empty text does not resolve at all.
@@ -154,10 +154,8 @@ func ByTextReference(ctx context.Context, db edb.EnterpriseDB, text ...string) (
 			b.add(refKey{handle: strings.TrimPrefix(t, "@")})
 		}
 	}
-	if err := b.Resolve(ctx, db); err != nil {
-		return nil, err
-	}
-	return b, nil
+	b.Resolve(ctx, db)
+	return b
 }
 
 // bag is implemented as a map of resolved users and map of references.
@@ -291,20 +289,18 @@ func (b *bag) add(k refKey) {
 // Fetched users are augmented with all the other references that
 // can point to them (also from the database), and the newly fetched
 // references are then linked back to the bag.
-func (b *bag) Resolve(ctx context.Context, db edb.EnterpriseDB) error {
+func (b *bag) Resolve(ctx context.Context, db edb.EnterpriseDB) {
 	for k, refCtx := range b.references {
 		if !refCtx.resolutionDone {
 			userRefs, teamRefs, err := k.fetch(ctx, db)
 			refCtx.resolutionDone = true
 			if err != nil {
-				return err
+				refCtx.appendErr(err)
 			}
 			// User resolved
 			if userRefs != nil {
 				if _, ok := b.resolvedUsers[userRefs.id]; !ok {
-					if err := userRefs.augment(ctx, db); err != nil {
-						return err
-					}
+					userRefs.augment(ctx, db)
 					b.resolvedUsers[userRefs.id] = userRefs
 					userRefs.linkBack(b)
 				}
@@ -322,7 +318,6 @@ func (b *bag) Resolve(ctx context.Context, db edb.EnterpriseDB) error {
 			}
 		}
 	}
-	return nil
 }
 
 // userReferences represents all the references found for a given user in the database.
@@ -334,35 +329,41 @@ type userReferences struct {
 	// codeHostHandles are handles on the code-host that are linked with the user
 	codeHostHandles []string
 	verifiedEmails  []string
+	errs            []error
+}
+
+func (r *userReferences) appendErr(err error) {
+	r.errs = append(r.errs, err)
 }
 
 // augment fetches all the references for this user that are missing.
 // These can then be linked back into the bag using `linkBack`.
 // In order to call augment, `id`
-func (r *userReferences) augment(ctx context.Context, db edb.EnterpriseDB) error {
+func (r *userReferences) augment(ctx context.Context, db edb.EnterpriseDB) {
+	// User references has to have an ID
 	if r.id == 0 {
-		return errors.New("userReferences needs id set for augmenting")
+		r.appendErr(errors.New("userReferences needs id set for augmenting"))
+		return
 	}
 	var err error
 	if r.user == nil {
 		r.user, err = db.Users().GetByID(ctx, r.id)
 		if err != nil {
-			return errors.Wrap(err, "augmenting user")
+			r.appendErr(errors.Wrap(err, "augmenting user"))
 		}
 	}
 	if len(r.codeHostHandles) == 0 {
 		r.codeHostHandles, err = fetchCodeHostHandles(ctx, db, r.id)
 		if err != nil {
-			return errors.Wrap(err, "augmenting code host handles")
+			r.appendErr(errors.Wrap(err, "augmenting code host handles"))
 		}
 	}
 	if len(r.verifiedEmails) == 0 {
 		r.verifiedEmails, err = fetchVerifiedEmails(ctx, db, r.id)
 		if err != nil {
-			return errors.Wrap(err, "augmenting verified emails")
+			r.appendErr(errors.Wrap(err, "augmenting verified emails"))
 		}
 	}
-	return nil
 }
 
 func fetchVerifiedEmails(ctx context.Context, db edb.EnterpriseDB, userID int32) ([]string, error) {
@@ -579,11 +580,16 @@ type refContext struct {
 	// resolutionDone is set to true after the reference pointing at this refContext
 	// has been attempted to be resolved.
 	resolutionDone bool
+	resolutionErrs []error
 }
 
 // successfullyResolved context either points to a team or to a user.
 func (c refContext) successfullyResolved() bool {
 	return c.resolvedUserID != 0 || c.resolvedTeamID != 0
+}
+
+func (c *refContext) appendErr(err error) {
+	c.resolutionErrs = append(c.resolutionErrs, err)
 }
 
 func (c refContext) resolvedIDForDebugging() string {

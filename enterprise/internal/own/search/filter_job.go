@@ -55,18 +55,12 @@ func (s *fileHasOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, 
 	// need to match for ownership. Therefore we create a single bag per entry.
 	var includeBags []own.Bag
 	for _, o := range s.includeOwners {
-		b, err := own.ByTextReference(ctx, database.NewEnterpriseDB(clients.DB), o)
-		if err != nil {
-			return nil, errors.Wrap(err, "failure trying to resolve search term")
-		}
+		b := own.ByTextReference(ctx, database.NewEnterpriseDB(clients.DB), o)
 		includeBags = append(includeBags, b)
 	}
 	var excludeBags []own.Bag
 	for _, o := range s.excludeOwners {
-		b, err := own.ByTextReference(ctx, database.NewEnterpriseDB(clients.DB), o)
-		if err != nil {
-			return nil, errors.Wrap(err, "failure trying to resolve search term")
-		}
+		b := own.ByTextReference(ctx, database.NewEnterpriseDB(clients.DB), o)
 		excludeBags = append(excludeBags, b)
 	}
 
