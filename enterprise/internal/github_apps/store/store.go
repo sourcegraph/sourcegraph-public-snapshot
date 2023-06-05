@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 
 	"github.com/keegancsmith/sqlf"
