@@ -1,10 +1,10 @@
-## Chatting with Cody
+## Explain
 
 <p align="center">
   <video autoPlay muted loop playsInline>
       <source
           type="video/mp4"
-          src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/cody-chat-may2023.mp4"
+          src="https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/cody-explain-may2023.mp4"
       />
   </video>
 </p>
