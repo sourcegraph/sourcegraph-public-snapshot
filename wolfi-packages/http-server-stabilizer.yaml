@@ -31,6 +31,6 @@ pipeline:
       expected-sha256: 4d0d2e4e36d20441abc898fd87031c0b4e40ce25057b6023c929bb0ffa0de4f7
   - uses: go/build
     with:
-      packages: main.go
+      packages: ./...
       prefix: /usr/local
       output: http-server-stabilizer
