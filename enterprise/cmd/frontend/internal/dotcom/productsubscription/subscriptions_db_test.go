@@ -155,36 +155,39 @@ func TestProductSubscriptions_Update(t *testing.T) {
 		})
 	})
 
-	t.Run("llmProxyAccess", func(t *testing.T) {
+	t.Run("codyGatewayAccess", func(t *testing.T) {
 		t.Run("set non-null values", func(t *testing.T) {
 			err := subscriptions.Update(ctx, sub0, dbSubscriptionUpdate{
-				llmProxyAccess: &graphqlbackend.UpdateLLMProxyAccessInput{
-					Enabled:                  pointify(true),
-					RateLimit:                pointify(int32(12)),
-					RateLimitIntervalSeconds: pointify(int32(time.Hour.Seconds())),
+				codyGatewayAccess: &graphqlbackend.UpdateCodyGatewayAccessInput{
+					Enabled:                                 pointify(true),
+					ChatCompletionsRateLimit:                pointify(int32(12)),
+					ChatCompletionsRateLimitIntervalSeconds: pointify(int32(time.Hour.Seconds())),
 				},
 			})
 			require.NoError(t, err)
 			got, err := subscriptions.GetByID(ctx, sub0)
 			require.NoError(t, err)
-			autogold.Expect(dbLLMProxyAccess{
-				Enabled: true, RateLimit: valast.Addr(int32(12)).(*int32),
-				RateIntervalSeconds: valast.Addr(int32(3600)).(*int32),
-			}).Equal(t, got.LLMProxyAccess)
+			autogold.Expect(dbCodyGatewayAccess{
+				Enabled: true,
+				ChatRateLimit: dbRateLimit{
+					RateLimit:           valast.Addr(int32(12)).(*int32),
+					RateIntervalSeconds: valast.Addr(int32(3600)).(*int32),
+				},
+			}).Equal(t, got.CodyGatewayAccess)
 		})
 
 		t.Run("set to zero/null values", func(t *testing.T) {
 			err := subscriptions.Update(ctx, sub0, dbSubscriptionUpdate{
-				llmProxyAccess: &graphqlbackend.UpdateLLMProxyAccessInput{
-					Enabled:                  pointify(false),
-					RateLimit:                pointify(int32(0)),
-					RateLimitIntervalSeconds: pointify(int32(0)),
+				codyGatewayAccess: &graphqlbackend.UpdateCodyGatewayAccessInput{
+					Enabled:                                 pointify(false),
+					ChatCompletionsRateLimit:                pointify(int32(0)),
+					ChatCompletionsRateLimitIntervalSeconds: pointify(int32(0)),
 				},
 			})
 			require.NoError(t, err)
 			got, err := subscriptions.GetByID(ctx, sub0)
 			require.NoError(t, err)
-			autogold.Expect(dbLLMProxyAccess{}).Equal(t, got.LLMProxyAccess)
+			autogold.Expect(dbCodyGatewayAccess{}).Equal(t, got.CodyGatewayAccess)
 		})
 	})
 }

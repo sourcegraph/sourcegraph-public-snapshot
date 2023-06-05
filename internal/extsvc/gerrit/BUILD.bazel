@@ -4,7 +4,10 @@ go_library(
     name = "gerrit",
     srcs = [
         "account.go",
+        "changes.go",
         "client.go",
+        "projects.go",
+        "types.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit",
     visibility = ["//:__subpackages__"],
@@ -21,7 +24,11 @@ go_library(
 go_test(
     name = "gerrit_test",
     timeout = "short",
-    srcs = ["client_test.go"],
+    srcs = [
+        "changes_test.go",
+        "main_test.go",
+        "projects_test.go",
+    ],
     data = glob(["testdata/**"]),
     embed = [":gerrit"],
     deps = [

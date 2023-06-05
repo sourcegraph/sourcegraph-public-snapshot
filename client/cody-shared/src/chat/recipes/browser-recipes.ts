@@ -5,17 +5,21 @@ import { FindCodeSmells } from './find-code-smells'
 import { GenerateDocstring } from './generate-docstring'
 import { GenerateTest } from './generate-test'
 import { ImproveVariableNames } from './improve-variable-names'
-import { Recipe } from './recipe'
+import { Recipe, RecipeID } from './recipe'
 import { TranslateToLanguage } from './translate'
 
-const registeredRecipes: { [id: string]: Recipe } = {}
+const registeredRecipes: { [id in RecipeID]?: Recipe } = {}
 
-export function registerRecipe(id: string, recipe: Recipe): void {
+export function registerRecipe(id: RecipeID, recipe: Recipe): void {
     registeredRecipes[id] = recipe
 }
 
-export function getRecipe(id: string): Recipe | null {
+export function getRecipe(id: RecipeID): Recipe | undefined {
     return registeredRecipes[id]
+}
+
+function nullLog(filterLabel: string, text: string, ...args: unknown[]): void {
+    // Do nothing
 }
 
 function init(): void {
@@ -24,7 +28,7 @@ function init(): void {
     }
 
     const recipes: Recipe[] = [
-        new ChatQuestion(),
+        new ChatQuestion(nullLog),
         new ExplainCodeDetailed(),
         new ExplainCodeHighLevel(),
         new GenerateDocstring(),

@@ -5,7 +5,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -101,9 +101,9 @@ const executableWorkspaceJobsConditionFmtstr = `
 )`
 
 // CreateBatchSpecWorkspaceExecutionJobs creates the given batch spec workspace jobs.
-func (s *Store) CreateBatchSpecWorkspaceExecutionJobs(ctx context.Context, batchSpecID int64, useV2 bool) (err error) {
-	ctx, _, endObservation := s.operations.createBatchSpecWorkspaceExecutionJobs.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("batchSpecID", int(batchSpecID)),
+func (s *Store) CreateBatchSpecWorkspaceExecutionJobs(ctx context.Context, batchSpecID int64) (err error) {
+	ctx, _, endObservation := s.operations.createBatchSpecWorkspaceExecutionJobs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("batchSpecID", int(batchSpecID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -212,8 +212,8 @@ type GetBatchSpecWorkspaceExecutionJobOpts struct {
 
 // GetBatchSpecWorkspaceExecutionJob gets a BatchSpecWorkspaceExecutionJob matching the given options.
 func (s *Store) GetBatchSpecWorkspaceExecutionJob(ctx context.Context, opts GetBatchSpecWorkspaceExecutionJobOpts) (job *btypes.BatchSpecWorkspaceExecutionJob, err error) {
-	ctx, _, endObservation := s.operations.getBatchSpecWorkspaceExecutionJob.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(opts.ID)),
+	ctx, _, endObservation := s.operations.getBatchSpecWorkspaceExecutionJob.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(opts.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -391,7 +391,7 @@ type CancelBatchSpecWorkspaceExecutionJobsOpts struct {
 // The returned list of records may not match the list of the given IDs, if
 // some of the records were already canceled, completed, failed, errored, etc.
 func (s *Store) CancelBatchSpecWorkspaceExecutionJobs(ctx context.Context, opts CancelBatchSpecWorkspaceExecutionJobsOpts) (jobs []*btypes.BatchSpecWorkspaceExecutionJob, err error) {
-	ctx, _, endObservation := s.operations.cancelBatchSpecWorkspaceExecutionJobs.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, _, endObservation := s.operations.cancelBatchSpecWorkspaceExecutionJobs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	if opts.BatchSpecID == 0 && len(opts.IDs) == 0 {

@@ -38,7 +38,7 @@ Simply follow the steps in the next section to configure a Gerrit authentication
 
 If the `"authorization": {}` option has been set on a Gerrit code host connection, a Gerrit authentication provider will be required so that authroized users are able to search for and browse the code mirrored by that code host connection.
 
-1. In the **Site Admin** settings area, select [**Site configuration**](/admin/config/site_config) from the options on the left.
+1. In the **Site Admin** settings area, select [**Site configuration**](../config/site_config.md) from the options on the left.
 2. Add a Gerrit configuration to the list of `"auth.providers"`.
 ![Add a Gerrit configuration to the list of configured authentication providers](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/external-services/gerrit/gerrit-auth.png)
 3. Here is an example configuration:

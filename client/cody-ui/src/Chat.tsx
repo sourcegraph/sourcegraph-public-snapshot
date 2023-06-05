@@ -37,6 +37,8 @@ interface ChatProps extends ChatClassNames {
     copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
     suggestions?: string[]
     setSuggestions?: (suggestions: undefined | []) => void
+    needsEmailVerification?: boolean
+    needsEmailVerificationNotice?: React.FunctionComponent
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {
@@ -51,8 +53,9 @@ export interface ChatUITextAreaProps {
     autoFocus: boolean
     value: string
     required: boolean
+    disabled?: boolean
     onInput: React.FormEventHandler<HTMLElement>
-    onKeyDown: React.KeyboardEventHandler<HTMLElement>
+    onKeyDown?: (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null) => void
 }
 
 export interface ChatUISubmitButtonProps {
@@ -79,8 +82,9 @@ export interface FeedbackButtonsProps {
     feedbackButtonsOnSubmit: (text: string) => void
 }
 
+// TODO: Rename to CodeBlockActionsProps
 export interface CopyButtonProps {
-    copyButtonOnSubmit: (text: string) => void
+    copyButtonOnSubmit: (text: string, insert?: boolean) => void
 }
 /**
  * The Cody chat interface, with a transcript of all messages and a message form.
@@ -103,6 +107,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     afterTips,
     className,
     codeBlocksCopyButtonClassName,
+    codeBlocksInsertButtonClassName,
     transcriptItemClassName,
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
@@ -117,6 +122,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     copyButtonOnSubmit,
     suggestions,
     setSuggestions,
+    needsEmailVerification = false,
+    needsEmailVerificationNotice: NeedsEmailVerificationNotice,
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
@@ -145,10 +152,17 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 
             onSubmit(input, submitType)
             setSuggestions?.(undefined)
-            setHistoryIndex(input.length + 1)
+            setHistoryIndex(inputHistory.length + 1)
             setInputHistory([...inputHistory, input])
         },
         [inputHistory, messageInProgress, onSubmit, setInputHistory, setSuggestions]
+    )
+    const onChatInput = useCallback(
+        ({ target }: React.SyntheticEvent) => {
+            const { value } = target as HTMLInputElement
+            inputHandler(value)
+        },
+        [inputHandler]
     )
 
     const onChatSubmit = useCallback((): void => {
@@ -161,7 +175,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     }, [formInput, messageInProgress, setFormInput, submitInput])
 
     const onChatKeyDown = useCallback(
-        (event: React.KeyboardEvent<HTMLDivElement>): void => {
+        (event: React.KeyboardEvent<HTMLElement>, caretPosition: number | null): void => {
             // Submit input on Enter press (without shift) and
             // trim the formInput to make sure input value is not empty.
             if (
@@ -176,44 +190,68 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                 setMessageBeingEdited(false)
                 onChatSubmit()
             }
+
             // Loop through input history on up arrow press
-            if (event.key === 'ArrowUp' && inputHistory.length) {
-                if (formInput === inputHistory[historyIndex] || !formInput) {
+            if (!inputHistory.length) {
+                return
+            }
+
+            if (formInput === inputHistory[historyIndex] || !formInput) {
+                if (event.key === 'ArrowUp' && caretPosition === 0) {
                     const newIndex = historyIndex - 1 < 0 ? inputHistory.length - 1 : historyIndex - 1
+                    setHistoryIndex(newIndex)
+                    setFormInput(inputHistory[newIndex])
+                } else if (event.key === 'ArrowDown' && caretPosition === formInput.length) {
+                    const newIndex = historyIndex + 1 >= inputHistory.length ? 0 : historyIndex + 1
                     setHistoryIndex(newIndex)
                     setFormInput(inputHistory[newIndex])
                 }
             }
         },
-        [inputHistory, onChatSubmit, formInput, historyIndex, setFormInput, setMessageBeingEdited]
+        [inputHistory, historyIndex, setFormInput, onChatSubmit, formInput, setMessageBeingEdited]
     )
 
     const transcriptWithWelcome = useMemo<ChatMessage[]>(
-        () => [{ speaker: 'assistant', displayText: welcomeText(afterTips) }, ...transcript],
+        () => [
+            {
+                speaker: 'assistant',
+                displayText: welcomeText(afterTips),
+            },
+            ...transcript,
+        ],
         [afterTips, transcript]
     )
 
     return (
         <div className={classNames(className, styles.innerContainer)}>
-            <Transcript
-                transcript={transcriptWithWelcome}
-                messageInProgress={messageInProgress}
-                messageBeingEdited={messageBeingEdited}
-                setMessageBeingEdited={setMessageBeingEdited}
-                fileLinkComponent={fileLinkComponent}
-                codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
-                transcriptItemClassName={transcriptItemClassName}
-                humanTranscriptItemClassName={humanTranscriptItemClassName}
-                transcriptItemParticipantClassName={transcriptItemParticipantClassName}
-                transcriptActionClassName={transcriptActionClassName}
-                className={styles.transcriptContainer}
-                textAreaComponent={TextArea}
-                EditButtonContainer={EditButtonContainer}
-                editButtonOnSubmit={editButtonOnSubmit}
-                FeedbackButtonsContainer={FeedbackButtonsContainer}
-                feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                copyButtonOnSubmit={copyButtonOnSubmit}
-            />
+            {needsEmailVerification && NeedsEmailVerificationNotice ? (
+                <div className="flex-1">
+                    <NeedsEmailVerificationNotice />
+                </div>
+            ) : (
+                <Transcript
+                    transcript={transcriptWithWelcome}
+                    messageInProgress={messageInProgress}
+                    messageBeingEdited={messageBeingEdited}
+                    setMessageBeingEdited={setMessageBeingEdited}
+                    fileLinkComponent={fileLinkComponent}
+                    codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
+                    codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
+                    transcriptItemClassName={transcriptItemClassName}
+                    humanTranscriptItemClassName={humanTranscriptItemClassName}
+                    transcriptItemParticipantClassName={transcriptItemParticipantClassName}
+                    transcriptActionClassName={transcriptActionClassName}
+                    className={styles.transcriptContainer}
+                    textAreaComponent={TextArea}
+                    EditButtonContainer={EditButtonContainer}
+                    editButtonOnSubmit={editButtonOnSubmit}
+                    FeedbackButtonsContainer={FeedbackButtonsContainer}
+                    feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                    copyButtonOnSubmit={copyButtonOnSubmit}
+                    submitButtonComponent={SubmitButton}
+                    chatInputClassName={chatInputClassName}
+                />
+            )}
 
             <form className={classNames(styles.inputRow, inputRowClassName)}>
                 {suggestions !== undefined && suggestions.length !== 0 && SuggestionButton ? (
@@ -236,16 +274,14 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                         value={formInput}
                         autoFocus={true}
                         required={true}
-                        onInput={({ target }) => {
-                            const { value } = target as HTMLInputElement
-                            inputHandler(value)
-                        }}
+                        disabled={needsEmailVerification}
+                        onInput={onChatInput}
                         onKeyDown={onChatKeyDown}
                     />
                     <SubmitButton
                         className={styles.submitButton}
                         onClick={onChatSubmit}
-                        disabled={!!messageInProgress}
+                        disabled={!!messageInProgress || needsEmailVerification}
                     />
                 </div>
                 {contextStatus && (

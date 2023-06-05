@@ -12,7 +12,7 @@ import { SelfHostedCta, SelfHostedCtaProps } from './SelfHostedCta'
 const decorator: DecoratorFn = story => <WebStory>{() => <div className="container mt-3">{story()}</div>}</WebStory>
 
 const config: Meta = {
-    title: 'web/markering/SelfHostedCta',
+    title: 'web/marketing/SelfHostedCta',
     decorators: [decorator],
 }
 

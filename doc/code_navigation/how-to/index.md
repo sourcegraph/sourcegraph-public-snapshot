@@ -18,3 +18,7 @@
 - [Add precise indexing to CI workflows](adding_lsif_to_workflows.md)
 - [Enable auto-indexing](enable_auto_indexing.md)
 - [Configure auto-indexing](configure_auto_indexing.md)
+
+## Best practices
+
+- [Guide to defining policies](policies_best_practices.md) as it relates to resource usage

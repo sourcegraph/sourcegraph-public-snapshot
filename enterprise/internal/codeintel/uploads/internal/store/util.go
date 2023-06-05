@@ -3,8 +3,6 @@ package store
 import (
 	"database/sql"
 	"sort"
-	"strconv"
-	"strings"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -116,15 +114,6 @@ FROM (
 -- Remove ranks > 1, as they are shadowed by another upload in the same output set
 WHERE t.r <= 1
 `
-
-func intsToString(vs []int) string {
-	strs := make([]string, 0, len(vs))
-	for _, v := range vs {
-		strs = append(strs, strconv.Itoa(v))
-	}
-
-	return strings.Join(strs, ", ")
-}
 
 func scanCountsWithTotalCount(rows *sql.Rows, queryErr error) (totalCount int, _ map[int]int, err error) {
 	if queryErr != nil {

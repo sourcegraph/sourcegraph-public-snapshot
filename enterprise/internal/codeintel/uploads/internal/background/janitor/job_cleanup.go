@@ -17,8 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const recordTypeName = "SCIP metadata"
-
 func NewDeletedRepositoryJanitor(
 	store store.Store,
 	config *Config,
@@ -30,7 +28,7 @@ func NewDeletedRepositoryJanitor(
 		Name:        name,
 		Description: "Removes upload records associated with an unknown repository.",
 		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
 			return store.DeleteUploadsWithoutRepository(ctx, time.Now())
 		},
@@ -52,7 +50,7 @@ func NewUnknownCommitJanitor(
 		Name:        name,
 		Description: "Removes upload records associated with an unknown commit.",
 		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
 			return store.ProcessSourcedCommits(
 				ctx,
@@ -102,7 +100,7 @@ func NewAbandonedUploadJanitor(
 		Name:        name,
 		Description: "Removes upload records that did did not receive a full payload from the user.",
 		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
 			return store.DeleteUploadsStuckUploading(ctx, time.Now().UTC().Add(-config.UploadTimeout))
 		},
@@ -128,7 +126,7 @@ func NewExpiredUploadJanitor(
 		Name:        name,
 		Description: "Soft-deletes unreferenced upload records that are not protected by any data retention policy.",
 		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
 			return store.SoftDeleteExpiredUploads(ctx, expiredUploadsBatchSize)
 		},
@@ -146,7 +144,7 @@ func NewExpiredUploadTraversalJanitor(
 		Name:        name,
 		Description: "Soft-deletes a tree of externally unreferenced upload records that are not protected by any data retention policy.",
 		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
 			return store.SoftDeleteExpiredUploadsViaTraversal(ctx, expiredUploadsMaxTraversal)
 		},
@@ -168,7 +166,7 @@ func NewHardDeleter(
 		Name:        name,
 		Description: "Deleted data associated with soft-deleted upload records.",
 		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
 			const uploadsBatchSize = 100
 			options := shared.GetUploadsOptions{
@@ -233,7 +231,7 @@ func NewAuditLogJanitor(
 		Name:        name,
 		Description: "Deletes sufficiently old upload audit log records.",
 		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
 			return store.DeleteOldAuditLogs(ctx, config.AuditLogMaxAge, time.Now())
 		},
@@ -254,7 +252,7 @@ func NewSCIPExpirationTask(
 		Name:        name,
 		Description: "Deletes SCIP document payloads that are not referenced by any index.",
 		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name, recordTypeName),
+		Metrics:     background.NewJanitorMetrics(observationCtx, name),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
 			return lsifStore.DeleteUnreferencedDocuments(ctx, config.UnreferencedDocumentBatchSize, config.UnreferencedDocumentMaxAge, time.Now())
 		},

@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"strings"
 
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	sharedresolvers "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -18,11 +18,11 @@ import (
 )
 
 // 🚨 SECURITY: Only site admins may infer auto-index jobs
-func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.InferAutoIndexJobsForRepoArgs) (_ []resolverstubs.AutoIndexJobDescriptionResolver, err error) {
-	ctx, _, endObservation := r.operations.inferAutoIndexJobsForRepo.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repository", string(args.Repository)),
-		log.String("rev", resolverstubs.Deref(args.Rev, "")),
-		log.String("script", resolverstubs.Deref(args.Script, "")),
+func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.InferAutoIndexJobsForRepoArgs) (_ resolverstubs.InferAutoIndexJobsResultResolver, err error) {
+	ctx, _, endObservation := r.operations.inferAutoIndexJobsForRepo.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repository", string(args.Repository)),
+		attribute.String("rev", resolverstubs.Deref(args.Rev, "")),
+		attribute.String("script", resolverstubs.Deref(args.Script, "")),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -48,25 +48,28 @@ func (r *rootResolver) InferAutoIndexJobsForRepo(ctx context.Context, args *reso
 		localOverrideScript = *args.Script
 	}
 
-	// TODO - expose hints
-	config, _, err := r.autoindexSvc.InferIndexConfiguration(ctx, repositoryID, rev, localOverrideScript, false)
+	result, err := r.autoindexSvc.InferIndexConfiguration(ctx, repositoryID, rev, localOverrideScript, false)
 	if err != nil {
 		return nil, err
 	}
 
-	if config == nil {
-		return nil, nil
+	jobResolvers, err := newDescriptionResolvers(r.siteAdminChecker, &config.IndexConfiguration{IndexJobs: result.IndexJobs})
+	if err != nil {
+		return nil, err
 	}
 
-	return newDescriptionResolvers(r.siteAdminChecker, config)
+	return &inferAutoIndexJobsResultResolver{
+		jobs:            jobResolvers,
+		inferenceOutput: result.InferenceOutput,
+	}, nil
 }
 
 // 🚨 SECURITY: Only site admins may queue auto-index jobs
 func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *resolverstubs.QueueAutoIndexJobsForRepoArgs) (_ []resolverstubs.PreciseIndexResolver, err error) {
-	ctx, traceErrs, endObservation := r.operations.queueAutoIndexJobsForRepo.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repository", string(args.Repository)),
-		log.String("rev", resolverstubs.Deref(args.Rev, "")),
-		log.String("configuration", resolverstubs.Deref(args.Configuration, "")),
+	ctx, traceErrs, endObservation := r.operations.queueAutoIndexJobsForRepo.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repository", string(args.Repository)),
+		attribute.String("rev", resolverstubs.Deref(args.Rev, "")),
+		attribute.String("configuration", resolverstubs.Deref(args.Configuration, "")),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -119,6 +122,22 @@ func (r *rootResolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *reso
 	}
 
 	return resolvers, nil
+}
+
+//
+//
+
+type inferAutoIndexJobsResultResolver struct {
+	jobs            []resolverstubs.AutoIndexJobDescriptionResolver
+	inferenceOutput string
+}
+
+func (r *inferAutoIndexJobsResultResolver) Jobs() []resolverstubs.AutoIndexJobDescriptionResolver {
+	return r.jobs
+}
+
+func (r *inferAutoIndexJobsResultResolver) InferenceOutput() string {
+	return r.inferenceOutput
 }
 
 //

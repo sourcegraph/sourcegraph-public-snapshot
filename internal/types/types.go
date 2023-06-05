@@ -13,8 +13,10 @@ import (
 	"github.com/google/uuid"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 )
 
 // BatchChangeSource represents how a batch change can be created
@@ -80,6 +82,15 @@ type Repo struct {
 	Blocked *RepoBlock `json:",omitempty"`
 	// KeyValuePairs is the set of key-value pairs associated with the repo
 	KeyValuePairs map[string]*string `json:",omitempty"`
+}
+
+// RepoCommit is a record of a repo and a corresponding commit.
+type RepoCommit struct {
+	ID                   int64
+	RepoID               api.RepoID
+	CommitSHA            dbutil.CommitBytea
+	PerforceChangelistID int64
+	CreatedAt            time.Time
 }
 
 // SearchedRepo is a collection of metadata about repos that is used to decorate search results
@@ -863,31 +874,10 @@ func (r Role) IsUser() bool {
 	return r.Name == string(UserSystemRole)
 }
 
-// A PermissionNamespace represents a distinct context within which permission policies
-// are defined and enforced.
-type PermissionNamespace string
-
-func (n PermissionNamespace) String() string {
-	return string(n)
-}
-
-// Valid checks if a namespace is valid and supported by the Sourcegraph RBAC system.
-func (n PermissionNamespace) Valid() bool {
-	switch n {
-	case BatchChangesNamespace:
-		return true
-	default:
-		return false
-	}
-}
-
-// BatchChangesNamespace represents the Batch Changes namespace.
-const BatchChangesNamespace PermissionNamespace = "BATCH_CHANGES"
-
 type Permission struct {
 	ID        int32
-	Namespace PermissionNamespace
-	Action    string
+	Namespace rtypes.PermissionNamespace
+	Action    rtypes.NamespaceAction
 	CreatedAt time.Time
 }
 
@@ -912,7 +902,7 @@ type UserRole struct {
 
 type NamespacePermission struct {
 	ID         int64
-	Namespace  PermissionNamespace
+	Namespace  rtypes.PermissionNamespace
 	ResourceID int64
 	UserID     int32
 	CreatedAt  time.Time
@@ -1029,6 +1019,37 @@ type CodyAggregatedEvent struct {
 	InvalidMonth        int32
 	InvalidWeek         int32
 	InvalidDay          int32
+}
+
+// NOTE: DO NOT alter this struct without making a symmetric change
+// to the updatecheck handler.
+// RepoMetadataAggregatedStats represents the total number of repo metadata,
+// number of repositories with any metadata, total and unique number of
+// events for repo metadata usage related events over the current day, week, month.
+type RepoMetadataAggregatedStats struct {
+	Summary *RepoMetadataAggregatedSummary
+	Daily   *RepoMetadataAggregatedEvents
+	Weekly  *RepoMetadataAggregatedEvents
+	Monthly *RepoMetadataAggregatedEvents
+}
+
+type RepoMetadataAggregatedSummary struct {
+	IsEnabled              bool
+	RepoMetadataCount      *int32
+	ReposWithMetadataCount *int32
+}
+
+type RepoMetadataAggregatedEvents struct {
+	StartTime          time.Time
+	CreateRepoMetadata *EventStats
+	UpdateRepoMetadata *EventStats
+	DeleteRepoMetadata *EventStats
+	SearchFilterUsage  *EventStats
+}
+
+type EventStats struct {
+	UsersCount  *int32
+	EventsCount *int32
 }
 
 // NOTE: DO NOT alter this struct without making a symmetric change
@@ -2011,3 +2032,8 @@ const (
 	AccessRequestStatusApproved AccessRequestStatus = "APPROVED"
 	AccessRequestStatusRejected AccessRequestStatus = "REJECTED"
 )
+
+type PerforceChangelist struct {
+	CommitSHA    api.CommitID
+	ChangelistID int64
+}

@@ -41,10 +41,10 @@ func TestNewFirecrackerWorkspace(t *testing.T) {
 			},
 			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmdRunner *workspace.MockCmdRunner, cmd *workspace.MockCommand, tempDir string) {
 				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
-				// mkfs.ext4
-				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 				// losetup --find
 				cmdRunner.CombinedOutputFunc.PushReturn([]byte(tempDir), nil)
+				// mkfs.ext4
+				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 				// mount
 				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 				// losetup --detach
@@ -65,10 +65,10 @@ func TestNewFirecrackerWorkspace(t *testing.T) {
 			},
 			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmdRunner *workspace.MockCmdRunner, cmd *workspace.MockCommand, tempDir string) {
 				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
-				// mkfs.ext4
-				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 				// losetup --find
 				cmdRunner.CombinedOutputFunc.PushReturn([]byte(tempDir), nil)
+				// mkfs.ext4
+				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 				// mount
 				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 				// losetup --detach
@@ -167,10 +167,10 @@ func TestNewFirecrackerWorkspace(t *testing.T) {
 			},
 			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmdRunner *workspace.MockCmdRunner, cmd *workspace.MockCommand, tempDir string) {
 				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
-				// mkfs.ext4
-				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 				// losetup --find
 				cmdRunner.CombinedOutputFunc.PushReturn([]byte(tempDir), nil)
+				// mkfs.ext4
+				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 				// mount
 				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 				// losetup --detach
@@ -194,10 +194,10 @@ func TestNewFirecrackerWorkspace(t *testing.T) {
 			},
 			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmdRunner *workspace.MockCmdRunner, cmd *workspace.MockCommand, tempDir string) {
 				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
-				// mkfs.ext4
-				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 				// losetup --find
 				cmdRunner.CombinedOutputFunc.PushReturn([]byte(tempDir), nil)
+				// mkfs.ext4
+				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 				// mount
 				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 				// losetup --detach
@@ -275,10 +275,10 @@ func TestNewFirecrackerWorkspace(t *testing.T) {
 			},
 			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmdRunner *workspace.MockCmdRunner, cmd *workspace.MockCommand, tempDir string) {
 				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
-				// mkfs.ext4
-				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 				// losetup --find
 				cmdRunner.CombinedOutputFunc.PushReturn([]byte(tempDir), nil)
+				// mkfs.ext4
+				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 				// mount
 				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 				// losetup --detach
@@ -314,10 +314,10 @@ func TestNewFirecrackerWorkspace(t *testing.T) {
 			},
 			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmdRunner *workspace.MockCmdRunner, cmd *workspace.MockCommand, tempDir string) {
 				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
-				// mkfs.ext4
-				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 				// losetup --find
 				cmdRunner.CombinedOutputFunc.PushReturn([]byte(tempDir), nil)
+				// mkfs.ext4
+				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 				// mount
 				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 				// losetup --detach
@@ -354,10 +354,10 @@ func TestNewFirecrackerWorkspace(t *testing.T) {
 			},
 			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmdRunner *workspace.MockCmdRunner, cmd *workspace.MockCommand, tempDir string) {
 				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
-				// mkfs.ext4
-				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 				// losetup --find
 				cmdRunner.CombinedOutputFunc.PushReturn([]byte(tempDir), nil)
+				// mkfs.ext4
+				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 				// mount
 				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 				// losetup --detach
@@ -442,10 +442,10 @@ func TestNewFirecrackerWorkspace(t *testing.T) {
 			},
 			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmdRunner *workspace.MockCmdRunner, cmd *workspace.MockCommand, tempDir string) {
 				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
-				// mkfs.ext4
-				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 				// losetup --find
 				cmdRunner.CombinedOutputFunc.PushReturn([]byte(tempDir), nil)
+				// mkfs.ext4
+				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 				// mount
 				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 				// losetup --detach
@@ -490,10 +490,10 @@ func TestNewFirecrackerWorkspace(t *testing.T) {
 			},
 			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockFilesStore, cmdRunner *workspace.MockCmdRunner, cmd *workspace.MockCommand, tempDir string) {
 				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
-				// mkfs.ext4
-				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 				// losetup --find
 				cmdRunner.CombinedOutputFunc.PushReturn([]byte(tempDir), nil)
+				// mkfs.ext4
+				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 				// mount
 				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 				// losetup --detach

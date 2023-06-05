@@ -52,6 +52,18 @@ js_binary(
     visibility = ["//client:__subpackages__"],
 )
 
+js_binary(
+    name = "run_mocha_tests_with_percy",
+    data = [
+        "//:node_modules/@percy/cli",
+        "//:node_modules/mocha",
+        "//:node_modules/puppeteer",
+        "//:node_modules/resolve-bin",
+    ],
+    entry_point = "runMochaTestsWithPercy.js",
+    visibility = ["//client:__subpackages__"],
+)
+
 ts_project(
     name = "mock_ts",
     srcs = [

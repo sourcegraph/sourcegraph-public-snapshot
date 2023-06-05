@@ -36,16 +36,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// Run from integration_test.go
+// Run from webhooks_integration_test.go
 func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 	return func(t *testing.T) {
-		now := timeutil.Now()
-		clock := func() time.Time { return now }
+		// @BolajiOlajide hardcoded the time here because we use the time to generate the key
+		// for events in the `fixtures`. This key needs to be static else the tests fails, and it's not
+		// advisable to ignore the `key` field because if the logic changes, our tests won't catch it.
+		clock := func() time.Time { return time.Date(2023, time.May, 16, 12, 0, 0, 0, time.UTC) }
 
 		ctx := context.Background()
 
@@ -236,6 +237,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 					cmpopts.IgnoreFields(btypes.ChangesetEvent{}, "CreatedAt"),
 					cmpopts.IgnoreFields(btypes.ChangesetEvent{}, "UpdatedAt"),
 				}
+
 				if diff := cmp.Diff(tc.ChangesetEvents, have, opts...); diff != "" {
 					t.Error(diff)
 				}

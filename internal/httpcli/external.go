@@ -106,7 +106,7 @@ func (t *externalTransport) update(ctx context.Context, config *schema.TlsExtern
 			pool, err := x509.SystemCertPool() // safe to mutate, a clone is returned
 			if err != nil {
 				tr.AddEvent("failed to load SystemCertPool",
-					attribute.String("error", err.Error()),
+					trace.Error(err),
 					attribute.String("warning", "communication with external HTTPS APIs may fail"))
 
 				pool = x509.NewCertPool()

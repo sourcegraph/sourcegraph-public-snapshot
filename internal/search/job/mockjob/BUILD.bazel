@@ -9,6 +9,6 @@ go_library(
         "//internal/search",
         "//internal/search/job",
         "//internal/search/streaming",
-        "@com_github_opentracing_opentracing_go//log",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )

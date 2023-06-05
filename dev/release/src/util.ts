@@ -208,7 +208,7 @@ export async function getContainerRegistryCredential(registryHostname: string): 
         `${cacheFolder}/cr_${registryHostname.replace('.', '_')}_username.txt`
     )
     const registryPassowrd = await readLine(
-        `Enter your container registry (${registryHostname} ) password or access token: `,
+        `Enter your container registry (${registryHostname} ) access token: `,
         `${cacheFolder}/cr_${registryHostname.replace('.', '_')}_password.txt`
     )
     const credential: ContainerRegistryCredential = {
@@ -253,6 +253,7 @@ export const updateUpgradeGuides = (previous: string, next: string): EditFunc =>
             const updateFunc = getUpgradeGuide(mode)
             if (updateFunc === undefined) {
                 console.log(`Skipping upgrade file: ${file} due to missing content generator`)
+                continue
             }
             const guide = getUpgradeGuide(mode)(previous, next)
 

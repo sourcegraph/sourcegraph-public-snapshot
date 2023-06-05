@@ -2,7 +2,6 @@ package reducer
 
 import (
 	"context"
-	"time"
 
 	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store"
@@ -11,8 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
-
-const recordTypeName = "path count inputs"
 
 func NewReducer(
 	observationCtx *observation.Context,
@@ -25,7 +22,7 @@ func NewReducer(
 		Name:        name,
 		Description: "Aggregates records from `codeintel_ranking_path_counts_inputs` into `codeintel_path_ranks`.",
 		Interval:    config.Interval,
-		Metrics:     background.NewPipelineMetrics(observationCtx, name, recordTypeName),
+		Metrics:     background.NewPipelineMetrics(observationCtx, name),
 		ProcessFunc: func(ctx context.Context) (numRecordsProcessed int, numRecordsAltered background.TaggedCounts, err error) {
 			numPathCountInputsScanned, numRanksUpdated, err := reduceRankingGraph(ctx, store, config.BatchSize)
 			return numPathCountInputsScanned, background.NewSingleCount(numRanksUpdated), err
@@ -35,16 +32,21 @@ func NewReducer(
 
 func reduceRankingGraph(
 	ctx context.Context,
-	store store.Store,
+	s store.Store,
 	batchSize int,
 ) (numPathRanksInserted int, numPathCountInputsProcessed int, err error) {
 	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 		return 0, 0, nil
 	}
 
-	return store.InsertPathRanks(
+	derivativeGraphKeyPrefix, _, err := store.DerivativeGraphKey(ctx, s)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return s.InsertPathRanks(
 		ctx,
-		rankingshared.DerivativeGraphKeyFromTime(time.Now()),
+		rankingshared.DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix),
 		batchSize,
 	)
 }

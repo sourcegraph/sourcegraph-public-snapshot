@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
+	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
@@ -24,9 +24,8 @@ func AppReady(db database.DB, logger log.Logger) {
 
 	ctx := context.Background()
 
-	// Our goal is to open the browser to a special sign-in URL containing a
-	// nonce (signInURL). We additionally want to display the URL without the
-	// nonce since it can only be used once (displayURL)
+	// Our goal is to open the browser to a special sign-in URL containing a in-memory
+	// secret (signInURL).
 	displayURL := globals.ExternalURL().String()
 	browserURL := displayURL
 

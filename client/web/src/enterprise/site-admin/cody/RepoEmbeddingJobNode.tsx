@@ -15,53 +15,77 @@ import {
     Link,
     H4,
     Alert,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { RepoEmbeddingJobFields, RepoEmbeddingJobState } from '../../../graphql-operations'
 
 import styles from './RepoEmbeddingJobNode.module.scss'
 
-interface RepoEmbeddingJobNodeProps extends RepoEmbeddingJobFields {}
+interface RepoEmbeddingJobNodeProps extends RepoEmbeddingJobFields {
+    onCancel: (id: string) => void
+}
 
 export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
+    id,
     state,
+    cancel,
     repo,
     revision,
     finishedAt,
     queuedAt,
     startedAt,
     failureMessage,
+    onCancel,
 }) => (
     <li className="list-group-item p-2">
-        <div className="d-flex align-items-center">
-            <div className={styles.badgeWrapper}>
-                <RepoEmbeddingJobStateBadge state={state} />
-            </div>
-            <div className="d-flex flex-column ml-3">
-                {repo && revision ? (
-                    <Link to={`${repo.url}@${revision.oid}`}>
-                        {repo.name}@{revision.abbreviatedOID}
-                    </Link>
-                ) : (
-                    <div>Unknown repository</div>
-                )}
-                <div className="mt-1">
-                    <RepoEmbeddingJobExecutionInfo
-                        state={state}
-                        finishedAt={finishedAt}
-                        queuedAt={queuedAt}
-                        startedAt={startedAt}
-                        failureMessage={failureMessage}
-                    />
+        <div className="d-flex justify-content-between">
+            <div className="d-flex align-items-center">
+                <div className={styles.badgeWrapper}>
+                    <RepoEmbeddingJobStateBadge state={state} />
                 </div>
+                <div className="d-flex flex-column ml-3">
+                    {repo && revision ? (
+                        <Link to={`${repo.url}@${revision.oid}`}>
+                            {repo.name}@{revision.abbreviatedOID}
+                        </Link>
+                    ) : (
+                        <div>Unknown repository</div>
+                    )}
+                    <div className="mt-1">
+                        <RepoEmbeddingJobExecutionInfo
+                            state={state}
+                            cancel={cancel}
+                            finishedAt={finishedAt}
+                            queuedAt={queuedAt}
+                            startedAt={startedAt}
+                            failureMessage={failureMessage}
+                        />
+                    </div>
+                </div>
+            </div>
+            <div className="d-flex align-items-center">
+                {state === RepoEmbeddingJobState.QUEUED || state === RepoEmbeddingJobState.PROCESSING ? (
+                    <Tooltip content="Cancel repository embedding job">
+                        <Button
+                            aria-label="Cancel"
+                            onClick={() => onCancel(id)}
+                            variant="secondary"
+                            size="sm"
+                            disabled={cancel}
+                        >
+                            Cancel
+                        </Button>
+                    </Tooltip>
+                ) : null}
             </div>
         </div>
     </li>
 )
 
 const RepoEmbeddingJobExecutionInfo: FC<
-    Pick<RepoEmbeddingJobFields, 'state' | 'finishedAt' | 'failureMessage' | 'queuedAt' | 'startedAt'>
-> = ({ state, finishedAt, queuedAt, startedAt, failureMessage }) => {
+    Pick<RepoEmbeddingJobFields, 'state' | 'cancel' | 'finishedAt' | 'failureMessage' | 'queuedAt' | 'startedAt'>
+> = ({ state, cancel, finishedAt, queuedAt, startedAt, failureMessage }) => {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false)
     return (
         <>
@@ -73,12 +97,24 @@ const RepoEmbeddingJobExecutionInfo: FC<
             {state === RepoEmbeddingJobState.CANCELED && <small>Embedding was canceled.</small>}
             {state === RepoEmbeddingJobState.QUEUED && (
                 <small>
-                    Embedding was queued <Timestamp date={queuedAt} />.
+                    {cancel ? (
+                        'Cancelling ...'
+                    ) : (
+                        <>
+                            Embedding was queued <Timestamp date={queuedAt} />.
+                        </>
+                    )}
                 </small>
             )}
             {state === RepoEmbeddingJobState.PROCESSING && startedAt && (
                 <small>
-                    Embedding started processing <Timestamp date={startedAt} />.
+                    {cancel ? (
+                        'Cancelling ...'
+                    ) : (
+                        <>
+                            Embedding started processing <Timestamp date={startedAt} />.
+                        </>
+                    )}
                 </small>
             )}
             {(state === RepoEmbeddingJobState.ERRORED || state === RepoEmbeddingJobState.FAILED) && failureMessage && (

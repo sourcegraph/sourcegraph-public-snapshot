@@ -3,7 +3,7 @@ package jobutil
 import (
 	"context"
 
-	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -41,9 +41,9 @@ func (j *reposPartialJob) Resolve(rr resolvedRepos) job.Job {
 	return setRepos(j.inner, rr.indexed, rr.unindexed)
 }
 
-func (j *reposPartialJob) Name() string                       { return "PartialReposJob" }
-func (j *reposPartialJob) Fields(job.Verbosity) []otlog.Field { return nil }
-func (j *reposPartialJob) Children() []job.Describer          { return []job.Describer{j.inner} }
+func (j *reposPartialJob) Name() string                                  { return "PartialReposJob" }
+func (j *reposPartialJob) Attributes(job.Verbosity) []attribute.KeyValue { return nil }
+func (j *reposPartialJob) Children() []job.Describer                     { return []job.Describer{j.inner} }
 func (j *reposPartialJob) MapChildren(fn job.MapFunc) job.PartialJob[resolvedRepos] {
 	cp := *j
 	cp.inner = job.Map(j.inner, fn)
@@ -119,16 +119,16 @@ func (p *repoPagerJob) Name() string {
 	return "RepoPagerJob"
 }
 
-func (p *repoPagerJob) Fields(v job.Verbosity) (res []otlog.Field) {
+func (p *repoPagerJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 	switch v {
 	case job.VerbosityMax:
 		res = append(res,
-			otlog.Bool("containsRefGlobs", p.containsRefGlobs),
+			attribute.Bool("containsRefGlobs", p.containsRefGlobs),
 		)
 		fallthrough
 	case job.VerbosityBasic:
 		res = append(res,
-			trace.Scoped("repoOpts", p.repoOpts.Tags()...),
+			trace.Scoped("repoOpts", p.repoOpts.Attributes()...)...,
 		)
 	}
 	return res

@@ -29,7 +29,6 @@ const {
 } = require('@sourcegraph/build-config')
 
 const { IS_PRODUCTION, IS_DEVELOPMENT, ENVIRONMENT_CONFIG, writeIndexHTMLPlugin } = require('./dev/utils')
-const { isHotReloadEnabled } = require('./src/integration/environment')
 
 const {
   NODE_ENV,
@@ -55,6 +54,7 @@ const {
   SOURCEGRAPH_APP,
 } = ENVIRONMENT_CONFIG
 
+const isHotReloadEnabled = NODE_ENV !== 'production' && !IS_CI
 const IS_PERSISTENT_CACHE_ENABLED = IS_DEVELOPMENT && !IS_CI
 const IS_EMBED_ENTRY_POINT_ENABLED = ENTERPRISE && (IS_PRODUCTION || (IS_DEVELOPMENT && EMBED_DEVELOPMENT))
 

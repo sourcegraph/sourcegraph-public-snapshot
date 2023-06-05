@@ -48,9 +48,9 @@ go_build() {
   local package="$1"
 
   if [[ "${CI_DEBUG_PROFILE:-"false"}" == "true" ]]; then
-    env time -v ./cmd/server/go-build.sh "$package"
+    env time -v ./cmd/server/go-build-wolfi.sh "$package"
   else
-    ./cmd/server/go-build.sh "$package"
+    ./cmd/server/go-build-wolfi.sh "$package"
   fi
 }
 export -f go_build

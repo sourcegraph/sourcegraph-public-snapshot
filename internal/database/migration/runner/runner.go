@@ -286,8 +286,10 @@ func (r *Runner) withLockedSchemaState(
 	return false, f(schemaVersion, byState, unlock)
 }
 
-const lockPollInterval = time.Second
-const lockPollLogRatio = 5
+const (
+	lockPollInterval = time.Second
+	lockPollLogRatio = 5
+)
 
 // pollLock will attempt to acquire a session-level advisory lock while the given context has not
 // been canceled. The caller must eventually invoke the unlock function on successful acquisition
@@ -479,7 +481,6 @@ func logIndexStatus(schemaContext schemaContext, tableName, indexName string, in
 			renderIndexStatus(indexStatus),
 		),
 	)
-
 }
 
 // renderIndexStatus returns a slice of interface pairs describing the given index status for use in a

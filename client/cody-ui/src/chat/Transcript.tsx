@@ -4,7 +4,13 @@ import classNames from 'classnames'
 
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { ChatUITextAreaProps, EditButtonProps, FeedbackButtonsProps, CopyButtonProps } from '../Chat'
+import {
+    ChatUITextAreaProps,
+    EditButtonProps,
+    FeedbackButtonsProps,
+    CopyButtonProps,
+    ChatUISubmitButtonProps,
+} from '../Chat'
 
 import { FileLinkProps } from './ContextFiles'
 import { TranscriptItem, TranscriptItemClassNames } from './TranscriptItem'
@@ -25,8 +31,9 @@ export const Transcript: React.FunctionComponent<
         FeedbackButtonsContainer?: React.FunctionComponent<FeedbackButtonsProps>
         feedbackButtonsOnSubmit?: (text: string) => void
         copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
+        submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
     } & TranscriptItemClassNames
-> = ({
+> = React.memo(function TranscriptContent({
     transcript,
     messageInProgress,
     messageBeingEdited,
@@ -34,6 +41,7 @@ export const Transcript: React.FunctionComponent<
     fileLinkComponent,
     className,
     codeBlocksCopyButtonClassName,
+    codeBlocksInsertButtonClassName,
     transcriptItemClassName,
     humanTranscriptItemClassName,
     transcriptItemParticipantClassName,
@@ -44,7 +52,9 @@ export const Transcript: React.FunctionComponent<
     FeedbackButtonsContainer,
     feedbackButtonsOnSubmit,
     copyButtonOnSubmit,
-}) => {
+    submitButtonComponent,
+    chatInputClassName,
+}) {
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
     useEffect(() => {
         if (transcriptContainerRef.current) {
@@ -91,6 +101,7 @@ export const Transcript: React.FunctionComponent<
                             setBeingEdited={setMessageBeingEdited}
                             fileLinkComponent={fileLinkComponent}
                             codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
+                            codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
                             transcriptItemClassName={transcriptItemClassName}
                             humanTranscriptItemClassName={humanTranscriptItemClassName}
                             transcriptItemParticipantClassName={transcriptItemParticipantClassName}
@@ -103,6 +114,8 @@ export const Transcript: React.FunctionComponent<
                             feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                             copyButtonOnSubmit={copyButtonOnSubmit}
                             showFeedbackButtons={index > 0 && transcript.length - index === 1}
+                            submitButtonComponent={submitButtonComponent}
+                            chatInputClassName={chatInputClassName}
                         />
                     )
             )}
@@ -114,14 +127,17 @@ export const Transcript: React.FunctionComponent<
                     setBeingEdited={setMessageBeingEdited}
                     fileLinkComponent={fileLinkComponent}
                     codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
+                    codeBlocksInsertButtonClassName={codeBlocksInsertButtonClassName}
                     transcriptItemClassName={transcriptItemClassName}
                     transcriptItemParticipantClassName={transcriptItemParticipantClassName}
                     transcriptActionClassName={transcriptActionClassName}
                     showEditButton={false}
                     showFeedbackButtons={false}
                     copyButtonOnSubmit={copyButtonOnSubmit}
+                    submitButtonComponent={submitButtonComponent}
+                    chatInputClassName={chatInputClassName}
                 />
             )}
         </div>
     )
-}
+})

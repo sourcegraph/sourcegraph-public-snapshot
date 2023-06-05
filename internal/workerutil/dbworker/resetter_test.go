@@ -1,6 +1,7 @@
 package dbworker
 
 import (
+	"strconv"
 	"testing"
 	"time"
 
@@ -19,6 +20,10 @@ type TestRecord struct {
 
 func (v TestRecord) RecordID() int {
 	return v.ID
+}
+
+func (v TestRecord) RecordUID() string {
+	return strconv.Itoa(v.ID)
 }
 
 func TestResetter(t *testing.T) {

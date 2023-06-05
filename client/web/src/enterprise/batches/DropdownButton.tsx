@@ -18,6 +18,8 @@ import {
     Icon,
 } from '@sourcegraph/wildcard'
 
+import { useBatchChangesRolloutWindowConfig } from './backend'
+
 import styles from './DropdownButton.module.scss'
 
 export interface Action {
@@ -169,11 +171,11 @@ const DropdownItem: React.FunctionComponent<React.PropsWithChildren<DropdownItem
     action,
     setSelectedType,
 }) => {
+    const { rolloutWindowConfig, loading } = useBatchChangesRolloutWindowConfig()
     const onSelect = useCallback(() => {
         setSelectedType(action.type)
     }, [setSelectedType, action.type])
-
-    const { batchChangesRolloutWindows } = window.context
+    const shouldDisplayRolloutInfo = action.type === 'publish' && rolloutWindowConfig && rolloutWindowConfig.length > 0
 
     return (
         <MenuItem className={styles.menuListItem} onSelect={onSelect} disabled={action.disabled}>
@@ -187,17 +189,18 @@ const DropdownItem: React.FunctionComponent<React.PropsWithChildren<DropdownItem
                 )}
             </H4>
             <Text className="text-wrap text-muted mb-0">
-                {action.type === 'publish' && batchChangesRolloutWindows && batchChangesRolloutWindows.length > 0 ? (
-                    <small>
-                        {action.dropdownDescription} <br />
-                        <b>
-                            Note: Rollout windows have been set up by the admin. This means that some of the selected
-                            changesets won't be processed until a time in the future.
-                        </b>{' '}
-                    </small>
-                ) : (
-                    <small>{action.dropdownDescription}</small>
-                )}
+                <small>
+                    {action.dropdownDescription}
+                    {!loading && shouldDisplayRolloutInfo && (
+                        <>
+                            <br />
+                            <strong>
+                                Note: Rollout windows have been set up by the admin. This means that some of the
+                                selected changesets won't be processed until a time in the future.
+                            </strong>
+                        </>
+                    )}
+                </small>
             </Text>
         </MenuItem>
     )

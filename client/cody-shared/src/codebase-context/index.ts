@@ -6,7 +6,7 @@ import { Message } from '../sourcegraph-api'
 import { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
 import { isError } from '../utils'
 
-import { ContextMessage, getContextMessageWithResponse } from './messages'
+import { ContextMessage, ContextFile, getContextMessageWithResponse } from './messages'
 
 export interface ContextSearchOptions {
     numCodeResults: number
@@ -14,6 +14,7 @@ export interface ContextSearchOptions {
 }
 
 export class CodebaseContext {
+    private embeddingResultsError = ''
     constructor(
         private config: Pick<Configuration, 'useContext' | 'serverEndpoint'>,
         private codebase: string | undefined,
@@ -31,19 +32,23 @@ export class CodebaseContext {
 
     public async getContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
         switch (this.config.useContext) {
-            case 'embeddings' || 'blended':
+            case 'keyword':
+                return this.getKeywordContextMessages(query, options)
+            case 'none':
+                return []
+            default:
                 return this.embeddings
                     ? this.getEmbeddingsContextMessages(query, options)
                     : this.getKeywordContextMessages(query, options)
-            case 'keyword':
-                return this.getKeywordContextMessages(query, options)
-            default:
-                return this.getEmbeddingsContextMessages(query, options)
         }
     }
 
     public checkEmbeddingsConnection(): boolean {
         return !!this.embeddings
+    }
+
+    public getEmbeddingSearchErrors(): string {
+        return this.embeddingResultsError
     }
 
     public async getSearchResults(
@@ -56,7 +61,11 @@ export class CodebaseContext {
                 endpoint: this.config.serverEndpoint,
             }
         }
-        return { results: await this.getKeywordSearchResults(query, options), endpoint: this.config.serverEndpoint }
+        return {
+            results:
+                (await this.keywords?.getSearchContext(query, options.numCodeResults + options.numTextResults)) || [],
+            endpoint: this.config.serverEndpoint,
+        }
     }
 
     // We split the context into multiple messages instead of joining them into a single giant message.
@@ -86,29 +95,31 @@ export class CodebaseContext {
             options.numCodeResults,
             options.numTextResults
         )
+
         if (isError(embeddingsSearchResults)) {
             console.error('Error retrieving embeddings:', embeddingsSearchResults)
+            this.embeddingResultsError = `Error retrieving embeddings: ${embeddingsSearchResults}`
             return []
         }
-
+        this.embeddingResultsError = ''
         return embeddingsSearchResults.codeResults.concat(embeddingsSearchResults.textResults)
     }
 
-    private makeContextMessageWithResponse(groupedResults: { fileName: string; results: string[] }): ContextMessage[] {
-        const contextTemplateFn = isMarkdownFile(groupedResults.fileName)
+    private makeContextMessageWithResponse(groupedResults: { file: ContextFile; results: string[] }): ContextMessage[] {
+        const contextTemplateFn = isMarkdownFile(groupedResults.file.fileName)
             ? populateMarkdownContextTemplate
             : populateCodeContextTemplate
 
         return groupedResults.results.flatMap<Message>(text =>
-            getContextMessageWithResponse(contextTemplateFn(text, groupedResults.fileName), groupedResults.fileName)
+            getContextMessageWithResponse(contextTemplateFn(text, groupedResults.file.fileName), groupedResults.file)
         )
     }
 
     private async getKeywordContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
         const results = await this.getKeywordSearchResults(query, options)
-        return results.flatMap(({ content, fileName }) => {
+        return results.flatMap(({ content, fileName, repoName, revision }) => {
             const messageText = populateCodeContextTemplate(content, fileName)
-            return getContextMessageWithResponse(messageText, fileName)
+            return getContextMessageWithResponse(messageText, { fileName, repoName, revision })
         })
     }
 
@@ -119,15 +130,15 @@ export class CodebaseContext {
         if (!this.keywords) {
             return []
         }
-        return this.keywords.getSearchContext(query, options.numCodeResults + options.numTextResults)
+        return this.keywords.getContext(query, options.numCodeResults + options.numTextResults)
     }
 }
 
-function groupResultsByFile(results: EmbeddingsSearchResult[]): { fileName: string; results: string[] }[] {
-    const originalFileOrder: string[] = []
+function groupResultsByFile(results: EmbeddingsSearchResult[]): { file: ContextFile; results: string[] }[] {
+    const originalFileOrder: ContextFile[] = []
     for (const result of results) {
-        if (!originalFileOrder.includes(result.fileName)) {
-            originalFileOrder.push(result.fileName)
+        if (!originalFileOrder.find((ogFile: ContextFile) => ogFile.fileName === result.fileName)) {
+            originalFileOrder.push({ fileName: result.fileName, repoName: result.repoName, revision: result.revision })
         }
     }
 
@@ -141,9 +152,9 @@ function groupResultsByFile(results: EmbeddingsSearchResult[]): { fileName: stri
         }
     }
 
-    return originalFileOrder.map(fileName => ({
-        fileName,
-        results: mergeConsecutiveResults(resultsGroupedByFile.get(fileName)!),
+    return originalFileOrder.map(file => ({
+        file,
+        results: mergeConsecutiveResults(resultsGroupedByFile.get(file.fileName)!),
     }))
 }
 

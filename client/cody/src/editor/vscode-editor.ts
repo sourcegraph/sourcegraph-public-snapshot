@@ -6,10 +6,21 @@ import {
     ActiveTextEditorVisibleContent,
     Editor,
 } from '@sourcegraph/cody-shared/src/editor'
+import { SURROUNDING_LINES } from '@sourcegraph/cody-shared/src/prompt/constants'
 
-const SURROUNDING_LINES = 50
+import { FixupController } from '../non-stop/FixupController'
+import { InlineController } from '../services/InlineController'
 
 export class VSCodeEditor implements Editor {
+    constructor(
+        public controllers: {
+            inline: InlineController
+            // TODO: Rename this from "task" to "fixup" when the fixup data
+            // model moves from client/cody-shared to client/cody
+            task: FixupController
+        }
+    ) {}
+
     public getWorkspaceRootPath(): string | null {
         const uri = vscode.window.activeTextEditor?.document?.uri
         if (uri) {
@@ -37,14 +48,15 @@ export class VSCodeEditor implements Editor {
     }
 
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
+        if (this.controllers.inline.isInProgress) {
+            return null
+        }
         const activeEditor = this.getActiveTextEditorInstance()
         if (!activeEditor) {
             return null
         }
         const selection = activeEditor.selection
         if (!selection || selection?.start.isEqual(selection.end)) {
-            // eslint-disable-next-line @typescript-eslint/no-floating-promises
-            vscode.window.showErrorMessage('No code selected. Please select some code and try again.')
             return null
         }
         return this.createActiveTextEditorSelection(activeEditor, selection)
@@ -111,26 +123,33 @@ export class VSCodeEditor implements Editor {
 
     public async replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
         const activeEditor = this.getActiveTextEditorInstance()
+        if (this.controllers.inline.isInProgress) {
+            await this.controllers.inline.replace(fileName, replacement, selectedText)
+            return
+        }
         if (!activeEditor || vscode.workspace.asRelativePath(activeEditor.document.uri.fsPath) !== fileName) {
             // TODO: should return something indicating success or failure
+            console.error('Missing file')
             return
         }
         const selection = activeEditor.selection
         if (!selection) {
+            console.error('Missing selection')
             return
         }
-
         if (activeEditor.document.getText(selection) !== selectedText) {
             // TODO: Be robust to this.
-            await vscode.window.showErrorMessage(
+            await vscode.window.showInformationMessage(
                 'The selection changed while Cody was working. The text will not be edited.'
             )
             return
         }
 
+        // Editing the document
         await activeEditor.edit(edit => {
             edit.replace(selection, replacement)
         })
+
         return
     }
 
@@ -147,5 +166,11 @@ export class VSCodeEditor implements Editor {
         return vscode.window.showInputBox({
             placeHolder: prompt || 'Enter here...',
         })
+    }
+
+    // TODO: When Non-Stop Fixup doesn't depend directly on the chat view,
+    // move the recipe to client/cody and remove this entrypoint.
+    public async didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
+        await this.controllers.task.didReceiveFixupText(id, text, state)
     }
 }

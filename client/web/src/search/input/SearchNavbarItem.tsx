@@ -115,6 +115,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                         settingsCascade={props.settingsCascade}
                         navbarSearchQuery={queryState.query}
                         submitSearch={submitSearchOnChange}
+                        structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
                     />
                 </LazyExperimentalSearchInput>
             </Form>

@@ -1,4 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
 
 go_library(
     name = "repo",
@@ -6,24 +6,29 @@ go_library(
         "document_ranks.go",
         "handler.go",
         "janitor.go",
+        "scheduler.go",
         "worker.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/embeddings/repo",
     visibility = ["//enterprise/cmd/worker:__subpackages__"],
     deps = [
+        "//cmd/searcher/diff",
         "//cmd/worker/job",
         "//cmd/worker/shared/init/db",
+        "//enterprise/cmd/worker/shared/init/codeintel",
+        "//enterprise/internal/codeintel/context",
         "//enterprise/internal/database",
         "//enterprise/internal/embeddings",
         "//enterprise/internal/embeddings/background/repo",
         "//enterprise/internal/embeddings/embed",
-        "//enterprise/internal/embeddings/split",
         "//internal/actor",
         "//internal/api",
         "//internal/api/internalapi",
         "//internal/codeintel/types",
         "//internal/conf",
+        "//internal/database",
         "//internal/env",
+        "//internal/featureflag",
         "//internal/gitserver",
         "//internal/goroutine",
         "//internal/httpcli",
@@ -34,5 +39,18 @@ go_library(
         "//internal/workerutil/dbworker/store",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "repo_test",
+    srcs = ["handler_test.go"],
+    embed = [":repo"],
+    deps = [
+        "//enterprise/internal/embeddings/embed",
+        "//internal/api",
+        "//internal/authz",
+        "//internal/gitserver",
+        "@com_github_google_go_cmp//cmp",
     ],
 )

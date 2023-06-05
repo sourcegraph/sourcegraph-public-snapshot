@@ -9,7 +9,7 @@ import { Heading } from './Heading'
 
 import styles from './PageHeader.module.scss'
 
-type BreadcrumbItem = {
+export type BreadcrumbItem = {
     /** Use a valid path to render this Breadcrumb as a Link */
     to?: string
     icon?: BreadcrumbIcon

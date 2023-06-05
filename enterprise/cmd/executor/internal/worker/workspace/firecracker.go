@@ -138,16 +138,8 @@ func setupLoopDevice(
 		return "", "", "", errors.Wrap(err, "failed to close backing file")
 	}
 
-	// Create an ext4 file system in the device backing file.
-	out, err := commandLogger(ctx, cmdRunner, handle, "mkfs.ext4", blockDeviceFile)
-	if err != nil {
-		return "", "", "", errors.Wrapf(err, "failed to create ext4 filesystem in backing file: %q", out)
-	}
-
-	fmt.Fprintf(handle, "Wrote ext4 filesystem to backing file %q\n", blockDeviceFile)
-
 	// Create a loop device pointing to our block device.
-	out, err = commandLogger(ctx, cmdRunner, handle, "losetup", "--find", "--show", blockDeviceFile)
+	out, err := commandLogger(ctx, cmdRunner, handle, "losetup", "--find", "--show", blockDeviceFile)
 	if err != nil {
 		return "", "", "", errors.Wrapf(err, "failed to create loop device: %q", out)
 	}
@@ -163,6 +155,14 @@ func setupLoopDevice(
 		}
 	}()
 	fmt.Fprintf(handle, "Created loop device at %q backed by %q\n", blockDevice, blockDeviceFile)
+
+	// Create an ext4 file system in the device backing file.
+	out, err = commandLogger(ctx, cmdRunner, handle, "mkfs.ext4", blockDevice)
+	if err != nil {
+		return "", "", "", errors.Wrapf(err, "failed to create ext4 filesystem in backing file: %q", out)
+	}
+
+	fmt.Fprintf(handle, "Wrote ext4 filesystem to %q\n", blockDevice)
 
 	// Mount the loop device at a temporary directory so we can write the workspace contents to it.
 	tmpMountDir, err = mountLoopDevice(ctx, cmdRunner, blockDevice, handle)

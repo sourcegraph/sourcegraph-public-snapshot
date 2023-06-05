@@ -10,7 +10,7 @@
 steps:
   - group: "Pipeline setup"
     steps:
-      - label: ':hammer_and_wrench: :pipeline: Generate pipeline'
+      - label: ':bazel::pipeline: Generate pipeline'
         key: 'pipeline-gen'
         agents: { queue: bazel }
         # Prioritize generating pipelines so that jobs can get generated and queued up as soon

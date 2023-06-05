@@ -30,7 +30,7 @@ js_test(
         "BUILDKITE_BRANCH": "$$BUILDKITE_BRANCH",
         "BUILDKITE_PULL_REQUEST_REPO": "$$BUILDKITE_PULL_REQUEST_REPO",
         "BUILDKITE_PULL_REQUEST": "$$BUILDKITE_PULL_REQUEST",
-        "GH_TOKEN": "$$GH_TOKEN",
+        "GH_TOKEN": "$(GH_TOKEN)",
         "WEB_BUNDLE_PATH": "$(rootpath //client/web:bundle-enterprise)",
     },
     tags = ["manual"],

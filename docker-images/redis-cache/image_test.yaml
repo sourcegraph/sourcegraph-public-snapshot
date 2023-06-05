@@ -1,0 +1,40 @@
+schemaVersion: "2.0.0"
+
+commandTests:
+  - name: "redis-server is runnable"
+    command: "redis-server"
+    args:
+      - --version
+
+  - name: "not running as root"
+    command: "/usr/bin/id"
+    args:
+      - -u
+    excludedOutput: ["^0"]
+    exitCode: 0
+  - name: "redis user has correct uid"
+    command: "/usr/bin/id"
+    args:
+      - -u
+    expectedOutput: ["^999\n"]
+    exitCode: 0
+  - name: "redis user has correct gid"
+    command: "/usr/bin/id"
+    args:
+      - -g
+    expectedOutput: ["^1000\n"]
+    exitCode: 0
+
+fileExistenceTests:
+- name: '/etc/redis/redis.conf'
+  path: '/etc/redis/redis.conf'
+  shouldExist: true
+  uid: 0
+  gid: 0
+  permissions: '-rw-r--r--'
+- name: '/redis-data'
+  path: '/redis-data'
+  shouldExist: true
+  uid: 999
+  gid: 1000
+  permissions: 'drwxr-xr-x'

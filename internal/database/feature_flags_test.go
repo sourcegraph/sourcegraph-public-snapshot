@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
@@ -32,6 +33,7 @@ func TestFeatureFlagStore(t *testing.T) {
 	t.Run("UserlessFeatureFlags", testUserlessFeatureFlags)
 	t.Run("OrganizationFeatureFlag", testOrgFeatureFlag)
 	t.Run("GetFeatureFlag", testGetFeatureFlag)
+	t.Run("UpdateFeatureFlag", testUpdateFeatureFlag)
 }
 
 func errorContains(s string) require.ErrorAssertionFunc {
@@ -679,10 +681,8 @@ func testOrgFeatureFlag(t *testing.T) {
 		got2, err2 := flagStore.GetOrgFeatureFlag(ctx, org.ID, "f2")
 		require.NoError(t, err1)
 		require.NoError(t, err2)
-		expected1 := true
-		expected2 := false
-		require.Equal(t, expected1, got1)
-		require.Equal(t, expected2, got2)
+		require.True(t, got1)
+		require.False(t, got2)
 	})
 
 	t.Run("bool vals with org override", func(t *testing.T) {
@@ -726,26 +726,56 @@ func testGetFeatureFlag(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	flagStore := db.FeatureFlags()
+	ctx := context.Background()
 	t.Run("no value", func(t *testing.T) {
-		ctx := context.Background()
-		ff, err := flagStore.GetFeatureFlag(ctx, "does-not-exist")
+		flag, err := flagStore.GetFeatureFlag(ctx, "does-not-exist")
 		require.Equal(t, err, sql.ErrNoRows)
-		require.Nil(t, ff)
+		require.Nil(t, flag)
 	})
 	t.Run("true value", func(t *testing.T) {
-		ctx := context.Background()
 		_, err := flagStore.CreateBool(ctx, "is-true", true)
 		require.NoError(t, err)
-		ff, err := flagStore.GetFeatureFlag(ctx, "is-true")
+		flag, err := flagStore.GetFeatureFlag(ctx, "is-true")
 		require.NoError(t, err)
-		require.True(t, ff.Bool.Value)
+		require.True(t, flag.Bool.Value)
 	})
 	t.Run("false value", func(t *testing.T) {
-		ctx := context.Background()
 		_, err := flagStore.CreateBool(ctx, "is-false", true)
 		require.NoError(t, err)
-		ff, err := flagStore.GetFeatureFlag(ctx, "is-false")
+		flag, err := flagStore.GetFeatureFlag(ctx, "is-false")
 		require.NoError(t, err)
-		require.True(t, ff.Bool.Value)
+		require.True(t, flag.Bool.Value)
+	})
+}
+
+func testUpdateFeatureFlag(t *testing.T) {
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	flagStore := db.FeatureFlags()
+	ctx := context.Background()
+	t.Run("invalid input", func(t *testing.T) {
+		updatedFf, err := flagStore.UpdateFeatureFlag(ctx, &ff.FeatureFlag{Name: "invalid"})
+		require.EqualError(t, err, "feature flag must have exactly one type")
+		require.Nil(t, updatedFf)
+	})
+	t.Run("boolean flag successful update", func(t *testing.T) {
+		boolFlag, err := flagStore.CreateBool(ctx, "update-test-true-flag", true)
+		require.NoError(t, err)
+		boolFlag.Bool.Value = false
+		updatedFlag, err := flagStore.UpdateFeatureFlag(ctx, boolFlag)
+		require.NoError(t, err)
+		assert.False(t, updatedFlag.Bool.Value)
+		assert.Greater(t, updatedFlag.UpdatedAt, boolFlag.UpdatedAt)
+	})
+	t.Run("rollout flag successful update", func(t *testing.T) {
+		rolloutFlag, err := flagStore.CreateRollout(ctx, "update-test-rollout-flag", 42)
+		require.NoError(t, err)
+		const expectedValue = int32(1337)
+		rolloutFlag.Rollout.Rollout = expectedValue
+		updatedFlag, err := flagStore.UpdateFeatureFlag(ctx, rolloutFlag)
+		require.NoError(t, err)
+		assert.Equal(t, expectedValue, updatedFlag.Rollout.Rollout)
+		assert.Greater(t, updatedFlag.UpdatedAt, rolloutFlag.UpdatedAt)
 	})
 }

@@ -13,11 +13,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
 )
 
-func BazelOperations() *operations.Set {
-	ops := operations.NewNamedSet("Bazel")
-	ops.Append(bazelConfigure())
-	ops.Append(bazelTest("//...", "//client/web:test"))
-	ops.Append(bazelBackCompatTest(
+func BazelOperations() []operations.Operation {
+	ops := []operations.Operation{}
+	ops = append(ops, bazelConfigure())
+	ops = append(ops, bazelTest("//...", "//client/web:test"))
+	ops = append(ops, bazelBackCompatTest(
 		"@sourcegraph_back_compat//cmd/...",
 		"@sourcegraph_back_compat//lib/...",
 		"@sourcegraph_back_compat//internal/...",
@@ -36,6 +36,36 @@ func bazelCmd(args ...string) string {
 	}
 	Cmd := append(pre, args...)
 	return strings.Join(Cmd, " ")
+}
+
+func bazelPushImagesCmd(version string) func(*bk.Pipeline) {
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(":bazel::docker: Push OCI/Wolfi",
+			bk.Agent("queue", "bazel"),
+			bk.DependsOn("bazel-tests"),
+			bk.Key("bazel-push-images"),
+			bk.Env("PUSH_VERSION", version),
+			bk.Cmd(bazelStampedCmd(`build $$(bazel query 'kind("oci_push rule", //...)')`)),
+			bk.Cmd("./enterprise/dev/ci/push_all.sh"),
+		)
+	}
+}
+
+func bazelStampedCmd(args ...string) string {
+	pre := []string{
+		"bazel",
+		"--bazelrc=.bazelrc",
+		"--bazelrc=.aspect/bazelrc/ci.bazelrc",
+		"--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc",
+	}
+	post := []string{
+		"--stamp",
+		"--workspace_status_command=./dev/bazel_stamp_vars.sh",
+	}
+
+	cmd := append(pre, args...)
+	cmd = append(cmd, post...)
+	return strings.Join(cmd, " ")
 }
 
 // bazelAnalysisPhase only runs the analasys phase, ensure that the buildfiles
@@ -90,6 +120,8 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 		bk.DependsOn("bazel-configure"),
 		bk.Agent("queue", "bazel"),
 		bk.Key("bazel-tests"),
+		bk.ArtifactPaths("./bazel-testlogs/enterprise/cmd/embeddings/shared/shared_test/*.log", "./command.profile.gz"),
+		bk.AutomaticRetry(1), // TODO @jhchabran flaky stuff are breaking builds
 	}
 
 	// Test commands
@@ -101,17 +133,6 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 			bk.Cmd(cmd))
 	}
 	cmds = append(cmds, bazelTestCmds...)
-
-	// Run commands
-	runTargets := []string{
-		"//client/web:bundlesize-report",
-	}
-	bazelRunCmd := bazelCmd(fmt.Sprintf("run %s", strings.Join(runTargets, " ")))
-	cmds = append(cmds,
-		bazelAnnouncef("bazel run %s", strings.Join(runTargets, " ")),
-		bk.Cmd(bazelRunCmd),
-		bazelAnnouncef("✅"),
-	)
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(":bazel: Tests",
@@ -126,7 +147,8 @@ func bazelBackCompatTest(targets ...string) func(*bk.Pipeline) {
 		bk.Agent("queue", "bazel"),
 
 		// Generate a patch that backports the migration from the new code into the old one.
-		bk.Cmd("git diff origin/ci/backcompat-v5.0.0..HEAD -- migrations/ > dev/backcompat/patches/back_compat_migrations.patch"),
+		// Ignore space is because of https://github.com/bazelbuild/bazel/issues/17376
+		bk.Cmd("git diff --ignore-space-at-eol origin/ci/backcompat-v5.0.0..HEAD -- migrations/ > dev/backcompat/patches/back_compat_migrations.patch"),
 	}
 
 	bazelCmd := bazelCmd(fmt.Sprintf("test %s", strings.Join(targets, " ")))
@@ -161,17 +183,19 @@ func bazelTestWithDepends(optional bool, dependsOn string, targets ...string) fu
 	}
 }
 
-func bazelBuild(optional bool, targets ...string) func(*bk.Pipeline) {
+func bazelBuild(targets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
+		bk.Key("bazel_build"),
 		bk.Agent("queue", "bazel"),
 	}
-	bazelCmd := bazelCmd(fmt.Sprintf("build %s", strings.Join(targets, " ")))
-	cmds = append(cmds, bk.Cmd(bazelCmd))
+	cmd := bazelStampedCmd(fmt.Sprintf("build %s", strings.Join(targets, " ")))
+	cmds = append(
+		cmds,
+		bk.Cmd(cmd),
+		bk.Cmd(bazelStampedCmd("run //enterprise/cmd/server:candidate_push")),
+	)
 
 	return func(pipeline *bk.Pipeline) {
-		if optional {
-			cmds = append(cmds, bk.SoftFail())
-		}
 		pipeline.AddStep(":bazel: Build ...",
 			cmds...,
 		)
@@ -232,6 +256,9 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 					bk.Cmd("ls -lah "+buildScriptPath),
 					bk.Cmd(buildScriptPath),
 				)
+			} else if _, err := os.Stat(filepath.Join("client", app)); err == nil {
+				// Building Docker image located under $REPO_ROOT/client/
+				cmds = append(cmds, bk.AnnotatedCmd("client/"+app+"/build.sh", buildAnnotationOptions))
 			} else {
 				// Building Docker images located under $REPO_ROOT/cmd/
 				cmdDir := func() string {
@@ -278,7 +305,7 @@ func bazelBuildCandidateDockerImages(apps []string, version string, tag string, 
 				// bk.AutomaticRetryStatus(3, 222),
 			)
 		}
-		pipeline.AddStep(":docker: :construction: Build Docker images", cmds...)
+		pipeline.AddStep(":bazel::docker: :construction: Build Docker images", cmds...)
 	}
 }
 
@@ -332,6 +359,9 @@ func bazelBuildCandidateDockerImage(app string, version string, tag string, rt r
 				bk.Cmd("ls -lah "+buildScriptPath),
 				bk.Cmd(buildScriptPath),
 			)
+		} else if _, err := os.Stat(filepath.Join("client", app)); err == nil {
+			// Building Docker image located under $REPO_ROOT/client/
+			cmds = append(cmds, bk.AnnotatedCmd("client/"+app+"/build.sh", buildAnnotationOptions))
 		} else {
 			// Building Docker images located under $REPO_ROOT/cmd/
 			cmdDir := func() string {
@@ -377,7 +407,7 @@ func bazelBuildCandidateDockerImage(app string, version string, tag string, rt r
 			// Retry in case of flakes when pushing
 			// bk.AutomaticRetryStatus(3, 222),
 		)
-		pipeline.AddStep(fmt.Sprintf(":docker: :construction: Build %s", app), cmds...)
+		pipeline.AddStep(fmt.Sprintf(":bazel::docker: :construction: Build %s", app), cmds...)
 	}
 }
 

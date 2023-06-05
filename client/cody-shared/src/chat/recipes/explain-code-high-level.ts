@@ -3,14 +3,15 @@ import { truncateText, truncateTextStart } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
 import { getContextMessagesFromSelection, getNormalizedLanguageName, MARKDOWN_FORMAT_PROMPT } from './helpers'
-import { Recipe, RecipeContext } from './recipe'
+import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 export class ExplainCodeHighLevel implements Recipe {
-    public id = 'explain-code-high-level'
+    public id: RecipeID = 'explain-code-high-level'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
         if (!selection) {
+            await context.editor.showWarningMessage('No code selected. Please select some code and try again.')
             return Promise.resolve(null)
         }
 
@@ -29,7 +30,7 @@ export class ExplainCodeHighLevel implements Recipe {
                 truncatedSelectedText,
                 truncatedPrecedingText,
                 truncatedFollowingText,
-                selection.fileName,
+                selection,
                 context.codebaseContext
             )
         )

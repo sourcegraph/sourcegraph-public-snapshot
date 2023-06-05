@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/graph-gophers/graphql-go"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/resolvers/gitresolvers"
@@ -44,9 +44,9 @@ func NewRootResolver(
 }
 
 func (r *rootResolver) Vulnerabilities(ctx context.Context, args resolverstubs.GetVulnerabilitiesArgs) (_ resolverstubs.VulnerabilityConnectionResolver, err error) {
-	ctx, _, endObservation := r.operations.getVulnerabilities.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int32("first", resolverstubs.Deref(args.First, 0)),
-		log.String("after", resolverstubs.Deref(args.After, "")),
+	ctx, _, endObservation := r.operations.getVulnerabilities.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("first", int(resolverstubs.Deref(args.First, 0))),
+		attribute.String("after", resolverstubs.Deref(args.After, "")),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -72,9 +72,9 @@ func (r *rootResolver) Vulnerabilities(ctx context.Context, args resolverstubs.G
 }
 
 func (r *rootResolver) VulnerabilityMatches(ctx context.Context, args resolverstubs.GetVulnerabilityMatchesArgs) (_ resolverstubs.VulnerabilityMatchConnectionResolver, err error) {
-	ctx, errTracer, endObservation := r.operations.getMatches.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int32("first", resolverstubs.Deref(args.First, 0)),
-		log.String("after", resolverstubs.Deref(args.After, "")),
+	ctx, errTracer, endObservation := r.operations.getMatches.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("first", int(resolverstubs.Deref(args.First, 0))),
+		attribute.String("after", resolverstubs.Deref(args.After, "")),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -134,7 +134,7 @@ func (r *rootResolver) VulnerabilityMatches(ctx context.Context, args resolverst
 }
 
 func (r *rootResolver) VulnerabilityMatchesCountByRepository(ctx context.Context, args resolverstubs.GetVulnerabilityMatchCountByRepositoryArgs) (_ resolverstubs.VulnerabilityMatchCountByRepositoryConnectionResolver, err error) {
-	ctx, _, endObservation := r.operations.vulnerabilityMatchesCountByRepository.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, _, endObservation := r.operations.vulnerabilityMatchesCountByRepository.WithErrors(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	limit, offset, err := args.ParseLimitOffset(50)
@@ -165,8 +165,8 @@ func (r *rootResolver) VulnerabilityMatchesCountByRepository(ctx context.Context
 }
 
 func (r *rootResolver) VulnerabilityByID(ctx context.Context, vulnerabilityID graphql.ID) (_ resolverstubs.VulnerabilityResolver, err error) {
-	ctx, _, endObservation := r.operations.vulnerabilityByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("vulnerabilityID", string(vulnerabilityID)),
+	ctx, _, endObservation := r.operations.vulnerabilityByID.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("vulnerabilityID", string(vulnerabilityID)),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -184,8 +184,8 @@ func (r *rootResolver) VulnerabilityByID(ctx context.Context, vulnerabilityID gr
 }
 
 func (r *rootResolver) VulnerabilityMatchByID(ctx context.Context, vulnerabilityMatchID graphql.ID) (_ resolverstubs.VulnerabilityMatchResolver, err error) {
-	ctx, errTracer, endObservation := r.operations.vulnerabilityMatchByID.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("vulnerabilityMatchID", string(vulnerabilityMatchID)),
+	ctx, errTracer, endObservation := r.operations.vulnerabilityMatchByID.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("vulnerabilityMatchID", string(vulnerabilityMatchID)),
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
@@ -221,7 +221,7 @@ func (r *rootResolver) VulnerabilityMatchByID(ctx context.Context, vulnerability
 }
 
 func (r *rootResolver) VulnerabilityMatchesSummaryCounts(ctx context.Context) (_ resolverstubs.VulnerabilityMatchesSummaryCountResolver, err error) {
-	ctx, _, endObservation := r.operations.vulnerabilityMatchesSummaryCounts.WithErrors(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, _, endObservation := r.operations.vulnerabilityMatchesSummaryCounts.WithErrors(ctx, &err, observation.Args{})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
 	counts, err := r.sentinelSvc.GetVulnerabilityMatchesSummaryCounts(ctx)

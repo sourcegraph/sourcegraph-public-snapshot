@@ -6,6 +6,8 @@ import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
+import { AuthStatus, isLoggedIn } from '../src/chat/protocol'
+
 import { Chat } from './Chat'
 import { Debug } from './Debug'
 import { Header } from './Header'
@@ -18,19 +20,20 @@ import { UserHistory } from './UserHistory'
 import type { VSCodeWrapper } from './utils/VSCodeApi'
 
 export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vscodeAPI }) => {
-    const [config, setConfig] = useState<Pick<Configuration, 'debug' | 'serverEndpoint'> | null>(null)
-    const [debugLog, setDebugLog] = useState(['No data yet'])
+    const [config, setConfig] = useState<Pick<Configuration, 'debugEnable' | 'serverEndpoint'> | null>(null)
+    const [debugLog, setDebugLog] = useState<string[]>([])
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [messageBeingEdited, setMessageBeingEdited] = useState<boolean>(false)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
-    const [isValidLogin, setIsValidLogin] = useState<boolean>()
+    const [authStatus, setAuthStatus] = useState<AuthStatus>()
     const [formInput, setFormInput] = useState('')
     const [inputHistory, setInputHistory] = useState<string[] | []>([])
     const [userHistory, setUserHistory] = useState<ChatHistory | null>(null)
     const [contextStatus, setContextStatus] = useState<ChatContextStatus | null>(null)
-    const [errorMessage, setErrorMessage] = useState<string>('')
+    const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [suggestions, setSuggestions] = useState<string[] | undefined>()
+    const [isAppInstalled, setIsAppInstalled] = useState<boolean>(false)
 
     useEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -48,11 +51,12 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 }
                 case 'config':
                     setConfig(message.config)
-                    setView(message.config.hasAccessToken ? 'chat' : 'login')
+                    setAuthStatus(message.authStatus)
+                    setView(isLoggedIn(message.authStatus) ? 'chat' : 'login')
                     break
                 case 'login':
-                    setIsValidLogin(message.isValid)
-                    setView(message.isValid ? 'chat' : 'login')
+                    setAuthStatus(message.authStatus)
+                    setView(isLoggedIn(message.authStatus) ? 'chat' : 'login')
                     break
                 case 'showTab':
                     if (message.tab === 'chat') {
@@ -70,7 +74,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     setContextStatus(message.contextStatus)
                     break
                 case 'errors':
-                    setErrorMessage(message.errors)
+                    setErrorMessages([...errorMessages, message.errors].slice(-5))
+                    setDebugLog([...debugLog, message.errors])
                     break
                 case 'view':
                     setView(message.messages)
@@ -78,19 +83,22 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 case 'suggestions':
                     setSuggestions(message.suggestions)
                     break
+                case 'app-state':
+                    setIsAppInstalled(message.isInstalled)
+                    break
             }
         })
 
         vscodeAPI.postMessage({ command: 'initialized' })
         // The dependencies array is empty to execute the callback only on component mount.
-    }, [debugLog, vscodeAPI])
+    }, [debugLog, errorMessages, vscodeAPI])
 
     const onLogin = useCallback(
         (token: string, endpoint: string) => {
             if (!token || !endpoint) {
                 return
             }
-            setIsValidLogin(undefined)
+            setAuthStatus(undefined)
             vscodeAPI.postMessage({ command: 'settings', serverEndpoint: endpoint, accessToken: token })
         },
         [vscodeAPI]
@@ -99,6 +107,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const onLogout = useCallback(() => {
         vscodeAPI.postMessage({ command: 'removeToken' })
         setView('login')
+        setAuthStatus(undefined)
     }, [vscodeAPI])
 
     if (!view) {
@@ -108,46 +117,64 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     return (
         <div className="outer-container">
             <Header />
-            {view === 'login' && (
-                <Login onLogin={onLogin} isValidLogin={isValidLogin} serverEndpoint={config?.serverEndpoint} />
-            )}
-            {view !== 'login' && <NavBar view={view} setView={setView} devMode={Boolean(config?.debug)} />}
-            {view === 'debug' && config?.debug && <Debug debugLog={debugLog} />}
-            {view === 'history' && (
-                <UserHistory
-                    userHistory={userHistory}
-                    setUserHistory={setUserHistory}
-                    setInputHistory={setInputHistory}
-                    setView={setView}
+            {view === 'login' ? (
+                <Login
+                    onLogin={onLogin}
+                    authStatus={authStatus}
+                    serverEndpoint={config?.serverEndpoint}
+                    isAppInstalled={isAppInstalled}
                     vscodeAPI={vscodeAPI}
                 />
-            )}
-            {view === 'recipes' && <Recipes vscodeAPI={vscodeAPI} />}
-            {view === 'settings' && <Settings onLogout={onLogout} serverEndpoint={config?.serverEndpoint} />}
-            {view === 'chat' && errorMessage && (
-                <div className="error">
-                    Error: {errorMessage}
-                    <button type="button" onClick={() => setErrorMessage('')} className="close-btn">
-                        ×
-                    </button>
-                </div>
-            )}
-            {view === 'chat' && (
-                <Chat
-                    messageInProgress={messageInProgress}
-                    messageBeingEdited={messageBeingEdited}
-                    setMessageBeingEdited={setMessageBeingEdited}
-                    transcript={transcript}
-                    contextStatus={contextStatus}
-                    formInput={formInput}
-                    setFormInput={setFormInput}
-                    inputHistory={inputHistory}
-                    setInputHistory={setInputHistory}
-                    vscodeAPI={vscodeAPI}
-                    suggestions={suggestions}
-                    setSuggestions={setSuggestions}
-                />
+            ) : (
+                <>
+                    <NavBar view={view} setView={setView} devMode={Boolean(config?.debugEnable)} />
+                    {errorMessages && <ErrorBanner errors={errorMessages} setErrors={setErrorMessages} />}
+                    {view === 'debug' && config?.debugEnable && <Debug debugLog={debugLog} />}
+                    {view === 'history' && (
+                        <UserHistory
+                            userHistory={userHistory}
+                            setUserHistory={setUserHistory}
+                            setInputHistory={setInputHistory}
+                            setView={setView}
+                            vscodeAPI={vscodeAPI}
+                        />
+                    )}
+                    {view === 'recipes' && <Recipes vscodeAPI={vscodeAPI} />}
+                    {view === 'settings' && <Settings onLogout={onLogout} serverEndpoint={config?.serverEndpoint} />}
+                    {view === 'chat' && (
+                        <Chat
+                            messageInProgress={messageInProgress}
+                            messageBeingEdited={messageBeingEdited}
+                            setMessageBeingEdited={setMessageBeingEdited}
+                            transcript={transcript}
+                            contextStatus={contextStatus}
+                            formInput={formInput}
+                            setFormInput={setFormInput}
+                            inputHistory={inputHistory}
+                            setInputHistory={setInputHistory}
+                            vscodeAPI={vscodeAPI}
+                            suggestions={suggestions}
+                            setSuggestions={setSuggestions}
+                        />
+                    )}
+                </>
             )}
         </div>
     )
 }
+
+const ErrorBanner: React.FunctionComponent<{ errors: string[]; setErrors: (errors: string[]) => void }> = ({
+    errors,
+    setErrors,
+}) => (
+    <div className="error-container">
+        {errors.map((error, i) => (
+            <div key={i} className="error">
+                <span>{error}</span>
+                <button type="button" className="close-btn" onClick={() => setErrors(errors.filter(e => e !== error))}>
+                    ×
+                </button>
+            </div>
+        ))}
+    </div>
+)

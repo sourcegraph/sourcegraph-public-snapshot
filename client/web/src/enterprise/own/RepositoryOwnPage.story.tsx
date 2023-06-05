@@ -12,6 +12,7 @@ import {
     GetIngestedCodeownersResult,
     GetIngestedCodeownersVariables,
     RepositoryFields,
+    RepositoryType,
 } from '../../graphql-operations'
 
 import { GET_INGESTED_CODEOWNERS_QUERY } from './graphqlQueries'
@@ -48,6 +49,7 @@ const repo: RepositoryFields = {
         abbrevName: 'main',
     },
     metadata: [],
+    sourceType: RepositoryType.GIT_REPOSITORY,
 }
 
 const empyResponse: MockedResponse<GetIngestedCodeownersResult, GetIngestedCodeownersVariables> = {

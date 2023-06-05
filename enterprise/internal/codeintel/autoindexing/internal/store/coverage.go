@@ -7,7 +7,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -16,8 +16,8 @@ import (
 )
 
 func (s *store) TopRepositoriesToConfigure(ctx context.Context, limit int) (_ []shared.RepositoryWithCount, err error) {
-	ctx, _, endObservation := s.operations.topRepositoriesToConfigure.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("limit", limit),
+	ctx, _, endObservation := s.operations.topRepositoriesToConfigure.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("limit", limit),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -57,9 +57,9 @@ LIMIT %s
 `
 
 func (s *store) RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) (_ []shared.RepositoryWithAvailableIndexers, totalCount int, err error) {
-	ctx, _, endObservation := s.operations.repositoryIDsWithConfiguration.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("offset", offset),
-		log.Int("limit", limit),
+	ctx, _, endObservation := s.operations.repositoryIDsWithConfiguration.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("offset", offset),
+		attribute.Int("limit", limit),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -72,19 +72,23 @@ func (s *store) RepositoryIDsWithConfiguration(ctx context.Context, offset, limi
 
 const repositoriesWithConfigurationQuery = `
 SELECT
-	repository_id,
-	available_indexers,
+	r.id,
+	cai.available_indexers,
 	COUNT(*) OVER() AS count
-FROM cached_available_indexers
-WHERE available_indexers != '{}'::jsonb
+FROM cached_available_indexers cai
+JOIN repo r ON r.id = cai.repository_id
+WHERE
+	available_indexers != '{}'::jsonb AND
+	r.deleted_at IS NULL AND
+	r.blocked IS NULL
 ORDER BY num_events DESC
 LIMIT %s
 OFFSET %s
 `
 
 func (s *store) GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error) {
-	ctx, _, endObservation := s.operations.getLastIndexScanForRepository.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
+	ctx, _, endObservation := s.operations.getLastIndexScanForRepository.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -104,10 +108,10 @@ SELECT last_index_scan_at FROM lsif_last_index_scan WHERE repository_id = %s
 `
 
 func (s *store) SetConfigurationSummary(ctx context.Context, repositoryID int, numEvents int, availableIndexers map[string]shared.AvailableIndexer) (err error) {
-	ctx, _, endObservation := s.operations.setConfigurationSummary.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
-		log.Int("numEvents", numEvents),
-		log.Int("numIndexers", len(availableIndexers)),
+	ctx, _, endObservation := s.operations.setConfigurationSummary.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
+		attribute.Int("numEvents", numEvents),
+		attribute.Int("numIndexers", len(availableIndexers)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -129,8 +133,8 @@ SET
 `
 
 func (s *store) TruncateConfigurationSummary(ctx context.Context, numRecordsToRetain int) (err error) {
-	ctx, _, endObservation := s.operations.truncateConfigurationSummary.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("numRecordsToRetain", numRecordsToRetain),
+	ctx, _, endObservation := s.operations.truncateConfigurationSummary.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("numRecordsToRetain", numRecordsToRetain),
 	}})
 	defer endObservation(1, observation.Args{})
 

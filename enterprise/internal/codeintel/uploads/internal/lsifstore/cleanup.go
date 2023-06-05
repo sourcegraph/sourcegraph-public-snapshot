@@ -2,22 +2,20 @@ package lsifstore
 
 import (
 	"context"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 func (s *store) IDsWithMeta(ctx context.Context, ids []int) (_ []int, err error) {
-	ctx, _, endObservation := s.operations.idsWithMeta.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Int("numIDs", len(ids)),
-		otlog.String("ids", intsToString(ids)),
+	ctx, _, endObservation := s.operations.idsWithMeta.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("numIDs", len(ids)),
+		attribute.IntSlice("ids", ids),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -34,8 +32,8 @@ WHERE m.upload_id = ANY(%s)
 `
 
 func (s *store) ReconcileCandidates(ctx context.Context, batchSize int) (_ []int, err error) {
-	ctx, _, endObservation := s.operations.reconcileCandidates.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Int("batchSize", batchSize),
+	ctx, _, endObservation := s.operations.reconcileCandidates.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("batchSize", batchSize),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -76,9 +74,9 @@ RETURNING dump_id
 `
 
 func (s *store) DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int) (err error) {
-	ctx, _, endObservation := s.operations.deleteLsifDataByUploadIds.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Int("numBundleIDs", len(bundleIDs)),
-		otlog.String("bundleIDs", intsToString(bundleIDs)),
+	ctx, _, endObservation := s.operations.deleteLsifDataByUploadIds.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("numBundleIDs", len(bundleIDs)),
+		attribute.IntSlice("bundleIDs", bundleIDs),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -157,8 +155,8 @@ WHERE dump_id IN (SELECT dump_id FROM locked_rows)
 `
 
 func (s *store) DeleteUnreferencedDocuments(ctx context.Context, batchSize int, maxAge time.Duration, now time.Time) (_, _ int, err error) {
-	ctx, _, endObservation := s.operations.idsWithMeta.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("maxAge", maxAge.String()),
+	ctx, _, endObservation := s.operations.idsWithMeta.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Stringer("maxAge", maxAge),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -215,15 +213,3 @@ SELECT
 	(SELECT COUNT(*) FROM candidates),
 	(SELECT COUNT(*) FROM deleted_documents)
 `
-
-//
-//
-
-func intsToString(vs []int) string {
-	strs := make([]string, 0, len(vs))
-	for _, v := range vs {
-		strs = append(strs, strconv.Itoa(v))
-	}
-
-	return strings.Join(strs, ", ")
-}

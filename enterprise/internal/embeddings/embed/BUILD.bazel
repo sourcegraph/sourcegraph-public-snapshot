@@ -6,12 +6,13 @@ go_library(
         "api.go",
         "embed.go",
         "files.go",
+        "iface.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
+        "//enterprise/internal/codeintel/context",
         "//enterprise/internal/embeddings",
-        "//enterprise/internal/embeddings/split",
         "//enterprise/internal/paths",
         "//internal/api",
         "//internal/binary",
@@ -20,6 +21,7 @@ go_library(
         "//internal/httpcli",
         "//lib/errors",
         "//schema",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 
@@ -29,14 +31,16 @@ go_test(
     srcs = [
         "embed_test.go",
         "files_test.go",
+        "mocks_test.go",
     ],
     embed = [":embed"],
     deps = [
+        "//enterprise/internal/codeintel/context",
         "//enterprise/internal/embeddings",
-        "//enterprise/internal/embeddings/split",
         "//internal/api",
         "//internal/codeintel/types",
         "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
         "@com_github_stretchr_testify//require",
     ],
 )

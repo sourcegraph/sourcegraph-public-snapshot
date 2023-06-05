@@ -6,7 +6,7 @@ import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
 import { getFileExtension } from './helpers'
-import { Recipe, RecipeContext } from './recipe'
+import { Recipe, RecipeContext, RecipeID } from './recipe'
 
 /*
 This class implements the context-search recipe.
@@ -26,7 +26,7 @@ Functionality:
 */
 
 export class ContextSearch implements Recipe {
-    public id = 'context-search'
+    public id: RecipeID = 'context-search'
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const query = humanChatInput || (await context.editor.showInputBox('Enter your search query here...')) || ''
@@ -65,13 +65,15 @@ export class ContextSearch implements Recipe {
         for (const file of resultContext.results) {
             const fileContent = this.sanitizeContent(file.content)
             const extension = getFileExtension(file.fileName)
+            const ignoreFilesExtension = /^(md|txt)$/
+            if (extension.match(ignoreFilesExtension)) {
+                continue
+            }
             let uri = new URL(`/search?q=context:global+file:${file.fileName}`, endpointUri).href
 
-            // TODO: Open file in editor (the uri is currently being stripped by the chat component)
-            // This current does not work hence the wsRootPath === uri
-            if (wsRootPath === uri) {
-                const vsceUri = vscode.Uri.parse('vscode://file:' + wsRootPath + '/' + file.fileName).toString()
-                uri = new URL(vsceUri).href
+            if (wsRootPath) {
+                const fileUri = vscode.Uri.joinPath(vscode.Uri.file(wsRootPath), file.fileName)
+                uri = vscode.Uri.parse(`vscode://file${fileUri.path}`).toString()
             }
 
             snippets +=

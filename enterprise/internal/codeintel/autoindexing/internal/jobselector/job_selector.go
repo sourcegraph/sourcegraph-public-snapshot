@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -47,7 +48,7 @@ var (
 )
 
 // InferIndexJobsFromRepositoryStructure collects the result of InferIndexJobs over all registered recognizers.
-func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) ([]config.IndexJob, error) {
+func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, localOverrideScript string, bypassLimit bool) (*shared.InferenceResult, error) {
 	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))
 	if err != nil {
 		return nil, err
@@ -64,21 +65,35 @@ func (s *JobSelector) InferIndexJobsFromRepositoryStructure(ctx context.Context,
 		script = localOverrideScript
 	}
 
-	indexes, err := s.inferenceSvc.InferIndexJobs(ctx, repo.Name, commit, script)
+	if _, canInfer, err := s.store.RepositoryExceptions(ctx, repositoryID); err != nil {
+		return nil, err
+	} else if !canInfer {
+		s.logger.Warn("Auto-indexing job inference for this repo is disabled", log.Int("repositoryID", repositoryID), log.String("repoName", string(repo.Name)))
+		return nil, nil
+	}
+
+	result, err := s.inferenceSvc.InferIndexJobs(ctx, repo.Name, commit, script)
 	if err != nil {
 		return nil, err
 	}
 
-	if !bypassLimit && len(indexes) > MaximumIndexJobsPerInferredConfiguration {
+	if !bypassLimit && len(result.IndexJobs) > MaximumIndexJobsPerInferredConfiguration {
 		s.logger.Info("Too many inferred roots. Scheduling no index jobs for repository.", log.Int("repository_id", repositoryID))
-		return nil, nil
+		result.IndexJobs = nil
 	}
 
-	return indexes, nil
+	return result, nil
 }
 
 // inferIndexJobsFromRepositoryStructure collects the result of  InferIndexJobHints over all registered recognizers.
-func (s *JobSelector) InferIndexJobHintsFromRepositoryStructure(ctx context.Context, repoName api.RepoName, commit string) ([]config.IndexJobHint, error) {
+func (s *JobSelector) InferIndexJobHintsFromRepositoryStructure(ctx context.Context, repositoryID int, repoName api.RepoName, commit string) ([]config.IndexJobHint, error) {
+	if _, canInfer, err := s.store.RepositoryExceptions(ctx, repositoryID); err != nil {
+		return nil, err
+	} else if !canInfer {
+		s.logger.Warn("Auto-indexing job inference for this repo is disabled", log.Int("repositoryID", repositoryID), log.String("repoName", string(repoName)))
+		return nil, nil
+	}
+
 	indexes, err := s.inferenceSvc.InferIndexJobHints(ctx, repoName, commit, overrideScript)
 	if err != nil {
 		return nil, err
@@ -97,6 +112,13 @@ type configurationFactoryFunc func(ctx context.Context, repositoryID int, commit
 //   - committed to `sourcegraph.yaml` in the repository
 //   - inferred from the repository structure
 func (s *JobSelector) GetIndexRecords(ctx context.Context, repositoryID int, commit, configuration string, bypassLimit bool) ([]uploadsshared.Index, error) {
+	if canSchedule, _, err := s.store.RepositoryExceptions(ctx, repositoryID); err != nil {
+		return nil, err
+	} else if !canSchedule {
+		s.logger.Warn("Auto-indexing scheduling for this repo is disabled", log.Int("repositoryID", repositoryID))
+		return nil, nil
+	}
+
 	fns := []configurationFactoryFunc{
 		makeExplicitConfigurationFactory(configuration),
 		s.getIndexRecordsFromConfigurationInDatabase,
@@ -195,12 +217,12 @@ func (s *JobSelector) getIndexRecordsFromConfigurationInRepository(ctx context.C
 // determines a set of index jobs that are likely to succeed. If no jobs could be inferred then a
 // false valued flag is returned.
 func (s *JobSelector) inferIndexRecordsFromRepositoryStructure(ctx context.Context, repositoryID int, commit string, bypassLimit bool) ([]uploadsshared.Index, bool, error) {
-	indexJobs, err := s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, "", bypassLimit)
-	if err != nil || len(indexJobs) == 0 {
+	result, err := s.InferIndexJobsFromRepositoryStructure(ctx, repositoryID, commit, "", bypassLimit)
+	if err != nil || len(result.IndexJobs) == 0 {
 		return nil, false, err
 	}
 
-	return convertInferredConfiguration(repositoryID, commit, indexJobs), true, nil
+	return convertInferredConfiguration(repositoryID, commit, result.IndexJobs), true, nil
 }
 
 // convertIndexConfiguration converts an index configuration object into a set of index records to be

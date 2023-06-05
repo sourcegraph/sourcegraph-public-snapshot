@@ -10,7 +10,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-if [[ "$DOCKER_BAZEL" == "true" ]]; then
+if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
   ./dev/ci/bazel.sh build //dev/sg
 
   out=$(./dev/ci/bazel.sh cquery //dev/sg --output=files)

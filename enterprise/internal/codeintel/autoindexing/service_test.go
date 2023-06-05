@@ -53,6 +53,8 @@ func TestQueueIndexesExplicit(t *testing.T) {
 	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []uploadsshared.Index) ([]uploadsshared.Index, error) {
 		return indexes, nil
 	})
+	mockDBStore.RepositoryExceptionsFunc.SetDefaultReturn(true, true, nil)
+
 	mockGitserverClient := gitserver.NewMockClient()
 	mockGitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, rev string, opts gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		return api.CommitID(fmt.Sprintf("c%s", repo)), nil
@@ -151,6 +153,7 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 		return indexes, nil
 	})
 	mockDBStore.GetIndexConfigurationByRepositoryIDFunc.SetDefaultReturn(indexConfiguration, true, nil)
+	mockDBStore.RepositoryExceptionsFunc.SetDefaultReturn(true, true, nil)
 
 	mockGitserverClient := gitserver.NewMockClient()
 	mockGitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, rev string, opts gitserver.ResolveRevisionOptions) (api.CommitID, error) {
@@ -253,6 +256,7 @@ func TestQueueIndexesInRepository(t *testing.T) {
 	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []uploadsshared.Index) ([]uploadsshared.Index, error) {
 		return indexes, nil
 	})
+	mockDBStore.RepositoryExceptionsFunc.SetDefaultReturn(true, true, nil)
 
 	gitserverClient := gitserver.NewMockClient()
 	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, rev string, opts gitserver.ResolveRevisionOptions) (api.CommitID, error) {
@@ -328,6 +332,7 @@ func TestQueueIndexesInferred(t *testing.T) {
 	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []uploadsshared.Index) ([]uploadsshared.Index, error) {
 		return indexes, nil
 	})
+	mockDBStore.RepositoryExceptionsFunc.SetDefaultReturn(true, true, nil)
 
 	gitserverClient := gitserver.NewMockClient()
 	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, rev string, opts gitserver.ResolveRevisionOptions) (api.CommitID, error) {
@@ -336,14 +341,14 @@ func TestQueueIndexesInferred(t *testing.T) {
 	gitserverClient.ReadFileFunc.SetDefaultReturn(nil, os.ErrNotExist)
 
 	inferenceService := NewMockInferenceService()
-	inferenceService.InferIndexJobsFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, s1, s2 string) ([]config.IndexJob, error) {
+	inferenceService.InferIndexJobsFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, s1, s2 string) (*shared.InferenceResult, error) {
 		switch string(rn) {
 		case "r42":
-			return []config.IndexJob{{Root: ""}}, nil
+			return &shared.InferenceResult{IndexJobs: []config.IndexJob{{Root: ""}}}, nil
 		case "r44":
-			return []config.IndexJob{{Root: "a"}, {Root: "b"}}, nil
+			return &shared.InferenceResult{IndexJobs: []config.IndexJob{{Root: "a"}, {Root: "b"}}}, nil
 		default:
-			return nil, nil
+			return &shared.InferenceResult{IndexJobs: nil}, nil
 		}
 	})
 
@@ -398,6 +403,7 @@ func TestQueueIndexesForPackage(t *testing.T) {
 		return indexes, nil
 	})
 	mockDBStore.IsQueuedFunc.SetDefaultReturn(false, nil)
+	mockDBStore.RepositoryExceptionsFunc.SetDefaultReturn(true, true, nil)
 
 	gitserverClient := gitserver.NewMockClient()
 	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, versionString string, opts gitserver.ResolveRevisionOptions) (api.CommitID, error) {
@@ -417,18 +423,20 @@ func TestQueueIndexesForPackage(t *testing.T) {
 	})
 
 	inferenceService := NewMockInferenceService()
-	inferenceService.InferIndexJobsFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, s1, s2 string) ([]config.IndexJob, error) {
-		return []config.IndexJob{
-			{
-				Root: "",
-				Steps: []config.DockerStep{
-					{
-						Image:    "sourcegraph/lsif-go:latest",
-						Commands: []string{"go mod download"},
+	inferenceService.InferIndexJobsFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, s1, s2 string) (*shared.InferenceResult, error) {
+		return &shared.InferenceResult{
+			IndexJobs: []config.IndexJob{
+				{
+					Root: "",
+					Steps: []config.DockerStep{
+						{
+							Image:    "sourcegraph/lsif-go:latest",
+							Commands: []string{"go mod download"},
+						},
 					},
+					Indexer:     "sourcegraph/lsif-go:latest",
+					IndexerArgs: []string{"lsif-go", "--no-animation"},
 				},
-				Indexer:     "sourcegraph/lsif-go:latest",
-				IndexerArgs: []string{"lsif-go", "--no-animation"},
 			},
 		}, nil
 	})

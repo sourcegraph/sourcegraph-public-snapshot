@@ -26,7 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -445,8 +445,8 @@ func validateGitHubConnection(githubValidators []func(*types.GitHubConnection) e
 		)
 	}
 
-	if c.Token == "" {
-		err = errors.Append(err, errors.New("token must be set"))
+	if c.Token == "" && c.GitHubAppDetails == nil {
+		err = errors.Append(err, errors.New("either token or GitHub App Details must be set"))
 	}
 	if c.Repos == nil && c.RepositoryQuery == nil && c.Orgs == nil {
 		err = errors.Append(err, errors.New("at least one of repositoryQuery, repos or orgs must be set"))
@@ -1331,9 +1331,9 @@ ORDER BY es.id, essj.finished_at DESC
 	return scanSyncErrors(e.Query(ctx, q))
 }
 
-func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesListOptions) ([]*types.ExternalService, error) {
-	span, _ := ot.StartSpanFromContext(ctx, "ExternalServiceStore.list") //nolint:staticcheck // OT is deprecated
-	defer span.Finish()
+func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesListOptions) (_ []*types.ExternalService, err error) {
+	tr, ctx := trace.New(ctx, "externalServiceStore", "List")
+	defer tr.FinishWithErr(&err)
 
 	if opt.OrderByDirection != "ASC" {
 		opt.OrderByDirection = "DESC"
@@ -1426,9 +1426,9 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 	return results, nil
 }
 
-func (e *externalServiceStore) ListRepos(ctx context.Context, opt ExternalServiceReposListOptions) ([]*types.ExternalServiceRepo, error) {
-	span, _ := ot.StartSpanFromContext(ctx, "ExternalServiceStore.listRepos") //nolint:staticcheck // OT is deprecated
-	defer span.Finish()
+func (e *externalServiceStore) ListRepos(ctx context.Context, opt ExternalServiceReposListOptions) (_ []*types.ExternalServiceRepo, err error) {
+	tr, ctx := trace.New(ctx, "externalServiceStore", "ListRepos")
+	defer tr.FinishWithErr(&err)
 
 	predicate := sqlf.Sprintf("TRUE")
 

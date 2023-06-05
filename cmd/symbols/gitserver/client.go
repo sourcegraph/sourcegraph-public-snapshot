@@ -5,7 +5,7 @@ import (
 	"context"
 	"io"
 
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -55,10 +55,10 @@ func NewClient(observationCtx *observation.Context) GitserverClient {
 }
 
 func (c *gitserverClient) FetchTar(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (_ io.ReadCloser, err error) {
-	ctx, _, endObservation := c.operations.fetchTar.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repo", string(repo)),
-		log.String("commit", string(commit)),
-		log.Int("paths", len(paths)),
+	ctx, _, endObservation := c.operations.fetchTar.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repo", string(repo)),
+		attribute.String("commit", string(commit)),
+		attribute.Int("paths", len(paths)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -78,10 +78,10 @@ func (c *gitserverClient) FetchTar(ctx context.Context, repo api.RepoName, commi
 }
 
 func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (_ Changes, err error) {
-	ctx, _, endObservation := c.operations.gitDiff.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("repo", string(repo)),
-		log.String("commitA", string(commitA)),
-		log.String("commitB", string(commitB)),
+	ctx, _, endObservation := c.operations.gitDiff.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("repo", string(repo)),
+		attribute.String("commitA", string(commitA)),
+		attribute.String("commitB", string(commitB)),
 	}})
 	defer endObservation(1, observation.Args{})
 

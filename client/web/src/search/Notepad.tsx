@@ -33,11 +33,11 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/
 import { buildSearchURLQuery, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, TextArea, Icon, H2, H3, Text, createLinkUrl, useMatchMedia } from '@sourcegraph/wildcard'
 
+import { useSidebarSize } from '../cody/sidebar/useSidebarSize'
 import { BlockInput } from '../notebooks'
 import { createNotebook } from '../notebooks/backend'
 import { blockToGQLInput } from '../notebooks/serialize'
 import { EnterprisePageRoutes } from '../routes.constants'
-import { useCodySidebarSize } from '../stores/codySidebar'
 import {
     addNotepadEntry,
     NotepadEntry,
@@ -383,7 +383,7 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
 
     // HACK: This is temporary fix for the overlapping Notepad icon until we either disable notepad
     //       or move Cody to the top level and mount the Notepad entrypoint inside it
-    const codySidebarWidth = useCodySidebarSize()
+    const { sidebarSize: codySidebarWidth } = useSidebarSize()
 
     return (
         <aside

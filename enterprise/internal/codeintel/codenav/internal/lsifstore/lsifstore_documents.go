@@ -5,8 +5,8 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
@@ -16,9 +16,9 @@ import (
 )
 
 func (s *store) SCIPDocument(ctx context.Context, id int, path string) (_ *scip.Document, err error) {
-	ctx, _, endObservation := s.operations.scipDocument.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("path", path),
-		log.Int("uploadID", id),
+	ctx, _, endObservation := s.operations.scipDocument.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("path", path),
+		attribute.Int("uploadID", id),
 	}})
 	defer endObservation(1, observation.Args{})
 

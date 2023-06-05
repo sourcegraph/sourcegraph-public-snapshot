@@ -3,6 +3,10 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"/../../..
 
+if [[ "${DOCKER_BAZEL:-false}" == "true" ]]; then
+  exit 0
+fi
+
 function checksum_client_code {
   tmpfile=$(mktemp)
   # shellcheck disable=SC2064

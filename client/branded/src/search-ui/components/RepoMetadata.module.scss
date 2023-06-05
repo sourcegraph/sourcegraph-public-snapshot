@@ -2,22 +2,13 @@
     gap: 0.5rem;
 }
 
-.meta {
-    color: var(--body-color);
-}
-
 .highlight {
     color: var(--search-filter-keyword-color);
 }
 
-.delete-button,
-.meta {
-    font-size: 0.75rem;
-}
-
-.container.small {
-    .delete-button,
-    .meta {
-        font-size: 0.625rem;
+.badge-button {
+    &:focus,
+    &:hover {
+        background-color: var(--badge-dark);
     }
 }

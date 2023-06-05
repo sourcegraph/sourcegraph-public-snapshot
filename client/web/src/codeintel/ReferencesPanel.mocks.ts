@@ -58,6 +58,8 @@ export function buildReferencePanelMocks(): ReferencePanelMock {
         afterReferences: null,
         firstImplementations: 100,
         afterImplementations: null,
+        firstPrototypes: 100,
+        afterPrototypes: null,
     }
 
     const resolveRepoRevisionBlobVariables: ResolveRepoAndRevisionVariables = {
@@ -209,6 +211,14 @@ const USE_PRECISE_CODE_INTEL_MOCK: UsePreciseCodeIntelForPositionResult = {
                         __typename: 'LocationConnection',
                     },
                     implementations: {
+                        nodes: [],
+                        pageInfo: {
+                            endCursor: null,
+                            __typename: 'PageInfo',
+                        },
+                        __typename: 'LocationConnection',
+                    },
+                    prototypes: {
                         nodes: [],
                         pageInfo: {
                             endCursor: null,
@@ -692,6 +702,7 @@ export const defaultProps: ReferencesPanelProps = {
         const [result, setResult] = useState<UseCodeIntelResult>({
             data: {
                 implementations: { endCursor: '', nodes: [] },
+                prototypes: { endCursor: '', nodes: [] },
                 references: { endCursor: '', nodes: [] },
                 definitions: { endCursor: '', nodes: [] },
             },
@@ -702,6 +713,9 @@ export const defaultProps: ReferencesPanelProps = {
             implementationsHasNextPage: false,
             fetchMoreImplementationsLoading: false,
             fetchMoreImplementations: () => {},
+            prototypesHasNextPage: false,
+            fetchMorePrototypesLoading: false,
+            fetchMorePrototypes: () => {},
         })
         useQuery<
             UsePreciseCodeIntelForPositionResult,
@@ -725,6 +739,11 @@ export const defaultProps: ReferencesPanelProps = {
                             endCursor: lsif.implementations.pageInfo.endCursor,
                             nodes: lsif.implementations.nodes.map(buildPreciseLocation),
                         },
+                        prototypes: {
+                            endCursor: lsif.prototypes.pageInfo.endCursor,
+                            nodes: lsif.prototypes.nodes.map(buildPreciseLocation),
+                        },
+
                         references: {
                             endCursor: lsif.references.pageInfo.endCursor,
                             nodes: lsif.references.nodes.map(buildPreciseLocation),

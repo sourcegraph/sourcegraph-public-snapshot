@@ -14,6 +14,7 @@ import { CodeIntelInferenceConfigurationPageProps } from '../configuration/pages
 import { GlobalDashboardPageProps } from '../dashboard/pages/GlobalDashboardPage'
 import { CodeIntelPreciseIndexesPageProps } from '../indexes/pages/CodeIntelPreciseIndexesPage'
 import { CodeIntelPreciseIndexPageProps } from '../indexes/pages/CodeIntelPreciseIndexPage'
+import { CodeIntelRankingPageProps } from '../ranking/pages/CodeIntelRankingPage'
 
 export interface AdminCodeIntelAreaRouteContext extends TelemetryProps {
     authenticatedUser: AuthenticatedUser | null
@@ -39,6 +40,11 @@ const CodeIntelInferenceConfigurationPage = lazyComponent<
     CodeIntelInferenceConfigurationPageProps,
     'CodeIntelInferenceConfigurationPage'
 >(() => import('../configuration/pages/CodeIntelInferenceConfigurationPage'), 'CodeIntelInferenceConfigurationPage')
+
+const CodeIntelRankingPage = lazyComponent<CodeIntelRankingPageProps, 'CodeIntelRankingPage'>(
+    () => import('../ranking/pages/CodeIntelRankingPage'),
+    'CodeIntelRankingPage'
+)
 
 const CodeIntelConfigurationPolicyPage = lazyComponent<
     CodeIntelConfigurationPolicyPageProps,
@@ -85,6 +91,12 @@ export const codeIntelAreaRoutes: readonly AdminCodeIntelAreaRoute[] = (
             path: '/inference-configuration',
             render: props => <CodeIntelInferenceConfigurationPage {...props} />,
             condition: () => window.context?.codeIntelAutoIndexingEnabled,
+        },
+
+        // Ranking
+        {
+            path: '/ranking',
+            render: props => <CodeIntelRankingPage {...props} />,
         },
 
         // Legacy routes

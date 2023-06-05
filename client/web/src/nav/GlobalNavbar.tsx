@@ -17,7 +17,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, ButtonLink, useWindowSize, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Link, ButtonLink, useWindowSize, Tooltip, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { TauriNavigation } from '../app/TauriNavigation'
 import { HistoryStack } from '../app/useHistoryStack'
@@ -26,6 +26,8 @@ import { BatchChangesProps } from '../batches'
 import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { CodeMonitoringProps } from '../codeMonitoring'
+import { CodyLogo } from '../cody/components/CodyLogo'
+import { useIsCodyEnabled } from '../cody/useIsCodyEnabled'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { useFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
@@ -152,6 +154,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const showSearchContext = searchContextsEnabled && !isSourcegraphDotCom
     const showCodeMonitoring = codeMonitoringEnabled
     const showSearchNotebook = notebooksEnabled
+    const isLicensed = !!window.context?.licenseInfo
+    const codyEnabled = useIsCodyEnabled()
 
     const [isSentinelEnabled] = useFeatureFlag('sentinel')
     // TODO: Include isSourcegraphDotCom in subsequent PR
@@ -178,13 +182,17 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
         const items: (NavDropdownItem | false)[] = [
             !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
             ownEnabled && { path: EnterprisePageRoutes.Own, content: 'Own' },
-            window.context?.codyEnabled && {
+            codyEnabled.search && {
                 path: EnterprisePageRoutes.CodySearch,
-                content: 'Cody',
+                content: (
+                    <>
+                        Natural language search <ProductStatusBadge status="experimental" />
+                    </>
+                ),
             },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [ownEnabled, showSearchContext])
+    }, [ownEnabled, showSearchContext, codyEnabled.search])
 
     const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
 
@@ -216,13 +224,21 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 variant: navLinkVariant,
                             }}
                             routeMatch={routeMatch}
-                            mobileHomeItem={{ content: 'Search home' }}
+                            homeItem={{ content: 'Search home' }}
                             items={searchNavBarItems}
+                            name="search"
                         />
                     ) : (
                         <NavItem icon={MagnifyIcon}>
                             <NavLink variant={navLinkVariant} to={PageRoutes.Search}>
                                 Code Search
+                            </NavLink>
+                        </NavItem>
+                    )}
+                    {codyEnabled.chat && (
+                        <NavItem icon={CodyLogo}>
+                            <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Cody}>
+                                Cody AI
                             </NavLink>
                         </NavItem>
                     )}
@@ -243,7 +259,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     {/* This is the only circumstance where we show something
                          batch-changes-related even if the instance does not have batch
                          changes enabled, for marketing purposes on sourcegraph.com */}
-                    {(props.batchChangesEnabled || isSourcegraphDotCom) && (
+                    {((props.batchChangesEnabled && isLicensed) || isSourcegraphDotCom) && (
                         <BatchChangesNavItem variant={navLinkVariant} />
                     )}
                     {codeInsights && (
@@ -269,11 +285,10 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 content: 'Feedback',
                                 variant: navLinkVariant,
                             }}
-                            mobileHomeItem={{ content: 'Feedback' }}
                             items={[
                                 {
                                     content: 'Join our Discord',
-                                    path: 'https://about.sourcegraph.com/community',
+                                    path: 'https://discord.com/servers/sourcegraph-969688426372825169',
                                     target: '_blank',
                                 },
                                 {
@@ -282,6 +297,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                     target: '_blank',
                                 },
                             ]}
+                            name="feedback"
                         />
                     )}
                 </NavGroup>
@@ -290,7 +306,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         <>
                             <NavAction>
                                 <Link className={styles.link} to="https://about.sourcegraph.com">
-                                    About
+                                    About Sourcegraph
                                 </Link>
                             </NavAction>
 
@@ -302,13 +318,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 </NavAction>
                             )}
                         </>
-                    )}
-                    {isSourcegraphApp && (
-                        <NavAction>
-                            <Link className={styles.link} to="/app/coming-soon">
-                                Coming soon
-                            </Link>
-                        </NavAction>
                     )}
                     {isSourcegraphApp && (
                         <ButtonLink
@@ -357,7 +366,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
                     {props.authenticatedUser?.siteAdmin && (
                         <NavAction>
-                            <StatusMessagesNavItem />
+                            <StatusMessagesNavItem isSourcegraphApp={isSourcegraphApp} />
                         </NavAction>
                     )}
                     {!props.authenticatedUser ? (

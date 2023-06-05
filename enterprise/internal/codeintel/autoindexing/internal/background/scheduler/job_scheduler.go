@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/store"
 	policiesshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -57,14 +58,15 @@ func NewScheduler(
 		)
 	})
 
-	return goroutine.NewPeriodicGoroutineWithMetrics(
-		context.Background(),
-		"codeintel.autoindexing-background-scheduler", "schedule autoindexing jobs in the background using defined or inferred configurations",
-		config.SchedulerInterval,
+	return goroutine.NewPeriodicGoroutine(
+		actor.WithInternalActor(context.Background()),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			return job.handleScheduler(ctx, config.RepositoryProcessDelay, config.RepositoryBatchSize, config.PolicyBatchSize, config.InferenceConcurrency)
 		}),
-		observationCtx.Operation(observation.Op{
+		goroutine.WithName("codeintel.autoindexing-background-scheduler"),
+		goroutine.WithDescription("schedule autoindexing jobs in the background using defined or inferred configurations"),
+		goroutine.WithInterval(config.SchedulerInterval),
+		goroutine.WithOperation(observationCtx.Operation(observation.Op{
 			Name:              "codeintel.indexing.HandleIndexSchedule",
 			MetricLabelValues: []string{"HandleIndexSchedule"},
 			Metrics:           redMetrics,
@@ -74,7 +76,7 @@ func NewScheduler(
 				}
 				return observation.EmitForDefault
 			},
-		}),
+		})),
 	)
 }
 
@@ -150,19 +152,22 @@ func (b indexSchedulerJob) handleScheduler(
 }
 
 func (b indexSchedulerJob) handleRepository(ctx context.Context, repositoryID, policyBatchSize int, now time.Time) error {
-	offset := 0
-
 	repo, err := b.repoStore.Get(ctx, api.RepoID(repositoryID))
 	if err != nil {
 		return err
 	}
-	repoName := repo.Name
+
+	var (
+		t        = true
+		offset   = 0
+		repoName = repo.Name
+	)
 
 	for {
 		// Retrieve the set of configuration policies that affect indexing for this repository.
 		policies, totalCount, err := b.policiesSvc.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
 			RepositoryID: repositoryID,
-			ForIndexing:  true,
+			ForIndexing:  &t,
 			Limit:        policyBatchSize,
 			Offset:       offset,
 		})
@@ -200,9 +205,7 @@ func (b indexSchedulerJob) handleRepository(ctx context.Context, repositoryID, p
 
 func NewOnDemandScheduler(s store.Store, indexEnqueuer IndexEnqueuer, config *Config) goroutine.BackgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
-		context.Background(),
-		"codeintel.autoindexing-ondemand-scheduler", "schedule autoindexing jobs for explicitly requested repo+revhash combinations",
-		config.OnDemandSchedulerInterval,
+		actor.WithInternalActor(context.Background()),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			if !autoIndexingEnabled() {
 				return nil
@@ -226,5 +229,8 @@ func NewOnDemandScheduler(s store.Store, indexEnqueuer IndexEnqueuer, config *Co
 				return tx.MarkRepoRevsAsProcessed(ctx, ids)
 			})
 		}),
+		goroutine.WithName("codeintel.autoindexing-ondemand-scheduler"),
+		goroutine.WithDescription("schedule autoindexing jobs for explicitly requested repo+revhash combinations"),
+		goroutine.WithInterval(config.OnDemandSchedulerInterval),
 	)
 }

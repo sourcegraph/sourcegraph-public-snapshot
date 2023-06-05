@@ -76,11 +76,13 @@ load("@npm//:rawr/package_json.bzl", my_alias = "bin")
 
 With the above statement `rules_js` generated the following targets for `rawr`:
 
-* `rawr` for use with `bazel build`
-* `rawr_binary` for use with `bazel run`
-* `rawr_test` for use with `bazel test`
+* `rawr` for use with `bazel build` ([js_binary](https://docs.aspect.build/rules/aspect_rules_js/docs/js_binary) + [js_run_binary](https://docs.aspect.build/rules/aspect_rules_js/docs/js_run_binary) internally)
+* `rawr_binary` for use with `bazel run` ([js_binary](https://docs.aspect.build/rules/aspect_rules_js/docs/js_binary) internally)
+* `rawr_test` for use with `bazel test` ([js_test](https://docs.aspect.build/rules/aspect_rules_js/docs/js_binary#js_test) internally)
 
-Cool? I mean we technically have rawr now available but HTF do we use this? To create a build target using rawr we can now do:
+See the generated macro implementation [here](https://sourcegraph.com/github.com/aspect-build/rules_js@f60bbf809ec013df3979659b4dfa84bc248da3fa/-/blob/npm/private/npm_import.bzl?L281-331) for more details.
+
+Cool? I mean we technically have `rawr` now available but HTF do we use this? To create a build target using `rawr` we can now do:
 
 ```
 my_alias.rawr (
@@ -110,3 +112,31 @@ bazel test //:rawr_event_test
 ```
 
 An example of a js binary being executed as a bazel test target is `graphql-schema-linter`, whose definition can be found in [`cmd/frontend/graphqlbackend/BUILD.bazel`](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph@71616027c3f461d6022f3fa2fa24c0e085ee545f/-/blob/cmd/frontend/graphqlbackend/BUILD.bazel).
+
+### How do I build/test Bazel targets of a specific type for all client packages?
+
+Using Bazel, you can build or test specific targets across all client packages. This can be done by leveraging Bazel's `query` and `test` commands.
+The `test` command is used to build and run all test targets. However, with the help of `query`, we can filter out the specific targets we want to build and test.
+
+For example, to check all Typescript types across all client packages locally, use:
+
+```sh
+bazel test `bazel query 'attr("name", ".*_typecheck_test", //...)'`
+```
+
+1. `bazel test`: Commands Bazel to build and run specified test targets.
+2. `bazel query 'attr("name", ".*_typecheck_test", //...)'`: Sub-command that specifies the targets for test. It queries for all targets whose name ends with `_typecheck_test` in all packages (`//...`).
+
+If you want to run tests for a specific package, replace `//...` with the package path like `//client/vscode...`.
+
+```sh
+bazel test `bazel query 'attr("name", ".*_typecheck_test", //client/vscode...)'`
+```
+
+### How do I run ESLint on a client package?
+
+Similar to the above, we can use bazel query to find all target names ending with `_eslint` and test them:
+
+```sh
+bazel test `bazel query 'attr("name", ".*_eslint$", //client/wildcard/...)'`
+```

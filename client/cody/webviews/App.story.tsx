@@ -40,7 +40,19 @@ export const Simple: ComponentStoryObj<typeof App> = {
 const dummyVSCodeAPI: VSCodeWrapper = {
     onMessage: cb => {
         // Send initial message so that the component is fully rendered.
-        cb({ type: 'config', config: { debug: true, hasAccessToken: true, serverEndpoint: 'https://example.com' } })
+        cb({
+            type: 'config',
+            config: {
+                debugEnable: true,
+                serverEndpoint: 'https://example.com',
+            },
+            authStatus: {
+                showInvalidAccessTokenError: false,
+                authenticated: true,
+                hasVerifiedEmail: false,
+                requiresVerifiedEmail: false,
+            },
+        })
         return () => {}
     },
     postMessage: () => {},

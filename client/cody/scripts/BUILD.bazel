@@ -1,0 +1,29 @@
+load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
+load("//dev:defs.bzl", "ts_project")
+
+# gazelle:js_ignore_imports ../package.json
+# gazelle:js_files **/*.{ts,tsx}
+
+ts_config(
+    name = "tsconfig",
+    src = "tsconfig.json",
+    visibility = ["//client:__subpackages__"],
+    deps = [
+        "//client/cody:tsconfig",
+    ],
+)
+
+ts_project(
+    name = "scripts",
+    srcs = [
+        "bundle.ts",
+        "release.ts",
+    ],
+    tsconfig = ":tsconfig",
+    deps = [
+        "//:node_modules/@types/node",
+        "//:node_modules/@types/semver",
+        "//:node_modules/esbuild",
+        "//:node_modules/semver",
+    ],
+)

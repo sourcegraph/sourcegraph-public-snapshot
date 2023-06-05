@@ -3,7 +3,7 @@ package structural
 import (
 	"context"
 
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -207,20 +207,18 @@ func (*SearchJob) Name() string {
 	return "StructuralSearchJob"
 }
 
-func (s *SearchJob) Fields(v job.Verbosity) (res []log.Field) {
+func (s *SearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 	switch v {
 	case job.VerbosityMax:
 		res = append(res,
-			log.Bool("useFullDeadline", s.SearcherArgs.UseFullDeadline),
-			log.Bool("containsRefGlobs", s.ContainsRefGlobs),
-			log.String("useIndex", string(s.UseIndex)),
+			attribute.Bool("useFullDeadline", s.SearcherArgs.UseFullDeadline),
+			attribute.Bool("containsRefGlobs", s.ContainsRefGlobs),
+			attribute.String("useIndex", string(s.UseIndex)),
 		)
 		fallthrough
 	case job.VerbosityBasic:
-		res = append(res,
-			trace.Scoped("patternInfo", s.SearcherArgs.PatternInfo.Fields()...),
-			trace.Scoped("repoOpts", s.RepoOpts.Tags()...),
-		)
+		res = append(res, trace.Scoped("patternInfo", s.SearcherArgs.PatternInfo.Fields()...)...)
+		res = append(res, trace.Scoped("repoOpts", s.RepoOpts.Attributes()...)...)
 	}
 	return res
 }

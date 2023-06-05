@@ -35,6 +35,7 @@ go_test(
         "//internal/actor",
         "//internal/database",
         "//internal/database/dbtest",
+        "//internal/rbac/types",
         "//internal/types",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_keegancsmith_sqlf//:sqlf",

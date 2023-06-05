@@ -92,6 +92,7 @@ const batchSpecWorkspaceFieldsFragment = gql`
             __typename
             id
             queueName
+            queueNames
             hostname
             active
             os

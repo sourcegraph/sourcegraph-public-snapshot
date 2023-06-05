@@ -15,8 +15,6 @@ LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 
 ENV DATA_DIR /data/index
-RUN mkdir -p ${DATA_DIR}
-RUN chown -R sourcegraph:sourcegraph /data
 
 USER sourcegraph
 WORKDIR /home/sourcegraph
@@ -30,4 +28,5 @@ COPY --from=zoekt_upstream /usr/local/bin/zoekt-webserver /usr/local/bin/
 ENV GOGC=25
 
 ENTRYPOINT ["/sbin/tini", "--"]
-CMD ["zoekt-webserver", "-index $DATA_DIR", "-pprof", "-rpc", "-indexserver_proxy"]
+# hadolint ignore=DL3025
+CMD zoekt-webserver -index $DATA_DIR -pprof -rpc -indexserver_proxy

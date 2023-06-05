@@ -1,16 +1,10 @@
 package codemonitors
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"net/http"
 	"net/url"
 	"sort"
 
-	"github.com/graphql-go/graphql/gqlerrors"
-	"github.com/opentracing/opentracing-go"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -20,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
@@ -33,81 +26,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-const gqlSettingsQuery = `query CodeMonitorSettings{
-	viewerSettings {
-		final
-	}
-}`
-
-type gqlSettingsResponse struct {
-	Data struct {
-		ViewerSettings struct {
-			Final string `json:"final"`
-		} `json:"viewerSettings"`
-	} `json:"data"`
-	Errors []gqlerrors.FormattedError
-}
-
-// Settings queries for the computed Settings for the current actor
-func Settings(ctx context.Context) (_ *schema.Settings, err error) {
-	span, ctx := opentracing.StartSpanFromContext(ctx, "CodeMonitorSearch")
-	defer func() {
-		span.LogFields(otlog.Error(err))
-		span.Finish()
-	}()
-
-	reqBody, err := json.Marshal(map[string]any{"query": gqlSettingsQuery})
-	if err != nil {
-		return nil, errors.Wrap(err, "marshal request body")
-	}
-
-	urlStr, err := gqlURL("CodeMonitorSettings")
-	if err != nil {
-		return nil, errors.Wrap(err, "construct frontend URL")
-	}
-
-	req, err := http.NewRequest("POST", urlStr, bytes.NewReader(reqBody))
-	if err != nil {
-		return nil, errors.Wrap(err, "construct request")
-	}
-	req.Header.Set("Content-Type", "application/json")
-	if span != nil {
-		carrier := opentracing.HTTPHeadersCarrier(req.Header)
-		span.Tracer().Inject(
-			span.Context(),
-			opentracing.HTTPHeaders,
-			carrier,
-		)
-	}
-
-	resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
-	if err != nil {
-		return nil, errors.Wrap(err, "do request")
-	}
-	defer resp.Body.Close()
-
-	var res gqlSettingsResponse
-	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
-		return nil, errors.Wrap(err, "decode response")
-	}
-
-	if len(res.Errors) > 0 {
-		var combined error
-		for _, err := range res.Errors {
-			combined = errors.Append(combined, err)
-		}
-		return nil, combined
-	}
-
-	var unmarshaledSettings schema.Settings
-	if err := json.Unmarshal([]byte(res.Data.ViewerSettings.Final), &unmarshaledSettings); err != nil {
-		return nil, err
-	}
-	return &unmarshaledSettings, nil
-}
-
 func Search(ctx context.Context, logger log.Logger, db database.DB, enterpriseJobs jobutil.EnterpriseJobs, query string, monitorID int64, settings *schema.Settings) (_ []*result.CommitMatch, err error) {
-	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs(), enterpriseJobs)
+	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs(), search.SearcherGRPCConnectionCache(), enterpriseJobs)
 	inputs, err := searchClient.Plan(
 		ctx,
 		"V3",
@@ -160,7 +80,7 @@ func Search(ctx context.Context, logger log.Logger, db database.DB, enterpriseJo
 // On subsequent runs, this allows us to treat all new repos or sets of args as something new that should
 // be searched from the beginning.
 func Snapshot(ctx context.Context, logger log.Logger, db database.DB, enterpriseJobs jobutil.EnterpriseJobs, query string, monitorID int64, settings *schema.Settings) error {
-	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs(), enterpriseJobs)
+	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs(), search.SearcherGRPCConnectionCache(), enterpriseJobs)
 	inputs, err := searchClient.Plan(
 		ctx,
 		"V3",

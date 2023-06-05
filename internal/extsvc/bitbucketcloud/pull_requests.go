@@ -23,6 +23,7 @@ type PullRequestInput struct {
 	// If SourceRepo is provided, only FullName is actually used.
 	SourceRepo        *Repo
 	DestinationBranch *string
+	CloseSourceBranch bool `json:"close_source_branch"`
 }
 
 // CreatePullRequest opens a new pull request.
@@ -199,10 +200,11 @@ func (input *PullRequestInput) MarshalJSON() ([]byte, error) {
 	}
 
 	type request struct {
-		Title       string  `json:"title"`
-		Description string  `json:"description,omitempty"`
-		Source      source  `json:"source"`
-		Destination *source `json:"destination,omitempty"`
+		Title             string  `json:"title"`
+		Description       string  `json:"description,omitempty"`
+		Source            source  `json:"source"`
+		Destination       *source `json:"destination,omitempty"`
+		CloseSourceBranch bool    `json:"close_source_branch,omitempty"`
 	}
 
 	req := request{
@@ -211,6 +213,7 @@ func (input *PullRequestInput) MarshalJSON() ([]byte, error) {
 		Source: source{
 			Branch: branch{Name: input.SourceBranch},
 		},
+		CloseSourceBranch: input.CloseSourceBranch,
 	}
 	if input.SourceRepo != nil {
 		req.Source.Repository = &repository{

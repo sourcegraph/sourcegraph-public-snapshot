@@ -21,7 +21,6 @@ type DotcomResolver interface {
 	CreateProductSubscription(context.Context, *CreateProductSubscriptionArgs) (ProductSubscription, error)
 	UpdateProductSubscription(context.Context, *UpdateProductSubscriptionArgs) (*EmptyResponse, error)
 	GenerateProductLicenseForSubscription(context.Context, *GenerateProductLicenseForSubscriptionArgs) (ProductLicense, error)
-	GenerateAccessTokenForSubscription(context.Context, *GenerateAccessTokenForSubscriptionArgs) (ProductSubscriptionAccessToken, error)
 	ArchiveProductSubscription(context.Context, *ArchiveProductSubscriptionArgs) (*EmptyResponse, error)
 
 	// DotcomQuery
@@ -41,11 +40,13 @@ type ProductSubscription interface {
 	Account(context.Context) (*UserResolver, error)
 	ActiveLicense(context.Context) (ProductLicense, error)
 	ProductLicenses(context.Context, *graphqlutil.ConnectionArgs) (ProductLicenseConnection, error)
-	LLMProxyAccess() LLMProxyAccess
+	CodyGatewayAccess() CodyGatewayAccess
 	CreatedAt() gqlutil.DateTime
 	IsArchived() bool
 	URL(context.Context) (string, error)
 	URLForSiteAdmin(context.Context) *string
+	CurrentSourcegraphAccessToken(context.Context) (*string, error)
+	SourcegraphAccessTokens(context.Context) ([]string, error)
 }
 
 type CreateProductSubscriptionArgs struct {
@@ -97,9 +98,11 @@ type ProductLicense interface {
 
 // ProductLicenseInput implements the GraphQL type ProductLicenseInput.
 type ProductLicenseInput struct {
-	Tags      []string
-	UserCount int32
-	ExpiresAt int32
+	Tags                     []string
+	UserCount                int32
+	ExpiresAt                int32
+	SalesforceSubscriptionID *string
+	SalesforceOpportunityID  *string
 }
 
 type ProductLicensesArgs struct {
@@ -125,21 +128,42 @@ type UpdateProductSubscriptionArgs struct {
 }
 
 type UpdateProductSubscriptionInput struct {
-	LLMProxyAccess *UpdateLLMProxyAccessInput
+	CodyGatewayAccess *UpdateCodyGatewayAccessInput
 }
 
-type UpdateLLMProxyAccessInput struct {
-	Enabled                  *bool
-	RateLimit                *int32
-	RateLimitIntervalSeconds *int32
+type UpdateCodyGatewayAccessInput struct {
+	Enabled                                 *bool
+	ChatCompletionsRateLimit                *int32
+	ChatCompletionsRateLimitIntervalSeconds *int32
+	ChatCompletionsAllowedModels            *[]string
+	CodeCompletionsRateLimit                *int32
+	CodeCompletionsRateLimitIntervalSeconds *int32
+	CodeCompletionsAllowedModels            *[]string
 }
 
-type LLMProxyAccess interface {
+type CodyGatewayAccess interface {
 	Enabled() bool
-	RateLimit(context.Context) (LLMProxyRateLimit, error)
+	ChatCompletionsRateLimit(context.Context) (CodyGatewayRateLimit, error)
+	CodeCompletionsRateLimit(context.Context) (CodyGatewayRateLimit, error)
 }
 
-type LLMProxyRateLimit interface {
+type CodyGatewayUsageDatapoint interface {
+	Date() gqlutil.DateTime
+	Model() string
+	Count() int32
+}
+
+type CodyGatewayRateLimitSource string
+
+const (
+	CodyGatewayRateLimitSourceOverride CodyGatewayRateLimitSource = "OVERRIDE"
+	CodyGatewayRateLimitSourcePlan     CodyGatewayRateLimitSource = "PLAN"
+)
+
+type CodyGatewayRateLimit interface {
+	Source() CodyGatewayRateLimitSource
+	AllowedModels() []string
 	Limit() int32
 	IntervalSeconds() int32
+	Usage(context.Context) ([]CodyGatewayUsageDatapoint, error)
 }

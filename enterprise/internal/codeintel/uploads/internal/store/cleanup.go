@@ -7,7 +7,6 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -16,9 +15,9 @@ import (
 
 // HardDeleteUploadsByIDs deletes the upload record with the given identifier.
 func (s *store) HardDeleteUploadsByIDs(ctx context.Context, ids ...int) (err error) {
-	ctx, _, endObservation := s.operations.hardDeleteUploadsByIDs.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("numIDs", len(ids)),
-		log.String("ids", intsToString(ids)),
+	ctx, _, endObservation := s.operations.hardDeleteUploadsByIDs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("numIDs", len(ids)),
+		attribute.IntSlice("ids", ids),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -56,8 +55,8 @@ DELETE FROM lsif_indexes WHERE id IN (SELECT id FROM locked_indexes)
 
 // DeleteUploadsStuckUploading soft deletes any upload record that has been uploading since the given time.
 func (s *store) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_, _ int, err error) {
-	ctx, trace, endObservation := s.operations.deleteUploadsStuckUploading.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("uploadedBefore", uploadedBefore.Format(time.RFC3339)), // TODO - should be a duration
+	ctx, trace, endObservation := s.operations.deleteUploadsStuckUploading.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("uploadedBefore", uploadedBefore.Format(time.RFC3339)), // TODO - should be a duration
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -586,9 +585,9 @@ GROUP BY repository_id, commit
 // UpdateSourcedCommits updates the commit_last_checked_at field of each upload records belonging to
 // the given repository identifier and commit. This method returns the count of upload records modified
 func (s *store) UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, err error) {
-	ctx, trace, endObservation := s.operations.updateSourcedCommits.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
-		log.String("commit", commit),
+	ctx, trace, endObservation := s.operations.updateSourcedCommits.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
+		attribute.String("commit", commit),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -654,9 +653,9 @@ func (s *store) DeleteSourcedCommits(ctx context.Context, repositoryID int, comm
 	uploadsUpdated, uploadsDeleted int,
 	err error,
 ) {
-	ctx, trace, endObservation := s.operations.deleteSourcedCommits.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
-		log.String("commit", commit),
+	ctx, trace, endObservation := s.operations.deleteSourcedCommits.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
+		attribute.String("commit", commit),
 	}})
 	defer endObservation(1, observation.Args{})
 

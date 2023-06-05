@@ -110,7 +110,7 @@ func transformRecord(ctx context.Context, db database.DB, index uploadsshared.In
 	}
 
 	// TODO: Temporary workaround. LSIF-go needs tags, but they make git fetching slower.
-	fetchTags := strings.HasPrefix(index.Indexer, "sourcegraph/lsif-go")
+	fetchTags := strings.HasPrefix(index.Indexer, conf.ExecutorsLsifGoImage())
 
 	dockerSteps = append(dockerSteps, apiclient.DockerStep{
 		Key:   "upload",

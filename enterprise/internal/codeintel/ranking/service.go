@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -116,6 +117,14 @@ func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (
 		MeanRank: logmean,
 		Paths:    paths,
 	}, nil
+}
+
+func (s *Service) Summaries(ctx context.Context) ([]shared.Summary, error) {
+	return s.store.Summaries(ctx)
+}
+
+func (s *Service) BumpDerivativeGraphKey(ctx context.Context) error {
+	return s.store.BumpDerivativeGraphKey(ctx)
 }
 
 func (s *Service) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error) {

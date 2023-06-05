@@ -32,8 +32,11 @@ Available comamndsets in `sg.config.yaml`:
 * api-only
 * app
 * batches 🦡
+* batches-kubernetes
 * codeintel
 * codeintel-bazel
+* codeintel-kubernetes
+* cody-gateway
 * dotcom
 * embeddings
 * enterprise
@@ -41,9 +44,9 @@ Available comamndsets in `sg.config.yaml`:
 * enterprise-codeinsights
 * enterprise-codeintel 🧠
 * enterprise-codeintel-bazel
+* enterprise-codeintel-multi-queue-executor
 * enterprise-e2e
 * iam
-* llm-proxy
 * monitoring
 * monitoring-alerts
 * oss
@@ -94,17 +97,22 @@ Available commands in `sg.config.yaml`:
 
 * batches-executor
 * batches-executor-firecracker
+* batches-executor-kubernetes
 * batcheshelper-builder
 * bext
 * blobstore
 * caddy
 * codeintel-executor
 * codeintel-executor-firecracker
+* codeintel-executor-kubernetes
 * codeintel-worker
-* cody-slack: Start Cody-Slack locally server locally
+* cody-gateway
+* cody-slack-dev: Start Cody-Slack dev locally
+* cody-slack-docker: Start Cody-Slack locally prod in Docker
 * debug-env: Debug env vars
 * docsite: Docsite instance serving the docs
 * embeddings
+* executor-kubernetes-template
 * executor-template
 * frontend: Enterprise frontend
 * github-proxy
@@ -114,9 +122,9 @@ Available commands in `sg.config.yaml`:
 * gitserver-template
 * grafana
 * jaeger
-* llm-proxy
 * loki
 * monitoring-generator
+* multiqueue-executor
 * oss-frontend
 * oss-gitserver-0
 * oss-gitserver-1
@@ -253,7 +261,6 @@ This command is useful when:
 
 Supported run types when providing an argument for 'sg ci build [runtype]':
 
-* bzl - Bazel Exp Branch
 * wolfi - Wolfi Exp Branch
 * main-dry-run - Main dry run
 * docker-images-patch - Patch image
@@ -357,6 +364,9 @@ Available testsuites in `sg.config.yaml`:
 * bext-e2e
 * bext-integration
 * client
+* cody-e2e
+* cody-integration
+* cody-unit
 * docsite
 * web-e2e
 * web-integration
@@ -424,6 +434,15 @@ Flags:
 ### sg lint go
 
 Check go code for linting errors, forbidden imports, generated files, etc.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+### sg lint graphql
+
+Checks the graphql code for linting errors [bazel].
 
 
 Flags:
@@ -557,6 +576,9 @@ $ sg db reset-redis
 
 # Create a site-admin user whose email and password are foo@sourcegraph.com and sourcegraph.
 $ sg db add-user -username=foo
+
+# Create an access token for the user created above.
+$ sg db add-access-token -username=foo
 ```
 
 ### sg db delete-test-dbs
@@ -621,6 +643,20 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--password="<value>"`: Password for user (default: sourcegraphsourcegraph)
+* `--username="<value>"`: Username for user (default: sourcegraph)
+
+### sg db add-access-token
+
+Create a sourcegraph access token.
+
+Run 'sg db add-access-token -username bob' to create an access token for the given username. The access token will be printed if the operation succeeds
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--note="<value>"`: Note attached to the token
+* `--sudo`: Set true to make a site-admin level token
 * `--username="<value>"`: Username for user (default: sourcegraph)
 
 ## sg migration
@@ -819,11 +855,13 @@ Available schemas:
 
 Flags:
 
+* `--auto-fix, --autofix`: Database goes brrrr.
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--file="<value>"`: The target schema description file.
+* `--ignore-migrator-update`: Ignore the running migrator not being the latest version. It is recommended to use the latest migrator version.
 * `--schema, --db="<value>"`: The target `schema` to compare. Possible values are 'frontend', 'codeintel' and 'codeinsights'
 * `--skip-version-check`: Skip validation of the instance's current version.
-* `--version="<value>"`: The target schema version. Can be a version (e.g. 5.0.2) or resolvable as a git revlike on the Sourcegraph repository (e.g. a branch, tag or commit hash).
+* `--version="<value>"`: The target schema version. Can be a version (e.g. 5.0.2) or resolvable as a git revlike on the Sourcegraph repository (e.g. a branch, tag or commit hash). (default: HEAD)
 
 ### sg migration add-log
 
@@ -1111,7 +1149,7 @@ Flags:
 
 Calculate recall for embeddings.
 
-Requires a running embeddings service with embeddings of the Sourcegraph repository.
+Recall is the fraction of relevant documents that were successfully retrieved. Recall=1 if, for every query in the test data, all relevant documents were retrieved. The command requires a running embeddings service with embeddings of the Sourcegraph repository.
 
 
 Flags:
@@ -1214,6 +1252,43 @@ List registered instances for src-cli.
 Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+## sg app
+
+Manage releases and update manifests used to let Sourcegraph App clients know that a new update is available.
+
+
+Various commands to handle management of releases, and processes around Sourcegraph App.
+
+
+
+```sh
+# Update the updater manifest
+$ sg app update-manifest
+
+# Update the updater manifest based on a particular github release
+$ sg app update-manifest --release-tag app-v2023.07.07
+
+# Do everything except upload the updated manifest
+$ sg app update-manifest --no-upload
+
+# Update the manifest but don't update the signatures from the release - useful if the release comes from the same build
+$ sg app update-manifest --update-signatures
+```
+
+### sg app update-manifest
+
+update the manifest used by the updater endpoint on dotCom.
+
+
+Flags:
+
+* `--bucket="<value>"`: Bucket where the updated manifest should be uploaded to once updated. (default: sourcegraph-app)
+* `--build="<value>"`: Build number to retrieve the update-manifest from. If no build number is given, the latest build will be used (default: -1)
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--no-upload`: do everything except upload the final manifest
+* `--release-tag="<value>"`: GitHub release tag which should be used to update the manifest with. If no tag is given the latest GitHub release is used (default: latest)
+* `--update-signatures`: update the signatures in the update manifest by retrieving the signature content from the GitHub release
 
 ## sg teammate
 

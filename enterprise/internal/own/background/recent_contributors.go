@@ -71,9 +71,5 @@ func (r *recentContributorsIndexer) indexRepo(ctx context.Context, repoId api.Re
 	}
 	r.logger.Info("commits inserted", logger.Int("count", len(commitLog)), logger.Int("repo_id", int(repoId)))
 	commitCounter.Add(float64(len(commitLog)))
-	if err != nil {
-		return err
-	}
-
 	return nil
 }

@@ -3,6 +3,7 @@ import { subDays } from 'date-fns'
 import {
     DiffHunkLineType,
     ExternalServiceKind,
+    RepositoryType,
     SharedGraphQlOperations,
 } from '@sourcegraph/shared/src/graphql-operations'
 import { accessibilityAudit } from '@sourcegraph/shared/src/testing/accessibility'
@@ -24,11 +25,13 @@ describe('RepositoryCommitPage', () => {
         RepositoryCommit: () => ({
             node: {
                 __typename: 'Repository',
+                sourceType: RepositoryType.GIT_REPOSITORY,
                 commit: {
                     __typename: 'GitCommit',
                     id: 'R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3pOamd3T1RJMU1BPT0iLCJjIjoiMWU3YmQwMDBlNzhjZjM1YzZlMWJlMWI5ZjE1MTBiNGFhZGZhYTQxNiJ9',
                     oid: '1e7bd000e78cf35c6e1be1b9f1510b4aadfaa416',
                     abbreviatedOID: '1e7bd00',
+                    perforceChangelist: null,
                     message: 'Signup copy adjustment (#43435)\n\nCopy adjustment',
                     subject: 'Signup copy adjustment (#43435)',
                     body: 'Copy adjustment',
@@ -67,6 +70,7 @@ describe('RepositoryCommitPage', () => {
                             __typename: 'GitCommit',
                             oid: '56ab377d94fe96c87bc8c5e26675c585f9312e64',
                             abbreviatedOID: '56ab377',
+                            perforceChangelist: null,
                             url: '/github.com/sourcegraph/sourcegraph/-/commit/56ab377d94fe96c87bc8c5e26675c585f9312e64',
                         },
                     ],
@@ -263,6 +267,7 @@ describe('RepositoryCommitPage', () => {
                 id: 'UmVwb3NpdG9yeTozNjgwOTI1MA==',
                 name: 'github.com/sourcegraph/sourcegraph',
                 url: '/github.com/sourcegraph/sourcegraph',
+                sourceType: RepositoryType.GIT_REPOSITORY,
                 externalURLs: [
                     {
                         url: 'https://github.com/sourcegraph/sourcegraph',

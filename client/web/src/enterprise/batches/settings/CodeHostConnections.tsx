@@ -61,7 +61,7 @@ const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeH
             <ConnectionContainer className="mb-3">
                 {error && <ConnectionError errors={[error.message]} />}
                 {loading && !connection && <ConnectionLoading />}
-                <ConnectionList as="ul" className="list-group" aria-label="code hosts">
+                <ConnectionList as="ul" className="list-group" aria-label="code host connections">
                     {connection?.nodes?.map(node => (
                         <CodeHostConnectionNode
                             key={node.externalServiceURL}
@@ -79,7 +79,7 @@ const CodeHostConnections: React.FunctionComponent<React.PropsWithChildren<CodeH
                             centered={true}
                             connection={connection}
                             noun="code host"
-                            pluralNoun="code hosts"
+                            pluralNoun="code host connections"
                             hasNextPage={hasNextPage}
                         />
                         {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}

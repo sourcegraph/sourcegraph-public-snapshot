@@ -15,7 +15,7 @@ OPTIONS:
   -previousStepPath string
         The path to the previous steps result file. Defaults to current working directory.
   -workspaceFiles string
-        The path to the workspace files. Defaults to "/data/workspace-files". (default "/data/workspace-files")
+        The path to the workspace files. Defaults to "/job/workspace-files". (default "/job/workspace-files")
 ```
 
 ### Arguments
@@ -27,11 +27,11 @@ OPTIONS:
 
 ### Options
 
-| Flag                | Default Value           | Description                                                                  |
-| ------------------- | ----------------------- | ---------------------------------------------------------------------------- |
-| `-input`            | `input.json`            | The path to the input file. Defaults to "input.json". (default "input.json") |
-| `-previousStepPath` | N/A                     | The path to the previous step's result file.                                 |
-| `-workspaceFiles`   | `/data/workspace-files` | The path to the workspace files.                                             |
+| Flag                | Default Value          | Description                                                                  |
+| ------------------- | ---------------------- | ---------------------------------------------------------------------------- |
+| `-input`            | `input.json`           | The path to the input file. Defaults to "input.json". (default "input.json") |
+| `-previousStepPath` | N/A                    | The path to the previous step's result file.                                 |
+| `-workspaceFiles`   | `/job/workspace-files` | The path to the workspace files.                                             |
 
 ## Modes
 
