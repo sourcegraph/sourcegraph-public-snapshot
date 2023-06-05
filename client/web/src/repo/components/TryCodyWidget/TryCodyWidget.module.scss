@@ -1,3 +1,5 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 :global(.theme-dark) {
     --cody-blob-bg-gradient: linear-gradient(339.95deg, #15171e -44.65%, #49169d 15.56%, #5e398c 88.23%);
     --cody-repo-bg-gradient: linear-gradient(339.95deg, #15171e -44.65%, #49169d -16.82%, #1e212e 88.23%), #ffffff;
@@ -56,4 +58,14 @@
 
 .card-images {
     width: 100%;
+    align-items: self-end;
+
+    @media (--md-breakpoint-down) {
+        width: unset;
+    }
+
+    > img {
+        max-width: 35.688rem;
+        max-height: 7.438rem;
+    }
 }

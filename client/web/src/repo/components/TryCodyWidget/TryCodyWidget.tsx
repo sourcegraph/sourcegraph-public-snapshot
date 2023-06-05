@@ -115,7 +115,6 @@ export const TryCodyWidget: React.FC<TelemetryProps & { className?: string; type
 }) => {
     const isLightTheme = useIsLightTheme()
     const { isDismissed, onDismiss } = useTryCodyWidget(telemetryService)
-    const assetsRoot = window.context?.assetsRoot || ''
     useEffect(() => {
         if (isDismissed) {
             return
@@ -133,7 +132,9 @@ export const TryCodyWidget: React.FC<TelemetryProps & { className?: string; type
             ? {
                   title: 'Try Cody on public code',
                   useCases: ['Select code in the file below', 'Select an action with Cody widget'],
-                  image: `${assetsRoot}/img/cody-marketing-blob-${isLightTheme ? 'light' : 'dark'}.png`,
+                  image: `https://storage.googleapis.com/sourcegraph-assets/app-images/cody-action-bar-${
+                      isLightTheme ? 'light' : 'dark'
+                  }.png`,
               }
             : {
                   title: 'Try Cody AI assist on this repo',
@@ -141,7 +142,9 @@ export const TryCodyWidget: React.FC<TelemetryProps & { className?: string; type
                       'Click the Ask Cody button above and to the right of this banner',
                       'Ask Cody a question like “Explain the structure of this repository”',
                   ],
-                  image: `${assetsRoot}/img/cody-marketing-repo-${isLightTheme ? 'light' : 'dark'}.png`,
+                  image: `https://storage.googleapis.com/sourcegraph-assets/app-images/cody-chat-banner-image-${
+                      isLightTheme ? 'light' : 'dark'
+                  }.png`,
               }
 
     return (
