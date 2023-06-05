@@ -101,7 +101,7 @@ const executableWorkspaceJobsConditionFmtstr = `
 )`
 
 // CreateBatchSpecWorkspaceExecutionJobs creates the given batch spec workspace jobs.
-func (s *Store) CreateBatchSpecWorkspaceExecutionJobs(ctx context.Context, batchSpecID int64) (err error) {
+func (s *Store) CreateBatchSpecWorkspaceExecutionJobs(ctx context.Context, batchSpecID int64, useV2 bool) (err error) {
 	ctx, _, endObservation := s.operations.createBatchSpecWorkspaceExecutionJobs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("batchSpecID", int(batchSpecID)),
 	}})
@@ -123,7 +123,7 @@ type RetryWorkspacesOpts struct {
 // RetryWorkspaces deletes existing execution jobs and associated changeset specs,
 // and creates fresh jobs to re-run them.
 func (s *Store) RetryWorkspaces(ctx context.Context, opts RetryWorkspacesOpts) (err error) {
-	ctx, _, endObservation := s.operations.retryWorkspaces.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
+	ctx, _, endObservation := s.operations.retryWorkspaces.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	if len(opts.BatchSpecWorkspaceIDs) == 0 && opts.BatchSpecID == 0 {
@@ -160,9 +160,12 @@ const retryWorkspacesQueryFmtstr = `
 WITH workspaces AS (
 	SELECT
 		batch_spec_workspaces.id,
-		batch_spec_workspaces.changeset_spec_ids
+		batch_spec_workspaces.changeset_spec_ids,
+		batch_spec_workspace_execution_jobs.version
 	FROM batch_spec_workspaces
 	INNER JOIN repo ON repo.id = batch_spec_workspaces.repo_id
+	LEFT JOIN batch_spec_workspace_execution_jobs
+		ON batch_spec_workspaces.id = batch_spec_workspace_execution_jobs.batch_spec_workspace_id
 	WHERE
 		repo.deleted_at IS NULL
 		AND
