@@ -253,7 +253,7 @@
       },
       {
         "command": "cody.history",
-        "title": "Cody: Chat history",
+        "title": "Cody: Chat History",
         "group": "Cody",
         "icon": "$(list-unordered)"
       },
