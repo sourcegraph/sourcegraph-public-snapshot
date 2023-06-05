@@ -29,6 +29,9 @@ type MockGitHubAppsStore struct {
 	// GetByAppIDFunc is an instance of a mock function object controlling
 	// the behavior of the method GetByAppID.
 	GetByAppIDFunc *GitHubAppsStoreGetByAppIDFunc
+	// GetByDomainFunc is an instance of a mock function object controlling
+	// the behavior of the method GetByDomain.
+	GetByDomainFunc *GitHubAppsStoreGetByDomainFunc
 	// GetByIDFunc is an instance of a mock function object controlling the
 	// behavior of the method GetByID.
 	GetByIDFunc *GitHubAppsStoreGetByIDFunc
@@ -66,6 +69,11 @@ func NewMockGitHubAppsStore() *MockGitHubAppsStore {
 		},
 		GetByAppIDFunc: &GitHubAppsStoreGetByAppIDFunc{
 			defaultHook: func(context.Context, int, string) (r0 *types.GitHubApp, r1 error) {
+				return
+			},
+		},
+		GetByDomainFunc: &GitHubAppsStoreGetByDomainFunc{
+			defaultHook: func(context.Context, *types1.GitHubAppDomain, string) (r0 *types.GitHubApp, r1 error) {
 				return
 			},
 		},
@@ -121,6 +129,11 @@ func NewStrictMockGitHubAppsStore() *MockGitHubAppsStore {
 				panic("unexpected invocation of MockGitHubAppsStore.GetByAppID")
 			},
 		},
+		GetByDomainFunc: &GitHubAppsStoreGetByDomainFunc{
+			defaultHook: func(context.Context, *types1.GitHubAppDomain, string) (*types.GitHubApp, error) {
+				panic("unexpected invocation of MockGitHubAppsStore.GetByDomain")
+			},
+		},
 		GetByIDFunc: &GitHubAppsStoreGetByIDFunc{
 			defaultHook: func(context.Context, int) (*types.GitHubApp, error) {
 				panic("unexpected invocation of MockGitHubAppsStore.GetByID")
@@ -167,6 +180,9 @@ func NewMockGitHubAppsStoreFrom(i GitHubAppsStore) *MockGitHubAppsStore {
 		},
 		GetByAppIDFunc: &GitHubAppsStoreGetByAppIDFunc{
 			defaultHook: i.GetByAppID,
+		},
+		GetByDomainFunc: &GitHubAppsStoreGetByDomainFunc{
+			defaultHook: i.GetByDomain,
 		},
 		GetByIDFunc: &GitHubAppsStoreGetByIDFunc{
 			defaultHook: i.GetByID,
@@ -510,6 +526,117 @@ func (c GitHubAppsStoreGetByAppIDFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitHubAppsStoreGetByAppIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitHubAppsStoreGetByDomainFunc describes the behavior when the
+// GetByDomain method of the parent MockGitHubAppsStore instance is invoked.
+type GitHubAppsStoreGetByDomainFunc struct {
+	defaultHook func(context.Context, *types1.GitHubAppDomain, string) (*types.GitHubApp, error)
+	hooks       []func(context.Context, *types1.GitHubAppDomain, string) (*types.GitHubApp, error)
+	history     []GitHubAppsStoreGetByDomainFuncCall
+	mutex       sync.Mutex
+}
+
+// GetByDomain delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitHubAppsStore) GetByDomain(v0 context.Context, v1 *types1.GitHubAppDomain, v2 string) (*types.GitHubApp, error) {
+	r0, r1 := m.GetByDomainFunc.nextHook()(v0, v1, v2)
+	m.GetByDomainFunc.appendCall(GitHubAppsStoreGetByDomainFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetByDomain method
+// of the parent MockGitHubAppsStore instance is invoked and the hook queue
+// is empty.
+func (f *GitHubAppsStoreGetByDomainFunc) SetDefaultHook(hook func(context.Context, *types1.GitHubAppDomain, string) (*types.GitHubApp, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetByDomain method of the parent MockGitHubAppsStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GitHubAppsStoreGetByDomainFunc) PushHook(hook func(context.Context, *types1.GitHubAppDomain, string) (*types.GitHubApp, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitHubAppsStoreGetByDomainFunc) SetDefaultReturn(r0 *types.GitHubApp, r1 error) {
+	f.SetDefaultHook(func(context.Context, *types1.GitHubAppDomain, string) (*types.GitHubApp, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitHubAppsStoreGetByDomainFunc) PushReturn(r0 *types.GitHubApp, r1 error) {
+	f.PushHook(func(context.Context, *types1.GitHubAppDomain, string) (*types.GitHubApp, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitHubAppsStoreGetByDomainFunc) nextHook() func(context.Context, *types1.GitHubAppDomain, string) (*types.GitHubApp, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitHubAppsStoreGetByDomainFunc) appendCall(r0 GitHubAppsStoreGetByDomainFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitHubAppsStoreGetByDomainFuncCall objects
+// describing the invocations of this function.
+func (f *GitHubAppsStoreGetByDomainFunc) History() []GitHubAppsStoreGetByDomainFuncCall {
+	f.mutex.Lock()
+	history := make([]GitHubAppsStoreGetByDomainFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitHubAppsStoreGetByDomainFuncCall is an object that describes an
+// invocation of method GetByDomain on an instance of MockGitHubAppsStore.
+type GitHubAppsStoreGetByDomainFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *types1.GitHubAppDomain
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.GitHubApp
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitHubAppsStoreGetByDomainFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitHubAppsStoreGetByDomainFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
