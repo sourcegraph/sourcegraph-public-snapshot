@@ -26,7 +26,7 @@ type completionsResolver struct {
 }
 
 func NewCompletionsResolver(db database.DB, logger log.Logger) graphqlbackend.CompletionsResolver {
-	rl := httpapi.NewRateLimiter(db, redispool.Store, httpapi.RateLimitScopeCompletion)
+	rl := httpapi.NewRateLimiter(db, redispool.Store, types.CompletionsFeatureChat)
 	return &completionsResolver{rl: rl, db: db, logger: logger}
 }
 
@@ -53,7 +53,6 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 		completionsConfig.Endpoint,
 		completionsConfig.Provider,
 		completionsConfig.AccessToken,
-		completionsConfig.ChatModel,
 	)
 	if err != nil {
 		return "", errors.Wrap(err, "GetCompletionStreamClient")
@@ -64,16 +63,14 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 		return "", err
 	}
 
-	var last string
-	if err := client.Stream(ctx, convertParams(args), func(event types.CompletionResponse) error {
-		// each completion is just a partial of the final result, since we're in a sync request anyway
-		// we will just wait for the final completion event
-		last = event.Completion
-		return nil
-	}); err != nil {
-		return "", errors.Wrap(err, "client.Stream")
+	params := convertParams(args)
+	// No way to configure the model through the request, we hard code to chat.
+	params.Model = completionsConfig.ChatModel
+	resp, err := client.Complete(ctx, types.CompletionsFeatureChat, params)
+	if err != nil {
+		return "", errors.Wrap(err, "client.Complete")
 	}
-	return last, nil
+	return resp.Completion, nil
 }
 
 func convertParams(args graphqlbackend.CompletionsArgs) types.CompletionRequestParameters {

@@ -2,6 +2,7 @@ package store
 
 import (
 	"database/sql"
+	"strconv"
 	"testing"
 	"time"
 
@@ -34,6 +35,10 @@ func (v TestRecord) RecordID() int {
 	return v.ID
 }
 
+func (v TestRecord) RecordUID() string {
+	return strconv.Itoa(v.ID)
+}
+
 func testScanRecord(sc dbutil.Scanner) (*TestRecord, error) {
 	var record TestRecord
 	return &record, sc.Scan(&record.ID, &record.State, pq.Array(&record.ExecutionLogs))
@@ -49,6 +54,10 @@ func (v TestRecordView) RecordID() int {
 	return v.ID
 }
 
+func (v TestRecordView) RecordUID() string {
+	return strconv.Itoa(v.ID)
+}
+
 func testScanRecordView(sc dbutil.Scanner) (*TestRecordView, error) {
 	var record TestRecordView
 	return &record, sc.Scan(&record.ID, &record.State, &record.NewField)
@@ -62,6 +71,10 @@ type TestRecordRetry struct {
 
 func (v TestRecordRetry) RecordID() int {
 	return v.ID
+}
+
+func (v TestRecordRetry) RecordUID() string {
+	return strconv.Itoa(v.ID)
 }
 
 func testScanRecordRetry(sc dbutil.Scanner) (*TestRecordRetry, error) {

@@ -7,7 +7,7 @@ contents:
     - mailcap
 
     # redis packages
-    - redis
+    - redis-6.2
 
 accounts:
   groups:
@@ -26,8 +26,9 @@ paths:
     gid: 1000
     permissions: 0o755
 
-work-dir:
-  /redis-data
+work-dir: /redis-data
 
 entrypoint:
   command: redis-server
+
+# MANUAL REBUILD: 

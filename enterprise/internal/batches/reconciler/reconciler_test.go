@@ -128,11 +128,13 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 			}
 			changeset := bt.CreateChangeset(t, ctx, store, changesetOpts)
 
-			state.MockClient.CreateCommitFromPatchFunc.SetDefaultHook(func(context.Context, gitprotocol.CreateCommitFromPatchRequest) (string, error) {
+			state.MockClient.CreateCommitFromPatchFunc.SetDefaultHook(func(context.Context, gitprotocol.CreateCommitFromPatchRequest) (*gitprotocol.CreateCommitFromPatchResponse, error) {
+				resp := new(gitprotocol.CreateCommitFromPatchResponse)
 				if changesetSpec != nil {
-					return changesetSpec.HeadRef, nil
+					resp.Rev = changesetSpec.HeadRef
+					return resp, nil
 				}
-				return "", nil
+				return resp, nil
 			})
 
 			// Setup the sourcer that's used to create a Source with which

@@ -3,16 +3,17 @@ package database
 import (
 	"context"
 	"encoding/json"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -242,6 +243,17 @@ func (s *recentViewSignalStore) BuildAggregateFromEvents(ctx context.Context, ev
 	// Iterating over each event only once and gathering data for both
 	// `repoNameToMetadata` and `userToCountByPath` at the same time.
 	db := NewDBWith(s.Logger, s)
+	// Getting own signal config to find out if there are any excluded repos.
+	// TODO(own): remove magic "recent-views" and use
+	// "/enterprise/internal/own/types" when this file is moved to enterprise package
+	configurations, err := db.OwnSignalConfigurations().LoadConfigurations(ctx, LoadSignalConfigurationArgs{Name: "recent-views"})
+	if err != nil {
+		return errors.Wrap(err, "error during fetching own signals configuration")
+	}
+	var excludes RepoExclusions
+	if len(configurations) > 0 {
+		excludes = regexifyPatterns(configurations[0].ExcludedRepoPatterns)
+	}
 	for _, event := range events {
 		// Checking if the event has a repo name and a path. If it is not the case, we
 		// cannot proceed with given event and skip it.
@@ -249,6 +261,9 @@ func (s *recentViewSignalStore) BuildAggregateFromEvents(ctx context.Context, ev
 		err := json.Unmarshal(event.PublicArgument, &r)
 		if err != nil {
 			eventUnmarshalErrorCounter.Inc()
+			continue
+		}
+		if excludes.ShouldExclude(r.RepoName) {
 			continue
 		}
 		// Incrementing the count for a user and path in a "compute if absent" way.
@@ -329,4 +344,23 @@ func (s *recentViewSignalStore) BuildAggregateFromEvents(ctx context.Context, ev
 		}
 	}
 	return nil
+}
+
+type RepoExclusions []*lazyregexp.Regexp
+
+func (re RepoExclusions) ShouldExclude(repoName string) bool {
+	for _, exclusion := range re {
+		if exclusion.MatchString(repoName) {
+			return true
+		}
+	}
+	return false
+}
+
+// regexifyPatterns will convert postgres patterns to regex patterns. For example github.com/% -> github.com/.*
+func regexifyPatterns(patterns []string) (exclusions RepoExclusions) {
+	for _, pattern := range patterns {
+		exclusions = append(exclusions, lazyregexp.New(strings.ReplaceAll(pattern, "%", ".*")))
+	}
+	return
 }

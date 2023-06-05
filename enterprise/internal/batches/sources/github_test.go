@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -216,6 +217,70 @@ func TestGithubSource_CloseChangeset(t *testing.T) {
 			ctx := context.Background()
 			src, save := setup(t, ctx, tc.name)
 			defer save(t)
+
+			err := src.CloseChangeset(ctx, tc.cs)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if err != nil {
+				return
+			}
+
+			pr := tc.cs.Changeset.Metadata.(*github.PullRequest)
+			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
+		})
+	}
+}
+
+func TestGithubSource_CloseChangeset_DeleteSourceBranch(t *testing.T) {
+	// Repository used: https://github.com/sourcegraph/automation-testing
+	//
+	// This test can be updated with `-update GithubSource_CloseChangeset_DeleteSourceBranch`,
+	// provided this PR is open: https://github.com/sourcegraph/automation-testing/pull/468
+	repo := &types.Repo{
+		Metadata: &github.Repository{
+			ID:            "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+			NameWithOwner: "sourcegraph/automation-testing",
+		},
+	}
+
+	testCases := []struct {
+		name string
+		cs   *Changeset
+		err  string
+	}{
+		{
+			name: "success",
+			cs: &Changeset{
+				Changeset: &btypes.Changeset{
+					Metadata: &github.PullRequest{
+						ID:          "PR_kwDODS5xec4waMkR",
+						HeadRefName: "refs/heads/test-pr-10",
+					},
+				},
+				RemoteRepo: repo,
+				TargetRepo: repo,
+			},
+			err: "<nil>",
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		tc.name = "GithubSource_CloseChangeset_DeleteSourceBranch_" + strings.ReplaceAll(tc.name, " ", "_")
+
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+			src, save := setup(t, ctx, tc.name)
+			defer save(t)
+
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					BatchChangesAutoDeleteBranch: true,
+				},
+			})
+			defer conf.Mock(nil)
 
 			err := src.CloseChangeset(ctx, tc.cs)
 			if have, want := fmt.Sprint(err), tc.err; have != want {

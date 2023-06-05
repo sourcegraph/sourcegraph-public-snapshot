@@ -11,7 +11,9 @@ import (
 	"time"
 
 	adobatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
+	gerritbatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/keegancsmith/sqlf"
@@ -494,7 +496,6 @@ func (s *Store) GetChangeset(ctx context.Context, opts GetChangesetOpts) (ch *bt
 	if c.ID == 0 {
 		return nil, ErrNoResults
 	}
-
 	return &c, nil
 }
 
@@ -1467,6 +1468,10 @@ func ScanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 		m := new(adobatches.AnnotatedPullRequest)
 		// Ensure the inner PR is initialized, it should never be nil.
 		m.PullRequest = &azuredevops.PullRequest{}
+		t.Metadata = m
+	case extsvc.TypeGerrit:
+		m := new(gerritbatches.AnnotatedChange)
+		m.Change = &gerrit.Change{}
 		t.Metadata = m
 	default:
 		return errors.New("unknown external service type")

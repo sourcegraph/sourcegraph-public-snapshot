@@ -24,7 +24,7 @@ import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './SetupSteps.module.scss'
 
-interface StepComponentProps extends TelemetryProps {
+export interface StepComponentProps extends TelemetryProps {
     baseURL: string
     className?: string
 }
@@ -35,6 +35,7 @@ export interface StepConfiguration {
     name: string
     nextURL?: string
     component: ComponentType<StepComponentProps>
+    onView?: () => void
     onNext?: (client: ApolloClient<{}>) => void
 }
 
@@ -109,6 +110,7 @@ export const SetupStepsRoot: FC<SetupStepsProps> = props => {
     const currentStep = steps[activeStepIndex]
 
     useEffect(() => {
+        currentStep.onView?.()
         onStepChange(currentStep)
     }, [currentStep, onStepChange])
 

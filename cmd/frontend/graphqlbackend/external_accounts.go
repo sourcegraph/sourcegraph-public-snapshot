@@ -7,9 +7,9 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/auth/sourcegraphoperator"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -24,7 +24,8 @@ func (r *siteResolver) ExternalAccounts(ctx context.Context, args *struct {
 	ServiceType *string
 	ServiceID   *string
 	ClientID    *string
-}) (*externalAccountConnectionResolver, error) {
+},
+) (*externalAccountConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins can list all external accounts.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -53,7 +54,8 @@ func (r *siteResolver) ExternalAccounts(ctx context.Context, args *struct {
 
 func (r *UserResolver) ExternalAccounts(ctx context.Context, args *struct {
 	graphqlutil.ConnectionArgs
-}) (*externalAccountConnectionResolver, error) {
+},
+) (*externalAccountConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins and the user can list a user's external accounts.
 	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
 		return nil, err
@@ -122,7 +124,8 @@ func (r *externalAccountConnectionResolver) PageInfo(ctx context.Context) (*grap
 
 func (r *schemaResolver) DeleteExternalAccount(ctx context.Context, args *struct {
 	ExternalAccount graphql.ID
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	id, err := unmarshalExternalAccountID(args.ExternalAccount)
 	if err != nil {
 		return nil, err
@@ -154,7 +157,8 @@ func (r *schemaResolver) AddExternalAccount(ctx context.Context, args *struct {
 	ServiceType    string
 	ServiceID      string
 	AccountDetails string
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	a := actor.FromContext(ctx)
 	if !a.IsAuthenticated() || a.IsInternal() {
 		return nil, auth.ErrNotAuthenticated

@@ -37,7 +37,7 @@ func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready
 	}
 	go func() {
 		if err := run.StandaloneRun(ctx, runner, observationCtx.Logger, &otherConfig, false); err != nil {
-			observationCtx.Logger.Fatal("executor for other queue failed", log.Error(err))
+			observationCtx.Logger.Warn("executor for other queue failed", log.Error(err))
 		}
 	}()
 

@@ -11,41 +11,29 @@ import (
 func TestTransformPattern(t *testing.T) {
 	patterns := []string{
 		"compute",
-		"K",
-		"Means",
+		"K",     // very short terms should be removed
+		"Means", // stop words should be removed
 		"Clustering",
-		"convert",
+		"implement", // common code-related terms should be removed
 		"int",
 		"to",
 		"string",
 		"finding",
-		"time",
-		"elapsed",
+		"\"time",    // leading punctuation should be removed
+		"elapsed\"", // trailing punctuation should be removed
 		"using",
 		"a",
 		"timer",
 		"computing",
+		"!?", // punctuation-only token should be removed
 	}
 	wantPatterns := []string{
-		"compute",
 		"comput",
-		"k",
-		"means",
-		"mean",
-		"clustering",
 		"cluster",
-		"convert",
 		"int",
 		"string",
-		"finding",
-		"find",
-		"time",
-		"elapsed",
 		"elaps",
-		"using",
-		"use",
 		"timer",
-		"computing",
 	}
 
 	gotPatterns := transformPatterns(patterns)
@@ -75,8 +63,8 @@ func TestQueryStringToKeywordQuery(t *testing.T) {
 		},
 		{
 			query:        "K MEANS CLUSTERING in python",
-			wantQuery:    autogold.Expect("count:99999999 type:file lang:Python (k OR means OR mean OR clustering OR cluster)"),
-			wantPatterns: autogold.Expect([]string{"k", "means", "mean", "clustering", "cluster"}),
+			wantQuery:    autogold.Expect("count:99999999 type:file (cluster OR python)"),
+			wantPatterns: autogold.Expect([]string{"cluster", "python"}),
 		},
 	}
 

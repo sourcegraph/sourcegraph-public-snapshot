@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "cli",
@@ -23,18 +24,18 @@ go_library(
         "//cmd/frontend/internal/app/assetsutil",
         "//cmd/frontend/internal/app/ui",
         "//cmd/frontend/internal/app/updatecheck",
-        "//cmd/frontend/internal/auth",
         "//cmd/frontend/internal/bg",
         "//cmd/frontend/internal/cli/middleware",
         "//cmd/frontend/internal/highlight",
         "//cmd/frontend/internal/httpapi",
         "//cmd/frontend/internal/httpapi/router",
-        "//cmd/frontend/internal/session",
         "//cmd/frontend/internal/siteid",
         "//cmd/frontend/oneclickexport",
         "//internal/actor",
         "//internal/adminanalytics",
         "//internal/api",
+        "//internal/auth",
+        "//internal/auth/userpasswd",
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/conf/deploy",
@@ -61,6 +62,7 @@ go_library(
         "//internal/requestclient",
         "//internal/search/job/jobutil",
         "//internal/service",
+        "//internal/session",
         "//internal/symbols",
         "//internal/sysreq",
         "//internal/trace",

@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "auth",
@@ -17,10 +18,9 @@ go_library(
         "//cmd/frontend/globals",
         "//cmd/frontend/internal/app/router",
         "//cmd/frontend/internal/app/ui/router",
-        "//cmd/frontend/internal/auth/userpasswd",
-        "//cmd/frontend/internal/session",
         "//internal/actor",
         "//internal/auth",
+        "//internal/auth/userpasswd",
         "//internal/authz",
         "//internal/conf",
         "//internal/database",
@@ -29,6 +29,7 @@ go_library(
         "//internal/extsvc",
         "//internal/featureflag",
         "//internal/lazyregexp",
+        "//internal/session",
         "//internal/types",
         "//internal/usagestats",
         "//lib/errors",

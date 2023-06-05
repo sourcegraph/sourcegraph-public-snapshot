@@ -1,9 +1,9 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "sourcegraphoperator",
     srcs = [
-        "account.go",
         "associate.go",
         "config.go",
         "middleware.go",
@@ -13,17 +13,16 @@ go_library(
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/auth",
-        "//cmd/frontend/auth/providers",
         "//cmd/frontend/external/session",
         "//enterprise/cmd/frontend/internal/auth/openidconnect",
+        "//enterprise/cmd/worker/shared/sourcegraphoperator",
         "//enterprise/internal/cloud",
         "//internal/actor",
         "//internal/auth",
-        "//internal/auth/sourcegraphoperator",
+        "//internal/auth/providers",
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/database",
-        "//internal/encryption",
         "//internal/extsvc",
         "//lib/errors",
         "//schema",
@@ -46,13 +45,13 @@ go_test(
     ],
     deps = [
         "//cmd/frontend/auth",
-        "//cmd/frontend/auth/providers",
         "//cmd/frontend/external/session",
         "//enterprise/cmd/frontend/internal/auth/openidconnect",
+        "//enterprise/cmd/worker/shared/sourcegraphoperator",
         "//enterprise/internal/cloud",
         "//internal/actor",
         "//internal/auth",
-        "//internal/auth/sourcegraphoperator",
+        "//internal/auth/providers",
         "//internal/conf",
         "//internal/database",
         "//internal/database/dbtest",

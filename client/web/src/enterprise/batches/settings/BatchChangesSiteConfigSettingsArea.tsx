@@ -5,6 +5,7 @@ import { PageHeader, Alert, Text } from '@sourcegraph/wildcard'
 import { PageTitle } from '../../../components/PageTitle'
 
 import { GlobalCodeHostConnections } from './CodeHostConnections'
+import { RolloutWindowsConfiguration } from './RolloutWindowsConfiguration'
 
 export interface BatchChangesSiteConfigSettingsAreaProps {}
 
@@ -15,6 +16,7 @@ export const BatchChangesSiteConfigSettingsArea: React.FunctionComponent<
     <>
         <PageTitle title="Batch changes settings" />
         <PageHeader headingElement="h2" path={[{ text: 'Batch Changes settings' }]} className="mb-3" />
+        <RolloutWindowsConfiguration />
         <GlobalCodeHostConnections
             headerLine={
                 <>

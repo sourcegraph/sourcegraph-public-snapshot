@@ -2,13 +2,12 @@ package sourcegraphoperator
 
 import (
 	"path"
-	"time"
 
 	feAuth "github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/openidconnect"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -59,18 +58,4 @@ func (p *provider) Config() schema.AuthProviders {
 			ConfigID: auth.SourcegraphOperatorProviderType,
 		},
 	}
-}
-
-// LifecycleDuration returns the converted lifecycle duration from given minutes.
-// It returns the default duration (60 minutes) if the given minutes is
-// non-positive.
-func LifecycleDuration(minutes int) time.Duration {
-	if minutes <= 0 {
-		return 60 * time.Minute
-	}
-	return time.Duration(minutes) * time.Minute
-}
-
-func (p *provider) lifecycleDuration() time.Duration {
-	return LifecycleDuration(p.config.LifecycleDuration)
 }

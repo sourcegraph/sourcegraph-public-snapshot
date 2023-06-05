@@ -47,7 +47,12 @@ interface EmbeddingsMultiSearchResponse {
 }
 
 interface SearchTypeRepoResponse {
-    search: { results: { results: { name: string }[] } }
+    search: {
+        results: {
+            limitHit: boolean
+            results: { name: string }[]
+        }
+    }
 }
 
 interface LogEventResponse {}
@@ -67,6 +72,7 @@ export interface EmbeddingsSearchResults {
 }
 
 export interface SearchTypeRepoResults {
+    limitHit: boolean
     repositories: { name: string }[]
 }
 
@@ -94,7 +100,9 @@ export class SourcegraphGraphQLAPIClient {
         private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
     ) {}
 
-    public onConfigurationChange(newConfig: typeof this.config): void {
+    public onConfigurationChange(
+        newConfig: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
+    ): void {
         this.config = newConfig
     }
 
@@ -150,6 +158,10 @@ export class SourcegraphGraphQLAPIClient {
         argument?: string | {}
         publicArgument?: string | {}
     }): Promise<void | Error> {
+        if (process.env.CODY_TESTING === 'true') {
+            console.log(`not logging ${event.event} in test mode`)
+            return
+        }
         try {
             if (this.config.serverEndpoint === this.dotcomUrl) {
                 await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(
@@ -210,6 +222,7 @@ export class SourcegraphGraphQLAPIClient {
             query,
         }).then(response =>
             extractDataOrError(response, data => ({
+                limitHit: data.search.results.limitHit,
                 repositories: data.search.results.results,
             }))
         )
