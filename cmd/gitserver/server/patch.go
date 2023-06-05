@@ -222,7 +222,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 	gitCommitArgs := []string{"commit"}
 	for _, m := range messages {
-		gitCommitArgs = append(gitCommitArgs, "-m", fmt.Sprintf("%q", m))
+		gitCommitArgs = append(gitCommitArgs, "-m", stylizeCommitMessage(m))
 	}
 	cmd = exec.CommandContext(ctx, "git", gitCommitArgs...)
 
@@ -330,6 +330,20 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 
 	return http.StatusOK, resp
+}
+
+func stylizeCommitMessage(message string) string {
+	if styleMessage(message) {
+		return fmt.Sprintf("%q", message)
+	}
+	return message
+}
+
+func styleMessage(message string) bool {
+	if strings.HasPrefix(message, "Change-Id: I") {
+		return false
+	}
+	return true
 }
 
 func cleanUpTmpRepo(logger log.Logger, path string) {

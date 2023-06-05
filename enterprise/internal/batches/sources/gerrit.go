@@ -173,8 +173,8 @@ func (s GerritSource) CloseChangeset(ctx context.Context, cs *Changeset) error {
 
 // UpdateChangeset can update Changesets.
 // Noop, Gerrit updates changes through git push directly
-func (s GerritSource) UpdateChangeset(context.Context, *Changeset) error {
-	return nil
+func (s GerritSource) UpdateChangeset(ctx context.Context, cs *Changeset) error {
+	return s.LoadChangeset(ctx, cs)
 }
 
 // ReopenChangeset will reopen the Changeset on the source, if it's closed.
@@ -216,7 +216,11 @@ func (s GerritSource) BuildCommitOpts(repo *types.Repo, changeset *btypes.Change
 	opts := BuildCommitOptsCommon(repo, spec, pushOpts)
 	pushRef := strings.Replace(gitdomain.EnsureRefPrefix(spec.BaseRef), "refs/heads", "refs/for", 1) //Magical Gerrit ref for pushing changes.
 	opts.PushRef = &pushRef
-	opts.CommitInfo.Messages = append(opts.CommitInfo.Messages, "Change-Id: "+GenerateGerritChangeID(*changeset))
+	changeID := changeset.ExternalID
+	if changeID == "" {
+		changeID = GenerateGerritChangeID(*changeset)
+	}
+	opts.CommitInfo.Messages = append(opts.CommitInfo.Messages, "Change-Id: "+changeID)
 	return opts
 }
 
