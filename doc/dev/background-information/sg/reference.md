@@ -32,8 +32,10 @@ Available comamndsets in `sg.config.yaml`:
 * api-only
 * app
 * batches 🦡
+* batches-kubernetes
 * codeintel
 * codeintel-bazel
+* codeintel-kubernetes
 * cody-gateway
 * dotcom
 * embeddings
@@ -42,6 +44,7 @@ Available comamndsets in `sg.config.yaml`:
 * enterprise-codeinsights
 * enterprise-codeintel 🧠
 * enterprise-codeintel-bazel
+* enterprise-codeintel-multi-queue-executor
 * enterprise-e2e
 * iam
 * monitoring
@@ -94,12 +97,14 @@ Available commands in `sg.config.yaml`:
 
 * batches-executor
 * batches-executor-firecracker
+* batches-executor-kubernetes
 * batcheshelper-builder
 * bext
 * blobstore
 * caddy
 * codeintel-executor
 * codeintel-executor-firecracker
+* codeintel-executor-kubernetes
 * codeintel-worker
 * cody-gateway
 * cody-slack-dev: Start Cody-Slack dev locally
@@ -107,6 +112,7 @@ Available commands in `sg.config.yaml`:
 * debug-env: Debug env vars
 * docsite: Docsite instance serving the docs
 * embeddings
+* executor-kubernetes-template
 * executor-template
 * frontend: Enterprise frontend
 * github-proxy
@@ -118,6 +124,7 @@ Available commands in `sg.config.yaml`:
 * jaeger
 * loki
 * monitoring-generator
+* multiqueue-executor
 * oss-frontend
 * oss-gitserver-0
 * oss-gitserver-1
@@ -1245,6 +1252,43 @@ List registered instances for src-cli.
 Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+## sg app
+
+Manage releases and update manifests used to let Sourcegraph App clients know that a new update is available.
+
+
+Various commands to handle management of releases, and processes around Sourcegraph App.
+
+
+
+```sh
+# Update the updater manifest
+$ sg app update-manifest
+
+# Update the updater manifest based on a particular github release
+$ sg app update-manifest --release-tag app-v2023.07.07
+
+# Do everything except upload the updated manifest
+$ sg app update-manifest --no-upload
+
+# Update the manifest but don't update the signatures from the release - useful if the release comes from the same build
+$ sg app update-manifest --update-signatures
+```
+
+### sg app update-manifest
+
+update the manifest used by the updater endpoint on dotCom.
+
+
+Flags:
+
+* `--bucket="<value>"`: Bucket where the updated manifest should be uploaded to once updated. (default: sourcegraph-app)
+* `--build="<value>"`: Build number to retrieve the update-manifest from. If no build number is given, the latest build will be used (default: -1)
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--no-upload`: do everything except upload the final manifest
+* `--release-tag="<value>"`: GitHub release tag which should be used to update the manifest with. If no tag is given the latest GitHub release is used (default: latest)
+* `--update-signatures`: update the signatures in the update manifest by retrieving the signature content from the GitHub release
 
 ## sg teammate
 

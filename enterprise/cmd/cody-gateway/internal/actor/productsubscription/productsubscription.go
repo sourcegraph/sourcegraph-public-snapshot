@@ -9,6 +9,7 @@ import (
 	"github.com/Khan/genqlient/graphql"
 	"github.com/gregjones/httpcache"
 	"github.com/sourcegraph/log"
+	"github.com/vektah/gqlparser/v2/gqlerror"
 	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
@@ -16,11 +17,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/productsubscription"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// product subscription tokens are always a prefix of 4 characters (sgs_)
+// product subscription tokens are always a prefix of 4 characters (sgs_ or slk_)
 // followed by a 64-character hex-encoded SHA256 hash
 const tokenLength = 4 + 64
 
@@ -57,9 +59,12 @@ func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Cl
 func (s *Source) Name() string { return codygateway.ProductSubscriptionActorSourceName }
 
 func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
-	// "sgs_" is productSubscriptionAccessTokenPrefix
-	if token == "" || !strings.HasPrefix(token, "sgs_") {
+	if token == "" {
 		return nil, actor.ErrNotFromSource{}
+	}
+	if !strings.HasPrefix(token, productsubscription.AccessTokenPrefix) &&
+		!strings.HasPrefix(token, licensing.LicenseKeyBasedAccessTokenPrefix) {
+		return nil, actor.ErrNotFromSource{Reason: "unknown token prefix"}
 	}
 
 	if len(token) != tokenLength {
@@ -134,9 +139,29 @@ func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
 	return seen, errs
 }
 
+func (s *Source) checkAccessToken(ctx context.Context, token string) (*dotcom.CheckAccessTokenResponse, error) {
+	resp, err := dotcom.CheckAccessToken(ctx, s.dotcom, token)
+	if err == nil {
+		return resp, nil
+	}
+
+	// Inspect the error to see if it's a list of GraphQL errors.
+	gqlerrs, ok := err.(gqlerror.List)
+	if !ok {
+		return nil, err
+	}
+
+	for _, gqlerr := range gqlerrs {
+		if gqlerr.Extensions != nil && gqlerr.Extensions["code"] == codygateway.GQLErrCodeProductSubscriptionNotFound {
+			return nil, actor.ErrAccessTokenDenied{Reason: "associated product subscription not found"}
+		}
+	}
+	return nil, err
+}
+
 func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor, error) {
 	var act *actor.Actor
-	resp, checkErr := dotcom.CheckAccessToken(ctx, s.dotcom, token)
+	resp, checkErr := s.checkAccessToken(ctx, token)
 	if checkErr != nil {
 		// Generate a stateless actor so that we aren't constantly hitting the dotcom API
 		act = NewActor(s, token, dotcom.ProductSubscriptionState{}, s.internalMode)

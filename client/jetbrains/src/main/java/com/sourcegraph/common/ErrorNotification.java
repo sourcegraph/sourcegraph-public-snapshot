@@ -11,17 +11,20 @@ import com.sourcegraph.Icons;
 import org.jetbrains.annotations.NotNull;
 
 public class ErrorNotification {
-    public static void show(Project project, String errorMessage) {
-        Notification notification = new Notification("Sourcegraph errors", "Sourcegraph", errorMessage, NotificationType.WARNING);
-        AnAction dismissAction = new DumbAwareAction("Dismiss") {
-            @Override
-            public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
-                notification.expire();
-            }
+  public static void show(Project project, String errorMessage) {
+    Notification notification =
+        new Notification(
+            "Sourcegraph errors", "Sourcegraph", errorMessage, NotificationType.WARNING);
+    AnAction dismissAction =
+        new DumbAwareAction("Dismiss") {
+          @Override
+          public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
+            notification.expire();
+          }
         };
-        notification.setIcon(Icons.SourcegraphLogo);
-        notification.addAction(dismissAction);
-        Notifications.Bus.notify(notification);
-        notification.notify(project);
-    }
+    notification.setIcon(Icons.SourcegraphLogo);
+    notification.addAction(dismissAction);
+    Notifications.Bus.notify(notification);
+    notification.notify(project);
+  }
 }

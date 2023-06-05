@@ -2,16 +2,33 @@ load("@aspect_bazel_lib//lib:copy_to_bin.bzl", "copy_files_to_bin_actions")
 load("//dev:js_lib.bzl", "gather_files_from_js_providers", "gather_runfiles")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 load("@aspect_rules_js//js:providers.bzl", "JsInfo")
-load("@bazel_skylib//rules:build_test.bzl", "build_test")
 
-def get_client_package_path():
-    # Used to reference the `eslint_config` target in the client package
-    # We assume that eslint config files are located at `client/<package>`
-    return "/".join(native.package_name().split("/")[:2])
+def eslint_config_and_lint_root(name = "eslint_config", config_deps = [], root_js_deps = []):
+    """
+    Creates an ESLint configuration target and an ESLint test target for a client package root JS files.
 
-def eslint_config(deps = []):
+    Args:
+        name: The name of the ESLint configuration target.
+        config_deps: A list of dependencies for the ESLint config target.
+        root_js_deps: A list of dependencies for the `root_js_eslint` target.
+
+    The macro assumes the presence of specific files (".eslintrc.js", ".eslintignore", "package.json")
+    and a tsconfig target in the current directory. It adds a reference to a top-level ESLint configuration
+    as a dependency, and sets the visibility to the current package and its subpackages.
+
+    For the 'root_js_eslint' target, it assumes all '.js' files in the current directory as its sources and
+    additional dependencies provided by 'root_js_deps'. It uses a global ESLint binary and the generated
+    ESLint configuration as its config.
+
+    Example usage:
+        eslint_config_and_lint_root(
+            config_deps = ["//my:dependency"],
+            root_js_deps = ["//other:dependency"],
+        )
+    """
+
     js_library(
-        name = "eslint_config",
+        name = name,
         testonly = True,
         srcs = [".eslintrc.js"],
         data = [
@@ -21,15 +38,28 @@ def eslint_config(deps = []):
         ],
         deps = [
             "//:eslint_config",
-        ] + deps,
+        ] + config_deps,
         visibility = ["//{}:__subpackages__".format(get_client_package_path())],
     )
 
+    eslint_test_with_types(
+        name = "root_js_eslint",
+        srcs = native.glob(["*.js"]),
+        config = ":eslint_config",
+        deps = [
+            "//:jest_config",  # required for import/extensions rule not to fail on the `jest.config.base` import.
+            "//:node_modules/@types/node",
+        ] + root_js_deps,
+    )
+
+# This private rule implementation wraps the ESLint binary.
+# It executes ESLint against the provided source files and
+# ensures that depenencies' type are available at lint time.
 def _custom_eslint_impl(ctx):
     copied_srcs = copy_files_to_bin_actions(ctx, ctx.files.srcs)
 
     inputs_depset = depset(
-        copied_srcs,
+        copied_srcs + [ctx.executable.binary],
         transitive = [gather_files_from_js_providers(
             targets = [ctx.attr.config] + ctx.attr.deps,
             include_sources = False,
@@ -47,24 +77,17 @@ def _custom_eslint_impl(ctx):
         deps = [],
     )
 
-    args = ctx.actions.args()
+    # Declare the output file for the ESLint output.
+    report = ctx.actions.declare_file(ctx.attr.report)
 
-    # TODO: add context on why it doesn't work well with `overrides` globs.
-    # args.add("--no-eslintrc")
-    # args.add_all(["--config", get_path(ctx.files.config[0])])
+    args = ctx.actions.args()  # Create the argument list for the ESLint command.
+    args.add("--quiet")  # Ignore warnings and fail only on errors.
+    args.add_all(["--format", "./{}".format(ctx.files.formatter[0].short_path)])  # Use the custom formatter to ouput relative paths.
+    args.add_all([s.short_path for s in copied_srcs])  # Specify the files to lint.
+    args.add_all(["--output-file", report.short_path])  # Specify the output file for the ESLint output.
 
-    # Ignore warnings and fail only on errors.
-    args.add("--quiet")
-
-    # Use the custom formatter to ouput relative paths.
-    args.add_all(["--format", "./{}".format(ctx.files.formatter[0].short_path)])
-
-    # Specify the files to lint.
-    args.add_all([s.short_path for s in copied_srcs])
-
-    # Declare the output file for the eslint output.
-    output = ctx.actions.declare_file(ctx.attr.output)
-    # args.add_all(["--output-file", output.short_path])
+    # Declare the output file for the exit code output.
+    exit_code_out = ctx.actions.declare_file("exit_%s" % ctx.attr.report)
 
     env = {
         "BAZEL_BINDIR": ctx.bin_dir.path,
@@ -72,28 +95,46 @@ def _custom_eslint_impl(ctx):
         # "JS_BINARY__LOG_INFO": "1",
         # "JS_BINARY__LOG_ERROR": "1",
         # "JS_BINARY__SILENT_ON_SUCCESS": "0",
-        "JS_BINARY__STDOUT_OUTPUT_FILE": output.path,
-        "JS_BINARY__STDERR_OUTPUT_FILE": output.path,
-        # "JS_BINARY__EXPECTED_EXIT_CODE": "0",
-        # "JS_BINARY__EXIT_CODE_OUTPUT_FILE": output.path,
+        # "JS_BINARY__STDOUT_OUTPUT_FILE": report.path,
+        # "JS_BINARY__STDERR_OUTPUT_FILE": report.path,
+        "JS_BINARY__EXIT_CODE_OUTPUT_FILE": exit_code_out.path,
     }
 
-    ctx.actions.run(
+    # The script wrapper around the ESLint binary is essential to create an empty 'report'
+    # file in cases where ESLint finds no errors. Bazel expects all declared outputs of
+    # ctx.actions.run_shell to be created during its execution. Failure to do so results
+    # in Bazel errors, hence if ESLint doesn't generate a 'report', we manually create one.
+    command = """
+        #!/usr/bin/env bash
+        set -o pipefail -o errexit -o nounset
+
+        # Call the ESLint @aspect_rules_js wrapper.
+        "{binary}" "$@"
+
+        # If the ESLint report is not created, create the empty one.
+        if [ ! -f "{report}" ]; then
+            touch "{report}"
+        fi
+    """.format(binary = ctx.executable.binary.path, report = report.path)
+
+    # Generate and run a bash script to wrap the binary
+    ctx.actions.run_shell(
         env = env,
         inputs = inputs_depset,
-        outputs = [output],
-        executable = ctx.executable.binary,
+        outputs = [report, exit_code_out],
+        command = command,
         arguments = [args],
         mnemonic = "ESLint",
+        tools = ctx.attr.binary[DefaultInfo].default_runfiles.files,
     )
 
     return [
         DefaultInfo(
-            files = depset([output]),
+            files = depset([report]),
             runfiles = runfiles,
         ),
         OutputGroupInfo(
-            output = depset([output]),
+            report = depset([report]),
             runfiles = runfiles.files,
         ),
     ]
@@ -106,17 +147,54 @@ _eslint_test_with_types = rule(
         "config": attr.label(allow_single_file = True),
         "formatter": attr.label(allow_single_file = True, default = Label("//:eslint-relative-formatter")),
         "binary": attr.label(executable = True, cfg = "exec", allow_files = True),
-        "output": attr.string(),
+        "report": attr.string(),
     },
 )
 
 def eslint_test_with_types(name, **kwargs):
-    lint_name = "%s_lint" % name
+    """
+    A higher-level function to perform an ESLint test on TypeScript files with type checking.
 
-    build_test(name, targets = [lint_name])
+    Args:
+        name: A string representing the name of the test.
+        **kwargs: Arbitrary keyword arguments for additional customization of the test. This can
+                  include the source files (`srcs`), dependencies (`deps`), ESLint configuration
+                  (`config`), and more.
+
+    This macro wraps the `_eslint_test_with_types` rule and subsequently runs a shell test to
+    verify the output. It generates an output report named '<name>-output.txt' and a linting
+    target with the name of the original test suffixed with '_lint'.
+
+    Example usage:
+        eslint_test_with_types(
+            name = "my_test",
+            srcs = ["my_file.ts"],
+            deps = [":my_dependency"],
+            testonly = True,
+            config = ":my_eslint_config",
+        )
+    """
+    lint_name = "%s_lint" % name
+    report = "%s-output.txt" % name
 
     _eslint_test_with_types(
+        testonly = True,
         name = lint_name,
-        output = "%s-output.txt" % name,
+        report = report,
+        binary = "//:eslint",
         **kwargs
     )
+
+    lint_target_name = ":%s" % lint_name
+
+    native.sh_test(
+        name = name,
+        srcs = ["//dev:eslint-report-test.sh"],
+        args = ["$(location %s)" % lint_target_name],
+        data = [lint_target_name],
+    )
+
+# This function provides the path to the client package, assuming
+# that eslint config files are located at `client/<package>`.
+def get_client_package_path():
+    return "/".join(native.package_name().split("/")[:2])

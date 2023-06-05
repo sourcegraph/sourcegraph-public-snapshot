@@ -51,8 +51,9 @@ COPY --from=prom_upstream /npm_licenses.tar.bz2 /npm_licenses.tar.bz2
 # Check the upstream image (replacing VERSION with the appropriate Prometheus version) when upgrading
 COPY --from=am_upstream /bin/alertmanager /bin/alertmanager
 
+# Temporarily run as root
+USER root
 RUN ln -s /usr/share/prometheus/console_libraries /usr/share/prometheus/consoles/ /etc/prometheus/
-
 
 # Add required directories and switch to sourcegraph user
 RUN mkdir -p /prometheus && chown -R sourcegraph:sourcegraph /prometheus

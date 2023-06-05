@@ -1,0 +1,255 @@
+schemaVersion: "2.0.0"
+
+commandTests:
+  - name: "server binary is runnable"
+    command: "/server"
+    envVars:
+      - key: "SANITY_CHECK"
+        value: "true"
+
+  # Sourcegraph binaries
+  - name: "embeddings binary is runnable"
+    command: "embeddings"
+    envVars:
+      - key: "SANITY_CHECK"
+        value: "true"
+  - name: "frontend binary is runnable"
+    command: "frontend"
+    envVars:
+      - key: "SANITY_CHECK"
+        value: "true"
+  - name: "github-proxy binary is runnable"
+    command: "github-proxy"
+    envVars:
+      - key: "SANITY_CHECK"
+        value: "true"
+  - name: "gitserver binary is runnable"
+    command: "gitserver"
+    envVars:
+      - key: "SANITY_CHECK"
+        value: "true"
+  - name: "migrator binary is runnable"
+    command: "migrator"
+    envVars:
+      - key: "SANITY_CHECK"
+        value: "true"
+  - name: "precise-code-intel-worker binary is runnable"
+    command: "precise-code-intel-worker"
+    envVars:
+      - key: "SANITY_CHECK"
+        value: "true"
+  - name: "repo-updater binary is runnable"
+    command: "repo-updater"
+    envVars:
+      - key: "SANITY_CHECK"
+        value: "true"
+  - name: "searcher binary is runnable"
+    command: "searcher"
+    envVars:
+      - key: "SANITY_CHECK"
+        value: "true"
+  - name: "symbols binary is runnable"
+    command: "symbols"
+    envVars:
+      - key: "SANITY_CHECK"
+        value: "true"
+  - name: "syntax_highlighter binary is runnable"
+    command: "syntax_highlighter"
+    envVars:
+      - key: "SANITY_CHECK"
+        value: "true"
+  - name: "scip-ctags is runnable"
+    command: "/usr/local/bin/scip-ctags"
+    envVars:
+      - key: "SANITY_CHECK"
+        value: "true"
+  - name: "worker binary is runnable"
+    command: "worker"
+    envVars:
+      - key: "SANITY_CHECK"
+        value: "true"
+
+  # Git
+  - name: "git is runnable"
+    command: "git"
+    args:
+      - version
+  - name: "git-lfs is runnable"
+    command: "git-lfs"
+    args:
+      - version
+  - name: "git p4 is runnable"
+    command: "git"
+    args:
+      - p4
+    expectedOutput: ["valid commands: submit"]
+    exitCode: 2
+
+  # Zoekt binaries
+  - name: "zoekt-webserver is runnable"
+    command: "zoekt-webserver"
+    args:
+      - --version
+  - name: "zoekt-archive-index is runnable"
+    command: "zoekt-archive-index"
+    args:
+      - --help
+  - name: "zoekt-git-index is runnable"
+    command: "zoekt-git-index"
+    args:
+      - --version
+  - name: "zoekt-sourcegraph-indexserver is runnable"
+    command: "zoekt-sourcegraph-indexserver"
+    args:
+      - --help
+
+  # Postgresql
+  - name: "postgres is runnable"
+    command: "postgres"
+    args:
+      - --version
+  # Bash
+  - name: "bash is runnable"
+    command: "bash"
+    args:
+      - --version
+  # P4 tools
+  - name: "p4 is runnable"
+    command: "p4"
+    args:
+      - -h
+  - name: "p4-fusion binary is runnable"
+    command: "p4-fusion-binary"
+  # Coursier
+  - name: "coursier is runnable"
+    command: "coursier"
+  # Redis
+  - name: "redis-server is runnable"
+    command: "redis-server"
+    args:
+      - --version
+  # Python3
+  - name: "python3 is runnable"
+    command: "python3"
+    args:
+      - --version
+  # SSH
+  - name: "ssh is runnable"
+    command: "ssh"
+    exitCode: 255
+  # PCRE
+  - name: "pcre is runnable"
+    command: "pcregrep"
+    args:
+      - --help
+  # Comby
+  - name: "comby is runnable"
+    command: "comby"
+    args:
+      - -h
+  # s3proxy
+  - name: "s3proxy is runnable"
+    command: "/opt/s3proxy/s3proxy"
+    args:
+      - --version
+  # Ctags
+  - name: "ctags is runnable"
+    command: "universal-ctags"
+    args:
+      - --version
+  # su-exec
+  - name: "su-exec is runnable"
+    command: "su-exec"
+    args:
+      - --help
+  # nginx
+  - name: "nginx is runnable"
+    command: "nginx"
+    args:
+      - -version
+  # postgres_exporter
+  - name: "postgres_exporter is runnable"
+    command: "postgres_exporter"
+    args:
+      - --version
+  # Prometheus + Alertmanager
+  - name: "prometheus is runnable"
+    command: "prometheus"
+    args:
+      - --version
+  - name: "promtool is runnable"
+    command: "promtool"
+    args:
+      - --version
+  - name: "alertmanager is runnable"
+    command: "alertmanager"
+    args:
+      - --version
+  # Grafana
+  - name: "grafana-server is runnable"
+    command: "/usr/share/grafana/bin/grafana-server"
+    args:
+      - -v
+  # Correct users and groups
+  - name: "correct users exist"
+    command: "cat"
+    args:
+      - '/etc/passwd'
+    expectedOutput: [
+      "sourcegraph:x:100:101",
+      "postgres:x:70:70",
+      "nginx:x:101:102",
+      "redis:x:102:103",
+      "grafana:x:103:104",
+    ]
+
+  # TODO(security): This container should not be running as root
+  # - name: "not running as root"
+  #   command: "/usr/bin/id"
+  #   args:
+  #     - -u
+  #   excludedOutput: ["^0"]
+  #   exitCode: 0
+
+
+fileExistenceTests:
+# Prometheus
+- name: '/prometheus.sh'
+  path: '/prometheus.sh'
+  shouldExist: true
+  uid: 0
+  gid: 0
+  permissions: '-r-xr-xr-x'
+- name: '/alertmanager.sh'
+  path: '/alertmanager.sh'
+  shouldExist: true
+  uid: 0
+  gid: 0
+  permissions: '-r-xr-xr-x'
+# Grafana
+- name: 'Dashboard config'
+  path: '/sg_config_grafana/provisioning/dashboards/sourcegraph/gitserver.json'
+  shouldExist: true
+  uid: 0
+  gid: 0
+  permissions: '-r-xr-xr-x'
+# p4-fusion wrappers
+- name: '/usr/local/bin/p4-fusion'
+  path: '/usr/local/bin/p4-fusion'
+  shouldExist: true
+  uid: 0
+  gid: 0
+  permissions: '-r-xr-xr-x'
+- name: '/usr/local/bin/process-stats-watcher.sh'
+  path: '/usr/local/bin/process-stats-watcher.sh'
+  shouldExist: true
+  uid: 0
+  gid: 0
+  permissions: '-r-xr-xr-x'
+
+metadataTest:
+  envVars:
+    - key: GO111MODULES
+      value: 'on'
+    - key: LANG
+      value: 'en_US.utf8'

@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { updateRangeOnDocChange } from './InlineAssist'
+import { editDocByUri, updateRangeOnDocChange } from './InlineAssist'
 
 describe('UpdateRangeOnDocChange returns a new selection range by calculating lines of code changed in current docs', () => {
     it('Returns current Range if change occurs after the current selected range', () => {
@@ -43,5 +43,23 @@ describe('UpdateRangeOnDocChange returns a new selection range by calculating li
         const changeText = 'line0'
         const result = updateRangeOnDocChange(cur, change, changeText)
         expect(result).toEqual(new vscode.Range(3, 0, 8, 0))
+    })
+})
+
+describe('editDocByUri returns a new selection range by calculating lines of code edited by Cody', () => {
+    test('replaces a single line in a document', async () => {
+        const uri = vscode.Uri.file('/tmp/test.txt')
+        const lines = { start: 1, end: 3 }
+        const content = 'foo\nfoo\nfoo'
+        const range = await editDocByUri(uri, lines, content)
+        expect(range).toEqual(new vscode.Range(1, 0, 2, 0))
+    })
+
+    test('replaces multiple lines in a document', async () => {
+        const uri = vscode.Uri.file('/tmp/test.txt')
+        const lines = { start: 1, end: 3 }
+        const content = 'foo\nbar\nfoo\nbar\nfoo'
+        const range = await editDocByUri(uri, lines, content)
+        expect(range).toEqual(new vscode.Range(1, 0, 4, 0))
     })
 })
