@@ -25,6 +25,9 @@ Sourcegraph is currently migrating to Bazel as its build system and this page is
 - ➡️  [Cheat sheet](#bazel-cheat-sheet)
 - ➡️  [FAQ](#faq)
 - 📽️ [Bazel Status Update](https://go/bazel-status)
+- See also
+  - [Bazel for client/*](./bazel_web.md)
+  - [Building container images with Bazel](./bazel_containers.md)
 
 ## Why do we need a build system?
 
