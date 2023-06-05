@@ -1,0 +1,18 @@
+schemaVersion: "2.0.0"
+
+commandTests:
+  - name: "binary is runnable"
+    command: "/usr/local/bin/executor"
+    envVars:
+      - key: "SANITY_CHECK"
+        value: "true"
+  - name: "src-cli binary is runnable"
+    command: "/usr/local/bin/src"
+    args:
+      - -v
+  - name: "not running as root"
+    command: "/usr/bin/id"
+    args:
+      - -u
+    excludedOutput: ["^0"]
+    exitCode: 0

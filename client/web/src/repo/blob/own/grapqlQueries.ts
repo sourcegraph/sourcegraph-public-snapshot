@@ -10,6 +10,7 @@ export const OWNER_FIELDS = gql`
             email
             avatarURL
             user {
+                id
                 username
                 displayName
                 url
@@ -23,6 +24,7 @@ export const OWNER_FIELDS = gql`
             teamDisplayName: displayName
             avatarURL
             url
+            external
         }
     }
 `
@@ -81,6 +83,58 @@ export const FETCH_OWNERS = gql`
                                     ...AssignedOwnerFields
                                 }
                             }
+                        }
+                    }
+                }
+            }
+        }
+        currentUser {
+            permissions {
+                nodes {
+                    displayName
+                }
+            }
+        }
+    }
+`
+
+export const FETCH_TREE_OWNERS = gql`
+    ${OWNER_FIELDS}
+    ${RECENT_CONTRIBUTOR_FIELDS}
+    ${RECENT_VIEW_FIELDS}
+    ${ASSIGNED_OWNER_FIELDS}
+
+    fragment CodeownersFileEntryFields on CodeownersFileEntry {
+        title
+        description
+        codeownersFile {
+            url
+        }
+        ruleLineMatch
+    }
+
+    fragment OwnershipConnectionFields on OwnershipConnection {
+        totalOwners
+        nodes {
+            owner {
+                ...OwnerFields
+            }
+            reasons {
+                ...CodeownersFileEntryFields
+                ...RecentContributorOwnershipSignalFields
+                ...RecentViewOwnershipSignalFields
+                ...AssignedOwnerFields
+            }
+        }
+    }
+
+    query FetchTreeOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
+        node(id: $repo) {
+            ... on Repository {
+                commit(rev: $revision) {
+                    blob(path: $currentPath) {
+                        ownership {
+                            ...OwnershipConnectionFields
                         }
                     }
                 }

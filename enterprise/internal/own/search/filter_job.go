@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"go.opentelemetry.io/otel/attribute"
 
@@ -48,10 +47,7 @@ func (s *fileHasOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, 
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer finish(alert, err)
 
-	var (
-		mu   sync.Mutex
-		errs error
-	)
+	var maxAlerter search.MaxAlerter
 
 	rules := NewRulesCache(clients.Gitserver, clients.DB)
 
@@ -59,18 +55,12 @@ func (s *fileHasOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, 
 	// need to match for ownership. Therefore we create a single bag per entry.
 	var includeBags []own.Bag
 	for _, o := range s.includeOwners {
-		b, err := own.ByTextReference(ctx, database.NewEnterpriseDB(clients.DB), o)
-		if err != nil {
-			return nil, errors.Wrap(err, "failure trying to resolve search term")
-		}
+		b := own.ByTextReference(ctx, database.NewEnterpriseDB(clients.DB), o)
 		includeBags = append(includeBags, b)
 	}
 	var excludeBags []own.Bag
 	for _, o := range s.excludeOwners {
-		b, err := own.ByTextReference(ctx, database.NewEnterpriseDB(clients.DB), o)
-		if err != nil {
-			return nil, errors.Wrap(err, "failure trying to resolve search term")
-		}
+		b := own.ByTextReference(ctx, database.NewEnterpriseDB(clients.DB), o)
 		excludeBags = append(excludeBags, b)
 	}
 
@@ -78,18 +68,15 @@ func (s *fileHasOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, 
 		var err error
 		event.Results, err = applyCodeOwnershipFiltering(ctx, &rules, includeBags, s.includeOwners, excludeBags, s.excludeOwners, event.Results)
 		if err != nil {
-			mu.Lock()
-			errs = errors.Append(errs, err)
-			mu.Unlock()
+			maxAlerter.Add(search.AlertForOwnershipSearchError())
 		}
 		stream.Send(event)
 	})
 
 	alert, err = s.child.Run(ctx, clients, filteredStream)
-	if err != nil {
-		errs = errors.Append(errs, err)
-	}
-	return alert, errs
+	// Add is nil-safe, we can just add an alert even if its pointer is nil.
+	maxAlerter.Add(alert)
+	return maxAlerter.Alert, err
 }
 
 func (s *fileHasOwnersJob) Name() string {

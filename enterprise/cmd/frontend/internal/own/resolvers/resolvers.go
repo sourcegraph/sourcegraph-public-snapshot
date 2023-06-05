@@ -8,6 +8,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/internal/rbac"
 
 	owntypes "github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
@@ -223,6 +224,18 @@ func (r *ownResolver) GitTreeOwnership(
 	return r.ownershipConnection(args, ownerships)
 }
 
+func (r *ownResolver) GitTreeOwnershipStats(ctx context.Context, tree *graphqlbackend.GitTreeEntryResolver) (graphqlbackend.OwnershipStatsResolver, error) {
+	return &ownStatsResolver{
+		db:     r.db,
+		repoID: tree.Repository().IDInt32(),
+		path:   tree.Path(),
+	}, nil
+}
+
+func (r *ownResolver) InstanceOwnershipStats(ctx context.Context) (graphqlbackend.OwnershipStatsResolver, error) {
+	return &ownStatsResolver{db: r.db}, nil
+}
+
 func (r *ownResolver) PersonOwnerField(_ *graphqlbackend.PersonResolver) string {
 	return "owner"
 }
@@ -263,31 +276,62 @@ func (r *ownResolver) computeCodeowners(ctx context.Context, blob *graphqlbacken
 	if rs != nil {
 		rule = rs.Match(blob.Path())
 	}
+	bag := own.EmptyBag()
+	ruleToRefs := make(map[*codeownerspb.Rule][]own.Reference, 0)
 	if rule != nil {
 		owners := rule.GetOwner()
-		resolvedOwners, err := r.ownService().ResolveOwnersWithType(ctx, owners)
+		externalRepo, err := repo.ExternalRepo(ctx)
 		if err != nil {
 			return nil, err
 		}
-		for _, ro := range resolvedOwners {
-			res := &codeownersFileEntryResolver{
-				db:              r.db,
-				gitserverClient: r.gitserver,
-				source:          rs.GetSource(),
-				repo:            blob.Repository(),
-				matchLineNumber: rule.GetLineNumber(),
-			}
-			ownerships = append(ownerships, &ownershipResolver{
-				db:            r.db,
-				resolvedOwner: ro,
-				reasons: []*ownershipReasonResolver{
-					{
-						res,
-					},
+		// For each owner from CODEOWNERS file, we create a reference and put it into the
+		// bag.
+		for _, owner := range owners {
+			ref := own.Reference{
+				RepoContext: &own.RepoContext{
+					Name:         repoName,
+					CodeHostKind: externalRepo.ServiceType,
 				},
-			})
+				Handle: owner.Handle,
+				Email:  owner.Email,
+			}
+			bag.Add(ref)
+			if _, ok := ruleToRefs[rule]; !ok {
+				ruleToRefs[rule] = make([]own.Reference, 0)
+			}
+			ruleToRefs[rule] = append(ruleToRefs[rule], ref)
 		}
 	}
+	bag.Resolve(ctx, r.db)
+	for rule, refs := range ruleToRefs {
+		for _, ref := range refs {
+			resolvedOwner, found := bag.FindResolved(ref)
+			if !found {
+				if guess := ref.ResolutionGuess(); guess != nil {
+					resolvedOwner = guess
+				}
+			}
+			if resolvedOwner != nil {
+				res := &codeownersFileEntryResolver{
+					db:              r.db,
+					gitserverClient: r.gitserver,
+					source:          rs.GetSource(),
+					repo:            blob.Repository(),
+					matchLineNumber: rule.GetLineNumber(),
+				}
+				ownerships = append(ownerships, &ownershipResolver{
+					db:            r.db,
+					resolvedOwner: resolvedOwner,
+					reasons: []*ownershipReasonResolver{
+						{
+							res,
+						},
+					},
+				})
+			}
+		}
+	}
+
 	return ownerships, nil
 }
 
@@ -332,6 +376,20 @@ func (r *ownResolver) ownershipConnection(
 		next:       next,
 		ownerships: ownerships,
 	}, nil
+}
+
+type ownStatsResolver struct {
+	db     edb.EnterpriseDB
+	repoID api.RepoID
+	path   string
+}
+
+func (r *ownStatsResolver) TotalFiles(ctx context.Context) (int32, error) {
+	return 0, nil // TODO(#52826): Implement graphQL resolver with db lookup.
+}
+
+func (r *ownStatsResolver) TotalCodeownedFiles(ctx context.Context) (int32, error) {
+	return 0, nil // TODO(#52826): Implement graphQL resolver with db lookup.
 }
 
 type ownershipConnectionResolver struct {

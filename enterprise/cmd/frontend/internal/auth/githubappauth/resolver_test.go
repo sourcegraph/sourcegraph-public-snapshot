@@ -173,7 +173,7 @@ func TestResolver_GitHubApps(t *testing.T) {
 					}
 				}`,
 			Variables: map[string]any{
-				"domain": types.ReposDomain.ToGraphQL(),
+				"domain": types.ReposGitHubAppDomain.ToGraphQL(),
 			},
 			ExpectedResult: fmt.Sprintf(`{
 				"gitHubApps": {

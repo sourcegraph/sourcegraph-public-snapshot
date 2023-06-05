@@ -55,8 +55,11 @@ func newTriggerQueryEnqueuer(ctx context.Context, store edb.CodeMonitorStore) go
 			return err
 		})
 	return goroutine.NewPeriodicGoroutine(
-		ctx, "code_monitors.trigger_query_enqueuer", "enqueues code monitor trigger query jobs",
-		1*time.Minute, enqueueActive,
+		ctx,
+		enqueueActive,
+		goroutine.WithName("code_monitors.trigger_query_enqueuer"),
+		goroutine.WithDescription("enqueues code monitor trigger query jobs"),
+		goroutine.WithInterval(1*time.Minute),
 	)
 }
 
@@ -80,7 +83,13 @@ func newTriggerJobsLogDeleter(ctx context.Context, store edb.CodeMonitorStore) g
 		func(ctx context.Context) error {
 			return store.DeleteOldTriggerJobs(ctx, eventRetentionInDays)
 		})
-	return goroutine.NewPeriodicGoroutine(ctx, "code_monitors.trigger_jobs_log_deleter", "deletes code job logs from code monitor triggers", 60*time.Minute, deleteLogs)
+	return goroutine.NewPeriodicGoroutine(
+		ctx,
+		deleteLogs,
+		goroutine.WithName("code_monitors.trigger_jobs_log_deleter"),
+		goroutine.WithDescription("deletes code job logs from code monitor triggers"),
+		goroutine.WithInterval(60*time.Minute),
+	)
 }
 
 func newActionRunner(ctx context.Context, observationCtx *observation.Context, s edb.CodeMonitorStore, metrics codeMonitorsMetrics) *workerutil.Worker[*edb.ActionJob] {

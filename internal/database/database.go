@@ -40,6 +40,7 @@ type DB interface {
 	OutboundWebhooks(encryption.Key) OutboundWebhookStore
 	OutboundWebhookJobs(encryption.Key) OutboundWebhookJobStore
 	OutboundWebhookLogs(encryption.Key) OutboundWebhookLogStore
+	OwnershipStats() OwnershipStatsStore
 	RecentContributionSignals() RecentContributionSignalStore
 	Permissions() PermissionStore
 	PermissionSyncJobs() PermissionSyncJobStore
@@ -203,6 +204,10 @@ func (d *db) OutboundWebhookJobs(key encryption.Key) OutboundWebhookJobStore {
 
 func (d *db) OutboundWebhookLogs(key encryption.Key) OutboundWebhookLogStore {
 	return OutboundWebhookLogsWith(d.Store, key)
+}
+
+func (d *db) OwnershipStats() OwnershipStatsStore {
+	return &ownershipStats{d.Store}
 }
 
 func (d *db) RecentContributionSignals() RecentContributionSignalStore {

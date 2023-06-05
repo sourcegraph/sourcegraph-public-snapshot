@@ -11,6 +11,7 @@ go_library(
     deps = [
         "//internal/api",
         "//internal/extsvc",
+        "//internal/gitserver/v1:gitserver",
         "@com_github_inconshreveable_log15//:log15",
     ],
 )
