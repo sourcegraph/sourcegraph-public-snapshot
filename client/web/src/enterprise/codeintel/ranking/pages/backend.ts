@@ -1,4 +1,4 @@
-import { ApolloError } from '@apollo/client'
+import { ApolloError, ApolloQueryResult } from '@apollo/client'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
 
@@ -45,6 +45,7 @@ export const useRankingSummary = (
     error?: ApolloError
     loading: boolean
     data: RankingSummaryResult | undefined
+    refetch: () => Promise<ApolloQueryResult<RankingSummaryResult>>
 } =>
     useQuery<RankingSummaryResult, RankingSummaryVariables>(RANKING_SUMMARY, {
         variables,

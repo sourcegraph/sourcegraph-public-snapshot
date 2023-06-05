@@ -36,7 +36,7 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelRankingPage'), [telemetryService])
 
-    const { data, loading, error } = useRankingSummary({})
+    const { data, loading, error, refetch } = useRankingSummary({})
 
     const [bumpDerivativeGraphKey, { loading: bumping }] = useMutation<
         BumpDerivativeGraphKeyResult,
@@ -49,14 +49,24 @@ export const CodeIntelRankingPage: FunctionComponent<CodeIntelRankingPageProps> 
     >(DELETE_RANKING_PROGRESS)
 
     const onEnqueue = useCallback(async () => {
-        // TODO - should refresh ranking summary
-        await bumpDerivativeGraphKey()
+        try {
+            await bumpDerivativeGraphKey()
+        } finally {
+            window.alert('A new job will begin on the next invocation.')
+        }
     }, [bumpDerivativeGraphKey])
 
     const onDelete = useCallback(
         async (graphKey: string) => {
-            // TODO - should refresh ranking summary
-            await deleteProgressEntry({ variables: { graphKey } })
+            if (!window.confirm('Delete progress record?')) {
+                return
+            }
+
+            try {
+                await deleteProgressEntry({ variables: { graphKey } })
+            } finally {
+                await refetch()
+            }
         },
         [deleteProgressEntry]
     )

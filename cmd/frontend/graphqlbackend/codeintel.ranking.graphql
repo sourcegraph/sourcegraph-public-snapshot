@@ -12,22 +12,22 @@ extend type Mutation {
     bumpDerivativeGraphKey: EmptyResponse!
 
     """
-    TODO
+    Deletes the ranking progress object associated with a particular graph key.
     """
     deleteRankingProgress(graphKey: String!): EmptyResponse
 }
 
 """
-TODO
+THe progress of current and historic precise ranking jobs.
 """
 type GlobalRankingSummary {
     """
-    TODO
+    Precise ranking job summaries ordered reverse-chronologically.
     """
     rankingSummary: [RankingSummary!]!
 
     """
-    TODO
+    The time that the next ranking job is configured to begin.
     """
     nextJobStartsAt: DateTime
 }
