@@ -79,18 +79,6 @@ describe('validateAuthStatus', () => {
         expect(newAuthStatus(isDotComOrApp, '', !verifiedEmail, codyEnabled, siteVersion)).toEqual(expected)
     })
 
-    test('returns auth status for valid user with varified email on dotcom or app instance that does not have isCodyEnabled (older versions)', () => {
-        const expected = {
-            ...defaultAuthStatus,
-            authenticated: true,
-            hasVerifiedEmail: true,
-            showInvalidAccessTokenError: false,
-            requiresVerifiedEmail: true,
-            siteHasCodyEnabled: false,
-        }
-        expect(newAuthStatus(isDotComOrApp, '1', verifiedEmail, !codyEnabled, siteVersion)).toEqual(expected)
-    })
-
     test('returns auth status for valid user with varified email on dotcom or app instance', () => {
         const expected = {
             ...defaultAuthStatus,

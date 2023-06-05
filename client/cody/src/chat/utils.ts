@@ -102,7 +102,7 @@ export async function getAuthStatus(
     }
     // Early return if no access token
     if (!config.accessToken) {
-        return unauthenticatedStatus
+        return { ...unauthenticatedStatus }
     }
     // Version is for frontend to check if Cody is not enabled due to unsupported version when siteHasCodyEnabled is false
     const { enabled, version } = await client.isCodyEnabled()
@@ -110,14 +110,17 @@ export async function getAuthStatus(
     const isDotComOrApp = client.isDotCom() || isLocalApp(config.serverEndpoint)
     if (isDotComOrApp) {
         const userInfo = await client.getCurrentUserIdAndVerifiedEmail()
-        if (isError(userInfo)) {
-            return unauthenticatedStatus
+        if (!userInfo || isError(userInfo)) {
+            return { ...unauthenticatedStatus }
         }
-        return newAuthStatus(isDotComOrApp, userInfo.id, userInfo.hasVerifiedEmail, true, version)
+        if (userInfo.id.length > 0) {
+            return newAuthStatus(isDotComOrApp, userInfo.id, userInfo.hasVerifiedEmail, true, version)
+        }
+        return { ...unauthenticatedStatus }
     }
     const userId = await client.getCurrentUserId()
     if (!userId || isError(userId)) {
-        return unauthenticatedStatus
+        return { ...unauthenticatedStatus }
     }
 
     return newAuthStatus(isDotComOrApp, userId, false, enabled, version)
@@ -140,6 +143,9 @@ export function newAuthStatus(
     isCodyEnabled: boolean,
     version: string
 ): AuthStatus {
+    if (!userId) {
+        return { ...unauthenticatedStatus }
+    }
     const newAuthStatus = { ...defaultAuthStatus }
     // Set values and return early
     newAuthStatus.authenticated = !!userId
