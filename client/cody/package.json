@@ -88,7 +88,6 @@
             "media": {
               "markdown": "walkthroughs/setup.md"
             },
-            "when": "!cody.activated",
             "completionEvents": [
               "onContext:cody.activated"
             ]
@@ -127,8 +126,8 @@
           },
           {
             "id": "completions",
-            "title": "Code completion",
-            "description": "Let Cody automatically write code for you. Start writing a comment or a line of code and Cody will suggest the next few lines.\n[Enable in Settings](command:cody.walkthrough.enableAutomaticCodeCompletions)",
+            "title": "Code completions",
+            "description": "Let Cody automatically write code for you. Start writing a comment or a line of code and Cody will suggest the next few lines.\n[Enable in Settings](command:cody.walkthrough.enableCodeCompletions)",
             "media": {
               "markdown": "walkthroughs/completions.md"
             }
@@ -279,8 +278,8 @@
         "title": "Cody Walkthrough: Show Inline Assist"
       },
       {
-        "command": "cody.walkthrough.enableAutomaticCodeCompletions",
-        "title": "Cody Walkthrough: Enable automatic code completions"
+        "command": "cody.walkthrough.enableCodeCompletions",
+        "title": "Cody Walkthrough: Enable code completions"
       },
       {
         "command": "cody.comment.add",
@@ -489,7 +488,7 @@
           "when": "false"
         },
         {
-          "command": "cody.walkthrough.enableAutomaticCodeCompletions",
+          "command": "cody.walkthrough.enableCodeCompletions",
           "when": "false"
         },
         {

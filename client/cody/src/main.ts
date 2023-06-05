@@ -191,7 +191,7 @@ const register = async (
                 openToSide: true,
             })
         }),
-        vscode.commands.registerCommand('cody.walkthrough.enableAutomaticCodeCompletions', async () => {
+        vscode.commands.registerCommand('cody.walkthrough.enableCodeCompletions', async () => {
             await workspaceConfig.update('cody.experimental.suggestions', true, vscode.ConfigurationTarget.Global)
             // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
             return vscode.commands.executeCommand('workbench.action.openSettings', {

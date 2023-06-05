@@ -1,4 +1,4 @@
-## Code completions
+## Using code completions
 
 <p align="center">
   <video autoPlay muted loop playsInline>

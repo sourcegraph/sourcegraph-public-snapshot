@@ -1,4 +1,4 @@
-## Setting up cody
+## Setting up Cody
 
 <p align="center">
   <img src="https://storage.googleapis.com/sourcegraph-assets/cody-setup.gif" alt="Cody Chat"/>
