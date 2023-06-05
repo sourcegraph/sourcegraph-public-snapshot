@@ -340,10 +340,7 @@ func stylizeCommitMessage(message string) string {
 }
 
 func styleMessage(message string) bool {
-	if strings.HasPrefix(message, "Change-Id: I") {
-		return false
-	}
-	return true
+	return !strings.HasPrefix(message, "Change-Id: I")
 }
 
 func cleanUpTmpRepo(logger log.Logger, path string) {
