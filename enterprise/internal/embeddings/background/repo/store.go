@@ -101,8 +101,8 @@ type RepoEmbeddingJobsStore interface {
 	CreateRepoEmbeddingJob(ctx context.Context, repoID api.RepoID, revision api.CommitID) (int, error)
 	GetLastCompletedRepoEmbeddingJob(ctx context.Context, repoID api.RepoID) (*RepoEmbeddingJob, error)
 	GetLastRepoEmbeddingJobForRevision(ctx context.Context, repoID api.RepoID, revision api.CommitID) (*RepoEmbeddingJob, error)
-	ListRepoEmbeddingJobs(ctx context.Context, args *database.PaginationArgs) ([]*RepoEmbeddingJob, error)
-	CountRepoEmbeddingJobs(ctx context.Context) (int, error)
+	ListRepoEmbeddingJobs(ctx context.Context, args ListOpts) ([]*RepoEmbeddingJob, error)
+	CountRepoEmbeddingJobs(ctx context.Context, args ListOpts) (int, error)
 	GetEmbeddableRepos(ctx context.Context, opts EmbeddableRepoOpts) ([]EmbeddableRepo, error)
 	CancelRepoEmbeddingJob(ctx context.Context, job int) error
 }
@@ -185,6 +185,11 @@ type EmbeddableRepoOpts struct {
 	// MinimumInterval is the minimum amount of time that must have passed since the last
 	// successful embedding job.
 	MinimumInterval time.Duration
+}
+
+type ListOpts struct {
+	*database.PaginationArgs
+	Query *string
 }
 
 func init() {
@@ -285,10 +290,31 @@ func (s *repoEmbeddingJobsStore) GetLastRepoEmbeddingJobForRevision(ctx context.
 const countRepoEmbeddingJobsQuery = `
 SELECT COUNT(*)
 FROM repo_embedding_jobs
+%s -- joinClause
+%s -- whereClause
 `
 
-func (s *repoEmbeddingJobsStore) CountRepoEmbeddingJobs(ctx context.Context) (int, error) {
-	q := sqlf.Sprintf(countRepoEmbeddingJobsQuery)
+// CountRepoEmbeddingJobs returns the number of repo embedding jobs that match
+// the query. If there is no query, all repo embedding jobs are counted.
+func (s *repoEmbeddingJobsStore) CountRepoEmbeddingJobs(ctx context.Context, opts ListOpts) (int, error) {
+	var conds []*sqlf.Query
+
+	var joinClause *sqlf.Query
+	if opts.Query != nil && *opts.Query != "" {
+		conds = append(conds, sqlf.Sprintf("repo.name LIKE %s", "%"+*opts.Query+"%"))
+		joinClause = sqlf.Sprintf("JOIN repo ON repo.id = repo_embedding_jobs.repo_id")
+	} else {
+		joinClause = sqlf.Sprintf("")
+	}
+
+	var whereClause *sqlf.Query
+	if len(conds) != 0 {
+		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "\n AND "))
+	} else {
+		whereClause = sqlf.Sprintf("")
+	}
+
+	q := sqlf.Sprintf(countRepoEmbeddingJobsQuery, joinClause, whereClause)
 	var count int
 	if err := s.QueryRow(ctx, q).Scan(&count); err != nil {
 		return 0, err
@@ -299,15 +325,24 @@ func (s *repoEmbeddingJobsStore) CountRepoEmbeddingJobs(ctx context.Context) (in
 const listRepoEmbeddingJobsQueryFmtstr = `
 SELECT %s
 FROM repo_embedding_jobs
+%s -- joinClause
 %s -- whereClause
 `
 
-func (s *repoEmbeddingJobsStore) ListRepoEmbeddingJobs(ctx context.Context, paginationArgs *database.PaginationArgs) ([]*RepoEmbeddingJob, error) {
-	pagination := paginationArgs.SQL()
+func (s *repoEmbeddingJobsStore) ListRepoEmbeddingJobs(ctx context.Context, opts ListOpts) ([]*RepoEmbeddingJob, error) {
+	pagination := opts.PaginationArgs.SQL()
 
 	var conds []*sqlf.Query
 	if pagination.Where != nil {
 		conds = append(conds, pagination.Where)
+	}
+
+	var joinClause *sqlf.Query
+	if opts.Query != nil && *opts.Query != "" {
+		conds = append(conds, sqlf.Sprintf("repo.name LIKE %s", "%"+*opts.Query+"%"))
+		joinClause = sqlf.Sprintf("JOIN repo ON repo.id = repo_embedding_jobs.repo_id")
+	} else {
+		joinClause = sqlf.Sprintf("")
 	}
 
 	var whereClause *sqlf.Query
@@ -317,7 +352,7 @@ func (s *repoEmbeddingJobsStore) ListRepoEmbeddingJobs(ctx context.Context, pagi
 		whereClause = sqlf.Sprintf("")
 	}
 
-	q := sqlf.Sprintf(listRepoEmbeddingJobsQueryFmtstr, sqlf.Join(repoEmbeddingJobsColumns, ", "), whereClause)
+	q := sqlf.Sprintf(listRepoEmbeddingJobsQueryFmtstr, sqlf.Join(repoEmbeddingJobsColumns, ", "), joinClause, whereClause)
 	q = pagination.AppendOrderToQuery(q)
 	q = pagination.AppendLimitToQuery(q)
 

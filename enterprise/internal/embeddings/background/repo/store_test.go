@@ -29,6 +29,10 @@ func TestRepoEmbeddingJobsStore(t *testing.T) {
 	err := repoStore.Create(ctx, createdRepo)
 	require.NoError(t, err)
 
+	createdRepo2 := &types.Repo{Name: "github.com/sourcegraph/zoekt", URI: "github.com/sourcegraph/zoekt", ExternalRepo: api.ExternalRepoSpec{}}
+	err = repoStore.Create(ctx, createdRepo2)
+	require.NoError(t, err)
+
 	store := NewRepoEmbeddingJobsStore(db)
 
 	// no job exists
@@ -36,19 +40,32 @@ func TestRepoEmbeddingJobsStore(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, exists, false)
 
-	// Create two repo embedding jobs.
+	// Create three repo embedding jobs.
 	id1, err := store.CreateRepoEmbeddingJob(ctx, createdRepo.ID, "deadbeef")
 	require.NoError(t, err)
 
 	id2, err := store.CreateRepoEmbeddingJob(ctx, createdRepo.ID, "coffee")
 	require.NoError(t, err)
 
-	count, err := store.CountRepoEmbeddingJobs(ctx)
+	id3, err := store.CreateRepoEmbeddingJob(ctx, createdRepo2.ID, "tea")
 	require.NoError(t, err)
-	require.Equal(t, 2, count)
+
+	count, err := store.CountRepoEmbeddingJobs(ctx, ListOpts{})
+	require.NoError(t, err)
+	require.Equal(t, 3, count)
+
+	pattern := "oek" // matching zoekt
+	count, err = store.CountRepoEmbeddingJobs(ctx, ListOpts{Query: &pattern})
+	require.NoError(t, err)
+	require.Equal(t, 1, count)
+
+	pattern = "unknown"
+	count, err = store.CountRepoEmbeddingJobs(ctx, ListOpts{Query: &pattern})
+	require.NoError(t, err)
+	require.Equal(t, 0, count)
 
 	first := 10
-	jobs, err := store.ListRepoEmbeddingJobs(ctx, &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true})
+	jobs, err := store.ListRepoEmbeddingJobs(ctx, ListOpts{PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}})
 	require.NoError(t, err)
 
 	// only queued job exists
@@ -56,10 +73,11 @@ func TestRepoEmbeddingJobsStore(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, exists, false)
 
-	// Expect to get the two repo embedding jobs in the list.
-	require.Equal(t, 2, len(jobs))
+	// Expect to get the three repo embedding jobs in the list.
+	require.Equal(t, 3, len(jobs))
 	require.Equal(t, id1, jobs[0].ID)
 	require.Equal(t, id2, jobs[1].ID)
+	require.Equal(t, id3, jobs[2].ID)
 
 	// Check that we get the correct repo embedding job for repo and revision.
 	lastEmbeddingJobForRevision, err := store.GetLastRepoEmbeddingJobForRevision(ctx, createdRepo.ID, "deadbeef")
@@ -112,7 +130,7 @@ func TestCancelRepoEmbeddingJob(t *testing.T) {
 	require.NoError(t, err)
 
 	first := 10
-	jobs, err := store.ListRepoEmbeddingJobs(ctx, &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true})
+	jobs, err := store.ListRepoEmbeddingJobs(ctx, ListOpts{PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}})
 	require.NoError(t, err)
 
 	// Expect to get the two repo embedding jobs in the list.

@@ -78,6 +78,10 @@ extend type Query {
         also used in conjunction with "last" to return the last N nodes.
         """
         before: String
+        """
+        Filter by the name of the repository.
+        """
+        query: String
     ): RepoEmbeddingJobsConnection!
 }
 
