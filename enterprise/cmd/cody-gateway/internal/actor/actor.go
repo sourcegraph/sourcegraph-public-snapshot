@@ -157,7 +157,7 @@ func (l *concurrentLimiter) TryAcquire(ctx context.Context) (func() error, error
 		UpdateRateLimitTTL: l.actor.LastUpdated != nil && time.Since(*l.actor.LastUpdated) < 5*time.Minute,
 	}).TryAcquire(ctx)
 	if err != nil {
-		if errors.HasType(err, limiter.NoAccessError{}) || errors.HasType(err, limiter.RateLimitExceededError{}) {
+		if errors.As(err, &limiter.NoAccessError{}) || errors.As(err, &limiter.RateLimitExceededError{}) {
 			retryAfter, err := limiter.RetryAfterWithTTL(l.redis, l.nowFunc, l.actor.ID)
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to get TTL for rate limit counter")
@@ -210,7 +210,7 @@ func (u updateOnFailureLimiter) TryAcquire(ctx context.Context) (func() error, e
 		UpdateRateLimitTTL: u.LastUpdated != nil && time.Since(*u.LastUpdated) < 5*time.Minute,
 	}).TryAcquire(ctx)
 
-	if errors.HasType(err, limiter.NoAccessError{}) || errors.HasType(err, limiter.RateLimitExceededError{}) {
+	if errors.As(err, &limiter.NoAccessError{}) || errors.As(err, &limiter.RateLimitExceededError{}) {
 		u.Actor.Update(ctx) // TODO: run this in goroutine+background context maybe?
 	}
 
