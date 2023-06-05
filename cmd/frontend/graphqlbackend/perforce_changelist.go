@@ -12,7 +12,8 @@ import (
 )
 
 type PerforceChangelistResolver struct {
-	cid string
+	cid          string
+	canonicalURL string
 }
 
 func toPerforceChangelistResolver(ctx context.Context, r *RepositoryResolver, commitBody string) (*PerforceChangelistResolver, error) {
@@ -27,11 +28,21 @@ func toPerforceChangelistResolver(ctx context.Context, r *RepositoryResolver, co
 		return nil, errors.Wrap(err, "failed to generate perforceChangelistID")
 	}
 
-	return &PerforceChangelistResolver{cid: changelistID}, nil
+	repoURL := r.url()
+	repoURL.Path += "/-/changelist/" + changelistID
+
+	return &PerforceChangelistResolver{
+		cid:          changelistID,
+		canonicalURL: repoURL.String(),
+	}, nil
 }
 
 func (r *PerforceChangelistResolver) CID() string {
 	return r.cid
+}
+
+func (r *PerforceChangelistResolver) CanonicalURL() string {
+	return r.canonicalURL
 }
 
 var p4FusionCommitSubjectPattern = lazyregexp.New(`^(\d+) - (.*)$`)
