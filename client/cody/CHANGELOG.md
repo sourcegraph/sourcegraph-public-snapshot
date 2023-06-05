@@ -15,10 +15,13 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 ### Fixed
 
 - Cody Inline Assist: Decorations for `/fix` on light theme [pull/52796](https://github.com/sourcegraph/sourcegraph/pull/52796)
-- Cody Inline Assist: Fixs cody processing indefinitely isse [pull/52796](https://github.com/sourcegraph/sourcegraph/pull/52796)
+- Cody Inline Assist: Fixes cody processing indefinitely isse [pull/52796](https://github.com/sourcegraph/sourcegraph/pull/52796)
 - Cody Inline Assist: Use more than 1 context file for `/touch` [pull/52796](https://github.com/sourcegraph/sourcegraph/pull/52796)
+- Cody completions: Various fixes for completion analytics. [pull/](https://github.com/sourcegraph/sourcegraph/pull/)
 
 ### Changed
+
+- Cody completions: Improved the number of completions presented and reduced the latency [pull/](https://github.com/sourcegraph/sourcegraph/pull/)
 
 ## [0.2.1]
 
