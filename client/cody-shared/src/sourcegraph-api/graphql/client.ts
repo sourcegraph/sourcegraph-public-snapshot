@@ -192,25 +192,40 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
+    /**
+     * Checks if Cody is enabled on the current Sourcegraph instance.
+     *
+     * @returns
+     * enabled: Whether Cody is enabled.
+     * version: The Sourcegraph version.
+     *
+     * This method first checks the Sourcegraph version using `getSiteVersion()`.
+     * If the version is before 5.0.0, Cody is disabled.
+     * If the version is 5.0.0 or newer, it checks for the existence of the `isCodyEnabled` field using `getSiteHasIsCodyEnabledField()`.
+     * If the field exists, it calls `getSiteHasCodyEnabled()` to check its value.
+     * If the field does not exist, Cody is assumed to be enabled for versions between 5.0.0 - 5.1.0.
+     */
     public async isCodyEnabled(): Promise<{ enabled: boolean; version: string }> {
-        // Check site version. Cody does not work on versions older than 5.0
+        // Check site version.
         const siteVersion = await this.getSiteVersion()
         if (isError(siteVersion)) {
             return { enabled: false, version: '' }
         }
         const insiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
+        // NOTE: Cody does not work on versions older than 5.0
         const versionBeforeCody = !insiderBuild && siteVersion < '5.0.0'
         if (versionBeforeCody) {
             return { enabled: false, version: siteVersion }
         }
+        // Beta version is betwewen 5.0.0 - 5.1.0 and does not have isCodyEnabled field
+        const betaVersion = !insiderBuild && siteVersion >= '5.0.0' && siteVersion < '5.1.0'
         const hasIsCodyEnabledField = await this.getSiteHasIsCodyEnabledField()
-        // On older versions of Sourcegraph, the isCodyEnabled field does not exist
-        if (!isError(hasIsCodyEnabledField) && hasIsCodyEnabledField) {
+        // The isCodyEnabled field does not exist before version 5.1.0
+        if (!isError(hasIsCodyEnabledField) && hasIsCodyEnabledField && !betaVersion) {
             const siteHasCodyEnabled = await this.getSiteHasCodyEnabled()
             return { enabled: !isError(siteHasCodyEnabled) && siteHasCodyEnabled, version: siteVersion }
         }
-        // Version is 5.0 or newer, but cannot find the isCodyEnabled field
-        return { enabled: true, version: siteVersion }
+        return { enabled: betaVersion, version: siteVersion }
     }
 
     public async logEvent(event: {

@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -542,9 +541,6 @@ func (r *siteResolver) PerUserCodeCompletionsQuota() *int32 {
 }
 
 func (r *siteResolver) RequiresVerifiedEmailForCody(ctx context.Context) bool {
-	if !r.IsCodyEnabled(ctx) {
-		return false
-	}
 	// App is typically forwarding Cody requests to dotcom.
 	// This section can be removed if dotcom stops requiring verified emails
 	if deploy.IsApp() {
@@ -562,5 +558,3 @@ func (r *siteResolver) RequiresVerifiedEmailForCody(ctx context.Context) bool {
 	isAdmin := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil
 	return !isAdmin
 }
-
-func (r *siteResolver) IsCodyEnabled(ctx context.Context) bool { return cody.IsCodyEnabled(ctx) }

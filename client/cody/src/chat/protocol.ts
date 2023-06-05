@@ -68,6 +68,15 @@ export const defaultAuthStatus = {
     siteVersion: '',
 }
 
+export const unauthenticatedStatus = {
+    showInvalidAccessTokenError: true,
+    authenticated: false,
+    hasVerifiedEmail: false,
+    requiresVerifiedEmail: false,
+    siteHasCodyEnabled: false,
+    siteVersion: '',
+}
+
 export function isLoggedIn(authStatus: AuthStatus): boolean {
     if (!authStatus.siteHasCodyEnabled) {
         return false

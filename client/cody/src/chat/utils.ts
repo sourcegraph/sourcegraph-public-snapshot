@@ -10,7 +10,7 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 import { LocalKeywordContextFetcher } from '../keyword-context/local-keyword-context-fetcher'
 
 import { Config } from './ChatViewProvider'
-import { AuthStatus, authStatusInit, isLocalApp } from './protocol'
+import { AuthStatus, defaultAuthStatus, isLocalApp, unauthenticatedStatus } from './protocol'
 
 // Converts a git clone URL to the codebase name that includes the slash-separated code host, owner, and repository name
 // This should captures:
@@ -87,7 +87,7 @@ export async function getCodebaseContext(
 let client: SourcegraphGraphQLAPIClient
 let configWithToken: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
 
-/*
+/**
  * Gets the authentication status for a user.
  *
  * @returns The user's authentication status.
@@ -102,57 +102,57 @@ export async function getAuthStatus(
     }
     // Early return if no access token
     if (!config.accessToken) {
-        return authStatusInit
+        return defaultAuthStatus
     }
+    // Version is for frontend to check if Cody is not enabled due to unsupported version when siteHasCodyEnabled is false
     const { enabled, version } = await client.isCodyEnabled()
     // Use early returns to avoid nested if-else
-    const isDotComOrApp = client.isDotCom() || isLocalApp(config.serverEndpoint
+    const isDotComOrApp = client.isDotCom() || isLocalApp(config.serverEndpoint)
     if (isDotComOrApp) {
         const userInfo = await client.getCurrentUserIdAndVerifiedEmail()
         if (isError(userInfo)) {
-            return authStatusInit
+            return defaultAuthStatus
         }
-        return validateAuthStatus(isEnterprise, userInfo.id, userInfo.hasVerifiedEmail, true, version)
+        return newAuthStatus(isDotComOrApp, userInfo.id, userInfo.hasVerifiedEmail, true, version)
     }
     const userId = await client.getCurrentUserId()
     if (!userId || isError(userId)) {
-        return authStatusInit
+        return defaultAuthStatus
     }
 
-    return validateAuthStatus(isEnterprise, userId, false, enabled, version)
+    return newAuthStatus(isDotComOrApp, userId, false, enabled, version)
 }
 
-/*
+/**
  * Checks a user's authentication status.
  *
- * @param isEnterprise Whether the user is on an enterprise Sourcegraph instance.
+ * @param isDotComOrApp Whether the user is on an insider build instance or enterprise instance.
  * @param userId The user's ID.
  * @param isEmailVerified Whether the user has verified their email. Default to true for non-enterprise instances.
  * @param isCodyEnabled Whether Cody is enabled on the Sourcegraph instance. Default to true for non-enterprise instances.
- * @returns The user's authentication status.
+ * @param version The Sourcegraph instance version.
+ * @returns The user's authentication status. It's for frontend to display when instance is on unsupported version if siteHasCodyEnabled is false
  */
-export function validateAuthStatus(
-    isEnterprise: boolean,
+export function newAuthStatus(
+    isDotComOrApp: boolean,
     userId: string,
     isEmailVerified: boolean,
     isCodyEnabled: boolean,
     version: string
 ): AuthStatus {
-    const authStatus = { ...authStatusInit }
     // Early return for invalid user ID
     if (!userId) {
-        return authStatus
+        return unauthenticatedStatus
     }
-    // Cache isEnterprise check
-    const enterprise = isEnterprise
+    const newAuthStatus = { ...defaultAuthStatus }
+    // Cache enterprise check
+    const enterpriseUser = !isDotComOrApp
     // Set values and return early
-    authStatus.authenticated = !!userId
-    authStatus.showInvalidAccessTokenError = !userId
-    authStatus.requiresVerifiedEmail = !enterprise
-    authStatus.hasVerifiedEmail = !enterprise && isEmailVerified
-    // Set remaining values for enterprise instances
-    authStatus.siteHasCodyEnabled = enterprise ? isCodyEnabled : true
-    // Version is for frontend to check if Cody is not enabled due to unsupported version when siteHasCodyEnabled is false
-    authStatus.siteVersion = version
-    return authStatus
+    newAuthStatus.authenticated = !!userId
+    newAuthStatus.showInvalidAccessTokenError = !userId
+    newAuthStatus.requiresVerifiedEmail = !enterpriseUser
+    newAuthStatus.hasVerifiedEmail = !enterpriseUser && isEmailVerified
+    newAuthStatus.siteHasCodyEnabled = isCodyEnabled
+    newAuthStatus.siteVersion = version
+    return newAuthStatus
 }

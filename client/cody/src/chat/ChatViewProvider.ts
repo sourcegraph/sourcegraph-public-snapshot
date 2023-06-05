@@ -34,7 +34,7 @@ import {
     DOTCOM_URL,
     ExtensionMessage,
     WebviewMessage,
-    authStatusInit,
+    defaultAuthStatus,
     isLoggedIn,
 } from './protocol'
 import { getRecipe } from './recipes'
@@ -301,7 +301,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.transcript.addErrorAsAssistantResponse(err)
                 // Log users out on unauth error
                 if (statusCode && statusCode >= 400 && statusCode <= 410) {
-                    const authStatus = { ...authStatusInit }
+                    const authStatus = { ...defaultAuthStatus }
                     if (statusCode === 403) {
                         authStatus.authenticated = true
                         authStatus.requiresVerifiedEmail = true
