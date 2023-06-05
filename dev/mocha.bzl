@@ -103,6 +103,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
 
         # `js_run_binary` is used here in the combination with `build_test` instead of
         # `js_test` because only `js_run_binary` currntly supports the `stamp` attribute.
+        # otherwise we could use js_binary with bazel test.
         # https://docs.aspect.build/rules/aspect_rules_js/docs/js_run_binary#stamp
         js_run_binary(
             name = binary_name,
@@ -113,7 +114,7 @@ def mocha_test(name, tests, deps = [], args = [], data = [], env = {}, is_percy_
             }),
             srcs = data,
             out_dirs = ["out"],
-            silent_on_success = False,
+            silent_on_success = True,
 
             # Used to provide BUILDKITE_BRANCH and BUILDKITE_COMMIT to Percy via
             # dev/bazel_buildkite_stamp_vars.sh. See the tool implementation for more details.
