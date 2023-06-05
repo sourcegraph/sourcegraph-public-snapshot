@@ -109,7 +109,7 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
 	}
 
 	// We enforce that GitHub Apps created in the "batches" domain are for unique instance URLs.
-	if domain == types.BatchesDomain {
+	if domain == types.BatchesGitHubAppDomain {
 		existingGHApp, err := s.GetByDomain(ctx, &domain, baseURL.String())
 		// An error is expected if no existing app was found, but we double check that
 		// we didn't get a different, unrelated error
