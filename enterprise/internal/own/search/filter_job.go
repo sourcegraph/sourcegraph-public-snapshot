@@ -49,8 +49,8 @@ func (s *fileHasOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, 
 	defer finish(alert, err)
 
 	var (
-		mu   sync.Mutex
-		errs error
+		mu         sync.Mutex
+		maxAlerter search.MaxAlerter
 	)
 
 	rules := NewRulesCache(clients.Gitserver, clients.DB)
@@ -79,17 +79,16 @@ func (s *fileHasOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, 
 		event.Results, err = applyCodeOwnershipFiltering(ctx, &rules, includeBags, s.includeOwners, excludeBags, s.excludeOwners, event.Results)
 		if err != nil {
 			mu.Lock()
-			errs = errors.Append(errs, err)
+			maxAlerter.Add(search.AlertForOwnershipSearchError())
 			mu.Unlock()
 		}
 		stream.Send(event)
 	})
 
 	alert, err = s.child.Run(ctx, clients, filteredStream)
-	if err != nil {
-		errs = errors.Append(errs, err)
-	}
-	return alert, errs
+	// Add is nil-safe, we can just add an alert even if its pointer is nil.
+	maxAlerter.Add(alert)
+	return maxAlerter.Alert, err
 }
 
 func (s *fileHasOwnersJob) Name() string {

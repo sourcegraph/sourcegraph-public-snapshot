@@ -426,7 +426,6 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 				excludeBags,
 				tt.args.excludeOwners,
 				tt.args.matches)
-			//require.NoError(t, err)
 			tt.want.Equal(t, matches)
 		})
 	}
