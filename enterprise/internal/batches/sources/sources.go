@@ -312,7 +312,7 @@ func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css Change
 		return nil, errors.Wrap(err, "invalid configuration type")
 	}
 
-	app, err := tx.GitHubAppsStore().GetByDomain(ctx, types.BatchesDomain, config.Url)
+	app, err := tx.GitHubAppsStore().GetByDomain(ctx, types.BatchesGitHubAppDomain, config.Url)
 	if err != nil {
 		return nil, ErrNoGitHubAppConfigured
 	}

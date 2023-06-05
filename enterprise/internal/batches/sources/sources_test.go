@@ -487,11 +487,11 @@ func TestSourcer_ForChangeset(t *testing.T) {
 		t.Run("with GH App", func(t *testing.T) {
 			ghaStore := ghastore.NewMockGitHubAppsStore()
 			ghaStore.GetByDomainFunc.SetDefaultHook(func(ctx context.Context, domain types.GitHubAppDomain, baseUrl string) (*ghatypes.GitHubApp, error) {
-				assert.EqualValues(t, types.BatchesDomain, domain)
+				assert.EqualValues(t, types.BatchesGitHubAppDomain, domain)
 				assert.EqualValues(t, config.Url, baseUrl)
 				ghApp := &ghatypes.GitHubApp{
 					BaseURL:    config.Url,
-					Domain:     types.BatchesDomain,
+					Domain:     types.BatchesGitHubAppDomain,
 					AppID:      1234,
 					PrivateKey: testGHAppPrivateKey,
 				}

@@ -99,7 +99,7 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
 	}
 	domain := app.Domain
 	if domain == "" {
-		domain = itypes.ReposDomain
+		domain = itypes.ReposGitHubAppDomain
 	}
 
 	query := sqlf.Sprintf(`INSERT INTO

@@ -354,7 +354,7 @@ func TestListGitHubApp(t *testing.T) {
 	repoApp := &ghtypes.GitHubApp{
 		AppID:        1234,
 		Name:         "Test App 1",
-		Domain:       types.ReposDomain,
+		Domain:       types.ReposGitHubAppDomain,
 		Slug:         "test-app-1",
 		BaseURL:      "https://github.com",
 		AppURL:       "https://github.com/apps/testapp",
@@ -367,7 +367,7 @@ func TestListGitHubApp(t *testing.T) {
 	batchesApp := &ghtypes.GitHubApp{
 		AppID:        5678,
 		Name:         "Test App 2",
-		Domain:       types.BatchesDomain,
+		Domain:       types.BatchesGitHubAppDomain,
 		Slug:         "test-app-2",
 		BaseURL:      "https://enterprise.github.com",
 		AppURL:       "https://enterprise.github.com/apps/testapp",
@@ -405,7 +405,7 @@ func TestListGitHubApp(t *testing.T) {
 	})
 
 	t.Run("domain-filtered github apps", func(t *testing.T) {
-		domain := types.ReposDomain
+		domain := types.ReposGitHubAppDomain
 		fetched, err := store.List(ctx, &domain)
 		require.NoError(t, err)
 		require.Len(t, fetched, 1)

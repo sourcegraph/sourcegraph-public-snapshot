@@ -107,10 +107,10 @@ func parseDomain(s *string) (*itypes.GitHubAppDomain, error) {
 	}
 	switch strings.ToUpper(*s) {
 	case "REPOS":
-		domain := itypes.ReposDomain
+		domain := itypes.ReposGitHubAppDomain
 		return &domain, nil
 	case "BATCHES":
-		domain := itypes.BatchesDomain
+		domain := itypes.BatchesGitHubAppDomain
 		return &domain, nil
 	default:
 		return nil, errors.Errorf("unknown domain %q", *s)
