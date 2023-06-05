@@ -3,7 +3,6 @@ package search
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"go.opentelemetry.io/otel/attribute"
 
@@ -48,10 +47,7 @@ func (s *fileHasOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, 
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer finish(alert, err)
 
-	var (
-		mu         sync.Mutex
-		maxAlerter search.MaxAlerter
-	)
+	var maxAlerter search.MaxAlerter
 
 	rules := NewRulesCache(clients.Gitserver, clients.DB)
 
@@ -78,9 +74,7 @@ func (s *fileHasOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, 
 		var err error
 		event.Results, err = applyCodeOwnershipFiltering(ctx, &rules, includeBags, s.includeOwners, excludeBags, s.excludeOwners, event.Results)
 		if err != nil {
-			mu.Lock()
 			maxAlerter.Add(search.AlertForOwnershipSearchError())
-			mu.Unlock()
 		}
 		stream.Send(event)
 	})

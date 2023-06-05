@@ -52,9 +52,7 @@ func (s *selectOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, s
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		matches, ok, err := getCodeOwnersFromMatches(ctx, &rules, event.Results)
 		if err != nil {
-			mu.Lock()
 			maxAlerter.Add(search.AlertForOwnershipSearchError())
-			mu.Unlock()
 		}
 		mu.Lock()
 		if ok {
