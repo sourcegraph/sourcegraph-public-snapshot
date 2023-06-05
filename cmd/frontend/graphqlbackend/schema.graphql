@@ -10239,4 +10239,5 @@ type PerforceChangelist {
     The changelist ID.
     """
     cid: String!
+    canonicalURL: String!
 }
