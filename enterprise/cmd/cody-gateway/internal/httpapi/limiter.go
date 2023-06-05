@@ -20,7 +20,7 @@ func rateLimit(
 	baseLogger log.Logger,
 	eventLogger events.Logger,
 	cache limiter.RedisStore,
-	concurrentLimitConfig codygateway.ConcurrentLimitConfig,
+	concurrentLimitConfig codygateway.ActorConcurrentLimitConfig,
 	next http.Handler,
 ) http.Handler {
 	baseLogger = baseLogger.Scoped("rateLimit", "rate limit handler")

@@ -31,7 +31,7 @@ func makeUpstreamHandler[ReqT any](
 	baseLogger log.Logger,
 	eventLogger events.Logger,
 	rs limiter.RedisStore,
-	concurrentLimitConfig codygateway.ConcurrentLimitConfig,
+	concurrentLimitConfig codygateway.ActorConcurrentLimitConfig,
 
 	upstreamName, upstreamAPIURL string,
 	allowedModels []string,

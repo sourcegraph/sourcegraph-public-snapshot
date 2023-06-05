@@ -20,7 +20,7 @@ func newOpenAIHandler(
 	logger log.Logger,
 	eventLogger events.Logger,
 	rs limiter.RedisStore,
-	concurrentLimitConfig codygateway.ConcurrentLimitConfig,
+	concurrentLimitConfig codygateway.ActorConcurrentLimitConfig,
 	accessToken string,
 	orgID string,
 	allowedModels []string,

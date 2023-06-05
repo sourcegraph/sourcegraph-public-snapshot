@@ -52,7 +52,7 @@ type Config struct {
 
 	Trace TraceConfig
 
-	ConcurrentLimit codygateway.ConcurrentLimitConfig
+	ActorConcurrentLimit codygateway.ActorConcurrentLimitConfig
 }
 
 type TraceConfig struct {
@@ -90,7 +90,7 @@ func (c *Config) Load() {
 	c.Trace.GCPProjectID = c.Get("CODY_GATEWAY_TRACE_GCP_PROJECT_ID", os.Getenv("GOOGLE_CLOUD_PROJECT"), "Google Cloud Traces project ID.")
 
 	c.ActorConcurrentLimit.Percentage = float32(c.GetPercent("CODY_GATEWAY_ACTOR_CONCURRENT_LIMIT_PERCENTAGE", "50", "The percentage of daily rate limit to be allowed as concurrent requests limit from an actor.")) / 100
-	c.ConcurrentLimit.Interval = c.GetInterval("CODY_GATEWAY_ACTOR_CONCURRENT_LIMIT_INTERVAL", "10s", "The interval at which to check the concurrent requests limit from an actor.")
+	c.ActorConcurrentLimit.Interval = c.GetInterval("CODY_GATEWAY_ACTOR_CONCURRENT_LIMIT_INTERVAL", "10s", "The interval at which to check the concurrent requests limit from an actor.")
 }
 
 func (c *Config) Validate() error {

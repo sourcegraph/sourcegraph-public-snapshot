@@ -14,7 +14,7 @@ import (
 )
 
 type Config struct {
-	ConcurrentLimit        codygateway.ConcurrentLimitConfig
+	ConcurrentLimit        codygateway.ActorConcurrentLimitConfig
 	AnthropicAccessToken   string
 	AnthropicAllowedModels []string
 	OpenAIAccessToken      string

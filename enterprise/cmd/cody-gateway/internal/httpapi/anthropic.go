@@ -20,7 +20,7 @@ func newAnthropicHandler(
 	logger log.Logger,
 	eventLogger events.Logger,
 	rs limiter.RedisStore,
-	concurrentLimitConfig codygateway.ConcurrentLimitConfig,
+	concurrentLimitConfig codygateway.ActorConcurrentLimitConfig,
 	accessToken string,
 	allowedModels []string,
 ) http.Handler {

@@ -87,13 +87,13 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	rs := newRedisStore(redispool.Cache)
 
 	obctx.Logger.Debug("concurrent limit",
-		log.Float32("percentage", config.ConcurrentLimit.Percentage),
-		log.String("internal", config.ConcurrentLimit.Interval.String()),
+		log.Float32("percentage", config.ActorConcurrentLimit.Percentage),
+		log.String("internal", config.ActorConcurrentLimit.Interval.String()),
 	)
 	// Set up our handler chain, which is run from the bottom up. Application handlers
 	// come last.
 	handler := httpapi.NewHandler(obctx.Logger, eventLogger, rs, authr, &httpapi.Config{
-		ConcurrentLimit:        config.ConcurrentLimit,
+		ConcurrentLimit:        config.ActorConcurrentLimit,
 		AnthropicAccessToken:   config.Anthropic.AccessToken,
 		AnthropicAllowedModels: config.Anthropic.AllowedModels,
 		OpenAIAccessToken:      config.OpenAI.AccessToken,

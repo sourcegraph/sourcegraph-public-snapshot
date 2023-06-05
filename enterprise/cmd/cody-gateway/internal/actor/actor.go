@@ -98,7 +98,7 @@ func (a *Actor) Limiter(
 	logger log.Logger,
 	redis limiter.RedisStore,
 	feature types.CompletionsFeature,
-	concurrentLimitConfig codygateway.ConcurrentLimitConfig,
+	concurrentLimitConfig codygateway.ActorConcurrentLimitConfig,
 ) (limiter.Limiter, bool) {
 	if a == nil {
 		// Not logged in, no limit applicable.
