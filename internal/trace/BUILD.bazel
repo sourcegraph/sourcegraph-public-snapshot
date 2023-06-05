@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -30,5 +31,15 @@ go_library(
         "@io_opentelemetry_go_otel//codes",
         "@io_opentelemetry_go_otel_trace//:trace",
         "@org_golang_x_net//trace",
+    ],
+)
+
+go_test(
+    name = "trace_test",
+    srcs = ["attributes_test.go"],
+    embed = [":trace"],
+    deps = [
+        "//lib/errors",
+        "@com_github_stretchr_testify//require",
     ],
 )
