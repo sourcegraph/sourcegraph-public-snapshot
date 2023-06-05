@@ -7072,6 +7072,11 @@ type Site implements SettingsSubject {
     Whether users are required to have a verified email in order to access Cody.
     """
     requiresVerifiedEmailForCody: Boolean!
+
+    """
+    Whether Cody is enabled for this site.
+    """
+    isCodyEnabled: Boolean!
 }
 
 """
