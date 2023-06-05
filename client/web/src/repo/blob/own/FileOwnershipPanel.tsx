@@ -73,7 +73,7 @@ export const FileOwnershipPanel: React.FunctionComponent<
             ? (userId: string | undefined) => (
                   <MakeOwnerButton
                       onSuccess={refetch}
-                      onError={(_: Error) => {}} // TODO(#52911)
+                      onError={() => {}} // TODO(#52911)
                       repoId={repoID}
                       path={filePath}
                       userId={userId}
