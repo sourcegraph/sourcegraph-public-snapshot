@@ -26,13 +26,17 @@ func NewCleaner(ctx context.Context, observationCtx *observation.Context, worker
 	})
 
 	// We look for jobs to clean up every hour.
-	return goroutine.NewPeriodicGoroutineWithMetrics(
-		ctx, "insights.data_retention_job_cleaner", "removes completed data retention jobs",
-		1*time.Hour, goroutine.HandlerFunc(
+	return goroutine.NewPeriodicGoroutine(
+		ctx,
+		goroutine.HandlerFunc(
 			func(ctx context.Context) error {
 				return cleanJobs(ctx, workerBaseStore)
 			},
-		), operation,
+		),
+		goroutine.WithName("insights.data_retention_job_cleaner"),
+		goroutine.WithDescription("removes completed data retention jobs"),
+		goroutine.WithInterval(1*time.Hour),
+		goroutine.WithOperation(operation),
 	)
 }
 

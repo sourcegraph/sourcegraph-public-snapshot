@@ -2,7 +2,6 @@ import { CodebaseContext } from '../../codebase-context'
 import { ContextMessage } from '../../codebase-context/messages'
 import { MAX_CURRENT_FILE_TOKENS, MAX_HUMAN_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText, truncateTextStart } from '../../prompt/truncation'
-import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { Interaction } from '../transcript/interaction'
 
 import { Recipe, RecipeContext, RecipeID } from './recipe'
@@ -15,6 +14,8 @@ export class NonStop implements Recipe {
         const controllers = context.editor.controllers
         const selection = context.editor.getActiveTextEditorSelection()
 
+        // TODO: Make this work with unsaved documents
+        // TODO: Do not require any text to be selected
         if (!controllers || !selection) {
             await context.editor.showWarningMessage('Cody Fixups: Failed to start.')
             return null
@@ -51,18 +52,18 @@ export class NonStop implements Recipe {
             .replace('{truncateTextStart}', truncateTextStart(selection.precedingText, quarterFileContext))
             .replace('{fileName}', selection.fileName)
 
-        context.responseMultiplexer.sub(
-            'selection',
-            new BufferedBotResponseSubscriber(async content => {
-                // TODO Handles LLM output
-                // TODO Replace the selected text with the suggested replacement
-                // Mark the task as done
+        let text = ''
+
+        context.responseMultiplexer.sub('selection', {
+            onResponse: async (content: string) => {
+                text += content
+                await context.editor.didReceiveFixupText(taskID, text, 'streaming')
+            },
+            onTurnComplete: async () => {
+                await context.editor.didReceiveFixupText(taskID, text, 'complete')
                 controllers.task.stop(taskID)
-                if (!content) {
-                    await context.editor.showWarningMessage('Cody did not suggest any replacement.')
-                }
-            })
-        )
+            },
+        })
 
         return Promise.resolve(
             new Interaction(

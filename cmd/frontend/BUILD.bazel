@@ -1,4 +1,7 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
 
 go_library(
     name = "frontend_lib",
@@ -22,4 +25,50 @@ go_binary(
         "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
         "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
     },
+)
+
+pkg_tar(
+    name = "tar_frontend",
+    srcs = [":frontend"],
+)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_base",
+    entrypoint = [
+        "/sbin/tini",
+        "--",
+        "/frontend",
+    ],
+    env = {
+        "CONFIGURATION_MODE": "server",
+        "PGDATABASE": "sg",
+        "PGHOST": "pgsql",
+        "PGPORT": "5432",
+        "PGSSLMODE": "disable",
+        "PGUSER": "sg",
+        "CODEINTEL_PGDATABASE": "sg",
+        "CODEINTEL_PGHOST": "codeintel-db",
+        "CODEINTEL_PGPORT": "5432",
+        "CODEINTEL_PGSSLMODE": "disable",
+        "CODEINTEL_PGUSER": "sg",
+        "PUBLIC_REPO_REDIRECTS": "true",
+    },
+    tars = [":tar_frontend"],
+    user = "sourcegraph",
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["frontend:candidate"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = ["requires-network"],
 )

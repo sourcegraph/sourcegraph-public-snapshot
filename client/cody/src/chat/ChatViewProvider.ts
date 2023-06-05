@@ -313,6 +313,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     void this.clearAndRestartSession()
                 }
                 this.onCompletionEnd()
+                void this.editor.controllers.inline.error()
                 console.error(`Completion request failed: ${err}`)
             },
         })
@@ -622,6 +623,21 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     /**
+     * Send embedding connections or results error to output
+     */
+    private logEmbeddingsSearchErrors(): void {
+        if (this.config.useContext !== 'embeddings') {
+            return
+        }
+        const searchErrors = this.codebaseContext.getEmbeddingSearchErrors()
+        // Display error message as assistant response for users with indexed codebase but getting search errors
+        if (this.codebaseContext.checkEmbeddingsConnection() && searchErrors) {
+            this.transcript.addErrorAsAssistantResponse(searchErrors)
+            debug('ChatViewProvider:onLogEmbeddingsErrors', '', { verbose: searchErrors })
+        }
+    }
+
+    /**
      * Publish the config to the webview.
      */
     private publishConfig(): void {
@@ -680,16 +696,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             case 'click':
                 logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri)
                 break
-        }
-    }
-
-    /**
-     * Send embedding connections or results error to output
-     */
-    private logEmbeddingsSearchErrors(): void {
-        const searchErrors = this.codebaseContext.getEmbeddingSearchErrors()
-        if (searchErrors) {
-            debug('ChatViewProvider:onLogEmbeddingsErrors', '', { verbose: searchErrors })
         }
     }
 

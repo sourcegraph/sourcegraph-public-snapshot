@@ -269,7 +269,7 @@ pub struct Reference<'a> {
 }
 
 pub fn parse_tree<'a>(
-    config: &mut LocalConfiguration,
+    config: &LocalConfiguration,
     tree: &'a tree_sitter::Tree,
     source_bytes: &'a [u8],
 ) -> Result<Vec<scip::types::Occurrence>> {
@@ -425,9 +425,10 @@ mod test {
         .expect("dump document")
     }
 
-    fn parse_file_for_lang(config: &mut LocalConfiguration, source_code: &str) -> Result<Document> {
+    fn parse_file_for_lang(config: &LocalConfiguration, source_code: &str) -> Result<Document> {
         let source_bytes = source_code.as_bytes();
-        let tree = config.parser.parse(source_bytes, None).unwrap();
+        let mut parser = config.get_parser();
+        let tree = parser.parse(source_bytes, None).unwrap();
 
         let occ = parse_tree(config, &tree, source_bytes)?;
         let mut doc = Document::new();

@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "store",
@@ -30,6 +31,7 @@ go_library(
         "//enterprise/internal/batches/search",
         "//enterprise/internal/batches/sources/azuredevops",
         "//enterprise/internal/batches/sources/bitbucketcloud",
+        "//enterprise/internal/batches/sources/gerrit",
         "//enterprise/internal/batches/store/author",
         "//enterprise/internal/batches/types",
         "//internal/actor",

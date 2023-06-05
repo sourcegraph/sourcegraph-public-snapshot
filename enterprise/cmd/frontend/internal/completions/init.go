@@ -24,14 +24,14 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	logger := log.Scoped("completions", "")
+	logger := log.Scoped("completions", "Cody completions")
 
 	enterpriseServices.NewChatCompletionsStreamHandler = func() http.Handler {
-		completionsHandler := httpapi.NewChatCompletionsStreamHandler(logger, db)
+		completionsHandler := httpapi.NewChatCompletionsStreamHandler(logger.Scoped("chat", "chat completions handler"), db)
 		return requireVerifiedEmailMiddleware(db, observationCtx.Logger, completionsHandler)
 	}
 	enterpriseServices.NewCodeCompletionsHandler = func() http.Handler {
-		codeCompletionsHandler := httpapi.NewCodeCompletionsHandler(logger, db)
+		codeCompletionsHandler := httpapi.NewCodeCompletionsHandler(logger.Scoped("code", "code completions handler"), db)
 		return requireVerifiedEmailMiddleware(db, observationCtx.Logger, codeCompletionsHandler)
 	}
 	enterpriseServices.CompletionsResolver = resolvers.NewCompletionsResolver(db, observationCtx.Logger)

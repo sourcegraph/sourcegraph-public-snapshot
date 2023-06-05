@@ -17,16 +17,16 @@
         "2023-09-20T10:00:00.000-07:00"
       ],
       "current": "5.1.0",
-      "captainGitHubUsername": "coury-clark",
-      "captainSlackUsername": "coury"
+      "captainGitHubUsername": "unknwon",
+      "captainSlackUsername": "joe"
     },
-    "5.0.5": {
-      "codeFreezeDate": "2023-05-24T10:00:00.000-07:00",
-      "securityApprovalDate": "2023-05-24T10:00:00.000-07:00",
-      "releaseDate": "2023-05-31T10:00:00.000-07:00",
-      "current": "5.0.5",
-      "captainGitHubUsername": "keegancsmith",
-      "captainSlackUsername": "keegan"
+    "5.0.6": {
+      "codeFreezeDate": "2023-06-07T10:00:00.000-07:00",
+      "securityApprovalDate": "2023-06-07T10:00:00.000-07:00",
+      "releaseDate": "2023-06-14T10:00:00.000-07:00",
+      "current": "5.0.6",
+      "captainGitHubUsername": "camdencheek",
+      "captainSlackUsername": "camden"
     }
   },
   "dryRun": {
@@ -35,15 +35,5 @@
     "trackingIssues": false,
     "calendar": false,
     "slack": false
-  },
-  "in_progress": {
-    "captainGitHubUsername": "keegancsmith",
-    "captainSlackUsername": "keegan",
-    "releases": [
-      {
-        "version": "5.0.5",
-        "previous": "5.0.4"
-      }
-    ]
   }
 }
