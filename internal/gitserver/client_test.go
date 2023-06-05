@@ -178,14 +178,9 @@ func TestProtoRoundTrip(t *testing.T) {
 
 	createCommit := func(original protocol.CreateCommitFromPatchResponse) bool {
 		var converted protocol.CreateCommitFromPatchResponse
-
 		converted.FromProto(original.ToProto())
 
-		if diff = cmp.Diff(original, converted); diff != "" {
-			return false
-		}
-
-		return true
+		return cmp.Diff(original, converted) == ""
 	}
 
 	if err := quick.Check(createCommit, nil); err != nil {
