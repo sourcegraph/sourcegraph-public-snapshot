@@ -75,7 +75,7 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reas
                                 className="mx-2"
                                 inline={true}
                             />
-                            {/*In case of unresolved, but guessed GitHub team, ID is 0 and we don't need to provide a link to the non-existing team*/}
+                            {/* In case of unresolved, but guessed GitHub team, ID is 0 and we don't need to provide a link to the non-existing team. */}
                             <LinkOrSpan to={owner.external ? undefined : `/teams/${owner.name}`}>
                                 {owner.teamDisplayName || owner.name}
                             </LinkOrSpan>
