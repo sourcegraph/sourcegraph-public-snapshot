@@ -14,7 +14,6 @@ To generate an index for your codebase and enable codebase-aware answers for Cod
 
 - [Configure Code Graph Context](code_graph_context.md) for your Sourcegraph instance
 - [Enable Cody for your Sourcegraph instance](enabling_cody_enterprise.md#step-1-enable-cody-on-your-sourcegraph-instance)
-- [Enable Cody for your Sourcegraph account](enabling_cody_enterprise.md#turning-cody-off)
 
 ### Sourcegraph.com
 
