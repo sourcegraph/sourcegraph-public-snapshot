@@ -26,18 +26,13 @@ function getsuggestionsFromConfig(config: vscode.WorkspaceConfiguration): boolea
     return config.get<boolean>('cody.experimental.suggestions', false)
 }
 
-const config = vscode.workspace.getConfiguration()
+let config = vscode.workspace.getConfiguration()
+
 
 export class EventLogger {
+
     private serverEndpoint = getServerEndpointFromConfig(config)
     private extensionDetails = { ide: 'VSCode', ideExtensionType: 'Cody' }
-    private configurationDetails = {
-        contextSelection: getUseContextFromConfig(config),
-        chatPredictions: getchatPredictionsFromConfig(config),
-        inline: getinlineFromConfig(config),
-        nonStop: getnonStopFromConfig(config),
-        suggestions: getsuggestionsFromConfig(config),
-    }
 
     private constructor(private gqlAPIClient: SourcegraphGraphQLAPIClient) {}
 
@@ -59,17 +54,28 @@ export class EventLogger {
      * @param publicProperties Public argument information.
      */
     public log(eventName: string, anonymousUserID: string, eventProperties?: any, publicProperties?: any): void {
+        // need to get the config here because it can change
+        config = vscode.workspace.getConfiguration()
+        // create the configuration details
+        const configurationDetails = {
+            contextSelection: getUseContextFromConfig(config),
+            chatPredictions: getchatPredictionsFromConfig(config),
+            inline: getinlineFromConfig(config),
+            nonStop: getnonStopFromConfig(config),
+            suggestions: getsuggestionsFromConfig(config),
+        }
+
         const argument = {
             ...eventProperties,
             serverEndpoint: this.serverEndpoint,
             extensionDetails: this.extensionDetails,
-            configurationDetails: this.configurationDetails,
+            configurationDetails: configurationDetails,
         }
         const publicArgument = {
             ...publicProperties,
             serverEndpoint: this.serverEndpoint,
             extensionDetails: this.extensionDetails,
-            configurationDetails: this.configurationDetails,
+            configurationDetails: configurationDetails,
         }
         try {
             this.gqlAPIClient
