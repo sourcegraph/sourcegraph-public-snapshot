@@ -104,7 +104,7 @@
           {
             "id": "explain",
             "title": "Explain code",
-            "description": "Cody can help explain code. Select some lines and use the \"Explain selected code\" recipe.\n[Open Recipes](command:cody.walkthrough.showExplain)",
+            "description": "Ask Cody to explain some code. Select some lines and use the \"Explain selected code\" recipe.\n[Open Recipes](command:cody.walkthrough.showExplain)",
             "media": {
               "markdown": "walkthroughs/explain.md"
             }
@@ -112,7 +112,7 @@
           {
             "id": "fixup",
             "title": "Fixup code",
-            "description": "Cody can edit and improve code using inline instructions. Type what you want Cody to do above or below a block of code and use the \"Fixup code from inline instructions\" recipe.\n[Open Recipes](command:cody.walkthrough.showFixup)",
+            "description": "Instruct Cody to edit and improve code with the \"Fixup code from inline instructions\" recipe.\n[Open Recipes](command:cody.walkthrough.showFixup)",
             "media": {
               "markdown": "walkthroughs/fixup.md"
             }
@@ -128,7 +128,7 @@
           {
             "id": "completions",
             "title": "Automatic code completion",
-            "description": "Start writing code or write a comment and Cody will suggest the next few lines for you. Choose to accept it, or open the command palette and click \"Cody: View Suggestions\" to see various code snippets Cody suggests using.\n[Enable in Settings](command:cody.walkthrough.enableAutomaticCodeCompletions)",
+            "description": "Let Cody automatically write code for you. Start writing a comment or a line of code and Cody will suggest the next few lines.\n[Enable in Settings](command:cody.walkthrough.enableAutomaticCodeCompletions)",
             "media": {
               "markdown": "walkthroughs/completions.md"
             }
