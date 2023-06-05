@@ -132,3 +132,27 @@ Visit the following pages to follow the build status for:
 - [VS Code UX Guidelines](https://code.visualstudio.com/api/ux-guidelines/webviews)
 - [VS Code Webview UI Toolkit](https://microsoft.github.io/vscode-webview-ui-toolkit)
 - [VS Code Icons - Codicons](https://microsoft.github.io/vscode-codicons/dist/codicon.html)
+
+## Debugging with dedicated Node DevTools
+
+1. **Initialize the Build Watcher**: Run the following command from the monorepo root to start the build watcher:
+
+```sh
+pnpm --filter cody-ai run watch
+```
+
+2. **Launch the VSCode Extension Host**: Next, start the VSCode extension host by executing the command below from the monorepo root:
+
+```sh
+pnpm --filter cody-ai run start:debug
+```
+
+3. **Access the Chrome Inspector**: Open up your Google Chrome browser and navigate to `chrome://inspect/#devices`.
+4. **Open Node DevTools**: Look for and click on the option that says "Open dedicated DevTools for Node".
+5. **Specify the Debugging Endpoint**: At this point, DevTools aren't initialized yet. Therefore, you need to specify [the debugging endpoint](https://nodejs.org/en/docs/inspector/) `localhost:9333` (the port depends on the `--inspect-extensions` CLI flag used in the `start:debug` npm script)
+6. **Start Debugging Like a PRO**: yay!
+
+### Moar tips
+
+1. To open the webviews developer tools: cmd+shift+p and select `Developer: Toggle Developer Tools`
+2. To reload extension sources: cmd+shift+p and select `Developer: Reload Window`. If you have the watcher running it should be enough to get the latest changes to the extension host.

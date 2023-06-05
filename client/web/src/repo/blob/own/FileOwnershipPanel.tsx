@@ -12,6 +12,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Alert, Button, ErrorAlert, H3, H4, Icon, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
+import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import {
     FetchOwnershipResult,
     FetchOwnershipVariables,
@@ -19,9 +20,11 @@ import {
     OwnershipConnectionFields,
     SearchPatternType,
 } from '../../../graphql-operations'
+import { OwnershipAssignPermission } from '../../../rbac/constants'
 
 import { FileOwnershipEntry } from './FileOwnershipEntry'
 import { FETCH_OWNERS } from './grapqlQueries'
+import { MakeOwnerButton } from './MakeOwnerButton'
 
 import styles from './FileOwnershipPanel.module.scss'
 
@@ -36,13 +39,14 @@ export const FileOwnershipPanel: React.FunctionComponent<
         telemetryService.log('OwnershipPanelOpened')
     }, [telemetryService])
 
-    const { data, loading, error } = useQuery<FetchOwnershipResult, FetchOwnershipVariables>(FETCH_OWNERS, {
+    const { data, loading, error, refetch } = useQuery<FetchOwnershipResult, FetchOwnershipVariables>(FETCH_OWNERS, {
         variables: {
             repo: repoID,
             revision: revision ?? '',
             currentPath: filePath,
         },
     })
+    const [ownPromotionEnabled] = useFeatureFlag('own-promote')
 
     if (loading) {
         return (
@@ -61,8 +65,24 @@ export const FileOwnershipPanel: React.FunctionComponent<
         )
     }
 
+    const canAssignOwners = (data?.currentUser?.permissions?.nodes || []).some(
+        permission => permission.displayName === OwnershipAssignPermission
+    )
+    const makeOwnerButton =
+        canAssignOwners && ownPromotionEnabled
+            ? (userId: string | undefined) => (
+                  <MakeOwnerButton
+                      onSuccess={refetch}
+                      onError={() => {}} // TODO(#52911)
+                      repoId={repoID}
+                      path={filePath}
+                      userId={userId}
+                  />
+              )
+            : undefined
+
     if (data?.node?.__typename === 'Repository') {
-        return <OwnerList data={data?.node?.commit?.blob?.ownership} />
+        return <OwnerList data={data?.node?.commit?.blob?.ownership} makeOwnerButton={makeOwnerButton} />
     }
     return <OwnerList />
 }
@@ -140,9 +160,10 @@ const resolveOwnerSearchPredicate = (owners?: OwnerFields[]): string => {
 
 interface OwnerListProps {
     data?: OwnershipConnectionFields
+    makeOwnerButton?: (userId: string | undefined) => React.ReactElement
 }
 
-const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data }) => {
+const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data, makeOwnerButton }) => {
     if (data?.nodes && data.nodes.length) {
         const nodes = data.nodes
         const totalCount = data.totalOwners
@@ -155,6 +176,7 @@ const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data }) => {
                             <th>Contact</th>
                             <th>Owner</th>
                             <th>Reason</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -209,14 +231,25 @@ const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data }) => {
                                             reason.__typename === 'AssignedOwner'
                                     )
                             )
-                            .map((ownership, index) => (
+                            .map((ownership, index) => {
+                                const userId =
+                                    ownership.owner.__typename === 'Person' &&
+                                    ownership.owner.user?.__typename === 'User'
+                                        ? ownership.owner.user.id
+                                        : undefined
                                 // This list is not expected to change, so it's safe to use the index as a key.
                                 // eslint-disable-next-line react/no-array-index-key
-                                <React.Fragment key={index}>
-                                    {index > 0 && <tr className={styles.bordered} />}
-                                    <FileOwnershipEntry owner={ownership.owner} reasons={ownership.reasons} />
-                                </React.Fragment>
-                            ))}
+                                return (
+                                    <React.Fragment key={index}>
+                                        {index > 0 && <tr className={styles.bordered} />}
+                                        <FileOwnershipEntry
+                                            owner={ownership.owner}
+                                            reasons={ownership.reasons}
+                                            makeOwnerButton={makeOwnerButton?.(userId)}
+                                        />
+                                    </React.Fragment>
+                                )
+                            })}
                     </tbody>
                 </table>
             </div>
