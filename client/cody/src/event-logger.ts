@@ -8,17 +8,22 @@ import { LocalStorage } from './services/LocalStorageProvider'
 
 let eventLoggerGQLClient: SourcegraphGraphQLAPIClient
 let eventLogger: EventLogger | null = null
-let anonymousUserID: string | null
+let anonymousUserID: string
 
 export async function updateEventLogger(
     config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>,
     localStorage: LocalStorage
 ): Promise<void> {
-    await localStorage.setAnonymousUserID()
+    const status = await localStorage.setAnonymousUserID()
+    anonymousUserID = localStorage.getAnonymousUserID() || ''
     if (!eventLoggerGQLClient) {
         eventLoggerGQLClient = new SourcegraphGraphQLAPIClient(config)
         eventLogger = EventLogger.create(eventLoggerGQLClient)
-        await logCodyInstalled()
+        if (status === 'installed') {
+            logEvent('CodyInstalled')
+        } else {
+            logEvent('CodyVSCodeExtension:CodySavedLogin:executed')
+        }
     } else {
         eventLoggerGQLClient.onConfigurationChange(config)
     }
@@ -39,7 +44,6 @@ export function logEvent(eventName: string, eventProperties?: any, publicPropert
     if (!eventLogger || !anonymousUserID) {
         return
     }
-
     const argument = {
         ...eventProperties,
         version: packageVersion,
@@ -49,12 +53,9 @@ export function logEvent(eventName: string, eventProperties?: any, publicPropert
         ...publicProperties,
         version: packageVersion,
     }
-    void eventLogger.log(eventName, anonymousUserID, argument, publicArgument)
-}
-
-export async function logCodyInstalled(): Promise<void> {
-    if (!eventLogger || !anonymousUserID) {
-        return
+    try {
+        eventLogger.log(eventName, anonymousUserID, argument, publicArgument)
+    } catch (error) {
+        console.error(error)
     }
-    await eventLogger.log('CodyInstalled', anonymousUserID)
 }

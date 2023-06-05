@@ -9,7 +9,7 @@ import (
 
 	"github.com/davecgh/go-spew/spew"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -206,6 +206,7 @@ func (m *mockGitLab) ListProjects(c *gitlab.Client, ctx context.Context, urlStr 
 	}
 	return projs[(page-1)*perPage:], nil, nil
 }
+
 func (m *mockGitLab) ListTree(c *gitlab.Client, ctx context.Context, op gitlab.ListTreeOp) ([]*gitlab.Tree, error) {
 	if _, ok := m.madeListTree[c.Auth.Hash()]; !ok {
 		m.madeListTree[c.Auth.Hash()] = map[gitlab.ListTreeOp]int{}

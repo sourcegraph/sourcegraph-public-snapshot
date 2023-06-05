@@ -2,7 +2,6 @@ package mapper
 
 import (
 	"context"
-	"time"
 
 	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store"
@@ -60,7 +59,7 @@ func NewSeedMapper(
 
 func mapInitializerRankingGraph(
 	ctx context.Context,
-	store store.Store,
+	s store.Store,
 	batchSize int,
 ) (
 	numInitialPathsProcessed int,
@@ -71,25 +70,35 @@ func mapInitializerRankingGraph(
 		return 0, 0, nil
 	}
 
-	return store.InsertInitialPathCounts(
+	derivativeGraphKeyPrefix, _, err := store.DerivativeGraphKey(ctx, s)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return s.InsertInitialPathCounts(
 		ctx,
-		rankingshared.DerivativeGraphKeyFromTime(time.Now()),
+		rankingshared.DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix),
 		batchSize,
 	)
 }
 
 func mapRankingGraph(
 	ctx context.Context,
-	store store.Store,
+	s store.Store,
 	batchSize int,
 ) (numReferenceRecordsProcessed int, numInputsInserted int, err error) {
 	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 		return 0, 0, nil
 	}
 
-	return store.InsertPathCountInputs(
+	derivativeGraphKeyPrefix, _, err := store.DerivativeGraphKey(ctx, s)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return s.InsertPathCountInputs(
 		ctx,
-		rankingshared.DerivativeGraphKeyFromTime(time.Now()),
+		rankingshared.DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix),
 		batchSize,
 	)
 }

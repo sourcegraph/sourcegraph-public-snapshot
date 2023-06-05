@@ -16,7 +16,7 @@ type AutoindexingServiceResolver interface {
 	UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error)
 
 	// Inference
-	InferAutoIndexJobsForRepo(ctx context.Context, args *InferAutoIndexJobsForRepoArgs) ([]AutoIndexJobDescriptionResolver, error)
+	InferAutoIndexJobsForRepo(ctx context.Context, args *InferAutoIndexJobsForRepoArgs) (InferAutoIndexJobsResultResolver, error)
 	QueueAutoIndexJobsForRepo(ctx context.Context, args *QueueAutoIndexJobsForRepoArgs) ([]PreciseIndexResolver, error)
 }
 
@@ -51,6 +51,11 @@ type InferredConfigurationResolver interface {
 	Configuration() string
 	ParsedConfiguration(ctx context.Context) (*[]AutoIndexJobDescriptionResolver, error)
 	LimitError() *string
+}
+
+type InferAutoIndexJobsResultResolver interface {
+	Jobs() []AutoIndexJobDescriptionResolver
+	InferenceOutput() string
 }
 
 type (

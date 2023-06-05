@@ -100,7 +100,9 @@ export class SourcegraphGraphQLAPIClient {
         private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
     ) {}
 
-    public onConfigurationChange(newConfig: typeof this.config): void {
+    public onConfigurationChange(
+        newConfig: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>
+    ): void {
         this.config = newConfig
     }
 
@@ -156,6 +158,10 @@ export class SourcegraphGraphQLAPIClient {
         argument?: string | {}
         publicArgument?: string | {}
     }): Promise<void | Error> {
+        if (process.env.CODY_TESTING === 'true') {
+            console.log(`not logging ${event.event} in test mode`)
+            return
+        }
         try {
             if (this.config.serverEndpoint === this.dotcomUrl) {
                 await this.fetchSourcegraphAPI<APIResponse<LogEventResponse>>(LOG_EVENT_MUTATION, event).then(

@@ -13,14 +13,16 @@ export class Fixup implements Recipe {
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         // TODO: Prompt the user for additional direction.
-        const selection = context.editor.getActiveTextEditorSelection() || context.editor.controller?.selection
+        const selection = context.editor.getActiveTextEditorSelection() || context.editor.controllers?.inline.selection
         if (!selection) {
+            await context.editor.controllers?.inline.error()
             await context.editor.showWarningMessage('Select some code to fixup.')
             return null
         }
         const quarterFileContext = Math.floor(MAX_CURRENT_FILE_TOKENS / 4)
         if (truncateText(selection.selectedText, quarterFileContext * 2) !== selection.selectedText) {
             const msg = "The amount of text selected exceeds Cody's current capacity."
+            await context.editor.controllers?.inline.error()
             await context.editor.showWarningMessage(msg)
             return null
         }
@@ -40,6 +42,7 @@ export class Fixup implements Recipe {
             'selection',
             new BufferedBotResponseSubscriber(async content => {
                 if (!content) {
+                    await context.editor.controllers?.inline.error()
                     await context.editor.showWarningMessage(
                         'Cody did not suggest any replacement.\nTry starting a new conversation with Cody.'
                     )
@@ -95,7 +98,7 @@ export class Fixup implements Recipe {
     \`\`\`
 
     Additional Instruction:
-    - {responseMultiplexerPrompt}
     - {humanInput}
+    - {responseMultiplexerPrompt}
 `
 }

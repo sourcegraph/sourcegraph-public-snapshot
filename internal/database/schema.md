@@ -71,7 +71,7 @@ Foreign-key constraints:
  assigned_at          | timestamp without time zone |           | not null | now()
 Indexes:
     "assigned_owners_pkey" PRIMARY KEY, btree (id)
-    "assigned_owners_file_path" btree (file_path_id)
+    "assigned_owners_file_path_owner" UNIQUE, btree (file_path_id, owner_user_id)
 Foreign-key constraints:
     "assigned_owners_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
     "assigned_owners_owner_user_id_fkey" FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
@@ -893,6 +893,7 @@ Referenced by:
 Indexes:
     "codeintel_initial_path_ranks_processed_pkey" PRIMARY KEY, btree (id)
     "codeintel_initial_path_ranks_processed_cgraph_key_codeintel_ini" UNIQUE, btree (graph_key, codeintel_initial_path_ranks_id)
+    "codeintel_initial_path_ranks_processed_codeintel_initial_path_r" btree (codeintel_initial_path_ranks_id)
 Foreign-key constraints:
     "fk_codeintel_initial_path_ranks" FOREIGN KEY (codeintel_initial_path_ranks_id) REFERENCES codeintel_initial_path_ranks(id) ON DELETE CASCADE
 
@@ -961,6 +962,7 @@ Foreign-key constraints:
  id              | integer                  |           | not null | nextval('codeintel_ranking_exports_id_seq'::regclass)
  last_scanned_at | timestamp with time zone |           |          | 
  deleted_at      | timestamp with time zone |           |          | 
+ upload_key      | text                     |           |          | 
 Indexes:
     "codeintel_ranking_exports_pkey" PRIMARY KEY, btree (id)
     "codeintel_ranking_exports_graph_key_upload_id" UNIQUE, btree (graph_key, upload_id)
@@ -975,20 +977,31 @@ Referenced by:
 
 ```
 
+# Table "public.codeintel_ranking_graph_keys"
+```
+   Column   |           Type           | Collation | Nullable |                         Default                          
+------------+--------------------------+-----------+----------+----------------------------------------------------------
+ id         | integer                  |           | not null | nextval('codeintel_ranking_graph_keys_id_seq'::regclass)
+ graph_key  | text                     |           | not null | 
+ created_at | timestamp with time zone |           |          | now()
+Indexes:
+    "codeintel_ranking_graph_keys_pkey" PRIMARY KEY, btree (id)
+
+```
+
 # Table "public.codeintel_ranking_path_counts_inputs"
 ```
     Column     |  Type   | Collation | Nullable |                             Default                              
 ---------------+---------+-----------+----------+------------------------------------------------------------------
  id            | bigint  |           | not null | nextval('codeintel_ranking_path_counts_inputs_id_seq'::regclass)
- document_path | text    |           | not null | 
  count         | integer |           | not null | 
  graph_key     | text    |           | not null | 
  processed     | boolean |           | not null | false
- repository_id | integer |           | not null | 
+ definition_id | bigint  |           |          | 
 Indexes:
     "codeintel_ranking_path_counts_inputs_pkey" PRIMARY KEY, btree (id)
+    "codeintel_ranking_path_counts_inputs_graph_key_definition_id" btree (graph_key, definition_id, id) WHERE NOT processed
     "codeintel_ranking_path_counts_inputs_graph_key_id" btree (graph_key, id)
-    "codeintel_ranking_path_counts_inputs_graph_key_repository_id_id" btree (graph_key, repository_id, id) WHERE NOT processed
 
 ```
 
@@ -1336,7 +1349,7 @@ Contains state for own jobs that scrape events if enabled.
 ------------------+--------------------------+-----------+----------+-------------------------------------------------
  id               | integer                  |           | not null | nextval('executor_heartbeats_id_seq'::regclass)
  hostname         | text                     |           | not null | 
- queue_name       | text                     |           | not null | 
+ queue_name       | text                     |           |          | 
  os               | text                     |           | not null | 
  architecture     | text                     |           | not null | 
  docker_version   | text                     |           | not null | 
@@ -1346,9 +1359,12 @@ Contains state for own jobs that scrape events if enabled.
  src_cli_version  | text                     |           | not null | 
  first_seen_at    | timestamp with time zone |           | not null | now()
  last_seen_at     | timestamp with time zone |           | not null | now()
+ queue_names      | text[]                   |           |          | 
 Indexes:
     "executor_heartbeats_pkey" PRIMARY KEY, btree (id)
     "executor_heartbeats_hostname_key" UNIQUE CONSTRAINT, btree (hostname)
+Check constraints:
+    "one_of_queue_name_queue_names" CHECK (queue_name IS NOT NULL AND queue_names IS NULL OR queue_names IS NOT NULL AND queue_name IS NULL)
 
 ```
 
@@ -1373,6 +1389,8 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
 **os**: The operating system running the executor.
 
 **queue_name**: The queue name that the executor polls for work.
+
+**queue_names**: The list of queue names that the executor polls for work.
 
 **src_cli_version**: The version of src-cli used by the executor.
 
@@ -1879,7 +1897,7 @@ Stores data points for a code insight that do not need to be queried directly, b
  protected                   | boolean                  |           | not null | false
  repository_patterns         | text[]                   |           |          | 
  last_resolved_at            | timestamp with time zone |           |          | 
- lockfile_indexing_enabled   | boolean                  |           | not null | false
+ embeddings_enabled          | boolean                  |           | not null | false
 Indexes:
     "lsif_configuration_policies_pkey" PRIMARY KEY, btree (id)
     "lsif_configuration_policies_repository_id" btree (repository_id)
@@ -1895,8 +1913,6 @@ Triggers:
 **index_intermediate_commits**: If the matching Git object is a branch, setting this value to true will also index all commits on the matching branches. Setting this value to false will only consider the tip of the branch.
 
 **indexing_enabled**: Whether or not this configuration policy affects auto-indexing schedules.
-
-**lockfile_indexing_enabled**: Whether to index the lockfiles in the repositories matched by this policy
 
 **pattern**: A pattern used to match` names of the associated Git object type.
 
@@ -3113,8 +3129,14 @@ Indexes:
  license_user_count      | integer                  |           |          | 
  license_expires_at      | timestamp with time zone |           |          | 
  access_token_enabled    | boolean                  |           | not null | true
+ site_id                 | uuid                     |           |          | 
+ license_check_token     | bytea                    |           |          | 
+ revoked_at              | timestamp with time zone |           |          | 
+ salesforce_sub_id       | text                     |           |          | 
+ salesforce_opp_id       | text                     |           |          | 
 Indexes:
     "product_licenses_pkey" PRIMARY KEY, btree (id)
+    "product_licenses_license_check_token_idx" UNIQUE, btree (license_check_token)
 Foreign-key constraints:
     "product_licenses_product_subscription_id_fkey" FOREIGN KEY (product_subscription_id) REFERENCES product_subscriptions(id)
 
@@ -3124,18 +3146,22 @@ Foreign-key constraints:
 
 # Table "public.product_subscriptions"
 ```
-             Column              |           Type           | Collation | Nullable | Default 
----------------------------------+--------------------------+-----------+----------+---------
- id                              | uuid                     |           | not null | 
- user_id                         | integer                  |           | not null | 
- billing_subscription_id         | text                     |           |          | 
- created_at                      | timestamp with time zone |           | not null | now()
- updated_at                      | timestamp with time zone |           | not null | now()
- archived_at                     | timestamp with time zone |           |          | 
- account_number                  | text                     |           |          | 
- llm_proxy_enabled               | boolean                  |           | not null | false
- llm_proxy_rate_limit            | integer                  |           |          | 
- llm_proxy_rate_interval_seconds | integer                  |           |          | 
+                   Column                    |           Type           | Collation | Nullable | Default 
+---------------------------------------------+--------------------------+-----------+----------+---------
+ id                                          | uuid                     |           | not null | 
+ user_id                                     | integer                  |           | not null | 
+ billing_subscription_id                     | text                     |           |          | 
+ created_at                                  | timestamp with time zone |           | not null | now()
+ updated_at                                  | timestamp with time zone |           | not null | now()
+ archived_at                                 | timestamp with time zone |           |          | 
+ account_number                              | text                     |           |          | 
+ cody_gateway_enabled                        | boolean                  |           | not null | false
+ cody_gateway_chat_rate_limit                | integer                  |           |          | 
+ cody_gateway_chat_rate_interval_seconds     | integer                  |           |          | 
+ cody_gateway_chat_rate_limit_allowed_models | text[]                   |           |          | 
+ cody_gateway_code_rate_limit                | integer                  |           |          | 
+ cody_gateway_code_rate_interval_seconds     | integer                  |           |          | 
+ cody_gateway_code_rate_limit_allowed_models | text[]                   |           |          | 
 Indexes:
     "product_subscriptions_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -3144,12 +3170,6 @@ Referenced by:
     TABLE "product_licenses" CONSTRAINT "product_licenses_product_subscription_id_fkey" FOREIGN KEY (product_subscription_id) REFERENCES product_subscriptions(id)
 
 ```
-
-**llm_proxy_enabled**: Whether or not this subscription has access to LLM-proxy
-
-**llm_proxy_rate_interval_seconds**: Custom time interval over which the for LLM-proxy rate limit is applied
-
-**llm_proxy_rate_limit**: Custom requests per time interval allowed for LLM-proxy
 
 # Table "public.query_runner_state"
 ```
@@ -4287,6 +4307,39 @@ Foreign-key constraints:
           WHERE ((changeset_specs_1.id = changesets.current_spec_id) AND (changeset_specs_1.head_ref = changeset_specs.head_ref)))))))
      JOIN repo ON ((changeset_specs.repo_id = repo.id)))
   WHERE ((changeset_specs.external_id IS NULL) AND (repo.deleted_at IS NULL));
+```
+
+# View "public.codeintel_configuration_policies"
+
+## View query:
+
+```sql
+ SELECT lsif_configuration_policies.id,
+    lsif_configuration_policies.repository_id,
+    lsif_configuration_policies.name,
+    lsif_configuration_policies.type,
+    lsif_configuration_policies.pattern,
+    lsif_configuration_policies.retention_enabled,
+    lsif_configuration_policies.retention_duration_hours,
+    lsif_configuration_policies.retain_intermediate_commits,
+    lsif_configuration_policies.indexing_enabled,
+    lsif_configuration_policies.index_commit_max_age_hours,
+    lsif_configuration_policies.index_intermediate_commits,
+    lsif_configuration_policies.protected,
+    lsif_configuration_policies.repository_patterns,
+    lsif_configuration_policies.last_resolved_at,
+    lsif_configuration_policies.embeddings_enabled
+   FROM lsif_configuration_policies;
+```
+
+# View "public.codeintel_configuration_policies_repository_pattern_lookup"
+
+## View query:
+
+```sql
+ SELECT lsif_configuration_policies_repository_pattern_lookup.policy_id,
+    lsif_configuration_policies_repository_pattern_lookup.repo_id
+   FROM lsif_configuration_policies_repository_pattern_lookup;
 ```
 
 # View "public.external_service_sync_jobs_with_next_sync_at"

@@ -31,12 +31,7 @@ export class EventLogger {
      * @param eventProperties The additional argument information.
      * @param publicProperties Public argument information.
      */
-    public async log(
-        eventName: string,
-        anonymousUserID: string,
-        eventProperties?: any,
-        publicProperties?: any
-    ): Promise<void> {
+    public log(eventName: string, anonymousUserID: string, eventProperties?: any, publicProperties?: any): void {
         const argument = {
             ...eventProperties,
             serverEndpoint: this.serverEndpoint,
@@ -47,16 +42,18 @@ export class EventLogger {
             serverEndpoint: this.serverEndpoint,
             extensionDetails: this.extensionDetails,
         }
-        console.log('api request for anonID: ' + anonymousUserID)
         try {
-            await this.gqlAPIClient.logEvent({
-                event: eventName,
-                userCookieID: anonymousUserID,
-                source: 'IDEEXTENSION',
-                url: '',
-                argument: JSON.stringify(argument),
-                publicArgument: JSON.stringify(publicArgument),
-            })
+            this.gqlAPIClient
+                .logEvent({
+                    event: eventName,
+                    userCookieID: anonymousUserID,
+                    source: 'IDEEXTENSION',
+                    url: '',
+                    argument: JSON.stringify(argument),
+                    publicArgument: JSON.stringify(publicArgument),
+                })
+                .then(() => {})
+                .catch(() => {})
         } catch (error) {
             console.log(error)
         }

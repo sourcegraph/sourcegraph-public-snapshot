@@ -93,48 +93,72 @@ func (h *simpleHandler) OnShutdown() {
 	}
 }
 
+type Option func(*PeriodicGoroutine)
+
+func WithName(name string) Option {
+	return func(p *PeriodicGoroutine) { p.name = name }
+}
+
+func WithDescription(description string) Option {
+	return func(p *PeriodicGoroutine) { p.description = description }
+}
+
+func WithInterval(interval time.Duration) Option {
+	return WithIntervalFunc(func() time.Duration { return interval })
+}
+
+func WithIntervalFunc(getInterval getIntervalFunc) Option {
+	return func(p *PeriodicGoroutine) { p.getInterval = getInterval }
+}
+
+func WithOperation(operation *observation.Operation) Option {
+	return func(p *PeriodicGoroutine) { p.operation = operation }
+}
+
+func withClock(clock glock.Clock) Option {
+	return func(p *PeriodicGoroutine) { p.clock = clock }
+}
+
 // NewPeriodicGoroutine creates a new PeriodicGoroutine with the given handler. The context provided will propagate into
 // the executing goroutine and will terminate the goroutine if cancelled.
-func NewPeriodicGoroutine(ctx context.Context, name, description string, interval time.Duration, handler Handler) *PeriodicGoroutine {
-	return NewPeriodicGoroutineWithMetrics(ctx, name, description, interval, handler, nil)
-}
+func NewPeriodicGoroutine(ctx context.Context, handler Handler, options ...Option) *PeriodicGoroutine {
+	r := newDefaultPeriodicRoutine()
+	for _, o := range options {
+		o(r)
+	}
 
-// NewPeriodicGoroutineWithMetrics creates a new PeriodicGoroutine with the given handler. The context provided will propagate into
-// the executing goroutine and will terminate the goroutine if cancelled.
-func NewPeriodicGoroutineWithMetrics(ctx context.Context, name, description string, interval time.Duration, handler Handler, operation *observation.Operation) *PeriodicGoroutine {
-	return newPeriodicGoroutine(ctx, name, description, func() time.Duration { return interval }, handler, operation, glock.NewRealClock())
-}
-
-func NewPeriodicGoroutineWithMetricsAndDynamicInterval(ctx context.Context, name, description string, getInterval getIntervalFunc, handler Handler, operation *observation.Operation) *PeriodicGoroutine {
-	return newPeriodicGoroutine(ctx, name, description, getInterval, handler, operation, glock.NewRealClock())
-}
-
-func newPeriodicGoroutine(ctx context.Context, name, description string, getInterval getIntervalFunc, handler Handler, operation *observation.Operation, clock glock.Clock) *PeriodicGoroutine {
 	ctx, cancel := context.WithCancel(ctx)
+	r.ctx = ctx
+	r.cancel = cancel
+	r.finished = make(chan struct{})
+	r.handler = wrapHandler(handler, r.name, r.description)
 
-	var h unifiedHandler
-	if uh, ok := handler.(unifiedHandler); ok {
-		h = uh
-	} else {
-		h = &simpleHandler{
-			name:    name,
-			scope:   log.Scoped(name, description),
-			Handler: handler,
-		}
-	}
+	return r
+}
 
+func newDefaultPeriodicRoutine() *PeriodicGoroutine {
 	return &PeriodicGoroutine{
-		name:        name,
-		description: description,
-		handler:     h,
-		getInterval: getInterval,
-		operation:   operation,
-		clock:       clock,
-		ctx:         ctx,
-		cancel:      cancel,
-		finished:    make(chan struct{}),
+		name:        "",
+		description: "",
+		getInterval: func() time.Duration { return time.Second },
+		operation:   nil,
+		clock:       glock.NewRealClock(),
 	}
 }
+
+func wrapHandler(handler Handler, name, description string) unifiedHandler {
+	if uh, ok := handler.(unifiedHandler); ok {
+		return uh
+	}
+
+	return &simpleHandler{
+		name:    name,
+		scope:   log.Scoped(name, description),
+		Handler: handler,
+	}
+}
+
+const MaxConsecutiveReinvocations = 100
 
 // Start begins the process of calling the registered handler in a loop. This process will
 // wait the interval supplied at construction between invocations.
@@ -144,10 +168,12 @@ func (r *PeriodicGoroutine) Start() {
 	}
 	defer close(r.finished)
 
+	reinvocations := 0
+
 loop:
 	for {
 		start := time.Now()
-		shutdown, err := runPeriodicHandler(r.ctx, r.handler, r.operation)
+		shutdown, reinvoke, err := runPeriodicHandler(r.ctx, r.handler, r.operation)
 		duration := time.Since(start)
 		if r.recorder != nil {
 			go r.recorder.LogRun(r, duration, err)
@@ -159,6 +185,23 @@ loop:
 		} else if h, ok := r.handler.(ErrorHandler); ok && err != nil {
 			h.HandleError(err)
 		}
+
+		if reinvoke {
+			select {
+			case <-r.ctx.Done():
+				break loop
+
+			default:
+				reinvocations++
+
+				if reinvocations < MaxConsecutiveReinvocations {
+					continue loop
+				}
+
+			}
+		}
+
+		reinvocations = 0
 
 		select {
 		case <-r.clock.After(r.getInterval()):
@@ -215,7 +258,9 @@ func (r *PeriodicGoroutine) RegisterRecorder(recorder *recorder.Recorder) {
 	r.recorder = recorder
 }
 
-func runPeriodicHandler(ctx context.Context, handler Handler, operation *observation.Operation) (_ bool, err error) {
+var ErrReinvokeImmediately = errors.New("periodic handler wishes to be immediately re-invoked")
+
+func runPeriodicHandler(ctx context.Context, handler Handler, operation *observation.Operation) (shutdown, reinvoke bool, err error) {
 	if operation != nil {
 		tmpCtx, _, endObservation := operation.With(ctx, &err, observation.Args{})
 		defer endObservation(1, observation.Args{})
@@ -227,9 +272,13 @@ func runPeriodicHandler(ctx context.Context, handler Handler, operation *observa
 		if ctx.Err() != nil && errors.Is(err, ctx.Err()) {
 			// If the error is due to the loop being shut down, break
 			// from the run loop in the calling function
-			return true, nil
+			return true, false, nil
+		}
+
+		if errors.Is(err, ErrReinvokeImmediately) {
+			return false, true, nil
 		}
 	}
 
-	return false, err
+	return false, false, err
 }

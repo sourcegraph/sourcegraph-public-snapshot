@@ -149,7 +149,7 @@ func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *QueueAut
 	return r.autoIndexingRootResolver.QueueAutoIndexJobsForRepo(ctx, args)
 }
 
-func (r *Resolver) InferAutoIndexJobsForRepo(ctx context.Context, args *InferAutoIndexJobsForRepoArgs) (_ []AutoIndexJobDescriptionResolver, err error) {
+func (r *Resolver) InferAutoIndexJobsForRepo(ctx context.Context, args *InferAutoIndexJobsForRepoArgs) (_ InferAutoIndexJobsResultResolver, err error) {
 	return r.autoIndexingRootResolver.InferAutoIndexJobsForRepo(ctx, args)
 }
 
@@ -211,4 +211,8 @@ func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, ar
 
 func (r *Resolver) RankingSummary(ctx context.Context) (_ []RankingSummaryResolver, err error) {
 	return r.rankingServiceResolver.RankingSummary(ctx)
+}
+
+func (r *Resolver) BumpDerivativeGraphKey(ctx context.Context) (_ *EmptyResponse, err error) {
+	return r.rankingServiceResolver.BumpDerivativeGraphKey(ctx)
 }

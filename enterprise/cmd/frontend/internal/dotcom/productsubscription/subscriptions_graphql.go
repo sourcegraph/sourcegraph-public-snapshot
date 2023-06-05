@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -133,8 +134,8 @@ func (r *productSubscription) ProductLicenses(ctx context.Context, args *graphql
 	return &productLicenseConnection{db: r.db, opt: opt}, nil
 }
 
-func (r *productSubscription) LLMProxyAccess() graphqlbackend.LLMProxyAccess {
-	return llmProxyAccessResolver{sub: r}
+func (r *productSubscription) CodyGatewayAccess() graphqlbackend.CodyGatewayAccess {
+	return codyGatewayAccessResolver{sub: r}
 }
 
 func (r *productSubscription) CurrentSourcegraphAccessToken(ctx context.Context) (*string, error) {
@@ -151,7 +152,7 @@ func (r *productSubscription) CurrentSourcegraphAccessToken(ctx context.Context)
 		return nil, errors.New("active license has been disabled for access")
 	}
 
-	token := defaultAccessToken(defaultRawAccessToken([]byte(r.activeLicense.LicenseKey)))
+	token := licensing.GenerateLicenseKeyBasedAccessToken(r.activeLicense.LicenseKey)
 	return &token, nil
 }
 
@@ -163,7 +164,7 @@ func (r *productSubscription) SourcegraphAccessTokens(ctx context.Context) (toke
 
 	var mainToken string
 	if activeLicense != nil && activeLicense.AccessTokenEnabled {
-		mainToken = defaultAccessToken(defaultRawAccessToken([]byte(r.activeLicense.LicenseKey)))
+		mainToken = licensing.GenerateLicenseKeyBasedAccessToken(r.activeLicense.LicenseKey)
 		tokens = append(tokens, mainToken)
 	}
 
@@ -175,7 +176,7 @@ func (r *productSubscription) SourcegraphAccessTokens(ctx context.Context) (toke
 		if !l.AccessTokenEnabled {
 			continue
 		}
-		lt := defaultAccessToken(defaultRawAccessToken([]byte(l.LicenseKey)))
+		lt := licensing.GenerateLicenseKeyBasedAccessToken(r.activeLicense.LicenseKey)
 		if mainToken == "" || lt != mainToken {
 			tokens = append(tokens, lt)
 		}
@@ -236,7 +237,7 @@ func (r ProductSubscriptionLicensingResolver) UpdateProductSubscription(ctx cont
 		return nil, err
 	}
 	if err := (dbSubscriptions{db: r.DB}).Update(ctx, sub.v.ID, dbSubscriptionUpdate{
-		llmProxyAccess: args.Update.LLMProxyAccess,
+		codyGatewayAccess: args.Update.CodyGatewayAccess,
 	}); err != nil {
 		return nil, err
 	}

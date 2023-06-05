@@ -104,7 +104,7 @@ func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) 
 	defer r.errTracer.Collect(&err, attribute.String("indexConfigResolver.field", "inferredConfiguration"))
 
 	var limitErr error
-	configuration, _, err := r.autoindexSvc.InferIndexConfiguration(ctx, r.repositoryID, "", "", true)
+	result, err := r.autoindexSvc.InferIndexConfiguration(ctx, r.repositoryID, "", "", true)
 	if err != nil {
 		if errors.As(err, &inference.LimitError{}) {
 			limitErr = err
@@ -112,11 +112,8 @@ func (r *indexConfigurationResolver) InferredConfiguration(ctx context.Context) 
 			return nil, err
 		}
 	}
-	if configuration == nil {
-		return nil, nil
-	}
 
-	marshaled, err := config.MarshalJSON(*configuration)
+	marshaled, err := config.MarshalJSON(config.IndexConfiguration{IndexJobs: result.IndexJobs})
 	if err != nil {
 		return nil, err
 	}

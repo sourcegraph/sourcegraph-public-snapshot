@@ -1,9 +1,10 @@
 /* eslint-disable no-console */
+
+import { execSync } from 'child_process'
 import { promises as fs } from 'fs'
 import path from 'path'
 
 import { Octokit } from 'octokit'
-import { exec } from 'shelljs'
 
 const COMMENT_HEADING = '## Bundle size report 📦'
 
@@ -22,8 +23,37 @@ const ROOT_PATH = path.join(__dirname, '../../../')
 const STATIC_ASSETS_PATH = path.join(ROOT_PATH, process.env.WEB_BUNDLE_PATH || 'ui/assets')
 const STATOSCOPE_BIN = path.join(ROOT_PATH, 'node_modules/@statoscope/cli/bin/cli.js')
 
-const MERGE_BASE = exec('git merge-base HEAD origin/main').toString().trim()
+const MERGE_BASE = execSync('git merge-base HEAD origin/main').toString().trim()
 let COMPARE_REV = ''
+
+async function findFile(root: string, filename: string): Promise<string> {
+    // file can be in one of 3 base paths
+    const parts: string[] = ['oss', 'enterprise', '']
+    const files = await Promise.all(
+        parts.flatMap(async (dir: string) => {
+            const filePath = path.join(root, dir, filename)
+            try {
+                await fs.access(filePath)
+                return filePath
+            } catch {
+                return ''
+            }
+        })
+    )
+
+    const foundFile = files.reduce((accumulator: string, possibleFile: string): string => {
+        if (possibleFile) {
+            return possibleFile
+        }
+        return accumulator
+    })
+
+    if (!foundFile) {
+        throw new Error(`"${filename} not found under root ${root}`)
+    }
+
+    return foundFile
+}
 
 /**
  * We may not have a stats.json file for the merge base commit as these are only
@@ -32,9 +62,7 @@ let COMPARE_REV = ''
  */
 function getTarPath(): string | undefined {
     console.log('--- Find a commit to compare the bundle size against')
-    const revisions = exec(`git --no-pager log "${MERGE_BASE}" --pretty=format:"%H" -n 20`, { silent: true })
-        .toString()
-        .split('\n')
+    const revisions = execSync(`git --no-pager log "${MERGE_BASE}" --pretty=format:"%H" -n 20`).toString().split('\n')
 
     for (const revision of revisions) {
         try {
@@ -42,7 +70,7 @@ function getTarPath(): string | undefined {
             const bucket = 'sourcegraph_buildkite_cache'
             const file = `sourcegraph/sourcegraph/bundle_size_cache-${revision}.tar.gz`
 
-            exec(`gsutil -q cp -r "gs://${bucket}/${file}" "${tarPath}"`)
+            execSync(`gsutil -q cp -r "gs://${bucket}/${file}" "${tarPath}"`)
 
             console.log(`Found cached archive for ${revision}:`, tarPath)
             // TODO: remove mutable global variable
@@ -51,7 +79,6 @@ function getTarPath(): string | undefined {
             return tarPath
         } catch (error) {
             console.log(`Cached archive for ${revision} not found:`, error)
-            process.exit(0)
         }
     }
 
@@ -62,24 +89,21 @@ async function prepareStats(): Promise<{ commitFile: string; compareFile: string
     const tarPath = getTarPath()
 
     if (tarPath) {
-        exec(`tar -xf ${tarPath} --strip-components=2 -C ${STATIC_ASSETS_PATH}`)
-        exec(`ls -la ${STATIC_ASSETS_PATH}`)
-
-        const commitFile = path.join(STATIC_ASSETS_PATH, `stats-${BUILDKITE_COMMIT}.json`)
-        const compareFile = path.join(STATIC_ASSETS_PATH, `stats-${COMPARE_REV}.json`)
-        console.log({ commitFile, compareFile })
+        execSync(`tar -xf ${tarPath} --strip-components=2 -C ${STATIC_ASSETS_PATH}`)
+        execSync(`ls -la ${STATIC_ASSETS_PATH}`)
 
         try {
-            await fs.access(commitFile)
-            await fs.access(compareFile)
+            const commitFile = await findFile(STATIC_ASSETS_PATH, `stats-${BUILDKITE_COMMIT}.json`)
+            const compareFile = await findFile(STATIC_ASSETS_PATH, `stats-${COMPARE_REV}.json`)
+            console.log({ commitFile, compareFile })
 
             const compareReportPath = path.join(STATIC_ASSETS_PATH, 'compare-report.html')
 
-            exec(`${STATOSCOPE_BIN} generate -i "${commitFile}" -r "${compareFile}" -t ${compareReportPath}`)
+            execSync(`${STATOSCOPE_BIN} generate -i "${commitFile}" -r "${compareFile}" -t ${compareReportPath}`)
 
             const bucket = 'sourcegraph_reports'
             const file = `statoscope-reports/${BUILDKITE_BRANCH}/compare-report.html`
-            exec(`gsutil cp ${compareReportPath} "gs://${bucket}/${file}"`)
+            execSync(`gsutil cp ${compareReportPath} "gs://${bucket}/${file}"`)
 
             return { commitFile, compareFile }
         } catch (error) {
@@ -138,8 +162,8 @@ type Report = [Header, Metric, Metric, Metric, Metric, Metric, Metric, Metric, M
 
 function parseReport(commitFile: string, compareFile: string): Report {
     const queryFile = path.join(__dirname, 'report-bundle-jora-query')
-    const rawReport = exec(`cat "${queryFile}" | ${STATOSCOPE_BIN} query -i "${compareFile}" -i "${commitFile}"`, {
-        silent: true,
+    const rawReport = execSync(`cat "${queryFile}" | ${STATOSCOPE_BIN} query -i "${compareFile}" -i "${commitFile}"`, {
+        encoding: 'utf8',
     })
 
     return JSON.parse(rawReport) as Report

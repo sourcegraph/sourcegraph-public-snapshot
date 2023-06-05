@@ -5,6 +5,7 @@ import * as vscode from 'vscode'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { ExtensionApi } from '../../src/extension-api'
+import { FixupTask } from '../../src/non-stop/FixupTask'
 import * as mockServer from '../fixtures/mock-server'
 
 /**
@@ -25,7 +26,7 @@ export async function beforeIntegrationTest(): Promise<void> {
     // Configure extension.
     const config = vscode.workspace.getConfiguration()
     await config.update('cody.serverEndpoint', mockServer.SERVER_URL)
-    await ensureExecuteCommand('cody.set-access-token', ['test-token'])
+    await ensureExecuteCommand('cody.set-access-token', [mockServer.VALID_TOKEN])
 }
 
 /**
@@ -75,4 +76,22 @@ export async function getTranscript(index: number): Promise<ChatMessage> {
     })
     assert.ok(transcript)
     return transcript[index]
+}
+
+export async function getFixupTasks(): Promise<FixupTask[]> {
+    const api = getExtensionAPI()
+    const testSupport = api.exports.testing
+    assert.ok(testSupport)
+
+    let fixups: FixupTask[] | undefined
+
+    await waitUntil(async () => {
+        if (!api.isActive || !api.exports.testing) {
+            return false
+        }
+        fixups = await getExtensionAPI().exports.testing?.fixupTasks()
+        return true
+    })
+    assert.ok(fixups)
+    return fixups || []
 }
