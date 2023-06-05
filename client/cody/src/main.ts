@@ -1,8 +1,8 @@
-import { onConfigurationChange } from '@Sourcegraph demo days/cody-shared/src/telemetry/EventLogger'
 import * as vscode from 'vscode'
 
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ConfigurationWithAccessToken } from '@sourcegraph/cody-shared/src/configuration'
+import { onConfigurationChange } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
 
 import { ChatViewProvider, getAuthStatus } from './chat/ChatViewProvider'
 import { DOTCOM_URL, LOCAL_APP_URL, isLoggedIn } from './chat/protocol'
