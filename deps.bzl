@@ -978,8 +978,8 @@ def go_dependencies():
         name = "com_github_bwesterb_go_ristretto",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/bwesterb/go-ristretto",
-        sum = "h1:S2C0mmSjCLS3H9+zfXoIoKzl+cOncvBvt6pE+zTm5Ms=",
-        version = "v1.2.2",
+        sum = "h1:1w53tCkGhCQ5djbat3+MH0BAQ5Kfgbt56UZQ/JMzngw=",
+        version = "v1.2.3",
     )
     go_repository(
         name = "com_github_c2h5oh_datasize",
@@ -1145,8 +1145,8 @@ def go_dependencies():
             "//third_party/com_github_cloudflare_circl:dh_x25519_BUILD_bazel.patch",  # keep
             "//third_party/com_github_cloudflare_circl:dh_x448_BUILD_bazel.patch",  # keep
         ],
-        sum = "h1:VWp8dY3yH69fdM7lM6A1+NhhVoDu9vqK0jOgmkQHFWk=",
-        version = "v1.3.2",
+        sum = "h1:fE/Qz0QdIGqeWfnwq0RE0R7MI51s0M2E4Ga9kq5AEMs=",
+        version = "v1.3.3",
     )
 
     go_repository(
@@ -2393,8 +2393,8 @@ def go_dependencies():
         name = "com_github_go_enry_go_enry_v2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/go-enry/go-enry/v2",
-        sum = "h1:BwvNrN58JqBJhyyVdZSl5QD3xoxEEGYUrRyPh31FGhw=",
-        version = "v2.8.3",
+        sum = "h1:QrY3hx/RiqCJJRbdU0MOcjfTM1a586J0WSooqdlJIhs=",
+        version = "v2.8.4",
     )
     go_repository(
         name = "com_github_go_enry_go_oniguruma",
@@ -6349,15 +6349,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        patch_args = ["-p1"],
-        patches = [
-            "//third_party/com_github_sourcegraph_zoekt:zoekt_archive_index.patch",
-            "//third_party/com_github_sourcegraph_zoekt:zoekt_git_index.patch",
-            "//third_party/com_github_sourcegraph_zoekt:zoekt_webserver.patch",
-            "//third_party/com_github_sourcegraph_zoekt:zoekt_indexserver.patch",
-        ],
-        sum = "h1:BNbBGAoGT2+nSzad7cXmQ2OC6tpWZXBcNFlk7YIQljU=",
-        version = "v0.0.0-20230524133412-579a9a1eb19b",
+        sum = "h1:jH88SW2KBo29QBR0MmKlWj/fZ3ISqj62Pf8EDcIloJI=",
+        version = "v0.0.0-20230602150854-c4c4a21d80dd",
     )
 
     go_repository(
@@ -9020,8 +9013,8 @@ def go_dependencies():
         name = "org_golang_x_exp",
         build_file_proto_mode = "disable_global",
         importpath = "golang.org/x/exp",
-        sum = "h1:4iLhBPcpqFmylhnkbY3W0ONLUYYkDAW9xMFLfxgsvCw=",
-        version = "v0.0.0-20221208152030-732eee02a75a",
+        sum = "h1:5llv2sWeaMSnA3w2kS57ouQQ4pudlXrR0dCgw51QK9o=",
+        version = "v0.0.0-20230425010034-47ecfdc1ba53",
     )
     go_repository(
         name = "org_golang_x_image",
