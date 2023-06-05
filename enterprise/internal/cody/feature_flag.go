@@ -45,33 +45,28 @@ func isCodyEnabled(ctx context.Context) bool {
 	if err := licensing.Check(licensing.FeatureCody); err != nil {
 		return false
 	}
-	completionsConfig := conf.Get().Completions
-	if completionsConfig == nil {
+
+	if !conf.CodyEnabled() {
 		return false
 	}
 
-	if !completionsConfig.Enabled {
-		return false
+	if conf.CodyRestrictUsersFeatureFlag() {
+		return featureflag.FromContext(ctx).GetBoolOr("cody", false)
 	}
 
-	experimentalFeatures := conf.Get().ExperimentalFeatures
-	if experimentalFeatures != nil && experimentalFeatures.CodyRestrictUsersFeatureFlag {
-		return featureflag.FromContext(ctx).GetBoolOr("cody-experimental", false)
-	}
 	return true
 }
 
 // isCodyEnabledInApp determines if cody is enabled within Sourcegraph App.
-// If Completions are configured and enabled, cody is enabled.
+// If cody.enabled is set to true, cody is enabled.
 // If the App user's dotcom auth token is present, cody is enabled.
 // In all other cases Cody is disabled.
 func isCodyEnabledInApp() bool {
-	completionsConfig := conf.Get().Completions
-	appConfig := conf.Get().App
-	if completionsConfig != nil && completionsConfig.Enabled {
+	if conf.CodyEnabled() {
 		return true
 	}
 
+	appConfig := conf.Get().App
 	if appConfig != nil && len(appConfig.DotcomAuthToken) > 0 {
 		return true
 	}

@@ -191,6 +191,22 @@ func BatchChangesRestrictedToAdmins() bool {
 	return false
 }
 
+// CodyEnabled returns whether Cody is enabled on this instance. If
+// `cody.enabled` is not set or set to false, it's not enabled.
+func CodyEnabled() bool {
+	if enabled := Get().CodyEnabled; enabled != nil {
+		return *enabled
+	}
+	return false
+}
+
+func CodyRestrictUsersFeatureFlag() bool {
+	if restrict := Get().CodyRestrictUsersFeatureFlag; restrict != nil {
+		return *restrict
+	}
+	return false
+}
+
 func ExecutorsEnabled() bool {
 	return Get().ExecutorsAccessToken != ""
 }

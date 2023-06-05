@@ -91,7 +91,6 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) *schema.Completio
 		// Only the Provider, Access Token and Enabled required to forward the request to dotcom
 		return &schema.Completions{
 			AccessToken: appConfig.DotcomAuthToken,
-			Enabled:     len(appConfig.DotcomAuthToken) > 0,
 			Provider:    dotcom.ProviderName,
 			// TODO: These are not required right now as upstream overwrites this,
 			// but should we switch to Cody Gateway they will be.
