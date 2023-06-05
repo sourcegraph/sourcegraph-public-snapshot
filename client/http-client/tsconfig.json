@@ -8,7 +8,7 @@
     "baseUrl": "./src",
     "jsx": "react-jsx",
   },
-  "include": ["./src/**/*", "./*.ts"],
+  "include": ["src", "*.js"],
   "references": [
     {
       "path": "../common",

@@ -10,6 +10,7 @@ load("@npm//:defs.bzl", "npm_link_all_packages")
 load("//dev/linters/staticcheck:analyzers.bzl", "STATIC_CHECK_ANALYZERS")
 load("@npm//:eslint/package_json.bzl", eslint_bin = "bin")
 load("//:stamp_tags.bzl", "stamp_tags")
+load("//dev:eslint.bzl", "eslint_test_with_types")
 
 # Gazelle config
 #
@@ -244,6 +245,7 @@ js_library(
     ],
     data = [
         ".eslintignore",
+        "package.json",
         ":eslint-relative-formatter",
     ],
     deps = [
@@ -268,6 +270,15 @@ js_library(
         ":node_modules/react",  # required to resolve the react version for eslint-plugin-react
         ":tsconfig-eslint",
         "//:node_modules/tslib",
+    ],
+)
+
+eslint_test_with_types(
+    name = "eslint_test",
+    srcs = glob(["*.js"]),
+    config = ":eslint_config",
+    deps = [
+        ":node_modules/@types/node",
     ],
 )
 
