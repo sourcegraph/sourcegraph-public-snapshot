@@ -95,6 +95,39 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 		return executortypes.Job{}, false, errors.New(message)
 	}
 
+	// 1. discard empty queues
+	var nonEmptyQueues []string
+	for _, queue := range req.Queues {
+		var err error
+		var count int
+		switch queue {
+		case m.BatchesQueueHandler.Name:
+			count, err = m.BatchesQueueHandler.Store.QueuedCount(ctx, false)
+		case m.CodeIntelQueueHandler.Name:
+			count, err = m.CodeIntelQueueHandler.Store.QueuedCount(ctx, false)
+		}
+		if err != nil {
+			return executortypes.Job{}, false, err
+		}
+		if count != 0 {
+			nonEmptyQueues = append(nonEmptyQueues, queue)
+		}
+	}
+
+	var candidateQueue string
+	if len(nonEmptyQueues) == 0 {
+		// all queues are empty, dequeue nothing
+		return executortypes.Job{}, false, nil
+	} else if len(nonEmptyQueues) == 1 {
+		// only one queue contains items, select as candidate
+		candidateQueue = nonEmptyQueues[0]
+	} else {
+		// 2. multiple populated queues discard queues exceeding threshold
+		// TODO
+		// 3. select queue
+		// TODO
+	}
+
 	resourceMetadata := ResourceMetadata{
 		NumCPUs:   req.NumCPUs,
 		Memory:    req.Memory,
@@ -112,57 +145,49 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 
 	logger := m.logger.Scoped("dequeue", "Pick a job record from the database.")
 	var job executortypes.Job
-	for _, queue := range req.Queues {
-		switch queue {
-		case m.BatchesQueueHandler.Name:
-			record, dequeued, err := m.BatchesQueueHandler.Store.Dequeue(ctx, req.ExecutorName, nil)
-			if err != nil {
-				err = errors.Wrapf(err, "dbworkerstore.Dequeue %s", queue)
-				logger.Error("Failed to dequeue", log.String("queue", queue), log.Error(err))
-				return executortypes.Job{}, false, err
-			}
-			if !dequeued {
-				// no batches job to dequeue, try next queue
-				continue
-			}
-
-			job, err = m.BatchesQueueHandler.RecordTransformer(ctx, req.Version, record, resourceMetadata)
-			if err != nil {
-				markErr := markRecordAsFailed(ctx, m.BatchesQueueHandler.Store, record.RecordID(), err, logger)
-				err = errors.Wrapf(errors.Append(err, markErr), "RecordTransformer %s", queue)
-				logger.Error("Failed to transform record", log.String("queue", queue), log.Error(err))
-				return executortypes.Job{}, false, err
-			}
-		case m.CodeIntelQueueHandler.Name:
-			record, dequeued, err := m.CodeIntelQueueHandler.Store.Dequeue(ctx, req.ExecutorName, nil)
-			if err != nil {
-				err = errors.Wrapf(err, "dbworkerstore.Dequeue %s", queue)
-				logger.Error("Failed to dequeue", log.String("queue", queue), log.Error(err))
-				return executortypes.Job{}, false, err
-			}
-			if !dequeued {
-				// no codeintel job to dequeue, try next queue
-				continue
-			}
-
-			job, err = m.CodeIntelQueueHandler.RecordTransformer(ctx, req.Version, record, resourceMetadata)
-			if err != nil {
-				markErr := markRecordAsFailed(ctx, m.CodeIntelQueueHandler.Store, record.RecordID(), err, logger)
-				err = errors.Wrapf(errors.Append(err, markErr), "RecordTransformer %s", queue)
-				logger.Error("Failed to transform record", log.String("queue", queue), log.Error(err))
-				return executortypes.Job{}, false, err
-			}
+	switch candidateQueue {
+	case m.BatchesQueueHandler.Name:
+		record, dequeued, err := m.BatchesQueueHandler.Store.Dequeue(ctx, req.ExecutorName, nil)
+		if err != nil {
+			err = errors.Wrapf(err, "dbworkerstore.Dequeue %s", candidateQueue)
+			logger.Error("Failed to dequeue", log.String("queue", candidateQueue), log.Error(err))
+			return executortypes.Job{}, false, err
 		}
-		if job.ID != 0 {
-			job.Queue = queue
-			break
+		if !dequeued {
+			// no batches job to dequeue. Even though the queue was populated before, another executor
+			// instance could have dequeued in the meantime
+			return executortypes.Job{}, false, nil
+		}
+
+		job, err = m.BatchesQueueHandler.RecordTransformer(ctx, req.Version, record, resourceMetadata)
+		if err != nil {
+			markErr := markRecordAsFailed(ctx, m.BatchesQueueHandler.Store, record.RecordID(), err, logger)
+			err = errors.Wrapf(errors.Append(err, markErr), "RecordTransformer %s", candidateQueue)
+			logger.Error("Failed to transform record", log.String("queue", candidateQueue), log.Error(err))
+			return executortypes.Job{}, false, err
+		}
+	case m.CodeIntelQueueHandler.Name:
+		record, dequeued, err := m.CodeIntelQueueHandler.Store.Dequeue(ctx, req.ExecutorName, nil)
+		if err != nil {
+			err = errors.Wrapf(err, "dbworkerstore.Dequeue %s", candidateQueue)
+			logger.Error("Failed to dequeue", log.String("queue", candidateQueue), log.Error(err))
+			return executortypes.Job{}, false, err
+		}
+		if !dequeued {
+			// no codeintel job to dequeue. Even though the queue was populated before, another executor
+			// instance could have dequeued in the meantime
+			return executortypes.Job{}, false, nil
+		}
+
+		job, err = m.CodeIntelQueueHandler.RecordTransformer(ctx, req.Version, record, resourceMetadata)
+		if err != nil {
+			markErr := markRecordAsFailed(ctx, m.CodeIntelQueueHandler.Store, record.RecordID(), err, logger)
+			err = errors.Wrapf(errors.Append(err, markErr), "RecordTransformer %s", candidateQueue)
+			logger.Error("Failed to transform record", log.String("queue", candidateQueue), log.Error(err))
+			return executortypes.Job{}, false, err
 		}
 	}
-
-	if job.ID == 0 {
-		// all queues are empty, return nothing
-		return executortypes.Job{}, false, nil
-	}
+	job.Queue = candidateQueue
 
 	// If this executor supports v2, return a v2 payload. Based on this field,
 	// marshalling will be switched between old and new payload.
@@ -188,6 +213,9 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 		}
 	}
 	job.Token = token
+
+	// increment dequeue counter
+	// TODO
 
 	return job, true, nil
 }
