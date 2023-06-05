@@ -52,7 +52,7 @@ func TestPeriodicGoroutineReinvoke(t *testing.T) {
 	})
 
 	witnessHandler := func() {
-		for i := 0; i < MaxConsecutiveReinvocations; i++ {
+		for i := 0; i < maxConsecutiveReinvocations; i++ {
 			<-called
 		}
 	}
@@ -74,8 +74,8 @@ func TestPeriodicGoroutineReinvoke(t *testing.T) {
 	witnessHandler()
 	goroutine.Stop()
 
-	if calls := len(handler.HandleFunc.History()); calls != 4*MaxConsecutiveReinvocations {
-		t.Errorf("unexpected number of handler invocations. want=%d have=%d", 4*MaxConsecutiveReinvocations, calls)
+	if calls := len(handler.HandleFunc.History()); calls != 4*maxConsecutiveReinvocations {
+		t.Errorf("unexpected number of handler invocations. want=%d have=%d", 4*maxConsecutiveReinvocations, calls)
 	}
 }
 
@@ -116,6 +116,101 @@ func TestPeriodicGoroutineWithDynamicInterval(t *testing.T) {
 
 	if calls := len(handler.HandleFunc.History()); calls != 4 {
 		t.Errorf("unexpected number of handler invocations. want=%d have=%d", 4, calls)
+	}
+}
+
+func TestPeriodicGoroutineConcurrency(t *testing.T) {
+	clock := glock.NewMockClock()
+	handler := NewMockHandler()
+	called := make(chan struct{}, 1)
+	concurrency := 4
+
+	handler.HandleFunc.SetDefaultHook(func(ctx context.Context) error {
+		called <- struct{}{}
+		return nil
+	})
+
+	goroutine := NewPeriodicGoroutine(
+		context.Background(),
+		handler,
+		WithName(t.Name()),
+		WithConcurrency(concurrency),
+		withClock(clock),
+	)
+	go goroutine.Start()
+	clock.BlockingAdvance(time.Second)
+	for i := 0; i < concurrency; i++ {
+		<-called
+	}
+	clock.BlockingAdvance(time.Second)
+	for i := 0; i < concurrency; i++ {
+		<-called
+	}
+	clock.BlockingAdvance(time.Second)
+	for i := 0; i < concurrency; i++ {
+		<-called
+	}
+	goroutine.Stop()
+
+	if calls := len(handler.HandleFunc.History()); calls != 3*concurrency {
+		t.Errorf("unexpected number of handler invocations. want=%d have=%d", 3*concurrency, calls)
+	}
+}
+
+func TestPeriodicGoroutineWithDynamicConcurrency(t *testing.T) {
+	clock := glock.NewMockClock()
+	concurrencyClock := glock.NewMockClock()
+	handler := NewMockHandler()
+	called := make(chan struct{}, 1)
+
+	handler.HandleFunc.SetDefaultHook(func(ctx context.Context) error {
+		called <- struct{}{}
+		return nil
+	})
+
+	concurrency := 0
+
+	// concurrency: 1 -> 2 -> 3 ...
+	getConcurrency := func() int {
+		concurrency += 1
+		return concurrency
+	}
+
+	goroutine := NewPeriodicGoroutine(
+		context.Background(),
+		handler,
+		WithName(t.Name()),
+		WithConcurrencyFunc(getConcurrency),
+		withClock(clock),
+		withConcurrencyClock(concurrencyClock),
+	)
+	go goroutine.Start()
+
+	// Pool size = 1
+	<-called
+
+	// Pool size = 2
+	concurrencyClock.BlockingAdvance(concurrencyRecheckInterval)
+	<-called
+	<-called
+	clock.BlockingAdvance(time.Second)
+	<-called
+	<-called
+
+	// Pool size 3
+	concurrencyClock.BlockingAdvance(concurrencyRecheckInterval)
+	<-called
+	<-called
+	<-called
+	clock.BlockingAdvance(time.Second)
+	<-called
+	<-called
+	<-called
+
+	goroutine.Stop()
+
+	if calls := len(handler.HandleFunc.History()); calls != 11 {
+		t.Errorf("unexpected number of handler invocations. want=%d have=%d", 11, calls)
 	}
 }
 
