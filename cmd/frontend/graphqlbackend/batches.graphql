@@ -3447,6 +3447,12 @@ type BatchChangesCodeHost {
     credential: BatchChangesCredential
 
     """
+    Configuration for commit signing, if any has been set up. Always nil if the code
+    host type doesn't have commit signing support yet.
+    """
+    commitSigningConfiguration: CommitSigningConfiguration
+
+    """
     If true, some of the repositories on this code host require
     an SSH key to be configured.
     """
@@ -3466,6 +3472,34 @@ type BatchChangesCodeHost {
     If true, the code host has webhooks configured.
     """
     hasWebhooks: Boolean!
+}
+
+"""
+Commit signing configuration for a code host, e.g. GitHubApp or SSHKey. Today, the
+only supported form of commit signing is via a GitHub App.
+"""
+union CommitSigningConfiguration = GitHubAppConfiguration
+
+"""
+The configuration for a GitHubApp created for Batch Changes commit signing.
+"""
+type GitHubAppConfiguration {
+    """
+    The ID of the GitHub App.
+    """
+    appID: Int!
+    """
+    The name of the GitHub App
+    """
+    name: String!
+    """
+    The URL of the GitHub App page
+    """
+    appURL: String!
+    """
+    The logo URL of the GitHub App
+    """
+    logo: String!
 }
 
 """
