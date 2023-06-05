@@ -193,19 +193,19 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             exact: true,
             path: '/cody',
             render: () => <Navigate to="/site-admin/embeddings" />,
-            condition: () => Boolean(window.context?.embeddingsEnabled),
+            condition: () => Boolean(window.context?.embeddingsEnabled && window.context?.codyEnabled),
         },
         {
             exact: true,
             path: '/embeddings',
             render: props => <SiteAdminCodyPage {...props} />,
-            condition: () => Boolean(window.context?.embeddingsEnabled),
+            condition: () => Boolean(window.context?.embeddingsEnabled && window.context?.codyEnabled),
         },
         {
             exact: true,
             path: '/embeddings/configuration',
             render: props => <CodyConfigurationPage {...props} />,
-            condition: () => Boolean(window.context?.embeddingsEnabled),
+            condition: () => Boolean(window.context?.embeddingsEnabled && window.context?.codyEnabled),
         },
         {
             path: '/embeddings/configuration/:id',
