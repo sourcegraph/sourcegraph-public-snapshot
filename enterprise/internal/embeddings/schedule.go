@@ -40,9 +40,9 @@ func ScheduleRepositoriesForEmbedding(
 			if refName == "" {
 				return errors.Newf("could not get latest commit for repo %s", r.Name)
 			}
-
-			// If the user has forced a reindex, then we always start a new job. Otherwise, we skip creating a job for
-			// a revision if there's already an identical job that's completed or scheduled to run.
+			
+			// Skip creating a repo embedding job for a repo at revision, if there already exists
+			// an identical job that has been completed, or is scheduled to run (processing or queued).
 			if !forceReindex {
 				job, _ := tx.GetLastRepoEmbeddingJobForRevision(ctx, r.ID, latestRevision)
 				if job.IsRepoEmbeddingJobScheduledOrCompleted() {

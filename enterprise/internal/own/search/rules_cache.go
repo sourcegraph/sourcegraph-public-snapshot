@@ -68,7 +68,7 @@ func (c *RulesCache) AssignedOwners(ctx context.Context, repoID api.RepoID, comm
 	if _, ok := c.assigned[key]; !ok {
 		assigned, err := c.ownService.AssignedOwnership(ctx, repoID, commitID)
 		if err != nil {
-			// TODO: Consider error condition
+			// Error is picked up on a call site and in most cases a search alert is created.
 			return nil, err
 		}
 		c.assigned[key] = assigned
