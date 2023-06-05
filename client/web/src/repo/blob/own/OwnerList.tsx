@@ -190,7 +190,7 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data, isDir
     )
 }
 
-const NoOwnershipAlert: React.FunctionComponent<{ isDirectory: boolean }> = ({ isDirectory }) => (
+const NoOwnershipAlert: React.FunctionComponent<{ isDirectory?: boolean }> = ({ isDirectory }) => (
     <Alert variant="info">
         {isDirectory ? 'No ownership data for this path.' : 'No ownership data for this file.'}
     </Alert>
