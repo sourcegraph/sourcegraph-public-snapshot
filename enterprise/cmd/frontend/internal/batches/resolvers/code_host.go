@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -39,6 +40,9 @@ func (c *batchChangesCodeHostResolver) CommitSigningConfiguration(ctx context.Co
 		domain := itypes.BatchesGitHubAppDomain
 		ghapp, err := gstore.GetByDomain(ctx, &domain, c.codeHost.ExternalServiceID)
 		if err != nil {
+			if strings.Contains(err.Error(), "no app exists matching criteria: {domain = %s AND base_url = %s") {
+				return nil, nil
+			}
 			return nil, err
 		}
 		return &commitSigningConfigResolver{
