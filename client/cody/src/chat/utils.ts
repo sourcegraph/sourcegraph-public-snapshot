@@ -139,12 +139,12 @@ export function validateAuthStatus(
     version: string
 ): AuthStatus {
     const authStatus = { ...authStatusInit }
-    // Cache isEnterprise check
-    const enterprise = isEnterprise
     // Early return for invalid user ID
     if (!userId) {
         return authStatus
     }
+    // Cache isEnterprise check
+    const enterprise = isEnterprise
     // Set values and return early
     authStatus.authenticated = !!userId
     authStatus.showInvalidAccessTokenError = !userId
