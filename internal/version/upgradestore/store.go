@@ -205,27 +205,26 @@ func (s *store) EnsureUpgradeTable(ctx context.Context) (err error) {
 }
 
 func (s *store) ClaimAutoUpgrade(ctx context.Context, from, to string) (claimed bool, err error) {
-	tx, err := s.db.Transact(ctx)
-	if err != nil {
-		return false, err
-	}
-
-	// Allow selects to still work (for UI purposes) but serializes claiming.
-	// May impact writing logs.
-	if err := tx.Exec(ctx, sqlf.Sprintf("LOCK TABLE upgrade_logs IN EXCLUSIVE MODE NOWAIT")); err != nil {
-		var pgerr *pgconn.PgError
-		if errors.As(err, &pgerr) && pgerr.Code == pgerrcode.LockNotAvailable {
-			return false, nil
+	s.db.WithTransact(ctx, func(tx *basestore.Store) error {
+		// Allow selects to still work (for UI purposes) but serializes claiming.
+		// May impact writing logs.
+		if err := tx.Exec(ctx, sqlf.Sprintf("LOCK TABLE upgrade_logs IN EXCLUSIVE MODE NOWAIT")); err != nil {
+			var pgerr *pgconn.PgError
+			if errors.As(err, &pgerr) && pgerr.Code == pgerrcode.LockNotAvailable {
+				return nil
+			}
+			return err
 		}
-		return false, err
-	}
 
-	query := sqlf.Sprintf(claimAutoUpgradeQuery, from, to, hostname.Get(), to)
-	if claimed, _, err = basestore.ScanFirstBool(tx.Query(ctx, query)); err != nil {
-		return
-	}
+		query := sqlf.Sprintf(claimAutoUpgradeQuery, from, to, hostname.Get(), to)
+		if claimed, _, err = basestore.ScanFirstBool(tx.Query(ctx, query)); err != nil {
+			return err
+		}
 
-	return
+		return nil
+	})
+
+	return claimed, err
 }
 
 const claimAutoUpgradeQuery = `

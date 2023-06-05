@@ -10,9 +10,11 @@ import (
 	"strings"
 	"time"
 
+	gcontext "github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -62,6 +64,8 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db databa
 
 	// try to claim
 	for {
+		obsvCtx.Logger.Info("attempting to claim autoupgrade lock")
+
 		currentVersionStr, _, err := upgradestore.GetServiceVersion(ctx)
 		if err != nil {
 			return errors.Wrap(err, "autoupgradestore.GetServiceVersion")
@@ -73,6 +77,7 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db databa
 		}
 
 		if cmp := oobmigration.CompareVersions(currentVersion, toVersion); cmp == oobmigration.VersionOrderAfter || cmp == oobmigration.VersionOrderEqual {
+			obsvCtx.Logger.Info("installation is up-to-date, nothing to do!")
 			return nil
 		}
 
@@ -84,6 +89,8 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db databa
 		if claimed {
 			break
 		}
+
+		obsvCtx.Logger.Warn("unable to claim autoupgrade lock, sleeping...")
 
 		time.Sleep(time.Second * 10)
 	}
@@ -164,14 +171,16 @@ func runMigration(ctx context.Context,
 }
 
 func serveConfigurationServer(ctx context.Context, obsvCtx *observation.Context) (context.CancelFunc, error) {
-	serveMux := http.NewServeMux()
-	router := mux.NewRouter().PathPrefix("/.internal").Subrouter()
 	middleware := httpapi.JsonMiddleware(&httpapi.ErrorHandler{
 		Logger:       obsvCtx.Logger,
 		WriteErrBody: true,
 	})
-	router.Path("/configuration").Methods(http.MethodPost).Name(apirouter.Configuration)
-	router.Get(apirouter.Configuration).Handler(middleware(func(w http.ResponseWriter, r *http.Request) error {
+
+	serveMux := http.NewServeMux()
+
+	internalRouter := mux.NewRouter().PathPrefix("/.internal").Subrouter()
+	internalRouter.Path("/configuration").Methods("POST").Name(apirouter.Configuration)
+	internalRouter.Get(apirouter.Configuration).Handler(middleware(func(w http.ResponseWriter, r *http.Request) error {
 		configuration := conf.Unified{
 			ServiceConnectionConfig: conftypes.ServiceConnections{
 				PostgresDSN:          "lol",
@@ -181,8 +190,13 @@ func serveConfigurationServer(ctx context.Context, obsvCtx *observation.Context)
 		}
 		return json.NewEncoder(w).Encode(configuration)
 	}))
-	serveMux.Handle("/.internal/", router)
-	h := http.Handler(serveMux)
+
+	serveMux.Handle("/.internal/", internalRouter)
+	serveMux.Handle("/.assets/", http.StripPrefix("/.assets", secureHeadersMiddleware(assetsutil.NewAssetHandler(serveMux), crossOriginPolicyAssets)))
+
+	h := gcontext.ClearHandler(serveMux)
+	h = healthCheckMiddleware(h)
+
 	server := &http.Server{
 		Handler:      h,
 		ReadTimeout:  30 * time.Second,
