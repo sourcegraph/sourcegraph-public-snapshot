@@ -1,6 +1,7 @@
 # Building container images with Bazel
 
 Building containers with Bazel, and using Wolfi for the base images is faster, more reliable and provides much better caching capabilities. This allows us to build the containers in PRs pipelines, not only on the `main` branch. 
+You'll find a lot of mentions of [OCI](https://opencontainers.org/) throughout this document, which the new standard for container formats and runtime.  
 
 We use [`rules_oci`](https://github.com/bazel-contrib/rules_oci) and [Wolfi](https://github.com/wolfi-dev) to produce the container images. 
 
