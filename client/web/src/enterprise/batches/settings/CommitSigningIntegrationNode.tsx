@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { mdiCheckCircleOutline, mdiCheckboxBlankCircleOutline, mdiCogOutline, mdiDelete, mdiOpenInNew } from '@mdi/js'
+import { mdiCheckCircleOutline, mdiCheckboxBlankCircleOutline, mdiDelete, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 
@@ -82,10 +82,6 @@ const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ 
                         View In GitHub <Icon inline={true} svgPath={mdiOpenInNew} aria-hidden={true} />
                     </small>
                 </AnchorLink>
-                {/* TODO: */}
-                <ButtonLink className="mr-2" aria-label="Edit" variant="secondary" size="sm">
-                    <Icon aria-hidden={true} svgPath={mdiCogOutline} /> Edit
-                </ButtonLink>
                 {/* TODO: */}
                 <Tooltip content="Delete GitHub App">
                     <Button aria-label="Delete" onClick={noop} disabled={false} variant="danger" size="sm">
