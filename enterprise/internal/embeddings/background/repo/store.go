@@ -134,13 +134,10 @@ global_policy_descriptor AS MATERIALIZED (
 		p.repository_patterns IS NULL
 	LIMIT 1
 ),
-last_successful_jobs AS (
-	SELECT DISTINCT ON (repo_id) repo_id, finished_at
+last_queued_jobs AS (
+	SELECT DISTINCT ON (repo_id) repo_id, queued_at
 	FROM repo_embedding_jobs
-	WHERE
-		state = 'completed' AND
-		failure_message IS NULL
-	ORDER BY repo_id, finished_at DESC
+	ORDER BY repo_id, queued_at DESC
 ),
 repositories_matching_policy AS (
     (
@@ -180,8 +177,8 @@ repositories_matching_policy AS (
 --
 SELECT DISTINCT ON (rmp.id) rmp.id, rmp.last_changed
 FROM repositories_matching_policy rmp
-LEFT JOIN last_successful_jobs lsj ON lsj.repo_id = rmp.id
-WHERE lsj.finished_at IS NULL OR lsj.finished_at < current_timestamp - (%s * '1 second'::interval);
+LEFT JOIN last_queued_jobs lqj ON lqj.repo_id = rmp.id
+WHERE lqj.queued_at IS NULL OR lqj.queued_at < current_timestamp - (%s * '1 second'::interval);
 `
 
 type EmbeddableRepoOpts struct {
