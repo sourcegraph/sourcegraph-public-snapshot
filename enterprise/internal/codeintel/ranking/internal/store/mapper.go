@@ -63,6 +63,8 @@ progress AS (
 	SELECT
 		crp.id,
 		crp.max_export_id,
+		crp.reference_cursor_export_deleted_at,
+		crp.reference_cursor_export_id,
 		crp.mappers_started_at as started_at
 	FROM codeintel_ranking_progress crp
 	WHERE
@@ -88,13 +90,28 @@ exported_uploads AS (
 		-- Ensure that the record is within the bounds where it would be visible
 		-- to the current "snapshot" defined by the ranking computation state row.
 		cre.id <= p.max_export_id AND
-		(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at)
+		(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at) AND
+
+		-- Perf improvement: filter out any uploads that have already been completely
+		-- processed. We order uploads by their deletion timestamp and ID as we scan
+		-- for candidates. We track the last values we see in each batch so that we
+		-- can efficiently discard candidates we don't need to filter out below.
+		(
+			COALESCE(p.reference_cursor_export_deleted_at, 'infinity'::timestamptz) >
+				COALESCE(cre.deleted_at, '-infinity'::timestamptz) OR
+			(
+				p.reference_cursor_export_deleted_at IS NOT DISTINCT FROM cre.deleted_at AND
+				p.reference_cursor_export_id <= cre.id
+			)
+		)
 	ORDER BY cre.graph_key, cre.deleted_at DESC NULLS FIRST, cre.id
 ),
 refs AS (
 	SELECT
 		rr.id,
 		eu.upload_id,
+		eu.deleted_at AS exported_upload_deleted_at,
+		eu.id AS exported_upload_id,
 		eu.upload_key,
 		rr.symbol_names
 	FROM codeintel_ranking_references rr
@@ -111,6 +128,13 @@ refs AS (
 	ORDER BY eu.deleted_at DESC NULLS FIRST, eu.id, rr.exported_upload_id
 	LIMIT %s
 	FOR UPDATE SKIP LOCKED
+),
+ordered_refs AS (
+	SELECT
+		r.*,
+		-- Rank opposite of the sort order used in the refs CTE above
+		RANK() OVER (ORDER BY r.exported_upload_deleted_at ASC NULLS LAST, r.exported_upload_id DESC) AS rank
+	FROM refs r
 ),
 locked_refs AS (
 	INSERT INTO codeintel_ranking_references_processed (graph_key, codeintel_ranking_reference_id)
@@ -206,8 +230,13 @@ ins AS (
 set_progress AS (
 	UPDATE codeintel_ranking_progress
 	SET
-		num_reference_records_processed = COALESCE(num_reference_records_processed, 0) + (SELECT COUNT(*) FROM locked_refs),
-		mapper_completed_at             = CASE WHEN (SELECT COUNT(*) FROM refs) = 0 THEN NOW() ELSE NULL END
+		-- Update cursor values with the last item in the batch
+		reference_cursor_export_deleted_at = COALESCE((SELECT tor.exported_upload_deleted_at FROM ordered_refs tor WHERE tor.rank = 1 LIMIT 1), NULL),
+		reference_cursor_export_id         = COALESCE((SELECT tor.exported_upload_id FROM ordered_refs tor WHERE tor.rank = 1 LIMIT 1), NULL),
+		-- Update overall progress
+		num_reference_records_processed    = COALESCE(num_reference_records_processed, 0) + (SELECT COUNT(*) FROM locked_refs),
+		mapper_completed_at                = CASE WHEN (SELECT COUNT(*) FROM refs) = 0 THEN NOW() ELSE NULL END
+
 	WHERE id IN (SELECT id FROM progress)
 )
 SELECT
@@ -265,6 +294,8 @@ progress AS (
 	SELECT
 		crp.id,
 		crp.max_export_id,
+		crp.path_cursor_deleted_export_at,
+		crp.path_cursor_export_id,
 		crp.mappers_started_at as started_at
 	FROM codeintel_ranking_progress crp
 	WHERE
@@ -289,13 +320,27 @@ exported_uploads AS (
 		-- Ensure that the record is within the bounds where it would be visible
 		-- to the current "snapshot" defined by the ranking computation state row.
 		cre.id <= p.max_export_id AND
-		(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at)
+		(cre.deleted_at IS NULL OR cre.deleted_at > p.started_at) AND
+
+		-- Perf improvement: filter out any uploads that have already been completely
+		-- processed. We order uploads by their deletion timestamp and ID as we scan
+		-- for candidates. We track the last values we see in each batch so that we
+		-- can efficiently discard candidates we don't need to filter out below.
+		(
+			COALESCE(p.path_cursor_deleted_export_at, 'infinity'::timestamptz) >
+				COALESCE(cre.deleted_at, '-infinity'::timestamptz) OR
+			(
+				p.path_cursor_deleted_export_at IS NOT DISTINCT FROM cre.deleted_at AND
+				p.path_cursor_export_id <= cre.id
+			)
+		)
 	ORDER BY cre.graph_key, cre.deleted_at DESC NULLS FIRST, cre.id
 ),
 unprocessed_path_counts AS (
 	SELECT
 		ipr.id,
 		eu.upload_id,
+		eu.deleted_at AS exported_upload_deleted_at,
 		eu.id AS exported_upload_id,
 		ipr.graph_key,
 		CASE
@@ -316,6 +361,13 @@ unprocessed_path_counts AS (
 	ORDER BY eu.deleted_at DESC NULLS FIRST, eu.id, ipr.exported_upload_id
 	LIMIT %s
 	FOR UPDATE SKIP LOCKED
+),
+ordered_paths AS (
+	SELECT
+		p.*,
+		-- Rank opposite of the sort order used in the unprocessed_path_counts CTE above
+		RANK() OVER (ORDER BY p.exported_upload_deleted_at ASC NULLS LAST, p.exported_upload_id DESC) AS rank
+	FROM unprocessed_path_counts p
 ),
 locked_path_counts AS (
 	INSERT INTO codeintel_initial_path_ranks_processed (graph_key, codeintel_initial_path_ranks_id)
@@ -354,8 +406,12 @@ ins AS (
 set_progress AS (
 	UPDATE codeintel_ranking_progress
 	SET
-		num_path_records_processed = COALESCE(num_path_records_processed, 0) + (SELECT COUNT(*) FROM locked_path_counts),
-		seed_mapper_completed_at   = CASE WHEN (SELECT COUNT(*) FROM unprocessed_path_counts) = 0 THEN NOW() ELSE NULL END
+		-- Update cursor values with the last item in the batch
+		path_cursor_deleted_export_at = COALESCE((SELECT op.exported_upload_deleted_at FROM ordered_paths op WHERE op.rank = 1 LIMIT 1), NULL),
+		path_cursor_export_id         = COALESCE((SELECT op.exported_upload_id FROM ordered_paths op WHERE op.rank = 1 LIMIT 1), NULL),
+		-- Update overall progress
+		num_path_records_processed    = COALESCE(num_path_records_processed, 0) + (SELECT COUNT(*) FROM locked_path_counts),
+		seed_mapper_completed_at      = CASE WHEN (SELECT COUNT(*) FROM unprocessed_path_counts) = 0 THEN NOW() ELSE NULL END
 	WHERE id IN (SELECT id FROM progress)
 )
 SELECT
