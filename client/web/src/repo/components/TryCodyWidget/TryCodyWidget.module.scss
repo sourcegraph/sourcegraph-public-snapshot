@@ -1,6 +1,9 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 :root {
     --email-icon-color: #dadada;
 }
+
 :global(.theme-dark) {
     --cody-bg-gradient: linear-gradient(45deg, #15171e 0%, #49169d 100%, #1e212e 100%, #ffffff 100%);
     --cody-auth-bg-gradient: var(--cody-bg-gradient);
@@ -49,6 +52,20 @@
     color: var(--body-color);
     width: max-content;
     margin-top: 0.688rem !important;
+}
+
+.card-images {
+    width: 100%;
+    align-items: self-end;
+
+    @media (--md-breakpoint-down) {
+        width: unset;
+    }
+
+    > img {
+        max-width: 35.688rem;
+        max-height: 7.438rem;
+    }
 }
 
 .no-auth-card {

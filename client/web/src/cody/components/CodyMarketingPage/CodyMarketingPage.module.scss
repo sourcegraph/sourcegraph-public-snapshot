@@ -33,7 +33,15 @@
 .header-section {
     margin-top: 1.5rem;
     padding: 1.5rem 0;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
     gap: 4rem;
+
+    @media (--md-breakpoint-down) {
+        flex-direction: column;
+        align-items: center;
+    }
 
     .cody-conversation {
         padding: 0.25rem 1rem;
@@ -50,12 +58,12 @@
         padding: 1.5rem;
         box-shadow: 0 0.5rem 1rem -6px rgba(46, 34, 119, 0.1);
         border-radius: 3px;
-        max-width: 550px;
     }
 
     .cody-sign-up-panel-wrapper {
         box-shadow: var(--marketing-block-shadow);
         height: fit-content;
+        max-width: 598px;
     }
 
     .button-wrapper {

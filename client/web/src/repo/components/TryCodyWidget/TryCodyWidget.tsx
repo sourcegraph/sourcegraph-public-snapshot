@@ -132,13 +132,13 @@ const NoAuthWidgetContent: React.FC<NonAuthWidgetContentProps> = ({ type, teleme
     )
 }
 
-const AuthUserWidgetContent: React.FC<AuthWidgetContentProps> = ({ type, theme, assetsRoot }) => {
+const AuthUserWidgetContent: React.FC<AuthWidgetContentProps> = ({ type, theme }) => {
     const { title, useCases, image } =
         type === 'blob'
             ? {
                   title: 'Try Cody on public code',
                   useCases: ['Select code in the file below', 'Select an action with Cody widget'],
-                  image: `${assetsRoot}/img/cody-marketing-blob-${theme}.png`,
+                  image: `https://storage.googleapis.com/sourcegraph-assets/app-images/cody-action-bar-${theme}.png`,
               }
             : {
                   title: 'Try Cody AI assist on this repo',
@@ -146,7 +146,7 @@ const AuthUserWidgetContent: React.FC<AuthWidgetContentProps> = ({ type, theme, 
                       'Click the Ask Cody button above and to the right of this banner',
                       'Ask Cody a question like “Explain the structure of this repository”',
                   ],
-                  image: `${assetsRoot}/img/cody-marketing-repo-${theme}.png`,
+                  image: `https://storage.googleapis.com/sourcegraph-assets/app-images/cody-chat-banner-image-${theme}.png`,
               }
 
     return (
@@ -164,7 +164,7 @@ const AuthUserWidgetContent: React.FC<AuthWidgetContentProps> = ({ type, theme, 
                     </ol>
                 </div>
             </div>
-            <div className="d-flex justify-content-center w-100">
+            <div className={classNames('d-flex justify-content-center', styles.cardImages)}>
                 <img src={image} alt="Cody" />
             </div>
         </>
@@ -181,8 +181,6 @@ export const TryCodyWidget: React.FC<
 > = ({ className = 'mb-4', telemetryService, type, authenticatedUser, context }) => {
     const isLightTheme = useIsLightTheme()
     const { isDismissed, onDismiss } = useTryCodyWidget(telemetryService)
-    const assetsRoot = window.context?.assetsRoot || ''
-
     useEffect(() => {
         if (isDismissed) {
             return
@@ -209,7 +207,6 @@ export const TryCodyWidget: React.FC<
                 <AuthUserWidgetContent
                     type={type}
                     theme={isLightTheme ? 'light' : 'dark'}
-                    assetsRoot={assetsRoot}
                     telemetryService={telemetryService}
                 />
             ) : (

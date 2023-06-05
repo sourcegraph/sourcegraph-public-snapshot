@@ -88,7 +88,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
             </PageHeader>
 
             {/* Page content */}
-            <div className={classNames('d-flex flex-row flex-wrap justify-content-center', styles.headerSection)}>
+            <div className={styles.headerSection}>
                 <div>
                     <H1>Sign up to get Cody, our AI assistant, free</H1>
                     <div className="ml-3">
