@@ -4,25 +4,34 @@ import { mdiAccount } from '@mdi/js'
 import { Navigate } from 'react-router-dom'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
-import { H1, Icon, Link, LoadingSpinner, PageHeader, ProductStatusBadge, ButtonLink } from '@sourcegraph/wildcard'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { H1, Icon, Link, LoadingSpinner, PageHeader, ProductStatusBadge } from '@sourcegraph/wildcard'
 
+import { AuthenticatedUser } from '../../auth'
+import { BreadcrumbSetters } from '../../components/Breadcrumbs'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
-import { TreeOwnershipPanel } from '../../repo/blob/own/TreeOwnershipPanel'
+import { RepositoryFields } from '../../graphql-operations'
 
-import { RepositoryOwnAreaPageProps } from './RepositoryOwnEditPage'
+import { RepositoryOwnPageContents } from './RepositoryOwnPageContents'
 
-const BREADCRUMB = { key: 'own', element: 'Ownership' }
+/**
+ * Properties passed to all page components in the repository code navigation area.
+ */
+export interface RepositoryOwnAreaPageProps extends Pick<BreadcrumbSetters, 'useBreadcrumb'>, TelemetryProps {
+    /** The active repository. */
+    repo: RepositoryFields
+    authenticatedUser: Pick<AuthenticatedUser, 'siteAdmin'> | null
+}
+const BREADCRUMB = { key: 'edit-own', element: 'Edit ownership' }
 
-export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPageProps> = ({
+export const RepositoryOwnEditPage: React.FunctionComponent<RepositoryOwnAreaPageProps> = ({
     useBreadcrumb,
     repo,
+    authenticatedUser,
     telemetryService,
 }) => {
-    const queryParameters = new URLSearchParams(location.search)
-    const path = queryParameters.get('path') ?? ''
-
     useBreadcrumb(BREADCRUMB)
 
     const [ownEnabled, status] = useFeatureFlag('search-ownership')
@@ -48,15 +57,6 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
     return (
         <Page>
             <PageTitle title={`Ownership for ${displayRepoName(repo.name)}`} />
-            <ButtonLink
-                aria-label="Navigate to edit ownership page"
-                style={{ float: 'right' }}
-                variant="secondary"
-                to={`${repo.url}/-/own/edit`}
-            >
-                Edit Ownership
-            </ButtonLink>
-
             <PageHeader
                 description={
                     <>
@@ -72,7 +72,7 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
                 </H1>
             </PageHeader>
 
-            <TreeOwnershipPanel repoID={repo.id} filePath={path} telemetryService={telemetryService} />
+            <RepositoryOwnPageContents repo={repo} authenticatedUser={authenticatedUser} />
         </Page>
     )
 }

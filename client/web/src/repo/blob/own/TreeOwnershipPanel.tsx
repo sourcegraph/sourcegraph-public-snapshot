@@ -9,17 +9,22 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
-import { FetchOwnershipResult, FetchOwnershipVariables } from '../../../graphql-operations'
+import { FetchTreeOwnershipResult, FetchTreeOwnershipVariables } from '../../../graphql-operations'
 import { OwnershipAssignPermission } from '../../../rbac/constants'
 
-import { FETCH_OWNERS } from './grapqlQueries'
+import { FETCH_TREE_OWNERS } from './grapqlQueries'
 import { MakeOwnerButton } from './MakeOwnerButton'
 import { OwnerList } from './OwnerList'
-import { OwnershipPanelProps } from './TreeOwnershipPanel'
 
 import styles from './FileOwnershipPanel.module.scss'
 
-export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & TelemetryProps> = ({
+export interface OwnershipPanelProps {
+    repoID: string
+    revision?: string
+    filePath: string
+}
+
+export const TreeOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & TelemetryProps> = ({
     repoID,
     revision,
     filePath,
@@ -29,13 +34,16 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
         telemetryService.log('OwnershipPanelOpened')
     }, [telemetryService])
 
-    const { data, loading, error, refetch } = useQuery<FetchOwnershipResult, FetchOwnershipVariables>(FETCH_OWNERS, {
-        variables: {
-            repo: repoID,
-            revision: revision ?? '',
-            currentPath: filePath,
-        },
-    })
+    const { data, loading, error, refetch } = useQuery<FetchTreeOwnershipResult, FetchTreeOwnershipVariables>(
+        FETCH_TREE_OWNERS,
+        {
+            variables: {
+                repo: repoID,
+                revision: revision ?? '',
+                currentPath: filePath,
+            },
+        }
+    )
     const [ownPromotionEnabled] = useFeatureFlag('own-promote')
 
     if (loading) {
@@ -73,8 +81,8 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
     if (data?.node?.__typename === 'Repository') {
         return (
             <OwnerList
-                data={data?.node?.commit?.blob?.ownership}
-                isDirectory={false}
+                data={data?.node?.commit?.tree?.ownership}
+                isDirectory={true}
                 makeOwnerButton={makeOwnerButton}
             />
         )
