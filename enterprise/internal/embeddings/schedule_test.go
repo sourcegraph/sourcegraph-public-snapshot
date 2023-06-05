@@ -43,7 +43,7 @@ func TestScheduleRepositoriesForEmbedding(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 1, count)
 
-	// With force reindex, a new job will be scheduled anyways
+	// With the 'force' argument, a new job will be scheduled anyways
 	err = ScheduleRepositoriesForEmbedding(ctx, repoNames, true, db, store, gitserverClient)
 	require.NoError(t, err)
 	count, err = store.CountRepoEmbeddingJobs(ctx, repo.ListOpts{})

@@ -21,8 +21,8 @@ type EmbeddingsResolver interface {
 }
 
 type ScheduleRepositoriesForEmbeddingArgs struct {
-	RepoNames    []string
-	ForceReindex *bool
+	RepoNames []string
+	Force     *bool
 }
 
 type IsContextRequiredForChatQueryInputArgs struct {
