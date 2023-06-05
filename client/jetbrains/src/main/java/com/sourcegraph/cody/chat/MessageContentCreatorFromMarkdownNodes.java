@@ -14,7 +14,6 @@ import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.ui.BrowserHyperlinkListener;
 import com.intellij.ui.ColorUtil;
 import com.intellij.util.ui.JBInsets;
-import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import java.awt.*;
 import java.util.Optional;
@@ -26,6 +25,7 @@ import org.commonmark.renderer.html.HtmlRenderer;
 import org.jetbrains.annotations.NotNull;
 
 public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
+  private static final int TEXT_MARGIN = 14;
   private final HtmlRenderer htmlRenderer = HtmlRenderer.builder().build();
   private final JPanel messagePanel;
   private final int gradientWidth;
@@ -47,7 +47,8 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
     jEditorPane.setEditable(false);
     jEditorPane.addHyperlinkListener(BrowserHyperlinkListener.INSTANCE);
     jEditorPane.setOpaque(false);
-    jEditorPane.setMargin(JBInsets.create(new Insets(14, 20, 14, 20)));
+    jEditorPane.setMargin(
+        JBInsets.create(new Insets(TEXT_MARGIN, TEXT_MARGIN, TEXT_MARGIN, TEXT_MARGIN)));
     textPane = jEditorPane;
     messagePanel.add(textPane, textPaneIndex++);
     return jEditorPane;
@@ -98,10 +99,12 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
   private void insertCodeEditor(String codeContent, String languageName) {
     JPanel editorPanel = new JPanel(new BorderLayout());
     Document codeDocument = EditorFactory.getInstance().createDocument(codeContent);
-    EditorEx editor = (EditorEx) EditorFactory.getInstance().createEditor(codeDocument);
+    EditorEx editor = (EditorEx) EditorFactory.getInstance().createViewer(codeDocument);
     setHighlighting(editor, languageName);
     fillEditorSettings(editor.getSettings());
-    editorPanel.setBorder(new EmptyBorder(JBUI.insetsLeft(gradientWidth)));
+    editor.setVerticalScrollbarVisible(false);
+    editor.getGutterComponentEx().setPaintBackground(false);
+    editorPanel.setBorder(new EmptyBorder(JBInsets.create(new Insets(0, gradientWidth, 0, 0))));
     editorPanel.add(editor.getComponent(), BorderLayout.CENTER);
     editorPanel.setOpaque(false);
     messagePanel.add(editorPanel, BorderLayout.CENTER, textPaneIndex++);
@@ -227,12 +230,13 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
   }
 
   private static void fillEditorSettings(final EditorSettings editorSettings) {
+    editorSettings.setAdditionalColumnsCount(0);
+    editorSettings.setAdditionalLinesCount(0);
+    editorSettings.setGutterIconsShown(false);
     editorSettings.setWhitespacesShown(false);
     editorSettings.setLineMarkerAreaShown(false);
     editorSettings.setIndentGuidesShown(false);
-    editorSettings.setLineNumbersShown(true);
-    editorSettings.setFoldingOutlineShown(false);
-    editorSettings.setAdditionalLinesCount(1);
+    editorSettings.setLineNumbersShown(false);
     editorSettings.setUseSoftWraps(false);
   }
 }
