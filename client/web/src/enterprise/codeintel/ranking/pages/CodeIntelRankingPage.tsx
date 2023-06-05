@@ -132,7 +132,7 @@ interface ProgressProps {
 const Progress: FunctionComponent<ProgressProps> = ({ title, subtitle, progress, className }) => (
     <div>
         <div className={classNames(styles.tableContainer, className)}>
-            <H4 className="p-0 m-0">{title}</H4>
+            <H4 className="m-0">{title}</H4>
             {subtitle && <Text size="small">{subtitle}</Text>}
 
             <div className={styles.row}>

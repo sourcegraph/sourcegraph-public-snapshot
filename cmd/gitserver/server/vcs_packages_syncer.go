@@ -385,7 +385,7 @@ func runCommandInDirectory(ctx context.Context, cmd *exec.Cmd, workingDirectory 
 	cmd.Env = append(cmd.Env, "GIT_COMMITTER_NAME="+gitName)
 	cmd.Env = append(cmd.Env, "GIT_COMMITTER_EMAIL="+gitEmail)
 	cmd.Env = append(cmd.Env, "GIT_COMMITTER_DATE="+stableGitCommitDate)
-	output, err := common.RunWith(ctx, wrexec.Wrap(ctx, nil, cmd), false, nil)
+	output, err := runWith(ctx, wrexec.Wrap(ctx, nil, cmd), false, nil)
 	if err != nil {
 		return "", errors.Wrapf(err, "command %s failed with output %s", cmd.Args, string(output))
 	}

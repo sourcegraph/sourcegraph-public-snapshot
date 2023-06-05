@@ -18,7 +18,7 @@ export type RecipeID =
     | 'context-search'
     | 'explain-code-detailed'
     | 'explain-code-high-level'
-    | 'file-flow'
+    | 'file-touch'
     | 'find-code-smells'
     | 'fixup'
     | 'generate-docstring'
@@ -29,6 +29,7 @@ export type RecipeID =
     | 'next-questions'
     | 'non-stop'
     | 'optimize-code'
+    | 'pr-description'
     | 'release-notes'
     | 'translate-to-language'
 
