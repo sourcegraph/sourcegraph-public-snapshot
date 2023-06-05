@@ -12,6 +12,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Alert, Button, ErrorAlert, H3, H4, Icon, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../../components/MarketingBlock'
+import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import {
     FetchOwnershipResult,
     FetchOwnershipVariables,
@@ -45,6 +46,7 @@ export const FileOwnershipPanel: React.FunctionComponent<
             currentPath: filePath,
         },
     })
+    const [ownPromotionEnabled] = useFeatureFlag('own-promote')
 
     if (loading) {
         return (
@@ -66,17 +68,18 @@ export const FileOwnershipPanel: React.FunctionComponent<
     const canAssignOwners = (data?.currentUser?.permissions?.nodes || []).some(
         permission => permission.displayName === OwnershipAssignPermission
     )
-    const makeOwnerButton = canAssignOwners
-        ? (userId: string | undefined) => (
-              <MakeOwnerButton
-                  onSuccess={refetch}
-                  onError={(e: Error) => {}} //TODO
-                  repoId={repoID}
-                  path={filePath}
-                  userId={userId}
-              />
-          )
-        : undefined
+    const makeOwnerButton =
+        canAssignOwners && ownPromotionEnabled
+            ? (userId: string | undefined) => (
+                  <MakeOwnerButton
+                      onSuccess={refetch}
+                      onError={(e: Error) => {}} //TODO
+                      repoId={repoID}
+                      path={filePath}
+                      userId={userId}
+                  />
+              )
+            : undefined
 
     if (data?.node?.__typename === 'Repository') {
         return <OwnerList data={data?.node?.commit?.blob?.ownership} makeOwnerButton={makeOwnerButton} />

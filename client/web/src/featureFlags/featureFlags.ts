@@ -33,6 +33,7 @@ export type FeatureFlagName =
     | 'cody-web-sidebar'
     | 'cody-web-all'
     | 'cody-web-editor-recipes'
+    | 'own-promote'
 
 interface OrgFlagOverride {
     orgID: string
