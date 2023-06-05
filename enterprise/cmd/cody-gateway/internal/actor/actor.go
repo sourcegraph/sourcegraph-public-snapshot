@@ -115,6 +115,10 @@ func (a *Actor) Limiter(
 	dailyLimit := float32(limit.Limit) / ratioToDay
 	// Finally, compute the concurrent limit with the given percentage of the daily limit.
 	concurrentLimit := int(dailyLimit * concurrentLimitConfig.Percentage)
+	// Just in case a poor choice of percentage results in a concurrent limit of 0.
+	if concurrentLimit <= 0 {
+		concurrentLimit = 1
+	}
 
 	// The redis store has to use a prefix for the given feature because we need to
 	// rate limit by feature.
