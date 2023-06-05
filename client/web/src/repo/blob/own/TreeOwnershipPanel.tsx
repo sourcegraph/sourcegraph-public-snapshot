@@ -14,6 +14,9 @@ import { FETCH_TREE_OWNERS } from './grapqlQueries'
 import { OwnerList } from './OwnerList'
 
 import styles from './FileOwnershipPanel.module.scss'
+import {OwnershipAssignPermission} from '../../../rbac/constants';
+import {MakeOwnerButton} from './MakeOwnerButton';
+import {useFeatureFlag} from '../../../featureFlags/useFeatureFlag';
 
 export interface OwnershipPanelProps {
     repoID: string
@@ -31,7 +34,7 @@ export const TreeOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
         telemetryService.log('OwnershipPanelOpened')
     }, [telemetryService])
 
-    const { data, loading, error } = useQuery<FetchTreeOwnershipResult, FetchTreeOwnershipVariables>(
+    const { data, loading, error, refetch } = useQuery<FetchTreeOwnershipResult, FetchTreeOwnershipVariables>(
         FETCH_TREE_OWNERS,
         {
             variables: {
@@ -41,6 +44,7 @@ export const TreeOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
             },
         }
     )
+    const [ownPromotionEnabled] = useFeatureFlag('own-promote')
 
     if (loading) {
         return (
@@ -49,6 +53,21 @@ export const TreeOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
             </div>
         )
     }
+    const canAssignOwners = (data?.currentUser?.permissions?.nodes || []).some(
+        permission => permission.displayName === OwnershipAssignPermission
+    )
+    const makeOwnerButton =
+        canAssignOwners && ownPromotionEnabled
+            ? (userId: string | undefined) => (
+                <MakeOwnerButton
+                    onSuccess={refetch}
+                    onError={() => {}} // TODO(#52911)
+                    repoId={repoID}
+                    path={filePath}
+                    userId={userId}
+                />
+            )
+            : undefined
 
     if (error) {
         logger.log(error)
@@ -60,7 +79,7 @@ export const TreeOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
     }
 
     if (data?.node?.__typename === 'Repository') {
-        return <OwnerList data={data?.node?.commit?.tree?.ownership} isDirectory={true} />
+        return <OwnerList data={data?.node?.commit?.tree?.ownership} isDirectory={true} makeOwnerButton={makeOwnerButton} />
     }
     return <OwnerList />
 }

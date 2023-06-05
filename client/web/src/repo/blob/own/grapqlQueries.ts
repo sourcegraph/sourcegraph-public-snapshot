@@ -140,6 +140,13 @@ export const FETCH_TREE_OWNERS = gql`
                 }
             }
         }
+        currentUser {
+            permissions {
+                nodes {
+                    displayName
+                }
+            }
+        }
     }
 `
 
