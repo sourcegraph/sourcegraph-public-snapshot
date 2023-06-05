@@ -368,7 +368,7 @@ func TestChangesetEvent(t *testing.T) {
 				Metadata:    reviewers[1],
 			}, {
 				ChangesetID: 24,
-				Kind:        ChangesetEventKindAzureDevOpsPullRequesReviewed,
+				Kind:        ChangesetEventKindAzureDevOpsPullRequestReviewed,
 				Key:         reviewers[2].ID,
 				Metadata:    reviewers[2],
 			}, {
