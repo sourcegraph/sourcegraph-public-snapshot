@@ -289,7 +289,6 @@ func (b *bag) Resolve(ctx context.Context, db edb.EnterpriseDB) error {
 			}
 			// User resolved
 			if userRefs != nil {
-				refCtx.resolvedUserID = userRefs.id
 				if _, ok := b.resolvedUsers[userRefs.id]; !ok {
 					if err := userRefs.augment(ctx, db); err != nil {
 						return err
@@ -297,16 +296,17 @@ func (b *bag) Resolve(ctx context.Context, db edb.EnterpriseDB) error {
 					b.resolvedUsers[userRefs.id] = userRefs
 					userRefs.linkBack(b)
 				}
+				refCtx.resolvedUserID = userRefs.id
 			}
 			// Team resolved
 			if teamRefs != nil {
 				id := teamRefs.team.ID
-				refCtx.resolvedTeamID = id
 				if _, ok := b.resolvedTeams[id]; !ok {
 					b.resolvedTeams[id] = teamRefs
 				}
 				// Team was referred to either by ID or by name, need to link back.
 				teamRefs.linkBack(b)
+				refCtx.resolvedTeamID = id
 			}
 		}
 	}
