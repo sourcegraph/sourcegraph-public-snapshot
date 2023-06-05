@@ -293,7 +293,7 @@ func (s *repoEmbeddingJobsStore) GetLastRepoEmbeddingJobForRevision(ctx context.
 const countRepoEmbeddingJobsQuery = `
 SELECT COUNT(*)
 FROM repo_embedding_jobs
-JOIN repo ON repo.id = repo_embedding_jobs.repo_id
+%s -- joinClause
 %s -- whereClause
 `
 
@@ -301,9 +301,13 @@ JOIN repo ON repo.id = repo_embedding_jobs.repo_id
 // the query. If there is no query, all repo embedding jobs are counted.
 func (s *repoEmbeddingJobsStore) CountRepoEmbeddingJobs(ctx context.Context, opts ListOpts) (int, error) {
 	var conds []*sqlf.Query
+
+	var joinClause *sqlf.Query
 	if opts.Query != nil && *opts.Query != "" {
 		conds = append(conds, sqlf.Sprintf("repo.name LIKE %s", "%"+*opts.Query+"%"))
-
+		joinClause = sqlf.Sprintf("JOIN repo ON repo.id = repo_embedding_jobs.repo_id")
+	} else {
+		joinClause = sqlf.Sprintf("")
 	}
 
 	var whereClause *sqlf.Query
@@ -313,7 +317,7 @@ func (s *repoEmbeddingJobsStore) CountRepoEmbeddingJobs(ctx context.Context, opt
 		whereClause = sqlf.Sprintf("")
 	}
 
-	q := sqlf.Sprintf(countRepoEmbeddingJobsQuery, whereClause)
+	q := sqlf.Sprintf(countRepoEmbeddingJobsQuery, joinClause, whereClause)
 	var count int
 	if err := s.QueryRow(ctx, q).Scan(&count); err != nil {
 		return 0, err
@@ -324,7 +328,7 @@ func (s *repoEmbeddingJobsStore) CountRepoEmbeddingJobs(ctx context.Context, opt
 const listRepoEmbeddingJobsQueryFmtstr = `
 SELECT %s
 FROM repo_embedding_jobs
-JOIN repo ON repo.id = repo_embedding_jobs.repo_id
+%s -- joinClause
 %s -- whereClause
 `
 
@@ -336,8 +340,12 @@ func (s *repoEmbeddingJobsStore) ListRepoEmbeddingJobs(ctx context.Context, opts
 		conds = append(conds, pagination.Where)
 	}
 
+	var joinClause *sqlf.Query
 	if opts.Query != nil && *opts.Query != "" {
 		conds = append(conds, sqlf.Sprintf("repo.name LIKE %s", "%"+*opts.Query+"%"))
+		joinClause = sqlf.Sprintf("JOIN repo ON repo.id = repo_embedding_jobs.repo_id")
+	} else {
+		joinClause = sqlf.Sprintf("")
 	}
 
 	var whereClause *sqlf.Query
@@ -347,7 +355,7 @@ func (s *repoEmbeddingJobsStore) ListRepoEmbeddingJobs(ctx context.Context, opts
 		whereClause = sqlf.Sprintf("")
 	}
 
-	q := sqlf.Sprintf(listRepoEmbeddingJobsQueryFmtstr, sqlf.Join(repoEmbeddingJobsColumns, ", "), whereClause)
+	q := sqlf.Sprintf(listRepoEmbeddingJobsQueryFmtstr, sqlf.Join(repoEmbeddingJobsColumns, ", "), joinClause, whereClause)
 	q = pagination.AppendOrderToQuery(q)
 	q = pagination.AppendLimitToQuery(q)
 
