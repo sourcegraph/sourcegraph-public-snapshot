@@ -26,11 +26,6 @@
 
 The app is a free, lightweight, native desktop version of Sourcegraph that connects your local code to our AI coding assistant, Cody. You can ask Cody questions about all the code you connect to your app in both the app interface and, if you connect the VS code extension, in your editor. 
 
-Cody gets context from a blend of various sources to write and explain code for you and answer questions:
-- Keyword search
-- Embeddings search (not supported in the app yet, but coming soon!)
-- Deep integration with the Sourcegraph code graph
-
 <div class="socials">
   <a href="https://discord.com/invite/s2qDtYGnAE"><img alt="Discord" src="discord.svg"></img></a>
   <a href="https://twitter.com/sourcegraph"><img alt="Twitter" src="twitter.svg"></img></a>
