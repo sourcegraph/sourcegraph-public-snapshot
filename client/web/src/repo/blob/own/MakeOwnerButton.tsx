@@ -1,4 +1,4 @@
-import { mdiLoading, mdiPlus } from '@mdi/js'
+import { mdiPlus } from '@mdi/js'
 
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
@@ -19,7 +19,7 @@ export const MakeOwnerButton: React.FC<MakeOwnerButtonProps> = ({ onSuccess, onE
     return (
         <Tooltip content={tooltipContent}>
             <Button variant={'primary'} outline={true} size={'sm'} disabled={userId === undefined}>
-                <Icon svgPath={loading ? mdiLoading : mdiPlus} />
+                <Icon aria-hidden={true} svgPath={mdiPlus} />
                 Make owner
             </Button>
         </Tooltip>
