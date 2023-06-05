@@ -2,6 +2,7 @@ package goroutine
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/derision-test/glock"
@@ -23,20 +24,21 @@ type getConcurrencyFunc func() int
 // for more information and a step-by-step guide on how to implement a
 // PeriodicBackgroundRoutine.
 type PeriodicGoroutine struct {
-	name             string
-	description      string
-	jobName          string
-	recorder         *recorder.Recorder
-	getInterval      getIntervalFunc
-	getConcurrency   getConcurrencyFunc
-	handler          unifiedHandler
-	operation        *observation.Operation
-	clock            glock.Clock
-	concurrencyClock glock.Clock
-	ctx              context.Context    // root context passed to the handler
-	cancel           context.CancelFunc // cancels the root context
-	finished         chan struct{}      // signals that Start has finished
-	reinvocations    int
+	name              string
+	description       string
+	jobName           string
+	recorder          *recorder.Recorder
+	getInterval       getIntervalFunc
+	getConcurrency    getConcurrencyFunc
+	handler           unifiedHandler
+	operation         *observation.Operation
+	clock             glock.Clock
+	concurrencyClock  glock.Clock
+	ctx               context.Context    // root context passed to the handler
+	cancel            context.CancelFunc // cancels the root context
+	finished          chan struct{}      // signals that Start has finished
+	reinvocationsLock sync.Mutex
+	reinvocations     int
 }
 
 var _ recorder.Recordable = &PeriodicGoroutine{}
@@ -322,6 +324,9 @@ func (r *PeriodicGoroutine) runHandlerAndDetermineBackoff() (time.Duration, bool
 }
 
 func (r *PeriodicGoroutine) getNextInterval(tryReinvoke bool) time.Duration {
+	r.reinvocationsLock.Lock()
+	defer r.reinvocationsLock.Unlock()
+
 	if tryReinvoke {
 		r.reinvocations++
 
