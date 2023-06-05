@@ -1,3 +1,4 @@
+import { onConfigurationChange } from '@Sourcegraph demo days/cody-shared/src/telemetry/EventLogger'
 import * as vscode from 'vscode'
 
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
@@ -278,11 +279,13 @@ const register = async (
         await vscode.commands.executeCommand('setContext', 'cody.nonstop.fixups.enabled', true)
     }
 
+    onConfigurationChange(initialConfig)
     return {
         disposable: vscode.Disposable.from(...disposables),
         onConfigurationChange: newConfig => {
             chatProvider.onConfigurationChange(newConfig)
             externalServicesOnDidConfigurationChange(newConfig)
+            onConfigurationChange(newConfig)
         },
     }
 }

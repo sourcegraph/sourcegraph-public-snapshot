@@ -28,14 +28,56 @@ function getsuggestionsFromConfig(config: vscode.WorkspaceConfiguration): boolea
 
 let config = vscode.workspace.getConfiguration()
 
+let configurationDetails = {
+    contextSelection: getUseContextFromConfig(config),
+    chatPredictions: getchatPredictionsFromConfig(config),
+    inline: getinlineFromConfig(config),
+    nonStop: getnonStopFromConfig(config),
+    suggestions: getsuggestionsFromConfig(config),
+}
+
+export function onConfigurationChange(newconfig: any): any {
+    newconfig = vscode.workspace.getConfiguration()
+    console.log('onConfigurationChange', newconfig)
+    console.log('configurationDetails changed')
+    configurationDetails = {
+        contextSelection: getUseContextFromConfig(newconfig),
+        chatPredictions: getchatPredictionsFromConfig(newconfig),
+        inline: getinlineFromConfig(newconfig),
+        nonStop: getnonStopFromConfig(newconfig),
+        suggestions: getsuggestionsFromConfig(newconfig),
+    }
+    EventLogger.setConfigurationDetails(configurationDetails)
+}
+
 export class EventLogger {
     private serverEndpoint = getServerEndpointFromConfig(config)
     private extensionDetails = { ide: 'VSCode', ideExtensionType: 'Cody' }
-
+    configurationDetails = {
+        contextSelection: getUseContextFromConfig(config),
+        chatPredictions: getchatPredictionsFromConfig(config),
+        inline: getinlineFromConfig(config),
+        nonStop: getnonStopFromConfig(config),
+        suggestions: getsuggestionsFromConfig(config),
+    }
     private constructor(private gqlAPIClient: SourcegraphGraphQLAPIClient) {}
 
     public static create(gqlAPIClient: SourcegraphGraphQLAPIClient): EventLogger {
         return new EventLogger(gqlAPIClient)
+    }
+
+    public static setConfigurationDetails(newConfigurationDetails: {
+        contextSelection: string
+        chatPredictions: boolean
+        inline: boolean
+        nonStop: boolean
+        suggestions: boolean
+    }): any {
+        // let newconfig = vscode.workspace.getConfiguration()
+        configurationDetails = newConfigurationDetails
+        // configurationDetails = onConfigurationChange(newconfig)
+        console.log('configurationDetails', configurationDetails)
+        console.log('newConfigurationDetails', newConfigurationDetails)
     }
 
     /**
@@ -52,17 +94,6 @@ export class EventLogger {
      * @param publicProperties Public argument information.
      */
     public log(eventName: string, anonymousUserID: string, eventProperties?: any, publicProperties?: any): void {
-        // need to get the config here because it can change
-        config = vscode.workspace.getConfiguration()
-        // create the configuration details
-        const configurationDetails = {
-            contextSelection: getUseContextFromConfig(config),
-            chatPredictions: getchatPredictionsFromConfig(config),
-            inline: getinlineFromConfig(config),
-            nonStop: getnonStopFromConfig(config),
-            suggestions: getsuggestionsFromConfig(config),
-        }
-
         const argument = {
             ...eventProperties,
             serverEndpoint: this.serverEndpoint,
