@@ -112,7 +112,7 @@ func NewActor(source *Source, cacheKey string, user dotcom.DotcomUserState) *act
 		Key:           cacheKey,
 		ID:            user.UserName,
 		AccessEnabled: user.GetCodyGatewayAccess().Enabled,
-		RateLimits:    defaultUserRateLimits(),
+		RateLimits:    zeroRequestsAllowed(),
 		LastUpdated:   &now,
 		Source:        source,
 	}
@@ -136,17 +136,9 @@ func NewActor(source *Source, cacheKey string, user dotcom.DotcomUserState) *act
 	return a
 }
 
-func defaultUserRateLimits() map[types.CompletionsFeature]actor.RateLimit {
+func zeroRequestsAllowed() map[types.CompletionsFeature]actor.RateLimit {
 	return map[types.CompletionsFeature]actor.RateLimit{
-		types.CompletionsFeatureChat: {
-			AllowedModels: []string{"claude-v1"},
-			Limit:         50,
-			Interval:      24 * time.Hour,
-		},
-		types.CompletionsFeatureCode: {
-			AllowedModels: []string{"claude-instant-v1"},
-			Limit:         500,
-			Interval:      24 * time.Hour,
-		},
+		types.CompletionsFeatureChat: {},
+		types.CompletionsFeatureCode: {},
 	}
 }
