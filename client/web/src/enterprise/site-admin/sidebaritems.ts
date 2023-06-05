@@ -150,13 +150,15 @@ export const codyGroup: SiteAdminSideBarGroup = {
             label: 'Embeddings',
             to: '/site-admin/embeddings',
             exact: true,
+            condition: () => window.context?.embeddingsEnabled,
         },
         {
             label: 'Configuration',
             to: '/site-admin/embeddings/configuration',
+            condition: () => window.context?.embeddingsEnabled,
         },
     ],
-    condition: () => window.context?.embeddingsEnabled,
+    condition: () => window.context?.codyEnabled,
 }
 
 const usersGroup: SiteAdminSideBarGroup = {
