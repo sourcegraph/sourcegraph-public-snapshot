@@ -110,12 +110,21 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		db := database.NewDB(logger, sqlDB)
 
 		if err := tryAutoUpgrade(ctx, observationCtx, db, enterpriseMigratorHook); err != nil {
-			sqlDB.Close()
 			return errors.Wrap(err, "frontend.tryAutoUpgrade")
 		}
 
 		go conf.NewLogsSinksSource(conf.DefaultClient())
 		tracer.Init(sglog.Scoped("tracer", "internal tracer package"), tracer.ConfConfigurationSource{WatchableSiteConfig: conf.DefaultClient()})
+
+		fmt.Println("final-mile migration")
+		schemas := []string{"frontend", "codeintel", "codeinsights"}
+		for i, fn := range []func(*observation.Context, string, string) (*sql.DB, error){connections.MigrateNewFrontendDB, connections.MigrateNewCodeIntelDB, connections.MigrateNewCodeInsightsDB} {
+			sqlDB, err = fn(observationCtx, "", "frontend")
+			if err != nil {
+				return errors.Wrapf(err, "failed to perform last-mile migration for %s schema", schemas[i])
+			}
+			sqlDB.Close()
+		}
 
 		return nil
 	}(); err != nil {

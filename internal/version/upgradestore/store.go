@@ -257,5 +257,18 @@ WITH claim_attempt AS (
 )
 SELECT COALESCE((
 	SELECT claimed FROM claim_attempt
-), false)
+), false)`
+
+func (s *store) SetUpgradeStatus(ctx context.Context, success bool) error {
+	return s.db.Exec(ctx, sqlf.Sprintf(setUpgradeStatusQuery, time.Now(), success))
+}
+
+const setUpgradeStatusQuery = `
+UPDATE upgrade_logs
+SET
+	finished_at = %s,
+	success = %s
+WHERE id = (
+	SELECT MAX(id) FROM upgrade_logs
+)
 `

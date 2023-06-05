@@ -27,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
@@ -37,12 +36,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
-
-type UpgradeStore interface {
-	EnsureUpgradeTable(context.Context) error
-	GetServiceVersion(context.Context) (string, bool, error)
-	ClaimAutoUpgrade(ctx context.Context, from string, to string) (claimed bool, err error)
-}
 
 var buffer strings.Builder // :)
 
@@ -70,38 +63,16 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db databa
 		return nil
 	}
 
-	// as sourcegraph-frontend-internal isn't publicly reachable, and must be up before sourcegraph-frontend,
-	// we mark ourselves as 'ready' (so sourcegraph-frontend can start), service the dummy configuration,
-	// and spin-wait until the version is where we want it to be.
-	if !strings.Contains(hostname.Get(), "frontend-internal") {
-		return performAutoUpgrade(ctx, obsvCtx, db, toVersion, hook)
-	} else {
-		ticker := time.NewTicker(time.Second * 10)
-		defer ticker.Stop()
-		for ; ; <-ticker.C {
-			currentVersionStr, _, err := upgradestore.GetServiceVersion(ctx)
-			if err != nil {
-				return errors.Wrap(err, "autoupgradestore.GetServiceVersion")
-			}
-
-			var ok bool
-			currentVersion, ok := oobmigration.NewVersionFromString(currentVersionStr)
-			if !ok {
-				return errors.Newf("VERSION STRING BAD %s", currentVersion)
-			}
-
-			if cmp := oobmigration.CompareVersions(currentVersion, toVersion); cmp == oobmigration.VersionOrderAfter || cmp == oobmigration.VersionOrderEqual {
-				obsvCtx.Logger.Info("installation is up-to-date, continuing startup!")
-				return nil
-			}
-		}
-	}
+	return performAutoUpgrade(ctx, obsvCtx, db, toVersion, hook)
 }
 
 func performAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db database.DB, toVersion oobmigration.Version, hook store.RegisterMigratorsUsingConfAndStoreFactoryFunc) error {
 	upgradestore := upgradestore.New(db)
 
-	var currentVersion oobmigration.Version
+	var (
+		currentVersion oobmigration.Version
+		success        bool
+	)
 
 	if err := upgradestore.EnsureUpgradeTable(ctx); err != nil {
 		return errors.Wrap(err, "autoupgradestore.EnsureUpgradeTable")
@@ -133,6 +104,11 @@ func performAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db da
 		}
 
 		if claimed {
+			defer func() {
+				ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+				defer cancel()
+				upgradestore.SetUpgradeStatus(ctx, success)
+			}()
 			break
 		}
 
@@ -153,7 +129,11 @@ func performAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db da
 		return errors.Wrap(err, "autoupgradestore.SetAutoUpgrade")
 	}
 
-	return errors.New("MIGRATION SUCCEEDED, RESTARTING")
+	success = true
+
+	obsvCtx.Logger.Info("MIGRATION SUCCESSFUL")
+
+	return nil // errors.New("MIGRATION SUCCEEDED, RESTARTING")
 }
 
 func runMigration(ctx context.Context,
@@ -223,6 +203,7 @@ func serveConfigurationServer(ctx context.Context, obsvCtx *observation.Context)
 	serveMux := http.NewServeMux()
 
 	internalRouter := mux.NewRouter().PathPrefix("/.internal").Subrouter()
+	internalRouter.StrictSlash(true)
 	internalRouter.Path("/configuration").Methods("POST").Name(apirouter.Configuration)
 	internalRouter.Get(apirouter.Configuration).Handler(middleware(func(w http.ResponseWriter, r *http.Request) error {
 		configuration := conf.Unified{
