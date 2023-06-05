@@ -173,15 +173,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
-			// TODO: (@umpox, @valerybugakov) Figure out if we can reliably enable this in PRs.
-			ClientLintOnlyChangedFiles: false,
-			CreateBundleSizeDiff:       true,
-			ForceBazel:                 !c.MessageFlags.NoBazel,
+			CreateBundleSizeDiff:      true,
+			ForceBazel:                !c.MessageFlags.NoBazel,
 		}))
-
-		// At this stage, we don't break builds because of a Bazel failure.
-		// TODO(JH) Disabled until re-enabled with flag
-		// ops.Merge(BazelOperations(true))
 
 		// Now we set up conditional operations that only apply to pull requests.
 		if c.Diff.Has(changed.Client) {
@@ -404,7 +398,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Temporary: on main branches, we build images with bazel binaries based on their toolchain and/or purpose. This step key is the first image in the array.
 		// This will be removed once we build images with wolfi.
 		ops.Merge(operations.NewNamedSet("Integration tests",
-			backendIntegrationTests(c.candidateImageTag(), "symbols"),
+			backendIntegrationTests(c.candidateImageTag(), "server"),
 			codeIntelQA(c.candidateImageTag()),
 		))
 		// End-to-end tests
@@ -431,6 +425,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				publishOps.Append(publishExecutorDockerMirror(c))
 			}
 		}
+		publishOps.Append(bazelPushImagesCmd(c.Version))
 		ops.Merge(publishOps)
 	}
 

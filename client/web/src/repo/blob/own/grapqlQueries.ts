@@ -10,6 +10,7 @@ export const OWNER_FIELDS = gql`
             email
             avatarURL
             user {
+                id
                 username
                 displayName
                 url
@@ -23,6 +24,7 @@ export const OWNER_FIELDS = gql`
             teamDisplayName: displayName
             avatarURL
             url
+            external
         }
     }
 `
@@ -83,6 +85,13 @@ export const FETCH_OWNERS = gql`
                             }
                         }
                     }
+                }
+            }
+        }
+        currentUser {
+            permissions {
+                nodes {
+                    displayName
                 }
             }
         }

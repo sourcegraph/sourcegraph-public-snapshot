@@ -389,6 +389,17 @@ func (r *GitTreeEntryResolver) Ownership(ctx context.Context, args ListOwnership
 	return nil, nil
 }
 
+type OwnershipStatsArgs struct {
+	Reasons *[]OwnershipReasonType
+}
+
+func (r *GitTreeEntryResolver) OwnershipStats(ctx context.Context) (OwnershipStatsResolver, error) {
+	if _, ok := r.ToGitTree(); !ok {
+		return nil, nil
+	}
+	return EnterpriseResolvers.ownResolver.GitTreeOwnershipStats(ctx, r)
+}
+
 func (r *GitTreeEntryResolver) parent(ctx context.Context) (*GitTreeEntryResolver, error) {
 	if r.IsRoot() {
 		return nil, nil
