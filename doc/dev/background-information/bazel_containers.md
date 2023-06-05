@@ -202,4 +202,3 @@ go build \
 
 When we are building and testing our targets, we do not stamp our binaries with any specific versions. This enables to cache all outputs. But when we're releasing them, we do want to stamp them before releasing them in the wild. 
 
-
