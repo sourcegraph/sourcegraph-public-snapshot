@@ -99,9 +99,9 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
 }
 
 const ERROR_MESSAGES = {
-    DISABLED: 'Cody is not available on your instance. Please reach out to your site admin to enable Cody.',
+    DISABLED: 'Cody is not enabled on your instance. To enable Cody, contact your site admin.',
     VERSION:
-        'Your Sourcegraph instance is not fully compatible with Cody. Please reach out to your site admin to upgrade instance to a compatible version: 5.1.0 or above.',
+        'Cody is not supported by your Sourcegraph instance (version ${TODO}). To use Cody, please contact your site admin to upgrade to version 5.1.0 or above.',
     INVALID: 'Invalid credentials. Please check the Sourcegraph instance URL and access token.',
     EMAIL: 'Email not verified. Please add a verified email to your Sourcegraph.com account.',
 }

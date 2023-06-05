@@ -59,7 +59,7 @@ export interface AuthStatus {
     siteVersion: string
 }
 
-export const authStatusInit = {
+export const defaultAuthStatus = {
     showInvalidAccessTokenError: false,
     authenticated: false,
     hasVerifiedEmail: false,

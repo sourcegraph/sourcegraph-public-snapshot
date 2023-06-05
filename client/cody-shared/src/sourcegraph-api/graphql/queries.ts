@@ -8,7 +8,7 @@ query CurrentUser {
 export const SITE_GRAPHQL_FIELDS_QUERY = `
 query SiteGraphQLFields {
     __type(name: "Site") {
-        fields{
+        fields {
             name
         }
     }

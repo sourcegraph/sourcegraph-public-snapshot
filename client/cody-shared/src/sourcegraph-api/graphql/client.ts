@@ -200,7 +200,7 @@ export class SourcegraphGraphQLAPIClient {
         }
         const insiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
         const versionBeforeCody = !insiderBuild && siteVersion < '5.0.0'
-        if (!insiderBuild && versionBeforeCody) {
+        if (versionBeforeCody) {
             return { enabled: false, version: siteVersion }
         }
         const hasIsCodyEnabledField = await this.getSiteHasIsCodyEnabledField()

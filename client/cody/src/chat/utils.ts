@@ -106,8 +106,8 @@ export async function getAuthStatus(
     }
     const { enabled, version } = await client.isCodyEnabled()
     // Use early returns to avoid nested if-else
-    const isEnterprise = !(client.isDotCom() || isLocalApp(config.serverEndpoint))
-    if (!isEnterprise) {
+    const isDotComOrApp = client.isDotCom() || isLocalApp(config.serverEndpoint
+    if (isDotComOrApp) {
         const userInfo = await client.getCurrentUserIdAndVerifiedEmail()
         if (isError(userInfo)) {
             return authStatusInit
