@@ -1,8 +1,9 @@
-import { mdiPlus } from '@mdi/js'
+import { mdiLoading, mdiPlus } from '@mdi/js'
 
-import { AssignOwnerResult, AssignOwnerVariables } from '../../../graphql-operations'
 import { useMutation } from '@sourcegraph/http-client'
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
+
+import { AssignOwnerResult, AssignOwnerVariables } from '../../../graphql-operations'
 
 import { ASSIGN_OWNER } from './grapqlQueries'
 
@@ -43,8 +44,8 @@ export const MakeOwnerButton: React.FC<MakeOwnerButtonProps> = ({ onSuccess, onE
 
     return (
         <Tooltip content={tooltipContent}>
-            <Button variant="primary" outline={true} size="sm" disabled={userId === undefined}>
-                <Icon aria-hidden={true} svgPath={mdiPlus} />
+            <Button onClick={assignOwner} variant="primary" outline={true} size="sm" disabled={userId === undefined}>
+                <Icon aria-hidden={true} svgPath={loading ? mdiLoading : mdiPlus} />
                 Make owner
             </Button>
         </Tooltip>

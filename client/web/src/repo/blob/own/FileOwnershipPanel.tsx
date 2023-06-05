@@ -46,6 +46,7 @@ export const FileOwnershipPanel: React.FunctionComponent<
             currentPath: filePath,
         },
     })
+    const [makeOwnerError, setMakeOwnerError] = React.useState<Error | null>(null)
     const [ownPromotionEnabled] = useFeatureFlag('own-promote')
 
     if (loading) {
@@ -73,7 +74,7 @@ export const FileOwnershipPanel: React.FunctionComponent<
             ? (userId: string | undefined) => (
                   <MakeOwnerButton
                       onSuccess={refetch}
-                      onError={() => {}} // TODO(#52911)
+                      onError={setMakeOwnerError}
                       repoId={repoID}
                       path={filePath}
                       userId={userId}
@@ -161,15 +162,21 @@ const resolveOwnerSearchPredicate = (owners?: OwnerFields[]): string => {
 interface OwnerListProps {
     data?: OwnershipConnectionFields
     makeOwnerButton?: (userId: string | undefined) => React.ReactElement
+    makeOwnerError?: Error
 }
 
-const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data, makeOwnerButton }) => {
+const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data, makeOwnerButton, makeOwnerError }) => {
     if (data?.nodes && data.nodes.length) {
         const nodes = data.nodes
         const totalCount = data.totalOwners
         return (
             <div className={styles.contents}>
                 <OwnExplanation owners={nodes.map(ownership => ownership.owner)} />
+                {makeOwnerError && (
+                    <div className={styles.contents}>
+                        <ErrorAlert error={makeOwnerError} prefix="Error promoting an owner" className="mt-2" />
+                    </div>
+                )}
                 <table className={styles.table}>
                     <thead>
                         <tr className="sr-only">
