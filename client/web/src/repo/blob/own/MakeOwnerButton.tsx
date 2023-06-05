@@ -10,7 +10,7 @@ export interface MakeOwnerButtonProps {
     userId?: string
 }
 
-export const MakeOwnerButton: React.FC<MakeOwnerButtonProps> = ({ onSuccess, onError, path, userId, repoId }) => {
+export const MakeOwnerButton: React.FC<MakeOwnerButtonProps> = ({ userId }) => {
     const tooltipContent =
         userId === undefined
             ? 'Only ownership entries that are recognized as Sourcegraph users can be assigned ownership.'
@@ -18,7 +18,7 @@ export const MakeOwnerButton: React.FC<MakeOwnerButtonProps> = ({ onSuccess, onE
 
     return (
         <Tooltip content={tooltipContent}>
-            <Button variant={'primary'} outline={true} size={'sm'} disabled={userId === undefined}>
+            <Button variant="primary" outline={true} size="sm" disabled={userId === undefined}>
                 <Icon aria-hidden={true} svgPath={mdiPlus} />
                 Make owner
             </Button>

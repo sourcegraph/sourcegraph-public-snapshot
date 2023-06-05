@@ -24,7 +24,7 @@ import { OwnershipAssignPermission } from '../../../rbac/constants'
 
 import { FileOwnershipEntry } from './FileOwnershipEntry'
 import { FETCH_OWNERS } from './grapqlQueries'
-import { MakeOwnerButton, MakeOwnerButtonProps } from './MakeOwnerButton'
+import { MakeOwnerButton } from './MakeOwnerButton'
 
 import styles from './FileOwnershipPanel.module.scss'
 
@@ -73,7 +73,7 @@ export const FileOwnershipPanel: React.FunctionComponent<
             ? (userId: string | undefined) => (
                   <MakeOwnerButton
                       onSuccess={refetch}
-                      onError={(e: Error) => {}} //TODO
+                      onError={(_: Error) => {}} // TODO(#52911)
                       repoId={repoID}
                       path={filePath}
                       userId={userId}
@@ -245,7 +245,7 @@ const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data, makeOwnerBut
                                         <FileOwnershipEntry
                                             owner={ownership.owner}
                                             reasons={ownership.reasons}
-                                            makeOwnerButton={makeOwnerButton && makeOwnerButton(userId)}
+                                            makeOwnerButton={makeOwnerButton?.(userId)}
                                         />
                                     </React.Fragment>
                                 )
