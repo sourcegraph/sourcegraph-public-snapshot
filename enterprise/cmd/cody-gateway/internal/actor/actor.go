@@ -190,7 +190,7 @@ type ErrConcurrentLimitExceeded struct {
 }
 
 func (e ErrConcurrentLimitExceeded) Error() string {
-	return fmt.Sprintf("you exceeded the concurrent limit %d for %q. Retry after %s",
+	return fmt.Sprintf("you exceeded the concurrency limit of %d requests for %q. Retry after %s",
 		e.limit, e.feature, e.retryAfter.Truncate(time.Second))
 }
 
