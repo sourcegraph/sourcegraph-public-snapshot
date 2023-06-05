@@ -8,16 +8,16 @@ import { useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ErrorAlert, LoadingSpinner } from '@sourcegraph/wildcard'
 
+import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { FetchOwnershipResult, FetchOwnershipVariables } from '../../../graphql-operations'
+import { OwnershipAssignPermission } from '../../../rbac/constants'
 
 import { FETCH_OWNERS } from './grapqlQueries'
+import { MakeOwnerButton } from './MakeOwnerButton'
 import { OwnerList } from './OwnerList'
 import { OwnershipPanelProps } from './TreeOwnershipPanel'
 
 import styles from './FileOwnershipPanel.module.scss'
-import {useFeatureFlag} from '../../../featureFlags/useFeatureFlag';
-import { OwnershipAssignPermission } from '../../../rbac/constants'
-import { MakeOwnerButton } from './MakeOwnerButton'
 
 export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & TelemetryProps> = ({
     repoID,
@@ -51,14 +51,14 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
     const makeOwnerButton =
         canAssignOwners && ownPromotionEnabled
             ? (userId: string | undefined) => (
-                <MakeOwnerButton
-                    onSuccess={refetch}
-                    onError={() => {}} // TODO(#52911)
-                    repoId={repoID}
-                    path={filePath}
-                    userId={userId}
-                />
-            )
+                  <MakeOwnerButton
+                      onSuccess={refetch}
+                      onError={() => {}} // TODO(#52911)
+                      repoId={repoID}
+                      path={filePath}
+                      userId={userId}
+                  />
+              )
             : undefined
 
     if (error) {
@@ -71,7 +71,13 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
     }
 
     if (data?.node?.__typename === 'Repository') {
-        return <OwnerList data={data?.node?.commit?.blob?.ownership} isDirectory={false} makeOwnerButton={makeOwnerButton} />
+        return (
+            <OwnerList
+                data={data?.node?.commit?.blob?.ownership}
+                isDirectory={false}
+                makeOwnerButton={makeOwnerButton}
+            />
+        )
     }
     return <OwnerList />
 }

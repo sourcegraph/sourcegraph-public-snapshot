@@ -158,7 +158,6 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data, isDir
                                     )
                             )
                             .map((ownership, index) => {
-
                                 const userId =
                                     ownership.owner.__typename === 'Person' &&
                                     ownership.owner.user?.__typename === 'User'
@@ -166,15 +165,15 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data, isDir
                                         : undefined
 
                                 return (
-                                        <React.Fragment key={index}>
-                                            {index > 0 && <tr className={styles.bordered}/>}
-                                            <FileOwnershipEntry
-                                                owner={ownership.owner}
-                                                reasons={ownership.reasons}
-                                                makeOwnerButton={makeOwnerButton?.(userId)}
-                                            />
-                                        </React.Fragment>
-                                    )
+                                    <React.Fragment key={index}>
+                                        {index > 0 && <tr className={styles.bordered} />}
+                                        <FileOwnershipEntry
+                                            owner={ownership.owner}
+                                            reasons={ownership.reasons}
+                                            makeOwnerButton={makeOwnerButton?.(userId)}
+                                        />
+                                    </React.Fragment>
+                                )
                             })}
                     </tbody>
                 </table>
