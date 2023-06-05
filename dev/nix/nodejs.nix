@@ -9,7 +9,7 @@ pkgs.nodejs-16_x.overrideAttrs (oldAttrs: {
       version = "8.3.0";
       src = fetchurl {
         url = "https://registry.npmjs.org/pnpm/-/pnpm-${version}.tgz";
-        sha512 = "sha512-e2H73wTRxmc5fWF/6QJqbuwU6O3NRVZC1G1WFXG8EqfN/+ZBu8XVHJZwPH6Xh0DxbEoZgw8/wy2utgCDwPu4Sg==";
+        sha512 = "sha512-wRS8ap/SPxBqbUMzcUNkoA0suLqk9BqMlvi8dM2FRuhwUDgqVGYLc5jQ6Ww3uqVc+84zJvN2GYmTWCubaoWPtQ==";
       };
     };
     typescript = oldAttrs.passthru.pkgs.typescript.override rec {
