@@ -1,6 +1,7 @@
 package types
 
 import (
+	"strconv"
 	"strings"
 	"time"
 )
@@ -95,4 +96,8 @@ type ChangesetJob struct {
 
 func (j *ChangesetJob) RecordID() int {
 	return int(j.ID)
+}
+
+func (j *ChangesetJob) RecordUID() string {
+	return strconv.FormatInt(j.ID, 10)
 }

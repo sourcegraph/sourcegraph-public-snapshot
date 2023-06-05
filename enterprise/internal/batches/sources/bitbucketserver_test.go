@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -284,6 +285,83 @@ func TestBitbucketServerSource_CloseChangeset(t *testing.T) {
 			}
 
 			tc.err = strings.ReplaceAll(tc.err, "${INSTANCEURL}", instanceURL)
+
+			err = bbsSrc.CloseChangeset(ctx, tc.cs)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if err != nil {
+				return
+			}
+
+			pr := tc.cs.Changeset.Metadata.(*bitbucketserver.PullRequest)
+			testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), pr)
+		})
+	}
+}
+
+func TestBitbucketServerSource_CloseChangeset_DeleteSourceBranch(t *testing.T) {
+	// Repository used: https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing
+	//
+	// This test can be updated with `-update BitbucketServerSource_CloseChangeset_DeleteSourceBranch`,
+	// provided this PR is open: https://bitbucket.sgdev.org/projects/SOUR/repos/automation-testing/pull-requests/168/overview
+
+	pr := &bitbucketserver.PullRequest{ID: 168, Version: 1}
+	pr.ToRef.Repository.Slug = "automation-testing"
+	pr.ToRef.Repository.Project.Key = "SOUR"
+	pr.FromRef.ID = "refs/heads/delete-me"
+
+	testCases := []struct {
+		name string
+		cs   *Changeset
+		err  string
+	}{
+		{
+			name: "success",
+			cs:   &Changeset{Changeset: &btypes.Changeset{Metadata: pr}},
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		tc.name = "BitbucketServerSource_CloseChangeset_DeleteSourceBranch_" + strings.ReplaceAll(tc.name, " ", "_")
+
+		t.Run(tc.name, func(t *testing.T) {
+			t.Logf("Updating fixtures: %t", update(tc.name))
+
+			cf, save := newClientFactory(t, tc.name)
+			defer save(t)
+
+			conf.Mock(&conf.Unified{
+				SiteConfiguration: schema.SiteConfiguration{
+					BatchChangesAutoDeleteBranch: true,
+				},
+			})
+			defer conf.Mock(nil)
+
+			lg := log15.New()
+			lg.SetHandler(log15.DiscardHandler())
+
+			svc := &types.ExternalService{
+				Kind: extsvc.KindBitbucketServer,
+				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.BitbucketServerConnection{
+					Url:   "https://bitbucket.sgdev.org",
+					Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
+				})),
+			}
+
+			ctx := context.Background()
+			bbsSrc, err := NewBitbucketServerSource(ctx, svc, cf)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if tc.err == "" {
+				tc.err = "<nil>"
+			}
+
+			tc.err = strings.ReplaceAll(tc.err, "${INSTANCEURL}", "https://bitbucket.sgdev.org")
 
 			err = bbsSrc.CloseChangeset(ctx, tc.cs)
 			if have, want := fmt.Sprint(err), tc.err; have != want {

@@ -55,9 +55,9 @@ Since when one changes, they all probably change, here is an example of getting 
 ```bash
 hash_type=sha256
 for url in \
-"https://cdist2.perforce.com/perforce/r22.2/bin.macosx12arm64/p4api-openssl1.1.1.tgz" \
-"https://cdist2.perforce.com/perforce/r22.2/bin.macosx12x86_64/p4api-openssl1.1.1.tgz" \
-"https://cdist2.perforce.com/perforce/r22.2/bin.linux26x86_64/p4api-glibc2.3-openssl1.1.1.tgz"
+"https://cdist2.perforce.com/perforce/r22.2/bin.macosx12arm64/p4api-openssl3.tgz" \
+"https://cdist2.perforce.com/perforce/r22.2/bin.macosx12x86_64/p4api-openssl3.tgz" \
+"https://cdist2.perforce.com/perforce/r22.2/bin.linux26x86_64/p4api-glibc2.3-openssl3.tgz"
 do
   echo "${url}"
   hash_value=$(nix-prefetch-url --type "${hash_type}" --unpack "${url}")
@@ -72,8 +72,8 @@ Although building p4-fusion manually can take some effort, it is possible on mac
 
 ## Build tools
 
-In addition to the compiler, which can be installed with the `build-essential` package on Debian 
-You will need `cmake` to build `p4-fusion`. The compiler it uses 
+In addition to the compiler, which can be installed with the `build-essential` package on Debian
+You will need `cmake` to build `p4-fusion`. The compiler it uses
 
 ## Dependencies
 

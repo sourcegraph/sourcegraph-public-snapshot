@@ -1,6 +1,7 @@
 package retention
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -46,6 +47,10 @@ var dataRetentionJobColumns = []*sqlf.Query{
 
 func (j *DataRetentionJob) RecordID() int {
 	return j.ID
+}
+
+func (j *DataRetentionJob) RecordUID() string {
+	return strconv.Itoa(j.ID)
 }
 
 func scanDataRetentionJob(s dbutil.Scanner) (*DataRetentionJob, error) {

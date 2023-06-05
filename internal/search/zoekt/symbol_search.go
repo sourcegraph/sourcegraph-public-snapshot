@@ -8,19 +8,16 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
 type SymbolSearchJob struct {
-	Repos          *IndexedRepoRevs // the set of indexed repository revisions to search.
-	Query          zoektquery.Q
-	FileMatchLimit int32
-	Select         filter.SelectPath
-	Features       search.Features
-	Since          func(time.Time) time.Duration `json:"-"` // since if non-nil will be used instead of time.Since. For tests
+	Repos       *IndexedRepoRevs // the set of indexed repository revisions to search.
+	Query       zoektquery.Q
+	ZoektParams *search.ZoektParameters
+	Since       func(time.Time) time.Duration `json:"-"` // since if non-nil will be used instead of time.Since. For tests
 }
 
 // Run calls the zoekt backend to search symbols
@@ -43,7 +40,7 @@ func (z *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, s
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	err = zoektSearch(ctx, clients.Logger, z.Repos, z.Query, nil, search.SymbolRequest, clients.Zoekt, z.FileMatchLimit, z.Select, z.Features, since, stream)
+	err = zoektSearch(ctx, clients.Logger, z.Repos, z.Query, nil, search.SymbolRequest, clients.Zoekt, z.ZoektParams, since, stream)
 	if err != nil {
 		tr.SetAttributes(trace.Error(err))
 		// Only record error if we haven't timed out.
@@ -63,8 +60,8 @@ func (z *SymbolSearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue)
 	switch v {
 	case job.VerbosityMax:
 		res = append(res,
-			attribute.Int("fileMatchLimit", int(z.FileMatchLimit)),
-			attribute.Stringer("select", z.Select),
+			attribute.Int("fileMatchLimit", int(z.ZoektParams.FileMatchLimit)),
+			attribute.Stringer("select", z.ZoektParams.Select),
 		)
 		// z.Repos is nil for un-indexed search
 		if z.Repos != nil {
@@ -87,7 +84,7 @@ func (z *SymbolSearchJob) MapChildren(job.MapFunc) job.Job { return z }
 
 type GlobalSymbolSearchJob struct {
 	GlobalZoektQuery *GlobalZoektQuery
-	ZoektArgs        *search.ZoektParameters
+	ZoektParams      *search.ZoektParameters
 	RepoOpts         search.RepoOptions
 }
 
@@ -97,10 +94,10 @@ func (s *GlobalSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClie
 
 	userPrivateRepos := privateReposForActor(ctx, clients.Logger, clients.DB, s.RepoOpts)
 	s.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
-	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
+	s.ZoektParams.Query = s.GlobalZoektQuery.Generate()
 
 	// always search for symbols in indexed repositories when searching the repo universe.
-	err = DoZoektSearchGlobal(ctx, clients.Logger, clients.Zoekt, s.ZoektArgs, nil, stream)
+	err = DoZoektSearchGlobal(ctx, clients.Logger, clients.Zoekt, s.ZoektParams, nil, stream)
 	if err != nil {
 		tr.SetAttributes(trace.Error(err))
 		// Only record error if we haven't timed out.
@@ -122,14 +119,14 @@ func (s *GlobalSymbolSearchJob) Attributes(v job.Verbosity) (res []attribute.Key
 		res = append(res,
 			trace.Stringers("repoScope", s.GlobalZoektQuery.RepoScope),
 			attribute.Bool("includePrivate", s.GlobalZoektQuery.IncludePrivate),
-			attribute.Int("fileMatchLimit", int(s.ZoektArgs.FileMatchLimit)),
-			attribute.Stringer("select", s.ZoektArgs.Select),
+			attribute.Int("fileMatchLimit", int(s.ZoektParams.FileMatchLimit)),
+			attribute.Stringer("select", s.ZoektParams.Select),
 		)
 		fallthrough
 	case job.VerbosityBasic:
 		res = append(res,
 			attribute.Stringer("query", s.GlobalZoektQuery.Query),
-			attribute.String("type", string(s.ZoektArgs.Typ)),
+			attribute.String("type", string(s.ZoektParams.Typ)),
 		)
 		res = append(res, trace.Scoped("repoOpts", s.RepoOpts.Attributes()...)...)
 	}

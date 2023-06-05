@@ -22,10 +22,11 @@ func NewCacheEntryCleaner(ctx context.Context, s *store.Store) goroutine.Backgro
 
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
-		"batchchanges.cache-cleaner", "cleaning up LRU batch spec execution cache entries",
-		cacheCleanInterval,
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			return s.CleanBatchSpecExecutionCacheEntries(ctx, maxSizeByte)
 		}),
+		goroutine.WithName("batchchanges.cache-cleaner"),
+		goroutine.WithDescription("cleaning up LRU batch spec execution cache entries"),
+		goroutine.WithInterval(cacheCleanInterval),
 	)
 }

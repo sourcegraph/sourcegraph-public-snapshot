@@ -69,3 +69,4 @@ We're shipping new releases of the app quickly, and you should get prompts to up
 ## Uninstallation
 
 We're working on a better way to clear all data including webkit storage, but for now you can run `rm -rf ~/.sourcegraph-psql ~/Library/Application\ Support/com.sourcegraph.cody ~/Library/Caches/com.sourcegraph.cody ~/Library/WebKit/com.sourcegraph.cody` to uninstall the app.
+

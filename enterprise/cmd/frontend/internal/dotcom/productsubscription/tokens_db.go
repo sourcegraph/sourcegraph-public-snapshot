@@ -7,16 +7,11 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/productsubscription"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/hashutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-// defaultRawAccessToken is currently just a hash of the license key.
-func defaultRawAccessToken(licenseKey []byte) []byte {
-	return hashutil.ToSHA256Bytes(licenseKey)
-}
 
 type dbTokens struct {
 	store *basestore.Store
@@ -26,16 +21,32 @@ func newDBTokens(db database.DB) dbTokens {
 	return dbTokens{store: basestore.NewWithHandle(db.Handle())}
 }
 
-// LookupAccessToken returns the subscription ID corresponding to a token,
-// trimming token prefixes if there are any.
-func (t dbTokens) LookupAccessToken(ctx context.Context, token string) (string, error) {
-	if !strings.HasPrefix(token, productSubscriptionAccessTokenPrefix) {
-		return "", errors.New("invalid token: unknown prefix")
+type productSubscriptionNotFoundError struct {
+	reason string
+}
+
+func (e productSubscriptionNotFoundError) Error() string {
+	return "product subscription not found because " + e.reason
+}
+
+func (e productSubscriptionNotFoundError) NotFound() bool {
+	return true
+}
+
+// LookupProductSubscriptionIDByAccessToken returns the subscription ID
+// corresponding to a token, trimming token prefixes if there are any.
+func (t dbTokens) LookupProductSubscriptionIDByAccessToken(ctx context.Context, token string) (string, error) {
+	if !strings.HasPrefix(token, productsubscription.AccessTokenPrefix) &&
+		!strings.HasPrefix(token, licensing.LicenseKeyBasedAccessTokenPrefix) {
+		return "", productSubscriptionNotFoundError{reason: "invalid token with unknown prefix"}
 	}
 
-	decoded, err := hex.DecodeString(strings.TrimPrefix(token, productSubscriptionAccessTokenPrefix))
+	// Extract the raw token and decode it. Right now the prefix doesn't mean
+	// much, we only track 'license_key' and check the that the raw token value
+	// matches the license key. Note that all prefixes have the same length.
+	decoded, err := hex.DecodeString(token[len(licensing.LicenseKeyBasedAccessTokenPrefix):])
 	if err != nil {
-		return "", errors.New("invalid token: unknown encoding")
+		return "", productSubscriptionNotFoundError{reason: "invalid token with unknown encoding"}
 	}
 
 	query := sqlf.Sprintf(`
@@ -48,20 +59,9 @@ WHERE
 	)
 	subID, found, err := basestore.ScanFirstString(t.store.Query(ctx, query))
 	if err != nil {
-		return "", errors.New("invalid token")
-	}
-	if !found {
-		return "", &productSubscriptionNotFoundError{}
+		return "", err
+	} else if !found {
+		return "", productSubscriptionNotFoundError{reason: "no associated token"}
 	}
 	return subID, nil
-}
-
-type productSubscriptionNotFoundError struct{}
-
-func (e productSubscriptionNotFoundError) Error() string {
-	return "product subscription not found"
-}
-
-func (e productSubscriptionNotFoundError) NotFound() bool {
-	return true
 }

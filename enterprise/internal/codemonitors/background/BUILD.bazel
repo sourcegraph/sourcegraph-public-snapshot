@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "background",
@@ -34,6 +35,7 @@ go_library(
         "//internal/observation",
         "//internal/search/job/jobutil",
         "//internal/search/result",
+        "//internal/settings",
         "//internal/txemail",
         "//internal/txemail/txtypes",
         "//internal/types",

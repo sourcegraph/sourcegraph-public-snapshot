@@ -12,7 +12,6 @@ go_library(
         "//internal/conf/confdefaults",
         "//internal/conf/deploy",
         "//internal/env",
-        "//internal/goroutine",
         "//internal/version",
         "//lib/errors",
         "@com_github_fatih_color//:color",

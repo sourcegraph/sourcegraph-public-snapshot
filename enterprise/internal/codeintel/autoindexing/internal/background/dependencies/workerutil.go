@@ -1,6 +1,9 @@
 package dependencies
 
-import "time"
+import (
+	"strconv"
+	"time"
+)
 
 // dependencyIndexingJob is a subset of the lsif_dependency_indexing_jobs table and acts as the
 // queue and execution record for indexing the dependencies of a particular completed upload.
@@ -22,6 +25,10 @@ func (u dependencyIndexingJob) RecordID() int {
 	return u.ID
 }
 
+func (u dependencyIndexingJob) RecordUID() string {
+	return strconv.Itoa(u.ID)
+}
+
 // dependencySyncingJob is a subset of the lsif_dependency_syncing_jobs table and acts as the
 // queue and execution record for indexing the dependencies of a particular completed upload.
 type dependencySyncingJob struct {
@@ -38,4 +45,8 @@ type dependencySyncingJob struct {
 
 func (u dependencySyncingJob) RecordID() int {
 	return u.ID
+}
+
+func (u dependencySyncingJob) RecordUID() string {
+	return strconv.Itoa(u.ID)
 }

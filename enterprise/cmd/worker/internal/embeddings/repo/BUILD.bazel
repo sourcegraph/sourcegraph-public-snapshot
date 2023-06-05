@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "repo",
@@ -6,6 +7,7 @@ go_library(
         "document_ranks.go",
         "handler.go",
         "janitor.go",
+        "scheduler.go",
         "worker.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/embeddings/repo",
@@ -25,6 +27,7 @@ go_library(
         "//internal/api/internalapi",
         "//internal/codeintel/types",
         "//internal/conf",
+        "//internal/database",
         "//internal/env",
         "//internal/featureflag",
         "//internal/gitserver",

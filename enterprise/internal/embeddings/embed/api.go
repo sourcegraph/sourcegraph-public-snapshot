@@ -42,10 +42,8 @@ type embeddingsClient struct {
 	config *schema.Embeddings
 }
 
-// isDisabled checks the current state of the site config to see if embeddings are
-// enabled. This gives an "escape hatch" for cancelling a long-running embeddings job.
 func (c *embeddingsClient) isDisabled() bool {
-	return !conf.EmbeddingsEnabled()
+	return c.config == nil || !c.config.Enabled
 }
 
 func (c *embeddingsClient) GetDimensions() (int, error) {

@@ -407,6 +407,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                         </ul>
                     </li>
                     <li>Histogram of cloned repository sizes</li>
+                    <li>Aggregate daily, weekly, monthly repository metadata usage statistics</li>
                 </ul>
                 {updatesDisabled && <Text>All telemetry is disabled.</Text>}
             </Container>

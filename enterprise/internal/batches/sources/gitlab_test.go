@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
@@ -190,6 +191,104 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 
 			if p.changeset.Changeset.Metadata != p.mr {
 				t.Errorf("unexpected metadata: have %+v; want %+v", p.changeset.Changeset.Metadata, p.mr)
+			}
+		})
+
+		t.Run("integration", func(t *testing.T) {
+			// Repository used: https://gitlab.com/batch-changes-testing/batch-changes-test-repo
+			// This repository does not have any project setting to delete source branches
+			// automatically on PR merge.
+			//
+			// The requests here cannot be easily rerun with `-update` since you can only open a
+			// pull request once. To update, push a new branch with at least one commit to
+			// batch-changes-test-repo, then update the branch names in the test cases below.
+			//
+			// You can update just this test with `-update GitLabSource_CreateChangeset`.
+			repo := &types.Repo{
+				Metadata: &gitlab.Project{
+					// https://gitlab.com/batch-changes-testing/batch-changes-test-repo
+					ProjectCommon: gitlab.ProjectCommon{ID: 40370047},
+				},
+			}
+
+			testCases := []struct {
+				name               string
+				cs                 *Changeset
+				removeSourceBranch bool
+			}{
+				{
+					name: "no-remove-source-branch",
+					cs: &Changeset{
+						Title:      "This is a test PR",
+						Body:       "This is the description of the test PR",
+						HeadRef:    "refs/heads/test-pr-3",
+						BaseRef:    "refs/heads/main",
+						RemoteRepo: repo,
+						TargetRepo: repo,
+						Changeset:  &btypes.Changeset{},
+					},
+					removeSourceBranch: false,
+				},
+				{
+					name: "yes-remove-source-branch",
+					cs: &Changeset{
+						Title:      "This is a test PR",
+						Body:       "This is the description of the test PR",
+						HeadRef:    "refs/heads/test-pr-4",
+						BaseRef:    "refs/heads/main",
+						RemoteRepo: repo,
+						TargetRepo: repo,
+						Changeset:  &btypes.Changeset{},
+					},
+					removeSourceBranch: true,
+				},
+			}
+
+			for _, tc := range testCases {
+				tc := tc
+				tc.name = "GitLabSource_CreateChangeset_" + tc.name
+
+				t.Run(tc.name, func(t *testing.T) {
+					cf, save := newClientFactory(t, tc.name)
+					defer save(t)
+
+					if tc.removeSourceBranch {
+						conf.Mock(&conf.Unified{
+							SiteConfiguration: schema.SiteConfiguration{
+								BatchChangesAutoDeleteBranch: true,
+							},
+						})
+						defer conf.Mock(nil)
+					}
+
+					lg := log15.New()
+					lg.SetHandler(log15.DiscardHandler())
+
+					svc := &types.ExternalService{
+						Kind: extsvc.KindGitLab,
+						Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitLabConnection{
+							Url:   "https://gitlab.com",
+							Token: os.Getenv("GITLAB_TOKEN"),
+						})),
+					}
+
+					ctx := context.Background()
+					gitlabSource, err := NewGitLabSource(ctx, svc, cf)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					_, err = gitlabSource.CreateChangeset(ctx, tc.cs)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					meta := tc.cs.Changeset.Metadata.(*gitlab.MergeRequest)
+					testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), meta)
+					if meta.ForceRemoveSourceBranch != tc.removeSourceBranch {
+						t.Fatalf("unexpected ForceRemoveSourceBranch value: have %v, want %v", meta.ForceRemoveSourceBranch, tc.removeSourceBranch)
+					}
+				})
 			}
 		})
 	})

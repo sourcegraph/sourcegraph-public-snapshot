@@ -16,6 +16,7 @@ const response: FetchOwnershipResult = {
         commit: {
             blob: {
                 ownership: {
+                    totalOwners: 4,
                     nodes: [
                         {
                             __typename: 'Ownership',
@@ -68,6 +69,35 @@ const response: FetchOwnershipResult = {
                                     },
                                     ruleLineMatch: 10,
                                 },
+                                {
+                                    __typename: 'RecentContributorOwnershipSignal',
+                                    title: 'Recent Contributor',
+                                    description:
+                                        'Owner is associated because they have contributed to this file in the last 90 days',
+                                },
+                            ],
+                        },
+                        {
+                            __typename: 'Ownership',
+                            owner: {
+                                __typename: 'Team',
+                                avatarURL: null,
+                                teamDisplayName: 'Delta Team',
+                                name: 'delta',
+                                external: false,
+                                url: '/teams/delta',
+                            },
+                            reasons: [
+                                {
+                                    __typename: 'CodeownersFileEntry',
+                                    title: 'CodeOwner',
+                                    description: 'This team is listed in the CODEOWNERS file',
+                                    codeownersFile: {
+                                        __typename: 'VirtualFile',
+                                        url: '/own',
+                                    },
+                                    ruleLineMatch: 10,
+                                },
                             ],
                         },
                         {
@@ -81,36 +111,34 @@ const response: FetchOwnershipResult = {
                             },
                             reasons: [
                                 {
-                                    __typename: 'CodeownersFileEntry',
-                                    title: 'CodeOwner',
-                                    description: 'This person is listed in the CODEOWNERS file',
-                                    codeownersFile: {
-                                        __typename: 'VirtualFile',
-                                        url: '/own',
-                                    },
-                                    ruleLineMatch: 10,
+                                    __typename: 'RecentContributorOwnershipSignal',
+                                    title: 'Recent Contributor',
+                                    description:
+                                        'Owner is associated because they have contributed to this file in the last 90 days',
+                                },
+                                {
+                                    __typename: 'RecentViewOwnershipSignal',
+                                    title: 'Recent View',
+                                    description:
+                                        'Owner is associated because they have viewed this file in the last 90 days.',
                                 },
                             ],
                         },
                         {
                             __typename: 'Ownership',
                             owner: {
-                                __typename: 'Team',
+                                __typename: 'Person',
+                                email: '',
                                 avatarURL: null,
-                                teamDisplayName: 'Delta Team',
-                                name: 'delta',
-                                url: '/teams/delta',
+                                displayName: 'alice',
+                                user: null,
                             },
                             reasons: [
                                 {
-                                    __typename: 'CodeownersFileEntry',
-                                    title: 'CodeOwner',
-                                    description: 'This team is listed in the CODEOWNERS file',
-                                    codeownersFile: {
-                                        __typename: 'VirtualFile',
-                                        url: '/own',
-                                    },
-                                    ruleLineMatch: 10,
+                                    __typename: 'RecentViewOwnershipSignal',
+                                    title: 'Recent View',
+                                    description:
+                                        'Owner is associated because they have viewed this file in the last 90 days.',
                                 },
                             ],
                         },
