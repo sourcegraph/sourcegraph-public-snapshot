@@ -4,7 +4,7 @@ import { mdiEmail } from '@mdi/js'
 
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
-import { Button, ButtonLink, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Icon, LinkOrSpan, Tooltip } from '@sourcegraph/wildcard'
 
 import {
     AssignedOwnerFields,
@@ -22,6 +22,7 @@ import containerStyles from './FileOwnershipPanel.module.scss'
 interface Props {
     owner: OwnerFields
     reasons: OwnershipReason[]
+    makeOwnerButton?: React.ReactElement
 }
 
 type OwnershipReason =
@@ -30,7 +31,7 @@ type OwnershipReason =
     | RecentViewOwnershipSignalFields
     | AssignedOwnerFields
 
-export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reasons }) => {
+export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reasons, makeOwnerButton }) => {
     const findEmail = (): string | undefined => {
         if (owner.__typename !== 'Person') {
             return undefined
@@ -75,7 +76,10 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reas
                                 className="mx-2"
                                 inline={true}
                             />
-                            <Link to={`/teams/${owner.name}`}>{owner.teamDisplayName || owner.name}</Link>
+                            {/* In case of unresolved, but guessed GitHub team, ID is 0 and we don't need to provide a link to the non-existing team. */}
+                            <LinkOrSpan to={owner.external ? undefined : `/teams/${owner.name}`}>
+                                {owner.teamDisplayName || owner.name}
+                            </LinkOrSpan>
                         </>
                     )}
                 </div>
@@ -85,6 +89,7 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reas
                     <OwnershipBadge key={reason.title} reason={reason} />
                 ))}
             </td>
+            <td className={containerStyles.fitting}>{makeOwnerButton}</td>
         </tr>
     )
 }

@@ -6,6 +6,7 @@ import { FileTouch } from '@sourcegraph/cody-shared/src/chat/recipes/file-touch'
 import { FindCodeSmells } from '@sourcegraph/cody-shared/src/chat/recipes/find-code-smells'
 import { Fixup } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
 import { GenerateDocstring } from '@sourcegraph/cody-shared/src/chat/recipes/generate-docstring'
+import { PrDescription } from '@sourcegraph/cody-shared/src/chat/recipes/generate-pr-description'
 import { ReleaseNotes } from '@sourcegraph/cody-shared/src/chat/recipes/generate-release-notes'
 import { GenerateTest } from '@sourcegraph/cody-shared/src/chat/recipes/generate-test'
 import { GitHistory } from '@sourcegraph/cody-shared/src/chat/recipes/git-log'
@@ -51,6 +52,7 @@ function init(): void {
         new NonStop(),
         new OptimizeCode(),
         new ReleaseNotes(),
+        new PrDescription(),
         new TranslateToLanguage(),
     ]
 
