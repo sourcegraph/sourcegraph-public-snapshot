@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "codemonitors",
@@ -13,7 +14,6 @@ go_library(
         "//internal/database",
         "//internal/errcode",
         "//internal/gitserver/protocol",
-        "//internal/httpcli",
         "//internal/search",
         "//internal/search/client",
         "//internal/search/commit",
@@ -24,9 +24,6 @@ go_library(
         "//internal/search/streaming",
         "//lib/errors",
         "//schema",
-        "@com_github_graphql_go_graphql//gqlerrors",
-        "@com_github_opentracing_opentracing_go//:opentracing-go",
-        "@com_github_opentracing_opentracing_go//log",
         "@com_github_sourcegraph_log//:log",
     ],
 )

@@ -5,6 +5,8 @@ import (
 	"strconv"
 
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -150,6 +152,10 @@ func (s BitbucketCloudSource) UpdateChangeset(ctx context.Context, cs *Changeset
 	// request when updating a pull request.
 	opts.Reviewers = pr.Reviewers
 
+	if conf.Get().BatchChangesAutoDeleteBranch {
+		opts.CloseSourceBranch = true
+	}
+
 	updated, err := s.client.UpdatePullRequest(ctx, targetRepo, pr.ID, opts)
 	if err != nil {
 		return errors.Wrap(err, "updating pull request")
@@ -263,6 +269,10 @@ func (s BitbucketCloudSource) GetFork(ctx context.Context, targetRepo *types.Rep
 	return s.checkAndCopy(targetRepo, fork)
 }
 
+func (s BitbucketCloudSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+	return BuildCommitOptsCommon(repo, spec, pushOpts)
+}
+
 func (s BitbucketCloudSource) checkAndCopy(targetRepo *types.Repo, fork *bitbucketcloud.Repo) (*types.Repo, error) {
 	tr := targetRepo.Metadata.(*bitbucketcloud.Repo)
 
@@ -318,11 +328,14 @@ func (s BitbucketCloudSource) setChangesetMetadata(ctx context.Context, repo *bi
 
 func (s BitbucketCloudSource) changesetToPullRequestInput(cs *Changeset) bitbucketcloud.PullRequestInput {
 	destBranch := gitdomain.AbbreviateRef(cs.BaseRef)
+	closeSourceBranch := conf.Get().BatchChangesAutoDeleteBranch
+
 	opts := bitbucketcloud.PullRequestInput{
 		Title:             cs.Title,
 		Description:       cs.Body,
 		SourceBranch:      gitdomain.AbbreviateRef(cs.HeadRef),
 		DestinationBranch: &destBranch,
+		CloseSourceBranch: closeSourceBranch,
 	}
 
 	// If we're forking, then we need to set the source repository as well.

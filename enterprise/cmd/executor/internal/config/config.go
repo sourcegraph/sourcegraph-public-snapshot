@@ -27,6 +27,8 @@ type Config struct {
 	FrontendURL                                    string
 	FrontendAuthorizationToken                     string
 	QueueName                                      string
+	QueueNamesStr                                  string
+	QueueNames                                     []string
 	QueuePollInterval                              time.Duration
 	MaximumNumJobs                                 int
 	FirecrackerImage                               string
@@ -97,7 +99,8 @@ func NewAppConfig() *Config {
 func (c *Config) Load() {
 	c.FrontendURL = c.Get("EXECUTOR_FRONTEND_URL", "", "The external URL of the sourcegraph instance.")
 	c.FrontendAuthorizationToken = c.Get("EXECUTOR_FRONTEND_PASSWORD", c.defaultFrontendPassword, "The authorization token supplied to the frontend.")
-	c.QueueName = c.Get("EXECUTOR_QUEUE_NAME", "", "The name of the queue to listen to.")
+	c.QueueName = c.GetOptional("EXECUTOR_QUEUE_NAME", "The name of the queue to listen to.")
+	c.QueueNamesStr = c.GetOptional("EXECUTOR_QUEUE_NAMES", "The names of multiple queues to listen to, comma-separated.")
 	c.QueuePollInterval = c.GetInterval("EXECUTOR_QUEUE_POLL_INTERVAL", "1s", "Interval between dequeue requests.")
 	c.MaximumNumJobs = c.GetInt("EXECUTOR_MAXIMUM_NUM_JOBS", "1", "Number of virtual machines or containers that can be running at once.")
 	c.UseFirecracker = c.GetBool("EXECUTOR_USE_FIRECRACKER", strconv.FormatBool(runtime.GOOS == "linux" && !IsKubernetes()), "Whether to isolate commands in virtual machines. Requires ignite and firecracker. Linux hosts only. Kubernetes is not supported.")
@@ -125,8 +128,8 @@ func (c *Config) Load() {
 	c.KubernetesNodeSelector = c.GetOptional("EXECUTOR_KUBERNETES_NODE_SELECTOR", "A comma separated list of values to use as a node selector for Kubernetes Jobs. e.g. foo=bar,app=my-app")
 	c.kubernetesNodeRequiredAffinityMatchExpressions = c.GetOptional("EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_EXPRESSIONS", "The JSON encoded required affinity match expressions for Kubernetes Jobs. e.g. [{\"key\": \"foo\", \"operator\": \"In\", \"values\": [\"bar\"]}]")
 	c.kubernetesNodeRequiredAffinityMatchFields = c.GetOptional("EXECUTOR_KUBERNETES_NODE_REQUIRED_AFFINITY_MATCH_FIELDS", "The JSON encoded required affinity match fields for Kubernetes Jobs. e.g. [{\"key\": \"foo\", \"operator\": \"In\", \"values\": [\"bar\"]}]")
-	c.kubernetesPodAffinity = c.GetOptional("EXECUTOR_KUBERNETES_POD_AFFINITY", "The JSON encoded pod affinity for Kubernetes Jobs. e.g. {\"requiredDuringSchedulingIgnoredDuringExecution\": [{\"labelSelector\": {\"matchExpressions\": [{\"key\": \"foo\", \"operator\": \"In\", \"values\": [\"bar\"]}]}, \"topologyKey\": \"kubernetes.io/hostname\"}]}")
-	c.kubernetesPodAntiAffinity = c.GetOptional("EXECUTOR_KUBERNETES_POD_ANTI_AFFINITY", "The JSON encoded pod anti-affinity for Kubernetes Jobs. e.g. {\"requiredDuringSchedulingIgnoredDuringExecution\": [{\"labelSelector\": {\"matchExpressions\": [{\"key\": \"foo\", \"operator\": \"In\", \"values\": [\"bar\"]}]}, \"topologyKey\": \"kubernetes.io/hostname\"}]}")
+	c.kubernetesPodAffinity = c.GetOptional("EXECUTOR_KUBERNETES_POD_AFFINITY", "The JSON encoded pod affinity for Kubernetes Jobs. e.g. [{\"labelSelector\": {\"matchExpressions\": [{\"key\": \"foo\", \"operator\": \"In\", \"values\": [\"bar\"]}]}, \"topologyKey\": \"kubernetes.io/hostname\"}]")
+	c.kubernetesPodAntiAffinity = c.GetOptional("EXECUTOR_KUBERNETES_POD_ANTI_AFFINITY", "The JSON encoded pod anti-affinity for Kubernetes Jobs. e.g. [{\"labelSelector\": {\"matchExpressions\": [{\"key\": \"foo\", \"operator\": \"In\", \"values\": [\"bar\"]}]}, \"topologyKey\": \"kubernetes.io/hostname\"}]")
 	c.kubernetesNodeTolerations = c.GetOptional("EXECUTOR_KUBERNETES_NODE_TOLERATIONS", "The JSON encoded tolerations for Kubernetes Jobs. e.g. [{\"key\": \"foo\", \"operator\": \"Equal\", \"value\": \"bar\", \"effect\": \"NoSchedule\"}]")
 	c.KubernetesNamespace = c.Get("EXECUTOR_KUBERNETES_NAMESPACE", "default", "The namespace to run executor jobs in.")
 	c.KubernetesPersistenceVolumeName = c.Get("EXECUTOR_KUBERNETES_PERSISTENCE_VOLUME_NAME", "sg-executor-pvc", "The name of the Kubernetes persistence volume to use for executor jobs.")
@@ -136,11 +139,15 @@ func (c *Config) Load() {
 	c.KubernetesResourceRequestMemory = c.Get("EXECUTOR_KUBERNETES_RESOURCE_REQUEST_MEMORY", "12Gi", "The minimum memory resource for Kubernetes Jobs.")
 	c.DockerAddHostGateway = c.GetBool("EXECUTOR_DOCKER_ADD_HOST_GATEWAY", "false", "If true, host.docker.internal will be exposed to the docker commands run by the runtime. Warn: Can be insecure. Only use this if you understand what you're doing. This is mostly used for running against a Sourcegraph on the same host.")
 	c.dockerAuthConfigStr = c.GetOptional("EXECUTOR_DOCKER_AUTH_CONFIG", "The content of the docker config file including auth for services. If using firecracker, only static credentials are supported, not credential stores nor credential helpers.")
-	c.KubernetesJobDeadline = c.GetInt("KUBERNETES_JOB_DEADLINE", "300", "The number of seconds after which a Kubernetes job will be terminated.")
+	c.KubernetesJobDeadline = c.GetInt("KUBERNETES_JOB_DEADLINE", "1200", "The number of seconds after which a Kubernetes job will be terminated.")
 	c.KubernetesKeepJobs = c.GetBool("KUBERNETES_KEEP_JOBS", "false", "If true, Kubernetes jobs will not be deleted after they complete. Useful for debugging.")
 	c.KubernetesSecurityContextRunAsUser = c.GetInt("KUBERNETES_RUN_AS_USER", "-1", "The user ID to run Kubernetes jobs as.")
 	c.KubernetesSecurityContextRunAsGroup = c.GetInt("KUBERNETES_RUN_AS_GROUP", "-1", "The group ID to run Kubernetes jobs as.")
 	c.KubernetesSecurityContextFSGroup = c.GetInt("KUBERNETES_FS_GROUP", "1000", "The group ID to run all containers in the Kubernetes jobs as. Defaults to 1000, the group ID of the docker group in the executor container.")
+
+	if c.QueueNamesStr != "" {
+		c.QueueNames = strings.Split(c.QueueNamesStr, ",")
+	}
 
 	if c.dockerAuthConfigStr != "" {
 		c.dockerAuthConfigUnmarshalError = json.Unmarshal([]byte(c.dockerAuthConfigStr), &c.DockerAuthConfig)
@@ -179,8 +186,18 @@ func getKubeConfigPath() string {
 }
 
 func (c *Config) Validate() error {
-	if c.QueueName != "" && c.QueueName != "batches" && c.QueueName != "codeintel" {
+	if c.QueueName == "" && c.QueueNamesStr == "" {
+		c.AddError(errors.New("neither EXECUTOR_QUEUE_NAME or EXECUTOR_QUEUE_NAMES is set"))
+	} else if c.QueueName != "" && c.QueueNamesStr != "" {
+		c.AddError(errors.New("both EXECUTOR_QUEUE_NAME and EXECUTOR_QUEUE_NAMES are set"))
+	} else if c.QueueName != "" && c.QueueName != "batches" && c.QueueName != "codeintel" {
 		c.AddError(errors.New("EXECUTOR_QUEUE_NAME must be set to 'batches' or 'codeintel'"))
+	} else {
+		for _, queueName := range c.QueueNames {
+			if queueName != "batches" && queueName != "codeintel" {
+				c.AddError(errors.Newf("EXECUTOR_QUEUE_NAMES contains invalid queue name '%s'", queueName))
+			}
+		}
 	}
 
 	u, err := url.Parse(c.FrontendURL)

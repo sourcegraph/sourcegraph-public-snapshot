@@ -85,7 +85,7 @@ export const StreamingSearchResults: FC<StreamingSearchResultsProps> = props => 
     const [enableSearchResultsKeyboardNavigation] = useFeatureFlag('search-results-keyboard-navigation', true)
     const [ownFeatureFlagEnabled] = useFeatureFlag('search-ownership', false)
     const enableOwnershipSearch = ownEnabled && ownFeatureFlagEnabled
-    const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', false)
+    const [enableRepositoryMetadata] = useFeatureFlag('repository-metadata', true)
 
     const [sidebarCollapsed, setSidebarCollapsed] = useTemporarySetting('search.sidebar.collapsed', false)
 

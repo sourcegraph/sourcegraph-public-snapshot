@@ -197,3 +197,7 @@ index.scip
 
 # Generated on CI only
 .aspect/bazelrc/ci.sourcegraph.bazelrc
+
+# nix
+result
+result-*

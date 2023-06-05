@@ -33,9 +33,7 @@ import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { CodeIntelligenceProps } from '../codeintel'
 import { CodySidebar } from '../cody/sidebar'
-import { useChatStore } from '../cody/stores/chat'
-import { useCodySidebarStore } from '../cody/stores/sidebar'
-import { useIsCodyEnabled } from '../cody/useIsCodyEnabled'
+import { useCodySidebar } from '../cody/sidebar/Provider'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { RouteError } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
@@ -155,7 +153,22 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
         location.pathname + location.search + location.hash
     )
 
-    const codyEnabled = useIsCodyEnabled()
+    const {
+        isCodyEnabled,
+        sidebarSize: codySidebarSize,
+        isSidebarOpen: isCodySidebarOpen,
+        setIsSidebarOpen: setIsCodySidebarOpen,
+        setSidebarSize: setCodySidebarSize,
+        loaded: codyLoaded,
+        scope,
+        setScope,
+    } = useCodySidebar()
+
+    useEffect(() => {
+        if (codyLoaded && scope.type === 'Automatic' && !scope.repositories.find((name: string) => name === repoName)) {
+            setScope({ ...scope, repositories: [...scope.repositories, repoName] })
+        }
+    }, [scope, repoName, setScope, codyLoaded])
 
     const resolvedRevisionOrError = useObservable(
         useMemo(
@@ -193,13 +206,6 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
     )
 
     const focusCodyShortcut = useKeyboardShortcut('focusCody')
-    const {
-        isOpen: isCodySidebarOpen,
-        setIsOpen: setIsCodySidebarOpen,
-        onResize: onCodySidebarResize,
-    } = useCodySidebarStore()
-    // TODO: This hook call is used to initialize the chat store with the right repo name.
-    useChatStore({ codebase: repoName, setIsCodySidebarOpen })
 
     /**
      * A long time ago, we fetched `repo` in a separate GraphQL query.
@@ -351,7 +357,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
 
     return (
         <>
-            {codyEnabled.sidebar &&
+            {isCodyEnabled.sidebar &&
                 focusCodyShortcut?.keybindings.map((keybinding, index) => (
                     <Shortcut
                         key={index}
@@ -375,7 +381,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                         telemetryService={props.telemetryService}
                     />
 
-                    {codyEnabled.sidebar ? (
+                    {isCodyEnabled.sidebar ? (
                         <RepoHeaderContributionPortal
                             position="right"
                             priority={1}
@@ -491,16 +497,16 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                     </Suspense>
                 </div>
 
-                {codyEnabled.sidebar && isCodySidebarOpen && (
+                {isCodyEnabled.sidebar && isCodySidebarOpen && (
                     <Panel
                         className="cody-sidebar-panel"
                         position="right"
                         ariaLabel="Cody sidebar"
                         maxSize={CODY_SIDEBAR_SIZES.max}
                         minSize={CODY_SIDEBAR_SIZES.min}
-                        defaultSize={CODY_SIDEBAR_SIZES.default}
+                        defaultSize={codySidebarSize || CODY_SIDEBAR_SIZES.default}
                         storageKey="size-cache-cody-sidebar"
-                        onResize={onCodySidebarResize}
+                        onResize={setCodySidebarSize}
                     >
                         <CodySidebar onClose={() => setIsCodySidebarOpen(false)} />
                     </Panel>

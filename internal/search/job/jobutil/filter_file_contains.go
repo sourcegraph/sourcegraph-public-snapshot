@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewFileContainsFilterJob creates a filter job to post-filter results for the
@@ -34,13 +35,17 @@ import (
 // an unindexed search for each streamed diff match. However, we cannot pre-filter
 // because then are not checking whether the file contains the requested content
 // at the commit of the diff match.
-func NewFileContainsFilterJob(includePatterns []string, originalPattern query.Node, caseSensitive bool, child job.Job) job.Job {
+func NewFileContainsFilterJob(includePatterns []string, originalPattern query.Node, caseSensitive bool, child job.Job) (job.Job, error) {
 	includeMatchers := make([]*regexp.Regexp, 0, len(includePatterns))
 	for _, pattern := range includePatterns {
 		if !caseSensitive {
 			pattern = "(?i:" + pattern + ")"
 		}
-		includeMatchers = append(includeMatchers, regexp.MustCompile(pattern))
+		re, err := regexp.Compile(pattern)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to regexp.Compile(%q) for file:contains.content() include patterns", pattern)
+		}
+		includeMatchers = append(includeMatchers, re)
 	}
 
 	originalPatternStrings := patternsInTree(originalPattern)
@@ -49,7 +54,11 @@ func NewFileContainsFilterJob(includePatterns []string, originalPattern query.No
 		if !caseSensitive {
 			originalPatternString = "(?i:" + originalPatternString + ")"
 		}
-		originalPatternMatchers = append(originalPatternMatchers, regexp.MustCompile(originalPatternString))
+		re, err := regexp.Compile(originalPatternString)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to regexp.Compile(%q) for file:contains.content() original patterns", originalPatternString)
+		}
+		originalPatternMatchers = append(originalPatternMatchers, re)
 	}
 
 	return &fileContainsFilterJob{
@@ -58,7 +67,7 @@ func NewFileContainsFilterJob(includePatterns []string, originalPattern query.No
 		includeMatchers:         includeMatchers,
 		originalPatternMatchers: originalPatternMatchers,
 		child:                   child,
-	}
+	}, nil
 }
 
 type fileContainsFilterJob struct {

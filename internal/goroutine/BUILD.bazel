@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "goroutine",
@@ -6,7 +7,6 @@ go_library(
         "background.go",
         "goroutine.go",
         "periodic.go",
-        "pool.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/goroutine",
     visibility = ["//:__subpackages__"],
@@ -16,6 +16,7 @@ go_library(
         "//internal/observation",
         "//lib/errors",
         "@com_github_derision_test_glock//:glock",
+        "@com_github_sourcegraph_conc//:conc",
         "@com_github_sourcegraph_log//:log",
     ],
 )
@@ -29,12 +30,10 @@ go_test(
         "goroutine_test.go",
         "mocks_test.go",
         "periodic_test.go",
-        "pool_test.go",
     ],
     embed = [":goroutine"],
     deps = [
         "//lib/errors",
         "@com_github_derision_test_glock//:glock",
-        "@com_github_google_go_cmp//cmp",
     ],
 )

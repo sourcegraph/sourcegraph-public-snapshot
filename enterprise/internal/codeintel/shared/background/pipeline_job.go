@@ -95,13 +95,13 @@ func NewPipelineMetrics(observationCtx *observation.Context, name string) *Pipel
 func NewPipelineJob(ctx context.Context, opts PipelineOptions) goroutine.BackgroundRoutine {
 	pipeline := &pipeline{opts: opts}
 
-	return goroutine.NewPeriodicGoroutineWithMetricsAndDynamicInterval(
+	return goroutine.NewPeriodicGoroutine(
 		actor.WithInternalActor(ctx),
-		opts.Name,
-		opts.Description,
-		pipeline.interval,
 		pipeline,
-		opts.Metrics.op,
+		goroutine.WithName(opts.Name),
+		goroutine.WithDescription(opts.Description),
+		goroutine.WithIntervalFunc(pipeline.interval),
+		goroutine.WithOperation(opts.Metrics.op),
 	)
 }
 
@@ -126,7 +126,12 @@ func (j *pipeline) Handle(ctx context.Context) error {
 		j.opts.Metrics.numRecordsAltered.With(prometheus.Labels{"record": name}).Add(float64(count))
 	}
 
-	return nil
+	if numRecordsProcessed == 0 {
+		return nil
+	}
+
+	// There were records to process, so attempt a next batch immediately
+	return goroutine.ErrReinvokeImmediately
 }
 
 //

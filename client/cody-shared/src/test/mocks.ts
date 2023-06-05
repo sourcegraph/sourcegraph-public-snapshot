@@ -84,6 +84,10 @@ export class MockEditor implements Editor {
     public showInputBox(prompt?: string): Promise<string | undefined> {
         return this.mocks.showInputBox?.(prompt) ?? Promise.resolve(undefined)
     }
+
+    public didReceiveFixupText(id: string, text: string, state: 'streaming' | 'complete'): Promise<void> {
+        return this.mocks.didReceiveFixupText?.(id, text, state) ?? Promise.resolve(undefined)
+    }
 }
 
 export const defaultEmbeddingsClient = new MockEmbeddingsClient()
@@ -108,5 +112,6 @@ export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
                 defaultKeywordContextFetcher
             ),
         responseMultiplexer: args.responseMultiplexer || new BotResponseMultiplexer(),
+        firstInteraction: args.firstInteraction ?? false,
     }
 }

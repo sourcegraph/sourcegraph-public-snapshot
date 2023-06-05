@@ -129,8 +129,8 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				"blobstore",
 				"bundled-executor",
 				"cadvisor",
-				"codeinsights-db",
-				"codeintel-db",
+				// "codeinsights-db",
+				// "codeintel-db",
 				"embeddings",
 				"executor",
 				"executor-kubernetes",
@@ -140,12 +140,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				"indexed-searcher",
 				"jaeger-agent",
 				"jaeger-all-in-one",
-				"llm-proxy",
+				"cody-gateway",
 				"loadtest",
 				"migrator",
 				"node-exporter",
 				"opentelemetry-collector",
-				"postgres-12-alpine",
+				// "postgres-12-alpine",
 				"postgres_exporter",
 				"precise-code-intel-worker",
 				"prometheus",
@@ -173,15 +173,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(CoreTestOperations(c.Diff, CoreTestOperationsOptions{
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
-			// TODO: (@umpox, @valerybugakov) Figure out if we can reliably enable this in PRs.
-			ClientLintOnlyChangedFiles: false,
-			CreateBundleSizeDiff:       true,
-			ForceBazel:                 !c.MessageFlags.NoBazel,
+			CreateBundleSizeDiff:      true,
+			ForceBazel:                !c.MessageFlags.NoBazel,
 		}))
-
-		// At this stage, we don't break builds because of a Bazel failure.
-		// TODO(JH) Disabled until re-enabled with flag
-		// ops.Merge(BazelOperations(true))
 
 		// Now we set up conditional operations that only apply to pull requests.
 		if c.Diff.Has(changed.Client) {
@@ -225,7 +219,15 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addClientLintersForAllFiles,
 			addCodyExtensionTests,
 			wait,
-			addCodyReleaseSteps)
+			addCodyReleaseSteps("stable"))
+
+	case runtype.CodyNightly:
+		// If this is a Cody VS Code extension nightly build, run the Cody tests and release
+		ops = operations.NewSet(
+			addClientLintersForAllFiles,
+			addCodyExtensionTests,
+			wait,
+			addCodyReleaseSteps("nightly"))
 
 	case runtype.BextNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and
@@ -291,10 +293,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.CandidatesNoTest:
 		imageBuildOps := operations.NewNamedSet("Image builds")
 		imageBuildOps.Append(buildCandidateDockerImage("syntax-highlighter", c.Version, c.candidateImageTag(), false))
+		imageBuildOps.Append(buildCandidateDockerImage("symbols", c.Version, c.candidateImageTag(), false))
 		imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesTestDeps, c.Version, c.candidateImageTag(), c.RunType))
 		var deployImages = []string{}
 		for _, image := range images.DeploySourcegraphDockerImages {
-			if image == "syntax-highlighter" {
+			if image == "syntax-highlighter" || image == "symbols" {
 				continue
 			}
 			deployImages = append(deployImages, image)
@@ -353,10 +356,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			}
 		} else {
 			imageBuildOps.Append(buildCandidateDockerImage("syntax-highlighter", c.Version, c.candidateImageTag(), false))
+			imageBuildOps.Append(buildCandidateDockerImage("symbols", c.Version, c.candidateImageTag(), false))
 			imageBuildOps.Append(bazelBuildCandidateDockerImages(images.SourcegraphDockerImagesTestDeps, c.Version, c.candidateImageTag(), c.RunType))
 			var deployImages = []string{}
 			for _, image := range images.DeploySourcegraphDockerImages {
-				if image == "syntax-highlighter" {
+				if image == "syntax-highlighter" || image == "symbols" {
 					continue
 				}
 				deployImages = append(deployImages, image)
@@ -394,7 +398,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		// Temporary: on main branches, we build images with bazel binaries based on their toolchain and/or purpose. This step key is the first image in the array.
 		// This will be removed once we build images with wolfi.
 		ops.Merge(operations.NewNamedSet("Integration tests",
-			backendIntegrationTests(c.candidateImageTag(), "symbols"),
+			backendIntegrationTests(c.candidateImageTag(), "server"),
 			codeIntelQA(c.candidateImageTag()),
 		))
 		// End-to-end tests
@@ -421,6 +425,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				publishOps.Append(publishExecutorDockerMirror(c))
 			}
 		}
+		publishOps.Append(bazelPushImagesCmd(c.Version))
 		ops.Merge(publishOps)
 	}
 

@@ -83,3 +83,23 @@ For projects that have non-standard or complex dependency resolution or pre-comp
 From there you can view or edit the repository's configuration. We use a superset of JSON that allows for comments and trailing commas. The set of index jobs that would be [inferred](../explanations/auto_indexing_inference.md) from the content of the repository (at the current tip of the default branch) can be viewed and may often be useful as a starting point to define more elaborate indexing jobs.
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/renamed/configuration.png" class="screenshot" alt="Auto-indexing configuration editor">
+
+## Private repositories and packages configuration
+
+For auto-indexing jobs to be able to build your projects that use private repositories and packages,
+you need to provide language-specific configuration in the form of Executor secrets.
+
+### Go
+
+For Go resolver to access private Git repositories, you need to configure a `NETRC_DATA` secret with 
+the following contents:
+
+```text
+machine <your-git-host> login <git-user-login> password <github-token-or-password>
+```
+
+Under the hood, this information will be used to write the [.netrc](https://www.gnu.org/software/inetutils/manual/html_node/The-_002enetrc-file.html) file that is respected by Git and Go.
+
+### TypeScript/JavaScript
+
+For **NPM**, you can create a [secret named `NPM_TOKEN`](https://docs.npmjs.com/using-private-packages-in-a-ci-cd-workflow#set-the-token-as-an-environment-variable-on-the-cicd-server) which will be automatically picked up by the indexer.

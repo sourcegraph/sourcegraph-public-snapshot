@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "backend",
@@ -57,7 +58,6 @@ go_library(
         "//internal/search/result",
         "//internal/symbols",
         "//internal/trace",
-        "//internal/trace/ot",
         "//internal/txemail",
         "//internal/txemail/txtypes",
         "//internal/types",
@@ -69,6 +69,7 @@ go_library(
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 

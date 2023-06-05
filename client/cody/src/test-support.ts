@@ -1,6 +1,7 @@
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
+import { FixupTask } from './non-stop/FixupTask'
 
 // A one-slot channel which lets readers block on a value being
 // available from a writer. Tests use this to wait for the
@@ -40,5 +41,9 @@ export class TestSupport {
 
     public async chatTranscript(): Promise<ChatMessage[]> {
         return (await this.chatViewProvider.get()).transcriptForTesting(this)
+    }
+
+    public async fixupTasks(): Promise<FixupTask[]> {
+        return (await this.chatViewProvider.get()).fixupTasksForTesting(this)
     }
 }

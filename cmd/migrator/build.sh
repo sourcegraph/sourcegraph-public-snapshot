@@ -47,6 +47,7 @@ gcs_filenames=(
 
 function download_gcs() {
   outfile="${OUTPUT}/schema-descriptions/${1}-${2}"
+  echo "${outfile}"
   if ! curl -fsSL "https://storage.googleapis.com/sourcegraph-assets/migrations/drift/${1}-${2}" 2>/dev/null >"${outfile}"; then
     rm "${outfile}"
   fi
@@ -68,7 +69,7 @@ git_versions=(
   v4.3.0 v4.3.1
   v4.4.0 v4.4.1 v4.4.2
   v4.5.0 v4.5.1
-  v5.0.0 v5.0.1 v5.0.2 v5.0.3 v5.0.4)
+  v5.0.0 v5.0.1 v5.0.2 v5.0.3 v5.0.4 v5.0.5)
 
 for version in "${git_versions[@]}"; do
   echo "Persisting schemas for ${version} from Git..."

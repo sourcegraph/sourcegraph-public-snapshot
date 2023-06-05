@@ -18,7 +18,7 @@ Administration is usually handled by site administrators are the admins responsi
 
 ## [Upgrade Sourcegraph](updates/index.md)
 
-> NOTE: The Sourcegraph 4.0 [`migrator`](./how-to/manual_database_migrations.md) can now perform upgrades across [multiple versions](updates/index.md#multi-version-upgrades) on any instance 3.20 or later.
+> NOTE: The Sourcegraph 4.0 [`migrator`](./updates/migrator/migrator-operations.md) can now perform upgrades across [multiple versions](updates/index.md#multi-version-upgrades) on any instance 3.20 or later.
 
 - [Upgrade Sourcegraph](updates/index.md)
   - [Single-minor-version "standard" upgrades](updates/index.md#standard-upgrades)

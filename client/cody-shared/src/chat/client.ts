@@ -39,6 +39,7 @@ export interface Client {
         recipeId: RecipeID,
         options?: {
             prefilledOptions?: PrefilledOptions
+            humanChatInput?: string
         }
     ) => Promise<void>
     reset: () => void
@@ -66,7 +67,7 @@ export async function createClient({
         )
     }
 
-    const embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId) : null
+    const embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId, true) : null
 
     const codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null)
 
@@ -105,6 +106,7 @@ export async function createClient({
             intentDetector,
             codebaseContext,
             responseMultiplexer: new BotResponseMultiplexer(),
+            firstInteraction: transcript.isEmpty,
         })
         if (!interaction) {
             return
