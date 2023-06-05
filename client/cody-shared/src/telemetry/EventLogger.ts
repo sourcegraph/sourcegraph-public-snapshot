@@ -10,42 +10,46 @@ function getUseContextFromConfig(config: vscode.WorkspaceConfiguration): string 
     return config.get<string>('cody.useContext', '')
 }
 
-function getchatPredictionsFromConfig(config: vscode.WorkspaceConfiguration): boolean {
+function getChatPredictionsFromConfig(config: vscode.WorkspaceConfiguration): boolean {
     return config.get<boolean>('cody.experimental.chatPredictions', false)
 }
 
-function getinlineFromConfig(config: vscode.WorkspaceConfiguration): boolean {
+function getInlineFromConfig(config: vscode.WorkspaceConfiguration): boolean {
     return config.get<boolean>('cody.experimental.inline', false)
 }
 
-function getnonStopFromConfig(config: vscode.WorkspaceConfiguration): boolean {
+function getNonStopFromConfig(config: vscode.WorkspaceConfiguration): boolean {
     return config.get<boolean>('cody.experimental.nonStop', false)
 }
 
-function getsuggestionsFromConfig(config: vscode.WorkspaceConfiguration): boolean {
+function getSuggestionsFromConfig(config: vscode.WorkspaceConfiguration): boolean {
     return config.get<boolean>('cody.experimental.suggestions', false)
+}
+
+function getGuardrailsFromConfig(config: vscode.WorkspaceConfiguration): boolean {
+    return config.get<boolean>('cody.experimental.guardrails', false)
 }
 
 let config = vscode.workspace.getConfiguration()
 
 let configurationDetails = {
     contextSelection: getUseContextFromConfig(config),
-    chatPredictions: getchatPredictionsFromConfig(config),
-    inline: getinlineFromConfig(config),
-    nonStop: getnonStopFromConfig(config),
-    suggestions: getsuggestionsFromConfig(config),
+    chatPredictions: getChatPredictionsFromConfig(config),
+    inline: getInlineFromConfig(config),
+    nonStop: getNonStopFromConfig(config),
+    suggestions: getSuggestionsFromConfig(config),
+    guardrails: getGuardrailsFromConfig(config),
 }
 
 export function onConfigurationChange(newconfig: any): any {
     newconfig = vscode.workspace.getConfiguration()
-    console.log('onConfigurationChange', newconfig)
-    console.log('configurationDetails changed')
     configurationDetails = {
         contextSelection: getUseContextFromConfig(newconfig),
-        chatPredictions: getchatPredictionsFromConfig(newconfig),
-        inline: getinlineFromConfig(newconfig),
-        nonStop: getnonStopFromConfig(newconfig),
-        suggestions: getsuggestionsFromConfig(newconfig),
+        chatPredictions: getChatPredictionsFromConfig(newconfig),
+        inline: getInlineFromConfig(newconfig),
+        nonStop: getNonStopFromConfig(newconfig),
+        suggestions: getSuggestionsFromConfig(newconfig),
+        guardrails: getGuardrailsFromConfig(newconfig),
     }
     EventLogger.setConfigurationDetails(configurationDetails)
 }
@@ -53,13 +57,7 @@ export function onConfigurationChange(newconfig: any): any {
 export class EventLogger {
     private serverEndpoint = getServerEndpointFromConfig(config)
     private extensionDetails = { ide: 'VSCode', ideExtensionType: 'Cody' }
-    configurationDetails = {
-        contextSelection: getUseContextFromConfig(config),
-        chatPredictions: getchatPredictionsFromConfig(config),
-        inline: getinlineFromConfig(config),
-        nonStop: getnonStopFromConfig(config),
-        suggestions: getsuggestionsFromConfig(config),
-    }
+    configurationDetails = configurationDetails
     private constructor(private gqlAPIClient: SourcegraphGraphQLAPIClient) {}
 
     public static create(gqlAPIClient: SourcegraphGraphQLAPIClient): EventLogger {
@@ -72,12 +70,9 @@ export class EventLogger {
         inline: boolean
         nonStop: boolean
         suggestions: boolean
+        guardrails: boolean
     }): any {
-        // let newconfig = vscode.workspace.getConfiguration()
         configurationDetails = newConfigurationDetails
-        // configurationDetails = onConfigurationChange(newconfig)
-        console.log('configurationDetails', configurationDetails)
-        console.log('newConfigurationDetails', newConfigurationDetails)
     }
 
     /**
