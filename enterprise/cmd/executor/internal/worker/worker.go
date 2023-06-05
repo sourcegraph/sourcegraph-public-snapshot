@@ -36,8 +36,14 @@ type Options struct {
 
 	// QueueName is the name of the queue to process work from. Having this configurable
 	// allows us to have multiple worker pools with different resource requirements and
-	// horizontal scaling factors while still uniformly processing events.
+	// horizontal scaling factors while still uniformly processing events. Only one of
+	// QueueName and QueueNames can be set.
 	QueueName string
+
+	// QueueNames is the list of queue names to process work from. When multiple queues
+	// are configured the frontend will dequeue a job from one of those queues and return
+	// it to the executor to process. Only one of QueueNames and QueueName can be set.
+	QueueNames []string
 
 	// GitServicePath is the path to the internal git service API proxy in the frontend.
 	// This path should contain the endpoints info/refs and git-upload-pack.
@@ -129,7 +135,8 @@ func NewWorker(observationCtx *observation.Context, nameSet *janitor.NameSet, op
 // after a ping is successful and returns false if a user signal is received.
 func connectToFrontend(logger log.Logger, queueClient *queue.Client, options Options) bool {
 	start := time.Now()
-	logger.Debug("Connecting to Sourcegraph instance", log.String("url", options.QueueOptions.BaseClientOptions.EndpointOptions.URL))
+	logger = logger.With(log.String("url", options.QueueOptions.BaseClientOptions.EndpointOptions.URL))
+	logger.Debug("Connecting to Sourcegraph instance")
 
 	ticker := time.NewTicker(time.Second)
 	defer ticker.Stop()

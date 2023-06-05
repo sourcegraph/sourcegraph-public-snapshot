@@ -19,6 +19,7 @@ type Store interface {
 	WithMigrationLog(ctx context.Context, definition definition.Definition, up bool, f func() error) error
 	Describe(ctx context.Context) (map[string]schemas.SchemaDescription, error)
 	Versions(ctx context.Context) (appliedVersions, pendingVersions, failedVersions []int, _ error)
+	RunDDLStatements(ctx context.Context, statements []string) error
 }
 
 // OutputFactory allows providing global output that might not be instantiated at compile time.

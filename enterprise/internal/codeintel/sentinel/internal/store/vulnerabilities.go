@@ -6,7 +6,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	otlog "github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/sentinel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -16,8 +16,8 @@ import (
 )
 
 func (s *store) VulnerabilityByID(ctx context.Context, id int) (_ shared.Vulnerability, _ bool, err error) {
-	ctx, _, endObservation := s.operations.vulnerabilityByID.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Int("id", id),
+	ctx, _, endObservation := s.operations.vulnerabilityByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("id", id),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -76,8 +76,8 @@ const vulnerabilityAffectedSymbolFields = `
 `
 
 func (s *store) GetVulnerabilitiesByIDs(ctx context.Context, ids ...int) (_ []shared.Vulnerability, err error) {
-	ctx, _, endObservation := s.operations.getVulnerabilitiesByIDs.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Int("numIDs", len(ids)),
+	ctx, _, endObservation := s.operations.getVulnerabilitiesByIDs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("numIDs", len(ids)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -99,9 +99,9 @@ ORDER BY v.id, vap.id, vas.id
 `
 
 func (s *store) GetVulnerabilities(ctx context.Context, args shared.GetVulnerabilitiesArgs) (_ []shared.Vulnerability, _ int, err error) {
-	ctx, _, endObservation := s.operations.getVulnerabilities.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Int("limit", args.Limit),
-		otlog.Int("offset", args.Offset),
+	ctx, _, endObservation := s.operations.getVulnerabilities.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("limit", args.Limit),
+		attribute.Int("offset", args.Offset),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -130,8 +130,8 @@ ORDER BY v.id, vap.id, vas.id
 `
 
 func (s *store) InsertVulnerabilities(ctx context.Context, vulnerabilities []shared.Vulnerability) (_ int, err error) {
-	ctx, _, endObservation := s.operations.insertVulnerabilities.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.Int("numVulnerabilities", len(vulnerabilities)),
+	ctx, _, endObservation := s.operations.insertVulnerabilities.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("numVulnerabilities", len(vulnerabilities)),
 	}})
 	defer endObservation(1, observation.Args{})
 

@@ -253,7 +253,7 @@ If there are a lot less users, than repositories, it is better to rely on user-c
 {
   // ...
   "permissions.syncOldestUsers": 20,
-  "permissions.syncOldestRepos": 1
+  "permissions.syncOldestRepos": 0 // minimum 1 on versions 5.0.3 and older
 }
 ```
 
@@ -276,7 +276,7 @@ permission sync in these situations:
 ```json
 {
   // ...
-  "permissions.syncOldestUsers": 1,
+  "permissions.syncOldestUsers": 0, // minimum 1 on versions 5.0.3 and older
   "permissions.syncOldestRepos": 20
 }
 ```
@@ -288,3 +288,21 @@ a minute. `2500/(4 * 60) = 10.4`, so the scheduler needs to schedule 11 reposito
 
 The rate limit for the code host needs to be changed to support the load. In that case the recommendation 
 is to set it to 2x of the amount of [requests expected from permission syncing](#request-count).
+
+## Troubleshooting 
+
+In some cases, user-centric and repo-centric permission sync can conflict. This typically happens when the code host connection token is misconfigured or expired, but the user token works correctly. A conflict like this can periodically revoke users' access to repositories until the next user permission sync.
+
+### Disable repo-centric permission sync
+
+> IMPORTANT: This feature is only supported in Sourcegraph 5.0.4 and later. 
+
+> IMPORTANT: Disabling repo-centric permission sync can break your permission setup depending on your code host and user authentication method. Contact Sourcegraph support before disabling repo-centric permission sync.
+
+To completely disable repo-centric permission sync scheduling, use this site configuration:
+
+```json
+{
+ // ...
+ "permissions.syncOldestRepos": 0 
+}

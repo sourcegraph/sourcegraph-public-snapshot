@@ -40,11 +40,14 @@ type DB interface {
 	OutboundWebhooks(encryption.Key) OutboundWebhookStore
 	OutboundWebhookJobs(encryption.Key) OutboundWebhookJobStore
 	OutboundWebhookLogs(encryption.Key) OutboundWebhookLogStore
+	OwnershipStats() OwnershipStatsStore
+	RecentContributionSignals() RecentContributionSignalStore
 	Permissions() PermissionStore
 	PermissionSyncJobs() PermissionSyncJobStore
 	Phabricator() PhabricatorStore
 	RedisKeyValue() RedisKeyValueStore
 	Repos() RepoStore
+	RepoCommitsChangelists() RepoCommitsChangelistsStore
 	RepoKVPs() RepoKVPStore
 	RolePermissions() RolePermissionStore
 	Roles() RoleStore
@@ -65,6 +68,10 @@ type DB interface {
 	ExecutorSecretAccessLogs() ExecutorSecretAccessLogStore
 	ZoektRepos() ZoektReposStore
 	Teams() TeamStore
+	EventLogsScrapeState() EventLogsScrapeStateStore
+	RecentViewSignal() RecentViewSignalStore
+	AssignedOwners() AssignedOwnersStore
+	OwnSignalConfigurations() SignalConfigurationStore
 
 	WithTransact(context.Context, func(tx DB) error) error
 }
@@ -199,6 +206,14 @@ func (d *db) OutboundWebhookLogs(key encryption.Key) OutboundWebhookLogStore {
 	return OutboundWebhookLogsWith(d.Store, key)
 }
 
+func (d *db) OwnershipStats() OwnershipStatsStore {
+	return &ownershipStats{d.Store}
+}
+
+func (d *db) RecentContributionSignals() RecentContributionSignalStore {
+	return RecentContributionSignalStoreWith(d.Store)
+}
+
 func (d *db) Permissions() PermissionStore {
 	return PermissionsWith(d.Store)
 }
@@ -217,6 +232,10 @@ func (d *db) RedisKeyValue() RedisKeyValueStore {
 
 func (d *db) Repos() RepoStore {
 	return ReposWith(d.logger, d.Store)
+}
+
+func (d *db) RepoCommitsChangelists() RepoCommitsChangelistsStore {
+	return RepoCommitsChangelistsWith(d.logger, d.Store)
 }
 
 func (d *db) RepoKVPs() RepoKVPStore {
@@ -297,4 +316,20 @@ func (d *db) ZoektRepos() ZoektReposStore {
 
 func (d *db) Teams() TeamStore {
 	return TeamsWith(d.Store)
+}
+
+func (d *db) EventLogsScrapeState() EventLogsScrapeStateStore {
+	return EventLogsScrapeStateStoreWith(d.Store)
+}
+
+func (d *db) RecentViewSignal() RecentViewSignalStore {
+	return RecentViewSignalStoreWith(d.Store, d.logger)
+}
+
+func (d *db) AssignedOwners() AssignedOwnersStore {
+	return AssignedOwnersStoreWith(d.Store, d.logger)
+}
+
+func (d *db) OwnSignalConfigurations() SignalConfigurationStore {
+	return SignalConfigurationStoreWith(d.Store)
 }

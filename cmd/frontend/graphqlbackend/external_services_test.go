@@ -465,7 +465,8 @@ func TestExcludeRepoFromExternalServices_ExcludedFromTwoExternalServices(t *test
 				ID:     options.IDs[1],
 				Kind:   extsvc.KindGitHub,
 				Config: extsvc.NewUnencryptedConfig(`{"exclude":[{"name":"sourcegraph/sourcegraph"}],"repositoryQuery":["none"],"token":"abc","url":"https://github.com"}`),
-			}}, nil
+			},
+		}, nil
 	})
 
 	repos := database.NewMockRepoStore()

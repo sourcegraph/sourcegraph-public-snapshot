@@ -6,6 +6,7 @@ package auth
 import (
 	"context"
 	"net/http"
+	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
@@ -30,10 +31,7 @@ type Authenticator interface {
 	Hash() string
 }
 
-type AuthenticatorWithRefresh interface {
-	// Must implement the base Authenticator interface
-	Authenticator
-
+type Refreshable interface {
 	// NeedsRefresh returns true if the Authenticator is no longer valid and
 	// needs to be refreshed, such as checking if an OAuth token is close to
 	// expiry or already expired.
@@ -43,6 +41,11 @@ type AuthenticatorWithRefresh interface {
 	// and if any storage updates should happen after refreshing, that is done
 	// here as well.
 	Refresh(context.Context, httpcli.Doer) error
+}
+
+type AuthenticatorWithRefresh interface {
+	Authenticator
+	Refreshable
 }
 
 // AuthenticatorWithSSH wraps the Authenticator interface and augments it by
@@ -58,4 +61,11 @@ type AuthenticatorWithSSH interface {
 	// authorized_keys file format. This is usually accepted by code hosts to
 	// allow access to git over SSH.
 	SSHPublicKey() (publicKey string)
+}
+
+// URLAuthenticator instances allow adding credentials to URLs.
+type URLAuthenticator interface {
+	// SetURLUser authenticates the provided URL by modifying the User property
+	// of the URL in-place.
+	SetURLUser(*url.URL)
 }

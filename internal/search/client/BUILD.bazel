@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "client",
@@ -15,6 +16,7 @@ go_library(
         "//internal/endpoint",
         "//internal/featureflag",
         "//internal/gitserver",
+        "//internal/grpc/defaults",
         "//internal/search",
         "//internal/search/job",
         "//internal/search/job/jobutil",

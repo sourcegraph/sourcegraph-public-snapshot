@@ -2,7 +2,6 @@ package mapper
 
 import (
 	"context"
-	"time"
 
 	rankingshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/shared"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/ranking/internal/store"
@@ -11,8 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
-
-const recordTypeName = "path count inputs"
 
 func NewMapper(
 	observationCtx *observation.Context,
@@ -25,7 +22,7 @@ func NewMapper(
 		Name:        name,
 		Description: "Joins ranking definition and references together to create document path count records.",
 		Interval:    config.Interval,
-		Metrics:     background.NewPipelineMetrics(observationCtx, name, recordTypeName),
+		Metrics:     background.NewPipelineMetrics(observationCtx, name),
 		ProcessFunc: func(ctx context.Context) (numRecordsProcessed int, numRecordsAltered background.TaggedCounts, err error) {
 			numReferencesScanned, nuPathCountInputsInserted, err := mapRankingGraph(ctx, store, config.BatchSize)
 			if err != nil {
@@ -48,7 +45,7 @@ func NewSeedMapper(
 		Name:        name,
 		Description: "Adds initial zero counts to files that may not contain any known references.",
 		Interval:    config.Interval,
-		Metrics:     background.NewPipelineMetrics(observationCtx, name, recordTypeName),
+		Metrics:     background.NewPipelineMetrics(observationCtx, name),
 		ProcessFunc: func(ctx context.Context) (numRecordsProcessed int, numRecordsAltered background.TaggedCounts, err error) {
 			numInitialPathsScanned, nuPathCountInputsInserted, err := mapInitializerRankingGraph(ctx, store, config.BatchSize)
 			if err != nil {
@@ -62,7 +59,7 @@ func NewSeedMapper(
 
 func mapInitializerRankingGraph(
 	ctx context.Context,
-	store store.Store,
+	s store.Store,
 	batchSize int,
 ) (
 	numInitialPathsProcessed int,
@@ -73,25 +70,35 @@ func mapInitializerRankingGraph(
 		return 0, 0, nil
 	}
 
-	return store.InsertInitialPathCounts(
+	derivativeGraphKeyPrefix, _, err := store.DerivativeGraphKey(ctx, s)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return s.InsertInitialPathCounts(
 		ctx,
-		rankingshared.DerivativeGraphKeyFromTime(time.Now()),
+		rankingshared.DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix),
 		batchSize,
 	)
 }
 
 func mapRankingGraph(
 	ctx context.Context,
-	store store.Store,
+	s store.Store,
 	batchSize int,
 ) (numReferenceRecordsProcessed int, numInputsInserted int, err error) {
 	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 		return 0, 0, nil
 	}
 
-	return store.InsertPathCountInputs(
+	derivativeGraphKeyPrefix, _, err := store.DerivativeGraphKey(ctx, s)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return s.InsertPathCountInputs(
 		ctx,
-		rankingshared.DerivativeGraphKeyFromTime(time.Now()),
+		rankingshared.DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix),
 		batchSize,
 	)
 }

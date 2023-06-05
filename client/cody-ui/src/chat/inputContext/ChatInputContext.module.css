@@ -46,3 +46,13 @@
     text-overflow: ellipsis;
     overflow: hidden;
 }
+
+.index-present,
+.index-missing {
+    font-weight: bold;
+}
+
+.indexStatus {
+    display: inline;
+    color: var(--vscode-list-warningForeground, inherit);
+}

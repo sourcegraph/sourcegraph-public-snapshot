@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
@@ -159,6 +160,64 @@ func TestUserEmails_GetPrimary(t *testing.T) {
 	checkPrimaryEmail(t, "b1@example.com", true)
 }
 
+func TestUserEmails_HasVerifiedEmail(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	user, err := db.Users().Create(ctx, NewUser{
+		Email:                 "a@example.com",
+		Username:              "u2",
+		Password:              "pw",
+		EmailVerificationCode: "c",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	checkHasVerifiedEmail := func(t *testing.T, wantVerified bool) {
+		t.Helper()
+		have, err := db.UserEmails().HasVerifiedEmail(ctx, user.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if have != wantVerified {
+			t.Fatalf("got hasVerified %t, want %t", have, wantVerified)
+		}
+	}
+
+	// Has no emails, no verified
+	checkHasVerifiedEmail(t, false)
+
+	code := "abcd"
+	if err := db.UserEmails().Add(ctx, user.ID, "e1@example.com", &code); err != nil {
+		t.Fatal(err)
+	}
+
+	// Has email, but not verified
+	checkHasVerifiedEmail(t, false)
+
+	if err := db.UserEmails().Add(ctx, user.ID, "e2@example.com", &code); err != nil {
+		t.Fatal(err)
+	}
+
+	// Has two emails, but no verified
+	checkHasVerifiedEmail(t, false)
+
+	// Verify email 1/2
+	if _, err := db.UserEmails().Verify(ctx, user.ID, "e1@example.com", code); err != nil {
+		t.Fatal(err)
+	}
+
+	// Has two emails, but no verified
+	checkHasVerifiedEmail(t, true)
+}
+
 func TestUserEmails_SetPrimary(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -221,32 +280,33 @@ func TestUserEmails_ListByUser(t *testing.T) {
 		Password:              "pw",
 		EmailVerificationCode: "c",
 	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
 	testTime := time.Now().Round(time.Second).UTC()
-	if _, err := db.ExecContext(ctx,
+	_, err = db.ExecContext(ctx,
 		`INSERT INTO user_emails(user_id, email, verification_code, verified_at) VALUES($1, $2, $3, $4)`,
-		user.ID, "b@example.com", "c2", testTime); err != nil {
-		t.Fatal(err)
-	}
+		user.ID, "b@example.com", "c2", testTime)
+	require.NoError(t, err)
+
+	t.Run("list emails when there are none without errors", func(t *testing.T) {
+		userEmails, err := db.UserEmails().ListByUser(ctx, UserEmailsListOptions{
+			UserID: 42133742,
+		})
+		require.NoError(t, err)
+		assert.Empty(t, userEmails)
+	})
 
 	t.Run("list all emails", func(t *testing.T) {
 		userEmails, err := db.UserEmails().ListByUser(ctx, UserEmailsListOptions{
 			UserID: user.ID,
 		})
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, err)
 		normalizeUserEmails(userEmails)
 		want := []*UserEmail{
 			{UserID: user.ID, Email: "a@example.com", VerificationCode: strptr("c"), Primary: true},
 			{UserID: user.ID, Email: "b@example.com", VerificationCode: strptr("c2"), VerifiedAt: &testTime},
 		}
-		if diff := cmp.Diff(want, userEmails); diff != "" {
-			t.Fatalf("userEmails: %s", diff)
-		}
+		assert.Empty(t, cmp.Diff(want, userEmails))
 	})
 
 	t.Run("list only verified emails", func(t *testing.T) {
@@ -254,16 +314,12 @@ func TestUserEmails_ListByUser(t *testing.T) {
 			UserID:       user.ID,
 			OnlyVerified: true,
 		})
-		if err != nil {
-			t.Fatal(err)
-		}
+		require.NoError(t, err)
 		normalizeUserEmails(userEmails)
 		want := []*UserEmail{
 			{UserID: user.ID, Email: "b@example.com", VerificationCode: strptr("c2"), VerifiedAt: &testTime},
 		}
-		if diff := cmp.Diff(want, userEmails); diff != "" {
-			t.Fatalf("userEmails: %s", diff)
-		}
+		assert.Empty(t, cmp.Diff(want, userEmails))
 	})
 }
 

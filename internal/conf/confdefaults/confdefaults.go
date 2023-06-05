@@ -90,6 +90,9 @@ var App = conftypes.RawUnified{
 	"codeIntelAutoIndexing.enabled": true,
 	"codeIntelAutoIndexing.allowGlobalPolicies": true,
 	"executors.frontendURL": "http://host.docker.internal:3080",
+	"experimentalFeatures": {		
+		"structuralSearch": "disabled"
+	},
 }`,
 }
 

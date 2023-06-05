@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -52,8 +52,8 @@ type GetBulkOperationOpts struct {
 
 // GetBulkOperation gets a BulkOperation matching the given options.
 func (s *Store) GetBulkOperation(ctx context.Context, opts GetBulkOperationOpts) (op *btypes.BulkOperation, err error) {
-	ctx, _, endObservation := s.operations.getBulkOperation.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("ID", opts.ID),
+	ctx, _, endObservation := s.operations.getBulkOperation.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("ID", opts.ID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -179,8 +179,8 @@ type CountBulkOperationsOpts struct {
 
 // CountBulkOperations gets the count of BulkOperations in the given batch change.
 func (s *Store) CountBulkOperations(ctx context.Context, opts CountBulkOperationsOpts) (count int, err error) {
-	ctx, _, endObservation := s.operations.countBulkOperations.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("batchChangeID", int(opts.BatchChangeID)),
+	ctx, _, endObservation := s.operations.countBulkOperations.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("batchChangeID", int(opts.BatchChangeID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -221,8 +221,8 @@ type ListBulkOperationErrorsOpts struct {
 
 // ListBulkOperationErrors gets a list of BulkOperationErrors in a given BulkOperation.
 func (s *Store) ListBulkOperationErrors(ctx context.Context, opts ListBulkOperationErrorsOpts) (es []*btypes.BulkOperationError, err error) {
-	ctx, _, endObservation := s.operations.listBulkOperationErrors.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.String("bulkOperationID", opts.BulkOperationID),
+	ctx, _, endObservation := s.operations.listBulkOperationErrors.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("bulkOperationID", opts.BulkOperationID),
 	}})
 	defer endObservation(1, observation.Args{})
 

@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/log"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/utils/pointer"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
@@ -62,6 +63,7 @@ func apiWorkerOptions(c *config.Config, queueTelemetryOptions queue.TelemetryOpt
 	return apiworker.Options{
 		VMPrefix:      c.VMPrefix,
 		QueueName:     c.QueueName,
+		QueueNames:    c.QueueNames,
 		WorkerOptions: workerOptions(c),
 		RunnerOptions: runner.Options{
 			DockerOptions:      dockerOptions(c),
@@ -83,12 +85,19 @@ func apiWorkerOptions(c *config.Config, queueTelemetryOptions queue.TelemetryOpt
 }
 
 func workerOptions(c *config.Config) workerutil.WorkerOptions {
+	var identity string
+	if len(c.QueueNames) > 0 {
+		identity = strings.Replace(c.QueueNamesStr, ",", "_", -1)
+	} else {
+		identity = c.QueueName
+	}
+
 	return workerutil.WorkerOptions{
-		Name:                 fmt.Sprintf("executor_%s_worker", c.QueueName),
+		Name:                 fmt.Sprintf("executor_%s_worker", identity),
 		NumHandlers:          c.MaximumNumJobs,
 		Interval:             c.QueuePollInterval,
 		HeartbeatInterval:    5 * time.Second,
-		Metrics:              makeWorkerMetrics(c.QueueName),
+		Metrics:              makeWorkerMetrics(identity),
 		NumTotalJobs:         c.NumTotalJobs,
 		MaxActiveTime:        c.MaxActiveTime,
 		WorkerHostname:       c.WorkerHostname,
@@ -136,6 +145,7 @@ func queueOptions(c *config.Config, telemetryOptions queue.TelemetryOptions) que
 	return queue.Options{
 		ExecutorName:      c.WorkerHostname,
 		QueueName:         c.QueueName,
+		QueueNames:        c.QueueNames,
 		BaseClientOptions: baseClientOptions(c, "/.executors/queue"),
 		TelemetryOptions:  telemetryOptions,
 		ResourceOptions: queue.ResourceOptions{
@@ -190,7 +200,16 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 	if c.KubernetesResourceRequestCPU != "" {
 		resourceRequest.CPU = resource.MustParse(c.KubernetesResourceRequestCPU)
 	}
-
+	var runAsUser *int64
+	if c.KubernetesSecurityContextRunAsUser > 0 {
+		runAsUser = pointer.Int64(int64(c.KubernetesSecurityContextRunAsUser))
+	}
+	var runAsGroup *int64
+	if c.KubernetesSecurityContextRunAsGroup > 0 {
+		runAsGroup = pointer.Int64(int64(c.KubernetesSecurityContextRunAsGroup))
+	}
+	fsGroup := pointer.Int64(int64(c.KubernetesSecurityContextFSGroup))
+	deadline := pointer.Int64(int64(c.KubernetesJobDeadline))
 	return runner.KubernetesOptions{
 		Enabled:    config.IsKubernetes(),
 		ConfigPath: c.KubernetesConfigPath,
@@ -201,15 +220,20 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 				MatchExpressions: c.KubernetesNodeRequiredAffinityMatchExpressions,
 				MatchFields:      c.KubernetesNodeRequiredAffinityMatchFields,
 			},
+			PodAffinity:           c.KubernetesPodAffinity,
+			PodAntiAffinity:       c.KubernetesPodAntiAffinity,
+			Tolerations:           c.KubernetesNodeTolerations,
 			Namespace:             c.KubernetesNamespace,
 			PersistenceVolumeName: c.KubernetesPersistenceVolumeName,
 			ResourceLimit:         resourceLimit,
 			ResourceRequest:       resourceRequest,
-			Retry: command.KubernetesRetry{
-				Attempts: c.KubernetesJobRetryBackoffLimit,
-				Backoff:  c.KubernetesJobRetryBackoffDuration,
+			Deadline:              deadline,
+			KeepJobs:              c.KubernetesKeepJobs,
+			SecurityContext: command.KubernetesSecurityContext{
+				RunAsUser:  runAsUser,
+				RunAsGroup: runAsGroup,
+				FSGroup:    fsGroup,
 			},
-			KeepJobs: c.KubernetesKeepJobs,
 		},
 	}
 }

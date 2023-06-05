@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -15,6 +16,7 @@ func init() {
 }
 
 func main() {
+	sanitycheck.Pass()
 	liblog := log.Init(log.Resource{
 		Name:    env.MyName,
 		Version: version.Version(),

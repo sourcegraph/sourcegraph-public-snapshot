@@ -487,6 +487,7 @@ func TestHandler_Handle(t *testing.T) {
 				require.Len(t, jobRuntime.PrepareWorkspaceFunc.History(), 1)
 				require.Len(t, jobWorkspace.RemoveFunc.History(), 1)
 				require.Len(t, jobRuntime.NewRunnerFunc.History(), 1)
+				assert.NotEmpty(t, jobRuntime.NewRunnerFunc.History()[0].Arg2.Name)
 				require.Len(t, jobRunner.TeardownFunc.History(), 1)
 				require.Len(t, jobRuntime.NewRunnerSpecsFunc.History(), 1)
 				require.Len(t, jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1, 1)

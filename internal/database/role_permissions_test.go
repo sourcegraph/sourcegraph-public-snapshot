@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -260,7 +261,8 @@ func TestRolePermissionGetByRoleID(t *testing.T) {
 
 	totalRolePermissions := 5
 	for i := 1; i <= totalRolePermissions; i++ {
-		p := createTestPermissionForRolePermission(ctx, fmt.Sprintf("action-%d", i), t, db)
+		action := rtypes.NamespaceAction(fmt.Sprintf("%s-%d", rtypes.BatchChangesReadAction, i))
+		p := createTestPermissionForRolePermission(ctx, action, t, db)
 		err := store.Assign(ctx, AssignRolePermissionOpts{
 			RoleID:       r.ID,
 			PermissionID: p.ID,
@@ -448,7 +450,8 @@ func TestBulkAssignPermissionsToRole(t *testing.T) {
 	numberOfPerms := 4
 	var perms []int32
 	for i := 0; i < numberOfPerms; i++ {
-		perm := createTestPermissionForRolePermission(ctx, fmt.Sprintf("READ-%d", i), t, db)
+		action := rtypes.NamespaceAction(fmt.Sprintf("%s-%d", rtypes.BatchChangesReadAction, i))
+		perm := createTestPermissionForRolePermission(ctx, action, t, db)
 		perms = append(perms, perm.ID)
 	}
 
@@ -690,10 +693,10 @@ func TestSetPermissionsForRole(t *testing.T) {
 	})
 }
 
-func createTestPermissionForRolePermission(ctx context.Context, action string, t *testing.T, db DB) *types.Permission {
+func createTestPermissionForRolePermission(ctx context.Context, action rtypes.NamespaceAction, t *testing.T, db DB) *types.Permission {
 	t.Helper()
 	p, err := db.Permissions().Create(ctx, CreatePermissionOpts{
-		Namespace: types.BatchChangesNamespace,
+		Namespace: rtypes.BatchChangesNamespace,
 		Action:    action,
 	})
 	if err != nil {

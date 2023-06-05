@@ -3,21 +3,30 @@ import { useCallback, useState } from 'react'
 import { TextFieldType } from '@vscode/webview-ui-toolkit/dist/text-field'
 import { VSCodeTextField, VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
-import { renderMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
+import { renderCodyMarkdown } from '@sourcegraph/cody-shared/src/chat/markdown'
 import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
+
+import { AuthStatus } from '../src/chat/protocol'
+
+import { ConnectApp } from './ConnectApp'
+import { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Login.module.css'
 
 interface LoginProps {
-    isValidLogin?: boolean
+    authStatus?: AuthStatus
     onLogin: (token: string, endpoint: string) => void
     serverEndpoint?: string
+    isAppInstalled: boolean
+    vscodeAPI: VSCodeWrapper
 }
 
 export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>> = ({
-    isValidLogin,
+    authStatus,
     onLogin,
     serverEndpoint,
+    isAppInstalled,
+    vscodeAPI,
 }) => {
     const [token, setToken] = useState<string>('')
     const [endpoint, setEndpoint] = useState(serverEndpoint)
@@ -34,57 +43,51 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
 
     return (
         <div className={styles.container}>
-            {isValidLogin === false && (
+            {authStatus?.showInvalidAccessTokenError && (
                 <p className={styles.error}>
                     Invalid credentials. Please check the Sourcegraph instance URL and access token.
                 </p>
             )}
-            <p className={styles.inputLabel}>
-                <i className="codicon codicon-organization" />
-                <span>Enterprise User</span>
-            </p>
-            <form className={styles.wrapper} onSubmit={onSubmit}>
-                <label htmlFor="endpoint" className={styles.inputLabel}>
-                    <i className="codicon codicon-link" />
-                    <span>Sourcegraph Instance URL</span>
-                </label>
-                <VSCodeTextField
-                    id="endpoint"
-                    value={endpoint || ''}
-                    className={styles.input}
-                    placeholder="https://example.sourcegraph.com"
-                    onInput={(e: any) => setEndpoint(e.target.value)}
-                />
-
-                <label htmlFor="accessToken" className={styles.inputLabel}>
-                    <i className="codicon codicon-key" />
-                    <span>
+            {authStatus?.authenticated === true &&
+                authStatus?.requiresVerifiedEmail &&
+                authStatus?.hasVerifiedEmail === false && (
+                    <p className={styles.error}>
+                        Email not verified. Please add a verified email to your Sourcegraph.com account.
+                    </p>
+                )}
+            <section className={styles.section}>
+                <h2 className={styles.sectionHeader}>Enterprise User</h2>
+                <form className={styles.wrapper} onSubmit={onSubmit}>
+                    <VSCodeTextField
+                        id="endpoint"
+                        value={endpoint || ''}
+                        className={styles.input}
+                        placeholder="https://example.sourcegraph.com"
+                        onInput={(e: any) => setEndpoint(e.target.value)}
+                    >
+                        Sourcegraph Instance URL
+                    </VSCodeTextField>
+                    <VSCodeTextField
+                        id="accessToken"
+                        value={token}
+                        placeholder=""
+                        className={styles.input}
+                        type={TextFieldType.password}
+                        onInput={(e: any) => setToken(e.target.value)}
+                    >
                         Access Token (
                         <a href="https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token">docs</a>)
-                    </span>
-                </label>
-                <VSCodeTextField
-                    id="accessToken"
-                    value={token}
-                    placeholder=""
-                    className={styles.input}
-                    type={TextFieldType.password}
-                    onInput={(e: any) => setToken(e.target.value)}
-                />
-
-                <VSCodeButton className={styles.button} type="submit">
-                    Sign In
-                </VSCodeButton>
-            </form>
-            <p className={styles.inputLabel}>
-                <i className="codicon codicon-account" />
-                <span>Everyone Else</span>
-            </p>
-            <div className={styles.wrapper}>
-                <p className={styles.input}>
-                    <a href="https://docs.google.com/forms/d/e/1FAIpQLScSI06yGMls-V1FALvFyURi8U9bKRTSKPworBhzZEHDQvo0HQ/viewform">
-                        Fill out this form to request access.
-                    </a>
+                    </VSCodeTextField>
+                    <VSCodeButton className={styles.button} type="submit">
+                        Sign In
+                    </VSCodeButton>
+                </form>
+            </section>
+            <div className={styles.divider} />
+            <section className={styles.section}>
+                <h2 className={styles.sectionHeader}>Everyone Else</h2>
+                <p className={styles.openMessage}>
+                    Cody for open source code is available to all users with a Sourcegraph.com account
                 </p>
                 <a href="https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=CODY">
                     <VSCodeButton
@@ -95,8 +98,12 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                         Continue with Sourcegraph.com
                     </VSCodeButton>
                 </a>
-            </div>
-            <div className={styles.terms} dangerouslySetInnerHTML={{ __html: renderMarkdown(CODY_TERMS_MARKDOWN) }} />
+                {isAppInstalled && <ConnectApp vscodeAPI={vscodeAPI} />}
+            </section>
+            <div
+                className={styles.terms}
+                dangerouslySetInnerHTML={{ __html: renderCodyMarkdown(CODY_TERMS_MARKDOWN) }}
+            />
         </div>
     )
 }

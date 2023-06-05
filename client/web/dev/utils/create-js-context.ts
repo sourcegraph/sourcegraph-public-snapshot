@@ -31,6 +31,8 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         batchChangesDisableWebhooksWarning: false,
         batchChangesWebhookLogsEnabled: true,
         executorsEnabled: false,
+        codyEnabled: true,
+        codyRequiresVerifiedEmail: false,
         codeIntelAutoIndexingEnabled: false,
         codeIntelAutoIndexingAllowGlobalPolicies: false,
         codeInsightsEnabled: true,
@@ -47,7 +49,6 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         needServerRestart: false,
         needsSiteInit: false,
         needsRepositoryConfiguration: false,
-        localFilePickerAvailable: true,
         resetPasswordEnabled: true,
         runningOnMacOS: true,
         sentryDSN: null,
@@ -75,7 +76,6 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         },
         embeddingsEnabled: false,
         primaryLoginProvidersCount: 5,
-        batchChangesRolloutWindows: null,
         // Site-config overrides default JS context
         ...siteConfig,
     }

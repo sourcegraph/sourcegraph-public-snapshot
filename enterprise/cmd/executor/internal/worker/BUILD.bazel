@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "worker",
@@ -21,6 +22,7 @@ go_library(
         "//enterprise/cmd/executor/internal/worker/runtime",
         "//enterprise/cmd/executor/internal/worker/workspace",
         "//enterprise/internal/executor/types",
+        "//enterprise/internal/executor/util",
         "//internal/goroutine",
         "//internal/honey",
         "//internal/observation",

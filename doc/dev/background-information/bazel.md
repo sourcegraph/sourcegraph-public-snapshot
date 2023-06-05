@@ -5,30 +5,29 @@ Sourcegraph is currently migrating to Bazel as its build system and this page is
 ## 📅 Timeline
 
 - 2023-04-03 Bazel steps are required to pass on all PR builds.
-  - Run `bazel run :update-gazelle-repos` if you changed the `go.mod`.
+  - Run `bazel run //:gazelle-update-repos` if you changed the `go.mod`.
   - Run `bazel configure` after making all your changes in the PR and commit the updated/added `BUILD.bazel`
-  - Add `[no-bazel]` in your commit description if you want to bypass Bazel. 
+  - Add `[no-bazel]` in your commit description if you want to bypass Bazel.
     - ⚠️  see [what to do after using `[no-bazel]`](#i-just-used-no-bazel-to-merge-my-pr)
 - 2023-04-06 Bazel steps are required to pass on main.
-  - Run `bazel run :update-gazelle-repos` if you changed the `go.mod`.
+  - Run `bazel run //:gazelle-update-repos` if you changed the `go.mod`.
   - Run `bazel configure` after making all your changes in the PR and commit the updated/added `BUILD.bazel`
   - Add `[no-bazel]` in your commit description if you want to bypass Bazel.
     - ⚠️  see [what to do after using `[no-bazel]`](#i-just-used-no-bazel-to-merge-my-pr)
 - 2023-04-10 You cannot opt out of Bazel anymore
-
-The above timeline affects the following CI jobs:
-
-- Go unit tests.
-- Client unit tests (Jest).
-  - with the exception of Cody, which has not been ported yet to build with Bazel.
-
-Other jobs will follow-up shortly, but as long as you're following instructions mentioned in that doc (TL;DR run `bazel configure`) this won't change anything for you.
-
-You may find the build and tests to be slow at first, either locally or in CI. This is because to be efficient, Bazel cache needs to be warm.
+- 2023-05-02 Additonally, to normal container building process, container images are now also built with `rules_oci` and Wolfi for as base images.
+  - Those new images are used by the new test targets under `//testing/...` that run the E2E tests and Backend Integration tests.
+  - The new images are deployed on S2 (and only S2).
+  - See [Slack thread](https://sourcegraph.slack.com/archives/C04MYFW01NV/p1685606796918859)
+- **2023-05-07 The new images are deployed on Dotcom.** 
+- 2023-05-14 After the release cut and the beginning of the code freeze, all operations that are now migrated to Bazel will have their legacy counterpart removed. 
 
 - ➡️  [Cheat sheet](#bazel-cheat-sheet)
 - ➡️  [FAQ](#faq)
 - 📽️ [Bazel Status Update](https://go/bazel-status)
+- See also
+  - [Bazel for client/*](./bazel_web.md)
+  - [Building container images with Bazel](./bazel_containers.md)
 
 ## Why do we need a build system?
 
@@ -215,11 +214,11 @@ So when a change is detected, `iBazel` will build the affected target and it wil
 
 ### General
 
-#### I just used `[no-bazel]` to merge my PR 
+#### I just used `[no-bazel]` to merge my PR
 
-While using `[no-bazel]` will enable you to get your pull request merged, the subsequent builds will be with Bazel unless they also have that flag. 
+While using `[no-bazel]` will enable you to get your pull request merged, the subsequent builds will be with Bazel unless they also have that flag.
 
-Therefore you need to follow-up quickly with a fix to ensure `main` is not broken. 
+Therefore you need to follow-up quickly with a fix to ensure `main` is not broken.
 
 #### The analysis cache is being busted because of `--action_env`
 
@@ -236,15 +235,52 @@ INFO: Build option --action_env has changed, discarding analysis cache.
 
 #### My JetBrains IDE becomes unresponsive after Bazel builds
 
-By default, JetBrains IDEs such as GoLand will try and index the files in your project workspace. If you run Bazel locally, the resulting artifacts will be indexed, which will likely hog the full heap size that the IDE is allocated.  
+By default, JetBrains IDEs such as GoLand will try and index the files in your project workspace. If you run Bazel locally, the resulting artifacts will be indexed, which will likely hog the full heap size that the IDE is allocated.
 
-There is no reason to index these files, so you can just exclude them from indexing by right-clicking artifact directories, then choosing **Mark directory as** &rarr; **Excluded** from the context menu. A restart is required to stop the indexing process. 
+There is no reason to index these files, so you can just exclude them from indexing by right-clicking artifact directories, then choosing **Mark directory as** &rarr; **Excluded** from the context menu. A restart is required to stop the indexing process.
 
 #### My local `bazel configure` or `./dev/ci/bazel-configure.sh` run has diff with a result of Bazel CI step
 
 This could happen when there are any files which are not tracked by Git. These files affect the run of `bazel configure` and typically add more items to `BUILD.bazel` file.
 
-Solution: run `git clean -ffdx` then run `bazel configure` again. 
+Solution: run `git clean -ffdx` then run `bazel configure` again.
+
+#### How do I clean up all local Bazel cache?
+
+1. The simplest way to clean up the cache is to use the clean command: `bazel clean`. This command will remove all output files and the cache in the bazel-* directories within your workspace. Use the `--expunge` flag to remove the entire working tree, including the cache directory, and force a full rebuild.
+2. To manually clear the global Bazel cache, you need to remove the respective folders from your machine. On macOS, the global cache is typically located at either `~/.cache/bazel` or `/var/tmp/_bazel_$(whoami)`.
+
+#### Where do I fine Bazel rules locally on disk?
+
+Use `bazel info output_base` to find the output base directory. From there go to the `external` folder to find Bazel rules saved locally.
+
+#### How do I build a container on MacOS 
+
+Our containers are only built for `linux/amd64`, therefore we need to cross-compile on MacOS to produce correct images. To simplify this process, a configuration flag is available: `--config darwin-docker` to swap the toolchains for you. 
+
+Example: 
+
+```
+# Create a tarball that can be loaded in Docker of the worker service:
+bazel build //cmd/worker:image_tarball --config darwin-docker
+
+# Load the image in Docker: 
+docker load --input $(bazel cquery //cmd/worker:image_tarball  --config darwin-docker --output=files)
+```
+
+You can also use the same configuration flag to run the container tests on MacOS: 
+
+```
+bazel test //cmd/worker:image_test --config darwin-docker
+```
+
+#### Can I run integration tests (`bazel test //testing/...`) locally? 
+
+At the time of writing this documentation, it's not possible to do so, because we need to cross compile to produce `linux/amd64` container images, but the test runners need to run against your host architecture. If your host isn't `linux/amd64` you won't be able to run those tests. 
+
+This is caused by the fact that there is no straightforward way of telling Bazel to use a given toolchain for certain targets and another one for others, in a consistent fashion across the various binaries we produce (rust+go).
+
+See [this issue](https://github.com/sourcegraph/sourcegraph/issues/52914) to track progress on this particular problem. 
 
 ### Go
 
@@ -376,7 +412,7 @@ error: aborting due to 2 previous errors
 ```
 Bazel doesn't know about the module/crate being use in the rust code. If you do a git blame `Cargo.toml` you'll probably see that a new dependency has been added, but the build files were not updated. There are two ways to solve this:
 1. Run `bazel configure` and `CARGO_BAZEL_REPIN=1 CARGO_BAZEL_REPIN_ONLY=crate_index bazel sync --only=crate_index`. Once the commands have completed you can check that the dependency has been picked up and syntax-highlighter can be built by running `bazel build //docker-images/syntax-highlighter/...`. **Note** this will usually work if the dependency is an *external* dependency.
-2. You're going to have to update the `BUILD.bazel` file yourself. Which one you might ask? From the above error we can see the file `src/main.rs` is where the error is encountered, so we need to tell *its BUILD.bazel* about the new dependency. 
+2. You're going to have to update the `BUILD.bazel` file yourself. Which one you might ask? From the above error we can see the file `src/main.rs` is where the error is encountered, so we need to tell *its BUILD.bazel* about the new dependency.
 For the above dependency, the crate is defined in `docker-images/syntax-highlighter/crates`. You'll also see that each of those crates have their own `BUILD.bazel` files in them, which means we can reference them as targets! Take a peak at `scip-treesitter-languages` `BUILD.bazel` file and take note of the name - that is its target. Now that we have the name of the target we can add it as a dep to `docker-images/syntax-highlighter`. In the snippet below the `syntax-highlighter` `rust_binary` rule is updated with the `scip-treesitter-languages` dependency. Note that we need to refer to the full target path when adding it to the dep list in the `BUILD.bazel` file.
 ```
 rust_binary(
@@ -416,6 +452,27 @@ cat bazel-sourcegraph/external/local_config_cc/cc_wrapper.sh | grep "# Call the 
 # Call the C++ compiler
 /usr/bin/gcc "$@"
 ```
+
+### On MacOS, you get `Bad CPU type for executable` when running Bazel
+
+This typically happens when `bazel` tries to use `protoc` to compile protobuf definitions and you're on an arm64 mac. The full error will look like the following:
+```
+src/main/tools/process-wrapper-legacy.cc:80: "execvp(bazel-out/darwin_arm64-opt-exec-2B5CBBC6/bin/external/com_google_protobuf_protoc_macos_aarch64/protoc.exe, ...)": Bad CPU type in executable
+ERROR: /private/var/tmp/_bazel_ec2-user/c27d26456d2e68ea0aaccfcda2d35b4e/external/go_googleapis/google/api/BUILD.bazel:22:14: Generating Descriptor Set proto_library @go_googleapis//google/api:api_proto failed: (Exit 1): protoc.exe failed: error executing command (from target @go_googleapis//google/api:api_proto) bazel-out/darwin_arm64-opt-exec-2B5CBBC6/bin/external/com_google_protobuf_protoc_macos_aarch64/protoc.exe --direct_dependencies google/api/launch_stage.proto ... (remaining 5 arguments skipped)
+```
+
+If you run the `file` utility on the `protoc` binary you'll see the CPU architecture mismatch.
+```
+file bazel-out/darwin_arm64-opt-exec-2B5CBBC6/bin/external/com_google_protobuf_protoc_macos_aarch64/protoc.exe
+bazel-out/darwin_arm64-opt-exec-2B5CBBC6/bin/external/com_google_protobuf_protoc_macos_aarch64/protoc.exe: Mach-O 64-bit executable x86_64
+```
+
+To fix this, you need to install Rosetta 2. There are various ways of doing that, but below is the CLI way to do it.
+```
+/usr/sbin/softwareupdate --install-rosetta --agree-to-license
+```
+
+__Tested on Darwin 22.3.0 Darwin Kernel Version 22.3.0__
 
 ## Resources
 

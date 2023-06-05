@@ -26,6 +26,8 @@ import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { useLocalStorage } from '@sourcegraph/wildcard'
 
+import { CodeMirrorEditor } from '../../cody/components/CodeMirrorEditor'
+import { useCodySidebar } from '../../cody/sidebar/Provider'
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { ExternalLinkFields, Scalars } from '../../graphql-operations'
 import { BlameHunkData } from '../blame/useBlameHunks'
@@ -47,6 +49,7 @@ import { pin, updatePin, selectOccurrence } from './codemirror/token-selection/c
 import { tokenSelectionExtension } from './codemirror/token-selection/extension'
 import { languageSupport } from './codemirror/token-selection/languageSupport'
 import { selectionFromLocation } from './codemirror/token-selection/selections'
+import { codyWidgetExtension } from './codemirror/tooltips/CodyTooltip'
 import { isValidLineRange } from './codemirror/utils'
 import { setBlobEditView } from './use-blob-store'
 
@@ -95,9 +98,6 @@ export interface BlobPropsFacet extends BlobProps {
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
     /** The raw content of the blob. */
     content: string
-
-    /** The trusted syntax-highlighted code as HTML */
-    html: string
 
     /** LSIF syntax-highlighting data */
     lsif?: string
@@ -273,6 +273,9 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         [customHistoryAction]
     )
 
+    // Added fallback to take care of ReferencesPanel/Simple storybook
+    const { isCodyEnabled, setEditorScope } = useCodySidebar()
+
     const extensions = useMemo(
         () => [
             // Log uncaught errors that happen in callbacks that we pass to
@@ -289,6 +292,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             }),
             scipSnapshot(blobInfo.snapshotData),
             codeFoldingExtension(),
+            isCodyEnabled.editorRecipes ? codyWidgetExtension() : [],
             navigateToLineOnAnyClick ? navigateToLineOnAnyClickExtension : tokenSelectionExtension(),
             syntaxHighlight.of(blobInfo),
             languageSupport.of(blobInfo),
@@ -318,7 +322,7 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
         // further below. However, they are still needed here because we need to
         // set initial values when we re-initialize the editor.
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [onSelection, blobInfo, extensionsController]
+        [onSelection, blobInfo, extensionsController, isCodyEnabled]
     )
 
     const editorRef = useRef<EditorView | null>(null)
@@ -431,6 +435,32 @@ export const CodeMirrorBlob: React.FunctionComponent<BlobProps> = props => {
             openSearchPanel(editorRef.current)
         }
     }, [])
+
+    // Sync the currently viewed document with the editor zustand store. This is used for features
+    // like Cody to know what file and range a user is looking at.
+    useEffect(() => {
+        const view = editorRef.current
+        setEditorScope(
+            new CodeMirrorEditor(
+                view
+                    ? {
+                          view,
+                          repo: props.blobInfo.repoName,
+                          revision: props.blobInfo.revision,
+                          filename: props.blobInfo.filePath,
+                          content: props.blobInfo.content,
+                      }
+                    : undefined
+            )
+        )
+        return () => setEditorScope(new CodeMirrorEditor())
+    }, [
+        props.blobInfo.content,
+        props.blobInfo.filePath,
+        props.blobInfo.repoName,
+        props.blobInfo.revision,
+        setEditorScope,
+    ])
 
     return (
         <>

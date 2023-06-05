@@ -19,4 +19,7 @@ import (
 	_ "golang.org/x/tools/cmd/goimports"
 	// used in many places
 	_ "golang.org/x/tools/cmd/stringer"
+
+	// Used for cody-gateway to generate a GraphQL client
+	_ "github.com/Khan/genqlient"
 )

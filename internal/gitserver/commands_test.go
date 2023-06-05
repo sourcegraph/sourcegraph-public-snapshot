@@ -15,6 +15,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	godiff "github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 
@@ -2016,7 +2018,7 @@ func TestParseCommitsUniqueToBranch(t *testing.T) { // KEEP
 	}
 }
 
-func TestParseBranchesContaining(t *testing.T) { //KEEP
+func TestParseBranchesContaining(t *testing.T) { // KEEP
 	names := parseBranchesContaining([]string{
 		"refs/tags/v0.7.0",
 		"refs/tags/v0.5.1",
@@ -2512,42 +2514,64 @@ func TestArchiveReaderForRepoWithoutSubRepoPermissions(t *testing.T) {
 }
 
 func TestRead(t *testing.T) {
-	const wantData = "abcd\n"
-	repo := MakeGitRepository(t,
+	const commitCmd = "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z"
+	repo, dir := MakeGitRepositoryAndReturnDir(t,
+		// simple file
 		"echo abcd > file1",
 		"git add file1",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		commitCmd,
+
+		// test we handle file names with .. (git show by default interprets
+		// this). Ensure past the .. exists as a branch. Then if we use git
+		// show it would return a diff instead of file contents.
+		"mkdir subdir",
+		"echo old > subdir/name",
+		"echo old > subdir/name..dev",
+		"git add subdir",
+		commitCmd,
+		"echo dotdot > subdir/name..dev",
+		"git add subdir",
+		commitCmd,
+		"git branch dev",
 	)
-	const commitID = "3d689662de70f9e252d4f6f1d75284e23587d670"
+	commitID := api.CommitID(GetHeadCommitFromGitDir(t, dir))
 
 	ctx := context.Background()
 
 	tests := map[string]struct {
-		file    string
-		checkFn func(*testing.T, error, []byte)
+		file string
+		want string // if empty we treat as non-existant.
 	}{
 		"all": {
 			file: "file1",
-			checkFn: func(t *testing.T, err error, data []byte) {
-				if err != nil {
-					t.Fatal(err)
-				}
-				if string(data) != wantData {
-					t.Errorf("got %q, want %q", data, wantData)
-				}
-			},
+			want: "abcd\n",
 		},
 
 		"nonexistent": {
 			file: "filexyz",
-			checkFn: func(t *testing.T, err error, data []byte) {
-				if err == nil {
-					t.Fatal("err == nil")
-				}
-				if !errors.Is(err, os.ErrNotExist) {
-					t.Fatalf("got err %v, want os.IsNotExist", err)
-				}
-			},
+		},
+
+		"dotdot-all": {
+			file: "subdir/name..dev",
+			want: "dotdot\n",
+		},
+
+		"dotdot-nonexistent": {
+			file: "subdir/404..dev",
+		},
+
+		// This test case ensures we do not return a log with diff for the
+		// specially crafted "git show HASH:..branch". IE a way to bypass
+		// sub-repo permissions.
+		"dotdot-diff": {
+			file: "..dev",
+		},
+
+		// 3 dots ... as a prefix when using git show will return an error like
+		// error: object b5462a7c880ce339ba3f93ac343706c0fa35babc is a tree, not a commit
+		// fatal: Invalid symmetric difference expression 269e2b9bda9a95ad4181a7a6eb2058645d9bad82:...dev
+		"dotdotdot": {
+			file: "...dev",
 		},
 	}
 
@@ -2563,9 +2587,27 @@ func TestRead(t *testing.T) {
 		ctx = actor.WithActor(ctx, &actor.Actor{
 			UID: 1,
 		})
+		checkFn := func(t *testing.T, err error, data []byte) {
+			if test.want == "" {
+				if err == nil {
+					t.Fatal("err == nil")
+				}
+				if !errors.Is(err, os.ErrNotExist) {
+					t.Fatalf("got err %v, want os.IsNotExist", err)
+				}
+			} else {
+				if err != nil {
+					t.Fatal(err)
+				}
+				if string(data) != test.want {
+					t.Errorf("got %q, want %q", data, test.want)
+				}
+			}
+		}
+
 		t.Run(name+"-ReadFile", func(t *testing.T) {
 			data, err := client.ReadFile(ctx, nil, repo, commitID, test.file)
-			test.checkFn(t, err, data)
+			checkFn(t, err, data)
 		})
 		t.Run(name+"-ReadFile-with-sub-repo-permissions-no-op", func(t *testing.T) {
 			checker.EnabledFunc.SetDefaultHook(func() bool {
@@ -2578,7 +2620,7 @@ func TestRead(t *testing.T) {
 				return authz.None, nil
 			})
 			data, err := client.ReadFile(ctx, checker, repo, commitID, test.file)
-			test.checkFn(t, err, data)
+			checkFn(t, err, data)
 		})
 		t.Run(name+"-ReadFile-with-sub-repo-permissions-filters-file", func(t *testing.T) {
 			checker.EnabledFunc.SetDefaultHook(func() bool {
@@ -2596,7 +2638,7 @@ func TestRead(t *testing.T) {
 			}
 		})
 		t.Run(name+"-GetFileReader", func(t *testing.T) {
-			runNewFileReaderTest(ctx, t, repo, commitID, test.file, nil, test.checkFn)
+			runNewFileReaderTest(ctx, t, repo, commitID, test.file, nil, checkFn)
 		})
 		t.Run(name+"-GetFileReader-with-sub-repo-permissions-noop", func(t *testing.T) {
 			checker.EnabledFunc.SetDefaultHook(func() bool {
@@ -2608,7 +2650,7 @@ func TestRead(t *testing.T) {
 				}
 				return authz.None, nil
 			})
-			runNewFileReaderTest(ctx, t, repo, commitID, test.file, checker, test.checkFn)
+			runNewFileReaderTest(ctx, t, repo, commitID, test.file, checker, checkFn)
 		})
 		t.Run(name+"-GetFileReader-with-sub-repo-permissions-filters-file", func(t *testing.T) {
 			checker.EnabledFunc.SetDefaultHook(func() bool {
@@ -3205,4 +3247,55 @@ func TestBlameHunkReader(t *testing.T) {
 			}
 		}
 	})
+}
+
+func Test_CommitLog(t *testing.T) {
+	ClientMocks.LocalGitserver = true
+	defer ResetClientMocks()
+
+	tests := map[string]struct {
+		extraGitCommands []string
+		wantFiles        [][]string // put these in log reverse order
+		wantCommits      int
+		wantErr          string
+	}{
+		"commit changes files": {
+			extraGitCommands: getGitCommandsWithFileLists([]string{"file1.txt", "file2.txt"}, []string{"file3.txt"}),
+			wantFiles:        [][]string{{"file3.txt"}, {"file1.txt", "file2.txt"}},
+			wantCommits:      2,
+		},
+		"no commits": {
+			wantErr: "gitCommand: exit status 128",
+		},
+		"one file two commits": {
+			extraGitCommands: getGitCommandsWithFileLists([]string{"file1.txt"}, []string{"file1.txt"}),
+			wantFiles:        [][]string{{"file1.txt"}, {"file1.txt"}},
+			wantCommits:      2,
+		},
+		"one commit": {
+			extraGitCommands: getGitCommandsWithFileLists([]string{"file1.txt"}),
+			wantFiles:        [][]string{{"file1.txt"}},
+			wantCommits:      1,
+		},
+	}
+
+	for label, test := range tests {
+		t.Run(label, func(t *testing.T) {
+			repo := MakeGitRepository(t, test.extraGitCommands...)
+			logResults, err := NewClient().CommitLog(context.Background(), repo, time.Time{})
+			if err != nil {
+				require.ErrorContains(t, err, test.wantErr)
+			}
+
+			t.Log(test)
+			for i, result := range logResults {
+				t.Log(result)
+				assert.Equal(t, "a@a.com", result.AuthorEmail)
+				assert.Equal(t, "a", result.AuthorName)
+				assert.Equal(t, 40, len(result.SHA))
+				assert.ElementsMatch(t, test.wantFiles[i], result.ChangedFiles)
+			}
+			assert.Equal(t, test.wantCommits, len(logResults))
+		})
+	}
 }

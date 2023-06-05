@@ -13,8 +13,8 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth"
+	githubapp "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/githubappauth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches"
 	codeintelinit "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel"
@@ -46,23 +46,23 @@ import (
 type EnterpriseInitializer = func(context.Context, *observation.Context, database.DB, codeintel.Services, conftypes.UnifiedWatchable, *enterprise.Services) error
 
 var initFunctions = map[string]EnterpriseInitializer{
-	"app":            app.Init,
 	"authz":          authz.Init,
 	"batches":        batches.Init,
 	"codeintel":      codeintelinit.Init,
 	"codemonitors":   codemonitors.Init,
+	"completions":    completions.Init,
 	"compute":        compute.Init,
 	"dotcom":         dotcom.Init,
+	"embeddings":     embeddings.Init,
+	"githubapp":      githubapp.Init,
 	"insights":       insights.Init,
 	"licensing":      licensing.Init,
 	"notebooks":      notebooks.Init,
+	"own":            own.Init,
+	"rbac":           rbac.Init,
+	"repos.webhooks": webhooks.Init,
 	"scim":           scim.Init,
 	"searchcontexts": searchcontexts.Init,
-	"repos.webhooks": webhooks.Init,
-	"embeddings":     embeddings.Init,
-	"rbac":           rbac.Init,
-	"own":            own.Init,
-	"completions":    completions.Init,
 }
 
 func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterprise.Services {

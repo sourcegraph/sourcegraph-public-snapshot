@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "adminanalytics",
@@ -21,7 +22,6 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/database",
-        "//internal/eventlogger",
         "//internal/featureflag",
         "//internal/redispool",
         "//lib/errors",
@@ -33,8 +33,12 @@ go_library(
 go_test(
     name = "adminanalytics_test",
     timeout = "short",
-    srcs = ["users_test.go"],
+    srcs = [
+        "users_test.go",
+        "utils_test.go",
+    ],
     embed = [":adminanalytics"],
+    flaky = True,
     tags = [
         # Test requires localhost for database
         "requires-network",
@@ -45,5 +49,6 @@ go_test(
         "//internal/types",
         "@com_github_google_go_cmp//cmp",
         "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//require",
     ],
 )

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 
-import { mdiFileDocumentOutline, mdiSourceRepository } from '@mdi/js'
+import { mdiFileDocumentOutline, mdiSourceRepository, mdiFileExcel } from '@mdi/js'
 import classNames from 'classnames'
 
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
@@ -10,18 +10,21 @@ import { Icon } from '../../utils/Icon'
 
 import styles from './ChatInputContext.module.css'
 
+const warning =
+    'This repository has not yet been configured for Cody indexing on Sourcegraph, and response quality will be poor. To enable Cody’s code graph indexing, click here to see the Cody documentation, or email support@sourcegraph.com for assistance.'
+
 export const ChatInputContext: React.FunctionComponent<{
     contextStatus: ChatContextStatus
     className?: string
-}> = ({ contextStatus, className }) => {
+}> = React.memo(function ChatInputContextContent({ contextStatus, className }) {
     const items: Pick<React.ComponentProps<typeof ContextItem>, 'icon' | 'text' | 'tooltip'>[] = useMemo(
         () =>
             [
                 contextStatus.codebase
                     ? {
-                          icon: mdiSourceRepository,
+                          icon: contextStatus.connection ? mdiSourceRepository : mdiFileExcel,
                           text: basename(contextStatus.codebase.replace(/^(github|gitlab)\.com\//, '')),
-                          tooltip: contextStatus.codebase,
+                          tooltip: contextStatus.connection ? contextStatus.codebase : warning,
                       }
                     : null,
                 contextStatus.filePath
@@ -32,12 +35,26 @@ export const ChatInputContext: React.FunctionComponent<{
                       }
                     : null,
             ].filter(isDefined),
-        [contextStatus.codebase, contextStatus.filePath]
+        [contextStatus.codebase, contextStatus.connection, contextStatus.filePath]
     )
 
     return (
         <div className={classNames(styles.container, className)}>
-            <h3 className={styles.badge}>{items.length > 0 ? 'Context' : 'No context'}</h3>
+            {contextStatus.mode && contextStatus.connection ? (
+                <h3
+                    title="This repository’s code graph has been indexed by Cody"
+                    className={classNames(styles.badge, styles.indexPresent)}
+                >
+                    Indexed
+                </h3>
+            ) : contextStatus.supportsKeyword ? (
+                <h3 title={warning} className={classNames(styles.badge, styles.indexMissing)}>
+                    <a href="https://docs.sourcegraph.com/cody/troubleshooting#codebase-is-not-indexed">
+                        <span className={styles.indexStatus}>⚠ Not Indexed</span>
+                    </a>
+                </h3>
+            ) : null}
+
             {items.length > 0 && (
                 <ul className={styles.items}>
                     {items.map(({ icon, text, tooltip }, index) => (
@@ -48,7 +65,7 @@ export const ChatInputContext: React.FunctionComponent<{
             )}
         </div>
     )
-}
+})
 
 const ContextItem: React.FunctionComponent<{ icon: string; text: string; tooltip?: string; as: 'li' }> = ({
     icon,

@@ -94,3 +94,8 @@ var appSchema string
 //
 //go:embed completions.graphql
 var completionSchema string
+
+// gitHubAppsSchema is the GitHub apps raw graqhql schema.
+//
+//go:embed githubapps.graphql
+var gitHubAppsSchema string

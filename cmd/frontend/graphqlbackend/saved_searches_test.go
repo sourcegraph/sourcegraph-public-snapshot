@@ -266,11 +266,12 @@ func TestSavedSearchByIDNonOwner(t *testing.T) {
 }
 
 func TestCreateSavedSearch(t *testing.T) {
-	ctx := context.Background()
 	key := int32(1)
 
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true, ID: key}, nil)
+
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: key})
 
 	ss := database.NewMockSavedSearchStore()
 	ss.CreateFunc.SetDefaultHook(func(_ context.Context, newSavedSearch *types.SavedSearch) (*types.SavedSearch, error) {
@@ -332,11 +333,11 @@ func TestCreateSavedSearch(t *testing.T) {
 }
 
 func TestUpdateSavedSearch(t *testing.T) {
-	ctx := context.Background()
-
 	key := int32(1)
 	users := database.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true, ID: key}, nil)
+
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: key})
 
 	ss := database.NewMockSavedSearchStore()
 	ss.UpdateFunc.SetDefaultHook(func(ctx context.Context, savedSearch *types.SavedSearch) (*types.SavedSearch, error) {
@@ -510,11 +511,11 @@ func TestUpdateSavedSearchPermissions(t *testing.T) {
 }
 
 func TestDeleteSavedSearch(t *testing.T) {
-	ctx := context.Background()
-
 	key := int32(1)
 	users := database.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true, ID: key}, nil)
+	users.GetByIDFunc.SetDefaultReturn(&types.User{SiteAdmin: true, ID: key}, nil)
+
+	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: key})
 
 	ss := database.NewMockSavedSearchStore()
 	ss.GetByIDFunc.SetDefaultReturn(&api.SavedQuerySpecAndConfig{

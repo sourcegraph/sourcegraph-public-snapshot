@@ -6,13 +6,14 @@ package job
 import (
 	"context"
 
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
@@ -55,7 +56,7 @@ type Describer interface {
 	Children() []Describer
 
 	// Fields is the set of fields that describe the job
-	Fields(Verbosity) []otlog.Field
+	Attributes(Verbosity) []attribute.KeyValue
 }
 
 type Verbosity int
@@ -67,9 +68,10 @@ const (
 )
 
 type RuntimeClients struct {
-	Logger       log.Logger
-	DB           database.DB
-	Zoekt        zoekt.Streamer
-	SearcherURLs *endpoint.Map
-	Gitserver    gitserver.Client
+	Logger                      log.Logger
+	DB                          database.DB
+	Zoekt                       zoekt.Streamer
+	SearcherURLs                *endpoint.Map
+	SearcherGRPCConnectionCache *defaults.ConnectionCache
+	Gitserver                   gitserver.Client
 }

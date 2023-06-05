@@ -88,6 +88,10 @@ type UserStore interface {
 	Transact(context.Context) (UserStore, error)
 	Update(context.Context, int32, UserUpdate) error
 	UpdatePassword(ctx context.Context, id int32, oldPassword, newPassword string) error
+	SetChatCompletionsQuota(ctx context.Context, id int32, quota *int) error
+	GetChatCompletionsQuota(ctx context.Context, id int32) (*int, error)
+	SetCodeCompletionsQuota(ctx context.Context, id int32, quota *int) error
+	GetCodeCompletionsQuota(ctx context.Context, id int32) (*int, error)
 	With(basestore.ShareableStore) UserStore
 }
 
@@ -1060,10 +1064,7 @@ type UsersListOptions struct {
 
 func (u *userStore) List(ctx context.Context, opt *UsersListOptions) (_ []*types.User, err error) {
 	tr, ctx := trace.New(ctx, "database.Users.List", fmt.Sprintf("%+v", opt))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	defer tr.FinishWithErr(&err)
 
 	if opt == nil {
 		opt = &UsersListOptions{}
@@ -1077,10 +1078,7 @@ func (u *userStore) List(ctx context.Context, opt *UsersListOptions) (_ []*types
 // ListForSCIM lists users along with their email addresses and SCIM ExternalID.
 func (u *userStore) ListForSCIM(ctx context.Context, opt *UsersListOptions) (_ []*types.UserForSCIM, err error) {
 	tr, ctx := trace.New(ctx, "database.Users.ListForSCIM", fmt.Sprintf("%+v", opt))
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	defer tr.FinishWithErr(&err)
 
 	if opt == nil {
 		opt = &UsersListOptions{}
@@ -1479,6 +1477,46 @@ func (u *userStore) UpdatePassword(ctx context.Context, id int32, oldPassword, n
 	}
 
 	return nil
+}
+
+// SetChatCompletionsQuota sets the user's quota override for completions. Nil means unset.
+func (u *userStore) SetChatCompletionsQuota(ctx context.Context, id int32, quota *int) error {
+	if quota == nil {
+		return u.Exec(ctx, sqlf.Sprintf("UPDATE users SET completions_quota = NULL WHERE id = %s", id))
+	}
+	return u.Exec(ctx, sqlf.Sprintf("UPDATE users SET completions_quota = %s WHERE id = %s", *quota, id))
+}
+
+// GetChatCompletionsQuota reads the user's quota override for completions. Nil means unset.
+func (u *userStore) GetChatCompletionsQuota(ctx context.Context, id int32) (*int, error) {
+	quota, found, err := basestore.ScanFirstInt(u.Query(ctx, sqlf.Sprintf("SELECT completions_quota FROM users WHERE id = %s AND completions_quota IS NOT NULL", id)))
+	if err != nil {
+		return nil, err
+	}
+	if found {
+		return &quota, nil
+	}
+	return nil, nil
+}
+
+// SetCodeCompletionsQuota sets the user's quota override for code completions. Nil means unset.
+func (u *userStore) SetCodeCompletionsQuota(ctx context.Context, id int32, quota *int) error {
+	if quota == nil {
+		return u.Exec(ctx, sqlf.Sprintf("UPDATE users SET code_completions_quota = NULL WHERE id = %s", id))
+	}
+	return u.Exec(ctx, sqlf.Sprintf("UPDATE users SET code_completions_quota = %s WHERE id = %s", *quota, id))
+}
+
+// GetCodeCompletionsQuota reads the user's quota override for code completions. Nil means unset.
+func (u *userStore) GetCodeCompletionsQuota(ctx context.Context, id int32) (*int, error) {
+	quota, found, err := basestore.ScanFirstInt(u.Query(ctx, sqlf.Sprintf("SELECT code_completions_quota FROM users WHERE id = %s AND code_completions_quota IS NOT NULL", id)))
+	if err != nil {
+		return nil, err
+	}
+	if found {
+		return &quota, nil
+	}
+	return nil, nil
 }
 
 // CreatePassword creates a user's password if they don't have a password.

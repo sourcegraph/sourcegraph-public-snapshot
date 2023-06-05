@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -16,9 +15,9 @@ import (
 
 // GetPathExists determines if the path exists in the database.
 func (s *store) GetPathExists(ctx context.Context, bundleID int, path string) (_ bool, err error) {
-	ctx, _, endObservation := s.operations.getPathExists.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("bundleID", bundleID),
-		log.String("path", path),
+	ctx, _, endObservation := s.operations.getPathExists.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("bundleID", bundleID),
+		attribute.String("path", path),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -42,9 +41,9 @@ SELECT EXISTS (
 
 // Stencil returns all ranges within a single document.
 func (s *store) GetStencil(ctx context.Context, bundleID int, path string) (_ []shared.Range, err error) {
-	ctx, trace, endObservation := s.operations.getStencil.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("bundleID", bundleID),
-		log.String("path", path),
+	ctx, trace, endObservation := s.operations.getStencil.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("bundleID", bundleID),
+		attribute.String("path", path),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -82,11 +81,11 @@ LIMIT 1
 
 // GetRanges returns definition, reference, implementation, and hover data for each range within the given span of lines.
 func (s *store) GetRanges(ctx context.Context, bundleID int, path string, startLine, endLine int) (_ []shared.CodeIntelligenceRange, err error) {
-	ctx, _, endObservation := s.operations.getRanges.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("bundleID", bundleID),
-		log.String("path", path),
-		log.Int("startLine", startLine),
-		log.Int("endLine", endLine),
+	ctx, _, endObservation := s.operations.getRanges.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("bundleID", bundleID),
+		attribute.String("path", path),
+		attribute.Int("startLine", startLine),
+		attribute.Int("endLine", endLine),
 	}})
 	defer endObservation(1, observation.Args{})
 

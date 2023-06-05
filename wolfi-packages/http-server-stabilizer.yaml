@@ -2,8 +2,8 @@
 
 package:
   name: http-server-stabilizer
-  version: 1.0.5
-  epoch: 0
+  version: 1.1.0
+  epoch: 1
   description: "HTTP server stabilizer for unruly servers"
   target-architecture:
     - x86_64
@@ -28,8 +28,9 @@ pipeline:
   - uses: fetch
     with:
       uri: https://github.com/sourcegraph/http-server-stabilizer/archive/refs/tags/v${{package.version}}.tar.gz
-      expected-sha256: e568f2b407a09d288abfc41057e6b76a68d00f0cfe2d461d629263fa2fbba94e
+      expected-sha256: 4d0d2e4e36d20441abc898fd87031c0b4e40ce25057b6023c929bb0ffa0de4f7
   - uses: go/build
     with:
-      packages: main.go
+      packages: ./...
+      prefix: /usr/local
       output: http-server-stabilizer

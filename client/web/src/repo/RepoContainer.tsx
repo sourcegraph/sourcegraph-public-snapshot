@@ -24,7 +24,6 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { EditorHint, SearchContextProps } from '@sourcegraph/shared/src/search'
 import { escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
@@ -33,11 +32,11 @@ import { Button, Icon, Link, Panel, useObservable } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
 import { CodeIntelligenceProps } from '../codeintel'
-import { CodyChat } from '../cody/CodyChat'
+import { CodySidebar } from '../cody/sidebar'
+import { useCodySidebar } from '../cody/sidebar/Provider'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { RouteError } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { NotebookProps } from '../notebooks'
@@ -45,7 +44,7 @@ import { OwnConfigProps } from '../own/OwnConfigProps'
 import { searchQueryForRepoRevision, SearchStreamingProps } from '../search'
 import { useExperimentalQueryInput } from '../search/useExperimentalSearchInput'
 import { useNavbarQueryState } from '../stores'
-import { useChatStore } from '../stores/codyChat'
+import { EventName } from '../util/constants'
 import { RouteV6Descriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
@@ -154,6 +153,23 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
         location.pathname + location.search + location.hash
     )
 
+    const {
+        isCodyEnabled,
+        sidebarSize: codySidebarSize,
+        isSidebarOpen: isCodySidebarOpen,
+        setIsSidebarOpen: setIsCodySidebarOpen,
+        setSidebarSize: setCodySidebarSize,
+        loaded: codyLoaded,
+        scope,
+        setScope,
+    } = useCodySidebar()
+
+    useEffect(() => {
+        if (codyLoaded && scope.type === 'Automatic' && !scope.repositories.find((name: string) => name === repoName)) {
+            setScope({ ...scope, repositories: [...scope.repositories, repoName] })
+        }
+    }, [scope, repoName, setScope, codyLoaded])
+
     const resolvedRevisionOrError = useObservable(
         useMemo(
             () =>
@@ -189,11 +205,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
         )
     )
 
-    const [isCodyEnabled] = useFeatureFlag('cody-experimental')
-    useChatStore(isCodyEnabled, repoName)
-
     const focusCodyShortcut = useKeyboardShortcut('focusCody')
-    const [isCodySidebarOpen, setCodySidebarOpen] = useTemporarySetting('cody.showSidebar', false)
 
     /**
      * A long time ago, we fetched `repo` in a separate GraphQL query.
@@ -345,13 +357,13 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
 
     return (
         <>
-            {isCodyEnabled &&
+            {isCodyEnabled.sidebar &&
                 focusCodyShortcut?.keybindings.map((keybinding, index) => (
                     <Shortcut
                         key={index}
                         {...keybinding}
                         onMatch={() => {
-                            setCodySidebarOpen(true)
+                            setIsCodySidebarOpen(true)
                         }}
                     />
                 ))}
@@ -369,7 +381,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                         telemetryService={props.telemetryService}
                     />
 
-                    {isCodyEnabled ? (
+                    {isCodyEnabled.sidebar ? (
                         <RepoHeaderContributionPortal
                             position="right"
                             priority={1}
@@ -380,11 +392,11 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                                 !isCodySidebarOpen ? (
                                     <AskCodyButton
                                         onClick={() => {
-                                            props.telemetryService.log('web:codySidebar:chatOpened', {
+                                            props.telemetryService.log(EventName.CODY_SIDEBAR_CHAT_OPENED, {
                                                 repo,
                                                 path: filePath,
                                             })
-                                            setCodySidebarOpen(true)
+                                            setIsCodySidebarOpen(true)
                                         }}
                                     />
                                 ) : null
@@ -485,16 +497,18 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                     </Suspense>
                 </div>
 
-                {isCodyEnabled && isCodySidebarOpen && (
+                {isCodyEnabled.sidebar && isCodySidebarOpen && (
                     <Panel
+                        className="cody-sidebar-panel"
                         position="right"
                         ariaLabel="Cody sidebar"
                         maxSize={CODY_SIDEBAR_SIZES.max}
                         minSize={CODY_SIDEBAR_SIZES.min}
-                        defaultSize={CODY_SIDEBAR_SIZES.default}
+                        defaultSize={codySidebarSize || CODY_SIDEBAR_SIZES.default}
                         storageKey="size-cache-cody-sidebar"
+                        onResize={setCodySidebarSize}
                     >
-                        <CodyChat onClose={() => setCodySidebarOpen(false)} />
+                        <CodySidebar onClose={() => setIsCodySidebarOpen(false)} />
                     </Panel>
                 )}
             </div>

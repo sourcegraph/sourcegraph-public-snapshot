@@ -2,6 +2,10 @@
     background: var(--marketing-gradient);
     border-radius: var(--border-radius);
     padding: 0.25rem;
+
+    &.thin {
+        padding: 0.125rem;
+    }
 }
 
 .content {
@@ -12,4 +16,8 @@
     color: var(--body-color);
     border-radius: var(--border-radius);
     padding: 0.5rem;
+
+    .thin & {
+        height: 100%;
+    }
 }

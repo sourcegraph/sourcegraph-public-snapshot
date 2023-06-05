@@ -92,6 +92,18 @@ In practice, Sourcegraph OSS involves:
    </td>
   </tr>
   <tr>
+   <td>Cody (QA or CodeGen)
+   </td>
+   <td>✗
+   </td>
+   <td>✓ (limited)
+   </td>
+   <td>✓
+   </td>
+   <td>✓
+   </td>
+  </tr>
+  <tr>
    <td>Code navigation (go to definition/find references)
    </td>
    <td>✗
@@ -145,6 +157,18 @@ In practice, Sourcegraph OSS involves:
    <td>✗
    </td>
    <td>✗
+   </td>
+   <td>✓
+   </td>
+   <td>✓
+   </td>
+  </tr>
+  <tr>
+   <td>Own
+   </td>
+   <td>✗
+   </td>
+   <td>✓
    </td>
    <td>✓
    </td>

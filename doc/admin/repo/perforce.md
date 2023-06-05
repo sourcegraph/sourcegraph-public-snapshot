@@ -107,9 +107,9 @@ For example, if your Perforce depot `//depot/Talkhouse` has different permission
 {
   // ...
   "depots": [
-    "//depot/Talkhouse/main-dev",
-    "//depot/Talkhouse/rel1.0/front",
-    "//depot/Talkhouse/rel1.0/back"
+    "//depot/Talkhouse/main-dev/",
+    "//depot/Talkhouse/rel1.0/front/",
+    "//depot/Talkhouse/rel1.0/back/"
   ]
 }
 ```
@@ -120,9 +120,9 @@ By configuring each subdirectory that has unique permissions, Sourcegraph is abl
 {
   // ...
   "depots": [
-    "//depot/Talkhouse/main-dev",
-    "//depot/Talkhouse/rel1.0",
-    "//depot/Talkhouse/rel1.0/back"
+    "//depot/Talkhouse/main-dev/",
+    "//depot/Talkhouse/rel1.0/",
+    "//depot/Talkhouse/rel1.0/back/"
   ]
 }
 ```

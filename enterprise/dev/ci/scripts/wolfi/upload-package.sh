@@ -45,6 +45,7 @@ for apk in "${apks[@]}"; do
   fi
 
   # TODO: Pass -n when on main to avoid accidental overwriting
+  # no-cache to avoid index/packages getting out of sync
   echo "   * Uploading package and index fragment to repo"
-  gsutil -u "$GCP_PROJECT" cp "$apk" "$index_fragment" "$dest_path"
+  gsutil -u "$GCP_PROJECT" -h "Cache-Control:no-cache" cp "$apk" "$index_fragment" "$dest_path"
 done

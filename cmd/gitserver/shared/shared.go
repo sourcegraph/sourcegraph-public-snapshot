@@ -7,7 +7,6 @@ import (
 	"database/sql"
 	"net"
 	"net/http"
-	"net/url"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -16,11 +15,12 @@ import (
 
 	jsoniter "github.com/json-iterator/go"
 	"github.com/sourcegraph/log"
-	"github.com/tidwall/gjson"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
+	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -33,7 +33,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/crates"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
@@ -52,7 +51,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -72,7 +70,7 @@ var (
 	rateLimitSyncerLimitPerSecond = env.MustGetInt("SRC_REPOS_SYNC_RATE_LIMIT_RATE_PER_SECOND", 80, "Rate limit applied to rate limit syncing")
 )
 
-type EnterpriseInit func(db database.DB)
+type EnterpriseInit func(db database.DB, keyring keyring.Ring)
 
 type Config struct {
 	env.BaseConfig
@@ -128,7 +126,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 
 	if enterpriseInit != nil {
-		enterpriseInit(db)
+		enterpriseInit(db, keyring.Default())
 	}
 
 	if err != nil {
@@ -141,7 +139,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		ReposDir:           config.ReposDir,
 		DesiredPercentFree: wantPctFree2,
 		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
-			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, nil, repo)
+			return getRemoteURLFunc(ctx, externalServiceStore, repoStore, repo)
 		},
 		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
 			return getVCSSyncer(ctx, externalServiceStore, repoStore, dependenciesSvc, repo, config.ReposDir, config.CoursierCacheDir)
@@ -152,7 +150,25 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(batchLogGlobalConcurrencyLimit)),
 	}
 
-	grpcServer := defaults.NewServer(logger)
+	configurationWatcher := conf.DefaultClient()
+
+	var additionalServerOptions []grpc.ServerOption
+
+	for method, scopedLogger := range map[string]log.Logger{
+		proto.GitserverService_Exec_FullMethodName:    logger.Scoped("exec.accesslog", "exec endpoint access log"),
+		proto.GitserverService_Archive_FullMethodName: logger.Scoped("archive.accesslog", "archive endpoint access log"),
+	} {
+		streamInterceptor := accesslog.StreamServerInterceptor(scopedLogger, configurationWatcher)
+		unaryInterceptor := accesslog.UnaryServerInterceptor(scopedLogger, configurationWatcher)
+
+		additionalServerOptions = append(additionalServerOptions,
+			grpc.ChainStreamInterceptor(methodSpecificStreamInterceptor(method, streamInterceptor)),
+			grpc.ChainUnaryInterceptor(methodSpecificUnaryInterceptor(method, unaryInterceptor)),
+		)
+	}
+
+	grpcServer := defaults.NewServer(logger, additionalServerOptions...)
+
 	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{
 		Server: &gitserver,
 	})
@@ -171,7 +187,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	// TODO: Why do we set server state as a side effect of creating our handler?
 	handler := gitserver.Handler()
 	handler = actor.HTTPMiddleware(logger, handler)
-	handler = requestclient.HTTPMiddleware(handler)
+	handler = requestclient.InternalHTTPMiddleware(handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
 	handler = internalgrpc.MultiplexHandlers(grpcServer, handler)
@@ -314,7 +330,6 @@ func getRemoteURLFunc(
 	ctx context.Context,
 	externalServiceStore database.ExternalServiceStore,
 	repoStore database.RepoStore,
-	cli httpcli.Doer,
 	repo api.RepoName,
 ) (string, error) {
 	r, err := repoStore.GetByName(ctx, repo)
@@ -338,87 +353,9 @@ func getRemoteURLFunc(
 			continue
 		}
 
-		if svc.Kind == extsvc.KindGitHub {
-			config, err := conf.GitHubAppConfig()
-			if err != nil {
-				return "", err
-			}
-			if config.Configured() {
-				rawConfig, err := svc.Config.Decrypt(ctx)
-				if err != nil {
-					return "", err
-				}
-				installationID := gjson.Get(rawConfig, "githubAppInstallationID").Int()
-				if installationID > 0 {
-					rawConfig, err = editGitHubAppExternalServiceConfigToken(ctx, externalServiceStore, svc, rawConfig, config.PrivateKey, config.AppID, installationID, cli)
-					if err != nil {
-						return "", errors.Wrap(err, "edit GitHub App external service config token")
-					}
-					svc.Config.Set(rawConfig)
-				}
-			}
-		}
 		return repos.EncryptableCloneURL(ctx, log.Scoped("repos.CloneURL", ""), svc.Kind, svc.Config, r)
 	}
 	return "", errors.Errorf("no sources for %q", repo)
-}
-
-// editGitHubAppExternalServiceConfigToken updates the "token" field of the given
-// external service config through GitHub App and returns a new copy of the
-// config ensuring the token is always valid.
-func editGitHubAppExternalServiceConfigToken(
-	ctx context.Context,
-	externalServiceStore database.ExternalServiceStore,
-	svc *types.ExternalService,
-	rawConfig string,
-	privateKey []byte,
-	appID string,
-	installationID int64,
-	cli httpcli.Doer,
-) (string, error) {
-	logger := log.Scoped("editGitHubAppExternalServiceConfigToken", "updates the 'token' field of the given external service")
-
-	baseURL, err := url.Parse(gjson.Get(rawConfig, "url").String())
-	if err != nil {
-		return "", errors.Wrap(err, "parse base URL")
-	}
-
-	apiURL, githubDotCom := github.APIRoot(baseURL)
-	if !githubDotCom {
-		return "", errors.Errorf("only GitHub App on GitHub.com is supported, but got %q", baseURL)
-	}
-
-	var c schema.GitHubConnection
-	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
-		return "", nil
-	}
-
-	appAuther, err := github.NewGitHubAppAuthenticator(appID, privateKey)
-	if err != nil {
-		return "", errors.Wrap(err, "new authenticator with GitHub App")
-	}
-
-	scopedLogger := logger.Scoped("app", "github client for github app").With(log.String("appID", appID))
-	appClient := github.NewV3Client(scopedLogger, svc.URN(), apiURL, appAuther, cli)
-
-	token, err := appClient.CreateAppInstallationAccessToken(ctx, installationID)
-	if err != nil {
-		return "", errors.Wrap(err, "get or renew GitHub App installation access token")
-	}
-
-	// NOTE: Use `json.Marshal` breaks the actual external service config that fails
-	// validation with missing "repos" property when no repository has been selected,
-	// due to generated JSON tag of ",omitempty".
-	config, err := jsonc.Edit(rawConfig, token.Token, "token")
-	if err != nil {
-		return "", errors.Wrap(err, "edit token")
-	}
-	err = externalServiceStore.Update(ctx, conf.Get().AuthProviders, svc.ID,
-		&database.ExternalServiceUpdate{
-			Config:         &config,
-			TokenExpiresAt: token.ExpiresAt,
-		})
-	return config, err
 }
 
 func getVCSSyncer(
@@ -620,4 +557,30 @@ func getAddr() string {
 		addr = net.JoinHostPort(host, port)
 	}
 	return addr
+}
+
+// methodSpecificStreamInterceptor returns a gRPC stream server interceptor that only calls the next interceptor if the method matches.
+//
+// The returned interceptor will call next if the invoked gRPC method matches the method parameter. Otherwise, it will call handler directly.
+func methodSpecificStreamInterceptor(method string, next grpc.StreamServerInterceptor) grpc.StreamServerInterceptor {
+	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+		if method != info.FullMethod {
+			return handler(srv, ss)
+		}
+
+		return next(srv, ss, info, handler)
+	}
+}
+
+// methodSpecificUnaryInterceptor returns a gRPC unary server interceptor that only calls the next interceptor if the method matches.
+//
+// The returned interceptor will call next if the invoked gRPC method matches the method parameter. Otherwise, it will call handler directly.
+func methodSpecificUnaryInterceptor(method string, next grpc.UnaryServerInterceptor) grpc.UnaryServerInterceptor {
+	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+		if method != info.FullMethod {
+			return handler(ctx, req)
+		}
+
+		return next(ctx, req, info, handler)
+	}
 }

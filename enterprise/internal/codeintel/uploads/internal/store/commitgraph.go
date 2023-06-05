@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go/log"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/commitgraph"
@@ -24,8 +23,8 @@ import (
 
 // SetRepositoryAsDirty marks the given repository's commit graph as out of date.
 func (s *store) SetRepositoryAsDirty(ctx context.Context, repositoryID int) (err error) {
-	ctx, _, endObservation := s.operations.setRepositoryAsDirty.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
+	ctx, _, endObservation := s.operations.setRepositoryAsDirty.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -79,14 +78,12 @@ func (s *store) UpdateUploadsVisibleToCommits(
 	dirtyToken int,
 	now time.Time,
 ) (err error) {
-	ctx, trace, endObservation := s.operations.updateUploadsVisibleToCommits.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{
-			log.Int("repositoryID", repositoryID),
-			log.Int("numCommitGraphKeys", len(commitGraph.Order())),
-			log.Int("numRefDescriptions", len(refDescriptions)),
-			log.Int("dirtyToken", dirtyToken),
-		},
-	})
+	ctx, trace, endObservation := s.operations.updateUploadsVisibleToCommits.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
+		attribute.Int("numCommitGraphKeys", len(commitGraph.Order())),
+		attribute.Int("numRefDescriptions", len(refDescriptions)),
+		attribute.Int("dirtyToken", dirtyToken),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	return s.withTransaction(ctx, func(tx *store) error {
@@ -225,9 +222,9 @@ WHERE repository_id = %s
 // GetCommitsVisibleToUpload returns the set of commits for which the given upload can answer code intelligence queries.
 // To paginate, supply the token returned from this method to the invocation for the next page.
 func (s *store) GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error) {
-	ctx, _, endObservation := s.operations.getCommitsVisibleToUpload.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("uploadID", uploadID),
-		log.Int("limit", limit),
+	ctx, _, endObservation := s.operations.getCommitsVisibleToUpload.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("uploadID", uploadID),
+		attribute.Int("limit", limit),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -298,15 +295,13 @@ LIMIT %s
 // splits the repository into multiple dumps. For this reason, the returned dumps are always sorted in most-recently-finished order to
 // prevent returning data from stale dumps.
 func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []shared.Dump, err error) {
-	ctx, trace, endObservation := s.operations.findClosestDumps.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{
-			log.Int("repositoryID", repositoryID),
-			log.String("commit", commit),
-			log.String("path", path),
-			log.Bool("rootMustEnclosePath", rootMustEnclosePath),
-			log.String("indexer", indexer),
-		},
-	})
+	ctx, trace, endObservation := s.operations.findClosestDumps.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
+		attribute.String("commit", commit),
+		attribute.String("path", path),
+		attribute.Bool("rootMustEnclosePath", rootMustEnclosePath),
+		attribute.String("indexer", indexer),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	conds := makeFindClosestDumpConditions(path, rootMustEnclosePath, indexer)
@@ -351,31 +346,32 @@ ORDER BY u.finished_at DESC
 // FindClosestDumpsFromGraphFragment returns the set of dumps that can most accurately answer queries for the given repository, commit,
 // path, and optional indexer by only considering the given fragment of the full git graph. See FindClosestDumps for additional details.
 func (s *store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) (_ []shared.Dump, err error) {
-	ctx, trace, endObservation := s.operations.findClosestDumpsFromGraphFragment.With(ctx, &err, observation.Args{
-		LogFields: []log.Field{
-			log.Int("repositoryID", repositoryID),
-			log.String("commit", commit),
-			log.String("path", path),
-			log.Bool("rootMustEnclosePath", rootMustEnclosePath),
-			log.String("indexer", indexer),
-			log.Int("numCommitGraphKeys", len(commitGraph.Order())),
-		},
-	})
+	ctx, trace, endObservation := s.operations.findClosestDumpsFromGraphFragment.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
+		attribute.String("commit", commit),
+		attribute.String("path", path),
+		attribute.Bool("rootMustEnclosePath", rootMustEnclosePath),
+		attribute.String("indexer", indexer),
+		attribute.Int("numCommitGraphKeys", len(commitGraph.Order())),
+	}})
 	defer endObservation(1, observation.Args{})
 
 	if len(commitGraph.Order()) == 0 {
 		return nil, nil
 	}
 
-	commits := make([]string, 0, len(commitGraph.Graph()))
+	commitQueries := make([]*sqlf.Query, 0, len(commitGraph.Graph()))
 	for commit := range commitGraph.Graph() {
-		commits = append(commits, commit)
+		commitQueries = append(commitQueries, sqlf.Sprintf("%s", dbutil.CommitBytea(commit)))
 	}
 
 	commitGraphView, err := scanCommitGraphView(s.db.Query(ctx, sqlf.Sprintf(
 		findClosestDumpsFromGraphFragmentCommitGraphQuery,
-		makeVisibleUploadCandidatesQuery(repositoryID, commits...)),
-	))
+		repositoryID,
+		sqlf.Join(commitQueries, ", "),
+		repositoryID,
+		sqlf.Join(commitQueries, ", "),
+	)))
 	if err != nil {
 		return nil, err
 	}
@@ -405,7 +401,33 @@ func (s *store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 
 const findClosestDumpsFromGraphFragmentCommitGraphQuery = `
 WITH
-visible_uploads AS (%s)
+visible_uploads AS (
+	-- Select the set of uploads visible from one of the given commits. This is done by
+	-- looking at each commit's row in the lsif_nearest_uploads table, and the (adjusted)
+	-- set of uploads from each commit's nearest ancestor according to the data compressed
+	-- in the links table.
+	--
+	-- NB: A commit should be present in at most one of these tables.
+	SELECT
+		nu.repository_id,
+		upload_id::integer,
+		nu.commit_bytea,
+		u_distance::text::integer as distance
+	FROM lsif_nearest_uploads nu
+	CROSS JOIN jsonb_each(nu.uploads) as u(upload_id, u_distance)
+	WHERE nu.repository_id = %s AND nu.commit_bytea IN (%s)
+	UNION (
+		SELECT
+			nu.repository_id,
+			upload_id::integer,
+			ul.commit_bytea,
+			u_distance::text::integer + ul.distance as distance
+		FROM lsif_nearest_uploads_links ul
+		JOIN lsif_nearest_uploads nu ON nu.repository_id = ul.repository_id AND nu.commit_bytea = ul.ancestor_commit_bytea
+		CROSS JOIN jsonb_each(nu.uploads) as u(upload_id, u_distance)
+		WHERE nu.repository_id = %s AND ul.commit_bytea IN (%s)
+	)
+)
 SELECT
 	vu.upload_id,
 	encode(vu.commit_bytea, 'hex'),
@@ -493,8 +515,8 @@ SELECT EXTRACT(EPOCH FROM NOW() - ldr.set_dirty_at)::integer AS age
 // CommitGraphMetadata returns whether or not the commit graph for the given repository is stale, along with the date of
 // the most recent commit graph refresh for the given repository.
 func (s *store) GetCommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, err error) {
-	ctx, _, endObservation := s.operations.getCommitGraphMetadata.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("repositoryID", repositoryID),
+	ctx, _, endObservation := s.operations.getCommitGraphMetadata.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", repositoryID),
 	}})
 	defer endObservation(1, observation.Args{})
 

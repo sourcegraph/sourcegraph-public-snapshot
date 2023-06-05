@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "gitlab",
@@ -10,9 +11,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/gitlab",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//cmd/frontend/auth/providers",
         "//enterprise/internal/authz/types",
         "//enterprise/internal/licensing",
+        "//internal/auth/providers",
         "//internal/authz",
         "//internal/database",
         "//internal/extsvc",
@@ -36,9 +37,10 @@ go_test(
     ],
     embed = [":gitlab"],
     deps = [
-        "//cmd/frontend/auth/providers",
         "//internal/api",
+        "//internal/auth/providers",
         "//internal/authz",
+        "//internal/database",
         "//internal/extsvc",
         "//internal/extsvc/auth",
         "//internal/extsvc/gitlab",
@@ -51,6 +53,7 @@ go_test(
         "@com_github_google_go_cmp//cmp",
         "@com_github_inconshreveable_log15//:log15",
         "@com_github_sergi_go_diff//diffmatchpatch",
+        "@com_github_stretchr_testify//require",
         "@org_golang_x_oauth2//:oauth2",
     ],
 )

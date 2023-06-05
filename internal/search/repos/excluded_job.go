@@ -3,7 +3,7 @@ package repos
 import (
 	"context"
 
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -38,13 +38,13 @@ func (c *ComputeExcludedJob) Name() string {
 	return "ReposComputeExcludedJob"
 }
 
-func (c *ComputeExcludedJob) Fields(v job.Verbosity) (res []log.Field) {
+func (c *ComputeExcludedJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
 	switch v {
 	case job.VerbosityMax:
 		fallthrough
 	case job.VerbosityBasic:
 		res = append(res,
-			trace.Scoped("repoOpts", c.RepoOpts.Tags()...),
+			trace.Scoped("repoOpts", c.RepoOpts.Attributes()...)...,
 		)
 	}
 	return res

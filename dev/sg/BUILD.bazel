@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 
 go_library(
     name = "sg_lib",
@@ -13,10 +14,12 @@ go_library(
         "release.go",
         "sg_adr.go",
         "sg_analytics.go",
+        "sg_app.go",
         "sg_audit.go",
         "sg_ci.go",
         "sg_cloud.go",
         "sg_db.go",
+        "sg_embeddings_qa.go",
         "sg_feedback.go",
         "sg_generate.go",
         "sg_help.go",
@@ -74,6 +77,7 @@ go_library(
         "//dev/sg/linters",
         "//dev/sg/root",
         "//dev/team",
+        "//enterprise/cmd/embeddings/qa",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/connections/live",
@@ -116,6 +120,7 @@ go_library(
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_run//:run",
         "@com_github_urfave_cli_v2//:cli",
+        "@com_google_cloud_go_storage//:storage",
         "@in_gopkg_yaml_v3//:yaml_v3",
         "@io_opentelemetry_go_otel//attribute",
         "@io_opentelemetry_go_otel_trace//:trace",

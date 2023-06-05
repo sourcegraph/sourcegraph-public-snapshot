@@ -1,6 +1,8 @@
 package context
 
 import (
+	"context"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -18,4 +20,8 @@ func newService(
 		store:      store,
 		operations: newOperations(observationCtx),
 	}
+}
+
+func (s *Service) SplitIntoEmbeddableChunks(ctx context.Context, text string, fileName string, splitOptions SplitOptions) ([]EmbeddableChunk, error) {
+	return SplitIntoEmbeddableChunks(text, fileName, splitOptions), nil
 }

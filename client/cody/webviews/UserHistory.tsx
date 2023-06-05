@@ -1,94 +1,89 @@
 /* eslint-disable react/no-array-index-key */
+
+import { useCallback } from 'react'
+
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
-import './UserHistory.css'
+import { ChatHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { useCallback, useState } from 'react'
+import { View } from './NavBar'
+import { VSCodeWrapper } from './utils/VSCodeApi'
 
-import classNames from 'classnames'
-
-import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
-import { ContextFiles } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
-
-import { FileLink } from './FileLink'
-import { vscodeAPI } from './utils/VSCodeApi'
-
-import styles from './Chat.module.css'
+import chatStyles from './Chat.module.css'
+import styles from './UserHistory.module.css'
 
 interface HistoryProps {
     userHistory: ChatHistory | null
     setUserHistory: (history: ChatHistory | null) => void
     setInputHistory: (inputHistory: string[] | []) => void
+    setView: (view: View | undefined) => void
+    vscodeAPI: VSCodeWrapper
 }
 
 export const UserHistory: React.FunctionComponent<React.PropsWithChildren<HistoryProps>> = ({
     userHistory,
     setUserHistory,
     setInputHistory,
+    setView,
+    vscodeAPI,
 }) => {
-    const [chatHistory, setChatHistory] = useState('')
-
     const onRemoveHistoryClick = useCallback(() => {
         if (userHistory) {
             vscodeAPI.postMessage({ command: 'removeHistory' })
-            setChatHistory('removed')
             setUserHistory(null)
             setInputHistory([])
         }
-    }, [setInputHistory, setUserHistory, userHistory])
+    }, [setInputHistory, setUserHistory, userHistory, vscodeAPI])
+
+    function restoreMetadata(chatID: string): void {
+        vscodeAPI.postMessage({ command: 'restoreHistory', chatID })
+        setView('chat')
+    }
 
     return (
-        <div className={styles.innerContainer}>
-            <div className={styles.nonTranscriptContainer}>
-                <div className={styles.bubbleContainer}>
-                    <div className="history-item-container">
-                        <h3>Remove Chat & Input History</h3>
+        <div className={chatStyles.innerContainer}>
+            <div className={chatStyles.nonTranscriptContainer}>
+                <div className={styles.headingContainer}>
+                    <h3>Chat History</h3>
+                    <div className={styles.clearButtonContainer}>
                         <VSCodeButton
-                            className="history-btn history-remove-btn"
+                            className={styles.clearButton}
                             type="button"
-                            appearance="secondary"
                             onClick={onRemoveHistoryClick}
-                            disabled={userHistory === null || chatHistory === 'removed'}
+                            disabled={userHistory === null}
                         >
-                            {userHistory === null || chatHistory === 'removed'
-                                ? 'Chat history is empty'
-                                : 'Remove all local history'}
+                            Clear History
                         </VSCodeButton>
-                        <h3>Local Chat History</h3>
                     </div>
-                    {chatHistory !== 'removed' &&
-                        userHistory &&
-                        [...Object.entries(userHistory)].reverse().map(chat => (
-                            <div key={chat[0]} className="history-item-container">
-                                <VSCodeButton
-                                    className="history-btn"
-                                    type="button"
-                                    onClick={() => setChatHistory(chatHistory === chat[0] ? '' : chat[0])}
-                                >
-                                    {chat[0]}
-                                </VSCodeButton>
-                                {chatHistory === chat[0] && (
-                                    <div className="history-convo-container">
-                                        {chat[1].map((message: ChatMessage, index: number) => (
-                                            <div
-                                                key={index}
-                                                className={classNames('history-bubble-container', styles.bubbleContent)}
-                                            >
-                                                {message.displayText && (
-                                                    <p dangerouslySetInnerHTML={{ __html: message.displayText }} />
-                                                )}
-                                                {message.contextFiles && message.contextFiles.length > 0 && (
-                                                    <ContextFiles
-                                                        contextFiles={message.contextFiles}
-                                                        fileLinkComponent={FileLink}
-                                                    />
-                                                )}
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        ))}
+                </div>
+                <div className={styles.itemsContainer}>
+                    {userHistory &&
+                        [...Object.entries(userHistory)]
+                            .sort(
+                                (a, b) =>
+                                    +new Date(b[1].lastInteractionTimestamp) - +new Date(a[1].lastInteractionTimestamp)
+                            )
+                            .map(chat => {
+                                const lastMessage =
+                                    chat[1].interactions[chat[1].interactions.length - 1].assistantMessage
+                                if (!lastMessage?.displayText) {
+                                    return null
+                                }
+
+                                return (
+                                    <VSCodeButton
+                                        key={chat[0]}
+                                        className={styles.itemButton}
+                                        onClick={() => restoreMetadata(chat[0])}
+                                        type="button"
+                                    >
+                                        <div className={styles.itemButtonInnerContainer}>
+                                            <div className={styles.itemDate}>{new Date(chat[0]).toLocaleString()}</div>
+                                            <div className={styles.itemLastMessage}>{lastMessage.displayText}</div>
+                                        </div>
+                                    </VSCodeButton>
+                                )
+                            })}
                 </div>
             </div>
         </div>

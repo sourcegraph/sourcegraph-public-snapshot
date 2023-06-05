@@ -32,7 +32,7 @@ func main() {
 		},
 		DefaultCommand: "generate",
 	}
-	if err := app.Run([]string{""}); err != nil {
+	if err := app.Run(os.Args); err != nil {
 		// Render in plain text for human readability
 		println(err.Error())
 		logger.Fatal("error encountered")

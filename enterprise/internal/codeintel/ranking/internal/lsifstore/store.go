@@ -12,6 +12,8 @@ import (
 )
 
 type Store interface {
+	WithTransaction(ctx context.Context, f func(tx Store) error) error
+
 	// Stream
 	InsertDefinitionsAndReferencesForDocument(ctx context.Context, upload shared.ExportedUpload, rankingGraphKey string, rankingBatchSize int, f func(ctx context.Context, upload shared.ExportedUpload, rankingBatchSize int, rankingGraphKey, path string, document *scip.Document) error) error
 }

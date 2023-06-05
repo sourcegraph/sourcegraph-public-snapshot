@@ -54,18 +54,6 @@ type AWSKMSEncryptionKey struct {
 	Type            string `json:"type"`
 }
 
-// ApiRatelimit description: Configuration for API rate limiting
-type ApiRatelimit struct {
-	// Enabled description: Whether API rate limiting is enabled
-	Enabled bool `json:"enabled"`
-	// Overrides description: An array of rate limit overrides
-	Overrides []*Overrides `json:"overrides,omitempty"`
-	// PerIP description: Limit granted per IP per hour, only applied to anonymous users
-	PerIP int `json:"perIP"`
-	// PerUser description: Limit granted per user per hour
-	PerUser int `json:"perUser"`
-}
-
 // App description: Configuration options for App only.
 type App struct {
 	// DotcomAuthToken description: Authentication token for Sourcegraph.com. If present, indicates that the App account is connected to a Sourcegraph.com account.
@@ -90,7 +78,7 @@ type AuditLog struct {
 	GraphQL bool `json:"graphQL"`
 	// InternalTraffic description: Capture security events performed by the internal traffic (adds significant noise).
 	InternalTraffic bool `json:"internalTraffic"`
-	// SeverityLevel description: Severity logging level for the audit log.
+	// SeverityLevel description: DEPRECATED: No effect, audit logs are always set to SRC_LOG_LEVEL
 	SeverityLevel string `json:"severityLevel,omitempty"`
 }
 
@@ -531,6 +519,8 @@ type ChangesetTemplate struct {
 	Branch string `json:"branch"`
 	// Commit description: The Git commit to create with the changes.
 	Commit ExpandedGitCommitDescription `json:"commit"`
+	// Fork description: Whether to publish the changeset to a fork of the target repository. If omitted, the changeset will be published to a branch directly on the target repository, unless the global `batches.enforceFork` setting is enabled. If set, this property will override any global setting.
+	Fork bool `json:"fork,omitempty"`
 	// Published description: Whether to publish the changeset. An unpublished changeset can be previewed on Sourcegraph by any person who can view the batch change, but its commit, branch, and pull request aren't created on the code host. A published changeset results in a commit, branch, and pull request being created on the code host. If omitted, the publication state is controlled from the Batch Changes UI.
 	Published any `json:"published,omitempty"`
 	// Title description: The title of the changeset.
@@ -552,6 +542,16 @@ type CloudKMSEncryptionKey struct {
 	Type            string `json:"type"`
 }
 
+// CodyGateway description: Configuration related to the Cody Gateway service management. This should only be used on sourcegraph.com.
+type CodyGateway struct {
+	// BigQueryDataset description: The dataset to pull BigQuery Cody Gateway related events from.
+	BigQueryDataset string `json:"bigQueryDataset,omitempty"`
+	// BigQueryGoogleProjectID description: The project ID to pull BigQuery Cody Gatewayrelated events from.
+	BigQueryGoogleProjectID string `json:"bigQueryGoogleProjectID,omitempty"`
+	// BigQueryTable description: The table in the dataset to pull BigQuery Cody Gateway related events from.
+	BigQueryTable string `json:"bigQueryTable,omitempty"`
+}
+
 // Completions description: Configuration for the completions service.
 type Completions struct {
 	// AccessToken description: The access token used to authenticate with the external completions provider.
@@ -562,8 +562,14 @@ type Completions struct {
 	CompletionModel string `json:"completionModel,omitempty"`
 	// Enabled description: Toggles whether completions are enabled.
 	Enabled bool `json:"enabled"`
+	// Endpoint description: The endpoint under which to reach the provider. Currently only used for provider types "sourcegraph", "openai" and "anthropic". The default values are "https://cody-gateway.sourcegraph.com", "https://api.openai.com/v1/chat/completions", and "https://api.anthropic.com/v1/complete" for Sourcegraph, OpenAI, and Anthropic, respectively.
+	Endpoint string `json:"endpoint,omitempty"`
 	// Model description: DEPRECATED. Use chatModel instead.
 	Model string `json:"model"`
+	// PerUserCodeCompletionsDailyLimit description: If > 0, enables the maximum number of code completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.
+	PerUserCodeCompletionsDailyLimit int `json:"perUserCodeCompletionsDailyLimit,omitempty"`
+	// PerUserDailyLimit description: If > 0, enables the maximum number of completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.
+	PerUserDailyLimit int `json:"perUserDailyLimit,omitempty"`
 	// Provider description: The external completions provider.
 	Provider string `json:"provider"`
 }
@@ -586,6 +592,8 @@ type DebugLog struct {
 type Dotcom struct {
 	// AppNotifications description: Notifications to display in the Sourcegraph app.
 	AppNotifications []*AppNotifications `json:"app.notifications,omitempty"`
+	// CodyGateway description: Configuration related to the Cody Gateway service management. This should only be used on sourcegraph.com.
+	CodyGateway *CodyGateway `json:"codyGateway,omitempty"`
 	// SlackLicenseExpirationWebhook description: Slack webhook for upcoming license expiration notifications.
 	SlackLicenseExpirationWebhook string `json:"slackLicenseExpirationWebhook,omitempty"`
 	// SrcCliVersionCache description: Configuration related to the src-cli version cache. This should only be used on sourcegraph.com.
@@ -618,6 +626,14 @@ type Embeddings struct {
 	Enabled bool `json:"enabled"`
 	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
 	ExcludedFilePathPatterns []string `json:"excludedFilePathPatterns,omitempty"`
+	// Incremental description: Experimental: Whether to generate embeddings incrementally. If true, only files that have changed since the last run will be processed.
+	Incremental bool `json:"incremental,omitempty"`
+	// MaxCodeEmbeddingsPerRepo description: The maximum number of embeddings for code files to generate per repo
+	MaxCodeEmbeddingsPerRepo int `json:"maxCodeEmbeddingsPerRepo,omitempty"`
+	// MaxTextEmbeddingsPerRepo description: The maximum number of embeddings for text files to generate per repo
+	MaxTextEmbeddingsPerRepo int `json:"maxTextEmbeddingsPerRepo,omitempty"`
+	// MinimumInterval description: The time to wait between runs. Valid time units are "s", "m", "h". Example values: "30s", "5m", "1h".
+	MinimumInterval string `json:"minimumInterval,omitempty"`
 	// Model description: The model used for embedding.
 	Model string `json:"model"`
 	// Url description: The url to the external embedding API service.
@@ -676,6 +692,7 @@ type EncryptionKeys struct {
 	EnableCache            bool           `json:"enableCache,omitempty"`
 	ExecutorSecretKey      *EncryptionKey `json:"executorSecretKey,omitempty"`
 	ExternalServiceKey     *EncryptionKey `json:"externalServiceKey,omitempty"`
+	GitHubAppKey           *EncryptionKey `json:"gitHubAppKey,omitempty"`
 	OutboundWebhookKey     *EncryptionKey `json:"outboundWebhookKey,omitempty"`
 	UserExternalAccountKey *EncryptionKey `json:"userExternalAccountKey,omitempty"`
 	WebhookKey             *EncryptionKey `json:"webhookKey,omitempty"`
@@ -728,6 +745,8 @@ type ExcludedGitLabProject struct {
 	Id int `json:"id,omitempty"`
 	// Name description: The name of a GitLab project ("group/name") to exclude from mirroring.
 	Name string `json:"name,omitempty"`
+	// Pattern description: Regular expression which matches against the name of a GitLab project ("group/name").
+	Pattern string `json:"pattern,omitempty"`
 }
 type ExcludedGitoliteRepo struct {
 	// Name description: The name of a Gitolite repo ("my-repo") to exclude from mirroring.
@@ -988,7 +1007,7 @@ type GitCommitDescription struct {
 	Version int `json:"version,omitempty"`
 }
 
-// GitHubApp description: The config options for Sourcegraph GitHub App.
+// GitHubApp description: DEPRECATED: The config options for Sourcegraph GitHub App.
 type GitHubApp struct {
 	// AppID description: The app ID of the GitHub App for Sourcegraph.
 	AppID string `json:"appID,omitempty"`
@@ -1000,6 +1019,16 @@ type GitHubApp struct {
 	PrivateKey string `json:"privateKey,omitempty"`
 	// Slug description: The slug of the GitHub App for Sourcegraph.
 	Slug string `json:"slug,omitempty"`
+}
+
+// GitHubAppDetails description: If non-null, this is a GitHub App connection with some additional properties.
+type GitHubAppDetails struct {
+	// AppID description: The ID of the GitHub App.
+	AppID int `json:"appID,omitempty"`
+	// BaseURL description: The base URL of the GitHub App.
+	BaseURL string `json:"baseURL,omitempty"`
+	// InstallationID description: The installation ID of this connection.
+	InstallationID int `json:"installationID,omitempty"`
 }
 
 // GitHubAuthProvider description: Configures the GitHub (or GitHub Enterprise) OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your GitHub instance: https://developer.github.com/apps/building-oauth-apps/creating-an-oauth-app/. When a user signs into Sourcegraph or links their GitHub account to their existing Sourcegraph account, GitHub will prompt the user for the repo scope.
@@ -1047,13 +1076,15 @@ type GitHubConnection struct {
 	//
 	// Note: ID is the GitHub GraphQL ID, not the GitHub database ID. eg: "curl https://api.github.com/repos/vuejs/vue | jq .node_id"
 	Exclude []*ExcludedGitHubRepo `json:"exclude,omitempty"`
+	// GitHubAppDetails description: If non-null, this is a GitHub App connection with some additional properties.
+	GitHubAppDetails *GitHubAppDetails `json:"gitHubAppDetails,omitempty"`
 	// GitURLType description: The type of Git URLs to use for cloning and fetching Git repositories on this GitHub instance.
 	//
 	// If "http", Sourcegraph will access GitHub repositories using Git URLs of the form http(s)://github.com/myteam/myproject.git (using https: if the GitHub instance uses HTTPS).
 	//
 	// If "ssh", Sourcegraph will access GitHub repositories using Git URLs of the form git@github.com:myteam/myproject.git. See the documentation for how to provide SSH private keys and known_hosts: https://docs.sourcegraph.com/admin/repo/auth#repositories-that-need-http-s-or-ssh-authentication.
 	GitURLType string `json:"gitURLType,omitempty"`
-	// GithubAppInstallationID description: The installation ID of the GitHub App.
+	// GithubAppInstallationID description: DEPRECATED: The installation ID of the GitHub App.
 	GithubAppInstallationID string `json:"githubAppInstallationID,omitempty"`
 	// InitialRepositoryEnablement description: Deprecated and ignored field which will be removed entirely in the next release. GitHub repositories can no longer be enabled or disabled explicitly. Configure repositories to be mirrored via "repos", "exclude" and "repositoryQuery" instead.
 	InitialRepositoryEnablement bool `json:"initialRepositoryEnablement,omitempty"`
@@ -1337,6 +1368,8 @@ type JVMPackagesConnection struct {
 type Log struct {
 	// AuditLog description: EXPERIMENTAL: Configuration for audit logging (specially formatted log entries for tracking sensitive events)
 	AuditLog *AuditLog `json:"auditLog,omitempty"`
+	// SecurityEventLog description: EXPERIMENTAL: Configuration for security event logging
+	SecurityEventLog *SecurityEventLog `json:"securityEventLog,omitempty"`
 	// Sentry description: Configuration for Sentry
 	Sentry *Sentry `json:"sentry,omitempty"`
 }
@@ -1630,12 +1663,6 @@ type OutputVariable struct {
 	Format string `json:"format,omitempty"`
 	// Value description: The value of the output, which can be a template string.
 	Value string `json:"value"`
-}
-type Overrides struct {
-	// Key description: The key that we want to override for example a username
-	Key string `json:"key,omitempty"`
-	// Limit description: The limit per hour, 'unlimited' or 'blocked'
-	Limit any `json:"limit,omitempty"`
 }
 
 // PagureConnection description: Configuration for a connection to Pagure.
@@ -1961,6 +1988,12 @@ type SearchScope struct {
 	Value string `json:"value"`
 }
 
+// SecurityEventLog description: EXPERIMENTAL: Configuration for security event logging
+type SecurityEventLog struct {
+	// Location description: Where to output the security event log [none, auditlog, database, all] where auditlog is the default logging to stdout with the specified audit log format
+	Location string `json:"location,omitempty"`
+}
+
 // Sentry description: Configuration for Sentry
 type Sentry struct {
 	// BackendDSN description: Sentry Data Source Name (DSN) for backend errors. Per the Sentry docs (https://docs.sentry.io/quickstart/#about-the-dsn), it should match the following pattern: '{PROTOCOL}://{PUBLIC_KEY}@{HOST}/{PATH}{PROJECT_ID}'.
@@ -2025,6 +2058,8 @@ type Settings struct {
 	Notices []*Notice `json:"notices,omitempty"`
 	// OpenInEditor description: Group of settings related to opening files in an editor.
 	OpenInEditor *SettingsOpenInEditor `json:"openInEditor,omitempty"`
+	// OrgsAllMembersBatchChangesAdmin description: If enabled, all members of the org will be treated as admins (e.g. can edit, apply, delete) for all batch changes created in that org.
+	OrgsAllMembersBatchChangesAdmin *bool `json:"orgs.allMembersBatchChangesAdmin,omitempty"`
 	// PerforceCodeHostToSwarmMap description: Key-value pairs of code host URLs to Swarm URLs. Keys should have no prefix and should not end with a slash, like "perforce.company.com:1666". Values should look like "https://swarm.company.com/", with a slash at the end.
 	PerforceCodeHostToSwarmMap map[string]string `json:"perforce.codeHostToSwarmMap,omitempty"`
 	// Quicklinks description: DEPRECATED: This setting will be removed in a future version of Sourcegraph.
@@ -2101,6 +2136,7 @@ func (v *Settings) UnmarshalJSON(data []byte) error {
 	delete(m, "motd")
 	delete(m, "notices")
 	delete(m, "openInEditor")
+	delete(m, "orgs.allMembersBatchChangesAdmin")
 	delete(m, "perforce.codeHostToSwarmMap")
 	delete(m, "quicklinks")
 	delete(m, "search.contextLines")
@@ -2135,8 +2171,6 @@ type SettingsExperimentalFeatures struct {
 	CodeInsightsRepoUI *string `json:"codeInsightsRepoUI,omitempty"`
 	// CodeMonitoringWebHooks description: Shows code monitor webhook and Slack webhook actions in the UI, allowing users to configure them.
 	CodeMonitoringWebHooks *bool `json:"codeMonitoringWebHooks,omitempty"`
-	// EnableCodeMirrorFileView description: Uses CodeMirror to display files. In this first iteration not all features of the current file view are available.
-	EnableCodeMirrorFileView *bool `json:"enableCodeMirrorFileView,omitempty"`
 	// EnableLazyBlobSyntaxHighlighting description: Fetch un-highlighted blob contents to render immediately, decorate with syntax highlighting once loaded.
 	EnableLazyBlobSyntaxHighlighting *bool `json:"enableLazyBlobSyntaxHighlighting,omitempty"`
 	// EnableLazyFileResultSyntaxHighlighting description: Fetch un-highlighted file result contents to render immediately, decorate with syntax highlighting once loaded.
@@ -2214,7 +2248,6 @@ func (v *SettingsExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "codeInsightsCompute")
 	delete(m, "codeInsightsRepoUI")
 	delete(m, "codeMonitoringWebHooks")
-	delete(m, "enableCodeMirrorFileView")
 	delete(m, "enableLazyBlobSyntaxHighlighting")
 	delete(m, "enableLazyFileResultSyntaxHighlighting")
 	delete(m, "enableSearchFilePrefetch")
@@ -2275,8 +2308,6 @@ type SettingsOpenInEditor struct {
 type SiteConfiguration struct {
 	// RedirectUnsupportedBrowser description: Prompts user to install new browser for non es5
 	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser,omitempty"`
-	// ApiRatelimit description: Configuration for API rate limiting
-	ApiRatelimit *ApiRatelimit `json:"api.ratelimit,omitempty"`
 	// App description: Configuration options for App only.
 	App *App `json:"app,omitempty"`
 	// AuthAccessRequest description: The config options for access requests
@@ -2323,6 +2354,8 @@ type SiteConfiguration struct {
 	AuthzEnforceForSiteAdmins bool `json:"authz.enforceForSiteAdmins,omitempty"`
 	// AuthzRefreshInterval description: Time interval (in seconds) of how often each component picks up authorization changes in external services.
 	AuthzRefreshInterval int `json:"authz.refreshInterval,omitempty"`
+	// BatchChangesAutoDeleteBranch description: Automatically delete branches created for Batch Changes changesets when the changeset is merged or closed, for supported code hosts. Overrides any setting on the repository on the code host itself.
+	BatchChangesAutoDeleteBranch bool `json:"batchChanges.autoDeleteBranch,omitempty"`
 	// BatchChangesChangesetsRetention description: How long changesets will be retained after they have been detached from a batch change.
 	BatchChangesChangesetsRetention string `json:"batchChanges.changesetsRetention,omitempty"`
 	// BatchChangesDisableWebhooksWarning description: Hides Batch Changes warnings about webhooks not being configured.
@@ -2349,6 +2382,8 @@ type SiteConfiguration struct {
 	CodeIntelAutoIndexingIndexerMap map[string]string `json:"codeIntelAutoIndexing.indexerMap,omitempty"`
 	// CodeIntelAutoIndexingPolicyRepositoryMatchLimit description: The maximum number of repositories to which a single auto-indexing policy can apply. Default is -1, which is unlimited.
 	CodeIntelAutoIndexingPolicyRepositoryMatchLimit *int `json:"codeIntelAutoIndexing.policyRepositoryMatchLimit,omitempty"`
+	// CodeIntelRankingDocumentReferenceCountsCronExpression description: A cron expression indicating when to run the document reference counts graph reduction job.
+	CodeIntelRankingDocumentReferenceCountsCronExpression *string `json:"codeIntelRanking.documentReferenceCountsCronExpression,omitempty"`
 	// CodeIntelRankingDocumentReferenceCountsDerivativeGraphKeyPrefix description: An arbitrary identifier used to group calculated rankings from SCIP data (excluding the SCIP export).
 	CodeIntelRankingDocumentReferenceCountsDerivativeGraphKeyPrefix string `json:"codeIntelRanking.documentReferenceCountsDerivativeGraphKeyPrefix,omitempty"`
 	// CodeIntelRankingDocumentReferenceCountsEnabled description: Enables/disables the document reference counts feature. Currently experimental.
@@ -2399,6 +2434,8 @@ type SiteConfiguration struct {
 	ExecutorsBatcheshelperImageTag string `json:"executors.batcheshelperImageTag,omitempty"`
 	// ExecutorsFrontendURL description: The URL where Sourcegraph executors can reach the Sourcegraph instance. If not set, defaults to externalURL. URLs with a path (other than `/`) are not allowed. For Docker executors, the special hostname `host.docker.internal` can be used to refer to the Docker container's host.
 	ExecutorsFrontendURL string `json:"executors.frontendURL,omitempty"`
+	// ExecutorsLsifGoImage description: The tag to use for the lsif-go image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.
+	ExecutorsLsifGoImage string `json:"executors.lsifGoImage,omitempty"`
 	// ExecutorsSrcCLIImage description: The image to use for src-cli in executors. Use this value to pull from a custom image registry.
 	ExecutorsSrcCLIImage string `json:"executors.srcCLIImage,omitempty"`
 	// ExecutorsSrcCLIImageTag description: The tag to use for the src-cli image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.
@@ -2412,7 +2449,7 @@ type SiteConfiguration struct {
 	ExternalURL string `json:"externalURL,omitempty"`
 	// GitCloneURLToRepositoryName description: JSON array of configuration that maps from Git clone URL to repository name. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.
 	GitCloneURLToRepositoryName []*CloneURLToRepositoryName `json:"git.cloneURLToRepositoryName,omitempty"`
-	// GitHubApp description: The config options for Sourcegraph GitHub App.
+	// GitHubApp description: DEPRECATED: The config options for Sourcegraph GitHub App.
 	GitHubApp *GitHubApp `json:"gitHubApp,omitempty"`
 	// GitLongCommandTimeout description: Maximum number of seconds that a long Git command (e.g. clone or remote update) is allowed to execute. The default is 3600 seconds, or 1 hour.
 	GitLongCommandTimeout int `json:"gitLongCommandTimeout,omitempty"`
@@ -2424,13 +2461,13 @@ type SiteConfiguration struct {
 	GitRecorder *GitRecorder `json:"gitRecorder,omitempty"`
 	// GitUpdateInterval description: JSON array of repo name patterns and update intervals. If a repo matches a pattern, the associated interval will be used. If it matches no patterns a default backoff heuristic will be used. Pattern matches are attempted in the order they are provided.
 	GitUpdateInterval []*UpdateIntervalRule `json:"gitUpdateInterval,omitempty"`
-	// HtmlBodyBottom description: HTML to inject at the bottom of the `<body>` element on each page, for analytics scripts
+	// HtmlBodyBottom description: HTML to inject at the bottom of the `<body>` element on each page, for analytics scripts. Requires env var ENABLE_INJECT_HTML=true.
 	HtmlBodyBottom string `json:"htmlBodyBottom,omitempty"`
-	// HtmlBodyTop description: HTML to inject at the top of the `<body>` element on each page, for analytics scripts
+	// HtmlBodyTop description: HTML to inject at the top of the `<body>` element on each page, for analytics scripts. Requires env var ENABLE_INJECT_HTML=true.
 	HtmlBodyTop string `json:"htmlBodyTop,omitempty"`
-	// HtmlHeadBottom description: HTML to inject at the bottom of the `<head>` element on each page, for analytics scripts
+	// HtmlHeadBottom description: HTML to inject at the bottom of the `<head>` element on each page, for analytics scripts. Requires env var ENABLE_INJECT_HTML=true.
 	HtmlHeadBottom string `json:"htmlHeadBottom,omitempty"`
-	// HtmlHeadTop description: HTML to inject at the top of the `<head>` element on each page, for analytics scripts
+	// HtmlHeadTop description: HTML to inject at the top of the `<head>` element on each page, for analytics scripts. Requires env var ENABLE_INJECT_HTML=true.
 	HtmlHeadTop string `json:"htmlHeadTop,omitempty"`
 	// InsightsAggregationsBufferSize description: The size of the buffer for aggregations ran in-memory. A higher limit might strain memory for the frontend
 	InsightsAggregationsBufferSize int `json:"insights.aggregations.bufferSize,omitempty"`
@@ -2482,6 +2519,12 @@ type SiteConfiguration struct {
 	OrganizationInvitations *OrganizationInvitations `json:"organizationInvitations,omitempty"`
 	// OutboundRequestLogLimit description: The maximum number of outbound requests to retain. This is a global limit across all outbound requests. If the limit is exceeded, older items will be deleted. If the limit is 0, no outbound requests are logged.
 	OutboundRequestLogLimit int `json:"outboundRequestLogLimit,omitempty"`
+	// OwnBackgroundRepoIndexConcurrencyLimit description: The max number of concurrent Own jobs that will run per worker node.
+	OwnBackgroundRepoIndexConcurrencyLimit int `json:"own.background.repoIndexConcurrencyLimit,omitempty"`
+	// OwnBackgroundRepoIndexRateBurstLimit description: The maximum per second burst of repositories for Own jobs per worker node. Generally this value should not be less than the max concurrency.
+	OwnBackgroundRepoIndexRateBurstLimit int `json:"own.background.repoIndexRateBurstLimit,omitempty"`
+	// OwnBackgroundRepoIndexRateLimit description: The maximum per second rate of repositories for Own jobs per worker node.
+	OwnBackgroundRepoIndexRateLimit int `json:"own.background.repoIndexRateLimit,omitempty"`
 	// OwnBestEffortTeamMatching description: The Own service will attempt to match a Team by the last part of its handle if it contains a slash and no match is found for its full handle.
 	OwnBestEffortTeamMatching *bool `json:"own.bestEffortTeamMatching,omitempty"`
 	// ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
@@ -2491,9 +2534,9 @@ type SiteConfiguration struct {
 	// PermissionsSyncJobsHistorySize description: The number of last repo/user permission jobs to keep for history.
 	PermissionsSyncJobsHistorySize *int `json:"permissions.syncJobsHistorySize,omitempty"`
 	// PermissionsSyncOldestRepos description: Number of repo permissions to schedule for syncing in single scheduler iteration.
-	PermissionsSyncOldestRepos int `json:"permissions.syncOldestRepos,omitempty"`
+	PermissionsSyncOldestRepos *int `json:"permissions.syncOldestRepos,omitempty"`
 	// PermissionsSyncOldestUsers description: Number of user permissions to schedule for syncing in single scheduler iteration.
-	PermissionsSyncOldestUsers int `json:"permissions.syncOldestUsers,omitempty"`
+	PermissionsSyncOldestUsers *int `json:"permissions.syncOldestUsers,omitempty"`
 	// PermissionsSyncReposBackoffSeconds description: Don't sync a repo's permissions if it has synced within the last n seconds.
 	PermissionsSyncReposBackoffSeconds int `json:"permissions.syncReposBackoffSeconds,omitempty"`
 	// PermissionsSyncScheduleInterval description: Time interval (in seconds) of how often each component picks up authorization changes in external services.
@@ -2564,7 +2607,6 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 		return err
 	}
 	delete(m, "RedirectUnsupportedBrowser")
-	delete(m, "api.ratelimit")
 	delete(m, "app")
 	delete(m, "auth.accessRequest")
 	delete(m, "auth.accessTokens")
@@ -2582,6 +2624,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "auth.userOrgMap")
 	delete(m, "authz.enforceForSiteAdmins")
 	delete(m, "authz.refreshInterval")
+	delete(m, "batchChanges.autoDeleteBranch")
 	delete(m, "batchChanges.changesetsRetention")
 	delete(m, "batchChanges.disableWebhooksWarning")
 	delete(m, "batchChanges.enabled")
@@ -2594,6 +2637,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "codeIntelAutoIndexing.enabled")
 	delete(m, "codeIntelAutoIndexing.indexerMap")
 	delete(m, "codeIntelAutoIndexing.policyRepositoryMatchLimit")
+	delete(m, "codeIntelRanking.documentReferenceCountsCronExpression")
 	delete(m, "codeIntelRanking.documentReferenceCountsDerivativeGraphKeyPrefix")
 	delete(m, "codeIntelRanking.documentReferenceCountsEnabled")
 	delete(m, "codeIntelRanking.documentReferenceCountsGraphKey")
@@ -2618,6 +2662,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "executors.batcheshelperImage")
 	delete(m, "executors.batcheshelperImageTag")
 	delete(m, "executors.frontendURL")
+	delete(m, "executors.lsifGoImage")
 	delete(m, "executors.srcCLIImage")
 	delete(m, "executors.srcCLIImageTag")
 	delete(m, "experimentalFeatures")
@@ -2660,6 +2705,9 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "observability.tracing")
 	delete(m, "organizationInvitations")
 	delete(m, "outboundRequestLogLimit")
+	delete(m, "own.background.repoIndexConcurrencyLimit")
+	delete(m, "own.background.repoIndexRateBurstLimit")
+	delete(m, "own.background.repoIndexRateLimit")
 	delete(m, "own.bestEffortTeamMatching")
 	delete(m, "parentSourcegraph")
 	delete(m, "permissions.syncJobCleanupInterval")
@@ -2729,10 +2777,18 @@ type SubRepoPermissions struct {
 	UserCacheTTLSeconds int `json:"userCacheTTLSeconds,omitempty"`
 }
 
+// SymbolConfiguration description: Configure symbol generation
+type SymbolConfiguration struct {
+	// Engine description: Manually specify overrides for symbol generation engine per language
+	Engine map[string]string `json:"engine"`
+}
+
 // SyntaxHighlighting description: Syntax highlighting configuration
 type SyntaxHighlighting struct {
 	Engine    SyntaxHighlightingEngine   `json:"engine"`
 	Languages SyntaxHighlightingLanguage `json:"languages"`
+	// Symbols description: Configure symbol generation
+	Symbols SymbolConfiguration `json:"symbols"`
 }
 type SyntaxHighlightingEngine struct {
 	// Default description: The default syntax highlighting engine to use

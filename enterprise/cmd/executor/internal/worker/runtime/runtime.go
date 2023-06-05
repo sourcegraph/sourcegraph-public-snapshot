@@ -26,6 +26,7 @@ type Runtime interface {
 	NewRunner(ctx context.Context, logger command.Logger, options RunnerOptions) (runner.Runner, error)
 	// NewRunnerSpecs builds and returns the commands that the runner will execute.
 	NewRunnerSpecs(ws workspace.Workspace, steps []types.DockerStep) ([]runner.Spec, error)
+	//CommandKey() string
 }
 
 // RunnerOptions are the options to create a runner.
@@ -100,8 +101,9 @@ func New(
 			return nil, err
 		}
 		kubeCmd := &command.KubernetesCommand{
-			Logger:    logger,
-			Clientset: clientset,
+			Logger:     logger,
+			Clientset:  clientset,
+			Operations: ops,
 		}
 		logger.Info("using runtime 'kubernetes'")
 		return &kubernetesRuntime{
@@ -147,3 +149,14 @@ const (
 	NameKubernetes  Name = "kubernetes"
 	NameShell       Name = "shell"
 )
+
+// CommandKey returns the fully formatted key for the command.
+func CommandKey(name Name, rawStepKey string, index int) string {
+	switch name {
+	case NameKubernetes:
+		return kubernetesKey(rawStepKey, index)
+	default:
+		// shell, docker, and firecracker all use the same key format.
+		return dockerKey(rawStepKey, index)
+	}
+}

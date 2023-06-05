@@ -32,7 +32,7 @@ export const ProgressBar: FC<{}> = () => {
             },
             {
                 value: Math.max(data?.repositoryStats.notCloned ?? 0, 0),
-                description: 'Not cloned',
+                description: 'Queued',
             },
             {
                 value: Math.max(data?.repositoryStats.cloning ?? 0, 0),

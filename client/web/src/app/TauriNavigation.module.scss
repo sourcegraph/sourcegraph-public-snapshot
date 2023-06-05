@@ -1,0 +1,17 @@
+.list {
+    gap: 0.25rem;
+    margin: 0 -0.5rem;
+}
+
+.button {
+    padding: 0 0.25rem;
+
+    &:focus-visible:not(:disabled):not(.disabled):not([aria-disabled='true']) {
+        box-shadow: none; // This prevents a double outline on focus, since the inner icon will have its own outline.
+    }
+
+    &[aria-disabled='true'] {
+        opacity: 0.4;
+        cursor: default; // Don't use the "disabled" cursor, it's too prominent.
+    }
+}

@@ -5,8 +5,10 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -15,23 +17,23 @@ import (
 
 func NewCommitGraphUpdater(
 	store store.Store,
-	locker Locker,
 	gitserverClient gitserver.Client,
 	config *Config,
 ) goroutine.BackgroundRoutine {
 	updater := &commitGraphUpdater{
 		store:           store,
-		locker:          locker,
+		locker:          locker.NewWith(store.Handle(), "codeintel"),
 		gitserverClient: gitserverClient,
 	}
 
 	return goroutine.NewPeriodicGoroutine(
-		context.Background(),
-		"codeintel.commitgraph-updater", "updates the visibility commit graph for dirty repos",
-		config.Interval,
+		actor.WithInternalActor(context.Background()),
 		goroutine.HandlerFunc(func(ctx context.Context) error {
 			return updater.UpdateAllDirtyCommitGraphs(ctx, config.MaxAgeForNonStaleBranches, config.MaxAgeForNonStaleTags)
 		}),
+		goroutine.WithName("codeintel.commitgraph-updater"),
+		goroutine.WithDescription("updates the visibility commit graph for dirty repos"),
+		goroutine.WithInterval(config.Interval),
 	)
 }
 

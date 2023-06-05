@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -73,8 +73,8 @@ func createSiteCredentialQuery(ctx context.Context, c *btypes.SiteCredential, ke
 }
 
 func (s *Store) DeleteSiteCredential(ctx context.Context, id int64) (err error) {
-	ctx, _, endObservation := s.operations.deleteSiteCredential.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(id)),
+	ctx, _, endObservation := s.operations.deleteSiteCredential.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(id)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -113,8 +113,8 @@ type GetSiteCredentialOpts struct {
 }
 
 func (s *Store) GetSiteCredential(ctx context.Context, opts GetSiteCredentialOpts) (sc *btypes.SiteCredential, err error) {
-	ctx, _, endObservation := s.operations.getSiteCredential.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(opts.ID)),
+	ctx, _, endObservation := s.operations.getSiteCredential.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(opts.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -214,8 +214,8 @@ func listSiteCredentialsQuery(opts ListSiteCredentialsOpts) *sqlf.Query {
 }
 
 func (s *Store) UpdateSiteCredential(ctx context.Context, c *btypes.SiteCredential) (err error) {
-	ctx, _, endObservation := s.operations.updateSiteCredential.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(c.ID)),
+	ctx, _, endObservation := s.operations.updateSiteCredential.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(c.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
 

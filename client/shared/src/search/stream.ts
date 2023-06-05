@@ -153,7 +153,7 @@ export interface RepositoryMatch {
     private?: boolean
     branches?: string[]
     descriptionMatches?: Range[]
-    keyValuePairs?: Record<string, string>
+    metadata?: Record<string, string | undefined>
 }
 
 export type OwnerMatch = PersonMatch | TeamMatch
@@ -472,10 +472,9 @@ export interface StreamSearchOptions {
     featureOverrides?: string[]
     searchMode?: SearchMode
     sourcegraphURL?: string
-    decorationKinds?: string[]
-    decorationContextLines?: number
     displayLimit?: number
     chunkMatches?: boolean
+    enableRepositoryMetadata?: boolean
 }
 
 function initiateSearchStream(
@@ -486,8 +485,6 @@ function initiateSearchStream(
         caseSensitive,
         trace,
         featureOverrides,
-        decorationKinds,
-        decorationContextLines,
         searchMode = SearchMode.Precise,
         displayLimit = 1500,
         sourcegraphURL = '',
@@ -503,9 +500,6 @@ function initiateSearchStream(
             ['v', version],
             ['t', patternType as string],
             ['sm', searchMode.toString()],
-            ['dl', '0'],
-            ['dk', (decorationKinds || ['html']).join('|')],
-            ['dc', (decorationContextLines || '1').toString()],
             ['display', displayLimit.toString()],
             ['cm', chunkMatches ? 't' : 'f'],
         ]

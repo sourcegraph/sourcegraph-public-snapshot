@@ -52,10 +52,10 @@ export const ExternalServicesPage: FC<Props> = ({
         <Navigate to="/site-admin/external-services/new" replace={true} />
     ) : (
         <div className="site-admin-external-services-page">
-            <PageTitle title="Manage code hosts" />
+            <PageTitle title="Code host connections" />
             <PageHeader
-                path={[{ text: 'Manage code hosts' }]}
-                description="Manage code host connections to sync repositories."
+                path={[{ text: 'Code host connections' }]}
+                description="Code host connections to sync repositories."
                 headingElement="h2"
                 actions={
                     <>
@@ -71,7 +71,7 @@ export const ExternalServicesPage: FC<Props> = ({
                             as={Link}
                             disabled={editingDisabled}
                         >
-                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Add code host
+                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Add connection
                         </ButtonLink>
                     </>
                 }
@@ -85,7 +85,7 @@ export const ExternalServicesPage: FC<Props> = ({
                 <ConnectionContainer>
                     {error && <ConnectionError errors={[error.message]} />}
                     {loading && !connection && <ConnectionLoading />}
-                    <ConnectionList as="ul" className="list-group" aria-label="CodeHosts">
+                    <ConnectionList as="ul" className="list-group" aria-label="Code Host Connections">
                         {connection?.nodes?.map(node => (
                             <ExternalServiceNode key={node.id} node={node} editingDisabled={editingDisabled} />
                         ))}
@@ -97,8 +97,8 @@ export const ExternalServicesPage: FC<Props> = ({
                                 first={connection.totalCount ?? 0}
                                 centered={true}
                                 connection={connection}
-                                noun="code host"
-                                pluralNoun="code hosts"
+                                noun="code host connection"
+                                pluralNoun="code host connections"
                                 hasNextPage={hasNextPage}
                             />
                             {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}

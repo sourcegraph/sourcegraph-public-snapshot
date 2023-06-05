@@ -62,7 +62,7 @@ func TestIsContextRequiredForChatQuery(t *testing.T) {
 
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
-			getQueryEmbedding := func(query string) ([]float32, error) {
+			getQueryEmbedding := func(_ context.Context, query string) ([]float32, error) {
 				return tt.embedding, tt.embeddingErr
 			}
 

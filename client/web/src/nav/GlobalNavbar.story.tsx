@@ -1,12 +1,14 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { updateJSContextBatchChangesLicense } from '@sourcegraph/shared/src/testing/batches'
 import {
     mockFetchSearchContexts,
     mockGetUserSearchContextNamespaces,
 } from '@sourcegraph/shared/src/testing/searchContexts/testHelpers'
 import { Grid, H3 } from '@sourcegraph/wildcard'
 
+import { HistoryStack } from '../app/useHistoryStack'
 import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
 
@@ -38,6 +40,7 @@ const defaultProps: GlobalNavbarProps = {
     codeMonitoringEnabled: true,
     ownEnabled: true,
     showFeedbackModal: () => undefined,
+    historyStack: {} as HistoryStack,
 }
 
 const allNavItemsProps: Partial<GlobalNavbarProps> = {
@@ -56,15 +59,19 @@ const allAuthenticatedNavItemsProps: Partial<GlobalNavbarProps> = {
     } as AuthenticatedUser,
 }
 
-const decorator: DecoratorFn = Story => (
-    <WebStory>
-        {() => (
-            <div className="mt-3">
-                <Story args={defaultProps} />
-            </div>
-        )}
-    </WebStory>
-)
+const decorator: DecoratorFn = Story => {
+    updateJSContextBatchChangesLicense('full')
+
+    return (
+        <WebStory>
+            {() => (
+                <div className="mt-3">
+                    <Story args={defaultProps} />
+                </div>
+            )}
+        </WebStory>
+    )
+}
 
 const config: Meta = {
     title: 'web/nav/GlobalNav',

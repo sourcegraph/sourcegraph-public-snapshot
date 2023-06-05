@@ -10,6 +10,12 @@ Sourcegraph App is a single-binary distribution of Sourcegraph that runs on your
 sg start app
 ```
 
+If your are running app on a fresh database instance you also have to perform the following steps:
+
+- After opening the web app you will be directed to `/sign-in`, NOT the local repo setup step that is shown in production.
+- Select to sign up with a new user account (the link following the log in options).
+- Give this user account site admin privileges by running `psql -h ~/.sourcegraph-psql -U sourcegraph sourcegraph -c 'update users set site_admin=true'`
+
 ## Usage
 
 Sourcegraph App is in alpha (only for internal use at Sourcegraph).

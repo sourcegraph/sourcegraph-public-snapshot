@@ -52,4 +52,4 @@
 }
 ```
 
-> NOTE: Optional, but recommended: [add automatic provisioning of users with SCIM](../../scim). 
+> NOTE: Optional, but recommended: [add automatic provisioning of users with SCIM](../../scim.md). 

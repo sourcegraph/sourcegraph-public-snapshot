@@ -1,4 +1,6 @@
-import React from 'react'
+import React, { useRef } from 'react'
+
+import { noop } from 'lodash'
 
 import { Chat as ChatUI, ChatUISubmitButtonProps, ChatUITextAreaProps } from '@sourcegraph/cody-ui/src/Chat'
 import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
@@ -10,7 +12,11 @@ import styles from './Chat.module.css'
 export const Chat: React.FunctionComponent<
     Omit<
         React.ComponentPropsWithoutRef<typeof ChatUI>,
-        'textAreaComponent' | 'submitButtonComponent' | 'fileLinkComponent'
+        | 'textAreaComponent'
+        | 'submitButtonComponent'
+        | 'fileLinkComponent'
+        | 'messageBeingEdited'
+        | 'setMessageBeingEdited'
     >
 > = ({
     messageInProgress,
@@ -23,6 +29,8 @@ export const Chat: React.FunctionComponent<
     onSubmit,
 }) => (
     <ChatUI
+        messageBeingEdited={false}
+        setMessageBeingEdited={noop}
         messageInProgress={messageInProgress}
         transcript={transcript}
         contextStatus={contextStatus}
@@ -52,17 +60,28 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     required,
     onInput,
     onKeyDown,
-}) => (
-    <textarea
-        className={className}
-        rows={rows}
-        value={value}
-        autoFocus={autoFocus}
-        required={required}
-        onInput={onInput}
-        onKeyDown={onKeyDown}
-    />
-)
+}) => {
+    const textAreaRef = useRef<HTMLTextAreaElement>(null)
+
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLElement>): void => {
+        if (onKeyDown) {
+            onKeyDown(event, textAreaRef.current?.selectionStart ?? null)
+        }
+    }
+
+    return (
+        <textarea
+            ref={textAreaRef}
+            className={className}
+            rows={rows}
+            value={value}
+            autoFocus={autoFocus}
+            required={required}
+            onInput={onInput}
+            onKeyDown={handleKeyDown}
+        />
+    )
+}
 
 const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ className, disabled, onClick }) => (
     <button className={className} type="submit" disabled={disabled} onClick={onClick}>

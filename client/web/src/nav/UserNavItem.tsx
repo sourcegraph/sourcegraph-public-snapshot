@@ -68,7 +68,6 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
     const { themeSetting, setThemeSetting } = useTheme()
     const keyboardShortcutSwitchTheme = useKeyboardShortcut('switchTheme')
     const [enableTeams] = useFeatureFlag('search-ownership')
-    const [enableAppConnectDotCom] = useFeatureFlag('app-connect-dotcom')
 
     const supportsSystemTheme = useMemo(
         () => Boolean(window.matchMedia?.('not all and (prefers-color-scheme), (prefers-color-scheme)').matches),
@@ -140,23 +139,18 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     <MenuDivider className={styles.dropdownDivider} />
                                 </>
                             ) : null}
-                            <MenuLink as={Link} to={authenticatedUser.settingsURL!}>
+                            <MenuLink
+                                as={Link}
+                                to={isSourcegraphApp ? '/user/app-settings' : authenticatedUser.settingsURL!}
+                            >
                                 Settings
                             </MenuLink>
-                            <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
-                                Saved searches
-                            </MenuLink>
-                            {isSourcegraphApp && (
-                                <MenuLink as={Link} to="/setup">
-                                    Setup wizard
+                            {!isSourcegraphApp && (
+                                <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
+                                    Saved searches
                                 </MenuLink>
                             )}
-                            {isSourcegraphApp && (
-                                <MenuLink as={Link} to="/site-admin/repositories">
-                                    Repositories
-                                </MenuLink>
-                            )}
-                            {isSourcegraphApp && enableAppConnectDotCom && <AppUserConnectDotComAccount />}
+                            {isSourcegraphApp && <AppUserConnectDotComAccount />}
                             {enableTeams && !isSourcegraphDotCom && (
                                 <MenuLink as={Link} to="/teams">
                                     Teams

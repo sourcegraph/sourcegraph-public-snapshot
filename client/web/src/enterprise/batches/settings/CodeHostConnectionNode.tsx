@@ -1,5 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react'
 
+import { ApolloError } from '@apollo/client'
 import { mdiCheckCircleOutline, mdiCheckboxBlankCircleOutline } from '@mdi/js'
 import classNames from 'classnames'
 
@@ -36,13 +37,16 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
     refetchAll,
     userID,
 }) => {
+    const [checkCredError, setCheckCredError] = useState<ApolloError | undefined>()
     const ExternalServiceIcon = defaultExternalServices[node.externalServiceKind].icon
     const codeHostDisplayName = defaultExternalServices[node.externalServiceKind].defaultDisplayName
 
-    const [checkCred, { data: checkCredData, loading: checkCredLoading, error: checkCredError }] = useLazyQuery<
+    const [checkCred, { data: checkCredData, loading: checkCredLoading }] = useLazyQuery<
         CheckBatchChangesCredentialResult,
         CheckBatchChangesCredentialVariables
-    >(CHECK_BATCH_CHANGES_CREDENTIAL, {})
+    >(CHECK_BATCH_CHANGES_CREDENTIAL, {
+        onError: err => setCheckCredError(err),
+    })
 
     const buttonReference = useRef<HTMLButtonElement | null>(null)
 
@@ -66,6 +70,7 @@ export const CodeHostConnectionNode: React.FunctionComponent<React.PropsWithChil
     }, [])
     const afterAction = useCallback(() => {
         setOpenModal(undefined)
+        setCheckCredError(undefined)
         buttonReference.current?.focus()
         refetchAll()
     }, [refetchAll, buttonReference])

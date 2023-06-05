@@ -18,7 +18,7 @@ sidebar. */
 
 This page is a reference guide to the batch spec YAML format in which batch specs are defined. If you're new to YAML and want a short introduction, see "[Learn YAML in five minutes](https://learnxinyminutes.com/docs/yaml/)."
 
-## [`name`](#name)
+## `name`
 
 The name of the batch change, which is unique among all batch changes in the namespace. A batch change's name is case-preserving.
 
@@ -32,7 +32,7 @@ name: update-go-import-statements
 name: update-node.js
 ```
 
-## [`description`](#description)
+## `description`
 
 The description of the batch change. It's rendered as Markdown.
 
@@ -53,7 +53,7 @@ description: |
   `github.com/sourcegraph/sourcegraph-in-x86-asm`
 ```
 
-## [`on`](#on)
+## `on`
 
 The set of repositories (and branches) to run the batch change on, specified as a list of search queries (that match repositories) and/or specific repositories.
 
@@ -65,7 +65,7 @@ on:
   - repository: github.com/sourcegraph/sourcegraph
 ```
 
-## [`on.repositoriesMatchingQuery`](#on-repositoriesmatchingquery)
+## `on.repositoriesMatchingQuery`
 
 A Sourcegraph search query that matches a set of repositories (and branches). Each matched repository branch is added to the list of repositories that the batch change will be run on.
 
@@ -83,7 +83,7 @@ on:
   - repositoriesMatchingQuery: lang:typescript file:web const changesetStatsFragment
 ```
 
-## [`on.repository`](#on-repository)
+## `on.repository`
 
 A specific repository (and, optionally, one or more branches) to be added to the list of repositories that the batch change will be run on.
 
@@ -128,7 +128,7 @@ on:
 ```
 
 
-## [`steps`](#steps)
+## `steps`
 
 The sequence of commands to run (for each repository branch matched in the `on` property) to produce the batch change's changes.
 
@@ -157,15 +157,15 @@ steps:
       NEW_VERSION: 1.33.0
 ```
 
-## [`steps.run`](#steps-run)
+## `steps.run`
 
 The shell command to run in the container. It can also be a multi-line shell script. The working directory is the root directory of the repository checkout.
 
 <aside class="note">
-<span class="badge badge-feature">Templating</span> <code>steps.run</code> can include <a href="batch_spec_templating">template variables</a> in Sourcegraph 3.22 and <a href="https://sourcegraph.com/github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.21.5.
+<span class="badge badge-feature">Templating</span> <code>steps.run</code> can include <a href="batch_spec_templating">template variables</a>.
 </aside>
 
-## [`steps.container`](#steps-container)
+## `steps.container`
 
 The Docker image used to launch the Docker container in which the shell command is run.
 
@@ -173,14 +173,14 @@ The image has to have either the `/bin/sh` or the `/bin/bash` shell.
 
 It is executed using `docker` on the machine on which the [Sourcegraph CLI (`src`)](https://sourcegraph.com/github.com/sourcegraph/src-cli) is executed. If the image exists locally, that is used. Otherwise it's pulled using `docker pull`.
 
-## [`steps.env`](#steps-env)
+## `steps.env`
 
 Environment variables to set in the environment when running this command.
 
-These may be defined either as an [object](#environment-object) or (in Sourcegraph 3.23 and later) as an [array](#environment-array).
+These may be defined either as an [object](#environment-object) or as an [array](#environment-array).
 
 <aside class="note">
-<span class="badge badge-feature">Templating</span> The value for each entry in <code>steps.env</code> can include <a href="batch_spec_templating">template variables</a> in Sourcegraph 3.22 and <a href="https://sourcegraph.com/github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.21.5.
+<span class="badge badge-feature">Templating</span> <code>steps.env</code> can include <a href="batch_spec_templating">template variables</a>.
 </aside>
 
 ### Environment object
@@ -198,8 +198,6 @@ steps:
 ```
 
 ### Environment array
-
-<span class="badge badge-note">Sourcegraph 3.23+</span>
 
 In this case, `steps.env` is an array. Each array item is either:
 
@@ -232,16 +230,14 @@ steps:
 
 For instance, if `USER` is set to `adam`, this would append `Hello world! from adam` to `README.md`.
 
-## [`steps.files`](#steps-files)
-
-<span class="badge badge-note">Sourcegraph 3.22+</span>
+## `steps.files`
 
 Files to create on the host machine and mount into the container when running `steps.run`.
 
 `steps.files` is an object, where the key is the name of the file _inside the container_ and the value is the content of the file.
 
 <aside class="note">
-<span class="badge badge-feature">Templating</span> The value for each entry in <code>steps.files</code> can include <a href="batch_spec_templating">template variables</a> in Sourcegraph 3.22 and <a href="https://sourcegraph.com/github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.21.5.
+<span class="badge badge-feature">Templating</span> <code>steps.files</code> can include <a href="batch_spec_templating">template variables</a>.
 </aside>
 
 ### Examples
@@ -273,9 +269,7 @@ steps:
         .dir-locals.el
 ```
 
-## [`steps.outputs`](#steps-outputs)
-
-<span class="badge badge-note">Sourcegraph 3.24+</span>
+## `steps.outputs`
 
 Output variables that are set after the [`steps.run`](#steps-run) command has been executed. These variables are available in the global `outputs` namespace as `outputs.<name>` <a href="batch_spec_templating">template variables</a> in the `run`, `env`, and `outputs` properties of subsequent steps, and the [`changesetTemplate`](#changesettemplate). Two steps with the same output variable name will overwrite the previous contents.
 
@@ -334,7 +328,7 @@ changesetTemplate:
     ${{ outputs.goreleaserConfig.before.hooks }}
 ```
 
-## [`steps.outputs.<name>.value`](#steps-outputs-name-value)
+## `steps.outputs.<name>.value`
 
 The value the output should be set to.
 
@@ -342,15 +336,13 @@ The value the output should be set to.
 <span class="badge badge-feature">Templating</span> <code>steps.outputs.$name.value</code> can include <a href="batch_spec_templating">template variables</a>.
 </aside>
 
-## [`steps.outputs.<name>.format`](#steps-outputs-name-format)
+## `steps.outputs.<name>.format`
 
 The format of the corresponding [`steps.outputs.<name>.value`](#outputs-value). When this is set to something other than `text`, it will be parsed as the given format.
 
 Possible values: `text`, `yaml`, `json`. Default is `text`.
 
-## [`steps.if`](#steps-if)
-
-<span class="badge badge-note">Sourcegraph 3.28+</span>with Sourcegraph CLI 3.28 and later.
+## `steps.if`
 
 Condition to check before executing the step. If the value of the `if:` attribute is `true` (boolean) or `"true"` (string) then the step is executed in the given repository (or workspace, in case [workspaces](#workspaces) are used). Otherwise the step is skipped.
 
@@ -419,7 +411,7 @@ steps:
     container: golang
 ```
 
-## [`steps.mount`](#steps-mount)
+## `steps.mount`
 
 <aside class="note">
 <span class="badge badge-note">New</span> <code>mount</code> is a new feature. Using <code>mount</code> locally is supported in Sourcegraph 3.41 and <a href="https://sourcegraph.com/github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.41. Using <code>mount</code> in batch changes server-side is supported in Sourcegraph 4.1 and <a href="https://sourcegraph.com/github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 4.0.1. It's a <b>preview</b> of functionality we're currently exploring to make running custom scripts/binaries easier. If you have any feedback, please let us know!
@@ -480,7 +472,7 @@ steps:
       mountpoint: /tmp/supporting-files
 ```
 
-## [`importChangesets`](#importchangesets)
+## `importChangesets`
 
 An array describing which already-existing changesets should be imported from the code host into the batch change.
 
@@ -495,15 +487,15 @@ importChangesets:
 ```
 
 
-## [`importChangesets.repository`](#importchangesets-repository)
+## `importChangesets.repository`
 
 The repository name as configured on your Sourcegraph instance.
 
-## [`importChangesets.externalIDs`](#importchangesets-externalids)
+## `importChangesets.externalIDs`
 
 The changesets to import from the code host. For GitHub this is the pull request number, for GitLab this is the merge request number, and for Bitbucket Server, Bitbucket Data Center, or Bitbucket Cloud this is the pull request number.
 
-## [`changesetTemplate`](#changesettemplate)
+## `changesetTemplate`
 
 A template describing how to create (and update) changesets with the file changes produced by the command steps.
 
@@ -550,23 +542,23 @@ changesetTemplate:
     - git.istari.example/anna/*: true
 ```
 
-## [`changesetTemplate.title`](#changesettemplate-title)
+## `changesetTemplate.title`
 
 The title of the changeset on the code host.
 
 <aside class="note">
-<span class="badge badge-feature">Templating</span> <code>changesetTemplate.title</code> can include <a href="batch_spec_templating">template variables</a> starting with Sourcegraph 3.24 and <a href="../../cli">Sourcegraph CLI</a> 3.24.
+<span class="badge badge-feature">Templating</span> <code>changesetTemplate.title</code> can include <a href="batch_spec_templating">template variables</a>.
 </aside>
 
-## [`changesetTemplate.body`](#changesettemplate-body)
+## `changesetTemplate.body`
 
 The body (description) of the changeset on the code host. If the code supports Markdown you can use it here.
 
 <aside class="note">
-<span class="badge badge-feature">Templating</span> <code>changesetTemplate.body</code> can include <a href="batch_spec_templating">template variables</a> starting with Sourcegraph 3.24 and <a href="../../cli">Sourcegraph CLI</a> 3.24.
+<span class="badge badge-feature">Templating</span> <code>changesetTemplate.body</code> can include <a href="batch_spec_templating">template variables</a>.
 </aside>
 
-## [`changesetTemplate.branch`](#changesettemplate-branch)
+## `changesetTemplate.branch`
 
 The name of the Git branch to create or update on each repository with the changes.
 
@@ -584,27 +576,27 @@ changesetTemplate:
 ```
 
 <aside class="note">
-<span class="badge badge-feature">Templating</span> <code>changesetTemplate.branch</code> can include <a href="batch_spec_templating">template variables</a> starting with Sourcegraph 3.24 and <a href="../../cli">Sourcegraph CLI</a> 3.24.
+<span class="badge badge-feature">Templating</span> <code>changesetTemplate.branch</code> can include <a href="batch_spec_templating">template variables</a>.
 </aside>
 
-## [`changesetTemplate.commit`](#changesettemplate-commit)
+## `changesetTemplate.commit`
 
 The Git commit to create with the changes.
 
-## [`changesetTemplate.commit.message`](#changesettemplate-commit-message)
+## `changesetTemplate.commit.message`
 
 The Git commit message.
 
 <aside class="note">
-<span class="badge badge-feature">Templating</span> <code>changesetTemplate.commit.message</code> can include <a href="batch_spec_templating">template variables</a> starting with Sourcegraph 3.24 and <a href="../../cli">Sourcegraph CLI</a> 3.24.
+<span class="badge badge-feature">Templating</span> <code>changesetTemplate.commit.message</code> can include <a href="batch_spec_templating">template variables</a>.
 </aside>
 
-## [`changesetTemplate.commit.author`](#changesettemplate-commit-author)
+##[`changesetTemplate.commit.author`
 
 The `name` and `email` of the Git commit author.
 
 <aside class="note">
-<span class="badge badge-feature">Templating</span> <code>changesetTemplate.commit.author</code> can include <a href="batch_spec_templating">template variables</a> starting with Sourcegraph 3.24 and <a href="../../cli">Sourcegraph CLI</a> 3.24.
+<span class="badge badge-feature">Templating</span> <code>changesetTemplate.commit.author</code> can include <a href="batch_spec_templating">template variables</a>.
 </aside>
 
 ### Examples
@@ -617,7 +609,7 @@ changesetTemplate:
       email: alan.turing@example.com
 ```
 
-## [`changesetTemplate.published`](#changesettemplate-published)
+## `changesetTemplate.published`
 
 Whether to publish the changeset. This may be a boolean value (ie `true` or `false`), `'draft'`, or [an array to only publish some changesets within the batch change](#publishing-only-specific-changesets). This may also be omitted, in which case the publication state will be controlled through the Sourcegraph UI, and will default to unpublished (that is, the same as specifying `false`).
 
@@ -633,7 +625,7 @@ When `published` is set to `draft` a commit, branch, and pull request / merge re
 
 A published changeset results in a commit, branch, and pull request being created on the code host.
 
-### [Publishing only specific changesets](#publishing-only-specific-changesets)
+### Publishing only specific changesets
 
 To publish only specific changesets within a batch change, an array of single-element objects can be provided. For example:
 
@@ -735,11 +727,7 @@ changesetTemplate:
 
 (Multiple changesets in a single repository can be produced, for example, [per project in a monorepo](../how-tos/creating_changesets_per_project_in_monorepos.md) or by [transforming large changes into multiple changesets](../how-tos/creating_multiple_changesets_in_large_repositories.md)).
 
-## [`transformChanges`](#transformchanges)
-
-<aside class="experimental">
-<span class="badge badge-experimental">Experimental</span> <code>transformChanges</code> is an experimental feature in Sourcegraph 3.23 and <a href="https://sourcegraph.com/github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.23. It's a <b>preview</b> of functionality we're currently exploring to make managing large changes in large repositories easier. If you have any feedback, please let us know!
-</aside>
+## `transformChanges`
 
 A description of how to transform the changes (diffs) produced in each repository before turning them into separate changeset specs by inserting them into the [`changesetTemplate`](#changesettemplate).
 
@@ -774,7 +762,7 @@ transformChanges:
       branch: my-batch-change-go-date
 ```
 
-## [`transformChanges.group`](#transformchanges-group)
+## `transformChanges.group`
 
 A list of groups to define which file diffs to group together to create an additional changeset in the given repository.
 
@@ -782,27 +770,23 @@ The **order of the list matters**, since each file diff's filepath is matched ag
 
 If no changes have been produced in a `directory` then no changeset will be created.
 
-## [`transformChanges.group.directory`](#transformchanges-group-directory)
+## `transformChanges.group.directory`
 
 The name of the directory in which file diffs should be grouped together.
 
 The name is relative to the root of the repository.
 
-## [`transformChanges.group.branch`](#transformchanges-group-branch)
+## `transformChanges.group.branch`
 
 The branch that should be used for this additional changeset. This **overwrites the [`changesetTemplate.branch`](#changesettemplate-branch)** when creating the additional changeset.
 
 **Important**: the branch can _not_ be nested under the [`changesetTemplate.branch`](#changesettemplate-branch), i.e. if the `changesetTemplate.branch` is `my-batch-change` then this can _not_ be `my-batch-change/my-subdirectory` since [git doesn't allow that](https://stackoverflow.com/a/22630664). Additionally branch names must be unique and cannot be used as arguments for multiple `directory` fields.
 
-## [`transformChanges.group.repository`](#transformchanges-repository)
+## `transformChanges.group.repository`
 
 Optional: the file diffs matching the given directory will only be grouped in a repository with that name, as configured on your Sourcegraph instance.
 
-## [`workspaces`](#workspaces)
-
-<aside class="experimental">
-<span class="badge badge-experimental">Experimental</span> <code>workspaces</code> is an experimental feature in Sourcegraph 3.25 and <a href="https://sourcegraph.com/github.com/sourcegraph/src-cli">Sourcegraph CLI</a> 3.25. It's a <b>preview</b> of functionality we're currently exploring to make managing large changes in large repositories easier. If you have any feedback, please let us know!
-</aside>
+## `workspaces`
 
 The optional `workspaces` property allows users to define where projects are located in repositories and cause the [`steps`](#steps) to be executed for each project, instead of once per repository. That allows easier creation of multiple changesets in large repositories.
 
@@ -810,7 +794,7 @@ For each repository that's yielded by [`on`](#on), Sourcegraph search is used to
 
 **Important**: Since multiple workspaces in the same repository can produce multiple changesets, it's **required** to use templating to produce a unique [`changesetTemplate.branch`](#changesettemplate-branch) for each produced changeset. See the [examples](#workspaces-examples) below.
 
-### [Examples](#workspaces-examples)
+### Examples
 
 Defining JavaScript projects that live in a monorepo by using the location of the `package.json` file as the root for each project:
 
@@ -932,7 +916,7 @@ changesetTemplate:
     message: Test in
 ```
 
-## [`workspaces.rootAtLocationOf`](#workspaces-rootatlocationof)
+## `workspaces.rootAtLocationOf`
 
 The full name of the file that sits at the root of one or more workspaces in a given repository.
 
@@ -953,7 +937,7 @@ workspaces:
 
 would create _two changesets_ in the repository, one in `packages/sourcegraph-ui` and one in `packages/sourcegraph-test-helper`.
 
-## [`workspaces.in`](#workspaces-in)
+## `workspaces.in`
 
 The repositories in which the workspace should be discovered.
 
@@ -979,7 +963,7 @@ workspaces:
     in: gitlab.com/my-javascript-org/*-plugin
 ```
 
-## [`workspaces.onlyFetchWorkspace`](#workspaces-onlyfetchworkspace)
+## `workspaces.onlyFetchWorkspace`
 
 When set to `true`, only the folder containing the workspace is downloaded to execute the `steps`.
 

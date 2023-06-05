@@ -15,6 +15,7 @@ go_library(
     deps = [
         "//enterprise/internal/codeintel/sentinel/internal/store",
         "//enterprise/internal/codeintel/sentinel/shared",
+        "//internal/actor",
         "//internal/env",
         "//internal/goroutine",
         "//internal/lazyregexp",

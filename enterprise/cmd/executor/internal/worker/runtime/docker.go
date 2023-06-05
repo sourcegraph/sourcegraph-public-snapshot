@@ -48,16 +48,9 @@ func (r *dockerRuntime) NewRunner(ctx context.Context, logger command.Logger, op
 func (r *dockerRuntime) NewRunnerSpecs(ws workspace.Workspace, steps []types.DockerStep) ([]runner.Spec, error) {
 	runnerSpecs := make([]runner.Spec, len(steps))
 	for i, step := range steps {
-		var key string
-		if len(step.Key) != 0 {
-			key = fmt.Sprintf("step.docker.%s", step.Key)
-		} else {
-			key = fmt.Sprintf("step.docker.%d", i)
-		}
-
 		runnerSpecs[i] = runner.Spec{
 			CommandSpec: command.Spec{
-				Key:       key,
+				Key:       dockerKey(step.Key, i),
 				Command:   nil,
 				Dir:       step.Dir,
 				Env:       step.Env,
@@ -69,4 +62,11 @@ func (r *dockerRuntime) NewRunnerSpecs(ws workspace.Workspace, steps []types.Doc
 	}
 
 	return runnerSpecs, nil
+}
+
+func dockerKey(stepKey string, index int) string {
+	if len(stepKey) > 0 {
+		return "step.docker." + stepKey
+	}
+	return fmt.Sprintf("step.docker.%d", index)
 }

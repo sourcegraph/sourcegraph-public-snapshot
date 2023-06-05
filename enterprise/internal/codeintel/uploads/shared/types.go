@@ -3,6 +3,7 @@ package shared
 import (
 	"database/sql/driver"
 	"encoding/json"
+	"strconv"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/executor"
@@ -38,6 +39,10 @@ type Upload struct {
 
 func (u Upload) RecordID() int {
 	return u.ID
+}
+
+func (u Upload) RecordUID() string {
+	return strconv.Itoa(u.ID)
 }
 
 // TODO - unify with Upload
@@ -108,6 +113,10 @@ type Index struct {
 
 func (i Index) RecordID() int {
 	return i.ID
+}
+
+func (i Index) RecordUID() string {
+	return strconv.Itoa(i.ID)
 }
 
 type DockerStep struct {
@@ -236,11 +245,11 @@ type ReindexIndexesOptions struct {
 }
 
 type ExportedUpload struct {
-	ID           int
-	Repo         string
-	RepoID       int
-	Root         string
-	ObjectPrefix string
+	UploadID         int
+	ExportedUploadID int
+	Repo             string
+	RepoID           int
+	Root             string
 }
 
 type IndexesWithRepositoryNamespace struct {

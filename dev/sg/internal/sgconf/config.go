@@ -101,6 +101,10 @@ func (c *Commandset) Merge(other *Commandset) *Commandset {
 		merged.Checks = other.Checks
 	}
 
+	if !equal(merged.BazelCommands, other.BazelCommands) && len(other.BazelCommands) != 0 {
+		merged.BazelCommands = other.BazelCommands
+	}
+
 	for k, v := range other.Env {
 		merged.Env[k] = v
 	}

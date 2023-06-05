@@ -14,20 +14,20 @@ import (
 	"time"
 
 	"github.com/RoaringBitmap/roaring"
-	"github.com/opentracing/opentracing-go/ext"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	zoektquery "github.com/sourcegraph/zoekt/query"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -293,7 +293,7 @@ func lookupMatcher(language string) string {
 	return ".generic"
 }
 
-func structuralSearchWithZoekt(ctx context.Context, indexed zoekt.Streamer, p *protocol.Request, sender matchSender) (err error) {
+func structuralSearchWithZoekt(ctx context.Context, logger log.Logger, indexed zoekt.Streamer, p *protocol.Request, sender matchSender) (err error) {
 	patternInfo := &search.TextPatternInfo{
 		Pattern:                      p.Pattern,
 		IsNegated:                    p.IsNegated,
@@ -315,7 +315,7 @@ func structuralSearchWithZoekt(ctx context.Context, indexed zoekt.Streamer, p *p
 		p.Branch = "HEAD"
 	}
 	branchRepos := []zoektquery.BranchRepos{{Branch: p.Branch, Repos: roaring.BitmapOf(uint32(p.RepoID))}}
-	err = zoektSearch(ctx, indexed, patternInfo, branchRepos, time.Since, p.Repo, sender)
+	err = zoektSearch(ctx, logger, indexed, patternInfo, branchRepos, time.Since, p.Repo, sender)
 	if err != nil {
 		return err
 	}
@@ -397,15 +397,9 @@ func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatt
 		return mockStructuralSearch(ctx, inputType, paths, extensionHint, pattern, rule, languages, repo, sender)
 	}
 
-	span, ctx := ot.StartSpanFromContext(ctx, "StructuralSearch") //nolint:staticcheck // OT is deprecated
-	span.SetTag("repo", repo)
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.SetTag("err", err.Error())
-		}
-		span.Finish()
-	}()
+	tr, ctx := trace.New(ctx, "searcher", "StructuralSearch",
+		attribute.String("repo", string(repo)))
+	defer tr.FinishWithErr(&err)
 
 	// Cap the number of forked processes to limit the size of zip contents being mapped to memory. Resolving #7133 could help to lift this restriction.
 	numWorkers := 4
@@ -416,7 +410,7 @@ func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatt
 	if v, ok := paths.(subset); ok {
 		filePatterns = v
 	}
-	span.LogFields(otlog.Int("paths", len(filePatterns)))
+	tr.AddEvent("calculated paths", attribute.Int("paths", len(filePatterns)))
 
 	args := comby.Args{
 		Input:         inputType,

@@ -10,6 +10,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
@@ -21,13 +22,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -142,6 +142,19 @@ func (r *RepositoryResolver) URI(ctx context.Context) (string, error) {
 	return repo.URI, err
 }
 
+func (r *RepositoryResolver) SourceType(ctx context.Context) (*SourceType, error) {
+	repo, err := r.repo(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to retrieve innerRepo")
+	}
+
+	if repo.ExternalRepo.ServiceType == extsvc.TypePerforce {
+		return &PerforceDepotSourceType, nil
+	}
+
+	return &GitRepositorySourceType, nil
+}
+
 func (r *RepositoryResolver) Description(ctx context.Context) (string, error) {
 	repo, err := r.repo(ctx)
 	return repo.Description, err
@@ -197,10 +210,10 @@ type RepositoryCommitArgs struct {
 	InputRevspec *string
 }
 
-func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitArgs) (*GitCommitResolver, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "repository.commit") //nolint:staticcheck // OT is deprecated
-	defer span.Finish()
-	span.SetTag("commit", args.Rev)
+func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitArgs) (_ *GitCommitResolver, err error) {
+	tr, ctx := trace.New(ctx, "RepositoryResolver", "Commit",
+		attribute.String("commit", args.Rev))
+	defer tr.FinishWithErr(&err)
 
 	repo, err := r.repo(ctx)
 	if err != nil {
@@ -218,9 +231,9 @@ func (r *RepositoryResolver) Commit(ctx context.Context, args *RepositoryCommitA
 	return r.CommitFromID(ctx, args, commitID)
 }
 
-func (r *RepositoryResolver) FirstEverCommit(ctx context.Context) (*GitCommitResolver, error) {
-	span, ctx := ot.StartSpanFromContext(ctx, "repository.firstEverCommit") //nolint:staticcheck // OT is deprecated
-	defer span.Finish()
+func (r *RepositoryResolver) FirstEverCommit(ctx context.Context) (_ *GitCommitResolver, err error) {
+	tr, ctx := trace.New(ctx, "RepositoryResolver", "FirstEverCommit")
+	defer tr.FinishWithErr(&err)
 
 	repo, err := r.repo(ctx)
 	if err != nil {
@@ -371,7 +384,12 @@ func (r *RepositoryResolver) Stars(ctx context.Context) (int32, error) {
 	return int32(repo.Stars), nil
 }
 
+// Deprecated: Use RepositoryResolver.Metadata instead.
 func (r *RepositoryResolver) KeyValuePairs(ctx context.Context) ([]KeyValuePair, error) {
+	return r.Metadata(ctx)
+}
+
+func (r *RepositoryResolver) Metadata(ctx context.Context) ([]KeyValuePair, error) {
 	repo, err := r.repo(ctx)
 	if err != nil {
 		return nil, err
@@ -564,7 +582,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		CommitInfo: protocol.PatchCommitInfo{
 			AuthorName:  info.AuthorName,
 			AuthorEmail: info.AuthorEmail,
-			Message:     info.Message,
+			Messages:    []string{info.Message},
 			Date:        info.Date,
 		},
 	})
@@ -627,85 +645,19 @@ func makePhabClientForOrigin(ctx context.Context, logger log.Logger, db database
 	return nil, errors.Errorf("no phabricator was configured for: %s", origin)
 }
 
-type KeyValuePair struct {
-	key   string
-	value *string
-}
-
-func (k KeyValuePair) Key() string {
-	return k.key
-}
-
-func (k KeyValuePair) Value() *string {
-	return k.value
-}
-
-func (r *schemaResolver) AddRepoKeyValuePair(ctx context.Context, args struct {
-	Repo  graphql.ID
-	Key   string
-	Value *string
-},
-) (*EmptyResponse, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return &EmptyResponse{}, err
-	}
-
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
-		return nil, errors.New("'repository-metadata' feature flag is not enabled")
-	}
-
-	repoID, err := UnmarshalRepositoryID(args.Repo)
-	if err != nil {
-		return &EmptyResponse{}, err
-	}
-
-	return &EmptyResponse{}, r.db.RepoKVPs().Create(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
-}
-
-func (r *schemaResolver) UpdateRepoKeyValuePair(ctx context.Context, args struct {
-	Repo  graphql.ID
-	Key   string
-	Value *string
-},
-) (*EmptyResponse, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return &EmptyResponse{}, err
-	}
-
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
-		return nil, errors.New("'repository-metadata' feature flag is not enabled")
-	}
-
-	repoID, err := UnmarshalRepositoryID(args.Repo)
-	if err != nil {
-		return &EmptyResponse{}, err
-	}
-
-	_, err = r.db.RepoKVPs().Update(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
-	return &EmptyResponse{}, err
-}
-
-func (r *schemaResolver) DeleteRepoKeyValuePair(ctx context.Context, args struct {
-	Repo graphql.ID
-	Key  string
-},
-) (*EmptyResponse, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return &EmptyResponse{}, err
-	}
-
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", false) {
-		return nil, errors.New("'repository-metadata' feature flag is not enabled")
-	}
-
-	repoID, err := UnmarshalRepositoryID(args.Repo)
-	if err != nil {
-		return &EmptyResponse{}, err
-	}
-
-	return &EmptyResponse{}, r.db.RepoKVPs().Delete(ctx, repoID, args.Key)
-}
-
 func (r *RepositoryResolver) IngestedCodeowners(ctx context.Context) (CodeownersIngestedFileResolver, error) {
 	return EnterpriseResolvers.ownResolver.RepoIngestedCodeowners(ctx, r.IDInt32())
+}
+
+// isPerforceDepot is a helper to avoid the repetitive error handling of calling r.SourceType, and
+// where we want to only take a custom action if this function returns true. For false we want to
+// ignore and continue on the default behaviour.
+func (r *RepositoryResolver) isPerforceDepot(ctx context.Context) bool {
+	s, err := r.SourceType(ctx)
+	if err != nil {
+		r.logger.Error("failed to retrieve sourceType of repository", log.Error(err))
+		return false
+	}
+
+	return s == &PerforceDepotSourceType
 }

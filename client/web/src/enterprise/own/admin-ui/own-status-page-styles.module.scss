@@ -1,0 +1,46 @@
+.root {
+    padding: 1rem;
+}
+
+.job {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    list-style-type: none;
+}
+
+.job-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+}
+
+.job-name {
+    margin: 0;
+}
+
+.job-status {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+}
+
+.job-description {
+    margin: 0;
+}
+
+.exclude-repos {
+    margin-top: 0.5rem;
+}
+
+.top-header {
+    display: flex;
+    align-items: center;
+}
+
+.save-button {
+    margin-left: auto;
+}

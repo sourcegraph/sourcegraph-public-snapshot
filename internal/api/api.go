@@ -8,7 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
+
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
@@ -58,10 +60,24 @@ type RepoCommit struct {
 	CommitID CommitID
 }
 
-func (rc RepoCommit) LogFields() []log.Field {
-	return []log.Field{
-		log.String("repo", string(rc.Repo)),
-		log.String("commitID", string(rc.CommitID)),
+func (rc *RepoCommit) ToProto() *proto.RepoCommit {
+	return &proto.RepoCommit{
+		Repo:   string(rc.Repo),
+		Commit: string(rc.CommitID),
+	}
+}
+
+func (rc *RepoCommit) FromProto(p *proto.RepoCommit) {
+	*rc = RepoCommit{
+		Repo:     RepoName(p.GetRepo()),
+		CommitID: CommitID(p.GetCommit()),
+	}
+}
+
+func (rc RepoCommit) Attrs() []attribute.KeyValue {
+	return []attribute.KeyValue{
+		attribute.String("repo", string(rc.Repo)),
+		attribute.String("commitID", string(rc.CommitID)),
 	}
 }
 

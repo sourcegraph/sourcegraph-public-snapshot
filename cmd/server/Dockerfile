@@ -1,5 +1,5 @@
 # Install p4 CLI (keep this up to date with cmd/gitserver/Dockerfile)
-FROM sourcegraph/alpine-3.14:211375_2023-04-02_5.0-05ccd1762636@sha256:cd5089e0b0f7e5a5cd18996f5acd23cfa2bde33f6b7ffb9ace47f552941f0be2 AS p4cli
+FROM sourcegraph/alpine-3.14:213466_2023-04-17_5.0-bdda34a71619@sha256:6354a4ff578b685e36c8fbde81f62125ae0011b047fb2cc22d1b0de616b3c59a AS p4cli
 
 # hash provided in http://filehost.perforce.com/perforce/r22.2/bin.linux26x86_64/SHA256SUMS
 # if the hash is not provided, calculate it by downloading the file and running `sha256sum` on it in Terminal
@@ -9,20 +9,20 @@ RUN echo "8bc10fca1c5a26262b4072deec76150a668581a9749d0504cd443084773d4fd0  /usr
     sha256sum -c expected_hash
 
 # Install p4-fusion (keep this up to date with cmd/gitserver/Dockerfile)
-FROM sourcegraph/alpine-3.14:211375_2023-04-02_5.0-05ccd1762636@sha256:cd5089e0b0f7e5a5cd18996f5acd23cfa2bde33f6b7ffb9ace47f552941f0be2 AS p4-fusion
+FROM sourcegraph/alpine-3.14:213466_2023-04-17_5.0-bdda34a71619@sha256:6354a4ff578b685e36c8fbde81f62125ae0011b047fb2cc22d1b0de616b3c59a AS p4-fusion
 
 COPY p4-fusion-install-alpine.sh /p4-fusion-install-alpine.sh
 RUN /p4-fusion-install-alpine.sh
 
 # Install coursier (keep this up to date with cmd/gitserver/Dockerfile)
-FROM sourcegraph/alpine-3.14:211375_2023-04-02_5.0-05ccd1762636@sha256:cd5089e0b0f7e5a5cd18996f5acd23cfa2bde33f6b7ffb9ace47f552941f0be2 AS coursier
+FROM sourcegraph/alpine-3.14:213466_2023-04-17_5.0-bdda34a71619@sha256:6354a4ff578b685e36c8fbde81f62125ae0011b047fb2cc22d1b0de616b3c59a AS coursier
 
 RUN wget -O coursier.gz https://github.com/coursier/coursier/releases/download/v2.1.0-RC4/cs-x86_64-pc-linux-static.gz && \
     gzip -d coursier.gz && \
     mv coursier /usr/local/bin/coursier && \
     chmod +x /usr/local/bin/coursier
 
-FROM sourcegraph/alpine-3.14:211375_2023-04-02_5.0-05ccd1762636@sha256:cd5089e0b0f7e5a5cd18996f5acd23cfa2bde33f6b7ffb9ace47f552941f0be2
+FROM sourcegraph/alpine-3.14:213466_2023-04-17_5.0-bdda34a71619@sha256:6354a4ff578b685e36c8fbde81f62125ae0011b047fb2cc22d1b0de616b3c59a
 # TODO(security): This container should not be running as root!
 #
 # The default user in sourcegraph/alpine is a non-root `sourcegraph` user but because old deployments
@@ -73,7 +73,7 @@ RUN apk add --no-cache --verbose \
 # hadolint ignore=DL3022
 COPY --from=comby/comby:alpine-3.14-1.8.1@sha256:a5e80d6bad6af008478679809dc8327ebde7aeff7b23505b11b20e36aa62a0b2 /usr/local/bin/comby /usr/local/bin/comby
 # hadolint ignore=DL3022
-COPY --from=docker.io/sourcegraph/syntax-highlighter:186324_2022-12-01_02d3b4384446 /syntax_highlighter /usr/local/bin/
+COPY --from=docker.io/sourcegraph/syntax-highlighter:215692_2023-04-27_5.0-fb61a539c3a1 /syntax_highlighter /usr/local/bin/
 
 
 # install blobstore (keep this up to date with the upstream Docker image

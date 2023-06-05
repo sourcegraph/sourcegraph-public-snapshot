@@ -5,14 +5,41 @@ import (
 	"sync"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type operations struct {
-	batchLog       *observation.Operation
-	batchLogSingle *observation.Operation
+	archiveReader    *observation.Operation
+	batchLog         *observation.Operation
+	batchLogSingle   *observation.Operation
+	blameFile        *observation.Operation
+	commits          *observation.Operation
+	contributorCount *observation.Operation
+	do               *observation.Operation
+	exec             *observation.Operation
+	firstEverCommit  *observation.Operation
+	getBehindAhead   *observation.Operation
+	getCommit        *observation.Operation
+	getCommits       *observation.Operation
+	hasCommitAfter   *observation.Operation
+	listBranches     *observation.Operation
+	listRefs         *observation.Operation
+	listTags         *observation.Operation
+	lstat            *observation.Operation
+	mergeBase        *observation.Operation
+	newFileReader    *observation.Operation
+	p4Exec           *observation.Operation
+	readDir          *observation.Operation
+	readFile         *observation.Operation
+	resolveRevision  *observation.Operation
+	revList          *observation.Operation
+	search           *observation.Operation
+	stat             *observation.Operation
+	streamBlameFile  *observation.Operation
 }
 
 func newOperations(observationCtx *observation.Context) *operations {
@@ -40,9 +67,48 @@ func newOperations(observationCtx *observation.Context) *operations {
 		})
 	}
 
+	// We don't want to send errors to sentry for `gitdomain.RevisionNotFoundError`
+	// errors, as they should be actionable on the call site.
+	resolveRevisionOperation := observationCtx.Operation(observation.Op{
+		Name:              fmt.Sprintf("gitserver.client.%s", "ResolveRevision"),
+		MetricLabelValues: []string{"ResolveRevision"},
+		Metrics:           redMetrics,
+		ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
+			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+				return observation.EmitForMetrics
+			}
+			return observation.EmitForSentry
+		},
+	})
+
 	return &operations{
-		batchLog:       op("BatchLog"),
-		batchLogSingle: subOp("batchLogSingle"),
+		archiveReader:    op("ArchiveReader"),
+		batchLog:         op("BatchLog"),
+		batchLogSingle:   subOp("batchLogSingle"),
+		blameFile:        op("BlameFile"),
+		commits:          op("Commits"),
+		contributorCount: op("ContributorCount"),
+		do:               subOp("do"),
+		exec:             op("Exec"),
+		firstEverCommit:  op("FirstEverCommit"),
+		getBehindAhead:   op("GetBehindAhead"),
+		getCommit:        op("GetCommit"),
+		getCommits:       op("GetCommits"),
+		hasCommitAfter:   op("HasCommitAfter"),
+		listBranches:     op("ListBranches"),
+		listRefs:         op("ListRefs"),
+		listTags:         op("ListTags"),
+		lstat:            subOp("lStat"),
+		mergeBase:        op("MergeBase"),
+		newFileReader:    op("NewFileReader"),
+		p4Exec:           op("P4Exec"),
+		readDir:          op("ReadDir"),
+		readFile:         op("ReadFile"),
+		resolveRevision:  resolveRevisionOperation,
+		revList:          op("RevList"),
+		search:           op("Search"),
+		stat:             op("Stat"),
+		streamBlameFile:  op("StreamBlameFile"),
 	}
 }
 

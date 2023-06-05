@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go/log"
+	"go.opentelemetry.io/otel/attribute"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -109,8 +109,8 @@ type DeleteBatchSpecWorkspaceFileOpts struct {
 
 // DeleteBatchSpecWorkspaceFile deletes BatchSpecWorkspaceFiles that match the specified DeleteBatchSpecWorkspaceFileOpts.
 func (s *Store) DeleteBatchSpecWorkspaceFile(ctx context.Context, opts DeleteBatchSpecWorkspaceFileOpts) (err error) {
-	ctx, _, endObservation := s.operations.deleteBatchSpecWorkspaceFile.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(opts.ID)),
+	ctx, _, endObservation := s.operations.deleteBatchSpecWorkspaceFile.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(opts.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -151,9 +151,9 @@ type GetBatchSpecWorkspaceFileOpts struct {
 
 // GetBatchSpecWorkspaceFile retrieves the matching BatchSpecWorkspaceFile based on the provided GetBatchSpecWorkspaceFileOpts.
 func (s *Store) GetBatchSpecWorkspaceFile(ctx context.Context, opts GetBatchSpecWorkspaceFileOpts) (file *btypes.BatchSpecWorkspaceFile, err error) {
-	ctx, _, endObservation := s.operations.getBatchSpecWorkspaceFile.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(opts.ID)),
-		log.String("RandID", opts.RandID),
+	ctx, _, endObservation := s.operations.getBatchSpecWorkspaceFile.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("ID", int(opts.ID)),
+		attribute.String("RandID", opts.RandID),
 	}})
 	defer endObservation(1, observation.Args{})
 

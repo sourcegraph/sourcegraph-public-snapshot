@@ -137,14 +137,6 @@
             "pointer": true
           }
         },
-        "enableCodeMirrorFileView": {
-          "description": "Uses CodeMirror to display files. In this first iteration not all features of the current file view are available.",
-          "type": "boolean",
-          "default": false,
-          "!go": {
-            "pointer": true
-          }
-        },
         "enableLazyBlobSyntaxHighlighting": {
           "description": "Fetch un-highlighted blob contents to render immediately, decorate with syntax highlighting once loaded.",
           "type": "boolean",
@@ -516,6 +508,14 @@
         "type": "string"
       },
       "default": {}
+    },
+    "orgs.allMembersBatchChangesAdmin": {
+      "description": "If enabled, all members of the org will be treated as admins (e.g. can edit, apply, delete) for all batch changes created in that org.",
+      "type": "boolean",
+      "default": false,
+      "!go": {
+        "pointer": true
+      }
     }
   },
   "definitions": {

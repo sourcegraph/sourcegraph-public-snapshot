@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
@@ -49,22 +50,24 @@ type SearchClient interface {
 	JobClients() job.RuntimeClients
 }
 
-func NewSearchClient(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map, enterpriseJobs jobutil.EnterpriseJobs) SearchClient {
+func NewSearchClient(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map, searcherGRPCConnectionCache *defaults.ConnectionCache, enterpriseJobs jobutil.EnterpriseJobs) SearchClient {
 	return &searchClient{
-		logger:         logger,
-		db:             db,
-		zoekt:          zoektStreamer,
-		searcherURLs:   searcherURLs,
-		enterpriseJobs: enterpriseJobs,
+		logger:                      logger,
+		db:                          db,
+		zoekt:                       zoektStreamer,
+		searcherURLs:                searcherURLs,
+		searcherGRPCConnectionCache: searcherGRPCConnectionCache,
+		enterpriseJobs:              enterpriseJobs,
 	}
 }
 
 type searchClient struct {
-	logger         log.Logger
-	db             database.DB
-	zoekt          zoekt.Streamer
-	searcherURLs   *endpoint.Map
-	enterpriseJobs jobutil.EnterpriseJobs
+	logger                      log.Logger
+	db                          database.DB
+	zoekt                       zoekt.Streamer
+	searcherURLs                *endpoint.Map
+	searcherGRPCConnectionCache *defaults.ConnectionCache
+	enterpriseJobs              jobutil.EnterpriseJobs
 }
 
 func (s *searchClient) Plan(
@@ -78,10 +81,7 @@ func (s *searchClient) Plan(
 	sourcegraphDotComMode bool,
 ) (_ *search.Inputs, err error) {
 	tr, ctx := trace.New(ctx, "NewSearchInputs", searchQuery)
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	defer tr.FinishWithErr(&err)
 
 	searchType, err := detectSearchType(version, patternType)
 	if err != nil {
@@ -138,10 +138,7 @@ func (s *searchClient) Execute(
 	inputs *search.Inputs,
 ) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "Execute", "")
-	defer func() {
-		tr.SetError(err)
-		tr.Finish()
-	}()
+	defer tr.FinishWithErr(&err)
 
 	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan, s.enterpriseJobs)
 	if err != nil {
@@ -153,11 +150,12 @@ func (s *searchClient) Execute(
 
 func (s *searchClient) JobClients() job.RuntimeClients {
 	return job.RuntimeClients{
-		Logger:       s.logger,
-		DB:           s.db,
-		Zoekt:        s.zoekt,
-		SearcherURLs: s.searcherURLs,
-		Gitserver:    gitserver.NewClient(),
+		Logger:                      s.logger,
+		DB:                          s.db,
+		Zoekt:                       s.zoekt,
+		SearcherURLs:                s.searcherURLs,
+		SearcherGRPCConnectionCache: s.searcherGRPCConnectionCache,
+		Gitserver:                   gitserver.NewClient(),
 	}
 }
 

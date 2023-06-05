@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "runner",
@@ -8,6 +9,7 @@ go_library(
         "kubernetes.go",
         "runner.go",
         "shell.go",
+        "skip.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner",
     visibility = ["//enterprise/cmd/executor:__subpackages__"],
@@ -31,6 +33,7 @@ go_test(
         "kubernetes_test.go",
         "mocks_test.go",
         "shell_test.go",
+        "skip_test.go",
     ],
     embed = [":runner"],
     deps = [
@@ -47,6 +50,7 @@ go_test(
         "@io_k8s_apimachinery//pkg/api/resource",
         "@io_k8s_apimachinery//pkg/apis/meta/v1:meta",
         "@io_k8s_apimachinery//pkg/runtime",
+        "@io_k8s_apimachinery//pkg/watch",
         "@io_k8s_client_go//kubernetes/fake",
         "@io_k8s_client_go//testing",
     ],

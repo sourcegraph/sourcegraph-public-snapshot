@@ -8,7 +8,7 @@ import { ListTeamsOfParentResult } from '../../graphql-operations'
 import { LIST_TEAMS_OF_PARENT } from '../list/backend'
 
 import { TeamChildTeamsPage } from './TeamChildTeamsPage'
-import { testContext } from './test-utils'
+import { testContext } from './testContext.mock'
 
 const config: Meta = {
     title: 'web/teams/TeamChildTeamsPage',

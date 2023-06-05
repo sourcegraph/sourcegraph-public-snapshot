@@ -21,6 +21,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -376,7 +377,7 @@ func TestCleanupExpired(t *testing.T) {
 	}
 	recloneTime := func(path string) time.Time {
 		t.Helper()
-		ts, err := getRecloneTime(GitDir(path))
+		ts, err := getRecloneTime(common.GitDir(path))
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -395,20 +396,20 @@ func TestCleanupExpired(t *testing.T) {
 		repoPerforceGCOld: 2 * repoTTLGC,
 	} {
 		ts := time.Now().Add(-delta)
-		if err := setRecloneTime(GitDir(gitDirPath), ts); err != nil {
+		if err := setRecloneTime(common.GitDir(gitDirPath), ts); err != nil {
 			t.Fatal(err)
 		}
 		if err := os.Chtimes(filepath.Join(gitDirPath, "HEAD"), ts, ts); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if err := gitConfigSet(GitDir(repoCorrupt), gitConfigMaybeCorrupt, "1"); err != nil {
+	if err := gitConfigSet(common.GitDir(repoCorrupt), gitConfigMaybeCorrupt, "1"); err != nil {
 		t.Fatal(err)
 	}
-	if err := setRepositoryType(GitDir(repoPerforce), "perforce"); err != nil {
+	if err := setRepositoryType(common.GitDir(repoPerforce), "perforce"); err != nil {
 		t.Fatal(err)
 	}
-	if err := setRepositoryType(GitDir(repoPerforceGCOld), "perforce"); err != nil {
+	if err := setRepositoryType(common.GitDir(repoPerforceGCOld), "perforce"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -684,7 +685,7 @@ func TestCleanupOldLocks(t *testing.T) {
 		if err := cmd.Run(); err != nil {
 			t.Fatal(err)
 		}
-		dir := GitDir(filepath.Join(root, c.name, ".git"))
+		dir := common.GitDir(filepath.Join(root, c.name, ".git"))
 		for _, f := range c.files {
 			writeFile(t, dir.Path(f.name), nil)
 			if f.age == 0 {
@@ -708,7 +709,7 @@ func TestCleanupOldLocks(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			dir := GitDir(filepath.Join(root, c.name, ".git"))
+			dir := common.GitDir(filepath.Join(root, c.name, ".git"))
 			for _, f := range c.files {
 				if f.wantRemoved != isRemoved(dir.Path(f.name)) {
 					t.Fatalf("%s should have been removed", f.name)
@@ -850,7 +851,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 		"github.com/bam/bam/.git",
 		"example.com/repo/.git",
 	} {
-		if err := s.removeRepoDirectory(GitDir(filepath.Join(root, d)), logger, true); err != nil {
+		if err := s.removeRepoDirectory(common.GitDir(filepath.Join(root, d)), logger, true); err != nil {
 			t.Fatalf("failed to remove %s: %s", d, err)
 		}
 	}
@@ -861,7 +862,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 		"github.com/bam/bam/.git",
 		"example.com/repo/.git",
 	} {
-		if err := s.removeRepoDirectory(GitDir(filepath.Join(root, d)), logger, true); err != nil {
+		if err := s.removeRepoDirectory(common.GitDir(filepath.Join(root, d)), logger, true); err != nil {
 			t.Fatalf("failed to remove %s: %s", d, err)
 		}
 	}
@@ -911,7 +912,7 @@ func TestRemoveRepoDirectory_Empty(t *testing.T) {
 		DB:             db,
 	}
 
-	if err := s.removeRepoDirectory(GitDir(filepath.Join(root, "github.com/foo/baz/.git")), logger, true); err != nil {
+	if err := s.removeRepoDirectory(common.GitDir(filepath.Join(root, "github.com/foo/baz/.git")), logger, true); err != nil {
 		t.Fatal(err)
 	}
 
@@ -958,7 +959,7 @@ func TestRemoveRepoDirectory_UpdateCloneStatus(t *testing.T) {
 		ctx:            ctx,
 	}
 
-	if err := s.removeRepoDirectory(GitDir(filepath.Join(root, "github.com/foo/baz/.git")), logger, false); err != nil {
+	if err := s.removeRepoDirectory(common.GitDir(filepath.Join(root, "github.com/foo/baz/.git")), logger, false); err != nil {
 		t.Fatal(err)
 	}
 
@@ -1248,7 +1249,7 @@ func TestJitterDuration(t *testing.T) {
 	}
 }
 
-func prepareEmptyGitRepo(t *testing.T, dir string) GitDir {
+func prepareEmptyGitRepo(t *testing.T, dir string) common.GitDir {
 	t.Helper()
 	cmd := exec.Command("git", "init", ".")
 	cmd.Dir = dir
@@ -1260,7 +1261,7 @@ func prepareEmptyGitRepo(t *testing.T, dir string) GitDir {
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("execution error: %v, output %s", err, out)
 	}
-	return GitDir(filepath.Join(dir, ".git"))
+	return common.GitDir(filepath.Join(dir, ".git"))
 }
 
 func TestTooManyLooseObjects(t *testing.T) {
@@ -1574,7 +1575,7 @@ update gitserver_repos set repo_size_bytes = 228 where repo_id = 1;
 
 func TestSGMLogFile(t *testing.T) {
 	logger := logtest.Scoped(t)
-	dir := GitDir(t.TempDir())
+	dir := common.GitDir(t.TempDir())
 	cmd := exec.Command("git", "--bare", "init")
 	dir.Set(cmd)
 	if err := cmd.Run(); err != nil {
@@ -1708,7 +1709,7 @@ error message
 
 // We test whether the lock set by sg maintenance is respected by git gc.
 func TestGitGCRespectsLock(t *testing.T) {
-	dir := GitDir(t.TempDir())
+	dir := common.GitDir(t.TempDir())
 	cmd := exec.Command("git", "--bare", "init")
 	dir.Set(cmd)
 	if err := cmd.Run(); err != nil {
@@ -1751,7 +1752,7 @@ func TestGitGCRespectsLock(t *testing.T) {
 func TestSGMaintenanceRespectsLock(t *testing.T) {
 	logger, getLogs := logtest.Captured(t)
 
-	dir := GitDir(t.TempDir())
+	dir := common.GitDir(t.TempDir())
 	cmd := exec.Command("git", "--bare", "init")
 	dir.Set(cmd)
 	if err := cmd.Run(); err != nil {
@@ -1781,7 +1782,7 @@ func TestSGMaintenanceRespectsLock(t *testing.T) {
 func TestSGMaintenanceRemovesLock(t *testing.T) {
 	logger := logtest.Scoped(t)
 
-	dir := GitDir(t.TempDir())
+	dir := common.GitDir(t.TempDir())
 	cmd := exec.Command("git", "--bare", "init")
 	dir.Set(cmd)
 	if err := cmd.Run(); err != nil {

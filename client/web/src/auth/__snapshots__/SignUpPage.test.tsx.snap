@@ -7,16 +7,6 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
   <div
     class="page"
   >
-    <header
-      class="position-relative"
-    >
-      <div
-        class="headerBackground1"
-      />
-      <div
-        class="headerBackground2"
-      />
-    </header>
     <div
       class="d-flex justify-content-center mb-5 leftOrRightContainer"
     >
@@ -29,25 +19,117 @@ exports[`SignUpPage renders sign up page (cloud) 1`] = `
           src="/img/sourcegraph-logo-light.svg"
         />
         <h2
-          class="h2 d-flex align-items-center mb-4 mt-1 pageHeading"
+          class="h2 d-flex align-items-center mb-4 mt-1 text-wrap pageHeading"
         >
-          Easily search the code you care about.
+          Sign up for access to an AI code assistant with the context of millions of public repositories.
         </h2>
-        With a Sourcegraph account, you can also:
         <ul
-          class="featureList"
+          class="list-unstyled"
         >
-          <li>
-            Search across 2M+ open source repositories
+          <li
+            class="d-flex align-items-start"
+          >
+            <div
+              class="p-2 rounded mr-3 d-flex iconContainer"
+            >
+              <svg
+                aria-label="Understand, and write code faster with an A.I. assistant"
+                class="mdi-icon iconInline"
+                fill="currentColor"
+                height="24"
+                role="img"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M18,8H6V6H18V8M18,11H6V9H18V11M18,14H6V12H18V14M22,4A2,2 0 0,0 20,2H4A2,2 0 0,0 2,4V16A2,2 0 0,0 4,18H18L22,22V4Z"
+                />
+              </svg>
+            </div>
+            <div
+              class="flex-grow-1 d-flex flex-column"
+            >
+              <h4
+                class="h4 m-0 p-0"
+              >
+                Understand, and write code faster with an A.I. assistant
+              </h4>
+              <p
+                class="text-muted description"
+              >
+                Cody answers code questions and writes code for you by reading your entire codebase and the code graph.
+              </p>
+            </div>
           </li>
-          <li>
-            Monitor code for changes
+          <li
+            class="d-flex align-items-start"
+          >
+            <div
+              class="p-2 rounded mr-3 d-flex iconContainer"
+            >
+              <svg
+                aria-label="Codebase-aware chat"
+                class="mdi-icon iconInline"
+                fill="currentColor"
+                height="24"
+                role="img"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M9.5,13.09L10.91,14.5L6.41,19H10V21H3V14H5V17.59L9.5,13.09M10.91,9.5L9.5,10.91L5,6.41V10H3V3H10V5H6.41L10.91,9.5M14.5,13.09L19,17.59V14H21V21H14V19H17.59L13.09,14.5L14.5,13.09M13.09,9.5L17.59,5H14V3H21V10H19V6.41L14.5,10.91L13.09,9.5Z"
+                />
+              </svg>
+            </div>
+            <div
+              class="flex-grow-1 d-flex flex-column"
+            >
+              <h4
+                class="h4 m-0 p-0"
+              >
+                Codebase-aware chat
+              </h4>
+              <p
+                class="text-muted description"
+              >
+                Cody knows about your local code and can learn from the code graph and documentation inside your organization.
+              </p>
+            </div>
           </li>
-          <li>
-            Navigate through code with IDE like go to references and definition hovers
-          </li>
-          <li>
-            Integrate data, tooling, and code in a single location 
+          <li
+            class="d-flex align-items-start"
+          >
+            <div
+              class="p-2 rounded mr-3 d-flex iconContainer"
+            >
+              <svg
+                aria-label="Get Access to Cody for VS Code and the web"
+                class="mdi-icon iconInline"
+                fill="currentColor"
+                height="24"
+                role="img"
+                viewBox="0 0 24 24"
+                width="24"
+              >
+                <path
+                  d="M17,16.47V7.39L11,11.93M2.22,9.19C1.92,8.87 1.91,8.37 2.2,8.04L3.4,6.93C3.6,6.75 4.09,6.67 4.45,6.93L7.87,9.54L15.8,2.29C16.12,1.97 16.67,1.84 17.3,2.17L21.3,4.08C21.66,4.29 22,4.62 22,5.23V18.73C22,19.13 21.71,19.56 21.4,19.73L17,21.83C16.68,21.96 16.08,21.84 15.87,21.63L7.85,14.33L4.45,16.93C4.07,17.19 3.6,17.12 3.4,16.93L2.2,15.83C1.88,15.5 1.92,14.96 2.25,14.63L5.25,11.93"
+                />
+              </svg>
+            </div>
+            <div
+              class="flex-grow-1 d-flex flex-column"
+            >
+              <h4
+                class="h4 m-0 p-0"
+              >
+                Get Access to Cody for VS Code and the web
+              </h4>
+              <p
+                class="text-muted description"
+              >
+                Get free access to Cody for VS Code by signing up. Not a VS Code user? The web app has what you need and other editors are on the way!
+              </p>
+            </div>
           </li>
         </ul>
         <div

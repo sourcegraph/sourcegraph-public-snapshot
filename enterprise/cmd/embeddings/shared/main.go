@@ -18,16 +18,14 @@ import (
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
@@ -58,7 +56,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	repoEmbeddingJobsStore := repo.NewRepoEmbeddingJobsStore(db)
 
 	// Run setup
-	gitserverClient := gitserver.NewClient()
 	uploadStore, err := embeddings.NewEmbeddingsUploadStore(ctx, observationCtx, config.EmbeddingsUploadStoreConfig)
 	if err != nil {
 		return err
@@ -69,28 +66,35 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return errors.Wrap(err, "creating sub-repo client")
 	}
 
-	readFile := func(ctx context.Context, repoName api.RepoName, revision api.CommitID, fileName string) ([]byte, error) {
-		return gitserverClient.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, repoName, revision, fileName)
-	}
-
-	getRepoEmbeddingIndex, err := getCachedRepoEmbeddingIndex(repoStore, repoEmbeddingJobsStore, func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
-		return embeddings.DownloadRepoEmbeddingIndex(ctx, uploadStore, string(repoEmbeddingIndexName))
-	})
+	indexGetter, err := NewCachedEmbeddingIndexGetter(
+		repoStore,
+		repoEmbeddingJobsStore,
+		func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
+			return embeddings.DownloadRepoEmbeddingIndex(ctx, uploadStore, string(repoEmbeddingIndexName))
+		},
+		config.EmbeddingsCacheSize,
+	)
 	if err != nil {
 		return err
 	}
 
-	client := embed.NewEmbeddingsClient()
-	getQueryEmbedding, err := getCachedQueryEmbeddingFn(client)
+	getQueryEmbedding, err := getCachedQueryEmbeddingFn()
 	if err != nil {
 		return err
 	}
+
+	weaviate := newWeaviateClient(
+		logger,
+		getQueryEmbedding,
+		config.WeaviateURL,
+	)
 
 	getContextDetectionEmbeddingIndex := getCachedContextDetectionEmbeddingIndex(uploadStore)
 
 	// Create HTTP server
-	handler := NewHandler(logger, readFile, getRepoEmbeddingIndex, getQueryEmbedding, getContextDetectionEmbeddingIndex)
+	handler := NewHandler(logger, indexGetter.Get, getQueryEmbedding, weaviate, getContextDetectionEmbeddingIndex)
 	handler = handlePanic(logger, handler)
+	handler = featureflag.Middleware(db.FeatureFlags(), handler)
 	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
 	handler = instrumentation.HTTPMiddleware("", handler)
 	handler = actor.HTTPMiddleware(logger, handler)
@@ -110,9 +114,9 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 func NewHandler(
 	logger log.Logger,
-	readFile readFileFn,
 	getRepoEmbeddingIndex getRepoEmbeddingIndexFn,
 	getQueryEmbedding getQueryEmbeddingFn,
+	weaviate *weaviateClient,
 	getContextDetectionEmbeddingIndex getContextDetectionEmbeddingIndexFn,
 ) http.Handler {
 	// Initialize the legacy JSON API server
@@ -126,11 +130,11 @@ func NewHandler(
 		var args embeddings.EmbeddingsSearchParameters
 		err := json.NewDecoder(r.Body).Decode(&args)
 		if err != nil {
-			http.Error(w, "could not parse request body", http.StatusBadRequest)
+			http.Error(w, "could not parse request body: "+err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		res, err := searchRepoEmbeddingIndex(r.Context(), logger, args, readFile, getRepoEmbeddingIndex, getQueryEmbedding)
+		res, err := searchRepoEmbeddingIndexes(r.Context(), args, getRepoEmbeddingIndex, getQueryEmbedding, weaviate)
 		if errcode.IsNotFound(err) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return

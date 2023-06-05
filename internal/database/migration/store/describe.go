@@ -347,17 +347,6 @@ tables AS MATERIALIZED (
 		t.table_schema NOT LIKE 'pg_%%' AND
 		t.table_schema NOT LIKE '_timescaledb_%%' AND
 		t.table_schema != 'information_schema'
-),
-element_types AS MATERIALIZED (
-	SELECT
-		e.object_catalog,
-		e.object_schema,
-		e.object_name,
-		e.collection_type_identifier,
-		e.data_type
-	FROM information_schema.element_types e
-	WHERE
-		e.object_type = 'TABLE'
 )
 SELECT
 	c.table_schema AS schemaName,
@@ -365,7 +354,16 @@ SELECT
 	c.column_name AS columnName,
 	c.ordinal_position AS index,
 	CASE
-		WHEN c.data_type = 'ARRAY'           THEN e.data_type || '[]'
+		WHEN c.data_type = 'ARRAY' THEN COALESCE((
+			SELECT e.data_type
+			FROM information_schema.element_types e
+			WHERE
+				e.object_type = 'TABLE' AND
+				e.object_catalog = c.table_catalog AND
+				e.object_schema = c.table_schema AND
+				e.object_name = c.table_name AND
+				e.collection_type_identifier = c.dtd_identifier
+		)) || '[]'
 		WHEN c.data_type = 'USER-DEFINED'    THEN c.udt_name
 		WHEN c.character_maximum_length != 0 THEN c.data_type || '(' || c.character_maximum_length::text || ')'
 		ELSE c.data_type
@@ -382,11 +380,6 @@ FROM information_schema.columns c
 JOIN tables t ON
 	t.table_schema = c.table_schema AND
 	t.table_name = c.table_name
-LEFT JOIN element_types e ON
-	e.object_catalog = c.table_catalog AND
-	e.object_schema = c.table_schema AND
-	e.object_name = c.table_name AND
-	e.collection_type_identifier = c.dtd_identifier
 ORDER BY
 	c.table_schema,
 	c.table_name,

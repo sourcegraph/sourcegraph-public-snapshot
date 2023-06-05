@@ -50,7 +50,7 @@ var funcMap = template.FuncMap{
 		}
 
 		// Read file contents and calculate MD5 sum to represent version.
-		f, err := assets.Assets.Open(fp)
+		f, err := assets.Provider.Assets().Open(fp)
 		if err != nil {
 			return "", err
 		}

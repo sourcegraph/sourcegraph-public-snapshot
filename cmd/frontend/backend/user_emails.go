@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
@@ -22,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -31,8 +33,11 @@ type UserEmailsService interface {
 	Remove(ctx context.Context, userID int32, email string) error
 	SetPrimaryEmail(ctx context.Context, userID int32, email string) error
 	SetVerified(ctx context.Context, userID int32, email string, verified bool) error
+	HasVerifiedEmail(ctx context.Context, userID int32) (bool, error)
+	CurrentActorHasVerifiedEmail(ctx context.Context) (bool, error)
 	ResendVerificationEmail(ctx context.Context, userID int32, email string, now time.Time) error
 	SendUserEmailOnFieldUpdate(ctx context.Context, id int32, change string) error
+	SendUserEmailOnAccessTokenChange(ctx context.Context, id int32, tokenName string, deleted bool) error
 }
 
 // NewUserEmailsService creates an instance of UserEmailsService that contains
@@ -231,6 +236,30 @@ func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string
 	return nil
 }
 
+// CurrentActorHasVerifiedEmail returns whether the actor associated with the given
+// context.Context has a verified email.
+func (e *userEmails) CurrentActorHasVerifiedEmail(ctx context.Context) (bool, error) {
+	// 🚨 SECURITY: We require an authenticated, non-internal actor
+	a := actor.FromContext(ctx)
+	if !a.IsAuthenticated() || a.IsInternal() {
+		return false, auth.ErrNotAuthenticated
+	}
+
+	return e.HasVerifiedEmail(ctx, a.UID)
+}
+
+// HasVerifiedEmail returns whether the user with the given userID has a
+// verified email.
+func (e *userEmails) HasVerifiedEmail(ctx context.Context, userID int32) (bool, error) {
+	// 🚨 SECURITY: Only the authenticated user and site admins can check
+	// whether the user has verified email.
+	if err := auth.CheckSiteAdminOrSameUser(ctx, e.db, userID); err != nil {
+		return false, err
+	}
+
+	return e.db.UserEmails().HasVerifiedEmail(ctx, userID)
+}
+
 // ResendVerificationEmail attempts to re-send the verification e-mail for the
 // given user and email combination. If an e-mail sent within the last minute we
 // do nothing.
@@ -278,19 +307,27 @@ func (e *userEmails) ResendVerificationEmail(ctx context.Context, userID int32, 
 	return SendUserEmailVerificationEmail(ctx, user.Username, email, code)
 }
 
-// SendUserEmailOnFieldUpdate sends the user an email that important account information has changed.
-// The change is the information we want to provide the user about the change
-func (e *userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, id int32, change string) error {
+func (e *userEmails) loadUserForEmail(ctx context.Context, id int32) (*types.User, string, error) {
 	email, verified, err := e.db.UserEmails().GetPrimaryEmail(ctx, id)
 	if err != nil {
-		return errors.Wrap(err, "get user primary email")
+		return nil, "", errors.Wrap(err, "get user primary email")
 	}
 	if !verified {
-		return errors.Newf("unable to send email to user ID %d's unverified primary email address", id)
+		return nil, "", errors.Newf("unable to send email to user ID %d's unverified primary email address", id)
 	}
 	usr, err := e.db.Users().GetByID(ctx, id)
 	if err != nil {
-		return errors.Wrap(err, "get user")
+		return nil, "", errors.Wrap(err, "get user")
+	}
+	return usr, email, nil
+}
+
+// SendUserEmailOnFieldUpdate sends the user an email that important account information has changed.
+// The change is the information we want to provide the user about the change
+func (e *userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, id int32, change string) error {
+	usr, email, err := e.loadUserForEmail(ctx, id)
+	if err != nil {
+		return err
 	}
 
 	return txemail.Send(ctx, "user_account_update", txemail.Message{
@@ -320,6 +357,69 @@ If this was you, carry on, and thanks for using Sourcegraph! Otherwise, please c
 	HTML: `
 <p>
 Hi there! Somebody (likely you) {{.Change}} for the user {{.Username}} on Sourcegraph ({{.Host}}).
+</p>
+
+<p>If this was you, carry on, and thanks for using Sourcegraph! Otherwise, please change your password immediately.</p>
+`,
+})
+
+// SendUserEmailOnAccessTokenCreation sends the user an email that an access
+// token has been created or deleted.
+func (e *userEmails) SendUserEmailOnAccessTokenChange(ctx context.Context, id int32, tokenName string, deleted bool) error {
+	usr, email, err := e.loadUserForEmail(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	var tmpl txtypes.Templates
+	if deleted {
+		tmpl = accessTokenDeletedEmailTemplate
+	} else {
+		tmpl = accessTokenCreatedEmailTemplate
+	}
+	return txemail.Send(ctx, "user_access_token_created", txemail.Message{
+		To:       []string{email},
+		Template: tmpl,
+		Data: struct {
+			Email     string
+			TokenName string
+			Username  string
+			Host      string
+		}{
+			Email:     email,
+			TokenName: tokenName,
+			Username:  usr.Username,
+			Host:      globals.ExternalURL().Host,
+		},
+	})
+}
+
+var accessTokenCreatedEmailTemplate = txemail.MustValidate(txtypes.Templates{
+	Subject: `New Sourcegraph access token created ({{.Host}})`,
+	Text: `
+Hi there! Somebody (likely you) created a new access token "{{.TokenName}}" for the user {{.Username}} on Sourcegraph ({{.Host}}).
+
+If this was you, carry on, and thanks for using Sourcegraph! Otherwise, please change your password immediately.
+`,
+	HTML: `
+<p>
+Hi there! Somebody (likely you) created a new access token "{{.TokenName}}" for the user {{.Username}} on Sourcegraph ({{.Host}}).
+</p>
+
+<p>If this was you, carry on, and thanks for using Sourcegraph! Otherwise, please change your password immediately.</p>
+`,
+})
+
+var accessTokenDeletedEmailTemplate = txemail.MustValidate(txtypes.Templates{
+	Subject: `Sourcegraph access token deleted ({{.Host}})`,
+	Text: `
+Hi there! Somebody (likely you) deleted the access token "{{.TokenName}}" for the user {{.Username}} on Sourcegraph ({{.Host}}).
+
+If this was you, carry on, and thanks for using Sourcegraph! Otherwise, please change your password immediately.
+`,
+	HTML: `
+<p>
+Hi there! Somebody (likely you) deleted the access token "{{.TokenName}}" for the user {{.Username}} on Sourcegraph ({{.Host}}).
 </p>
 
 <p>If this was you, carry on, and thanks for using Sourcegraph! Otherwise, please change your password immediately.</p>

@@ -12,12 +12,17 @@
 - [Overview](architecture/index.md)
 - [Introducing a new service](architecture/introducing_a_new_service.md)
 
+## [Sourcegraph App](app/index.md)
+
+- [Notes about code signing the Sourcegraph App](./app/codesigning.md)
+
 ## Development
 
 - [`sg` - the Sourcegraph developer tool](./sg/index.md)
   - [Full `sg` reference](./sg/reference.md)
 - [Using Bazel](./bazel.md)
   - [Bazel and client code](./bazel_web.md)
+  - [Bazel and container images](./bazel_containers.md)
 - [Developing the web clients](web/index.md)
   - [Developing the web app](web/web_app.md)
   - [Developing the code host integrations](web/code_host_integrations.md)
@@ -59,6 +64,7 @@
 
 ## [SQL](sql/index.md)
 
+- [Migrations overview](sql/migrations_overview.md)
 - [Migrations](sql/migrations.md)
 - High-performance guides
   - [Batch operations](sql/batch_operations.md)
@@ -77,6 +83,10 @@
 - [Renovate dependency updates](renovate.md)
 - [Honeycomb](honeycomb.md)
 - [Using PostgreSQL](postgresql.md)
+
+## Wolfi
+
+- [Wolfi Overview](wolfi/index.md)
 
 ## Other
 

@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -53,13 +54,13 @@ type PermissionStore interface {
 type GetPermissionForUserOpts struct {
 	UserID int32
 
-	Namespace types.PermissionNamespace
-	Action    string
+	Namespace rtypes.PermissionNamespace
+	Action    rtypes.NamespaceAction
 }
 
 type CreatePermissionOpts struct {
-	Namespace types.PermissionNamespace
-	Action    string
+	Namespace rtypes.PermissionNamespace
+	Action    rtypes.NamespaceAction
 }
 
 type PermissionOpts struct {
@@ -81,8 +82,8 @@ type PermissionListOpts struct {
 type PermissionNotFoundErr struct {
 	ID int32
 
-	Namespace types.PermissionNamespace
-	Action    string
+	Namespace rtypes.PermissionNamespace
+	Action    rtypes.NamespaceAction
 }
 
 func (p *PermissionNotFoundErr) Error() string {

@@ -256,3 +256,76 @@ kind: Config
 
 	assert.Equal(t, runtime.NameKubernetes, r.Name())
 }
+
+func TestCommandKey(t *testing.T) {
+	tests := []struct {
+		name        string
+		runtimeName runtime.Name
+		key         string
+		index       int
+		expectedKey string
+	}{
+		{
+			name:        "Docker",
+			runtimeName: runtime.NameDocker,
+			key:         "step.1.pre",
+			index:       0,
+			expectedKey: "step.docker.step.1.pre",
+		},
+		{
+			name:        "Docker with index",
+			runtimeName: runtime.NameDocker,
+			key:         "",
+			index:       1,
+			expectedKey: "step.docker.1",
+		},
+		{
+			name:        "Firecracker",
+			runtimeName: runtime.NameFirecracker,
+			key:         "step.1.pre",
+			index:       0,
+			expectedKey: "step.docker.step.1.pre",
+		},
+		{
+			name:        "Firecracker with index",
+			runtimeName: runtime.NameFirecracker,
+			key:         "",
+			index:       1,
+			expectedKey: "step.docker.1",
+		},
+		{
+			name:        "Kubernetes",
+			runtimeName: runtime.NameKubernetes,
+			key:         "step.1.pre",
+			index:       0,
+			expectedKey: "step.kubernetes.step.1.pre",
+		},
+		{
+			name:        "Kubernetes with index",
+			runtimeName: runtime.NameKubernetes,
+			key:         "",
+			index:       1,
+			expectedKey: "step.kubernetes.1",
+		},
+		{
+			name:        "Shell",
+			runtimeName: runtime.NameShell,
+			key:         "step.1.pre",
+			index:       0,
+			expectedKey: "step.docker.step.1.pre",
+		},
+		{
+			name:        "Shell with index",
+			runtimeName: runtime.NameShell,
+			key:         "",
+			index:       1,
+			expectedKey: "step.docker.1",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			key := runtime.CommandKey(test.runtimeName, test.key, test.index)
+			assert.Equal(t, test.expectedKey, key)
+		})
+	}
+}

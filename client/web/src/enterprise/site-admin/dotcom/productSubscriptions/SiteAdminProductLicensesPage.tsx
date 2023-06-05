@@ -1,27 +1,14 @@
 import React, { useEffect } from 'react'
 
-import { Observable, of } from 'rxjs'
-import { map } from 'rxjs/operators'
-
-import { createAggregateError } from '@sourcegraph/common'
-import { gql } from '@sourcegraph/http-client'
 import { H2, Text } from '@sourcegraph/wildcard'
 
-import { queryGraphQL } from '../../../../backend/graphql'
 import { FilteredConnection } from '../../../../components/FilteredConnection'
 import { PageTitle } from '../../../../components/PageTitle'
-import {
-    DotComProductLicensesResult,
-    DotComProductLicensesVariables,
-    ProductLicenseFields,
-} from '../../../../graphql-operations'
+import { ProductLicenseFields } from '../../../../graphql-operations'
 import { eventLogger } from '../../../../tracking/eventLogger'
 
-import {
-    siteAdminProductLicenseFragment,
-    SiteAdminProductLicenseNode,
-    SiteAdminProductLicenseNodeProps,
-} from './SiteAdminProductLicenseNode'
+import { queryLicenses } from './backend'
+import { SiteAdminProductLicenseNode, SiteAdminProductLicenseNodeProps } from './SiteAdminProductLicenseNode'
 
 interface Props {}
 
@@ -53,47 +40,4 @@ export const SiteAdminProductLicensesPage: React.FunctionComponent<React.PropsWi
             />
         </div>
     )
-}
-
-function queryLicenses(args: {
-    first?: number
-    query?: string
-}): Observable<DotComProductLicensesResult['dotcom']['productLicenses']> {
-    const variables: Partial<DotComProductLicensesVariables> = {
-        first: args.first,
-        licenseKeySubstring: args.query,
-    }
-    return args.query
-        ? queryGraphQL<DotComProductLicensesResult>(
-              gql`
-                  query DotComProductLicenses($first: Int, $licenseKeySubstring: String) {
-                      dotcom {
-                          productLicenses(first: $first, licenseKeySubstring: $licenseKeySubstring) {
-                              nodes {
-                                  ...ProductLicenseFields
-                              }
-                              totalCount
-                              pageInfo {
-                                  hasNextPage
-                              }
-                          }
-                      }
-                  }
-                  ${siteAdminProductLicenseFragment}
-              `,
-              variables
-          ).pipe(
-              map(({ data, errors }) => {
-                  if (!data?.dotcom?.productLicenses || (errors && errors.length > 0)) {
-                      throw createAggregateError(errors)
-                  }
-                  return data.dotcom.productLicenses
-              })
-          )
-        : of({
-              __typename: 'ProductLicenseConnection' as const,
-              nodes: [],
-              totalCount: 0,
-              pageInfo: { __typename: 'PageInfo' as const, hasNextPage: false, endCursor: null },
-          })
 }

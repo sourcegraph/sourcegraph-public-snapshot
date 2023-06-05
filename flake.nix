@@ -1,61 +1,40 @@
 {
-  description = "The Sourcegraph developer environment Nix Flake";
+  description = "The Sourcegraph developer environment & packages Nix Flake";
 
   inputs = {
     nixpkgs.url = "nixpkgs/nixos-unstable";
+    flake-utils.url = "github:numtide/flake-utils";
   };
 
-  outputs = { self, nixpkgs }:
-    {
-      devShells = nixpkgs.lib.genAttrs
-        [ "x86_64-linux" "aarch64-linux" "aarch64-darwin" "x86_64-darwin" ]
-        (system:
-          let
-            pkgs = import nixpkgs {
-              inherit system;
-              overlays = [ self.overlays.ctags ];
-            };
-          in
-          {
-            default = import ./shell.nix { inherit pkgs; };
-          }
-        );
-      # Pin a specific version of universal-ctags to the same version as in cmd/symbols/ctags-install-alpine.sh.
-      overlays.ctags = self: super: rec {
-        universal-ctags = super.universal-ctags.overrideAttrs (old: {
-          version = "5.9.20220403.0";
-          src = super.fetchFromGitHub {
-            owner = "universal-ctags";
-            repo = "ctags";
-            rev = "f95bb3497f53748c2b6afc7f298cff218103ab90";
-            sha256 = "sha256-pd89KERQj6K11Nue3YFNO+NLOJGqcMnHkeqtWvMFk38=";
-          };
-          # disable checks, else we get `make[1]: *** No rule to make target 'optlib/cmake.c'.  Stop.`
-          doCheck = false;
-          checkFlags = [ ];
-        });
-      };
-
-      # recursiveUpdate is just for recursively merging sets
-      packages = nixpkgs.lib.recursiveUpdate
+  outputs = { self, nixpkgs, flake-utils }:
+    flake-utils.lib.eachDefaultSystem
+      (system:
+        let
+          pkgs = nixpkgs.legacyPackages.${system};
+          pkgs' = import nixpkgs { inherit system; overlays = builtins.attrValues self.overlays; };
+        in
         {
-          x86_64-linux.p4-fusion-portable = self.packages.x86_64-linux.p4-fusion.overrideAttrs (oldAttrs: {
-            # patch the ELF interpreter for non-nix(os) distros.
-            postFixup = ''
-              patchelf \
-                --set-interpreter /lib64/ld-linux-x86-64.so.2 \
-                $out/bin/p4-fusion
-            '';
-          });
-        }
-        (
-          nixpkgs.lib.genAttrs [ "x86_64-linux" "x86_64-darwin" "aarch64-darwin" ] (system:
-            let pkgs = import nixpkgs { inherit system; };
-            in
-            {
-              p4-fusion = pkgs.callPackage ./dev/nix/p4-fusion.nix { };
-            }
-          )
-        );
+          legacyPackages = pkgs';
+
+          packages = {
+            ctags = pkgs.callPackage ./dev/nix/ctags.nix { };
+            comby = pkgs.callPackage ./dev/nix/comby.nix { };
+            nodejs-16_x = pkgs.callPackage ./dev/nix/nodejs.nix { };
+          }
+          # so we don't get `packages.aarch64-linux.p4-fusion` in nix `flake show` output
+          // pkgs.lib.optionalAttrs (pkgs.targetPlatform.system != "aarch64-linux") {
+            p4-fusion = pkgs.callPackage ./dev/nix/p4-fusion.nix { };
+          };
+
+          devShells.default = pkgs'.callPackage ./shell.nix { };
+
+          formatter = pkgs.nixpkgs-fmt;
+        }) // {
+      overlays = {
+        ctags = final: prev: { universal-ctags = self.packages.${prev.system}.ctags; };
+        comby = final: prev: { comby = self.packages.${prev.system}.comby; };
+        nodejs-16_x = final: prev: { nodejs-16_x = self.packages.${prev.system}.nodejs-16_x; };
+        p4-fusion = final: prev: { p4-fusion = self.packages.${prev.system}.p4-fusion; };
+      };
     };
 }

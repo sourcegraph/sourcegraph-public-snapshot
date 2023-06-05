@@ -4,11 +4,12 @@ import (
 	"context"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/userpasswd"
 	iauth "github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -20,7 +21,8 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 	Username      string
 	Email         *string
 	VerifiedEmail *bool
-}) (*createUserResult, error) {
+},
+) (*createUserResult, error) {
 	// 🚨 SECURITY: Only site admins can create user accounts.
 	if err := iauth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err

@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -30,10 +31,12 @@ func NewPackagesFilterApplicator(
 	}
 
 	return goroutine.NewPeriodicGoroutine(
-		context.Background(),
-		"codeintel.package-filter-applicator", "applies package repo filters to all package repo references to precompute their blocked status",
-		time.Second*5,
-		goroutine.HandlerFunc(job.handle))
+		actor.WithInternalActor(context.Background()),
+		goroutine.HandlerFunc(job.handle),
+		goroutine.WithName("codeintel.package-filter-applicator"),
+		goroutine.WithDescription("applies package repo filters to all package repo references to precompute their blocked status"),
+		goroutine.WithInterval(time.Second*5),
+	)
 }
 
 func (j *packagesFilterApplicatorJob) handle(ctx context.Context) (err error) {

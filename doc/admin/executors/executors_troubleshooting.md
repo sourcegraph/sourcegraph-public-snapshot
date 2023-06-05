@@ -16,7 +16,7 @@ You can now run `executor validate`, which will inform you about any configurati
 ### Creating a debug Firecracker VM
 The next step is to create a temporary Firecracker VM for debugging purposes.
 
-> NOTE: if the host VM is provisioned with the [Sourcegraph terraform modules](./deploy_executors_terraform), the VMs may be configured to stop automatically. Refer to [Disabling the auto-deletion of Executor VMs](#disabling-the-auto-deletion-of-executor-vms) for information to prevent this.
+> NOTE: if the host VM is provisioned with the [Sourcegraph terraform modules](./deploy_executors_terraform.md), the VMs may be configured to stop automatically. Refer to [Disabling the auto-deletion of Executor VMs](#disabling-the-auto-deletion-of-executor-vms) for information to prevent this.
 
 Run one of the following commands `executor test-vm` to generate a test firecracker VM:
 ```shell
@@ -35,7 +35,7 @@ $ ignite attach executor-test-vm-0160f53f-e765-4481-a81e-aa3c704d07bd
 Execute the generated `ignite attach <vm>` command to gain a shell to the Firecracker VM.
 
 ## Disabling the auto-deletion of Executor VMs
-> NOTE: These instructions are for users using the VMs deployed via the [Terraform Modules](./deploy_executors_terraform)
+> NOTE: These instructions are for users using the VMs deployed via the [Terraform Modules](./deploy_executors_terraform.md)
 
 The Executor host VMs are configured to automatically tear themselves down once all jobs in the queue are completed. While this is desired behaviour under regular circumstances, it complicates debugging issues in the executor configuration or connections. To prevent the VMs from automatically stopping:
 1. `ssh` into the VM
@@ -47,7 +47,7 @@ The VM should now persist after all jobs are satisfied.
 ## Recreating a Firecracker VM 
 If a server-side batch change fails unexpectedly, it's possible to recreate the generated Firecracker VM from the batch change execution.
 
-> NOTE: if the host VM is provisioned with the [Sourcegraph terraform modules](./deploy_executors_terraform), the VMs may be configured to stop automatically. Refer to [Disabling the auto-deletion of Executor VMs](#disabling-the-auto-deletion-of-executor-vms) for information to prevent this.
+> NOTE: if the host VM is provisioned with the [Sourcegraph terraform modules](./deploy_executors_terraform.md), the VMs may be configured to stop automatically. Refer to [Disabling the auto-deletion of Executor VMs](#disabling-the-auto-deletion-of-executor-vms) for information to prevent this.
 
 1. Navigate to the failed execution page of the Batch Change
 1. Select a failed Workspace on the left and click the `Diagnostics` link on the right pane
@@ -141,23 +141,24 @@ ssh -i "path/to/key.pem" root@${INSTANCE_PUBLIC_DNS}
 ## Misconfigured environment variables
 This section lists some common mistakes with environment variables. Some of these will be exposed by running `executor validate` on the executor instance.
 
-| Env var                                                                                                                                                                 | Common mistakes                                             |
-|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------|
-| `EXECUTOR_FRONTEND_URL`                                                                                                                                                 | No protocol included (e.g. `https://`                       |
-| `EXECUTOR_FRONTEND_PASSWORD`                                                                                                                                            | Not set in `executor.accessToken` in the site config        |
-| `EXECUTOR_QUEUE_NAME`                                                                                                                                                   | Value doesn't match one of [`codeintel`, `batches`]         |
-| <ul><li>`EXECUTOR_MAXIMUM_RUNTIME_PER_JOB`</li><li>`EXECUTOR_MAX_ACTIVE_TIME`</li><li>`EXECUTOR_QUEUE_POLL_INTERVAL`</li><li>`EXECUTOR_CLEANUP_TASK_INTERVAL`</li></ul> | Value format can't be parsed by `time.ParseDuration`        |
-| <ul><li>`EXECUTOR_JOB_MEMORY`</li><li>`EXECUTOR_JOB_NUM_CPUS`</li></ul>                                                                                                 | Value format not recognized by virtual machine or Docker    |
-| `EXECUTOR_FIRECRACKER_DISK_SPACE`                                                                                                                                       | Value format not recognized by virtual machine              |
-| `EXECUTOR_DOCKER_REGISTRY_MIRROR_URL`                                                                                                                                   | Wrong IP or port specified                                  |
-| `EXECUTOR_DOCKER_HOST_MOUNT_PATH`                                                                                                                                       | Workspace does not exist at provided mount path             |
-| `EXECUTOR_VM_STARTUP_SCRIPT_PATH`                                                                                                                                       | Script does not exist at provided file path                 |
-| <ul><li>`EXECUTOR_FIRECRACKER_IMAGE`</li><li>`EXECUTOR_FIRECRACKER_KERNEL_IMAGE`</li><li>`EXECUTOR_FIRECRACKER_SANDBOX_IMAGE`</li></ul>                                 | Image does not exist for provided repository, name, or tag  |
-| <ul><li>`NODE_EXPORTER_URL`</li><li>`DOCKER_REGISTRY_NODE_EXPORTER_URL`</li></ul>                                                                                       | `/metrics` path is included or wrong IP or port specified   |
-| `SRC_LOG_LEVEL`                                                                                                                                                         | not set to one of [`dbug`, `info`, `warn`, `error`, `crit`] |
+| Env var                                                                                                                                                                 | Common mistakes                                                                                                            |
+|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------|
+| `EXECUTOR_FRONTEND_URL`                                                                                                                                                 | No protocol included (e.g. `https://`                                                                                      |
+| `EXECUTOR_FRONTEND_PASSWORD`                                                                                                                                            | Not set in `executor.accessToken` in the site config                                                                       |
+| `EXECUTOR_QUEUE_NAME`                                                                                                                                                   | Value doesn't match one of [`codeintel`, `batches`], or neither of `EXECUTOR_QUEUE_NAME` and `EXECUTOR_QUEUE_NAMES` is set |
+| `EXECUTOR_QUEUE_NAMES`                                                                                                                                                  | Value doesn't match one of [`codeintel`, `batches`]                                                                        |
+| <ul><li>`EXECUTOR_MAXIMUM_RUNTIME_PER_JOB`</li><li>`EXECUTOR_MAX_ACTIVE_TIME`</li><li>`EXECUTOR_QUEUE_POLL_INTERVAL`</li><li>`EXECUTOR_CLEANUP_TASK_INTERVAL`</li></ul> | Value format can't be parsed by `time.ParseDuration`                                                                       |
+| <ul><li>`EXECUTOR_JOB_MEMORY`</li><li>`EXECUTOR_JOB_NUM_CPUS`</li></ul>                                                                                                 | Value format not recognized by virtual machine or Docker                                                                   |
+| `EXECUTOR_FIRECRACKER_DISK_SPACE`                                                                                                                                       | Value format not recognized by virtual machine                                                                             |
+| `EXECUTOR_DOCKER_REGISTRY_MIRROR_URL`                                                                                                                                   | Wrong IP or port specified                                                                                                 |
+| `EXECUTOR_DOCKER_HOST_MOUNT_PATH`                                                                                                                                       | Workspace does not exist at provided mount path                                                                            |
+| `EXECUTOR_VM_STARTUP_SCRIPT_PATH`                                                                                                                                       | Script does not exist at provided file path                                                                                |
+| <ul><li>`EXECUTOR_FIRECRACKER_IMAGE`</li><li>`EXECUTOR_FIRECRACKER_KERNEL_IMAGE`</li><li>`EXECUTOR_FIRECRACKER_SANDBOX_IMAGE`</li></ul>                                 | Image does not exist for provided repository, name, or tag                                                                 |
+| <ul><li>`NODE_EXPORTER_URL`</li><li>`DOCKER_REGISTRY_NODE_EXPORTER_URL`</li></ul>                                                                                       | `/metrics` path is included or wrong IP or port specified                                                                  |
+| `SRC_LOG_LEVEL`                                                                                                                                                         | not set to one of [`dbug`, `info`, `warn`, `error`, `crit`]                                                                |
 
 ## Verify Firecracker support    
-The VM instance must [support KVM](./deploy_executors#firecracker-requirements). In effect, this means the instance must meet certain requirements depending on the Cloud provider in use.
+The VM instance must [support KVM](./deploy_executors.md#firecracker-requirements). In effect, this means the instance must meet certain requirements depending on the Cloud provider in use.
     
 ### GCP
 Nested virtualization must be enabled on the machine.

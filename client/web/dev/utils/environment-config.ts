@@ -43,7 +43,7 @@ export const ENVIRONMENT_CONFIG = {
     // Allow overriding default Webpack naming behavior for debugging.
     WEBPACK_USE_NAMED_CHUNKS: getEnvironmentBoolean('WEBPACK_USE_NAMED_CHUNKS'),
     // Enables the plugin that write Webpack stats to disk.
-    WEBPACK_EXPORT_STATS_FILENAME: process.env.WEBPACK_EXPORT_STATS_FILENAME,
+    WEBPACK_EXPORT_STATS: process.env.WEBPACK_EXPORT_STATS,
     // Allow to adjust https://webpack.js.org/configuration/devtool/ in the dev environment.
     WEBPACK_DEVELOPMENT_DEVTOOL: process.env.WEBPACK_DEVELOPMENT_DEVTOOL || 'eval-cheap-module-source-map',
     STATIC_ASSETS_PATH: process.env.STATIC_ASSETS_PATH || STATIC_ASSETS_PATH,
@@ -79,6 +79,7 @@ export const ENVIRONMENT_CONFIG = {
      */
     ENTERPRISE: getEnvironmentBoolean('ENTERPRISE'),
     SOURCEGRAPHDOTCOM_MODE: getEnvironmentBoolean('SOURCEGRAPHDOTCOM_MODE'),
+    SOURCEGRAPH_APP: getEnvironmentBoolean('SOURCEGRAPH_APP'),
 
     // Is reporting to Sentry enabled.
     ENABLE_SENTRY: getEnvironmentBoolean('ENABLE_SENTRY'),

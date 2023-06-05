@@ -1,0 +1,14 @@
+# hadolint ignore=DL3007
+FROM us.gcr.io/sourcegraph-dev/wolfi-jaeger-agent-base:latest
+
+ARG COMMIT_SHA="unknown"
+ARG DATE="unknown"
+ARG VERSION="unknown"
+
+LABEL org.opencontainers.image.revision=${COMMIT_SHA}
+LABEL org.opencontainers.image.created=${DATE}
+LABEL org.opencontainers.image.version=${VERSION}
+LABEL com.sourcegraph.jaeger.version=${JAEGER_VERSION}
+
+EXPOSE 5775/udp 6831/udp 6832/udp 5778
+ENTRYPOINT ["/usr/local/bin/jaeger-agent"]

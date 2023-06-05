@@ -1,7 +1,7 @@
 package:
   name: comby
   version: 1.8.1
-  epoch: 0
+  epoch: 2
   description: "A code rewrite tool for structural search and replace that supports ~every language."
   target-architecture:
     - x86_64
@@ -23,15 +23,44 @@ environment:
       - wolfi-base
       - busybox
       - ca-certificates-bundle
+      - build-base
+      - autoconf
+      - pcre-dev
+      - zlib-dev
+      - m4
+      - gmp-dev
+      - libev-dev
+      - sqlite-libs
+      - sqlite-dev
+      - wget
+      # opam deps
+      - posix-libc-utils
+      - patch
+      - bubblewrap
 
 pipeline:
+  - runs: |
+      ls -al $HOME
+  # Fetch Comby source
   - uses: fetch
     with:
-      uri: https://github.com/comby-tools/comby/releases/download/${{package.version}}/comby-${{package.version}}-x86_64-linux.tar.gz
-      expected-sha256: ec0ca6477822154d71033e0b0a724c23a0608b99028ecab492bc9876ae8c458a
-      # TODO: Work out why we can't use fetch's extract: true
+      uri: https://github.com/comby-tools/comby/archive/refs/tags/${{package.version}}.tar.gz
+      expected-sha256: 04d51cf742bbbf5e5fda064a710be44537fac49bff598d0e9762a3a799d666e2
+      strip-components: 0
+  # Download and configure opam
+  # Safe to use --disable-sandboxing as melange builds within a sandbox
   - runs: |
-      tar zxvf comby-${{package.version}}-x86_64-linux.tar.gz
+      wget https://github.com/ocaml/opam/releases/download/2.1.4/opam-2.1.4-x86_64-linux -O opam
+      chmod +x opam
+      mv opam /usr/bin
+      opam init --disable-sandboxing
+      opam switch create 4.11.0 4.11.0
+      eval $(opam env --switch=4.11.0)
+      cd comby-${{package.version}}/
+      opam install . --deps-only --yes
+      make
+      make test
+      make install
   - runs: |
       mkdir -p ${{targets.destdir}}/usr/bin/
-      cp comby-${{package.version}}-x86_64-linux ${{targets.destdir}}/usr/bin/comby
+      cp $HOME/.opam/4.11.0/bin/comby ${{targets.destdir}}/usr/bin/

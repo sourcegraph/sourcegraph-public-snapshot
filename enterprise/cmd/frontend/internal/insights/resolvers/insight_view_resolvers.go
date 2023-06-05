@@ -11,8 +11,8 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/segmentio/ksuid"
-	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
@@ -454,6 +454,13 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 		if err != nil {
 			return nil, err
 		}
+
+		if len(args.Input.DataSeries[i].RepositoryScope.Repositories) > 0 {
+			err := validateRepositoryList(ctx, args.Input.DataSeries[i].RepositoryScope.Repositories, r.postgresDB.Repos())
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	uid := actor.FromContext(ctx).UID
@@ -543,6 +550,13 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 		if err != nil {
 			return nil, err
 		}
+
+		if len(args.Input.DataSeries[i].RepositoryScope.Repositories) > 0 {
+			err := validateRepositoryList(ctx, args.Input.DataSeries[i].RepositoryScope.Repositories, r.postgresDB.Repos())
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	tx, err := r.insightStore.Transact(ctx)
@@ -615,6 +629,32 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 	}
 
 	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: permissionsValidator, viewId: insightViewId}, nil
+}
+
+// validateRepositoryList will validate that the repos provided exist and are accessible by the user in the current context
+func validateRepositoryList(ctx context.Context, repos []string, repoStore database.RepoStore) error {
+	list, err := repoStore.List(ctx, database.ReposListOptions{Names: repos})
+	if err != nil {
+		return errors.Wrap(err, "repoStore.List")
+	}
+
+	var missingRepos []string
+	foundRepos := make(map[string]struct{}, len(list))
+	for _, repo := range list {
+		foundRepos[string(repo.Name)] = struct{}{}
+	}
+
+	for _, repo := range repos {
+		if _, ok := foundRepos[repo]; !ok {
+			missingRepos = append(missingRepos, repo)
+		}
+	}
+
+	if len(missingRepos) > 0 {
+		return errors.Newf("repositories not found")
+	}
+
+	return nil
 }
 
 func isCaptureGroupSeries(generatedFromCaptureGroups *bool) bool {
