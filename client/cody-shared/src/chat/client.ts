@@ -5,6 +5,7 @@ import { PrefilledOptions, withPreselectedOptions } from '../editor/withPreselec
 import { SourcegraphEmbeddingsSearchClient } from '../embeddings/client'
 import { SourcegraphIntentDetectorClient } from '../intent-detector/client'
 import { SourcegraphBrowserCompletionsClient } from '../sourcegraph-api/completions/browserClient'
+import { SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { isError } from '../utils'
 
@@ -29,6 +30,7 @@ export interface ClientInit {
     setTranscript: (transcript: Transcript) => void
     editor: Editor
     initialTranscript?: Transcript
+    CompletionsClient: any //SourcegraphCompletionsClient
 }
 
 export interface Client {
@@ -52,10 +54,11 @@ export async function createClient({
     setTranscript,
     editor,
     initialTranscript,
+    CompletionsClient = SourcegraphBrowserCompletionsClient,
 }: ClientInit): Promise<Client> {
     const fullConfig = { debugEnable: false, ...config }
 
-    const completionsClient = new SourcegraphBrowserCompletionsClient(fullConfig)
+    const completionsClient = new CompletionsClient(fullConfig)
     const chatClient = new ChatClient(completionsClient)
 
     const graphqlClient = new SourcegraphGraphQLAPIClient(fullConfig)

@@ -29,11 +29,11 @@ export class CodeMirrorEditor implements Editor {
         return this.editor?.revision
     }
 
-    public getWorkspaceRootPath(): string | null {
+    public async getWorkspaceRootPath(): Promise<string | null> {
         return null
     }
 
-    public getActiveTextEditor(): ActiveTextEditor | null {
+    public async getActiveTextEditor(): Promise<ActiveTextEditor | null> {
         const editor = this.editor
         if (editor) {
             return {
@@ -46,7 +46,7 @@ export class CodeMirrorEditor implements Editor {
         return null
     }
 
-    public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
+    public async getActiveTextEditorSelection(): Promise<ActiveTextEditorSelection | null> {
         const editor = this.editor
 
         if (!editor || editor.view.state.selection.main.empty) {
@@ -74,7 +74,7 @@ export class CodeMirrorEditor implements Editor {
         return null
     }
 
-    public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
+    public async getActiveTextEditorSelectionOrEntireFile(): Promise<ActiveTextEditorSelection | null> {
         if (this.editor) {
             const selection = this.getActiveTextEditorSelection()
             if (selection) {
@@ -94,7 +94,7 @@ export class CodeMirrorEditor implements Editor {
         return null
     }
 
-    public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
+    public async getActiveTextEditorVisibleContent(): Promise<ActiveTextEditorVisibleContent | null> {
         const editor = this.editor
         if (editor) {
             const { from, to } = editor.view.viewport
@@ -115,9 +115,9 @@ export class CodeMirrorEditor implements Editor {
         return Promise.resolve()
     }
 
-    public showQuickPick(labels: string[]): Promise<string | undefined> {
+    public async showQuickPick(labels: string[]): Promise<string | null> {
         // TODO: Use a proper UI element
-        return Promise.resolve(window.prompt(`Choose between: ${labels.join(', ')}`, labels[0]) || undefined)
+        return Promise.resolve(window.prompt(`Choose between: ${labels.join(', ')}`, labels[0]) ?? null)
     }
 
     public async showWarningMessage(message: string): Promise<void> {
@@ -127,8 +127,8 @@ export class CodeMirrorEditor implements Editor {
         return Promise.resolve()
     }
 
-    public showInputBox(): Promise<string | undefined> {
+    public showInputBox(): Promise<string | null> {
         // TODO: Use a proper UI element
-        return Promise.resolve(window.prompt('Enter your answer: ') || undefined)
+        return Promise.resolve(window.prompt('Enter your answer: ') ?? null)
     }
 }

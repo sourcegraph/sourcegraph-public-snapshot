@@ -11,15 +11,15 @@ export class SourcegraphIntentDetectorClient implements IntentDetector {
         return this.client.isContextRequiredForQuery(input)
     }
 
-    public isEditorContextRequired(input: string): boolean | Error {
+    public isEditorContextRequired(input: string): Promise<boolean | Error> {
         const inputLowerCase = input.toLowerCase()
         // If the input matches any of the `editorRegexps` we assume that we have to include
         // the editor context (e.g., currently open file) to the overall message context.
         for (const regexp of editorRegexps) {
             if (inputLowerCase.match(regexp)) {
-                return true
+                return Promise.resolve(true)
             }
         }
-        return false
+        return Promise.resolve(false)
     }
 }

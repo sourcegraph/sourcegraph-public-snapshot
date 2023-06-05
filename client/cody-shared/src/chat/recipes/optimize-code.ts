@@ -15,7 +15,7 @@ export class OptimizeCode implements Recipe {
     public title = 'Optimize code'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
+        const selection = await context.editor.getActiveTextEditorSelectionOrEntireFile()
         if (!selection) {
             return Promise.resolve(null)
         }

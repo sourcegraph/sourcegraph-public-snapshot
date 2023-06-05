@@ -29,8 +29,8 @@ export class MockIntentDetector implements IntentDetector {
         return this.mocks.isCodebaseContextRequired?.(input) ?? Promise.resolve(false)
     }
 
-    public isEditorContextRequired(input: string): boolean | Error {
-        return this.mocks.isEditorContextRequired?.(input) ?? false
+    public isEditorContextRequired(input: string): Promise<boolean | Error> {
+        return Promise.resolve(this.mocks.isEditorContextRequired?.(input) ?? false)
     }
 }
 
@@ -49,40 +49,40 @@ export class MockKeywordContextFetcher implements KeywordContextFetcher {
 export class MockEditor implements Editor {
     constructor(private mocks: Partial<Editor> = {}) {}
 
-    public getWorkspaceRootPath(): string | null {
-        return this.mocks.getWorkspaceRootPath?.() ?? null
+    public getWorkspaceRootPath(): Promise<string | null> {
+        return this.mocks.getWorkspaceRootPath?.() ?? Promise.resolve(null)
     }
 
-    public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
-        return this.mocks.getActiveTextEditorSelection?.() ?? null
+    public getActiveTextEditorSelection(): Promise<ActiveTextEditorSelection | null> {
+        return this.mocks.getActiveTextEditorSelection?.() ?? Promise.resolve(null)
     }
 
-    public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
-        return this.mocks.getActiveTextEditorSelection?.() ?? null
+    public getActiveTextEditorSelectionOrEntireFile(): Promise<ActiveTextEditorSelection | null> {
+        return this.mocks.getActiveTextEditorSelection?.() ?? Promise.resolve(null)
     }
 
-    public getActiveTextEditor(): ActiveTextEditor | null {
-        return this.mocks.getActiveTextEditor?.() ?? null
+    public getActiveTextEditor(): Promise<ActiveTextEditor | null> {
+        return this.mocks.getActiveTextEditor?.() ?? Promise.resolve(null)
     }
 
-    public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
-        return this.mocks.getActiveTextEditorVisibleContent?.() ?? null
+    public getActiveTextEditorVisibleContent(): Promise<ActiveTextEditorVisibleContent | null> {
+        return this.mocks.getActiveTextEditorVisibleContent?.() ?? Promise.resolve(null)
     }
 
     public replaceSelection(fileName: string, selectedText: string, replacement: string): Promise<void> {
         return this.mocks.replaceSelection?.(fileName, selectedText, replacement) ?? Promise.resolve()
     }
 
-    public showQuickPick(labels: string[]): Promise<string | undefined> {
-        return this.mocks.showQuickPick?.(labels) ?? Promise.resolve(undefined)
+    public showQuickPick(labels: string[]): Promise<string | null> {
+        return this.mocks.showQuickPick?.(labels) ?? Promise.resolve(null)
     }
 
     public showWarningMessage(message: string): Promise<void> {
         return this.mocks.showWarningMessage?.(message) ?? Promise.resolve()
     }
 
-    public showInputBox(prompt?: string): Promise<string | undefined> {
-        return this.mocks.showInputBox?.(prompt) ?? Promise.resolve(undefined)
+    public showInputBox(prompt?: string): Promise<string | null> {
+        return this.mocks.showInputBox?.(prompt) ?? Promise.resolve(null)
     }
 }
 

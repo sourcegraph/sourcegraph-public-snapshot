@@ -10,7 +10,7 @@ export class ExplainCodeHighLevel implements Recipe {
     public title = 'Explain selected code (high level)'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
+        const selection = await context.editor.getActiveTextEditorSelectionOrEntireFile()
         if (!selection) {
             await context.editor.showWarningMessage('No code selected. Please select some code and try again.')
             return Promise.resolve(null)

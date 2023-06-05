@@ -11,7 +11,7 @@ export class ReleaseNotes implements Recipe {
     public title = 'Generate release notes'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const dirPath = context.editor.getWorkspaceRootPath()
+        const dirPath = await context.editor.getWorkspaceRootPath()
         if (!dirPath) {
             return null
         }

@@ -14,7 +14,7 @@ export class NonStop implements Recipe {
 
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         const controllers = context.editor.controllers
-        const selection = context.editor.getActiveTextEditorSelection()
+        const selection = await context.editor.getActiveTextEditorSelection()
 
         if (!controllers || !selection) {
             await context.editor.showWarningMessage('Cody Fixups: Failed to start.')

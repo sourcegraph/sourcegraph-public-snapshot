@@ -35,7 +35,7 @@ export class ContextSearch implements Recipe {
             return null
         }
         const truncatedText = truncateText(query.replace('/search ', '').replace('/s ', ''), MAX_HUMAN_INPUT_TOKENS)
-        const wsRootPath = context.editor.getWorkspaceRootPath()
+        const wsRootPath = await context.editor.getWorkspaceRootPath()
         return new Interaction(
             {
                 speaker: 'human',

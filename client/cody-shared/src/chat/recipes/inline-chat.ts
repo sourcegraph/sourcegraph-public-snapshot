@@ -97,7 +97,7 @@ export class InlineAssist implements Recipe {
         const contextMessages: ContextMessage[] = []
         // Add selected text and current file as context
         contextMessages.push(...ChatQuestion.getEditorSelectionContext(selection))
-        contextMessages.push(...ChatQuestion.getEditorContext(editor))
+        contextMessages.push(...(await ChatQuestion.getEditorContext(editor)))
 
         const extraContext = await codebaseContext.getContextMessages(text, {
             numCodeResults: 5,

@@ -54,15 +54,15 @@ export class NextQuestions implements Recipe {
             contextMessages.push(...codebaseContextMessages)
         }
 
-        if (isCodebaseContextRequired || intentDetector.isEditorContextRequired(text)) {
-            contextMessages.push(...this.getEditorContext(editor))
+        if (isCodebaseContextRequired || (await intentDetector.isEditorContextRequired(text))) {
+            contextMessages.push(...(await this.getEditorContext(editor)))
         }
 
         return contextMessages
     }
 
-    private getEditorContext(editor: Editor): ContextMessage[] {
-        const visibleContent = editor.getActiveTextEditorVisibleContent()
+    private async getEditorContext(editor: Editor): Promise<ContextMessage[]> {
+        const visibleContent = await editor.getActiveTextEditorVisibleContent()
         if (!visibleContent) {
             return []
         }

@@ -31,7 +31,7 @@ export class ChatQuestion implements Recipe {
                     context.firstInteraction,
                     context.intentDetector,
                     context.codebaseContext,
-                    context.editor.getActiveTextEditorSelection() || null
+                    await context.editor.getActiveTextEditorSelection()
                 )
             )
         )
@@ -63,17 +63,17 @@ export class ChatQuestion implements Recipe {
             contextMessages.push(...codebaseContextMessages)
         }
 
-        const isEditorContextRequired = intentDetector.isEditorContextRequired(text)
+        const isEditorContextRequired = await intentDetector.isEditorContextRequired(text)
         this.debug('ChatQuestion:getContextMessages', 'isEditorContextRequired', isEditorContextRequired)
         if (isCodebaseContextRequired || isEditorContextRequired) {
-            contextMessages.push(...ChatQuestion.getEditorContext(editor))
+            contextMessages.push(...(await ChatQuestion.getEditorContext(editor)))
         }
 
         return contextMessages
     }
 
-    public static getEditorContext(editor: Editor): ContextMessage[] {
-        const visibleContent = editor.getActiveTextEditorVisibleContent()
+    public static async getEditorContext(editor: Editor): Promise<ContextMessage[]> {
+        const visibleContent = await editor.getActiveTextEditorVisibleContent()
         if (!visibleContent) {
             return []
         }

@@ -260,7 +260,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 void this.openExternalLinks(message.value)
                 break
             case 'openFile': {
-                const rootPath = this.editor.getWorkspaceRootPath()
+                const rootPath = await this.editor.getWorkspaceRootPath()
                 if (!rootPath) {
                     this.sendErrorToWebview('Failed to open file: missing rootPath')
                     return
@@ -306,10 +306,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 const lastInteraction = this.transcript.getLastInteraction()
                 if (lastInteraction) {
                     const displayText = reformatBotMessage(text, responsePrefix)
-                    const fileExistFunc = (filePaths: string[]): Promise<{ [filePath: string]: boolean }> => {
-                        const rootPath = this.editor.getWorkspaceRootPath()
+                    const fileExistFunc = async (filePaths: string[]): Promise<{ [filePath: string]: boolean }> => {
+                        const rootPath = await this.editor.getWorkspaceRootPath()
                         if (!rootPath) {
-                            return Promise.resolve({})
+                            return {}
                         }
                         return fastFilesExist(this.rgPath, rootPath, filePaths)
                     }
@@ -414,7 +414,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             // these are ephemeral
             return
         }
-        const workspaceRoot = this.editor.getWorkspaceRootPath()
+        const workspaceRoot = await this.editor.getWorkspaceRootPath()
         if (!workspaceRoot || workspaceRoot === '' || workspaceRoot === this.currentWorkspaceRoot) {
             return
         }
@@ -657,8 +657,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      * Publish the current context status to the webview.
      */
     private publishContextStatus(): void {
-        const send = (): void => {
-            const editorContext = this.editor.getActiveTextEditor()
+        const send = async (): Promise<void> => {
+            const editorContext = await this.editor.getActiveTextEditor()
             void this.webview?.postMessage({
                 type: 'contextStatus',
                 contextStatus: {

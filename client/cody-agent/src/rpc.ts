@@ -2,10 +2,45 @@ import assert from 'assert'
 import { Readable, Writable } from 'stream'
 
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
+import { TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
+import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import {
+    ActiveTextEditor,
+    ActiveTextEditorSelection,
+    ActiveTextEditorVisibleContent,
+} from '@sourcegraph/cody-shared/src/editor'
 
 export interface RecipeInfo {
     id: RecipeID
     title: string
+}
+
+export interface StaticEditor {
+    workspaceRoot: string | null
+}
+
+// Static recipe context that lots of recipes might need
+// More context is obtained if necessary via server to client requests
+export interface StaticRecipeContext {
+    editor: StaticEditor
+    firstInteraction: boolean
+}
+
+export interface ExecuteRecipeParams {
+    id: RecipeID
+    humanChatInput: string
+    context: StaticRecipeContext
+}
+
+export interface ReplaceSelectionParams {
+    fileName: string
+    selectedText: string
+    replacement: string
+}
+
+export interface ReplaceSelectionResult {
+    applied: boolean
+    failureReason: string
 }
 
 // TODO: Add some version info to prevent version incompatibilities
@@ -24,25 +59,49 @@ export interface ServerInfo {
 // ...
 
 // The RPC initialization process is the same as LSP:
+// (-- Server process started; session begins --)
 // Client: initialize request
 // Server: initialize response
 // Client: initialized notification
 // Client and server send anything they want after this point
+// The RPC shutdown process is the same as LSP:
+// Client: shutdown request
+// Server: shutdown response
+// Client: exit notification
+// (-- Server process exited; session ends --)
 type Requests = {
     // Client -> Server
     initialize: [ClientInfo, ServerInfo]
+    shutdown: [void, void]
+
     'recipes/list': [void, RecipeInfo[]]
+    'recipes/execute': [ExecuteRecipeParams, void]
 
     // Server -> Client
+    'editor/quickPick': [string[], string | null]
+    'editor/prompt': [string, string | null]
+
+    'editor/active': [void, ActiveTextEditor | null]
+    'editor/selection': [void, ActiveTextEditorSelection | null]
+    'editor/selectionOrEntireFile': [void, ActiveTextEditorSelection | null]
+    'editor/visibleContent': [void, ActiveTextEditorVisibleContent | null]
+
+    'intent/isCodebaseContextRequired': [string, boolean]
+    'intent/isEditorContextRequired': [string, boolean]
+
+    'editor/replaceSelection': [ReplaceSelectionParams, ReplaceSelectionResult]
 }
 
 type Notifications = {
     // Client -> Server
     initialized: [void]
-    'recipes/execute': [RecipeID]
+    exit: [void]
 
     // Server -> Client
-    'chat/updateTranscript': [void]
+    'editor/warning': [string]
+
+    'chat/updateMessageInProgress': [ChatMessage | null]
+    'chat/updateTranscript': [TranscriptJSON]
 }
 
 export type RequestMethod = keyof Requests
@@ -138,7 +197,7 @@ export class MessageDecoder extends Writable {
                             break
 
                         default:
-                            console.error(`Unknown header ${headerName}: ignoring!`)
+                            console.error(`Unknown header '${headerName}': ignoring!`)
                             break
                     }
 
@@ -150,13 +209,12 @@ export class MessageDecoder extends Writable {
                 if (this.contentLengthRemaining === 0) {
                     try {
                         const data = JSON.parse(this.contentBuffer.toString())
+                        this.contentBuffer = Buffer.alloc(0)
+                        this.contentLengthRemaining = null
                         this.callback(null, data)
                     } catch (err) {
                         this.callback(err, null)
                     }
-
-                    this.contentBuffer = Buffer.alloc(0)
-                    this.contentLengthRemaining = null
 
                     continue
                 }

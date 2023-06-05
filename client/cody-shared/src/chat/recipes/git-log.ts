@@ -12,7 +12,7 @@ export class GitHistory implements Recipe {
     public title = 'Explain Git history'
 
     public async getInteraction(_humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
-        const dirPath = context.editor.getWorkspaceRootPath()
+        const dirPath = await context.editor.getWorkspaceRootPath()
         if (!dirPath) {
             return null
         }
@@ -35,7 +35,7 @@ export class GitHistory implements Recipe {
                 rawDisplayText: 'What changed in my codebase in the last week?',
             },
         ]
-        const selection = context.editor.getActiveTextEditorSelectionOrEntireFile()
+        const selection = await context.editor.getActiveTextEditorSelectionOrEntireFile()
         if (selection) {
             const name = path.basename(selection.fileName)
             items.push({

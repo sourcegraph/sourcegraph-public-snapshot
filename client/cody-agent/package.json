@@ -12,10 +12,11 @@
   "main": "src/index.ts",
   "sideEffects": false,
   "scripts": {
-    "build": "tsc -b",
+    "build": "esbuild ./src/index.ts --bundle --outfile=dist/agent.js --format=cjs --platform=node",
+    "build-ts": "tsc -b",
     "lint": "pnpm run lint:js",
     "lint:js": "eslint --cache '**/*.[tj]s?(x)'",
-    "test": "jest"
+    "test": "npm run build && jest"
   },
   "dependencies": {
     "@sourcegraph/common": "workspace:*",
