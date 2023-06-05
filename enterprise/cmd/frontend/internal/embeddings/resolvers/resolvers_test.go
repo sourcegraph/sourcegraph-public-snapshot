@@ -32,9 +32,9 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 	licensing.MockCheckFeature = func(feature licensing.Feature) error {
 		return nil
 	}
-	defer func() {
+	t.Cleanup(func() {
 		licensing.MockCheckFeature = oldMock
-	}()
+	})
 
 	mockDB := database.NewMockDB()
 	mockRepos := database.NewMockRepoStore()

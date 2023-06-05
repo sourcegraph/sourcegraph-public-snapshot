@@ -17,9 +17,9 @@ func TestIsCodyEnabled(t *testing.T) {
 	licensing.MockCheckFeature = func(feature licensing.Feature) error {
 		return nil
 	}
-	defer func() {
+	t.Cleanup(func() {
 		licensing.MockCheckFeature = oldMock
-	}()
+	})
 
 	t.Run("Unauthenticated user", func(t *testing.T) {
 		conf.Mock(&conf.Unified{
