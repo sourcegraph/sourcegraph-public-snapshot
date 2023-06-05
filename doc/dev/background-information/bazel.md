@@ -5,12 +5,12 @@ Sourcegraph is currently migrating to Bazel as its build system and this page is
 ## 📅 Timeline
 
 - 2023-04-03 Bazel steps are required to pass on all PR builds.
-  - Run `bazel run :update-gazelle-repos` if you changed the `go.mod`.
+  - Run `bazel run //:gazelle-update-repos` if you changed the `go.mod`.
   - Run `bazel configure` after making all your changes in the PR and commit the updated/added `BUILD.bazel`
   - Add `[no-bazel]` in your commit description if you want to bypass Bazel.
     - ⚠️  see [what to do after using `[no-bazel]`](#i-just-used-no-bazel-to-merge-my-pr)
 - 2023-04-06 Bazel steps are required to pass on main.
-  - Run `bazel run :update-gazelle-repos` if you changed the `go.mod`.
+  - Run `bazel run //:gazelle-update-repos` if you changed the `go.mod`.
   - Run `bazel configure` after making all your changes in the PR and commit the updated/added `BUILD.bazel`
   - Add `[no-bazel]` in your commit description if you want to bypass Bazel.
     - ⚠️  see [what to do after using `[no-bazel]`](#i-just-used-no-bazel-to-merge-my-pr)
