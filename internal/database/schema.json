@@ -547,6 +547,15 @@
       "CycleOption": "NO"
     },
     {
+      "Name": "codeowners_owners_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
       "Name": "commit_authors_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
@@ -8657,6 +8666,149 @@
           "ConstraintDefinition": "FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE"
         }
       ],
+      "Triggers": []
+    },
+    {
+      "Name": "codeowners_individual_stats",
+      "Comment": "Data on how many files in given tree are owned by given owner.\n\nAs opposed to ownership-general `ownership_path_stats` table, the individual \u003cpath x owner\u003e stats\nare stored in CODEOWNERS-specific table `codeowners_individual_stats`. The reason for that is that\nwe are also indexing on owner_id which is CODEOWNERS-specific.",
+      "Columns": [
+        {
+          "Name": "file_path_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "owner_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "tree_owned_files_count",
+          "Index": 3,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Total owned file count by given owner at given file tree."
+        },
+        {
+          "Name": "updated_at",
+          "Index": 4,
+          "TypeName": "timestamp without time zone",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "When the last background job updating counts run."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "codeowners_individual_stats_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeowners_individual_stats_pkey ON codeowners_individual_stats USING btree (file_path_id, owner_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (file_path_id, owner_id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "codeowners_individual_stats_file_path_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "repo_paths",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)"
+        },
+        {
+          "Name": "codeowners_individual_stats_owner_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "codeowners_owners",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (owner_id) REFERENCES codeowners_owners(id)"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "codeowners_owners",
+      "Comment": "Text reference in CODEOWNERS entry to use in codeowners_individual_stats. Reference is either email or handle without @ in front.",
+      "Columns": [
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('codeowners_owners_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "reference",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "We just keep the reference as opposed to splitting it to handle or email\nsince the distinction is not relevant for query, and this makes indexing way easier."
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "codeowners_owners_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeowners_owners_pkey ON codeowners_owners USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "codeowners_owners_reference",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeowners_owners_reference ON codeowners_owners USING btree (reference)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
       "Triggers": []
     },
     {
@@ -19794,6 +19946,73 @@
       ]
     },
     {
+      "Name": "ownership_path_stats",
+      "Comment": "Data on how many files in given tree are owned by anyone.\n\nWe choose to have a table for `ownership_path_stats` - more general than for CODEOWNERS,\nwith a specific tree_codeowned_files_count CODEOWNERS column. The reason for that\nis that we aim at expanding path stats by including total owned files (via CODEOWNERS\nor assigned ownership), and perhaps files count by assigned ownership only.",
+      "Columns": [
+        {
+          "Name": "file_path_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "last_updated_at",
+          "Index": 3,
+          "TypeName": "timestamp without time zone",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "When the last background job updating counts run."
+        },
+        {
+          "Name": "tree_codeowned_files_count",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "ownership_path_stats_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX ownership_path_stats_pkey ON ownership_path_stats USING btree (file_path_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (file_path_id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "ownership_path_stats_file_path_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "repo_paths",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)"
+        }
+      ],
+      "Triggers": []
+    },
+    {
       "Name": "package_repo_filters",
       "Comment": "",
       "Columns": [
@@ -22556,6 +22775,32 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
+        },
+        {
+          "Name": "tree_files_count",
+          "Index": 5,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Total count of files in the file tree rooted at the path. 1 for files."
+        },
+        {
+          "Name": "tree_files_counts_updated_at",
+          "Index": 6,
+          "TypeName": "timestamp without time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Timestamp of the job that updated the file counts"
         }
       ],
       "Indexes": [

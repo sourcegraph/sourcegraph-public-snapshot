@@ -1976,6 +1976,43 @@ CREATE SEQUENCE codeowners_id_seq
 
 ALTER SEQUENCE codeowners_id_seq OWNED BY codeowners.id;
 
+CREATE TABLE codeowners_individual_stats (
+    file_path_id integer NOT NULL,
+    owner_id integer NOT NULL,
+    tree_owned_files_count integer NOT NULL,
+    updated_at timestamp without time zone NOT NULL
+);
+
+COMMENT ON TABLE codeowners_individual_stats IS 'Data on how many files in given tree are owned by given owner.
+
+As opposed to ownership-general `ownership_path_stats` table, the individual <path x owner> stats
+are stored in CODEOWNERS-specific table `codeowners_individual_stats`. The reason for that is that
+we are also indexing on owner_id which is CODEOWNERS-specific.';
+
+COMMENT ON COLUMN codeowners_individual_stats.tree_owned_files_count IS 'Total owned file count by given owner at given file tree.';
+
+COMMENT ON COLUMN codeowners_individual_stats.updated_at IS 'When the last background job updating counts run.';
+
+CREATE TABLE codeowners_owners (
+    id integer NOT NULL,
+    reference text NOT NULL
+);
+
+COMMENT ON TABLE codeowners_owners IS 'Text reference in CODEOWNERS entry to use in codeowners_individual_stats. Reference is either email or handle without @ in front.';
+
+COMMENT ON COLUMN codeowners_owners.reference IS 'We just keep the reference as opposed to splitting it to handle or email
+since the distinction is not relevant for query, and this makes indexing way easier.';
+
+CREATE SEQUENCE codeowners_owners_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE codeowners_owners_id_seq OWNED BY codeowners_owners.id;
+
 CREATE TABLE commit_authors (
     id integer NOT NULL,
     email text NOT NULL,
@@ -3768,6 +3805,21 @@ CREATE SEQUENCE own_signal_recent_contribution_id_seq
 
 ALTER SEQUENCE own_signal_recent_contribution_id_seq OWNED BY own_signal_recent_contribution.id;
 
+CREATE TABLE ownership_path_stats (
+    file_path_id integer NOT NULL,
+    tree_codeowned_files_count integer,
+    last_updated_at timestamp without time zone NOT NULL
+);
+
+COMMENT ON TABLE ownership_path_stats IS 'Data on how many files in given tree are owned by anyone.
+
+We choose to have a table for `ownership_path_stats` - more general than for CODEOWNERS,
+with a specific tree_codeowned_files_count CODEOWNERS column. The reason for that
+is that we aim at expanding path stats by including total owned files (via CODEOWNERS
+or assigned ownership), and perhaps files count by assigned ownership only.';
+
+COMMENT ON COLUMN ownership_path_stats.last_updated_at IS 'When the last background job updating counts run.';
+
 CREATE TABLE package_repo_filters (
     id integer NOT NULL,
     behaviour text NOT NULL,
@@ -4131,10 +4183,16 @@ CREATE TABLE repo_paths (
     id integer NOT NULL,
     repo_id integer NOT NULL,
     absolute_path text NOT NULL,
-    parent_id integer
+    parent_id integer,
+    tree_files_count integer,
+    tree_files_counts_updated_at timestamp without time zone
 );
 
 COMMENT ON COLUMN repo_paths.absolute_path IS 'Absolute path does not start or end with forward slash. Example: "a/b/c". Root directory is empty path "".';
+
+COMMENT ON COLUMN repo_paths.tree_files_count IS 'Total count of files in the file tree rooted at the path. 1 for files.';
+
+COMMENT ON COLUMN repo_paths.tree_files_counts_updated_at IS 'Timestamp of the job that updated the file counts';
 
 CREATE SEQUENCE repo_paths_id_seq
     AS integer
@@ -4813,6 +4871,8 @@ ALTER TABLE ONLY codeintel_ranking_references_processed ALTER COLUMN id SET DEFA
 
 ALTER TABLE ONLY codeowners ALTER COLUMN id SET DEFAULT nextval('codeowners_id_seq'::regclass);
 
+ALTER TABLE ONLY codeowners_owners ALTER COLUMN id SET DEFAULT nextval('codeowners_owners_id_seq'::regclass);
+
 ALTER TABLE ONLY commit_authors ALTER COLUMN id SET DEFAULT nextval('commit_authors_id_seq'::regclass);
 
 ALTER TABLE ONLY configuration_policies_audit_logs ALTER COLUMN sequence SET DEFAULT nextval('configuration_policies_audit_logs_seq'::regclass);
@@ -5117,6 +5177,12 @@ ALTER TABLE ONLY codeintel_ranking_references
 ALTER TABLE ONLY codeintel_ranking_references_processed
     ADD CONSTRAINT codeintel_ranking_references_processed_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY codeowners_individual_stats
+    ADD CONSTRAINT codeowners_individual_stats_pkey PRIMARY KEY (file_path_id, owner_id);
+
+ALTER TABLE ONLY codeowners_owners
+    ADD CONSTRAINT codeowners_owners_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY codeowners
     ADD CONSTRAINT codeowners_pkey PRIMARY KEY (id);
 
@@ -5332,6 +5398,9 @@ ALTER TABLE ONLY own_signal_configurations
 
 ALTER TABLE ONLY own_signal_recent_contribution
     ADD CONSTRAINT own_signal_recent_contribution_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY ownership_path_stats
+    ADD CONSTRAINT ownership_path_stats_pkey PRIMARY KEY (file_path_id);
 
 ALTER TABLE ONLY package_repo_filters
     ADD CONSTRAINT package_repo_filters_pkey PRIMARY KEY (id);
@@ -5621,6 +5690,8 @@ CREATE INDEX codeintel_ranking_references_graph_key_id ON codeintel_ranking_refe
 CREATE UNIQUE INDEX codeintel_ranking_references_processed_graph_key_codeintel_rank ON codeintel_ranking_references_processed USING btree (graph_key, codeintel_ranking_reference_id);
 
 CREATE INDEX codeintel_ranking_references_processed_reference_id ON codeintel_ranking_references_processed USING btree (codeintel_ranking_reference_id);
+
+CREATE INDEX codeowners_owners_reference ON codeowners_owners USING btree (reference);
 
 CREATE UNIQUE INDEX commit_authors_email_name ON commit_authors USING btree (email, name);
 
@@ -6236,6 +6307,12 @@ ALTER TABLE ONLY codeintel_ranking_exports
 ALTER TABLE ONLY codeintel_ranking_references
     ADD CONSTRAINT codeintel_ranking_references_exported_upload_id_fkey FOREIGN KEY (exported_upload_id) REFERENCES codeintel_ranking_exports(id) ON DELETE CASCADE;
 
+ALTER TABLE ONLY codeowners_individual_stats
+    ADD CONSTRAINT codeowners_individual_stats_file_path_id_fkey FOREIGN KEY (file_path_id) REFERENCES repo_paths(id);
+
+ALTER TABLE ONLY codeowners_individual_stats
+    ADD CONSTRAINT codeowners_individual_stats_owner_id_fkey FOREIGN KEY (owner_id) REFERENCES codeowners_owners(id);
+
 ALTER TABLE ONLY codeowners
     ADD CONSTRAINT codeowners_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
 
@@ -6442,6 +6519,9 @@ ALTER TABLE ONLY own_signal_recent_contribution
 
 ALTER TABLE ONLY own_signal_recent_contribution
     ADD CONSTRAINT own_signal_recent_contribution_commit_author_id_fkey FOREIGN KEY (commit_author_id) REFERENCES commit_authors(id);
+
+ALTER TABLE ONLY ownership_path_stats
+    ADD CONSTRAINT ownership_path_stats_file_path_id_fkey FOREIGN KEY (file_path_id) REFERENCES repo_paths(id);
 
 ALTER TABLE ONLY package_repo_versions
     ADD CONSTRAINT package_id_fk FOREIGN KEY (package_id) REFERENCES lsif_dependency_repos(id) ON DELETE CASCADE;
