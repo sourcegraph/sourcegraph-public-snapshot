@@ -200,7 +200,6 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 		return afterDone, err
 	}
 	opts := css.BuildCommitOpts(e.targetRepo, e.ch, e.spec, pushConf)
-	
 	_, err = e.pushCommit(ctx, opts)
 	var pce pushCommitError
 	if errors.As(err, &pce) {
