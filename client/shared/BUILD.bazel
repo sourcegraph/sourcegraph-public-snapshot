@@ -5,7 +5,7 @@ load("//dev:defs.bzl", "jest_test", "npm_package", "sass", "ts_project")
 load("//client/shared/dev:generate_schema.bzl", "generate_schema")
 load("//client/shared/dev:generate_graphql_operations.bzl", "generate_graphql_operations")
 load("//client/shared/dev:tools.bzl", "module_style_typings")
-load("//dev:eslint.bzl", "eslint_config")
+load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types")
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
@@ -16,7 +16,22 @@ load("//dev:eslint.bzl", "eslint_config")
 
 npm_link_all_packages(name = "node_modules")
 
-eslint_config()
+eslint_config_and_lint_root()
+
+# Temporary ESLint target to lint stories. This will be removed once we have a
+# custom gazelle targets. E.g., `gazelle:custom_js_files stories src/**/*.story.tsx`
+eslint_test_with_types(
+    name = "stories_eslint",
+    srcs = glob([
+        "src/**/*.story.tsx",
+        "src/**/*.fixtures.ts",
+    ]),
+    config = ":eslint_config",
+    deps = [
+        "//:jest_config",  # required for import/extensions rule not to fail on the `jest.config.base` import.
+        "//:node_modules/@types/node",
+    ],
+)
 
 ts_config(
     name = "tsconfig",
