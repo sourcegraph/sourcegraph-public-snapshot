@@ -582,7 +582,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		CommitInfo: protocol.PatchCommitInfo{
 			AuthorName:  info.AuthorName,
 			AuthorEmail: info.AuthorEmail,
-			Message:     info.Message,
+			Messages:    []string{info.Message},
 			Date:        info.Date,
 		},
 	})
