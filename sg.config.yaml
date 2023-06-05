@@ -1219,8 +1219,8 @@ commandsets:
       - gitserver-0
       - gitserver-1
       - searcher
-      - symbols
       - caddy
+      - symbols
       - docsite
       - syntax-highlighter
       - github-proxy

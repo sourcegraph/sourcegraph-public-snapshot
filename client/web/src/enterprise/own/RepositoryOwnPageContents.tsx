@@ -14,7 +14,7 @@ import {
 import { DeleteFileButton } from './DeleteFileButton'
 import { GET_INGESTED_CODEOWNERS_QUERY } from './graphqlQueries'
 import { IngestedFileViewer } from './IngestedFileViewer'
-import { RepositoryOwnAreaPageProps } from './RepositoryOwnPage'
+import { RepositoryOwnAreaPageProps } from './RepositoryOwnEditPage'
 import { UploadFileButton } from './UploadFileButton'
 
 import styles from './RepositoryOwnPageContents.module.scss'

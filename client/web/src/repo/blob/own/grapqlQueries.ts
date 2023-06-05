@@ -132,11 +132,18 @@ export const FETCH_TREE_OWNERS = gql`
         node(id: $repo) {
             ... on Repository {
                 commit(rev: $revision) {
-                    blob(path: $currentPath) {
+                    tree(path: $currentPath) {
                         ownership {
                             ...OwnershipConnectionFields
                         }
                     }
+                }
+            }
+        }
+        currentUser {
+            permissions {
+                nodes {
+                    displayName
                 }
             }
         }

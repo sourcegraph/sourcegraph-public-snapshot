@@ -17,7 +17,7 @@ import { PersonLink } from '../../../person/PersonLink'
 
 import { OwnershipBadge } from './OwnershipBadge'
 
-import containerStyles from './FileOwnershipPanel.module.scss'
+import containerStyles from './OwnerList.module.scss'
 
 interface Props {
     owner: OwnerFields
