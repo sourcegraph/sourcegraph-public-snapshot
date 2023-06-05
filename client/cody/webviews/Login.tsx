@@ -99,11 +99,11 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
 }
 
 const ERROR_MESSAGES = {
-    DISABLED: 'Cody is not enabled on your instance. To enable Cody, contact your site admin.',
+    DISABLED: 'Cody is not enabled on your instance. To enable Cody, please contact your site admin.',
     VERSION:
-        'Cody is not supported by your Sourcegraph instance (version ${TODO}). To use Cody, please contact your site admin to upgrade to version 5.1.0 or above.',
+        'Cody is not supported by your Sourcegraph instance version (version: $SITEVERSION). To use Cody, please contact your site admin to upgrade to version 5.1.0 or above.',
     INVALID: 'Invalid credentials. Please check the Sourcegraph instance URL and access token.',
-    EMAIL: 'Email not verified. Please add a verified email to your Sourcegraph.com account.',
+    EMAIL_NOT_VERIFIED: 'Email not verified. Please add a verified email to your Sourcegraph.com account.',
 }
 
 const ErrorContainer: React.FunctionComponent<{ authStatus: AuthStatus }> = ({ authStatus }) => {
@@ -115,24 +115,26 @@ const ErrorContainer: React.FunctionComponent<{ authStatus: AuthStatus }> = ({ a
         hasVerifiedEmail,
         siteVersion,
     } = authStatus
+    // Assumes Cody is enabled for all insider builds
     const isInsiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
-    // Version is compatible if it is an insider build or if version is 5.0.0 or above
-    const isVersionCompatible = isInsiderBuild && siteVersion >= '5.0.0'
+    // Version is compatible if version is 5.1.0 or above
+    const isVersionCompatible = !isInsiderBuild && siteVersion >= '5.1.0'
+    const isVersionBeforeCody = !isInsiderBuild && siteVersion < '5.0.0'
     // When doesn't have a valid token
     if (showInvalidAccessTokenError) {
         return <p className={styles.error}>{ERROR_MESSAGES.INVALID}</p>
     }
     // When authenticated but doesn't have a verified email
     if (authenticated && requiresVerifiedEmail && !hasVerifiedEmail) {
-        return <p className={styles.error}>{ERROR_MESSAGES.EMAIL}</p>
+        return <p className={styles.error}>{ERROR_MESSAGES.EMAIL_NOT_VERIFIED}</p>
+    }
+    // When version is lower than 5.0.0
+    if (isVersionBeforeCody) {
+        return <p className={styles.error}>{ERROR_MESSAGES.VERSION.replace('$SITEVERSION', siteVersion)}</p>
     }
     // When version is compatible but Cody is not enabled
     if (isVersionCompatible && !siteHasCodyEnabled) {
         return <p className={styles.error}>{ERROR_MESSAGES.DISABLED}</p>
-    }
-    // When version is lower than 5.0.0
-    if (!siteHasCodyEnabled && !isVersionCompatible) {
-        return <p className={styles.error}>{ERROR_MESSAGES.VERSION}</p>
     }
     return null
 }

@@ -1,4 +1,4 @@
-import { defaultAuthStatus } from './protocol'
+import { defaultAuthStatus, unauthenticatedStatus } from './protocol'
 import { convertGitCloneURLToCodebaseName, newAuthStatus } from './utils'
 
 describe('convertGitCloneURLToCodebaseName', () => {
@@ -74,9 +74,21 @@ describe('validateAuthStatus', () => {
     const verifiedEmail = true
     const codyEnabled = true
     // DOTCOM AND APP USERS
-    test('returns initial auth status for invalid user', () => {
-        const expected = { ...defaultAuthStatus }
+    test('returns auth state for invalid user on dotcom or app instance', () => {
+        const expected = { ...unauthenticatedStatus }
         expect(newAuthStatus(isDotComOrApp, '', !verifiedEmail, codyEnabled, siteVersion)).toEqual(expected)
+    })
+
+    test('returns auth status for valid user with varified email on dotcom or app instance that does not have isCodyEnabled (older versions)', () => {
+        const expected = {
+            ...defaultAuthStatus,
+            authenticated: true,
+            hasVerifiedEmail: true,
+            showInvalidAccessTokenError: false,
+            requiresVerifiedEmail: true,
+            siteHasCodyEnabled: false,
+        }
+        expect(newAuthStatus(isDotComOrApp, '1', verifiedEmail, !codyEnabled, siteVersion)).toEqual(expected)
     })
 
     test('returns auth status for valid user with varified email on dotcom or app instance', () => {
@@ -113,7 +125,7 @@ describe('validateAuthStatus', () => {
     })
 
     test('returns auth status for invalid user on enterprise instance with Cody enabled', () => {
-        const expected = defaultAuthStatus
+        const expected = { ...unauthenticatedStatus }
         expect(newAuthStatus(!isDotComOrApp, '', verifiedEmail, codyEnabled, siteVersion)).toEqual(expected)
     })
 
@@ -127,7 +139,7 @@ describe('validateAuthStatus', () => {
     })
 
     test('returns auth status for invalid user on enterprise instance with Cody disabled', () => {
-        const expected = defaultAuthStatus
+        const expected = { ...unauthenticatedStatus }
         expect(newAuthStatus(!isDotComOrApp, '', verifiedEmail, !codyEnabled, siteVersion)).toEqual(expected)
     })
 })

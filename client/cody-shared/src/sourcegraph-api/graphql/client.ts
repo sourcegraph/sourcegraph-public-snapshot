@@ -209,7 +209,7 @@ export class SourcegraphGraphQLAPIClient {
         // Check site version.
         const siteVersion = await this.getSiteVersion()
         if (isError(siteVersion)) {
-            return { enabled: false, version: '' }
+            return { enabled: false, version: 'unknown' }
         }
         const insiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
         // NOTE: Cody does not work on versions older than 5.0
@@ -218,14 +218,14 @@ export class SourcegraphGraphQLAPIClient {
             return { enabled: false, version: siteVersion }
         }
         // Beta version is betwewen 5.0.0 - 5.1.0 and does not have isCodyEnabled field
-        const betaVersion = !insiderBuild && siteVersion >= '5.0.0' && siteVersion < '5.1.0'
+        const betaVersion = siteVersion >= '5.0.0' && siteVersion < '5.1.0'
         const hasIsCodyEnabledField = await this.getSiteHasIsCodyEnabledField()
         // The isCodyEnabled field does not exist before version 5.1.0
-        if (!isError(hasIsCodyEnabledField) && hasIsCodyEnabledField && !betaVersion) {
+        if (!insiderBuild && !betaVersion && !isError(hasIsCodyEnabledField) && hasIsCodyEnabledField) {
             const siteHasCodyEnabled = await this.getSiteHasCodyEnabled()
             return { enabled: !isError(siteHasCodyEnabled) && siteHasCodyEnabled, version: siteVersion }
         }
-        return { enabled: betaVersion, version: siteVersion }
+        return { enabled: insiderBuild || betaVersion, version: siteVersion }
     }
 
     public async logEvent(event: {
