@@ -1292,6 +1292,7 @@ ts_project(
         "src/repo/blob/own/FileOwnershipEntry.tsx",
         "src/repo/blob/own/FileOwnershipPanel.tsx",
         "src/repo/blob/own/HistoryAndOwnBar.tsx",
+        "src/repo/blob/own/MakeOwnerButton.tsx",
         "src/repo/blob/own/OwnershipBadge.tsx",
         "src/repo/blob/own/grapqlQueries.ts",
         "src/repo/blob/panel/BlobPanel.tsx",
