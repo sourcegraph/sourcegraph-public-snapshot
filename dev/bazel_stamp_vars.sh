@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 build_number="${BUILDKITE_BUILD_NUMBER:-000000}"
-date_fragment="$(date +%y-%m-%d)"
+date_fragment="$(date +%Y-%m-%d)"
 latest_tag="5.0"
 stamp_version="${build_number}_${date_fragment}_${latest_tag}-$(git rev-parse --short HEAD)"
 

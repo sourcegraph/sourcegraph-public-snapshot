@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "gitserver",
@@ -45,6 +46,7 @@ go_library(
         "@com_github_opentracing_opentracing_go//log",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_sourcegraph_conc//pool",
         "@com_github_sourcegraph_go_diff//diff",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_log//logtest",
@@ -87,6 +89,7 @@ go_test(
         "//internal/grpc",
         "//internal/grpc/defaults",
         "//internal/httpcli",
+        "//internal/randstring",
         "//internal/types",
         "//lib/errors",
         "//schema",
@@ -96,5 +99,7 @@ go_test(
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
         "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//codes",
+        "@org_golang_google_grpc//status",
     ],
 )

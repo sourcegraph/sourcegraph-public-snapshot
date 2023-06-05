@@ -108,13 +108,19 @@ const (
 	ChangesetEventKindAzureDevOpsPullRequestUpdated                 ChangesetEventKind = "azuredevops:pullrequest:updated"
 	ChangesetEventKindAzureDevOpsPullRequestApproved                ChangesetEventKind = "azuredevops:pullrequest:approved"
 	ChangesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions ChangesetEventKind = "azuredevops:pullrequest:approved_with_suggestions"
-	ChangesetEventKindAzureDevOpsPullRequesReviewed                 ChangesetEventKind = "azuredevops:pullrequest:reviewed"
+	ChangesetEventKindAzureDevOpsPullRequestReviewed                ChangesetEventKind = "azuredevops:pullrequest:reviewed"
 	ChangesetEventKindAzureDevOpsPullRequestWaitingForAuthor        ChangesetEventKind = "azuredevops:pullrequest:waiting_for_author"
 	ChangesetEventKindAzureDevOpsPullRequestRejected                ChangesetEventKind = "azuredevops:pullrequest:rejected"
 	ChangesetEventKindAzureDevOpsPullRequestBuildSucceeded          ChangesetEventKind = "azuredevops:pullrequest:build_succeeded"
 	ChangesetEventKindAzureDevOpsPullRequestBuildFailed             ChangesetEventKind = "azuredevops:pullrequest:build_failed"
 	ChangesetEventKindAzureDevOpsPullRequestBuildError              ChangesetEventKind = "azuredevops:pullrequest:build_error"
 	ChangesetEventKindAzureDevOpsPullRequestBuildPending            ChangesetEventKind = "azuredevops:pullrequest:build_pending"
+
+	ChangesetEventKindGerritChangeApproved                ChangesetEventKind = "gerrit:change:approved"
+	ChangesetEventKindGerritChangeApprovedWithSuggestions ChangesetEventKind = "gerrit:change:approved_with_suggestions"
+	ChangesetEventKindGerritChangeReviewed                ChangesetEventKind = "gerrit:change:reviewed"
+	ChangesetEventKindGerritChangeNeedsChanges            ChangesetEventKind = "gerrit:change:needs_changes"
+	ChangesetEventKindGerritChangeRejected                ChangesetEventKind = "gerrit:change:rejected"
 
 	ChangesetEventKindInvalid ChangesetEventKind = "invalid"
 )

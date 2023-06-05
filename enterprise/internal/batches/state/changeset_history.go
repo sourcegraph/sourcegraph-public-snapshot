@@ -6,6 +6,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 	adobatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
+	gerritbatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/gerrit"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -339,6 +340,10 @@ func initialExternalState(ch *btypes.Changeset, ce ChangesetEvents) btypes.Chang
 		}
 	case *adobatches.AnnotatedPullRequest:
 		if m.IsDraft {
+			open = false
+		}
+	case *gerritbatches.AnnotatedChange:
+		if m.Change.WorkInProgress {
 			open = false
 		}
 	default:

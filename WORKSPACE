@@ -92,19 +92,19 @@ http_archive(
 )
 
 SRC_CLI_VERSION = "5.0.3"
+
 http_archive(
     name = "src-cli-linux-amd64",
-    sha256 = "d125d732ad4c47ae6977c49574b01cc1b3c943b2a2108142267438e829538aa3",
-    url = "https://github.com/sourcegraph/src-cli/releases/download/{0}/src-cli_{0}_linux_amd64.tar.gz".format(SRC_CLI_VERSION),
     build_file_content = """
 filegroup(
     name = "src-cli-linux-amd64",
     srcs = ["src"],
     visibility = ["//visibility:public"],
 )
-    """
+    """,
+    sha256 = "d125d732ad4c47ae6977c49574b01cc1b3c943b2a2108142267438e829538aa3",
+    url = "https://github.com/sourcegraph/src-cli/releases/download/{0}/src-cli_{0}_linux_amd64.tar.gz".format(SRC_CLI_VERSION),
 )
-
 
 http_archive(
     name = "container_structure_test",
@@ -115,6 +115,7 @@ http_archive(
 
 # hermetic_cc_toolchain setup ================================
 HERMETIC_CC_TOOLCHAIN_VERSION = "v2.0.0-rc2"
+
 http_archive(
     name = "hermetic_cc_toolchain",
     sha256 = "40dff82816735e631e8bd51ede3af1c4ed1ad4646928ffb6a0e53e228e55738c",
@@ -371,6 +372,7 @@ load("@rules_pkg//:deps.bzl", "rules_pkg_dependencies")
 rules_pkg_dependencies()
 
 load("//dev:oci_deps.bzl", "oci_deps")
+
 oci_deps()
 
 load("//enterprise/cmd/embeddings/shared:assets.bzl", "embbedings_assets_deps")
@@ -378,4 +380,5 @@ load("//enterprise/cmd/embeddings/shared:assets.bzl", "embbedings_assets_deps")
 embbedings_assets_deps()
 
 load("@container_structure_test//:repositories.bzl", "container_structure_test_register_toolchain")
+
 container_structure_test_register_toolchain(name = "cst")

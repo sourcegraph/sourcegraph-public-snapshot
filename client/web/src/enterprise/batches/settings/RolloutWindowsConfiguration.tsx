@@ -2,7 +2,7 @@ import React from 'react'
 
 import { mdiPulse } from '@mdi/js'
 
-import { Text, H3, Container, Icon, LoadingSpinner, ErrorAlert, Link } from '@sourcegraph/wildcard'
+import { Text, H3, Container, Icon, LoadingSpinner, ErrorAlert, Link, Code } from '@sourcegraph/wildcard'
 
 import { useBatchChangesRolloutWindowConfig } from '../backend'
 
@@ -33,7 +33,7 @@ export const RolloutWindowsConfiguration: React.FunctionComponent = () => {
                             Configuring rollout windows allows changesets to be reconciled at a slower or faster rate
                             based on the time of day and/or the day of the week. These windows are applied to changesets
                             across all code hosts and can be configured with the{' '}
-                            <strong>batchChanges.rolloutWindows</strong>{' '}
+                            <Code>batchChanges.rolloutWindows</Code>{' '}
                             <Link to="/help/admin/config/batch_changes#rollout-windows">
                                 site configuration option.
                             </Link>
