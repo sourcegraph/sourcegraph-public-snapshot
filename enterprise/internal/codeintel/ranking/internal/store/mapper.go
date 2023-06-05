@@ -401,14 +401,14 @@ const vacuumStaleProcessedPathsQuery = `
 WITH
 locked_paths_processed AS (
 	SELECT id
-	FROM codeintel_ranking_paths_processed
+	FROM codeintel_initial_path_ranks_processed
 	WHERE (graph_key < %s OR graph_key > %s)
 	ORDER BY graph_key, id
 	FOR UPDATE SKIP LOCKED
 	LIMIT %s
 ),
 deleted_locked_paths_processed AS (
-	DELETE FROM codeintel_ranking_paths_processed
+	DELETE FROM codeintel_initial_path_ranks_processed
 	WHERE id IN (SELECT id FROM locked_paths_processed)
 	RETURNING 1
 )
