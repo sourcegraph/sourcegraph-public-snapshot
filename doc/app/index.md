@@ -60,17 +60,17 @@ Batch changes and precise code intel require the following optional dependencies
 
 - Use the app icon in your system tray to open a Cody chat window. This is especially helpful when arranged alongside your IDE if you prefer an editor other than VS Code. 
 
-### Get help & give feedback
+## Get help & give feedback
 
 Cody app is early-stages, if you run into any trouble or have ideas/feedback, we'd love to hear from you!
 
 * [Join our community Discord](https://discord.com/invite/s2qDtYGnAE) for live help/discussion
 * [Create a GitHub issue](https://github.com/sourcegraph/app/issues/new)
 
-### Upgrading
+## Upgrading
 
 We're shipping new releases of the app quickly, and you should get prompts to upgrade automatically. Let us know if you have any issues!
 
-### Uninstallation
+## Uninstallation
 
 We're working on a better way to clear all data including webkit storage, but for now you can run `rm -rf ~/.sourcegraph-psql ~/Library/Application\ Support/com.sourcegraph.cody ~/Library/Caches/com.sourcegraph.cody ~/Library/WebKit/com.sourcegraph.cody` to uninstall the app. 
