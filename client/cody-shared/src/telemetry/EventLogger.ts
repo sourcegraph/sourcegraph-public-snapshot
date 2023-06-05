@@ -30,7 +30,7 @@ function getGuardrailsFromConfig(config: vscode.WorkspaceConfiguration): boolean
     return config.get<boolean>('cody.experimental.guardrails', false)
 }
 
-let config = vscode.workspace.getConfiguration()
+const config = vscode.workspace.getConfiguration()
 
 let configurationDetails = {
     contextSelection: getUseContextFromConfig(config),
@@ -57,7 +57,7 @@ export function onConfigurationChange(newconfig: any): any {
 export class EventLogger {
     private serverEndpoint = getServerEndpointFromConfig(config)
     private extensionDetails = { ide: 'VSCode', ideExtensionType: 'Cody' }
-    configurationDetails = configurationDetails
+    public configurationDetails = configurationDetails
     private constructor(private gqlAPIClient: SourcegraphGraphQLAPIClient) {}
 
     public static create(gqlAPIClient: SourcegraphGraphQLAPIClient): EventLogger {
@@ -93,13 +93,13 @@ export class EventLogger {
             ...eventProperties,
             serverEndpoint: this.serverEndpoint,
             extensionDetails: this.extensionDetails,
-            configurationDetails: configurationDetails,
+            configurationDetails,
         }
         const publicArgument = {
             ...publicProperties,
             serverEndpoint: this.serverEndpoint,
             extensionDetails: this.extensionDetails,
-            configurationDetails: configurationDetails,
+            configurationDetails,
         }
         try {
             this.gqlAPIClient
