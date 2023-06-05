@@ -9,6 +9,7 @@ go_library(
     deps = [
         "//cmd/frontend/backend",
         "//cmd/frontend/envvar",
+        "//enterprise/internal/licensing",
         "//internal/actor",
         "//internal/auth",
         "//internal/conf",
@@ -25,6 +26,7 @@ go_test(
     srcs = ["feature_flag_test.go"],
     embed = [":cody"],
     deps = [
+        "//enterprise/internal/licensing",
         "//internal/actor",
         "//internal/conf",
         "//internal/conf/deploy",

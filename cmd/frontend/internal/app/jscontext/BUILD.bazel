@@ -18,7 +18,6 @@ go_library(
         "//internal/actor",
         "//internal/auth/providers",
         "//internal/auth/userpasswd",
-        "//internal/cody",
         "//internal/conf",
         "//internal/conf/deploy",
         "//internal/database",
