@@ -2,7 +2,9 @@ package store
 
 import (
 	"context"
+	"fmt"
 	"net/url"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -98,7 +100,7 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
 
 	baseURL, err := url.Parse(app.BaseURL)
 	if err != nil {
-		return -1, errors.New("unable to parse base URL: %s", baseURL)
+		return -1, fmt.Errorf("unable to parse base URL: %s", baseURL.String())
 	}
 	baseURL = extsvc.NormalizeBaseURL(baseURL)
 	domain := app.Domain
