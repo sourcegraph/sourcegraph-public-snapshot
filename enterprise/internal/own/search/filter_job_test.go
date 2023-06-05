@@ -408,14 +408,12 @@ func TestApplyCodeOwnershipFiltering(t *testing.T) {
 
 			var includeBags []own.Bag
 			for _, o := range tt.args.includeOwners {
-				b, err := own.ByTextReference(ctx, db, o)
-				require.NoError(t, err)
+				b := own.ByTextReference(ctx, db, o)
 				includeBags = append(includeBags, b)
 			}
 			var excludeBags []own.Bag
 			for _, o := range tt.args.excludeOwners {
-				b, err := own.ByTextReference(ctx, db, o)
-				require.NoError(t, err)
+				b := own.ByTextReference(ctx, db, o)
 				excludeBags = append(excludeBags, b)
 			}
 			matches, _ := applyCodeOwnershipFiltering(
