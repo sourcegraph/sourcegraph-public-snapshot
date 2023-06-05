@@ -120,8 +120,7 @@ func TestSearchFilteringExample(t *testing.T) {
 		t.Run(testName, func(t *testing.T) {
 			// Do this at first during search and hold references to all the known entities
 			// that can be referred to by given search term.
-			bag, err := ByTextReference(ctx, db, testCase.searchTerm)
-			require.NoError(t, err)
+			bag := ByTextReference(ctx, db, testCase.searchTerm)
 			for name, r := range ownerReferences {
 				t.Run(name, func(t *testing.T) {
 					assert.True(t, bag.Contains(r), fmt.Sprintf("%s.Contains(%s), want true, got false", bag, r))
@@ -139,8 +138,7 @@ func TestBagNoUser(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 	ctx := context.Background()
-	bag, err := ByTextReference(ctx, db, "userdoesnotexist")
-	require.NoError(t, err)
+	bag := ByTextReference(ctx, db, "userdoesnotexist")
 	for name, r := range map[string]Reference{
 		"same handle matches even when there is no user": {
 			Handle: "userdoesnotexist",
@@ -249,8 +247,7 @@ func TestBagUserFoundNoMatches(t *testing.T) {
 	}
 	for testName, testCase := range tests {
 		t.Run(testName, func(t *testing.T) {
-			bag, err := ByTextReference(ctx, db, testCase.searchTerm)
-			require.NoError(t, err)
+			bag := ByTextReference(ctx, db, testCase.searchTerm)
 			// Check test is valid by verifying user can be found by handle/email.
 			require.True(t, bag.Contains(testCase.validationRef), fmt.Sprintf("validation: Contains(%s), want true, got false", testCase.validationRef))
 			for name, r := range ownerReferences {
@@ -296,8 +293,7 @@ func TestBagUnverifiedEmailOnlyMatchesWithItself(t *testing.T) {
 
 	// Imagine this is the search with filter
 	// `file:has.owner(john-the-unverified@example.com)`.
-	bag, err := ByTextReference(ctx, db, unverifiedEmail)
-	require.NoError(t, err)
+	bag := ByTextReference(ctx, db, unverifiedEmail)
 	for name, r := range ownerReferences {
 		t.Run(name, func(t *testing.T) {
 			if r.Email == unverifiedEmail {
@@ -321,8 +317,7 @@ func TestBagRetrievesTeamsByName(t *testing.T) {
 	require.NoError(t, err)
 	team, err := db.Teams().GetTeamByName(ctx, "team-name")
 	require.NoError(t, err)
-	bag, err := ByTextReference(ctx, db, "team-name")
-	require.NoError(t, err)
+	bag := ByTextReference(ctx, db, "team-name")
 	ref := Reference{TeamID: team.ID}
 	assert.True(t, bag.Contains(ref), "%s contains %s", bag, ref)
 }
@@ -347,8 +342,7 @@ func TestBagManyUsers(t *testing.T) {
 		EmailIsVerified: true,
 	})
 	require.NoError(t, err)
-	bag, err := ByTextReference(ctx, db, "jdoe", "ssmith")
-	require.NoError(t, err)
+	bag := ByTextReference(ctx, db, "jdoe", "ssmith")
 	assert.True(t, bag.Contains(Reference{Handle: "ssmith"}))
 	assert.True(t, bag.Contains(Reference{Handle: "jdoe"}))
 }
