@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
@@ -37,17 +38,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
+type UpgradeStore interface {
+	EnsureUpgradeTable(context.Context) error
+	GetServiceVersion(context.Context) (string, bool, error)
+	ClaimAutoUpgrade(ctx context.Context, from string, to string) (claimed bool, err error)
+}
+
 var buffer strings.Builder // :)
 
-var shouldAutoUpgade = env.MustGetBool("SRC_AUTOUPGRADE", false, "blahblahblah")
+var shouldAutoUpgade = env.MustGetBool("SRC_AUTOUPGRADE", false, "If you forgot to set intent to autoupgrade before shutting down the instance, set this env var.")
 
 func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db database.DB, hook store.RegisterMigratorsUsingConfAndStoreFactoryFunc) (err error) {
-	toVersion, ok := oobmigration.NewVersionFromString(version.Version())
-	if !ok {
-		return nil
-	}
-	var currentVersion oobmigration.Version
-
 	upgradestore := upgradestore.New(db)
 
 	_, doAutoUpgrade, err := upgradestore.GetAutoUpgrade(ctx)
@@ -57,6 +58,50 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db databa
 	if !doAutoUpgrade && !shouldAutoUpgade {
 		return nil
 	}
+
+	stopFunc, err := serveConfigurationServer(ctx, obsvCtx)
+	if err != nil {
+		return err
+	}
+	defer stopFunc()
+
+	toVersion, ok := oobmigration.NewVersionFromString(version.Version())
+	if !ok {
+		return nil
+	}
+
+	// as sourcegraph-frontend-internal isn't publicly reachable, and must be up before sourcegraph-frontend,
+	// we mark ourselves as 'ready' (so sourcegraph-frontend can start), service the dummy configuration,
+	// and spin-wait until the version is where we want it to be.
+	if !strings.Contains(hostname.Get(), "frontend-internal") {
+		return performAutoUpgrade(ctx, obsvCtx, db, toVersion, hook)
+	} else {
+		ticker := time.NewTicker(time.Second * 10)
+		defer ticker.Stop()
+		for ; ; <-ticker.C {
+			currentVersionStr, _, err := upgradestore.GetServiceVersion(ctx)
+			if err != nil {
+				return errors.Wrap(err, "autoupgradestore.GetServiceVersion")
+			}
+
+			var ok bool
+			currentVersion, ok := oobmigration.NewVersionFromString(currentVersionStr)
+			if !ok {
+				return errors.Newf("VERSION STRING BAD %s", currentVersion)
+			}
+
+			if cmp := oobmigration.CompareVersions(currentVersion, toVersion); cmp == oobmigration.VersionOrderAfter || cmp == oobmigration.VersionOrderEqual {
+				obsvCtx.Logger.Info("installation is up-to-date, continuing startup!")
+				return nil
+			}
+		}
+	}
+}
+
+func performAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db database.DB, toVersion oobmigration.Version, hook store.RegisterMigratorsUsingConfAndStoreFactoryFunc) error {
+	upgradestore := upgradestore.New(db)
+
+	var currentVersion oobmigration.Version
 
 	if err := upgradestore.EnsureUpgradeTable(ctx); err != nil {
 		return errors.Wrap(err, "autoupgradestore.EnsureUpgradeTable")
@@ -71,6 +116,7 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db databa
 			return errors.Wrap(err, "autoupgradestore.GetServiceVersion")
 		}
 
+		var ok bool
 		currentVersion, ok = oobmigration.NewVersionFromString(currentVersionStr)
 		if !ok {
 			return errors.Newf("VERSION STRING BAD %s", currentVersion)
@@ -95,18 +141,16 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, db databa
 		time.Sleep(time.Second * 10)
 	}
 
-	stopFunc, err := serveConfigurationServer(ctx, obsvCtx)
-	if err != nil {
-		return err
-	}
-	defer stopFunc()
-
 	if err := runMigration(ctx, obsvCtx, currentVersion, toVersion, db, hook); err != nil {
 		return err
 	}
 
 	if err := upgradestore.SetServiceVersion(ctx, toVersion.GitTag()); err != nil {
 		return errors.Wrap(err, "autoupgradstore.SetServiceVersion")
+	}
+
+	if err := upgradestore.SetAutoUpgrade(ctx, false); err != nil {
+		return errors.Wrap(err, "autoupgradestore.SetAutoUpgrade")
 	}
 
 	return errors.New("MIGRATION SUCCEEDED, RESTARTING")
