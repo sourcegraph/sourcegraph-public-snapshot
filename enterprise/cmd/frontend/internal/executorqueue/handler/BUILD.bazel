@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "handler",
@@ -48,6 +49,7 @@ go_test(
         "//internal/database",
         "//internal/executor",
         "//internal/metrics/store",
+        "//internal/types",
         "//internal/workerutil",
         "//internal/workerutil/dbworker/store",
         "//internal/workerutil/dbworker/store/mocks",

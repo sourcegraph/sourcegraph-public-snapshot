@@ -1,4 +1,4 @@
-import { FC, useCallback, useEffect } from 'react'
+import { FC, useCallback, useEffect, useState } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -13,11 +13,13 @@ import {
     Validator,
     ErrorAlert,
     Form,
+    useDebounce,
 } from '@sourcegraph/wildcard'
 
 import {
     ConnectionContainer,
     ConnectionError,
+    ConnectionForm,
     ConnectionList,
     ConnectionLoading,
     ConnectionSummary,
@@ -57,7 +59,10 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
         telemetryService.logPageView('SiteAdminCodyPage')
     }, [telemetryService])
 
-    const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useRepoEmbeddingJobsConnection()
+    const [searchValue, setSearchValue] = useState('')
+    const query = useDebounce(searchValue, 200)
+
+    const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useRepoEmbeddingJobsConnection(query)
 
     const [scheduleRepoEmbeddingJobs, { loading: repoEmbeddingJobsLoading, error: repoEmbeddingJobsError }] =
         useScheduleRepoEmbeddingJobs()
@@ -144,8 +149,15 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                         />
                     </div>
                 )}
+            </Container>
+            <Container>
                 <H3 className="mt-3">Repository embedding jobs</H3>
                 <ConnectionContainer>
+                    <ConnectionForm
+                        inputValue={searchValue}
+                        onInputChange={event => setSearchValue(event.target.value)}
+                        inputPlaceholder="Filter embedding jobs..."
+                    />
                     {error && <ConnectionError errors={[error.message]} />}
                     {loading && !connection && <ConnectionLoading />}
                     <ConnectionList as="ul" className="list-group" aria-label="Repository embedding jobs">
@@ -160,6 +172,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                                 first={connection.totalCount ?? 0}
                                 centered={true}
                                 connection={connection}
+                                connectionQuery={query}
                                 noun="repository embedding job"
                                 pluralNoun="repository embedding jobs"
                                 hasNextPage={hasNextPage}

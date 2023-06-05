@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 # gazelle:resolve go github.com/sourcegraph/sourcegraph/ui/assets //ui/assets
 go_library(

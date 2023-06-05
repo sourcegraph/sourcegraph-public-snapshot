@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "sources",
@@ -21,6 +22,7 @@ go_library(
         "//enterprise/internal/batches/sources/gerrit",
         "//enterprise/internal/batches/store",
         "//enterprise/internal/batches/types",
+        "//internal/api",
         "//internal/conf",
         "//internal/database",
         "//internal/errcode",

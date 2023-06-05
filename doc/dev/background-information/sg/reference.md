@@ -44,6 +44,7 @@ Available comamndsets in `sg.config.yaml`:
 * enterprise-codeinsights
 * enterprise-codeintel 🧠
 * enterprise-codeintel-bazel
+* enterprise-codeintel-multi-queue-executor
 * enterprise-e2e
 * iam
 * monitoring
@@ -123,6 +124,7 @@ Available commands in `sg.config.yaml`:
 * jaeger
 * loki
 * monitoring-generator
+* multiqueue-executor
 * oss-frontend
 * oss-gitserver-0
 * oss-gitserver-1
@@ -1267,8 +1269,11 @@ $ sg app update-manifest
 # Update the updater manifest based on a particular github release
 $ sg app update-manifest --release-tag app-v2023.07.07
 
-# Do a dry run of updating the manifest
-$ sg app update-manifest --dry-run
+# Do everything except upload the updated manifest
+$ sg app update-manifest --no-upload
+
+# Update the manifest but don't update the signatures from the release - useful if the release comes from the same build
+$ sg app update-manifest --update-signatures
 ```
 
 ### sg app update-manifest
