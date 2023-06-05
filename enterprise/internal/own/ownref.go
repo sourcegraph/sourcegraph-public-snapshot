@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -47,9 +48,20 @@ type Reference struct {
 	Email string
 }
 
-func (r Reference) ResolutionGuess() *codeowners.Person {
+func (r Reference) ResolutionGuess() codeowners.ResolvedOwner {
 	if r.Handle == "" && r.Email == "" {
 		return nil
+	}
+	// If this is a GitHub repo and the handle contains a "/", then we can tell that this is a team.
+	if r.RepoContext != nil && strings.ToLower(r.RepoContext.CodeHostKind) == extsvc.VariantGitHub.AsType() && strings.Contains(r.Handle, "/") {
+		return &codeowners.Team{
+			Handle: r.Handle,
+			Email:  r.Email,
+			Team: &types.Team{
+				Name:        r.Handle,
+				DisplayName: r.Handle,
+			},
+		}
 	}
 	return &codeowners.Person{
 		Handle: r.Handle,
