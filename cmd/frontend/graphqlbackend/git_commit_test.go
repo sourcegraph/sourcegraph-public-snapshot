@@ -53,8 +53,8 @@ func TestGitCommitResolver(t *testing.T) {
 			require.Equal(t, "/xyz/-/commit/master%5E1", commitResolver.URL())
 
 			opts := GitTreeEntryResolverOpts{
-				commit: commitResolver,
-				stat:   CreateFileInfo("a/b", false),
+				Commit: commitResolver,
+				Stat:   CreateFileInfo("a/b", false),
 			}
 			treeResolver := NewGitTreeEntryResolver(db, client, opts)
 			url, err := treeResolver.URL(ctx)

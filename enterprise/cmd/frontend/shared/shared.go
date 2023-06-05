@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/completions"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/compute"
+	internalcontext "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/context"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/embeddings"
 	executor "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue"
@@ -54,6 +55,7 @@ var initFunctions = map[string]EnterpriseInitializer{
 	"compute":        compute.Init,
 	"dotcom":         dotcom.Init,
 	"embeddings":     embeddings.Init,
+	"context":        internalcontext.Init,
 	"githubapp":      githubapp.Init,
 	"insights":       insights.Init,
 	"licensing":      licensing.Init,

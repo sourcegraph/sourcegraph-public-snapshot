@@ -496,6 +496,12 @@ func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
 	return fs
 }
 
+// RepoIDName combines a repo name and ID into a single struct
+type RepoIDName struct {
+	ID   api.RepoID
+	Name api.RepoName
+}
+
 // MinimalRepo represents a source code repository name, its ID and number of stars.
 type MinimalRepo struct {
 	ID    api.RepoID

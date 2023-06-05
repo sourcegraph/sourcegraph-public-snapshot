@@ -1,0 +1,52 @@
+extend type Query {
+    """
+    EXPERIMENTAL: Get pieces of context related to the query from a set of repositories.
+    """
+    getCodyContext(
+        """
+        The repositories to search.
+        """
+        repos: [ID!]!
+        """
+        A natural language query string.
+        """
+        query: String!
+        """
+        The number of code results to return.
+        """
+        codeResultsCount: Int!
+        """
+        The number of text results to return. Text results contain Markdown files and similar file types primarily used for writing documentation.
+        """
+        textResultsCount: Int!
+    ): [CodyContextResult!]!
+}
+
+"""
+EXPERIMENTAL: A single piece of context. It's defined as a union so we can
+return other types of context in the future (think code intel definition
+or wiki page).
+"""
+union CodyContextResult = FileChunkContext
+
+"""
+A piece of context that represents a chunk of a file in a git repository
+"""
+type FileChunkContext {
+    """
+    The git blob this file is associated with
+    """
+    blob: GitBlob!
+    """
+    The start line of the relevant chunk (inclusive).
+    """
+    startLine: Int!
+    """
+    The end line of the relevant chunk (exclusive).
+    """
+    endLine: Int!
+    """
+    The relevant content of the file from start line to end line.
+    """
+    chunkContent: String!
+}

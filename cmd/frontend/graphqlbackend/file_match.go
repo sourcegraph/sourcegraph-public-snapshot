@@ -31,8 +31,8 @@ func (fm *FileMatchResolver) File() *GitTreeEntryResolver {
 	// (which would make it slow). This GitCommitResolver will return empty
 	// values for all other fields.
 	opts := GitTreeEntryResolverOpts{
-		commit: fm.Commit(),
-		stat:   CreateFileInfo(fm.Path, false),
+		Commit: fm.Commit(),
+		Stat:   CreateFileInfo(fm.Path, false),
 	}
 	return NewGitTreeEntryResolver(fm.db, gitserver.NewClient(), opts)
 }

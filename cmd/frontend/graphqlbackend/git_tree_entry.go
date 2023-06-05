@@ -51,8 +51,8 @@ type GitTreeEntryResolver struct {
 }
 
 type GitTreeEntryResolverOpts struct {
-	commit *GitCommitResolver
-	stat   fs.FileInfo
+	Commit *GitCommitResolver
+	Stat   fs.FileInfo
 }
 
 type GitTreeContentPageArgs struct {
@@ -63,8 +63,8 @@ type GitTreeContentPageArgs struct {
 func NewGitTreeEntryResolver(db database.DB, gitserverClient gitserver.Client, opts GitTreeEntryResolverOpts) *GitTreeEntryResolver {
 	return &GitTreeEntryResolver{
 		db:              db,
-		commit:          opts.commit,
-		stat:            opts.stat,
+		commit:          opts.Commit,
+		stat:            opts.Stat,
 		gitserverClient: gitserverClient,
 	}
 }

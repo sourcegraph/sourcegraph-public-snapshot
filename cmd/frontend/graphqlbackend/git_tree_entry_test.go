@@ -18,10 +18,10 @@ func TestGitTreeEntry_RawZipArchiveURL(t *testing.T) {
 	db := database.NewMockDB()
 	gitserverClient := gitserver.NewMockClient()
 	opts := GitTreeEntryResolverOpts{
-		commit: &GitCommitResolver{
+		Commit: &GitCommitResolver{
 			repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}),
 		},
-		stat: CreateFileInfo("a/b", true),
+		Stat: CreateFileInfo("a/b", true),
 	}
 	got := NewGitTreeEntryResolver(db, gitserverClient, opts).RawZipArchiveURL()
 	want := "http://example.com/my/repo/-/raw/a/b?format=zip"
@@ -44,10 +44,10 @@ func TestGitTreeEntry_Content(t *testing.T) {
 		return []byte(wantContent), nil
 	})
 	opts := GitTreeEntryResolverOpts{
-		commit: &GitCommitResolver{
+		Commit: &GitCommitResolver{
 			repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}),
 		},
-		stat: CreateFileInfo(wantPath, true),
+		Stat: CreateFileInfo(wantPath, true),
 	}
 	gitTree := NewGitTreeEntryResolver(db, gitserverClient, opts)
 
@@ -133,10 +133,10 @@ func TestGitTreeEntry_ContentPagination(t *testing.T) {
 
 	for _, tc := range tests {
 		opts := GitTreeEntryResolverOpts{
-			commit: &GitCommitResolver{
+			Commit: &GitCommitResolver{
 				repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}),
 			},
-			stat: CreateFileInfo(wantPath, true),
+			Stat: CreateFileInfo(wantPath, true),
 		}
 		gitTree := NewGitTreeEntryResolver(db, gitserverClient, opts)
 
@@ -172,10 +172,10 @@ func TestGitTreeEntry_ContentPagination(t *testing.T) {
 
 	// Testing default (nils) for pagination.
 	opts := GitTreeEntryResolverOpts{
-		commit: &GitCommitResolver{
+		Commit: &GitCommitResolver{
 			repoResolver: NewRepositoryResolver(db, gitserverClient, &types.Repo{Name: "my/repo"}),
 		},
-		stat: CreateFileInfo(wantPath, true),
+		Stat: CreateFileInfo(wantPath, true),
 	}
 	gitTree := NewGitTreeEntryResolver(db, gitserverClient, opts)
 

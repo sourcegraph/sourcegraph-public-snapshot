@@ -294,8 +294,8 @@ func (r *GitCommitResolver) path(ctx context.Context, path string, validate func
 		return nil, err
 	}
 	opts := GitTreeEntryResolverOpts{
-		commit: r,
-		stat:   stat,
+		Commit: r,
+		Stat:   stat,
 	}
 	return NewGitTreeEntryResolver(r.db, r.gitserverClient, opts), nil
 }
