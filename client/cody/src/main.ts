@@ -186,7 +186,7 @@ const register = async (
         vscode.commands.registerCommand('cody.walkthrough.enableInlineAssist', async () => {
             await workspaceConfig.update('cody.experimental.inline', true, vscode.ConfigurationTarget.Global)
             // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
-            return vscode.commands.executeCommand('workbench.action.openWorkspaceSettings', {
+            return vscode.commands.executeCommand('workbench.action.openSettings', {
                 query: 'cody.experimental.inline',
                 openToSide: true,
             })
@@ -194,7 +194,7 @@ const register = async (
         vscode.commands.registerCommand('cody.walkthrough.enableAutomaticCodeCompletions', async () => {
             await workspaceConfig.update('cody.experimental.suggestions', true, vscode.ConfigurationTarget.Global)
             // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
-            return vscode.commands.executeCommand('workbench.action.openWorkspaceSettings', {
+            return vscode.commands.executeCommand('workbench.action.openSettings', {
                 query: 'cody.experimental.suggestions',
                 openToSide: true,
             })
