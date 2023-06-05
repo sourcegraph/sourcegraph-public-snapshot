@@ -3,6 +3,7 @@ package productsubscription
 import (
 	"bytes"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -45,7 +46,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 		LicenseCheckToken: makeToken("assigned-site-id-token"),
 		SiteID:            strPtr("assigned-site-id"),
 	}
-	allLicenses := []dbLicense{
+	licenses := []dbLicense{
 		validLicense,
 		expiredLicense,
 		revokedLicense,
@@ -58,7 +59,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 		if err != nil {
 			return nil, err
 		}
-		for _, license := range allLicenses {
+		for _, license := range licenses {
 			if license.LicenseCheckToken != nil && bytes.Equal(*license.LicenseCheckToken, token) {
 				return &license, nil
 			}
@@ -68,70 +69,79 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 
 	tests := []struct {
 		name       string
-		headers    http.Header
 		body       string
+		headers    http.Header
+		want       licensing.LicenseCheckResponse
 		wantStatus int
 	}{
 		{
 			name:       "no access token",
-			headers:    nil,
 			body:       `{"siteID": "some-site-id"}`,
+			headers:    nil,
+			want:       licensing.LicenseCheckResponse{Error: strPtr("invalid access token")},
 			wantStatus: http.StatusUnauthorized,
 		},
 		{
 			name: "invalid access token",
+			body: `{"siteID": "some-site-id"}`,
 			headers: http.Header{
 				"Authorization": {"Bearer invalid-token"},
 			},
-			body:       `{"siteID": "some-site-id"}`,
+			want:       licensing.LicenseCheckResponse{Error: strPtr("invalid access token")},
 			wantStatus: http.StatusUnauthorized,
 		},
 		{
 			name: "expired license access token",
+			body: `{"siteID": "some-site-id"}`,
 			headers: http.Header{
 				"Authorization": {"Bearer " + hex.EncodeToString(*expiredLicense.LicenseCheckToken)},
 			},
-			body:       `{"siteID": "some-site-id"}`,
+			want:       licensing.LicenseCheckResponse{Error: strPtr("license expired")},
 			wantStatus: http.StatusForbidden,
 		},
 		{
 			name: "revoked license access token",
+			body: `{"siteID": "some-site-id"}`,
 			headers: http.Header{
 				"Authorization": {"Bearer " + hex.EncodeToString(*revokedLicense.LicenseCheckToken)},
 			},
-			body:       `{"siteID": "some-site-id"}`,
+			want:       licensing.LicenseCheckResponse{Error: strPtr("license revoked")},
 			wantStatus: http.StatusForbidden,
 		},
 		{
 			name: "valid access token, invalid request body",
+			body: "invalid body",
 			headers: http.Header{
 				"Authorization": {"Bearer " + hex.EncodeToString(*validLicense.LicenseCheckToken)},
 			},
-			body:       "invalid body",
+			want:       licensing.LicenseCheckResponse{Error: strPtr("invalid request body")},
 			wantStatus: http.StatusBadRequest,
 		},
 		{
-			name: "valid access token, incorrect site id",
+			name: "valid access token, invalid site id (abuse)",
 			headers: http.Header{
 				"Authorization": {"Bearer " + hex.EncodeToString(*assignedLicense.LicenseCheckToken)},
 			},
 			body:       `{"siteID": "some-site-id"}`,
-			wantStatus: http.StatusUnprocessableEntity,
+			want:       licensing.LicenseCheckResponse{Data: &licensing.LicenseCheckResponseData{IsValid: false, Reason: strPtr("license is already in use")}},
+			wantStatus: http.StatusOK,
 		},
 		{
 			name: "valid access token, valid site id",
+			body: fmt.Sprintf(`{"siteID": "%s"}`, *assignedLicense.SiteID),
 			headers: http.Header{
 				"Authorization": {"Bearer " + hex.EncodeToString(*assignedLicense.LicenseCheckToken)},
 			},
-			body:       fmt.Sprintf(`{"siteID": "%s"}`, *assignedLicense.SiteID),
+			want:       licensing.LicenseCheckResponse{Data: &licensing.LicenseCheckResponseData{IsValid: true}},
 			wantStatus: http.StatusOK,
 		},
 		{
 			name: "valid access token, new site id",
+			body: `{"siteID": "some-site-id"}`,
 			headers: http.Header{
 				"Authorization": {"Bearer " + hex.EncodeToString(*validLicense.LicenseCheckToken)},
 			},
-			body:       `{"siteID": "some-site-id"}`,
+			want:       licensing.LicenseCheckResponse{Data: &licensing.LicenseCheckResponseData{IsValid: true}},
 			wantStatus: http.StatusOK,
 		},
 	}
@@ -140,14 +150,20 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			res := httptest.NewRecorder()
 			req, err := http.NewRequest(http.MethodPost, "/", strings.NewReader(test.body))
 			require.NoError(t, err)
+
 			for k, v := range test.headers {
 				req.Header[k] = v
 			}
+
 			handler := NewLicenseCheckHandler(db)
 			handler.ServeHTTP(res, req)
+
 			require.Equal(t, test.wantStatus, res.Code)
+			require.Equal(t, "application/json", res.Header().Get("Content-Type"))
+
+			var got licensing.LicenseCheckResponse
+			json.Unmarshal([]byte(res.Body.String()), &got)
+			require.Equal(t, test.want, got)
 		})
 	}
-
-	// todo: test rate limiting
 }

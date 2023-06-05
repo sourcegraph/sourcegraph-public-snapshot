@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -30,53 +31,87 @@ func extractBearer(h http.Header) (string, error) {
 	return token, nil
 }
 
-type LicenseCheckRequestParams struct {
-	ClientSiteID string `json:"siteID"`
-}
+var (
+	ErrInvalidAccessTokenMsg   = "invalid access token"
+	ErrExpiredLicenseMsg       = "license expired"
+	ErrInvalidRequestBodyMsg   = "invalid request body"
+	ErrLicenseRevokedMsg       = "license revoked"
+	ErrFailedToAssignSiteIDMsg = "failed to assign site ID to license"
 
-// todo: consider using response body instead of relying on status codes
+	ReasonLicenseIsAlreadyInUseMsg = "license is already in use"
+)
+
 func NewLicenseCheckHandler(db database.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// todo: add logging & rate limiting
 		tokenHexEncoded, err := extractBearer(r.Header)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusUnauthorized)
+			replyWithJSON(w, http.StatusUnauthorized, licensing.LicenseCheckResponse{
+				Error: &ErrInvalidAccessTokenMsg,
+			})
 			return
 		}
 
 		lStore := dbLicenses{db: db}
 		license, err := lStore.GetByToken(r.Context(), tokenHexEncoded)
 		if err != nil || license == nil {
-			http.Error(w, "invalid access token", http.StatusUnauthorized)
+			replyWithJSON(w, http.StatusUnauthorized, licensing.LicenseCheckResponse{
+				Error: &ErrInvalidAccessTokenMsg,
+			})
 			return
 		}
 		now := time.Now()
 		if license.LicenseExpiresAt != nil && license.LicenseExpiresAt.Before(now) {
-			http.Error(w, "access token expired", http.StatusForbidden)
+			replyWithJSON(w, http.StatusForbidden, licensing.LicenseCheckResponse{
+				Error: &ErrExpiredLicenseMsg,
+			})
 			return
 		}
 
-		var args LicenseCheckRequestParams
+		var args licensing.LicenseCheckRequestParams
 		err = json.NewDecoder(r.Body).Decode(&args)
 		if err != nil {
-			http.Error(w, "invalid request body", http.StatusBadRequest)
+			replyWithJSON(w, http.StatusBadRequest, licensing.LicenseCheckResponse{
+				Error: &ErrInvalidRequestBodyMsg,
+			})
 			return
 		}
 
 		if license.SiteID != nil && *license.SiteID != args.ClientSiteID {
-			http.Error(w, "access token does not match site ID", http.StatusUnprocessableEntity)
+			replyWithJSON(w, http.StatusOK, licensing.LicenseCheckResponse{
+				Data: &licensing.LicenseCheckResponseData{
+					IsValid: false,
+					Reason:  &ReasonLicenseIsAlreadyInUseMsg,
+				},
+			})
 			return
 		}
 
 		if license.RevokedAt != nil {
-			http.Error(w, "license revoked", http.StatusForbidden)
+			replyWithJSON(w, http.StatusForbidden, licensing.LicenseCheckResponse{
+				Error: &ErrLicenseRevokedMsg,
+			})
 			return
 		}
 
 		if license.SiteID == nil {
-			if err := lStore.AssignSiteID(r.Context(), license.ID, *&args.ClientSiteID); err != nil {
-				http.Error(w, "failed to assign site ID", http.StatusInternalServerError)
+			if err := lStore.AssignSiteID(r.Context(), license.ID, args.ClientSiteID); err != nil {
+				replyWithJSON(w, http.StatusInternalServerError, licensing.LicenseCheckResponse{
+					Error: &ErrFailedToAssignSiteIDMsg,
+				})
 				return
 			}
 		}
+		replyWithJSON(w, http.StatusOK, licensing.LicenseCheckResponse{
+			Data: &licensing.LicenseCheckResponseData{
+				IsValid: true,
+			},
+		})
 	})
+}
+
+func replyWithJSON(w http.ResponseWriter, statusCode int, data interface{}) {
+	w.WriteHeader(statusCode)
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(data)
 }
