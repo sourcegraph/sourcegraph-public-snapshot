@@ -5,8 +5,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.VerticalFlowLayout;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTabbedPane;
-import com.intellij.ui.scale.JBUIScale;
-import com.sourcegraph.cody.api.Speaker;
 import com.sourcegraph.cody.chat.Chat;
 import com.sourcegraph.cody.chat.ChatBubble;
 import com.sourcegraph.cody.chat.ChatMessage;
@@ -71,7 +69,7 @@ class CodyToolWindowContent implements UpdatableChat {
     recipesPanel.add(releaseNotesButton);
 
     // Chat panel
-    messagesPanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 10, true, true));
+    messagesPanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, true));
     JBScrollPane chatPanel =
         new JBScrollPane(
             messagesPanel,
@@ -101,7 +99,7 @@ class CodyToolWindowContent implements UpdatableChat {
 
     // Main content panel
     contentPanel.setLayout(new BorderLayout(0, 20));
-    contentPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+    contentPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
     contentPanel.add(chatPanel, BorderLayout.CENTER);
     contentPanel.add(controlsPanel, BorderLayout.SOUTH);
 
@@ -115,18 +113,12 @@ class CodyToolWindowContent implements UpdatableChat {
     ApplicationManager.getApplication()
         .invokeLater(
             () -> {
-              boolean isHuman = message.getSpeaker() == Speaker.HUMAN;
-
               // Bubble panel
               var bubblePanel = new JPanel();
               bubblePanel.setLayout(
                   new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false));
-              bubblePanel.setBorder(
-                  BorderFactory.createEmptyBorder(
-                      0, isHuman ? JBUIScale.scale(20) : 0, 0, !isHuman ? JBUIScale.scale(20) : 0));
-
               // Chat bubble
-              ChatBubble bubble = new ChatBubble(10, message);
+              ChatBubble bubble = new ChatBubble(message);
               bubblePanel.add(bubble, VerticalFlowLayout.TOP);
               messagesPanel.add(bubblePanel);
               messagesPanel.revalidate();
@@ -151,7 +143,7 @@ class CodyToolWindowContent implements UpdatableChat {
                 JPanel lastBubblePanel =
                     (JPanel) messagesPanel.getComponent(messagesPanel.getComponentCount() - 1);
                 ChatBubble lastBubble = (ChatBubble) lastBubblePanel.getComponent(0);
-                lastBubble.updateText(message.getDisplayText());
+                lastBubble.updateText(message);
                 messagesPanel.revalidate();
                 messagesPanel.repaint();
               }
