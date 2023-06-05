@@ -624,6 +624,29 @@ commands:
       - enterprise/internal
       - enterprise/cmd/executor
 
+  executor-kubernetes-template: &executor_kubernetes_template
+    cmd: |
+      cd $MANIFEST_PATH
+      cleanup() {
+        kubectl delete -f .
+      }
+      kubectl delete -f . --ignore-not-found
+      kubectl apply -f .
+      trap cleanup EXIT
+      while true; do
+        sleep 1
+      done
+    install: ./enterprise/cmd/executor-kubernetes/build.sh
+    env:
+      IMAGE: sourcegraph/executor-kubernetes:insiders
+      # TODO: This is required but should only be set on M1 Macs.
+      PLATFORM: linux/arm64
+    watch:
+      - lib
+      - internal
+      - enterprise/internal
+      - enterprise/cmd/executor
+
   codeintel-executor:
     <<: *executor_template
     cmd: |
@@ -643,6 +666,11 @@ commands:
       EXECUTOR_USE_FIRECRACKER: true
       EXECUTOR_QUEUE_NAME: codeintel
 
+  codeintel-executor-kubernetes:
+    <<: *executor_kubernetes_template
+    env:
+      MANIFEST_PATH: ./enterprise/cmd/executor/kubernetes/codeintel
+
   batches-executor:
     <<: *executor_template
     cmd: |
@@ -650,6 +678,23 @@ commands:
     env:
       EXECUTOR_QUEUE_NAME: batches
       EXECUTOR_MAXIMUM_NUM_JOBS: 8
+
+  # If you want to use this, either start it with `sg run batches-executor-firecracker` or
+  # modify the `commandsets.batches` in your local `sg.config.overwrite.yaml`
+  batches-executor-firecracker:
+    <<: *executor_template
+    cmd: |
+      env TMPDIR="$HOME/.sourcegraph/batches-executor-temp" \
+        sudo --preserve-env=TMPDIR,EXECUTOR_QUEUE_NAME,EXECUTOR_FRONTEND_URL,EXECUTOR_FRONTEND_PASSWORD,EXECUTOR_USE_FIRECRACKER \
+          .bin/executor
+    env:
+      EXECUTOR_USE_FIRECRACKER: true
+      EXECUTOR_QUEUE_NAME: batches
+
+  batches-executor-kubernetes:
+    <<: *executor_kubernetes_template
+    env:
+      MANIFEST_PATH: ./enterprise/cmd/executor/kubernetes/batches
 
   # This tool rebuilds the batcheshelper image every time the source of it is changed.
   batcheshelper-builder:
@@ -665,17 +710,14 @@ commands:
       - lib/batches
     continueWatchOnExit: true
 
-  # If you want to use this, either start it with `sg run batches-executor-firecracker` or
-  # modify the `commandsets.batches` in your local `sg.config.overwrite.yaml`
-  batches-executor-firecracker:
+  multiqueue-executor:
     <<: *executor_template
     cmd: |
-      env TMPDIR="$HOME/.sourcegraph/batches-executor-temp" \
-        sudo --preserve-env=TMPDIR,EXECUTOR_QUEUE_NAME,EXECUTOR_FRONTEND_URL,EXECUTOR_FRONTEND_PASSWORD,EXECUTOR_USE_FIRECRACKER \
-          .bin/executor
+      env TMPDIR="$HOME/.sourcegraph/multiqueue-executor-temp" .bin/executor
     env:
-      EXECUTOR_USE_FIRECRACKER: true
-      EXECUTOR_QUEUE_NAME: batches
+      EXECUTOR_QUEUE_NAME: ""
+      EXECUTOR_QUEUE_NAMES: "codeintel,batches"
+      EXECUTOR_MAXIMUM_NUM_JOBS: 8
 
   blobstore:
     cmd: .bin/blobstore
@@ -987,13 +1029,13 @@ bazelCommands:
     ignoreStderr: true
     env:
       # Environment copied from Dockerfile
-      WORKERS: '1'
-      ROCKET_ENV: 'production'
-      ROCKET_LIMITS: '{json=10485760}'
-      ROCKET_SECRET_KEY: 'SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA='
-      ROCKET_KEEP_ALIVE: '0'
-      ROCKET_PORT: '9238'
-      QUIET: 'true'
+      WORKERS: "1"
+      ROCKET_ENV: "production"
+      ROCKET_LIMITS: "{json=10485760}"
+      ROCKET_SECRET_KEY: "SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA="
+      ROCKET_KEEP_ALIVE: "0"
+      ROCKET_PORT: "9238"
+      QUIET: "true"
   github-proxy:
     target: //cmd/github-proxy
   frontend:
@@ -1266,6 +1308,36 @@ commandsets:
       - redis
       - postgres
       - git
+
+  codeintel-kubernetes:
+    <<: *codeintel_set
+    commands:
+      - frontend
+      - worker
+      - repo-updater
+      - web
+      - gitserver-0
+      - gitserver-1
+      - searcher
+      - symbols
+      - caddy
+      - docsite
+      - syntax-highlighter
+      - github-proxy
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
+      - blobstore
+      - codeintel-worker
+      - codeintel-executor-kubernetes
+      # - otel-collector
+      - jaeger
+      - grafana
+      - prometheus
+
+  enterprise-codeintel:
+    <<: *codeintel_set
     commands:
       - frontend
       - worker
@@ -1290,9 +1362,33 @@ commandsets:
       - jaeger
       - grafana
       - prometheus
-
-  enterprise-codeintel:
+  enterprise-codeintel-multi-queue-executor:
     <<: *codeintel_set
+    commands:
+      - frontend
+      - worker
+      - repo-updater
+      - web
+      - gitserver-0
+      - gitserver-1
+      - searcher
+      - symbols
+      - caddy
+      - docsite
+      - syntax-highlighter
+      - github-proxy
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
+      - blobstore
+      - codeintel-worker
+      - multiqueue-executor
+      # - otel-collector
+      - jaeger
+      - grafana
+      - prometheus
+
   enterprise-codeintel-bazel:
     <<: *codeintel_bazel_set
 
@@ -1373,6 +1469,34 @@ commandsets:
       - zoekt-web-1
       - blobstore
       - batches-executor
+      - batcheshelper-builder
+
+  batches-kubernetes:
+    requiresDevPrivate: true
+    checks:
+      - docker
+      - redis
+      - postgres
+      - git
+    commands:
+      - frontend
+      - worker
+      - repo-updater
+      - web
+      - gitserver-0
+      - gitserver-1
+      - searcher
+      - symbols
+      - caddy
+      - docsite
+      - syntax-highlighter
+      - github-proxy
+      - zoekt-index-0
+      - zoekt-index-1
+      - zoekt-web-0
+      - zoekt-web-1
+      - blobstore
+      - batches-executor-kubernetes
       - batcheshelper-builder
 
   embeddings:

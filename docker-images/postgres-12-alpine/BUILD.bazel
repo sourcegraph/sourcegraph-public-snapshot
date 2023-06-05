@@ -1,0 +1,65 @@
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//dev:oci_defs.bzl", "image_repository")
+
+# TODO move this to a different folder
+
+filegroup(
+    name = "config",
+    srcs = glob(
+        ["rootfs/*"],
+    ) + ["config/postgresql.conf.sample"],
+)
+
+pkg_tar(
+    name = "config_tar",
+    srcs = [
+        ":config",
+    ],
+    remap_paths = {
+        "/rootfs": "/",
+        "/postgresql.conf.sample": "/usr/share/postgresql/postgresql.conf.sample",
+    },
+)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_postgresql-12_base",
+    entrypoint = ["/postgres-wolfi.sh"],
+    env = {
+        "POSTGRES_PASSWORD": "",
+        "POSTGRES_USER": "sg",
+        "POSTGRES_DB": "sg",
+        "PGDATA": "/data/pgdata-12",
+        "LANG": "en_US.utf8",
+        "PGHOST": "/var/run/postgresql",
+    },
+    tars = [":config_tar"],
+    user = "postgres",
+    visibility = [
+        "//docker-images/codeintel-db:__pkg__",
+    ],
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["postgres-12:candidate"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = ["requires-network"],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    remote_tags = "//:tags",
+    repository = image_repository("postgres-12-alpine"),  # TODO careful, this is not an alpine
+)

@@ -71,7 +71,7 @@ Foreign-key constraints:
  assigned_at          | timestamp without time zone |           | not null | now()
 Indexes:
     "assigned_owners_pkey" PRIMARY KEY, btree (id)
-    "assigned_owners_file_path" btree (file_path_id)
+    "assigned_owners_file_path_owner" UNIQUE, btree (file_path_id, owner_user_id)
 Foreign-key constraints:
     "assigned_owners_file_path_id_fkey" FOREIGN KEY (file_path_id) REFERENCES repo_paths(id)
     "assigned_owners_owner_user_id_fkey" FOREIGN KEY (owner_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
@@ -977,6 +977,18 @@ Referenced by:
 
 ```
 
+# Table "public.codeintel_ranking_graph_keys"
+```
+   Column   |           Type           | Collation | Nullable |                         Default                          
+------------+--------------------------+-----------+----------+----------------------------------------------------------
+ id         | integer                  |           | not null | nextval('codeintel_ranking_graph_keys_id_seq'::regclass)
+ graph_key  | text                     |           | not null | 
+ created_at | timestamp with time zone |           |          | now()
+Indexes:
+    "codeintel_ranking_graph_keys_pkey" PRIMARY KEY, btree (id)
+
+```
+
 # Table "public.codeintel_ranking_path_counts_inputs"
 ```
     Column     |  Type   | Collation | Nullable |                             Default                              
@@ -1337,7 +1349,7 @@ Contains state for own jobs that scrape events if enabled.
 ------------------+--------------------------+-----------+----------+-------------------------------------------------
  id               | integer                  |           | not null | nextval('executor_heartbeats_id_seq'::regclass)
  hostname         | text                     |           | not null | 
- queue_name       | text                     |           | not null | 
+ queue_name       | text                     |           |          | 
  os               | text                     |           | not null | 
  architecture     | text                     |           | not null | 
  docker_version   | text                     |           | not null | 
@@ -1347,9 +1359,12 @@ Contains state for own jobs that scrape events if enabled.
  src_cli_version  | text                     |           | not null | 
  first_seen_at    | timestamp with time zone |           | not null | now()
  last_seen_at     | timestamp with time zone |           | not null | now()
+ queue_names      | text[]                   |           |          | 
 Indexes:
     "executor_heartbeats_pkey" PRIMARY KEY, btree (id)
     "executor_heartbeats_hostname_key" UNIQUE CONSTRAINT, btree (hostname)
+Check constraints:
+    "one_of_queue_name_queue_names" CHECK (queue_name IS NOT NULL AND queue_names IS NULL OR queue_names IS NOT NULL AND queue_name IS NULL)
 
 ```
 
@@ -1374,6 +1389,8 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
 **os**: The operating system running the executor.
 
 **queue_name**: The queue name that the executor polls for work.
+
+**queue_names**: The list of queue names that the executor polls for work.
 
 **src_cli_version**: The version of src-cli used by the executor.
 
@@ -3112,8 +3129,14 @@ Indexes:
  license_user_count      | integer                  |           |          | 
  license_expires_at      | timestamp with time zone |           |          | 
  access_token_enabled    | boolean                  |           | not null | true
+ site_id                 | uuid                     |           |          | 
+ license_check_token     | bytea                    |           |          | 
+ revoked_at              | timestamp with time zone |           |          | 
+ salesforce_sub_id       | text                     |           |          | 
+ salesforce_opp_id       | text                     |           |          | 
 Indexes:
     "product_licenses_pkey" PRIMARY KEY, btree (id)
+    "product_licenses_license_check_token_idx" UNIQUE, btree (license_check_token)
 Foreign-key constraints:
     "product_licenses_product_subscription_id_fkey" FOREIGN KEY (product_subscription_id) REFERENCES product_subscriptions(id)
 
@@ -3123,22 +3146,22 @@ Foreign-key constraints:
 
 # Table "public.product_subscriptions"
 ```
-                  Column                  |           Type           | Collation | Nullable | Default 
-------------------------------------------+--------------------------+-----------+----------+---------
- id                                       | uuid                     |           | not null | 
- user_id                                  | integer                  |           | not null | 
- billing_subscription_id                  | text                     |           |          | 
- created_at                               | timestamp with time zone |           | not null | now()
- updated_at                               | timestamp with time zone |           | not null | now()
- archived_at                              | timestamp with time zone |           |          | 
- account_number                           | text                     |           |          | 
- llm_proxy_enabled                        | boolean                  |           | not null | false
- llm_proxy_chat_rate_limit                | integer                  |           |          | 
- llm_proxy_chat_rate_interval_seconds     | integer                  |           |          | 
- llm_proxy_chat_rate_limit_allowed_models | text[]                   |           |          | 
- llm_proxy_code_rate_limit                | integer                  |           |          | 
- llm_proxy_code_rate_interval_seconds     | integer                  |           |          | 
- llm_proxy_code_rate_limit_allowed_models | text[]                   |           |          | 
+                   Column                    |           Type           | Collation | Nullable | Default 
+---------------------------------------------+--------------------------+-----------+----------+---------
+ id                                          | uuid                     |           | not null | 
+ user_id                                     | integer                  |           | not null | 
+ billing_subscription_id                     | text                     |           |          | 
+ created_at                                  | timestamp with time zone |           | not null | now()
+ updated_at                                  | timestamp with time zone |           | not null | now()
+ archived_at                                 | timestamp with time zone |           |          | 
+ account_number                              | text                     |           |          | 
+ cody_gateway_enabled                        | boolean                  |           | not null | false
+ cody_gateway_chat_rate_limit                | integer                  |           |          | 
+ cody_gateway_chat_rate_interval_seconds     | integer                  |           |          | 
+ cody_gateway_chat_rate_limit_allowed_models | text[]                   |           |          | 
+ cody_gateway_code_rate_limit                | integer                  |           |          | 
+ cody_gateway_code_rate_interval_seconds     | integer                  |           |          | 
+ cody_gateway_code_rate_limit_allowed_models | text[]                   |           |          | 
 Indexes:
     "product_subscriptions_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -3147,12 +3170,6 @@ Referenced by:
     TABLE "product_licenses" CONSTRAINT "product_licenses_product_subscription_id_fkey" FOREIGN KEY (product_subscription_id) REFERENCES product_subscriptions(id)
 
 ```
-
-**llm_proxy_chat_rate_interval_seconds**: Custom time interval over which the for LLM-proxy rate limit is applied
-
-**llm_proxy_chat_rate_limit**: Custom requests per time interval allowed for LLM-proxy
-
-**llm_proxy_enabled**: Whether or not this subscription has access to LLM-proxy
 
 # Table "public.query_runner_state"
 ```

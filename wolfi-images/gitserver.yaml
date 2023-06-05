@@ -11,7 +11,6 @@ contents:
     - git-lfs
     - git-p4
     - openssh-client
-    # - python2                  # TODO: Not available in Wolfi repo
     - python3
     - bash
 
@@ -27,5 +26,3 @@ paths:
     permissions: 0o755
 
 work-dir: /
-
-# MANUAL REBUILD: 

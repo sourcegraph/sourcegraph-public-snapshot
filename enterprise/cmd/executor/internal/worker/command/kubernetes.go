@@ -2,6 +2,7 @@ package command
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"path/filepath"
 	"strings"
@@ -176,25 +177,45 @@ func (c *KubernetesCommand) WaitForPodToSucceed(ctx context.Context, namespace s
 	for event := range watch.ResultChan() {
 		pod, ok := event.Object.(*corev1.Pod)
 		if !ok {
-			return nil, errors.New("unexpected object type")
+			// If we get an event for something other than a pod, log it for now and try again. We don't have enough
+			// information to know if this is a problem or not. We have seen this happen in the wild, but hard to
+			// replicate.
+			c.Logger.Warn("Unexpected object type", log.String("type", fmt.Sprintf("%T", event.Object)))
+			continue
 		}
 		c.Logger.Debug(
 			"Watching pod",
 			log.String("name", pod.Name),
 			log.String("phase", string(pod.Status.Phase)),
+			log.Time("creationTimestamp", pod.CreationTimestamp.Time),
+			kubernetesTimep("deletionTimestamp", pod.DeletionTimestamp),
 		)
 		switch pod.Status.Phase {
 		case corev1.PodFailed:
 			return pod, ErrKubernetesPodFailed
 		case corev1.PodSucceeded:
 			return pod, nil
+		case corev1.PodPending:
+			if pod.DeletionTimestamp != nil {
+				return nil, ErrKubernetesPodNotScheduled
+			}
 		}
 	}
 	return nil, errors.New("unexpected end of watch")
 }
 
+func kubernetesTimep(key string, time *metav1.Time) log.Field {
+	if time == nil {
+		return log.Timep(key, nil)
+	}
+	return log.Time(key, time.Time)
+}
+
 // ErrKubernetesPodFailed is returned when a Kubernetes pod fails.
 var ErrKubernetesPodFailed = errors.New("pod failed")
+
+// ErrKubernetesPodNotScheduled is returned when a Kubernetes pod could not be scheduled and was deleted.
+var ErrKubernetesPodNotScheduled = errors.New("deleted by scheduler: pod could not be scheduled")
 
 // NewKubernetesJob creates a Kubernetes job with the given name, image, volume path, and spec.
 func NewKubernetesJob(name string, image string, spec Spec, path string, options KubernetesContainerOptions) *batchv1.Job {
