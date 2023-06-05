@@ -19,6 +19,7 @@ go_library(
         "//internal/conf",
         "//internal/database",
         "//internal/errcode",
+        "//internal/extsvc",
         "//internal/gitserver",
         "//internal/types",
         "//lib/errors",

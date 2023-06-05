@@ -235,6 +235,10 @@ func (r *TeamResolver) OwnerField() string {
 	return EnterpriseResolvers.ownResolver.TeamOwnerField(r)
 }
 
+func (r *TeamResolver) External() bool {
+	return r.team.ID == 0
+}
+
 type ListTeamMembersArgs struct {
 	First  *int32
 	After  *string

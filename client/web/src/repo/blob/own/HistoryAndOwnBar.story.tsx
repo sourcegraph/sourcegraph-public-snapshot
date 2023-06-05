@@ -21,6 +21,7 @@ const barData: FetchOwnersAndHistoryResult = {
                                 avatarURL: null,
                                 teamDisplayName: 'Xclaesse',
                                 url: '/teams/xclaesse',
+                                external: false,
                                 name: 'xclaesse',
                                 __typename: 'Team',
                             },

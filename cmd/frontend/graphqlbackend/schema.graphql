@@ -9328,6 +9328,12 @@ type Team implements Node {
     The creator of this team. Null, if the user was deleted.
     """
     creator: User
+
+    """
+    True, if the team is external, i.e. not found in our database.
+    Example: CODEOWNERS files can contain references to GitHub teams which are not the part of Sourcegraph teams.
+    """
+    external: Boolean!
 }
 
 """
