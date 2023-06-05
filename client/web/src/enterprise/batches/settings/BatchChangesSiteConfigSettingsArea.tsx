@@ -5,6 +5,7 @@ import { PageHeader, Alert, Text } from '@sourcegraph/wildcard'
 import { PageTitle } from '../../../components/PageTitle'
 
 import { GlobalCodeHostConnections } from './CodeHostConnections'
+import { GlobalCommitSigningIntegrations } from './CommitSigningIntegrations'
 import { RolloutWindowsConfiguration } from './RolloutWindowsConfiguration'
 
 export interface BatchChangesSiteConfigSettingsAreaProps {}
@@ -28,5 +29,6 @@ export const BatchChangesSiteConfigSettingsArea: React.FunctionComponent<
                 </>
             }
         />
+        <GlobalCommitSigningIntegrations />
     </>
 )
