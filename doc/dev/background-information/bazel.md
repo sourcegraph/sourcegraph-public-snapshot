@@ -15,20 +15,19 @@ Sourcegraph is currently migrating to Bazel as its build system and this page is
   - Add `[no-bazel]` in your commit description if you want to bypass Bazel.
     - ⚠️  see [what to do after using `[no-bazel]`](#i-just-used-no-bazel-to-merge-my-pr)
 - 2023-04-10 You cannot opt out of Bazel anymore
-
-The above timeline affects the following CI jobs:
-
-- Go unit tests.
-- Client unit tests (Jest).
-  - with the exception of Cody, which has not been ported yet to build with Bazel.
-
-Other jobs will follow-up shortly, but as long as you're following instructions mentioned in that doc (TL;DR run `bazel configure`) this won't change anything for you.
-
-You may find the build and tests to be slow at first, either locally or in CI. This is because to be efficient, Bazel cache needs to be warm.
+- 2023-05-02 Additonally, to normal container building process, container images are now also built with `rules_oci` and Wolfi for as base images.
+  - Those new images are used by the new test targets under `//testing/...` that run the E2E tests and Backend Integration tests.
+  - The new images are deployed on S2 (and only S2).
+  - See [Slack thread](https://sourcegraph.slack.com/archives/C04MYFW01NV/p1685606796918859)
+- **2023-05-07 The new images are deployed on Dotcom.** 
+- 2023-05-14 After the release cut and the beginning of the code freeze, all operations that are now migrated to Bazel will have their legacy counterpart removed. 
 
 - ➡️  [Cheat sheet](#bazel-cheat-sheet)
 - ➡️  [FAQ](#faq)
 - 📽️ [Bazel Status Update](https://go/bazel-status)
+- See also
+  - [Bazel for client/*](./bazel_web.md)
+  - [Building container images with Bazel](./bazel_containers.md)
 
 ## Why do we need a build system?
 
@@ -254,6 +253,34 @@ Solution: run `git clean -ffdx` then run `bazel configure` again.
 #### Where do I fine Bazel rules locally on disk?
 
 Use `bazel info output_base` to find the output base directory. From there go to the `external` folder to find Bazel rules saved locally.
+
+#### How do I build a container on MacOS 
+
+Our containers are only built for `linux/amd64`, therefore we need to cross-compile on MacOS to produce correct images. To simplify this process, a configuration flag is available: `--config darwin-docker` to swap the toolchains for you. 
+
+Example: 
+
+```
+# Create a tarball that can be loaded in Docker of the worker service:
+bazel build //cmd/worker:image_tarball --config darwin-docker
+
+# Load the image in Docker: 
+docker load --input $(bazel cquery //cmd/worker:image_tarball  --config darwin-docker --output=files)
+```
+
+You can also use the same configuration flag to run the container tests on MacOS: 
+
+```
+bazel test //cmd/worker:image_test --config darwin-docker
+```
+
+#### Can I run integration tests (`bazel test //testing/...`) locally? 
+
+At the time of writing this documentation, it's not possible to do so, because we need to cross compile to produce `linux/amd64` container images, but the test runners need to run against your host architecture. If your host isn't `linux/amd64` you won't be able to run those tests. 
+
+This is caused by the fact that there is no straightforward way of telling Bazel to use a given toolchain for certain targets and another one for others, in a consistent fashion across the various binaries we produce (rust+go).
+
+See [this issue](https://github.com/sourcegraph/sourcegraph/issues/52914) to track progress on this particular problem. 
 
 ### Go
 
