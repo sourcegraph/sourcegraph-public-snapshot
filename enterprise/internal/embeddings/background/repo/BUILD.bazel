@@ -35,6 +35,7 @@ go_test(
         "requires-network",
     ],
     deps = [
+        "//enterprise/internal/codeintel/policies/shared",
         "//internal/api",
         "//internal/database",
         "//internal/database/dbtest",

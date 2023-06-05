@@ -42,7 +42,7 @@ func ScheduleRepositoriesForEmbedding(
 
 			job, _ := tx.GetLastRepoEmbeddingJobForRevision(ctx, r.ID, latestRevision)
 			// Skip creating a repo embedding job for a repo at revision, if there already exists
-			// an identical job that has been completed, cancelled or is scheduled to run (processing or queued).
+			// an identical job that has been completed, or is scheduled to run (processing or queued).
 			if job.IsRepoEmbeddingJobScheduledOrCompleted() {
 				return nil
 			}
