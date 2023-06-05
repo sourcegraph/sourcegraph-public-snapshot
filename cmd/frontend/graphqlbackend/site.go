@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/cody"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -558,3 +559,5 @@ func (r *siteResolver) RequiresVerifiedEmailForCody(ctx context.Context) bool {
 	isAdmin := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil
 	return !isAdmin
 }
+
+func (r *siteResolver) IsCodyEnabled(ctx context.Context) bool { return cody.IsCodyEnabled(ctx) }
