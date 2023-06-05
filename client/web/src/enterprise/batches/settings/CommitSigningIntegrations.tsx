@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Container, H3, Text } from '@sourcegraph/wildcard'
+import { Container, H3, Link, Text } from '@sourcegraph/wildcard'
 
 import { UseShowMorePaginationResult } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
 import {
@@ -51,6 +51,7 @@ export const CommitSigningIntegrations: React.FunctionComponent<
     return (
         <Container>
             <H3>Commit signing integrations</H3>
+            {/* TODO: Link to docs if it's admin viewing (readOnly = false) */}
             <Text>
                 Connect GitHub Apps to enable Batch Changes to sign commits for your changesets. Contact your site admin
                 to manage connections.
@@ -84,6 +85,14 @@ export const CommitSigningIntegrations: React.FunctionComponent<
                     </SummaryContainer>
                 )}
             </ConnectionContainer>
+            <Text className="mb-0">
+                Code host not present? Batch Changes only supports commit signing on GitHub code hosts today.{' '}
+                {/* TODO: Fill in docs link */}
+                <Link to="/help/admin/commit_signing_intergrations" target="_blank" rel="noopener noreferrer">
+                    See the docs
+                </Link>{' '}
+                for more information.
+            </Text>
         </Container>
     )
 }

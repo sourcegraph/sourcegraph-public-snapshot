@@ -82,7 +82,7 @@ const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ 
                         View In GitHub <Icon inline={true} svgPath={mdiOpenInNew} aria-hidden={true} />
                     </small>
                 </AnchorLink>
-                {/* TODO: */}
+                {/* TODO: Hook up delete button */}
                 <Tooltip content="Delete GitHub App">
                     <Button aria-label="Delete" onClick={noop} disabled={false} variant="danger" size="sm">
                         <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete
@@ -91,7 +91,7 @@ const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ 
             </div>
         </>
     ) : (
-        // TODO:
+        // TODO: Hook up create button
         <ButtonLink to="/batch-changes/new-github-app" className="ml-auto text-nowrap" variant="success" as={Link}>
             Create GitHub App
         </ButtonLink>

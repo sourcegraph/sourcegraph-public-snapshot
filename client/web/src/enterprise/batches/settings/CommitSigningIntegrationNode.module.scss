@@ -1,9 +1,7 @@
 .node {
     padding: 0;
     border: none;
-    &:not(:last-child) {
-        padding-bottom: 1rem;
-    }
+    padding-bottom: 1rem;
     &:not(:first-child) {
         padding-top: 1rem;
         border-top: 1px solid var(--border-color);
@@ -20,6 +18,7 @@
     align-items: center;
     margin-left: auto;
     padding-left: 0.5rem;
+    height: 2rem;
     gap: 0.5rem;
 }
 
