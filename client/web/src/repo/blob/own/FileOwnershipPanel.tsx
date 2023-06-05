@@ -15,6 +15,9 @@ import { OwnerList } from './OwnerList'
 import { OwnershipPanelProps } from './TreeOwnershipPanel'
 
 import styles from './FileOwnershipPanel.module.scss'
+import {useFeatureFlag} from '../../../featureFlags/useFeatureFlag';
+import { OwnershipAssignPermission } from '../../../rbac/constants'
+import { MakeOwnerButton } from './MakeOwnerButton'
 
 export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & TelemetryProps> = ({
     repoID,
@@ -26,13 +29,14 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
         telemetryService.log('OwnershipPanelOpened')
     }, [telemetryService])
 
-    const { data, loading, error } = useQuery<FetchOwnershipResult, FetchOwnershipVariables>(FETCH_OWNERS, {
+    const { data, loading, error, refetch } = useQuery<FetchOwnershipResult, FetchOwnershipVariables>(FETCH_OWNERS, {
         variables: {
             repo: repoID,
             revision: revision ?? '',
             currentPath: filePath,
         },
     })
+    const [ownPromotionEnabled] = useFeatureFlag('own-promote')
 
     if (loading) {
         return (
@@ -41,6 +45,21 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
             </div>
         )
     }
+    const canAssignOwners = (data?.currentUser?.permissions?.nodes || []).some(
+        permission => permission.displayName === OwnershipAssignPermission
+    )
+    const makeOwnerButton =
+        canAssignOwners && ownPromotionEnabled
+            ? (userId: string | undefined) => (
+                <MakeOwnerButton
+                    onSuccess={refetch}
+                    onError={() => {}} // TODO(#52911)
+                    repoId={repoID}
+                    path={filePath}
+                    userId={userId}
+                />
+            )
+            : undefined
 
     if (error) {
         logger.log(error)
@@ -52,7 +71,7 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
     }
 
     if (data?.node?.__typename === 'Repository') {
-        return <OwnerList data={data?.node?.commit?.blob?.ownership} />
+        return <OwnerList data={data?.node?.commit?.blob?.ownership} isDirectory={false} makeOwnerButton={makeOwnerButton} />
     }
     return <OwnerList />
 }

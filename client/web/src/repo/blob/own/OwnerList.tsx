@@ -89,7 +89,7 @@ interface OwnerListProps {
     isDirectory?: boolean
 }
 
-export const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data, isDirectory = false }) => {
+export const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data, isDirectory = false, makeOwnerButton }) => {
     if (data?.nodes && data.nodes.length) {
         const nodes = data.nodes
         const totalCount = data.totalOwners
@@ -102,6 +102,7 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data, isDir
                             <th>Contact</th>
                             <th>Owner</th>
                             <th>Reason</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -156,14 +157,25 @@ export const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data, isDir
                                             reason.__typename === 'AssignedOwner'
                                     )
                             )
-                            .map((ownership, index) => (
-                                // This list is not expected to change, so it's safe to use the index as a key.
-                                // eslint-disable-next-line react/no-array-index-key
-                                <React.Fragment key={index}>
-                                    {index > 0 && <tr className={styles.bordered} />}
-                                    <FileOwnershipEntry owner={ownership.owner} reasons={ownership.reasons} />
-                                </React.Fragment>
-                            ))}
+                            .map((ownership, index) => {
+
+                                const userId =
+                                    ownership.owner.__typename === 'Person' &&
+                                    ownership.owner.user?.__typename === 'User'
+                                        ? ownership.owner.user.id
+                                        : undefined
+
+                                return (
+                                        <React.Fragment key={index}>
+                                            {index > 0 && <tr className={styles.bordered}/>}
+                                            <FileOwnershipEntry
+                                                owner={ownership.owner}
+                                                reasons={ownership.reasons}
+                                                makeOwnerButton={makeOwnerButton?.(userId)}
+                                            />
+                                        </React.Fragment>
+                                    )
+                            })}
                     </tbody>
                 </table>
             </div>
