@@ -69,7 +69,7 @@ export abstract class CompletionProvider {
                     },
                     {
                         speaker: 'assistant',
-                        text: `\`\`\`\n// Ok\`\`\``,
+                        text: '```\n// Ok```',
                     },
                 ]
 
@@ -255,19 +255,19 @@ export class InlineCompletionProvider extends CompletionProvider {
                 },
                 {
                     speaker: 'assistant',
-                    text: `\`\`\`\n// Ok\`\`\``,
+                    text: '```\n// Ok```',
                 },
                 {
                     speaker: 'human',
                     text:
-                        `Complete the following file:\n` +
+                        'Complete the following file:\n' +
                         '```' +
                         `\n${prefixLines.slice(0, endLine).join('\n')}\n` +
                         '```',
                 },
                 {
                     speaker: 'assistant',
-                    text: '```' + `\n${prefixLines.slice(endLine).join('\n')}${this.injectPrefix}`,
+                    text: `\`\`\`\n${prefixLines.slice(endLine).join('\n')}${this.injectPrefix}`,
                 },
             ]
         } else {
