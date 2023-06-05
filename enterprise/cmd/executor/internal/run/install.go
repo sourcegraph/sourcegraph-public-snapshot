@@ -14,6 +14,7 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/apiclient/queue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/util"
 	"github.com/sourcegraph/sourcegraph/internal/download"
@@ -37,8 +38,8 @@ func InstallCNI(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, c
 	return installCNIPlugins(cliCtx)
 }
 
-func InstallSrc(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
-	return installSrc(cliCtx, runner, logger, config)
+func InstallSrc(cliCtx *cli.Context, _ util.CmdRunner, logger log.Logger, config *config.Config) error {
+	return installSrc(cliCtx, logger, config)
 }
 
 func InstallIPTablesRules(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
@@ -68,7 +69,7 @@ func InstallAll(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, c
 	}
 
 	logger.Info("Running executor install src-cli")
-	if err := installSrc(cliCtx, runner, logger, config); err != nil {
+	if err := installSrc(cliCtx, logger, config); err != nil {
 		return err
 	}
 
@@ -292,23 +293,33 @@ func installCNIPlugins(cliCtx *cli.Context) error {
 	return nil
 }
 
-func installSrc(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error {
+func installSrc(cliCtx *cli.Context, logger log.Logger, config *config.Config) error {
 	binDir := cliCtx.Path("bin-dir")
 	if binDir == "" {
 		binDir = "/usr/local/bin"
 	}
 
-	telemetryOptions := newQueueTelemetryOptions(cliCtx.Context, runner, config.UseFirecracker, logger)
-	copts := queueOptions(config, telemetryOptions)
+	copts := queueOptions(
+		config,
+		// We don't need telemetry here as we only use the client to talk to the Sourcegraph
+		// instance to see what src-cli version it recommends. This saves a few exec calls
+		// and confusing error messages.
+		queue.TelemetryOptions{},
+	)
 	client, err := apiclient.NewBaseClient(logger, copts.BaseClientOptions)
 	if err != nil {
 		return err
 	}
-	srcVersion, err := util.LatestSrcCLIVersion(cliCtx.Context, client, copts.BaseClientOptions.EndpointOptions)
-	if err != nil {
-		logger.Warn("Failed to fetch latest src version", log.Error(err))
-		srcVersion = srccli.MinimumVersion
+	srcVersion := srccli.MinimumVersion
+	if copts.BaseClientOptions.EndpointOptions.URL != "" {
+		srcVersion, err = util.LatestSrcCLIVersion(cliCtx.Context, client, copts.BaseClientOptions.EndpointOptions)
+		if err != nil {
+			logger.Warn("Failed to fetch latest src version, falling back to minimum version required by this executor", log.Error(err))
+		}
+	} else {
+		logger.Warn("Sourcegraph instance endpoint not configured, using minimum src-cli version instead of recommended version")
 	}
+
 	return download.ArchivedExecutable(cliCtx.Context, fmt.Sprintf("https://github.com/sourcegraph/src-cli/releases/download/%s/src-cli_%s_%s_%s.tar.gz", srcVersion, srcVersion, runtime.GOOS, runtime.GOARCH), path.Join(binDir, "src"), "src")
 }
 
