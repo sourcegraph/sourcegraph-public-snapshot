@@ -1,5 +1,6 @@
 import { mdiLoading, mdiPlus } from '@mdi/js'
 
+import { ErrorLike, asError } from '@sourcegraph/common'
 import { useMutation } from '@sourcegraph/http-client'
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
@@ -25,7 +26,7 @@ export const MakeOwnerButton: React.FC<MakeOwnerButtonProps> = ({ onSuccess, onE
 
     const assignOwner = async () => {
         if (userId !== undefined) {
-            const result = await requestAssignOwner({
+            await requestAssignOwner({
                 variables: {
                     input: {
                         absolutePath: path,
@@ -33,13 +34,13 @@ export const MakeOwnerButton: React.FC<MakeOwnerButtonProps> = ({ onSuccess, onE
                         repoID: repoId,
                     },
                 },
+                onCompleted: () => {
+                    onSuccess()
+                },
+                onError: (errors: ErrorLike) => {
+                    onError(asError(errors))
+                },
             })
-            if (result.errors) {
-                console.log('Got errors')
-                onError(new Error('Failed to make owner.'))
-            } else {
-                await onSuccess()
-            }
         }
     }
 
