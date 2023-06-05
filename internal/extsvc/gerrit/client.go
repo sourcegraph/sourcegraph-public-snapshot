@@ -43,6 +43,9 @@ type Client interface {
 	SubmitChange(ctx context.Context, changeID string) (*Change, error)
 	RestoreChange(ctx context.Context, changeID string) (*Change, error)
 	WriteReviewComment(ctx context.Context, changeID string, comment ChangeReviewComment) error
+	GetChangeReviews(ctx context.Context, changeID string) (*[]Reviewer, error)
+	SetWIP(ctx context.Context, changeID string) error
+	SetReadyForReview(ctx context.Context, changeID string) error
 }
 
 // NewClient returns an authenticated Gerrit API client with

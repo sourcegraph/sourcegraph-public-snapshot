@@ -108,6 +108,54 @@ func (c *client) RestoreChange(ctx context.Context, changeID string) (*Change, e
 	return &change, nil
 }
 
+// SetReadyForReview sets the change status as ready for review.
+func (c *client) SetReadyForReview(ctx context.Context, changeID string) error {
+	pathStr, err := url.JoinPath("a/changes", url.PathEscape(changeID), "ready")
+	if err != nil {
+		return err
+	}
+	reqURL := url.URL{Path: pathStr}
+	req, err := http.NewRequest("POST", reqURL.String(), nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.do(ctx, req, nil)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode >= http.StatusBadRequest {
+		return errors.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
+// SetWIP sets the change status as WIP (draft).
+func (c *client) SetWIP(ctx context.Context, changeID string) error {
+	pathStr, err := url.JoinPath("a/changes", url.PathEscape(changeID), "wip")
+	if err != nil {
+		return err
+	}
+	reqURL := url.URL{Path: pathStr}
+	req, err := http.NewRequest("POST", reqURL.String(), nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.do(ctx, req, nil)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode >= http.StatusBadRequest {
+		return errors.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
 // WriteReviewComment writes a review comment on a Gerrit change.
 func (c *client) WriteReviewComment(ctx context.Context, changeID string, comment ChangeReviewComment) error {
 	pathStr, err := url.JoinPath("a/changes", url.PathEscape(changeID), "revisions/current/review")
@@ -136,4 +184,31 @@ func (c *client) WriteReviewComment(ctx context.Context, changeID string, commen
 	}
 
 	return nil
+}
+
+// GetChangeReviews gets the list of reviewrs/reviews for the change.
+func (c *client) GetChangeReviews(ctx context.Context, changeID string) (*[]Reviewer, error) {
+	pathStr, err := url.JoinPath("a/changes", url.PathEscape(changeID), "revisions/current/reviewers")
+	if err != nil {
+		return nil, err
+	}
+	reqURL := url.URL{Path: pathStr}
+
+	req, err := http.NewRequest("GET", reqURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "text/plain; charset=UTF-8")
+
+	var reviewers []Reviewer
+	resp, err := c.do(ctx, req, &reviewers)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode >= http.StatusBadRequest {
+		return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	return &reviewers, nil
 }
