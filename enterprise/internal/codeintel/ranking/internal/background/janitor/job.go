@@ -53,7 +53,6 @@ func NewAbandonedExportedUploadsJanitor(
 	store store.Store,
 	config *Config,
 ) goroutine.BackgroundRoutine {
-	// TODO - add to dashboard
 	name := "codeintel.ranking.abandoned-exported-uploads-janitor"
 
 	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
@@ -73,7 +72,6 @@ func NewProcessedReferencesJanitor(
 	store store.Store,
 	config *Config,
 ) goroutine.BackgroundRoutine {
-	// TODO - add to dashboard
 	name := "codeintel.ranking.processed-references-janitor"
 
 	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
