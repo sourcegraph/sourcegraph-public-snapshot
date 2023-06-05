@@ -15,6 +15,7 @@ go_library(
         "//internal/observation",
         "//lib/errors",
         "@com_github_derision_test_glock//:glock",
+        "@com_github_sourcegraph_conc//:conc",
         "@com_github_sourcegraph_log//:log",
     ],
 )
