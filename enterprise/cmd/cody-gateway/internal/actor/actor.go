@@ -95,6 +95,7 @@ func WithActor(ctx context.Context, a *Actor) context.Context {
 }
 
 func (a *Actor) Limiter(
+	logger log.Logger,
 	redis limiter.RedisStore,
 	feature types.CompletionsFeature,
 	concurrentLimitConfig codygateway.ConcurrentLimitConfig,
@@ -124,6 +125,7 @@ func (a *Actor) Limiter(
 	// rate limit by feature.
 	featurePrefix := fmt.Sprintf("%s:", feature)
 	concurrentLimiter := &concurrentLimiter{
+		logger:  logger,
 		actor:   a,
 		feature: feature,
 		redis:   limiter.NewPrefixRedisStore(fmt.Sprintf("concurrent:%s", featurePrefix), redis),
@@ -141,6 +143,7 @@ func (a *Actor) Limiter(
 }
 
 type concurrentLimiter struct {
+	logger         log.Logger
 	actor          *Actor
 	feature        types.CompletionsFeature
 	redis          limiter.RedisStore
@@ -174,17 +177,15 @@ func (l *concurrentLimiter) TryAcquire(ctx context.Context) (func() error, error
 		}
 		return nil, errors.Wrap(err, "check concurrent limit")
 	}
+	if err = commit(); err != nil {
+		l.logger.Error("failed to commit concurrency limit consumption", log.Error(err))
+	}
 
 	featureCommit, err := l.featureLimiter.TryAcquire(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "check feature rate limit")
 	}
-	return func() error {
-		if err := featureCommit(); err != nil {
-			return err
-		}
-		return commit()
-	}, nil
+	return featureCommit, nil
 }
 
 type ErrConcurrentLimitExceeded struct {

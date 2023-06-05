@@ -35,7 +35,7 @@ func rateLimit(
 			return
 		}
 
-		l, ok := act.Limiter(cache, feature, concurrentLimitConfig)
+		l, ok := act.Limiter(baseLogger, cache, feature, concurrentLimitConfig)
 		if !ok {
 			response.JSONError(logger, w, http.StatusForbidden, errors.Newf("no access to feature %s", feature))
 			return
