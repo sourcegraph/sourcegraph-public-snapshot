@@ -193,7 +193,7 @@ go_library(
 )
 ```
 
-Here we're stamping the `worker_lib` target by assigning `STABLE_VERSION) to `internal/version.version`. This is the equivalent of:
+Here we're stamping the `worker_lib` target by assigning `STABLE_VERSION` to `internal/version.version`. This is the equivalent of:
 
 ```
 go build \
