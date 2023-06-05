@@ -53,6 +53,7 @@ func NewAbandonedExportedUploadsJanitor(
 	store store.Store,
 	config *Config,
 ) goroutine.BackgroundRoutine {
+	// TODO - add to dashboard
 	name := "codeintel.ranking.abandoned-exported-uploads-janitor"
 
 	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
@@ -62,6 +63,45 @@ func NewAbandonedExportedUploadsJanitor(
 		Metrics:     background.NewJanitorMetrics(observationCtx, name),
 		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
 			numDeleted, err := vacuumAbandonedExportedUploads(ctx, store)
+			return numDeleted, numDeleted, err
+		},
+	})
+}
+
+func NewProcessedReferencesJanitor(
+	observationCtx *observation.Context,
+	store store.Store,
+	config *Config,
+) goroutine.BackgroundRoutine {
+	// TODO - add to dashboard
+	name := "codeintel.ranking.processed-references-janitor"
+
+	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
+		Name:        name,
+		Description: "Removes old processed reference input records.",
+		Interval:    config.Interval,
+		Metrics:     background.NewJanitorMetrics(observationCtx, name),
+		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
+			numDeleted, err := vacuumStaleProcessedReferences(ctx, store)
+			return numDeleted, numDeleted, err
+		},
+	})
+}
+
+func NewProcessedPathsJanitor(
+	observationCtx *observation.Context,
+	store store.Store,
+	config *Config,
+) goroutine.BackgroundRoutine {
+	name := "codeintel.ranking.processed-paths-janitor"
+
+	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
+		Name:        name,
+		Description: "Removes old processed path input records.",
+		Interval:    config.Interval,
+		Metrics:     background.NewJanitorMetrics(observationCtx, name),
+		CleanupFunc: func(ctx context.Context) (numRecordsScanned int, numRecordsAltered int, err error) {
+			numDeleted, err := vacuumStaleProcessedPaths(ctx, store)
 			return numDeleted, numDeleted, err
 		},
 	})
@@ -125,14 +165,43 @@ func vacuumDeletedExportedUploads(ctx context.Context, s store.Store) (int, erro
 	return s.VacuumDeletedExportedUploads(ctx, rankingshared.DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix))
 }
 
-const vacuumBatchSize = 100 // TODO - configure via envvar
+const (
+	vacuumUploadsBatchSize     = 100
+	vacuumMiscRecordsBatchSize = 10000
+)
 
 func vacuumAbandonedExportedUploads(ctx context.Context, store store.Store) (int, error) {
 	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
 		return 0, nil
 	}
 
-	return store.VacuumAbandonedExportedUploads(ctx, rankingshared.GraphKey(), vacuumBatchSize)
+	return store.VacuumAbandonedExportedUploads(ctx, rankingshared.GraphKey(), vacuumUploadsBatchSize)
+}
+
+func vacuumStaleProcessedReferences(ctx context.Context, s store.Store) (int, error) {
+	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+		return 0, nil
+	}
+
+	derivativeGraphKeyPrefix, _, err := store.DerivativeGraphKey(ctx, s)
+	if err != nil {
+		return 0, err
+	}
+
+	return s.VacuumStaleProcessedReferences(ctx, rankingshared.DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix), vacuumMiscRecordsBatchSize)
+}
+
+func vacuumStaleProcessedPaths(ctx context.Context, s store.Store) (int, error) {
+	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+		return 0, nil
+	}
+
+	derivativeGraphKeyPrefix, _, err := store.DerivativeGraphKey(ctx, s)
+	if err != nil {
+		return 0, err
+	}
+
+	return s.VacuumStaleProcessedPaths(ctx, rankingshared.DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix), vacuumMiscRecordsBatchSize)
 }
 
 func vacuumStaleGraphs(ctx context.Context, s store.Store) (int, error) {
@@ -145,7 +214,7 @@ func vacuumStaleGraphs(ctx context.Context, s store.Store) (int, error) {
 		return 0, err
 	}
 
-	return s.VacuumStaleGraphs(ctx, rankingshared.DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix), vacuumBatchSize)
+	return s.VacuumStaleGraphs(ctx, rankingshared.DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix), vacuumMiscRecordsBatchSize)
 }
 
 func vacuumStaleRanks(ctx context.Context, s store.Store) (int, int, error) {

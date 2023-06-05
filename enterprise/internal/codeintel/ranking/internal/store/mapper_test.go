@@ -252,6 +252,14 @@ func TestInsertInitialPathCounts(t *testing.T) {
 	}
 }
 
+func TestVacuumStaleProcessedReferences(t *testing.T) {
+	// TODO
+}
+
+func TestVacuumStaleProcessedPaths(t *testing.T) {
+	// TODO
+}
+
 func TestVacuumStaleGraphs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
