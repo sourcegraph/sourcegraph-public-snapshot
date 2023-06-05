@@ -84,8 +84,17 @@ const CODE_HOST_FIELDS_FRAGMENT = gql`
         externalServiceURL
         requiresSSH
         requiresUsername
+        supportsCommitSigning
         credential {
             ...BatchChangesCredentialFields
+        }
+        commitSigningConfiguration {
+            ... on GitHubAppConfiguration {
+                appID
+                name
+                appURL
+                logo
+            }
         }
     }
 
