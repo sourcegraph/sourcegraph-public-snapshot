@@ -395,7 +395,7 @@ type OwnershipStatsArgs struct {
 
 func (r *GitTreeEntryResolver) OwnershipStats(ctx context.Context) (OwnershipStatsResolver, error) {
 	if _, ok := r.ToGitTree(); !ok {
-		return nil, nil // TODO: No support for blob for now, but can add it.
+		return nil, nil
 	}
 	return EnterpriseResolvers.ownResolver.GitTreeOwnershipStats(ctx, r)
 }

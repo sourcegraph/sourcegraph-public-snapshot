@@ -13,7 +13,7 @@ import { ChartContainer } from '../../../site-admin/analytics/components/ChartCo
 
 import { GET_INSTANCE_OWN_STATS, GET_OWN_JOB_CONFIGURATIONS } from './query'
 
-interface OwnCovaerateDatum {
+interface OwnCoverageDatum {
     name: string
     count: number
     fill: string
@@ -38,7 +38,7 @@ export const OwnAnalyticsPage: FC = () => {
 const OwnAnalyticsPanel: FC = () => {
     const { data, loading, error } = useQuery<GetInstanceOwnStatsResult>(GET_INSTANCE_OWN_STATS, {})
 
-    const ownSignalsData: OwnCovaerateDatum[] = [
+    const ownSignalsData: OwnCoverageDatum[] = [
         {
             name: 'CODEOWNERS',
             count: data?.instanceOwnershipStats?.totalCodeownedFiles || 0,
