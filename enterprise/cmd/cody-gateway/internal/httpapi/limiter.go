@@ -43,6 +43,12 @@ func rateLimit(
 
 		commit, err := l.TryAcquire(r.Context())
 		if err != nil {
+			limitedCause := "quota"
+			var concurrencyLimitExceeded actor.ErrConcurrencyLimitExceeded
+			if errors.As(err, &concurrencyLimitExceeded) {
+				limitedCause = "concurrency"
+			}
+
 			if loggerErr := eventLogger.LogEvent(
 				r.Context(),
 				events.Event{
@@ -52,6 +58,7 @@ func rateLimit(
 					Metadata: map[string]any{
 						"error": err.Error(),
 						codygateway.CompletionsEventFeatureMetadataField: feature,
+						"cause": limitedCause,
 					},
 				},
 			); loggerErr != nil {
@@ -66,6 +73,11 @@ func rateLimit(
 
 			if errors.Is(err, limiter.NoAccessError{}) {
 				response.JSONError(logger, w, http.StatusForbidden, err)
+				return
+			}
+
+			if limitedCause == "concurrency" {
+				concurrencyLimitExceeded.WriteResponse(w)
 				return
 			}
 

@@ -3,6 +3,8 @@ package actor
 import (
 	"context"
 	"fmt"
+	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -169,7 +171,7 @@ func (l *concurrentLimiter) TryAcquire(ctx context.Context) (func() error, error
 			if err != nil {
 				return nil, errors.Wrap(err, "failed to get TTL for rate limit counter")
 			}
-			return nil, ErrConcurrentLimitExceeded{
+			return nil, ErrConcurrencyLimitExceeded{
 				feature:    l.feature,
 				limit:      l.rateLimit.Limit,
 				retryAfter: retryAfter,
@@ -188,15 +190,23 @@ func (l *concurrentLimiter) TryAcquire(ctx context.Context) (func() error, error
 	return featureCommit, nil
 }
 
-type ErrConcurrentLimitExceeded struct {
+type ErrConcurrencyLimitExceeded struct {
 	feature    types.CompletionsFeature
 	limit      int
 	retryAfter time.Time
 }
 
-func (e ErrConcurrentLimitExceeded) Error() string {
+func (e ErrConcurrencyLimitExceeded) Error() string {
 	return fmt.Sprintf("you exceeded the concurrency limit of %d requests for %q. Retry after %s",
 		e.limit, e.feature, e.retryAfter.Truncate(time.Second))
+}
+
+func (e ErrConcurrencyLimitExceeded) WriteResponse(w http.ResponseWriter) {
+	// Rate limit exceeded, write well known headers and return correct status code.
+	w.Header().Set("x-ratelimit-limit", strconv.Itoa(e.limit))
+	w.Header().Set("x-ratelimit-remaining", "0")
+	w.Header().Set("retry-after", e.retryAfter.Format(time.RFC1123))
+	http.Error(w, e.Error(), http.StatusTooManyRequests)
 }
 
 type updateOnFailureLimiter struct {
