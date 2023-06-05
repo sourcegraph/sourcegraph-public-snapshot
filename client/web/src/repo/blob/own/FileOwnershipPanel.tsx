@@ -83,7 +83,13 @@ export const FileOwnershipPanel: React.FunctionComponent<
             : undefined
 
     if (data?.node?.__typename === 'Repository') {
-        return <OwnerList data={data?.node?.commit?.blob?.ownership} makeOwnerButton={makeOwnerButton} />
+        return (
+            <OwnerList
+                data={data?.node?.commit?.blob?.ownership}
+                makeOwnerButton={makeOwnerButton}
+                makeOwnerError={makeOwnerError || undefined}
+            />
+        )
     }
     return <OwnerList />
 }

@@ -18,6 +18,7 @@ import { FETCH_OWNERS_AND_HISTORY } from './grapqlQueries'
 
 import styles from './HistoryAndOwnBar.module.scss'
 
+// TODO: Also refresh the HistoryAndOwnBar
 export const HistoryAndOwnBar: React.FunctionComponent<{
     repoID: string
     revision?: string
@@ -29,7 +30,7 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
         navigate({ hash: '#tab=ownership' })
     }, [navigate])
 
-    const { data, error, loading } = useQuery<FetchOwnersAndHistoryResult, FetchOwnersAndHistoryVariables>(
+    const { data, error, loading, refetch } = useQuery<FetchOwnersAndHistoryResult, FetchOwnersAndHistoryVariables>(
         FETCH_OWNERS_AND_HISTORY,
         {
             variables: {

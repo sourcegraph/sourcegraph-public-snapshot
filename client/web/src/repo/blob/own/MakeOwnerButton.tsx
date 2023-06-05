@@ -35,6 +35,7 @@ export const MakeOwnerButton: React.FC<MakeOwnerButtonProps> = ({ onSuccess, onE
                 },
             })
             if (result.errors) {
+                console.log('Got errors')
                 onError(new Error('Failed to make owner.'))
             } else {
                 await onSuccess()
