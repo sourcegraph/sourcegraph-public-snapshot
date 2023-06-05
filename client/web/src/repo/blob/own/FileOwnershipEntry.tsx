@@ -22,7 +22,7 @@ import containerStyles from './OwnerList.module.scss'
 interface Props {
     owner: OwnerFields
     reasons: OwnershipReason[]
-    makeOwnerButton: React.ReactElement
+    makeOwnerButton?: React.ReactElement
 }
 
 type OwnershipReason =

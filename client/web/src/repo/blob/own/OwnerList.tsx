@@ -87,7 +87,7 @@ const resolveOwnerSearchPredicate = (owners?: OwnerFields[]): string => {
 interface OwnerListProps {
     data?: OwnershipConnectionFields
     isDirectory?: boolean
-    makeOwnerButton?: React.ReactElement
+    makeOwnerButton?: ((userId: (string | undefined)) => JSX.Element)
 }
 
 export const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data, isDirectory = false, makeOwnerButton }) => {
