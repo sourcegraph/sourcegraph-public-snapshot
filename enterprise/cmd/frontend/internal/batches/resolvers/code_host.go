@@ -9,7 +9,7 @@ import (
 	ghstore "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
 	ghtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type batchChangesCodeHostResolver struct {
@@ -36,7 +36,7 @@ func (c *batchChangesCodeHostResolver) CommitSigningConfiguration(ctx context.Co
 	switch c.codeHost.ExternalServiceType {
 	case extsvc.TypeGitHub:
 		gstore := ghstore.GitHubAppsWith(c.store.Store)
-		domain := types.BatchesDomain
+		domain := itypes.BatchesGitHubAppDomain
 		ghapp, err := gstore.GetByDomain(ctx, &domain, c.codeHost.ExternalServiceID)
 		if err != nil {
 			return nil, err
