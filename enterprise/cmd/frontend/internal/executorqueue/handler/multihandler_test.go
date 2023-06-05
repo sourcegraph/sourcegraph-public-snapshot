@@ -459,7 +459,8 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			for i := len(test.codeintelDequeueEvents) + len(test.batchesDequeueEvents); i > 0; i-- {
 				intnResults = append(intnResults, i-1)
 			}
-			mh.RandomGenerator = &MockRandom{IntnResults: intnResults}
+			// TODO fix randomness testing
+			//mh.RandomGenerator = &MockRandom{IntnResults: intnResults}
 
 			router := mux.NewRouter()
 			router.HandleFunc("/dequeue", mh.HandleDequeue)

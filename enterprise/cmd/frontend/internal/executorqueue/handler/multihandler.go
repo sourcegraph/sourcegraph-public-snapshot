@@ -11,12 +11,15 @@ import (
 	"github.com/sourcegraph/log"
 	"golang.org/x/exp/slices"
 
+	"github.com/mroth/weightedrand/v2"
+
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	executorstore "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
 	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -24,15 +27,36 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const dequeueTtl = 5 * 60 // 5 minutes
+
+type dequeueProperties struct {
+	// limit sets the maximum amount of dequeues in a given time window
+	limit int
+	// weight sets the probability of being randomly selected (base = 1)
+	weight int
+}
+
+var dequeuePropertiesPerQueue = map[string]dequeueProperties{
+	// TODO: this is entirely arbitrary for dev purposes
+	"batches": {
+		limit:  50,
+		weight: 4,
+	},
+	"codeintel": {
+		limit:  250,
+		weight: 1,
+	},
+}
+
 // MultiHandler handles the HTTP requests of an executor for more than one queue. See ExecutorHandler for single-queue implementation.
 type MultiHandler struct {
 	executorStore         database.ExecutorStore
-	JobTokenStore         executorstore.JobTokenStore
+	jobTokenStore         executorstore.JobTokenStore
 	metricsStore          metricsstore.DistributedStore
 	CodeIntelQueueHandler QueueHandler[uploadsshared.Index]
 	BatchesQueueHandler   QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]
+	dequeueCache          *rcache.Cache
 	validQueues           []string
-	RandomGenerator       RandomGenerator
 	logger                log.Logger
 }
 
@@ -46,12 +70,12 @@ func NewMultiHandler(
 ) MultiHandler {
 	return MultiHandler{
 		executorStore:         executorStore,
-		JobTokenStore:         jobTokenStore,
+		jobTokenStore:         jobTokenStore,
 		metricsStore:          metricsStore,
 		CodeIntelQueueHandler: codeIntelQueueHandler,
 		BatchesQueueHandler:   batchesQueueHandler,
+		dequeueCache:          rcache.NewWithTTL("executor_multihandler_dequeues", dequeueTtl),
 		validQueues:           []string{codeIntelQueueHandler.Name, batchesQueueHandler.Name},
-		RandomGenerator:       &realRandom{},
 		logger:                log.Scoped("executor-multi-queue-handler", "The route handler for all executor queues"),
 	}
 }
@@ -95,7 +119,7 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 		return executortypes.Job{}, false, errors.New(message)
 	}
 
-	// 1. discard empty queues
+	// discard empty queues
 	var nonEmptyQueues []string
 	for _, queue := range req.Queues {
 		var err error
@@ -122,25 +146,43 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 		// only one queue contains items, select as candidate
 		candidateQueue = nonEmptyQueues[0]
 	} else {
-		// 2. multiple populated queues discard queues exceeding threshold
-		// TODO
-		// 3. select queue
-		// TODO
+		// multiple populated queues, discard queues at dequeue limit
+		var candidateQueues []string
+		for _, queue := range nonEmptyQueues {
+			dequeues, err := m.dequeueCache.GetHashAll(queue)
+			if err != nil {
+				return executortypes.Job{}, false, errors.Wrapf(err, "failed to check dequeue count for queue '%s'", queue)
+			}
+			if len(dequeues) < dequeuePropertiesPerQueue[queue].limit {
+				candidateQueues = append(candidateQueues, queue)
+			}
+		}
+		if len(candidateQueues) == 1 {
+			// only one queue hasn't reached dequeue limit for this window, select as candidate
+			candidateQueue = candidateQueues[0]
+		} else {
+			if len(candidateQueues) == 0 {
+				// all queues are at limit, so make all candidate
+				candidateQueues = nonEmptyQueues
+			}
+			// final list of candidates: multiple not at limit or all at limit.
+			// pick a queue based on the defined weights
+			var choices []weightedrand.Choice[string, int]
+			for _, queue := range candidateQueues {
+				choices = append(choices, weightedrand.NewChoice(queue, dequeuePropertiesPerQueue[queue].weight))
+			}
+			chooser, err := weightedrand.NewChooser(choices...)
+			if err != nil {
+				return executortypes.Job{}, false, errors.Wrap(err, "failed to randomly select candidate queue to dequeue")
+			}
+			candidateQueue = chooser.Pick()
+		}
 	}
 
 	resourceMetadata := ResourceMetadata{
 		NumCPUs:   req.NumCPUs,
 		Memory:    req.Memory,
 		DiskSpace: req.DiskSpace,
-	}
-
-	// Initialize the random number generator
-	m.RandomGenerator.Seed(time.Now().UnixNano())
-
-	// Shuffle the slice using the Fisher-Yates algorithm
-	for i := len(req.Queues) - 1; i > 0; i-- {
-		j := m.RandomGenerator.Intn(i + 1)
-		req.Queues[i], req.Queues[j] = req.Queues[j], req.Queues[i]
 	}
 
 	logger := m.logger.Scoped("dequeue", "Pick a job record from the database.")
@@ -196,11 +238,11 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 	}
 
 	logger = m.logger.Scoped("token", "Create or regenerate a job token.")
-	token, err := m.JobTokenStore.Create(ctx, job.ID, job.Queue, job.RepositoryName)
+	token, err := m.jobTokenStore.Create(ctx, job.ID, job.Queue, job.RepositoryName)
 	if err != nil {
 		if errors.Is(err, executorstore.ErrJobTokenAlreadyCreated) {
 			// Token has already been created, regen it.
-			token, err = m.JobTokenStore.Regenerate(ctx, job.ID, job.Queue)
+			token, err = m.jobTokenStore.Regenerate(ctx, job.ID, job.Queue)
 			if err != nil {
 				err = errors.Wrap(err, "RegenerateToken")
 				logger.Error("Failed to regenerate token", log.Error(err))
@@ -354,6 +396,12 @@ type RandomGenerator interface {
 }
 
 type realRandom struct{}
+
+func newRealRandom() *realRandom {
+	rRandom := &realRandom{}
+	rRandom.Seed(time.Now().UnixNano())
+	return rRandom
+}
 
 func (r *realRandom) Seed(seed int64) {
 	rand.Seed(seed)
