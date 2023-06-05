@@ -22,6 +22,7 @@ import containerStyles from './FileOwnershipPanel.module.scss'
 interface Props {
     owner: OwnerFields
     reasons: OwnershipReason[]
+    makeOwnerButton?: React.ReactElement
 }
 
 type OwnershipReason =
@@ -30,7 +31,7 @@ type OwnershipReason =
     | RecentViewOwnershipSignalFields
     | AssignedOwnerFields
 
-export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reasons }) => {
+export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reasons, makeOwnerButton }) => {
     const findEmail = (): string | undefined => {
         if (owner.__typename !== 'Person') {
             return undefined
@@ -88,6 +89,7 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({ owner, reas
                     <OwnershipBadge key={reason.title} reason={reason} />
                 ))}
             </td>
+            <td className={containerStyles.fitting}>{makeOwnerButton}</td>
         </tr>
     )
 }
