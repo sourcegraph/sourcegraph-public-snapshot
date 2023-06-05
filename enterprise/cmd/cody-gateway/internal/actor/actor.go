@@ -100,7 +100,7 @@ func (a *Actor) Limiter(
 	logger log.Logger,
 	redis limiter.RedisStore,
 	feature types.CompletionsFeature,
-	concurrentLimitConfig codygateway.ActorConcurrentLimitConfig,
+	concurrencyLimitConfig codygateway.ActorConcurrencyLimitConfig,
 ) (limiter.Limiter, bool) {
 	if a == nil {
 		// Not logged in, no limit applicable.
@@ -116,24 +116,24 @@ func (a *Actor) Limiter(
 	ratioToDay := float32(limit.Interval / (24 * time.Hour))
 	// Then use the ratio to compute the rate limit for a day.
 	dailyLimit := float32(limit.Limit) / ratioToDay
-	// Finally, compute the concurrent limit with the given percentage of the daily limit.
-	concurrentLimit := int(dailyLimit * concurrentLimitConfig.Percentage)
-	// Just in case a poor choice of percentage results in a concurrent limit of 0.
-	if concurrentLimit <= 0 {
-		concurrentLimit = 1
+	// Finally, compute the concurrency limit with the given percentage of the daily limit.
+	concurrencyLimit := int(dailyLimit * concurrencyLimitConfig.Percentage)
+	// Just in case a poor choice of percentage results in a concurrency limit of 0.
+	if concurrencyLimit <= 0 {
+		concurrencyLimit = 1
 	}
 
 	// The redis store has to use a prefix for the given feature because we need to
 	// rate limit by feature.
 	featurePrefix := fmt.Sprintf("%s:", feature)
-	concurrentLimiter := &concurrentLimiter{
+	concurrencyLimiter := &concurrencyLimiter{
 		logger:  logger,
 		actor:   a,
 		feature: feature,
 		redis:   limiter.NewPrefixRedisStore(fmt.Sprintf("concurrent:%s", featurePrefix), redis),
 		rateLimit: RateLimit{
-			Limit:    concurrentLimit,
-			Interval: concurrentLimitConfig.Interval,
+			Limit:    concurrencyLimit,
+			Interval: concurrencyLimitConfig.Interval,
 		},
 		featureLimiter: updateOnFailureLimiter{
 			Redis:     limiter.NewPrefixRedisStore(featurePrefix, redis),
@@ -141,10 +141,10 @@ func (a *Actor) Limiter(
 			Actor:     a,
 		},
 	}
-	return concurrentLimiter, true
+	return concurrencyLimiter, true
 }
 
-type concurrentLimiter struct {
+type concurrencyLimiter struct {
 	logger         log.Logger
 	actor          *Actor
 	feature        types.CompletionsFeature
@@ -156,7 +156,7 @@ type concurrentLimiter struct {
 	nowFunc func() time.Time
 }
 
-func (l *concurrentLimiter) TryAcquire(ctx context.Context) (func() error, error) {
+func (l *concurrencyLimiter) TryAcquire(ctx context.Context) (func() error, error) {
 	commit, err := (limiter.StaticLimiter{
 		Identifier: l.actor.ID,
 		Redis:      l.redis,

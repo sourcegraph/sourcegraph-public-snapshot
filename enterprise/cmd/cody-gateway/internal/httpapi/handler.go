@@ -14,7 +14,7 @@ import (
 )
 
 type Config struct {
-	ConcurrentLimit        codygateway.ActorConcurrentLimitConfig
+	ConcurrencyLimit       codygateway.ActorConcurrencyLimitConfig
 	AnthropicAccessToken   string
 	AnthropicAllowedModels []string
 	OpenAIAccessToken      string
@@ -32,7 +32,7 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 		v1router.Handle(
 			"/completions/anthropic",
 			authr.Middleware(
-				newAnthropicHandler(logger, eventLogger, rs, config.ConcurrentLimit, config.AnthropicAccessToken, config.AnthropicAllowedModels),
+				newAnthropicHandler(logger, eventLogger, rs, config.ConcurrencyLimit, config.AnthropicAccessToken, config.AnthropicAllowedModels),
 			),
 		).Methods(http.MethodPost)
 	}
@@ -40,7 +40,7 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 		v1router.Handle(
 			"/completions/openai",
 			authr.Middleware(
-				newOpenAIHandler(logger, eventLogger, rs, config.ConcurrentLimit, config.OpenAIAccessToken, config.OpenAIOrgID, config.OpenAIAllowedModels),
+				newOpenAIHandler(logger, eventLogger, rs, config.ConcurrencyLimit, config.OpenAIAccessToken, config.OpenAIOrgID, config.OpenAIAllowedModels),
 			),
 		).Methods(http.MethodPost)
 	}
