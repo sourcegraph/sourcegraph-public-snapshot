@@ -6,7 +6,10 @@ import "golang.org/x/exp/slices"
 //
 // Zero values in either field indicates no access.
 type CodyGatewayRateLimit struct {
-	AllowedModels   []string
+	// AllowedModels is a list of allowed models for the given feature in the
+	// format "$PROVIDER/$MODEL_NAME", for example "anthropic/claude-v1".
+	AllowedModels []string
+
 	Limit           int32
 	IntervalSeconds int32
 }
@@ -21,9 +24,9 @@ func NewCodyGatewayChatRateLimit(plan Plan, userCount *int, licenseTags []string
 		uc = 1
 	}
 	// Switch on GPT models by default if the customer license has the GPT tag.
-	models := []string{"claude-v1", "claude-instant-v1"}
+	models := []string{"anthropic/claude-v1", "anthropic/claude-instant-v1"}
 	if slices.Contains(licenseTags, GPTLLMAccessTag) {
-		models = []string{"gpt-4", "gpt-3.5-turbo"}
+		models = []string{"openai/gpt-4", "openai/gpt-3.5-turbo"}
 	}
 	switch plan {
 	// TODO: This is just an example for now.
@@ -55,9 +58,9 @@ func NewCodyGatewayCodeRateLimit(plan Plan, userCount *int, licenseTags []string
 		uc = 1
 	}
 	// Switch on GPT models by default if the customer license has the GPT tag.
-	models := []string{"claude-instant-v1"}
+	models := []string{"anthropic/claude-instant-v1"}
 	if slices.Contains(licenseTags, GPTLLMAccessTag) {
-		models = []string{"gpt-3.5-turbo"}
+		models = []string{"openai/gpt-3.5-turbo"}
 	}
 	switch plan {
 	// TODO: This is just an example for now.

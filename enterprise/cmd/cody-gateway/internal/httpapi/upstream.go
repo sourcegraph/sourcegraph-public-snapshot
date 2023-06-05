@@ -49,12 +49,16 @@ func makeUpstreamHandler[ReqT any](
 	eventLogger events.Logger,
 	rs limiter.RedisStore,
 
-	upstreamName, upstreamAPIURL string,
+	// upstreamName is the name of the upstream provider. It MUST match the
+	// provider names defined clientside, i.e. "anthropic" or "openai".
+	upstreamName string,
+
+	upstreamAPIURL string,
 	allowedModels []string,
 
 	methods upstreamHandlerMethods[ReqT],
 ) http.Handler {
-	baseLogger = baseLogger.Scoped(strings.ToLower(upstreamName), fmt.Sprintf("%s upstream handler", upstreamName)).
+	baseLogger = baseLogger.Scoped(upstreamName, fmt.Sprintf("%s upstream handler", upstreamName)).
 		With(log.String("upstream.url", upstreamAPIURL))
 
 	var (
@@ -63,6 +67,13 @@ func makeUpstreamHandler[ReqT any](
 		getRequestMetadata = methods.getRequestMetadata
 		parseResponse      = methods.parseResponse
 	)
+
+	// Convert allowedModels to the Cody Gateway configuration format with the
+	// provider as a prefix. This aligns with the models returned when we query
+	// for rate limits from actor sources.
+	for i := range allowedModels {
+		allowedModels[i] = fmt.Sprintf("%s/%s", upstreamName, allowedModels[i])
+	}
 
 	return rateLimit(baseLogger, eventLogger, limiter.NewPrefixRedisStore("rate_limit:", rs), http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		act := actor.FromContext(r.Context())
@@ -113,8 +124,16 @@ func makeUpstreamHandler[ReqT any](
 		// Retrieve metadata from the initial request.
 		promptCharacterCount, model, am := getRequestMetadata(body)
 
-		if !isAllowedModel(intersection(allowedModels, rateLimit.AllowedModels), model) {
-			response.JSONError(logger, w, http.StatusBadRequest, errors.Newf("model %q is not allowed", model))
+		// Match the model against the allowlist of models, which are configured
+		// with the Cody Gateway model format "$PROVIDER/$MODEL_NAME". Models
+		// are sent as if they were against the upstream API, so they don't have
+		// the prefix yet when extracted - we need to add it back here. This
+		// full gatewayModel is also used in events tracking.
+		gatewayModel := fmt.Sprintf("%s/%s", upstreamName, model)
+		if allowed := intersection(allowedModels, rateLimit.AllowedModels); !isAllowedModel(allowed, gatewayModel) {
+			response.JSONError(logger, w, http.StatusBadRequest,
+				errors.Newf("model %q is not allowed, allowed: [%s]",
+					gatewayModel, strings.Join(allowed, ", ")))
 			return
 		}
 
@@ -124,7 +143,8 @@ func makeUpstreamHandler[ReqT any](
 				metadata[k] = v
 			}
 			metadata["prompt_character_count"] = promptCharacterCount
-			metadata["model"] = model
+			metadata["model"] = gatewayModel
+			metadata["provider"] = upstreamName
 			metadata[codygateway.CompletionsEventFeatureMetadataField] = feature
 			err = eventLogger.LogEvent(
 				r.Context(),

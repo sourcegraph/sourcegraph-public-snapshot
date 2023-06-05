@@ -20,7 +20,7 @@ func newOpenAIHandler(logger log.Logger, eventLogger events.Logger, rs limiter.R
 		logger,
 		eventLogger,
 		rs,
-		"OpenAI",
+		openai.ProviderName,
 		openAIURL,
 		allowedModels,
 		upstreamHandlerMethods[openaiRequest]{
