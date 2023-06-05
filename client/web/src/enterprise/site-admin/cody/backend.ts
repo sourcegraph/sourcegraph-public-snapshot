@@ -41,8 +41,8 @@ const REPO_EMBEDDING_JOB_FRAGMENT = gql`
 export const REPO_EMBEDDING_JOBS_LIST_QUERY = gql`
     ${REPO_EMBEDDING_JOB_FRAGMENT}
 
-    query RepoEmbeddingJobsList($first: Int, $after: String) {
-        repoEmbeddingJobs(first: $first, after: $after) {
+    query RepoEmbeddingJobsList($first: Int, $after: String, $query: String) {
+        repoEmbeddingJobs(first: $first, after: $after, query: $query) {
             nodes {
                 ...RepoEmbeddingJobFields
             }
@@ -55,16 +55,12 @@ export const REPO_EMBEDDING_JOBS_LIST_QUERY = gql`
     }
 `
 
-export const useRepoEmbeddingJobsConnection = (): UseShowMorePaginationResult<
-    RepoEmbeddingJobsListResult,
-    RepoEmbeddingJobFields
-> =>
+export const useRepoEmbeddingJobsConnection = (
+    query: string
+): UseShowMorePaginationResult<RepoEmbeddingJobsListResult, RepoEmbeddingJobFields> =>
     useShowMorePagination<RepoEmbeddingJobsListResult, RepoEmbeddingJobsListVariables, RepoEmbeddingJobFields>({
         query: REPO_EMBEDDING_JOBS_LIST_QUERY,
-        variables: {
-            after: null,
-            first: 10,
-        },
+        variables: { after: null, first: 10, query },
         getConnection: result => {
             const { repoEmbeddingJobs } = dataOrThrowErrors(result)
             return repoEmbeddingJobs

@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("@npm//:graphql-schema-linter/package_json.bzl", linter_bin = "bin")
 load("@aspect_rules_js//js:defs.bzl", "js_library")
 
