@@ -21,7 +21,7 @@ interface OwnCoverageDatum {
 }
 
 export const OwnAnalyticsPage: FC = () => {
-    // TODO: Error handling and loading
+    // TODO(#52826): Error handling and loading
     const { data } = useQuery<GetOwnSignalConfigurationsResult>(GET_OWN_JOB_CONFIGURATIONS, {})
     const enabled =
         data?.ownSignalConfigurations.some(
@@ -92,7 +92,7 @@ const OwnAnalyticsPanel: FC = () => {
 
 const OwnEnableAnalytics: FC = () => (
     <Alert variant="info">
-        Analytics is not enabled, please <Link to={'/site-admin/own-signal-page'}>enable Own analytics</Link> job first
-        to see Own stats.
+        Analytics is not enabled, please <Link to="/site-admin/own-signal-page">enable Own analytics</Link> job first to
+        see Own stats.
     </Alert>
 )
