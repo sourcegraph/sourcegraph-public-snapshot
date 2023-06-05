@@ -7,26 +7,44 @@ function getServerEndpointFromConfig(config: vscode.WorkspaceConfiguration): str
 }
 
 function getUseContextFromConfig(config: vscode.WorkspaceConfiguration): string {
+    if (!config) {
+        return ''
+    }
     return config.get<string>('cody.useContext', '')
 }
 
 function getChatPredictionsFromConfig(config: vscode.WorkspaceConfiguration): boolean {
+    if (!config) {
+        return false
+    }
     return config.get<boolean>('cody.experimental.chatPredictions', false)
 }
 
 function getInlineFromConfig(config: vscode.WorkspaceConfiguration): boolean {
+    if (!config) {
+        return false
+    }
     return config.get<boolean>('cody.experimental.inline', false)
 }
 
 function getNonStopFromConfig(config: vscode.WorkspaceConfiguration): boolean {
+    if (!config) {
+        return false
+    }
     return config.get<boolean>('cody.experimental.nonStop', false)
 }
 
 function getSuggestionsFromConfig(config: vscode.WorkspaceConfiguration): boolean {
+    if (!config) {
+        return false
+    }
     return config.get<boolean>('cody.experimental.suggestions', false)
 }
 
 function getGuardrailsFromConfig(config: vscode.WorkspaceConfiguration): boolean {
+    if (!config) {
+        return false
+    }
     return config.get<boolean>('cody.experimental.guardrails', false)
 }
 
