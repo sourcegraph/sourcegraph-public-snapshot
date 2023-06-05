@@ -5,7 +5,6 @@ import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import MonitorStarIcon from 'mdi-react/MonitorStarIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
 
 import { isPackagesEnabled } from './flags'
@@ -54,10 +53,7 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Own',
             to: '/site-admin/analytics/own',
-            condition: () => {
-                const [enableOwnAnalytics] = useFeatureFlag('own-analytics', false)
-                return enableOwnAnalytics
-            },
+            condition: context => context.ownAnalyticsEnabled,
         },
         {
             label: 'Feedback survey',
