@@ -14,7 +14,7 @@ import (
 	encryption "github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -32,6 +32,10 @@ type GitHubAppsStore interface {
 	// Install creates a new GitHub App installation in the database.
 	Install(ctx context.Context, id, installationID int) error
 
+	// GetLatestInstallID retrieves the latest GitHub App installation ID from the
+	// database for the GitHub App with the provided appID.
+	GetLatestInstallID(ctx context.Context, appID int) (int, error)
+
 	// GetByID retrieves a GitHub App from the database by ID.
 	GetByID(ctx context.Context, id int) (*ghtypes.GitHubApp, error)
 
@@ -42,13 +46,13 @@ type GitHubAppsStore interface {
 	GetBySlug(ctx context.Context, slug string, baseURL string) (*ghtypes.GitHubApp, error)
 
 	// GetByDomain retrieves a GitHub App from the database by domain and base url
-	GetByDomain(ctx context.Context, domain *types.GitHubAppDomain, baseURL string) (*ghtypes.GitHubApp, error)
+	GetByDomain(ctx context.Context, domain itypes.GitHubAppDomain, baseURL string) (*ghtypes.GitHubApp, error)
 
 	// WithEncryptionKey sets encryption key on store. Returns a new GitHubAppsStore
 	WithEncryptionKey(key encryption.Key) GitHubAppsStore
 
 	// Lists all GitHub Apps in the store and optionally filters by domain
-	List(ctx context.Context, domain *types.GitHubAppDomain) ([]*ghtypes.GitHubApp, error)
+	List(ctx context.Context, domain *itypes.GitHubAppDomain) ([]*ghtypes.GitHubApp, error)
 }
 
 // gitHubAppStore handles storing and retrieving GitHub Apps from the database.
@@ -105,12 +109,12 @@ func (s *gitHubAppsStore) Create(ctx context.Context, app *ghtypes.GitHubApp) (i
 	baseURL = extsvc.NormalizeBaseURL(baseURL)
 	domain := app.Domain
 	if domain == "" {
-		domain = types.ReposGitHubAppDomain
+		domain = itypes.ReposGitHubAppDomain
 	}
 
 	// We enforce that GitHub Apps created in the "batches" domain are for unique instance URLs.
-	if domain == types.BatchesGitHubAppDomain {
-		existingGHApp, err := s.GetByDomain(ctx, &domain, baseURL.String())
+	if domain == itypes.BatchesGitHubAppDomain {
+		existingGHApp, err := s.GetByDomain(ctx, domain, baseURL.String())
 		// An error is expected if no existing app was found, but we double check that
 		// we didn't get a different, unrelated error
 		if err != nil && !strings.Contains(err.Error(), "no app exists matching criteria") {
@@ -224,6 +228,18 @@ func (s *gitHubAppsStore) Install(ctx context.Context, id, installationID int) e
 	return s.Exec(ctx, query)
 }
 
+func (s *gitHubAppsStore) GetLatestInstallID(ctx context.Context, appID int) (int, error) {
+	query := sqlf.Sprintf(`
+		SELECT installation_id
+		FROM github_app_installs
+		JOIN github_apps ON github_app_installs.app_id = github_apps.id
+		WHERE github_apps.app_id = %s
+		ORDER BY github_app_installs.id DESC LIMIT 1
+		`, appID)
+	installID, _, err := basestore.ScanFirstInt(s.Query(ctx, query))
+	return installID, err
+}
+
 func (s *gitHubAppsStore) get(ctx context.Context, where *sqlf.Query) (*ghtypes.GitHubApp, error) {
 	selectQuery := `SELECT
 		id,
@@ -305,12 +321,12 @@ func (s *gitHubAppsStore) GetBySlug(ctx context.Context, slug string, baseURL st
 }
 
 // GetByDomain retrieves a GitHub App from the database by domain and base url
-func (s *gitHubAppsStore) GetByDomain(ctx context.Context, domain *types.GitHubAppDomain, baseURL string) (*ghtypes.GitHubApp, error) {
-	return s.get(ctx, sqlf.Sprintf(`domain = %s AND base_url = %s`, *domain, baseURL))
+func (s *gitHubAppsStore) GetByDomain(ctx context.Context, domain itypes.GitHubAppDomain, baseURL string) (*ghtypes.GitHubApp, error) {
+	return s.get(ctx, sqlf.Sprintf(`domain = %s AND base_url = %s`, domain, baseURL))
 }
 
 // List lists all GitHub Apps in the store
-func (s *gitHubAppsStore) List(ctx context.Context, domain *types.GitHubAppDomain) ([]*ghtypes.GitHubApp, error) {
+func (s *gitHubAppsStore) List(ctx context.Context, domain *itypes.GitHubAppDomain) ([]*ghtypes.GitHubApp, error) {
 	where := sqlf.Sprintf(`true`)
 	if domain != nil {
 		where = sqlf.Sprintf("domain = %s", *domain)
