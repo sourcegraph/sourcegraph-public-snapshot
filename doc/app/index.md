@@ -22,7 +22,7 @@
 }
 </style>
 
-# Sourcegraph App
+# Cody App
 
 Sourcegraph App is a lightweight single-binary version of Sourcegraph for your local machine.
 
