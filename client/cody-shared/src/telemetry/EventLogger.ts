@@ -28,9 +28,7 @@ function getsuggestionsFromConfig(config: vscode.WorkspaceConfiguration): boolea
 
 let config = vscode.workspace.getConfiguration()
 
-
 export class EventLogger {
-
     private serverEndpoint = getServerEndpointFromConfig(config)
     private extensionDetails = { ide: 'VSCode', ideExtensionType: 'Cody' }
 
