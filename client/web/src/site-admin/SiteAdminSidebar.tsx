@@ -27,7 +27,7 @@ export interface SiteAdminSidebarProps extends BatchChangesProps {
     /** The items for the side bar, by group */
     groups: SiteAdminSideBarGroups
     className?: string
-    ownAnalyticsEnabled: boolean
+    ownAnalyticsEnabled?: boolean
 }
 
 /**

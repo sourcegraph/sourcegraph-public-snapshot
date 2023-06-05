@@ -49,6 +49,7 @@ const response: FetchOwnershipResult = {
                                 displayName: 'Bob the Builder',
                                 user: {
                                     __typename: 'User',
+                                    id: 'UserId',
                                     displayName: 'Bob the Builder',
                                     url: '/users/bob',
                                     username: 'bob',

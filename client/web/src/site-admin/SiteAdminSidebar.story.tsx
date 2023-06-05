@@ -22,6 +22,7 @@ export const AdminSidebarItems: Story = () => (
                 groups={siteAdminSidebarGroups}
                 isSourcegraphDotCom={false}
                 isSourcegraphApp={false}
+                ownAnalyticsEnabled={false}
                 batchChangesEnabled={false}
                 batchChangesExecutionEnabled={false}
                 batchChangesWebhookLogsEnabled={false}

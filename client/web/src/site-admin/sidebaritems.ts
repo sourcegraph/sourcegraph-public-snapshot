@@ -53,7 +53,7 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Own',
             to: '/site-admin/analytics/own',
-            condition: context => context.ownAnalyticsEnabled,
+            condition: context => context.ownAnalyticsEnabled || false,
         },
         {
             label: 'Feedback survey',

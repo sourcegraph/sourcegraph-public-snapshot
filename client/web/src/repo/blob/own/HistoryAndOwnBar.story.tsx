@@ -33,6 +33,7 @@ const barData: FetchOwnersAndHistoryResult = {
                                 avatarURL: 'https://avatars.githubusercontent.com/u/5090588?v=4',
                                 displayName: 'pwithnall',
                                 user: {
+                                    id: 'userid',
                                     displayName: 'Philip Withnall',
                                     url: '/users/pwithnall',
                                     username: 'pwithnall',
@@ -55,6 +56,9 @@ const barData: FetchOwnersAndHistoryResult = {
                     ],
                     totalCount: 3,
                     __typename: 'OwnershipConnection',
+                },
+                contributors: {
+                    totalCount: 2,
                 },
                 __typename: 'GitBlob',
             },
