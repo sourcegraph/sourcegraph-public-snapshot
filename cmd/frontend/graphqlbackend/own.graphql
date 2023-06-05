@@ -78,6 +78,9 @@ extend type GitCommit {
     ): OwnershipConnection!
 }
 
+"""
+Statistics about code ownership computed for given context (usually a repository or directory).
+"""
 type OwnershipStats {
     """
     Total files considered for ownership statistics (owned + unowned).
