@@ -72,7 +72,7 @@ func rateLimit(baseLogger log.Logger, eventLogger events.Logger, cache limiter.R
 
 		// If response is healthy, consume the rate limit
 		if responseRecorder.StatusCode >= 200 && responseRecorder.StatusCode < 300 {
-			if err := commit(); err != nil {
+			if err := commit(1); err != nil {
 				logger.Error("failed to commit rate limit consumption", log.Error(err))
 			}
 		}

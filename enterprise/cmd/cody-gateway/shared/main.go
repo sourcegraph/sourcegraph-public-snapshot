@@ -181,8 +181,8 @@ type redisStore struct {
 	store redispool.KeyValue
 }
 
-func (s *redisStore) Incr(key string) (int, error) {
-	return s.store.Incr(key)
+func (s *redisStore) Incrby(key string, val int) (int, error) {
+	return s.store.Incrby(key, val)
 }
 
 func (s *redisStore) GetInt(key string) (int, error) {

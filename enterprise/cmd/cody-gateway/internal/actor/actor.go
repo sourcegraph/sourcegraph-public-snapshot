@@ -141,7 +141,7 @@ type updateOnFailureLimiter struct {
 	*Actor
 }
 
-func (u updateOnFailureLimiter) TryAcquire(ctx context.Context) (func() error, error) {
+func (u updateOnFailureLimiter) TryAcquire(ctx context.Context) (func(int) error, error) {
 	commit, err := (limiter.StaticLimiter{
 		Identifier: u.ID,
 		Redis:      u.Redis,

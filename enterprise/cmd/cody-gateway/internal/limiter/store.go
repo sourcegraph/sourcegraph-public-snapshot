@@ -7,7 +7,7 @@ import (
 // RedisStore is the backend for tracking limiter state.
 type RedisStore interface {
 	// Incr increments a key's value, or initializes it to 1 if it does not exist
-	Incr(key string) (int, error)
+	Incrby(key string, val int) (int, error)
 	// Get retrieves a key's value
 	GetInt(key string) (int, error)
 	// TTL provides seconds TTL on an existing key
@@ -25,12 +25,12 @@ type mockStore map[string]mockRedisEntry
 
 var _ RedisStore = mockStore{}
 
-func (m mockStore) Incr(key string) (int, error) {
+func (m mockStore) Incrby(key string, val int) (int, error) {
 	entry, ok := m[key]
 	if !ok {
 		entry = mockRedisEntry{}
 	}
-	entry.value++
+	entry.value += val
 	m[key] = entry
 	return entry.value, nil
 }

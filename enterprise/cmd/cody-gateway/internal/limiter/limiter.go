@@ -14,7 +14,7 @@ type Limiter interface {
 	// actually consume a request. This allows us to easily avoid deducting from
 	// the rate limit if the request to upstream fails, at the cost of slight
 	// over-allowance.
-	TryAcquire(ctx context.Context) (commit func() error, err error)
+	TryAcquire(ctx context.Context) (commit func(int) error, err error)
 }
 
 type StaticLimiter struct {
@@ -33,7 +33,7 @@ type StaticLimiter struct {
 	nowFunc func() time.Time
 }
 
-func (l StaticLimiter) TryAcquire(ctx context.Context) (func() error, error) {
+func (l StaticLimiter) TryAcquire(ctx context.Context) (func(int) error, error) {
 	// Zero values implies no access - this is a fallback check, callers should
 	// be checking independently if access is granted.
 	if l.Identifier == "" || l.Limit <= 0 || l.Interval <= 0 {
@@ -88,8 +88,8 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (func() error, error) {
 	// yet have a deadline set. This means if the user comes back later we wouldn't of expired
 	// just one token. This seems fine. Note: this isn't an issue on subsequent requests in the
 	// same time block since the TTL would have been set.
-	return func() error {
-		if _, err := l.Redis.Incr(l.Identifier); err != nil {
+	return func(usage int) error {
+		if _, err := l.Redis.Incrby(l.Identifier, usage); err != nil {
 			return errors.Wrap(err, "failed to increment rate limit counter")
 		}
 

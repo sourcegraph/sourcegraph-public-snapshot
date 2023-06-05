@@ -2,6 +2,7 @@ package embeddings
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/sourcegraph/log"
 
@@ -64,8 +65,15 @@ func rateLimit(baseLogger log.Logger, eventLogger events.Logger, cache limiter.R
 
 		// If response is healthy, consume the rate limit
 		if responseRecorder.StatusCode >= 200 && responseRecorder.StatusCode < 300 {
-			// TODO: We should commit the number of tokens consumed here, not simply increment by 1.
-			if err := commit(); err != nil {
+			uh := w.Header().Get(usageHeaderName)
+			if uh == "" {
+				logger.Error("no usage header set on response")
+			}
+			usage, err := strconv.Atoi(uh)
+			if err != nil {
+				logger.Error("failed to parse usage header as number", log.Error(err))
+			}
+			if err := commit(usage); err != nil {
 				logger.Error("failed to commit rate limit consumption", log.Error(err))
 			}
 		}

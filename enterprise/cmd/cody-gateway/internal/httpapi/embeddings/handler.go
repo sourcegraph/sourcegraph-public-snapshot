@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -18,6 +19,8 @@ import (
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+const usageHeaderName = "X-Token-Usage"
 
 func NewHandler(
 	baseLogger log.Logger,
@@ -103,8 +106,9 @@ func NewHandler(
 			}
 			response.JSONError(logger, w, http.StatusInternalServerError, err)
 			return
-
 		}
+
+		w.Header().Add(usageHeaderName, strconv.Itoa(usedTokens))
 
 		data, err := json.Marshal(resp)
 		if err != nil {
@@ -113,7 +117,6 @@ func NewHandler(
 		}
 
 		w.Header().Add("Content-Type", "application/json; charset=utf-8")
-
 		_, _ = w.Write(data)
 	}))
 }
