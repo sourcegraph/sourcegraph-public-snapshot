@@ -156,7 +156,7 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                     <ConnectionForm
                         inputValue={searchValue}
                         onInputChange={event => setSearchValue(event.target.value)}
-                        inputPlaceholder="Search embedding jobs..."
+                        inputPlaceholder="Filter embedding jobs..."
                     />
                     {error && <ConnectionError errors={[error.message]} />}
                     {loading && !connection && <ConnectionLoading />}
