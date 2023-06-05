@@ -236,15 +236,13 @@ pub fn parse_tree<'a>(
 mod test {
     use scip::types::Document;
     use scip_treesitter::snapshot::{dump_document, dump_document_with_config, SnapshotOptions};
-    use tree_sitter::Parser;
+    use scip_treesitter_languages::parsers::BundledParser;
 
     use super::*;
 
     fn parse_file_for_lang(config: &TagConfiguration, source_code: &str) -> Result<Document> {
         let source_bytes = source_code.as_bytes();
-
-        let mut parser = Parser::new();
-        parser.set_language(config.language).unwrap();
+        let mut parser = config.get_parser();
         let tree = parser.parse(source_bytes, None).unwrap();
 
         let mut occ = parse_tree(config, &tree, source_bytes)?;
@@ -264,7 +262,8 @@ mod test {
 
     #[test]
     fn test_can_parse_rust_tree() -> Result<()> {
-        let config = crate::languages::rust();
+        let config = crate::languages::get_tag_configuration(&BundledParser::Rust)
+            .expect("to have rust parser");
         let source_code = include_str!("../testdata/scopes.rs");
         let doc = parse_file_for_lang(config, source_code)?;
 
@@ -276,7 +275,8 @@ mod test {
 
     #[test]
     fn test_can_parse_go_tree() -> Result<()> {
-        let config = crate::languages::go();
+        let config = crate::languages::get_tag_configuration(&BundledParser::Go)
+            .expect("to have rust parser");
         let source_code = include_str!("../testdata/example.go");
         let doc = parse_file_for_lang(config, source_code)?;
 
@@ -288,7 +288,8 @@ mod test {
 
     #[test]
     fn test_can_parse_go_internal_tree() -> Result<()> {
-        let config = crate::languages::go();
+        let config = crate::languages::get_tag_configuration(&BundledParser::Go)
+            .expect("to have rust parser");
         let source_code = include_str!("../testdata/internal_go.go");
         let doc = parse_file_for_lang(config, source_code)?;
 
@@ -300,7 +301,8 @@ mod test {
 
     #[test]
     fn test_enclosing_range() -> Result<()> {
-        let config = crate::languages::go();
+        let config = crate::languages::get_tag_configuration(&BundledParser::Go)
+            .expect("to have rust parser");
         let source_code = include_str!("../testdata/scopes_of_go.go");
         let doc = parse_file_for_lang(config, source_code)?;
 

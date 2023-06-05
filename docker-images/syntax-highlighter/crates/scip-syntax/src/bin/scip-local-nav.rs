@@ -16,7 +16,7 @@ struct Arguments {
     root_dir: String,
 }
 
-fn parse_files(config: &mut LocalConfiguration, root: &Path, dir: &Path) -> Vec<Document> {
+fn parse_files(config: &LocalConfiguration, root: &Path, dir: &Path) -> Vec<Document> {
     // TODO: Filter
 
     let extension = "go";
@@ -36,8 +36,8 @@ fn parse_files(config: &mut LocalConfiguration, root: &Path, dir: &Path) -> Vec<
         }
 
         let contents = fs::read_to_string(entry).expect("is a valid file");
-        let tree = config
-            .parser
+        let mut parser = config.get_parser();
+        let tree = parser
             .parse(contents.as_bytes(), None)
             .expect("to parse the tree");
 
@@ -91,10 +91,10 @@ fn main() {
         ..Default::default()
     };
 
-    let mut config = scip_syntax::languages::get_local_configuration(BundledParser::Go).unwrap();
+    let config = scip_syntax::languages::get_local_configuration(BundledParser::Go).unwrap();
     index
         .documents
-        .extend(parse_files(&mut config, directory, directory));
+        .extend(parse_files(config, directory, directory));
 
     println!("{:?}", index.documents.len());
     write_message_to_file(directory.join("index.scip"), index).expect("to write the file");
