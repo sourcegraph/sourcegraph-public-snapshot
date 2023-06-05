@@ -184,7 +184,7 @@ const register = async (
         vscode.commands.registerCommand('cody.walkthrough.showFixup', () => chatProvider.setWebviewView('recipes')),
         vscode.commands.registerCommand('cody.walkthrough.showExplain', () => chatProvider.setWebviewView('recipes')),
         vscode.commands.registerCommand('cody.walkthrough.enableInlineAssist', async () => {
-            await workspaceConfig.update('cody.experimental.inline', true)
+            await workspaceConfig.update('cody.experimental.inline', true, vscode.ConfigurationTarget.Global)
             // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
             return vscode.commands.executeCommand('workbench.action.openWorkspaceSettings', {
                 query: 'cody.experimental.inline',
@@ -192,7 +192,7 @@ const register = async (
             })
         }),
         vscode.commands.registerCommand('cody.walkthrough.enableAutomaticCodeCompletions', async () => {
-            await workspaceConfig.update('cody.experimental.suggestions', true)
+            await workspaceConfig.update('cody.experimental.suggestions', true, vscode.ConfigurationTarget.Global)
             // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
             return vscode.commands.executeCommand('workbench.action.openWorkspaceSettings', {
                 query: 'cody.experimental.suggestions',
