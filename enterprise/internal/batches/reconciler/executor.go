@@ -663,8 +663,8 @@ func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSour
 			}
 			rev := resp.Rev
 			// We use the existing commit as the basis for the new commit, duplicating it
-			// over the REST API in order to produce a signed version of it and then
-			// deleting the original one.
+			// over the REST API in order to produce a signed version of it to replace the
+			// original one with.
 			err = gcss.DuplicateCommit(ctx, opts, remoteRepo, rev)
 			if err != nil {
 				return errors.Wrap(err, "failed to duplicate commit")

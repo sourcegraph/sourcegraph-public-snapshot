@@ -93,24 +93,24 @@ func (s GitHubSource) ValidateAuthenticator(ctx context.Context) error {
 }
 
 // DuplicateCommit creates a new commit on the code host using the details of an existing
-// one at the given revision ref, for the purposes of creating a signed version of an
-// unsigned commit. Signing commits is only possible over the GitHub web APIs, when using
-// a GitHub App to authenticate. Thus, this method only makes sense to invoke in the
-// context of a `ChangesetSource` authenticated via a GitHub App.
+// one at the given revision ref. It should be used for the purposes of creating a signed
+// version of an unsigned commit. Signing commits is only possible over the GitHub web
+// APIs when using a GitHub App to authenticate. Thus, this method only makes sense to
+// invoke in the context of a `ChangesetSource` authenticated via a GitHub App.
 //
 // Due to limitations and feature-incompleteness of both the REST and GraphQL APIs today
 // (2023-05-26), we still take advantage of gitserver to push an initial commit based on
-// the changeset patch, then we look up the commit on the code host and duplicate it using
-// a REST endpoint in order to create a signed version of it. We then update the branch
-// ref, orphaning the original commit.
+// the changeset patch. We then look up the commit on the code host and duplicate it using
+// a REST endpoint in order to create a signed version of it. Lastly, we update the branch
+// ref, orphaning the original commit (it will be trash-collected in time).
 //
 // Using the REST API is necessary because the GraphQL API does not expose any mutations
 // for creating commits other than one which requires sending the entire file contents for
-// any files changed by the commit, which is not feasible for large commits. The REST API
-// allows us to create a commit based on a tree SHA, which we can get from the existing
-// commit. However, it will only sign the commit if it's authenticated via a GitHub App
-// installation, meaning the commit will be authored by a bot account, rather than by the
-// user who authored the batch change.
+// any files changed by the commit, which is not feasible for duplicating large commits.
+// The REST API allows us to create a commit based on a tree SHA, which we can easily get
+// from the existing commit. However, it will only sign the commit if it's authenticated
+// as a GitHub App installation, meaning the commit will be authored by a bot account
+// representing the installation, rather than by the user who authored the batch change.
 //
 // If GitHub ever achieves parity between the REST and GraphQL APIs for creating commits,
 // we should update this method and use the GraphQL API instead, because it would allow us
@@ -144,8 +144,9 @@ func (s GitHubSource) DuplicateCommit(ctx context.Context, opts protocol.CreateC
 		return errors.Wrap(err, "creating new commit")
 	}
 
-	// Update the branch ref to point to the new commit, orphaning the original. The
-	// orphaned commit will be garbage collected automatically by GitHub.
+	// Update the branch ref to point to the new commit, orphaning the original. There's
+	// no way to delete a commit over the API, but the orphaned commit will be garbage
+	// collected automatically by GitHub so it's okay to leave it.
 	_, err = s.client.UpdateRef(ctx, owner, repoName, rev, newCommit.SHA)
 	if err != nil {
 		return errors.Wrap(err, "updating ref to point to new commit")
