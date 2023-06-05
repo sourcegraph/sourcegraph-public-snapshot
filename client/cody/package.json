@@ -84,7 +84,7 @@
           {
             "id": "setup",
             "title": "Setup Cody",
-            "description": "Get started by logging into Sourcegraph and setting up Cody.\n[Setup Cody](command:cody.login)",
+            "description": "Get started by logging into Sourcegraph and setting up Cody.\n[Setup Cody](command:cody.walkthrough.showLogin)",
             "media": {
               "markdown": "walkthroughs/setup.md"
             },
@@ -95,7 +95,7 @@
           {
             "id": "chat",
             "title": "Ask Cody a question",
-            "description": "Cody writes code and answers questions using your own code graph as context.\n[Open Chat](command:cody.chat)",
+            "description": "Cody writes code and answers questions using your own code graph as context.\n[Open Chat](command:cody.walkthrough.showChat)",
             "media": {
               "markdown": "walkthroughs/chat.md"
             }
@@ -103,7 +103,7 @@
           {
             "id": "explain",
             "title": "Explain code",
-            "description": "Cody can help explain code. Select some lines and use the \"Explain selected code\" recipe.\n[Open Recipes](command:cody.recipes)",
+            "description": "Cody can help explain code. Select some lines and use the \"Explain selected code\" recipe.\n[Open Recipes](command:cody.walkthrough.showExplain)",
             "media": {
               "markdown": "walkthroughs/explain.md"
             }
@@ -111,7 +111,7 @@
           {
             "id": "fixup",
             "title": "Fixup code",
-            "description": "Cody can edit and improve code using inline instructions. Type what you want Cody to do above or below a block of code and use the \"Fixup code from inline instructions\" recipe.\n[Open Recipes](command:cody.recipes)",
+            "description": "Cody can edit and improve code using inline instructions. Type what you want Cody to do above or below a block of code and use the \"Fixup code from inline instructions\" recipe.\n[Open Recipes](command:cody.walkthrough.showFixup)",
             "media": {
               "markdown": "walkthroughs/fixup.md"
             }
@@ -119,7 +119,7 @@
           {
             "id": "inline-assist",
             "title": "Inline Assist",
-            "description": "Chat with Cody without leaving your file. Click the + button next to any line number in a file to bring up Inline Assist.\n[Enable in Settings](command:cody.settings)",
+            "description": "Chat with Cody without leaving your file. Click the + button next to any line number in a file to bring up Inline Assist.\n[Enable in Settings](command:cody.walkthrough.enableInlineAssist)",
             "media": {
               "markdown": "walkthroughs/inline-assist.md"
             }
@@ -127,7 +127,7 @@
           {
             "id": "completions",
             "title": "Automatic code completion",
-            "description": "Start writing code or write a comment and Cody will suggest the next few lines for you. Choose to accept it, or open the command palette and click \"Cody: View Suggestions\" to see various code snippets Cody suggests using.\n[Enable in Settings](command:cody.settings)",
+            "description": "Start writing code or write a comment and Cody will suggest the next few lines for you. Choose to accept it, or open the command palette and click \"Cody: View Suggestions\" to see various code snippets Cody suggests using.\n[Enable in Settings](command:cody.walkthrough.enableAutomaticCodeCompletions)",
             "media": {
               "markdown": "walkthroughs/completions.md"
             }
@@ -244,25 +244,34 @@
         "icon": "$(add)"
       },
       {
-        "command": "cody.login",
-        "title": "Cody: Show login",
-        "group": "Cody"
-      },
-      {
-        "command": "cody.chat",
-        "title": "Cody: Show chat",
-        "group": "Cody"
-      },
-      {
         "command": "cody.history",
-        "title": "Cody: Show chat history",
+        "title": "Cody: Chat history",
         "group": "Cody",
         "icon": "$(list-unordered)"
       },
       {
-        "command": "cody.recipes",
-        "title": "Cody: Show recipes",
-        "group": "Cody"
+        "command": "cody.walkthrough.showLogin",
+        "title": "Cody Walkthrough: Show login"
+      },
+      {
+        "command": "cody.walkthrough.showChat",
+        "title": "Cody Walkthrough: Show chat"
+      },
+      {
+        "command": "cody.walkthrough.showFixup",
+        "title": "Cody Walkthrough: Show fixup"
+      },
+      {
+        "command": "cody.walkthrough.showExplain",
+        "title": "Cody Walkthrough: Show explain"
+      },
+      {
+        "command": "cody.walkthrough.enableInlineAssist",
+        "title": "Cody Walkthrough: Show Inline Assist"
+      },
+      {
+        "command": "cody.walkthrough.enableAutomaticCodeCompletions",
+        "title": "Cody Walkthrough: Enable automatic code completions"
       },
       {
         "command": "cody.comment.add",
@@ -453,7 +462,31 @@
         {
           "command": "cody.inline.insert",
           "when": "false"
-	}
+	      },
+        {
+          "command": "cody.walkthrough.showLogin",
+          "when": "false"
+        },
+        {
+          "command": "cody.walkthrough.showChat",
+          "when": "false"
+        },
+        {
+          "command": "cody.walkthrough.showFixup",
+          "when": "false"
+        },
+        {
+          "command": "cody.walkthrough.showExplain",
+          "when": "false"
+        },
+        {
+          "command": "cody.walkthrough.enableAutomaticCodeCompletions",
+          "when": "false"
+        },
+        {
+          "command": "cody.walkthrough.enableInlineAssist",
+          "when": "false"
+        }
       ],
       "editor/context": [
         {

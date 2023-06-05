@@ -177,11 +177,28 @@ const register = async (
             vscode.commands.executeCommand('workbench.action.openWalkthrough', 'sourcegraph.cody-ai#welcome', false)
         ),
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
-        vscode.commands.registerCommand('cody.login', () => chatProvider.setWebviewView('login')),
-        vscode.commands.registerCommand('cody.chat', () => chatProvider.setWebviewView('chat')),
         vscode.commands.registerCommand('cody.settings', () => chatProvider.setWebviewView('settings')),
         vscode.commands.registerCommand('cody.history', () => chatProvider.setWebviewView('history')),
-        vscode.commands.registerCommand('cody.recipes', () => chatProvider.setWebviewView('recipes')),
+        vscode.commands.registerCommand('cody.walkthrough.showLogin', () => chatProvider.setWebviewView('login')),
+        vscode.commands.registerCommand('cody.walkthrough.showChat', () => chatProvider.setWebviewView('chat')),
+        vscode.commands.registerCommand('cody.walkthrough.showFixup', () => chatProvider.setWebviewView('recipes')),
+        vscode.commands.registerCommand('cody.walkthrough.showExplain', () => chatProvider.setWebviewView('recipes')),
+        vscode.commands.registerCommand('cody.walkthrough.enableInlineAssist', async () => {
+            await workspaceConfig.update('cody.experimental.inline', true)
+            // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
+            return vscode.commands.executeCommand('workbench.action.openWorkspaceSettings', {
+                query: 'cody.experimental.inline',
+                openToSide: true,
+            })
+        }),
+        vscode.commands.registerCommand('cody.walkthrough.enableAutomaticCodeCompletions', async () => {
+            await workspaceConfig.update('cody.experimental.suggestions', true)
+            // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
+            return vscode.commands.executeCommand('workbench.action.openWorkspaceSettings', {
+                query: 'cody.experimental.suggestions',
+                openToSide: true,
+            })
+        }),
         vscode.commands.registerCommand('cody.interactive.clear', async () => {
             await chatProvider.clearAndRestartSession()
             chatProvider.setWebviewView('chat')
