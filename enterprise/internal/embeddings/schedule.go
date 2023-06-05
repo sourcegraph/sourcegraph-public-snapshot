@@ -40,7 +40,7 @@ func ScheduleRepositoriesForEmbedding(
 			if refName == "" {
 				return errors.Newf("could not get latest commit for repo %s", r.Name)
 			}
-			
+
 			// Skip creating a repo embedding job for a repo at revision, if there already exists
 			// an identical job that has been completed, or is scheduled to run (processing or queued).
 			if !forceReindex {

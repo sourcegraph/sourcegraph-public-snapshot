@@ -40,11 +40,13 @@ func TestScheduleRepositoriesForEmbedding(t *testing.T) {
 	err = ScheduleRepositoriesForEmbedding(ctx, repoNames, false, db, store, gitserverClient)
 	require.NoError(t, err)
 	count, err := store.CountRepoEmbeddingJobs(ctx)
+	require.NoError(t, err)
 	require.Equal(t, 1, count)
 
 	// With force reindex, a new job will be scheduled anyways
 	err = ScheduleRepositoriesForEmbedding(ctx, repoNames, true, db, store, gitserverClient)
 	require.NoError(t, err)
 	count, err = store.CountRepoEmbeddingJobs(ctx)
+	require.NoError(t, err)
 	require.Equal(t, 2, count)
 }
