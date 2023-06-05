@@ -24,6 +24,7 @@ export const OWNER_FIELDS = gql`
             teamDisplayName: displayName
             avatarURL
             url
+            external
         }
     }
 `
