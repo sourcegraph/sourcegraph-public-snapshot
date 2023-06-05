@@ -40,12 +40,11 @@ func (s *selectOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, s
 	var (
 		mu                    sync.Mutex
 		hasResultWithNoOwners bool
-		errs                  error
+		maxAlerter            search.MaxAlerter
 		bagMu                 sync.Mutex // TODO(#52553): Make bag thread-safe
 	)
 
 	dedup := result.NewDeduper()
-	var maxAlerter search.MaxAlerter
 
 	rules := NewRulesCache(clients.Gitserver, clients.DB)
 	bag := own.EmptyBag()
@@ -53,9 +52,7 @@ func (s *selectOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, s
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		matches, ok, err := getCodeOwnersFromMatches(ctx, &rules, event.Results)
 		if err != nil {
-			mu.Lock()
-			errs = errors.Append(errs, err)
-			mu.Unlock()
+			maxAlerter.Add(search.AlertForOwnershipSearchError())
 		}
 		mu.Lock()
 		if ok {
@@ -80,7 +77,7 @@ func (s *selectOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, s
 					guess := r.ResolutionGuess()
 					// No text references found to make a guess, something is wrong.
 					if guess == nil {
-						// TODO: Handle error condition
+						maxAlerter.Add(search.AlertForOwnershipSearchError())
 						continue nextReference
 					}
 					ro = guess
@@ -105,16 +102,13 @@ func (s *selectOwnersJob) Run(ctx context.Context, clients job.RuntimeClients, s
 	})
 
 	alert, err = s.child.Run(ctx, clients, filteredStream)
-	if err != nil {
-		errs = errors.Append(errs, err)
-	}
 	maxAlerter.Add(alert)
 
 	if hasResultWithNoOwners {
 		maxAlerter.Add(search.AlertForUnownedResult())
 	}
 
-	return maxAlerter.Alert, errs
+	return maxAlerter.Alert, err
 }
 
 func (s *selectOwnersJob) Name() string {
