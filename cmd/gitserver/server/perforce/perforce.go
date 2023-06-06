@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -74,8 +75,10 @@ func (s *Service) EnqueueChangelistMappingJob(job *ChangelistMappingJob) {
 
 func (s *Service) startPerforceChangelistMappingPipeline(ctx context.Context) {
 	jobs := make(chan *ChangelistMappingJob)
-	go s.changelistMappingConsumer(ctx, jobs)
-	go s.changelistMappingProducer(ctx, jobs)
+
+	// Protect against panics.
+	goroutine.Go(func() { s.changelistMappingConsumer(ctx, jobs) })
+	goroutine.Go(func() { s.changelistMappingProducer(ctx, jobs) })
 }
 
 // changelistMappingProducer "pops" jobs from the FIFO queue of the "Service" and produce them
