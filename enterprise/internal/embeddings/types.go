@@ -169,8 +169,8 @@ type EmbedRepoStats struct {
 	CodeIndexStats EmbedFilesStats
 	TextIndexStats EmbedFilesStats
 
-	// IsDelta is only true if the corresponding index is a delta index
-	IsDelta bool
+	// IsIncremental indicates whether the embedding job should reindex changed files
+	IsIncremental bool
 }
 
 func (e *EmbedRepoStats) ToFields() []log.Field {
@@ -179,7 +179,7 @@ func (e *EmbedRepoStats) ToFields() []log.Field {
 		log.Bool("hasRanks", e.HasRanks),
 		log.Object("codeIndex", e.CodeIndexStats.ToFields()...),
 		log.Object("textIndex", e.TextIndexStats.ToFields()...),
-		log.Bool("isDelta", e.IsDelta),
+		log.Bool("isIncremental", e.IsIncremental),
 	}
 }
 

@@ -1,4 +1,5 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_test")
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "database",
@@ -40,6 +41,7 @@ go_library(
         "outbound_webhook_logs.go",
         "outbound_webhooks.go",
         "own_signal_configurations.go",
+        "ownership_stats.go",
         "permission_sync_code_host_state.go",
         "permission_sync_jobs.go",
         "permissions.go",
@@ -183,6 +185,7 @@ go_test(
         "outbound_webhook_logs_test.go",
         "outbound_webhooks_test.go",
         "own_signal_configurations_test.go",
+        "ownership_stats_test.go",
         "permission_sync_code_host_state_test.go",
         "permission_sync_jobs_test.go",
         "permissions_test.go",
@@ -269,5 +272,6 @@ go_test(
         "@com_github_tidwall_gjson//:gjson",
         "@org_golang_x_exp//maps",
         "@org_golang_x_sync//errgroup",
+        "@tools_gotest//assert",
     ],
 )

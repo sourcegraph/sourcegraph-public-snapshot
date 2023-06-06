@@ -10,6 +10,7 @@ export const OWNER_FIELDS = gql`
             email
             avatarURL
             user {
+                id
                 username
                 displayName
                 url
@@ -23,6 +24,7 @@ export const OWNER_FIELDS = gql`
             teamDisplayName: displayName
             avatarURL
             url
+            external
         }
     }
 `
@@ -86,6 +88,13 @@ export const FETCH_OWNERS = gql`
                 }
             }
         }
+        currentUser {
+            permissions {
+                nodes {
+                    displayName
+                }
+            }
+        }
     }
 `
 
@@ -123,11 +132,18 @@ export const FETCH_TREE_OWNERS = gql`
         node(id: $repo) {
             ... on Repository {
                 commit(rev: $revision) {
-                    blob(path: $currentPath) {
+                    tree(path: $currentPath) {
                         ownership {
                             ...OwnershipConnectionFields
                         }
                     }
+                }
+            }
+        }
+        currentUser {
+            permissions {
+                nodes {
+                    displayName
                 }
             }
         }
