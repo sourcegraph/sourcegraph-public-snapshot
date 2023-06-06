@@ -25,6 +25,8 @@ import {
     VSCodeSecretStorage,
 } from './services/SecretStorageProvider'
 
+const CODY_FEEDBACK_URL = 'https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback'
+
 /**
  * Start the extension, watching all relevant configuration and secrets for changes.
  */
@@ -175,6 +177,9 @@ const register = async (
         // Commands
         vscode.commands.registerCommand('cody.welcome', () =>
             vscode.commands.executeCommand('workbench.action.openWalkthrough', 'sourcegraph.cody-ai#welcome', false)
+        ),
+        vscode.commands.registerCommand('cody.feedback', () =>
+            vscode.commands.executeCommand('vscode.open', vscode.Uri.parse(CODY_FEEDBACK_URL))
         ),
         vscode.commands.registerCommand('cody.focus', () => vscode.commands.executeCommand('cody.chat.focus')),
         vscode.commands.registerCommand('cody.settings', () => chatProvider.setWebviewView('settings')),

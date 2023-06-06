@@ -184,6 +184,12 @@
         "icon": "$(book)"
       },
       {
+        "command": "cody.feedback",
+        "title": "Cody: Feedback",
+        "group": "Cody",
+        "icon": "$(feedback)"
+      },
+      {
         "command": "cody.recipe.optimize-code",
         "title": "Ask Cody: Optimize Code"
       },
@@ -565,9 +571,14 @@
           "group": "navigation@3"
         },
         {
-          "command": "cody.welcome",
+          "command": "cody.feedback",
           "when": "view == cody.chat",
           "group": "navigation@4"
+        },
+        {
+          "command": "cody.welcome",
+          "when": "view == cody.chat",
+          "group": "navigation@5"
         },
         {
           "command": "cody.fixup.apply-all",
