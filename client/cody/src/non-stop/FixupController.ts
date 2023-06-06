@@ -44,6 +44,8 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
         this.files = new FixupFileObserver()
         this._disposables.push(vscode.workspace.onDidRenameFiles(this.files.didRenameFiles.bind(this.files)))
         this._disposables.push(vscode.workspace.onDidDeleteFiles(this.files.didDeleteFiles.bind(this.files)))
+        // Observe editor focus
+        this._disposables.push(vscode.window.onDidChangeVisibleTextEditors(this.didChangeVisibleTextEditors.bind(this)))
         // Start the fixup tree view provider
         this.taskViewProvider = new TaskViewProvider()
         // Observe file edits
@@ -252,10 +254,41 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
     // changed and we need to update diffs.
     private needsDiffUpdate_: Set<FixupTask> = new Set()
 
-    // TODO: Hook up onDidChangeVisibleTextEditors to apply decorations to
-    // editors as they become visible
+    // Files where the editor wasn't visible and we have delayed computing diffs
+    // for tasks.
+    private needsEditor_: Set<FixupFile> = new Set()
 
-    // TODO: Move the core of this method to a separate component
+    private didChangeVisibleTextEditors(editors: readonly vscode.TextEditor[]): void {
+        const editorsByFile = new Map<FixupFile, vscode.TextEditor[]>()
+        for (const editor of editors) {
+            const file = this.files.maybeForUri(editor.document.uri)
+            if (!file) {
+                continue
+            }
+            // Group editors by file so the decorator can apply decorations
+            // in one shot.
+            if (!editorsByFile.has(file)) {
+                editorsByFile.set(file, [])
+            }
+            editorsByFile.get(file)?.push(editor)
+            // If we were waiting for an editor to get text to diff against,
+            // start that process now.
+            if (this.needsEditor_.has(file)) {
+                this.needsEditor_.delete(file)
+                for (const task of this.tasksForFile(file)) {
+                    if (this.needsDiffUpdate_.size === 0) {
+                        void this.scheduler.scheduleIdle(() => this.updateDiffs())
+                    }
+                    this.needsDiffUpdate_.add(task)
+                }
+            }
+        }
+        // Apply any decorations we have to the visible editors.
+        for (const [file, editors] of editorsByFile.entries()) {
+            this.decorator.didChangeVisibleTextEditors(file, editors)
+        }
+    }
+
     private updateDiffs(): void {
         const deadlineMsec = Date.now() + 500
 
@@ -264,6 +297,7 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
             this.needsDiffUpdate_.delete(task)
             const editor = vscode.window.visibleTextEditors.find(editor => editor.document.uri === task.fixupFile.uri)
             if (!editor) {
+                this.needsEditor_.add(task.fixupFile)
                 continue
             }
             // TODO: When Cody doesn't suggest any output something has gone
@@ -279,16 +313,28 @@ export class FixupController implements FixupFileCollection, FixupIdleTaskRunner
             // Switch to using a gross line-based range and updating it in the
             // FixupDocumentEditObserver.
             const diff = computeDiff(task.original, botText, bufferText, task.selectionRange.start)
-            // TODO: Cache the source text and diff edits for application
-            console.log(botText)
-            // TODO: Cache the diff output on the fixup so it can be applied;
-            // have the decorator reapply decorations to visible editors
-            this.decorator.decorate(editor, diff)
-            if (!diff.clean) {
-                // TODO: If this isn't an in-progress diff, then schedule
-                // a re-spin or notify failure
-                continue
-            }
+            task.diff = diff
+            this.didUpdateDiff(task)
+        }
+
+        if (this.needsDiffUpdate_.size) {
+            // We did not get through the work; schedule more later.
+            void this.scheduler.scheduleIdle(() => this.updateDiffs())
+        }
+    }
+
+    private didUpdateDiff(task: FixupTask): void {
+        if (!task.diff) {
+            // Once we have a diff, we never go back to not having a diff.
+            // If adding that transition, you must un-apply old highlights for
+            // this task.
+            throw new Error('unreachable')
+        }
+        this.decorator.didUpdateDiff(task)
+        if (!task.diff.clean) {
+            // TODO: If this isn't an in-progress diff, then schedule
+            // a re-spin or notify failure
+            return
         }
     }
 }
