@@ -252,6 +252,134 @@ func TestInsertInitialPathCounts(t *testing.T) {
 	}
 }
 
+func TestVacuumStaleProcessedReferences(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
+
+	// Insert and export uploads
+	insertUploads(t, db,
+		uploadsshared.Upload{ID: 1},
+		uploadsshared.Upload{ID: 2},
+		uploadsshared.Upload{ID: 3},
+	)
+	if _, err := db.ExecContext(ctx, `
+		WITH v AS (SELECT unnest('{1, 2, 3}'::integer[]))
+		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key, upload_key)
+		SELECT id + 100, id, $1, md5('key-' || id::text) FROM v AS v(id)
+	`,
+		mockRankingGraphKey,
+	); err != nil {
+		t.Fatalf("failed to insert exported upload: %s", err)
+	}
+
+	if _, err := db.ExecContext(ctx, `
+		WITH v AS (SELECT unnest('{1, 2, 3}'::integer[]))
+		INSERT INTO codeintel_ranking_references (graph_key, symbol_names, exported_upload_id)
+		SELECT $1, '{}', id FROM codeintel_ranking_exports
+	`,
+		mockRankingGraphKey,
+	); err != nil {
+		t.Fatalf("failed to insert references: %s", err)
+	}
+
+	for _, graphKey := range []string{
+		key,
+		rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "456"),
+		rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "789"),
+	} {
+		if _, err := db.ExecContext(ctx, `
+			INSERT INTO codeintel_ranking_references_processed (graph_key, codeintel_ranking_reference_id)
+			SELECT $1, id FROM codeintel_ranking_references
+		`, graphKey); err != nil {
+			t.Fatalf("failed to insert ranking processed reference records: %s", err)
+		}
+	}
+
+	if numRecords, _, err := basestore.ScanFirstInt(db.QueryContext(ctx, "SELECT COUNT(*) FROM codeintel_ranking_references_processed")); err != nil {
+		t.Fatalf("unexpected error counting records: %s", err)
+	} else if numRecords != 9 {
+		t.Fatalf("unexpected number of records. want=%d have=%d", 9, numRecords)
+	}
+
+	if _, err := store.VacuumStaleProcessedReferences(ctx, key, 1000); err != nil {
+		t.Fatalf("unexpected error vacuuming processed reference records: %s", err)
+	}
+
+	if numRecords, _, err := basestore.ScanFirstInt(db.QueryContext(ctx, "SELECT COUNT(*) FROM codeintel_ranking_references_processed")); err != nil {
+		t.Fatalf("unexpected error counting records: %s", err)
+	} else if numRecords != 3 {
+		t.Fatalf("unexpected number of records. want=%d have=%d", 3, numRecords)
+	}
+}
+
+func TestVacuumStaleProcessedPaths(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observation.TestContext, db)
+
+	key := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
+
+	// Insert and export uploads
+	insertUploads(t, db,
+		uploadsshared.Upload{ID: 1},
+		uploadsshared.Upload{ID: 2},
+		uploadsshared.Upload{ID: 3},
+	)
+	if _, err := db.ExecContext(ctx, `
+		WITH v AS (SELECT unnest('{1, 2, 3}'::integer[]))
+		INSERT INTO codeintel_ranking_exports (id, upload_id, graph_key, upload_key)
+		SELECT id + 100, id, $1, md5('key-' || id::text) FROM v AS v(id)
+	`,
+		mockRankingGraphKey,
+	); err != nil {
+		t.Fatalf("failed to insert exported upload: %s", err)
+	}
+
+	if _, err := db.ExecContext(ctx, `
+		WITH v AS (SELECT unnest('{1, 2, 3}'::integer[]))
+		INSERT INTO codeintel_initial_path_ranks (graph_key, document_paths, exported_upload_id)
+		SELECT $1, '{}', id FROM codeintel_ranking_exports
+	`,
+		mockRankingGraphKey,
+	); err != nil {
+		t.Fatalf("failed to insert path ranks: %s", err)
+	}
+
+	for _, graphKey := range []string{
+		key,
+		rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "456"),
+		rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "789"),
+	} {
+		if _, err := db.ExecContext(ctx, `
+			INSERT INTO codeintel_initial_path_ranks_processed (graph_key, codeintel_initial_path_ranks_id)
+			SELECT $1, id FROM codeintel_initial_path_ranks
+		`, graphKey); err != nil {
+			t.Fatalf("failed to insert ranking processed reference records: %s", err)
+		}
+	}
+
+	if numRecords, _, err := basestore.ScanFirstInt(db.QueryContext(ctx, "SELECT COUNT(*) FROM codeintel_initial_path_ranks_processed")); err != nil {
+		t.Fatalf("unexpected error counting records: %s", err)
+	} else if numRecords != 9 {
+		t.Fatalf("unexpected number of records. want=%d have=%d", 9, numRecords)
+	}
+
+	if _, err := store.VacuumStaleProcessedPaths(ctx, key, 1000); err != nil {
+		t.Fatalf("unexpected error vacuuming processed path records: %s", err)
+	}
+
+	if numRecords, _, err := basestore.ScanFirstInt(db.QueryContext(ctx, "SELECT COUNT(*) FROM codeintel_initial_path_ranks_processed")); err != nil {
+		t.Fatalf("unexpected error counting records: %s", err)
+	} else if numRecords != 3 {
+		t.Fatalf("unexpected number of records. want=%d have=%d", 3, numRecords)
+	}
+}
+
 func TestVacuumStaleGraphs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
