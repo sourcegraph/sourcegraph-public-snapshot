@@ -169,7 +169,7 @@ export const useGlobalBatchChangesCodeHostConnection = (): UseShowMorePagination
         query: GLOBAL_CODE_HOSTS,
         variables: {
             after: null,
-            first: 15,
+            first: 30,
         },
         options: {
             useURL: true,

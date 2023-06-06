@@ -76,11 +76,11 @@ export const CommitSigningIntegrations: React.FunctionComponent<
                     <SummaryContainer className="mt-2">
                         <ConnectionSummary
                             noSummaryIfAllNodesVisible={true}
-                            first={15}
+                            first={30}
                             centered={true}
                             connection={connection}
-                            noun="code host"
-                            pluralNoun="code host connections"
+                            noun="code host commit signing integration"
+                            pluralNoun="code host commit signing integrations"
                             hasNextPage={hasNextPage}
                         />
                         {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
