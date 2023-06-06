@@ -167,7 +167,6 @@ Once set up, you can use code navigation with popular development tools:
 - Language-specific guides
   - [Index a Go repository](how-to/index_a_go_repository.md)
   - [Index a TypeScript or JavaScript repository](how-to/index_a_typescript_and_javascript_repository.md)
-  - [Index a C++ repository](how-to/index_a_cpp_repository.md)
   - [Index a Java, Scala, or Kotlin repository](https://sourcegraph.github.io/scip-java/docs/getting-started.html)
 - Automate uploading code graph data
   - [Add code graph data to many repositories](how-to/adding_lsif_to_many_repos.md)
