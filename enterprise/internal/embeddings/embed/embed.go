@@ -20,7 +20,7 @@ import (
 
 func NewEmbeddingsClient(siteConfig *schema.SiteConfiguration) (client.EmbeddingsClient, error) {
 	c := siteConfig.Embeddings
-	if c == nil || !c.Enabled || c.Provider == "" {
+	if c == nil || !c.Enabled {
 		return nil, errors.New("embeddings are not configured or disabled")
 	}
 
