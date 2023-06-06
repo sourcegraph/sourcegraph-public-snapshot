@@ -10,6 +10,7 @@ ts_project(
     srcs = [
         "auth.test.ts",
         "common.ts",
+        "fixup-decorator.test.ts",
         "helpers.ts",
         "history.test.ts",
         "inline-assist.test.ts",

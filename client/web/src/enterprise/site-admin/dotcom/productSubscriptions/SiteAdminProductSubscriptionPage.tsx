@@ -185,7 +185,12 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                     />
                 )}
 
-                <H3>Licenses</H3>
+                <H3 className="d-flex align-items-center mt-5">
+                    Licenses
+                    <Button className="ml-auto" onClick={toggleShowGenerate} variant="primary">
+                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Generate new license manually
+                    </Button>
+                </H3>
                 <LicenseGenerationKeyWarning className="mb-3" />
                 <Container className="mb-2">
                     <ProductSubscriptionLicensesConnection
@@ -193,17 +198,13 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                         licenseUpdates={licenseUpdates}
                     />
                 </Container>
-                <div className="mb-3">
-                    <Button onClick={toggleShowGenerate} variant="primary">
-                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Generate new license manually
-                    </Button>
-                </div>
             </div>
 
             {showGenerate && (
                 <SiteAdminGenerateProductLicenseForSubscriptionForm
                     subscriptionID={productSubscription.id}
                     subscriptionAccount={productSubscription.account?.username || ''}
+                    latestLicense={productSubscription.productLicenses?.nodes[0]}
                     onGenerate={onLicenseUpdate}
                     onCancel={() => setShowGenerate(false)}
                 />
