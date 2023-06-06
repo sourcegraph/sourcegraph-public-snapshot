@@ -26,6 +26,8 @@ type handler struct {
 
 var _ workerutil.Handler[*contextdetectionbg.ContextDetectionEmbeddingJob] = &handler{}
 
+const MAX_EMBEDDINGS_RETRIES = 3
+
 func (h *handler) Handle(ctx context.Context, logger log.Logger, _ *contextdetectionbg.ContextDetectionEmbeddingJob) error {
 	if !conf.EmbeddingsEnabled() {
 		return errors.New("embeddings are not configured or disabled")
@@ -55,7 +57,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, _ *contextdetec
 }
 
 func getContextDetectionMessagesMeanEmbedding(ctx context.Context, messages []string, client client.EmbeddingsClient) ([]float32, error) {
-	messagesEmbeddings, err := client.GetEmbeddingsWithRetries(ctx, messages)
+	messagesEmbeddings, err := client.GetEmbeddingsWithRetries(ctx, messages, MAX_EMBEDDINGS_RETRIES)
 	if err != nil {
 		return nil, err
 	}

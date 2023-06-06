@@ -68,7 +68,7 @@ func embedQueries(queries []string, siteConfigPath string) error {
 		if err != nil {
 			return err
 		}
-		v, err := c.GetEmbeddingsWithRetries(ctx, []string{query}, 10)
+		v, err := c.GetEmbeddingsWithRetries(ctx, []string{query}, 0)
 		if err != nil {
 			return errors.Wrapf(err, "failed to get embeddings for query %s", query)
 		}

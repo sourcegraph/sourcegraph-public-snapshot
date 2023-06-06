@@ -35,8 +35,9 @@ func NewEmbeddingsClient(siteConfig *schema.SiteConfiguration) (client.Embedding
 }
 
 const (
-	embeddingsBatchSize = 512
-	maxFileSize         = 1_000_000 // 1MB
+	getEmbeddingsMaxRetries = 5
+	embeddingsBatchSize     = 512
+	maxFileSize             = 1_000_000 // 1MB
 )
 
 // EmbedRepo embeds file contents from the given file names for a repository.
@@ -177,7 +178,7 @@ func embedFiles(
 			index.Ranks = append(index.Ranks, float32(repoPathRanks.Paths[chunk.FileName]))
 		}
 
-		batchEmbeddings, err := client.GetEmbeddingsWithRetries(ctx, batchChunks)
+		batchEmbeddings, err := client.GetEmbeddingsWithRetries(ctx, batchChunks, getEmbeddingsMaxRetries)
 		if err != nil {
 			return errors.Wrap(err, "error while getting embeddings")
 		}

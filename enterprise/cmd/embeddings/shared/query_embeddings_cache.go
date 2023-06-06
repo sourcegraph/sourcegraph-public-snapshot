@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const QUERY_EMBEDDING_RETRIES = 3
 const QUERY_EMBEDDINGS_CACHE_MAX_ENTRIES = 128
 
 func getCachedQueryEmbeddingFn() (getQueryEmbeddingFn, error) {
@@ -26,7 +27,7 @@ func getCachedQueryEmbeddingFn() (getQueryEmbeddingFn, error) {
 			if err != nil {
 				return nil, err
 			}
-			queryEmbedding, err = client.GetEmbeddingsWithRetries(ctx, []string{query})
+			queryEmbedding, err = client.GetEmbeddingsWithRetries(ctx, []string{query}, QUERY_EMBEDDING_RETRIES)
 			if err != nil {
 				return nil, err
 			}
