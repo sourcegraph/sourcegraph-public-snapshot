@@ -10,16 +10,25 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/anthropic"
 )
 
 const anthropicAPIURL = "https://api.anthropic.com/v1/complete"
 
-func newAnthropicHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisStore, accessToken string, allowedModels []string) http.Handler {
+func newAnthropicHandler(
+	logger log.Logger,
+	eventLogger events.Logger,
+	rs limiter.RedisStore,
+	concurrencyLimitConfig codygateway.ActorConcurrencyLimitConfig,
+	accessToken string,
+	allowedModels []string,
+) http.Handler {
 	return makeUpstreamHandler(
 		logger,
 		eventLogger,
 		rs,
+		concurrencyLimitConfig,
 		anthropic.ProviderName,
 		anthropicAPIURL,
 		allowedModels,
