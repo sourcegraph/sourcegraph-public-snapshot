@@ -74,7 +74,7 @@ func NewMultiHandler(
 		metricsStore:          metricsStore,
 		CodeIntelQueueHandler: codeIntelQueueHandler,
 		BatchesQueueHandler:   batchesQueueHandler,
-		dequeueCache:          rcache.NewWithTTL("executor_multihandler_dequeues", dequeueTtl),
+		dequeueCache:          rcache.New("executor_multihandler_dequeues"),
 		validQueues:           []string{codeIntelQueueHandler.Name, batchesQueueHandler.Name},
 		logger:                log.Scoped("executor-multi-queue-handler", "The route handler for all executor queues"),
 	}
@@ -149,7 +149,6 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 		// multiple populated queues, discard queues at dequeue limit
 		var candidateQueues []string
 		for _, queue := range nonEmptyQueues {
-			// todo dont use hash
 			dequeues, err := m.dequeueCache.GetHashAll(queue)
 			if err != nil {
 				return executortypes.Job{}, false, errors.Wrapf(err, "failed to check dequeue count for queue '%s'", queue)
@@ -258,7 +257,10 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 	job.Token = token
 
 	// increment dequeue counter
-	//m.dequeueCache.SetHashItem(selectedQueue, job.Token, time.Now().Unix())
+	err = m.dequeueCache.SetHashItem(selectedQueue, job.Token, fmt.Sprint(time.Now().Unix()))
+	if err != nil {
+		return executortypes.Job{}, false, errors.Wrapf(err, "failed to increment dequeue count for queue '%s'", selectedQueue)
+	}
 
 	return job, true, nil
 }
