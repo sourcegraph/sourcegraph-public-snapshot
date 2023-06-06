@@ -100,6 +100,17 @@ func makeUpstreamHandler[ReqT any](
 				return
 			}
 
+			// TEMPORARY: Add provider prefixes to AllowedModels for back-compat
+			// if it doesn't look like there is a prefix yet.
+			//
+			// This isn't very robust, but should tide us through a brief transition
+			// period until everything deploys and our caches refresh.
+			for i := range rateLimit.AllowedModels {
+				if !strings.Contains(rateLimit.AllowedModels[i], "/") {
+					rateLimit.AllowedModels[i] = fmt.Sprintf("%s/%s", upstreamName, rateLimit.AllowedModels[i])
+				}
+			}
+
 			// Parse the request body.
 			var body ReqT
 			if err := json.NewDecoder(r.Body).Decode(&body); err != nil {

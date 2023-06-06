@@ -64,11 +64,9 @@ func (c *codyGatewayClient) Complete(ctx context.Context, feature types.Completi
 }
 
 func (c *codyGatewayClient) clientForParams(feature types.CompletionsFeature, requestParams *types.CompletionRequestParameters) (types.CompletionsClient, error) {
-	gatewayModel := strings.ToLower(requestParams.Model)
-
 	// Extract provider and model from the Cody Gateway model format and override
 	// the request parameter's model.
-	provider, model := getProviderFromGatewayModel(gatewayModel)
+	provider, model := getProviderFromGatewayModel(strings.ToLower(requestParams.Model))
 	requestParams.Model = model
 
 	// Based on the provider, instantiate the appropriate client backed by a
@@ -78,17 +76,20 @@ func (c *codyGatewayClient) clientForParams(feature types.CompletionsFeature, re
 		return anthropic.NewClient(gatewayDoer(c.upstream, feature, c.gatewayURL, c.accessToken, "/v1/completions/anthropic"), "", ""), nil
 	case openai.ProviderName:
 		return openai.NewClient(gatewayDoer(c.upstream, feature, c.gatewayURL, c.accessToken, "/v1/completions/openai"), "", ""), nil
+	case "":
+		return nil, errors.Newf("no provider provided in model %s - a model in the format '$PROVIDER/$MODEL_NAME' is expected", model)
 	default:
-		return nil, errors.Newf("no client known for upstream model %s", gatewayModel)
+		return nil, errors.Newf("no client known for upstream provider %s", provider)
 	}
 }
 
 // getProviderFromGatewayModel extracts the model provider from Cody Gateway
 // configuration's expected model naming format, "$PROVIDER/$MODEL_NAME".
+// If a prefix isn't present, the whole value is assumed to be the model.
 func getProviderFromGatewayModel(gatewayModel string) (provider string, model string) {
 	parts := strings.SplitN(gatewayModel, "/", 2)
 	if len(parts) < 2 {
-		return parts[0], ""
+		return "", parts[0] // assume it's the provider that's missing, not the model.
 	}
 	return parts[0], parts[1]
 }
