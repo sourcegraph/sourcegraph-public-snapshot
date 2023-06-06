@@ -13,6 +13,7 @@ import {
     mdiDatabaseCheckOutline,
     mdiDatabaseSyncOutline,
     mdiDatabaseRemoveOutline,
+    mdiCheck,
 } from '@mdi/js'
 import classNames from 'classnames'
 
@@ -86,13 +87,29 @@ export const ContextPopover: React.FC<{
     const handleAddItem = (index: number) => {
         if (filteredItems) {
             const selectedItem = filteredItems[index]
-            setCurrentItems(prevItems => (prevItems ? [...prevItems, selectedItem] : [selectedItem]))
+            setCurrentItems(prevItems => {
+                if (prevItems) {
+                    // Check if the item is already in the currentItems list
+                    const itemIndex = prevItems.indexOf(selectedItem)
+                    if (itemIndex !== -1) {
+                        // Item exists, remove it from the list
+                        const updatedItems = [...prevItems]
+                        updatedItems.splice(itemIndex, 1)
+                        return updatedItems
+                    } else {
+                        // Item doesn't exist, add it to the list
+                        return [...prevItems, selectedItem]
+                    }
+                }
+                // prevItems is undefined, return a new list with the selected item
+                return [selectedItem]
+            })
         }
     }
 
     const filteredItems =
         contextType === SELECTED.REPOSITORIES
-            ? repoMockedModel.filter(item => !currentItems?.includes(item) && fuzzySearch(item, searchText))
+            ? repoMockedModel.filter(item => fuzzySearch(item, searchText))
             : filesMockedModel.filter(item => !currentItems?.includes(item) && fuzzySearch(item, searchText))
 
     const isSearching = searchText.length > 0
@@ -110,6 +127,7 @@ export const ContextPopover: React.FC<{
                 )}
             >
                 <div className={classNames(isEmpty && styles.triggerButtonEmpty, styles.triggerButtonInner)}>
+                    <Icon aria-hidden={true} svgPath={mdiChevronUp} />{' '}
                     {isEmpty ? (
                         `${header}...`
                     ) : (
@@ -118,17 +136,11 @@ export const ContextPopover: React.FC<{
                         </TruncatedText>
                     )}
                 </div>
-                <Icon aria-hidden={true} svgPath={mdiChevronUp} />
             </PopoverTrigger>
 
             <PopoverContent position={Position.topStart}>
-                <Card>
-                    <div className={classNames('justify-content-between', styles.header)}>
-                        {header}
-                        <Button onClick={() => setIsPopoverOpen(false)} variant="icon" aria-label="Close">
-                            <Icon aria-hidden={true} svgPath={mdiClose} />
-                        </Button>
-                    </div>
+                <Card className={styles.card}>
+                    <div className={classNames('justify-content-between', styles.header)}>CHAT CONTEXT</div>
                     {(isEmpty && !isSearching) || isSearchEmpty ? (
                         <EmptyState
                             icon={icon}
@@ -145,15 +157,16 @@ export const ContextPopover: React.FC<{
                                         contextType={contextType}
                                         handleAddItem={() => handleAddItem(index)}
                                         handleRemoveItem={() => handleRemoveItem(index)}
+                                        isSelected={currentItems?.includes(item) || false}
                                     />
                                 ))}
                             </div>
 
-                            <ContextActions
+                            {/* <ContextActions
                                 isSearching={isSearching}
                                 handleAddAll={handleAddAll}
                                 handleClearAll={handleClearAll}
-                            />
+                            /> */}
                         </>
                     )}
 
@@ -195,7 +208,8 @@ const ContextItem: React.FC<{
     contextType: ContextType
     handleAddItem: () => void
     handleRemoveItem: () => void
-}> = ({ item, icon, searchText, contextType, handleAddItem, handleRemoveItem }) => {
+    isSelected: boolean
+}> = ({ item, icon, searchText, contextType, handleAddItem, handleRemoveItem, isSelected }) => {
     const getRandomIcon = () => {
         const icons = [mdiDatabaseCheckOutline, mdiDatabaseSyncOutline, mdiDatabaseRemoveOutline]
         return icons[Math.floor(Math.random() * icons.length)]
@@ -205,12 +219,13 @@ const ContextItem: React.FC<{
 
     return (
         <div className={classNames('d-flex justify-content-between flex-row p-1 rounded-lg', styles.item)}>
-            <div>
-                <Icon
-                    style={{ color: randomIcon === mdiDatabaseRemoveOutline ? '#E09200' : 'inherit' }}
-                    aria-hidden={true}
-                    svgPath={randomIcon}
-                />{' '}
+            <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+                <ItemAction
+                    isSearching={searchText.length > 0}
+                    handleAddItem={handleAddItem}
+                    handleRemoveItem={handleRemoveItem}
+                    isSelected={isSelected}
+                />
                 <Icon aria-hidden={true} svgPath={icon} />{' '}
                 <span
                     dangerouslySetInnerHTML={{
@@ -227,10 +242,10 @@ const ContextItem: React.FC<{
                         </Text>
                     </>
                 )}
-                <ItemAction
-                    isSearching={searchText.length > 0}
-                    handleAddItem={handleAddItem}
-                    handleRemoveItem={handleRemoveItem}
+                <Icon
+                    style={{ color: randomIcon === mdiDatabaseRemoveOutline ? '#E09200' : 'inherit' }}
+                    aria-hidden={true}
+                    svgPath={randomIcon}
                 />
             </div>
         </div>
@@ -241,9 +256,14 @@ const ItemAction: React.FC<{
     isSearching: boolean
     handleAddItem: () => void
     handleRemoveItem: () => void
-}> = ({ isSearching, handleAddItem, handleRemoveItem }) => (
+    isSelected: boolean
+}> = ({ isSearching, handleAddItem, handleRemoveItem, isSelected }) => (
     <Button className="pl-1" variant="icon" onClick={isSearching ? handleAddItem : handleRemoveItem}>
-        <Icon aria-hidden={true} svgPath={isSearching ? mdiPlusCircleOutline : mdiMinusCircleOutline} />
+        <Icon
+            aria-hidden={true}
+            svgPath={isSearching ? mdiCheck : mdiMinusCircleOutline}
+            style={!isSelected ? { color: 'transparent' } : {}}
+        />
     </Button>
 )
 
@@ -272,10 +292,6 @@ const ContextActions: React.FC<{
  */
 const EmptyState: React.FC<{ icon: string; message: string }> = ({ icon, message }) => (
     <div className={classNames('d-flex align-items-center justify-content-center flex-column', styles.emptyState)}>
-        <svg height={40} width={40} viewBox="0 0 24 24">
-            <path d={icon} fill="currentColor" />
-        </svg>
-
         <Text size="small" className="m-0 d-flex text-center">
             {message}
         </Text>

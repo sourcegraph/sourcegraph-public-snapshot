@@ -8,23 +8,30 @@
     font-weight: 400;
 }
 
+.card {
+    height: 300px;
+}
+
 .header {
     text-transform: uppercase;
     font-size: 0.65rem;
     color: var(--input-placeholder-color);
     display: flex;
     border-bottom: 1px solid var(--border-color-2);
-    width: 37.5rem;
+    width: 380px;
     padding: 0.5rem 0.625rem;
 }
 
 .emptyState {
+    max-width: 380px;
+    height: 100%;
     color: var(--header-icon-color);
     padding: 0.9375rem 2.5rem;
 }
 
 .itemsContainer {
     max-height: 45vh;
+    height: 100%;
     padding: 0.5rem;
     overflow: auto;
 }

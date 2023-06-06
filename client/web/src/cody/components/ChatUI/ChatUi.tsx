@@ -176,7 +176,7 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = ({
     return (
         <>
             <ContextScope />
-            <div style={{ height: 12 }} />
+            <div style={{ height: 5 }} />
             <TextArea
                 ref={textAreaRef}
                 className={className}

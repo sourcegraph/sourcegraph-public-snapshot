@@ -19,7 +19,7 @@ export type ContextType = typeof SELECTED[keyof typeof SELECTED]
 interface ContextScopeProps {}
 
 export const ContextScope: React.FC<ContextScopeProps> = ({}) => {
-    const [selectedItem, setSelectedItem] = useState<ContextType>(SELECTED.NONE)
+    const [selectedItem, setSelectedItem] = useState<ContextType>(SELECTED.REPOSITORIES)
 
     const handleItemSelected = (itemIndex: ContextType) => {
         setSelectedItem(itemIndex)
@@ -34,12 +34,12 @@ export const ContextScope: React.FC<ContextScopeProps> = ({}) => {
 
     return (
         <div className={styles.wrapper}>
-            <ChatStatusIndicator status={chatStatus} />
+            {/* <ChatStatusIndicator status={chatStatus} /> */}
             {/* <ContextSeparator />
             <div className={styles.title}>Context</div> */}
-            <ContextSeparator />
-            <ContextScopePicker onSelect={handleItemSelected} selected={selectedItem} />
-            <ContextSeparator />
+            {/* <ContextSeparator /> */}
+            {/* <ContextScopePicker onSelect={handleItemSelected} selected={selectedItem} /> */}
+            {/* <ContextSeparator /> */}
             <div
                 className="d-flex"
                 style={{
@@ -61,10 +61,10 @@ const ItemRepos: React.FC = () => {
 
     return (
         <ContextPopover
-            header="Add repositories to the scope"
+            header="Add repositories to the chat context"
             icon={mdiGithub}
-            emptyMessage="Start by adding repositories to the scope."
-            inputPlaceholder="Search for a repository..."
+            emptyMessage="Add up to 10 repositories for Cody to reference when providing answers."
+            inputPlaceholder="Add repositories…"
             items={mockedRepoNames}
             contextType={SELECTED.REPOSITORIES}
             itemType="repositories"
