@@ -15,17 +15,20 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 ### Fixed
 
 - Cody Inline Assist: Decorations for `/fix` on light theme [pull/52796](https://github.com/sourcegraph/sourcegraph/pull/52796)
-- Cody Inline Assist: Fixs cody processing indefinitely isse [pull/52796](https://github.com/sourcegraph/sourcegraph/pull/52796)
+- Cody Inline Assist: Fixes cody processing indefinitely issue [pull/52796](https://github.com/sourcegraph/sourcegraph/pull/52796)
 - Cody Inline Assist: Use more than 1 context file for `/touch` [pull/52796](https://github.com/sourcegraph/sourcegraph/pull/52796)
+- Cody completions: Various fixes for completion analytics. [pull/52935](https://github.com/sourcegraph/sourcegraph/pull/52935)
 
 ### Changed
+
+- Cody completions: Improved the number of completions presented and reduced the latency [pull/52935](https://github.com/sourcegraph/sourcegraph/pull/52935)
 
 ## [0.2.1]
 
 ### Fixed
 
 - Escape Windows path separator in fast file finder path pattern [pull/52754](https://github.com/sourcegraph/sourcegraph/pull/52754)
-- Only display errors from the embeddings clients for users connnected to an indexed codebase [pull/52780](https://github.com/sourcegraph/sourcegraph/pull/52780)
+- Only display errors from the embeddings clients for users connected to an indexed codebase [pull/52780](https://github.com/sourcegraph/sourcegraph/pull/52780)
 
 ### Changed
 

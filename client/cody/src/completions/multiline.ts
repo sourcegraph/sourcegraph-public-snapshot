@@ -47,9 +47,7 @@ export function truncateMultilineCompletion(
 
     // Normalize responses that start with a newline followed by the exact indentation of
     // the first line.
-    console.log(lines)
     if (lines.length > 1 && lines[0] === '' && indentation(lines[1]) === startIndent) {
-        console.log('WHAT')
         lines.shift()
         lines[0] = lines[0].trimStart()
     }
