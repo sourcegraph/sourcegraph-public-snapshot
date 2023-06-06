@@ -195,12 +195,14 @@ referenced_definitions AS (
 	GROUP BY s.definition_id
 ),
 ins AS (
-	INSERT INTO codeintel_ranking_path_counts_inputs (definition_id, count, graph_key)
+	INSERT INTO codeintel_ranking_path_counts_inputs AS target (graph_key, definition_id, count, processed)
 	SELECT
+		%s,
 		rx.definition_id,
 		rx.count,
-		%s
+		false
 	FROM referenced_definitions rx
+	ON CONFLICT (graph_key, definition_id) WHERE NOT processed DO UPDATE SET count = target.count + EXCLUDED.count
 	RETURNING 1
 ),
 set_progress AS (
@@ -336,11 +338,12 @@ expanded_unprocessed_path_counts AS (
 	FROM unprocessed_path_counts upc
 ),
 ins AS (
-	INSERT INTO codeintel_ranking_path_counts_inputs (definition_id, count, graph_key)
+	INSERT INTO codeintel_ranking_path_counts_inputs (graph_key, definition_id, count, processed)
 	SELECT
+		%s,
 		rd.id,
 		0,
-		%s
+		false
 	FROM locked_path_counts lpc
 	JOIN expanded_unprocessed_path_counts eupc ON eupc.id = lpc.codeintel_initial_path_ranks_id
 	JOIN codeintel_ranking_definitions rd ON
@@ -349,6 +352,7 @@ ins AS (
 	WHERE
 		rd.graph_key = %s AND
 		rd.symbol_name = '$'
+	ON CONFLICT DO NOTHING
 	RETURNING 1
 ),
 set_progress AS (
