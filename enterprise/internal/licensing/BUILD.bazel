@@ -52,6 +52,7 @@ go_test(
         "//enterprise/internal/license",
         "//internal/redispool",
         "@com_github_gomodule_redigo//redis",
+        "//internal/database",
         "@com_github_google_go_cmp//cmp",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
