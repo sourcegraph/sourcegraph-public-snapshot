@@ -36,9 +36,9 @@ func EmbedRepo(
 	var toRemove []string
 	var err error
 
-	isDelta := opts.IndexedRevision != ""
+	isIncremental := opts.IndexedRevision != ""
 
-	if isDelta {
+	if isIncremental {
 		toIndex, toRemove, err = readLister.Diff(ctx, opts.IndexedRevision)
 		if err != nil {
 			logger.Error(
@@ -49,11 +49,11 @@ func EmbedRepo(
 				log.Error(err),
 			)
 			toRemove = nil
-			isDelta = false
+			isIncremental = false
 		}
 	}
 
-	if !isDelta { // full index
+	if !isIncremental { // full index
 		toIndex, err = readLister.List(ctx)
 		if err != nil {
 			return nil, nil, nil, err
@@ -92,7 +92,7 @@ func EmbedRepo(
 		HasRanks:       len(ranks.Paths) > 0,
 		CodeIndexStats: codeIndexStats,
 		TextIndexStats: textIndexStats,
-		IsDelta:        isDelta,
+		IsIncremental:  isIncremental,
 	}
 
 	return index, toRemove, stats, nil

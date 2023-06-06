@@ -34,6 +34,7 @@ go_library(
         "//internal/goroutine",
         "//internal/httpcli",
         "//internal/observation",
+        "//internal/types",
         "//internal/uploadstore",
         "//internal/workerutil",
         "//internal/workerutil/dbworker",

@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -64,18 +65,9 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 	// job for this repo. If we can find one, we'll attempt a delta index, otherwise
 	// we fall back to a full index.
 	var lastSuccessfulJobRevision api.CommitID
+	var previousEmbeddingsIndex *embeddings.RepoEmbeddingIndex
 	if conf.Get().Embeddings.Incremental {
-		lastSuccessfulJob, err := h.repoEmbeddingJobsStore.GetLastCompletedRepoEmbeddingJob(ctx, record.RepoID)
-		if err != nil {
-			logger.Info("no previous successful embeddings job found. Falling back to full index")
-		} else {
-			lastSuccessfulJobRevision = lastSuccessfulJob.Revision
-			logger.Info(
-				"found previous successful embeddings job. Attempting delta index",
-				log.String("old revision", string(lastSuccessfulJobRevision)),
-				log.String("new revision", string(record.Revision)),
-			)
-		}
+		lastSuccessfulJobRevision, previousEmbeddingsIndex = h.getPreviousEmbeddingIndex(ctx, logger, repo)
 	}
 
 	embeddingsClient := embed.NewEmbeddingsClient()
@@ -124,11 +116,36 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *repoemb
 		log.Object("stats", stats.ToFields()...),
 	)
 
-	if stats.IsDelta {
-		return embeddings.UpdateRepoEmbeddingIndex(ctx, h.uploadStore, string(embeddings.GetRepoEmbeddingIndexName(repo.Name)), repoEmbeddingIndex, toRemove, ranks)
+	indexName := string(embeddings.GetRepoEmbeddingIndexName(repo.Name))
+	if stats.IsIncremental {
+		return embeddings.UpdateRepoEmbeddingIndex(ctx, h.uploadStore, indexName, previousEmbeddingsIndex, repoEmbeddingIndex, toRemove, ranks)
 	} else {
-		return embeddings.UploadRepoEmbeddingIndex(ctx, h.uploadStore, string(embeddings.GetRepoEmbeddingIndexName(repo.Name)), repoEmbeddingIndex)
+		return embeddings.UploadRepoEmbeddingIndex(ctx, h.uploadStore, indexName, repoEmbeddingIndex)
 	}
+}
+
+// getPreviousEmbeddingIndex checks the last successfully indexed revision and returns its embeddings index. If there
+// is no previous revision, or if there's a problem downloading the index, then it returns a nil index. This means we
+// need to do a full (non-incremental) reindex.
+func (h *handler) getPreviousEmbeddingIndex(ctx context.Context, logger log.Logger, repo *types.Repo) (api.CommitID, *embeddings.RepoEmbeddingIndex) {
+	lastSuccessfulJob, err := h.repoEmbeddingJobsStore.GetLastCompletedRepoEmbeddingJob(ctx, repo.ID)
+	if err != nil {
+		logger.Info("No previous successful embeddings job found. Falling back to full index")
+		return "", nil
+	}
+
+	indexName := string(embeddings.GetRepoEmbeddingIndexName(repo.Name))
+	index, err := embeddings.DownloadRepoEmbeddingIndex(ctx, h.uploadStore, indexName)
+	if err != nil {
+		logger.Error("Error downloading previous embeddings index. Falling back to full index")
+		return "", nil
+	}
+
+	logger.Info(
+		"found previous successful embeddings job. Attempting delta index",
+		log.String("old revision", string(lastSuccessfulJob.Revision)),
+	)
+	return lastSuccessfulJob.Revision, index
 }
 
 func defaultTo(input, def int) int {

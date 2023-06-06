@@ -63,33 +63,28 @@ func UpdateRepoEmbeddingIndex(
 	ctx context.Context,
 	uploadStore uploadstore.Store,
 	key string,
-	index *RepoEmbeddingIndex,
+	previous *RepoEmbeddingIndex,
+	new *RepoEmbeddingIndex,
 	toRemove []string,
 	ranks types.RepoPathRanks,
 ) error {
-	// download existing index
-	rei, err := DownloadRepoEmbeddingIndex(ctx, uploadStore, key)
-	if err != nil {
-		return err
-	}
-
 	// update revision
-	rei.Revision = index.Revision
+	previous.Revision = new.Revision
 
 	// filter based on toRemove
 	toRemoveSet := make(map[string]struct{}, len(toRemove))
 	for _, s := range toRemove {
 		toRemoveSet[s] = struct{}{}
 	}
-	rei.CodeIndex.filter(toRemoveSet, ranks)
-	rei.TextIndex.filter(toRemoveSet, ranks)
+	previous.CodeIndex.filter(toRemoveSet, ranks)
+	previous.TextIndex.filter(toRemoveSet, ranks)
 
 	// append new data
-	rei.CodeIndex.append(index.CodeIndex)
-	rei.TextIndex.append(index.TextIndex)
+	previous.CodeIndex.append(new.CodeIndex)
+	previous.TextIndex.append(new.TextIndex)
 
 	// re-upload
-	return UploadRepoEmbeddingIndex(ctx, uploadStore, key, rei)
+	return UploadRepoEmbeddingIndex(ctx, uploadStore, key, previous)
 }
 
 func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store, key string) (*RepoEmbeddingIndex, error) {
