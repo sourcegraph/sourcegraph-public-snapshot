@@ -88,15 +88,26 @@ interface OwnerListProps {
     data?: OwnershipConnectionFields
     isDirectory?: boolean
     makeOwnerButton?: (userId: string | undefined) => JSX.Element
+    makeOwnerError?: Error
 }
 
-export const OwnerList: React.FunctionComponent<OwnerListProps> = ({ data, isDirectory = false, makeOwnerButton }) => {
+export const OwnerList: React.FunctionComponent<OwnerListProps> = ({
+    data,
+    isDirectory = false,
+    makeOwnerButton,
+    makeOwnerError,
+}) => {
     if (data?.nodes && data.nodes.length) {
         const nodes = data.nodes
         const totalCount = data.totalOwners
         return (
             <div className={styles.contents}>
                 <OwnExplanation owners={nodes.map(ownership => ownership.owner)} />
+                {makeOwnerError && (
+                    <div className={styles.contents}>
+                        <ErrorAlert error={makeOwnerError} prefix="Error promoting an owner" className="mt-2" />
+                    </div>
+                )}
                 <table className={styles.table}>
                     <thead>
                         <tr className="sr-only">
