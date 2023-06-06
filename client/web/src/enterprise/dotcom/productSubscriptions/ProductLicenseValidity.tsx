@@ -50,7 +50,7 @@ export const ProductLicenseValidity: React.FunctionComponent<
                 svgPath={getIcon(isExpired, isRevoked)}
                 aria-hidden={true}
                 className={classNames('mr-1', {
-                    ['text-success']: !isExpired,
+                    ['text-success']: !isExpired && !isRevoked,
                     ['text-danger']: isExpired || isRevoked,
                 })}
             />
