@@ -28,8 +28,9 @@ func TestActor_Limiter_Concurrency(t *testing.T) {
 			actor: &Actor{
 				RateLimits: map[codygateway.Feature]RateLimit{
 					codygateway.FeatureChatCompletions: {
-						Limit:    100,
-						Interval: 24 * time.Hour,
+						Limit:         100,
+						Interval:      24 * time.Hour,
+						AllowedModels: []string{"model"},
 					},
 				},
 			},
@@ -40,8 +41,9 @@ func TestActor_Limiter_Concurrency(t *testing.T) {
 			actor: &Actor{
 				RateLimits: map[codygateway.Feature]RateLimit{
 					codygateway.FeatureChatCompletions: {
-						Limit:    210,
-						Interval: 7 * 24 * time.Hour,
+						Limit:         210,
+						Interval:      7 * 24 * time.Hour,
+						AllowedModels: []string{"model"},
 					},
 				},
 			},
@@ -52,8 +54,9 @@ func TestActor_Limiter_Concurrency(t *testing.T) {
 			actor: &Actor{
 				RateLimits: map[codygateway.Feature]RateLimit{
 					codygateway.FeatureChatCompletions: {
-						Limit:    10,
-						Interval: time.Hour,
+						Limit:         10,
+						Interval:      time.Hour,
+						AllowedModels: []string{"model"},
 					},
 				},
 			},
@@ -64,8 +67,9 @@ func TestActor_Limiter_Concurrency(t *testing.T) {
 			actor: &Actor{
 				RateLimits: map[codygateway.Feature]RateLimit{
 					codygateway.FeatureChatCompletions: {
-						Limit:    3,
-						Interval: 24 * time.Hour,
+						Limit:         3,
+						Interval:      24 * time.Hour,
+						AllowedModels: []string{"model"},
 					},
 				},
 			},
