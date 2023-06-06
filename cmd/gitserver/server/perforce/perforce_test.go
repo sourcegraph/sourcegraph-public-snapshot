@@ -1,6 +1,7 @@
 package perforce
 
 import (
+	"container/list"
 	"context"
 	"database/sql"
 	"fmt"
@@ -12,10 +13,12 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/stretchr/testify/require"
 )
 
@@ -175,5 +178,37 @@ func TestParseGitLogLine(t *testing.T) {
 
 		require.Error(t, err)
 		require.Nil(t, got)
+	})
+}
+
+func TestServicePipeline(t *testing.T) {
+	db := &database.MockDB{}
+	ctx := context.Background()
+	svc := NewService(ctx, logtest.NoOp(t), db, list.New())
+
+	t.Cleanup(func() { ctx.Done() })
+
+	t.Run("feature flag disabled", func(t *testing.T) {
+		conf.Mock(nil)
+
+		svc.EnqueueChangelistMappingJob(&ChangelistMappingJob{})
+
+		s, _ := svc.(*service)
+		require.True(t, s.changelistMappingQueue.Empty())
+	})
+
+	t.Run("feature flag enabled", func(t *testing.T) {
+		conf.Mock(&conf.Unified{
+			SiteConfiguration: schema.SiteConfiguration{
+				ExperimentalFeatures: &schema.ExperimentalFeatures{
+					PerforceChangelistMapping: "enabled",
+				},
+			},
+		})
+
+		svc.EnqueueChangelistMappingJob(&ChangelistMappingJob{})
+
+		s, _ := svc.(*service)
+		require.False(t, s.changelistMappingQueue.Empty())
 	})
 }
