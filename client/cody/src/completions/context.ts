@@ -94,7 +94,6 @@ async function getRelevantFiles(currentEditor: vscode.TextEditor, history: Histo
 
     await Promise.all(
         history.lastN(10, curLang, [currentEditor.document.uri, ...files.map(f => f.uri)]).map(async item => {
-            console.log({ historyItem: item })
             try {
                 const document = await vscode.workspace.openTextDocument(item.document.uri)
                 addDocument(document)

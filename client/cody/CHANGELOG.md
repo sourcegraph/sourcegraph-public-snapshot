@@ -22,6 +22,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 ### Changed
 
 - Cody completions: Improved the number of completions presented and reduced the latency [pull/52935](https://github.com/sourcegraph/sourcegraph/pull/52935)
+- Cody completions: Various improvements to the context [pull/53043](https://github.com/sourcegraph/sourcegraph/pull/53043)
 
 ## [0.2.1]
 

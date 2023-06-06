@@ -341,7 +341,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             WINDOW_SIZE,
             contextChars
         )
-        console.log({ similarCode })
 
         const completer = new ManualCompletionProvider(
             this.completionsClient,
