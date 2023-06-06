@@ -226,7 +226,9 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                 <MenuItem
                                     as={Button}
                                     disabled={!repoClonedAndHealthy(node)}
-                                    onSelect={() => navigate(`/site-admin/embeddings?query=${node.name}`)}
+                                    onSelect={() =>
+                                        navigate(`/site-admin/embeddings?query=${encodeURIComponent(node.name)}`)
+                                    }
                                     className="p-2"
                                 >
                                     <Icon aria-hidden={true} svgPath={mdiVectorPolyline} className="mr-1" />
