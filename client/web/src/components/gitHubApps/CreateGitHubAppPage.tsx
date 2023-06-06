@@ -5,12 +5,20 @@ import { Link } from 'react-router-dom'
 
 import { Alert, Container, Button, Input, Label, Text, PageHeader, ButtonLink } from '@sourcegraph/wildcard'
 
+import { GitHubAppDomain } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { PageTitle } from '../PageTitle'
 
-interface stateResponse {
+interface StateResponse {
     state: string
-    webhookUUID: string
+    webhookUUID?: string
+    appID?: string
+}
+
+interface FormOptions {
+    state: string
+    name: string
+    webhookURL?: string
 }
 
 export interface CreateGitHubAppPageProps {
@@ -51,13 +59,11 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
 
     const originURL = window.location.origin
     const getManifest = useCallback(
-        (name: string, webhookURL: string): string =>
+        (name: string, webhookURL?: string): string =>
             JSON.stringify({
                 name: name.trim(),
                 url: originURL,
-                hook_attributes: {
-                    url: webhookURL,
-                },
+                hook_attributes: webhookURL ? { url: webhookURL } : undefined,
                 redirect_url: new URL('/.auth/githubapp/redirect', originURL).href,
                 setup_url: new URL('/.auth/githubapp/setup', originURL).href,
                 callback_urls: [new URL('/.auth/github/callback', originURL).href],
@@ -85,7 +91,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
     )
 
     const submitForm = useCallback(
-        (state: string, webhookURL: string, name: string) => {
+        ({ state, webhookURL, name }: FormOptions) => {
             if (state && ref.current && formInput.current) {
                 const actionUrl = createActionUrl(state)
                 ref.current.action = actionUrl
@@ -102,9 +108,12 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
             const response = await fetch(
                 `/.auth/githubapp/new-app-state?appName=${name}&webhookURN=${url}&domain=${appDomain}`
             )
-            const state: stateResponse = await response.json()
-            const webhookURL = new URL(`/.api/webhooks/${state.webhookUUID}`, originURL).href
-            submitForm(state.state, webhookURL, name)
+            const state: StateResponse = await response.json()
+            let webhookURL: string | undefined
+            if (state.webhookUUID?.length) {
+                webhookURL = new URL(`/.api/webhooks/${state.webhookUUID}`, originURL).href
+            }
+            submitForm({ state: state.state, webhookURL, name })
         } catch (error_) {
             if (error_ instanceof Error) {
                 setError(error_.message)
