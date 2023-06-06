@@ -39,12 +39,11 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
 }) => {
     const ref = useRef<HTMLFormElement>(null)
     const formInput = useRef<HTMLInputElement>(null)
-    const [name, setName] = useState<string>('')
-    const [url, setUrl] = useState<string>('')
     const [name, setName] = useState<string>(defaultAppName)
+    const [nameError, setNameError] = useState<string>()
     const [url, setUrl] = useState<string>(baseURL || 'https://github.com')
     const [org, setOrg] = useState<string>('')
-    const [error, setError] = useState<any>(null)
+    const [error, setError] = useState<string>()
 
     useEffect(() => eventLogger.logPageView('SiteAdminCreateGiHubApp'), [])
 
@@ -77,7 +76,8 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
             }
 
             const trimmedUrl = url.trim()
-            const baseUrl = trimmedUrl.endsWith('/') ? trimmedUrl : `${trimmedUrl}/`
+            const originURL = trimmedUrl.endsWith('/') ? trimmedUrl : `${trimmedUrl}/`
+            return new URL(`${prefix}?state=${state}`, originURL).href
         },
         [org, url]
     )
@@ -95,7 +95,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
     )
 
     const createState = useCallback(async () => {
-        setError(null)
+        setError(undefined)
         try {
             const response = await fetch(
                 `/.auth/githubapp/new-app-state?appName=${name}&webhookURN=${url}&domain=repos`
@@ -103,17 +103,29 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
             const state: stateResponse = await response.json()
             const webhookURL = new URL(`/.api/webhooks/${state.webhookUUID}`, originURL).href
             submitForm(state.state, webhookURL, name)
-        } catch (_error) {
-            setError(_error)
+        } catch (error_) {
+            if (error_ instanceof Error) {
+                setError(error_.message)
+            } else {
+                // eslint-disable-next-line no-console
+                console.error(error_)
+                setError('Unknown error occurred.')
+            }
         }
-
-    const handleNameChange = useCallback(
-        (event: React.ChangeEvent<HTMLInputElement>) => {
-            setName(event.target.value)
-        },
-        [setName]
-    )
     }, [submitForm, name, url, originURL])
+
+    const handleNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+        setName(event.target.value)
+        const trimmedValue = event.target.value.trim()
+        if (trimmedValue.length < 3) {
+            setNameError('Name must be 3 characters or more.')
+        } else if (trimmedValue.length > 34) {
+            // A requirement from GitHub's side
+            setNameError('Name must be 34 characters or less.')
+        } else {
+            setNameError(undefined)
+        }
+    }, [])
 
     const handleUrlChange = useCallback(
         (event: React.ChangeEvent<HTMLInputElement>) => setUrl(event.target.value.trim()),
@@ -146,7 +158,6 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                     it access to. Once installed on {baseURL || 'GitHub'}, you'll be redirected back here to finish
                     connecting it to Sourcegraph.
                 </Text>
-                <Text>Once completing install in GitHub, you'll be redirected back here.</Text>
 
                 <Label className="w-100">
                     <Text alignment="left" className="mb-2">
@@ -156,6 +167,8 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                         type="text"
                         onChange={handleNameChange}
                         value={name}
+                        error={nameError}
+                        status={nameError ? 'error' : undefined}
                         placeholder="Sourcegraph"
                         message="The display name of your GitHub App. It must be unique across the GitHub instance."
                     />
@@ -199,11 +212,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                     />
                 </Label>
                 <div className="mt-3">
-                    <Button
-                        variant="primary"
-                        onClick={createState}
-                        disabled={name.trim().length < 3 || url.trim().length < 10}
-                    >
+                    <Button variant="primary" onClick={createState}>
                         Create Github App
                     </Button>
                     <ButtonLink className="ml-3" to="/site-admin/github-apps" variant="secondary">
