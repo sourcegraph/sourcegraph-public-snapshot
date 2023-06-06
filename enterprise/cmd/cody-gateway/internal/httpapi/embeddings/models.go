@@ -11,6 +11,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway"
 )
 
+type ModelName string
+
+const (
+	ModelNameOpenAIAda ModelName = "openai/text-embedding-ada-002"
+)
+
 type EmbeddingsClient interface {
 	GenerateEmbeddings(context.Context, codygateway.EmbeddingsRequest) (_ *codygateway.EmbeddingsResponse, consumedTokens int, _ error)
 }
@@ -19,44 +25,29 @@ type ModelFactory interface {
 	ForModel(model string) (_ EmbeddingsClient, ok bool)
 }
 
-type ModelFactoryMap map[string]EmbeddingsClient
+type ModelFactoryMap map[ModelName]EmbeddingsClient
 
 func (mf ModelFactoryMap) ForModel(model string) (EmbeddingsClient, bool) {
-	c, ok := mf[model]
+	c, ok := mf[ModelName(model)]
 	return c, ok
-}
-
-// var Models = map[string]EmbeddingsClient{
-// 	"openai/text-embedding-ada-002": nil,
-// }
-
-type openAIModel struct {
-	upstreamName string
-	dimensions   int
-}
-
-var openAIModelMappings = map[string]openAIModel{
-	"openai/text-embedding-ada-002": {
-		upstreamName: "text-embedding-ada-002",
-		dimensions:   1536,
-	},
 }
 
 func NewListHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		act := actor.FromContext(r.Context())
 
-		modelEnabled := func(model string) bool {
+		modelEnabled := func(model ModelName) bool {
 			if !act.AccessEnabled || !act.EmbeddingsRateLimit.IsValid() {
 				return false
 			}
-			return slices.Contains(act.EmbeddingsRateLimit.AllowedModels, model)
+			return slices.Contains(act.EmbeddingsRateLimit.AllowedModels, string(model))
 		}
 
 		models := modelsResponse{
+			// Just a hardcoded list for now.
 			{
-				Enabled:    modelEnabled("openai/text-embedding-ada-002"),
-				Name:       "openai/text-embedding-ada-002",
+				Enabled:    modelEnabled(ModelNameOpenAIAda),
+				Name:       string(ModelNameOpenAIAda),
 				Dimensions: 1536,
 				Deprecated: false,
 			},

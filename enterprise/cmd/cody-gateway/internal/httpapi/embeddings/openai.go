@@ -116,3 +116,15 @@ type openaiEmbeddingsResponse struct {
 	Usage openaiEmbeddingsUsage  `json:"usage"`
 	Data  []openaiEmbeddingsData `json:"data"`
 }
+
+type openAIModel struct {
+	upstreamName string
+	dimensions   int
+}
+
+var openAIModelMappings = map[string]openAIModel{
+	string(ModelNameOpenAIAda): {
+		upstreamName: "text-embedding-ada-002",
+		dimensions:   1536,
+	},
+}

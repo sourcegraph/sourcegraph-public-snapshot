@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/embeddings"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/completions/types"
 )
 
@@ -43,7 +44,7 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 			},
 		},
 		EmbeddingsRateLimit: actor.RateLimit{
-			AllowedModels: []string{"openai/text-embedding-ada-002"},
+			AllowedModels: []string{string(embeddings.ModelNameOpenAIAda)},
 			Limit:         100_000,
 			Interval:      24 * time.Hour,
 		},
