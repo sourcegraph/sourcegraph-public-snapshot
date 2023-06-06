@@ -166,8 +166,8 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                 <Text>
                     Provide the details for a new GitHub App with the form below. Once you click "Create GitHub App",
                     you will be routed to {baseURL || 'GitHub'} to create the App and choose which repositories to grant
-                    it access to. Once installed on {baseURL || 'GitHub'}, you'll be redirected back here to finish
-                    connecting it to Sourcegraph.
+                    it access to. Once created on {baseURL || 'GitHub'}, you'll be redirected back here to finish
+                    installing it on Sourcegraph.
                 </Text>
 
                 <Label className="w-100">
