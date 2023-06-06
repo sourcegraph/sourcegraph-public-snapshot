@@ -71,6 +71,7 @@ type DB interface {
 	EventLogsScrapeState() EventLogsScrapeStateStore
 	RecentViewSignal() RecentViewSignalStore
 	AssignedOwners() AssignedOwnersStore
+	AssignedTeams() AssignedTeamsStore
 	OwnSignalConfigurations() SignalConfigurationStore
 
 	WithTransact(context.Context, func(tx DB) error) error
@@ -328,6 +329,10 @@ func (d *db) RecentViewSignal() RecentViewSignalStore {
 
 func (d *db) AssignedOwners() AssignedOwnersStore {
 	return AssignedOwnersStoreWith(d.Store, d.logger)
+}
+
+func (d *db) AssignedTeams() AssignedTeamsStore {
+	return AssignedTeamsStoreWith(d.Store, d.logger)
 }
 
 func (d *db) OwnSignalConfigurations() SignalConfigurationStore {

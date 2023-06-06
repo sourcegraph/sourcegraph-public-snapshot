@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Path to the schema_descriptions tool
 generate_bin="$1"

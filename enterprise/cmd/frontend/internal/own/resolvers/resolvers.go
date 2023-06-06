@@ -221,6 +221,13 @@ func (r *ownResolver) GitTreeOwnership(
 	}
 	ownerships = append(ownerships, viewerResolvers...)
 
+	// Retrieve assigned owners.
+	assignedOwners, err := r.computeAssignedOwners(ctx, r.logger, r.db, tree, repoID)
+	if err != nil {
+		return nil, err
+	}
+	ownerships = append(ownerships, assignedOwners...)
+
 	return r.ownershipConnection(args, ownerships)
 }
 

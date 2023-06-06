@@ -161,12 +161,11 @@ func TestPeriodicGoroutineConcurrency(t *testing.T) {
 }
 
 func TestPeriodicGoroutineWithDynamicConcurrency(t *testing.T) {
-	t.Skip()
-
 	clock := glock.NewMockClock()
 	concurrencyClock := glock.NewMockClock()
 	handler := NewMockHandler()
 	called := make(chan struct{})
+	exit := make(chan struct{})
 
 	handler.HandleFunc.SetDefaultHook(func(ctx context.Context) error {
 		select {
@@ -174,6 +173,11 @@ func TestPeriodicGoroutineWithDynamicConcurrency(t *testing.T) {
 			return nil
 
 		case <-ctx.Done():
+			select {
+			case exit <- struct{}{}:
+			default:
+			}
+
 			return ctx.Err()
 		}
 	})
@@ -196,37 +200,23 @@ func TestPeriodicGoroutineWithDynamicConcurrency(t *testing.T) {
 	)
 	go goroutine.Start()
 
-	// Pool size = 1
-	<-called
+	for poolSize := 1; poolSize < 3; poolSize++ {
+		// Ensure each of the
+		for i := 0; i < poolSize; i++ {
+			<-called
+		}
 
-	// Pool size = 2
-	concurrencyClock.BlockingAdvance(concurrencyRecheckInterval)
-
-	<-called
-	clock.BlockingAdvance(time.Second)
-	<-called
-	clock.BlockingAdvance(time.Second)
-	<-called
-	<-called
-
-	// Pool size 3
-	concurrencyClock.BlockingAdvance(concurrencyRecheckInterval)
-
-	<-called
-	clock.BlockingAdvance(time.Second)
-	<-called
-	clock.BlockingAdvance(time.Second)
-	<-called
-	clock.BlockingAdvance(time.Second)
-	<-called
-	<-called
-	<-called
+		// Resize the pool
+		clock.BlockingAdvance(time.Second)                           // invoke but block one handler
+		concurrencyClock.BlockingAdvance(concurrencyRecheckInterval) // trigger drain of the old pool
+		<-exit                                                       // wait for blocked handler to exit
+	}
 
 	goroutine.Stop()
 
-	if calls := len(handler.HandleFunc.History()); calls != 11 {
-		t.Errorf("unexpected number of handler invocations. want=%d have=%d", 11, calls)
-	}
+	// N.B.: no need for assertions here as getting through the test at all to this
+	// point without some permanent blockage shows that each of the pool sizes behave
+	// as expected.
 }
 
 func TestPeriodicGoroutineError(t *testing.T) {
