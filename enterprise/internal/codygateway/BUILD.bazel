@@ -2,7 +2,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "codygateway",
-    srcs = ["consts.go"],
+    srcs = [
+        "consts.go",
+        "types.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codygateway",
     visibility = ["//enterprise:__subpackages__"],
 )
