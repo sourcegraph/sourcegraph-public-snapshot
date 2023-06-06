@@ -3485,6 +3485,10 @@ The configuration for a GitHubApp created for Batch Changes commit signing.
 """
 type GitHubAppConfiguration {
     """
+    A globally unique identifier.
+    """
+    id: ID!
+    """
     The ID of the GitHub App.
     """
     appID: Int!

@@ -90,6 +90,7 @@ const CODE_HOST_FIELDS_FRAGMENT = gql`
         }
         commitSigningConfiguration {
             ... on GitHubAppConfiguration {
+                id
                 appID
                 name
                 appURL
