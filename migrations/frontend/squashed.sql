@@ -1932,7 +1932,11 @@ CREATE TABLE codeintel_ranking_progress (
     num_path_records_processed integer,
     num_reference_records_processed integer,
     num_count_records_processed integer,
-    max_export_id bigint NOT NULL
+    max_export_id bigint NOT NULL,
+    reference_cursor_export_deleted_at timestamp with time zone,
+    reference_cursor_export_id integer,
+    path_cursor_deleted_export_at timestamp with time zone,
+    path_cursor_export_id integer
 );
 
 CREATE SEQUENCE codeintel_ranking_progress_id_seq
