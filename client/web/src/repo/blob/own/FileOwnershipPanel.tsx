@@ -36,7 +36,7 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
             currentPath: filePath,
         },
     })
-    const [makeOwnerError, setMakeOwnerError] = React.useState<Error | null>(null)
+    const [makeOwnerError, setMakeOwnerError] = useState<Error | null>(null)
     const [ownPromotionEnabled] = useFeatureFlag('own-promote')
 
     if (loading) {
