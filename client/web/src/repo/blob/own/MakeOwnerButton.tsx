@@ -24,7 +24,7 @@ export const MakeOwnerButton: React.FC<MakeOwnerButtonProps> = ({ onSuccess, onE
 
     const [requestAssignOwner, { loading }] = useMutation<AssignOwnerResult, AssignOwnerVariables>(ASSIGN_OWNER, {})
 
-    const assignOwner = async () => {
+    const assignOwner: () => Promise<void> = async () => {
         if (userId !== undefined) {
             await requestAssignOwner({
                 variables: {
@@ -34,8 +34,8 @@ export const MakeOwnerButton: React.FC<MakeOwnerButtonProps> = ({ onSuccess, onE
                         repoID: repoId,
                     },
                 },
-                onCompleted: () => {
-                    onSuccess()
+                onCompleted: async () => {
+                    await onSuccess()
                 },
                 onError: (errors: ErrorLike) => {
                     onError(asError(errors))
