@@ -25,7 +25,7 @@ func NewEmbeddingsClient(siteConfig *schema.SiteConfiguration) (client.Embedding
 	}
 
 	switch c.Provider {
-	case "sourcegraph":
+	case "sourcegraph", "":
 		return sourcegraph.NewClient(siteConfig), nil
 	case "openai":
 		return openai.NewClient(c), nil
