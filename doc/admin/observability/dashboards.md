@@ -30152,3 +30152,45 @@ Query: `sum by(app) (up{app=~".*embeddings"}) / count by (app) (up{app=~".*embed
 
 <br />
 
+### Embeddings: Cache
+
+#### embeddings: hit_ratio
+
+<p class="subtitle">Hit ratio of the embeddings cache</p>
+
+A low hit rate indicates your cache is not well utilized. Consider increasing the cache size.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/embeddings/embeddings?viewPanel=100600` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `rate(src_embeddings_cache_hit_count[30m]) / (rate(src_embeddings_cache_hit_count[30m]) + rate(src_embeddings_cache_miss_count[30m]))`
+
+</details>
+
+<br />
+
+#### embeddings: evicted_bytes
+
+<p class="subtitle">Bytes evicted from the embeddings cache</p>
+
+A high eviction rate indicates that large numbers of embeddings are being removed from the cache, and will have to subsequently be re-fetched on a new query. Consider increasing the cache size.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/embeddings/embeddings?viewPanel=100601` on your Sourcegraph instance.
+
+
+<details>
+<summary>Technical details</summary>
+
+Query: `rate(src_embeddings_cache_evicted_bytes[10m])`
+
+</details>
+
+<br />
+
