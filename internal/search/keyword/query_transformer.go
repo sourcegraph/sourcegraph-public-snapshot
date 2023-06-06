@@ -3,7 +3,6 @@ package keyword
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
@@ -24,8 +23,6 @@ func concatNodeToPatterns(concat query.Operator) []string {
 	}
 	return patterns
 }
-
-var keywordRegex = lazyregexp.New(`[a-zA-Z0-9]+`)
 
 func nodeToPatternsAndParameters(rootNode query.Node) ([]string, []query.Parameter) {
 	operator, ok := rootNode.(query.Operator)
@@ -52,7 +49,7 @@ func nodeToPatternsAndParameters(rootNode query.Node) ([]string, []query.Paramet
 			case query.Parameter:
 				if op.Field == query.FieldContent {
 					// Split any content field into a set of patterns ignoring any punctuation and special characters
-					patterns = append(patterns, keywordRegex.FindAllString(op.Value, 16)...)
+					patterns = append(patterns, strings.Fields(op.Value)...)
 				} else if op.Field != query.FieldCount && op.Field != query.FieldCase && op.Field != query.FieldType {
 					parameters = append(parameters, op)
 				}
