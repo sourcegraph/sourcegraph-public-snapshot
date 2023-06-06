@@ -140,6 +140,7 @@ func (a *Actor) Limiter(
 			RateLimit: limit,
 			Actor:     a,
 		},
+		nowFunc: time.Now,
 	}
 	return concurrencyLimiter, true
 }
@@ -151,9 +152,7 @@ type concurrencyLimiter struct {
 	redis          limiter.RedisStore
 	rateLimit      RateLimit
 	featureLimiter limiter.Limiter
-
-	// Optional stub for current time. Used for testing.
-	nowFunc func() time.Time
+	nowFunc        func() time.Time
 }
 
 func (l *concurrencyLimiter) TryAcquire(ctx context.Context) (func() error, error) {
@@ -164,6 +163,7 @@ func (l *concurrencyLimiter) TryAcquire(ctx context.Context) (func() error, erro
 		Interval:   l.rateLimit.Interval,
 		// Only update rate limit TTL if the actor has been updated recently.
 		UpdateRateLimitTTL: l.actor.LastUpdated != nil && l.nowFunc().Sub(*l.actor.LastUpdated) < 5*time.Minute,
+		NowFunc:            l.nowFunc,
 	}).TryAcquire(ctx)
 	if err != nil {
 		if errors.As(err, &limiter.NoAccessError{}) || errors.As(err, &limiter.RateLimitExceededError{}) {
@@ -223,6 +223,7 @@ func (u updateOnFailureLimiter) TryAcquire(ctx context.Context) (func() error, e
 		Interval:   u.RateLimit.Interval,
 		// Only update rate limit TTL if the actor has been updated recently.
 		UpdateRateLimitTTL: u.LastUpdated != nil && time.Since(*u.LastUpdated) < 5*time.Minute,
+		NowFunc:            time.Now,
 	}).TryAcquire(ctx)
 
 	if errors.As(err, &limiter.NoAccessError{}) || errors.As(err, &limiter.RateLimitExceededError{}) {

@@ -145,7 +145,7 @@ func TestStaticLimiterTryAcquire(t *testing.T) {
 			if tc.limiter.Redis == nil {
 				tc.limiter.Redis = MockRedisStore{}
 			}
-			tc.limiter.nowFunc = func() time.Time { return now }
+			tc.limiter.NowFunc = func() time.Time { return now }
 			commit, err := tc.limiter.TryAcquire(context.Background())
 			if tc.wantErr != nil {
 				require.Error(t, err)
