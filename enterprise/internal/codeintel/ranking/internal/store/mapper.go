@@ -35,6 +35,8 @@ func (s *store) InsertPathCountInputs(
 		derivativeGraphKey,
 		batchSize,
 		derivativeGraphKey,
+		graphKey,
+		graphKey,
 		derivativeGraphKey,
 		graphKey,
 		graphKey,
@@ -160,9 +162,11 @@ processable_symbols AS (
 			JOIN codeintel_ranking_references rr2 ON rr2.exported_upload_id = cre2.id
 			JOIN codeintel_ranking_references_processed rrp2 ON rrp2.codeintel_ranking_reference_id = rr2.id
 			WHERE
-				rrp2.graph_key = %s AND
+				cre2.upload_id != r.upload_id AND
 				cre2.upload_key = r.upload_key AND
-				r.upload_id != cre2.upload_id
+				cre2.graph_key = %s AND
+				rr2.graph_key = %s AND
+				rrp2.graph_key = %s
 		) AND
 
 		-- For multiple references for the same repository/root/indexer in THIS batch, we want to
