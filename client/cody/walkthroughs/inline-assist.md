@@ -1,4 +1,4 @@
-## Inline Assist
+## Inline Assist (Experimental)
 
 TODO: Add gif of inline assist
 

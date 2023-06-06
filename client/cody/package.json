@@ -119,7 +119,7 @@
           },
           {
             "id": "inline-assist",
-            "title": "Inline Assist",
+            "title": "Inline Assist (Experimental)",
             "description": "Chat with Cody without leaving your file. Click the + button next to any line number in a file to bring up Inline Assist.\n[Enable in Settings](command:cody.walkthrough.enableInlineAssist)",
             "media": {
               "markdown": "walkthroughs/inline-assist.md"
@@ -127,7 +127,7 @@
           },
           {
             "id": "completions",
-            "title": "Code completions",
+            "title": "Code completions (Experimental)",
             "description": "Let Cody automatically write code for you. Start writing a comment or a line of code and Cody will suggest the next few lines.\n[Enable in Settings](command:cody.walkthrough.enableCodeCompletions)",
             "media": {
               "markdown": "walkthroughs/completions.md"
