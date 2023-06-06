@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -170,8 +169,6 @@ var textFileFilter = func() string {
 	}
 	return `file:(` + strings.Join(extensions, "|") + `)$`
 }()
-
-var wordRegex = lazyregexp.New(`[a-zA-Z0-9]+`)
 
 // getKeywordContext uses keyword search to find relevant bits of context for Cody
 func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetContextArgs) (_ []FileChunkContext, err error) {
