@@ -51,16 +51,20 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
                   + error.getMessage()
                   + "\"."));
     }
+    chat.finishMessageProcessing();
     System.err.println("Error: " + error);
   }
 
   @Override
   public void onComplete() {
     System.out.println("Streaming completed.");
+    chat.finishMessageProcessing();
   }
 
   @Override
-  public void onCancelled() {}
+  public void onCancelled() {
+    chat.finishMessageProcessing();
+  }
 
   private static @NotNull String reformatBotMessage(@NotNull String text, @Nullable String prefix) {
     String STOP_SEQUENCE_REGEXP = "(H|Hu|Hum|Huma|Human|Human:)$";
