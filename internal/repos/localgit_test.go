@@ -1,0 +1,100 @@
+package repos
+
+import (
+	"context"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"sort"
+	"strings"
+	"testing"
+
+	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
+)
+
+func TestLocalGitSource_ListRepos(t *testing.T) {
+	configs := []struct {
+		pattern string
+		repos   []string
+	}{
+		{
+			pattern: "projects/*",
+			repos:   []string{"projects/a", "projects/b", "projects/c.bare"},
+		},
+		{
+			pattern: "single-repo",
+			repos:   []string{"single-repo"},
+		},
+		{
+			pattern: "empty-projects/*",
+			repos:   []string{"single-repo"},
+		},
+	}
+
+	repoPatterns := []*schema.LocalGitRepoPattern{}
+
+	for _, config := range configs {
+		root := gitInitRepos(t, config.repos...)
+		repoPatterns = append(repoPatterns, &schema.LocalGitRepoPattern{Pattern: root + "/" + config.pattern})
+	}
+
+	ctx := context.Background()
+
+	svc := types.ExternalService{
+		Kind: extsvc.VariantLocalGit.AsKind(),
+		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.LocalGitExternalService{
+			Repos: repoPatterns,
+		})),
+	}
+
+	src, err := NewLocalGitSource(ctx, logtest.Scoped(t), &svc)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	repos, err := listAll(ctx, src)
+
+	sort.SliceStable(repos, func(i, j int) bool {
+		return repos[i].Name < repos[j].Name
+	})
+
+	testutil.AssertGolden(t, "testdata/sources/"+t.Name(), update(t.Name()), repos)
+}
+
+func gitInitBare(t *testing.T, path string) {
+	if err := exec.Command("git", "init", "--bare", path).Run(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func gitInit(t *testing.T, path string) {
+	cmd := exec.Command("git", "init")
+	cmd.Dir = path
+	if err := cmd.Run(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func gitInitRepos(t *testing.T, names ...string) string {
+	root := t.TempDir()
+	root = filepath.Join(root, "repos-root")
+
+	for _, name := range names {
+		p := filepath.Join(root, name)
+		if err := os.MkdirAll(p, 0755); err != nil {
+			t.Fatal(err)
+		}
+
+		if strings.HasSuffix(p, ".bare") {
+			gitInitBare(t, p)
+		} else {
+			gitInit(t, p)
+		}
+	}
+
+	return root
+}
