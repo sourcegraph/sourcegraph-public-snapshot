@@ -3558,9 +3558,7 @@ type Repository implements Node & GenericSearchResultInterface {
     EXPERIMENTAL: Returns infomration about the given changelist of the perforce depot, or null if
     no changelist exists with the given cid or it is not a perforce depot.
     """
-    changelist(
-        cid: String!
-    ): PerforceChangelist
+    changelist(cid: String!): PerforceChangelist
 
     """
     The first commit inside the repo
