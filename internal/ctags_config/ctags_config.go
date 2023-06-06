@@ -43,13 +43,19 @@ type ParserConfiguration struct {
 }
 
 var SupportLanguages = map[string]struct{}{
-	"Zig": {},
+	"Zig":    {},
+	"Python": {},
+	"C#":     {},
+	"Java":   {},
 }
 
 var BaseParserConfig = ParserConfiguration{
 	Engine: map[string]ParserType{
 		// TODO: put our other languages here
 		// TODO: also list the languages we support
-		"Zig": ScipCtags,
+		"Zig":    ScipCtags,
+		"Python": ScipCtags,
+		"C#":     ScipCtags,
+		"Java":   ScipCtags,
 	},
 }
