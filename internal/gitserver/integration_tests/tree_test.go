@@ -235,7 +235,7 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 	gitCommands := []string{
 		`touch ⊗.txt '".txt' \\.txt`,
 		`git add ⊗.txt '".txt' \\.txt`,
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m commit1 --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git commit -m commit1",
 	}
 	tests := map[string]struct {
 		repo api.RepoName

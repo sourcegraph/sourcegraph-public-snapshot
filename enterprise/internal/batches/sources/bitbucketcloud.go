@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
+	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -266,6 +267,10 @@ func (s BitbucketCloudSource) GetFork(ctx context.Context, targetRepo *types.Rep
 	}
 
 	return s.checkAndCopy(targetRepo, fork)
+}
+
+func (s BitbucketCloudSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+	return BuildCommitOptsCommon(repo, spec, pushOpts)
 }
 
 func (s BitbucketCloudSource) checkAndCopy(targetRepo *types.Repo, fork *bitbucketcloud.Repo) (*types.Repo, error) {

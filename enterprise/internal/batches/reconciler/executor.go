@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/log"
 
 	bgql "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/graphql"
@@ -19,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -201,9 +199,8 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 	if err != nil {
 		return afterDone, err
 	}
-	opts := buildCommitOpts(e.targetRepo, e.spec, pushConf)
-
-	err = e.pushCommit(ctx, opts)
+	opts := css.BuildCommitOpts(e.targetRepo, e.ch, e.spec, pushConf)
+	_, err = e.pushCommit(ctx, opts)
 	var pce pushCommitError
 	if errors.As(err, &pce) {
 		if acss, ok := css.(sources.ArchivableChangesetSource); ok {
@@ -612,22 +609,22 @@ func (e pushCommitError) Error() string {
 		e.RepositoryName, e.InternalError, e.Command, strings.TrimSpace(e.CombinedOutput))
 }
 
-func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) error {
-	_, err := e.client.CreateCommitFromPatch(ctx, opts)
+func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error) {
+	res, err := e.client.CreateCommitFromPatch(ctx, opts)
 	if err != nil {
 		var e *protocol.CreateCommitFromPatchError
 		if errors.As(err, &e) {
 			// Make "patch does not apply" errors a fatal error. Retrying the changeset
 			// rollout won't help here and just causes noise.
 			if strings.Contains(e.CombinedOutput, "patch does not apply") {
-				return errcode.MakeNonRetryable(pushCommitError{e})
+				return nil, errcode.MakeNonRetryable(pushCommitError{e})
 			}
-			return pushCommitError{e}
+			return nil, pushCommitError{e}
 		}
-		return err
+		return nil, err
 	}
 
-	return nil
+	return res, nil
 }
 
 // handleArchivedRepo updates the changeset and repo once it has been
@@ -668,39 +665,6 @@ func handleArchivedRepo(
 
 func (e *executor) enqueueWebhook(ctx context.Context, store *store.Store, eventType string) {
 	webhooks.EnqueueChangeset(ctx, e.logger, store, eventType, bgql.MarshalChangesetID(e.ch.ID))
-}
-
-func buildCommitOpts(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
-	// IMPORTANT: We add a trailing newline here, otherwise `git apply`
-	// will fail with "corrupt patch at line <N>" where N is the last line.
-	patch := append([]byte{}, spec.Diff...)
-	patch = append(patch, []byte("\n")...)
-	opts := protocol.CreateCommitFromPatchRequest{
-		Repo:       repo.Name,
-		BaseCommit: api.CommitID(spec.BaseRev),
-		Patch:      patch,
-		TargetRef:  spec.HeadRef,
-
-		// CAUTION: `UniqueRef` means that we'll push to a generated branch if it
-		// already exists.
-		// So when we retry publishing a changeset, this will overwrite what we
-		// pushed before.
-		UniqueRef: false,
-
-		CommitInfo: protocol.PatchCommitInfo{
-			Message:     spec.CommitMessage,
-			AuthorName:  spec.CommitAuthorName,
-			AuthorEmail: spec.CommitAuthorEmail,
-			Date:        spec.CreatedAt,
-		},
-		// We use unified diffs, not git diffs, which means they're missing the
-		// `a/` and `b/` filename prefixes. `-p0` tells `git apply` to not
-		// expect and strip prefixes.
-		GitApplyArgs: []string{"-p0"},
-		Push:         pushOpts,
-	}
-
-	return opts
 }
 
 type getBatchChanger interface {

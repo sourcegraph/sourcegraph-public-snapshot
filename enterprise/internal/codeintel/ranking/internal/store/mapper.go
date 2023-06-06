@@ -363,6 +363,58 @@ SELECT
 	(SELECT COUNT(*) FROM ins)
 `
 
+func (s *store) VacuumStaleProcessedReferences(ctx context.Context, derivativeGraphKey string, batchSize int) (_ int, err error) {
+	ctx, _, endObservation := s.operations.vacuumStaleProcessedReferences.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumStaleProcessedReferencesQuery, derivativeGraphKey, derivativeGraphKey, batchSize)))
+	return count, err
+}
+
+const vacuumStaleProcessedReferencesQuery = `
+WITH
+locked_references_processed AS (
+	SELECT id
+	FROM codeintel_ranking_references_processed
+	WHERE (graph_key < %s OR graph_key > %s)
+	ORDER BY graph_key, id
+	FOR UPDATE SKIP LOCKED
+	LIMIT %s
+),
+deleted_locked_references_processed AS (
+	DELETE FROM codeintel_ranking_references_processed
+	WHERE id IN (SELECT id FROM locked_references_processed)
+	RETURNING 1
+)
+SELECT COUNT(*) FROM deleted_locked_references_processed
+`
+
+func (s *store) VacuumStaleProcessedPaths(ctx context.Context, derivativeGraphKey string, batchSize int) (_ int, err error) {
+	ctx, _, endObservation := s.operations.vacuumStaleProcessedPaths.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(vacuumStaleProcessedPathsQuery, derivativeGraphKey, derivativeGraphKey, batchSize)))
+	return count, err
+}
+
+const vacuumStaleProcessedPathsQuery = `
+WITH
+locked_paths_processed AS (
+	SELECT id
+	FROM codeintel_initial_path_ranks_processed
+	WHERE (graph_key < %s OR graph_key > %s)
+	ORDER BY graph_key, id
+	FOR UPDATE SKIP LOCKED
+	LIMIT %s
+),
+deleted_locked_paths_processed AS (
+	DELETE FROM codeintel_initial_path_ranks_processed
+	WHERE id IN (SELECT id FROM locked_paths_processed)
+	RETURNING 1
+)
+SELECT COUNT(*) FROM deleted_locked_paths_processed
+`
+
 func (s *store) VacuumStaleGraphs(ctx context.Context, derivativeGraphKey string, batchSize int) (_ int, err error) {
 	ctx, _, endObservation := s.operations.vacuumStaleGraphs.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
