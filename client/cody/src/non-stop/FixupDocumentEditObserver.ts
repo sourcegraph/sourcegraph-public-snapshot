@@ -1,6 +1,7 @@
 import * as vscode from 'vscode'
 
 import { FixupFileCollection, FixupTextChanged } from './roles'
+import { TextChange, updateRangeMultipleChanges } from './tracked-range'
 
 /**
  * Observes text document changes and updates the regions with active fixups.
@@ -30,15 +31,15 @@ export class FixupDocumentEditObserver {
                 this.provider_.textDidChange(task)
                 break
             }
+            const updatedRange = updateRangeMultipleChanges(
+                task.selectionRange,
+                new Array<TextChange>(...event.contentChanges)
+            )
+            if (!updatedRange.isEqual(task.selectionRange)) {
+                task.selectionRange = updatedRange
+                // We don't notify about this range change. vscode will update
+                // any text decorations.
+            }
         }
-        // TODO: Update the selection ranges which were edited, see
-        // ./tracked-range or consider using simpler line-based
-        // ranges. Until this is implemented adding/deleting lines
-        // before fixups will cause conflicts.
-        //
-        // Need to clarify whether multi-range edits are progressive in the
-        // sense that edit 2 refers to ranges updated after edit 1, or if
-        // all the edits refer to ranges in the original document.
-        // TODO: Create new code lenses with updated ranges for each task with .set()
     }
 }
