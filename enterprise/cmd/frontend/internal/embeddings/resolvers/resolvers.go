@@ -153,10 +153,12 @@ func (r *Resolver) ScheduleRepositoriesForEmbedding(ctx context.Context, args gr
 	for _, repo := range args.RepoNames {
 		repoNames = append(repoNames, api.RepoName(repo))
 	}
+	forceReschedule := args.Force != nil && *args.Force
 
 	err = embeddings.ScheduleRepositoriesForEmbedding(
 		ctx,
 		repoNames,
+		forceReschedule,
 		r.db,
 		r.repoEmbeddingJobsStore,
 		r.gitserverClient,
