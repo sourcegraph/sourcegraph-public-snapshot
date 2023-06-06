@@ -13,9 +13,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-type fakeCodeownersWalk map[string][]TreeCodeownersCounts
+type fakeIndividualStatsIterator map[string][]TreeCodeownersCounts
 
-func (w fakeCodeownersWalk) Iterate(f func(string, TreeCodeownersCounts) error) error {
+func (w fakeIndividualStatsIterator) Iterate(f func(string, TreeCodeownersCounts) error) error {
 	for path, owners := range w {
 		for _, o := range owners {
 			if err := f(path, o); err != nil {
@@ -37,7 +37,7 @@ func TestUpdateIndividualCountsSuccess(t *testing.T) {
 	// 1. Setup repo and paths:
 	repo := mustCreate(ctx, t, d, &types.Repo{Name: "a/b"})
 	// 2. Insert countsg:
-	walk := fakeCodeownersWalk{
+	iter := fakeIndividualStatsIterator{
 		"": {
 			{CodeownersReference: "ownerA", CodeownedFileCount: 2},
 			{CodeownersReference: "ownerB", CodeownedFileCount: 1},
@@ -51,7 +51,7 @@ func TestUpdateIndividualCountsSuccess(t *testing.T) {
 		},
 	}
 	timestamp := time.Now()
-	updatedRows, err := d.OwnershipStats().UpdateIndividualCounts(ctx, repo.ID, walk, timestamp)
+	updatedRows, err := d.OwnershipStats().UpdateIndividualCounts(ctx, repo.ID, iter, timestamp)
 	require.NoError(t, err)
 	if got, want := updatedRows, 5; got != want {
 		t.Errorf("UpdateIndividualCounts, updated rows, got %d, want %d", got, want)
@@ -71,7 +71,7 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 	repo2 := mustCreate(ctx, t, d, &types.Repo{Name: "a/c"})
 	// 2. Insert counts:
 	timestamp := time.Now()
-	walk1 := fakeCodeownersWalk{
+	iter1 := fakeIndividualStatsIterator{
 		"": {
 			{CodeownersReference: "ownerA", CodeownedFileCount: 2},
 			{CodeownersReference: "ownerB", CodeownedFileCount: 1},
@@ -84,9 +84,9 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 			{CodeownersReference: "ownerA", CodeownedFileCount: 1},
 		},
 	}
-	_, err := d.OwnershipStats().UpdateIndividualCounts(ctx, repo1.ID, walk1, timestamp)
+	_, err := d.OwnershipStats().UpdateIndividualCounts(ctx, repo1.ID, iter1, timestamp)
 	require.NoError(t, err)
-	walk2 := fakeCodeownersWalk{
+	iter2 := fakeIndividualStatsIterator{
 		"": {
 			{CodeownersReference: "ownerA", CodeownedFileCount: 20},
 			{CodeownersReference: "ownerC", CodeownedFileCount: 10},
@@ -99,7 +99,7 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 			{CodeownersReference: "ownerC", CodeownedFileCount: 10},
 		},
 	}
-	_, err = d.OwnershipStats().UpdateIndividualCounts(ctx, repo2.ID, walk2, timestamp)
+	_, err = d.OwnershipStats().UpdateIndividualCounts(ctx, repo2.ID, iter2, timestamp)
 	require.NoError(t, err)
 	// 3. Query with or without aggregation:
 	t.Run("query single file", func(t *testing.T) {
@@ -143,6 +143,18 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 	})
 }
 
+// fakeAggregateStatsIterator contains aggregate counts by file path.
+type fakeAggregateStatsIterator map[string]TreeAggregateCounts
+
+func (w fakeAggregateStatsIterator) Iterate(f func(string, TreeAggregateCounts) error) error {
+	for path, counts := range w {
+		if err := f(path, counts); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func TestUpdateAggregateCountsSuccess(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -154,15 +166,15 @@ func TestUpdateAggregateCountsSuccess(t *testing.T) {
 	// 1. Setup repo and paths:
 	repo := mustCreate(ctx, t, d, &types.Repo{Name: "a/b"})
 	// 2. Insert aggregate counts:
-	walk := fakeTreeAggregateOwnership{
+	iter := fakeAggregateStatsIterator{
 		"":              {CodeownedFileCount: 3},
 		"dir1":          {CodeownedFileCount: 2},
 		"dir2/file1.go": {CodeownedFileCount: 1},
 	}
 	timestamp := time.Now()
-	updatedRows, err := d.OwnershipStats().UpdateAggregateCounts(ctx, repo.ID, walk, timestamp)
+	updatedRows, err := d.OwnershipStats().UpdateAggregateCounts(ctx, repo.ID, iter, timestamp)
 	require.NoError(t, err)
-	if got, want := updatedRows, len(walk); got != want {
+	if got, want := updatedRows, len(iter); got != want {
 		t.Errorf("UpdateAggregateCounts, updated rows, got %d, want %d", got, want)
 	}
 }
@@ -180,14 +192,14 @@ func TestQueryAggregateCounts(t *testing.T) {
 	repo2 := mustCreate(ctx, t, d, &types.Repo{Name: "a/c"})
 	// 2. Insert aggregate counts:
 	timestamp := time.Now()
-	repo1Counts := fakeTreeAggregateOwnership{
+	repo1Counts := fakeAggregateStatsIterator{
 		"":              {CodeownedFileCount: 3},
 		"dir1":          {CodeownedFileCount: 2},
 		"dir2/file1.go": {CodeownedFileCount: 1},
 	}
 	_, err := d.OwnershipStats().UpdateAggregateCounts(ctx, repo1.ID, repo1Counts, timestamp)
 	require.NoError(t, err)
-	repo2Counts := fakeTreeAggregateOwnership{
+	repo2Counts := fakeAggregateStatsIterator{
 		"": {CodeownedFileCount: 10}, // Just the root data
 	}
 	_, err = d.OwnershipStats().UpdateAggregateCounts(ctx, repo2.ID, repo2Counts, timestamp)
@@ -241,15 +253,4 @@ func TestQueryAggregateCounts(t *testing.T) {
 		}
 		assert.DeepEqual(t, want, got)
 	})
-}
-
-type fakeTreeAggregateOwnership map[string]TreeAggregateCounts
-
-func (w fakeTreeAggregateOwnership) Iterate(f func(string, TreeAggregateCounts) error) error {
-	for path, counts := range w {
-		if err := f(path, counts); err != nil {
-			return err
-		}
-	}
-	return nil
 }
