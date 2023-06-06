@@ -38,7 +38,22 @@ func TestGetCompletionsConfig(t *testing.T) {
 			}),
 		},
 		{
-			name: "zero-config cody gateway completions",
+			name: "zero-config cody gateway completions without license key",
+			config: schema.SiteConfiguration{
+				Completions: &schema.Completions{
+					Enabled: true,
+				},
+				LicenseKey: "",
+			},
+			want: autogold.Expect(&schema.Completions{
+				CompletionModel: "anthropic/claude-v1",
+				Enabled:         true,
+				Endpoint:        "https://cody-gateway.sourcegraph.com",
+				Provider:        "sourcegraph",
+			}),
+		},
+		{
+			name: "zero-config cody gateway completions with license key",
 			config: schema.SiteConfiguration{
 				Completions: &schema.Completions{
 					Enabled: true,
