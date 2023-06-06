@@ -166,7 +166,12 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
                         description="Comma separated list of the models the subscription can use. This normally doesn't need to be changed."
                         value={allowedModels}
                         onChange={onChangeAllowedModels}
-                        message={<ModelBadges models={splitModels(allowedModels)} />}
+                        message={
+                            <ModelBadges
+                                models={splitModels(allowedModels)}
+                                mode={mode === 'embeddings' ? 'embeddings' : 'completions'}
+                            />
+                        }
                     />
                 </div>
                 <div className="d-flex justify-content-end">

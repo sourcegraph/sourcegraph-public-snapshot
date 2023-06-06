@@ -164,7 +164,7 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
                                         />
                                     </tbody>
                                 </table>
-                                <RateLimitUsage productSubscriptionUUID={productSubscriptionUUID} />
+                                <RateLimitUsage mode="completions" productSubscriptionUUID={productSubscriptionUUID} />
 
                                 <hr />
 
@@ -191,7 +191,10 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
                                         />
                                     </tbody>
                                 </table>
-                                <EmbeddingsRateLimitUsage productSubscriptionUUID={productSubscriptionUUID} />
+                                <EmbeddingsRateLimitUsage
+                                    mode="embeddings"
+                                    productSubscriptionUUID={productSubscriptionUUID}
+                                />
                             </>
                         )}
                     </>
@@ -313,7 +316,10 @@ const RateLimitRow: React.FunctionComponent<RateLimitRowProps> = ({
                             {rateLimit.limit} requests / {prettyInterval(rateLimit.intervalSeconds)}
                         </td>
                         <td>
-                            <ModelBadges models={rateLimit.allowedModels} />
+                            <ModelBadges
+                                models={rateLimit.allowedModels}
+                                mode={mode === 'embeddings' ? 'embeddings' : 'completions'}
+                            />
                         </td>
                         {viewerCanAdminister && (
                             <td>
