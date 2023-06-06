@@ -2,6 +2,7 @@ package context
 
 import (
 	"context"
+	"fmt"
 	"math"
 	"regexp"
 	"strconv"
@@ -194,8 +195,8 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 		regexEscapedRepoNames[i] = regexp.QuoteMeta(string(repo.Name))
 	}
 
-	textQuery := "repo:^" + query.UnionRegExps(regexEscapedRepoNames) + "$ " + textFileFilter + ` content:"` + strconv.Quote(args.Query) + `"`
-	codeQuery := "repo:^" + query.UnionRegExps(regexEscapedRepoNames) + "$ -" + textFileFilter + ` content:"` + strconv.Quote(args.Query) + `"`
+	textQuery := fmt.Sprintf(`repo:^%s$ %s content:%s`, query.UnionRegExps(regexEscapedRepoNames), textFileFilter, strconv.Quote(args.Query))
+	codeQuery := fmt.Sprintf(`repo:^%s$ -%s content:%s`, query.UnionRegExps(regexEscapedRepoNames), textFileFilter, strconv.Quote(args.Query))
 
 	doSearch := func(ctx context.Context, query string, limit int) ([]FileChunkContext, error) {
 		if limit == 0 {
