@@ -22,17 +22,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type PerforceService interface {
-	// EnqueueChangelistMappingJob will push the ChangelistMappingJob onto the queue iff the experimental config for PerforceChangelistMapping is enabled and if the repo belongs to a code host of type PERFORCE.
-	EnqueueChangelistMappingJob(*ChangelistMappingJob)
-}
-
 type ChangelistMappingJob struct {
 	RepoName api.RepoName
 	RepoDir  common.GitDir
 }
 
-type service struct {
+// Service is used to manage perforce depot related interactions from gitserver.
+//
+// NOTE: Use NewService to instantiate a new service to ensure all other side effects of creating a
+// new service are taken care of.
+type Service struct {
 	Logger log.Logger
 	DB     database.DB
 
@@ -42,10 +41,10 @@ type service struct {
 
 // NewService initializes a new service with a queue and starts a producer-consumer pipeline that
 // will read jobs from the queue and "produce" them for "consumption".
-func NewService(ctx context.Context, logger log.Logger, db database.DB, jobs *list.List) PerforceService {
+func NewService(ctx context.Context, logger log.Logger, db database.DB, jobs *list.List) *Service {
 	queue := common.NewQueue[ChangelistMappingJob](jobs)
 
-	s := &service{
+	s := &Service{
 		Logger: logger,
 		DB:     db,
 
@@ -58,7 +57,10 @@ func NewService(ctx context.Context, logger log.Logger, db database.DB, jobs *li
 	return s
 }
 
-func (s *service) EnqueueChangelistMappingJob(job *ChangelistMappingJob) {
+// EnqueueChangelistMappingJob will push the ChangelistMappingJob onto the queue iff the
+// experimental config for PerforceChangelistMapping is enabled and if the repo belongs to a code
+// host of type PERFORCE.
+func (s *Service) EnqueueChangelistMappingJob(job *ChangelistMappingJob) {
 	if conf.Get().ExperimentalFeatures.PerforceChangelistMapping != "enabled" {
 		return
 	}
@@ -70,7 +72,7 @@ func (s *service) EnqueueChangelistMappingJob(job *ChangelistMappingJob) {
 	}
 }
 
-func (s *service) startPerforceChangelistMappingPipeline(ctx context.Context) {
+func (s *Service) startPerforceChangelistMappingPipeline(ctx context.Context) {
 	jobs := make(chan *ChangelistMappingJob)
 	go s.changelistMappingConsumer(ctx, jobs)
 	go s.changelistMappingProducer(ctx, jobs)
@@ -78,7 +80,7 @@ func (s *service) startPerforceChangelistMappingPipeline(ctx context.Context) {
 
 // changelistMappingProducer "pops" jobs from the FIFO queue of the "Service" and produce them
 // for "consumption".
-func (s *service) changelistMappingProducer(ctx context.Context, jobs chan<- *ChangelistMappingJob) {
+func (s *Service) changelistMappingProducer(ctx context.Context, jobs chan<- *ChangelistMappingJob) {
 	defer close(jobs)
 
 	for {
@@ -106,7 +108,7 @@ func (s *service) changelistMappingProducer(ctx context.Context, jobs chan<- *Ch
 }
 
 // changelistMappingConsumer "consumes" jobs "produced" by the producer.
-func (s *service) changelistMappingConsumer(ctx context.Context, jobs <-chan *ChangelistMappingJob) {
+func (s *Service) changelistMappingConsumer(ctx context.Context, jobs <-chan *ChangelistMappingJob) {
 	logger := s.Logger.Scoped("changelistMappingConsumer", "process perforce changelist mapping jobs")
 
 	// Process only one job at a time for a simpler pipeline at the moment.
@@ -128,7 +130,7 @@ func (s *service) changelistMappingConsumer(ctx context.Context, jobs <-chan *Ch
 }
 
 // doChangelistMapping performs the commits -> changelist ID mapping for a new or existing repo.
-func (s *service) doChangelistMapping(ctx context.Context, job *ChangelistMappingJob) error {
+func (s *Service) doChangelistMapping(ctx context.Context, job *ChangelistMappingJob) error {
 	logger := s.Logger.Scoped("doChangelistMapping", "").With(
 		log.String("repo", string(job.RepoName)),
 	)
@@ -170,7 +172,7 @@ func (s *service) doChangelistMapping(ctx context.Context, job *ChangelistMappin
 // will only return the commits yet to be mapped in the DB.
 //
 // It returns an error if any.
-func (s *service) getCommitsToInsert(ctx context.Context, logger log.Logger, repoID api.RepoID, dir common.GitDir) (commitsMap []types.PerforceChangelist, err error) {
+func (s *Service) getCommitsToInsert(ctx context.Context, logger log.Logger, repoID api.RepoID, dir common.GitDir) (commitsMap []types.PerforceChangelist, err error) {
 	latestRowCommit, err := s.DB.RepoCommitsChangelists().GetLatestForRepo(ctx, repoID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

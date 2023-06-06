@@ -289,7 +289,7 @@ type Server struct {
 	recordingCommandFactory *wrexec.RecordingCommandFactory
 
 	// Perforce is a plugin-like service attached to Server for all things Perforce.
-	Perforce perforce.PerforceService
+	Perforce *perforce.Service
 }
 
 type locks struct {

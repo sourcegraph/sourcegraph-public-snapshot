@@ -82,7 +82,7 @@ func TestGetCommitsToInsert(t *testing.T) {
 	repoCommitsStore := database.NewMockRepoCommitsChangelistsStore()
 	db.RepoCommitsChangelistsFunc.SetDefaultReturn(repoCommitsStore)
 
-	s := &service{
+	s := &Service{
 		Logger: logger,
 		DB:     db,
 	}
@@ -244,8 +244,7 @@ func TestServicePipeline(t *testing.T) {
 			repo.ExternalRepo.ServiceType = tc.serviceType
 			svc.EnqueueChangelistMappingJob(job)
 
-			s, _ := svc.(*service)
-			if got := s.changelistMappingQueue.Empty(); got != tc.expectedEmpty {
+			if got := svc.changelistMappingQueue.Empty(); got != tc.expectedEmpty {
 				t.Errorf("expected empty state of queue: %v, but got: %v", tc.expectedEmpty, got)
 			}
 		})

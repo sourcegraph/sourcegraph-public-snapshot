@@ -109,7 +109,6 @@ go_test(
         "cleanup_test.go",
         "customfetch_test.go",
         "list_gitolite_test.go",
-        "perforce_mock_test.go",
         "run_test.go",
         "server_test.go",
         "serverutil_test.go",
