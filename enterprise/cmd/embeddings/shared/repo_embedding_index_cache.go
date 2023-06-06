@@ -34,13 +34,13 @@ var (
 		Namespace: "src",
 		Name:      "embeddings_cache_miss_count",
 	})
+	embeddingsCacheMissBytes = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: "src",
+		Name:      "embeddings_cache_miss_bytes",
+	})
 	embeddingsCacheEvictedCount = promauto.NewCounter(prometheus.CounterOpts{
 		Namespace: "src",
 		Name:      "embeddings_cache_evicted_count",
-	})
-	embeddingsCacheEvictedBytes = promauto.NewCounter(prometheus.CounterOpts{
-		Namespace: "src",
-		Name:      "embeddings_cache_evicted_bytes",
 	})
 )
 
@@ -87,6 +87,7 @@ func (c *embeddingsIndexCache) Get(repo embeddings.RepoEmbeddingIndexName) (repo
 
 func (c *embeddingsIndexCache) Add(repo embeddings.RepoEmbeddingIndexName, value repoEmbeddingIndexCacheEntry) {
 	size := value.index.EstimateSize()
+	embeddingsCacheMissBytes.Add(float64(size))
 	if size > c.maxSizeBytes {
 		// Return early if the index could never fit in the cache.
 		// We don't want to dump the cache just to not be able to fit it.
@@ -116,7 +117,6 @@ func (c *embeddingsIndexCache) Add(repo embeddings.RepoEmbeddingIndexName, value
 func (c *embeddingsIndexCache) onEvict(_ embeddings.RepoEmbeddingIndexName, value repoEmbeddingIndexCacheEntry) {
 	c.remainingSizeBytes += value.index.EstimateSize()
 	embeddingsCacheEvictedCount.Inc()
-	embeddingsCacheEvictedBytes.Add(float64(value.index.EstimateSize()))
 }
 
 func NewCachedEmbeddingIndexGetter(

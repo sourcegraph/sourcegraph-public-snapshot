@@ -30174,11 +30174,11 @@ Query: `rate(src_embeddings_cache_hit_count[30m]) / (rate(src_embeddings_cache_h
 
 <br />
 
-#### embeddings: evicted_bytes
+#### embeddings: missed_bytes
 
-<p class="subtitle">Bytes evicted from the embeddings cache</p>
+<p class="subtitle">Bytes fetched due to a cache miss</p>
 
-A high eviction rate indicates that large numbers of embeddings are being removed from the cache, and will have to subsequently be re-fetched on a new query. Consider increasing the cache size.
+A high volume of missses indicates that the many searches are not hitting the cache. Consider increasing the cache size.
 
 This panel has no related alerts.
 
@@ -30188,7 +30188,7 @@ To see this panel, visit `/-/debug/grafana/d/embeddings/embeddings?viewPanel=100
 <details>
 <summary>Technical details</summary>
 
-Query: `rate(src_embeddings_cache_evicted_bytes[10m])`
+Query: `rate(src_embeddings_cache_miss_bytes[10m])`
 
 </details>
 
