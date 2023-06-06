@@ -44795,6 +44795,9 @@ type MockRepoCommitsChangelistsStore struct {
 	// GetLatestForRepoFunc is an instance of a mock function object
 	// controlling the behavior of the method GetLatestForRepo.
 	GetLatestForRepoFunc *RepoCommitsChangelistsStoreGetLatestForRepoFunc
+	// GetRepoCommitChangelistFunc is an instance of a mock function object
+	// controlling the behavior of the method GetRepoCommitChangelist.
+	GetRepoCommitChangelistFunc *RepoCommitsChangelistsStoreGetRepoCommitChangelistFunc
 }
 
 // NewMockRepoCommitsChangelistsStore creates a new mock of the
@@ -44809,6 +44812,11 @@ func NewMockRepoCommitsChangelistsStore() *MockRepoCommitsChangelistsStore {
 		},
 		GetLatestForRepoFunc: &RepoCommitsChangelistsStoreGetLatestForRepoFunc{
 			defaultHook: func(context.Context, api.RepoID) (r0 *types.RepoCommit, r1 error) {
+				return
+			},
+		},
+		GetRepoCommitChangelistFunc: &RepoCommitsChangelistsStoreGetRepoCommitChangelistFunc{
+			defaultHook: func(context.Context, api.RepoID, int64) (r0 *types.RepoCommit, r1 error) {
 				return
 			},
 		},
@@ -44830,6 +44838,11 @@ func NewStrictMockRepoCommitsChangelistsStore() *MockRepoCommitsChangelistsStore
 				panic("unexpected invocation of MockRepoCommitsChangelistsStore.GetLatestForRepo")
 			},
 		},
+		GetRepoCommitChangelistFunc: &RepoCommitsChangelistsStoreGetRepoCommitChangelistFunc{
+			defaultHook: func(context.Context, api.RepoID, int64) (*types.RepoCommit, error) {
+				panic("unexpected invocation of MockRepoCommitsChangelistsStore.GetRepoCommitChangelist")
+			},
+		},
 	}
 }
 
@@ -44843,6 +44856,9 @@ func NewMockRepoCommitsChangelistsStoreFrom(i RepoCommitsChangelistsStore) *Mock
 		},
 		GetLatestForRepoFunc: &RepoCommitsChangelistsStoreGetLatestForRepoFunc{
 			defaultHook: i.GetLatestForRepo,
+		},
+		GetRepoCommitChangelistFunc: &RepoCommitsChangelistsStoreGetRepoCommitChangelistFunc{
+			defaultHook: i.GetRepoCommitChangelist,
 		},
 	}
 }

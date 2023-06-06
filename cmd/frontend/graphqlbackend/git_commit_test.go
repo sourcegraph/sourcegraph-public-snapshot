@@ -688,15 +688,8 @@ func TestGitCommitPerforceChangelist(t *testing.T) {
 			ExternalRepo: api.ExternalRepoSpec{ServiceType: extsvc.TypePerforce},
 		}
 
-		repos := database.NewMockRepoStore()
 		repos.GetFunc.SetDefaultReturn(repo, nil)
 		repos.GetByNameFunc.SetDefaultReturn(repo, nil)
-		db.ReposFunc.SetDefaultReturn(repos)
-
-		repos.GetFunc.SetDefaultReturn(
-			repo,
-			nil,
-		)
 
 		// git-p4 commit.
 		c1 := gitdomain.Commit{
