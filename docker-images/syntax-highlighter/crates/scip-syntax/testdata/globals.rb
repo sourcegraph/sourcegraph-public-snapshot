@@ -51,3 +51,5 @@ module MyModule
     end
   end
 end
+
+class A::B::C; end

@@ -1,6 +1,10 @@
 (assignment left: [(identifier) (constant) (class_variable)] @descriptor.term)
 (module name: (_) @descriptor.namespace) @scope
+
+; TODO: this requires reverse scope addition; currently produces incorrect result
+; (scope_resolution scope: (constant) @descriptor.namespace name: (_) @descriptor.namespace) @scope
 (class name: (_) @descriptor.type) @scope
+
 (method name: (_) @descriptor.method) @local
 (singleton_method name: (_) @descriptor.method) @local
 [(do_block) (block) (unless) (case) (begin) (if) (while) (for)] @local
